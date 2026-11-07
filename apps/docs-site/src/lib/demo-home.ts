@@ -15,6 +15,7 @@ import { sampleChangeOrigin } from './demo';
 import { changeOrigin } from './product-branch';
 import type { ProductConfig } from '@bridge-ds/core';
 import type { ThumbSpec } from './branch-thumb';
+import type { LifecycleStage } from './review-state';
 import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 
 /** The fields of a pull request the demo home reads (GET /repos/{o}/{r}/pulls, or the activity snapshot). */
@@ -169,6 +170,8 @@ export function teamExplorations(
     previews?: Map<number, ThumbSpec>;
     /** The captures of product copies' explorations, by "product#number" (their numbers are their repository's). */
     productPreviews?: Map<string, ThumbSpec>;
+    /** A product copy's exploration handed to the developers: the stage its task says (Being built's words). */
+    taskStage?: (p: DemoPull) => LifecycleStage | null | undefined;
     sample?: boolean;
     /** The changed files of a running exploration (undefined while read): its card says "Not started" or "Exploring". */
     files?: (p: DemoPull) => readonly string[] | null | undefined;
@@ -185,6 +188,7 @@ export function teamExplorations(
       },
       preview: (p) => (p.product ? opts.productPreviews?.get(`${p.product}#${p.number}`) : opts.previews?.get(p.number)),
       ...(opts.files ? { files: opts.files } : {}),
+      ...(opts.taskStage ? { taskStage: opts.taskStage as never } : {}),
     },
   );
 }

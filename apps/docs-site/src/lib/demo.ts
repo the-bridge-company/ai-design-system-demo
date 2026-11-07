@@ -372,14 +372,65 @@ export function tourSteps(x: { rows: boolean; more: boolean; branches: boolean }
  * owner) is the lead in the visitor's seat (Dana), face seeded by ~dana. Claude and bots are not people: null, they
  * keep their own name ("Claude AI"). The returned `login` is the face seed.
  */
-export function samplePersonOf(login: string, team: { members: readonly { login: string; name: string; you?: boolean }[] }): { login: string; name: string } | null {
-  const bare = login.trim().replace(/^@/, '');
+export function samplePersonOf(
+  login: string,
+  team: { members: readonly { login: string; name: string; you?: boolean; reviews?: readonly string[] }[] },
+  seat: SampleSeat = 'lead',
+): { login: string; name: string } | null {
+  const bare = login.trim().replace(/^@/, '').replace(/^name:/, '').trim();
   if (!bare || isClaudeLogin(bare) || isBotLogin(bare)) return null;
   const { members } = team;
+  // A member by login ("~ann-leroy", "ann-leroy") or by the name Bridge recorded ("name:Ann", "Ann Leroy").
   const key = bare.replace(/^~/, '').toLowerCase();
-  const m = members.find((x) => x.login.replace(/^~/, '').toLowerCase() === key) ?? members.find((x) => x.you) ?? members[0];
+  const slug = key.replace(/\s+/g, '-');
+  const first = key.split(/\s+/)[0]!;
+  const byLogin = members.find((x) => x.login.replace(/^~/, '').toLowerCase() === slug);
+  const byName = members.find((x) => x.name.toLowerCase() === key) ?? (/\s/.test(key) ? members.find((x) => x.name.toLowerCase() === first) : undefined);
+  // Anyone else is a real account: the developer of a product's code, or the lead in the visitor's seat.
+  const dev = seat === 'developer' ? members.find((x) => !x.you && x.reviews?.includes('tech')) : undefined;
+  const m = byLogin ?? byName ?? dev ?? members.find((x) => x.you) ?? members[0];
   return m ? { login: m.login, name: m.name } : null;
 }
+
+/**
+ * The part a real account plays on the sample team when it is not one of its members: 'lead' (the visitor's seat,
+ * Dana) by default, 'developer' for who builds a product's code (its developer pull request, its task): the member
+ * who reviews tech (Malik).
+ */
+export type SampleSeat = 'lead' | 'developer';
+
+/** Acme Design's people (lib/invites.ts sampleTeam adds what Members shows): the one list, readable by /api too. */
+export interface SampleMember {
+  login: string;
+  name: string;
+  role: 'admin' | 'reviewer' | 'edit';
+  reviews: ('design' | 'tech')[];
+  you?: boolean;
+  email: string;
+}
+
+export function sampleMembers(lead = 'Dana'): SampleMember[] {
+  return [
+    { login: '~dana', name: lead, role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
+    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
+    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
+    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
+    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+  ];
+}
+
+/**
+ * Who a person is on screen, the one helper every screen and /api call goes through: on the sample team the persona
+ * (samplePersonOf, by `seat` for a real account), by name only; on any other team null, and the caller keeps the real
+ * person. `repo` is the team's design system ("owner/repo").
+ */
+export function personaOn(repo: string | null | undefined, login: string | null | undefined, seat: SampleSeat = 'lead', lead?: string): { login: string; name: string } | null {
+  if (!login || !isSampleTeam(repo)) return null;
+  return samplePersonOf(login, { members: sampleMembers(lead?.trim() || undefined) }, seat);
+}
+
+/** A name to show for a login: the persona's on the sample team, else `real` (the name the caller already had). */
+export const nameOn = (repo: string | null | undefined, login: string | null | undefined, real: string, seat: SampleSeat = 'lead', lead?: string): string => personaOn(repo, login, seat, lead)?.name ?? real;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Settings on the sample team

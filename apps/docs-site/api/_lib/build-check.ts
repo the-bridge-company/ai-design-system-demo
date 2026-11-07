@@ -9,6 +9,7 @@
 // The server copy of what it needs from core and lib/review-state (the API does not import core).
 import type { Redis } from './redis.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
+import { isSampleTeam, personaOn } from '../../src/lib/demo.js';
 
 export type BuildRole = 'designer' | 'pm' | 'lead';
 export type BuildKind = 'looks-right' | 'changes';
@@ -71,6 +72,21 @@ export async function saveBuild(redis: Redis, repo: string, pull: number, need: 
 
 export async function addBuildWord(redis: Redis, repo: string, pull: number, w: BuildWord): Promise<BuildWord[]> {
   return saveBuild(redis, repo, pull, (await buildRecordOf(redis, repo, pull)).need ?? { pm: false, lead: false }, w);
+}
+
+/**
+ * The words and names of a build check as the team `repo` ("owner/repo" of its design system) shows them: on the sample
+ * team (src/lib/demo.ts personaOn) every person is its persona, by name only, never the account behind the demo's
+ * repositories: who said a word, the designer. Any other team: unchanged.
+ */
+export function buildPeopleOn<N extends BuildNeed | undefined>(repo: string, words: BuildWord[], need: N): { words: BuildWord[]; need: N } {
+  if (!isSampleTeam(repo)) return { words, need };
+  const p = (login: string | undefined, name: string | undefined) => personaOn(repo, login ?? name);
+  // The persona's name, and no GitHub login: the page draws the face from the name.
+  const shown = words.map(({ by, ...w }) => ({ ...w, byName: p(by, w.byName)?.name ?? w.byName }));
+  const designer = need?.names?.designer;
+  const named = need && designer ? { ...need, names: { ...need.names, designer: p(designer, undefined)?.name ?? designer } } : need;
+  return { words: shown, need: named as N };
 }
 
 /** What the lists show (Being built, Home, Changes): who is still waiting, or who asked for changes, by name. */

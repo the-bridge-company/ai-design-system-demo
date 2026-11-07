@@ -139,7 +139,7 @@
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
-import { demoDialog } from '../../src/lib/demo.js';
+import { demoDialog, personaOn } from '../../src/lib/demo.js';
 import { putShot, shotImage, shotMeta, shotsTodo, workflowClaims, type ShotsCtx } from '../_lib/private-shots.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
@@ -181,7 +181,7 @@ import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { addsPmWords, isPm, PM_ONLY, PRODUCT_KEY, pmOf, pmsOf, publicPm, setPm, withPmWord, type PmWord, type ProductPm } from '../_lib/product-pm.js';
 import { deliverNotices, teamBase, type NotifyDeps } from '../_lib/notify.js';
-import { buildComment, buildRecordOf, buildStateOf, buildSummary, designCheckStatus, mentionedIssues, NO_DESIGN, DESIGN_CHECK, DESIGN_TASK_BACK_COMMENT_SERVER, devPullOfEvents, reopenedBody, saveBuild, taskOfUrl, type BuildNeed, type BuildRole, type BuildWord } from '../_lib/build-check.js';
+import { buildComment, buildPeopleOn, buildRecordOf, buildStateOf, buildSummary, designCheckStatus, mentionedIssues, NO_DESIGN, DESIGN_CHECK, DESIGN_TASK_BACK_COMMENT_SERVER, devPullOfEvents, reopenedBody, saveBuild, taskOfUrl, type BuildNeed, type BuildRole, type BuildWord } from '../_lib/build-check.js';
 import type { Notice } from '../_lib/notify-events.js';
 import { npmLatest, parseNpmNames, sendLibraryUpdate } from '../_lib/library-update.js';
 import { validPackageName } from '../../src/lib/library-update.js';
@@ -939,10 +939,12 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
       await deliverNotices(notices, nd, `build:${pair.code}:${dev.number}:${word.at}`).catch(() => undefined);
     }
   }
-  const st = buildStateOf(words, head, need);
+  // On the sample team its personas, never the account behind its repositories (build-check buildPeopleOn).
+  const shown = buildPeopleOn(t.full, words, need);
+  const st = buildStateOf(shown.words, head, shown.need);
   const target = `${teamBase(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), t.full)}changes/?exploration=${n}&product=${encodeURIComponent(product)}`;
   // The status needs the app's Commit statuses write permission: without it the comment still says it, and Studio too.
-  const named = designCheckStatus(st, need.names, { designChanging: write && body.why === 'design' && body.kind === 'changes' });
+  const named = designCheckStatus(st, shown.need.names, { designChanging: write && body.why === 'design' && body.kind === 'changes' });
   // The app's token for the proxy carries no status write: a token of its own, narrowed to it.
   // Written once per head and state: a read that changes nothing leaves GitHub alone (a page opens in a second, not three).
   const statusKey = `bridge:build:status:${canonicalRepo(pair.code).toLowerCase()}#${dev.number}`;
@@ -953,8 +955,13 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   if (status.status === 201) await ctx.svc.redis.cmd('SET', statusKey, statusNow, 'EX', 30 * 24 * 3600).catch(() => undefined);
   // The people by the names they go by (their GitHub profile, kept by Bridge), never a login, for the page's first paint.
   const nameOf = async (login: string | null | undefined) => (login && /^[A-Za-z0-9-]{1,39}$/.test(login) ? ((await profileNameOf(readCtxOf(ctx), ro, rn, login).catch(() => null)) ?? login) : (login ?? null));
-  const [builderName, designerShown] = await Promise.all([nameOf(builder), typeof block.memberName === 'string' ? Promise.resolve(block.memberName) : nameOf(typeof block.author === 'string' ? block.author : typeof block.doneBy === 'string' ? block.doneBy : null)]);
-  return json(200, { ...st, head, pull: { number: dev.number, url: dev.url, ...(ref ? { ref } : {}), ...(builder ? { builder } : {}), ...(builderName ? { builderName } : {}) }, ...(designerShown ? { designerName: designerShown } : {}), role, statusWritten: already || status.status === 201 });
+  // The sample team: the developer of its code is the persona who reviews tech, the designer its persona (src/lib/demo.ts).
+  const devPersona = personaOn(t.full, builder, 'developer');
+  const designerLogin = typeof block.author === 'string' ? block.author : typeof block.doneBy === 'string' ? block.doneBy : null;
+  const designerPersona = personaOn(t.full, typeof block.memberName === 'string' ? block.memberName : designerLogin);
+  const [builderName, designerShown] = await Promise.all([devPersona ? devPersona.name : nameOf(builder), designerPersona ? designerPersona.name : typeof block.memberName === 'string' ? Promise.resolve(block.memberName) : nameOf(designerLogin)]);
+  const builderShown = devPersona ? devPersona.login : builder;
+  return json(200, { ...st, head, pull: { number: dev.number, url: dev.url, ...(ref ? { ref } : {}), ...(builderShown ? { builder: builderShown } : {}), ...(builderName ? { builderName } : {}) }, ...(designerShown ? { designerName: designerShown } : {}), role, statusWritten: already || status.status === 201 });
 }
 
 const EXPLORATION_LABEL_SERVER = 'exploration';
@@ -986,7 +993,8 @@ async function onBuildChecks(req: Request, ctx: Ctx, body: Record<string, unknow
       const pr = token ? await ghApp(ctx, token, 'GET', `/repos/${o}/${r}/pulls/${number}`) : null;
       const head = typeof pr?.data?.head?.sha === 'string' ? (pr.data.head.sha as string) : null;
       if (!head) return;
-      checks[k] = buildSummary(buildStateOf(rec.words, head, rec.need), rec.need.names);
+      const shown = buildPeopleOn(t.full, rec.words, rec.need);
+      checks[k] = buildSummary(buildStateOf(shown.words, head, shown.need), shown.need.names);
     }),
   );
   return json(200, { checks });
@@ -2558,7 +2566,8 @@ export function designCheckFor(ctx: Ctx): (event: string, payload: unknown) => P
     const designer = typeof block?.memberName === 'string' ? block.memberName : typeof block?.author === 'string' ? block.author : typeof block?.doneBy === 'string' ? block.doneBy : undefined;
     const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block?.leadPieces) && (block!.leadPieces as unknown[]).length > 0, names: { ...(designer ? { designer } : {}), ...(pm ? { pm: pm.name } : {}) } };
     const words = await saveBuild(ctx.svc.redis, repo, pr!.number as number, need);
-    await write(designCheckStatus(buildStateOf(words, head, need), need.names, { designChanging: Boolean(block && typeof block.doneAt !== 'string') }));
+    const shown = buildPeopleOn(meta.team, words, need);
+    await write(designCheckStatus(buildStateOf(shown.words, head, shown.need), shown.need.names, { designChanging: Boolean(block && typeof block.doneAt !== 'string') }));
     return 'linked';
   };
 }

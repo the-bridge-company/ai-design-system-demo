@@ -7,25 +7,30 @@
 //     code"). The whole card opens the product page (lib/product-page.ts).
 import { Badge, Card, Link } from '@bridge-ds/react';
 import { Who } from './faces';
-import { BranchThumb } from './BranchThumb';
+import { BranchThumb, captureAgeOf } from './BranchThumb';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
 
+/** The corner of a library exploration's screen: it belongs to no product. */
+const LIBRARY = 'Library';
+
 export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationCard; showProduct?: boolean }) {
+  const age = captureAgeOf(c.preview);
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card">
-        <BranchThumb spec={c.preview} size="card" />
+        <BranchThumb spec={c.preview} size="card" chip={showProduct ? (c.product ?? LIBRARY) : null} />
         <div className="sh-card-body">
           <span className="sh-card-head">
-            <Link href={c.href} variant="subtle" className="t-body sh-card-title" data-card-primary>
+            <Link href={c.href} variant="subtle" className="t-body sh-card-title" title={c.title} data-card-primary>
               <span className="sh-strong">{c.title}</span>
             </Link>
           </span>
-          {/* A fixed footer, pinned to the bottom: the DS tag of its page, then who explores it and the product on one
-              line (a long one ends in an ellipsis). Every card of a row has the same footer, so the tags and the names
-              line up whatever the titles' length. On a product page the product goes without saying: it is left out. */}
+          {/* A fixed footer, pinned to the bottom: the DS tag of its page, then who explores it and when its screen was
+              captured, on one line (a long one ends in an ellipsis). Every card of a row has the same footer, so the
+              tags and the names line up whatever the titles' length. The product sits in the screen's corner; on a
+              product page it goes without saying and is left out. */}
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {c.state && (
@@ -38,7 +43,7 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
               <Who p={c.author} size="xs" />
               <span className="sh-card-name">
                 {c.author.name}
-                {showProduct && c.product ? <span className="sh-card-product">{SEP}{c.product}</span> : null}
+                {age ? <span className="sh-card-product">{SEP}{age}</span> : null}
               </span>
             </span>
           </span>

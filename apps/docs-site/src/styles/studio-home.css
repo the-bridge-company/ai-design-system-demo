@@ -431,8 +431,9 @@
   border-radius: 0;
 }
 
-/* Title (two lines at most), then the state tag with the product and who explores it, pinned to the bottom: in a row
-   of cards the tags and names line up whatever the titles' length, and nothing floats in empty space. */
+/* Title on one line (the whole title on hover and in the link's name), then the state tag right under it, then who
+   explores it and when its screen was captured. Every card's text is the same height, so a row of cards lines up
+   its tags and names with no space held for a second title line. */
 .sh-card-body {
   display: flex;
   flex: 1;
@@ -442,21 +443,20 @@
 }
 
 .sh-card-title {
-  display: -webkit-box;
-  line-height: var(--typography-h3-line-height);
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-height: var(--typography-h3-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* The footer: the tag, then the person and the product on one line, pinned to the bottom so every card of a row lines
-   them up. */
+/* The footer: the tag, then the person and when the screen was captured on one line, right under the title. */
 .sh-card-foot {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  margin-block-start: auto;
-  padding-block-start: var(--space-1);
 }
 
 .sh-card-tagline {

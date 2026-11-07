@@ -1,13 +1,14 @@
 // A listed change as a card, for the grid view of Changes and Being built: the same card as the Home's explorations
 // (ExplorationCards, styles sh-card-*), fed by what a row already knows. The screen on top, the title, then the fixed
-// footer: its one status tag, then who it belongs to and, when the list does not group by product, the product.
+// footer: its one status tag, then who it belongs to and when its screen was captured. The product, when the list
+// does not group by product, sits in the screen's corner (BranchThumb chip), so it reads at a glance.
 // The grid itself is the Home's grid (ul.sh-cards), so a card is the same size everywhere in Studio.
 // The switch between the two views sits in each list's filter bar (ViewSwitch).
 import { Badge, Card, Link, SegmentedControl } from '@bridge-ds/react';
 import { LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Who } from './faces';
-import { BranchThumb } from './BranchThumb';
+import { BranchThumb, captureAgeOf } from './BranchThumb';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
 import { SEP, type Person, type PillTone } from '../../../lib/home-model';
 import { LIST_VIEW_EVENT, LIST_VIEW_WORDS, readListView, rememberListView, type ListView, type ListViewChange } from '../../../lib/list-view';
@@ -69,7 +70,7 @@ export interface ListCardProps {
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
   /** Whose it is: the face and the name in the footer. */
   person: Person;
-  /** After the name, when the group heading does not already say it: "Account app". */
+  /** In the screen's corner, when the group heading does not already say it: "Account app". */
   product?: string | null;
   pill?: { label: string; tone: PillTone | 'info' } | null;
   /** A chip before the tag ("Exploration", "Sample"). */
@@ -77,10 +78,11 @@ export interface ListCardProps {
 }
 
 export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags }: ListCardProps) {
+  const age = captureAgeOf(thumb);
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card">
-        <BranchThumb spec={thumb} size="card" />
+        <BranchThumb spec={thumb} size="card" chip={product ?? null} />
         <div className="sh-card-body">
           <span className="sh-card-head">
             <Link href={href} variant="subtle" className="t-body sh-card-title" title={title} data-card-primary onClick={onClick} {...linkAttributes}>
@@ -100,10 +102,10 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
               <Who p={person} size="xs" />
               <span className="sh-card-name">
                 {person.name}
-                {product ? (
+                {age ? (
                   <span className="sh-card-product">
                     {SEP}
-                    {product}
+                    {age}
                   </span>
                 ) : null}
               </span>

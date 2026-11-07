@@ -356,8 +356,11 @@ export function BranchesList(p: BranchesListProps) {
   // thumbnails and avatars stay in one column.
   const pickable = (x: { tokenOnly: boolean | null }) => picks && selectable(x);
   const slot = <span className="bl-pick-slot" aria-hidden="true" />;
-  // The same branch as a card, for the grid: the Home's card (ListCard). Its footer names who it belongs to and, on
-  // Shipped (grouped by month), the product its heading does not say.
+  // The same branch as a card, for the grid: the Home's card (ListCard). Its footer names who it belongs to and when
+  // its screen was captured; on Shipped (grouped by month), its screen's corner names the product its heading does
+  // not say ("Library" for a library change).
+  // A library change in Shipped's grid: it belongs to no product.
+  const LIBRARY_CORNER = 'Library';
   const branchCard = ({ r, e }: (typeof rows)[number], product?: string | null) => {
     const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
     return (
@@ -368,7 +371,7 @@ export function BranchesList(p: BranchesListProps) {
         href={href}
         linkAttributes={r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) }}
         person={personOf(r)}
-        product={product ?? null}
+        product={product === undefined ? null : (product ?? LIBRARY_CORNER)}
         pill={r.pill}
       />
     );
@@ -531,7 +534,7 @@ export function BranchesList(p: BranchesListProps) {
               </h2>
               <ul className={view === 'grid' ? 'sh-cards' : 'sh-rows'} aria-labelledby={`bl-${g.key}`}>
                 {g.rows.map((x) => {
-                  const product = products.find((pp) => pp.key === x.product)?.name;
+                  const product = products.find((pp) => pp.key === x.product)?.name ?? null;
                   const line = [product, nameOf(x.r), shippedOn(shippedAtOf(x.r)!)].filter(Boolean).join(SEP);
                   // Shipped says when on the line; a library change the release has not published yet keeps its tag.
                   const waits = x.r.pill?.label === LIFECYCLE_LABEL['next-release'];

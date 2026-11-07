@@ -141,8 +141,10 @@
   object-position: top center;
 }
 
-/* "Captured 2 h ago" on a card's capture: small, on the surface, in the corner where a page rarely says much. */
-.bt--screen.is-shot {
+/* "Captured 2 h ago" on a card's capture, or the product the card belongs to (bt-chip): small, on the surface, in the
+   corner where a page rarely says much. */
+.bt--screen.is-shot,
+.bt--card:has(> .bt-chip) {
   position: relative;
 }
 
@@ -158,6 +160,15 @@
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
   white-space: nowrap;
+}
+
+/* The product chip reads first on a card: the text colour, a long name ends in an ellipsis inside the card. */
+.bt-chip {
+  max-width: calc(100% - var(--space-4));
+  overflow: hidden;
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
 }
 
 /* Screen not captured yet: a plate on the subtle surface, the Field Guide drawing beside the changed screen's name

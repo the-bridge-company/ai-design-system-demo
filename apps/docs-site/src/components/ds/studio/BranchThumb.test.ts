@@ -5,7 +5,7 @@ import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { BranchThumb } from './BranchThumb';
+import { BranchThumb, captureAgeOf } from './BranchThumb';
 
 afterEach(cleanup);
 
@@ -54,5 +54,33 @@ describe('BranchThumb, explored screens', () => {
       return html;
     });
     expect(others.some((h) => h !== first)).toBe(true);
+  });
+});
+
+describe('BranchThumb, the card corner', () => {
+  it('names the product in the corner of a capture; its age goes to the footer', () => {
+    const { container } = render(createElement(BranchThumb, { spec: shot, size: 'card', chip: 'Art print shop' }));
+    expect(container.querySelector('.bt-chip')?.textContent).toBe('Art print shop');
+    expect(container.querySelectorAll('.bt-captured')).toHaveLength(1);
+    expect(captureAgeOf(shot)).toBe('Captured 2 h ago');
+  });
+
+  it('leaves the corner empty on a list of one product', () => {
+    const { container } = render(createElement(BranchThumb, { spec: shot, size: 'card', chip: null }));
+    expect(container.querySelector('.bt-captured')).toBeNull();
+  });
+
+  it('names the product on a plate too, once: the plate keeps the screen only', () => {
+    const plate = { kind: 'screen' as const, src: null, product: 'Art print shop', screen: 'Order list', seed: 'a#1' };
+    const { container } = render(createElement(BranchThumb, { spec: plate, size: 'card', chip: 'Art print shop' }));
+    expect(container.querySelector('.bt-chip')?.textContent).toBe('Art print shop');
+    expect(container.querySelector('.bt-plate-screen')?.textContent).toBe('Order list');
+    expect(container.querySelector('.bt-plate-product')).toBeNull();
+    expect(captureAgeOf(plate)).toBeNull();
+  });
+
+  it('never puts a chip on a row thumbnail', () => {
+    const { container } = render(createElement(BranchThumb, { spec: shot, size: 'row', chip: 'Art print shop' }));
+    expect(container.querySelector('.bt-chip')).toBeNull();
   });
 });

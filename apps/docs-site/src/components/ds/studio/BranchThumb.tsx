@@ -78,15 +78,18 @@ function Lines() {
  * screen's name and the product (a row thumbnail keeps the drawing only). Never a fake wireframe that reads as a
  * broken image.
  */
-function ScreenPlate({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'screen' }>; size: ThumbSize }) {
-  const name = spec.screen ?? spec.product ?? null;
+function ScreenPlate({ spec, size, chip }: { spec: Extract<ThumbSpec, { kind: 'screen' }>; size: ThumbSize; chip?: string | null }) {
+  // A caller that sets the corner chip names the product there (or leaves it out on a one-product list): the plate
+  // then names only the screen.
+  const product = chip === undefined ? spec.product : null;
+  const name = spec.screen ?? product ?? null;
   return (
     <span className="bt-plate">
       <Drawing name={plateDrawing(spec)} width={size === 'row' ? 28 : 56} className="bt-plate-art" />
       {size === 'card' && name && (
         <span className="bt-plate-text">
           <span className="bt-plate-screen">{name}</span>
-          {spec.screen && spec.product && <span className="bt-plate-product">{spec.product}</span>}
+          {spec.screen && product && <span className="bt-plate-product">{product}</span>}
         </span>
       )}
     </span>
@@ -97,18 +100,18 @@ function ScreenPlate({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'screen'
  * A captured screen (lib/preview-shots): its top, where the page starts, with "Captured 2 h ago" on a card. An image
  * that does not load (removed, offline) gives the plate back in the same box: nothing moves.
  */
-function ScreenShot({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'screen' }> & { src: string }; size: ThumbSize }) {
+function ScreenShot({ spec, size, chip }: { spec: Extract<ThumbSpec, { kind: 'screen' }> & { src: string }; size: ThumbSize; chip?: string | null }) {
   const [failed, setFailed] = useState<string | null>(null);
-  if (failed === spec.src) return <ScreenPlate spec={spec} size={size} />;
+  if (failed === spec.src) return <ScreenPlate spec={spec} size={size} {...(chip === undefined ? {} : { chip })} />;
   return (
     <>
       <img className="bt-img bt-screen" src={spec.src} alt="" loading="lazy" decoding="async" onError={() => setFailed(spec.src)} />
-      {size === 'card' && spec.capturedAt && <span className="bt-captured">{capturedLine(spec.capturedAt, Date.now())}</span>}
+      {size === 'card' && chip === undefined && spec.capturedAt && <span className="bt-captured">{capturedLine(spec.capturedAt, Date.now())}</span>}
     </>
   );
 }
 
-function body(spec: ThumbSpec, size: ThumbSize): ReactNode {
+function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode {
   const room = ROOM[size];
   switch (spec.kind) {
     case 'color':
@@ -134,7 +137,11 @@ function body(spec: ThumbSpec, size: ThumbSize): ReactNode {
       );
     case 'screen':
       // One screen, not a before/after: an exploration is a new screen. Its top shows, where the page starts.
-      return spec.src ? <ScreenShot spec={{ ...spec, src: spec.src }} size={size} /> : <ScreenPlate spec={spec} size={size} />;
+      return spec.src ? (
+        <ScreenShot spec={{ ...spec, src: spec.src }} size={size} {...(chip === undefined ? {} : { chip })} />
+      ) : (
+        <ScreenPlate spec={spec} size={size} {...(chip === undefined ? {} : { chip })} />
+      );
     case 'text':
       return <Halves before={<Lines />} after={<Lines />} />;
     case 'icon':
@@ -145,10 +152,22 @@ function body(spec: ThumbSpec, size: ThumbSize): ReactNode {
 /** What the thumbnail shows, when it is one named thing (a build request's component): kept on the element for tests and tools. */
 const label = (spec: ThumbSpec) => (spec.kind === 'image' || spec.kind === 'icon' ? spec.label : undefined);
 
-export function BranchThumb({ spec, size }: { spec: ThumbSpec; size: 'row' | 'card' }) {
+/**
+ * `chip`, on a card: the caller decides the corner. A name ("Art print shop", "Library") shows there, so a card's
+ * product reads at a glance; null leaves the corner empty (a list of one product). Either way the capture's age goes
+ * to the card's footer (captureAgeOf). Left out, the corner keeps "Captured 2 h ago" (a product folder's tiles).
+ */
+export function BranchThumb({ spec, size, chip }: { spec: ThumbSpec; size: 'row' | 'card'; chip?: string | null }) {
+  const corner = size === 'card' ? chip : undefined;
   return (
     <span className={`bt bt--${size} bt--${spec.kind}${spec.kind === 'screen' && spec.src ? ' is-shot' : ''}`} aria-hidden="true" data-label={label(spec)}>
-      {body(spec, size)}
+      {body(spec, size, corner)}
+      {corner && <span className="bt-captured bt-chip">{corner}</span>}
     </span>
   );
+}
+
+/** "Captured 2 h ago" for a card's footer, when its screen is a capture with a date; null otherwise. */
+export function captureAgeOf(spec: ThumbSpec, now = Date.now()): string | null {
+  return spec.kind === 'screen' && spec.src && spec.capturedAt ? capturedLine(spec.capturedAt, now) : null;
 }

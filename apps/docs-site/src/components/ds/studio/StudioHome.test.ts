@@ -162,12 +162,14 @@ describe('StudioHome, explorations only', () => {
     expect(items[1]!.querySelector('img.bt-screen')?.getAttribute('src')).toBe('/sample/explorations/36.png');
     expect(items[1]!.querySelector('.bt--icon')).toBeNull();
     expect(screen.getByRole('link', { name: 'Billing screen' }).getAttribute('href')).toBe('/studio/changes/?exploration=37');
-    // A fixed footer: the DS tag of its page, then who explores it and the product on one line.
+    // The product in the screen's corner; then the DS tag of its page, then who explores it (and when the screen was
+    // captured, when it is a capture).
+    expect(items[2]!.querySelector('.bt .bt-chip')!.textContent).toBe('Account');
+    expect(items[2]!.querySelector('.sh-card-title')!.getAttribute('title')).toBe('Billing screen');
     const foot = [...items[2]!.querySelector('.sh-card-foot')!.children];
     expect(foot.map((c) => c.className.split(' ').find((n) => n.startsWith('sh-card-')))).toEqual(['sh-card-tagline', 'sh-card-who']);
     expect(items[2]!.querySelector('.sh-card-tagline [class*="badge"]')?.textContent).toBe('2 new pieces found');
-    expect(items[2]!.querySelector('.sh-card-product')!.textContent).toBe(`${SEP}Account`);
-    expect(items[2]!.querySelector('.sh-card-who')!.textContent).toMatch(new RegExp(`Dana${SEP}Account$`));
+    expect(items[2]!.querySelector('.sh-card-who')!.textContent).toMatch(/Dana$/);
     await expectNoAxeViolations(container);
   });
 

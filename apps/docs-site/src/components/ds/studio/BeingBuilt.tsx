@@ -163,16 +163,19 @@ function cardPerson(v: Row, data: BuildData) {
 
 /**
  * The same changes as cards: the Home's card (ListCard), one per change, in the Home's grid. The card names the
- * product, which no heading says here, and carries the same one status tag as its row.
+ * product in its screen's corner (no heading says it here, except a list filtered to one product), and carries the
+ * same one status tag as its row.
  */
-function Cards({ views, data, products, onOpen }: { views: Row[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void }) {
+function Cards({ views, data, products, onOpen, oneProduct = false }: { views: Row[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; oneProduct?: boolean }) {
   const shots = useExplorationShots(
     views.filter(isExploration).map((v) => ({ key: v.id, number: Number(/exploration=(\d+)/.exec(v.exploration.href)?.[1] ?? 0), product: (v as { productKey?: string | null }).productKey ?? null })),
   );
   return (
     <ul className="sh-cards bb-cards" aria-label="Build requests">
       {views.map((v) => {
-        const common = { person: cardPerson(v, data), product: products.find((p) => p.key.toLowerCase() === rowProduct(v, products))?.name ?? null, pill: statusTag(v) };
+        // The product in the screen's corner, unless the list is filtered to one product (it goes without saying).
+        const product = oneProduct ? null : (products.find((p) => p.key.toLowerCase() === rowProduct(v, products))?.name ?? null);
+        const common = { person: cardPerson(v, data), product, pill: statusTag(v) };
         if (isFix(v))
           return <ListCard key={v.id} {...common} thumb={{ kind: "icon", icon: "component", label: v.component }} title={v.component} href={studioHref(v.fix.href)} />;
         if (isExploration(v))
@@ -736,7 +739,7 @@ export default function BeingBuilt() {
       )}
       {shown.length ? (
         view === "grid" ? (
-          <Cards views={shown} data={data} products={products} onOpen={go} />
+          <Cards views={shown} data={data} products={products} onOpen={go} oneProduct={Boolean(active.product)} />
         ) : (
           <Rows views={shown} data={data} now={now} onOpen={go} />
         )

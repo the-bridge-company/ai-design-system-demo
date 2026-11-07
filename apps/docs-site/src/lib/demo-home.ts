@@ -15,6 +15,8 @@ import { sampleChangeOrigin } from './demo';
 import { changeOrigin } from './product-branch';
 import type { ProductConfig } from '@bridge-ds/core';
 import type { ThumbSpec } from './branch-thumb';
+import type { LifecycleStage } from './review-state';
+import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 
 /** The fields of a pull request the demo home reads (GET /repos/{o}/{r}/pulls, or the activity snapshot). */
 export interface DemoPull {
@@ -32,6 +34,8 @@ export interface DemoPull {
   /** Read from the closed list: "closed", and when it was merged. */
   state?: string;
   merged_at?: string | null;
+  /** A product's own repository (its design copy): the product key. Absent for the library repository. */
+  product?: string;
 }
 
 /** The fields of a suggestion the demo home reads (GET /repos/{o}/{r}/issues?labels=bridge-suggestion). */
@@ -164,6 +168,10 @@ export function teamExplorations(
   opts: LeadOptions & {
     products?: readonly ProductConfig[];
     previews?: Map<number, ThumbSpec>;
+    /** The captures of product copies' explorations, by "product#number" (their numbers are their repository's). */
+    productPreviews?: Map<string, ThumbSpec>;
+    /** A product copy's exploration handed to the developers: the stage its task says (Being built's words). */
+    taskStage?: (p: DemoPull) => LifecycleStage | null | undefined;
     sample?: boolean;
     /** The changed files of a running exploration (undefined while read): its card says "Not started" or "Exploring". */
     files?: (p: DemoPull) => readonly string[] | null | undefined;
@@ -173,9 +181,14 @@ export function teamExplorations(
     pulls.filter((p) => !isBotPull(p)),
     {
       products: opts.products ?? [],
-      author: (p) => askerOf(p, opts.people),
-      preview: (p) => opts.previews?.get(p.number),
+      author: (p) => {
+        // A product copy's exploration names its person in its block (a member by email, a sample persona).
+        const named = p.product ? explorationAuthorFor(p.user?.login, p.body) : null;
+        return named && isNameAuthor(named) ? person(named, nameOfAuthor(named), null) : askerOf(p, opts.people);
+      },
+      preview: (p) => (p.product ? opts.productPreviews?.get(`${p.product}#${p.number}`) : opts.previews?.get(p.number)),
       ...(opts.files ? { files: opts.files } : {}),
+      ...(opts.taskStage ? { taskStage: opts.taskStage as never } : {}),
     },
   );
 }

@@ -15,6 +15,8 @@ import { demoLogins, leadQueue, leadWaitingCount, teamExplorations, type DemoPul
 import { AVATARS_SHOWN, contrastNeed, person, guidanceNeed, NEEDS_SHOWN, sortNeeds, type NeedRow, type Person } from '../lib/home-model';
 import type { ExplorationCard } from '../lib/home-explorations';
 import type { ThumbSpec } from '../lib/branch-thumb';
+import type { LifecycleStage } from '../lib/review-state';
+import { taskUrlOf } from './design-task';
 import { isDemoRepo, isSampleTeam } from '../lib/demo';
 import { teamGuidance } from '../lib/team-facts';
 import { demoApprovals } from './demo-approvals';
@@ -137,9 +139,37 @@ export async function loadDemoHome(stat: DemoStatic, onUpdate: (d: DemoHomeData)
   const xpFiles = new Map<string, string[] | null>();
   const xpKey = (p: DemoPull) => `${p.number}@${p.head?.sha ?? ''}`;
   const files = (p: DemoPull) => (xpFiles.has(xpKey(p)) ? xpFiles.get(xpKey(p)) : undefined);
-  const explorations = () => teamExplorations([...activity.open, ...(activity.closed ?? [])], { people, products, previews, sample, files });
+  // The products' own explorations (their design copies), read through the same path as the product page.
+  let productOpen: DemoPull[] = [];
+  const productPreviews = new Map<string, ThumbSpec>();
+  let taskStages = new Map<string, LifecycleStage>();
+  const taskStage = (p: DemoPull) => {
+    const u = p.product ? taskUrlOf(p.body) : null;
+    return u ? taskStages.get(u) : null;
+  };
+  const explorations = () => teamExplorations([...activity.open, ...productOpen, ...(activity.closed ?? [])], { people, products, previews, productPreviews, taskStage, sample, files });
   const paint = () => onUpdate({ loading: false, needs: needs(), explorations: explorations(), lead, role, failed: null });
   paint();
+  const productRead = import('./product-repos')
+    .then((m) => m.productPulls())
+    .then(async (list) => {
+      productOpen = list.map((x) => ({ ...(x as unknown as DemoPull), product: x.product }));
+      paint();
+      const { designTaskStages } = await import('./design-task');
+      taskStages = await designTaskStages(list).catch(() => taskStages);
+      if (taskStages.size) paint();
+      const [{ previewShotOf }, { shotThumb }] = await Promise.all([import('./preview-shots'), import('../lib/preview-shots')]);
+      await Promise.all(
+        productOpen.map(async (x) => {
+          const shot = await previewShotOf({ number: x.number, product: x.product ?? null }).catch(() => null);
+          if (!shot) return;
+          const key = `${x.product}#${x.number}`;
+          productPreviews.set(key, shotThumb(shot, { product: products.find((q) => q.key === x.product)?.name ?? '', seed: key }));
+          paint();
+        }),
+      );
+    })
+    .catch(() => undefined);
 
   // Display names: from the source when it has them, else once per person shown (the avatars and the first rows).
   const logins = demoLogins(activity.open, activity.suggestions);
@@ -201,5 +231,6 @@ export async function loadDemoHome(stat: DemoStatic, onUpdate: (d: DemoHomeData)
         later();
       }),
   ]);
+  await productRead;
   paint();
 }

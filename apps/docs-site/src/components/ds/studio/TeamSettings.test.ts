@@ -72,7 +72,7 @@ describe('TeamSettings', () => {
       expect(names('Checks the code')).toEqual(['Malik']);
       expect(names('Adds it to the library')).toEqual(['Malik']);
       // The faces are the sample members' own, seeded by the logins Members uses.
-      expect([...row('Checks the look').querySelectorAll('[data-face]')].map((f) => f.getAttribute('data-face'))).toEqual(['~dana', '~ann-leroy']);
+      expect([...row('Checks the look').querySelectorAll('[data-face]')].map((f) => f.getAttribute('data-face'))).toEqual(['~dana', '~ann']);
       expect(screen.queryByText('Only owner')).toBeNull();
       expect(screen.getByText('Dana, with a written reason of at least 20 characters.')).toBeInTheDocument();
       expect(screen.getByText('Token values')).toBeInTheDocument();

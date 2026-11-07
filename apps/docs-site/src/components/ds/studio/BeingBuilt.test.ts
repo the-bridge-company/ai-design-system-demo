@@ -64,7 +64,7 @@ describe('Being built', () => {
     expect(container.querySelector('.bl-bar')!.textContent).toContain('6 changes.');
     await userEvent.click(container.querySelectorAll('.bl-bar [role="combobox"]')[1]!);
     await userEvent.click(await screen.findByRole('option', { name: /Malik/ }));
-    expect(location.search).toBe('?people=malik-haddad');
+    expect(location.search).toBe('?people=malik');
     expect(container.querySelector('.bl-bar')!.textContent).toContain('2 of 6 changes.');
     expect(screen.getByRole('tab', { name: /^All/ }).textContent).toContain('2');
     expect(screen.getByRole('tab', { name: /Waiting to be picked up/ }).textContent).toContain('0');
@@ -77,13 +77,13 @@ describe('Being built', () => {
   });
 
   it('opens on the filters of the address and keeps them through a detail', async () => {
-    history.replaceState(null, '', '/studio/building/?people=malik-haddad');
+    history.replaceState(null, '', '/studio/building/?people=malik');
     data = sample();
     render(createElement(BeingBuilt));
     await userEvent.click(await screen.findByText('Badge: add an info tone'));
-    expect(location.search).toBe('?request=33&people=malik-haddad');
+    expect(location.search).toBe('?request=33&people=malik');
     await userEvent.click(screen.getByRole('link', { name: 'All build requests' }));
-    expect(location.search).toBe('?people=malik-haddad');
+    expect(location.search).toBe('?people=malik');
     expect(screen.queryByText('Button: add a lg size')).toBeNull();
   });
 

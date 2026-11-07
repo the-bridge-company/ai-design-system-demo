@@ -37,7 +37,7 @@ interface Named {
   name: string;
   /** A person's GitHub login, for the face. */
   login?: string;
-  /** A sample member (~ann-leroy): the drawn face Members shows, never a GitHub photo. */
+  /** A sample member (~ann): the drawn face Members shows, never a GitHub photo. */
   sample?: boolean;
 }
 

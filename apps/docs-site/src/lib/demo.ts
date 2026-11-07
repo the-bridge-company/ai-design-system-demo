@@ -367,7 +367,7 @@ export function tourSteps(x: { rows: boolean; more: boolean; branches: boolean }
 /**
  * Who a login is on the sample team (History and other plain-script rows, scripts/people.ts): the sample team tells
  * its own story, never the repository's real accounts. `team` is lib/invites.ts sampleTeam(lead), the one source,
- * passed in so this module imports nothing the /api functions would load. A sample member's login ("~ann-leroy", with
+ * passed in so this module imports nothing the /api functions would load. A sample member's login ("~ann", with
  * or without the ~) is that member, name and face; any other human login (the repository's real accounts, such as its
  * owner) is the lead in the visitor's seat (Dana), face seeded by ~dana. Claude and bots are not people: null, they
  * keep their own name ("Claude AI"). The returned `login` is the face seed.
@@ -380,7 +380,7 @@ export function samplePersonOf(
   const bare = login.trim().replace(/^@/, '').replace(/^name:/, '').trim();
   if (!bare || isClaudeLogin(bare) || isBotLogin(bare)) return null;
   const { members } = team;
-  // A member by login ("~ann-leroy", "ann-leroy") or by the name Bridge recorded ("name:Ann", "Ann Leroy").
+  // A member by login ("~ann", "ann") or by the name Bridge recorded ("name:Ann", "Ann Leroy").
   const key = bare.replace(/^~/, '').toLowerCase();
   const slug = key.replace(/\s+/g, '-');
   const first = key.split(/\s+/)[0]!;
@@ -412,10 +412,10 @@ export interface SampleMember {
 export function sampleMembers(lead = 'Dana'): SampleMember[] {
   return [
     { login: '~dana', name: lead, role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
-    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
-    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
-    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
-    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+    { login: '~ann', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
+    { login: '~leo', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
+    { login: '~malik', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
+    { login: '~sofia', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
   ];
 }
 

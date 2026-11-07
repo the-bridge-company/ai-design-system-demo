@@ -47,9 +47,9 @@ describe('personHtml on the sample team', () => {
   });
 
   it('reads a sample member as that member, with the face Members shows', () => {
-    const el = host(personHtml('~ann-leroy'));
+    const el = host(personHtml('~ann'));
     expect(el.querySelector('.person-name')?.textContent).toBe('Ann');
-    expect(el.querySelector('[data-face]')?.getAttribute('data-face')).toBe('~ann-leroy');
+    expect(el.querySelector('[data-face]')?.getAttribute('data-face')).toBe('~ann');
   });
 
   it('keeps Claude as Claude AI', () => {

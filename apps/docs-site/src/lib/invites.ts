@@ -400,7 +400,7 @@ export const MEMBERS_WORDS = {
  * Ann reviews design, Leo and Sofia edit, Malik reviews code, and Priya (invited to edit) has not joined yet: she has
  * no work in the demo, while Sofia asks for branches and suggestions there ("Requested by Sofia Reyes."). Fixed sample
  * data, never read from GitHub, so a guest's Members page and invite dialog make no GitHub call. Their logins are the
- * ones the demo home gives them ("Requested by Ann Leroy." becomes ~ann-leroy, lib/home-model requesterPerson), so
+ * ones the demo home gives them ("Requested by Ann." becomes ~ann, lib/home-model requesterPerson), so
  * each drawn face is the same person on the home, in Members and in the dialog.
  */
 export function sampleTeam(lead = 'Dana'): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } {

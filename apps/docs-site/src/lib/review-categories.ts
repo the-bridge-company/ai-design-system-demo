@@ -88,7 +88,7 @@ export function reachLine(products: readonly ProductConfig[]): string | null {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Filters: the kind and the designer, kept in the address (?kind=library&by=ann-leroy)
+// Filters: the kind and the designer, kept in the address (?kind=library&by=ann)
 
 export type KindFilter = ReviewCategory | 'all';
 
@@ -117,7 +117,7 @@ export function withQueueFilters(search: string, f: QueueFilters): string {
   return s ? `?${s}` : '';
 }
 
-/** A stable key for a designer, from a login (a persona's "~ann-leroy" too) or else a name: "ann-leroy", "annleroy". */
+/** A stable key for a designer, from a login (a persona's "~ann" too) or else a name: "ann", "annleroy". */
 export function designerKey(who: { login?: string | null; name?: string | null }): string {
   const raw = who.login || who.name || '';
   return raw

@@ -78,7 +78,7 @@ describe('Being built', () => {
     expect(shipped.at(-1)).toMatchObject({ status: 'shipped', current: true });
     const picked = timelineSteps(views[2]!);
     expect(picked.map((s) => s.reached)).toEqual([true, true, false, false, false]);
-    expect(picked[1]).toMatchObject({ who: 'malik-haddad', current: true });
+    expect(picked[1]).toMatchObject({ who: 'malik', current: true });
   });
 
   it('links Jira only with a site set', () => {
@@ -387,13 +387,13 @@ describe('the filters of Being built', () => {
     { key: 'shop', name: 'Shop' },
     { key: 'library', name: 'Library', default: true },
   ];
-  const nameOf = (l: string) => ({ 'malik-haddad': 'Malik', dana: 'Dana' })[l] ?? l;
+  const nameOf = (l: string) => ({ 'malik': 'Malik', dana: 'Dana' })[l] ?? l;
   const view = { builders: [] as string[], requestedBy: 'dana' };
 
   it('a build request reads under who builds it and who sent it: You finds what you sent', () => {
     expect(rowPeople(view, { nameOf })).toEqual([{ key: 'dana', name: 'Dana' }]);
     expect(rowPeople(view, { nameOf, viewer: 'dana' })[0]!.key).toBe(YOU);
-    expect(rowPeople({ ...view, builders: ['malik-haddad'] }, { nameOf }).map((p) => p.key)).toEqual(['malik-haddad', 'dana']);
+    expect(rowPeople({ ...view, builders: ['malik'] }, { nameOf }).map((p) => p.key)).toEqual(['malik', 'dana']);
     expect(rowPeople({ ...view, requestedBy: null }, { nameOf })).toEqual([]);
   });
 

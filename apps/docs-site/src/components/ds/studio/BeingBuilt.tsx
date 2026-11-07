@@ -138,7 +138,7 @@ function Builders({
         <Icon icon={Hammer} size="sm" />
       </span>
     );
-  // The sample team draws each builder's face from their sample login (~malik-haddad), the same face as in Members.
+  // The sample team draws each builder's face from their sample login (~malik), the same face as in Members.
   const people = v.builders.map((l) =>
     data.sample
       ? person(`~${l}`, data.nameOf(l), null)

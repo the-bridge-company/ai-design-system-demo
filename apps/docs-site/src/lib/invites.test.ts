@@ -199,7 +199,7 @@ describe('contexts', () => {
     expect(s.members.map((m) => `${m.name}:${roleText(m)}`)).toEqual(['Dana:Admin', 'Ann:Reviewer: design', 'Leo:Can edit', 'Malik:Reviewer: code', 'Sofia:Can edit']);
     expect(s.members[0]!.you).toBe(true);
     // Sofia asks for work in the demo ("Requested by Sofia Reyes."), so she is a member; Priya has no work there.
-    expect(s.members.find((m) => m.name === 'Sofia')).toMatchObject({ login: '~sofia-reyes', email: 'sofia@acme.design' });
+    expect(s.members.find((m) => m.name === 'Sofia')).toMatchObject({ login: '~sofia', email: 'sofia@acme.design' });
     expect(s.pending).toEqual([expect.objectContaining({ email: 'priya@acme.design', role: 'edit', face: '~priya-natarajan' })]);
     expect(s.people.some((p) => /priya/i.test(p.email ?? ''))).toBe(false);
     expect(sampleTeam('Robin').members[0]!.name).toBe('Robin');

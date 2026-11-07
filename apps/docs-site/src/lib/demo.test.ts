@@ -102,8 +102,8 @@ describe('the demo Settings', () => {
     // The same people and logins as Members (lib/invites.ts sampleTeam), so the faces match.
     const team = sampleTeam('Dana').members;
     expect(p.owners.design).toEqual(team.filter((m) => m.reviews.includes('design')).map((m) => m.login));
-    expect(p.owners.design).toEqual(['~dana', '~ann-leroy']);
-    expect(p.owners.tech).toEqual(['~malik-haddad']);
+    expect(p.owners.design).toEqual(['~dana', '~ann']);
+    expect(p.owners.tech).toEqual(['~malik']);
     expect(p.owners.design.map(p.nameOf)).toEqual(['Dana', 'Ann']);
     expect(p.owners.tech.map(p.nameOf)).toEqual(['Malik']);
     // Any other login (the repository's real accounts) reads as the lead.
@@ -256,12 +256,12 @@ describe('approvals on the sample team follow its Review rules', () => {
 
 describe('samplePersonOf: people on the sample team', () => {
   it('Sofia, who asks for work in the demo, is a member with her own face', () => {
-    expect(samplePersonOf('~sofia-reyes', sampleTeam())).toEqual({ login: '~sofia-reyes', name: 'Sofia' });
+    expect(samplePersonOf('~sofia', sampleTeam())).toEqual({ login: '~sofia', name: 'Sofia' });
   });
 
   it('a sample member reads as that member, by the login Members uses', () => {
-    expect(samplePersonOf('~ann-leroy', sampleTeam())).toEqual({ login: '~ann-leroy', name: 'Ann' });
-    expect(samplePersonOf('malik-haddad', sampleTeam())).toEqual({ login: '~malik-haddad', name: 'Malik' });
+    expect(samplePersonOf('~ann', sampleTeam())).toEqual({ login: '~ann', name: 'Ann' });
+    expect(samplePersonOf('malik', sampleTeam())).toEqual({ login: '~malik', name: 'Malik' });
   });
 
   it("any other human login, the repository's real accounts, reads as the lead persona", () => {
@@ -282,8 +282,8 @@ describe('personaOn: no real account on the sample team', () => {
   const SAMPLE = 'acme-design-demo/bridge-demo-ds';
 
   it('the developer of a product code pull request reads as the member who reviews tech, not the lead', () => {
-    expect(samplePersonOf('peterbono', sampleTeam(), 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
-    expect(personaOn(SAMPLE, 'peterbono', 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
+    expect(samplePersonOf('peterbono', sampleTeam(), 'developer')).toEqual({ login: '~malik', name: 'Malik' });
+    expect(personaOn(SAMPLE, 'peterbono', 'developer')).toEqual({ login: '~malik', name: 'Malik' });
   });
 
   it('the lead the design owners name (the repository owner) reads as Dana', () => {
@@ -293,10 +293,10 @@ describe('personaOn: no real account on the sample team', () => {
   });
 
   it('a member recorded by name is that member, whatever the seat', () => {
-    expect(samplePersonOf('name:Ann', sampleTeam())).toEqual({ login: '~ann-leroy', name: 'Ann' });
-    expect(samplePersonOf('Leo', sampleTeam(), 'developer')).toEqual({ login: '~leo-martin', name: 'Leo' });
-    expect(samplePersonOf('Sofia Reyes', sampleTeam())).toEqual({ login: '~sofia-reyes', name: 'Sofia' });
-    expect(samplePersonOf('~malik-haddad', sampleTeam())).toEqual({ login: '~malik-haddad', name: 'Malik' });
+    expect(samplePersonOf('name:Ann', sampleTeam())).toEqual({ login: '~ann', name: 'Ann' });
+    expect(samplePersonOf('Leo', sampleTeam(), 'developer')).toEqual({ login: '~leo', name: 'Leo' });
+    expect(samplePersonOf('Sofia Reyes', sampleTeam())).toEqual({ login: '~sofia', name: 'Sofia' });
+    expect(samplePersonOf('~malik', sampleTeam())).toEqual({ login: '~malik', name: 'Malik' });
   });
 
   it('a real team keeps its real people: no persona, the name the caller had', () => {

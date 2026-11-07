@@ -23,7 +23,7 @@ describe('authorFor', () => {
   it('marks name-only authors', () => {
     expect(isNameAuthor(nameAuthor('Dino'))).toBe(true);
     expect(isNameAuthor('dino')).toBe(false);
-    expect(isNameAuthor('~ann-leroy')).toBe(false);
+    expect(isNameAuthor('~ann')).toBe(false);
     expect(nameOfAuthor('name:Dino')).toBe('Dino');
     expect(isAppLogin('app/x')).toBe(true);
     expect(isAppLogin('x[bot]')).toBe(true);

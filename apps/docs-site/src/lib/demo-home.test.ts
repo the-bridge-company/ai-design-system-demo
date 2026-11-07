@@ -126,6 +126,17 @@ describe("the DS lead's queue on the demo", () => {
     ]);
   });
 
+  it("lists a product copy's explorations with the person its block names and the copy's own capture", () => {
+    const block = `<!-- bridge-exploration ${JSON.stringify({ name: 'Team seats and roles', purpose: 'p', slug: 'team-seats-and-roles', startedAt: at(1), member: '0123456789abcdef', memberName: 'Sofia' })} -->`;
+    const copy = pull(1, { draft: true, labels: [{ name: 'exploration' }], head: { ref: 'explore/team-seats-and-roles' }, title: 'Exploration: Team seats and roles', body: block, product: 'account', user: { login: 'peterbono' } });
+    const library = pull(1, { title: 'Library change one' });
+    const shot = { kind: 'screen', src: 'https://x/team.png' } as const;
+    const cards = teamExplorations([copy, library], { products: [{ key: 'account', name: 'Account app' } as never], productPreviews: new Map([['account#1', shot]]), previews: new Map([[1, { kind: 'screen', src: 'https://x/library.png' } as const]]) });
+    const card = cards.find((c) => c.title === 'Team seats and roles')!;
+    expect(card.author.name).toBe('Sofia');
+    expect(card.preview).toMatchObject(shot);
+  });
+
   it('reads the explored screen of another demo when the visual impact run has one, a plate until then', () => {
     const explore = pull(7, { labels: [{ name: 'exploration' }], head: { ref: 'explore/pill-buttons' } });
     const plate = { kind: 'screen', src: null, product: 'Library', screen: null };

@@ -403,7 +403,7 @@ function Toolbar({
   const [isolate, setIsolate] = useState(false);
   const phone = useMedia('(max-width: 760px)');
   const reduced = useMedia('(prefers-reduced-motion: reduce)');
-  usePinnedBridgeTokens(liveTokensUrl(build), theme);
+  usePinnedBridgeTokens();
   useEffect(() => {
     if (!showing || reduced) {
       setFlash(false);

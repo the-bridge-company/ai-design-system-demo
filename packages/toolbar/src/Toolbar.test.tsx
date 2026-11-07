@@ -68,6 +68,17 @@ describe('the collapsed toolbar', () => {
     expect(screen.getByRole('button', { name: 'Show Bridge details' })).toBeInTheDocument();
   });
 
+  it('wears Bridge tokens of its own, never the host page tokens', async () => {
+    loadChange.mockResolvedValue(facts());
+    mount();
+    await waitFor(() => expect(bar()).toBeInTheDocument());
+    // Its root is pinned (bridgeTokens.ts) and the stylesheet that gives pinned elements the Bridge values is in.
+    expect(bar().closest('[data-bridge-pin]')).toHaveAttribute('data-brand', 'bridge');
+    const sheet = document.head.querySelector('style[data-bridge-pinned]');
+    expect(sheet?.textContent).toContain('[data-bridge-pin][data-bridge-pin][data-bridge-pin]');
+    expect(sheet?.textContent).toContain('--radius-control:');
+  });
+
   it('flips sides in one click and with B, without opening', async () => {
     loadChange.mockResolvedValue(facts());
     const user = userEvent.setup();

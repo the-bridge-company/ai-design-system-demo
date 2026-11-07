@@ -17,6 +17,7 @@ import { productPullsPath, tagProductPulls, type ExplorationPullLike } from '../
 import { cardProductKey } from '../lib/product-page';
 import { person, requesterPerson, type Person } from '../lib/home-model';
 import type { ThumbSpec } from '../lib/branch-thumb';
+import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from '../lib/author';
 import type { CopyView } from '../lib/design-copy';
 import { copyRepos, readCopyView } from './design-copy';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
@@ -113,7 +114,11 @@ export async function loadProductPage(key: string, onUpdate: (d: ProductPageData
   const pick = (login: string) => persons.get(login.toLowerCase()) ?? person(login, null, avatarOf(login));
   const author = (p: ExplorationPull) => {
     const r = requesterOf(p.body);
-    return (r && requesterPerson(r, pick)) ?? pick(p.user?.login ?? 'unknown');
+    if (r) return requesterPerson(r, pick) ?? pick(p.user?.login ?? 'unknown');
+    // The person the exploration names (a member by email, a sample persona), never the account that opened it.
+    const who = explorationAuthorFor(p.user?.login, p.body);
+    if (who && isNameAuthor(who)) return person(who, nameOfAuthor(who), null);
+    return pick(who ?? p.user?.login ?? 'unknown');
   };
   const shotKey = (p: { number: number; product?: string | null | undefined }) => `${p.product ?? ''}#${p.number}`;
   const viewer = currentViewer()?.login ?? null;

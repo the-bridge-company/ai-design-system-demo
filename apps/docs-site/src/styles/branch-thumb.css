@@ -6,9 +6,11 @@
   display: flex;
   flex-shrink: 0;
   overflow: hidden;
-  border: var(--border-width-default) solid var(--color-border-default);
+  border: var(--border-width-default) solid var(--color-border-strong);
   border-radius: var(--radius-inset);
   background: var(--color-surface-default);
+  /* Raised off the capture: a white page under a white chip would lose its edge and read as part of the screen. */
+  box-shadow: var(--elevation-raised);
   color: var(--color-text-muted);
 }
 
@@ -153,9 +155,11 @@
   inset-block-end: var(--space-2);
   inset-inline-end: var(--space-2);
   padding: var(--space-0-5) var(--space-2);
-  border: var(--border-width-default) solid var(--color-border-default);
+  border: var(--border-width-default) solid var(--color-border-strong);
   border-radius: var(--radius-inset);
   background: var(--color-surface-default);
+  /* Raised off the capture: a white page under a white chip would lose its edge and read as part of the screen. */
+  box-shadow: var(--elevation-raised);
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);

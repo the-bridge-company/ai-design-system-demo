@@ -7,6 +7,7 @@ import { BookOpen, Component, Contrast, GitBranch, Palette, UserPlus } from 'luc
 import { Icon, type LucideIcon } from '@bridge-ds/react';
 import { fitScale, plateDrawing, type ThumbIcon, type ThumbSpec } from '../../../lib/branch-thumb';
 import { capturedLine } from '../../../lib/preview-shots';
+import { ago } from '../../../lib/home-model';
 import { Drawing } from './Drawing';
 
 type ThumbSize = 'row' | 'card';
@@ -167,7 +168,7 @@ export function BranchThumb({ spec, size, chip }: { spec: ThumbSpec; size: 'row'
   );
 }
 
-/** "Captured 2 h ago" for a card's footer, when its screen is a capture with a date; null otherwise. */
+/** "2 h ago" for a card's footer (short, so a long name still fits), when its screen is a capture with a date; null otherwise. */
 export function captureAgeOf(spec: ThumbSpec, now = Date.now()): string | null {
-  return spec.kind === 'screen' && spec.src && spec.capturedAt ? capturedLine(spec.capturedAt, now) : null;
+  return spec.kind === 'screen' && spec.src && spec.capturedAt ? ago(spec.capturedAt, now) : null;
 }

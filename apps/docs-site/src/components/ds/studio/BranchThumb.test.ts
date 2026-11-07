@@ -62,7 +62,7 @@ describe('BranchThumb, the card corner', () => {
     const { container } = render(createElement(BranchThumb, { spec: shot, size: 'card', chip: 'Art print shop' }));
     expect(container.querySelector('.bt-chip')?.textContent).toBe('Art print shop');
     expect(container.querySelectorAll('.bt-captured')).toHaveLength(1);
-    expect(captureAgeOf(shot)).toBe('Captured 2 h ago');
+    expect(captureAgeOf(shot)).toBe('2 h ago');
   });
 
   it('leaves the corner empty on a list of one product', () => {

@@ -6,8 +6,8 @@
 // stays Claude AI ("Claude AI, with Dana"). Nothing is looked up on GitHub there.
 import { avatarHtml, type AvatarSize } from '@bridge-ds/react/dom';
 import { AGENT_NAME, authorLine, isClaudeLogin, isEmailAddress, loginKey, nameFace, loginsToFetch, nameBudget, personName, readNameCache, type NameCache } from '../lib/people';
-import { isSampleTeam, samplePersonOf } from '../lib/demo';
-import { isNameAuthor, nameOfAuthor } from '../lib/author';
+import { isSampleTeam, samplePersonOf, type SampleSeat } from '../lib/demo';
+import { isNameAuthor, nameAuthor, nameOfAuthor } from '../lib/author';
 import { sampleTeam } from '../lib/invites';
 import { currentViewer, esc, ghGet, hasWorkingToken } from './github-session';
 import { repoContext, siteConfig } from './repo-context';
@@ -57,9 +57,28 @@ function sampleLead(): string | undefined {
 }
 
 /** The sample persona a login reads as on the sample team, else null (another team, or Claude and bots). */
-function persona(login: string): { login: string; name: string } | null {
-  return onSample() ? samplePersonOf(login, sampleTeam(sampleLead())) : null;
+function persona(login: string, seat: SampleSeat = 'lead'): { login: string; name: string } | null {
+  return onSample() ? samplePersonOf(login, sampleTeam(sampleLead()), seat) : null;
 }
+
+/**
+ * Who a login is on this page, for every script that names people from GitHub (commit authors, a pull request's
+ * opener, the developer of a product's code): on the sample team its persona, by name only ("name:Dana", lib/author),
+ * so neither the real account's name nor its photo ever shows there; `seat` is the part a real account plays there
+ * (lib/demo.ts SampleSeat). Any other team: the login unchanged.
+ */
+export function sampleAuthor(login: string, seat: SampleSeat = 'lead'): string {
+  const p = login ? persona(login, seat) : null;
+  return p ? nameAuthor(p.name) : login;
+}
+
+/** The persona's name of a login on the sample team (`seat` as in sampleAuthor), else null: the caller keeps its own. */
+export function sampleName(login: string | null | undefined, seat: SampleSeat = 'lead'): string | null {
+  return login ? (persona(login, seat)?.name ?? null) : null;
+}
+
+/** True on the sample team's pages: its people are personas (sampleAuthor). */
+export const onSampleTeam = (): boolean => onSample();
 
 /**
  * What a designer reads for a login on this page: the profile name (lib/people personName), "Claude AI, with Ana"

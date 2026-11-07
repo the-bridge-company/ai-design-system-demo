@@ -80,10 +80,10 @@ import { sampleVisitor } from './demo-gate';
 import { copyText } from './explorer/util';
 import { loadVisualImpact } from './reviews/visual-impact';
 import { previewShotOf } from './preview-shots';
-import { isSampleExploration, isSampleTeam } from '../lib/demo';
-import { knownNames } from './people';
+import { isSampleTeam, type SampleSeat } from '../lib/demo';
+import { knownNames, onSampleTeam, sampleAuthor, sampleName } from './people';
 import { isEmailAddress, loginKey } from '../lib/people';
-import { explorationAuthorFor, isNameAuthor } from '../lib/author';
+import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from '../lib/author';
 import { siteApprovers } from './teams';
 import { studioHref } from '../lib/team-path';
 import { pullReviewsOf } from './review-reads';
@@ -141,6 +141,8 @@ export function emailAuthorName(author: string, body: string | null | undefined)
 }
 
 export function knownNamesOf(logins: readonly string[]): Record<string, string> {
+  // The sample team: its personas, never the repository's real accounts (scripts/people.ts sampleAuthor).
+  if (onSampleTeam()) return Object.fromEntries(logins.map((l) => [l, sampleName(l)]).filter((x): x is [string, string] => Boolean(x[1])));
   const cache = knownNames();
   const v = currentViewer();
   const out: Record<string, string> = {};
@@ -231,7 +233,7 @@ function leadViewOf(
   const repoAdmin = Boolean(viewer && connected() && currentAccess()?.admin && !sameLogin(viewer, asker) && !sameLogin(viewer, r.author));
   const isLead = Boolean(emailLead ? emailLead.decides && !startedByEmailMember(body, emailLead) : repoAdmin || (viewer && connected() && leads.some((l) => l.toLowerCase() === viewer.toLowerCase())));
   if (isLead) {
-    const who = block?.leadAskedByName ?? block?.leadAskedBy ?? 'The designer';
+    const who = block?.leadAskedByName ?? sampleName(block?.leadAskedBy) ?? block?.leadAskedBy ?? 'The designer';
     const leadName = viewer ? (knownNamesOf([viewer])[viewer] ?? undefined) : emailLead?.name;
     const me = { ...(viewer ? { lead: viewer } : {}), ...(leadName ? { leadName } : {}) };
     // Someone else answered first: the page shows what they said.
@@ -363,7 +365,7 @@ async function paintEarlyBuild(
   o: { r: ExplorationRow; pull: ExplorationPullLike; product: string; products: readonly ProductConfig[]; viewerRef: string | null; reopen: (line: string) => void },
 ): Promise<void> {
   const block = parseExplorationBody(o.pull.body);
-  const designer = (typeof block?.memberName === 'string' && block.memberName) || o.r.author;
+  const designer = (typeof block?.memberName === 'string' && block.memberName) || (isNameAuthor(o.r.author) ? nameOfAuthor(o.r.author) : o.r.author);
   // The frame: the section's place, its title and a calm line while it reads (never a blank zone).
   if (current?.key === key && current.props.stage === 'loading') {
     repaint(d, key, { stage: 'handed-off', handoff: { ...EARLY_HANDOFF, check: { line: BUILD_WORDS.reading, builder: 'the developer', designer, rows: [], onSay: null, note: null } } });
@@ -376,8 +378,9 @@ async function paintEarlyBuild(
     return;
   }
   const team = `${CFG.owner}/${CFG.repo}`;
-  const builder = read.pull.builderName ?? read.pull.builder ?? 'the developer';
-  const designerName = read.designerName ?? designer;
+  const builder = sampleName(read.pull.builder ?? read.pull.builderName, 'developer') ?? read.pull.builderName ?? read.pull.builder ?? 'the developer';
+  // On the sample team the page's persona, never the name the server read for the account behind it.
+  const designerName = (onSampleTeam() ? null : read.designerName) ?? designer;
   const pm = people?.pms[o.product.toLowerCase()]?.name ?? null;
   const code = o.products.find((p) => p.key === o.product);
   const buildUrl = read.pull.ref ? branchPreviewUrl(code?.preview, read.pull.ref) : null;
@@ -454,8 +457,8 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
   if (!read || current?.key !== key || !current.props.handoff) return;
   const pm = people?.pms[o.product.toLowerCase()]?.name ?? null;
   // The names Bridge's server knows (their GitHub profile) win over what the page could tell ("the developer").
-  const builder = read.pull.builderName ?? (o.builder === 'the developer' ? (read.pull.builder ?? o.builder) : o.builder);
-  const designer = read.designerName ?? o.designer;
+  const builder = sampleName(read.pull.builder ?? read.pull.builderName, 'developer') ?? read.pull.builderName ?? (o.builder === 'the developer' ? (read.pull.builder ?? o.builder) : o.builder);
+  const designer = (onSampleTeam() ? null : read.designerName) ?? o.designer;
   const check: BuildCheckView = {
     line: BUILD_WORDS.line(builder),
     builder,
@@ -488,11 +491,11 @@ function leadTalkOf(
   const all = decisionsOf(block);
   const open = openDecisionOf(pull.body);
   const known = { ...knownNamesOf(all.map((d) => d.by ?? '').filter(Boolean)), ...o.names };
-  const designer = block?.leadAskedByName ?? block?.memberName ?? known[r.author] ?? r.author;
+  const designer = block?.leadAskedByName ?? block?.memberName ?? known[r.author] ?? (isNameAuthor(r.author) ? nameOfAuthor(r.author) : r.author);
   const out = { decisions: decisionRows(all, known), tag: decisionTag(open, designer), designerZone: null, notDoing: null } as ReturnType<typeof leadTalkOf>;
   if (!open) return out;
   const who = sayerName(open, known);
-  const face = faceOf(open.by ?? nameAuthor(who), false, known);
+  const face = faceOf(open.by ? sampleAuthor(open.by) : nameAuthor(who), false, known);
   const when = open.at ? startedWhen(open.at) : '';
   out.headline = { who: face, text: decisionRows([open], known)[0]!.verb, when };
   if (open.kind === 'not-doing') {
@@ -555,9 +558,12 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   installReadPass();
   mod ??= await import('../components/ds/studio/ExplorationPage');
   const sample = isSampleTeam(`${CFG.owner}/${CFG.repo}`);
-  // A sample exploration: its sample person, never the one account behind the sample team (its commits below too).
-  const samplePerson = sample && isSampleExploration(r.branch);
-  if (samplePerson) r = { ...r, author: explorationAuthorFor(r.author, pull.body) ?? r.author };
+  // On the sample team every exploration names its sample person, never the one account behind the sample team (its
+  // commits below too): the person its record names, else the persona that account plays (scripts/people sampleAuthor).
+  const samplePerson = sample;
+  if (samplePerson) r = { ...r, author: sampleAuthor(explorationAuthorFor(r.author, pull.body) ?? r.author) };
+  // A face for who acts on it: on the sample team the persona of `seat` for a real account (the developer of the code).
+  const faceAs = (login: string, names: Record<string, string>, seat: SampleSeat = 'lead', nameOnly?: ReadonlySet<string>) => faceOf(sample ? sampleAuthor(login, seat) : login, false, names, false, nameOnly);
   const key = explorationKey(r);
   const own = productRepoByKey(r.product);
   const gh = own ? productClient(own.repo, pull.base?.ref) : dsClient();
@@ -889,28 +895,28 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const allNames = { ...names, ...knownNamesOf([...asked, ...(verdict ? [verdict.login] : [])]), ...more };
   // Done exploring by someone known by name only (an email member's commit, or the requester of the app's pull
   // request): the name's face, never a GitHub account's photo of that name.
-  const doneBy = faceOf(doneLogin, false, allNames, false, nameOnlyAuthors(commits));
+  const doneBy = faceAs(doneLogin, allNames, 'lead', nameOnlyAuthors(commits));
   const shippedAt = task?.closedAt ?? (pull as { merged_at?: string | null }).merged_at ?? null;
   const review = {
     // Reviewers asked on a draft: the developers asked for a review all the same.
     draft: pull.draft !== false && !requested.length,
-    asked: asked.map((l) => faceOf(l, false, allNames)),
-    verdict: verdict ? { kind: verdict.kind, by: faceOf(verdict.login, false, allNames) } : null,
+    asked: asked.map((l) => faceAs(l, allNames)),
+    verdict: verdict ? { kind: verdict.kind, by: faceAs(verdict.login, allNames) } : null,
     viewer,
     compareUrl: v.state === 'branch' ? v.url : null,
     dev: devRead
       ? {
           // The product's own preview pattern: the developers' version deploys from their repository, not the copy.
           url: devVersionUrl(devRead.pull, (products.find((p) => p.key === product.key) ?? product).preview, branchPreviewUrl),
-          answer: answer?.login ? { kind: answer.kind, by: faceOf(answer.login, false, allNames) } : null,
+          answer: answer?.login ? { kind: answer.kind, by: faceAs(answer.login, allNames) } : null,
         }
       : shippedAnswer?.login
-        ? { url: null, answer: { kind: shippedAnswer.kind, by: faceOf(shippedAnswer.login, false, allNames) } }
+        ? { url: null, answer: { kind: shippedAnswer.kind, by: faceAs(shippedAnswer.login, allNames) } }
         : null,
   };
   if (devRead) review.draft = devRead.pull.draft === true;
   // Who asked, by name, and their part on the team when its settings say (a lead): never "the developers" by default.
-  const askedBy = question?.login ? faceOf(question.login, false, allNames) : null;
+  const askedBy = question?.login ? faceAs(question.login, allNames, 'developer') : null;
   const questionOn = question ? { ...question, by: askedBy, role: askerRole(question.login, siteApprovers()) } : null;
   // A product added from its address: its developers work elsewhere and never see the task Bridge keeps. Team members
   // copy them one plain message from the "Developers build it" step (lib/developers-message).
@@ -921,7 +927,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: (v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch), shotUrl: shot?.src ?? null }) }
       : null;
   const leadOkBy = block?.leadOkBy ?? null;
-  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceOf(leadOkBy, false, allNames) : null, builders: builders.map((l) => faceOf(l, false, allNames)), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
+  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceAs(leadOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames, 'developer')), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
   const taskUrl = block?.task ?? null;
   const ref = r.product ? `${r.product}#${r.number}` : String(r.number);
   // Who may run the check: someone who can write it, in a team that writes branches. Bridge's server runs it for them:
@@ -1016,13 +1022,13 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
           }
         : null,
       forDevelopers,
-      declined: declined ? { note: declineNote ? { text: declineNote.text, by: faceOf(declineNote.login, false, allNames), when: declineNote.at ? startedWhen(declineNote.at) : '' } : null } : null,
+      declined: declined ? { note: declineNote ? { text: declineNote.text, by: faceAs(declineNote.login, allNames, 'developer'), when: declineNote.at ? startedWhen(declineNote.at) : '' } : null } : null,
     },
   });
   // Check the build (board R4): the developers' version is ready in the design team's copy. Read through Bridge's server,
   // who checks it and where each stands; the designer, the PM and the leads answer there (email members and PMs too).
   if (inCopy && own && devRead && !review.draft && status === 'building' && !declined) {
-    const builder = builders.length ? faceOf(builders[0]!, false, allNames).name : 'the developer';
+    const builder = builders.length ? faceAs(builders[0]!, allNames, 'developer').name : 'the developer';
     const designerName = block?.memberName ?? doneBy.name;
     void paintBuildCheck(d, key, { r, product: own.product.key, copy: own.repo, code: own.product.repo ?? null, builder, designer: designerName, devUrl: review.dev?.url ?? null, viewerRef: member?.ref ?? null, reopen: (line) => reopen(line), early: earlyBuild });
   }

@@ -123,6 +123,8 @@ import type { BranchesListProps, ListRow } from '../components/ds/studio/Branche
 import { conflictLine, conflictRows, freshness, libraryLine, nextSteps, resolveLabel, type CompareLike, type Freshness } from '../lib/library-sync';
 import { bringInLatest, checkGuardrail, commitResolution, readCompare, readConflicts, readDismissStale, waitForNewHead } from './reviews/library-sync';
 import { AGENT_NAME, isClaudeLogin, nameFace } from '../lib/people';
+import { sampleName } from './people';
+import { explorationAuthorFor } from '../lib/author';
 import { safeUrl } from '../lib/html';
 import { siteConfig } from './repo-context';
 import { isDemoRepo, isSampleTeam, sampleApprovalRows, sampleChangeOrigin, sampleCodeReviewers, sampleTurnSentence, SAMPLE_CHANGE_EFFECTS, SAMPLE_EFFECTS_BASE } from '../lib/demo';
@@ -399,6 +401,17 @@ function readContribMine() {
   });
 }
 
+/**
+ * Who a row names when Bridge recorded nobody ("Requested by"): on the sample team its persona, by name (the person its
+ * exploration names, else the persona the account behind the demo plays), never that account; elsewhere nobody (the
+ * row shows its author). Claude's own work stays Claude's.
+ */
+function sampleRequester(r: Row, agent: boolean): { name: string; login: null } | null {
+  if (agent || !isSampleTeam(`${repo.owner}/${repo.repo}`)) return null;
+  const name = sampleName(r.exploration ? (explorationAuthorFor(r.user.login, r.body ?? null) ?? r.user.login) : r.user.login);
+  return name ? { name, login: null } : null;
+}
+
 function listRow(r: Row): ListRow {
   const lifecycle: Lifecycle | 'exploration' = r.exploration ? 'exploration' : lifecycleOfRow(r);
   // An email contributor reviews nothing: their own branches are the server's list, and only those sent back with
@@ -421,6 +434,7 @@ function listRow(r: Row): ListRow {
             { author: own ? (listViewer() ?? r.user.login) : r.user.login, draft: r.draft, labels: r.labels, nature: r.nature, guidance: r.guidance, lifecycle, who: rowWho(r.kind, facts(r)), requested: r.requested, changesRequested: r.changesRequested },
             { login: listViewer(), role: contributor ? 'contributor' : viewerRole() },
           )));
+  const isAgent = Boolean(r.agent) || agentMade({ body: r.body ?? null, labels: r.labels ?? null });
   return {
     number: r.number,
     // An exploration reads its typed name, as on Home and its product page (lib/pr-title explorationTitle).
@@ -428,7 +442,7 @@ function listRow(r: Row): ListRow {
     rawTitle: r.title,
     jira: shownJiraKey(r.title),
     author: r.user.login,
-    agent: Boolean(r.agent) || agentMade({ body: r.body ?? null, labels: r.labels ?? null }),
+    agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
     // An exploration says when it last moved, after who: "Florian · 2 h ago".
     ago: r.exploration && r.updated_at ? shortAgo(r.updated_at) || null : null,
@@ -451,7 +465,7 @@ function listRow(r: Row): ListRow {
       return n?.repo ? n.product : null;
     })(),
     ...(r.product ? { product: r.product } : {}),
-    requester: requesterOf(r.body),
+    requester: requesterOf(r.body) ?? sampleRequester(r, isAgent),
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
     ...(r.reviewLine ? { reviewLine: r.reviewLine } : {}),

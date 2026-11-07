@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { sampleTeam } from './invites';
 import { roleRows } from './roles-view';
-import { isSampleExploration, sampleApprovalRows, sampleCodeReviewers, samplePersonOf, sampleTurnSentence } from './demo';
+import { isSampleExploration, nameOn, personaOn, sampleApprovalRows, sampleCodeReviewers, sampleMembers, samplePersonOf, sampleTurnSentence } from './demo';
 import { soloOwnerSentence } from '@bridge-ds/core';
 import { DEMO_APPROVED_KEY, demoApprovedSet, markDemoApproved, DEMO_REPOS, demoApproved, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, demoLeadName, demoSettingsPeople, demoTour, demoWaiting, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName, tourSteps } from './demo';
 
@@ -275,6 +275,46 @@ describe('samplePersonOf: people on the sample team', () => {
     expect(samplePersonOf('bridge-agent[bot]', sampleTeam())).toBeNull();
     expect(samplePersonOf('github-actions[bot]', sampleTeam())).toBeNull();
     expect(samplePersonOf(' ', sampleTeam())).toBeNull();
+  });
+});
+
+describe('personaOn: no real account on the sample team', () => {
+  const SAMPLE = 'acme-design-demo/bridge-demo-ds';
+
+  it('the developer of a product code pull request reads as the member who reviews tech, not the lead', () => {
+    expect(samplePersonOf('peterbono', sampleTeam(), 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
+    expect(personaOn(SAMPLE, 'peterbono', 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
+  });
+
+  it('the lead the design owners name (the repository owner) reads as Dana', () => {
+    expect(personaOn(SAMPLE, 'peterbono')).toEqual({ login: '~dana', name: 'Dana' });
+    expect(nameOn(SAMPLE, 'peterbono', 'Florian')).toBe('Dana');
+    expect(personaOn('peterbono/bridge-demo-ds', 'peterbono')?.name).toBe('Dana');
+  });
+
+  it('a member recorded by name is that member, whatever the seat', () => {
+    expect(samplePersonOf('name:Ann', sampleTeam())).toEqual({ login: '~ann-leroy', name: 'Ann' });
+    expect(samplePersonOf('Leo', sampleTeam(), 'developer')).toEqual({ login: '~leo-martin', name: 'Leo' });
+    expect(samplePersonOf('Sofia Reyes', sampleTeam())).toEqual({ login: '~sofia-reyes', name: 'Sofia' });
+    expect(samplePersonOf('~malik-haddad', sampleTeam())).toEqual({ login: '~malik-haddad', name: 'Malik' });
+  });
+
+  it('a real team keeps its real people: no persona, the name the caller had', () => {
+    expect(personaOn('acme/design-system', 'peterbono')).toBeNull();
+    expect(personaOn('acme/design-system', 'peterbono', 'developer')).toBeNull();
+    expect(nameOn('acme/design-system', 'peterbono', 'Florian')).toBe('Florian');
+    // Bridge's own design system is a demo, but its data is real: real names there too.
+    expect(personaOn('the-bridge-company/ai-design-system-demo', 'peterbono')).toBeNull();
+    expect(nameOn('the-bridge-company/ai-design-system-demo', 'peterbono', 'Florian')).toBe('Florian');
+  });
+
+  it('Claude and bots stay themselves on the sample team', () => {
+    expect(personaOn(SAMPLE, 'claude')).toBeNull();
+    expect(personaOn(SAMPLE, 'bridge-design-studio[bot]', 'developer')).toBeNull();
+  });
+
+  it('Members and the personas are one list', () => {
+    expect(sampleTeam('Robin').members.map((m) => [m.login, m.name])).toEqual(sampleMembers('Robin').map((m) => [m.login, m.name]));
   });
 });
 

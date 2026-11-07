@@ -22,7 +22,7 @@
 // account itself is admin), so the picker offers Admin only on an organization's repository (roleChoices) and says why.
 
 import { startedWhen, type Owners } from '@bridge-ds/core';
-import { isSampleTeam } from './demo';
+import { isSampleTeam, sampleMembers } from './demo';
 import { loginKey, nameFace } from './people';
 
 export type MemberRole = 'view' | 'edit' | 'reviewer' | 'admin';
@@ -404,13 +404,7 @@ export const MEMBERS_WORDS = {
  * each drawn face is the same person on the home, in Members and in the dialog.
  */
 export function sampleTeam(lead = 'Dana'): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } {
-  const members: Member[] = [
-    { login: '~dana', name: lead, role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
-    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
-    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
-    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
-    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
-  ];
+  const members: Member[] = sampleMembers(lead);
   const twoDaysAgo = new Date(Date.UTC(2026, 9, 20, 9)).toISOString();
   const pending: PendingInvite[] = [{ id: 'sample-priya', email: 'priya@acme.design', role: 'edit', sentAt: twoDaysAgo, face: '~priya-natarajan' }];
   // The organization's people the field suggests: the team itself (disabled, already in) and two who are not in it yet.

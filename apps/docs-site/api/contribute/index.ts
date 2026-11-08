@@ -178,6 +178,7 @@ import { configName, putTeamName } from '../_lib/teams.js';
 import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/session.js';
 import { teamInSet } from '../_lib/members.js';
 import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
+import { planDemoRefile, refiledComment, relinkBody, type RefileIssue, type RefilePull } from '../_lib/demo-refile.js';
 import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { addsPmWords, isPm, PM_ONLY, PRODUCT_KEY, pmOf, pmsOf, publicPm, setPm, withPmWord, type PmWord, type ProductPm } from '../_lib/product-pm.js';
@@ -659,6 +660,9 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
     case 'seed-demo':
       return await onSeedDemo(req, ctx, body);
 
+    case 'refile-demo':
+      return await onRefileDemo(req, ctx, body);
+
     case 'exploration-keeper': {
       // A lead signed in by email hands an exploration over: the member record says they lead, never the browser.
       const team = parseRepo(body.repo);
@@ -757,6 +761,113 @@ async function onSeedDemo(req: Request, ctx: Ctx, body: Record<string, unknown>)
   const r = await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
   await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
   return json(200, r, { 'Cache-Control': 'private, no-store' });
+}
+
+/** What `refile-demo` says per issue: in a dry run, what it would do; else what it did. */
+export interface RefileOutcome {
+  old: number;
+  title: string;
+  member: string;
+  why: string;
+  labels: string[];
+  relink: number[];
+  /** The replacement: filed now, found from a run that stopped halfway, or null in a dry run. */
+  new: number | null;
+  reused?: boolean;
+  /** What failed, in a run: the old issue then stays open. */
+  error?: string;
+}
+
+/** Every open issue or pull request of a repository, at most 300 (the sample team has a few dozen). */
+async function openOf<T>(ctx: Ctx, token: string, full: string, kind: 'issues' | 'pulls'): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; page <= 3; page++) {
+    const r = await ghApp(ctx, token, 'GET', `/repos/${full}/${kind}?state=open&per_page=100&page=${page}`);
+    if (r.status !== 200 || !Array.isArray(r.data)) throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+    out.push(...(r.data as T[]));
+    if (r.data.length < 100) break;
+  }
+  return out;
+}
+
+/** A write with the app's token and a JSON body (ghApp sends none). */
+async function ghAppWrite(ctx: Ctx, token: string, method: string, path: string, body: Record<string, unknown>): Promise<{ status: number; data: any }> {
+  let res: Response;
+  try {
+    res = await ctx.f(`${API}${path}`, {
+      method,
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+  }
+  return { status: res.status, data: await res.json().catch(() => null) };
+}
+
+/**
+ * POST { action: 'refile-demo', repo: <the sample team>, apply?: true } with a GitHub token (Authorization: Bearer) that
+ * administers the sample team's repository. Its open component change requests and suggestions opened by an account
+ * (not Bridge's App) are filed again for one of its members (api/_lib/demo-refile.ts planDemoRefile), through
+ * runAsMember: the path of a member's own write, so the App opens them with the member's "Requested by" line. Then,
+ * with the app: an open pull request that closes the old issue says the new number instead, and the old issue gets a
+ * comment that links its replacement and closes as not planned. Never deleted. Without `apply`, a dry run: what it
+ * would do, nothing written. The members are seeded first (seedDemoTeam, idempotent), so they exist as said. Run by
+ * scripts/refile-demo-items.mjs; nobody else may.
+ */
+async function onRefileDemo(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  if (!demoVisitorEmail(t.full)) return fail(404, 'not_found', 'Only the sample team has requests to file again.');
+  const a = await githubAccountOn(ctx, req, t);
+  if (a?.kind === 'expired') return fail(401, 'signin', GITHUB_EXPIRED);
+  if (a?.kind !== 'account' || a.perms?.admin !== true) return fail(403, 'not-allowed', SEED_WORDS.notAdmin);
+  const apply = body.apply === true;
+  const token = await ctx.svc.app.installationToken(t.owner, t.repo);
+  if (!token) return fail(409, 'app_missing', APP_MISSING);
+  const full = `${t.owner}/${t.repo}`;
+  const pullList = await openOf<RefilePull>(ctx, token, full, 'pulls');
+  const plan = planDemoRefile({ issues: await openOf<RefileIssue>(ctx, token, full, 'issues'), pulls: pullList });
+  const outcome = (i: (typeof plan.items)[number]): RefileOutcome => ({ old: i.old, title: i.title, member: i.member.name, why: i.why, labels: i.labels, relink: i.relink, new: i.existing, ...(i.existing ? { reused: true } : {}) });
+  if (!apply) return json(200, { dryRun: true, items: plan.items.map(outcome), skipped: plan.skipped }, { 'Cache-Control': 'private, no-store' });
+
+  await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
+  const pulls = new Map(pullList.map((p) => [p.number, p.body ?? '']));
+  const done: RefileOutcome[] = [];
+  for (const item of plan.items) {
+    const o = outcome(item);
+    done.push(o);
+    try {
+      let to = item.existing;
+      if (!to) {
+        const member = await ctx.svc.members.get(t.full, item.member.email);
+        if (!member) throw new Error(`${item.member.name} is not on the team.`);
+        const target: Target = { rest: ['issues'], rawRest: ['issues'], query: '' };
+        const r = await runAsMember(ctx, { team: full, at: { owner: t.owner, repo: t.repo, full: t.full }, scope: null, member, method: 'POST', target, body: { title: item.title, labels: item.labels, body: item.body } });
+        const data = (await r.json().catch(() => null)) as { number?: unknown } | null;
+        if (r.status !== 201 || typeof data?.number !== 'number') throw new Error(`GitHub answered ${r.status} when filing it.`);
+        to = data.number;
+      }
+      o.new = to;
+      for (const n of item.relink) {
+        const was = pulls.get(n);
+        if (was === undefined) continue;
+        const next = relinkBody(was, item.old, to);
+        if (next === was) continue;
+        const p = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/pulls/${n}`, { body: next });
+        if (p.status !== 200) throw new Error(`GitHub answered ${p.status} when pointing #${n} at #${to}.`);
+        pulls.set(n, next);
+      }
+      const c = await ghAppWrite(ctx, token, 'POST', `/repos/${full}/issues/${item.old}/comments`, { body: refiledComment(item.member.name, to) });
+      if (c.status !== 201) throw new Error(`GitHub answered ${c.status} on the comment.`);
+      const x = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/issues/${item.old}`, { state: 'closed', state_reason: 'not_planned' });
+      if (x.status !== 200) throw new Error(`GitHub answered ${x.status} when closing it.`);
+    } catch (e) {
+      o.error = e instanceof Error ? e.message : 'Something went wrong.';
+    }
+  }
+  await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
+  return json(200, { dryRun: false, items: done, skipped: plan.skipped }, { 'Cache-Control': 'private, no-store' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2301,6 +2412,31 @@ async function onProxy(req: Request, ctx: Ctx, params: URLSearchParams): Promise
     }
   }
 
+  return await runAsMember(ctx, { team: full, at, scope, member, method, target, body, accept: req.headers.get('accept'), inm: req.headers.get('if-none-match') });
+}
+
+/** One write of a member through Bridge: what runAsMember needs. */
+export interface MemberWrite {
+  /** The team, as asked. */
+  team: string;
+  /** The repository written: the team's own, or one of its products'. */
+  at: { owner: string; repo: string; full: string };
+  scope: ProductScope | null;
+  member: ProxyMember;
+  method: string;
+  target: Target;
+  body: Record<string, unknown> | null;
+  accept?: string | null;
+  inm?: string | null;
+}
+
+/**
+ * The GitHub call of a member's write, under the policy (planCall), with the app's token: the one path every write of
+ * a member takes, from their browser (onProxy) or from an admin action that files for them (onRefileDemo). Counts
+ * against their daily cap, records what is theirs (plan.after) and watches it for their notifications.
+ */
+async function runAsMember(ctx: Ctx, w: MemberWrite): Promise<Response> {
+  const { team: full, at, scope, member, method, target, body } = w;
   const token = await ctx.svc.app.installationToken(at.owner, at.repo);
   if (!token) return fail(409, 'app_missing', scope ? PRODUCT_APP_MISSING : APP_MISSING);
   const plan = await planCall(ctx, { team: full, owner: at.owner, repo: at.repo, full: at.full, member, token, method, target, body, scope: scope ?? undefined });
@@ -2310,8 +2446,8 @@ async function onProxy(req: Request, ctx: Ctx, params: URLSearchParams): Promise
     await bumpOrRefuse(ctx, [`bridge:contrib:count:${full}:${canonicalEmail(member.email)}:${day}`], [writeLimit(ctx.env)], LIMIT_WORDS.writes, 'writes');
   }
 
-  const accept = req.headers.get('accept')?.trim() ?? '';
-  const inm = req.headers.get('if-none-match');
+  const accept = w.accept?.trim() ?? '';
+  const inm = w.inm ?? null;
   const url = `${API}/repos/${at.owner}/${at.repo}${target.rawRest.length ? `/${target.rawRest.join('/')}` : ''}${target.query ? `?${target.query}` : ''}`;
   let res: Response;
   try {

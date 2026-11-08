@@ -12,7 +12,7 @@
 // not an admin reads who can change it, by name (SettingsParts AdminOnlyNote, BR-20).
 // Every team, the sample team and Bridge's own design system included, shows its own setup and people.
 // Repo strings reach the page as React text only.
-import { Avatar, Card, CardBody } from '@bridge-ds/react';
+import { Card, CardBody } from '@bridge-ds/react';
 import { overrideHolders, overrideReasonMin, parseOwnerEntry, type Owners } from '@bridge-ds/core';
 import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
 import { AdminOnlyNote, Code, DevFold } from './SettingsParts';
@@ -24,8 +24,7 @@ import { loginKey, ownerName } from '../../../lib/people';
 import { knownNames } from '../../../scripts/people';
 import type { MembersData } from '../../../scripts/members';
 import GitHubUsage from './GitHubUsage';
-
-const avatarSrc = (login: string) => `https://github.com/${encodeURIComponent(login)}.png?size=48`;
+import { githubPhoto, Who } from './faces';
 
 /** A person or a GitHub team, by the name designers know. */
 interface Named {
@@ -53,7 +52,7 @@ function People({ list }: { list: Named[] }) {
     <span className="set-owner-list">
       {list.map((p) => (
         <span className="set-owner" key={p.key}>
-          {p.login && <Avatar name={p.name} src={avatarSrc(p.login)} size="xs" decorative />}
+          {p.login && <Who p={{ login: p.login, name: p.name, avatar: githubPhoto(p.login) }} size="xs" />}
           <span>{p.name}</span>
         </span>
       ))}

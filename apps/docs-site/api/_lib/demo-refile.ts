@@ -11,14 +11,15 @@
 // Pure: planDemoRefile reads GitHub's REST shapes and says what to do, api/contribute action `refile-demo` does it
 // (scripts/refile-demo-items.mjs). Covered by src/lib/demo-refile.test.ts. Bundled with api/contribute, which ships
 // without the core package: the two readings of core it needs are kept here, and the test holds them equal to core's.
-import { DEMO_MEMBERS, type DemoMember } from './demo-members.js';
+import { DEMO_MEMBERS, RETIRED_DEMO_MEMBERS, type DemoMember } from './demo-members.js';
 
 /** Labels of what a member files as an issue: a component change request (a build request) or a suggestion. */
 export const REFILE_LABELS: readonly string[] = ['component-change', 'bridge-build', 'bridge-suggestion'];
 
 /**
  * Who asks for what, by the title's subject ("Card: a subtle tone…"), when the body names nobody on the team: designers
- * (Leo, Sofia, Ann) for design asks, Malik for the code-facing one. A body that already names a member keeps them.
+ * (Leo, Sofia, Ann). A body that already names a member keeps them. Never the team's developer: what he asks for he
+ * files from his own GitHub account (RETIRED_DEMO_MEMBERS), as a real team's developer does.
  */
 export const DEMO_REQUESTERS: Readonly<Record<string, string>> = {
   Avatar: 'sofia@acme.example',
@@ -27,7 +28,7 @@ export const DEMO_REQUESTERS: Readonly<Record<string, string>> = {
   EmptyState: 'leo@acme.example',
   ProfileHeader: 'ann@acme.example',
   Select: 'sofia@acme.example',
-  Table: 'malik@acme.example',
+  Table: 'leo@acme.example',
   Toast: 'leo@acme.example',
 };
 
@@ -104,6 +105,15 @@ export const withoutHandLine = (body: string): string => body.replace(HAND_LINE,
 const byName = (name: string | null | undefined) => (name ? DEMO_MEMBERS.find((m) => m.name.toLowerCase() === name.trim().toLowerCase()) : undefined);
 const byEmail = (email: string) => DEMO_MEMBERS.find((m) => m.email === email)!;
 
+/** Someone the sample team once had as an email member, by the name a body's line gives (RETIRED_DEMO_MEMBERS). */
+export const retiredRequester = (body: string | null | undefined) => {
+  const name = requesterName(body)?.trim().toLowerCase();
+  return name ? RETIRED_DEMO_MEMBERS.find((m) => m.name.toLowerCase() === name) : undefined;
+};
+
+/** Why an issue whose line names a former email member is left as it is. */
+export const retiredWhy = (r: { name: string; github: string }): string => `requested by ${r.name}, who files from his GitHub account (${r.github}), not as an email member`;
+
 /** The member an issue is filed again for, and why. */
 export function requesterFor(i: Pick<RefileIssue, 'title' | 'body'>): { member: DemoMember; why: RefileItem['why'] } {
   const named = byName(requesterName(i.body));
@@ -125,6 +135,11 @@ export function planDemoRefile(input: { issues: readonly RefileIssue[]; pulls: r
     const labels = labelNames(i.labels);
     if (!labels.some((l) => REFILE_LABELS.includes(l))) continue;
     if (isAppLogin(i.user?.login)) continue;
+    const retired = retiredRequester(i.body);
+    if (retired) {
+      out.skipped.push({ number: i.number, title: i.title, why: retiredWhy(retired) });
+      continue;
+    }
     const { member, why } = requesterFor(i);
     const existing = replacements.find((r) => r.title === i.title && requesterName(r.body) === member.name)?.number ?? null;
     const relink = input.pulls.filter((p) => p.state === 'open' && closingIssueNumbers(p.body).includes(i.number)).map((p) => p.number);
@@ -136,6 +151,7 @@ export function planDemoRefile(input: { issues: readonly RefileIssue[]; pulls: r
     out.skipped.push({ number: i.number, title: i.title, why: 'not a request or a suggestion' });
   }
   out.items.sort((a, b) => a.old - b.old);
+  out.skipped.sort((a, b) => a.number - b.number);
   return out;
 }
 

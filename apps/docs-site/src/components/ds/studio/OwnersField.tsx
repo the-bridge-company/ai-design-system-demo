@@ -8,7 +8,7 @@
 // scripts/roles.ts sends it for review with the rest of the form. Cancel resets it ("bridge:owners-reset").
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Users } from 'lucide-react';
-import { Avatar, AvatarGroup, Combobox, Tag } from '@bridge-ds/react';
+import { AvatarGroup, Combobox, Tag } from '@bridge-ds/react';
 import { parseOwnerEntry, teamKey, type OwnerGroup, type TeamStates, type TeamUnreadableReason } from '@bridge-ds/core';
 import { OWNER_GROUP_LABEL, ownerFromInput, ownerOptions, teamsPickerHint } from '../../../lib/roles-view';
 import { hasWorkingToken, prefersSignIn, readRepo, studioClient } from '../../../scripts/github-session';
@@ -16,6 +16,7 @@ import { loadTeams, teamDirectory } from '../../../scripts/teams';
 import { ownerName } from '../../../lib/people';
 import { knownNames } from '../../../scripts/people';
 import { useTeamPeople } from './members-state';
+import { githubPhoto, Who } from './faces';
 
 export interface OwnersFieldProps {
   group: OwnerGroup;
@@ -25,7 +26,6 @@ export interface OwnersFieldProps {
   initial: string[];
 }
 
-const avatarSrc = (login: string) => `https://github.com/${encodeURIComponent(login)}.png?size=48`;
 const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 
 export default function OwnersField({ group, initial, org }: OwnersFieldProps) {
@@ -107,7 +107,7 @@ export default function OwnersField({ group, initial, org }: OwnersFieldProps) {
             const who = ownerName(e.login, members, knownNames());
             return (
               <span className="set-owner" key={raw}>
-                <Avatar name={who} src={avatarSrc(e.login)} size="xs" decorative />
+                <Who p={{ login: e.login, name: who, avatar: githubPhoto(e.login) }} size="xs" />
                 <span>{who}</span>
               </span>
             );
@@ -125,7 +125,7 @@ export default function OwnersField({ group, initial, org }: OwnersFieldProps) {
                   {state.members.length > 0 && (
                     <AvatarGroup aria-label={`Members of ${name}`} max={4} size="xs">
                       {state.members.map((m) => (
-                        <Avatar key={m} name={m} src={avatarSrc(m)} size="xs" />
+                        <Who key={m} p={{ login: m, name: m, avatar: githubPhoto(m) }} name={m} size="xs" decorative={false} />
                       ))}
                     </AvatarGroup>
                   )}

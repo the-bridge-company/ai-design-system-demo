@@ -117,7 +117,7 @@ describe('the demo visitor reads as Dana', () => {
     expect((await again.json()).member).toMatchObject({ name: 'Dana', visitor: true });
     expect(again.headers.get('set-cookie')).toBeNull();
     const people = await (await get(`${q}&members=1`, { cookie })).json();
-    expect(people.members.map((m: { name: string }) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Malik', 'Sofia']);
+    expect(people.members.map((m: { name: string }) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Sofia']);
     expect(people.members.find((m: { you?: boolean }) => m.you)?.name).toBe('Dana');
     expect(people.pms.account).toMatchObject({ name: 'Ann' });
   });
@@ -187,16 +187,16 @@ describe('the demo visitor reads as Dana', () => {
 });
 
 describe('seeding the sample team', () => {
-  it('writes its five members and its PM once, then keeps them as they are', async () => {
+  it('writes its four members and its PM once, then keeps them as they are', async () => {
     const redis = memoryRedis(() => T0);
     const members = memberStore(redis);
     const first = await seedDemoTeam({ members, redis }, T0);
     expect(first.added).toEqual(DEMO_MEMBERS.map((m) => m.email));
     expect(first.pm).toBe('set');
     const again = await seedDemoTeam({ members, redis }, T0 + 1000);
-    expect(again).toEqual({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), pm: 'kept', migrated: [], forgot: 0 });
+    expect(again).toEqual({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), pm: 'kept', migrated: [], forgot: 0, retired: [] });
     expect(await members.get(DEMO, 'dana@acme.example')).toMatchObject({ role: 'admin', lead: true, version: 1 });
-    expect(await members.get(DEMO, 'malik@acme.example')).toMatchObject({ role: 'edit', version: 1 });
+    expect(await members.get(DEMO, 'leo@acme.example')).toMatchObject({ role: 'edit', version: 1 });
     // A member changed since is set back with a new version (their sessions end), as an admin's change does.
     await members.put(DEMO, { ...(await members.get(DEMO, 'leo@acme.example'))!, role: 'view' });
     const fixed = await seedDemoTeam({ members, redis }, T0 + 2000);
@@ -228,7 +228,7 @@ describe('seeding the sample team', () => {
     expect(await memberStore(redis).list(DEMO)).toEqual([]);
     const ok = await seed(true, 'y'.repeat(40));
     expect(ok.status).toBe(200);
-    expect((await ok.json()).added).toHaveLength(5);
-    expect((await memberStore(redis).list(DEMO)).map((m) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Malik', 'Sofia']);
+    expect((await ok.json()).added).toHaveLength(4);
+    expect((await memberStore(redis).list(DEMO)).map((m) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Sofia']);
   });
 });

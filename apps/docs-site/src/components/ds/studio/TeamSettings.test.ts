@@ -34,7 +34,7 @@ vi.mock('./SettingsParts', () => ({
   Code: ({ children }: { children: unknown }) => createElement('code', null, children as never),
   DevFold: () => null,
 }));
-vi.mock('./faces', () => ({ Who: ({ p }: { p: { login: string } }) => createElement('i', { 'data-face': p.login }) }));
+vi.mock('./faces', () => ({ Who: ({ p }: { p: { login: string } }) => createElement('i', { 'data-face': p.login }), githubPhoto: (l: string) => `https://github.com/${l}.png?size=48` }));
 vi.mock('../../../scripts/people', () => ({ knownNames: () => new Map() }));
 
 const { default: TeamSettings } = await import('./TeamSettings');

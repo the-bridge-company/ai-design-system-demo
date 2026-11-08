@@ -23,6 +23,19 @@ export function loginOfAvatar(url: string | null | undefined): string | null {
   return m ? m[1]!.toLowerCase() : null;
 }
 
+const GITHUB_ID_AVATAR = /^https:\/\/avatars\.githubusercontent\.com\/u\/\d+(?:\?|$)/;
+const LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+
+/**
+ * The login whose photo to check for a face: the one its address names, else, for the address GitHub's API gives
+ * (avatars.githubusercontent.com/u/<id>, Settings > Members), the person's login when it is one. Else null.
+ */
+export function avatarLogin(url: string | null | undefined, login: string | null | undefined): string | null {
+  const named = loginOfAvatar(url);
+  if (named) return named;
+  return url && GITHUB_ID_AVATAR.test(url) && login && LOGIN.test(login) ? login.toLowerCase() : null;
+}
+
 /** Where the check reads (CORS open, Last-Modified readable), smallest size. */
 export const photoProbeUrl = (login: string): string => `https://avatars.githubusercontent.com/${encodeURIComponent(login)}?s=8`;
 

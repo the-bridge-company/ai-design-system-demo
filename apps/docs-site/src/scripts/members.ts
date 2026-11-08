@@ -15,7 +15,7 @@ import { emailMembers, membersContext, membersPending, roleOf, type KnownPerson,
 import { loginKey, personName } from '../lib/people';
 import { currentViewer, getToken, ghGet, resolveAccess } from './github-session';
 import { invitesAvailable, listInvites, type ReviewMode } from './invites-api';
-import { knownNames } from './people';
+import { knownNames, lookUpNames } from './people';
 import { repoContext, siteConfig } from './repo-context';
 
 export interface MembersData {
@@ -248,6 +248,14 @@ export async function loadMembers(settled = true): Promise<MembersData> {
     } catch {
       pending = [];
     }
+  }
+
+  // GitHub people by their profile names ("Malik", not "acme-malik"), looked up once a week per person as on every
+  // other Studio page (scripts/people lookUpNames); the login stays when GitHub gives no name.
+  const github = members.filter((m) => m.via !== 'email' && !(m.you && viewer?.name));
+  if (github.length) {
+    const named = await lookUpNames(github.map((m) => m.login)).catch(() => names);
+    members = members.map((m) => (github.includes(m) ? { ...m, name: personName(m.login, named) } : m));
   }
 
   // A personal account's repository has no read-only or admin collaborators on GitHub: the picker says so.

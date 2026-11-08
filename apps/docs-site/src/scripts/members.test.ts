@@ -21,7 +21,7 @@ vi.mock('./github-session', () => ({
 }));
 vi.mock('./contribute-session', () => ({ contributeTeam: s.team }));
 vi.mock('./invites-api', () => ({ invitesAvailable: async () => true, listInvites: vi.fn(async () => ({ invites: [], members: [], personal: false })) }));
-vi.mock('./people', () => ({ knownNames: () => ({}) }));
+vi.mock('./people', () => ({ knownNames: () => ({}), lookUpNames: async () => ({}) }));
 vi.mock('./repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds', defaultBranch: 'main', hosted: true }), siteConfig: () => ({}) }));
 vi.mock('./team-data', () => ({ loadTeamData: () => (s.teamData ? s.teamData() : Promise.resolve({ model: { site: { owners: { design: ['peterbono'], tech: ['peterbono'] } } } })) }));
 

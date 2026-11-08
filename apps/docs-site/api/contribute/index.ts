@@ -868,7 +868,7 @@ async function onRefileDemo(req: Request, ctx: Ctx, body: Record<string, unknown
       }
       const c = await ghAppWrite(ctx, token, 'POST', `/repos/${full}/issues/${item.old}/comments`, { body: refiledComment(item.member.name, to) });
       if (c.status !== 201) throw new Error(`GitHub answered ${c.status} on the comment.`);
-      const x = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/issues/${item.old}`, { state: 'closed', state_reason: 'not_planned' });
+      const x = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/issues/${item.old}`, { state: 'closed', state_reason: 'duplicate' });
       if (x.status !== 200) throw new Error(`GitHub answered ${x.status} when closing it.`);
     } catch (e) {
       o.error = e instanceof Error ? e.message : 'Something went wrong.';

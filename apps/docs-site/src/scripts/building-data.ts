@@ -145,7 +145,8 @@ async function read(): Promise<BuildData> {
   const seen = new Set<number>();
   // The issues list also answers pull requests carrying the label (a library branch from Figma): they come from the
   // pull request list instead.
-  const issues = [...requests.data, ...builds.data].filter((i) => !i.pull_request && !seen.has(i.number) && seen.add(i.number));
+  // A request closed as a duplicate is not listed: another request carries the work (GitHub's "Close as duplicate").
+  const issues = [...requests.data, ...builds.data].filter((i) => !i.pull_request && i.state_reason !== 'duplicate' && !seen.has(i.number) && seen.add(i.number));
   // Builders and senders by their profile names, as Branches shows them (people.ts), not by their GitHub login.
   // Who asked Claude for a fix too (the connector grant's GitHub login): a name the server wrote stays as written.
   const askers = sessions.flatMap((s) => s.steps.map((x) => x.by)).filter(isLoginLike);

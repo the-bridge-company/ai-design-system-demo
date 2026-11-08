@@ -84,14 +84,22 @@ export const isBaselineRun = (run: Pick<AuditRun, 'id' | 'label'>): boolean => /
 
 /**
  * The team product an audit run measured: its `product` key, else the product whose folder (products[].path) holds
- * the audited folder. Undefined for anything else (another app of the repository, the design system itself).
+ * the audited folder, else the product its label names ("Account app" or "Account app, main": the name before the
+ * first comma, as the Quality page shows it). A product kept in its own repository has no folder here, and
+ * `bridge snapshot` up to 0.18.0 names it only when it is checked out beside the design system, so the label is
+ * what still says which product a run measured. Undefined for anything else (another app of the repository, the
+ * design system itself).
  */
-export function productOfRun(products: readonly ProductConfig[], run: Pick<AuditRun, 'product' | 'target'>): ProductConfig | undefined {
+export function productOfRun(products: readonly ProductConfig[], run: Pick<AuditRun, 'product' | 'target' | 'label'>): ProductConfig | undefined {
   let hit: ProductConfig | undefined;
   if (run.product) hit = findProduct(products, run.product);
-  else if (run.target?.path) {
-    const place = productForPlace(products, { relPath: run.target.path });
-    if (place.how === 'path') hit = place.product;
+  else {
+    const place = run.target?.path ? productForPlace(products, { relPath: run.target.path }) : undefined;
+    if (place?.how === 'path') hit = place.product;
+    else {
+      const named = run.label?.split(',')[0]?.trim().toLowerCase();
+      if (named) hit = products.find((p) => p.name.trim().toLowerCase() === named);
+    }
   }
   return hit && hit.key !== defaultProduct(products).key ? hit : undefined;
 }

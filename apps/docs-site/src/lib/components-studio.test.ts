@@ -170,4 +170,35 @@ describe('Studio Components "Used in": the team products only', () => {
     const got = productAudits(products, [run('docs', '2026-10-20T00:00:02Z', { target: { path: 'apps/docs-site/src' } }), run('admin-after', '2026-10-16T00:00:00Z', { label: 'Bridge admin, after migration', target: { path: 'apps/admin/src' } })]);
     expect(got.map((a) => a.product)).toEqual(['Admin demo', 'Docs']);
   });
+
+  it('maps a run without a product key or folder by the product its label names (a product in its own repository)', () => {
+    const products: ProductConfig[] = [
+      { key: 'library', name: 'Library', path: 'packages', default: true },
+      { key: 'account', name: 'Account app', repo: 'acme-design-demo/acme-account' },
+    ];
+    const got = productAudits(products, [
+      run('account-app', '2026-11-08T00:00:01Z', { label: 'Account app', target: { path: 'apps/account/src' } }),
+      run('account-main', '2026-11-07T00:00:00Z', { label: 'account app, main', target: { path: 'acme-account/src' } }),
+      run('lib', '2026-11-08T00:00:02Z', { label: 'Library', target: { path: 'tools/lib' } }),
+      run('web', '2026-11-08T00:00:03Z', { label: 'Web app', target: { path: 'apps/web/src' } }),
+    ]);
+    // The latest Account app run only; the Library is never a product it is used in; an unnamed app is left out.
+    expect(got).toEqual([{ product: 'Account app', components: { Button: 8 } }]);
+  });
+
+  it('prefers the product key and the folder over the label', () => {
+    const products: ProductConfig[] = [
+      { key: 'admin', name: 'Admin demo', path: 'apps/admin' },
+      { key: 'docs', name: 'Docs', path: 'apps/docs-site' },
+      { key: 'library', name: 'Library', default: true },
+    ];
+    const got = productAudits(products, [
+      run('a', '2026-10-20T00:00:00Z', { product: 'docs', label: 'Admin demo' }),
+      run('b', '2026-10-21T00:00:00Z', { label: 'Docs', target: { path: 'apps/admin/src' } }),
+    ]);
+    expect(got).toEqual([
+      { product: 'Admin demo', components: { Button: 21 } },
+      { product: 'Docs', components: { Button: 20 } },
+    ]);
+  });
 });

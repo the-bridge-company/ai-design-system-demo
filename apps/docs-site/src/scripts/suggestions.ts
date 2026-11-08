@@ -34,12 +34,10 @@ import {
   type SuggestionGovernance,
   type SuggestionStatus,
 } from '@bridge-ds/core';
-import { currentContributor, currentViewer, getToken, hasWorkingToken, initGitHubConnect, onAccess, prefersSignIn, readRepo, studioClient, ghGet } from './github-session';
+import { currentViewer, getToken, hasWorkingToken, initGitHubConnect, onAccess, prefersSignIn, readRepo, studioClient, ghGet } from './github-session';
 import { loadTeams, siteApprovers, siteRoles, siteSoloOwner } from './teams';
 import { siteConfig } from './repo-context';
-import { isSampleTeam, sampleApprovalRows, sampleCodeReviewers } from '../lib/demo';
 import { changeOrigin } from '../lib/product-branch';
-import { sampleTeam } from '../lib/invites';
 import { ghAction } from '../lib/gh-wording';
 import { canReview } from '../lib/access';
 import { person, requesterPerson, type BranchCard, type NeedRow, type Person } from '../lib/home-model';
@@ -407,16 +405,10 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
   const nameMap: Record<string, string> = {};
   await Promise.all([...new Set(logins.map((l) => l.toLowerCase()))].map(async (l) => (nameMap[l] = await nameOf(l))));
   if (mine !== seq) return;
-  // The demo seat (lib/demo.ts): on the sample team a visitor without an account sits where Dana sits, so the owners
-  // read as Dana and the author as who asked for it, never a real account (the branch page does the same).
-  const seat = !viewer && !currentContributor() && isSampleTeam(repoKey()) ? ((siteConfig() as { demo?: { viewer?: string } }).demo?.viewer ?? null) : null;
   // Who asked, as Bridge recorded it ("Requested by Priya Shah ... through Bridge."): the account that opened the issue
   // is the Bridge app for an email member, an agent, or a lead acting for someone (the home row says the same).
   const asker = requesterOf(d.issue.body);
-  if (seat) for (const o of [...owners.design, ...owners.tech]) nameMap[o.toLowerCase()] = seat;
-  const authorName = seat
-    ? (asker?.name?.split(/\s+/)[0] ?? asker?.login ?? 'A teammate')
-    : (asker?.name ?? (asker?.login ? (nameMap[asker.login.toLowerCase()] ?? asker.login) : null) ?? nameMap[d.issue.author.toLowerCase()] ?? d.issue.author);
+  const authorName = asker?.name ?? (asker?.login ? (nameMap[asker.login.toLowerCase()] ?? asker.login) : null) ?? nameMap[d.issue.author.toLowerCase()] ?? d.issue.author;
   const title = shortTitle(payload.title || d.issue.title);
   let today: TodayChecks | null = null;
   let conflicts: { path: string; detail: string; now?: unknown }[] | undefined;
@@ -425,14 +417,7 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
 
   const render = (said?: string) => {
     if (mine !== seq) return;
-    // The demo seat reads as a design owner ("~seat" is no GitHub login), so a closed suggestion says why, never "Connect GitHub".
-    const seatOwners = seat ? { ...owners, design: [...owners.design, '~seat'] } : owners;
-    const real = suggestionGate({ status, viewer: viewer ?? (seat ? '~seat' : null), author: d.issue.author, owners: seatOwners, tier: payload.tier.tier, approvals: d.approvals, collaborator: write, names: nameMap, signInLine: ghAction('review', prefersSignIn()), soloOwner: siteSoloOwner(), override: seat ? null : overrideGate() });
-    // The sample team, in the demo seat: the visitor reviews where Dana does. Approve can be tried (SuggestionReview
-    // shows the result and writes nothing); the page never asks for GitHub, the banner's "Get started" is the way in.
-    const open = status === 'needs-review' || status === 'changes-requested';
-    const sample = seat && open ? { author: authorName, codeBy: sampleCodeReviewers(sampleTeam(seat)) } : null;
-    const gate: SuggestionGate = sample ? { canApprove: true, canRequestChanges: true, canDecline: false, role: 'design', covers: ['design'], why: null } : seat ? { ...real, canDecline: false } : real;
+    const gate = suggestionGate({ status, viewer, author: d.issue.author, owners, tier: payload.tier.tier, approvals: d.approvals, collaborator: write, names: nameMap, signInLine: ghAction('review', prefersSignIn()), soloOwner: siteSoloOwner(), override: overrideGate() });
     const opened: OpenedSuggestion = { number: n, title, sha, role: gate.role, status, canApprove: gate.canApprove, canRequestChanges: gate.canRequestChanges };
     const props: SuggestionReviewProps = {
       n,
@@ -441,7 +426,7 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
       title,
       kind: kindLabel(payload.kind),
       summary: payload.summary,
-      author: seat ? { login: `~${authorName.toLowerCase()}`, name: authorName, avatarUrl: null, agent: false } : { login: d.issue.author, name: authorName, avatarUrl: `https://github.com/${d.issue.author}.png?size=64`, agent: payload.source === 'mcp' && /claude/i.test(d.issue.author) },
+      author: { login: d.issue.author, name: authorName, avatarUrl: `https://github.com/${d.issue.author}.png?size=64`, agent: payload.source === 'mcp' && /claude/i.test(d.issue.author) },
       source: payload.source,
       createdAt: d.issue.createdAt,
       status: statusBadge(status),
@@ -453,15 +438,12 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
       proofsWhen: today ? 'today' : conflicts === undefined && hasWorkingToken() ? 'checking' : 'suggested',
       stale: staleLines({ stale: d.approvals?.stale ?? [], names: nameMap, mainMoved, conflicts }),
       edited: d.parsed.ok && d.parsed.edited,
-      // The sample team's Review rules: Malik checks the code (lib/demo.ts sampleApprovalRows), never the seat.
-      approvals: seat
-        ? sampleApprovalRows(approvalRows({ tier: payload.tier.tier, approvals: d.approvals, owners, names: nameMap }), (r) => r.label === 'Tech approval', sampleCodeReviewers(sampleTeam(seat)))
-        : approvalRows({ tier: payload.tier.tier, approvals: d.approvals, owners, names: nameMap }),
+      approvals: approvalRows({ tier: payload.tier.tier, approvals: d.approvals, owners, names: nameMap }),
       gate,
       approveLabel: approveLabel(gate, payload.tier.tier),
       apply: status === 'approved' ? applyLines(n) : null,
       // Developers (tech owners) only: the same rule as the branch page's For developers fold.
-      developer: !seat && viewerRoles(viewer, owners).includes('tech'),
+      developer: viewerRoles(viewer, owners).includes('tech'),
       previews: payload.previews ?? [],
       next: host.next ?? [],
       crumbs: host.crumbs,
@@ -471,7 +453,6 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
       onRequestChanges: (text: string) => review('request-changes', text),
       onDecline: () => decline(),
       onOverride: (reason: string) => override(reason),
-      sample,
     };
     paint(el, props);
     host.opened?.(opened);

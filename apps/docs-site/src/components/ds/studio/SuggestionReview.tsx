@@ -41,8 +41,6 @@ import { Face, TokenRows, type PersonRef } from './BranchReview';
 import { Who, type Face as FaceData } from './faces';
 import { OWNER_OVERRIDE_WORDS, suggestionHref, SUGGESTION_WORDS, type ProofChip, type StaleView, type SuggestionGate, type SuggestionTokenRow } from '../../../lib/suggestions-view';
 import { valueName } from '../../../lib/review-page';
-import { demoApproved } from '../../../lib/demo';
-import { demoApprovals, rememberDemoApproval } from '../../../scripts/demo-approvals';
 
 /** A queue item waiting after this one, drawn as a card stacked behind. */
 export interface NextCard {
@@ -94,11 +92,6 @@ export interface SuggestionReviewProps {
   onDecline: () => void;
   /** The owner override: approve their own suggestion as owner, with the reason (gate.canOverride). */
   onOverride?: (reason: string) => Promise<string | void>;
-  /**
-   * The sample team (lib/demo.ts), in the demo seat: Approve can be tried, as on a branch. It shows the approved state
-   * and what happens next, and writes nothing; the page never asks for GitHub (the banner's "Get started" is the way in).
-   */
-  sample?: { author: string | null; codeBy: string | null } | null;
 }
 
 const PANE_ROWS = 4;
@@ -258,7 +251,7 @@ function Proof({ p }: { p: SuggestionReviewProps }) {
 // ---------------------------------------------------------------------------------------------------------------
 // The decision
 
-function Decide({ p, tried, onTry }: { p: SuggestionReviewProps; tried: boolean; onTry: () => void }) {
+function Decide({ p }: { p: SuggestionReviewProps }) {
   const [asking, setAsking] = useState(false);
   const [owning, setOwning] = useState(false);
   const [text, setText] = useState('');
@@ -407,14 +400,7 @@ function Decide({ p, tried, onTry }: { p: SuggestionReviewProps; tried: boolean;
                   {SUGGESTION_WORDS.requestChanges}
                 </Button>
               )}
-              {g.canApprove && p.sample ? (
-                // The sample team: Approve is tried here, nothing is written (no data-demo-write: the demo gate lets it through).
-                !tried && (
-                  <Button variant="primary" size="lg" className="sg-approve" data-sg-approve="" data-demo-try="approve" iconEnd={Check} onClick={onTry}>
-                    {p.approveLabel}
-                  </Button>
-                )
-              ) : g.canApprove && (
+              {g.canApprove && (
                 <Button variant="primary" size="lg" className="sg-approve" data-sg-approve="" data-demo-write="review suggestions" iconEnd={Check} loading={busy === 'approve'} disabled={busy !== null} onClick={() => void run('approve')}>
                   {p.approveLabel}
                 </Button>
@@ -438,21 +424,10 @@ function Decide({ p, tried, onTry }: { p: SuggestionReviewProps; tried: boolean;
           )}
         </div>
       )}
-      {tried && p.sample && <TriedApprove author={p.sample.author} codeBy={p.sample.codeBy} />}
       <p className="sg-said" role="status" aria-live="polite">
         {said}
       </p>
     </section>
-  );
-}
-
-/** Approve, tried on the sample team: approved, what happens next, and that nothing was sent (as on a branch). */
-function TriedApprove({ author, codeBy }: { author: string | null; codeBy: string | null }) {
-  const w = demoApproved(author, codeBy);
-  return (
-    <Alert tone="success" title={w.title}>
-      {w.next} {w.note}
-    </Alert>
   );
 }
 
@@ -477,22 +452,8 @@ function Peeks({ next }: { next: NextCard[] }) {
 export const whyOf = (summary: string | null | undefined): string => (summary ?? '').split(/\n\s*#{1,6}\s/)[0]!.trim();
 
 export function SuggestionReview(props: SuggestionReviewProps) {
-  // Approve tried on the sample team: remembered for the visit in this browser (scripts/demo-approvals.ts), nothing is sent.
-  const [tried, setTried] = useState(() => Boolean(props.sample) && demoApprovals().has(props.n));
-  useEffect(() => setTried(Boolean(props.sample) && demoApprovals().has(props.n)), [props.sample, props.n]);
-  const onTry = () => {
-    rememberDemoApproval(props.n);
-    setTried(true);
-  };
-  const p: SuggestionReviewProps =
-    tried && props.sample
-      ? {
-          ...props,
-          status: { label: 'Approved', tone: 'success' },
-          approvals: props.approvals.map((a) => (a.state === 'waiting' && a.label !== 'Tech approval' ? { ...a, state: 'approved' as const, text: 'You approved' } : a)),
-        }
-      : props;
-  const keys = p.inQueue && p.gate.canApprove && !tried;
+  const p = props;
+  const keys = p.inQueue && p.gate.canApprove;
   // In the review queue the page heading is the queue's: the suggestion title is one level down (as a branch).
   const Heading = p.inQueue ? 'h2' : 'h1';
   return (
@@ -562,7 +523,7 @@ export function SuggestionReview(props: SuggestionReviewProps) {
               </section>
             )}
           </div>
-          <Decide p={p} tried={tried} onTry={onTry} />
+          <Decide p={p} />
         </Card>
       </div>
     </div>

@@ -7,7 +7,7 @@
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, soloOwnerSentence, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { approvalNeedLong, effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -83,7 +83,6 @@ import { backToDraft, detailStatus, statusActionFor, takeSaid, type StatusAction
 import { ACTION_LABEL } from '../lib/change-status';
 import { ownedBy, PRODUCTS } from '../lib/branches-page';
 import { waitsOnMe } from '../lib/waiting-on';
-import { waitsOnLead } from '../lib/demo-home';
 import { LIFECYCLE_LABEL, LIFECYCLE_TONE, needsReviewRead, pullLifecycle, reviewLine, taskStage, waitsOnViewer, type DesignTaskRead, type LifecyclePull, type LifecycleStage, type PullReviewLike } from '../lib/review-state';
 import { explorationState } from '../lib/exploration-state';
 import { inNextRelease, libraryRelease, parseReleaseBody } from '../lib/release-view';
@@ -112,7 +111,6 @@ import {
   type GuidanceDocs,
 } from '../lib/review-page';
 import type { ActKind, BranchReviewProps, GuidanceView, PersonRef, TokenRowView, VisualView } from '../components/ds/studio/BranchReview';
-import type { VisualShot } from '../lib/visual-impact';
 /** The Motion change id (components/ds/studio/BranchReview MOTION_CHANGE), kept here so the island loads lazily. */
 const MOTION_CHANGE = 'tokens:motion';
 import { lifecycleOfRow } from './status-filter';
@@ -123,15 +121,9 @@ import type { BranchesListProps, ListRow } from '../components/ds/studio/Branche
 import { conflictLine, conflictRows, freshness, libraryLine, nextSteps, resolveLabel, type CompareLike, type Freshness } from '../lib/library-sync';
 import { bringInLatest, checkGuardrail, commitResolution, readCompare, readConflicts, readDismissStale, waitForNewHead } from './reviews/library-sync';
 import { AGENT_NAME, isClaudeLogin, nameFace } from '../lib/people';
-import { sampleName } from './people';
-import { explorationAuthorFor } from '../lib/author';
 import { safeUrl } from '../lib/html';
 import { siteConfig } from './repo-context';
-import { isDemoRepo, isSampleTeam, sampleApprovalRows, sampleChangeOrigin, sampleCodeReviewers, sampleTurnSentence, SAMPLE_CHANGE_EFFECTS, SAMPLE_EFFECTS_BASE } from '../lib/demo';
-import { sampleTeam } from '../lib/invites';
-import { demoApprovals } from './demo-approvals';
 import { viewerRoles } from '../lib/suggestions-view';
-import { waitingLabel } from '../lib/home-model';
 import type { WaitingExtra } from '../lib/review-categories';
 import { installReadPass } from './read-pass';
 
@@ -274,7 +266,6 @@ interface Row {
   number: number;
   title: string;
   updated_at: string;
-  /** When it was opened: on the demo, the lead's rows say how long it waits, as on its home. */
   created_at?: string;
   tier: Tier | null;
   kind: ReviewStatusKind | null;
@@ -368,15 +359,6 @@ function pillOf(r: Row, lifecycle: Lifecycle | 'exploration'): ListRow['pill'] {
 /** The library changes the open release pull request lists (lib/release-view libraryRelease): In the next release. */
 let releaseIds: Set<string> = new Set();
 
-/**
- * The demo persona a visitor without an account stands in for ("Dana", bridge.config.json "demo"), on a demo
- * repository only (lib/demo.ts), as the demo home does: Waiting on me then lists what waits on the lead.
- */
-function demoSeat(): string | null {
-  if (currentViewer() || currentContributor() || !isDemoRepo(`${repo.owner}/${repo.repo}`)) return null;
-  return (siteConfig() as { demo?: { viewer?: string } }).demo?.viewer ?? null;
-}
-
 /** What waits on the viewer besides branches (suggestions, usage guidance drafts), set by the page that reads them. */
 let waitingExtras: WaitingExtra[] = [];
 
@@ -401,39 +383,21 @@ function readContribMine() {
   });
 }
 
-/**
- * Who a row names when Bridge recorded nobody ("Requested by"): on the sample team its persona, by name (the person its
- * exploration names, else the persona the account behind the demo plays), never that account; elsewhere nobody (the
- * row shows its author). Claude's own work stays Claude's.
- */
-function sampleRequester(r: Row, agent: boolean): { name: string; login: null } | null {
-  if (agent || !isSampleTeam(`${repo.owner}/${repo.repo}`)) return null;
-  const name = sampleName(r.exploration ? (explorationAuthorFor(r.user.login, r.body ?? null) ?? r.user.login) : r.user.login);
-  return name ? { name, login: null } : null;
-}
-
 function listRow(r: Row): ListRow {
   const lifecycle: Lifecycle | 'exploration' = r.exploration ? 'exploration' : lifecycleOfRow(r);
   // An email contributor reviews nothing: their own branches are the server's list, and only those sent back with
   // changes requested wait on them.
   const contributor = Boolean(currentContributor());
   const own = contributor ? ownedBy({ author: r.user.login, number: r.number, headRef: r.head?.ref ?? null, product: r.product ?? null }, listViewer(), contribMine, `${repo.owner}/${repo.repo}`) : undefined;
-  // Waiting on me: the one rule of every surface (lib/waiting-on). In the lead's seat on the demo, the very predicate of
-  // its home and its Changes badge (lib/demo-home waitsOnLead), so the three counts agree. An email contributor's own
-  // branches come from the server's list.
-  const seat = demoSeat();
-  // Approve tried on the sample team during this visit (scripts/demo-approvals.ts): no longer waiting, and says so.
-  const demoApproved = seat !== null && isSampleTeam(`${repo.owner}/${repo.repo}`) && demoApprovals().has(r.number);
+  // Waiting on me: the one rule of every surface (lib/waiting-on). An email contributor's own branches come from the
+  // server's list.
   const turn =
-    !demoApproved &&
-    (seat !== null
-      ? !r.product && waitsOnLead(r)
-      : (lifecycle === 'exploration' ? Boolean(r.reviewWaits) : true) &&
-        (lifecycle === 'exploration' ||
-          waitsOnMe(
-            { author: own ? (listViewer() ?? r.user.login) : r.user.login, draft: r.draft, labels: r.labels, nature: r.nature, guidance: r.guidance, lifecycle, who: rowWho(r.kind, facts(r)), requested: r.requested, changesRequested: r.changesRequested },
-            { login: listViewer(), role: contributor ? 'contributor' : viewerRole() },
-          )));
+    (lifecycle === 'exploration' ? Boolean(r.reviewWaits) : true) &&
+    (lifecycle === 'exploration' ||
+      waitsOnMe(
+        { author: own ? (listViewer() ?? r.user.login) : r.user.login, draft: r.draft, labels: r.labels, nature: r.nature, guidance: r.guidance, lifecycle, who: rowWho(r.kind, facts(r)), requested: r.requested, changesRequested: r.changesRequested },
+        { login: listViewer(), role: contributor ? 'contributor' : viewerRole() },
+      ));
   const isAgent = Boolean(r.agent) || agentMade({ body: r.body ?? null, labels: r.labels ?? null });
   return {
     number: r.number,
@@ -446,8 +410,7 @@ function listRow(r: Row): ListRow {
     opens: r.exploration ? 'exploration' : 'pr',
     // An exploration says when it last moved, after who: "Florian · 2 h ago".
     ago: r.exploration && r.updated_at ? shortAgo(r.updated_at) || null : null,
-    // The lead's rows on the demo carry the home's status for the same change ("New today", "Waiting 2 days").
-    pill: demoApproved ? { label: 'Approved', tone: 'success' } : seat !== null && turn && r.created_at ? { label: waitingLabel(r.created_at, Date.now()), tone: 'warning' } : pillOf(r, lifecycle),
+    pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,
     ...(own !== undefined ? { mine: own } : {}),
@@ -465,7 +428,7 @@ function listRow(r: Row): ListRow {
       return n?.repo ? n.product : null;
     })(),
     ...(r.product ? { product: r.product } : {}),
-    requester: requesterOf(r.body) ?? sampleRequester(r, isAgent),
+    requester: requesterOf(r.body),
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
     ...(r.reviewLine ? { reviewLine: r.reviewLine } : {}),
@@ -501,7 +464,6 @@ function paintRows(rows: Row[], loading: boolean) {
     failure: (err) =>
       err instanceof RateLimitError ? (limitLine(err, `A preview of ${VOCAB.branches} together`) ?? `GitHub limits anonymous reads to 60 an hour. ${ghVerb(prefersSignIn())} to preview ${VOCAB.branches} together.`) : `Could not read a checked ${VOCAB.branch}: ${(err as Error).message}`,
     readClosed: () => void loadClosed(),
-    seat: demoSeat(),
     waiting: waitingExtras,
   };
   // Each call's module promise may settle in any order (Vite preloads its styles per call): paint the latest props,
@@ -809,10 +771,7 @@ function repaint(patch: Partial<BranchReviewProps>) {
 
 /** What a designer reads for a login, until profile names are known: the login, without @ and [bot]. */
 /** A login as people read it; the agent's accounts (claude, bridge-agent) read Claude AI (lib/people). */
-/**
- * Names that stand in for logins on the page open now: in the demo seat, the repository's owner reads as the persona
- * (Dana) and the author as who asked for the change (Ann), so the sample team never shows a real account.
- */
+/** Names that stand in for logins on the page open now: the member Bridge's app opened a change for. */
 const aliases = new Map<string, string>();
 /** First names from GitHub profiles (scripts/home-data personOf), once read: "Waiting for Malik", not "malik". */
 const profiles = new Map<string, string>();
@@ -913,7 +872,7 @@ export async function openPr(n: number, push = true) {
     // A token value change whose design approval is in (given here, from the CLI or the MCP server): Bridge arms its
     // merge (decision TV-1). Once per version; the page repaints when it is armed, or for a developer when it is held.
     const askKey = `${pull.number}:${pull.head.sha}`;
-    if (!demoSeat() && getToken() && !shipAsked.has(askKey) && shouldAskToShip({ approvals, figmaPush, state: pull.state, draft: pull.draft, merged_at: pull.merged_at, autoMerge: Boolean(pull.auto_merge), exploration: isActiveExploration(pull.labels) })) {
+    if (getToken() && !shipAsked.has(askKey) && shouldAskToShip({ approvals, figmaPush, state: pull.state, draft: pull.draft, merged_at: pull.merged_at, autoMerge: Boolean(pull.auto_merge), exploration: isActiveExploration(pull.labels) })) {
       void shipValues(pull.number, pull.head.sha).then((a) => {
         if (a && seq === openSeq && (a.armed || viewerRoles(access?.login ?? null, OWNERS()).includes('tech'))) void openPr(pull.number, false);
       });
@@ -948,10 +907,6 @@ export async function openPr(n: number, push = true) {
     d.toggleAttribute('data-can-suggest', props.actions.suggest);
     d.dataset.title = props.title;
     d.dataset.developer = pull.html_url;
-    // Review all on the sample team says who checks the code next after Approve (lib/demo.ts demoApproved).
-    if (props.sample?.codeBy) d.dataset.codeNext = props.sample.codeBy;
-    else delete d.dataset.codeNext;
-    d.toggleAttribute('data-values-only', Boolean(props.sample?.valuesOnly));
     runCurrent = (kind, text) => props.onAct(kind, text);
     // Who the approval rows and the status line name, by their profile name once GitHub says it.
     const unnamed = renamedLogins.filter((l) => !profiles.has(l.toLowerCase()) && !aliases.has(l.toLowerCase()));
@@ -1145,50 +1100,34 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
   const showOverride = gate.overridable && reviewer;
   const login = access?.login ?? null;
   const isAuthor = Boolean(login && login.toLowerCase() === pull.user.login.toLowerCase());
-  // The demo seat (lib/demo.ts): a visitor without an account sits where Dana sits, the sample team's design system
-  // lead, as on its home and in Branches. The repository's owner reads as Dana and the author as who asked for the
-  // change, so the page says "Your turn" like the list does, never "owner override needed" with a real account.
-  const seat = demoSeat();
-  const seatOwner = seat ? (OWNERS().design[0] ?? OWNERS().tech[0] ?? null) : null;
-  const asked0 = seat ? requesterOf(pull.body) : null;
-  const seatAuthor = seat ? (asked0?.name ?? asked0?.login ?? 'A teammate') : null;
-  const author = seatAuthor ? nameFace(seatAuthor).slice(1).replace(/^someone$/, 'teammate') : pull.user.login;
+  const author = pull.user.login;
   aliases.clear();
-  if (seat && seatOwner) aliases.set(seatOwner.toLowerCase(), seat);
-  if (seatAuthor) aliases.set(author, seatAuthor.split(/\s+/)[0]!);
   // A change Bridge's app opened for an email member ("Requested by Priya Shah ... through Bridge."): every sentence of
   // the page names Priya where it would name the app ("Waiting for Priya to address the changes").
   const opener = pull.user.login;
-  const forMember = !seat && /\[bot\]$/i.test(opener) ? requesterOf(pull.body) : null;
+  const forMember = /\[bot\]$/i.test(opener) ? requesterOf(pull.body) : null;
   if (forMember?.name) aliases.set(opener.toLowerCase(), requesterFirstName(forMember.name));
-  const viewer = login ?? seatOwner;
+  const viewer = login;
   // Developers (tech owners) see the technical side: failing tests, updating from main, the GitHub link. Designers
   // read who acts instead ("A developer is on it").
-  const developer = !seat && viewerRoles(login, OWNERS()).includes('tech');
+  const developer = viewerRoles(login, OWNERS()).includes('tech');
   // Who may use the owner override: the same rule as the Branches list (pr-status rowWho), so the list and the page
   // never disagree. The More menu item still needs the gate and write access (showOverride).
   const lookAgain = lookAgainReviewers(reviews, pull.head.sha, pull.user.login);
-  // An email member or a GitHub reader never reads "Your turn: approve" (no Approve button follows). The demo seat
-  // keeps its lead's turn: Approve is tried there and writes nothing.
-  const reviewsRight = seat ? {} : { reviews: reviewer };
+  // An email member or a GitHub reader never reads "Your turn: approve" (no Approve button follows).
+  const reviewsRight = { reviews: reviewer };
   const who = whoActs(
     needFromDetail({ state: lifecycle, ci, gate, changesRequestedBy: approvals.changesRequested, lookAgain, exploration, mergeable: pull.mergeable, claude: claudeStage(pull.labels) }),
-    people(author, { viewer, approvers: approvals.approvers, canMerge: reviewer && gate.canShip, overridable: !seat && canOverride(login, HOLDERS()), ...reviewsRight }),
+    people(author, { viewer, approvers: approvals.approvers, canMerge: reviewer && gate.canShip, overridable: canOverride(login, HOLDERS()), ...reviewsRight }),
   );
   const viewerPeople = people(author, { viewer, ...reviewsRight });
-  // The sample team, in the lead's seat: its Review rules, not the repository's only owner. The seat checks the look,
-  // Malik (the members who review tech, lib/invites.ts sampleTeam) checks the code: "Waiting for Malik", never
-  // "Covered by your approval".
-  const sampleSeat = Boolean(seat) && isSampleTeam(`${repo.owner}/${repo.repo}`);
-  const repoRows = approvalRows({ tier, approvals, people: viewerPeople, open, lookAgain });
-  const rows = sampleSeat ? sampleApprovalRows(repoRows, (r) => r.role === 'tech', sampleCodeReviewers(sampleTeam(seat ?? undefined))) : repoRows;
-  const codeNext = sampleSeat ? (rows.some((r) => r.role === 'tech' && r.state === 'waiting') ? sampleCodeReviewers(sampleTeam(seat ?? undefined)) : null) : null;
+  const rows = approvalRows({ tier, approvals, people: viewerPeople, open, lookAgain });
   const review = x.review instanceof Error ? null : x.review;
   const tokenOnly = files.length > 0 && files.every((f) => isTokenFile(f.filename) || f.filename.startsWith('.changeset/'));
   const story = checkStory({ failed: x.checks, pending: ci.pending.length, passed: ci.passed, design: review ? designFacts(review, x.checks.some((c) => c.kind === 'design')) : null, tokenOnly });
 
   // The who-acts sentence, designer first: developer failures never make "fix checks" the designer's turn.
-  let sentence = sampleSeat && viewer ? sampleTurnSentence(who.sentence, soloOwnerSentence(viewer, true), codeNext) : who.sentence;
+  let sentence = who.sentence;
   let yourTurn = who.yourTurn;
   const designRow = rows.find((r) => r.role === 'design' && r.canAct);
   if (open && who.action === 'fix-checks') {
@@ -1253,10 +1192,6 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
     claudeWaiting: claudeStage(pull.labels) === 'waiting',
     inQueue: Boolean(detailEl().closest('[data-review-queue]')),
   });
-  // The sample team, in the lead's seat: Approve can be tried (BranchReview shows the result and writes nothing).
-  // Anything else there opens no GitHub sign-in: the banner's "Get started" is the one way in.
-  const sample = sampleSeat && (status.lifecycle === 'ready' || status.lifecycle === 'waiting') && !exploration ? { author: seatAuthor, codeBy: onItsWay ? null : codeNext, ...(approvals.valuesOnly ? { valuesOnly: true } : {}) } : null;
-  if (sampleSeat && actions.primary?.kind === 'connect') actions.primary = sample ? { kind: 'approve', label: 'Approve' } : null;
   if (actions.primary?.kind === 'connect') actions.primary.label = ghAction('review', prefersSignIn());
   if (actions.primary && (actions.primary.kind === 'reopen' || actions.primary.kind === 'restart') && statusRun.kind) actions.primary.label = ACTION_LABEL[statusRun.kind];
   const openOverride = showOverride && access ? wireOverride(pull, access, gate) : null;
@@ -1273,9 +1208,7 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
     }),
     ...x.lineComments.map((c) => ({ login: c.user?.login ?? null, at: c.created_at, body: c.body, kind: 'COMMENT', path: c.path ?? null })),
   ].map((e) => ({ ...e, body: named(mdTitleText(e.body)) }));
-  // In the demo seat the author is who asked for the change (`author`), not the account that opened it on GitHub,
-  // which reads as Dana: her comments are a reviewer's, never "author".
-  const conv = conversation(entries, { author: seatAuthor ? author : pull.user.login, reviewers });
+  const conv = conversation(entries, { author: pull.user.login, reviewers });
   const peopleUsers = [pull.user, ...reviews.map((r) => r.user), ...comments.map((c) => c.user), ...x.lineComments.map((c) => c.user)].filter((u): u is NonNullable<typeof u> => Boolean(u));
   // The conversation's people by their profile name once read (built again then, like the approval rows): "Malik",
   // not "malik", for a member without GitHub too.
@@ -1294,22 +1227,22 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
   const asked = status.yourTurn && !isAuthor && canApprove;
   // Who asked, as Bridge recorded it ("Requested by Priya Shah ... through Bridge."), before the account that opened it
   // (the Bridge app for an email member, an agent or a lead acting for someone): the same person as on the home row.
-  const requested = seat ? null : requesterOf(pull.body);
+  const requested = requesterOf(pull.body);
   // Who asked, by name, re-read when profile names land.
   const lineNow = () => whoLine({ author: requested ? (requested.name ?? (requested.login ? nameOf(requested.login) : nameOf(author))) : nameOf(author), agent, guidanceOnly, canEdit: canEditGuidance, asked, lifecycle: status.lifecycle, sentence: named(statusRun.sentence) });
   const whoNow = (): BranchReviewProps['who'] => {
     const l = lineNow();
     // Bridge's app opened it for an email member: their face and name, never the app's avatar.
-    const member = !seat && forMember?.name && !forMember.login ? forMember.name : null;
-    return { person: seat ? { login: `~${author}`, name: nameOf(author), avatarUrl: null, agent: agent && !asked0 } : member ? { login: nameFace(member), name: member, avatarUrl: null, agent } : { login: pull.user.login, name: nameOf(pull.user.login), avatarUrl: pull.user.avatar_url, agent }, lead: l.lead, rest: l.rest };
+    const member = forMember?.name && !forMember.login ? forMember.name : null;
+    return { person: member ? { login: nameFace(member), name: member, avatarUrl: null, agent } : { login: pull.user.login, name: nameOf(pull.user.login), avatarUrl: pull.user.avatar_url, agent }, lead: l.lead, rest: l.rest };
   };
   const rowText = (r: (typeof rows)[number]) => (status.lifecycle === 'draft' && r.state === 'waiting' ? 'Not asked until a review is requested' : r.text);
   // Merged or closed: nothing waits on anyone, so no approval rows ("Waiting: ..." on a change already in the library).
-  const approvalsNow = (): BranchReviewProps['approvals'] => ((sampleSeat && onItsWay) || lifecycle === 'merged' || lifecycle === 'closed' ? [] : rows.map((r) => ({ label: r.role === 'approval' ? 'Approval' : `${r.label} approval`, state: r.state, text: named(rowText(r)) })));
-  // Profile names for the people these lines name, read after the first paint (never in the demo seat: its aliases).
-  renamed = seat ? null : () => ({ approvals: approvalsNow(), who: whoNow(), people: peopleNow() });
+  const approvalsNow = (): BranchReviewProps['approvals'] => (lifecycle === 'merged' || lifecycle === 'closed' ? [] : rows.map((r) => ({ label: r.role === 'approval' ? 'Approval' : `${r.label} approval`, state: r.state, text: named(rowText(r)) })));
+  // Profile names for the people these lines name, read after the first paint.
+  renamed = () => ({ approvals: approvalsNow(), who: whoNow(), people: peopleNow() });
   const talkers = peopleUsers.map((u) => u.login).filter((l) => !/\[bot\]$/i.test(l) && !isClaudeLogin(l));
-  renamedLogins = seat ? [] : [...new Set([...rows.flatMap((r) => loginsIn(rowText(r))), ...loginsIn(statusRun.sentence), ...talkers])];
+  renamedLogins = [...new Set([...rows.flatMap((r) => loginsIn(rowText(r))), ...loginsIn(statusRun.sentence), ...talkers])];
   const editable = tokenFilesOf(files) > 0 && isTokenChange(pull, REPO_KEY) && canAddTo(pull, login ?? undefined, write && !access?.contributor);
   const added = Number(new URLSearchParams(location.search).get('added'));
   if (added > 0) history.replaceState(history.state, '', `?pr=${pull.number}`);
@@ -1343,25 +1276,20 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
   const tryIt = exploration ? tryItCopy(tryItFromComments(comments, pull.head.sha)) : null;
   const code = productWork ? { files: files.map((f) => f.filename), branch: pull.head.ref, url: pull.html_url, number: pull.number, install: tryIt?.command ?? null } : null;
 
-  // Where it comes from, and on the sample team the before and after on that screen (lib/demo.ts).
-  const onSample = isSampleTeam(`${repo.owner}/${repo.repo}`);
-  const origin = changeOrigin(x.origin ?? (onSample ? sampleChangeOrigin(pull.head.ref) : null));
-  const effect = onSample ? sampleEffectOf(pull.head.ref) : null;
+  // Where it comes from: its own "Needed by", else the request or suggestion it closes.
+  const origin = changeOrigin(x.origin ?? null);
 
   return {
     pr: pull.number,
     origin,
     productContext,
-    sample,
     crumbs: reviewCrumbs(files.map((f) => f.filename), title, { products: SITE.products ?? [], labels: pull.labels, exploration }),
     productWork,
     code,
     title,
     jira: shownJiraKey(pull.title),
     // In review: the same pill as its row in Branches and on the home (lib/changes statusPill over core reviewStatusKind).
-    // In the demo seat: the list's pill for the same branch ("Waiting 1 day").
-    status: onItsWay ? { label: status.label, tone: 'info', lifecycle: status.lifecycle } : seat && status.lifecycle === 'ready' && !exploration && pull.created_at ? { label: waitingLabel(pull.created_at, Date.now()), tone: 'warning', lifecycle: status.lifecycle } : status.lifecycle === 'ready' && !exploration ? { ...statusPill(reviewStatus({ state: pull.state, draft: pull.draft, labels: pull.labels, merged_at: pull.merged_at, ci, approvals, tier, mergeable: pull.mergeable }).kind, who), lifecycle: status.lifecycle } : { label: status.label, tone: status.tone, lifecycle: status.lifecycle },
-    // In the demo seat, who asked for it, the face the list shows for the same branch.
+    status: onItsWay ? { label: status.label, tone: 'info', lifecycle: status.lifecycle } : status.lifecycle === 'ready' && !exploration ? { ...statusPill(reviewStatus({ state: pull.state, draft: pull.draft, labels: pull.labels, merged_at: pull.merged_at, ci, approvals, tier, mergeable: pull.mergeable }).kind, who), lifecycle: status.lifecycle } : { label: status.label, tone: status.tone, lifecycle: status.lifecycle },
     who: whoNow(),
     added: added > 0 ? addedNotice(added) : null,
     changes,
@@ -1388,19 +1316,17 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
       guidance[path] = { ...g, docs: docsNow, sections: guidanceView(original?.base ?? null, docsNow) };
       repaint({ guidance: { ...guidance } });
     },
-    visual: effect ?? (x.visual ? { state: 'loading', shots: [] } : null),
+    visual: x.visual ? { state: 'loading', shots: [] } : null,
     visualSetUp: x.visualSetUp,
-    visualSample: onSample,
     // The screens of the visual check come from the admin demo app (apps/admin, previews.apps.admin), a preview of
     // this repository, not a product: its name stays even when bridge.config.json lists no such product.
-    product: (effect && origin?.product) || (PRODUCTS.find((p) => p.key === 'admin')?.label ?? 'Admin demo'),
+    product: PRODUCTS.find((p) => p.key === 'admin')?.label ?? 'Admin demo',
     tryUrl: null,
     people: peopleMap,
     conversation: conv,
     fileComments: conv.all.filter((c) => c.path),
     checks: checksLine(story, { forDesigner: !developer }),
     developer: developer ? { tests: story.developer?.state === 'fail' ? story.developer.text : null, failing: ci.failed.map((c) => c.name), url: pull.html_url, number: pull.number, held: shipHeldLine(shipAnswers.get(`${pull.number}:${pull.head.sha}`)) } : null,
-    // A token push from Figma on the sample team ships once the checks pass (its Review rules): nobody approves it.
     approvals: approvalsNow(),
     update,
     actions,
@@ -1422,15 +1348,6 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
     note,
     inQueue: Boolean(detailEl().closest('[data-review-queue]')),
   };
-}
-
-/** The before and after of a sample team change, in the shape the visual impact gives a real one; null when it has none. */
-function sampleEffectOf(branch: string): VisualView | null {
-  const e = SAMPLE_CHANGE_EFFECTS[branch];
-  if (!e) return null;
-  if (e === 'none') return { state: 'no-change', shots: [] };
-  const shot: VisualShot = { key: `sample:${branch}`, kind: 'route', label: e.screen, brand: 'bridge', theme: e.theme, status: 'changed', percent: 0, boxes: [], size: { before: null, after: null }, images: { before: e.before, after: e.after } };
-  return { state: 'changes', shots: [shot], base: SAMPLE_EFFECTS_BASE };
 }
 
 const tokenFilesOf = (files: PrFile[]) => files.filter((f) => isTokenFile(f.filename)).length;

@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { sampleTeam } from './invites';
 import { roleRows } from './roles-view';
-import { isSampleExploration, nameOn, personaOn, sampleApprovalRows, sampleCodeReviewers, sampleMembers, samplePersonOf, sampleTurnSentence } from './demo';
-import { soloOwnerSentence } from '@bridge-ds/core';
+import { isSampleExploration, nameOn, personaOn, sampleMembers, samplePersonOf } from './demo';
 import { DEMO_APPROVED_KEY, demoApprovedSet, markDemoApproved, DEMO_REPOS, demoApproved, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, demoLeadName, demoSettingsPeople, demoTour, demoWaiting, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName, tourSteps } from './demo';
 
 describe('the demo', () => {
@@ -222,35 +221,6 @@ describe('drafts on the sample team', () => {
     expect(demoApprovedSet(s).size).toBe(0);
     // A malformed value reads as nothing approved.
     expect(demoApprovedSet(store({ [DEMO_APPROVED_KEY]: '{bad' })).size).toBe(0);
-  });
-});
-
-describe('approvals on the sample team follow its Review rules', () => {
-  it('names the members who check the code', () => {
-    expect(sampleCodeReviewers(sampleTeam())).toBe('Malik');
-    expect(sampleCodeReviewers({ members: [{ name: 'Dana', reviews: ['tech'], you: true }, { name: 'Malik', reviews: ['tech'] }, { name: 'Kim', reviews: ['tech'] }] })).toBe('Malik or Kim');
-    expect(sampleCodeReviewers({ members: [] })).toBeNull();
-  });
-
-  it('the code row waits for Malik, never covered by the visitor, and never carries their action', () => {
-    const rows = [
-      { role: 'design', state: 'waiting', text: 'Waiting for you', canAct: true },
-      { role: 'tech', state: 'waiting', text: 'Covered by your approval', canAct: false },
-    ];
-    expect(sampleApprovalRows(rows, (r) => r.role === 'tech', 'Malik')).toEqual([rows[0], { role: 'tech', state: 'waiting', text: 'Waiting for Malik', canAct: false }]);
-    // The visitor holds the code role on the repository too: on the sample team it is still Malik's.
-    expect(sampleApprovalRows([{ role: 'tech', state: 'waiting', text: 'Waiting for you', canAct: true }], (r) => r.role === 'tech', 'Malik')[0]).toMatchObject({ text: 'Waiting for Malik', canAct: false });
-    // An approved code row stays approved; a suggestion's row has no action.
-    const done = { role: 'tech', state: 'approved', text: 'Approved', canAct: false };
-    expect(sampleApprovalRows([done], (r) => r.role === 'tech', 'Malik')).toEqual([done]);
-    expect(sampleApprovalRows([{ label: 'Tech approval', state: 'waiting', text: 'Waiting for Dana' }], (r) => r.label === 'Tech approval', 'Malik')).toEqual([{ label: 'Tech approval', state: 'waiting', text: 'Waiting for Malik' }]);
-  });
-
-  it("never says the visitor's approval covers the code", () => {
-    const solo = soloOwnerSentence('peterbono', true);
-    expect(sampleTurnSentence(`Your turn: approve. ${solo}`, solo, 'Malik')).toBe('Your turn: approve. Malik checks the code next.');
-    expect(sampleTurnSentence(`Your turn: approve. ${solo}`, solo, null)).toBe('Your turn: approve.');
-    expect(sampleTurnSentence('Your turn: approve design.', solo, 'Malik')).toBe('Your turn: approve design.');
   });
 });
 

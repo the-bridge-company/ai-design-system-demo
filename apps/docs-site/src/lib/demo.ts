@@ -73,24 +73,6 @@ export const SAMPLE_CHANGE_ORIGINS: Readonly<Record<string, SampleOrigin>> = {
 /** The exploration a sample team change comes from, by its branch, or null. */
 export const sampleChangeOrigin = (branch: string | null | undefined): SampleOrigin | null => (branch ? (SAMPLE_CHANGE_ORIGINS[branch] ?? null) : null);
 
-/** What a change of the sample team does to a real screen (the review's Where it shows). */
-export type SampleEffect = { screen: string; theme: 'light' | 'dark'; before: string; after: string } | 'none';
-
-/**
- * The before and after of the sample team's token changes on the screen they come from: the screen of
- * public/sample/previews/, captured with the old and the new value, in public/sample/changes/. 'none': the screen
- * looks the same (the 56px is hand-typed there today, the token only gives it a name).
- */
-export const SAMPLE_CHANGE_EFFECTS: Readonly<Record<string, SampleEffect>> = {
-  'bridge/deepen-the-primary-blue-for-stronger-buttons': { screen: 'Profile page', theme: 'light', before: 'deepen-primary-blue-before.png', after: 'deepen-primary-blue-after.png' },
-  'bridge/add-a-highlight-surface-for-new-items': { screen: 'Profile page', theme: 'light', before: 'highlight-surface-before.png', after: 'highlight-surface-after.png' },
-  'bridge/fix-muted-text-contrast-on-dark-raised-surfaces': { screen: 'Notification channels', theme: 'dark', before: 'muted-text-contrast-before.png', after: 'muted-text-contrast-after.png' },
-  'bridge/add-a-56px-spacing-step-for-page-sections': 'none',
-};
-
-/** Where the images of SAMPLE_CHANGE_EFFECTS are served from. */
-export const SAMPLE_EFFECTS_BASE = '/sample/changes';
-
 /** The repository part of "owner/repo" in words: "ai-design-system-demo" reads "Ai design system demo". */
 export const humanizeRepo = (repo: string): string => {
   const part = repo.trim().split('/').pop()?.trim() ?? '';
@@ -150,8 +132,6 @@ export const DEMO_WORDS = {
   ownDialogTitle: 'Sign in with GitHub to do this.',
   ownDialogLead: 'This is the design system behind Bridge, read only for visitors. Nothing is saved.',
   dialogNote: 'You pick the repos Bridge can see. It starts read-only and asks again before it writes anything.',
-  /** On the sample team, where the before and after of a change without one would be (a real team sets up its checks). */
-  noBeforeAfter: 'On your own team, Bridge shows the before and after here.',
   /** The sample-team dialog's note: what happens on a real team. */
   sampleNote: 'With your own team, Bridge reads your design system and sends nothing until you ask.',
   keepExploring: 'Keep exploring',
@@ -162,7 +142,7 @@ export const DEMO_WORDS = {
 /**
  * Approve, tried on the sample team (a branch or its review page): the approved state and what happens next, nothing
  * written anywhere. `author` is who asked for the review ("Ann"), when known. `codeBy` names who still checks the code
- * ("Malik", sampleCodeReviewers), when the change needs that check: Settings > Review rules on the sample team.
+ * ("Malik"), when the change needs that check: Settings > Review rules on the sample team.
  * `valuesOnly`: a token value change (core withTokenValueApprovals, decision TV-1) needs no code check, so the design
  * approval sends it on to the library once the automatic checks pass.
  */
@@ -178,38 +158,6 @@ export function demoApproved(author?: string | null, codeBy?: string | null, val
         : `On your team, ${who} hears it at once, and a developer ships the change once the checks pass.`,
     note: 'Sample data, nothing is sent.',
   };
-}
-
-/**
- * Who checks the code on the sample team, by first name ("Malik", "Malik or Kim"): the members who review tech, as its
- * Settings > Review rules and Members say. `team` is lib/invites.ts sampleTeam(lead), passed in (see samplePersonOf).
- */
-export function sampleCodeReviewers(team: { members: readonly { name: string; reviews: readonly string[]; you?: boolean }[] }): string | null {
-  const names = team.members.filter((m) => !m.you && m.reviews.includes('tech')).map((m) => m.name);
-  if (!names.length) return null;
-  return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
-}
-
-/**
- * The approval checklist on the sample team, as its Review rules say: the visitor's seat (Dana) checks the look, the
- * members who review tech check the code. The repository behind it has one owner, whose one review would cover both
- * parts ("Covered by your approval"): on the sample team a code row that is not approved yet waits for `codeBy`
- * ("Waiting for Malik") and never carries the visitor's action. `isCode` tells the code row (a branch's `role` is
- * 'tech', a suggestion's label is "Tech approval").
- */
-export function sampleApprovalRows<R extends { state: string; text: string; canAct?: boolean }>(rows: readonly R[], isCode: (r: R) => boolean, codeBy: string | null): R[] {
-  if (!codeBy) return [...rows];
-  return rows.map((r) => (isCode(r) && r.state === 'waiting' ? { ...r, text: `Waiting for ${codeBy}`, ...('canAct' in r ? { canAct: false } : {}) } : r));
-}
-
-/**
- * The who-acts line on the sample team: never the only owner's "your approval covers design and code" (the visitor's
- * seat checks the look only); `codeBy` checks the code next when the change still needs it. `solo` is that sentence
- * (core soloOwnerSentence(login, true)), passed in so this module loads nothing at runtime for the /api functions.
- */
-export function sampleTurnSentence(sentence: string, solo: string, codeBy: string | null): string {
-  if (!sentence.includes(solo)) return sentence;
-  return sentence.replace(solo, codeBy ? `${codeBy} checks the code next.` : '').replace(/\s+$/, '');
 }
 
 // ---------------------------------------------------------------------------------------------------------------

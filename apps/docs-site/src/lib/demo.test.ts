@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { sampleTeam } from './invites';
-import { roleRows } from './roles-view';
 import { isSampleExploration, nameOn, personaOn, sampleMembers, samplePersonOf } from './demo';
-import { DEMO_APPROVED_KEY, demoApprovedSet, markDemoApproved, DEMO_REPOS, demoApproved, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, demoLeadName, demoSettingsPeople, demoTour, demoWaiting, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName, tourSteps } from './demo';
+import { DEMO_APPROVED_KEY, demoApprovedSet, markDemoApproved, DEMO_REPOS, demoApproved, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, demoTour, demoWaiting, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName, tourSteps } from './demo';
 
 describe('the demo', () => {
   it('is the self-hosted repository and the hosted demo team, any case', () => {
@@ -94,49 +93,17 @@ describe('the tour', () => {
   });
 });
 
-describe('the demo Settings', () => {
-  it('names the sample members who review, as Members shows them, never the repository accounts', () => {
-    const p = demoSettingsPeople({ demo: { viewer: 'Dana' } }, sampleTeam);
-    expect(p.lead).toBe('Dana');
-    // The same people and logins as Members (lib/invites.ts sampleTeam), so the faces match.
-    const team = sampleTeam('Dana').members;
-    expect(p.owners.design).toEqual(team.filter((m) => m.reviews.includes('design')).map((m) => m.login));
-    expect(p.owners.design).toEqual(['~dana', '~ann-leroy']);
-    expect(p.owners.tech).toEqual(['~malik-haddad']);
-    expect(p.owners.design.map(p.nameOf)).toEqual(['Dana', 'Ann']);
-    expect(p.owners.tech.map(p.nameOf)).toEqual(['Malik']);
-    // Any other login (the repository's real accounts) reads as the lead.
-    expect(p.nameOf('peterbono')).toBe('Dana');
-  });
-
-  it('follows the repository rights: each right names the people of its group', () => {
-    const p = demoSettingsPeople({ demo: { viewer: 'Dana' } }, sampleTeam);
-    const rows = roleRows(p.owners, { approveDesign: ['design'], approveTech: ['tech'], ship: ['tech'] });
-    expect(rows.map((r) => r.logins.map(p.nameOf))).toEqual([['Dana', 'Ann'], ['Malik'], ['Malik']]);
-  });
-
-  it('names a persona-less lead by role, in the lead seat', () => {
-    const p = demoSettingsPeople({}, sampleTeam);
-    expect(p.nameOf('~dana')).toBe('Your design system lead');
-  });
-
-  it('says the role when the demo has no persona', () => {
-    expect(demoLeadName(undefined)).toBe('Your design system lead');
-    expect(demoLeadName({ viewer: ' ' })).toBe('Your design system lead');
-  });
-});
-
 describe('teamDisplayName', () => {
-  it('a demo goes by its own name, any other team by its repository name in words, never owner/repo', () => {
+  it('a team without a name goes by its repository name in words, never owner/repo', () => {
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo')).toBe('Bridge DS');
-    expect(teamDisplayName('PeterBono/Bridge-Demo-DS')).toBe('Acme Design');
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Bridge demo ds');
     expect(teamDisplayName('acme/design-system')).toBe('Design system');
   });
 
-  it("a team's own name from bridge.config.json wins, except on the sample team", () => {
+  it("a team's own name from bridge.config.json wins, the sample team's included", () => {
     expect(teamDisplayName('acme/design-system', { name: '  Acme   Studio ' })).toBe('Acme Studio');
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo', { name: 'Bridge DS' })).toBe('Bridge DS');
-    expect(teamDisplayName('acme-design-demo/bridge-demo-ds', { name: 'Other' })).toBe('Acme Design');
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds', { name: 'Acme Design' })).toBe('Acme Design');
     expect(teamDisplayName('acme/ds', { name: ' ' })).toBe('Ds');
     expect(teamDisplayName('acme/ds', null)).toBe('Ds');
   });

@@ -10,7 +10,6 @@ export const MEASURE_WORDS = {
   label: 'Measure of your components',
   missing: MEASURE_MISSING_TEXT,
   waiting: 'The automatic measure is set up. Its first run measures your components; Claude can fix them after that.',
-  sample: 'On the sample team, the components are not measured.',
   checking: 'Checking the measure.',
   unknown: 'Bridge could not check the measure right now. Try again in a minute.',
   action: MEASURE_SETUP_ACTION,

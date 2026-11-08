@@ -5,8 +5,9 @@
 //                          choice unfolds its domains field (progressive disclosure), then Save and Cancel.
 //   Library link           the address, and Copy library link, so an admin shares it with the company.
 // Everyone else reads the same card and rows, with no Change, and who can change it by name under the choice ("Only
-// Sam Rivera (admin) can change this.", from the members Settings read; BR-20: no disabled control). The sample team (Acme Design) shows its sample choice and Save opens
-// the demo dialog, with no call; a site without the server says it is not available yet, never a fake save.
+// Sam Rivera (admin) can change this.", from the members Settings read; BR-20: no disabled control). A visitor of the sample team, who reads it as its lead, gets the demo
+// dialog on Save (the change needs a GitHub sign-in, which they have none of); a site without the server says it is not
+// available yet, never a fake save.
 // Mounted by both Settings pages (pages/studio/settings, pages/team-shell/settings). Rules and words: lib/library-access.
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { Check, Copy } from 'lucide-react';
@@ -66,7 +67,7 @@ function Editor({ data, onDone }: { data: AccessData; onDone: (saved: AccessSett
       list = parsed.domains;
     }
     setError(null);
-    if (data.context === 'sample') {
+    if ((await import('../../../scripts/github-session')).currentContributor()?.visitor) {
       const { openMakeItYours } = await import('../../../scripts/demo-gate');
       await openMakeItYours();
       return onDone(null, null);

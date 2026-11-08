@@ -257,14 +257,16 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
     await expectNoAxeViolations(menu);
   });
 
-  it('on the sample team, offers Invite collaborators even signed out, and opens the dialog over the page', async () => {
-    page.team = { owner: 'peterbono', repo: 'bridge-demo-ds' };
+  it('on the sample team, the menu of any team: its name from its settings, signed out no Invite collaborators', async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.site = { name: 'Acme Design' };
     const user = userEvent.setup();
     render(createElement(TeamChip, { launcher: true }));
-    await user.click(await screen.findByRole('button', { name: /Acme Design/ }));
+    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }));
     const menu = await screen.findByRole('menu');
-    await user.click(within(menu).getByRole('menuitem', { name: 'Invite collaborators' }));
-    expect(await screen.findByRole('dialog', { name: 'Invite collaborators' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Invite collaborators' })).toBeNull();
+    expect(within(menu).getByRole('menuitem', { name: 'Create a new team' })).toBeInTheDocument();
+    expect(screen.queryByText('Demo')).toBeNull();
   });
 
   it('on a team, lists it under "Your teams" once, not again in the recent teams', async () => {
@@ -275,25 +277,30 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
     expect(within(menu).getByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
   });
 
-  it('on the demo, offers the workspace the visitor came from and not the demo again', async () => {
-    page.team = { owner: 'peterbono', repo: 'bridge-demo-ds' };
+  it('on the sample team, lists where the visitor is, the team they came from under recent teams, never "Try it" with itself', async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.site = { name: 'Acme Design' };
     localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['acme-design-demo/bridge-demo-ds', 'globex/tokens']));
     const user = userEvent.setup();
     render(createElement(TeamChip, { launcher: true }));
-    await user.click(await screen.findByRole('button', { name: /Acme Design/ }));
+    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }));
     const menu = await screen.findByRole('menu');
     const yours = within(menu).getByRole('group', { name: 'Your teams' });
-    expect(within(yours).getByRole('menuitem', { name: /^Tokens/ })).not.toHaveAttribute('data-current');
+    expect(within(yours).getByRole('menuitem', { name: /^Acme Design/ })).toHaveAttribute('data-current');
+    expect(within(within(menu).getByRole('group', { name: 'Recent teams' })).getByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
     expect(within(menu).queryByRole('group', { name: 'Try it' })).toBeNull();
   });
 
-  it('on the demo without a workspace, shows no "Your teams"', async () => {
-    page.team = { owner: 'peterbono', repo: 'bridge-demo-ds' };
+  it('on the sample team without a workspace, lists only the team it is on, as on any team', async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.site = { name: 'Acme Design' };
     const user = userEvent.setup();
     render(createElement(TeamChip, { launcher: true }));
-    await user.click(await screen.findByRole('button', { name: /Acme Design/ }));
+    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }));
     const menu = await screen.findByRole('menu');
-    expect(within(menu).queryByRole('group', { name: 'Your teams' })).toBeNull();
+    const yours = within(menu).getByRole('group', { name: 'Your teams' });
+    expect(within(yours).getAllByRole('menuitem')).toHaveLength(1);
+    expect(within(yours).getByRole('menuitem', { name: /^Acme Design/ })).toHaveAttribute('data-current');
   });
 });
 

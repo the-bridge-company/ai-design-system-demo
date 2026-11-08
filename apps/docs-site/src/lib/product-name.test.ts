@@ -54,12 +54,11 @@ describe('product name', () => {
 });
 
 describe('canRenameProduct', () => {
-  it('an admin with GitHub renames, on a team shell or on the team\'s own Studio; never the sample team, never by email', () => {
-    expect(canRenameProduct({ admin: true }, false)).toBe(true);
-    expect(canRenameProduct({ repoAdmin: true }, false)).toBe(true);
-    expect(canRenameProduct({ admin: true }, true)).toBe(false);
-    expect(canRenameProduct({ admin: true, contributor: true }, false)).toBe(false);
-    expect(canRenameProduct({ admin: false }, false)).toBe(false);
-    expect(canRenameProduct(null, false)).toBe(false);
+  it('an admin with GitHub renames, on a team shell or on the team\'s own Studio; never by email (the sample team\'s visitor included)', () => {
+    expect(canRenameProduct({ admin: true })).toBe(true);
+    expect(canRenameProduct({ repoAdmin: true })).toBe(true);
+    expect(canRenameProduct({ admin: true, contributor: true })).toBe(false);
+    expect(canRenameProduct({ admin: false })).toBe(false);
+    expect(canRenameProduct(null)).toBe(false);
   });
 });

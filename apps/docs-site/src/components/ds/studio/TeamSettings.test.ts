@@ -62,21 +62,20 @@ describe('TeamSettings', () => {
     expect(screen.getByText('Nobody checks the code. From Figma, sending counts as the approval. A renamed or removed token waits for a code check.')).toBeInTheDocument();
   });
 
-  it('on the sample team, names the members who review, as Members does, never the repository account', () => {
-    Object.assign(at, { owner: 'peterbono', repo: 'bridge-demo-ds', site: sampleSite });
+  it('on the sample team, shows its own rules and people as on any team, with no sample note', () => {
+    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds', site: sampleSite });
     try {
       const { container } = render(createElement(TeamSettings));
       const row = (label: string) => screen.getByText(label).closest('.set-row')!;
-      const names = (label: string) => [...row(label).querySelectorAll('.set-owner')].map((o) => o.textContent);
-      expect(names('Checks the look')).toEqual(['Dana', 'Ann']);
-      expect(names('Checks the code')).toEqual(['Malik']);
-      expect(names('Adds it to the library')).toEqual(['Malik']);
-      // The faces are the sample members' own, seeded by the logins Members uses.
-      expect([...row('Checks the look').querySelectorAll('[data-face]')].map((f) => f.getAttribute('data-face'))).toEqual(['~dana', '~ann-leroy']);
-      expect(screen.queryByText('Only owner')).toBeNull();
-      expect(screen.getByText('Dana, with a written reason of at least 20 characters.')).toBeInTheDocument();
+      const names = (label: string) => [...row(label).querySelectorAll('.set-owner > span:last-child')].map((o) => o.textContent);
+      // The repository's own owners, named as any team names them (no persona rewrite).
+      expect(names('Checks the look')).toEqual(['peterbono']);
+      expect(names('Checks the code')).toEqual(['peterbono']);
+      expect(screen.getByText('peterbono, with a written reason of at least 20 characters.')).toBeInTheDocument();
       expect(screen.getByText('Token values')).toBeInTheDocument();
-      expect(container.textContent).not.toMatch(/peterbono/);
+      expect(container.textContent).not.toMatch(/a sample team/);
+      // The rules editor and the admin notes of any team.
+      expect(container.querySelectorAll('.set-row').length).toBeGreaterThan(3);
     } finally {
       Object.assign(at, { owner: 'acme', repo: 'acme-product', site });
     }

@@ -42,7 +42,7 @@ function put(key: string, value: string | null): void {
   }
 }
 
-/** The real team of this page (owner/name, or a team made in Bridge), else null (the sample team, no repository). */
+/** The team of this page (owner/name, or a team made in Bridge), else null (no repository). */
 export function pageTeam(): string | null {
   if (typeof document === 'undefined') return null;
   try {

@@ -57,7 +57,6 @@ import { leadHomeRow } from '../lib/lead-decisions';
 import type { HomeWaiting } from '../components/ds/studio/StudioHome';
 import { mineFromCards, noteMine } from '../lib/nav-products';
 import { busyText } from '../lib/team-load';
-import { isDemoRepo } from '../lib/demo';
 import { neededByOfChange } from '../lib/product-branch';
 
 /** Rows of the Needs you list whose closed request or suggestion is read for its origin: one read each, kept by ghGet. */
@@ -233,13 +232,13 @@ interface Classified {
 }
 
 /**
- * The people asking to join the team, for its admins only (the server checks it again): none on the demo, on a
+ * The people asking to join the team, for its admins only (the server checks it again): none on a
  * self-hosted site, or when the account cannot manage requests (no GitHub admin linked).
  */
 export async function loadJoinNeeds(now: number): Promise<NeedRow[]> {
   const { owner, repo } = readRepo();
   const full = `${owner}/${repo}`;
-  if (!isHosted() || isDemoRepo(full)) return [];
+  if (!isHosted()) return [];
   // The access may still be on its way (an email admin's is known without GitHub): wait for it, never fail on it.
   const a = currentAccess() ?? (await resolveAccess({ owner, repo }, { anonymous: true }).catch(() => null));
   if (!a?.admin && !a?.repoAdmin) return [];

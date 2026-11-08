@@ -7,9 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Accordion, AccordionItem, Badge, Button, Input, Link } from '@bridge-ds/react';
 import type { ChangesMode, RepoAccessState } from '@bridge-ds/core';
-import { accessBadge, accessSummary, chipIdentity, manageAccessUrl, NO_ACCESS_LINE, orgTeamsUrl, teamLink, viewerRow, whoCanDoWhat } from '../../../lib/access-view';
+import { accessBadge, accessSummary, manageAccessUrl, NO_ACCESS_LINE, orgTeamsUrl, teamLink, viewerRow, whoCanDoWhat } from '../../../lib/access-view';
 import { isHostedSite, teamShareBase } from '../../../lib/team-path';
-import { isSampleTeam } from '../../../lib/demo';
 
 /**
  * The places a long address may wrap: after "//", each "/" and each ".", so a phone breaks
@@ -206,17 +205,14 @@ export function TeamLinkLive(props: TeamLinkLiveProps) {
   const owner = ctx?.owner ?? props.owner ?? '';
   const repo = ctx?.repo ?? props.repo ?? '';
   const name = `${owner}/${repo}`;
-  // The sample team (Acme Design) names its visitor as the team chip does and never shows the repository's real
-  // accounts (Who can do what says owners without logins). Bridge's own design system is a real team: real owners.
-  const demo = isSampleTeam(name);
-  const badge = demo ? chipIdentity(name, { demo, state: access, signedIn: Boolean(login) }).badge : accessBadge(access, Boolean(login));
+  const badge = accessBadge(access, Boolean(login));
   return (
     <div className="tlk-live">
       <p className="tlk-summary">
         <Badge size="sm" tone={badge.tone} dot>
           {badge.label}
         </Badge>
-        <span>{accessSummary(login ? access : null, { login, repo: name, demo })}</span>
+        <span>{accessSummary(login ? access : null, { login, repo: name })}</span>
       </p>
       <TeamLink
         id="set-team-link"
@@ -225,7 +221,7 @@ export function TeamLinkLive(props: TeamLinkLiveProps) {
         link={ctx?.link ?? ''}
         access={login ? access : null}
         changes={ctx?.changes ?? props.changes ?? null}
-        owners={demo ? undefined : (ctx?.owners ?? props.owners)}
+        owners={ctx?.owners ?? props.owners}
         org={org}
       />
     </div>

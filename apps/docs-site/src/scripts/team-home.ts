@@ -11,9 +11,6 @@ import { setReviewCount } from './shell';
 import { rememberMine } from './needs-you';
 import { loadHome, type HomeData, type HomeStatic } from './home-data';
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
-import { loadDemoHome, type DemoHomeData } from './demo-home';
-import { paintDemoHome } from '../components/ds/studio/DemoHome';
-import { exploresDemo } from '../lib/demo';
 import { paintStudioHome, type HealthLine, type HomeComponent, type JoinHandlers, type StudioHomeProps } from '../components/ds/studio/StudioHome';
 import { JOINED_KEY, joinedNote } from '../lib/entry';
 import { joinHandlers } from './join-handlers';
@@ -115,26 +112,6 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
     },
   );
   const signIn = prefersSignIn();
-  // The demo team, for a visitor who cannot change it (lib/demo.ts): its own home, read-only.
-  let demoData: DemoHomeData | null = null;
-  let demoRead = false;
-  const exploring = () => {
-    const t = teamOfPage();
-    if (!t || (!known && getToken())) return false;
-    const v = currentViewer();
-    // An email contributor is a member of the team: never a demo visitor.
-    if (!v && currentContributor()) return false;
-    return exploresDemo({ repo: `${t.owner}/${t.repo}`, signedIn: Boolean(v), write: v ? (currentAccess()?.write ?? null) : false });
-  };
-  const readDemo = () => {
-    if (demoRead || !stat) return;
-    demoRead = true;
-    const t = teamOfPage();
-    void loadDemoHome(stat, (d) => {
-      demoData = d;
-      paint();
-    });
-  };
 
   function health(): HealthLine | null {
     if (!stat) return null;
@@ -142,33 +119,6 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
   }
 
   function paint() {
-    if (exploring()) {
-      // The demo's home is all repository data: it waits for the read, as before.
-      if (!stat) {
-        root ??= createRoot(el);
-        root.render(createElement(TeamLoadProgress, { label: "Reading this team's design system" }));
-        return;
-      }
-      readDemo();
-      root = paintDemoHome(
-        el,
-        {
-          loading: !demoData || demoData.loading,
-          needs: demoData?.needs ?? [],
-          explorations: demoData?.explorations ?? [],
-          health: health(),
-          building: true,
-          failed: demoData?.failed ?? null,
-            lead: demoData?.lead ?? null,
-            role: demoData?.role ?? null,
-          now: Date.now(),
-          components: stat.components,
-          startHrefs: stat.startHrefs,
-        },
-        root,
-      );
-      return;
-    }
     const f = facts();
     const now = Date.now();
     const v = currentViewer();
@@ -207,10 +157,6 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
   }
 
   function reload() {
-    if (exploring()) {
-      paint();
-      return;
-    }
     data = null;
     repaintHome = null;
     const mine = ++run;
@@ -249,24 +195,20 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
     paint();
     loadTeamData().then(
       (loaded) => {
-        const first = !stat;
         stat = teamHomeStatic(loaded);
         paintDs(null);
         sourceRoot ??= sourceEl ? createRoot(sourceEl) : null;
         sourceRoot?.render(createElement(TeamSourceNote, { data: loaded, refreshing: false, onRefresh: () => (resetTeamData(), start()) }));
-        // The demo waited for this read; a team's home only takes the facts in (contrast, guidance drafts).
-        if (exploring()) {
-          paint();
-          if (known && first) reload();
-        } else if (repaintHome) repaintHome();
+        // The home takes the facts in (contrast, guidance drafts).
+        if (repaintHome) repaintHome();
         else paint();
       },
       (err: unknown) => {
         const team = teamOfPage();
         const failure = teamFailure(err, team ? `${team.owner}/${team.repo}` : 'this repository');
         const retry = () => (resetTeamData(), start());
-        // Without a slot for it (or on the demo, all repository data), the failure takes the home's place, as before.
-        if (!dsEl || exploring()) {
+        // Without a slot for it, the failure takes the home's place, as before.
+        if (!dsEl) {
           root ??= createRoot(el);
           root.render(createElement(Fragment, null, loadingHeading(), createElement(TeamLoadError, { failure, onRetry: retry })));
           return;

@@ -3,7 +3,7 @@
 // (lib/product-name canRenameProduct, a product the team's settings list: it opens the name in place on the product's
 // page, #rename). "Add a product" on the title's line (it adds to the whole list, never to the last row), the same
 // dialog as the setup step (AddProduct.tsx), for the admins it lets in. Facts only to who can act on them: the whole band is a lead's or an admin's (lib/create-branch
-// libraryLead, an admin by email too); a designer gains nothing from it and never sees it. Never on the sample team.
+// libraryLead, an admin by email too); a designer gains nothing from it and never sees it.
 // The repositories behind each product wait in "For developers". Words: lib/settings-view.ts PRODUCTS_WORDS.
 import { useEffect, useState } from 'react';
 import { Card, CardBody, Link, Select } from '@bridge-ds/react';
@@ -20,7 +20,6 @@ interface Facts {
   products: ProductConfig[];
   /** The keys the team's own settings list: only those can be renamed. */
   listed: string[];
-  sample: boolean;
 }
 
 export default function TeamProducts() {
@@ -34,13 +33,13 @@ export default function TeamProducts() {
     let live = true;
     let unhook = () => undefined as void;
     const read = () =>
-      void Promise.all([import('../../../scripts/repo-context'), import('../../../lib/demo')]).then(([{ repoContext, siteConfig }, { isSampleTeam }]) => {
+      void import('../../../scripts/repo-context').then(({ repoContext, siteConfig }) => {
         if (!live) return;
         const r = repoContext();
         const site = siteConfig() as { products?: ProductConfig[] };
         if (!Object.keys(site).length) return;
         const repo = `${r.owner}/${r.repo}`;
-        setFacts({ repo, products: productsOf(site), listed: (site.products ?? []).map((p) => p.key.toLowerCase()), sample: isSampleTeam(repo) });
+        setFacts({ repo, products: productsOf(site), listed: (site.products ?? []).map((p) => p.key.toLowerCase()) });
       });
     read();
     document.addEventListener('bridge:team-model', read);
@@ -52,7 +51,7 @@ export default function TeamProducts() {
           // A lead or an admin (an email admin too), the same people who send a product its library update. Who leads
           // is known once the team's settings are read: painted again then.
           setLead((libraryLead(last) && !designerRoute()) || Boolean(last?.admin));
-          setRename(canRenameProduct(last, false));
+          setRename(canRenameProduct(last));
         };
         onAccess((a) => {
           last = a;
@@ -72,7 +71,7 @@ export default function TeamProducts() {
   // Who can be a product manager, read once the viewer is known to lead or administer the team (their sign-in is
   // settled by then): through Bridge's server, with their GitHub sign-in or their Bridge session.
   useEffect(() => {
-    if (!lead || !facts || facts.sample) return;
+    if (!lead || !facts) return;
     let live = true;
     void Promise.all([import('../../../scripts/github-session'), import('../../../scripts/contribute-session')]).then(async ([{ currentAccess, getToken }, { contributeTeam }]) => {
       const t = currentAccess()?.contributor ? null : getToken();
@@ -92,9 +91,9 @@ export default function TeamProducts() {
     return () => {
       live = false;
     };
-  }, [lead, facts?.repo, facts?.sample]);
+  }, [lead, facts?.repo]);
 
-  if (!facts || !lead || facts.sample) return null;
+  if (!facts || !lead) return null;
   return (
     <section className="ts-band" id="products" aria-labelledby="ts-products">
       {/* Add a product acts on the whole list: on the title's line, as Invite collaborators is on Members' (proximity). */}

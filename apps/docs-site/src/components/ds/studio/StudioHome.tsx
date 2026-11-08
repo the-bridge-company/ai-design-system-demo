@@ -47,7 +47,7 @@ import { studioHref } from '../../../lib/team-path';
 import { productFolders } from '../../../lib/product-page';
 import { siteConfig } from '../../../scripts/repo-context';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
-import { demoTour, demoWaiting, tourSteps, type TourAt } from '../../../lib/demo';
+import { demoTour, tourSteps, type TourAt } from '../../../lib/demo';
 import { useNarrow, useTour } from './HomeTour';
 
 // The rows of the queue (NeedList) and Approve and Decline on a join request live in NeedRows.tsx, shared with
@@ -56,38 +56,26 @@ export { NeedList, NeedRowItem, type JoinHandlers, type JoinOutcome } from './Ne
 import { NeedList, type JoinHandlers } from './NeedRows';
 
 
-/**
- * "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait. On the demo (`lead`),
- * the visitor sits in the lead's seat: "8 changes need your review. Ann and Claude AI are waiting on Dana, who leads
- * this design system." (lib/demo.ts demoWaiting), the lead left out of the people.
- */
-function Waiting({ needs, now, lead }: { needs: NeedRow[]; now: number; lead?: Person | null }) {
-  const people = uniquePeople(needs.filter((r) => r.waitsOnYou).map((r) => r.person)).filter((p) => !lead || p.agent || p.login.toLowerCase() !== lead.login.toLowerCase());
+/** "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait. */
+function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
+  const people = uniquePeople(needs.filter((r) => r.waitsOnYou).map((r) => r.person));
   const s = waitingSentence(people);
   const oldest = oldestLabel(needs, now);
-  const demo = lead !== undefined ? demoWaiting(needs.filter((r) => r.kind === 'review').length, s, lead?.name ?? null, needs.filter((r) => r.kind === 'guidance').length) : null;
-  if (!s && !demo) return null;
+  if (!s) return null;
   // A div, not a p: the avatar group is a block (a div inside a p is invalid HTML).
   return (
     <div className="t-body sh-waiting">
       {people.length > 0 && (
-        <AvatarGroup aria-label={lead === null ? 'Waiting for review' : 'Waiting on you'} max={AVATARS_SHOWN} size="md" className="sh-stack">
+        <AvatarGroup aria-label="Waiting on you" max={AVATARS_SHOWN} size="md" className="sh-stack">
           {people.map((p) => (
             <Who key={p.agent ? '#agent' : p.login} p={p} name={p.name} decorative={false} />
           ))}
         </AvatarGroup>
       )}
-      {demo ? (
-        <span>
-          <b className="sh-strong">{demo.count}</b>
-          {demo.rest}
-        </span>
-      ) : (
-        <span>
-          <b className="sh-strong">{s!.names}</b>
-          {s!.rest}
-        </span>
-      )}
+      <span>
+        <b className="sh-strong">{s.names}</b>
+        {s.rest}
+      </span>
       {oldest && (
         <Badge tone="warning" size="md" className="sh-oldest">
           {oldest}
@@ -131,9 +119,9 @@ function OnlyReviewerHint({ needs, snoozed }: { needs: NeedRow[]; snoozed: boole
   );
 }
 
-function Needs({ needs, now, snoozed, demo, tour, join, contributor }: { needs: NeedRow[]; now: number; snoozed: boolean; demo?: boolean; tour?: StudioHomeProps['tour']; join?: JoinHandlers; contributor?: boolean }) {
+function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRow[]; now: number; snoozed: boolean; tour?: HomeTour; join?: JoinHandlers; contributor?: boolean }) {
   const { shown, more } = splitNeeds(needs);
-  const moreAction = moreNeedsAction(Boolean(contributor) && !demo);
+  const moreAction = moreNeedsAction(Boolean(contributor));
   // On a phone the rows can fill the first screen: the first step sits above them, in view where the page opens (a
   // card in the flow, HomeTour.tsx). On a wide screen it floats under the rows it talks about.
   const narrow = useNarrow();
@@ -141,7 +129,7 @@ function Needs({ needs, now, snoozed, demo, tour, join, contributor }: { needs: 
     <>
       {narrow && tour?.('rows')}
       {/* One item: its button is the page's primary. Two or three: secondary buttons. More: no row buttons, each row is
-          its own link and "Review all" acts, the demo included. */}
+          its own link and "Review all" acts. */}
       <NeedList rows={shown} compact action={more ? undefined : shown.length === 1 ? 'primary' : 'secondary'} join={join} />
       {!narrow && tour?.('rows')}
       {more && (
@@ -155,7 +143,7 @@ function Needs({ needs, now, snoozed, demo, tour, join, contributor }: { needs: 
               </span>
             )}
           </p>
-          {/* A reviewer: the Review page, the one queue, the same rows as this list (the demo lead's included). Someone
+          {/* A reviewer: the Review page, the one queue, the same rows as this list. Someone
               without a review right: their own work on Changes (only reviewers get the review queue). */}
           <ButtonLink variant="primary" href={studioHref(moreAction.path)} className="sh-more-btn">
             {moreAction.label}
@@ -163,7 +151,7 @@ function Needs({ needs, now, snoozed, demo, tour, join, contributor }: { needs: 
         </div>
       )}
       {more && tour?.('more')}
-      {!demo && <OnlyReviewerHint needs={needs} snoozed={snoozed} />}
+      <OnlyReviewerHint needs={needs} snoozed={snoozed} />
     </>
   );
 }
@@ -197,7 +185,7 @@ function Explorations({
   components: HomeComponent[];
   title: string;
   seeAll: string;
-  tour?: StudioHomeProps['tour'];
+  tour?: HomeTour | undefined;
 }) {
   const narrow = useNarrow();
   const shown = explorations.slice(0, EXPLORATION_CARDS);
@@ -348,14 +336,6 @@ export interface StudioHomeProps {
   /** bridge.config.json products, for the product folders under the explorations. Absent: the page's (repo-context). */
   products?: ProductConfig[];
   /**
-   * The demo for a visitor (DemoHome.tsx, boards D1 and D1b): the same home from the DS lead's seat. `lead` names
-   * them in the waiting line; each row keeps its Review button; "Review all" opens the Review page; the team's
-   * explorations under their own title. Always the busy layout.
-   */
-  demo?: { lead: Person | null; explorationsTitle: string };
-  /** The demo tour's popovers, anchored where each step points: under the rows, the grouped row, the explorations. */
-  tour?: (at: HomeTourAt) => ReactNode;
-  /**
    * The viewer holds no review right (an email contributor, or a member no owner list names): the needs are only
    * their branches sent back with changes, and the contributor tour runs on the first visit.
    */
@@ -380,8 +360,10 @@ export interface StudioHomeProps {
   recent?: boolean;
 }
 
-/** Where a tour step can point: the demo's (lib/demo TourAt) and the contributor's ("start", the ways to start). */
+/** Where a tour step can point: the lead's (lib/demo TourAt) and the contributor's ("start", the ways to start). */
 export type HomeTourAt = TourAt | ContributorTourAt;
+/** The tour's popover for a step, anchored where it points, or nothing. */
+type HomeTour = (at: HomeTourAt) => ReactNode;
 
 const CONTRIBUTOR_TOUR_KEY = 'bridge.home.contributor-tour';
 const LEAD_TOUR_KEY = 'bridge.home.lead-tour';
@@ -431,34 +413,31 @@ export function StudioHome(p: StudioHomeProps) {
 
 function HomeBody(p: StudioHomeProps) {
   const snoozed = hintSnoozed(readSnooze(), p.now);
-  const own = useTour<ContributorTourAt>(CONTRIBUTOR_TOUR_KEY, contributorTourSteps(p.state === 'empty'), (at) => contributorTour(at, p.state === 'empty'), Boolean(p.contributor) && !p.demo && (p.state === 'busy' || p.state === 'empty'));
+  const own = useTour<ContributorTourAt>(CONTRIBUTOR_TOUR_KEY, contributorTourSteps(p.state === 'empty'), (at) => contributorTour(at, p.state === 'empty'), Boolean(p.contributor) && (p.state === 'busy' || p.state === 'empty'));
   // The lead's tour speaks of changes: rows that are only join requests (or a health note) are not what it shows. Its
   // first step points at the rows on screen, so it runs only when they hold a change; changes folded under "N more"
   // get the Review all step alone.
   const isChange = (r: NeedRow) => r.kind === 'review' || r.kind === 'guidance';
   const changeRows = p.needs.some(isChange);
   const split = splitNeeds(p.needs);
-  const byRole = explorationsFor(p.explorations, Boolean(p.contributor) && !p.demo);
+  const byRole = explorationsFor(p.explorations, Boolean(p.contributor));
   const leadSteps = tourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
-  const lead = useTour<TourAt>(LEAD_TOUR_KEY, leadSteps, (at) => demoTour(at), Boolean(p.lead) && !p.contributor && !p.demo && p.state === 'busy' && leadSteps.length > 0);
-  const tour: StudioHomeProps['tour'] =
-    p.tour ??
-    (p.contributor
-      ? (at) => (at === 'branches' || at === 'start' ? own(at) : null)
-      : p.lead && !p.demo
-        ? (at) => (at === 'rows' || at === 'more' || at === 'branches' ? lead(at) : null)
-        : undefined);
+  const lead = useTour<TourAt>(LEAD_TOUR_KEY, leadSteps, (at) => demoTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
+  const tour: HomeTour | undefined = p.contributor
+    ? (at) => (at === 'branches' || at === 'start' ? own(at) : null)
+    : p.lead
+      ? (at) => (at === 'rows' || at === 'more' || at === 'branches' ? lead(at) : null)
+      : undefined;
   const explorations = (
     <Explorations
       explorations={byRole.cards}
       components={p.components}
-      title={p.demo?.explorationsTitle ?? byRole.title}
-      // The demo shows the team's: all of them on Changes.
-      seeAll={p.demo ? studioHref('changes/') : byRole.seeAll}
+      title={byRole.title}
+      seeAll={byRole.seeAll}
       tour={tour}
     />
   );
-  if (p.state === 'signed-out' && !p.demo) {
+  if (p.state === 'signed-out') {
     return (
       <div className="sh">
         <section className="zone sh-zone" aria-labelledby="sh-hello">
@@ -481,7 +460,7 @@ function HomeBody(p: StudioHomeProps) {
     );
   }
   const note = p.note ? <JoinedNote text={p.note} /> : null;
-  if (p.state === 'empty' && !p.demo) {
+  if (p.state === 'empty') {
     return (
       <div className="sh">
         {note}
@@ -534,7 +513,7 @@ function HomeBody(p: StudioHomeProps) {
             <h1 id="sh-hello" className="sh-hello">
               {p.greeting}
             </h1>
-            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} lead={p.demo ? p.demo.lead : undefined} /> : <p className="t-body">{p.needs.length ? 'Your changes need you.' : QUIET_LINE}</p>}
+            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{p.needs.length ? 'Your changes need you.' : QUIET_LINE}</p>}
           </div>
         </div>
         {loading ? (
@@ -548,7 +527,7 @@ function HomeBody(p: StudioHomeProps) {
             </ul>
           </>
         ) : (
-          p.needs.length > 0 && <Needs needs={p.needs} now={p.now} snoozed={snoozed} demo={Boolean(p.demo)} tour={tour} join={p.join} contributor={Boolean(p.contributor)} />
+          p.needs.length > 0 && <Needs needs={p.needs} now={p.now} snoozed={snoozed} tour={tour} join={p.join} contributor={Boolean(p.contributor)} />
         )}
       </section>
       {p.failed && <p className="t-ui t-muted sh-health">{p.failed}</p>}
@@ -556,7 +535,7 @@ function HomeBody(p: StudioHomeProps) {
       {!loading && <WaitingOnOthers rows={p.waitingOnOthers ?? []} />}
       {p.building && <BuildLine />}
       {(byRole.cards.length > 0 || !loading) && explorations}
-      {!p.demo && !loading && <YourChanges n={p.branches.length} />}
+      {!loading && <YourChanges n={p.branches.length} />}
       {/* The products, like project folders in Figma: each opens its page, with the explorations made in it. */}
       {!loading && <ProductFolders folders={productFolders(p.products ?? pageProducts(), p.explorations)} />}
     </div>

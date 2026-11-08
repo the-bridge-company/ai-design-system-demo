@@ -32,8 +32,6 @@ import type { BranchesConfig } from '../../lib/branches';
 import { studioHref } from '../../lib/team-path';
 import TeamLauncher from '../../components/ds/studio/TeamLauncher';
 import '../../styles/team-launcher.css';
-import '../../styles/demo-home.css';
-import { isDemoRepo } from '../../lib/demo';
 
 // The hosted deployment (one site for every team, multi-team plan 4.3) opens other teams from here. A self-hosted
 // build leaves it out: its Studio is its own repository.
@@ -63,7 +61,7 @@ const homeStatic = {
   components: comps.map((c) => ({ name: c.name, slug: c.slug, family: c.category })).sort((a, b) => a.name.localeCompare(b.name)),
   startHrefs: { tokens: startChangeHref('look'), component: startChangeHref('variant'), guidance: firstMissing ? docsEditHref(firstMissing.slug) : studioHref('components/') },
   signIn: Boolean(signInConfig()),
-  // The launcher on the hosted site, hidden while a visitor explores the demo (components/ds/studio/DemoHome.tsx).
+  // The launcher on the hosted site, for visitors opening their own team.
   launcher: hostedSite,
 };
 // Start an exploration in a product: its preview settings, as the Branches page embeds them.
@@ -79,8 +77,6 @@ try {
   rawCfg = {};
 }
 const repoName = `${repo.owner}/${repo.repo}`;
-// The demo opens on its own home for visitors (lib/demo.ts): the launcher waits behind its banner.
-const demo = isDemoRepo(repoName);
 const onboarding = {
   changes: changesInConfig(rawCfg),
   name: teamName(rawCfg.name) ?? null,
@@ -105,7 +101,7 @@ const onboarding = {
   updated={freshness(PAGE_SOURCES.home)}
   wide
 >
-  {hostedSite && <div data-team-launcher hidden={demo}><TeamLauncher client:load /></div>}
+  {hostedSite && <div data-team-launcher><TeamLauncher client:load /></div>}
   <div class="sh-root" data-studio-home>
     <div class="sh">
       <section class="zone sh-zone" aria-busy="true" aria-label="Loading what needs you">
@@ -122,7 +118,7 @@ const onboarding = {
   <script>
     import { studioHref } from '../../lib/team-path';
     import { createRoot, type Root } from 'react-dom/client';
-    import { currentAccess, currentContributor, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from '../../scripts/github-session';
+    import { currentAccess, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from '../../scripts/github-session';
     import { siteConfig } from '../../scripts/repo-context';
     import { teamLink } from '../../lib/access-view';
     import { isHosted, isHostedSite, teamShareBase } from '../../lib/team-path';
@@ -140,9 +136,6 @@ const onboarding = {
     import { shortName } from '../../lib/home-model';
     import { proposeChangesMode, proposeTeamName } from '../../scripts/roles';
     import { onWorkspaceChange, readWorkspace } from '../../scripts/workspace';
-    import { exploresDemo } from '../../lib/demo';
-    import { loadDemoHome, type DemoHomeData } from '../../scripts/demo-home';
-    import { paintDemoHome } from '../../components/ds/studio/DemoHome';
 
     interface Static extends HomeStatic {
       adoptionDrop: number | null;
@@ -164,7 +157,6 @@ const onboarding = {
     const el = document.querySelector<HTMLElement>('[data-studio-home]')!;
     let root: Root | null = null;
     let data: HomeData | null = null;
-    let demoData: DemoHomeData | null = null;
     let known = false;
     let run = 0;
 
@@ -215,14 +207,6 @@ const onboarding = {
       return stat.contrastFail ? null : { text: 'Library healthy.', tone: 'ok', href: studioHref('quality/'), link: 'Open Quality' };
     }
 
-    // The demo, for a visitor who cannot change it: its own home, read-only (lib/demo.ts).
-    const exploring = () => {
-      const v = currentViewer();
-      if (!known && getToken()) return false;
-      // An email contributor is a member of the team: never a demo visitor.
-      if (!v && currentContributor()) return false;
-      return exploresDemo({ repo: onb.ctx.repo, signedIn: Boolean(v), write: v ? (currentAccess()?.write ?? null) : false });
-    };
     const launcherSlot = document.querySelector<HTMLElement>('[data-team-launcher]');
 
     function paint() {
@@ -230,29 +214,8 @@ const onboarding = {
       const v = currentViewer();
       const signedIn = Boolean(v) || (!known && Boolean(getToken()));
       const d = data;
-      const demo = exploring();
       // A member of this team is already in their Bridge: the launcher is for visitors opening their own team.
-      if (launcherSlot) launcherSlot.hidden = demo || !stat.launcher || (signedIn && Boolean(currentAccess()?.write));
-      if (demo) {
-        root = paintDemoHome(
-          el,
-          {
-            loading: !demoData || demoData.loading,
-            needs: demoData?.needs ?? [],
-            explorations: demoData?.explorations ?? [],
-            health: health(),
-            building: true,
-            failed: demoData?.failed ?? null,
-            lead: demoData?.lead ?? null,
-            role: demoData?.role ?? null,
-            now,
-            components: stat.components,
-            startHrefs: stat.startHrefs,
-          },
-          root,
-        );
-        return;
-      }
+      if (launcherSlot) launcherSlot.hidden = !stat.launcher || (signedIn && Boolean(currentAccess()?.write));
       const steps = onboardingSteps({
         login: v?.login ?? null,
         repo: onb.ctx.repo,
@@ -355,30 +318,13 @@ const onboarding = {
     }
 
     paint();
-    let demoRead = false;
-    const readDemo = () => {
-      if (demoRead) return;
-      demoRead = true;
-      void loadDemoHome(stat, (d) => {
-        demoData = d;
-        paint();
-      });
-    };
     onAccess(() => {
-      if (stepsOpen || exploring()) {
-        if (exploring()) readDemo();
-        paint();
-      }
+      if (stepsOpen) paint();
     });
     initGitHubConnect(() => {
       known = true;
       data = null;
       const mine = ++run;
-      if (exploring()) {
-        readDemo();
-        paint();
-        return;
-      }
       paint();
       void loadHome(stat, (d) => {
         if (mine !== run) return;

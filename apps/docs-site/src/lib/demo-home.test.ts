@@ -53,7 +53,6 @@ describe("the DS lead's queue on the demo", () => {
     ]);
     expect(rows[0]!.person).toMatchObject({ login: '~ann-leroy', avatar: null });
     expect(rows[1]!.person?.login).toBe('leom');
-    expect(rows.every((r) => r.sample)).toBe(true);
   });
 
   it('leaves running explorations and developer work out, by the same rule as every waiting on me list', () => {

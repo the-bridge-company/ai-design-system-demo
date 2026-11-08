@@ -1,7 +1,7 @@
 // The people of this page's team and what an admin does to them, shared by Settings > Members and the Invite
-// collaborators dialog so both show the same list and say the same things. On the sample team every change opens the
-// demo dialog ("This is a sample team.", board D2) and nothing is sent; on a real team each change
-// goes to the invites server (scripts/invites-api.ts), which checks on GitHub that the caller is an admin.
+// collaborators dialog so both show the same list and say the same things. Each change goes to the invites server
+// (scripts/invites-api.ts), which checks on GitHub that the caller is an admin; on the sample team it refuses a visitor
+// in the demo dialog's words (403 `demo`, board D2).
 import { useCallback, useEffect, useState } from 'react';
 import type { MembersData } from '../../../scripts/members';
 import { MEMBERS_WORDS, normalizeChoice, roleLabel, sentSummary, type Member, type PendingInvite, type RoleChoice, type KnownPerson } from '../../../lib/invites';
@@ -93,17 +93,13 @@ export function useTeamPeople(): MembersData | null {
 /** The names of the team's admins, from the members read (people first, by name). */
 export const adminNames = (data: MembersData | null): string[] => (data ? data.members.filter((m) => m.role === 'admin').map((m) => m.name) : []);
 
-/** The demo dialog: the sample team never sends anything. */
-async function demoGate() {
-  const { openMakeItYours } = await import('../../../scripts/demo-gate');
-  await openMakeItYours();
-}
-
 async function api() {
   return import('../../../scripts/invites-api');
 }
 
-function failure(err: unknown, unavailable: string): Notice {
+function failure(err: unknown, unavailable: string): Notice | null {
+  // Refused on a demo team: the demo dialog says why (scripts/invites-api), nothing more to say here.
+  if (err instanceof Error && (err as Error & { code?: string }).code === 'demo') return null;
   if (err instanceof Error && err.name === 'InvitesUnavailable') return { tone: 'info', text: unavailable };
   // A daily cap or a resend too soon is not a mistake: said calmly, with when to try again.
   if (err instanceof Error && (err as Error & { status?: number }).status === 429) return { tone: 'info', text: err.message || MEMBERS_WORDS.limitReached };
@@ -114,11 +110,9 @@ const prNotice = (text: string, pr?: { url: string }): Notice => (pr ? { tone: '
 
 /** The actions on members and invites. Each returns the notice to show, or null when the demo dialog opened. */
 export function memberActions(data: MembersData, update: (fn: (d: MembersData) => MembersData) => void) {
-  const sample = data.context === 'sample';
   const unavailable = MEMBERS_WORDS.unavailable;
 
   async function changeRole(m: Member, next: RoleChoice): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     const c = normalizeChoice(next);
     try {
       const a = await api();
@@ -135,7 +129,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
   }
 
   async function remove(m: Member): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     try {
       const a = await api();
       await (m.via === 'email' ? a.removeEmailMember(data.repo, m.email ?? m.login) : a.removeMember(data.repo, m.login));
@@ -147,7 +140,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
   }
 
   async function resend(p: PendingInvite): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     try {
       const r = await (await api()).resendInvite(data.repo, p.id);
       const next = r.invite;
@@ -159,7 +151,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
   }
 
   async function changeInviteRole(p: PendingInvite, next: RoleChoice): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     const c = normalizeChoice(next);
     try {
       const r = await (await api()).setInviteRole(data.repo, p.id, c);
@@ -172,7 +163,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
   }
 
   async function cancel(p: PendingInvite): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     try {
       await (await api()).cancelInvite(data.repo, p.id);
       update((d) => ({ ...d, pending: d.pending.filter((x) => x.id !== p.id) }));
@@ -184,7 +174,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
 
   /** Sends invites; the emails that did not go out stay in the field (returned in `left`). */
   async function send(emails: string[], choice: RoleChoice, people: readonly KnownPerson[]): Promise<{ notice: Notice | null; left: string[] }> {
-    if (sample) return void (await demoGate()), { notice: null, left: emails };
     try {
       const results = await (await api()).sendInvites(data.repo, normalizeChoice(choice), inviteePeople(emails, people));
       const failed = results.filter((r) => r.status === 'failed');
@@ -204,7 +193,6 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
   }
 
   async function setLead(m: Member, lead: boolean): Promise<Notice | null> {
-    if (sample) return void (await demoGate()), null;
     try {
       const a = await api();
       await a.setEmailMemberLead(data.repo, m.email ?? m.login, lead);

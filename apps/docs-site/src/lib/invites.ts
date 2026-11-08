@@ -22,7 +22,7 @@
 // account itself is admin), so the picker offers Admin only on an organization's repository (roleChoices) and says why.
 
 import { startedWhen, type Owners } from '@bridge-ds/core';
-import { isSampleTeam, sampleMembers } from './demo';
+import { sampleMembers } from './demo';
 import { loginKey, nameFace } from './people';
 
 export type MemberRole = 'view' | 'edit' | 'reviewer' | 'admin';
@@ -351,14 +351,13 @@ export function sentSummary(results: readonly { status: 'sent' | 'added' | 'alre
 // --- Contexts -------------------------------------------------------------------------------------------------
 
 /**
- * Which people a page shows, never mixed: the sample team's (fixed, no GitHub call), a real team's (GitHub and this
- * site's invites), or none at all for the browser workspace, which has no repository yet.
+ * Which people a page shows, never mixed: a team's (GitHub and this site's invites, the sample team's included), or
+ * none at all for the browser workspace, which has no repository yet.
  */
-export type MembersContext = 'sample' | 'real' | 'none';
+export type MembersContext = 'real' | 'none';
 
 export function membersContext(repo: string | null, noRepo: boolean): MembersContext {
-  if (noRepo || !repo) return 'none';
-  return isSampleTeam(repo) ? 'sample' : 'real';
+  return noRepo || !repo ? 'none' : 'real';
 }
 
 /** The words of each state of the Members band and the dialog. */
@@ -416,8 +415,6 @@ export function sampleTeam(lead = 'Dana'): { members: Member[]; pending: Pending
   return { members, pending, people };
 }
 
-/** The sample team's "now", so its pending line always reads the same ("Invited 2 days ago"). */
-export const SAMPLE_NOW = Date.UTC(2026, 9, 22, 9);
 
 
 /**

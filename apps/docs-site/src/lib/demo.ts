@@ -1,14 +1,14 @@
 // The demo: which design systems are the public demo, and the words a visitor reads there. Pure: no DOM, no
 // fetch, covered by demo.test.ts.
 //
-// A visitor without an account (or signed in without write access) explores the demo freely: the Studio home shows
-// the demo's real data read-only (components/ds/studio/DemoHome.tsx). The sample team has one banner and one call to
+// A visitor without an account explores the sample team as its lead (Dana, a read-only email member session,
+// api/_lib/demo-members.ts): every screen runs the code of any team, and the server refuses each write in the
+// sample-team dialog's words (403 `demo`, api/contribute demoWriteRefusal). The sample team has one banner and one call to
 // action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Approve can be tried and shows
 // its result without writing anything; edits stay in this browser as drafts for the visit (scripts/demo-drafts.ts);
 // every other action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
 // scripts/demo-gate.ts). Someone who can write to the demo repository (its owner) keeps the normal Studio.
 
-import type { Owners } from '@bridge-ds/core';
 import { isBotLogin, isClaudeLogin } from './people.js';
 import { canonicalRepo, isTeamKey } from './team-path.js';
 
@@ -82,16 +82,15 @@ export const humanizeRepo = (repo: string): string => {
 
 /**
  * The one name a team goes by everywhere it is named (the team chip and its menu, recent teams, the Library, Settings,
- * the invite page and email): the sample team is always Acme Design; otherwise bridge.config.json `name` when the
- * team set one (`config`, its settings once read), else Bridge for Bridge's own design system, else the repository
- * name in words ("Design system", never "acme/design-system").
+ * the invite page and email): bridge.config.json `name` when the team set one (`config`, its settings once read; the
+ * sample team's names it Acme Design), else Bridge for Bridge's own design system, else the repository name in words
+ * ("Design system", never "acme/design-system").
  */
 export const teamDisplayName = (repo: string, config?: { name?: unknown } | null): string => {
-  if (isSampleTeam(repo)) return SAMPLE_TEAM;
   const own = typeof config?.name === 'string' ? config.name.trim().replace(/\s+/g, ' ') : '';
   if (own) return own;
   if (isTeamKey(repo)) return 'Your team';
-  if (isDemoRepo(repo)) return OWN_TEAM;
+  if (isDemoRepo(repo) && !isSampleTeam(repo)) return OWN_TEAM;
   return humanizeRepo(repo);
 };
 
@@ -380,28 +379,3 @@ export function personaOn(repo: string | null | undefined, login: string | null 
 /** A name to show for a login: the persona's on the sample team, else `real` (the name the caller already had). */
 export const nameOn = (repo: string | null | undefined, login: string | null | undefined, real: string, seat: SampleSeat = 'lead', lead?: string): string => personaOn(repo, login, seat, lead)?.name ?? real;
 
-// ---------------------------------------------------------------------------------------------------------------
-// Settings on the sample team
-
-/** Who the demo's Settings name: the persona (bridge.config.json "demo"), else the role the demo always tells. */
-export const demoLeadName = (persona: { viewer?: string } | null | undefined): string => persona?.viewer?.trim() || 'Your design system lead';
-
-/**
- * The people of the sample team's Settings (components/ds/studio/TeamSettings.tsx): the same people as its Members
- * (`team`: lib/invites.ts sampleTeam, the one source, passed in so this module imports nothing the /api functions
- * would load), never the repository's real accounts. The design owners are the members
- * who review design (Dana, the visitor's seat, and Ann), the tech owners those who review tech (Malik), by their sample
- * logins (~dana...) so each face matches Members. The rules themselves (which group holds each right, the exception
- * on or off, its written reason) stay the repository's. The exception, owners only, names the lead (a design owner).
- * More than one owner: no only-owner line.
- */
-export function demoSettingsPeople(
-  site: { demo?: { viewer?: string } | undefined },
-  team: (lead: string) => { members: readonly { login: string; name: string; reviews: readonly string[] }[] },
-): { lead: string; owners: Owners; nameOf: (login: string) => string } {
-  const lead = demoLeadName(site.demo);
-  const { members } = team(lead);
-  const group = (g: 'design' | 'tech') => members.filter((m) => m.reviews.includes(g)).map((m) => m.login);
-  const names = new Map(members.map((m) => [m.login.toLowerCase(), m.name]));
-  return { lead, owners: { design: group('design'), tech: group('tech') }, nameOf: (login) => names.get(login.trim().toLowerCase()) ?? lead };
-}

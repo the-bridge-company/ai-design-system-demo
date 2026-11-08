@@ -201,8 +201,6 @@ export interface NeedRow {
   number?: number;
   /** The viewer is the only person who can review it. */
   onlyReviewer?: boolean;
-  /** Sample data of the demo: the row says so ("Sample"), so a visitor never takes it for real work. */
-  sample?: boolean;
   /** The verb on its button when it is not the kind's (rowAction): "Update" on a branch a reviewer sent back. */
   action?: string;
   /** A second muted line ("jordan.lee@acme.com · joins as Can edit"). */

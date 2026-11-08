@@ -106,7 +106,7 @@ export function DeleteTeamRow({ team, name }: DeleteTeamRowProps) {
   );
 }
 
-/** The team shell's Danger zone: only for an admin of a real team (never the sample team or a visitor). */
+/** The team shell's Danger zone: only for an admin of the team (the server refuses the sample team's visitor). */
 export default function DeleteTeamBand({ layout = 'shell' }: { layout?: 'shell' | 'site' }) {
   const people = useTeamPeople();
   if (!people || people.context !== 'real' || !people.canManage) return null;

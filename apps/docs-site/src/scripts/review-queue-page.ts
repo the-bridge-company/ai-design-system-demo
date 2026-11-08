@@ -19,11 +19,9 @@ import { Badge, Button, Card, CardBody, EmptyState, Progress, Select, Skeleton, 
 import { Inbox } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
 import { QueueBar, QueueList, QueueToasts } from '../components/ds/studio/ReviewQueue';
-import { currentAccess, currentViewer, initGitHubConnect, prefersSignIn, readRepo } from './github-session';
+import { currentViewer, initGitHubConnect, prefersSignIn, readRepo } from './github-session';
 import { joinHandlers } from './join-handlers';
 import { viewerRole } from './needs-you';
-import { loadDemoHome } from './demo-home';
-import { exploresDemo } from '../lib/demo';
 import { ENTRY_WORDS } from '../lib/entry';
 import { setReviewCount } from './shell';
 import { loadHome, type HomeStatic } from './home-data';
@@ -35,15 +33,6 @@ import { reviewLink } from '../lib/review-page';
 import { ghAction, ghButton } from '../lib/gh-wording';
 import type { NeedKind, NeedRow } from '../lib/home-model';
 import { studioHref } from '../lib/team-path';
-import { demoApproved, isSampleTeam } from '../lib/demo';
-import { rememberDemoApproval } from './demo-approvals';
-import { repoContext } from './repo-context';
-
-/** The sample team (lib/demo.ts): Approve is tried, nothing is sent; the rest opens the demo dialog. */
-const onSampleTeam = () => {
-  const r = repoContext();
-  return isSampleTeam(`${r.owner}/${r.repo}`) && !currentViewer();
-};
 
 /** The link of a row that does not open a branch review, by kind. */
 const OPEN_LABEL: Record<NeedKind, string> = {
@@ -250,9 +239,7 @@ export function initReviewQueue() {
     if (!row) return;
     outcomes.set(row.key, outcome);
     decided.set(row.key, row);
-    // In the lead's seat on the sample team, the badge counts the guidance drafts too, as its home line and Waiting on
-    // me do (lib/demo-home leadWaitingCount).
-    setReviewCount(rows.filter((r) => (r.kind === 'review' || (onSampleTeam() && r.kind === 'guidance')) && !outcomes.has(r.key)).length);
+    setReviewCount(rows.filter((r) => r.kind === 'review' && !outcomes.has(r.key)).length);
     return { i, row };
   }
 
@@ -261,13 +248,6 @@ export function initReviewQueue() {
     const n = opened;
     const d = decide('approved');
     if (!d) return;
-    // The sample team: the approved state and what happens next, nothing sent.
-    if (onSampleTeam()) {
-      const w = demoApproved(d.row.person?.name ?? null, detail.dataset.codeNext || null, detail.hasAttribute('data-values-only'));
-      // Once Undo has passed, the visit remembers it: the home and the branch say Approved too (scripts/demo-approvals.ts).
-      later(d, async () => rememberDemoApproval(n), `${w.next} ${w.note}`);
-      return;
-    }
     later(d, () => approveBranch(n, text));
   }
 
@@ -312,11 +292,6 @@ export function initReviewQueue() {
 
   async function act(kind: 'suggest' | 'ask', text = '') {
     if (busy || !opened) return;
-    if (onSampleTeam()) {
-      const { openMakeItYours } = await import('./demo-gate');
-      await openMakeItYours();
-      return;
-    }
     const n = opened;
     busy = kind;
     said = '';
@@ -384,16 +359,6 @@ export function initReviewQueue() {
 
   function emptyState() {
     const signIn = prefersSignIn();
-    // The sample team: no GitHub sign-in here, the banner's "Get started" is its one way in. Home lists what waits.
-    if (onSampleTeam())
-      return h(EmptyState, {
-        icon: Inbox,
-        size: 'lg',
-        headingLevel: 2,
-        title: 'Nothing to review here.',
-        description: failed ?? 'Home lists the changes waiting on the lead of this sample team.',
-        actions: h(ButtonLink, { variant: 'primary', href: studioHref() }, 'Back to Home'),
-      });
     return h(EmptyState, {
       icon: Inbox,
       size: 'lg',
@@ -593,24 +558,6 @@ export function initReviewQueue() {
     failed = null;
     signedIn = Boolean(login ?? currentViewer());
     paint();
-    // The demo, for a visitor who cannot change it: the lead's queue, the same rows as its home (lib/waiting-on),
-    // read-only. "Review all" on the home always lands here.
-    const { owner, repo } = readRepo();
-    if (exploresDemo({ repo: `${owner}/${repo}`, signedIn: Boolean(login), write: login ? (currentAccess()?.write ?? null) : false })) {
-      signedIn = false;
-      void loadDemoHome(stat, (d) => {
-        if (mine !== run) return;
-        failed = d.failed;
-        loading = d.loading;
-        rows = d.needs;
-        if (!loading && rows.length && !rowOf(selected) && !(selected && (branchNumber(null, selected) || suggestionOfKey(selected)))) {
-          show(rows[0]!.key);
-          return;
-        }
-        paint();
-      });
-      return;
-    }
     void loadHome(stat, (d) => {
       if (mine !== run) return;
       signedIn = Boolean(d.viewer);

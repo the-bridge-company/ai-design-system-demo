@@ -79,11 +79,11 @@ export const connectUrl = (host: PreviewHost, repo: string | null): string =>
 export const codeOf = (p: ProductConfig, library: string | null): string | null => p.design?.repo ?? p.repo ?? library;
 
 /**
- * Who sees the step: an admin of the team (connecting a host is theirs), on a real team, for a product of the team
- * (never the library), with no previews yet. Everybody else: nothing, not even a hint.
+ * Who sees the step: an admin of the team (connecting a host is theirs), for a product of the team (never the
+ * library), with no previews yet. Everybody else: nothing, not even a hint.
  */
-export function showsPreviewsStep(x: { admin: boolean; sample: boolean; product: ProductConfig | null; previews?: PreviewsLike | null }): boolean {
-  return Boolean(x.admin && !x.sample && x.product && !x.product.default && !hasPreviews(x.product, x.previews));
+export function showsPreviewsStep(x: { admin: boolean; product: ProductConfig | null; previews?: PreviewsLike | null }): boolean {
+  return Boolean(x.admin && x.product && !x.product.default && !hasPreviews(x.product, x.previews));
 }
 
 /** An admin, as the step reads the viewer's access: a GitHub admin of the team's code, or an admin of the team in Bridge. */

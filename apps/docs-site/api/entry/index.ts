@@ -155,7 +155,8 @@ import {
   teamsForDomain,
 } from '../_lib/teams.js';
 import { acceptInviteForGithub, githubApp as invitesApp, inviteStoreOn, maskEmail, repoKey as invitesKey, type InviteStore, type StoredInvite } from '../invites/index.js';
-import { teamDisplayName } from '../../src/lib/demo.js';
+import { demoDialog, teamDisplayName } from '../../src/lib/demo.js';
+import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { parseAiTools } from '../../src/lib/ai-tools.js';
 import { isTeamKey, STUDIO_ROOT, teamHref as studioTeamHref, teamKeyId, teamKeyOf } from '../../src/lib/team-path.js';
 
@@ -1339,6 +1340,10 @@ export async function handleEntry(req: Request, env: EntryEnv, deps: EntryDeps):
       const body = await readBody(req, MAX_BODY);
       // The one action without the cookie: what an invite link is, before signing in.
       if (body.action === 'invite-link') return await onInviteLink(ctx, req, a, body);
+      // The sample team's visitor (no account; they read it as its lead through api/contribute): refused in the demo
+      // dialog's words, as api/contribute demoWriteRefusal refuses their writes there.
+      const named = body.team ?? body.repo;
+      if (!a && typeof named === 'string' && demoVisitorEmail(named)) return fail(403, 'demo', demoDialog(named).lead);
       if (!a) return fail(401, 'signin', SIGNIN);
       return await onAction(ctx, req, a, body);
     }

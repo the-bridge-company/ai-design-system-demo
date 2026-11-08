@@ -7,7 +7,7 @@
 
 import { CONTRIBUTE_WORDS } from './contribute';
 import type { ChangesMode, RepoAccessState } from '@bridge-ds/core';
-import { isDemoRepo, isSampleTeam, SAMPLE_TEAM, teamDisplayName } from './demo';
+import { isDemoRepo, isSampleTeam, teamDisplayName } from './demo';
 
 import { appSlugFrom, DIRECT_APP_SLUG } from './github-signin';
 import { canonicalOwner, canonicalRepo } from './team-path';
@@ -373,10 +373,8 @@ export const isDemoTeam = (team: string | null | undefined, _hosted?: boolean) =
 
 /** What the team chip shows: the design system being viewed, and what the visitor can do on it. */
 export interface ChipIdentity {
-  /** demo: a friendly name (Bridge's own with the Bridge mark, Acme Design with its initials); team: the owner's avatar and the team's name. */
+  /** demo: Bridge's own design system, with the Bridge mark; team: the owner's avatar and the team's name. */
   kind: 'demo' | 'team';
-  /** The simulated team with sample data (Acme Design): its initials instead of the Bridge mark. */
-  sample?: boolean;
   /** The name on the chip. */
   name: string;
   /** The full name, in the tooltip. */
@@ -387,17 +385,13 @@ export interface ChipIdentity {
 /**
  * The chip of `team` ("owner/repo", null while unknown), named by teamDisplayName (lib/demo.ts): the team's own name
  * from bridge.config.json (`name`, once its settings are read), else its repository name in words; owner/repo stays in
- * the tooltip. The sample team reads "Acme Design" with a "Demo" tag for everyone: it is a simulated team, whatever
- * access the viewer has on its repository. Bridge's own design system reads "Bridge": a visitor without an account
- * explores freely (nothing they do reaches the repository), signed in it shows their real access like any team.
+ * the tooltip. The sample team is a team like any other (its name from its settings, the viewer's role). Bridge's own
+ * design system reads "Bridge": a visitor without an account explores freely (nothing they do reaches the repository),
+ * signed in it shows their real access like any team.
  */
 export function chipIdentity(team: string | null, f: { demo: boolean; state: RepoAccessState | null; signedIn: boolean; name?: string | null }): ChipIdentity {
-  if (f.demo && isSampleTeam(team)) {
-    // A designer never reads the repository on a sample: only a real team's title names it (where it helps tell two apart).
-    return { kind: 'demo', sample: true, name: SAMPLE_TEAM, title: `${SAMPLE_TEAM}, a sample team`, badge: { label: 'Demo', tone: 'info' } };
-  }
   const name = team ? teamDisplayName(team, { name: f.name }) : null;
-  if (f.demo) {
+  if (f.demo && !isSampleTeam(team)) {
     return {
       kind: 'demo',
       name: name ?? teamDisplayName(DEMO_TEAM),
@@ -408,10 +402,9 @@ export function chipIdentity(team: string | null, f: { demo: boolean; state: Rep
   return { kind: 'team', name: name ?? 'Your team', title: team ? `${name}, ${team}` : 'Your team', badge: accessBadge(f.state, f.signedIn) };
 }
 
-/** One sentence for Settings: what the viewer can do here. On the sample team (`demo`), a signed-out visitor explores freely. */
-export function accessSummary(state: RepoAccessState | null, f: { login?: string | null; repo: string; demo?: boolean; name?: string | null }): string {
+/** One sentence for Settings: what the viewer can do here. */
+export function accessSummary(state: RepoAccessState | null, f: { login?: string | null; repo: string; name?: string | null }): string {
   const team = teamDisplayName(f.repo, { name: f.name });
-  if (!state && !f.login && f.demo) return "You're exploring the demo with sample data. Nothing you do here is saved.";
   if (!state) return f.login ? `Checking what ${who(f.login)} can do on ${team}.` : `Sign in with GitHub to see what you can do on ${team}.`;
   switch (state) {
     case 'admin':

@@ -1,12 +1,11 @@
 // The team chip at the top of the Studio side nav (multi-team plan 7.1): the design system you are looking at, not your
 // account. The owner's avatar, the team's name (lib/demo.ts teamDisplayName: bridge.config.json `name` once read, else
-// the repository name in words; owner/repo in its title on a real team, never on a sample) and what you can do on it as a badge ("Can edit", "Can suggest",
+// the repository name in words; owner/repo in its title) and what you can do on it as a badge ("Can edit", "Can suggest",
 // "Guest"), then a chevron. On Bridge's own design system (the self-hosted site's own repository) it shows the Bridge
-// mark and "Bridge" instead of the owner's photo, and a visitor without an account reads "Explore freely". On the
-// sample team it reads "Acme Design" with its initials and a "Demo" tag (lib/demo.ts). It is the nav's
-// first focus stop and a full-width target. The name stays on one line (ellipsis, the full name in its title). Its
-// menu: Invite collaborators (signed in, the main action; it opens InviteDialog over the page, and on the sample team it is
-// there for everyone, with its sample people) or Sign in with GitHub (signed out), then on the hosted site the teams opened in this browser (max 5) and "Create a new team" (secondary, muted),
+// mark and "Bridge" instead of the owner's photo, and a visitor without an account reads "Explore freely". The sample
+// team reads like any team. It is the nav's first focus stop and a full-width target. The name stays on one line (ellipsis, the full name in its title). Its
+// menu: Invite collaborators (signed in, the main action; it opens InviteDialog over the page) or Sign in with GitHub
+// (signed out), then on the hosted site the teams opened in this browser (max 5) and "Create a new team" (secondary, muted),
 // which opens a dialog over the page (NewTeamDialog.tsx) to connect another design system: the person keeps their
 // place. Who you are stays at the bottom of the nav (components/GitHubAccount.astro): proximity keeps the team at the
 // top and the account at the bottom.
@@ -73,7 +72,7 @@ function TeamItem({ mark, title, line, role, href, current }: { mark: ReactEleme
 }
 
 /** The sample team's mark: its initials, like any team without a photo. */
-const SampleMark = ({ size = 'xs' }: { size?: 'xs' | 'sm' }) => <Avatar name={MENU_WORDS.demo} size={size} decorative className={size === 'sm' ? 'tc-avatar' : undefined} />;
+const SampleMark = () => <Avatar name={MENU_WORDS.demo} size="xs" decorative />;
 
 const DemoMark = () => (
   <span className="tc-mark" aria-hidden="true">
@@ -254,7 +253,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     if (!offerTeams) return [];
     const rows: TeamRow[] = [];
     if (chip.kind === 'workspace') rows.push({ key: wsTeam?.repo ?? 'ws', mark: wsMark, title: wsName, line: wsLine, ...(wsTeam ? { role: roleWord(wsTeam.role) } : {}), href: WORKSPACE_HOME, current: true });
-    const here = chip.kind !== 'workspace' && name && !isSampleTeam(name) ? name : null;
+    const here = chip.kind !== 'workspace' && name ? name : null;
     const mine = (t: string) => account?.teams.find((x) => x.repo.toLowerCase() === t.toLowerCase());
     const here_ = here ? mine(here) : undefined;
     const role = memberRole(shownAccess, roleSignedIn, reviewer) ?? (here_ ? roleWord(here_.role) : null);
@@ -295,8 +294,8 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   // recent teams, then "Create a new team" once signed in (signed out it comes first among the actions).
   const blocks: { key: string; node: ReactNode }[] = [];
   // The sample team never sits between real teams: a member signed in to Bridge finds it in the account menu
-  // (AccountMenu.tsx, "Try it · Acme Design"); a visitor without an account keeps it here.
-  const tryIt = offerTeams && chip.kind !== 'demo' && !account;
+  // (AccountMenu.tsx, "Try it · Acme Design"); a visitor without an account keeps it here, except on it.
+  const tryIt = offerTeams && chip.kind !== 'demo' && !account && !isSampleTeam(name);
   const teams = (
     <>
       {yours.length > 0 && (
@@ -314,10 +313,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     </>
   );
   if (yours.length > 0 || tryIt) blocks.push({ key: 'teams', node: teams });
-  // Invite collaborators opens the dialog over the page (board I1). The sample team shows it to everyone, with its
-  // sample people: sending opens the demo dialog. The browser workspace alone has nobody to invite yet; a team made in
-  // Bridge (no repository yet) has members: the item opens its Settings, Members, where its invites are sent.
-  const sample = chip.kind === 'demo' && Boolean(chip.sample) && isSampleTeam(name);
+  // Invite collaborators opens the dialog over the page (board I1). The browser workspace alone has nobody to invite
+  // yet; a team made in Bridge (no repository yet) has members: the item opens its Settings, Members, where its invites
+  // are sent.
   const wsTeamId = wsTeam ? teamKeyId(wsTeam.repo) : null;
   const inviteItem = (
     <MenuItem
@@ -337,7 +335,6 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
       key: 'actions',
       node: (
         <>
-          {sample && inviteItem}
           {/* Signed out the next steps come first: start a team of your own, or sign in to do more here. */}
           {offerTeams && createItem}
           {/* With a GitHub App, the one sign-in screen of Bridge (back here afterwards); else the token dialog. */}
@@ -393,9 +390,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
         <MenuTrigger
           render={<Button variant="ghost" fullWidth className="tc-trigger" />}
         >
-          {chip.kind === 'demo' && chip.sample ? (
-            <SampleMark size="sm" />
-          ) : chip.kind === 'demo' ? (
+          {chip.kind === 'demo' ? (
             <DemoMark />
           ) : chip.kind === 'workspace' ? (
             <Avatar name={wsTeam ? wsName : (viewerName ?? 'Workspace')} size="sm" decorative className="tc-avatar" />

@@ -13,7 +13,6 @@ import { loadTeamData, onTeamProgress, resetTeamData, teamOfPage, type TeamData 
 import { LoadProgress } from './LoadProgress';
 import { TEAM_PROGRESS_START, teamProgressView, type TeamProgress } from '../../../lib/load-progress';
 import { commitUrl, SNAPSHOT_TEMPLATE_URL, sourceLine, teamFailure, type TeamFailure } from '../../../lib/team-load';
-import { isDemoRepo } from '../../../lib/demo';
 import { signedInWithGitHub } from '../../../scripts/github-session';
 import { BusyNotice, useBusyRetry } from './BusyNotice';
 
@@ -59,12 +58,11 @@ export function useTeamData(): { load: TeamLoad; retry: () => void } {
 
 /**
  * "Read at a1b2c3d on main, from the Bridge snapshot." with the commit linked, and Refresh at the end. Only for a viewer
- * signed in with GitHub: commits mean nothing to a designer (an email member, a guest), and never on a demo team, whose
- * banner already says the data is a sample.
+ * signed in with GitHub: commits mean nothing to a designer (an email member, a guest, the sample team's visitor).
  */
 export function TeamSourceNote({ data, refreshing, onRefresh }: { data: TeamData; refreshing: boolean; onRefresh: () => void }) {
   const github = useGitHubSignIn();
-  if (!github || isDemoRepo(`${data.owner}/${data.repo}`)) return null;
+  if (!github) return null;
   const line = sourceLine({ sha: data.sha, branch: data.defaultBranch, source: data.source });
   const sha = data.sha.slice(0, 7);
   const [before, after] = line.split(sha) as [string, string];

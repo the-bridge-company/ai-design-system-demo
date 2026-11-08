@@ -6,7 +6,6 @@
 // Two audiences: contributors sign in with GitHub and are invited from Members (Can edit, Reviewer, Admin); readers,
 // the whole company, need no GitHub account and are let in here.
 
-import { isSampleTeam } from './demo';
 
 export type LibraryMode = 'anyone' | 'email' | 'team';
 
@@ -128,16 +127,12 @@ export function wrongDomainWords(domains: readonly string[]): string {
 
 // --- Contexts --------------------------------------------------------------------------------------------------
 
-/** Which Settings data a page shows: the sample team's (fixed, no call), a real team's, or none (no repository). */
-export type AccessContext = 'sample' | 'real' | 'none';
+/** Which Settings data a page shows: a team's (the sample team's included), or none (no repository). */
+export type AccessContext = 'real' | 'none';
 
 export function accessContext(repo: string | null, noRepo: boolean): AccessContext {
-  if (noRepo || !repo) return 'none';
-  return isSampleTeam(repo) ? 'sample' : 'real';
+  return noRepo || !repo ? 'none' : 'real';
 }
-
-/** Acme Design's sample setting: opened to its company's work emails, to show the choice (board-free, sample data). */
-export const SAMPLE_SETTING: AccessSetting = { mode: 'email', domains: ['acme.design'] };
 
 // --- The Library gate ------------------------------------------------------------------------------------------
 
@@ -154,13 +149,13 @@ export interface AccessAnswer {
  *   open-bridge  the Library, its published snapshot served by this site after the access check (private repository)
  *   email        "Enter your work email"
  *   team         "This library is open to its team", with Sign in with GitHub
- * The sample team and a site without the feature always open as before. A visitor signed in with GitHub reads with
+ * A site without the feature always opens as before. A visitor signed in with GitHub reads with
  * their own access, as before; if GitHub refuses them, the page falls back to the email gate (LibraryState).
  */
 export type GateKind = 'open' | 'open-bridge' | 'email' | 'team';
 
-export function libraryGate(x: { sample: boolean; github: boolean; answer: AccessAnswer | null }): GateKind {
-  if (x.sample || !x.answer?.available || !x.answer.setting) return 'open';
+export function libraryGate(x: { github: boolean; answer: AccessAnswer | null }): GateKind {
+  if (!x.answer?.available || !x.answer.setting) return 'open';
   if (x.github) return 'open';
   const s = x.answer.setting;
   const served = s.source === 'bridge';

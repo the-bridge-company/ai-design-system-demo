@@ -1,8 +1,8 @@
 // The home's first-visit tour: one DS Popover per step, anchored under what the step points at, "N of M", Skip tour
 // and Next (Done on the last). On a narrow screen (a phone) a floating popover has nowhere to go but over the cards it
 // talks about, so the step is a DS Card in the page flow instead, where the anchor sits: it moves the cards down and
-// covers none of them (tourPlacement). Remembered in this browser once finished. Two tours use it: the demo's, from the DS
-// lead's seat (DemoHome.tsx, lib/demo.ts demoTour), and the contributor's, for someone without a review right
+// covers none of them (tourPlacement). Remembered in this browser once finished. Two tours use it: the lead's
+// (StudioHome.tsx, lib/demo.ts demoTour), and the contributor's, for someone without a review right
 // (StudioHome.tsx, lib/home-model.ts contributorTour). A floating step steps aside while a dialog is open (Add a product,
 // Start an exploration, Account...) and comes back, at the same step, once it closes (useDialogOpen).
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';

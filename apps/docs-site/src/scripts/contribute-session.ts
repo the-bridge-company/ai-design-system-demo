@@ -129,7 +129,10 @@ export function forgetContributors() {
 
 /** The server's one refusal of a write on a demo team (api/contribute demoWriteRefusal): the demo dialog says why. */
 export const DEMO_REFUSAL = 'demo';
-const openDemoDialog = () => void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours()).catch(() => undefined);
+/** `action`: the action refused ("set-pm"), for the dialog's line; else what the visitor clicked. */
+const openDemoDialog = (action?: unknown) => void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours(typeof action === 'string' ? action : null)).catch(() => undefined);
+/** The `action` of a request body, when it has one. */
+const actionOf = (body: unknown): unknown => (body && typeof body === 'object' ? (body as { action?: unknown }).action : undefined);
 
 async function call<T>(method: 'GET' | 'POST', query: string, body?: unknown, extra: Record<string, string> = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', ...extra };
@@ -148,7 +151,7 @@ async function call<T>(method: 'GET' | 'POST', query: string, body?: unknown, ex
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (res.status === 503) throw new ContributeUnavailable();
   if (!res.ok) {
-    if (data.error === DEMO_REFUSAL) openDemoDialog();
+    if (data.error === DEMO_REFUSAL) openDemoDialog(actionOf(body));
     const message = typeof data.message === 'string' && data.message ? data.message : 'Something went wrong. Try again in a minute.';
     throw new ContributeError(message, typeof data.error === 'string' ? data.error : 'failed', res.status);
   }

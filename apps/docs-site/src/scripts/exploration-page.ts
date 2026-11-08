@@ -597,7 +597,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const lines = pageLines({ number: r.number, name: r.name, productName: product.name, product: own?.product.key, repo: own?.repo });
   // "Send to Figma": for who can edit, only when the team has a Figma file (Bridge's rule: a fact goes to who can act on it).
   const figmaLine = (status: string) =>
-    canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write })
+    canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write, visitor: Boolean(member?.visitor) })
       ? figmaLines({ number: r.number, name: r.name, product: own?.product.key, repo: own?.repo })
       : null;
   // "Reopen as a new exploration": a new one from this one's work, named after it. This one stays as it ended.

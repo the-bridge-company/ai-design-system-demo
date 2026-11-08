@@ -242,8 +242,9 @@ export function ToolPanel({ tools, tab, setTab, chosen, lines, setup, onCopy, sa
  * The tool's button. The Claude app opens Claude (the connector gate first while the viewer's Claude has no Bridge);
  * the terminal and Copilot copy the line and say where to paste it.
  */
-export function ToolAction({ tool, line, onCopy, say, variant, claudeLink, connectorAddress, onClaudeConnected, children, size = 'lg' }: { tool: AiTool; line: string; onCopy: (text: string) => Promise<void>; say: (s: string) => void; variant: 'primary' | 'secondary' | 'ghost'; claudeLink?: ClaudeLink; connectorAddress?: string; onClaudeConnected?: () => void; children?: string; size?: 'md' | 'lg' }) {
+export function ToolAction({ tool, line, onCopy, say, variant, claudeLink, connectorAddress, onClaudeConnected, children, size = 'lg', demoWrite }: { tool: AiTool; line: string; onCopy: (text: string) => Promise<void>; say: (s: string) => void; variant: 'primary' | 'secondary' | 'ghost'; claudeLink?: ClaudeLink; connectorAddress?: string; onClaudeConnected?: () => void; children?: string; size?: 'md' | 'lg'; /** The demo gate's mark ([data-demo-write]): on the demo, a click opens its dialog instead. */ demoWrite?: string }) {
   const [asking, setAsking] = useState(false);
+  const mark = demoWrite ? { 'data-demo-write': demoWrite } : {};
   const label = children ?? ACTION_LABEL[tool];
   const open = tool === 'claude-app';
   const copy = () => onCopy(line).then(() => !open && say(TOOL_SAID[tool].copied), () => !open && say(COPY_FAILED));
@@ -251,7 +252,7 @@ export function ToolAction({ tool, line, onCopy, say, variant, claudeLink, conne
   if (open && claudeLink === 'no')
     return (
       <>
-        <Button variant={variant} size={size} className="xp-continue" aria-haspopup="dialog" onClick={() => setAsking(true)}>
+        <Button variant={variant} size={size} className="xp-continue" aria-haspopup="dialog" {...mark} onClick={() => setAsking(true)}>
           {glyph}
           {label}
         </Button>
@@ -271,7 +272,7 @@ export function ToolAction({ tool, line, onCopy, say, variant, claudeLink, conne
     );
   if (!open)
     return (
-      <Button variant={variant} size={size} className="xp-continue" iconStart={tool === 'copilot' ? CopyIcon : undefined} onClick={() => void copy()}>
+      <Button variant={variant} size={size} className="xp-continue" iconStart={tool === 'copilot' ? CopyIcon : undefined} {...mark} onClick={() => void copy()}>
         {glyph}
         {label}
       </Button>
@@ -282,6 +283,7 @@ export function ToolAction({ tool, line, onCopy, say, variant, claudeLink, conne
       size={size}
       className="xp-continue"
       render={<a href={claudeNewUrl(line)} target="_blank" rel="noopener" />}
+      {...mark}
       onClick={() => {
         void copy();
         say(TOOL_SAID['claude-app'].opened!);

@@ -148,10 +148,13 @@ export const pageLines = continueLines;
 /**
  * Who gets "Send to Figma": the team has a Figma file and the viewer can edit (a fact shows only to who can act on it):
  * a member who joined with their email unless they only view, a designer Bridge writes for, a reviewer, or GitHub write
- * access. Never on an archived exploration or a shipped or closed one.
+ * access. Never on an archived exploration or a shipped or closed one. The sample team's visitor (`visitor`) sees it
+ * without a Figma file, so the demo shows the whole product; a click opens the demo dialog (data-demo-write).
  */
-export function canPutInFigma(v: { figmaFile: string | null | undefined; archived: boolean; status: string; memberRole: string | null | undefined; designer: boolean; reviewer: boolean; write: boolean | null | undefined }): boolean {
-  if (!v.figmaFile?.trim() || v.archived || v.status === 'shipped' || v.status === 'closed') return false;
+export function canPutInFigma(v: { figmaFile: string | null | undefined; archived: boolean; status: string; memberRole: string | null | undefined; designer: boolean; reviewer: boolean; write: boolean | null | undefined; visitor?: boolean }): boolean {
+  if (v.archived || v.status === 'shipped' || v.status === 'closed') return false;
+  if (v.visitor) return true;
+  if (!v.figmaFile?.trim()) return false;
   if (v.memberRole) return v.memberRole !== 'view';
   return v.designer || v.reviewer || v.write === true;
 }

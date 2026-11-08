@@ -407,6 +407,14 @@ describe('canPutInFigma', () => {
     expect(canPutInFigma({ ...v, status: 'closed' })).toBe(false);
     expect(canPutInFigma({ ...v, status: 'ready' })).toBe(true);
   });
+  it("the sample team's visitor sees it without a Figma file (the demo shows the whole product); a real team without one never does", () => {
+    const visitor = { ...v, figmaFile: null, write: null, memberRole: 'admin', visitor: true };
+    expect(canPutInFigma(visitor)).toBe(true);
+    expect(canPutInFigma({ ...visitor, visitor: false })).toBe(false);
+    expect(canPutInFigma({ ...v, figmaFile: null, memberRole: 'admin' })).toBe(false);
+    expect(canPutInFigma({ ...visitor, archived: true })).toBe(false);
+    expect(canPutInFigma({ ...visitor, status: 'shipped' })).toBe(false);
+  });
 });
 
 describe('waiting for the design lead', () => {

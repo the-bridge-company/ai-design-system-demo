@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { looksLikeAWall, oidcToken } from './private-shots.mjs';
+import { looksLikeAWall, migrationReport, oidcToken } from './private-shots.mjs';
+
+describe('the one-off move of the screenshots out of Redis', () => {
+  it('prints what moved and what it freed', () => {
+    expect(migrationReport({ dryRun: false, keys: 3, moved: 2, inStore: 1, redisBytesFreed: 204800, orphansDeleted: 1, orphanBytes: 51200 })).toBe(
+      ['Migration done.', '- 3 capture(s) indexed in Redis, 1 already in the Blob store', '- 2 image(s) moved to the Blob store, 200 KB of Redis freed', '- 1 stored image(s) no capture names deleted (50 KB)'].join('\n'),
+    );
+    expect(migrationReport({ dryRun: true, keys: 0, moved: 0, inStore: 0, redisBytesFreed: 0, orphansDeleted: 0, orphanBytes: 0 })).toMatch(/^Dry run: nothing changed\./);
+  });
+});
 
 describe('private shots runner', () => {
   it('never keeps a sign-in page', () => {

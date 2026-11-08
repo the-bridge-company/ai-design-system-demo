@@ -121,6 +121,8 @@ export async function putRequest(redis: Redis, r: JoinRequest, now: number): Pro
   await redis.pipe([
     ['SET', requestKey(r.repo, r.email), JSON.stringify(r), 'EX', ttl],
     ['ZADD', requestsKey(r.repo), Date.parse(r.expiresAt), canonicalEmail(r.email)],
+    // The list goes with its last request (it was kept forever, pruned only on read).
+    ['EXPIRE', requestsKey(r.repo), Math.ceil(JOIN_REQUEST_TTL_MS / 1000) + 60],
     ['SADD', myRequestsKey(r.email), lc(r.repo)],
     // Twice a request's life: a request that ran out unanswered can still say "Your request expired, ask again".
     ['EXPIRE', myRequestsKey(r.email), Math.ceil((2 * JOIN_REQUEST_TTL_MS) / 1000)],

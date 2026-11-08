@@ -140,7 +140,7 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
 import { demoDialog } from '../../src/lib/demo.js';
-import { putShot, shotImage, shotMeta, shotsTodo, workflowClaims, type ShotsCtx } from '../_lib/private-shots.js';
+import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, workflowClaims, type ShotsCtx, type ShotStore } from '../_lib/private-shots.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
 import { branchKey, issueKey, mineItems, mineKey } from '../_lib/former-member.js';
@@ -218,6 +218,8 @@ export interface ContribEnv {
   /** Notifications through Brevo (api/_lib/notify.ts); without the key they are kept, not sent. */
   BREVO_API_KEY?: string | undefined;
   NOTIFY_FROM?: string | undefined;
+  /** Bridge's private Vercel Blob store: the images of the private shots (api/_lib/private-shots.ts). */
+  BLOB_READ_WRITE_TOKEN?: string | undefined;
 }
 
 export interface ContribDeps {
@@ -233,6 +235,8 @@ export interface ContribDeps {
   app?: AppTokens;
   /** `npm run dev:full` only (api/_lib/local-admin.ts): admins seeded locally, ignored outside local mode. */
   localAdmins?: LocalAdmins;
+  /** Where the private shots' images go (tests, local mode); otherwise Vercel Blob from BLOB_READ_WRITE_TOKEN. */
+  shots?: ShotStore;
 }
 
 /** What a session cookie says. */
@@ -675,13 +679,13 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
 // ---------------------------------------------------------------------------------------------------------------
 // Screenshots of private products' explorations (api/_lib/private-shots.ts)
 
-const shotsCtxOf = (c: { f: FetchLike; now: () => number; svc: Services }): ShotsCtx => ({ f: c.f, now: c.now, redis: c.svc.redis, token: (o, r) => c.svc.app.installationToken(o, r) });
+const shotsCtxOf = (c: { f: FetchLike; now: () => number; svc: Services; store: ShotStore | null }): ShotsCtx => ({ f: c.f, now: c.now, redis: c.svc.redis, store: c.store, token: (o, r) => c.svc.app.installationToken(o, r) });
 
 /**
  * GET ?repo=<team>&shot=<owner/repo>&pr=<n>[&meta=1]: one capture of an exploration in a product repository of the team,
  * for a reader of the team (a member, or a visitor of a demo team): its date and commit with meta=1, else the image.
  */
-async function onShot(req: Request, ctx: Ctx, params: URLSearchParams): Promise<Response> {
+async function onShot(req: Request, ctx: Ctx, params: URLSearchParams, store: ShotStore | null): Promise<Response> {
   const { owner, repo, full } = parseRepo(params.get('repo'));
   const target = String(params.get('shot') ?? '').toLowerCase();
   const pr = Number(params.get('pr'));
@@ -692,7 +696,7 @@ async function onShot(req: Request, ctx: Ctx, params: URLSearchParams): Promise<
   const [po, pn] = target.split('/') as [string, string];
   await productReadAllowed(rctx, { owner, repo }, { owner: po, repo: pn }, reader);
   if (params.get('meta') === '1') return json(200, { shot: await shotMeta(ctx.svc.redis, target, pr) }, { 'Cache-Control': 'private, no-cache' });
-  return await shotImage(ctx.svc.redis, target, pr);
+  return await shotImage(ctx.svc.redis, store, target, pr);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2729,13 +2733,15 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
     }
     // Bridge's own capture workflow (api/_lib/private-shots.ts): its GitHub OIDC token, no cookie, no CSRF header.
     const shotsAction = params.get('shots');
-    if (shotsAction === 'todo' || shotsAction === 'put') {
+    if (shotsAction === 'todo' || shotsAction === 'put' || shotsAction === 'migrate') {
       const svc0 = services(env, deps);
       if (!svc0) return fail(503, 'not_configured', NOT_CONFIGURED);
-      const sctx = shotsCtxOf({ f: deps.fetch, now: deps.now ?? Date.now, svc: svc0 });
+      const sctx = shotsCtxOf({ f: deps.fetch, now: deps.now ?? Date.now, svc: svc0, store: shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots) });
       if (!(await workflowClaims(sctx, req.headers.get('authorization')))) return fail(401, 'signin', 'Only Bridge\'s capture workflow sends screenshots.');
       if (shotsAction === 'todo' && method === 'GET') return json(200, { jobs: await shotsTodo(sctx, params.get('force') === '1') });
       if (shotsAction === 'put' && method === 'POST') return await putShot(sctx, await readBody(req, 600_000));
+      // The one-off move of the images kept in Redis to the Blob store (dry=1 only counts): same workflow, same identity.
+      if (shotsAction === 'migrate' && method === 'POST') return json(200, await migrateShots(sctx, params.get('dry') === '1'));
       return fail(405, 'method', 'GET the todo list, POST a capture.');
     }
     if (method !== 'GET') requireCsrf(req);
@@ -2751,7 +2757,7 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
     if (method === 'GET' && params.get('npm') !== null && gh === null && blobs === null) {
       return json(200, { latest: await npmLatest(deps.fetch, svc?.redis ?? null, parseNpmNames(params.get('npm'))) });
     }
-    if (method === 'GET' && params.get('shot') !== null && svc && !cross) return await onShot(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params);
+    if (method === 'GET' && params.get('shot') !== null && svc && !cross) return await onShot(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
     if (method === 'GET' && gh === null && blobs === null && users === null && changes === null) {
       const repoArg = params.get('repo');
       if (repoArg === null || !svc) {
@@ -2823,6 +2829,7 @@ const envFromProcess = (): ContribEnv => ({
   GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET,
   BREVO_API_KEY: process.env.BREVO_API_KEY,
   NOTIFY_FROM: process.env.NOTIFY_FROM,
+  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
 });
 
 // Answers to calls with the Bridge app's tokens are metered per installation (api/_lib/github-quota.ts).

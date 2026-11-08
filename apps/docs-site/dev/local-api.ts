@@ -21,6 +21,7 @@ import type { FetchLike } from '../api/_lib/http.js';
 import { localAdminStore, localAdminsOn, type LocalAdmins } from '../api/_lib/local-admin.js';
 import { type EmailMember, memberStore } from '../api/_lib/members.js';
 import { memoryRedis, type Redis, type RedisArg, type RedisSnapshot } from '../api/_lib/redis.js';
+import { memoryShotStore } from '../api/_lib/private-shots.js';
 import { RESERVED_PATHS_URL, reservedFromFiles, type ReservedPaths } from '../src/lib/team-path.js';
 import { fixtureApp, fixtureGithub, gitFiles, type SampleBuilds } from './local-github.js';
 import { PERSONA_PREFIX } from './local-repo.js';
@@ -333,6 +334,9 @@ export function isModuleRequest(pathname: string): boolean {
 type Mod = Record<string, unknown>;
 type Handler = (req: Request) => Promise<Response>;
 
+/** The private shots' images in local mode (memory only, gone on restart). */
+const localShots = memoryShotStore();
+
 export interface Local {
   redis: Redis;
   email: EmailSender & { list(): OutboxItem[] };
@@ -359,7 +363,7 @@ export function handlerFor(rel: string, mod: Mod, local: Local, method: string, 
     case 'api/entry/index.ts':
       return call('handleEntry', { redis, ...admins, ...apps });
     case 'api/contribute/index.ts':
-      return call('handleContribute', { redis, ...admins, ...apps });
+      return call('handleContribute', { redis, shots: localShots, ...admins, ...apps });
     case 'api/invites/index.ts':
       return call('handleInvites', { store: extra.invites, members: extra.members, redis, ...admins, ...apps });
     case 'api/ship/index.ts':

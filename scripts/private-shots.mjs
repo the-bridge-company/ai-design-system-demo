@@ -3,12 +3,17 @@
 // private-shots.ts) instead of a public branch. Run by .github/workflows/private-shots.yml in Bridge's own repository:
 //
 //   node scripts/private-shots.mjs [--base https://bridge.floriangouloubi.com] [--dry-run] [--force]
+//   node scripts/private-shots.mjs --migrate [--dry-run]
 //
 // Asks Bridge which explorations need a capture (GET /api/contribute?shots=todo), fills each preview template with
 // @bridge-ds/core previewUrl (the branch, as the host names it), captures it with scripts/preview-shots.mjs captureOne
 // and sends the webp back (POST ?shots=put). Both calls carry this workflow's GitHub OIDC token (audience
 // bridge-shots): no stored secret. A preview that is not up yet, or that answers a sign-in page, is skipped and asked
 // again on the next run.
+//
+// --migrate (once, 2026-11-08): asks Bridge to move the images it still keeps in Redis to its private Blob store and to
+// delete the stored images no capture names (POST ?shots=migrate, dry=1 with --dry-run), and prints what it moved and
+// freed. Safe to run again: a second run moves nothing.
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -37,17 +42,37 @@ export function looksLikeAWall(finalUrl) {
 }
 
 function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com', dryRun: false, force: false };
+  const o = { base: 'https://bridge.floriangouloubi.com', dryRun: false, force: false, migrate: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
     else if (argv[i] === '--dry-run') o.dryRun = true;
     else if (argv[i] === '--force') o.force = true;
+    else if (argv[i] === '--migrate') o.migrate = true;
   }
   return o;
 }
 
+/** What a migration answer says, in one line per figure. */
+export function migrationReport(r) {
+  const kb = (n) => `${Math.round((n ?? 0) / 1024)} KB`;
+  return [
+    `${r.dryRun ? 'Dry run: nothing changed.' : 'Migration done.'}`,
+    `- ${r.keys} capture(s) indexed in Redis, ${r.inStore} already in the Blob store`,
+    `- ${r.moved} image(s) ${r.dryRun ? 'to move' : 'moved'} to the Blob store, ${kb(r.redisBytesFreed)} of Redis ${r.dryRun ? 'to free' : 'freed'}`,
+    `- ${r.orphansDeleted} stored image(s) no capture names ${r.dryRun ? 'to delete' : 'deleted'} (${kb(r.orphanBytes)})`,
+  ].join('\n');
+}
+
+async function migrate(o) {
+  const token = await oidcToken();
+  const res = await fetch(`${o.base}/api/contribute?shots=migrate${o.dryRun ? '&dry=1' : ''}`, { method: 'POST', headers: { authorization: `Bearer ${token}`, accept: 'application/json' } });
+  if (!res.ok) throw new Error(`Bridge answered ${res.status} to the migration: ${await res.text()}`);
+  console.log(migrationReport(await res.json()));
+}
+
 async function main() {
   const o = args(process.argv.slice(2));
+  if (o.migrate) return migrate(o);
   const require = createRequire(resolve(process.env.BRIDGE_DEPS ?? '.', 'package.json'));
   const core = await import(pathToFileURL(require.resolve('@bridge-ds/core')).href);
   const token = await oidcToken();

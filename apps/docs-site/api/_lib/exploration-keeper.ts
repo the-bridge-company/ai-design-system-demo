@@ -7,6 +7,9 @@ import type { MemberStore } from './members.js';
 import { repoMetaKey } from './notify.js';
 import type { Redis } from './redis.js';
 
+/** Who made an exploration is kept a year, like every other writer of these keys (api/contribute OWNERSHIP_TTL_S). */
+const OWNER_KEEP_S = 365 * 24 * 60 * 60;
+
 /**
  * The new keeper of an exploration: in the design team's copy, Bridge's own record of who owns its branch goes (the
  * exploration's block says it from now on, api/contribute pullClaimedBy) and notices follow the new owner. An email
@@ -27,7 +30,7 @@ export async function explorationKeeper(svc: { redis?: Redis | null | undefined;
   if (copy && redis) {
     const meta = await redis.cmd('GET', repoMetaKey(copy));
     if (typeof meta !== 'string' || (JSON.parse(meta) as { team?: string }).team?.toLowerCase() !== team.toLowerCase()) throw new HttpError(403, 'not-allowed', 'That copy is not this team\'s.');
-    await redis.pipe([['DEL', branchKey(copy, branch)], member ? ['SET', issueKey(copy, n), member.owner] : typeof body.login === 'string' ? ['SET', issueKey(copy, n), `gh:${body.login.toLowerCase()}`] : ['DEL', issueKey(copy, n)]]);
+    await redis.pipe([['DEL', branchKey(copy, branch)], member ? ['SET', issueKey(copy, n), member.owner, 'EX', OWNER_KEEP_S] : typeof body.login === 'string' ? ['SET', issueKey(copy, n), `gh:${body.login.toLowerCase()}`, 'EX', OWNER_KEEP_S] : ['DEL', issueKey(copy, n)]]);
   }
   return json(200, { ok: true, ...(member ? { ref: member.ref, name: member.name } : {}) });
 }

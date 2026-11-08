@@ -11,7 +11,9 @@
 //   bridge:gh:quota:<installation>:<resource>   JSON { limit, remaining, used, reset, resource, at }, kept until an
 //                                              hour after the reset. Written at most once per THROTTLE_MS per
 //                                              installation and resource in a warm function, sooner only when the
-//                                              window resets or the low state flips; never when nothing changed.
+//                                              window resets, the low state flips or what is left crosses a tenth
+//                                              of the limit; never when nothing changed. Settings' numbers may be up
+//                                              to THROTTLE_MS old (the free plan's 500k commands a month, 2026-11-08).
 //   bridge:gh:quota:repo:<owner/name>          the installation of a repository (the team's, for Settings), 1 day.
 //   bridge:gh:quota:<installation>:secondary   GitHub's secondary rate limit: how many times today (counter), and
 //   bridge:gh:quota:<installation>:secondary-at  when last (ms).
@@ -24,8 +26,8 @@ import { redisRest, type Redis, type RedisArg } from './redis.js';
 
 /** Under this share of the hourly limit left, the installation is low: one warning, and Settings says so to admins. */
 export const LOW_SHARE = 0.2;
-/** A warm function writes one installation's numbers at most this often (unless the window resets or it turns low). */
-export const THROTTLE_MS = 15 * 1000;
+/** A warm function writes one installation's numbers at most this often (unless the window resets, it turns low or a tenth of the limit goes). */
+export const THROTTLE_MS = 2 * 60 * 1000;
 export const REPO_KEEP_S = 24 * 60 * 60;
 export const SECONDARY_KEEP_S = 24 * 60 * 60;
 /** How long a secondary limit hit is still worth telling an admin about. */
@@ -136,7 +138,8 @@ export function quotaMeter(redis: Redis, o: { now?: () => number; log?: QuotaLog
           const prev = last.get(k);
           const low = isLow(rl);
           const changed = !prev || prev.limit !== rl.limit || prev.remaining !== rl.remaining || prev.used !== rl.used;
-          const due = !prev || prev.reset !== rl.reset || prev.low !== low || (changed && t - prev.at >= throttle);
+          const tenth = (x: RateLimit) => (x.limit > 0 ? Math.floor((x.remaining / x.limit) * 10) : 0);
+          const due = !prev || prev.reset !== rl.reset || prev.low !== low || (changed && (t - prev.at >= throttle || tenth(prev) !== tenth(rl)));
           if (due) {
             const ttl = Math.min(3 * 60 * 60, Math.max(60, rl.reset - Math.floor(t / 1000) + 60 * 60));
             writes.push(['SET', quotaKey(who.installation, rl.resource), JSON.stringify({ ...rl, at: t }), 'EX', ttl]);

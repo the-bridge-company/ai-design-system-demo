@@ -150,7 +150,8 @@ export const KEEP_S = 20 * 60;
  */
 export const ETAG_KEEP_S = 24 * 60 * 60;
 export const IMMUTABLE_KEEP_S = 24 * 60 * 60;
-export const BLOB_KEEP_S = 7 * 24 * 60 * 60;
+/** File contents by sha: also kept in each warm function's memory, so a day in Redis is enough (2026-11-08: 7 days filled it). */
+export const BLOB_KEEP_S = 24 * 60 * 60;
 /** Bigger answers are not kept in Redis (one Upstash request carries at most 1 MB). */
 export const MAX_KEPT_CHARS = 700_000;
 export const MAX_BATCH = 100;
@@ -418,9 +419,12 @@ async function countAndRead(ctx: ReadCtx, req: Request, full: string, reader: Re
   const budget = budgetOf(req, reader);
   const k = countKey(budget.kind, budget.who, now);
   const limit = reader.kind === 'guest' ? envInt(ctx.env.READ_MAX_GUEST, READ_LIMITS.guest) : envInt(ctx.env.READ_MAX_IP, READ_LIMITS.ip);
-  const r = await ctx.redis.pipe([['INCRBY', k, weight], ['EXPIRE', k, READ_WINDOW_S + 5], ['GET', wroteKey(full)], ['GET', countKey('up', budget.who, now)], ['GET', countKey('team', full.toLowerCase(), now)], ...extra.map((x) => ['GET', x])]);
+  // One MGET for every read: Upstash bills it as one command however many keys it reads (a batch of 100 blobs cost
+  // 105 commands as separate GETs, 3 now).
+  const r = await ctx.redis.pipe([['INCRBY', k, weight], ['EXPIRE', k, READ_WINDOW_S + 5], ['MGET', wroteKey(full), countKey('up', budget.who, now), countKey('team', full.toLowerCase(), now), ...extra]]);
   if (Number(r[0]) > limit) throw busy(secondsToNextWindow(now));
-  return { values: r.slice(5), wrote: Number(r[2]) || 0, up: upstreamOf(ctx, req, reader, full, r[3], r[4], now) };
+  const got = Array.isArray(r[2]) ? (r[2] as unknown[]) : [];
+  return { values: extra.map((_, i) => got[3 + i] ?? null), wrote: Number(got[0]) || 0, up: upstreamOf(ctx, req, reader, full, got[1], got[2], now) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -961,7 +965,8 @@ export async function onChanges(req: Request, ctx: ReadCtx, t: Pick<ReadTarget, 
   const readCold = async (c: ChangeRef) => {
     const paths = changeReads(c);
     const keys = paths.map((p) => getKey(t.full, STATUS_ACCEPT, urlOf(p)));
-    const kept = (await ctx.redis.pipe(keys.map((k) => ['GET', k]))).map(parseKept);
+    const got = keys.length ? await ctx.redis.cmd('MGET', ...keys) : [];
+    const kept = keys.map((_, i) => parseKept((Array.isArray(got) ? got : [])[i] ?? null));
     const reads: ChangeReads = {};
     for (const [i, path] of paths.entries()) {
       const k0 = kept[i] ?? null;

@@ -15,9 +15,8 @@ import type { LifecycleStage } from '../lib/review-state';
 import { homeExplorations, type ExplorationCard, type ExplorationPull } from '../lib/home-explorations';
 import { productPullsPath, tagProductPulls, type ExplorationPullLike } from '../lib/explorations-view';
 import { cardProductKey } from '../lib/product-page';
-import { person, requesterPerson, type Person } from '../lib/home-model';
+import { explorationPerson, person, type Person } from '../lib/home-model';
 import type { ThumbSpec } from '../lib/branch-thumb';
-import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from '../lib/author';
 import type { CopyView } from '../lib/design-copy';
 import { copyRepos, readCopyView } from './design-copy';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
@@ -112,14 +111,8 @@ export async function loadProductPage(key: string, onUpdate: (d: ProductPageData
   const persons = new Map<string, Person>();
   const shots = new Map<string, ThumbSpec>();
   const pick = (login: string) => persons.get(login.toLowerCase()) ?? person(login, null, avatarOf(login));
-  const author = (p: ExplorationPull) => {
-    const r = requesterOf(p.body);
-    if (r) return requesterPerson(r, pick) ?? pick(p.user?.login ?? 'unknown');
-    // The person the exploration names (a member by email), never the account that opened it.
-    const who = explorationAuthorFor(p.user?.login, p.body) ?? p.user?.login ?? null;
-    if (who && isNameAuthor(who)) return person(who, nameOfAuthor(who), null);
-    return pick(who ?? p.user?.login ?? 'unknown');
-  };
+  // The person the exploration names (a member by email), never the account that opened it: the one rule.
+  const author = (p: ExplorationPull) => explorationPerson(p.user?.login, p.body, pick);
   const shotKey = (p: { number: number; product?: string | null | undefined }) => `${p.product ?? ''}#${p.number}`;
   const viewer = currentViewer()?.login ?? null;
   const all = (): ExplorationPull[] => [...open, ...closed].map((p) => ({ ...p, user: p.user ?? { login: 'unknown' } }));

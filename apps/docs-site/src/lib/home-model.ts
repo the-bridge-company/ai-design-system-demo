@@ -12,9 +12,10 @@
 // Every value comes from GitHub (pull requests, their timeline and reviews) or from the repo at build time (usage
 // guidance, contrast, adoption, the changelog). Nothing here is guessed.
 import type { ThumbSpec } from './branch-thumb';
-import { agoInSentence, calendarDays, isDocsProposalBranch, PUBLISH_ROUTE_COPY } from '@bridge-ds/core';
+import { agoInSentence, calendarDays, isDocsProposalBranch, PUBLISH_ROUTE_COPY, requesterOf } from '@bridge-ds/core';
 import { STATUS_WORDS, VOCAB } from './vocabulary';
 import { isClaudeLogin, nameFace } from './people';
+import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { studioHref } from './team-path';
 import { questionLine } from './review-state';
 
@@ -641,4 +642,26 @@ export function requesterPerson(r: { name: string | null; login: string | null }
   if (!r.name) return null;
   const face = nameFace(r.name);
   return { login: face, name: displayName(face.slice(1), r.name), avatar: null };
+}
+
+/**
+ * A row's author as a person: someone known by name only ("name:Leo", lib/author nameAuthor) gets the drawn face of
+ * their name, never a GitHub lookup; a login reads through `pick`.
+ */
+export function authorPerson(who: string, pick: (login: string) => Person): Person {
+  if (!isNameAuthor(who)) return pick(who);
+  const name = nameOfAuthor(who).trim();
+  return requesterPerson({ name, login: null }) ?? pick(who);
+}
+
+/**
+ * Who an exploration is by, on every surface (Home cards, product page, Changes, Being built, the review rows): the one
+ * rule of lib/author explorationAuthorFor (the "Requested by" line, the exploration block's author or member, the
+ * account only when nobody is named), as a person. The exploration page reads the same rule.
+ */
+export function explorationPerson(login: string | null | undefined, body: string | null | undefined, pick: (login: string) => Person): Person {
+  const r = requesterOf(body);
+  const asked = r ? requesterPerson(r, pick) : null;
+  if (asked) return asked;
+  return authorPerson(explorationAuthorFor(login, body) ?? login ?? 'unknown', pick);
 }

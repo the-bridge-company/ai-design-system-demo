@@ -414,6 +414,11 @@
   gap: var(--space-3);
 }
 
+.br-checks-summary {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .br-checks-line.is-pass {
   color: var(--color-feedback-success-text);
   font-weight: var(--font-weight-medium);

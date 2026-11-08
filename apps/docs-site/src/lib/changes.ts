@@ -565,6 +565,9 @@ export function whoActs(need: Need, p: People): WhoActs {
 export function statusPill(kind: ReviewStatusKind, who: (Pick<WhoActs, 'short'> & Partial<Pick<WhoActs, 'action'>>) | null | undefined): { label: string; tone: StatusTone } {
   // Updated after the changes request: it waits for the reviewers' approval now, not on a blocker (core reviewStatusLabel).
   if (who?.action === 'look-again') return { label: who.short ?? LOOK_AGAIN_STATUS_LABEL, tone: GROUP_TONE.waiting };
+  // A designer's "A developer is on it" is work in progress, not an error: the tone of Being built (review-state
+  // LIFECYCLE_TONE), never the danger a developer's "Blocked by tests" wears.
+  if (who?.short === DEVELOPER_ON_IT) return { label: DEVELOPER_ON_IT, tone: 'info' };
   return { label: who?.short ?? REVIEW_STATUS[kind].label, tone: statusTone(kind) };
 }
 

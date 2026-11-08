@@ -8,6 +8,7 @@
 import { DEFAULT_PRODUCTS, defaultProduct, isToolingPull, productOfBranch, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
 import { MAX_TOGETHER } from './combine-changes';
 import { VOCAB } from './vocabulary';
+import { isNameAuthor, nameOfAuthor } from './author';
 import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
 import { designerOptions, peopleOf, type PeopleItem } from './review-categories';
 
@@ -240,6 +241,8 @@ export function isYours(
   if (r.requester?.login) return same(r.requester.login, viewer);
   if (r.requester?.name) return Boolean(viewerName && folded(viewerName) === folded(r.requester.name));
   if (r.agent) return false;
+  // Someone known by name only (an email member, lib/author nameAuthor): the viewer by their name.
+  if (isNameAuthor(r.author)) return Boolean(viewerName && folded(viewerName) === folded(nameOfAuthor(r.author)));
   return same(r.author, viewer);
 }
 

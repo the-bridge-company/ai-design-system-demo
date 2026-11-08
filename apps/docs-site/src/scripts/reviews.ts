@@ -6,6 +6,7 @@
 // "Copy link", "Link for a developer"; the page itself never links to GitHub.
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
+import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
 import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
@@ -405,7 +406,9 @@ function listRow(r: Row): ListRow {
     title: parseExplorationBody(r.body ?? null)?.name?.trim() ? explorationTitle({ title: r.title, body: r.body }) : humanTitle(mdTitleText(withoutJiraKey(r.title))),
     rawTitle: r.title,
     jira: shownJiraKey(r.title),
-    author: r.user.login,
+    // An exploration is by the person its record names (lib/author explorationAuthorFor), as on its page and on Home,
+    // never the account that opened its pull request; a branch by its author (the app's requester, lib/author authorFor).
+    author: (r.exploration ? explorationAuthorFor(r.user.login, r.body ?? null) : authorFor(r.user.login, r.body ?? null)) ?? r.user.login,
     agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
     // An exploration says when it last moved, after who: "Florian · 2 h ago".

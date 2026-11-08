@@ -37,7 +37,7 @@ import { designerKey } from './review-categories';
 import { safeUrl } from './html';
 import { DEV_MESSAGE_WORDS, developersMessage, offersDevelopersMessage } from './developers-message';
 import { JIRA_IN_BRIDGE } from './studio-flags';
-import { authorFor, isNameAuthor, nameOfAuthor } from './author';
+import { authorFor, explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { isProductBranch } from './product-branch';
 import { explorationHref } from './explorations-view';
 import { explorationState } from './exploration-state';
@@ -605,7 +605,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
         label: LIFECYCLE_LABEL[stage],
         sentence: sentence[status],
         builders: status === 'in-progress' || status === 'in-review' ? (task ? task.assignees : (p.assignees ?? [])).map((a) => a.login) : [],
-        requestedBy: doneBy ?? block?.author ?? authorFor(p.user?.login, p.body) ?? null,
+        requestedBy: doneBy ?? explorationAuthorFor(p.user?.login, p.body) ?? null,
         createdAt,
         ageDays,
         stale,

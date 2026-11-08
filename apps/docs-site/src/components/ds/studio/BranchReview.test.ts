@@ -62,6 +62,23 @@ describe('BranchReview', () => {
     expect(document.body.textContent).toContain('This repo has no visual checks yet.');
   });
 
+  it('puts the checks line in the decision bar, above the comment, so the sticky bar never covers it', () => {
+    const passing = { ...base, checks: { state: 'pass' as const, text: 'All 304 contrast checks pass', rows: [{ label: 'Contrast', state: 'pass' as const, text: 'All 304 pass.' }] } };
+    render(createElement(BranchReview, passing));
+    const bar = screen.getByRole('region', { name: 'Your review' });
+    expect(bar.textContent).toContain('All 304 contrast checks pass');
+    expect(screen.getAllByText('All 304 contrast checks pass')).toHaveLength(1);
+    const line = bar.querySelector('.br-checks-line')!;
+    const row = bar.querySelector('.br-bar-row')!;
+    expect(line.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the checks line with the approvals in the review queue (no decision bar)', () => {
+    render(createElement(BranchReview, { ...base, inQueue: true }));
+    expect(screen.queryByRole('region', { name: 'Your review' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Checks and approvals' }).textContent).toContain('Code checks fail');
+  });
+
   it('folds the technical side under For developers for a developer', () => {
     render(createElement(BranchReview, { ...base, developer: { tests: '2 developer tests fail. A developer fixes them.', failing: ['Unit tests'], url: 'https://github.com/o/r/pull/17', number: 17 } }));
     expect(screen.getByRole('button', { name: 'For developers' })).toBeTruthy();

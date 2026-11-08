@@ -34,23 +34,23 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-hosted');
 });
 
-const signIn = () => localStorage.setItem('bridge.contribute.member:acme/ds', JSON.stringify({ email: 'leo@acme.design', name: 'Leo', role: 'edit' }));
+const signIn = () => localStorage.setItem('bridge.contribute.member:acme/ds', JSON.stringify({ email: 'leo@acme.example', name: 'Leo', role: 'edit' }));
 
 describe('the email session', () => {
   it('knows the member of every email team of an account signed in with a code, without a call', () => {
-    localStorage.setItem('bridge.contribute.member:lumen/brand', JSON.stringify({ email: 'old@acme.design', name: 'Old', role: 'edit' }));
+    localStorage.setItem('bridge.contribute.member:lumen/brand', JSON.stringify({ email: 'old@acme.example', name: 'Old', role: 'edit' }));
     const seen: string[] = [];
     onContributeChange((repo) => seen.push(repo));
-    seedContributors({ email: 'leo@acme.design', name: 'Leo' }, [
+    seedContributors({ email: 'leo@acme.example', name: 'Leo' }, [
       { repo: 'acme/ds', role: 'edit', via: 'email' },
       { repo: 'Lumen/Mobile-Kit', role: 'edit', via: 'email' },
       { repo: 'lumen/brand', role: 'edit', via: 'email' },
       { repo: 'octo/gh-only', role: 'reviewer', via: 'github' },
     ]);
-    expect(contributorFor('acme/ds')).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'edit' });
-    expect(contributorFor('lumen/mobile-kit')?.email).toBe('leo@acme.design');
+    expect(contributorFor('acme/ds')).toEqual({ email: 'leo@acme.example', name: 'Leo', role: 'edit' });
+    expect(contributorFor('lumen/mobile-kit')?.email).toBe('leo@acme.example');
     // A member already known is left as the server last said; a GitHub team has no email session.
-    expect(contributorFor('lumen/brand')?.email).toBe('old@acme.design');
+    expect(contributorFor('lumen/brand')?.email).toBe('old@acme.example');
     expect(contributorFor('octo/gh-only')).toBeNull();
     expect(seen).toEqual(['acme/ds', 'Lumen/Mobile-Kit']);
     expect(calls).toHaveLength(0);
@@ -60,10 +60,10 @@ describe('the email session', () => {
   });
 
   it('reads who is signed in once per team and page, with the cookie', async () => {
-    answer = () => json(200, { available: true, member: { email: 'leo@acme.design', name: 'Leo', role: 'edit' } });
+    answer = () => json(200, { available: true, member: { email: 'leo@acme.example', name: 'Leo', role: 'edit' } });
     const info = await contributeInfo('acme/ds');
     await contributeInfo('acme/ds');
-    expect(info).toEqual({ available: true, member: { email: 'leo@acme.design', name: 'Leo', role: 'edit' } });
+    expect(info).toEqual({ available: true, member: { email: 'leo@acme.example', name: 'Leo', role: 'edit' } });
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe('/api/contribute?repo=acme%2Fds');
     expect(calls[0]!.init.credentials).toBe('include');
@@ -71,7 +71,7 @@ describe('the email session', () => {
   });
 
   it('spends the link and signs out', async () => {
-    answer = () => json(200, { member: { email: 'leo@acme.design', name: 'Leo' } });
+    answer = () => json(200, { member: { email: 'leo@acme.example', name: 'Leo' } });
     await verifyEmailSignIn('acme/ds', 'T'.repeat(43));
     expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ action: 'verify', repo: 'acme/ds', token: 'T'.repeat(43) });
     expect(contributorFor('acme/ds')).not.toBeNull();
@@ -81,8 +81,8 @@ describe('the email session', () => {
   });
 
   it('sends the header the server requires on every action (links, sign out)', async () => {
-    answer = () => json(200, { repo: 'acme/ds', member: { email: 'leo@acme.design', name: 'Leo', role: 'edit' } });
-    await requestEmailSignIn('acme/ds', 'leo@acme.design');
+    answer = () => json(200, { repo: 'acme/ds', member: { email: 'leo@acme.example', name: 'Leo', role: 'edit' } });
+    await requestEmailSignIn('acme/ds', 'leo@acme.example');
     await verifyEmailSignIn('acme/ds', 'T'.repeat(43));
     await signOutEmail('acme/ds');
     expect(calls).toHaveLength(3);
@@ -94,10 +94,10 @@ describe("Studio's GitHub calls for an email contributor", () => {
   it('carry the stand-in token on a team without a GitHub sign-in, the sample team included (its visitor reads as Dana)', () => {
     expect(getToken()).toBeNull();
     signIn();
-    expect(currentContributor()?.email).toBe('leo@acme.design');
+    expect(currentContributor()?.email).toBe('leo@acme.example');
     expect(getToken()).toBe(CONTRIB_TOKEN);
     history.replaceState(null, '', '/studio/acme-design-demo/bridge-demo-ds/');
-    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'dana@acme.design', name: 'Dana', role: 'edit', visitor: true }));
+    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'dana@acme.example', name: 'Dana', role: 'edit', visitor: true }));
     expect(currentContributor()).toMatchObject({ name: 'Dana', visitor: true });
     expect(getToken()).toBe(CONTRIB_TOKEN);
   });
@@ -157,7 +157,7 @@ describe("Studio's GitHub calls for an email contributor", () => {
           ]);
     const r = await studioFetch('https://api.github.com/repos/acme/ds/pulls?state=open', { headers: { Authorization: `Bearer ${CONTRIB_TOKEN}` } });
     const pulls = (await r.json()) as { number: number; user: { login: string } }[];
-    expect(pulls.map((p) => p.user.login)).toEqual(['leo@acme.design', 'bridge-design-studio[bot]', 'ann']);
+    expect(pulls.map((p) => p.user.login)).toEqual(['leo@acme.example', 'bridge-design-studio[bot]', 'ann']);
     expect(calls.some((c) => c.url === '/api/contribute?repo=acme%2Fds&mine=1')).toBe(true);
   });
 });
@@ -175,7 +175,7 @@ describe("an email member on their team's Library", () => {
     expect(teamToken({ owner: 'acme', repo: 'ds' })).toBe(CONTRIB_TOKEN);
     // Another team's Library, and the sample team's, stay visitor reads.
     expect(teamToken({ owner: 'lumen', repo: 'brand' })).toBeNull();
-    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'leo@acme.design', name: 'Leo', role: 'edit' }));
+    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'leo@acme.example', name: 'Leo', role: 'edit' }));
     expect(teamToken({ owner: 'peterbono', repo: 'bridge-demo-ds' })).toBeNull();
   });
 
@@ -191,8 +191,8 @@ describe("an email member on their team's Library", () => {
 describe("an email contributor on Bridge's own team", () => {
   it('is a member there, not a demo visitor; the sample team stays sample only', () => {
     history.replaceState(null, '', '/studio/the-bridge-company/ai-design-system-demo/');
-    localStorage.setItem('bridge.contribute.member:the-bridge-company/ai-design-system-demo', JSON.stringify({ email: 'leo@acme.design', name: 'Leo', role: 'edit' }));
-    expect(currentContributor()?.email).toBe('leo@acme.design');
+    localStorage.setItem('bridge.contribute.member:the-bridge-company/ai-design-system-demo', JSON.stringify({ email: 'leo@acme.example', name: 'Leo', role: 'edit' }));
+    expect(currentContributor()?.email).toBe('leo@acme.example');
     expect(getToken()).toBe(CONTRIB_TOKEN);
   });
 });
@@ -311,7 +311,7 @@ describe('a member reads through Bridge with fewer requests', () => {
     signIn();
     answer = () => json(200, { n: 1 });
     await get('/repos/acme/ds/pulls/1');
-    expect(Object.keys(sessionStorage).some((k) => k.startsWith('bridge.read.recent:acme/ds:leo@acme.design:'))).toBe(true);
+    expect(Object.keys(sessionStorage).some((k) => k.startsWith('bridge.read.recent:acme/ds:leo@acme.example:'))).toBe(true);
     // A new page: the memory is gone, the tab's copy stays.
     clearRecentMemory();
     await get('/repos/acme/ds/pulls/1');

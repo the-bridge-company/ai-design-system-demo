@@ -26,7 +26,7 @@ function setup(o: { draft?: boolean; pieces?: string[] } = {}) {
   clearReadMemory();
   const redis = memoryRedis(() => T0);
   const members = memberStore(redis);
-  const block = { name: 'Late tag', startedAt: '2026-11-01T00:00:00Z', doneAt: '2026-11-05T00:00:00Z', member: memberRef('mia@acme.design'), memberName: 'Mia', task: `https://github.com/${CODE}/issues/7`, ...(o.pieces ? { leadPieces: o.pieces } : {}) };
+  const block = { name: 'Late tag', startedAt: '2026-11-01T00:00:00Z', doneAt: '2026-11-05T00:00:00Z', member: memberRef('mia@acme.example'), memberName: 'Mia', task: `https://github.com/${CODE}/issues/7`, ...(o.pieces ? { leadPieces: o.pieces } : {}) };
   const world = { head: 'a'.repeat(40), comments: [] as string[], statuses: [] as { sha: string; state: string; context: string }[], writes: [] as string[], body: '' };
   const deps: ContribDeps = {
     fetch: async (url, init) => {
@@ -64,16 +64,16 @@ const at = { repo: REPO, product: 'shop', copy: COPY, number: 5 };
 const say = (kind: string, extra: Record<string, unknown> = {}) => ({ action: 'build-word', ...at, kind, ...extra });
 
 async function withPm(s: ReturnType<typeof setup>) {
-  const admin = await as(s, 'ann@acme.design', 'Ann', 'admin');
-  await as(s, 'dino@acme.design', 'Dino', 'view');
-  await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.design') } }, admin), ENV, s.deps);
+  const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
+  await as(s, 'dino@acme.example', 'Dino', 'view');
+  await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.example') } }, admin), ENV, s.deps);
 }
 
 describe('check the build: the design must change', () => {
   it('moves the exploration back to its designer: a new round, the task leaves the developers', async () => {
     const s = setup();
     await withPm(s);
-    const dino = await as(s, 'dino@acme.design', 'Dino', 'view');
+    const dino = await as(s, 'dino@acme.example', 'Dino', 'view');
     expect((await handleContribute(post(say('changes', { why: 'design', text: 'Keep the date visible' }), dino), ENV, s.deps)).status).toBe(200);
     const block = JSON.parse(/<!-- bridge-exploration (\{[\s\S]*?\}) -->/.exec(s.world.body)![1]!);
     expect(block.doneAt).toBeUndefined();
@@ -85,7 +85,7 @@ describe('check the build: the design must change', () => {
   it('the build is off: the exploration stays with the developers', async () => {
     const s = setup();
     await withPm(s);
-    const dino = await as(s, 'dino@acme.design', 'Dino', 'view');
+    const dino = await as(s, 'dino@acme.example', 'Dino', 'view');
     await handleContribute(post(say('changes', { why: 'build', text: 'Date cut' }), dino), ENV, s.deps);
     expect(s.world.writes.some((w) => w.includes(COPY))).toBe(false);
   });
@@ -95,7 +95,7 @@ describe('the lists read the whole check', () => {
   it('who is still waiting, by name, once the check was opened; null before', async () => {
     const s = setup();
     await withPm(s);
-    const mia = await as(s, 'mia@acme.design', 'Mia', 'edit');
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
     const lists = () => handleContribute(post({ action: 'build-checks', repo: REPO, pulls: [{ code: CODE, number: 12 }, { code: 'acme/other', number: 1 }] }, mia), ENV, s.deps).then((r) => r.json());
     expect((await lists()).checks).toEqual({ 'acme/shop#12': null, 'acme/other#1': null });
     await handleContribute(post(say('looks-right'), mia), ENV, s.deps);
@@ -107,8 +107,8 @@ describe('check the build', () => {
   it('the designer and the PM say it looks right; the Design check follows on the head', async () => {
     const s = setup();
     await withPm(s);
-    const mia = await as(s, 'mia@acme.design', 'Mia', 'edit');
-    const dino = await as(s, 'dino@acme.design', 'Dino', 'view');
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
+    const dino = await as(s, 'dino@acme.example', 'Dino', 'view');
     const first = await (await handleContribute(post({ action: 'build-state', ...at }, mia), ENV, s.deps)).json();
     expect(first).toMatchObject({ state: 'pending', role: 'designer', pull: { number: 12 } });
     expect(s.world.statuses.at(-1)).toEqual({ sha: s.world.head, state: 'pending', context: 'Design check' });
@@ -128,7 +128,7 @@ describe('check the build', () => {
   it('Needs changes needs a note and says which kind', async () => {
     const s = setup();
     await withPm(s);
-    const dino = await as(s, 'dino@acme.design', 'Dino', 'view');
+    const dino = await as(s, 'dino@acme.example', 'Dino', 'view');
     expect((await handleContribute(post(say('changes'), dino), ENV, s.deps)).status).toBe(400);
     const r = await (await handleContribute(post(say('changes', { why: 'design', text: 'Keep the date' }), dino), ENV, s.deps)).json();
     expect(r.state).toBe('failure');
@@ -137,12 +137,12 @@ describe('check the build', () => {
 
   it('nobody else answers, and the lead is asked only when the library changed', async () => {
     const s = setup({ pieces: ['Late tag'] });
-    const lee = await as(s, 'lee@acme.design', 'Lee', 'edit');
+    const lee = await as(s, 'lee@acme.example', 'Lee', 'edit');
     expect((await handleContribute(post(say('looks-right'), lee), ENV, s.deps)).status).toBe(403);
-    const mia = await as(s, 'mia@acme.design', 'Mia', 'edit');
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
     const st = await (await handleContribute(post(say('looks-right'), mia), ENV, s.deps)).json();
     expect(st).toMatchObject({ state: 'pending', description: 'Waiting for the lead' });
-    const flo = await as(s, 'flo@acme.design', 'Flo', 'edit', true);
+    const flo = await as(s, 'flo@acme.example', 'Flo', 'edit', true);
     expect((await (await handleContribute(post(say('looks-right'), flo), ENV, s.deps)).json()).state).toBe('success');
   });
 
@@ -154,7 +154,7 @@ describe('check the build', () => {
 
   it('a read that changes nothing writes no new Design check (once per head and state)', async () => {
     const s = setup();
-    const mia = await as(s, 'mia@acme.design', 'Mia', 'edit');
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
     await handleContribute(post({ action: 'build-state', ...at }, mia), ENV, s.deps);
     const after = s.world.statuses.length;
     expect(after).toBeGreaterThan(0);
@@ -166,7 +166,7 @@ describe('check the build', () => {
 
   it('nothing before the build is ready', async () => {
     const s = setup({ draft: true });
-    const mia = await as(s, 'mia@acme.design', 'Mia', 'edit');
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
     const read = await handleContribute(post({ action: 'build-state', ...at }, mia), ENV, s.deps);
     expect(read.status).toBe(200);
     expect(await read.json()).toMatchObject({ ready: false });

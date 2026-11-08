@@ -41,7 +41,7 @@ describe('an exploration Bridge started for an email member', () => {
     expect(startedByEmailMember('Body\n\nRequested by Dino through Bridge.', dino)).toBe(true);
   });
   it("is not theirs otherwise", () => {
-    expect(startedByEmailMember('Requested by Dino (other@acme.design) through Bridge.', dino)).toBe(false);
+    expect(startedByEmailMember('Requested by Dino (other@acme.example) through Bridge.', dino)).toBe(false);
     expect(startedByEmailMember('Requested by Dinosaur through Bridge.', dino)).toBe(false);
     expect(startedByEmailMember('No line', dino)).toBe(false);
     expect(startedByEmailMember(null, dino)).toBe(false);

@@ -84,7 +84,7 @@ describe('viewerClaudeLink', () => {
     const { SAMPLE_REPO } = await import('../lib/demo');
     session.repo = SAMPLE_REPO;
     session.login = null;
-    session.member = { email: 'dana@acme.design', name: 'Dana', role: 'edit' };
+    session.member = { email: 'dana@acme.example', name: 'Dana', role: 'edit' };
     const f = vi.fn(async () => json(200, { connections: [] }));
     setConnectorFetch(f);
     expect(await viewerClaudeLink()).toBe('no');
@@ -93,7 +93,7 @@ describe('viewerClaudeLink', () => {
 
   it('an email member is asked too', async () => {
     session.login = null;
-    session.member = { email: 'lee@acme.design', name: 'Lee', role: 'edit' };
+    session.member = { email: 'lee@acme.example', name: 'Lee', role: 'edit' };
     setConnectorFetch(async () => json(200, { connections: [] }));
     expect(await viewerClaudeLink()).toBe('no');
   });

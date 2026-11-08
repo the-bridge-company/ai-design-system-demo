@@ -394,7 +394,7 @@ function mixed(r: () => number, role: 'lead' | 'designer'): () => PageName {
 function team(r: () => number, designers: number, leads: number, minEvery: number, maxEvery: number): Person[] {
   const out: Person[] = [];
   const add = (role: 'lead' | 'designer', i: number) =>
-    out.push({ email: `${role}-${i}@acme.design`, role, start: Math.floor(r() * maxEvery), every: () => Math.floor(minEvery + r() * (maxEvery - minEvery)), page: mixed(r, role) });
+    out.push({ email: `${role}-${i}@acme.example`, role, start: Math.floor(r() * maxEvery), every: () => Math.floor(minEvery + r() * (maxEvery - minEvery)), page: mixed(r, role) });
   for (let i = 0; i < leads; i++) add('lead', i);
   for (let i = 0; i < designers; i++) add('designer', i);
   return out;
@@ -411,7 +411,7 @@ export function scenarios(o: { duration?: number } = {}): Scenario[] {
       name: 'A',
       label: '1 lead, 10 open changes, a load every 2 min',
       changes: 10,
-      people: [{ email: 'lead-0@acme.design', role: 'lead' as const, start: 0, every: () => 2 * MIN, page: (() => { const order: PageName[] = ['home', 'changes', 'change', 'building', 'product', 'library']; let i = 0; return () => order[i++ % order.length]!; })() }],
+      people: [{ email: 'lead-0@acme.example', role: 'lead' as const, start: 0, every: () => 2 * MIN, page: (() => { const order: PageName[] = ['home', 'changes', 'change', 'building', 'product', 'library']; let i = 0; return () => order[i++ % order.length]!; })() }],
       duration,
       updates: Math.round(5 * scale),
       seed: 11,
@@ -431,7 +431,7 @@ export function scenarios(o: { duration?: number } = {}): Scenario[] {
       name: 'D',
       label: 'Burst: 50 people open Home within 1 minute',
       changes: 20,
-      people: Array.from({ length: 50 }, (_, i) => ({ email: `p-${i}@acme.design`, role: (i < 5 ? 'lead' : 'designer') as 'lead' | 'designer', start: Math.floor(d() * MIN), every: () => HOUR * 10, page: () => 'home' as PageName })),
+      people: Array.from({ length: 50 }, (_, i) => ({ email: `p-${i}@acme.example`, role: (i < 5 ? 'lead' : 'designer') as 'lead' | 'designer', start: Math.floor(d() * MIN), every: () => HOUR * 10, page: () => 'home' as PageName })),
       duration: 2 * MIN,
       updates: 0,
       seed: 14,

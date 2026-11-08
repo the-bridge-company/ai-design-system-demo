@@ -17,7 +17,7 @@ import { forgetTeamEverywhere, knownTeamName, loadRecentTeams, loadTeamRoles, ty
 const NOW = 'the-bridge-company/ai-design-system-demo';
 const OLD_REPO = 'peterbono/ai-design-system-demo';
 const OLD_OWNER = 'art-print-shop-co/ai-design-system-demo';
-const EMAIL = 'flo@acme.design';
+const EMAIL = 'flo@acme.example';
 const HOST = 'bridge.example.com';
 const SITE = `https://${HOST}`;
 const SECRET = 's'.repeat(40);

@@ -42,7 +42,7 @@ export function anonymiseRequestedBy(body: string): string {
   return body.replace(REQUESTED_LINE, (_m, indent: string) => `${indent}${FORMER_MEMBER_LINE}`);
 }
 
-async function scan(redis: Redis, pattern: string): Promise<string[]> {
+export async function scan(redis: Redis, pattern: string): Promise<string[]> {
   const out = new Set<string>();
   let cursor = '0';
   for (let i = 0; i < 1000; i++) {

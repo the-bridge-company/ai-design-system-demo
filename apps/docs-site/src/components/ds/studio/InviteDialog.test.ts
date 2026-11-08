@@ -41,20 +41,20 @@ vi.mock('../../../scripts/invites-api', () => api);
 /** A team with five members, one invite not joined yet, and two people of the organization not in it yet. */
 const acmeTeam = (): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } => ({
   members: [
-    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
-    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
-    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
-    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
-    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.example' },
+    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.example' },
+    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.example' },
+    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.example' },
+    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.example' },
   ],
-  pending: [{ id: 'p-priya', email: 'priya@acme.design', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
+  pending: [{ id: 'p-priya', email: 'priya@acme.example', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
   people: [
-    { name: 'Ann', email: 'ann@acme.design', login: '~ann-leroy' },
-    { name: 'Leo', email: 'leo@acme.design', login: '~leo-martin' },
-    { name: 'Malik', email: 'malik@acme.design', login: '~malik-haddad' },
-    { name: 'Sofia', email: 'sofia@acme.design', login: '~sofia-reyes' },
-    { name: 'Mal Reyes', email: 'mal.reyes@acme.design' },
-    { name: 'Jonas Berg', email: 'jonas.berg@acme.design' },
+    { name: 'Ann', email: 'ann@acme.example', login: '~ann-leroy' },
+    { name: 'Leo', email: 'leo@acme.example', login: '~leo-martin' },
+    { name: 'Malik', email: 'malik@acme.example', login: '~malik-haddad' },
+    { name: 'Sofia', email: 'sofia@acme.example', login: '~sofia-reyes' },
+    { name: 'Mal Reyes', email: 'mal.reyes@acme.example' },
+    { name: 'Jonas Berg', email: 'jonas.berg@acme.example' },
   ],
 });
 
@@ -75,8 +75,8 @@ const real = (over: Partial<MembersData> = {}): MembersData => ({
     { login: 'ann', name: 'Ann', role: 'reviewer', reviews: ['design'] },
     { login: 'leo', name: 'Leo', role: 'edit', reviews: [] },
   ],
-  pending: [{ id: 'p1', email: 'priya@acme.design', role: 'view', sentAt: new Date(Date.now() - 2 * 86400_000).toISOString() }],
-  people: [{ name: 'Mal Reyes', email: 'mal@acme.design', login: 'mal' }],
+  pending: [{ id: 'p1', email: 'priya@acme.example', role: 'view', sentAt: new Date(Date.now() - 2 * 86400_000).toISOString() }],
+  people: [{ name: 'Mal Reyes', email: 'mal@acme.example', login: 'mal' }],
   canManage: true,
   personal: false,
   complete: true,
@@ -104,15 +104,15 @@ describe('Invite collaborators', () => {
     // An admin is not told that only admins can invite.
     expect(dialog.textContent).not.toMatch(/Only admins/);
     expect(within(dialog).getByRole('heading', { name: /Who has access 6/ })).toBeInTheDocument();
-    expect(within(dialog).getByText('priya@acme.design')).toBeInTheDocument();
+    expect(within(dialog).getByText('priya@acme.example')).toBeInTheDocument();
     const send = within(dialog).getByRole('button', { name: 'Send invites' });
     expect(send).toBeDisabled();
 
     // Two addresses typed from the keyboard become two chips.
     const field = within(dialog).getByLabelText('Work email');
     await user.click(field);
-    await user.keyboard('new@acme.design{Enter}');
-    await user.keyboard('other@acme.design,');
+    await user.keyboard('new@acme.example{Enter}');
+    await user.keyboard('other@acme.example,');
     await user.tab();
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Role: Can edit' }));
     expect(within(dialog).getByRole('button', { name: 'Send 2 invites' })).toBeEnabled();
@@ -123,7 +123,7 @@ describe('Invite collaborators', () => {
   it('takes several pasted addresses at once', async () => {
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));
-    await user.paste('a@acme.design, b@acme.design c@acme.design');
+    await user.paste('a@acme.example, b@acme.example c@acme.example');
     // Tab leaves the field: its list closes and the role picker takes the focus.
     await user.tab();
     expect(within(dialog).getByRole('button', { name: 'Send 3 invites' })).toBeInTheDocument();
@@ -133,9 +133,9 @@ describe('Invite collaborators', () => {
     api.sendInvites.mockRejectedValueOnce(refused());
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));
-    await user.keyboard('new@acme.design{Enter}');
+    await user.keyboard('new@acme.example{Enter}');
     await user.click(within(dialog).getByRole('button', { name: 'Send 1 invite' }));
-    await waitFor(() => expect(api.sendInvites).toHaveBeenCalledWith('acme-design-demo/bridge-demo-ds', { role: 'edit' }, [{ email: 'new@acme.design' }]));
+    await waitFor(() => expect(api.sendInvites).toHaveBeenCalledWith('acme-design-demo/bridge-demo-ds', { role: 'edit' }, [{ email: 'new@acme.example' }]));
     expect(within(dialog).queryByText(/Nothing is sent from Acme Design/)).toBeNull();
   });
 
@@ -143,9 +143,9 @@ describe('Invite collaborators', () => {
     page.data = real();
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));
-    await user.keyboard('mal@acme.design{Enter}');
+    await user.keyboard('mal@acme.example{Enter}');
     await user.click(within(dialog).getByRole('button', { name: 'Send 1 invite' }));
-    await waitFor(() => expect(api.sendInvites).toHaveBeenCalledWith('acme/ds', { role: 'edit' }, [{ email: 'mal@acme.design', login: 'mal' }]));
+    await waitFor(() => expect(api.sendInvites).toHaveBeenCalledWith('acme/ds', { role: 'edit' }, [{ email: 'mal@acme.example', login: 'mal' }]));
     expect(await within(dialog).findByText('1 invite sent.')).toBeInTheDocument();
     expect(demo.openMakeItYours).not.toHaveBeenCalled();
   });
@@ -156,7 +156,7 @@ describe('Invite collaborators', () => {
     api.sendInvites.mockRejectedValueOnce(limit);
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));
-    await user.keyboard('x@acme.design{Enter}');
+    await user.keyboard('x@acme.example{Enter}');
     await user.click(within(dialog).getByRole('button', { name: 'Send 1 invite' }));
     const line = await within(dialog).findByText("You reached today's invite limit. Try again tomorrow.");
     expect(line).toHaveAttribute('data-tone', 'info');
@@ -175,11 +175,11 @@ describe('Invite collaborators', () => {
   it('cancels a pending invite from its "More" menu, as in the Settings table', async () => {
     page.data = real();
     const { user, dialog } = await openDialog();
-    await user.click(within(dialog).getByRole('button', { name: 'More for priya@acme.design' }));
+    await user.click(within(dialog).getByRole('button', { name: 'More for priya@acme.example' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Cancel invite' }));
     await waitFor(() => expect(api.cancelInvite).toHaveBeenCalledWith('acme/ds', 'p1'));
-    expect(await within(dialog).findByText('The invite to priya@acme.design was cancelled.')).toBeInTheDocument();
-    expect(within(dialog).queryByText('priya@acme.design')).toBeNull();
+    expect(await within(dialog).findByText('The invite to priya@acme.example was cancelled.')).toBeInTheDocument();
+    expect(within(dialog).queryByText('priya@acme.example')).toBeNull();
     await expectNoAxeViolations(document.body);
   });
 
@@ -191,7 +191,7 @@ describe('Invite collaborators', () => {
     await user.click(more[0]!);
     await user.click(await screen.findByRole('menuitem', { name: 'Cancel invite' }));
     await waitFor(() => expect(api.cancelInvite).toHaveBeenCalled());
-    expect(within(dialog).getByText('priya@acme.design')).toBeInTheDocument();
+    expect(within(dialog).getByText('priya@acme.example')).toBeInTheDocument();
   });
 
   it('says invites are not available on a site without them, and cannot send', async () => {
@@ -199,7 +199,7 @@ describe('Invite collaborators', () => {
     const { user, dialog } = await openDialog();
     expect(within(dialog).getByText('Invites are not available yet on this site.')).toBeInTheDocument();
     await user.click(within(dialog).getByLabelText('Work email'));
-    await user.keyboard('x@acme.design{Enter}');
+    await user.keyboard('x@acme.example{Enter}');
     expect(within(dialog).getByRole('button', { name: 'Send 1 invite' })).toBeDisabled();
   });
 
@@ -322,12 +322,12 @@ describe('Settings > Members', () => {
     const user = userEvent.setup();
     render(createElement(MembersSection));
     // Priya was invited to view: the picker shows Can view chosen, and moves her to another role.
-    await user.click(await screen.findByRole('button', { name: 'Role for priya@acme.design: Can view' }));
+    await user.click(await screen.findByRole('button', { name: 'Role for priya@acme.example: Can view' }));
     expect(screen.getByRole('radio', { name: /Can view/ })).toHaveAttribute('aria-checked', 'true');
     await user.click(await screen.findByRole('radio', { name: /Can edit/ }));
     await waitFor(() => expect(api.setInviteRole).toHaveBeenCalledWith('acme/ds', 'p1', { role: 'edit' }));
     expect(api.resendInvite).not.toHaveBeenCalled();
-    expect(await screen.findByText('priya@acme.design will join as Can edit.')).toBeInTheDocument();
+    expect(await screen.findByText('priya@acme.example will join as Can edit.')).toBeInTheDocument();
   });
 
   it('a reader sees roles as text, no invite button and no controls (board I4)', async () => {

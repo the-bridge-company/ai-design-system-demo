@@ -289,7 +289,7 @@ the library link from there to share it. The server piece is one Vercel function
 | Choice                          | Who reads the Library                                                                           |
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Anyone with the link            | Everyone. The default for a public repository.                                                  |
-| Anyone with a work email at ... | People with an email at one of the listed domains (for example `acme.design`): they enter it on the Library and open the link Bridge emails them. |
+| Anyone with a work email at ... | People with an email at one of the listed domains (for example `acme.example`): they enter it on the Library and open the link Bridge emails them. |
 | Only the team                   | People with access to the repository on GitHub, signed in with GitHub. The default for a private repository. |
 
 Contributors (Can edit, Reviewer, Admin) keep signing in with GitHub and are invited from Members.
@@ -303,7 +303,7 @@ Contributors (Can edit, Reviewer, Admin) keep signing in with GitHub and are inv
   team keeps the default above; if the store were lost, every team would fall back to it, which never opens more than
   GitHub does. Only a repository admin changes it, checked on GitHub with their own sign-in on every save.
 - **The sign-in link.** On the Library, a reader enters their work email. The server checks the part after the `@`
-  against the listed domains (exact match, case-insensitive: `eng.acme.design` matches only if it is listed itself),
+  against the listed domains (exact match, case-insensitive: `eng.acme.example` matches only if it is listed itself),
   then emails a link `<site>/library/<owner>/<repo>/#signin=<token>`. The token is 32 random bytes in the fragment,
   so it reaches no server log. Only its SHA-256 is stored, with the team, the email's domain and the setting's version
   (never the email itself), for 15 minutes, and it works once. Consumer providers (`gmail.com`, `outlook.com`...) are

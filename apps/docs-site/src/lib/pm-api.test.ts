@@ -61,25 +61,25 @@ const word = (kind: string, text?: string) => ({ action: 'pm-word', repo: REPO, 
 describe('the product manager', () => {
   it('is picked by a lead or an admin, never by anyone else', async () => {
     const s = setup({});
-    const admin = await as(s, 'ann@acme.design', 'Ann', 'admin');
-    const editor = await as(s, 'mia@acme.design', 'Mia', 'edit');
-    await as(s, 'dino@acme.design', 'Dino', 'view');
-    const pick = { action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.design') } };
+    const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
+    const editor = await as(s, 'mia@acme.example', 'Mia', 'edit');
+    await as(s, 'dino@acme.example', 'Dino', 'view');
+    const pick = { action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.example') } };
     expect((await handleContribute(post(pick, editor), ENV, s.deps)).status).toBe(403);
     const r = await handleContribute(post(pick, admin), ENV, s.deps);
     expect(r.status).toBe(200);
-    expect((await r.json()).pm).toEqual({ name: 'Dino', ref: memberRef('dino@acme.design') });
+    expect((await r.json()).pm).toEqual({ name: 'Dino', ref: memberRef('dino@acme.example') });
     // Someone not on the team: refused.
     expect((await handleContribute(post({ ...pick, pm: { ref: 'f'.repeat(16) } }, admin), ENV, s.deps)).status).toBe(404);
   });
 
   it('says what they think, even with Can view; nobody else says it for them', async () => {
-    const s = setup({ member: memberRef('mia@acme.design'), memberName: 'Mia', leadAskedAt: '2026-11-06T00:00:00Z' });
-    const admin = await as(s, 'ann@acme.design', 'Ann', 'admin');
-    const pm = await as(s, 'dino@acme.design', 'Dino', 'view');
-    const designer = await as(s, 'mia@acme.design', 'Mia', 'edit');
-    const lead = await as(s, 'flo@acme.design', 'Flo', 'edit', true);
-    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.design') } }, admin), ENV, s.deps);
+    const s = setup({ member: memberRef('mia@acme.example'), memberName: 'Mia', leadAskedAt: '2026-11-06T00:00:00Z' });
+    const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
+    const pm = await as(s, 'dino@acme.example', 'Dino', 'view');
+    const designer = await as(s, 'mia@acme.example', 'Mia', 'edit');
+    const lead = await as(s, 'flo@acme.example', 'Flo', 'edit', true);
+    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.example') } }, admin), ENV, s.deps);
     // Needs changes needs a note.
     expect((await handleContribute(post(word('pm-changes'), pm), ENV, s.deps)).status).toBe(400);
     // The designer and a lead are not the PM.
@@ -88,17 +88,17 @@ describe('the product manager', () => {
     const r = await handleContribute(post(word('pm-changes', 'Show how many days late'), pm), ENV, s.deps);
     expect(r.status).toBe(200);
     expect(pmOpinionOf(s.pull.body)).toMatchObject({ kind: 'pm-changes', byName: 'Dino', text: 'Show how many days late', round: 1 });
-    expect(s.pull.body).not.toContain('dino@acme.design');
+    expect(s.pull.body).not.toContain('dino@acme.example');
   });
 
   it('the designer, and only them, says the PM agreed in a call', async () => {
-    const s = setup({ member: memberRef('mia@acme.design'), memberName: 'Mia' });
-    const admin = await as(s, 'ann@acme.design', 'Ann', 'admin');
-    const pm = await as(s, 'dino@acme.design', 'Dino', 'view');
-    const designer = await as(s, 'mia@acme.design', 'Mia', 'edit');
+    const s = setup({ member: memberRef('mia@acme.example'), memberName: 'Mia' });
+    const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
+    const pm = await as(s, 'dino@acme.example', 'Dino', 'view');
+    const designer = await as(s, 'mia@acme.example', 'Mia', 'edit');
     // No PM yet: nothing to say.
     expect((await handleContribute(post(word('pm-call'), designer), ENV, s.deps)).status).toBe(409);
-    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.design') } }, admin), ENV, s.deps);
+    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.example') } }, admin), ENV, s.deps);
     expect((await handleContribute(post(word('pm-call'), pm), ENV, s.deps)).status).toBe(403);
     expect((await handleContribute(post(word('pm-call'), designer), ENV, s.deps)).status).toBe(200);
     expect(pmOpinionOf(s.pull.body)).toMatchObject({ kind: 'pm-call', byName: 'Mia', to: ['Dino'] });
@@ -106,9 +106,9 @@ describe('the product manager', () => {
 
   it('never once it went to the developers, never in another product\'s repository', async () => {
     const s = setup({ doneAt: '2026-11-06T00:00:00Z' });
-    const admin = await as(s, 'ann@acme.design', 'Ann', 'admin');
-    const pm = await as(s, 'dino@acme.design', 'Dino', 'view');
-    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.design') } }, admin), ENV, s.deps);
+    const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
+    const pm = await as(s, 'dino@acme.example', 'Dino', 'view');
+    await handleContribute(post({ action: 'set-pm', repo: REPO, product: 'shop', pm: { ref: memberRef('dino@acme.example') } }, admin), ENV, s.deps);
     expect((await handleContribute(post(word('pm-ok'), pm), ENV, s.deps)).status).toBe(409);
     expect((await handleContribute(post({ ...word('pm-ok'), copy: 'acme/other' }, pm), ENV, s.deps)).status).toBe(404);
     expect(s.patches).toEqual([]);

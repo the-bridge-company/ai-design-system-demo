@@ -50,11 +50,11 @@ describe('the email session', () => {
   });
 
   it('keeps a member only with an email, as Admin, Can view or else Can edit', () => {
-    expect(parseMember({ email: 'leo@acme.design', name: ' Leo ', role: 'admin' })).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'admin' });
-    expect(parseMember({ email: 'leo@acme.design', name: 'Leo', role: 'owner' })).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'edit' });
-    expect(parseMember({ email: 'leo@acme.design' })).toEqual({ email: 'leo@acme.design', name: 'leo@acme.design', role: 'edit' });
+    expect(parseMember({ email: 'leo@acme.example', name: ' Leo ', role: 'admin' })).toEqual({ email: 'leo@acme.example', name: 'Leo', role: 'admin' });
+    expect(parseMember({ email: 'leo@acme.example', name: 'Leo', role: 'owner' })).toEqual({ email: 'leo@acme.example', name: 'Leo', role: 'edit' });
+    expect(parseMember({ email: 'leo@acme.example' })).toEqual({ email: 'leo@acme.example', name: 'leo@acme.example', role: 'edit' });
     // Can view stays Can view: it only takes rights away.
-    expect(parseMember({ email: 'vic@acme.design', name: 'Vic', role: 'view' })).toEqual({ email: 'vic@acme.design', name: 'Vic', role: 'view' });
+    expect(parseMember({ email: 'vic@acme.example', name: 'Vic', role: 'view' })).toEqual({ email: 'vic@acme.example', name: 'Vic', role: 'view' });
     expect(parseMember({ name: 'Leo' })).toBeNull();
   });
 
@@ -107,11 +107,11 @@ describe('signed-out screens', () => {
 
 describe('email members', () => {
   it('reads the rows the server marks via email, Can edit or Admin, with you', () => {
-    const rows = [{ email: 'Leo@acme.design', name: 'Leo', via: 'email', role: 'admin' }, { email: 'x@acme.design', via: 'github' }, { email: 'kim@acme.design', via: 'email', role: 'reviewer' }, null];
-    expect(emailMembers(rows, 'leo@acme.design')).toEqual([
-      { login: 'leo@acme.design', name: 'Leo', role: 'admin', reviews: [], email: 'leo@acme.design', via: 'email', you: true },
+    const rows = [{ email: 'Leo@acme.example', name: 'Leo', via: 'email', role: 'admin' }, { email: 'x@acme.example', via: 'github' }, { email: 'kim@acme.example', via: 'email', role: 'reviewer' }, null];
+    expect(emailMembers(rows, 'leo@acme.example')).toEqual([
+      { login: 'leo@acme.example', name: 'Leo', role: 'admin', reviews: [], email: 'leo@acme.example', via: 'email', you: true },
       // Anything else reads as Can edit: an email member is never Reviewer.
-      { login: 'kim@acme.design', name: 'kim@acme.design', role: 'edit', reviews: [], email: 'kim@acme.design', via: 'email' },
+      { login: 'kim@acme.example', name: 'kim@acme.example', role: 'edit', reviews: [], email: 'kim@acme.example', via: 'email' },
     ]);
   });
 });

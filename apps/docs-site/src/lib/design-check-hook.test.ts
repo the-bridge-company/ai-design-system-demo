@@ -49,8 +49,8 @@ function setup(o: { done?: boolean; watched?: boolean } = {}) {
   };
   const ready = async () => {
     if (o.watched !== false) await redis.pipe(watchWrites([{ repo: TEAM, meta: { team: TEAM, kind: 'team' } }, { repo: CODE, meta: { team: TEAM, kind: 'code', product: 'shop' } }]));
-    await memberStore(redis).put(TEAM, { email: 'dino@acme.design', name: 'Dino', role: 'view', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
-    await setPm(redis, TEAM, 'shop', { email: 'dino@acme.design', name: 'Dino' });
+    await memberStore(redis).put(TEAM, { email: 'dino@acme.example', name: 'Dino', role: 'view', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
+    await setPm(redis, TEAM, 'shop', { email: 'dino@acme.example', name: 'Dino' });
   };
   return { redis, statuses, hook, ready };
 }

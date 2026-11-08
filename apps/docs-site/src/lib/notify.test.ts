@@ -37,7 +37,9 @@ const T0 = Date.parse('2026-11-02T10:00:00Z');
 const TEAM = 'acme/design';
 const CODE = 'acme/shop';
 const COPY = 'acme/shop-design';
-const MIA = 'mia@acme.design';
+const MIA = 'mia@acme.example';
+/** A routable address: the providers drop reserved domains such as MIA's (api/_lib/email.ts neverMailed). */
+const OUT = 'mia@acme-mail.io';
 const dev = { login: 'ana', id: 42, type: 'User' };
 const bot = { login: 'bridge-app[bot]', id: 9, type: 'Bot' };
 const taskBody = `The design team explored this in Bridge.\n\n**Preview.** In the Vercel comment of the prototype: https://github.com/${COPY}/pull/7`;
@@ -374,7 +376,7 @@ describe('the emails', () => {
 
 describe('unsubscribe tokens', () => {
   it('open with the secret only, untouched', () => {
-    const t = unsubToken(SECRET, 'Mia@Acme.design', 'needs')!;
+    const t = unsubToken(SECRET, 'Mia@Acme.example', 'needs')!;
     expect(t).not.toContain('mia');
     expect(readUnsubToken(SECRET, t)).toEqual({ email: MIA, kind: 'needs' });
     expect(readUnsubToken('x'.repeat(40), t)).toBeNull();
@@ -431,12 +433,12 @@ describe('the Brevo sender', () => {
       calls.push({ url, init });
       return new Response('{"messageId":"1"}', { status: 201 });
     });
-    await s.send({ to: MIA, subject: 'S', text: 'T', html: '<p>H</p>', headers: { 'List-Unsubscribe': '<https://b/u>' } });
+    await s.send({ to: OUT, subject: 'S', text: 'T', html: '<p>H</p>', headers: { 'List-Unsubscribe': '<https://b/u>' } });
     expect(calls[0]!.url).toBe('https://api.brevo.com/v3/smtp/email');
     expect(calls[0]!.init.headers['api-key']).toBe('xkeysib-test');
     expect(JSON.parse(calls[0]!.init.body!)).toEqual({
       sender: { name: 'Bridge', email: 'notifications@acme.com' },
-      to: [{ email: MIA }],
+      to: [{ email: OUT }],
       subject: 'S',
       textContent: 'T',
       htmlContent: '<p>H</p>',
@@ -445,8 +447,8 @@ describe('the Brevo sender', () => {
   });
   it('throws on a refusal without the key or the address in the message', async () => {
     const s = brevoSender('xkeysib-test', 'notifications@acme.com', async () => new Response('{}', { status: 401 }));
-    await expect(s.send({ to: MIA, subject: 'S', text: 'T', html: 'H' })).rejects.toThrow('email provider answered 401');
-    await expect(brevoSender('k', 'not an address', async () => new Response()).send({ to: MIA, subject: 'S', text: 'T', html: 'H' })).rejects.toThrow(/not valid/);
+    await expect(s.send({ to: OUT, subject: 'S', text: 'T', html: 'H' })).rejects.toThrow('email provider answered 401');
+    await expect(brevoSender('k', 'not an address', async () => new Response()).send({ to: OUT, subject: 'S', text: 'T', html: 'H' })).rejects.toThrow(/not valid/);
   });
   it('from the env: needs the key; NOTIFY_FROM else INVITE_EMAIL_FROM', () => {
     const f = async () => new Response();
@@ -521,7 +523,7 @@ describe('the talk with a design lead', () => {
     let now = T0;
     const d: NotifyDeps = { redis, sender: { send: async (m: EmailMessage) => void sent.push(m) } as EmailSender, secret: SECRET, origin: 'https://bridge.test', now: () => now, loginId: async (l: string) => (l === 'flo' ? 7 : null) };
     await redis.pipe(watchWrites([{ repo: COPY, meta: { team: TEAM, kind: 'copy', product: 'shop' } }]));
-    await redis.cmd('SET', 'bridge:account:gh:7', 'florian@acme.design');
+    await redis.cmd('SET', 'bridge:account:gh:7', 'florian@acme.example');
     await redis.cmd('SET', issueKey(COPY, 7), MIA);
     await memberStore(redis).put(TEAM, { email: MIA, name: 'Mia', role: 'edit', version: 1, addedBy: 'x', at: 't' });
     return { d, redis, sent, later: (ms: number) => (now += ms) };
@@ -531,7 +533,7 @@ describe('the talk with a design lead', () => {
     const { d, sent } = await setup();
     const out = await deliverNotices(leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedByName: 'Mia', leadAskedTo: ['flo', 'dana'] }), base), d, 'e1');
     expect(out.map((o) => o.status)).toEqual(['sent', 'skipped']);
-    expect(sent[0]!.to).toBe('florian@acme.design');
+    expect(sent[0]!.to).toBe('florian@acme.example');
     expect(sent[0]!.text).toContain('changes/?exploration=7&product=shop');
   });
   it('the designer gets the lead\'s words; nobody hears about their own act', async () => {
@@ -560,7 +562,7 @@ describe('the talk with a design lead', () => {
     await sendReminders(d);
     expect(sent).toHaveLength(1);
     later(24 * 60 * 60 * 1000 + 1000);
-    await redis.cmd('DEL', `bridge:notify:soon:florian@acme.design:${COPY}#7`);
+    await redis.cmd('DEL', `bridge:notify:soon:florian@acme.example:${COPY}#7`);
     expect(await sendReminders(d)).toBe(1);
     expect(sent[1]!.subject).toBe('Late tag waits for you since 2 days');
     later(4 * 24 * 60 * 60 * 1000);
@@ -576,18 +578,18 @@ describe('the talk with a design lead', () => {
   });
   it("I'll look: the reminder goes to the one who took it, then back to every reviewer once", async () => {
     const { d, redis, sent, later } = await setup();
-    const LEA = 'lea@acme.design';
+    const LEA = 'lea@acme.example';
     await memberStore(redis).put(TEAM, { email: LEA, name: 'Lea', role: 'edit', lead: true, version: 1, addedBy: 'x', at: 't' });
     const DAY = 24 * 60 * 60 * 1000;
     const asked = { leadAskedAt: new Date(T0).toISOString(), leadAskedByName: 'Mia', leadAskedTo: ['flo'] };
     await deliverNotices(leadNoticesOf(none, block(asked), base), d, 't1');
-    expect(sent.map((m) => m.to).sort()).toEqual(['florian@acme.design', LEA]);
+    expect(sent.map((m) => m.to).sort()).toEqual(['florian@acme.example', LEA]);
     later(DAY);
     const taken = await deliverNotices(leadNoticesOf(block(asked), block({ ...asked, leadTakenAt: 'x', leadTakenByName: 'Lea' }), base), d, 't2');
     expect(taken).toEqual([]);
     expect(sent).toHaveLength(2);
     const fresh = async () => {
-      for (const e of ['florian@acme.design', LEA]) await redis.cmd('DEL', `bridge:notify:soon:${e}:${COPY}#7`);
+      for (const e of ['florian@acme.example', LEA]) await redis.cmd('DEL', `bridge:notify:soon:${e}:${COPY}#7`);
     };
     // When the usual reminder was due: Lea only.
     later(DAY + 1000);
@@ -598,7 +600,7 @@ describe('the talk with a design lead', () => {
     later(DAY);
     await fresh();
     expect(await sendReminders(d)).toBe(2);
-    expect(sent.slice(3).map((m) => m.to).sort()).toEqual(['florian@acme.design', LEA]);
+    expect(sent.slice(3).map((m) => m.to).sort()).toEqual(['florian@acme.example', LEA]);
     later(4 * DAY);
     expect(await sendReminders(d)).toBe(0);
   });

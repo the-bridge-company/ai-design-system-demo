@@ -95,7 +95,7 @@ function setup(world: Partial<World> = {}, env: Record<string, string> = {}) {
   };
   const members = memberStore(redis);
   /** A member's team cookie. */
-  const member = async (email = 'mia@acme.design', repo = TEAM) => {
+  const member = async (email = 'mia@acme.example', repo = TEAM) => {
     await members.put(repo, { email, name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(now).toISOString() });
     return `${cookieName(repo)}=${signSession({ repo, email, name: 'Mia', v: 1, exp: now + 1e9 }, SECRET)}`;
   };
@@ -168,7 +168,7 @@ describe('team reads: who', () => {
 
   it('reads for a Bridge account that belongs to the team (its team set), not for one that does not', async () => {
     const s = setup();
-    expect((await s.read(`${P}/pulls`, await s.account('sam@acme.design', [TEAM]))).status).toBe(200);
+    expect((await s.read(`${P}/pulls`, await s.account('sam@acme.example', [TEAM]))).status).toBe(200);
     const other = await s.account('eve@evil.example', ['evil/ds']);
     const r = await s.read(`${P}/pulls`, other);
     expect(r.status).toBe(401);
@@ -177,7 +177,7 @@ describe('team reads: who', () => {
 
   it('a member of one team cannot read another team', async () => {
     const s = setup();
-    const cookie = await s.member('mia@acme.design', TEAM);
+    const cookie = await s.member('mia@acme.example', TEAM);
     expect((await s.read('/repos/acme/secret/pulls', cookie, 'acme/secret')).status).toBe(401);
     // The path must be the team's own repository.
     expect((await s.read('/repos/acme/secret/pulls', cookie, TEAM)).status).toBe(403);
@@ -305,7 +305,7 @@ describe('team reads: the cache', () => {
     const nm = await s.read(`${P}/pulls`, cookie, TEAM, { 'if-none-match': '"p1"' });
     expect(nm.status).toBe(304);
     // Another member, another address: the same kept answer.
-    expect((await s.read(`${P}/pulls`, await s.member('leo@acme.design'), TEAM, { 'x-real-ip': '198.51.100.1' })).headers.get('x-bridge-cache')).toBe('hit');
+    expect((await s.read(`${P}/pulls`, await s.member('leo@acme.example'), TEAM, { 'x-real-ip': '198.51.100.1' })).headers.get('x-bridge-cache')).toBe('hit');
   });
 
   it('a write through Bridge makes kept answers be checked again at once', async () => {
@@ -358,7 +358,7 @@ describe('team reads: the cache', () => {
 
   it('makes one GitHub call for concurrent misses of the same answer', async () => {
     const s = setup();
-    const cookies = await Promise.all(['a', 'b', 'c', 'd'].map((x) => s.member(`${x}@acme.design`)));
+    const cookies = await Promise.all(['a', 'b', 'c', 'd'].map((x) => s.member(`${x}@acme.example`)));
     const rs = await Promise.all(cookies.map((c) => s.read(`${P}/pulls`, c)));
     expect(rs.every((r) => r.status === 200)).toBe(true);
     expect(gets(s.w, `${P}/pulls`)).toBe(1);
@@ -397,9 +397,9 @@ describe('team reads: limits', () => {
 
   it('counts per signed-in member, not per address: a busy office on one address keeps reading', async () => {
     const s = setup({}, { READ_MAX_IP: '3' });
-    const mia = await s.member('mia@acme.design');
-    const leo = await s.member('leo@acme.design');
-    const sam = await s.account('sam@acme.design', [TEAM]);
+    const mia = await s.member('mia@acme.example');
+    const leo = await s.member('leo@acme.example');
+    const sam = await s.account('sam@acme.example', [TEAM]);
     // Same address (203.0.113.9) for all three.
     for (let i = 0; i < 3; i++) expect((await s.read(`${P}/pulls`, mia)).status).toBe(200);
     expect((await s.read(`${P}/pulls`, mia)).status).toBe(429);
@@ -435,7 +435,7 @@ describe('team reads: limits', () => {
 
   it("every team has its own cap of GitHub calls, never of cached answers: many readers of kept answers are never busy", async () => {
     const s = setup({}, { READ_MAX_TEAM: '2' });
-    const people = await Promise.all(Array.from({ length: 30 }, (_, i) => s.member(`p${i}@acme.design`)));
+    const people = await Promise.all(Array.from({ length: 30 }, (_, i) => s.member(`p${i}@acme.example`)));
     // Two misses spend the team's two GitHub calls.
     expect((await s.read(`${P}/pulls`, people[0])).status).toBe(200);
     expect((await s.read(`${P}/issues`, people[0])).status).toBe(200);
@@ -504,7 +504,7 @@ describe('team reads: people by login', () => {
     // Kept: another member asks again, GitHub is not called.
     const before = s.w.calls.length;
     s.tick(60 * 60 * 1000);
-    const again = await (await s.users(['dana', 'ghost'], await s.member('leo@acme.design'))).json();
+    const again = await (await s.users(['dana', 'ghost'], await s.member('leo@acme.example'))).json();
     expect(again.users).toEqual({ dana: body.users.dana, ghost: null });
     expect(s.w.calls.length).toBe(before);
   });
@@ -552,7 +552,7 @@ describe('team reads: the status of open changes, once for the team', () => {
     // Another member, 20 s later: no GitHub call.
     s.tick(20_000);
     const before = s.w.calls.length;
-    expect((await (await s.changes([`7:${H}`], await s.member('leo@acme.design'))).json()).changes['7']).toEqual(body.changes['7']);
+    expect((await (await s.changes([`7:${H}`], await s.member('leo@acme.example'))).json()).changes['7']).toEqual(body.changes['7']);
     expect(s.w.calls.length).toBe(before);
     // The single reads share the same cache: a read of the pull request is a hit.
     expect((await s.read(`${P}/pulls/7`, await s.member())).headers.get('x-bridge-cache')).toBe('hit');
@@ -846,7 +846,7 @@ describe('team reads with a read pass (the toolbar in a private product preview)
       expect(r.headers.get('access-control-allow-credentials')).toBeNull();
     }
     // The member's budget, not the address's.
-    expect(Number(await s.redis.cmd('GET', countKey('member', memberBudgetId('mia@acme.design'), T0)))).toBeGreaterThan(0);
+    expect(Number(await s.redis.cmd('GET', countKey('member', memberBudgetId('mia@acme.example'), T0)))).toBeGreaterThan(0);
     expect(await s.redis.cmd('GET', countKey('ip', sha256('read-ip:203.0.113.9').slice(0, 24), T0))).toBeNull();
   });
 
@@ -860,7 +860,7 @@ describe('team reads with a read pass (the toolbar in a private product preview)
       expect(r.status, path).toBe(403);
       expect((await r.json()).error, path).toBe('not-allowed');
     }
-    const { pass } = (await (await mint(s, await s.member('mia@acme.design', DEMO), DEMO)).json()) as { pass: string };
+    const { pass } = (await (await mint(s, await s.member('mia@acme.example', DEMO), DEMO)).json()) as { pass: string };
     for (const path of reads) {
       const r = await readWith(s, path, pass, DEMO);
       expect(r.status, path).toBe(200);
@@ -903,7 +903,7 @@ describe('team reads with a read pass (the toolbar in a private product preview)
     expect((await readWith(s, `/repos/${OTHER}/pulls/1`, tampered)).status).toBe(401);
     expect((await readWith(s, `/repos/${COPY}/pulls/4`, 'v1.junk.junk')).status).toBe(401);
     // Minted for another team that lists the same product: does not open it through this team.
-    const other = (await (await mint(s, await s.member('mia@acme.design', OTHER), OTHER)).json()) as { pass: string };
+    const other = (await (await mint(s, await s.member('mia@acme.example', OTHER), OTHER)).json()) as { pass: string };
     expect(other.pass).toMatch(/^v1\./);
     expect((await readWith(s, `/repos/${COPY}/pulls/4`, other.pass)).status).toBe(401);
     expect((await readWith(s, `/repos/${COPY}/pulls/4`, other.pass, OTHER)).status).toBe(200);
@@ -913,7 +913,7 @@ describe('team reads with a read pass (the toolbar in a private product preview)
 
   it('on a public demo team, the pass opens its private product; without it, the visitor stays out', async () => {
     const s = setup(world(DEMO));
-    const cookie = await s.member('mia@acme.design', DEMO);
+    const cookie = await s.member('mia@acme.example', DEMO);
     const { pass } = (await (await mint(s, cookie, DEMO)).json()) as { pass: string };
     expect((await s.read(`/repos/${COPY}/pulls/4`, '', DEMO, from(PREVIEW_HOST))).status).toBe(403);
     const r = await readWith(s, `/repos/${COPY}/pulls/4`, pass, DEMO);

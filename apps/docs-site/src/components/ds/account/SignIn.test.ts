@@ -33,7 +33,7 @@ let reply: (c: Call) => Response;
 type EntryCall = { url: string; method: string; body: Record<string, unknown> | null; headers: Record<string, string> };
 let entryCalls: EntryCall[] = [];
 let entryReply: (c: EntryCall) => Response;
-const account = (over: Record<string, unknown> = {}) => ({ email: 'leo@acme.design', name: 'Leo', github: null, teams: [], ...over });
+const account = (over: Record<string, unknown> = {}) => ({ email: 'leo@acme.example', name: 'Leo', github: null, teams: [], ...over });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -96,9 +96,9 @@ describe('sign-in screen, email', () => {
     expect(screen.getByText('Enter your work email, like name@company.com.')).toBeInTheDocument();
     expect(posts('code')).toHaveLength(0);
     await user.clear(screen.getByRole('textbox', { name: 'Work email' }));
-    await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'leo@acme.design{Enter}');
+    await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'leo@acme.example{Enter}');
     expect(await screen.findByRole('heading', { name: 'Check your inbox' })).toBeInTheDocument();
-    await waitFor(() => expect(posts('code')[0]?.body ?? null).toEqual({ action: 'code', email: 'leo@acme.design' }));
+    await waitFor(() => expect(posts('code')[0]?.body ?? null).toEqual({ action: 'code', email: 'leo@acme.example' }));
     expect(posts('code')[0]!.headers['X-Bridge-Account']).toBe('1');
     const field = screen.getByRole('textbox', { name: 'Code' });
     expect(field).toHaveAttribute('inputmode', 'numeric');
@@ -108,7 +108,7 @@ describe('sign-in screen, email', () => {
     await user.click(field);
     await user.paste('123 456');
     await waitFor(() => expect(navigate.to).toHaveBeenCalledWith('/studio/acme/ds/tokens/'));
-    await waitFor(() => expect(posts('verify')[0]?.body ?? null).toEqual({ action: 'verify', email: 'leo@acme.design', code: '123456', tz: expect.any(String) }));
+    await waitFor(() => expect(posts('verify')[0]?.body ?? null).toEqual({ action: 'verify', email: 'leo@acme.example', code: '123456', tz: expect.any(String) }));
     expect(document.documentElement.hasAttribute('data-account')).toBe(true);
     // ?next= wins: Bridge does not pick a room.
     expect(entryCalls).toHaveLength(0);
@@ -127,7 +127,7 @@ describe('sign-in screen, email', () => {
     expect(pitch.closest('.zone')).not.toBeNull();
     expect(pitch.closest('.zone')!.querySelector('a, button, input')).toBeNull();
     expect(container.querySelector('.acc')!.compareDocumentPosition(pitch) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await userEvent.setup().type(await emailField(), 'leo@acme.design{Enter}');
+    await userEvent.setup().type(await emailField(), 'leo@acme.example{Enter}');
     expect(await screen.findByRole('heading', { name: 'Check your inbox' })).toBeInTheDocument();
     // Past the email: the same page, the harbor stays, the demo and the pitch have done their work.
     expect(screen.queryByText('Explore with AI. Keep what works in your design system.')).toBeNull();
@@ -153,7 +153,7 @@ describe('sign-in screen, email', () => {
     });
     render(createElement(SignIn));
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     const field = await screen.findByRole('textbox', { name: 'Code' });
     await user.type(field, '123456');
     await user.keyboard('{Enter}');
@@ -164,7 +164,7 @@ describe('sign-in screen, email', () => {
     await user.keyboard('{Enter}');
     expect(posts('verify')).toHaveLength(1);
     // The account's email team knows its member before the page opens: no "Sign in to open" there.
-    expect(JSON.parse(localStorage.getItem('bridge.contribute.member:acme/ds') ?? 'null')).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'edit' });
+    expect(JSON.parse(localStorage.getItem('bridge.contribute.member:acme/ds') ?? 'null')).toEqual({ email: 'leo@acme.example', name: 'Leo', role: 'edit' });
   });
 
   it('a code the 6th digit already got refused: Continue does not spend a second try, and is off while it checks', async () => {
@@ -181,7 +181,7 @@ describe('sign-in screen, email', () => {
     });
     render(createElement(SignIn));
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     const field = await screen.findByRole('textbox', { name: 'Code' });
     await user.type(field, '123456');
     const go = screen.getByRole('button', { name: 'Continue' });
@@ -214,7 +214,7 @@ describe('sign-in screen, email', () => {
     reply = (c) => (c.method === 'GET' ? json(200, { available: true, account: null }) : c.body?.action === 'verify' ? json(400, { error: 'bad-code' }) : json(200, { ok: true }));
     render(createElement(SignIn));
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     const field = await screen.findByRole('textbox', { name: 'Code' });
     await user.type(field, '12');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
@@ -233,7 +233,7 @@ describe('sign-in screen, email', () => {
     };
     render(createElement(SignIn));
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     const field = await screen.findByRole('textbox', { name: 'Code' });
     expect(screen.getByRole('button', { name: /Send a new code in/ })).toBeDisabled();
     await user.type(field, '111111');
@@ -253,17 +253,17 @@ describe('sign-in screen, email', () => {
     const user = userEvent.setup();
     const email = await emailField();
     expect(email).toHaveFocus();
-    await user.type(email, 'leo@acme.design{Enter}');
+    await user.type(email, 'leo@acme.example{Enter}');
     await user.click(await screen.findByRole('button', { name: 'I have a code' }));
     expect(await screen.findByRole('heading', { name: 'Check your inbox' })).toBeInTheDocument();
     await user.type(screen.getByRole('textbox', { name: 'Code' }), '123456');
-    await waitFor(() => expect(posts('verify')[0]!.body).toEqual({ action: 'verify', email: 'leo@acme.design', code: '123456', tz: expect.any(String) }));
+    await waitFor(() => expect(posts('verify')[0]!.body).toEqual({ action: 'verify', email: 'leo@acme.example', code: '123456', tz: expect.any(String) }));
   });
 
   it("says the server's own sentence when the daily cap is reached", async () => {
     reply = (c) => (c.method === 'GET' ? json(200, { available: true, account: null }) : json(429, { error: 'rate', message: 'Bridge sent enough codes to this email today. Try again tomorrow, or continue with GitHub.' }));
     render(createElement(SignIn));
-    await userEvent.setup().type(await emailField(), 'leo@acme.design{Enter}');
+    await userEvent.setup().type(await emailField(), 'leo@acme.example{Enter}');
     expect(await screen.findByText('Bridge sent enough codes to this email today. Try again tomorrow, or continue with GitHub.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Check your inbox' })).toBeNull();
   });
@@ -282,7 +282,7 @@ describe('sign-in screen, email', () => {
   it('lets a new code go out only after the cooldown, and goes back to another email', async () => {
     render(createElement(SignIn));
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     const resend = await screen.findByRole('button', { name: /Send a new code in \d+ s/ });
     expect(resend).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Use another email' }));
@@ -302,7 +302,7 @@ describe('sign-in screen, email', () => {
     expect(await screen.findByRole('heading', { name: 'Welcome to Bridge' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Open the demo' })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.type(await emailField(), 'leo@acme.design{Enter}');
+    await user.type(await emailField(), 'leo@acme.example{Enter}');
     await user.type(await screen.findByRole('textbox', { name: 'Code' }), '123456');
     expect(await screen.findByRole('heading', { name: 'One last thing: your name' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Your name' })).toHaveFocus();

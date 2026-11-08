@@ -14,7 +14,7 @@ import { NARROW_TOUR, tourPlacement } from './HomeTour';
 
 const NOW = Date.parse('2026-10-22T10:00:00Z');
 const dana = person('dana', 'Dana Kim', null);
-const leo = person('leo@acme.design', 'Leo', null);
+const leo = person('leo@acme.example', 'Leo', null);
 
 const sentBack = changeNeed({ number: 42, title: 'Spacing scale for dense tables', author: leo, asker: leo, since: null, task: 'own-changes', changesBy: [dana], thumb: { kind: 'icon', icon: 'branch' } }, NOW);
 const branch: BranchCard = { number: 42, title: 'Spacing scale for dense tables', href: '/studio/changes/?pr=42', stage: 'ready', updated: '2026-10-21T10:00:00Z', reviewer: dana, thumb: { kind: 'icon', icon: 'branch' } };

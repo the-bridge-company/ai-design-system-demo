@@ -97,14 +97,14 @@ const get = (query: string, cookie?: string) => new Request(`${ORIGIN}/api/libra
 const tokenOf = (msg: EmailMessage) => /#signin=([A-Za-z0-9_-]+)/.exec(msg.text)![1]!;
 const cookieOf = (r: Response) => (r.headers.get('set-cookie') ?? '').split(';')[0]!;
 
-async function setEmail(deps: LibraryDeps, domains = ['acme.design']) {
+async function setEmail(deps: LibraryDeps, domains = ['acme.example']) {
   const r = await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'email', domains }, { authorization: 'Bearer ghu_dana' }), ENV, deps);
   expect(r.status).toBe(200);
   return r;
 }
 
 /** Signs in as `email` and returns the session cookie ("name=value"). */
-async function signIn(deps: LibraryDeps, sent: EmailMessage[], email = 'mia@acme.design') {
+async function signIn(deps: LibraryDeps, sent: EmailMessage[], email = 'mia@acme.example') {
   const s = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email }), ENV, deps);
   expect(s.status).toBe(200);
   const v = await handleLibraryAccess(post({ action: 'verify', repo: REPO, token: tokenOf(sent[sent.length - 1]!) }), ENV, deps);
@@ -114,42 +114,42 @@ async function signIn(deps: LibraryDeps, sent: EmailMessage[], email = 'mia@acme
 
 describe('domains', () => {
   it('normalizes what an admin types, and refuses what is not a domain', () => {
-    expect(normalizeDomain(' @Acme.Design ')).toBe('acme.design');
+    expect(normalizeDomain(' @Acme.Example ')).toBe('acme.example');
     expect(normalizeDomain('mail.acme.co.uk')).toBe('mail.acme.co.uk');
-    for (const bad of ['acme', 'acme.', '.acme.design', 'acme..design', 'https://acme.design', 'acme.design/x', 'ac me.design', 'acmé.design', '*.acme.design', 'a@acme.design']) expect(normalizeDomain(bad), bad).toBeNull();
+    for (const bad of ['acme', 'acme.', '.acme.example', 'acme..design', 'https://acme.example', 'acme.example/x', 'ac me.design', 'acmé.design', '*.acme.example', 'a@acme.example']) expect(normalizeDomain(bad), bad).toBeNull();
   });
 
   it('keeps unique domains, refuses consumer providers and empty lists', () => {
-    expect(parseDomains(['Acme.design', '@acme.design', 'acme.studio', ''])).toEqual(['acme.design', 'acme.studio']);
+    expect(parseDomains(['Acme.example', '@acme.example', 'acme.studio', ''])).toEqual(['acme.example', 'acme.studio']);
     expect(() => parseDomains(['gmail.com'])).toThrow(/Anyone can get an email at gmail.com/);
     expect(() => parseDomains([])).toThrow(/Add your company email domain/);
-    expect(() => parseDomains('acme.design')).toThrow();
+    expect(() => parseDomains('acme.example')).toThrow();
     expect(() => parseDomains(Array.from({ length: 11 }, (_, i) => `d${i}.design`))).toThrow(/at most 10/);
   });
 
   it('matches the exact part after the @, case-insensitive, never a subdomain or a lookalike', () => {
-    const d = ['acme.design'];
-    expect(emailDomainIn('Mia@ACME.design', d)).toBe('acme.design');
-    expect(emailDomainIn(' mia@acme.design ', d)).toBe('acme.design');
-    for (const bad of ['mia@eng.acme.design', 'mia@acme.design.evil.com', 'mia@evil-acme.design', 'mia@acme.designs', 'acme.design@evil.com', 'mia@acme.design@evil.com', 'mia@evil.com#@acme.design', 'mia@acme.design.', '@acme.design', 'mia', 42, null, `${'a'.repeat(250)}@acme.design`]) {
+    const d = ['acme.example'];
+    expect(emailDomainIn('Mia@ACME.example', d)).toBe('acme.example');
+    expect(emailDomainIn(' mia@acme.example ', d)).toBe('acme.example');
+    for (const bad of ['mia@eng.acme.example', 'mia@acme.example.evil.com', 'mia@evil-acme.example', 'mia@acme.examples', 'acme.example@evil.com', 'mia@acme.example@evil.com', 'mia@evil.com#@acme.example', 'mia@acme.example.', '@acme.example', 'mia', 42, null, `${'a'.repeat(250)}@acme.example`]) {
       expect(emailDomainIn(bad, d), String(bad)).toBeNull();
     }
     // A subdomain matches only when the admin lists it.
-    expect(emailDomainIn('mia@eng.acme.design', ['acme.design', 'eng.acme.design'])).toBe('eng.acme.design');
+    expect(emailDomainIn('mia@eng.acme.example', ['acme.example', 'eng.acme.example'])).toBe('eng.acme.example');
   });
 
   it('words a wrong domain with the domains the library is open to', () => {
-    expect(wrongDomainWords(['acme.design'])).toBe('This library is open to @acme.design emails. Ask your design system team for access.');
+    expect(wrongDomainWords(['acme.example'])).toBe('This library is open to @acme.example emails. Ask your design system team for access.');
     expect(wrongDomainWords(['a.co', 'b.co', 'c.co'])).toBe('This library is open to @a.co, @b.co or @c.co emails. Ask your design system team for access.');
   });
 });
 
 describe('session cookie', () => {
-  const setting: LibrarySetting = { mode: 'email', domains: ['acme.design'], version: 3, private: true, updatedBy: 'dana', updatedAt: '' };
+  const setting: LibrarySetting = { mode: 'email', domains: ['acme.example'], version: 3, private: true, updatedBy: 'dana', updatedAt: '' };
   const req = (cookie: string) => new Request(`${ORIGIN}/api/library-access?repo=${REPO}`, { headers: { cookie } });
 
   it('is httpOnly, Secure, SameSite=Lax, scoped to this function, 30 days, one per team', () => {
-    const c = issueSession(REPO, 'acme.design', 3, SECRET, T0);
+    const c = issueSession(REPO, 'acme.example', 3, SECRET, T0);
     expect(c).toMatch(new RegExp(`^${cookieName(REPO)}=v1\\.`));
     expect(c).toContain('; Max-Age=2592000; Path=/api/library-access; HttpOnly; Secure; SameSite=Lax');
     expect(cookieName('acme/design')).toBe(cookieName('ACME/Design'));
@@ -160,8 +160,8 @@ describe('session cookie', () => {
   });
 
   it('verifies the signature and refuses any tampering', () => {
-    const v = signSession({ r: REPO, d: 'acme.design', v: 3, x: T0 + 1000 }, SECRET);
-    expect(verifySignature(v, SECRET)).toEqual({ r: REPO, d: 'acme.design', v: 3, x: T0 + 1000 });
+    const v = signSession({ r: REPO, d: 'acme.example', v: 3, x: T0 + 1000 }, SECRET);
+    expect(verifySignature(v, SECRET)).toEqual({ r: REPO, d: 'acme.example', v: 3, x: T0 + 1000 });
     expect(verifySignature(v, 'x'.repeat(40))).toBeNull();
     const [p, body, sig] = v.split('.');
     const forged = Buffer.from(JSON.stringify({ r: REPO, d: 'evil.com', v: 3, x: T0 + 1000 })).toString('base64url');
@@ -172,15 +172,15 @@ describe('session cookie', () => {
   });
 
   it('reads a live session for the current version only, and ends it on expiry, a change, another team', () => {
-    const cookie = (o: Partial<{ r: string; d: string; v: number; x: number }>) => `${cookieName(o.r ?? REPO)}=${signSession({ r: REPO, d: 'acme.design', v: 3, x: T0 + 1000, ...o }, SECRET)}`;
-    expect(readSession(req(cookie({})), REPO, setting, SECRET, T0)).toEqual({ domain: 'acme.design' });
+    const cookie = (o: Partial<{ r: string; d: string; v: number; x: number }>) => `${cookieName(o.r ?? REPO)}=${signSession({ r: REPO, d: 'acme.example', v: 3, x: T0 + 1000, ...o }, SECRET)}`;
+    expect(readSession(req(cookie({})), REPO, setting, SECRET, T0)).toEqual({ domain: 'acme.example' });
     expect(readSession(req(cookie({})), REPO, setting, SECRET, T0 + 1000)).toBeNull();
     expect(readSession(req(cookie({ v: 2 })), REPO, setting, SECRET, T0)).toBeNull();
     expect(readSession(req(cookie({})), REPO, { ...setting, domains: ['acme.studio'] }, SECRET, T0)).toBeNull();
     expect(readSession(req(cookie({})), REPO, { ...setting, mode: 'anyone' }, SECRET, T0)).toBeNull();
     expect(readSession(req(cookie({})), REPO, null, SECRET, T0)).toBeNull();
     // Another team's cookie, even renamed to this team's name.
-    const other = signSession({ r: 'acme/other', d: 'acme.design', v: 3, x: T0 + 1000 }, SECRET);
+    const other = signSession({ r: 'acme/other', d: 'acme.example', v: 3, x: T0 + 1000 }, SECRET);
     expect(readSession(req(`${cookieName(REPO)}=${other}`), REPO, setting, SECRET, T0)).toBeNull();
   });
 });
@@ -227,9 +227,9 @@ describe('the setting', () => {
     expect((await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'anyone' }, { authorization: 'Bearer ghu_kim01' }), ENV, kim.deps)).status).toBe(403);
     expect(await store.getSetting(REPO)).toBeNull();
 
-    const ok = await setEmail(deps, ['@Acme.design']);
-    expect(await ok.json()).toEqual({ setting: { mode: 'email', domains: ['acme.design'], source: 'bridge' } });
-    expect(await store.getSetting(REPO)).toMatchObject({ mode: 'email', domains: ['acme.design'], version: 1, private: true, updatedBy: 'dana' });
+    const ok = await setEmail(deps, ['@Acme.example']);
+    expect(await ok.json()).toEqual({ setting: { mode: 'email', domains: ['acme.example'], source: 'bridge' } });
+    expect(await store.getSetting(REPO)).toMatchObject({ mode: 'email', domains: ['acme.example'], version: 1, private: true, updatedBy: 'dana' });
     expect(w.calls.filter((c) => c.path === '/repos/acme/design').every((c) => c.auth === 'Bearer ghu_dana' || c.auth === 'Bearer ghu_leo01')).toBe(true);
   });
 
@@ -248,7 +248,7 @@ describe('the setting', () => {
     expect((await gmail.json()).error).toBe('public_domain');
     expect((await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'email', domains: [] }, auth), ENV, deps)).status).toBe(400);
     // Domains are dropped for the other modes.
-    const team = await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'team', domains: ['acme.design'] }, auth), ENV, deps);
+    const team = await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'team', domains: ['acme.example'] }, auth), ENV, deps);
     expect(await team.json()).toEqual({ setting: { mode: 'team', domains: [], source: 'bridge' } });
   });
 
@@ -262,7 +262,7 @@ describe('the setting', () => {
     const { deps } = setup();
     await setEmail(deps);
     const body = await (await handleLibraryAccess(get(`?repo=${REPO}`), ENV, deps)).json();
-    expect(body.setting).toEqual({ mode: 'email', domains: ['acme.design'], source: 'bridge' });
+    expect(body.setting).toEqual({ mode: 'email', domains: ['acme.example'], source: 'bridge' });
     expect(JSON.stringify(body)).not.toContain('dana');
   });
 });
@@ -271,10 +271,10 @@ describe('sign-in link', () => {
   it('emails a one-time fragment link, stores only its hash and domain, and opens a session once', async () => {
     const { deps, sent, store, at } = setup();
     await setEmail(deps);
-    const r = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: ' Mia@Acme.design ' }), ENV, deps);
+    const r = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: ' Mia@Acme.example ' }), ENV, deps);
     expect(await r.json()).toEqual({ sent: true });
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.to).toBe('mia@acme.design');
+    expect(sent[0]!.to).toBe('mia@acme.example');
     expect(sent[0]!.subject).toBe('Your link to the acme/design library');
     expect(sent[0]!.text).toContain(`${ORIGIN}/library/acme/design/#signin=`);
     expect(sent[0]!.text).toContain('expires in 15 minutes');
@@ -283,22 +283,22 @@ describe('sign-in link', () => {
     const raw = [...store.raw().entries()];
     const link = raw.find(([k]) => k.startsWith('bridge:library:signin:'))!;
     expect(link[0]).toBe(`bridge:library:signin:${createHash('sha256').update(token).digest('hex')}`);
-    expect(JSON.parse(link[1])).toEqual({ repo: REPO, domain: 'acme.design', version: 1 });
+    expect(JSON.parse(link[1])).toEqual({ repo: REPO, domain: 'acme.example', version: 1 });
     // Neither the email nor the IP is kept in clear anywhere.
     expect(JSON.stringify(raw)).not.toContain('mia');
     expect(JSON.stringify(raw)).not.toContain('203.0.113.7');
     expect(JSON.stringify(raw)).not.toContain(token);
 
     const v = await handleLibraryAccess(post({ action: 'verify', repo: REPO, token }), ENV, deps);
-    expect(await v.json()).toEqual({ ok: true, session: { domain: 'acme.design' } });
+    expect(await v.json()).toEqual({ ok: true, session: { domain: 'acme.example' } });
     const cookie = cookieOf(v);
-    expect(verifySignature(cookie.split('=')[1]!, SECRET)).toEqual({ r: REPO, d: 'acme.design', v: 1, x: at() + SESSION_TTL_MS });
+    expect(verifySignature(cookie.split('=')[1]!, SECRET)).toEqual({ r: REPO, d: 'acme.example', v: 1, x: at() + SESSION_TTL_MS });
     // Single use.
     const again = await handleLibraryAccess(post({ action: 'verify', repo: REPO, token }), ENV, deps);
     expect(again.status).toBe(410);
     expect((await again.json()).message).toBe(EXPIRED);
     // The session reads back.
-    expect((await (await handleLibraryAccess(get(`?repo=${REPO}`, cookie), ENV, deps)).json()).session).toEqual({ domain: 'acme.design' });
+    expect((await (await handleLibraryAccess(get(`?repo=${REPO}`, cookie), ENV, deps)).json()).session).toEqual({ domain: 'acme.example' });
   });
 
   it('says which domains the library is open to, and sends nothing', async () => {
@@ -306,23 +306,23 @@ describe('sign-in link', () => {
     await setEmail(deps);
     const r = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@gmail.com' }), ENV, deps);
     expect(r.status).toBe(403);
-    expect(await r.json()).toEqual({ error: 'domain', message: 'This library is open to @acme.design emails. Ask your design system team for access.', domains: ['acme.design'] });
+    expect(await r.json()).toEqual({ error: 'domain', message: 'This library is open to @acme.example emails. Ask your design system team for access.', domains: ['acme.example'] });
     expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'not an email' }), ENV, deps)).status).toBe(400);
     expect(sent).toHaveLength(0);
   });
 
   it('only works when the library opens with an email', async () => {
     const { deps, sent } = setup();
-    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps)).status).toBe(409);
+    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps)).status).toBe(409);
     await handleLibraryAccess(post({ action: 'set', repo: REPO, mode: 'team' }, { authorization: 'Bearer ghu_dana' }), ENV, deps);
-    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps)).status).toBe(409);
+    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps)).status).toBe(409);
     expect(sent).toHaveLength(0);
   });
 
   it('expires after 15 minutes', async () => {
     const { deps, sent, tick } = setup();
     await setEmail(deps);
-    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps);
+    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps);
     tick(SIGNIN_TTL_MS);
     expect((await handleLibraryAccess(post({ action: 'verify', repo: REPO, token: tokenOf(sent[0]!) }), ENV, deps)).status).toBe(410);
   });
@@ -330,12 +330,12 @@ describe('sign-in link', () => {
   it('opens only the team it was sent for, and no longer once the setting changed', async () => {
     const { deps, sent } = setup();
     await setEmail(deps);
-    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps);
+    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps);
     expect((await handleLibraryAccess(post({ action: 'verify', repo: 'acme/other', token: tokenOf(sent[0]!) }), ENV, deps)).status).toBe(410);
     // Spent by the wrong team: gone.
     expect((await handleLibraryAccess(post({ action: 'verify', repo: REPO, token: tokenOf(sent[0]!) }), ENV, deps)).status).toBe(410);
 
-    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps);
+    await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps);
     await setEmail(deps, ['acme.studio']);
     expect((await handleLibraryAccess(post({ action: 'verify', repo: REPO, token: tokenOf(sent[1]!) }), ENV, deps)).status).toBe(410);
     expect((await handleLibraryAccess(post({ action: 'verify', repo: REPO, token: 'short' }), ENV, deps)).status).toBe(410);
@@ -344,7 +344,7 @@ describe('sign-in link', () => {
   it('keeps nothing when the email cannot be sent, and counts nothing', async () => {
     const { deps, store } = setup({}, { email: { send: async () => Promise.reject(new Error('down')) } });
     await setEmail(deps);
-    const r = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps);
+    const r = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps);
     expect(r.status).toBe(502);
     expect(store.keys().some((k) => k.startsWith('bridge:library:signin:'))).toBe(false);
     const counts = [...store.raw().entries()].filter(([k]) => k.startsWith('bridge:library:count:'));
@@ -364,10 +364,10 @@ describe('revocation', () => {
     await setEmail(deps);
     const cookie = await signIn(deps, sent);
     const session = async () => (await (await handleLibraryAccess(get(`?repo=${REPO}`, cookie), ENV, deps)).json()).session;
-    expect(await session()).toEqual({ domain: 'acme.design' });
+    expect(await session()).toEqual({ domain: 'acme.example' });
     await setEmail(deps);
-    expect(await session()).toEqual({ domain: 'acme.design' });
-    await setEmail(deps, ['acme.design', 'acme.studio']);
+    expect(await session()).toEqual({ domain: 'acme.example' });
+    await setEmail(deps, ['acme.example', 'acme.studio']);
     expect(await session()).toBeNull();
   });
 
@@ -389,16 +389,16 @@ describe('caps', () => {
   it('caps links per email per day, with Retry-After, and starts again the next day', async () => {
     const { deps, sent, tick } = setup();
     await setEmail(deps);
-    for (let i = 0; i < LIMIT_DEFAULTS.email; i++) expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'MIA@acme.design' }), ENV, deps)).status).toBe(200);
-    const over = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps);
+    for (let i = 0; i < LIMIT_DEFAULTS.email; i++) expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'MIA@acme.example' }), ENV, deps)).status).toBe(200);
+    const over = await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps);
     expect(over.status).toBe(429);
     expect(await over.json()).toMatchObject({ error: 'limit', limit: 'email', message: LIMIT_WORDS.email });
     expect(Number(over.headers.get('retry-after'))).toBe(14 * 3600);
     // Another person from the same network still gets theirs.
-    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'leo@acme.design' }), ENV, deps)).status).toBe(200);
+    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'leo@acme.example' }), ENV, deps)).status).toBe(200);
     expect(sent).toHaveLength(LIMIT_DEFAULTS.email + 1);
     tick(24 * 3600 * 1000);
-    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, deps)).status).toBe(200);
+    expect((await handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, deps)).status).toBe(200);
   });
 
   it('caps links per network, per team and for the site', async () => {
@@ -406,12 +406,12 @@ describe('caps', () => {
     const { deps } = setup();
     await setEmail(deps);
     const ask = (email: string, ip: string) => handleLibraryAccess(post({ action: 'sign-in', repo: REPO, email }, { 'x-real-ip': ip }), env, deps);
-    expect((await ask('a@acme.design', '1.1.1.1')).status).toBe(200);
-    expect((await ask('b@acme.design', '1.1.1.1')).status).toBe(200);
-    const ip = await ask('c@acme.design', '1.1.1.1');
+    expect((await ask('a@acme.example', '1.1.1.1')).status).toBe(200);
+    expect((await ask('b@acme.example', '1.1.1.1')).status).toBe(200);
+    const ip = await ask('c@acme.example', '1.1.1.1');
     expect(await ip.json()).toMatchObject({ limit: 'ip', message: LIMIT_WORDS.ip });
-    expect((await ask('c@acme.design', '2.2.2.2')).status).toBe(200);
-    const team = await ask('d@acme.design', '3.3.3.3');
+    expect((await ask('c@acme.example', '2.2.2.2')).status).toBe(200);
+    const team = await ask('d@acme.example', '3.3.3.3');
     expect(await team.json()).toMatchObject({ limit: 'team', message: LIMIT_WORDS.team });
   });
 });

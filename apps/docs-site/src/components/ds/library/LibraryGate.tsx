@@ -2,7 +2,7 @@
 // "Anyone with a work email at ..." or "Only the team" (the email form is EmailLinkForm.tsx, shared with a team's email
 // sign-in). One calm screen, the page's one Harbor zone, one primary action:
 //   email        "Enter your work email" and Send me a link; then "Check your inbox" (the address masked). A wrong
-//                domain is said on the field ("This library is open to @acme.design emails. Ask your design system
+//                domain is said on the field ("This library is open to @acme.example emails. Ask your design system
 //                team for access."), an expired link above it, a site without email sign-in instead of the form.
 //   team         "This library is open to its team" and Sign in from Studio (GitHub).
 // useLibraryGate decides (lib/library-access.ts libraryGate) from the server's answer (scripts/library-access-api.ts):

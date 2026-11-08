@@ -155,7 +155,7 @@ import {
   teamsForDomain,
 } from '../_lib/teams.js';
 import { acceptInviteForGithub, githubApp as invitesApp, inviteStoreOn, maskEmail, repoKey as invitesKey, type InviteStore, type StoredInvite } from '../invites/index.js';
-import { demoDialog, teamDisplayName } from '../../src/lib/demo.js';
+import { demoDialog, isSampleTeam, teamDisplayName } from '../../src/lib/demo.js';
 import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { parseAiTools } from '../../src/lib/ai-tools.js';
 import { isTeamKey, STUDIO_ROOT, teamHref as studioTeamHref, teamKeyId, teamKeyOf } from '../../src/lib/team-path.js';
@@ -820,7 +820,7 @@ async function placeRequest(ctx: Ctx, req: Request, a: Account, full: string): P
     expiresAt: new Date(now + JOIN_REQUEST_TTL_MS).toISOString(),
   };
   await putRequest(ctx.svc.redis, r, now);
-  if (ctx.svc.email) {
+  if (ctx.svc.email && !isSampleTeam(full)) {
     const link = `${siteOrigin(req, ctx.env.PUBLIC_SITE_URL)}${manageHref(full)}`;
     const team = (await teamNamesOf(ctx, [full]))(full);
     for (const to of await adminEmails(ctx, full)) {
@@ -859,7 +859,7 @@ async function onApprove(ctx: Ctx, req: Request, a: Account, body: Record<string
   if (!prev) await ctx.svc.members.put(admin.full, member);
   await removeRequest(ctx.svc.redis, admin.full, r.email);
   await putDecided(ctx.svc.redis, { request: r, approved: true, added: !prev });
-  if (ctx.svc.email && !prev) {
+  if (ctx.svc.email && !prev && !isSampleTeam(admin.full)) {
     const link = `${siteOrigin(req, ctx.env.PUBLIC_SITE_URL)}${teamHref(admin.full)}`;
     try {
       const team = (await teamNamesOf(ctx, [admin.full]))(admin.full);

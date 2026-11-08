@@ -132,7 +132,7 @@ describe('the people filter', () => {
     expect(isYours({ author: 'peterbono', requester: { name: 'Ann Leroy', login: null } }, 'peterbono', 'Florian Gouloubi')).toBe(false);
     expect(isYours({ author: 'bridge-app[bot]', requester: { name: 'Florian Gouloubi', login: null } }, 'peterbono', 'Florian Gouloubi')).toBe(true);
     expect(isYours({ author: 'peterbono', agent: true }, 'peterbono')).toBe(false);
-    expect(isYours({ author: 'bridge-app[bot]', mine: true }, 'leo@acme.design')).toBe(true);
+    expect(isYours({ author: 'bridge-app[bot]', mine: true }, 'leo@acme.example')).toBe(true);
     expect(isYours({ author: 'dana' }, null)).toBe(false);
   });
 
@@ -263,16 +263,16 @@ describe('selection', () => {
 describe('email contributors on Branches', () => {
   const mine = { branches: ['bridge/leo-spacing'], issues: [42] };
   it('knows their own branches from the server list, not the author', () => {
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 42, headRef: 'x' }, 'leo@acme.design', mine)).toBe(true);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'bridge/leo-spacing' }, 'leo@acme.design', mine)).toBe(true);
-    expect(ownedBy({ author: 'leo@acme.design', number: 8, headRef: 'y' }, 'leo@acme.design', null)).toBe(true);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 9, headRef: 'bridge/ann' }, 'leo@acme.design', mine)).toBe(false);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 42, headRef: 'x' }, 'leo@acme.design', null)).toBe(false);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 42, headRef: 'x' }, 'leo@acme.example', mine)).toBe(true);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'bridge/leo-spacing' }, 'leo@acme.example', mine)).toBe(true);
+    expect(ownedBy({ author: 'leo@acme.example', number: 8, headRef: 'y' }, 'leo@acme.example', null)).toBe(true);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 9, headRef: 'bridge/ann' }, 'leo@acme.example', mine)).toBe(false);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 42, headRef: 'x' }, 'leo@acme.example', null)).toBe(false);
   });
 
   it('shows You from that list', () => {
-    expect(isYours({ author: 'bridge-app[bot]', mine: true }, 'leo@acme.design')).toBe(true);
-    expect(isYours({ author: 'leo@acme.design', mine: false }, 'leo@acme.design')).toBe(false);
+    expect(isYours({ author: 'bridge-app[bot]', mine: true }, 'leo@acme.example')).toBe(true);
+    expect(isYours({ author: 'leo@acme.example', mine: false }, 'leo@acme.example')).toBe(false);
   });
 
   it('waits on them only for their branches sent back with changes', () => {
@@ -315,10 +315,10 @@ describe('a member\'s work in the products (contribute ?mine=1 products)', () =>
     expect(mineIn(mine, 'acme/other', 'acme/design')).toEqual({ branches: [], issues: [] });
   });
   it('owns a product exploration by its copy\'s branch, not by a library number', () => {
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 4, headRef: 'explore/toast', headRepo: 'acme/shop-design' }, 'leo@acme.design', mine, 'acme/design')).toBe(true);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'explore/x', headRepo: 'acme/shop-design' }, 'leo@acme.design', mine, 'acme/design')).toBe(false);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 4, headRef: 'explore/toast', product: 'shop' }, 'leo@acme.design', mine, 'acme/design')).toBe(true);
-    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'explore/other', product: 'shop' }, 'leo@acme.design', mine, 'acme/design')).toBe(false);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 4, headRef: 'explore/toast', headRepo: 'acme/shop-design' }, 'leo@acme.example', mine, 'acme/design')).toBe(true);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'explore/x', headRepo: 'acme/shop-design' }, 'leo@acme.example', mine, 'acme/design')).toBe(false);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 4, headRef: 'explore/toast', product: 'shop' }, 'leo@acme.example', mine, 'acme/design')).toBe(true);
+    expect(ownedBy({ author: 'bridge-app[bot]', number: 7, headRef: 'explore/other', product: 'shop' }, 'leo@acme.example', mine, 'acme/design')).toBe(false);
   });
 });
 

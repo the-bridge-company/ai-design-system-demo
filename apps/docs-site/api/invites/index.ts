@@ -82,7 +82,7 @@ import { sessionAccount, type Account } from '../_lib/account.js';
 import { activeLocalAdmins, type LocalAdmins } from '../_lib/local-admin.js';
 import { EMAIL_ROLES, type EmailRole } from '../_lib/members.js';
 import { canonicalEmail, emailSpellings, sameEmail } from '../_lib/canonical-email.js';
-import { demoDialog, onBridge, teamDisplayName } from '../../src/lib/demo.js';
+import { demoDialog, isSampleTeam, onBridge, teamDisplayName } from '../../src/lib/demo.js';
 import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { isTeamKey } from '../../src/lib/team-path.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
@@ -785,7 +785,7 @@ async function reserve(ctx: Ctx, admin: string, repo: string, n: number): Promis
 // ---------------------------------------------------------------------------------------------------------------
 // The invitee's email, masked
 
-/** "m•••@acme.design": enough to recognise the address, not enough to read it. */
+/** "m•••@acme.example": enough to recognise the address, not enough to read it. */
 export function maskEmail(email: string): string {
   const [local = '', domain = ''] = email.trim().split('@');
   return `${local.slice(0, 1)}\u2022\u2022\u2022@${domain}`;
@@ -968,6 +968,8 @@ async function storeAndSend(ctx: Ctx, inv: Omit<StoredInvite, 'tokenHash' | 'sen
   const now = ctx.now();
   const full: StoredInvite = { ...inv, tokenHash: hash, sentAt: new Date(now).toISOString(), expiresAt: new Date(now + INVITE_TTL_MS).toISOString() };
   await ctx.svc.store.put(full, Math.ceil(INVITE_TTL_MS / 1000));
+  // The sample team's people are not real (api/_lib/demo-members.ts): its invites are kept, never mailed.
+  if (isSampleTeam(inv.repo)) return full;
   try {
     await ctx.svc.email.send(inviteEmail({ to: inv.email, inviter, repo: inv.repo, team: await teamNameOf(ctx, inv.repo), role: inv.role, ...(inv.reviewAs ? { reviewAs: inv.reviewAs } : {}), link: `${origin}${INVITE_PATH}#t=${token}` }));
   } catch {

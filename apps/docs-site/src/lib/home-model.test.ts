@@ -300,8 +300,8 @@ describe('rowAction', () => {
 
 describe('contributors: what waits on someone without a review right', () => {
   it('never gives an email contributor the review queue', () => {
-    expect(holdsReviewRight({ viewer: 'leo@acme.design', contributor: true, approvers: ['leo@acme.design'], write: true })).toBe(false);
-    expect(holdsReviewRight({ viewer: 'leo@acme.design', contributor: true, approvers: [], write: true })).toBe(false);
+    expect(holdsReviewRight({ viewer: 'leo@acme.example', contributor: true, approvers: ['leo@acme.example'], write: true })).toBe(false);
+    expect(holdsReviewRight({ viewer: 'leo@acme.example', contributor: true, approvers: [], write: true })).toBe(false);
   });
 
   it('gives it to the people the approver or ship lists name, nobody else', () => {

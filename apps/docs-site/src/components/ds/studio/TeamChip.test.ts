@@ -224,7 +224,7 @@ describe('TeamChip "Your teams"', () => {
 describe('TeamChip "Your teams" from a Bridge account', () => {
   it("lists the account's teams with their role, each opening its own space, and no Sign in", async () => {
     setAccountFetch(async () =>
-      new Response(JSON.stringify({ available: true, account: { email: 'leo@acme.design', name: 'Leo', github: null, teams: [{ repo: 'acme/ds', name: 'Acme Design', role: 'admin', via: 'email' }, { repo: 'globex/tokens', name: 'Globex', role: 'edit', via: 'email' }] } }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      new Response(JSON.stringify({ available: true, account: { email: 'leo@acme.example', name: 'Leo', github: null, teams: [{ repo: 'acme/ds', name: 'Acme Design', role: 'admin', via: 'email' }, { repo: 'globex/tokens', name: 'Globex', role: 'edit', via: 'email' }] } }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
     );
     const { menu } = await openMenu();
     const yours = await within(menu).findByRole('group', { name: 'Your teams' });
@@ -307,7 +307,7 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
 describe('TeamChip pill and name, from the server', () => {
   it("shows an email admin's role from /api/contribute, Admin and never Can edit", async () => {
     const { setContributeFetch } = await import('../../../scripts/contribute-session');
-    setContributeFetch(async () => new Response(JSON.stringify({ available: true, member: { email: 'leo@acme.design', name: 'Leo', role: 'admin' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    setContributeFetch(async () => new Response(JSON.stringify({ available: true, member: { email: 'leo@acme.example', name: 'Leo', role: 'admin' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
     page.viewer = { login: 'leo', name: 'Leo' };
     render(createElement(TeamChip, { launcher: true }));
     await waitFor(() => expect(page.listeners.length).toBeGreaterThan(0));

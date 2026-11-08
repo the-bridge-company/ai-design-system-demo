@@ -93,13 +93,13 @@ async function signIn(w: ReturnType<typeof world>, clientId?: string, redirectUr
   const cookie = cookieOf(auth);
   const info = await (await w.call(`/api/mcp?oauth=request&id=${request}`, { headers: { cookie: `bridge_oauth=${cookie}` } })).json();
   expect(info).toEqual({ client: id!.startsWith('https://') ? 'Claude Code' : 'Claude', redirectHost: new URL(redirectUri).host, sameBrowser: true, signedIn: false, name: null, email: null, teams: [] });
-  await putAccount(w.redis, { id: 'a1', email: 'dana@acme.design', name: 'Dana', github: { login: 'dana', id: 7 }, createdAt: '2026-10-01T00:00:00Z', version: 1 });
-  const account = `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'dana@acme.design', v: 1, exp: w.now() + 60_000 }, SECRET)}`;
+  await putAccount(w.redis, { id: 'a1', email: 'dana@acme.example', name: 'Dana', github: { login: 'dana', id: 7 }, createdAt: '2026-10-01T00:00:00Z', version: 1 });
+  const account = `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'dana@acme.example', v: 1, exp: w.now() + 60_000 }, SECRET)}`;
   // Signed in now: the same read says who, and the account's teams that have a design system (not a team made in Bridge).
-  await memberStore(w.redis).put('acme/design', { email: 'dana@acme.design', name: 'Dana', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
-  await memberStore(w.redis).put('_team/0123456789abcdef', { email: 'dana@acme.design', name: 'Dana', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+  await memberStore(w.redis).put('acme/design', { email: 'dana@acme.example', name: 'Dana', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+  await memberStore(w.redis).put('_team/0123456789abcdef', { email: 'dana@acme.example', name: 'Dana', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
   const signed = await (await w.call(`/api/mcp?oauth=request&id=${request}`, { headers: { cookie: `bridge_oauth=${cookie}; ${account}` } })).json();
-  expect(signed).toMatchObject({ signedIn: true, name: 'Dana', email: 'd***@acme.design', teams: [{ repo: 'acme/design', name: 'Design', role: 'admin' }] });
+  expect(signed).toMatchObject({ signedIn: true, name: 'Dana', email: 'd***@acme.example', teams: [{ repo: 'acme/design', name: 'Design', role: 'admin' }] });
   const approve = await w.call('/api/mcp?oauth=approve', { method: 'POST', headers: { 'content-type': 'application/json', origin: SITE, cookie: `bridge_oauth=${cookie}; ${account}` }, body: JSON.stringify({ request, repo: 'acme/design', allow: true }) });
   expect(approve.status).toBe(200);
   const gh = new URL((await approve.json()).redirect);
@@ -344,9 +344,9 @@ describe('Studio: the library check of an exploration (?view=pieces)', () => {
 
   it('a Can view member signed in by email runs no check (team-caller refuses a viewer any edit)', async () => {
     const w = world({ app: true });
-    await putAccount(w.redis, { id: 'v1', email: 'vic@acme.design', name: 'Vic', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
-    await memberStore(w.redis).put('acme/design', { email: 'vic@acme.design', name: 'Vic', role: 'view', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
-    const vic = { cookie: `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'vic@acme.design', v: 1, exp: w.now() + 60_000 }, SECRET)}`, 'x-bridge-contribute': '1', origin: SITE };
+    await putAccount(w.redis, { id: 'v1', email: 'vic@acme.example', name: 'Vic', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
+    await memberStore(w.redis).put('acme/design', { email: 'vic@acme.example', name: 'Vic', role: 'view', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+    const vic = { cookie: `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'vic@acme.example', v: 1, exp: w.now() + 60_000 }, SECRET)}`, 'x-bridge-contribute': '1', origin: SITE };
     const r = await post(w, { repo: 'acme/design', pr: 12 }, vic);
     expect(r.status).toBe(403);
     expect((await r.json()).error).toBe('view-only');
@@ -383,14 +383,14 @@ describe('Studio: who connected Bridge in Claude, and revoking', () => {
   it('an email member signed in to Studio reads their own connection as theirs (the exploration page gate)', async () => {
     const w = world({ app: true });
     await signIn(w);
-    const account = `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'dana@acme.design', v: 1, exp: w.now() + 60_000 }, SECRET)}`;
+    const account = `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'dana@acme.example', v: 1, exp: w.now() + 60_000 }, SECRET)}`;
     const member = { cookie: account, 'x-bridge-contribute': '1', origin: SITE };
     const list = await (await w.call('/api/mcp?view=connections&repo=acme/design', { headers: member })).json();
     expect(list.connections).toHaveLength(1);
     expect(list.connections[0]).toMatchObject({ client: 'Claude', mine: true });
-    await putAccount(w.redis, { id: 'a2', email: 'lee@acme.design', name: 'Lee', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
-    await memberStore(w.redis).put('acme/design', { email: 'lee@acme.design', name: 'Lee', role: 'edit', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
-    const lee = { cookie: `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'lee@acme.design', v: 1, exp: w.now() + 60_000 }, SECRET)}`, 'x-bridge-contribute': '1', origin: SITE };
+    await putAccount(w.redis, { id: 'a2', email: 'lee@acme.example', name: 'Lee', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
+    await memberStore(w.redis).put('acme/design', { email: 'lee@acme.example', name: 'Lee', role: 'edit', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+    const lee = { cookie: `${ACCOUNT_COOKIE}=${signAccountSession({ email: 'lee@acme.example', v: 1, exp: w.now() + 60_000 }, SECRET)}`, 'x-bridge-contribute': '1', origin: SITE };
     const theirs = await (await w.call('/api/mcp?view=connections&repo=acme/design', { headers: lee })).json();
     expect(theirs.connections[0]).toMatchObject({ mine: false });
   });
@@ -659,12 +659,12 @@ describe('Studio Settings: GitHub usage, for the team admins only (?view=github-
   it('answers an email admin of the team signed in to Studio, not an email member who can edit', async () => {
     const w = world({ app: true });
     await seed(w);
-    await putAccount(w.redis, { id: 'a1', email: 'ada@acme.design', name: 'Ada', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
-    await memberStore(w.redis).put('acme/design', { email: 'ada@acme.design', name: 'Ada', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
-    await putAccount(w.redis, { id: 'a2', email: 'lee@acme.design', name: 'Lee', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
-    await memberStore(w.redis).put('acme/design', { email: 'lee@acme.design', name: 'Lee', role: 'edit', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+    await putAccount(w.redis, { id: 'a1', email: 'ada@acme.example', name: 'Ada', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
+    await memberStore(w.redis).put('acme/design', { email: 'ada@acme.example', name: 'Ada', role: 'admin', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
+    await putAccount(w.redis, { id: 'a2', email: 'lee@acme.example', name: 'Lee', github: null, createdAt: '2026-10-01T00:00:00Z', version: 1 });
+    await memberStore(w.redis).put('acme/design', { email: 'lee@acme.example', name: 'Lee', role: 'edit', version: 1, addedBy: 'x', at: '2026-10-01T00:00:00Z' });
     const as = (email: string) => ({ cookie: `${ACCOUNT_COOKIE}=${signAccountSession({ email, v: 1, exp: w.now() + 60_000 }, SECRET)}`, 'x-bridge-contribute': '1', origin: SITE });
-    expect((await (await get(w, as('ada@acme.design'))).json()).usage).toMatchObject({ used: 1240, limit: 5000 });
-    expect((await get(w, as('lee@acme.design'))).status).toBe(403);
+    expect((await (await get(w, as('ada@acme.example'))).json()).usage).toMatchObject({ used: 1240, limit: 5000 });
+    expect((await get(w, as('lee@acme.example'))).status).toBe(403);
   });
 });

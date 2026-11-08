@@ -386,8 +386,8 @@ describe('POST /api/ship, a token value change from Studio (TV-1)', () => {
       const headers = { 'content-type': 'application/json', host: HOST, origin: `https://${HOST}`, 'x-bridge-contribute': '1', cookie };
       return handleShip(new Request(`https://${HOST}/api/ship`, { method: 'POST', headers, body: JSON.stringify({ repo: 'acme/design', pr: 7 }) }), ENV, { ...deps, redis, members });
     };
-    expect((await asMember('vic@acme.design', 'view')).status).toBe(401);
-    expect((await asMember('mia@acme.design', 'edit')).status).toBe(200);
+    expect((await asMember('vic@acme.example', 'view')).status).toBe(401);
+    expect((await asMember('mia@acme.example', 'edit')).status).toBe(200);
   });
 
   it('waits for the design approval: none, a tech approval only, or the author alone', async () => {

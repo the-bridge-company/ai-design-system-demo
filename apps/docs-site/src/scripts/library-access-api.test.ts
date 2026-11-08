@@ -10,9 +10,9 @@ afterEach(() => setAccessFetch(null));
 
 describe('the browser side of /api/library-access', () => {
   it('reads a team once per page, and asks again when told to', async () => {
-    const f = vi.fn(async (_url: string, _init?: RequestInit) => json(200, { available: true, setting: { mode: 'email', domains: ['acme.design'], source: 'github' }, session: null }));
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => json(200, { available: true, setting: { mode: 'email', domains: ['acme.example'], source: 'github' }, session: null }));
     setAccessFetch(f);
-    expect(await libraryAccess('acme/ds')).toEqual({ available: true, setting: { mode: 'email', domains: ['acme.design'], source: 'github' }, session: null });
+    expect(await libraryAccess('acme/ds')).toEqual({ available: true, setting: { mode: 'email', domains: ['acme.example'], source: 'github' }, session: null });
     await libraryAccess('ACME/ds');
     expect(f).toHaveBeenCalledTimes(1);
     await libraryAccess('acme/ds', true);
@@ -45,20 +45,20 @@ describe('the browser side of /api/library-access', () => {
   it('sends the sign-in without any GitHub token, and maps not configured to AccessUnavailable', async () => {
     const f = vi.fn(async (_url: string, _init?: RequestInit) => json(200, { sent: true }));
     setAccessFetch(f);
-    await requestSignIn('acme/ds', 'mia@acme.design');
+    await requestSignIn('acme/ds', 'mia@acme.example');
     expect(f.mock.calls[0]![1]!.headers).not.toHaveProperty('Authorization');
     setAccessFetch(async () => json(503, { error: 'not_configured', message: 'x' }));
-    await expect(requestSignIn('acme/ds', 'mia@acme.design')).rejects.toBeInstanceOf(AccessUnavailable);
+    await expect(requestSignIn('acme/ds', 'mia@acme.example')).rejects.toBeInstanceOf(AccessUnavailable);
     setAccessFetch(async () => json(429, { error: 'limit', message: 'Too many sign-in links were asked from this network today. Try again tomorrow.' }));
-    await expect(requestSignIn('acme/ds', 'mia@acme.design')).rejects.toBeInstanceOf(AccessError);
+    await expect(requestSignIn('acme/ds', 'mia@acme.example')).rejects.toBeInstanceOf(AccessError);
   });
 
   it('spends a link and forgets the cached answer, so the session reads back', async () => {
     let n = 0;
-    setAccessFetch(async (_u, init) => (init?.method === 'POST' ? json(200, { ok: true, session: { domain: 'acme.design' } }) : json(200, { available: true, setting: null, session: n++ ? { domain: 'acme.design' } : null })));
+    setAccessFetch(async (_u, init) => (init?.method === 'POST' ? json(200, { ok: true, session: { domain: 'acme.example' } }) : json(200, { available: true, setting: null, session: n++ ? { domain: 'acme.example' } : null })));
     expect((await libraryAccess('acme/ds')).session).toBeNull();
-    expect(await verifySignIn('acme/ds', 't'.repeat(43))).toEqual({ domain: 'acme.design' });
-    expect((await libraryAccess('acme/ds')).session).toEqual({ domain: 'acme.design' });
+    expect(await verifySignIn('acme/ds', 't'.repeat(43))).toEqual({ domain: 'acme.example' });
+    expect((await libraryAccess('acme/ds')).session).toEqual({ domain: 'acme.example' });
   });
 
   it("reads a private Library's file, or rejects with the server's sentence, marked as this site's", async () => {

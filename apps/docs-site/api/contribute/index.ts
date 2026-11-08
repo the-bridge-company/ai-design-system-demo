@@ -139,7 +139,7 @@
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
-import { demoDialog } from '../../src/lib/demo.js';
+import { demoDialog, isSampleTeam } from '../../src/lib/demo.js';
 import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, workflowClaims, type ShotsCtx, type ShotStore } from '../_lib/private-shots.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
@@ -178,6 +178,7 @@ import { configName, putTeamName } from '../_lib/teams.js';
 import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/session.js';
 import { teamInSet } from '../_lib/members.js';
 import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
+import { demoExplorationsOf, planDemoRefile, refiledComment, relinkBody, type RefileIssue, type RefilePull } from '../_lib/demo-refile.js';
 import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { addsPmWords, isPm, PM_ONLY, PRODUCT_KEY, pmOf, pmsOf, publicPm, setPm, withPmWord, type PmWord, type ProductPm } from '../_lib/product-pm.js';
@@ -606,7 +607,8 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
       ];
       const release = await bumpOrRefuse(ctx, keys, [SIGNIN_LIMITS.email, SIGNIN_LIMITS.ip, SIGNIN_LIMITS.team, SIGNIN_LIMITS.site], LIMIT_WORDS.signin, 'signin');
       const member = await svc.members.get(full, email);
-      if (!member) return json(200, { ok: true });
+      // The sample team's people are not real: Bridge never mails them a link (api/_lib/demo-members.ts).
+      if (!member || isSampleTeam(full)) return json(200, { ok: true });
       const token = b64url(Buffer.from(ctx.random(32)));
       const hash = sha256(token);
       await svc.redis.cmd('SET', signInKey(hash), JSON.stringify({ repo: full, email }), 'EX', SIGNIN_TTL_MS / 1000);
@@ -662,6 +664,12 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
 
     case 'seed-demo':
       return await onSeedDemo(req, ctx, body);
+
+    case 'refile-demo':
+      return await onRefileDemo(req, ctx, body);
+
+    case 'update-demo-branches':
+      return await onUpdateDemoBranches(req, ctx, body);
 
     case 'exploration-keeper': {
       // A lead signed in by email hands an exploration over: the member record says they lead, never the browser.
@@ -761,6 +769,205 @@ async function onSeedDemo(req: Request, ctx: Ctx, body: Record<string, unknown>)
   const r = await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
   await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
   return json(200, r, { 'Cache-Control': 'private, no-store' });
+}
+
+/** What `refile-demo` says per issue: in a dry run, what it would do; else what it did. */
+export interface RefileOutcome {
+  old: number;
+  title: string;
+  member: string;
+  why: string;
+  labels: string[];
+  relink: number[];
+  /** The replacement: filed now, found from a run that stopped halfway, or null in a dry run. */
+  new: number | null;
+  reused?: boolean;
+  /** What failed, in a run: the old issue then stays open. */
+  error?: string;
+}
+
+/** Every open issue or pull request of a repository, at most 300 (the sample team has a few dozen). */
+async function openOf<T>(ctx: Ctx, token: string, full: string, kind: 'issues' | 'pulls'): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; page <= 3; page++) {
+    const r = await ghApp(ctx, token, 'GET', `/repos/${full}/${kind}?state=open&per_page=100&page=${page}`);
+    if (r.status !== 200 || !Array.isArray(r.data)) throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+    out.push(...(r.data as T[]));
+    if (r.data.length < 100) break;
+  }
+  return out;
+}
+
+/** A write with the app's token and a JSON body (ghApp sends none). */
+async function ghAppWrite(ctx: Ctx, token: string, method: string, path: string, body: Record<string, unknown>): Promise<{ status: number; data: any }> {
+  let res: Response;
+  try {
+    res = await ctx.f(`${API}${path}`, {
+      method,
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+  }
+  return { status: res.status, data: await res.json().catch(() => null) };
+}
+
+/**
+ * POST { action: 'refile-demo', repo: <the sample team>, apply?: true } with a GitHub token (Authorization: Bearer) that
+ * administers the sample team's repository. Its open component change requests and suggestions opened by an account
+ * (not Bridge's App) are filed again for one of its members (api/_lib/demo-refile.ts planDemoRefile), through
+ * runAsMember: the path of a member's own write, so the App opens them with the member's "Requested by" line. Then,
+ * with the app: an open pull request that closes the old issue says the new number instead, and the old issue gets a
+ * comment that links its replacement and closes as not planned. Never deleted. Without `apply`, a dry run: what it
+ * would do, nothing written. The members are seeded first (seedDemoTeam, idempotent), so they exist as said. Run by
+ * scripts/refile-demo-items.mjs; nobody else may.
+ */
+async function onRefileDemo(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  if (!demoVisitorEmail(t.full)) return fail(404, 'not_found', 'Only the sample team has requests to file again.');
+  const a = await githubAccountOn(ctx, req, t);
+  if (a?.kind === 'expired') return fail(401, 'signin', GITHUB_EXPIRED);
+  if (a?.kind !== 'account' || a.perms?.admin !== true) return fail(403, 'not-allowed', SEED_WORDS.notAdmin);
+  const apply = body.apply === true;
+  const token = await ctx.svc.app.installationToken(t.owner, t.repo);
+  if (!token) return fail(409, 'app_missing', APP_MISSING);
+  const full = `${t.owner}/${t.repo}`;
+  const pullList = await openOf<RefilePull>(ctx, token, full, 'pulls');
+  const plan = planDemoRefile({ issues: await openOf<RefileIssue>(ctx, token, full, 'issues'), pulls: pullList });
+  const outcome = (i: (typeof plan.items)[number]): RefileOutcome => ({ old: i.old, title: i.title, member: i.member.name, why: i.why, labels: i.labels, relink: i.relink, new: i.existing, ...(i.existing ? { reused: true } : {}) });
+  if (!apply) return json(200, { dryRun: true, items: plan.items.map(outcome), skipped: plan.skipped }, { 'Cache-Control': 'private, no-store' });
+
+  await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
+  const pulls = new Map(pullList.map((p) => [p.number, p.body ?? '']));
+  const done: RefileOutcome[] = [];
+  for (const item of plan.items) {
+    const o = outcome(item);
+    done.push(o);
+    try {
+      let to = item.existing;
+      if (!to) {
+        const member = await ctx.svc.members.get(t.full, item.member.email);
+        if (!member) throw new Error(`${item.member.name} is not on the team.`);
+        const target: Target = { rest: ['issues'], rawRest: ['issues'], query: '' };
+        const r = await runAsMember(ctx, { team: full, at: { owner: t.owner, repo: t.repo, full: t.full }, scope: null, member, method: 'POST', target, body: { title: item.title, labels: item.labels, body: item.body } });
+        const data = (await r.json().catch(() => null)) as { number?: unknown } | null;
+        if (r.status !== 201 || typeof data?.number !== 'number') throw new Error(`GitHub answered ${r.status} when filing it.`);
+        to = data.number;
+      }
+      o.new = to;
+      for (const n of item.relink) {
+        const was = pulls.get(n);
+        if (was === undefined) continue;
+        const next = relinkBody(was, item.old, to);
+        if (next === was) continue;
+        const p = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/pulls/${n}`, { body: next });
+        if (p.status !== 200) throw new Error(`GitHub answered ${p.status} when pointing #${n} at #${to}.`);
+        pulls.set(n, next);
+      }
+      const c = await ghAppWrite(ctx, token, 'POST', `/repos/${full}/issues/${item.old}/comments`, { body: refiledComment(item.member.name, to) });
+      if (c.status !== 201) throw new Error(`GitHub answered ${c.status} on the comment.`);
+      const x = await ghAppWrite(ctx, token, 'PATCH', `/repos/${full}/issues/${item.old}`, { state: 'closed', state_reason: 'not_planned' });
+      if (x.status !== 200) throw new Error(`GitHub answered ${x.status} when closing it.`);
+    } catch (e) {
+      o.error = e instanceof Error ? e.message : 'Something went wrong.';
+    }
+  }
+  await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
+  return json(200, { dryRun: false, items: done, skipped: plan.skipped }, { 'Cache-Control': 'private, no-store' });
+}
+
+/** What `update-demo-branches` says per exploration: in a dry run, what it would do; else what it did. */
+export interface BranchOutcome {
+  copy: string;
+  pull: number;
+  branch: string;
+  member: string;
+  /** Commits of the copy's default branch the exploration does not have yet (read before anything is written). */
+  behind: number | null;
+  /** In a run: brought in, nothing to bring, or what stopped it. */
+  done?: 'merged' | 'up-to-date';
+  error?: string;
+}
+
+/**
+ * POST { action: 'update-demo-branches', repo: <the sample team>, apply?: true } with a GitHub token that administers
+ * the sample team's repository. Each open exploration of the sample team's design copies whose block names one of its
+ * members (api/_lib/demo-members.ts) is brought up to date from its product as that member, through the path Studio
+ * takes when they press "Bring it in" (src/scripts/design-copy.ts bringLatestIntoExploration, through runAsMember): the
+ * copy's default branch first takes the product's (GitHub's Sync fork, merge-upstream), then that branch is merged into
+ * the exploration with Bridge's App, so its activity says "<member> brought in the latest product", never an account.
+ * A branch Bridge keeps for nobody is recorded as the member's first, as when they start it through Bridge; one kept
+ * for someone else is left alone. Archived explorations are left alone. Without `apply`, a dry run that writes nothing.
+ * Run by scripts/refile-demo-items.mjs --update-branches; nobody else may.
+ */
+async function onUpdateDemoBranches(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  if (!demoVisitorEmail(t.full)) return fail(404, 'not_found', 'Only the sample team has explorations to bring up to date.');
+  const a = await githubAccountOn(ctx, req, t);
+  if (a?.kind === 'expired') return fail(401, 'signin', GITHUB_EXPIRED);
+  if (a?.kind !== 'account' || a.perms?.admin !== true) return fail(403, 'not-allowed', SEED_WORDS.notAdmin);
+  const apply = body.apply === true;
+  const out: BranchOutcome[] = [];
+  const skipped: { copy: string; pull: number; why: string }[] = [];
+  if (apply) await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
+  for (const pair of await productPairs(ctx, t)) {
+    const [owner, repo] = pair.copy.split('/') as [string, string];
+    const token = await ctx.svc.app.installationToken(owner, repo);
+    if (!token) {
+      skipped.push({ copy: pair.copy, pull: 0, why: 'Bridge is not installed on this copy.' });
+      continue;
+    }
+    const info = await ghApp(ctx, token, 'GET', `/repos/${pair.copy}`);
+    const main = typeof info.data?.default_branch === 'string' ? (info.data.default_branch as string) : null;
+    if (info.status !== 200 || !main) {
+      skipped.push({ copy: pair.copy, pull: 0, why: 'GitHub did not say what its default branch is.' });
+      continue;
+    }
+    const pulls = await openOf<any>(ctx, token, pair.copy, 'pulls');
+    const work = demoExplorationsOf(pulls, (b) => explorationBlockOf(b)?.memberName);
+    for (const s of work.skipped) skipped.push({ copy: pair.copy, ...s });
+    if (!work.items.length) continue;
+    const scope: ProductScope = { kind: 'copy', pair };
+    const at = { owner, repo, full: pair.copy };
+    const target = (...rest: string[]): Target => ({ rest, rawRest: rest, query: '' });
+    const behindOf = async (branch: string) => {
+      const c = await ghApp(ctx, token, 'GET', `/repos/${pair.copy}/compare/${encodeRef(branch)}...${encodeRef(main)}`);
+      return c.status === 200 && typeof c.data?.ahead_by === 'number' ? (c.data.ahead_by as number) : null;
+    };
+    let synced = false;
+    for (const w of work.items) {
+      const o: BranchOutcome = { copy: pair.copy, pull: w.pull, branch: w.branch, member: w.member.name, behind: await behindOf(w.branch) };
+      out.push(o);
+      if (!apply) continue;
+      try {
+        const member = await ctx.svc.members.get(t.full, w.member.email);
+        if (!member) throw new Error(`${w.member.name} is not on the team.`);
+        // The copy's default branch takes the product's first, once per copy, as the member's Sync fork.
+        if (!synced) {
+          const s = await runAsMember(ctx, { team: t.full, at, scope, member, method: 'POST', target: target('merge-upstream'), body: { branch: main } });
+          if (s.status >= 300 && s.status !== 409 && s.status !== 422) throw new Error(`GitHub answered ${s.status} when the copy took the latest product.`);
+          synced = true;
+        }
+        const keeper = await ctx.svc.redis.cmd('GET', branchKey(pair.copy, w.branch));
+        if (keeper && !sameEmail(keeper, member.email)) throw new Error('Bridge keeps this exploration for someone else.');
+        if (!keeper) {
+          await ctx.svc.redis.cmd('SET', branchKey(pair.copy, w.branch), member.email, 'EX', OWNERSHIP_TTL_S);
+          await rememberMine(ctx, pair.copy, member.email, `b:${w.branch}`);
+        }
+        const r = await runAsMember(ctx, { team: t.full, at, scope, member, method: 'POST', target: target('merges'), body: { base: w.branch, head: main, commit_message: `Bring the latest ${main} into ${w.branch}` } });
+        if (r.status === 201) o.done = 'merged';
+        else if (r.status === 204) o.done = 'up-to-date';
+        else if (r.status === 409) throw new Error('It conflicts with the latest product: a developer brings it in.');
+        else throw new Error(`GitHub answered ${r.status} when bringing it in.`);
+      } catch (e) {
+        o.error = e instanceof Error ? e.message : 'Something went wrong.';
+      }
+    }
+  }
+  return json(200, { dryRun: !apply, items: out, skipped }, { 'Cache-Control': 'private, no-store' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2305,6 +2512,31 @@ async function onProxy(req: Request, ctx: Ctx, params: URLSearchParams): Promise
     }
   }
 
+  return await runAsMember(ctx, { team: full, at, scope, member, method, target, body, accept: req.headers.get('accept'), inm: req.headers.get('if-none-match') });
+}
+
+/** One write of a member through Bridge: what runAsMember needs. */
+export interface MemberWrite {
+  /** The team, as asked. */
+  team: string;
+  /** The repository written: the team's own, or one of its products'. */
+  at: { owner: string; repo: string; full: string };
+  scope: ProductScope | null;
+  member: ProxyMember;
+  method: string;
+  target: Target;
+  body: Record<string, unknown> | null;
+  accept?: string | null;
+  inm?: string | null;
+}
+
+/**
+ * The GitHub call of a member's write, under the policy (planCall), with the app's token: the one path every write of
+ * a member takes, from their browser (onProxy) or from an admin action that files for them (onRefileDemo). Counts
+ * against their daily cap, records what is theirs (plan.after) and watches it for their notifications.
+ */
+async function runAsMember(ctx: Ctx, w: MemberWrite): Promise<Response> {
+  const { team: full, at, scope, member, method, target, body } = w;
   const token = await ctx.svc.app.installationToken(at.owner, at.repo);
   if (!token) return fail(409, 'app_missing', scope ? PRODUCT_APP_MISSING : APP_MISSING);
   const plan = await planCall(ctx, { team: full, owner: at.owner, repo: at.repo, full: at.full, member, token, method, target, body, scope: scope ?? undefined });
@@ -2314,8 +2546,8 @@ async function onProxy(req: Request, ctx: Ctx, params: URLSearchParams): Promise
     await bumpOrRefuse(ctx, [`bridge:contrib:count:${full}:${canonicalEmail(member.email)}:${day}`], [writeLimit(ctx.env)], LIMIT_WORDS.writes, 'writes');
   }
 
-  const accept = req.headers.get('accept')?.trim() ?? '';
-  const inm = req.headers.get('if-none-match');
+  const accept = w.accept?.trim() ?? '';
+  const inm = w.inm ?? null;
   const url = `${API}/repos/${at.owner}/${at.repo}${target.rawRest.length ? `/${target.rawRest.join('/')}` : ''}${target.query ? `?${target.query}` : ''}`;
   let res: Response;
   try {

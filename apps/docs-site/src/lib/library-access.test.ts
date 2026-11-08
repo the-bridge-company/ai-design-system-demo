@@ -20,7 +20,7 @@ describe('the choice in words', () => {
   it('names each choice, the work email one with its domains', () => {
     expect(settingLabel({ mode: 'anyone', domains: [] })).toBe('Anyone with the link');
     expect(settingLabel({ mode: 'team', domains: [] })).toBe('Only the team');
-    expect(settingLabel({ mode: 'email', domains: ['acme.design'] })).toBe('Anyone with a work email at acme.design');
+    expect(settingLabel({ mode: 'email', domains: ['acme.example'] })).toBe('Anyone with a work email at acme.example');
     expect(settingLabel({ mode: 'email', domains: ['a.co', 'b.co', 'c.co'] })).toBe('Anyone with a work email at a.co, b.co and c.co');
     expect(domainList([])).toBe('');
   });
@@ -37,13 +37,13 @@ describe('the choice in words', () => {
 
 describe('domains typed in Settings', () => {
   it('takes several, with @ or capitals, once each', () => {
-    expect(parseDomainField('@Acme.design, acme.studio acme.design')).toEqual({ domains: ['acme.design', 'acme.studio'] });
+    expect(parseDomainField('@Acme.example, acme.studio acme.example')).toEqual({ domains: ['acme.example', 'acme.studio'] });
   });
 
   it('says what is wrong, in words', () => {
-    expect(parseDomainField('')).toEqual({ error: 'Add your company email domain, like acme.design.' });
-    expect(parseDomainField('acme')).toEqual({ error: 'acme is not an email domain. Write it like acme.design.' });
-    expect(parseDomainField('https://acme.design')).toHaveProperty('error');
+    expect(parseDomainField('')).toEqual({ error: 'Add your company email domain, like acme.example.' });
+    expect(parseDomainField('acme')).toEqual({ error: 'acme is not an email domain. Write it like acme.example.' });
+    expect(parseDomainField('https://acme.example')).toHaveProperty('error');
     expect(parseDomainField('Gmail.com')).toEqual({ error: 'Anyone can get an email at gmail.com. Pick your company domain, or choose Anyone with the link.' });
     expect(parseDomainField(Array.from({ length: 11 }, (_, i) => `d${i}.design`).join(','))).toEqual({ error: 'Add at most 10 domains.' });
   });
@@ -53,11 +53,11 @@ describe('domains typed in Settings', () => {
   });
 
   it('matches an email on the exact part after the @, like the server', () => {
-    const d = ['acme.design'];
-    for (const e of ['mia@acme.design', 'Mia@ACME.Design', 'mia@eng.acme.design', 'mia@acme.design.evil.com', 'mia@acme.design@evil.com', 'acme.design@evil.com']) {
+    const d = ['acme.example'];
+    for (const e of ['mia@acme.example', 'Mia@ACME.Example', 'mia@eng.acme.example', 'mia@acme.example.evil.com', 'mia@acme.example@evil.com', 'acme.example@evil.com']) {
       expect(emailDomainIn(e, d), e).toBe(server.emailDomainIn(e, d));
     }
-    expect(wrongDomainWords(['acme.design', 'acme.studio'])).toBe(server.wrongDomainWords(['acme.design', 'acme.studio']));
+    expect(wrongDomainWords(['acme.example', 'acme.studio'])).toBe(server.wrongDomainWords(['acme.example', 'acme.studio']));
   });
 });
 
@@ -71,15 +71,15 @@ describe('what a Library page shows', () => {
   });
 
   it('asks for a work email until the reader has a session, then opens from GitHub or from this site', () => {
-    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }) })).toBe('email');
-    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }, { domain: 'acme.design' }) })).toBe('open');
-    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'bridge' }, { domain: 'acme.design' }) })).toBe('open-bridge');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.example'], source: 'github' }) })).toBe('email');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.example'], source: 'github' }, { domain: 'acme.example' }) })).toBe('open');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.example'], source: 'bridge' }, { domain: 'acme.example' }) })).toBe('open-bridge');
   });
 
   it('asks the team to sign in with GitHub, and lets a GitHub sign-in read as before', () => {
     expect(libraryGate({ github: false, answer: answer({ mode: 'team', domains: [] }) })).toBe('team');
     expect(libraryGate({ github: true, answer: answer({ mode: 'team', domains: [] }) })).toBe('open');
-    expect(libraryGate({ github: true, answer: answer({ mode: 'email', domains: ['acme.design'] }) })).toBe('open');
+    expect(libraryGate({ github: true, answer: answer({ mode: 'email', domains: ['acme.example'] }) })).toBe('open');
   });
 
   it('serves a private Library opened to anyone from this site', () => {
@@ -97,7 +97,7 @@ describe('what a Library page shows', () => {
   });
 
   it('masks the address on Check your inbox', () => {
-    expect(maskEmail('Mia@Acme.design')).toBe('m•••@acme.design');
+    expect(maskEmail('Mia@Acme.example')).toBe('m•••@acme.example');
   });
 
   it('reads the sample team as any team, and tells no repository apart', () => {

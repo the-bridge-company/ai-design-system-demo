@@ -132,7 +132,7 @@ function post(s: S, cookie: string | null, body: unknown, opts: { header?: boole
 }
 
 async function adminOpens(s: S, repo = REPO): Promise<string> {
-  const admin = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+  const admin = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
   const r = await post(s, admin, { action: 'discovery', repo, enabled: true });
   expect(r.status).toBe(200);
   return admin;
@@ -164,7 +164,7 @@ describe('public email domains', () => {
     for (const d of ['yahoo.fr', 'hotmail.co.uk', 'outlook.de', 'live.fr', 'yahoo.com.br', 'mail.yahoo.com', 'eu.gmx.net', 'GMAIL.COM']) expect(isPublicDomain(d), d).toBe(true);
   });
   it('keeps company domains', () => {
-    expect(workDomain('Mia@Acme.Design')).toBe('acme.design');
+    expect(workDomain('Mia@Acme.Example')).toBe('acme.example');
     expect(workDomain('x@studio.co.uk')).toBe('studio.co.uk');
     expect(workDomain('x@yahooligans-agency.com')).toBe('yahooligans-agency.com');
     expect(workDomain('x@gmail.com')).toBeNull();
@@ -181,15 +181,15 @@ describe('auth', () => {
   });
   it('refuses a POST without the CSRF header or from another site', async () => {
     const s = setup();
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect((await post(s, c, { action: 'request', repo: REPO }, { header: false })).status).toBe(403);
     expect((await post(s, c, { action: 'request', repo: REPO }, { origin: 'https://evil.example' })).status).toBe(403);
   });
   it('ends with the account version', async () => {
     const s = setup();
-    const c = await account(s, 'mia@acme.design', 'Mia');
-    const a = JSON.parse((await s.redis.cmd('GET', 'bridge:account:mia@acme.design')) as string);
-    await s.redis.cmd('SET', 'bridge:account:mia@acme.design', JSON.stringify({ ...a, version: 2 }));
+    const c = await account(s, 'mia@acme.example', 'Mia');
+    const a = JSON.parse((await s.redis.cmd('GET', 'bridge:account:mia@acme.example')) as string);
+    await s.redis.cmd('SET', 'bridge:account:mia@acme.example', JSON.stringify({ ...a, version: 2 }));
     expect((await get(s, c)).status).toBe(401);
   });
   it("refuses the sample team's visitor (no account) in the demo dialog's words, as api/contribute does", async () => {
@@ -209,19 +209,19 @@ describe('auth', () => {
 describe('routing order', () => {
   it('says create when nothing matches', async () => {
     const s = setup();
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect(await (await get(s, c)).json()).toEqual({ kind: 'create' });
   });
 
   it('lists teams open to the work domain, without anyone else’s email', async () => {
     const s = setup();
     await adminOpens(s);
-    await s.members.put(REPO, { email: 'zed@acme.design', name: 'Zed', role: 'edit', version: 1, addedBy: 'ada', at: '' });
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    await s.members.put(REPO, { email: 'zed@acme.example', name: 'Zed', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    const c = await account(s, 'mia@acme.example', 'Mia');
     const r = await get(s, c);
     const text = await r.text();
     // The people: GitHub admins first (by their Bridge name, else the login), then email members, by name.
-    expect(JSON.parse(text)).toEqual({ kind: 'domain', domain: 'acme.design', teams: [{ id: teamId(SECRET, REPO), name: 'Ds', memberCount: 3, people: ['Ada A.', 'bob', 'Zed'], adminName: 'Ada Admin', requested: false, expired: false }] });
+    expect(JSON.parse(text)).toEqual({ kind: 'domain', domain: 'acme.example', teams: [{ id: teamId(SECRET, REPO), name: 'Ds', memberCount: 3, people: ['Ada A.', 'bob', 'Zed'], adminName: 'Ada Admin', requested: false, expired: false }] });
     expect(text).not.toContain('@');
   });
 
@@ -237,16 +237,16 @@ describe('routing order', () => {
   it('puts invites before domain teams', async () => {
     const s = setup();
     await adminOpens(s);
-    await invite(s, { email: 'mia@acme.design', repo: 'acme/other' });
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    await invite(s, { email: 'mia@acme.example', repo: 'acme/other' });
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect(await (await get(s, c)).json()).toEqual({ kind: 'invites', invites: [{ id: 'a1b2c3d4e5f60718', team: 'Other', repo: 'acme/other', role: 'edit', invitedBy: 'ada', invitedAt: new Date(T0).toISOString(), memberCount: 0, people: [] }] });
   });
 
   it('puts teams before invites', async () => {
     const s = setup();
-    await invite(s, { email: 'mia@acme.design', repo: 'acme/other' });
-    await s.members.put(REPO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    await invite(s, { email: 'mia@acme.example', repo: 'acme/other' });
+    await s.members.put(REPO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect(await (await get(s, c)).json()).toEqual({ kind: 'teams', teams: [{ repo: REPO, id: teamId(SECRET, REPO), name: 'Ds', role: 'edit', via: 'email' }] });
   });
 
@@ -256,7 +256,7 @@ describe('routing order', () => {
       { full_name: 'acme/ds', permissions: { admin: true, push: true, pull: true } },
       { full_name: 'acme/read-only', permissions: { admin: false, push: false, pull: true } },
     ];
-    const c = await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
+    const c = await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
     expect(await (await get(s, c, '', USER_TOKEN)).json()).toEqual({ kind: 'teams', teams: [{ repo: 'acme/ds', id: teamId(SECRET, 'acme/ds'), name: 'Ds', role: 'admin', via: 'github' }] });
     // Without the token, or with a token of another GitHub account, GitHub is not asked.
     expect((await (await get(s, c)).json()).kind).toBe('create');
@@ -269,8 +269,8 @@ describe('team names', () => {
   it("names each team by its bridge.config.json name, kept with the team, in the picker, invites, domain cards and emails", async () => {
     const s = setup();
     s.w.configs[REPO] = { name: 'Mobile Kit Pro' };
-    await s.members.put(REPO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    await s.members.put(REPO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect(await (await get(s, c)).json()).toEqual({ kind: 'teams', teams: [{ repo: REPO, id: teamId(SECRET, REPO), name: 'Mobile Kit Pro', role: 'edit', via: 'email' }] });
     expect(JSON.parse(String(await s.redis.cmd('GET', 'bridge:team:name:acme/ds')))).toMatchObject({ name: 'Mobile Kit Pro' });
     // Kept: GitHub is not asked again within a day, and /api/account names the team the same way.
@@ -285,7 +285,7 @@ describe('team names', () => {
     const s = setup();
     s.w.configs[REPO] = { name: 'Mobile Kit Pro' };
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia Chen');
+    const mia = await account(s, 'mia@acme.example', 'Mia Chen');
     expect((await (await get(s, mia)).json()).teams[0].name).toBe('Mobile Kit Pro');
     await post(s, mia, { action: 'request', repo: REPO });
     expect(s.sent[0]!.subject).toBe('Mia Chen asked to join Mobile Kit Pro on Bridge');
@@ -295,8 +295,8 @@ describe('team names', () => {
     // A name over 60 characters is no name.
     const t = setup();
     t.w.configs[REPO] = { name: 'x'.repeat(61) };
-    await t.members.put(REPO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
-    expect((await (await get(t, await account(t, 'mia@acme.design', 'Mia'))).json()).teams[0].name).toBe('Ds');
+    await t.members.put(REPO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    expect((await (await get(t, await account(t, 'mia@acme.example', 'Mia'))).json()).teams[0].name).toBe('Ds');
   });
 });
 
@@ -307,13 +307,13 @@ describe('team cards: size and people, names only', () => {
       { id: 2, login: 'bob', permissions: { admin: false, push: true } },
       { id: 1, login: 'ada', permissions: { admin: true, push: true } },
     ];
-    await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
-    for (const [email, name] of [['zed@acme.design', 'Zed Ray'], ['who@acme.design', ''], ['raw@acme.design', 'raw@acme.design'], ['lea@acme.design', 'Lea Eng'], ['kim@acme.design', 'Kim']]) {
+    await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
+    for (const [email, name] of [['zed@acme.example', 'Zed Ray'], ['who@acme.example', ''], ['raw@acme.example', 'raw@acme.example'], ['lea@acme.example', 'Lea Eng'], ['kim@acme.example', 'Kim']]) {
       await s.members.put(REPO, { email: email!, name: name!, role: 'edit', version: 1, addedBy: 'ada', at: '' });
     }
     s.tick(86_400_000);
-    await invite(s, { email: 'mia@acme.design', createdAt: new Date(T0).toISOString() });
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    await invite(s, { email: 'mia@acme.example', createdAt: new Date(T0).toISOString() });
+    const c = await account(s, 'mia@acme.example', 'Mia');
     const r = await get(s, c);
     const text = await r.text();
     const [inv] = JSON.parse(text).invites;
@@ -325,9 +325,9 @@ describe('team cards: size and people, names only', () => {
   it('counts the email members when GitHub cannot be read', async () => {
     const s = setup();
     await adminOpens(s);
-    await s.members.put(REPO, { email: 'zed@acme.design', name: 'Zed', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    await s.members.put(REPO, { email: 'zed@acme.example', name: 'Zed', role: 'edit', version: 1, addedBy: 'ada', at: '' });
     s.w.installed.delete(REPO);
-    const c = await account(s, 'mia@acme.design', 'Mia');
+    const c = await account(s, 'mia@acme.example', 'Mia');
     expect((await (await get(s, c)).json()).teams[0]).toMatchObject({ memberCount: 1, people: ['Zed'] });
   });
 });
@@ -335,18 +335,18 @@ describe('team cards: size and people, names only', () => {
 describe('display names of inviters and admins', () => {
   it('shows the name kept on the invite, else resolves an older one from the team, else the login', async () => {
     const s = setup();
-    const c = await account(s, 'mia@acme.design', 'Mia');
-    await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const c = await account(s, 'mia@acme.example', 'Mia');
+    await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     const first = async () => (await (await get(s, c)).json()).invites[0].invitedBy;
-    await invite(s, { email: 'mia@acme.design', invitedBy: 'ada', invitedByName: 'Sam Rivera' });
+    await invite(s, { email: 'mia@acme.example', invitedBy: 'ada', invitedByName: 'Sam Rivera' });
     expect(await first()).toBe('Sam Rivera');
     // Older invite, the inviter a collaborator with a Bridge account: that name, no extra GitHub call.
-    await invite(s, { email: 'mia@acme.design', invitedBy: 'ADA', invitedByName: undefined as never });
+    await invite(s, { email: 'mia@acme.example', invitedBy: 'ADA', invitedByName: undefined as never });
     const before = s.calls.length;
     expect(await first()).toBe('Ada Admin');
     expect(s.calls.slice(before).filter((x) => x.includes('/users/') || /\/user\/\d/.test(x))).toEqual([]);
     // Not on the team any more (or GitHub unreadable): the login.
-    await invite(s, { email: 'mia@acme.design', invitedBy: 'gone' });
+    await invite(s, { email: 'mia@acme.example', invitedBy: 'gone' });
     expect(await first()).toBe('gone');
   });
 
@@ -354,7 +354,7 @@ describe('display names of inviters and admins', () => {
     const s = setup();
     s.w.names[1] = 'Ada Lovelace';
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     expect((await (await get(s, mia)).json()).teams[0].adminName).toBe('Ada Lovelace');
     await post(s, mia, { action: 'request', repo: REPO });
     const [req] = (await (await get(s, admin, `?requests=${REPO}`)).json()).requests;
@@ -365,7 +365,7 @@ describe('display names of inviters and admins', () => {
   it('falls back to the Bridge account name without a GitHub profile name, and reads older records live', async () => {
     const s = setup();
     await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     expect((await (await get(s, mia)).json()).teams[0].adminName).toBe('Ada Admin');
     // A record saved before display names: the account name, read live.
     const raw = JSON.parse(String(await s.redis.cmd('GET', 'bridge:team:discovery:acme/ds')));
@@ -378,30 +378,30 @@ describe('display names of inviters and admins', () => {
 describe('email sign-in and domain lists', () => {
   it('finds a GitHub-linked account and its teams when it signs in with the same email', async () => {
     const s = setup();
-    await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
-    await s.members.put('acme/other', { email: 'ada@acme.design', name: 'Ada', role: 'edit', version: 1, addedBy: 'x', at: '' });
+    await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
+    await s.members.put('acme/other', { email: 'ada@acme.example', name: 'Ada', role: 'edit', version: 1, addedBy: 'x', at: '' });
     const sent: EmailMessage[] = [];
     const deps = { fetch: s.deps.fetch, now: s.now, redis: s.redis, members: s.members, code: () => '424242', email: { send: async (m: EmailMessage) => void sent.push(m) } };
     const call = (body: unknown) =>
       handleAccount(new Request(`${ORIGIN}/api/account`, { method: 'POST', headers: { host: HOST, origin: ORIGIN, 'content-type': 'application/json', 'x-bridge-account': '1' }, body: JSON.stringify(body) }), ENV, deps);
-    expect((await call({ action: 'code', email: 'Ada@Acme.design' })).status).toBe(200);
-    const v = await call({ action: 'verify', email: 'ada@acme.design', code: '424242' });
+    expect((await call({ action: 'code', email: 'Ada@Acme.example' })).status).toBe(200);
+    const v = await call({ action: 'verify', email: 'ada@acme.example', code: '424242' });
     const body = await v.json();
-    expect(body).toMatchObject({ created: false, account: { email: 'ada@acme.design', github: { login: 'ada', id: 1 } } });
+    expect(body).toMatchObject({ created: false, account: { email: 'ada@acme.example', github: { login: 'ada', id: 1 } } });
     const cookie = v.headers.get('set-cookie')!.split(';')[0]!;
     expect(await (await get(s, cookie)).json()).toEqual({ kind: 'teams', teams: [{ repo: 'acme/other', id: teamId(SECRET, 'acme/other'), name: 'Other', role: 'edit', via: 'email' }] });
   });
 
   it('returns every team open to the domain, largest first', async () => {
     const s = setup();
-    const admin = await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
+    const admin = await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
     for (const [repo, extra] of [['acme/small', 0], ['acme/big', 5], ['acme/mid', 2], ['acme/tiny', 0]] as const) {
       s.w.installed.add(repo);
       s.w.collaborators[repo] = s.w.collaborators[REPO]!.slice(0, 1);
-      for (let i = 0; i < extra; i++) await s.members.put(repo, { email: `p${i}@acme.design`, name: `P${i}`, role: 'edit', version: 1, addedBy: 'ada', at: '' });
+      for (let i = 0; i < extra; i++) await s.members.put(repo, { email: `p${i}@acme.example`, name: `P${i}`, role: 'edit', version: 1, addedBy: 'ada', at: '' });
       await post(s, admin, { action: 'discovery', repo, enabled: true });
     }
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     const r = await (await get(s, mia)).json();
     expect(r.teams.map((t: { id: string; memberCount: number }) => [t.id, t.memberCount])).toEqual([[teamId(SECRET, 'acme/big'), 6], [teamId(SECRET, 'acme/mid'), 3], [teamId(SECRET, 'acme/small'), 1], [teamId(SECRET, 'acme/tiny'), 1]]);
     // People outside the team never read its repository.
@@ -411,7 +411,7 @@ describe('email sign-in and domain lists', () => {
   it('asks and cancels by the opaque id; an id of a team not open to the domain answers like nothing', async () => {
     const s = setup();
     await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     const [card] = (await (await get(s, mia)).json()).teams;
     expect(card.id).toMatch(/^t[a-f0-9]{20}$/);
     expect((await (await post(s, mia, { action: 'request', team: card.id })).json()).requested).toBe(true);
@@ -424,7 +424,7 @@ describe('email sign-in and domain lists', () => {
   it('says a request ran out unanswered, and asking again works', async () => {
     const s = setup();
     await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     const [card] = (await (await get(s, mia)).json()).teams;
     await post(s, mia, { action: 'request', team: card.id });
     s.tick(JOIN_REQUEST_TTL_MS + 1000);
@@ -436,9 +436,9 @@ describe('email sign-in and domain lists', () => {
   it('a member asking again gets the repository to open (409 already)', async () => {
     const s = setup();
     await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     const [card] = (await (await get(s, mia)).json()).teams;
-    await s.members.put(REPO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
+    await s.members.put(REPO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: '' });
     expect(await (await post(s, mia, { action: 'request', team: card.id })).json()).toMatchObject({ error: 'already', repo: REPO });
   });
 });
@@ -454,12 +454,12 @@ describe('names on a domain card', () => {
 describe('discovery opt-in', () => {
   it('is for admins only, matched by GitHub id', async () => {
     const s = setup();
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     expect(await (await post(s, bob, { action: 'discovery', repo: REPO, enabled: true })).json()).toMatchObject({ error: 'forbidden', message: ADMIN_ONLY });
-    const emailOnly = await account(s, 'mia@acme.design', 'Mia');
+    const emailOnly = await account(s, 'mia@acme.example', 'Mia');
     expect((await post(s, emailOnly, { action: 'discovery', repo: REPO, enabled: true })).status).toBe(403);
     // A renamed login now held by someone else: the id does not match.
-    const imposter = await account(s, 'eve@acme.design', 'Eve', { login: 'ada', id: 99 });
+    const imposter = await account(s, 'eve@acme.example', 'Eve', { login: 'ada', id: 99 });
     expect((await post(s, imposter, { action: 'discovery', repo: REPO, enabled: true })).status).toBe(403);
     expect((await get(s, bob, `?discovery=${REPO}`)).status).toBe(403);
   });
@@ -474,13 +474,13 @@ describe('discovery opt-in', () => {
 
   it('opens and closes the team', async () => {
     const s = setup();
-    const admin = await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
-    expect(await (await get(s, admin, `?discovery=${REPO}`)).json()).toEqual({ domain: 'acme.design', enabled: false, configured: false, eligible: true });
-    expect(await (await post(s, admin, { action: 'discovery', repo: REPO, enabled: true })).json()).toEqual({ domain: 'acme.design', enabled: true });
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.design')).toEqual([REPO]);
-    expect(await (await post(s, admin, { action: 'discovery', repo: REPO, enabled: false })).json()).toEqual({ domain: 'acme.design', enabled: false });
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.design')).toEqual([]);
-    expect(await (await get(s, admin, `?discovery=${REPO}`)).json()).toEqual({ domain: 'acme.design', enabled: false, configured: true, eligible: true });
+    const admin = await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
+    expect(await (await get(s, admin, `?discovery=${REPO}`)).json()).toEqual({ domain: 'acme.example', enabled: false, configured: false, eligible: true });
+    expect(await (await post(s, admin, { action: 'discovery', repo: REPO, enabled: true })).json()).toEqual({ domain: 'acme.example', enabled: true });
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.example')).toEqual([REPO]);
+    expect(await (await post(s, admin, { action: 'discovery', repo: REPO, enabled: false })).json()).toEqual({ domain: 'acme.example', enabled: false });
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.example')).toEqual([]);
+    expect(await (await get(s, admin, `?discovery=${REPO}`)).json()).toEqual({ domain: 'acme.example', enabled: false, configured: true, eligible: true });
     expect((await post(s, admin, { action: 'discovery', repo: REPO })).status).toBe(400);
   });
 });
@@ -488,8 +488,8 @@ describe('discovery opt-in', () => {
 describe('the team’s Library in Claude Design (GET ?claude-design=)', () => {
   it('answers admins only, with the address and version, never the published hashes', async () => {
     const s = setup();
-    const admin = await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    const admin = await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     expect(await (await get(s, admin, `?claude-design=${REPO}`)).json()).toEqual({ design: null });
     await putTeamClaudeDesign(s.redis, REPO, { url: 'https://claude.ai/artifact/YZ1z4WxSWErcMHVDcbFmkW', version: '1.8.3', files: { 'project/README.md': 'a'.repeat(64) }, at: '2026-11-01T00:00:00.000Z', by: 'Ada' });
     expect(await (await get(s, admin, `?claude-design=${REPO}`)).json()).toEqual({ design: { url: 'https://claude.ai/artifact/YZ1z4WxSWErcMHVDcbFmkW', version: '1.8.3', at: '2026-11-01T00:00:00.000Z' } });
@@ -523,12 +523,12 @@ describe('join requests', () => {
   it('asks once, emails the admins, then the admin approves', async () => {
     const s = setup();
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia Chen');
+    const mia = await account(s, 'mia@acme.example', 'Mia Chen');
     const r = await post(s, mia, { action: 'request', repo: REPO });
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({ requested: true, expiresAt: new Date(T0 + JOIN_REQUEST_TTL_MS).toISOString() });
     expect(s.sent).toHaveLength(1);
-    expect(s.sent[0]!.to).toBe('ada@acme.design');
+    expect(s.sent[0]!.to).toBe('ada@acme.example');
     expect(s.sent[0]!.subject).toBe('Mia Chen asked to join Ds on Bridge');
     expect(s.sent[0]!.text).toContain(`${ORIGIN}/studio/acme/ds/settings/`);
     for (const m of s.sent) expect(m.text + m.html + m.subject).not.toContain('\u2014');
@@ -539,17 +539,17 @@ describe('join requests', () => {
     expect((await (await get(s, mia)).json()).teams[0].requested).toBe(true);
 
     // Only admins list and answer.
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     expect((await get(s, bob, `?requests=${REPO}`)).status).toBe(403);
     expect((await get(s, mia, `?requests=${REPO}`)).status).toBe(403);
     const list = (await (await get(s, admin, `?requests=${REPO}`)).json()).requests;
-    expect(list).toEqual([{ id: expect.stringMatching(/^[a-f0-9]{16}$/), name: 'Mia Chen', email: 'mia@acme.design', createdAt: new Date(T0).toISOString(), expiresAt: new Date(T0 + JOIN_REQUEST_TTL_MS).toISOString() }]);
+    expect(list).toEqual([{ id: expect.stringMatching(/^[a-f0-9]{16}$/), name: 'Mia Chen', email: 'mia@acme.example', createdAt: new Date(T0).toISOString(), expiresAt: new Date(T0 + JOIN_REQUEST_TTL_MS).toISOString() }]);
     expect((await post(s, bob, { action: 'approve', repo: REPO, id: list[0].id })).status).toBe(403);
 
     const ok = await post(s, admin, { action: 'approve', repo: REPO, id: list[0].id });
     expect(await ok.json()).toEqual({ member: { name: 'Mia Chen', role: 'edit' }, repo: REPO });
-    expect(await s.members.get(REPO, 'mia@acme.design')).toMatchObject({ role: 'edit', addedBy: 'ada', version: 1 });
-    expect(s.sent[1]).toMatchObject({ to: 'mia@acme.design', subject: 'You joined Ds on Bridge' });
+    expect(await s.members.get(REPO, 'mia@acme.example')).toMatchObject({ role: 'edit', addedBy: 'ada', version: 1 });
+    expect(s.sent[1]).toMatchObject({ to: 'mia@acme.example', subject: 'You joined Ds on Bridge' });
     expect(s.sent[1]!.text).toContain('Ada Admin approved your request');
     expect((await (await get(s, admin, `?requests=${REPO}`)).json()).requests).toEqual([]);
     expect(await (await get(s, mia)).json()).toEqual({ kind: 'teams', teams: [{ repo: REPO, id: teamId(SECRET, REPO), name: 'Ds', role: 'edit', via: 'email' }] });
@@ -560,12 +560,12 @@ describe('join requests', () => {
   it('declines without an email, and expires after 14 days', async () => {
     const s = setup();
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     await post(s, mia, { action: 'request', repo: REPO });
     const [req] = (await (await get(s, admin, `?requests=${REPO}`)).json()).requests;
     expect(await (await post(s, admin, { action: 'decline', repo: REPO, id: req.id })).json()).toEqual({ ok: true });
     expect(s.sent).toHaveLength(1);
-    expect(await s.members.get(REPO, 'mia@acme.design')).toBeNull();
+    expect(await s.members.get(REPO, 'mia@acme.example')).toBeNull();
 
     await post(s, mia, { action: 'request', repo: REPO });
     s.tick(JOIN_REQUEST_TTL_MS + 1000);
@@ -576,16 +576,16 @@ describe('join requests', () => {
   it('undoes an approve (they leave, the request waits again) and a decline, once and only for a short while', async () => {
     const s = setup();
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     await post(s, mia, { action: 'request', repo: REPO });
     const [req] = (await (await get(s, admin, `?requests=${REPO}`)).json()).requests;
     await post(s, admin, { action: 'approve', repo: REPO, id: req.id });
-    expect(await s.members.get(REPO, 'mia@acme.design')).not.toBeNull();
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    expect(await s.members.get(REPO, 'mia@acme.example')).not.toBeNull();
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     expect((await post(s, bob, { action: 'undo', repo: REPO, id: req.id })).status).toBe(403);
     const u = await post(s, admin, { action: 'undo', repo: REPO, id: req.id });
     expect(await u.json()).toMatchObject({ undone: true, request: { id: req.id, name: 'Mia' } });
-    expect(await s.members.get(REPO, 'mia@acme.design')).toBeNull();
+    expect(await s.members.get(REPO, 'mia@acme.example')).toBeNull();
     expect((await (await get(s, admin, `?requests=${REPO}`)).json()).requests).toEqual([req]);
     // Once only.
     expect((await post(s, admin, { action: 'undo', repo: REPO, id: req.id })).status).toBe(410);
@@ -601,8 +601,8 @@ describe('join requests', () => {
   it('lets the requester cancel their own request, and only theirs', async () => {
     const s = setup();
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
-    const lou = await account(s, 'lou@acme.design', 'Lou');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
+    const lou = await account(s, 'lou@acme.example', 'Lou');
     await post(s, mia, { action: 'request', repo: REPO });
     // Someone else cancelling finds nothing of theirs to cancel: Mia's request stands.
     expect((await post(s, lou, { action: 'cancel-request', repo: REPO })).status).toBe(404);
@@ -628,7 +628,7 @@ describe('join requests', () => {
 
   it('answers the same 404 for a closed team, a missing team and another domain', async () => {
     const s = setup();
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     const a = await post(s, mia, { action: 'request', repo: REPO });
     const b = await post(s, mia, { action: 'request', repo: 'nobody/nothing' });
     expect(a.status).toBe(404);
@@ -644,19 +644,19 @@ describe('join requests', () => {
   it('says already on the team, and accepts an invite instead of asking', async () => {
     const s = setup();
     await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
-    await invite(s, { email: 'mia@acme.design' });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
+    await invite(s, { email: 'mia@acme.example' });
     const r = await post(s, mia, { action: 'request', repo: REPO });
     expect(await r.json()).toMatchObject({ joined: true, repo: REPO, role: 'edit', next: '/studio/acme/ds/' });
     expect(s.sent).toHaveLength(0);
-    expect(await s.invites.byEmail('mia@acme.design')).toEqual([]);
+    expect(await s.invites.byEmail('mia@acme.example')).toEqual([]);
     expect((await post(s, mia, { action: 'request', repo: REPO })).status).toBe(409);
   });
 
   it('is capped per person per day', async () => {
     const s = setup();
-    const mia = await account(s, 'mia@acme.design', 'Mia');
-    const admin = await account(s, 'ada@acme.design', 'Ada', { login: 'ada', id: 1 });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
+    const admin = await account(s, 'ada@acme.example', 'Ada', { login: 'ada', id: 1 });
     for (let i = 0; i <= REQUEST_LIMITS.email; i++) {
       const repo = `acme/t${i}`;
       s.w.installed.add(repo);
@@ -672,7 +672,7 @@ describe('join requests', () => {
   it('goes with the account when it is deleted', async () => {
     const s = setup();
     const admin = await adminOpens(s);
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     await post(s, mia, { action: 'request', repo: REPO });
     const del = await handleAccount(
       new Request(`${ORIGIN}/api/account`, { method: 'POST', headers: { host: HOST, origin: ORIGIN, 'content-type': 'application/json', 'x-bridge-account': '1', cookie: mia }, body: JSON.stringify({ action: 'delete' }) }),
@@ -688,54 +688,54 @@ describe('join requests', () => {
 describe('accept-invite', () => {
   it('joins a Can edit invite with the account email', async () => {
     const s = setup();
-    const inv = await invite(s, { email: 'mia@acme.design' });
-    const mia = await account(s, 'mia@acme.design', 'Mia Chen');
+    const inv = await invite(s, { email: 'mia@acme.example' });
+    const mia = await account(s, 'mia@acme.example', 'Mia Chen');
     const r = await post(s, mia, { action: 'accept-invite', repo: REPO, id: inv.id });
     expect(await r.json()).toEqual({ joined: true, status: 'joined', repo: REPO, role: 'edit', next: '/studio/acme/ds/' });
-    expect(await s.members.get(REPO, 'mia@acme.design')).toMatchObject({ name: 'Mia Chen', addedBy: 'ada' });
+    expect(await s.members.get(REPO, 'mia@acme.example')).toMatchObject({ name: 'Mia Chen', addedBy: 'ada' });
     expect((await post(s, mia, { action: 'accept-invite', repo: REPO, id: inv.id })).status).toBe(410);
   });
 
   it('joins a Can view invite with the email alone, even with GitHub linked, and lists the team as Can view', async () => {
     const s = setup();
-    const inv = await invite(s, { email: 'vic@acme.design', role: 'view' });
-    const vic = await account(s, 'vic@acme.design', 'Vic Lund', { login: 'vic', id: 9 });
+    const inv = await invite(s, { email: 'vic@acme.example', role: 'view' });
+    const vic = await account(s, 'vic@acme.example', 'Vic Lund', { login: 'vic', id: 9 });
     const r = await post(s, vic, { action: 'accept-invite', repo: REPO, id: inv.id });
     expect(await r.json()).toEqual({ joined: true, status: 'joined', repo: REPO, role: 'view', next: '/studio/acme/ds/' });
-    expect(await s.members.get(REPO, 'vic@acme.design')).toMatchObject({ role: 'view' });
+    expect(await s.members.get(REPO, 'vic@acme.example')).toMatchObject({ role: 'view' });
     expect((await (await get(s, vic)).json()).teams).toEqual([expect.objectContaining({ repo: REPO, role: 'view', via: 'email' })]);
   });
 
   it('never accepts someone else’s invite', async () => {
     const s = setup();
-    const inv = await invite(s, { email: 'zed@acme.design' });
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const inv = await invite(s, { email: 'zed@acme.example' });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     expect((await post(s, mia, { action: 'accept-invite', repo: REPO, id: inv.id })).status).toBe(410);
     expect((await post(s, mia, { action: 'accept-invite', repo: REPO, id: 'nope' })).status).toBe(410);
-    expect(await s.members.get(REPO, 'mia@acme.design')).toBeNull();
+    expect(await s.members.get(REPO, 'mia@acme.example')).toBeNull();
   });
 
   it('joins an admin invite with the email alone, as an email admin', async () => {
     const s = setup();
-    const inv = await invite(s, { email: 'cara@acme.design', role: 'admin' });
-    const emailOnly = await account(s, 'cara@acme.design', 'Cara');
+    const inv = await invite(s, { email: 'cara@acme.example', role: 'admin' });
+    const emailOnly = await account(s, 'cara@acme.example', 'Cara');
     expect(await (await post(s, emailOnly, { action: 'accept-invite', repo: REPO, id: inv.id })).json()).toMatchObject({ joined: true, role: 'admin' });
-    expect((await s.members.get(REPO, 'cara@acme.design'))?.role).toBe('admin');
+    expect((await s.members.get(REPO, 'cara@acme.example'))?.role).toBe('admin');
     expect(s.calls.some((c) => c.startsWith('PUT'))).toBe(false);
   });
 
   it('needs GitHub for a reviewer invite, and grants an admin invite on GitHub to a linked account, by the login read from the GitHub id', async () => {
     const s = setup();
-    const rev = await invite(s, { id: 'f1f2f3f4f5f6f7f8', email: 'cara@acme.design', role: 'reviewer', reviewAs: 'design', tokenHash: 'r'.repeat(64) });
-    const emailOnly = await account(s, 'cara@acme.design', 'Cara');
+    const rev = await invite(s, { id: 'f1f2f3f4f5f6f7f8', email: 'cara@acme.example', role: 'reviewer', reviewAs: 'design', tokenHash: 'r'.repeat(64) });
+    const emailOnly = await account(s, 'cara@acme.example', 'Cara');
     expect(await (await post(s, emailOnly, { action: 'accept-invite', repo: REPO, id: rev.id })).json()).toMatchObject({ error: 'github-required' });
-    const inv = await invite(s, { email: 'cara@acme.design', role: 'admin' });
-    const linked = await account(s, 'cara@acme.design', 'Cara', { login: 'cara-old', id: 9 });
+    const inv = await invite(s, { email: 'cara@acme.example', role: 'admin' });
+    const linked = await account(s, 'cara@acme.example', 'Cara', { login: 'cara-old', id: 9 });
     const r = await post(s, linked, { action: 'accept-invite', repo: REPO, id: inv.id });
     expect(await r.json()).toMatchObject({ joined: true, status: 'joined', repo: REPO, role: 'admin' });
     expect(s.calls).toContain('PUT /repos/acme/ds/collaborators/cara-now');
     // The reviewer invite still waits for the GitHub way.
-    expect((await s.invites.byEmail('cara@acme.design')).map((i) => i.id)).toEqual([rev.id]);
+    expect((await s.invites.byEmail('cara@acme.example')).map((i) => i.id)).toEqual([rev.id]);
   });
 });
 
@@ -746,30 +746,30 @@ describe('invite links (invite-link, the one identity of an invite)', () => {
 
   it('signed out: the team, who invited, the role and the masked address, never the email or the repository', async () => {
     const s = setup();
-    await invite(s, { email: 'mia@acme.design', role: 'reviewer', reviewAs: 'design', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
+    await invite(s, { email: 'mia@acme.example', role: 'reviewer', reviewAs: 'design', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
     const r = await link(s, null);
     expect(r.status).toBe(200);
     const text = await r.text();
-    expect(JSON.parse(text)).toEqual({ state: 'live', team: expect.any(String), invitedBy: 'Ada Admin', role: 'reviewer', reviewAs: 'design', sentTo: 'm•••@acme.design', signedIn: false, mine: false, member: false });
+    expect(JSON.parse(text)).toEqual({ state: 'live', team: expect.any(String), invitedBy: 'Ada Admin', role: 'reviewer', reviewAs: 'design', sentTo: 'm•••@acme.example', signedIn: false, mine: false, member: false });
     expect(text).not.toContain('mia@');
     expect(text).not.toContain(REPO);
   });
 
   it('signed in as the invited email: its E3 card; as someone else: only the masked address', async () => {
     const s = setup();
-    await invite(s, { email: 'mia@acme.design', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    await invite(s, { email: 'mia@acme.example', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     expect(await (await link(s, mia)).json()).toMatchObject({ state: 'live', signedIn: true, mine: true, member: false, invite: { id: 'a1b2c3d4e5f60718', repo: REPO, role: 'edit', invitedBy: 'Ada Admin' } });
     const leo = await account(s, 'leo@gmail.com', 'Leo');
     const other = await (await link(s, leo)).json();
-    expect(other).toMatchObject({ state: 'live', signedIn: true, mine: false, sentTo: 'm•••@acme.design' });
+    expect(other).toMatchObject({ state: 'live', signedIn: true, mine: false, sentTo: 'm•••@acme.example' });
     expect(other.invite).toBeUndefined();
   });
 
   it('a member: already in, with the team to open; a spent link still names the team and whom to ask', async () => {
     const s = setup();
-    const inv = await invite(s, { email: 'mia@acme.design', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
-    const mia = await account(s, 'mia@acme.design', 'Mia');
+    const inv = await invite(s, { email: 'mia@acme.example', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
     await post(s, mia, { action: 'accept-invite', repo: REPO, id: inv.id });
     expect(await (await link(s, mia)).json()).toMatchObject({ state: 'gone', invitedBy: 'Ada Admin', member: true, repo: REPO });
     const gone = await (await link(s, null)).json();
@@ -780,7 +780,7 @@ describe('invite links (invite-link, the one identity of an invite)', () => {
 
   it('an expired invite reads as gone, and the calls are capped per network', async () => {
     const s = setup();
-    await invite(s, { email: 'mia@acme.design', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
+    await invite(s, { email: 'mia@acme.example', invitedByName: 'Ada Admin', tokenHash: hashOf(TOKEN) });
     s.tick(8 * 86_400_000);
     expect(await (await link(s, null)).json()).toMatchObject({ state: 'gone', invitedBy: 'Ada Admin' });
     for (let i = 0; i < INVITE_LINK_PER_HOUR; i++) await link(s, null);
@@ -796,13 +796,13 @@ describe('invite links (invite-link, the one identity of an invite)', () => {
 describe('ask to join from the team address (any work domain)', () => {
   it('a public team: a Gmail account asks, the admin sees it in the requests and approves with Can edit', async () => {
     const s = setup();
-    const admin = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const admin = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     const sam = await account(s, 'sam.rivera@gmail.com', 'Sam Rivera');
     const r = await post(s, sam, { action: 'ask', repo: REPO });
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({ requested: true });
     // The admins get the email; it never says "work email" for a public mailbox.
-    expect(s.sent.map((m) => m.to)).toEqual(['ada@acme.design']);
+    expect(s.sent.map((m) => m.to)).toEqual(['ada@acme.example']);
     expect(s.sent[0]!.text).not.toContain('work email');
     expect(await (await get(s, sam, '?asked=acme/ds')).json()).toMatchObject({ asked: true });
     // Asking again keeps one request.
@@ -859,12 +859,12 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 
   /** Everything a team keeps, seeded under `team`, with Bob as a member who is not admin. */
   async function seedTeam(s: S, team: string) {
-    const bob = await account(s, 'bob@acme.design', 'Bob Member');
-    await s.members.put(team, { email: 'bob@acme.design', name: 'Bob Member', role: 'edit', version: 1, addedBy: 'Ada', at: new Date(s.now()).toISOString() });
-    await invite(s, { email: 'cara@acme.design', repo: team, id: 'b1b2c3d4e5f60718', tokenHash: 'c'.repeat(64) });
+    const bob = await account(s, 'bob@acme.example', 'Bob Member');
+    await s.members.put(team, { email: 'bob@acme.example', name: 'Bob Member', role: 'edit', version: 1, addedBy: 'Ada', at: new Date(s.now()).toISOString() });
+    await invite(s, { email: 'cara@acme.example', repo: team, id: 'b1b2c3d4e5f60718', tokenHash: 'c'.repeat(64) });
     const exp = new Date(s.now() + JOIN_REQUEST_TTL_MS).toISOString();
-    await putRequest(s.redis, { id: 'r1', repo: team, email: 'dan@acme.design', name: 'Dan', createdAt: new Date(s.now()).toISOString(), expiresAt: exp }, s.now());
-    const grant = await createGrant(s.redis, KEY32, { repo: team, client: { clientId: 'https://claude.ai/x', clientName: 'Claude' }, login: '', name: 'Bob', email: 'bob@acme.design' }, rnd, s.now());
+    await putRequest(s.redis, { id: 'r1', repo: team, email: 'dan@acme.example', name: 'Dan', createdAt: new Date(s.now()).toISOString(), expiresAt: exp }, s.now());
+    const grant = await createGrant(s.redis, KEY32, { repo: team, client: { clientId: 'https://claude.ai/x', clientName: 'Claude' }, login: '', name: 'Bob', email: 'bob@acme.example' }, rnd, s.now());
     await s.redis.pipe([
       ...watchWrites([
         { repo: team, meta: { team, kind: 'team' } },
@@ -882,7 +882,7 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 
   it('a team made in Bridge: only its admin deletes it, every key goes, nothing asks GitHub, and again is fine', async () => {
     const s = setup();
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin');
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin');
     const made = await post(s, ada, { action: 'create-team', name: "Florian's workspace", discover: true });
     const key = ((await made.json()) as { team: { key: string } }).team.key;
     const { bob, grant } = await seedTeam(s, key);
@@ -892,17 +892,17 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
     expect((await post(s, bob, { action: 'delete-team', team: key })).status).toBe(403);
     const stranger = await account(s, 'eve@else.design', 'Eve');
     expect((await post(s, stranger, { action: 'delete-team', team: key })).status).toBe(403);
-    expect(await s.members.get(key, 'bob@acme.design')).not.toBeNull();
+    expect(await s.members.get(key, 'bob@acme.example')).not.toBeNull();
 
     const r = await post(s, ada, { action: 'delete-team', team: key });
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ deleted: true, kind: 'team', next: '/start/' });
     expect(left(s, key)).toEqual([]);
     expect(await getGrant(s.redis, grant.id)).toBeNull();
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:account:teams:bob@acme.design')).toEqual([]);
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.design')).toEqual([]);
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:invites:email:cara@acme.design')).toEqual([]);
-    expect(await s.redis.cmd('SMEMBERS', 'bridge:joinreq:mine:dan@acme.design')).toEqual([]);
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:account:teams:bob@acme.example')).toEqual([]);
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:team:domain:acme.example')).toEqual([]);
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:invites:email:cara@acme.example')).toEqual([]);
+    expect(await s.redis.cmd('SMEMBERS', 'bridge:joinreq:mine:dan@acme.example')).toEqual([]);
     expect(await s.redis.cmd('SMEMBERS', NOTIFY_TEAMS_KEY)).toEqual(['other/unrelated']);
     expect(s.calls).toEqual([]);
 
@@ -914,12 +914,12 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 
   it('a repository team: an admin disconnects it, Bridge forgets it, GitHub is only read, never written', async () => {
     const s = setup();
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     const { bob, grant } = await seedTeam(s, REPO);
     await s.redis.cmd('SET', `bridge:team:name:${REPO}`, JSON.stringify({ name: 'Acme DS', at: s.now() }));
     // A team made in Bridge that was linked to this repository since: its record and old key go too.
     await s.redis.pipe([
-      ['SET', 'bridge:team:rec:00112233aabbccdd', JSON.stringify({ id: '00112233aabbccdd', name: 'Acme', createdBy: 'ada@acme.design', createdAt: '2026-10-01T00:00:00Z', repo: REPO, storybook: null })],
+      ['SET', 'bridge:team:rec:00112233aabbccdd', JSON.stringify({ id: '00112233aabbccdd', name: 'Acme', createdBy: 'ada@acme.example', createdAt: '2026-10-01T00:00:00Z', repo: REPO, storybook: null })],
       ['SET', `bridge:team:byrepo:${REPO}`, '00112233aabbccdd'],
     ]);
 
@@ -941,9 +941,9 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 
   it('an email admin of a repository team disconnects it without asking GitHub, then goes to their next team', async () => {
     const s = setup();
-    const mia = await account(s, 'mia@acme.design', 'Mia');
-    await s.members.put(REPO, { email: 'mia@acme.design', name: 'Mia', role: 'admin', version: 1, addedBy: 'ada', at: new Date(s.now()).toISOString() });
-    await s.members.put('acme/other', { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: new Date(s.now()).toISOString() });
+    const mia = await account(s, 'mia@acme.example', 'Mia');
+    await s.members.put(REPO, { email: 'mia@acme.example', name: 'Mia', role: 'admin', version: 1, addedBy: 'ada', at: new Date(s.now()).toISOString() });
+    await s.members.put('acme/other', { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'ada', at: new Date(s.now()).toISOString() });
     const r = await post(s, mia, { action: 'delete-team', team: REPO });
     expect(r.status).toBe(200);
     expect(((await r.json()) as { next: string }).next).toBe('/studio/acme/other/');
@@ -952,24 +952,24 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 
   it('a disconnected repository team leaves every "Your teams" that listed it through the linked GitHub account', async () => {
     const s = setup();
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     await get(s, ada, `?linked=${REPO}`);
     await get(s, bob, `?linked=${REPO}`);
     s.w.collaborators['acme/other'] = [{ id: 2, login: 'bob', permissions: { admin: false, push: true } }];
     await get(s, bob, '?linked=acme/other');
-    expect(await s.redis.cmd('SMEMBERS', `bridge:account:ghteams-of:${REPO}`)).toEqual(expect.arrayContaining(['ada@acme.design', 'bob@acme.design']));
+    expect(await s.redis.cmd('SMEMBERS', `bridge:account:ghteams-of:${REPO}`)).toEqual(expect.arrayContaining(['ada@acme.example', 'bob@acme.example']));
     expect((await post(s, ada, { action: 'delete-team', team: REPO })).status).toBe(200);
-    expect(await s.redis.cmd('GET', 'bridge:account:ghteams:ada@acme.design')).toBeNull();
+    expect(await s.redis.cmd('GET', 'bridge:account:ghteams:ada@acme.example')).toBeNull();
     // Bob keeps his other team, never this one.
-    expect(JSON.parse(String(await s.redis.cmd('GET', 'bridge:account:ghteams:bob@acme.design')))).toEqual({ 'acme/other': expect.objectContaining({ role: 'edit' }) });
+    expect(JSON.parse(String(await s.redis.cmd('GET', 'bridge:account:ghteams:bob@acme.example')))).toEqual({ 'acme/other': expect.objectContaining({ role: 'edit' }) });
     expect(await s.redis.cmd('SMEMBERS', `bridge:account:ghteams-of:${REPO}`)).toEqual([]);
   });
 
   it('needs the cookie and the CSRF header, and is capped per account per day', async () => {
     const s = setup();
     expect((await post(s, null, { action: 'delete-team', team: REPO })).status).toBe(401);
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin');
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin');
     expect((await post(s, ada, { action: 'delete-team', team: REPO }, { header: false })).status).toBe(403);
     for (let i = 0; i < DELETE_TEAM_PER_DAY; i++) {
       const r = await post(s, ada, { action: 'delete-team', team: `_team/${String(i).padStart(16, 'a')}` });
@@ -982,7 +982,7 @@ describe('delete-team (delete a team made in Bridge, disconnect a repository tea
 describe('the linked GitHub account role (GET ?linked=)', () => {
   it('an email account linked to a GitHub admin of the repository reads admin, with no GitHub sign-in in the browser', async () => {
     const s = setup();
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     const r = await get(s, ada, `?linked=${REPO}`);
     expect(r.status).toBe(200);
     expect(r.headers.get('cache-control')).toContain('no-store');
@@ -993,7 +993,7 @@ describe('the linked GitHub account role (GET ?linked=)', () => {
 
   it('a writer reads edit; kept for a while (one GitHub call)', async () => {
     const s = setup();
-    const bob = await account(s, 'bob@acme.design', 'Bob', { login: 'bob', id: 2 });
+    const bob = await account(s, 'bob@acme.example', 'Bob', { login: 'bob', id: 2 });
     expect(await (await get(s, bob, `?linked=${REPO}`)).json()).toEqual({ role: 'edit' });
     const n = s.calls.length;
     expect(await (await get(s, bob, `?linked=${REPO}`)).json()).toEqual({ role: 'edit' });
@@ -1013,11 +1013,11 @@ describe('the linked GitHub account role (GET ?linked=)', () => {
 
   it('no linked GitHub, not a collaborator, app not installed, a team made in Bridge, signed out', async () => {
     const s = setup();
-    const sam = await account(s, 'sam@acme.design', 'Sam');
+    const sam = await account(s, 'sam@acme.example', 'Sam');
     expect(await (await get(s, sam, `?linked=${REPO}`)).json()).toEqual({ role: null });
-    const cara = await account(s, 'cara@acme.design', 'Cara', { login: 'cara', id: 9 });
+    const cara = await account(s, 'cara@acme.example', 'Cara', { login: 'cara', id: 9 });
     expect(await (await get(s, cara, `?linked=${REPO}`)).json()).toEqual({ role: null });
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     expect(await (await get(s, ada, '?linked=acme/nobridge')).json()).toEqual({ role: null });
     expect(await (await get(s, ada, '?linked=_team/' + 'a'.repeat(16))).json()).toEqual({ role: null });
     expect(await (await get(s, ada, '?linked=not a repo')).json()).toEqual({ role: null });
@@ -1026,7 +1026,7 @@ describe('the linked GitHub account role (GET ?linked=)', () => {
 
   it('"Your teams" of the account lists the repository the linked GitHub account administers, until it no longer does', async () => {
     const s = setup();
-    const ada = await account(s, 'ada@acme.design', 'Ada Admin', { login: 'ada', id: 1 });
+    const ada = await account(s, 'ada@acme.example', 'Ada Admin', { login: 'ada', id: 1 });
     const teams = async () => {
       const r = await handleAccount(new Request(`${ORIGIN}/api/account`, { headers: { host: HOST, cookie: ada } }), ENV, { fetch: s.deps.fetch, redis: s.redis, now: s.now });
       return ((await r.json()) as { account: { teams: unknown[] } }).account.teams;
@@ -1040,9 +1040,9 @@ describe('the linked GitHub account role (GET ?linked=)', () => {
     expect(await (await get(s, ada, `?linked=${REPO}`)).json()).toEqual({ role: null });
     expect(await teams()).toEqual([]);
     // An email-only account never gets one.
-    const sam = await account(s, 'sam@acme.design', 'Sam');
+    const sam = await account(s, 'sam@acme.example', 'Sam');
     await get(s, sam, `?linked=${REPO}`);
-    expect(await s.redis.cmd('GET', 'bridge:account:ghteams:sam@acme.design')).toBeNull();
+    expect(await s.redis.cmd('GET', 'bridge:account:ghteams:sam@acme.example')).toBeNull();
   });
 
   it("GitHub's permission words in Bridge's roles", () => {

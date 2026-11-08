@@ -30,8 +30,8 @@ function setup() {
     app: { installationToken: async () => 'ghs_x' },
   };
   const member = async (repo: string) => {
-    await memberStore(redis).put(repo, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
-    return `${cookieName(repo)}=${signSession({ repo, email: 'mia@acme.design', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
+    await memberStore(redis).put(repo, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
+    return `${cookieName(repo)}=${signSession({ repo, email: 'mia@acme.example', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
   };
   const post = (query: string, body: unknown, cookie = '') =>
     handleContribute(
@@ -158,8 +158,8 @@ describe('the demo visitor reads as Dana', () => {
 
   it('lets a real member session win over a visitor one, and write as on any team', async () => {
     await fresh();
-    await memberStore(t.redis).put(DEMO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
-    const mia = `${cookieName(DEMO)}=${signSession({ repo: DEMO, email: 'mia@acme.design', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
+    await memberStore(t.redis).put(DEMO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
+    const mia = `${cookieName(DEMO)}=${signSession({ repo: DEMO, email: 'mia@acme.example', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
     const info = await (await get(q, { cookie: mia })).json();
     expect(info.member).toMatchObject({ name: 'Mia' });
     expect(info.member.visitor).toBeUndefined();
@@ -194,14 +194,14 @@ describe('seeding the sample team', () => {
     expect(first.added).toEqual(DEMO_MEMBERS.map((m) => m.email));
     expect(first.pm).toBe('set');
     const again = await seedDemoTeam({ members, redis }, T0 + 1000);
-    expect(again).toEqual({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), pm: 'kept' });
-    expect(await members.get(DEMO, 'dana@acme.design')).toMatchObject({ role: 'admin', lead: true, version: 1 });
-    expect(await members.get(DEMO, 'malik@acme.design')).toMatchObject({ role: 'edit', version: 1 });
+    expect(again).toEqual({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), pm: 'kept', migrated: [], forgot: 0 });
+    expect(await members.get(DEMO, 'dana@acme.example')).toMatchObject({ role: 'admin', lead: true, version: 1 });
+    expect(await members.get(DEMO, 'malik@acme.example')).toMatchObject({ role: 'edit', version: 1 });
     // A member changed since is set back with a new version (their sessions end), as an admin's change does.
-    await members.put(DEMO, { ...(await members.get(DEMO, 'leo@acme.design'))!, role: 'view' });
+    await members.put(DEMO, { ...(await members.get(DEMO, 'leo@acme.example'))!, role: 'view' });
     const fixed = await seedDemoTeam({ members, redis }, T0 + 2000);
-    expect(fixed.updated).toEqual(['leo@acme.design']);
-    expect(await members.get(DEMO, 'leo@acme.design')).toMatchObject({ role: 'edit', version: 2 });
+    expect(fixed.updated).toEqual(['leo@acme.example']);
+    expect(await members.get(DEMO, 'leo@acme.example')).toMatchObject({ role: 'edit', version: 2 });
   });
 
   it('runs only for a GitHub admin of the sample team', async () => {

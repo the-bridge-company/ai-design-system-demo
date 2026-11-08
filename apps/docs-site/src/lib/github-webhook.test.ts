@@ -36,8 +36,8 @@ function setup(env: Record<string, string> = { GITHUB_WEBHOOK_SECRET: HOOK_SECRE
   const deps: ContribDeps = { fetch: f, now: () => now, redis, app: { installationToken: async () => 'ghs_read' } };
   const allEnv = { LIBRARY_SESSION_SECRET: SECRET, ...env };
   const member = async () => {
-    await memberStore(redis).put(TEAM, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(now).toISOString() });
-    return `${cookieName(TEAM)}=${signSession({ repo: TEAM, email: 'mia@acme.design', name: 'Mia', v: 1, exp: now + 1e9 }, SECRET)}`;
+    await memberStore(redis).put(TEAM, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(now).toISOString() });
+    return `${cookieName(TEAM)}=${signSession({ repo: TEAM, email: 'mia@acme.example', name: 'Mia', v: 1, exp: now + 1e9 }, SECRET)}`;
   };
   const read = (path: string, cookie: string) =>
     handleContribute(new Request(`${ORIGIN}/api/contribute?repo=${encodeURIComponent(TEAM)}&gh=${encodeURIComponent(path)}`, { headers: { host: HOST, 'x-real-ip': '203.0.113.9', cookie } }), allEnv, deps);

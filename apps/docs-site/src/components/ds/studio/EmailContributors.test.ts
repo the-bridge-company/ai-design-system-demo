@@ -33,7 +33,7 @@ const team = (): MembersData => ({
   team: 'acme/ds',
   members: [
     { login: 'flo', name: 'Florian', role: 'admin', reviews: ['design'], you: true },
-    { login: 'leo@acme.design', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design', via: 'email' },
+    { login: 'leo@acme.example', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.example', via: 'email' },
   ],
   pending: [],
   people: [],
@@ -67,14 +67,14 @@ describe('Settings > Members, an email contributor', () => {
 
     await user.click(within(row).getByRole('button', { name: /^Role for Leo/ }));
     await user.click(await screen.findByRole('radio', { name: /^Admin/ }));
-    await waitFor(() => expect(api.setEmailMemberRole).toHaveBeenCalledWith('acme/ds', 'leo@acme.design', { role: 'admin' }));
+    await waitFor(() => expect(api.setEmailMemberRole).toHaveBeenCalledWith('acme/ds', 'leo@acme.example', { role: 'admin' }));
     expect(api.setMemberRole).not.toHaveBeenCalled();
     expect(await screen.findByText('Leo is now Admin.')).toBeInTheDocument();
     await user.click(within((await screen.findByText('Leo')).closest('tr')!).getByRole('button', { name: 'More for Leo' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Remove from team' }));
     expect(screen.getByText('Remove Leo from acme/ds? They are signed out at once.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Remove' }));
-    await waitFor(() => expect(api.removeEmailMember).toHaveBeenCalledWith('acme/ds', 'leo@acme.design'));
+    await waitFor(() => expect(api.removeEmailMember).toHaveBeenCalledWith('acme/ds', 'leo@acme.example'));
     expect(api.removeMember).not.toHaveBeenCalled();
   });
 });

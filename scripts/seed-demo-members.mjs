@@ -41,6 +41,7 @@ async function main() {
   console.log(`Updated: ${body.updated.join(', ') || 'none'}`);
   console.log(`Already there: ${body.kept.join(', ') || 'none'}`);
   console.log(`Account app product manager: ${body.pm === 'set' ? 'set to Ann' : 'already Ann'}`);
+  console.log(`Moved from acme.design to acme.example: ${body.migrated?.join(', ') || 'none'} (${body.forgot ?? 0} old keys removed)`);
 }
 
 main().catch((e) => {

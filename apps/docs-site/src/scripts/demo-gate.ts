@@ -3,7 +3,6 @@
 //     sample team "Get started" (the email sign-in), or "Back to your workspace" for someone signed in to Bridge;
 //   - every action that would change the demo opens the demo dialog (components/ds/studio/MakeItYours.tsx): on the
 //     sample team "This is a sample team." with the same "Get started", never a GitHub sign-in out of context.
-//     Approve is the exception there: it can be tried, and shows its result without writing (scripts/reviews.ts).
 // Someone who can write to the demo (its owner) keeps the normal Studio.
 //
 // Which actions: any element marked [data-demo-write="<what it does>"] ("create branches", "approve changes"), and
@@ -111,7 +110,6 @@ async function paintStrip(show: boolean, repo: string) {
     const back = await bannerBack(repo);
     return (on: boolean) => {
       slot.hidden = !on;
-      document.documentElement.toggleAttribute('data-demo-visit', on && isSampleTeam(repo));
       // A built "Connect GitHub to..." button says what it does instead on the sample team ([data-demo-label]).
       if (on && isSampleTeam(repo))
         document.querySelectorAll<HTMLElement>('[data-demo-write][data-demo-label]').forEach((el) => {

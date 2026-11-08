@@ -2,7 +2,7 @@
 // picked up." (from the Figma plugin or from Components, Change this component)
 // with a link to the page, under the Harbor zone. Never a Needs you row: a build request waits on developers, not on
 // the viewer. Nothing shows while nothing is open, or when the build requests could not be read. Data:
-// scripts/building-data.ts (the sample team's sample ones on the demo).
+// scripts/building-data.ts, the same on every team.
 import { useEffect, useState } from 'react';
 import { Icon, Link } from '@bridge-ds/react';
 import { Wrench } from 'lucide-react';

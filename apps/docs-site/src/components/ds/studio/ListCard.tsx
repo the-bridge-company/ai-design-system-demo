@@ -33,7 +33,7 @@ export function useListView(page: string): [ListView, (v: ListView) => void] {
 
 /**
  * The screens of the explorations listed, by each one's key: the capture of its preview (lib/preview-shots, one raw file
- * for all, no GitHub API call), on the sample team the screen shipped with the site. One without keeps its thumbnail.
+ * for all, no GitHub API call), the same on every team. One without keeps its thumbnail.
  */
 export function useExplorationShots(items: readonly { key: string; number: number; product: string | null; branch?: string | null }[]): Map<string, ThumbSpec> {
   const [shots, setShots] = useState<Map<string, ThumbSpec>>(new Map());

@@ -23,7 +23,7 @@ export const REVIEW_MODE_WORDS = {
   saved: 'Saved.',
 } as const;
 
-export default function ReviewModeSection({ repo, mode, demo, onSaved }: { repo: string; mode: ReviewMode; demo?: boolean; onSaved?: (m: ReviewMode) => void }) {
+export default function ReviewModeSection({ repo, mode, onSaved }: { repo: string; mode: ReviewMode; onSaved?: (m: ReviewMode) => void }) {
   const [value, setValue] = useState<ReviewMode>(mode);
   const [said, setSaid] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,7 +32,6 @@ export default function ReviewModeSection({ repo, mode, demo, onSaved }: { repo:
     if (next === value || busy) return;
     const was = value;
     setValue(next);
-    if (demo) return;
     setBusy(true);
     setSaid('');
     setReviewMode(repo, next)

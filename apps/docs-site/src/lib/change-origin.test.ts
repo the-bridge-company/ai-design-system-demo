@@ -1,13 +1,11 @@
-// Every change says where it comes from, when Bridge knows it: the "Needed by" block of a real change or of the request
-// it closes, the seeded sample data on the demo home, and nothing at all otherwise. The sample team's branches carry
-// real "Needed by" blocks in their bodies, read by the branch page like any team's.
+// Every change says where it comes from, when Bridge knows it: the "Needed by" block of the change or of the request
+// it closes, and nothing at all otherwise. The sample team's branches carry real "Needed by" blocks in their bodies,
+// read like any team's.
 import { describe, expect, it } from 'vitest';
 import { withNeededBy, type NeededBy } from '@bridge-ds/core';
 import { changeOrigin, neededByOfChange } from './product-branch';
 import { changeNeed, person } from './home-model';
-import { leadQueue, type DemoPull } from './demo-home';
 import { suggestionNeed } from './suggestions-view';
-import { SAMPLE_CHANGE_ORIGINS, isSampleExploration } from './demo';
 
 const needed: NeededBy = { pr: 12, title: 'Billing screen', branch: 'explore/billing', url: 'u', product: 'admin', productName: 'Admin demo', piece: 'p', pieceTitle: 'P' };
 const NOW = Date.parse('2026-11-06T12:00:00Z');
@@ -82,32 +80,14 @@ describe('the rows read the link', () => {
   });
 });
 
-describe('on the demo', () => {
-  const pull = (number: number, ref: string, body?: string): DemoPull => ({ number, title: `Change ${number}`, user: { login: 'ann' }, created_at: '2026-10-22T00:00:00Z', updated_at: '2026-10-22T00:00:00Z', head: { ref }, body: body ?? null });
-  const blue = 'bridge/deepen-the-primary-blue-for-stronger-buttons';
-
-  it('the sample team reads its seeded origins', () => {
-    const [row] = leadQueue([pull(13, blue)], [], NOW, { sample: true });
-    expect(row?.line).toContain('from Profile page');
-  });
-
-  it('a sample change with no known origin has no line', () => {
-    expect(leadQueue([pull(18, 'bridge/deprecate-color-bg-zone')], [], NOW, { sample: true })[0]?.line).not.toContain('from ');
-  });
-
-  it('the seed never reaches another team, whose real data still reads', () => {
-    expect(leadQueue([pull(13, blue)], [], NOW)[0]?.line).not.toContain('from ');
-    expect(leadQueue([pull(13, blue, withNeededBy('Body', needed))], [], NOW)[0]?.line).toContain('from Billing screen');
-  });
-
-  it('the seeds name a sample exploration', () => {
-    for (const o of Object.values(SAMPLE_CHANGE_ORIGINS)) expect(isSampleExploration(o.branch)).toBe(true);
-  });
-
-  it("the branch page reads a sample change's origin from its own Needed by block, as on any team", async () => {
-    const o = SAMPLE_CHANGE_ORIGINS['bridge/deepen-the-primary-blue-for-stronger-buttons']!;
-    const body = withNeededBy('Deeper blue for buttons.', { ...needed, pr: o.pr, title: o.title, branch: o.branch, product: o.product, productName: o.productName });
+describe('on the sample team', () => {
+  it("reads a change's origin from its own Needed by block, as on any team", async () => {
+    const body = withNeededBy('Deeper blue for buttons.', { ...needed, pr: 36, title: 'Profile page', branch: 'explore/profile-page', product: 'account', productName: 'Account app' });
     const origin = changeOrigin(await neededByOfChange(body, async () => null));
     expect(origin).toMatchObject({ name: 'Profile page', product: 'Account app', number: 36 });
+  });
+
+  it('a change without a block has no origin, whatever its branch', async () => {
+    expect(changeOrigin(await neededByOfChange('Deeper blue for buttons.', async () => null))).toBeNull();
   });
 });

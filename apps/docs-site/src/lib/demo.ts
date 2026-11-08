@@ -4,12 +4,10 @@
 // A visitor without an account explores the sample team as its lead (Dana, a read-only email member session,
 // api/_lib/demo-members.ts): every screen runs the code of any team, and the server refuses each write in the
 // sample-team dialog's words (403 `demo`, api/contribute demoWriteRefusal). The sample team has one banner and one call to
-// action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Approve can be tried and shows
-// its result without writing anything; edits stay in this browser as drafts for the visit (scripts/demo-drafts.ts);
-// every other action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
+// action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Edits stay in this browser as
+// drafts for the visit (scripts/demo-drafts.ts); every action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
 // scripts/demo-gate.ts). Someone who can write to the demo repository (its owner) keeps the normal Studio.
 
-import { isBotLogin, isClaudeLogin } from './people.js';
 import { canonicalRepo, isTeamKey } from './team-path.js';
 
 /**
@@ -35,43 +33,6 @@ export const OWN_TEAM = 'Bridge DS';
 
 /** True for the simulated team with sample data ("owner/repo", any case). */
 export const isSampleTeam = (repo: string | null | undefined): boolean => canonicalRepo((repo ?? '').trim()).toLowerCase() === SAMPLE_REPO;
-
-/**
- * True for the branch of a sample exploration. The repository behind the sample team has one account, which opened
- * every branch and made every commit: on these branches, the exploration's page names its sample person instead.
- */
-const SAMPLE_BRANCHES: readonly string[] = ['explore/profile-page', 'agent/billing-invoice-status', 'explore/team-seats-and-roles', 'explore/notification-channels', 'explore/plan-comparison'];
-export const isSampleExploration = (branch: string | null | undefined): boolean => Boolean(branch && SAMPLE_BRANCHES.includes(branch));
-
-/** Where a change of the sample team comes from: the exploration a "Needed by" block would name on a real team. */
-export interface SampleOrigin {
-  pr: number;
-  title: string;
-  branch: string;
-  product: string;
-  productName: string;
-}
-
-const PROFILE_PAGE: SampleOrigin = { pr: 36, title: 'Profile page', branch: 'explore/profile-page', product: 'account', productName: 'Account app' };
-const NOTIFICATION_CHANNELS: SampleOrigin = { pr: 47, title: 'Notification channels', branch: 'explore/notification-channels', product: 'account', productName: 'Account app' };
-
-/**
- * The exploration behind each library change of the sample team, by branch: a real team reads it from the "Needed by"
- * block Bridge writes when an exploration opens the change (lib/product-branch changeOrigin); the sample repository's
- * pull requests carry none. Each one is something that screen does by hand today: the 56px between sections, the
- * highlight, the avatar and the header. A change that came from nowhere in particular stays out: no origin, no line.
- */
-export const SAMPLE_CHANGE_ORIGINS: Readonly<Record<string, SampleOrigin>> = {
-  'bridge/deepen-the-primary-blue-for-stronger-buttons': PROFILE_PAGE,
-  'bridge/add-a-56px-spacing-step-for-page-sections': PROFILE_PAGE,
-  'bridge/add-a-highlight-surface-for-new-items': PROFILE_PAGE,
-  'agent/request-profile-header': PROFILE_PAGE,
-  'agent/request-avatar-xl': PROFILE_PAGE,
-  'bridge/fix-muted-text-contrast-on-dark-raised-surfaces': NOTIFICATION_CHANNELS,
-};
-
-/** The exploration a sample team change comes from, by its branch, or null. */
-export const sampleChangeOrigin = (branch: string | null | undefined): SampleOrigin | null => (branch ? (SAMPLE_CHANGE_ORIGINS[branch] ?? null) : null);
 
 /** The repository part of "owner/repo" in words: "ai-design-system-demo" reads "Ai design system demo". */
 export const humanizeRepo = (repo: string): string => {
@@ -122,8 +83,6 @@ export const DEMO_WORDS = {
   backToWorkspace: 'Back to your workspace',
   /** The same banner for someone who has no workspace yet. */
   connectOwn: 'Connect your design system',
-  /** The home's explorations, the team's from the lead's seat (board D1; library changes live on Changes). */
-  explorations: 'Recent explorations',
   /** A write action on the sample team (board D2). */
   dialogTitle: 'This is a sample team.',
   dialogLead: 'Nothing is sent from Acme Design. Get started to do this with your own team.',
@@ -138,29 +97,8 @@ export const DEMO_WORDS = {
   tryIt: `Try it · ${SAMPLE_TEAM}`,
 } as const;
 
-/**
- * Approve, tried on the sample team (a branch or its review page): the approved state and what happens next, nothing
- * written anywhere. `author` is who asked for the review ("Ann"), when known. `codeBy` names who still checks the code
- * ("Malik"), when the change needs that check: Settings > Review rules on the sample team.
- * `valuesOnly`: a token value change (core withTokenValueApprovals, decision TV-1) needs no code check, so the design
- * approval sends it on to the library once the automatic checks pass.
- */
-export function demoApproved(author?: string | null, codeBy?: string | null, valuesOnly?: boolean): { title: string; next: string; note: string } {
-  const who = author?.trim() ? author.trim().split(/\s+/)[0]! : 'the teammate who asked';
-  const code = codeBy?.trim();
-  return {
-    title: 'Approved',
-    next: valuesOnly
-      ? `On your team, ${who} hears it at once. A token value needs no code check: it reaches the library once the automatic checks pass.`
-      : code
-        ? `On your team, ${who} hears it at once. ${code} checks the code next, then it ships once the checks pass.`
-        : `On your team, ${who} hears it at once, and a developer ships the change once the checks pass.`,
-    note: 'Sample data, nothing is sent.',
-  };
-}
-
 // ---------------------------------------------------------------------------------------------------------------
-// Drafts made on the sample team (token edits, docs edits, a new brand), and the branches approved there, stay in this
+// Drafts made on the sample team (token edits, docs edits, a new brand) stay in this
 // browser for the visit and never mix with a real team's: entering the sample team puts a real draft aside, leaving it for any other page drops the
 // sample drafts and brings the real draft back. Pure over a Storage-like store (scripts/demo-drafts.ts runs it).
 
@@ -185,31 +123,6 @@ const sampleScoped = (k: string) => {
   return low.startsWith('bridge.') && low.includes(SAMPLE_REPO) && /draft/.test(low);
 };
 
-/**
- * Branches the visitor approved on the sample team (Approve tried, nothing sent), by number: kept for the visit like
- * the sample drafts, so the approved branch leaves the lead's queue and shows Approved on every page, and dropped
- * when the visitor leaves the sample team. Never read off the sample team.
- */
-export const DEMO_APPROVED_KEY = 'bridge.demo.approved';
-
-/** The sample team's branches approved during this visit. */
-export function demoApprovedSet(store: Pick<DraftStore, 'getItem'>): Set<number> {
-  try {
-    const v = JSON.parse(store.getItem(DEMO_APPROVED_KEY) ?? '[]') as unknown;
-    return new Set(Array.isArray(v) ? v.filter((n): n is number => Number.isInteger(n) && n > 0) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-/** Approve tried on a sample team branch: remembered for the visit (`approved` false forgets it, for Undo). */
-export function markDemoApproved(store: Pick<DraftStore, 'getItem' | 'setItem'>, pr: number, approved = true): void {
-  const set = demoApprovedSet(store);
-  if (approved) set.add(pr);
-  else set.delete(pr);
-  store.setItem(DEMO_APPROVED_KEY, JSON.stringify([...set]));
-}
-
 /** Keeps sample drafts and real drafts apart. `onSample`: this page is the sample team. Returns what it did. */
 export function swapDemoDrafts(store: DraftStore, onSample: boolean): 'entered' | 'left' | 'none' {
   const visiting = store.getItem(DEMO_VISIT_KEY) === '1';
@@ -218,8 +131,6 @@ export function swapDemoDrafts(store: DraftStore, onSample: boolean): 'entered' 
     const real = store.getItem(SHARED_DRAFT_KEY);
     if (real !== null) store.setItem(DEMO_STASH_KEY, real);
     store.removeItem(SHARED_DRAFT_KEY);
-    // A new visit starts with nothing approved (a visit that ended without passing through another page).
-    store.removeItem(DEMO_APPROVED_KEY);
     store.setItem(DEMO_VISIT_KEY, '1');
     return 'entered';
   }
@@ -230,7 +141,6 @@ export function swapDemoDrafts(store: DraftStore, onSample: boolean): 'entered' 
     if (k && sampleScoped(k)) scoped.push(k);
   }
   for (const k of scoped) store.removeItem(k);
-  store.removeItem(DEMO_APPROVED_KEY);
   const real = store.getItem(DEMO_STASH_KEY);
   if (real !== null) store.setItem(SHARED_DRAFT_KEY, real);
   else store.removeItem(SHARED_DRAFT_KEY);
@@ -252,130 +162,3 @@ export function demoDialog(repo: string | null | undefined): { title: string; le
 
 /** Bridge's own design system: a demo repository that is not the sample team. */
 export const isOwnTeam = (repo: string | null | undefined): boolean => isDemoRepo(repo) && !isSampleTeam(repo);
-
-/** What a write action in the demo does, as its data-demo-write says it, when it does not say ("save changes"). */
-export const DEFAULT_WRITE = 'save changes';
-
-/**
- * The waiting line of the demo (board D1b), the visitor in the DS lead's seat: "8 changes need your review." then
- * who waits: "Ann and Claude AI are waiting on you." (the visitor is Dana). `people` is
- * home-model waitingSentence over everyone but the lead.
- */
-export function demoWaiting(n: number, people: { names: string; rest: string } | null, lead: string | null, drafts = 0): { count: string; rest: string } {
-  // What the queue holds, so the line and "Review all · 1 of N" agree: the changes, then Claude AI's documentation
-  // drafts when there are any ("15 changes and 1 documentation draft need your review.").
-  const what = [n > 0 || !drafts ? `${n} ${n === 1 ? 'change' : 'changes'}` : '', drafts ? `${drafts} documentation ${drafts === 1 ? 'draft' : 'drafts'}` : ''].filter(Boolean).join(' and ');
-  const one = n + drafts === 1;
-  // No persona (Bridge's own design system, or a demo whose settings name none): the visitor is a visitor, not a
-  // reviewer, so nothing "needs your review" and nobody is "waiting on you".
-  if (!lead) {
-    const count = `${what} ${one ? 'waits' : 'wait'} for review.`;
-    return { count, rest: people ? ` ${people.names}${people.rest.replace(/ on you\.$/, ' on a reviewer.')}` : '' };
-  }
-  const count = `${what} ${one ? 'needs' : 'need'} your review.`;
-  if (!people) return { count, rest: ` ${lead} leads this design system.` };
-  return { count, rest: ` ${people.names}${people.rest}` };
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// The tour of the demo home (board D1): three steps, each anchored where it points
-
-export type TourAt = 'rows' | 'more' | 'branches';
-
-const DEMO_TOUR: Record<TourAt, { title: string; text: string }> = {
-  rows: {
-    title: 'Changes wait for the lead',
-    text: 'Each row is a change a teammate or Claude AI opened. Bridge shows it before and after, so the lead reviews the look, not the code.',
-  },
-  more: {
-    title: 'The whole queue, one by one',
-    text: 'Review all opens every change in turn: approve, ask for changes, and move on to the next.',
-  },
-  branches: {
-    title: 'Explore with Claude AI',
-    text: 'Each card is a product screen the team tries with Claude AI. Bridge spots what the library does not have yet, and the pieces worth keeping go to review.',
-  },
-};
-
-/** One step's words; the first names the persona's role when the settings give one ("Changes wait for the DS lead"). */
-export function demoTour(at: TourAt, role?: string | null): { title: string; text: string } {
-  const w = DEMO_TOUR[at];
-  return at === 'rows' && role ? { ...w, title: `Changes wait for the ${role}` } : w;
-}
-
-/** The steps the page can point at, in order: the grouped row only when there is one. */
-export function tourSteps(x: { rows: boolean; more: boolean; branches: boolean }): TourAt[] {
-  return (['rows', 'more', 'branches'] as const).filter((s) => x[s]);
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// People on the sample team
-
-/**
- * Who a login is on the sample team (History and other plain-script rows, scripts/people.ts): the sample team tells
- * its own story, never the repository's real accounts. `team` is lib/invites.ts sampleTeam(lead), the one source,
- * passed in so this module imports nothing the /api functions would load. A sample member's login ("~ann-leroy", with
- * or without the ~) is that member, name and face; any other human login (the repository's real accounts, such as its
- * owner) is the lead in the visitor's seat (Dana), face seeded by ~dana. Claude and bots are not people: null, they
- * keep their own name ("Claude AI"). The returned `login` is the face seed.
- */
-export function samplePersonOf(
-  login: string,
-  team: { members: readonly { login: string; name: string; you?: boolean; reviews?: readonly string[] }[] },
-  seat: SampleSeat = 'lead',
-): { login: string; name: string } | null {
-  const bare = login.trim().replace(/^@/, '').replace(/^name:/, '').trim();
-  if (!bare || isClaudeLogin(bare) || isBotLogin(bare)) return null;
-  const { members } = team;
-  // A member by login ("~ann-leroy", "ann-leroy") or by the name Bridge recorded ("name:Ann", "Ann Leroy").
-  const key = bare.replace(/^~/, '').toLowerCase();
-  const slug = key.replace(/\s+/g, '-');
-  const first = key.split(/\s+/)[0]!;
-  const byLogin = members.find((x) => x.login.replace(/^~/, '').toLowerCase() === slug);
-  const byName = members.find((x) => x.name.toLowerCase() === key) ?? (/\s/.test(key) ? members.find((x) => x.name.toLowerCase() === first) : undefined);
-  // Anyone else is a real account: the developer of a product's code, or the lead in the visitor's seat.
-  const dev = seat === 'developer' ? members.find((x) => !x.you && x.reviews?.includes('tech')) : undefined;
-  const m = byLogin ?? byName ?? dev ?? members.find((x) => x.you) ?? members[0];
-  return m ? { login: m.login, name: m.name } : null;
-}
-
-/**
- * The part a real account plays on the sample team when it is not one of its members: 'lead' (the visitor's seat,
- * Dana) by default, 'developer' for who builds a product's code (its developer pull request, its task): the member
- * who reviews tech (Malik).
- */
-export type SampleSeat = 'lead' | 'developer';
-
-/** Acme Design's people (lib/invites.ts sampleTeam adds what Members shows): the one list, readable by /api too. */
-export interface SampleMember {
-  login: string;
-  name: string;
-  role: 'admin' | 'reviewer' | 'edit';
-  reviews: ('design' | 'tech')[];
-  you?: boolean;
-  email: string;
-}
-
-export function sampleMembers(lead = 'Dana'): SampleMember[] {
-  return [
-    { login: '~dana', name: lead, role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
-    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
-    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
-    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
-    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
-  ];
-}
-
-/**
- * Who a person is on screen, the one helper every screen and /api call goes through: on the sample team the persona
- * (samplePersonOf, by `seat` for a real account), by name only; on any other team null, and the caller keeps the real
- * person. `repo` is the team's design system ("owner/repo").
- */
-export function personaOn(repo: string | null | undefined, login: string | null | undefined, seat: SampleSeat = 'lead', lead?: string): { login: string; name: string } | null {
-  if (!login || !isSampleTeam(repo)) return null;
-  return samplePersonOf(login, { members: sampleMembers(lead?.trim() || undefined) }, seat);
-}
-
-/** A name to show for a login: the persona's on the sample team, else `real` (the name the caller already had). */
-export const nameOn = (repo: string | null | undefined, login: string | null | undefined, real: string, seat: SampleSeat = 'lead', lead?: string): string => personaOn(repo, login, seat, lead)?.name ?? real;
-

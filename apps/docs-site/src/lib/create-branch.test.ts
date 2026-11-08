@@ -39,7 +39,6 @@ describe('start an exploration, in a product or the library', () => {
     expect(libraryLead({ write: true, contributor: true })).toBe(false);
     expect(libraryLead({ write: false })).toBe(false);
     expect(libraryLead(null)).toBe(false);
-    expect(libraryLead(null, true)).toBe(true);
   });
 
   it('preselects the target the page came from, else the only product, else the library when there is no product', () => {

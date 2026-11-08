@@ -19,7 +19,7 @@ export const loginKey = (login: string) => login.trim().replace(/^@/, '').toLowe
 /**
  * The face of someone Bridge knows by name only: an email member ("Requested by Dino through Bridge.", a commit by
  * "Dino", the account menu of a member who joined by email). One seed for all of them, `~` and the name as a slug
- * ("~dino", "~priya-shah"), the same convention as the sample team's personas: every surface that only has the name
+ * ("~dino", "~priya-shah"), the same for every email member: every surface that only has the name
  * draws the same face, and the `~` keeps it from ever being read as a GitHub login.
  */
 export const nameFace = (name: string): string =>

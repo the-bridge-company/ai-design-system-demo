@@ -195,5 +195,6 @@ out a token push that ships by itself until something holds it (a failing check,
   Code: `components/ds/studio/ChangeComponent.tsx`, `scripts/build-request-send.ts`, words in `lib/change-intent.ts`.
 - **Library:** a component page says "Figma is ahead: 2 changes being built (Ana)." by the preview while build
   requests for it are open.
-- The sample team of the demo shows sample build requests (`apps/docs-site/src/lib/building-sample.ts`) and never
-  reads GitHub for them; `npm run dev:scenario S19` serves the same ones for a local fixture team.
+- The sample team of the demo reads its build requests from its own repositories, as any team does (the Account
+  app's task and its developers' pull request in `acme-design-demo/acme-account`). `npm run dev:scenario S19` serves
+  fixture build requests (`apps/docs-site/dev/build-requests.ts`) for a local fixture team.

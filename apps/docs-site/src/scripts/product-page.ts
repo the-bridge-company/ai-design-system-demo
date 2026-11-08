@@ -18,7 +18,6 @@ import { cardProductKey } from '../lib/product-page';
 import { person, requesterPerson, type Person } from '../lib/home-model';
 import type { ThumbSpec } from '../lib/branch-thumb';
 import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from '../lib/author';
-import { sampleAuthor } from './people';
 import type { CopyView } from '../lib/design-copy';
 import { copyRepos, readCopyView } from './design-copy';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
@@ -116,9 +115,8 @@ export async function loadProductPage(key: string, onUpdate: (d: ProductPageData
   const author = (p: ExplorationPull) => {
     const r = requesterOf(p.body);
     if (r) return requesterPerson(r, pick) ?? pick(p.user?.login ?? 'unknown');
-    // The person the exploration names (a member by email, a sample persona), never the account that opened it.
-    // On the sample team, the persona the account behind it plays (scripts/people sampleAuthor).
-    const who = sampleAuthor(explorationAuthorFor(p.user?.login, p.body) ?? p.user?.login ?? '') || null;
+    // The person the exploration names (a member by email), never the account that opened it.
+    const who = explorationAuthorFor(p.user?.login, p.body) ?? p.user?.login ?? null;
     if (who && isNameAuthor(who)) return person(who, nameOfAuthor(who), null);
     return pick(who ?? p.user?.login ?? 'unknown');
   };

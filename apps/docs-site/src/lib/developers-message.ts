@@ -75,10 +75,9 @@ const TEAM_ACCESS: readonly RepoAccessState[] = ['reader', 'writer', 'admin'];
 
 /**
  * Whether the viewer belongs to the team: a member who joined with their email, or someone signed in with GitHub who can
- * read the team's code. Never a signed-out visitor, nor a visitor of the sample team.
+ * read the team's code. Never a signed-out visitor.
  */
-export function teamMember(v: { emailMember: boolean; signedIn: boolean; access: RepoAccessState | null | undefined; sample?: boolean }): boolean {
-  if (v.sample) return false;
+export function teamMember(v: { emailMember: boolean; signedIn: boolean; access: RepoAccessState | null | undefined }): boolean {
   if (v.emailMember) return true;
   return v.signedIn && Boolean(v.access && TEAM_ACCESS.includes(v.access));
 }

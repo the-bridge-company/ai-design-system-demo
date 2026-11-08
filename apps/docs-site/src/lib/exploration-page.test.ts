@@ -9,7 +9,6 @@ import {
   buildersOf,
   changedScreenOf,
   checkInClaudeLine,
-  commitsAs,
   doneActionFor,
   doneByOf,
   explorationTag,
@@ -63,10 +62,9 @@ describe('exploration page model', () => {
   });
 
   it('shows Done exploring only to people who can keep it', () => {
-    const v = { direct: true, demo: false, connected: true, write: true, keeper: true, keeperNote: 'Florian or a reviewer says when it is done exploring.' };
+    const v = { direct: true, connected: true, write: true, keeper: true, keeperNote: 'Florian or a reviewer says when it is done exploring.' };
     expect(doneActionFor(v)).toEqual({ kind: 'run' });
     expect(doneActionFor({ ...v, connected: false })).toBeNull();
-    expect(doneActionFor({ ...v, connected: false, demo: true })).toEqual({ kind: 'demo' });
     expect(doneActionFor({ ...v, write: false })).toBeNull();
     expect(doneActionFor({ ...v, keeper: false })).toEqual({ kind: 'note', text: v.keeperNote });
     expect(doneActionFor({ ...v, direct: false })).toBeNull();
@@ -389,7 +387,7 @@ describe('the library check runs on its own', () => {
 });
 
 describe('canPutInFigma', () => {
-  const v = { figmaFile: 'AbCdEf0123456789', demo: false, archived: false, status: 'active', memberRole: null, designer: false, reviewer: false, write: true };
+  const v = { figmaFile: 'AbCdEf0123456789', archived: false, status: 'active', memberRole: null, designer: false, reviewer: false, write: true };
   it('needs the team\'s Figma file and someone who can edit', () => {
     expect(canPutInFigma(v)).toBe(true);
     expect(canPutInFigma({ ...v, figmaFile: null })).toBe(false);
@@ -403,8 +401,7 @@ describe('canPutInFigma', () => {
     expect(canPutInFigma({ ...v, write: null, memberRole: 'admin' })).toBe(true);
     expect(canPutInFigma({ ...v, write: true, memberRole: 'view' })).toBe(false);
   });
-  it('not on the sample team, archived, shipped or closed', () => {
-    expect(canPutInFigma({ ...v, demo: true })).toBe(false);
+  it('not archived, shipped or closed', () => {
     expect(canPutInFigma({ ...v, archived: true })).toBe(false);
     expect(canPutInFigma({ ...v, status: 'shipped' })).toBe(false);
     expect(canPutInFigma({ ...v, status: 'closed' })).toBe(false);
@@ -418,19 +415,20 @@ describe('waiting for the design lead', () => {
   });
 });
 
-describe('commitsAs', () => {
-  const by = (login: string, message = 'Account app: first pass'): BranchCommitLike => ({ sha: login, author: { login }, commit: { message, author: { name: login, date: '2026-10-22T10:00:00Z' } } });
+describe("an email member's saves through Bridge", () => {
+  // Bridge commits for an email member with their name and a contributors address, no GitHub account: the sample team's
+  // people (Ann, Leo, Sofia) read the same way as any team's, with no rewrite of who made them.
+  const saved = (name: string, message = 'Account app: first pass'): BranchCommitLike => ({ sha: name, author: null, commit: { message, author: { name, email: '0a1b2c3d4e5f@contributors.bridge.invalid', date: '2026-10-22T10:00:00Z' } } as BranchCommitLike['commit'] });
 
-  it("reads a sample exploration's commits as its person, in the headline and the activity, never the account behind it", () => {
-    const commits = commitsAs([by('peterbono')], 'name:Ann Leroy');
+  it('read as the member by name, with the drawn face of their name, in the headline and the activity', () => {
+    const commits = [saved('Ann Leroy')];
     const names = gitNamesOf(commits);
     const rows = activityRows({ commits, author: 'name:Ann Leroy', names, now: new Date('2026-10-23T10:00:00Z') });
-    expect(JSON.stringify(rows)).not.toContain('peterbono');
     expect(rows[0]!.who).toMatchObject({ name: 'Ann Leroy', avatar: null, login: '~ann-leroy' });
   });
 
-  it("leaves Claude's own commits as Claude's", () => {
-    expect(commitsAs([by('claude[bot]')], 'name:Ann Leroy')[0]!.author!.login).toBe('claude[bot]');
+  it('are never linked to a GitHub account of the same name', () => {
+    expect(linkAuthors([saved('Ann Leroy'), { sha: 'x', author: { login: 'annl' }, commit: { message: 'm', author: { name: 'Ann Leroy', date: '2026-10-22T10:00:00Z' } } }])[0]!.author).toBeNull();
   });
 });
 

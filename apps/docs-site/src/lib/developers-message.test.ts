@@ -48,7 +48,7 @@ describe('developersMessage', () => {
 });
 
 describe('who sees "Copy for your developers"', () => {
-  it('team members only: email members and people who can read the team on GitHub, never signed-out or sample visitors', () => {
+  it('team members only: email members and people who can read the team on GitHub, never signed-out visitors (a sample team visitor reads as Dana, an email member)', () => {
     expect(teamMember({ emailMember: true, signedIn: false, access: null })).toBe(true);
     expect(teamMember({ emailMember: false, signedIn: true, access: 'reader' })).toBe(true);
     expect(teamMember({ emailMember: false, signedIn: true, access: 'writer' })).toBe(true);
@@ -57,7 +57,6 @@ describe('who sees "Copy for your developers"', () => {
     expect(teamMember({ emailMember: false, signedIn: true, access: 'no-access' })).toBe(false);
     expect(teamMember({ emailMember: false, signedIn: true, access: 'outside-contributor' })).toBe(false);
     expect(teamMember({ emailMember: false, signedIn: true, access: null })).toBe(false);
-    expect(teamMember({ emailMember: true, signedIn: true, access: 'admin', sample: true })).toBe(false);
   });
 
   it('an address product, once done exploring and until it ships, declined or archived aside', () => {

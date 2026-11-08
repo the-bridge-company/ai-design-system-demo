@@ -55,7 +55,6 @@ import { installUrl } from '../../../lib/access-view';
 import { afterCopyFirst, COPY_WORDS, startCopyLine, type CopyAccess } from '../../../lib/design-copy';
 import { CopyAccessStep } from './CopyAccessStep';
 import { siteConfig } from '../../../scripts/repo-context';
-import { isSampleTeam } from '../../../lib/demo';
 import { JIRA_IN_BRIDGE } from '../../../lib/studio-flags';
 import { useCopy } from './TeamLink';
 import { CONNECT_FIRST, connectFirst, copilotSetup, connectorUrl, TERMINAL_SETUP_LINE, TERMINAL_SETUP_LINE_COPY, terminalSetup } from '../../../lib/claude-connector';
@@ -262,23 +261,20 @@ export default function StartExploration({ components, appearance = 'menu', prod
   }, []);
 
   useEffect(() => {
-    const c = siteConfig();
-    if (isSampleTeam(c.owner && c.repo ? `${c.owner}/${c.repo}` : null)) setLead(true);
     // Setting state after an unmount is a no-op in React 18: no guard, so a remount never loses the access.
-    else
-      void import('../../../scripts/github-session')
-        .then((m) => {
-          setEmail(Boolean(m.currentContributor()));
-          // A designer signed in with GitHub works like an email member in the products (through Bridge) and, like
-          // them, is not a lead of the library.
-          m.onAccess((a) => {
-            const designer = m.designerRoute();
-            setLead(libraryLead(a) && !designer);
-            setAdmin(Boolean(a?.admin));
-            if (designer) setEmail(true);
-          });
-        })
-        .catch(() => undefined);
+    void import('../../../scripts/github-session')
+      .then((m) => {
+        setEmail(Boolean(m.currentContributor()));
+        // A designer signed in with GitHub works like an email member in the products (through Bridge) and, like
+        // them, is not a lead of the library.
+        m.onAccess((a) => {
+          const designer = m.designerRoute();
+          setLead(libraryLead(a) && !designer);
+          setAdmin(Boolean(a?.admin));
+          if (designer) setEmail(true);
+        });
+      })
+      .catch(() => undefined);
   }, []);
 
   // Known before they type: a product with no design copy is out of an email member's reach, so say it at once.

@@ -9,7 +9,7 @@ import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue } from '@bridge-ds/core';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { sampleBuildData, SAMPLE_BUILDERS } from '../../../lib/building-sample';
+import { fixtureBuildData, FIXTURE_BUILDERS } from '../../../../dev/build-requests';
 import { explorationBuildRows, toBuildIssue, toBuildPull, type RestPull } from '../../../lib/building-view';
 import { DEFAULT_PRODUCTS } from '@bridge-ds/core';
 import { fixRows, parseSession } from '../../../lib/claude-connector';
@@ -19,17 +19,17 @@ let data: unknown = null;
 vi.mock('../../../scripts/building-data', () => ({ loadBuildData: () => Promise.resolve(data), readFixes: () => Promise.resolve([]) }));
 const { default: BeingBuilt } = await import('./BeingBuilt');
 
-function sample() {
-  const { issues, pulls } = sampleBuildData(NOW);
-  const nameOf = (l: string) => SAMPLE_BUILDERS[l] ?? l;
-  return { views: assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW, nameOf }), bodies: new Map(issues.map((i) => [i.number, i.body ?? ''])), sample: true, stale: false, nameOf, jiraBase: null };
+function fixture() {
+  const { issues, pulls } = fixtureBuildData(NOW);
+  const nameOf = (l: string) => FIXTURE_BUILDERS[l] ?? l;
+  return { views: assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW, nameOf }), bodies: new Map(issues.map((i) => [i.number, i.body ?? ''])), stale: false, nameOf, jiraBase: null };
 }
 
 beforeEach(() => history.replaceState(null, '', '/studio/building/'));
 
 describe('Being built', () => {
   it('lists every build request with one status tag and no row button', async () => {
-    data = sample();
+    data = fixture();
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Tabs: put a count after the label')).toBeTruthy();
     expect(screen.getByText('Requested 10 days ago')).toBeTruthy();
@@ -39,7 +39,7 @@ describe('Being built', () => {
   });
 
   it('filters, then opens the detail in place with the developer fold', async () => {
-    data = sample();
+    data = fixture();
     render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     await userEvent.click(screen.getByRole('tab', { name: /In review/ }));
@@ -55,7 +55,7 @@ describe('Being built', () => {
   });
 
   it("has Changes' two filters under the tabs, with its count, the tab counts following them", async () => {
-    data = { ...sample(), viewer: 'dana' };
+    data = { ...fixture(), viewer: 'dana' };
     const { container } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     expect(container.querySelectorAll('.bl-bar [role="combobox"]').length).toBe(2);
@@ -78,7 +78,7 @@ describe('Being built', () => {
 
   it('opens on the filters of the address and keeps them through a detail', async () => {
     history.replaceState(null, '', '/studio/building/?people=malik-haddad');
-    data = sample();
+    data = fixture();
     render(createElement(BeingBuilt));
     await userEvent.click(await screen.findByText('Badge: add an info tone'));
     expect(location.search).toBe('?request=33&people=malik-haddad');
@@ -89,7 +89,7 @@ describe('Being built', () => {
 
   it('says so when the filters leave nothing, Clear filters on the same line', async () => {
     history.replaceState(null, '', '/studio/building/?product=admin');
-    data = sample();
+    data = fixture();
     render(createElement(BeingBuilt));
     expect(await screen.findByText(/Nothing here matches these filters/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
@@ -98,7 +98,7 @@ describe('Being built', () => {
 
   it('shows the same changes as cards when the person asks for the grid, and remembers it', async () => {
     localStorage.clear();
-    data = sample();
+    data = fixture();
     const { container, unmount } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     await userEvent.click(screen.getByRole('radio', { name: 'Grid' }));
@@ -114,7 +114,7 @@ describe('Being built', () => {
   });
 
   it('teaches what a build request is when nothing was sent', async () => {
-    data = { ...sample(), views: [], sample: false };
+    data = { ...fixture(), views: [] };
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Nothing is being built yet.')).toBeTruthy();
     expect(container.textContent).toContain('Bridge Figma plugin');
@@ -127,9 +127,9 @@ describe('Being built', () => {
   it("lists Claude's fixes in the same list, reconciled with their pull request, counted by the filters", async () => {
     const at = new Date(NOW - 2 * 86_400_000).toISOString();
     const session = parseSession({ component: 'Button', state: 'ready', startedAt: at, updatedAt: at, elapsed: 180, steps: [{ kind: 'proposed', text: 'Claude opened its fix for review', at, by: 'peterbono', review: 'changes/?pr=598' }] })!;
-    const base = sample();
+    const base = fixture();
     const fixes = fixRows([session], [{ number: 598, state: 'closed', merged_at: at, updated_at: at }], NOW, (l) => (l === 'peterbono' ? 'Florian' : l));
-    data = { ...base, sample: false, fixes };
+    data = { ...base, fixes };
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Button')).toBeTruthy();
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(7);
@@ -154,10 +154,10 @@ describe('Being built', () => {
     return { number: 489, title: r.title, body: r.body, html_url: 'https://github.com/acme/ds/issues/489', state: 'closed', state_reason: 'not_planned', labels: r.labels, user: { login: 'dana' }, assignees: [], created_at: at, closed_at: at };
   };
   const withTag = (closedDaysAgo: number, fixes: unknown[] = []) => {
-    const { issues, pulls } = sampleBuildData(NOW);
+    const { issues, pulls } = fixtureBuildData(NOW);
     const all = [...issues, declinedTag(closedDaysAgo)];
-    const nameOf = (l: string) => SAMPLE_BUILDERS[l] ?? l;
-    return { views: assembleBuildRequests({ issues: all.map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW, nameOf }), bodies: new Map(all.map((i) => [i.number, i.body ?? ''])), sample: false, stale: false, nameOf, jiraBase: null, fixes };
+    const nameOf = (l: string) => FIXTURE_BUILDERS[l] ?? l;
+    return { views: assembleBuildRequests({ issues: all.map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW, nameOf }), bodies: new Map(all.map((i) => [i.number, i.body ?? ''])), stale: false, nameOf, jiraBase: null, fixes };
   };
 
   it('keeps a request closed as not planned for a week, with its own pictures and component, then leaves it out', async () => {
@@ -184,7 +184,7 @@ describe('Being built', () => {
 
   it('shows the empty state once every listed request has left, never an empty list under a sentence', async () => {
     const nameOf = (l: string) => l;
-    data = { views: assembleBuildRequests({ issues: [toBuildIssue(declinedTag(9))], pulls: [], now: NOW, nameOf }), bodies: new Map(), sample: false, stale: false, nameOf, jiraBase: null };
+    data = { views: assembleBuildRequests({ issues: [toBuildIssue(declinedTag(9))], pulls: [], now: NOW, nameOf }), bodies: new Map(), stale: false, nameOf, jiraBase: null };
     render(createElement(BeingBuilt));
     expect(await screen.findByText('Nothing is being built yet.')).toBeTruthy();
   });
@@ -227,7 +227,7 @@ describe('Being built', () => {
       body: `<!-- bridge-exploration ${JSON.stringify({ name, purpose: '', doneAt: at(1), doneSha: 'h1', doneBy: 'peterbono' })} -->`,
       ...x,
     });
-    const nameOf = (l: string) => (l === 'peterbono' ? 'Florian' : (SAMPLE_BUILDERS[l] ?? l));
+    const nameOf = (l: string) => (l === 'peterbono' ? 'Florian' : (FIXTURE_BUILDERS[l] ?? l));
     const explorations = explorationBuildRows(
       [
         explored(611, 'explore new design pr being built', { labels: ['exploration', 'product: admin'] }),
@@ -237,7 +237,7 @@ describe('Being built', () => {
       ],
       { products: DEFAULT_PRODUCTS, now: NOW, nameOf },
     );
-    data = { ...sample(), sample: false, nameOf, explorations };
+    data = { ...fixture(), nameOf, explorations };
     // The page header's summary slot (StudioHeader.astro): the island writes its sentence there, explorations counted.
     const summary = document.body.appendChild(Object.assign(document.createElement('p'), { className: 'st-sub' }));
     summary.setAttribute('data-st-summary', '');
@@ -288,7 +288,7 @@ describe('Being built', () => {
     const products = [...DEFAULT_PRODUCTS, { key: 'poster', name: 'Poster Studio', repo: 'acme/poster-design', address: 'https://posterstudio.com' }];
     const ready = { number: 4, title: 'Exploration: Bigger frame picker', html_url: 'https://github.com/acme/poster-design/pull/4', state: 'open', draft: true, created_at: at, updated_at: at, labels: ['ready-for-devs'], head: { ref: 'explore/frames', sha: 'h1' }, product: 'poster', body: `<!-- bridge-exploration ${JSON.stringify({ name: 'Bigger frame picker', purpose: 'Larger swatches', doneAt: at, doneSha: 'h1', doneBy: 'peterbono' })} -->` } as RestPull;
     const explorations = explorationBuildRows([ready], { products, now: NOW, nameOf, member: true });
-    data = { views: [], bodies: new Map(), sample: false, stale: false, nameOf, jiraBase: null, explorations };
+    data = { views: [], bodies: new Map(), stale: false, nameOf, jiraBase: null, explorations };
     const { container } = render(createElement(BeingBuilt));
     const row = (await screen.findByText('Bigger frame picker')).closest('li')!;
     expect(row.textContent).toContain('Their developers work elsewhere: send them the message.');
@@ -306,7 +306,7 @@ describe('Being built', () => {
     const at = new Date(NOW - 86_400_000).toISOString();
     const nameOf = (l: string) => l;
     const ready: RestPull = { number: 611, title: 'Exploration: x', html_url: 'https://github.com/acme/ds/pull/611', state: 'open', draft: true, created_at: at, updated_at: at, labels: ['ready-for-devs'], head: { ref: 'explore/x', sha: 'h1' }, body: `<!-- bridge-exploration ${JSON.stringify({ name: 'Admin filters', purpose: '', doneAt: at, doneSha: 'h1' })} -->` };
-    data = { views: [], bodies: new Map(), sample: false, stale: false, nameOf, jiraBase: null, explorations: explorationBuildRows([ready], { products: DEFAULT_PRODUCTS, now: NOW, nameOf }) };
+    data = { views: [], bodies: new Map(), stale: false, nameOf, jiraBase: null, explorations: explorationBuildRows([ready], { products: DEFAULT_PRODUCTS, now: NOW, nameOf }) };
     render(createElement(BeingBuilt));
     await screen.findByText('Admin filters');
     await userEvent.click(screen.getByRole('tab', { name: /Waiting to be picked up/ }));

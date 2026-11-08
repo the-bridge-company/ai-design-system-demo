@@ -29,7 +29,7 @@ export const fixtureKey = (repo: string) => `bridge:local:fixture:${repo.trim().
 export interface Fixture {
   repo: string;
   name: string;
-  /** Serve sample build requests (lib/building-sample.ts) as its issues and pull requests (Being built). */
+  /** Serve sample build requests (dev/build-requests.ts) as its issues and pull requests (Being built). */
   builds?: boolean;
   /**
    * Writable (dev/local-repo.ts): branches, commits, pull requests, reviews, merges and issues are kept locally, and
@@ -154,15 +154,15 @@ function teamFiles(src: FixtureFiles, f: Fixture) {
  * A fetch that answers GitHub calls for fixture teams and passes every other call to `next`. `files` is read once,
  * on the first fixture call (a git command), so a server without scenarios never runs git.
  */
-/** The sample build requests module (lib/building-sample.ts), loaded only when a team seeded with them asks. */
-export type SampleBuilds = () => Promise<Pick<typeof import('../src/lib/building-sample.js'), 'sampleBuildData' | 'SAMPLE_BUILDERS'>>;
+/** The sample build requests module (dev/build-requests.ts), loaded only when a team seeded with them asks. */
+export type SampleBuilds = () => Promise<Pick<typeof import('./build-requests.js'), 'fixtureBuildData' | 'FIXTURE_BUILDERS'>>;
 
 /**
  * `samples`: never a static import. This file loads with astro.config.mjs, where workspace packages resolve to their
  * built dist (absent on a fresh checkout, so `npm run dev:full` would not start); the dev server passes its own loader,
  * which reads @bridge-ds/core from source like every page.
  */
-export function fixtureGithub(redis: Redis, files: () => FixtureFiles, next: FetchLike, now: () => number = Date.now, samples: SampleBuilds = () => import('../src/lib/building-sample.js')): FetchLike {
+export function fixtureGithub(redis: Redis, files: () => FixtureFiles, next: FetchLike, now: () => number = Date.now, samples: SampleBuilds = () => import('./build-requests.js')): FetchLike {
   let src: FixtureFiles | null = null;
   const source = () => (src ??= files());
   return async (url, init) => {
@@ -200,7 +200,7 @@ export function fixtureGithub(redis: Redis, files: () => FixtureFiles, next: Fet
     const someone = /^\/users\/([^/]+)$/.exec(u.pathname);
     if (someone && method === 'GET') {
       const l = decodeURIComponent(someone[1]!);
-      const name = PERSONAS[l]?.name ?? (await samples()).SAMPLE_BUILDERS[l];
+      const name = PERSONAS[l]?.name ?? (await samples()).FIXTURE_BUILDERS[l];
       if (name) return jsonRes(200, { login: l, name, avatar_url: '', type: 'User', html_url: `https://github.com/${l}` });
     }
     const m = /^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/.exec(u.pathname);
@@ -287,7 +287,7 @@ export function fixtureGithub(redis: Redis, files: () => FixtureFiles, next: Fet
     }
     // Build requests (Being built): the sample ones, for a fixture team seeded with them (S19).
     if (f.builds && (rest === '/issues' || rest === '/pulls')) {
-      const data = (await samples()).sampleBuildData(now(), f.repo);
+      const data = (await samples()).fixtureBuildData(now(), f.repo);
       if (rest === '/pulls') return jsonRes(200, data.pulls);
       const want = (u.searchParams.get('labels') ?? '').split(',').filter(Boolean);
       const state = u.searchParams.get('state') ?? 'open';

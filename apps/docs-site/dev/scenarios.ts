@@ -652,7 +652,7 @@ export const SCENARIOS: Scenario[] = [
           },
           { ...P.priya, kind: 'teams', teams: teamsOf([T.building, 'edit']), expect: 'The same, read only: no assign, no decline.' },
         ],
-        ['Acme Build serves the sample build requests of lib/building-sample.ts as its issues and pull requests.'],
+        ['Acme Build serves the sample build requests of dev/build-requests.ts as its issues and pull requests.'],
       );
     },
   },

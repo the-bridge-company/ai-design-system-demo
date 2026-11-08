@@ -233,14 +233,12 @@ export interface ExplorationPageProps {
   plate?: { product: string; screen: string | null; seed?: string | null } | null;
   /**
    * Has the viewer connected Bridge in their own Claude (scripts/claude-link.ts)? 'no': "Continue in Claude" and
-   * "Check in Claude" show the connect steps first (ConnectClaudeDialog). 'yes', 'unknown' or unset (signed out, the
-   * sample team, still reading, a failed read): they open Claude directly.
+   * "Check in Claude" show the connect steps first (ConnectClaudeDialog). 'yes', 'unknown' or unset (signed out,
+   * still reading, a failed read): they open Claude directly.
    */
   claudeLink?: 'yes' | 'no' | 'unknown';
   /** A designer (joined with their email, or with GitHub but working in the copy through Bridge): the Claude app with Bridge is their one tool. */
   emailMember?: boolean;
-  /** A signed-out visitor of the demo team: the preview only, no AI tool to continue in (the write gate, demo-gate.ts). */
-  visitor?: boolean;
   /** The connector address the steps show (<origin>/mcp). */
   connectorAddress?: string;
   /** "I've connected it, continue": the page forgets the answer and reads it again next time. */
@@ -362,10 +360,6 @@ function DoneCard({ p, tool, line, say }: { p: ExplorationPageProps; tool: AiToo
       <p>Pick what the library should keep. The preview stays for everyone.</p>
       {d.kind === 'note' ? (
         <p className="xp-muted">{d.text}</p>
-      ) : d.kind === 'demo' ? (
-        <Button variant="inverse" size="md" className="xp-done-btn" data-demo-write="keep an exploration">
-          Done exploring
-        </Button>
       ) : (
         <Button variant="inverse" size="md" className="xp-done-btn" onClick={(e) => p.onDone(e.currentTarget)}>
           Done exploring
@@ -1070,13 +1064,13 @@ function ExplorationBody(p: ExplorationPageProps) {
                 <div className="xp-act is-second">{previewButton}</div>
               ) : (
                 /* Archived: the preview still opens, nothing offers to keep working on it (Unarchive first). */
-                !handoff && !p.archived && !p.visitor && !answers && !answersBelow && !p.pm?.mine && (
+                !handoff && !p.archived && !answers && !answersBelow && !p.pm?.mine && (
                   <div className="xp-act is-second">
                     <ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" />
                   </div>
                 )
               )}
-              {!p.archived && !p.visitor && !answers && (p.notes?.notes?.figmaPage || p.figma) && (
+              {!p.archived && !answers && (p.notes?.notes?.figmaPage || p.figma) && (
                 <div className="xp-act is-third">
                   <FigmaAction p={p} tool={tab} say={setSaid} />
                 </div>

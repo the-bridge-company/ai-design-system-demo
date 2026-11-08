@@ -22,7 +22,7 @@ function scope(): { repo: string; key: string } | null {
   if (typeof document === 'undefined') return null;
   const ctx = repoContext();
   const repo = `${ctx.owner}/${ctx.repo}`;
-  if (accessContext(repo, document.documentElement.hasAttribute('data-no-repo')) !== 'real') return null;
+  if (accessContext(repo, document.documentElement.hasAttribute('data-no-repo')) === 'none') return null;
   const login = signedInWithGitHub() ? currentViewer()?.login : null;
   const member = login ? null : currentContributor();
   if (!login && !member) return null;

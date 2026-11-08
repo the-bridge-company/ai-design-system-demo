@@ -292,10 +292,10 @@ describe('Where: Add a product, for the people who may add one', () => {
     }
   });
 
-  it('a lead who is not an admin, a designer and the sample team never see it', async () => {
+  it("a lead who is not an admin, a designer and the sample team's visitor (an email admin) never see it", async () => {
     const cases: { access: Record<string, unknown>; site: Record<string, unknown> }[] = [
       { access: { state: 'writer', write: true, admin: false, contributor: false }, site: { owner: 'acme', repo: 'ds' } },
-      { access: admin, site: { owner: 'peterbono', repo: 'bridge-demo-ds' } },
+      { access: { ...admin, contributor: true }, site: { owner: 'acme-design-demo', repo: 'bridge-demo-ds' } },
     ];
     for (const c of cases) {
       viewer.access = c.access;

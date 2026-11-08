@@ -7,7 +7,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, CardBody, Input, Link } from '@bridge-ds/react';
 import { figmaFileProblem } from '@bridge-ds/core';
-import { isSampleTeam } from '../../../lib/demo';
 import { FIGMA_FILE_WORDS, figmaFileLabel } from '../../../lib/figma-file';
 import { libraryLead } from '../../../lib/create-branch';
 import { studioHref } from '../../../lib/team-path';
@@ -60,7 +59,7 @@ export default function FigmaFileSetting({ prefix, protectedBranches }: FigmaFil
     };
   }, []);
 
-  const editable = Boolean(facts) && lead && !isSampleTeam(facts?.repo);
+  const editable = Boolean(facts) && lead;
   const changed = value.trim() !== (facts?.set ?? '');
 
   const save = async () => {
@@ -140,7 +139,7 @@ export default function FigmaFileSetting({ prefix, protectedBranches }: FigmaFil
                 ) : (
                   <p className="set-row-help">{FIGMA_FILE_WORDS.notSet}</p>
                 )}
-                {facts && !isSampleTeam(facts.repo) && (emailLead ? <p className="set-row-help">{FIGMA_FILE_WORDS.githubOnly}</p> : <AdminOnlyNote fallback={!facts.set} />)}
+                {facts && (emailLead ? <p className="set-row-help">{FIGMA_FILE_WORDS.githubOnly}</p> : <AdminOnlyNote fallback={!facts.set} />)}
               </div>
             )}
           </div>

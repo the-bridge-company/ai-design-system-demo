@@ -1,6 +1,6 @@
 // "Add a product" (Settings > Products, the onboarding Products step, and the foot of Start an exploration's Where
 // list, which opens this same dialog through `open`), validated board "Add a product v3" (owner-approved 2026-11-04,
-// user flows AddProdFlows). One dialog, never the sample team, never an email member. Words and rules:
+// user flows AddProdFlows). One dialog, never for an email member. Words and rules:
 // lib/add-product.ts.
 //
 // D1: one question, "Where does it start from?", and three equal cards (Field Guide drawings): "Its code is on GitHub"
@@ -84,13 +84,13 @@ export function useCanAddProduct(): boolean {
     let live = true;
     let unhook = () => undefined as void;
     void (async () => {
-      const [{ isSampleTeam }, session, { repoContext, siteConfig }] = await Promise.all([import('../../../lib/demo'), import('../../../scripts/github-session'), import('../../../scripts/repo-context')]);
+      const [session, { repoContext, siteConfig }] = await Promise.all([import('../../../scripts/github-session'), import('../../../scripts/repo-context')]);
       let last: Parameters<Parameters<typeof session.onAccess>[0]>[0] = null;
       const paint = () => {
         if (!live) return;
         const r = repoContext();
         pageTeam = `${r.owner}/${r.repo}`;
-        setCan(canAddProduct(last, { sample: isSampleTeam(pageTeam), login: session.currentViewer()?.login ?? null, config: siteConfig() }));
+        setCan(canAddProduct(last, { login: session.currentViewer()?.login ?? null, config: siteConfig() }));
       };
       session.onAccess((a) => {
         last = a;

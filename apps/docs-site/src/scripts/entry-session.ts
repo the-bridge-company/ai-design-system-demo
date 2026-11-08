@@ -60,6 +60,8 @@ async function call<T>(method: 'GET' | 'POST', query: string, body?: unknown, wi
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
     const code = typeof data.error === 'string' ? data.error : 'failed';
+    // Refused on a demo team (api/entry): the demo dialog says why.
+    if (code === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours()).catch(() => undefined);
     const message = typeof data.message === 'string' && data.message ? data.message : FAILED;
     throw new EntryError(message, code, res.status, data);
   }

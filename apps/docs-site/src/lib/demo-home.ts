@@ -150,11 +150,10 @@ export function leadQueue(pulls: DemoPull[], suggestions: DemoSuggestion[], now:
         },
         now,
         ),
-        sample: true,
       };
     });
   const asked = leadSuggestions(suggestions)
-    .map((s) => ({ ...suggestionNeed({ number: s.number, title: shortTitle(s.title), createdAt: s.created_at }, askerOf({ user: s.user, body: s.body ?? null, labels: null }, opts.people), now), sample: true }));
+    .map((s) => ({ ...suggestionNeed({ number: s.number, title: shortTitle(s.title), createdAt: s.created_at }, askerOf({ user: s.user, body: s.body ?? null, labels: null }, opts.people), now) }));
   return [...changes, ...asked];
 }
 

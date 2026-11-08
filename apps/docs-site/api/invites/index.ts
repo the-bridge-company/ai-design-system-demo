@@ -82,7 +82,8 @@ import { sessionAccount, type Account } from '../_lib/account.js';
 import { activeLocalAdmins, type LocalAdmins } from '../_lib/local-admin.js';
 import { EMAIL_ROLES, type EmailRole } from '../_lib/members.js';
 import { canonicalEmail, emailSpellings, sameEmail } from '../_lib/canonical-email.js';
-import { onBridge, teamDisplayName } from '../../src/lib/demo.js';
+import { demoDialog, onBridge, teamDisplayName } from '../../src/lib/demo.js';
+import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { isTeamKey } from '../../src/lib/team-path.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { isReviewMode, reviewModeOf, setReviewMode } from '../_lib/review-mode.js';
@@ -1150,6 +1151,18 @@ const hasBearer = (req: Request) => /^Bearer\s+\S+/i.test(req.headers.get('autho
 const asAccount = (ctx: Ctx, req: Request, repoArg?: unknown) =>
   Boolean(ctx.svc.secret && ctx.svc.redis && ctx.svc.members) && (!hasBearer(req) || (typeof repoArg === 'string' && isTeamKey(repoArg)));
 
+/**
+ * A write on the sample team (api/_lib/demo-members.ts) from someone who is not one of its people: a signed-out visitor,
+ * who reads it as its lead (api/contribute), is refused in the demo dialog's words (403 `demo`), as api/contribute
+ * demoWriteRefusal refuses theirs. A GitHub sign-in goes on to the usual checks; so does a Bridge account on the team.
+ */
+async function demoRefusal(ctx: Ctx, req: Request, repoArg: unknown): Promise<Response | null> {
+  if (typeof repoArg !== 'string' || !demoVisitorEmail(repoArg) || hasBearer(req)) return null;
+  const a = ctx.svc.redis && ctx.svc.secret ? await sessionAccount(req, ctx.svc.redis, ctx.svc.secret, ctx.now()) : null;
+  if (a && ctx.svc.members && (await ctx.svc.members.get(repoArg.toLowerCase(), a.email))) return null;
+  return fail(403, 'demo', demoDialog(repoArg).lead);
+}
+
 /** The account behind the cookie, an admin of the team (email admin, or a seeded local admin); else 401 or 403. */
 async function emailAdmin(ctx: Ctx, req: Request, repoArg: unknown): Promise<EmailAdmin> {
   const redis = ctx.svc.redis!;
@@ -1296,6 +1309,8 @@ async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise
   if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);
   const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, limits: limitsFrom(env) };
   const body = await readBody(req);
+  const refused = await demoRefusal(ctx, req, body.repo);
+  if (refused) return refused;
   // A team made in Bridge has no GitHub side: managed as the account even when a GitHub sign-in comes along.
   if (EMAIL_ADMIN_ACTIONS.has(String(body.action)) && asAccount(ctx, req, body.repo)) return onEmailAdminPost(ctx, req, env, body);
 

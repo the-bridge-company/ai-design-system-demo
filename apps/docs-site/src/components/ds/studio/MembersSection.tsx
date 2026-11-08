@@ -6,8 +6,8 @@
 // line. Someone who is not an admin reads the same list with roles as text and no controls (board I4).
 // An email member (lib/contribute.ts) reads as any member, with no tag of their own; an admin makes them Admin or Can
 // edit (Reviewer is disabled in their picker, with the reason: reviewers approve on GitHub) or removes them.
-// Contexts (scripts/members.ts): the sample team shows its sample people and every change opens the demo dialog; a real
-// team reads GitHub and sends changes to the invites server; the browser workspace has no team yet.
+// Contexts (scripts/members.ts): a team (the sample team included) reads GitHub and sends changes to the invites server;
+// the browser workspace has no team yet.
 // Mounted by both Settings pages (pages/studio/settings, pages/team-shell/settings), and it mounts the dialog.
 // Admins of a real team on the hosted site also see who asks to join and who can find the team (JoinRequests.tsx,
 // boards E7a and E7c): "Asks to join" above the members, the discovery Switch under the intro. Approve puts the person
@@ -24,7 +24,7 @@ import { DiscoveryLine, JoinRequests, useEntryAdmin } from './JoinRequests';
 import { loadTeamRoles } from '../../../lib/recent-teams';
 import { isHosted, isTeamKey, teamKeyOfPage } from '../../../lib/team-path';
 import type { RoleChoice } from '../../../lib/invites';
-import { adminCount, choiceOf, inviteChoice, memberActions as allowed, MEMBERS_WORDS, membersContext, memberLine, memberSeed, pendingLine, roleText, roleLabel, SAMPLE_NOW, sortMembers, type Member, type PendingInvite } from '../../../lib/invites';
+import { adminCount, choiceOf, inviteChoice, memberActions as allowed, MEMBERS_WORDS, membersContext, memberLine, memberSeed, pendingLine, roleText, roleLabel, sortMembers, type Member, type PendingInvite } from '../../../lib/invites';
 import type { MembersData } from '../../../scripts/members';
 import type { JoinRequest } from '../../../lib/entry';
 import { repoContext } from '../../../scripts/repo-context';
@@ -48,7 +48,6 @@ export function withJoined(d: MembersData, r: JoinRequest): MembersData {
   return { ...d, members: [...d.members, { login, name: r.name, role: 'edit', reviews: [], email: login, via: 'email' }] };
 }
 
-const now = (data: MembersData) => (data.context === 'sample' ? SAMPLE_NOW : Date.now());
 
 function MemberRow({ m, data, admins, act, onNotice }: { m: Member; data: MembersData; admins: number; act: ReturnType<typeof memberActions>; onNotice: (n: Notice | null) => void }) {
   const can = allowed(m, { canManage: data.canManage, admins, emailAdmin: data.emailAdmin === true });
@@ -137,11 +136,11 @@ function PendingRow({ p, data, act, onNotice }: { p: PendingInvite; data: Member
           pending
           line={
             <>
-              {pendingLine(p.sentAt, now(data))}
+              {pendingLine(p.sentAt, Date.now())}
               {data.canManage && (
                 <>
                   {' · '}
-                  <Button variant="link" size="sm" className="mem-resend" data-demo-write={data.context === 'sample' ? 'send invites' : undefined} onClick={() => void run(() => act.resend(p))}>
+                  <Button variant="link" size="sm" className="mem-resend" onClick={() => void run(() => act.resend(p))}>
                     {MEMBERS_WORDS.resend}
                   </Button>
                 </>

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Invite collaborators (board I1), the role picker (I2) and Settings > Members (I3, I4) from the keyboard, with axe:
-// the sample team only ever opens the demo dialog, a real team sends through the invites server, a site without it
-// says so and sends nothing, a reader sees roles as text.
+// every team, the sample team included, sends through the invites server (which refuses the sample team's visitor in
+// the demo dialog's words, 403 `demo`), a site without it says so and sends nothing, a reader sees roles as text.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -38,10 +38,13 @@ vi.mock('../../../scripts/members', () => ({ loadMembers: async () => page.data 
 vi.mock('../../../scripts/demo-gate', () => demo);
 vi.mock('../../../scripts/invites-api', () => api);
 
+/** The sample team as any team reads it: its people, the visitor (Dana) an admin of it. */
 const sample = (): MembersData => {
   const s = sampleTeam();
-  return { context: 'sample', repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', ...s, canManage: true, personal: false, complete: true, invites: true };
+  return { context: 'real', repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', ...s, canManage: true, personal: false, complete: true, invites: true };
 };
+/** The invites server's refusal of a write by the sample team's visitor (api/invites demoRefusal). */
+const refused = () => Object.assign(new Error('Nothing is sent from Acme Design. Get started to do this with your own team.'), { name: 'InvitesError', status: 403, code: 'demo' });
 
 const real = (over: Partial<MembersData> = {}): MembersData => ({
   context: 'real',
@@ -106,13 +109,14 @@ describe('Invite collaborators', () => {
     expect(within(dialog).getByRole('button', { name: 'Send 3 invites' })).toBeInTheDocument();
   });
 
-  it('on the sample team, sending opens the demo dialog and sends nothing', async () => {
+  it('on the sample team, sending goes to the server as on any team; its refusal says nothing more than the demo dialog', async () => {
+    api.sendInvites.mockRejectedValueOnce(refused());
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));
     await user.keyboard('new@acme.design{Enter}');
     await user.click(within(dialog).getByRole('button', { name: 'Send 1 invite' }));
-    await waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
-    expect(api.sendInvites).not.toHaveBeenCalled();
+    await waitFor(() => expect(api.sendInvites).toHaveBeenCalledWith('acme-design-demo/bridge-demo-ds', { role: 'edit' }, [{ email: 'new@acme.design' }]));
+    expect(within(dialog).queryByText(/Nothing is sent from Acme Design/)).toBeNull();
   });
 
   it('on a real team, sends the emails with the role, and the GitHub account of a known person', async () => {
@@ -159,14 +163,15 @@ describe('Invite collaborators', () => {
     await expectNoAxeViolations(document.body);
   });
 
-  it('on the sample team, cancelling an invite opens the demo dialog and calls no server', async () => {
+  it('on the sample team, cancelling an invite goes to the server, which refuses it: the invite stays', async () => {
+    api.cancelInvite.mockRejectedValueOnce(refused());
     const { user, dialog } = await openDialog();
     const more = within(dialog).getAllByRole('button', { name: /^More for / });
     expect(more.length).toBeGreaterThan(0);
     await user.click(more[0]!);
     await user.click(await screen.findByRole('menuitem', { name: 'Cancel invite' }));
-    await waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
-    expect(api.cancelInvite).not.toHaveBeenCalled();
+    await waitFor(() => expect(api.cancelInvite).toHaveBeenCalled());
+    expect(within(dialog).getByText('priya@acme.design')).toBeInTheDocument();
   });
 
   it('says invites are not available on a site without them, and cannot send', async () => {
@@ -315,12 +320,14 @@ describe('Settings > Members', () => {
     await expectNoAxeViolations(document.body);
   });
 
-  it('on the sample team, a role change opens the demo dialog and calls no server', async () => {
+  it('on the sample team, a role change goes to the server, which refuses it: the role stays', async () => {
+    api.setMemberRole.mockRejectedValueOnce(refused());
     const user = userEvent.setup();
     render(createElement(MembersSection));
     await user.click(await screen.findByRole('button', { name: 'Role for Leo: Can edit' }));
     await user.click(await screen.findByRole('radio', { name: /Admin/ }));
-    await waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
-    expect(api.setMemberRole).not.toHaveBeenCalled();
+    await waitFor(() => expect(api.setMemberRole).toHaveBeenCalled());
+    expect(await screen.findByRole('button', { name: 'Role for Leo: Can edit' })).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing is sent from Acme Design/)).toBeNull();
   });
 });

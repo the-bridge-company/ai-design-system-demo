@@ -67,12 +67,11 @@ describe('the step', () => {
   });
 
   it('shows only to an admin of a real team, on a product with no previews yet, never the library', () => {
-    expect(showsPreviewsStep({ admin: true, sample: false, product: poster })).toBe(true);
-    expect(showsPreviewsStep({ admin: false, sample: false, product: poster })).toBe(false);
-    expect(showsPreviewsStep({ admin: true, sample: true, product: poster })).toBe(false);
-    expect(showsPreviewsStep({ admin: true, sample: false, product: shop })).toBe(false);
-    expect(showsPreviewsStep({ admin: true, sample: false, product: library })).toBe(false);
-    expect(showsPreviewsStep({ admin: true, sample: false, product: null })).toBe(false);
+    expect(showsPreviewsStep({ admin: true, product: poster })).toBe(true);
+    expect(showsPreviewsStep({ admin: false, product: poster })).toBe(false);
+    expect(showsPreviewsStep({ admin: true, product: shop })).toBe(false);
+    expect(showsPreviewsStep({ admin: true, product: library })).toBe(false);
+    expect(showsPreviewsStep({ admin: true, product: null })).toBe(false);
   });
 
   it('counts GitHub admins and team admins, never leads nor members', () => {

@@ -260,12 +260,12 @@ describe('StudioHome, one Start an exploration per state', () => {
   });
 });
 
-describe('StudioHome, demo', () => {
+describe('StudioHome, the sample team (its visitor reads as Dana, an email admin: the lead home of any team)', () => {
   it("shows the team's explorations, Start an exploration first and gated by the demo, no Sample chip, no library line", () => {
-    const demo = { lead: dana, explorationsTitle: 'Explorations' };
+    localStorage.setItem('bridge.home.lead-tour', 'done');
     const many = [36, 37, 38, 39].map((n) => exploration(n));
-    const { container } = render(createElement(StudioHome, props({ contributor: false, demo, tour: () => null, explorations: many, branches: [] })));
-    expect(screen.getByRole('heading', { level: 2, name: 'Explorations' })).toBeTruthy();
+    const { container } = render(createElement(StudioHome, props({ contributor: false, lead: true, explorations: many, branches: [] })));
+    expect(screen.getByRole('heading', { level: 2, name: 'Recent explorations' })).toBeTruthy();
     const items = container.querySelectorAll('[aria-labelledby="sh-explorations"] .sh-cards > li');
     expect(items[0]!.classList.contains('sh-create')).toBe(true);
     expect(items[0]!.querySelector('[data-demo-write="start explorations"]')).toBeTruthy();

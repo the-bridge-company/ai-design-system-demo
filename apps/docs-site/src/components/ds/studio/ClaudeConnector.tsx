@@ -4,8 +4,8 @@
 //                      Copy address on its row, and one line for Claude Team and Enterprise Owners.
 //   In Claude          "Connected in Claude by Dana Kim, last used Oct 25, 2026." or "Not connected yet."; each
 //                      connection on its own line with Remove for its owner or a team admin.
-// A "For developers" fold: Claude Code with the hosted address, and the local MCP server with npx. The sample team shows
-// the steps and no connection; nothing is ever called for it. Words: lib/claude-connector.ts.
+// A "For developers" fold: Claude Code with the hosted address, and the local MCP server with npx. Words:
+// lib/claude-connector.ts.
 // Below it, the measure of the team's components (MeasureSetting): what lets Claude fix what differs in Figma.
 import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
@@ -116,7 +116,7 @@ export default function ClaudeConnector() {
               <div className="set-row">
                 <p className="set-row-label">{W.status}</p>
                 <div className="set-row-value">
-                  <p>{context === 'sample' ? W.sample : connectionSentence(list ?? [])}</p>
+                  <p>{connectionSentence(list ?? [])}</p>
                   {(list ?? []).map((c) => (
                     <p className="set-row-help set-connection" key={c.id}>
                       <span>

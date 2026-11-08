@@ -366,15 +366,14 @@ describe('who adds products', () => {
     expect(teamLeadsOf({ governance: { owners: { design: 'dana' } } })).toEqual([]);
   });
 
-  it('admins and leads signed in with GitHub; never an email member, a plain writer or the sample team', () => {
-    const can = (access: Parameters<typeof canAddProduct>[0], login: string | null, sample = false) => canAddProduct(access, { sample, login, config });
+  it('admins and leads signed in with GitHub; never an email member (the sample team\'s visitor included) or a plain writer', () => {
+    const can = (access: Parameters<typeof canAddProduct>[0], login: string | null) => canAddProduct(access, { login, config });
     expect(can({ admin: true, write: true }, 'someone')).toBe(true);
     expect(can({ admin: false, repoAdmin: true }, 'someone')).toBe(true);
     expect(can({ admin: false, write: true }, 'Malik')).toBe(true);
     expect(can({ admin: false, write: false }, 'malik')).toBe(false);
     expect(can({ admin: false, write: true }, 'priya')).toBe(false);
     expect(can({ admin: true, write: true, contributor: true }, 'dana')).toBe(false);
-    expect(can({ admin: true, write: true }, 'dana', true)).toBe(false);
     expect(can(null, 'dana')).toBe(false);
   });
 });

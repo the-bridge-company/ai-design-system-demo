@@ -497,14 +497,15 @@ export function teamLeadsOf(config: unknown): string[] {
 }
 
 /**
- * Who adds products: admins and leads of the team signed in with GitHub (never an email member, never the sample
- * team). Bridge checks it again on the server before it writes anything; this only decides whether the button shows.
+ * Who adds products: admins and leads of the team signed in with GitHub (never an email member, the sample team's
+ * visitor included). Bridge checks it again on the server before it writes anything; this only decides whether the
+ * button shows.
  */
 export function canAddProduct(
   access: { admin?: boolean; repoAdmin?: boolean; write?: boolean; contributor?: boolean } | null | undefined,
-  x: { sample: boolean; login: string | null | undefined; config: unknown },
+  x: { login: string | null | undefined; config: unknown },
 ): boolean {
-  if (x.sample || !access || access.contributor) return false;
+  if (!access || access.contributor) return false;
   if (access.admin || access.repoAdmin) return true;
   const login = x.login?.trim().toLowerCase();
   return Boolean(access.write && login && teamLeadsOf(x.config).includes(login));

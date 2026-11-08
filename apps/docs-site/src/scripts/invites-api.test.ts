@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const session = vi.hoisted(() => ({ token: 'ghu_test' as string | null }));
 vi.mock('./github-session', () => ({ getToken: () => session.token }));
+const demo = vi.hoisted(() => ({ openMakeItYours: vi.fn(async () => {}) }));
+vi.mock('./demo-gate', () => demo);
 
 import { InvitesError, removeMember, InvitesUnavailable, listInvites, sendInvites, setInvitesFetch } from './invites-api';
 import { peopleFromCommits } from './members';
@@ -47,6 +49,15 @@ describe('invites api', () => {
     expect(headers.Authorization).toBeUndefined();
     // An email admin: the account cookie speaks for them, checked by the server.
     expect(headers['X-Bridge-Account']).toBe('1');
+  });
+});
+
+describe('the sample team', () => {
+  it("opens the demo dialog on the server's refusal of its visitor's write (403 demo), and still rejects", async () => {
+    session.token = null;
+    setInvitesFetch(async () => json(403, { error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' }));
+    await expect(sendInvites('acme-design-demo/bridge-demo-ds', { role: 'edit' }, [{ email: 'a@b.co' }])).rejects.toMatchObject({ code: 'demo', status: 403 });
+    await vi.waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
   });
 });
 

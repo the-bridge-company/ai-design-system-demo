@@ -1,7 +1,7 @@
 // Invite collaborators (board I1), a DS Dialog opened from the team chip menu and from Settings > Members. One
 // sentence says what happens (MEMBERS_WORDS.intro: an email, then the team; only Reviewers also sign in with GitHub).
 // Then the work email field, a DS Combobox that takes several emails as chips and suggests people Bridge
-// already knows (on a real team, the people who committed to it; on the sample team, Acme's people), with the role
+// already knows (the people who committed to the team's repository), with the role
 // picker on the same line (RolePicker, board I2). "Who has access" lists the team and the pending invites, with Resend
 // on their line and a "More" menu with Cancel invite, as in the Settings table (MembersSection PendingRow). The
 // footer ends with Cancel and the one primary action, "Send N invites". No team link, no GitHub words. Admins see no "only admins" note: it is for the people it stops, and they
@@ -28,7 +28,6 @@ import {
   pendingLine,
   roleLabel,
   roleText,
-  SAMPLE_NOW,
   closeLabel,
   sendLabel,
   sortMembers,
@@ -49,7 +48,7 @@ export interface InviteDialogProps {
 function AccessList({ data, update, notice, onNotice }: { data: MembersData; update: (fn: (d: MembersData) => MembersData) => void; notice: Notice | null; onNotice: (n: Notice | null) => void }) {
   const act = memberActions(data, update);
   const admins = adminCount(data.members);
-  const now = data.context === 'sample' ? SAMPLE_NOW : Date.now();
+  const now = Date.now();
   const members = sortMembers(data.members);
   // Pending invites carry a "More" menu at the row's end: member rows keep the same space, so every role lines up.
   const moreSpace = data.canManage && data.pending.length > 0;
@@ -91,7 +90,7 @@ function AccessList({ data, update, notice, onNotice }: { data: MembersData; upd
                   {data.canManage && (
                     <>
                       {' · '}
-                      <Button variant="link" size="sm" className="mem-resend" data-demo-write={data.context === 'sample' ? 'send invites' : undefined} onClick={() => void run(() => act.resend(p))}>
+                      <Button variant="link" size="sm" className="mem-resend" onClick={() => void run(() => act.resend(p))}>
                         {MEMBERS_WORDS.resend}
                       </Button>
                     </>
@@ -194,14 +193,13 @@ export default function InviteDialog({ open, onOpenChange, shared, onSent }: Inv
     }
   };
 
-  const sample = data?.context === 'sample';
   const footer =
     data && data.context !== 'none' ? (
       <div className="inv-footer">
         <ButtonGroup>
           <DialogClose render={<Button variant="secondary" size="lg" />}>{closeLabel(data.canManage, sent, emails.length)}</DialogClose>
           {data.canManage && (
-            <Button variant="primary" size="lg" disabled={!canSend} loading={busy} data-demo-write={sample ? 'send invites' : undefined} onClick={() => void send()}>
+            <Button variant="primary" size="lg" disabled={!canSend} loading={busy} onClick={() => void send()}>
               {sendLabel(emails.length)}
             </Button>
           )}

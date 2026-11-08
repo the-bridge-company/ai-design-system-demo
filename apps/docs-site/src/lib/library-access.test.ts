@@ -9,7 +9,6 @@ import {
   MODE_WORDS,
   parseDomainField,
   PUBLIC_EMAIL_DOMAINS,
-  SAMPLE_SETTING,
   settingLabel,
   signInToken,
   wrongDomainWords,
@@ -21,7 +20,7 @@ describe('the choice in words', () => {
   it('names each choice, the work email one with its domains', () => {
     expect(settingLabel({ mode: 'anyone', domains: [] })).toBe('Anyone with the link');
     expect(settingLabel({ mode: 'team', domains: [] })).toBe('Only the team');
-    expect(settingLabel(SAMPLE_SETTING)).toBe('Anyone with a work email at acme.design');
+    expect(settingLabel({ mode: 'email', domains: ['acme.design'] })).toBe('Anyone with a work email at acme.design');
     expect(settingLabel({ mode: 'email', domains: ['a.co', 'b.co', 'c.co'] })).toBe('Anyone with a work email at a.co, b.co and c.co');
     expect(domainList([])).toBe('');
   });
@@ -65,29 +64,27 @@ describe('domains typed in Settings', () => {
 describe('what a Library page shows', () => {
   const answer = (setting: AccessAnswer['setting'], session: AccessAnswer['session'] = null): AccessAnswer => ({ available: true, setting, session });
 
-  it('opens as before for the sample team, a site without the feature, and a team that chose nothing', () => {
-    const email = answer({ mode: 'email', domains: ['acme.design'], source: 'github' });
-    expect(libraryGate({ sample: true, github: false, answer: email })).toBe('open');
-    expect(libraryGate({ sample: false, github: false, answer: null })).toBe('open');
-    expect(libraryGate({ sample: false, github: false, answer: { available: false, setting: null, session: null } })).toBe('open');
-    expect(libraryGate({ sample: false, github: false, answer: answer(null) })).toBe('open');
+  it('opens as before for a site without the feature, and a team that chose nothing', () => {
+    expect(libraryGate({ github: false, answer: null })).toBe('open');
+    expect(libraryGate({ github: false, answer: { available: false, setting: null, session: null } })).toBe('open');
+    expect(libraryGate({ github: false, answer: answer(null) })).toBe('open');
   });
 
   it('asks for a work email until the reader has a session, then opens from GitHub or from this site', () => {
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }) })).toBe('email');
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }, { domain: 'acme.design' }) })).toBe('open');
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'bridge' }, { domain: 'acme.design' }) })).toBe('open-bridge');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }) })).toBe('email');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'github' }, { domain: 'acme.design' }) })).toBe('open');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'email', domains: ['acme.design'], source: 'bridge' }, { domain: 'acme.design' }) })).toBe('open-bridge');
   });
 
   it('asks the team to sign in with GitHub, and lets a GitHub sign-in read as before', () => {
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'team', domains: [] }) })).toBe('team');
-    expect(libraryGate({ sample: false, github: true, answer: answer({ mode: 'team', domains: [] }) })).toBe('open');
-    expect(libraryGate({ sample: false, github: true, answer: answer({ mode: 'email', domains: ['acme.design'] }) })).toBe('open');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'team', domains: [] }) })).toBe('team');
+    expect(libraryGate({ github: true, answer: answer({ mode: 'team', domains: [] }) })).toBe('open');
+    expect(libraryGate({ github: true, answer: answer({ mode: 'email', domains: ['acme.design'] }) })).toBe('open');
   });
 
   it('serves a private Library opened to anyone from this site', () => {
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'anyone', domains: [], source: 'bridge' }) })).toBe('open-bridge');
-    expect(libraryGate({ sample: false, github: false, answer: answer({ mode: 'anyone', domains: [], source: 'github' }) })).toBe('open');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'anyone', domains: [], source: 'bridge' }) })).toBe('open-bridge');
+    expect(libraryGate({ github: false, answer: answer({ mode: 'anyone', domains: [], source: 'github' }) })).toBe('open');
   });
 
   it('reads the link token from the address, nothing else', () => {
@@ -103,8 +100,8 @@ describe('what a Library page shows', () => {
     expect(maskEmail('Mia@Acme.design')).toBe('m•••@acme.design');
   });
 
-  it('tells the sample team, a real team and no repository apart', () => {
-    expect(accessContext('acme-design-demo/bridge-demo-ds', false)).toBe('sample');
+  it('reads the sample team as any team, and tells no repository apart', () => {
+    expect(accessContext('acme-design-demo/bridge-demo-ds', false)).toBe('real');
     expect(accessContext('the-bridge-company/ai-design-system-demo', false)).toBe('real');
     expect(accessContext('acme/ds', true)).toBe('none');
   });

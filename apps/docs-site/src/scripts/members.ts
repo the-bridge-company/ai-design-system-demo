@@ -1,8 +1,6 @@
 // Who is in the team of this page, for Settings > Members and the Invite collaborators dialog (lib/invites.ts has the
-// rules). Three contexts, never mixed (lib/invites membersContext):
-//   sample  Acme Design (acme-design-demo/bridge-demo-ds): its fixed sample people, no GitHub call at all, so a guest spends
-//           none of the 60 reads an hour GitHub gives them. Every change opens the demo dialog instead.
-//   real    any other team, Bridge's own included: the repository's people on GitHub (signed in with write access,
+// rules). Two contexts, never mixed (lib/invites membersContext):
+//   real    any team, the sample team and Bridge's own included: the repository's people on GitHub (signed in with write access,
 //           GitHub lists them; any other member, an email contributor or a GitHub reader, reads the same list from
 //           /api/contribute?members=1; else the reviewers from the settings), pending invites from this site's invites
 //           server, and suggestions from the people who committed to the repository.
@@ -13,7 +11,7 @@ import { teamDisplayName } from '../lib/demo';
 import { knownTeamName } from '../lib/recent-teams';
 import { accountName } from '../lib/account';
 import { teamKeyOfPage } from '../lib/team-path';
-import { emailMembers, membersContext, membersPending, roleOf, sampleTeam, type KnownPerson, type Member, type MembersContext, type PendingInvite } from '../lib/invites';
+import { emailMembers, membersContext, membersPending, roleOf, type KnownPerson, type Member, type MembersContext, type PendingInvite } from '../lib/invites';
 import { loginKey, personName } from '../lib/people';
 import { currentViewer, getToken, ghGet, resolveAccess } from './github-session';
 import { invitesAvailable, listInvites, type ReviewMode } from './invites-api';
@@ -171,11 +169,6 @@ export async function loadMembers(settled = true): Promise<MembersData> {
   const team = teamName(repo);
   const empty: MembersData = { context, repo, team, members: [], pending: [], people: [], canManage: false, personal: false, complete: true, invites: false };
   if (context === 'none') return empty;
-  if (context === 'sample') {
-    const s = sampleTeam();
-    // The visitor is in Dana's seat: the admin of the sample team. Changes open the demo dialog (never sent).
-    return { ...empty, members: s.members, pending: s.pending, people: s.people, canManage: true, complete: true, invites: true };
-  }
 
   const viewer = currentViewer();
   // Bridge's own lists (members by email, invites) never wait on GitHub: a failed access check reads as no access.

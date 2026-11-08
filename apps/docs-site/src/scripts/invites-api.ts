@@ -64,6 +64,8 @@ async function call<T>(method: 'GET' | 'POST', query: string, body?: unknown, au
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (res.status === 503 && data.error === 'not_configured') throw new InvitesUnavailable();
   if (!res.ok) {
+    // Refused on a demo team (api/invites demoRefusal): the demo dialog says why.
+    if (data.error === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours()).catch(() => undefined);
     // A daily cap or a resend too soon: never silent, and in the server's words when it gave some.
     const fallback = res.status === 429 ? MEMBERS_WORDS.limitReached : 'Something went wrong. Try again in a minute.';
     const message = typeof data.message === 'string' && data.message ? data.message : fallback;

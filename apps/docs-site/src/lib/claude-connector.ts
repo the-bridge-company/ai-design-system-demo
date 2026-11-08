@@ -22,7 +22,6 @@ export const CONNECTOR_WORDS = {
   remove: 'Remove',
   removed: 'Removed. That Claude no longer works with Bridge until it connects again.',
   noRepo: 'Connect your design system first. Then use Bridge inside your Claude.',
-  sample: 'On the sample team, nothing is connected.',
 } as const;
 
 export interface Connection {

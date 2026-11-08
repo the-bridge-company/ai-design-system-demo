@@ -815,3 +815,31 @@ describe('email contributors in Members', () => {
     expect(await members.get(REPO, 'priya@acme.design')).toBeNull();
   });
 });
+
+describe('the sample team', () => {
+  const SAMPLE = 'acme-design-demo/bridge-demo-ds';
+  const visitor = (body: unknown) =>
+    new Request(`${ORIGIN}/api/invites`, {
+      method: 'POST',
+      headers: { host: HOST, origin: ORIGIN, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'x-bridge-account': '1' },
+      body: JSON.stringify(body),
+    });
+
+  it("refuses its visitor's writes in the demo dialog's words (403 demo), as api/contribute does", async () => {
+    const { deps, sent } = setup();
+    for (const body of [{ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.design' }] }, { action: 'set-role', repo: SAMPLE, email: 'leo@acme.design', role: 'admin' }, { action: 'cancel', repo: SAMPLE, id: 'abc' }]) {
+      const r = await handleInvites(visitor(body), {}, deps);
+      expect(r.status).toBe(403);
+      expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
+    }
+    expect(sent).toHaveLength(0);
+  });
+
+  it('lets a GitHub sign-in through to the usual checks, and leaves any other team alone', async () => {
+    const { deps } = setup();
+    const signedIn = await handleInvites(post({ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    expect((await signedIn.json()).error).not.toBe('demo');
+    const other = await handleInvites(visitor({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    expect((await other.json()).error).not.toBe('demo');
+  });
+});

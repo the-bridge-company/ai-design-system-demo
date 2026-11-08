@@ -13,7 +13,7 @@ describe('the measure sentence', () => {
   });
 
   it('no command, file or branch in what a designer reads, no em dash anywhere', () => {
-    for (const k of ['missing', 'waiting', 'sample', 'what', 'sent', 'needsGitHub'] as const) expect(MEASURE_WORDS[k]).not.toMatch(/npx|json|bridge-requests|—/);
+    for (const k of ['missing', 'waiting', 'what', 'sent', 'needsGitHub'] as const) expect(MEASURE_WORDS[k]).not.toMatch(/npx|json|bridge-requests|—/);
   });
 });
 

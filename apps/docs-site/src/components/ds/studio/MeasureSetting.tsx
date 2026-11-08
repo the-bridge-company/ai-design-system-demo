@@ -4,7 +4,7 @@
 //   "Bridge hasn't measured your components yet. A developer turns it on once: Set up automatic measure."
 // The "For developers" fold holds the one action, Set up automatic measure (a pull request that adds the workflow),
 // what it does, and the facts. When GitHub does not let Bridge write a workflow, the fold says so and gives the file:
-// Open on GitHub (filled in when it fits the address) and Copy the workflow. The sample team reads nothing.
+// Open on GitHub (filled in when it fits the address) and Copy the workflow.
 // Words: lib/measure-setting.ts; GitHub: scripts/measure-setup.ts.
 import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
@@ -58,7 +58,7 @@ export default function MeasureSetting({ context }: { context: AccessContext }) 
     }
   };
 
-  const sentence = context === 'sample' ? W.sample : state ? measureSentence(state) : W.checking;
+  const sentence = state ? measureSentence(state) : W.checking;
   // Offered until the workflow is on the default branch: a measure made once by hand goes stale.
   const offer = context === 'real' && state !== null && (state.kind === 'missing' || (state.kind === 'measured' && !state.auto));
   return (

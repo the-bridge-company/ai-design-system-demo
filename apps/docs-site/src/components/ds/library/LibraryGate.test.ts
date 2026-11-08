@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The gate of a team's Library: "Enter your work email" and its states (link sent, wrong domain, link expired, not
-// available yet), "This library is open to its team", the sample team that never asks, and the link from the email
+// available yet), "This library is open to its team", the sample team asked as any team, and the link from the email
 // (its token leaves the address at once). Keyboard and axe.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -125,7 +125,7 @@ describe('the Library gate', () => {
     await expectNoAxeViolations(document.body);
   });
 
-  it('opens as before for a GitHub sign-in, a site without the feature, and the sample team (no call)', async () => {
+  it('opens as before for a GitHub sign-in, a site without the feature, and the sample team as any team', async () => {
     session.github = true;
     const a = render(createElement(Harness));
     expect(await screen.findByText('the library')).toBeInTheDocument();
@@ -138,9 +138,11 @@ describe('the Library gate', () => {
     expect(await screen.findByText('the library')).toBeInTheDocument();
     b.unmount();
 
+    // The sample team asks the server like any team: its public repository opens.
     api.libraryAccess.mockClear();
-    render(createElement(Harness, { owner: 'peterbono', repo: 'bridge-demo-ds' }));
+    api.answer = { available: true, setting: null, session: null };
+    render(createElement(Harness, { owner: 'acme-design-demo', repo: 'bridge-demo-ds' }));
     expect(await screen.findByText('the library')).toBeInTheDocument();
-    expect(api.libraryAccess).not.toHaveBeenCalled();
+    expect(api.libraryAccess).toHaveBeenCalledWith('acme-design-demo/bridge-demo-ds', false);
   });
 });

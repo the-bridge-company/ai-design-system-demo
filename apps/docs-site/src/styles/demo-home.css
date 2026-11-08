@@ -1,5 +1,5 @@
-/* The demo for a visitor (boards D1, D1b, D2): the demo banner (DemoBanner.tsx), the tour of the home
-   (DemoHome.tsx) and the write-action dialog (MakeItYours.tsx). The home itself is the signed-in home
+/* The demo for a visitor (boards D1, D1b, D2): the demo banner (DemoBanner.tsx), the home's tour (HomeTour.tsx)
+   and the write-action dialog (MakeItYours.tsx). The home itself is the signed-in home
    (studio-home.css); only what is new lives here. */
 
 /* --- The banner: a full-width strip under the app header, on every Studio page and the team Library ------------ */

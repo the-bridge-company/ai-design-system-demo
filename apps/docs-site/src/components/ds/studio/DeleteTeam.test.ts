@@ -28,8 +28,8 @@ describe('who sees the Danger zone', () => {
     expect(screen.getByRole('heading', { name: 'Danger zone' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Disconnect this team' })).toBeTruthy();
   });
-  it('a member who is not admin, the sample team and an unread team see nothing', () => {
-    for (const p of [real({ canManage: false }), real({ context: 'sample' }), null]) {
+  it('a member who is not admin, the browser workspace and an unread team see nothing', () => {
+    for (const p of [real({ canManage: false }), real({ context: 'none' }), null]) {
       people = p;
       const { container, unmount } = render(createElement(DeleteTeamBand));
       expect(container.innerHTML).toBe('');

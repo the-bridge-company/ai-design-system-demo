@@ -1,11 +1,10 @@
 // Settings, Library access: who reads this page's team's Library, read for the section (components/ds/studio/
-// LibraryAccessSection.tsx). Three contexts, never mixed (lib/library-access accessContext):
-//   sample  Acme Design: its sample choice (work emails at acme.design), no call at all; Save opens the demo dialog.
-//   real    any other team, Bridge's own included: the stored choice from this site (no GitHub call), else the default
+// LibraryAccessSection.tsx). Two contexts, never mixed (lib/library-access accessContext):
+//   real    any team, the sample team and Bridge's own included: the stored choice from this site (no GitHub call), else the default
 //           GitHub gives (public: anyone, private: the team). Who may change it comes from the session's access
 //           (repository admin), and the server checks again on GitHub.
 //   none    the browser workspace, which has no repository yet.
-import { accessContext, defaultSetting, SAMPLE_SETTING, type AccessContext, type AccessSetting } from '../lib/library-access';
+import { accessContext, defaultSetting, type AccessContext, type AccessSetting } from '../lib/library-access';
 import { libraryHref } from '../lib/library-shells';
 import { teamDisplayName } from '../lib/demo';
 import { currentViewer, resolveAccess } from './github-session';
@@ -41,8 +40,6 @@ export async function loadAccessSettings(): Promise<AccessData> {
   const link = `${location.origin}${libraryHref(ctx.owner, ctx.repo)}`;
   const base: AccessData = { context, repo, team, setting: defaultSetting(false), stored: false, canManage: false, isPrivate: null, available: false, link };
   if (context === 'none') return base;
-  // The visitor sits in the sample admin's seat; nothing is asked, nothing is sent.
-  if (context === 'sample') return { ...base, setting: SAMPLE_SETTING, stored: true, canManage: true, available: true };
   const [answer, access] = await Promise.all([libraryAccess(repo), resolveAccess({ owner: ctx.owner, repo: ctx.repo }, { anonymous: ctx.hosted })]);
   const isPrivate = typeof access?.private === 'boolean' ? access.private : null;
   return {

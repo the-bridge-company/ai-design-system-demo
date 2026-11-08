@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Settings, Library access: an admin changes who reads the library (the work email choice unfolds its domains), a
-// member reads it, the sample team only opens the demo dialog, a site without the server says so, and everyone can copy
+// member reads it, the sample team's visitor gets the demo dialog on Save, a site without the server says so, and everyone can copy
 // the library link. Keyboard and axe.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -29,6 +29,9 @@ const api = vi.hoisted(() => {
 vi.mock('../../../scripts/library-access-settings', () => ({ loadAccessSettings: async () => page.data }));
 vi.mock('../../../scripts/demo-gate', () => demo);
 vi.mock('../../../scripts/library-access-api', () => api);
+/** The email member on the page: the sample team's visitor reads as its lead (Dana), `visitor` set. */
+const session = vi.hoisted(() => ({ contributor: null as { visitor?: boolean } | null }));
+vi.mock('../../../scripts/github-session', () => ({ currentContributor: () => session.contributor }));
 
 const real = (over: Partial<AccessData> = {}): AccessData => ({
   context: 'real',
@@ -43,7 +46,7 @@ const real = (over: Partial<AccessData> = {}): AccessData => ({
   ...over,
 });
 
-const sample = (): AccessData => ({ ...real(), context: 'sample', repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', setting: { mode: 'email', domains: ['acme.design'] }, stored: true, isPrivate: null });
+const sample = (): AccessData => ({ ...real(), repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', setting: { mode: 'email', domains: ['acme.design'] }, stored: true, isPrivate: false });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -129,8 +132,9 @@ describe('Settings, Library access', () => {
     expect(await screen.findByText('The repository is public on GitHub, so its files stay readable there.')).toBeInTheDocument();
   });
 
-  it('on the sample team, shows the sample choice and Save opens the demo dialog, with no call', async () => {
+  it("on the sample team, shows the team's choice as any team does; its visitor's Save opens the demo dialog, with no call", async () => {
     page.data = sample();
+    session.contributor = { visitor: true };
     const user = userEvent.setup();
     render(createElement(LibraryAccessSection));
     expect(await screen.findByText('Anyone with a work email at acme.design')).toBeInTheDocument();
@@ -140,5 +144,6 @@ describe('Settings, Library access', () => {
     await waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
     expect(api.saveLibraryAccess).not.toHaveBeenCalled();
     expect(screen.getByText('Anyone with a work email at acme.design')).toBeInTheDocument();
+    session.contributor = null;
   });
 });

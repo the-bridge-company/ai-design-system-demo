@@ -192,6 +192,14 @@ describe('auth', () => {
     await s.redis.cmd('SET', 'bridge:account:mia@acme.design', JSON.stringify({ ...a, version: 2 }));
     expect((await get(s, c)).status).toBe(401);
   });
+  it("refuses the sample team's visitor (no account) in the demo dialog's words, as api/contribute does", async () => {
+    const s = setup();
+    const r = await post(s, null, { action: 'delete-team', team: 'acme-design-demo/bridge-demo-ds' });
+    expect(r.status).toBe(403);
+    expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
+    // Any other team still asks for the account.
+    expect((await post(s, null, { action: 'delete-team', team: REPO })).status).toBe(401);
+  });
   it('is not configured without storage or secret', async () => {
     const r = await handleEntry(new Request(`${ORIGIN}/api/entry`), {}, { fetch: async () => res(500) });
     expect(r.status).toBe(503);

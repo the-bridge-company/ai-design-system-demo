@@ -777,8 +777,6 @@ export default function ProductPage({
   const [signedIn, setSignedIn] = useState(true);
   /** Nobody signed in at all (no GitHub sign-in, no email member): a visitor. */
   const [visitor, setVisitor] = useState(false);
-  /** A real team (never the sample one): the library line reads the product's own repository. */
-  const [realTeam, setRealTeam] = useState(false);
   /** A lead or an admin: may send the library update to the developers. */
   const [canSend, setCanSend] = useState(false);
   const [libView, setLibView] = useState<LibraryView | null>(null);
@@ -831,7 +829,7 @@ export default function ProductPage({
   useEffect(() => {
     const p = data?.product;
     // The library line is a lead's or an admin's (they send the update): nobody else reads the product's library.
-    if (!realTeam || !canSend || !p || p.default) return;
+    if (!canSend || !p || p.default) return;
     let live = true;
     void (async () => {
       const [{ readLibraryView }, { signedInWithGitHub }] = await Promise.all([import('../../../scripts/library-update'), import('../../../scripts/github-session')]);
@@ -842,19 +840,11 @@ export default function ProductPage({
     return () => {
       live = false;
     };
-  }, [realTeam, canSend, data?.product?.key, reload]);
+  }, [canSend, data?.product?.key, reload]);
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [{ isSampleTeam }, { siteConfig }, { onAccess, designerRoute }, { libraryLead }] = await Promise.all([
-        import('../../../lib/demo'),
-        import('../../../scripts/repo-context'),
-        import('../../../scripts/github-session'),
-        import('../../../lib/create-branch'),
-      ]);
-      const c = siteConfig();
-      if (isSampleTeam(c.owner && c.repo ? `${c.owner}/${c.repo}` : null)) return;
-      setRealTeam(true);
+      const [{ onAccess, designerRoute }, { libraryLead }] = await Promise.all([import('../../../scripts/github-session'), import('../../../lib/create-branch')]);
       onAccess((a) => {
         if (!live) return;
         setCanLatest(a?.write === true);
@@ -870,8 +860,7 @@ export default function ProductPage({
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [{ isSampleTeam }, { onAccess }, { repoContext }, { canRenameProduct }] = await Promise.all([
-        import('../../../lib/demo'),
+      const [{ onAccess }, { repoContext }, { canRenameProduct }] = await Promise.all([
         import('../../../scripts/github-session'),
         import('../../../scripts/repo-context'),
         import('../../../lib/product-name'),
@@ -880,10 +869,9 @@ export default function ProductPage({
       onAccess((a) => {
         if (!live) return;
         const r = repoContext();
-        const sample = isSampleTeam(`${r.owner}/${r.repo}`);
-        setCanRename(canRenameProduct(a, sample));
-        // The previews step is an admin's (connecting a host is theirs), on a real team only.
-        setHosting(!sample && isTeamAdmin(a) ? { library: r.owner && r.repo ? `${r.owner}/${r.repo}` : null } : null);
+        setCanRename(canRenameProduct(a));
+        // The previews step is an admin's (connecting a host is theirs).
+        setHosting(isTeamAdmin(a) ? { library: r.owner && r.repo ? `${r.owner}/${r.repo}` : null } : null);
         adminRef.current = isTeamAdmin(a);
       });
     })();
@@ -1028,7 +1016,7 @@ export default function ProductPage({
     : null;
   // Only once the product is read: the step names the host its team's other products already use.
   const previews =
-    hosting && data?.product && !data.loading && showsPreviewsStep({ admin: true, sample: false, product: data.product, previews: teamPreviews })
+    hosting && data?.product && !data.loading && showsPreviewsStep({ admin: true, product: data.product, previews: teamPreviews })
       ? previewsStep(data.product, data.products, teamPreviews, hosting.library)
       : null;
   return (

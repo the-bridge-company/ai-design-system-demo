@@ -2,7 +2,7 @@
 // the theme (light, dark or System, picked in Settings), copy buttons, the mobile navigation sheet, the Cmd+K command palette, header menus, the "On this
 // page" rail and, in the Studio, the view of a change (scripts/view-change), the nav counts and the GitHub connection.
 import { bindCodeBlocks, bindDialogs, bindTooltips, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
-import { currentViewer, getToken, initGitHubConnect } from './github-session';
+import { getToken, initGitHubConnect } from './github-session';
 import { loadReviewNeedsYou, rememberedMine, type QueuePullFull } from './needs-you';
 import { initMaintainer } from './maintainer';
 import { pointLinksAtTeam } from './team-links';
@@ -681,11 +681,9 @@ function initStudio() {
       // Overview's rule (lib/overview-todo reviewNeedsYou).
       if (!pageCounts)
         initGitHubConnect((v) => {
-          // Signed out nothing waits on you, except in the lead's seat on a demo team: the count of its home line and
-          // Changes > Waiting on me (scripts/demo-home demoLeadCount).
+          // Signed out of GitHub nothing waits on you here (an email member's count comes from their home).
           if (!v) {
             setCount('reviews', null);
-            void import('./demo-home').then((m) => m.demoLeadCount()).then((n) => n !== null && !currentViewer() && setCount('reviews', n), () => undefined);
             return;
           }
           void loadReviewNeedsYou(f.data.map((p) => ({ ...p, state: p.state ?? 'open' })) as unknown as QueuePullFull[])

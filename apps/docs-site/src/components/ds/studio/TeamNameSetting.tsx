@@ -2,12 +2,12 @@
 // (self-hosted pages/studio/settings, team shells pages/team-shell/settings). One row: the label and what the name is
 // for on the left, the value on the right. An admin of the repository edits it in place, with Save on the same line;
 // Save opens the config pull request that sets `name` (scripts/roles.ts proposeTeamName), like every config change
-// from Studio. Everyone else reads it. The sample team (Acme Design) always reads its own name, read only.
+// from Studio. Everyone else reads it.
 // The name comes from the team's settings once read (scripts/repo-context.ts siteConfig, repainted on
 // bridge:team-model); before that, and when the file has none, Bridge's name for it (lib/demo.ts teamDisplayName).
 import { useEffect, useState } from 'react';
 import { Button, Card, CardBody, Input, Link } from '@bridge-ds/react';
-import { isSampleTeam, teamDisplayName } from '../../../lib/demo';
+import { teamDisplayName } from '../../../lib/demo';
 import { TEAM_NAME_WORDS, teamNameProblem } from '../../../lib/team-name';
 import { studioHref } from '../../../lib/team-path';
 import { AdminOnlyNote } from './SettingsParts';
@@ -63,7 +63,7 @@ export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameS
   }, []);
 
   const shown = facts ? teamDisplayName(facts.repo, { name: facts.set ?? undefined }) : '';
-  const editable = Boolean(facts) && admin && !emailAdmin && !isSampleTeam(facts?.repo);
+  const editable = Boolean(facts) && admin && !emailAdmin;
   const changed = value.trim().replace(/\s+/g, ' ') !== (facts?.set ?? '');
 
   const save = async () => {
@@ -133,8 +133,8 @@ export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameS
             ) : (
               <div className="set-row-value">
                 <p className="set-who">{shown || ' '}</p>
-                {facts && !isSampleTeam(facts.repo) && !facts.set && <p className="set-row-help">{TEAM_NAME_WORDS.notSet}</p>}
-                {facts && !isSampleTeam(facts.repo) && (emailAdmin ? <p className="set-row-help">{TEAM_NAME_WORDS.githubOnly}</p> : facts.set && <AdminOnlyNote fallback />)}
+                {facts && !facts.set && <p className="set-row-help">{TEAM_NAME_WORDS.notSet}</p>}
+                {facts && (emailAdmin ? <p className="set-row-help">{TEAM_NAME_WORDS.githubOnly}</p> : facts.set && <AdminOnlyNote fallback />)}
               </div>
             )}
           </div>

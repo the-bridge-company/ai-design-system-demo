@@ -19,7 +19,6 @@ vi.mock('./github-session', () => ({
 vi.mock('./home-data', () => ({ loadHome: s.loadHome }));
 vi.mock('./shell', () => ({ setReviewCount: () => undefined }));
 vi.mock('./needs-you', () => ({ rememberMine: () => undefined }));
-vi.mock('./demo-home', () => ({ loadDemoHome: () => undefined }));
 
 import { initTeamHome } from './team-home';
 

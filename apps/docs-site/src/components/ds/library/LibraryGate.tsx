@@ -6,7 +6,7 @@
 //                team for access."), an expired link above it, a site without email sign-in instead of the form.
 //   team         "This library is open to its team" and Sign in from Studio (GitHub).
 // useLibraryGate decides (lib/library-access.ts libraryGate) from the server's answer (scripts/library-access-api.ts):
-// the sample team and a site without the feature never ask anything and open as before. The link from the email lands
+// a site without the feature never asks anything and opens as before. The link from the email lands
 // here with #signin=<token>: the token leaves the address at once, then is spent on the server, which sets the
 // session cookie (httpOnly, never seen by this page).
 import { useEffect, useState } from 'react';
@@ -15,7 +15,6 @@ import EmailLinkForm from './EmailLinkForm';
 import { GitHubMark } from '../studio/brand-icons';
 import { Drawing } from '../studio/Drawing';
 import { emailDomainIn, GATE_WORDS, libraryGate, signInToken, wrongDomainWords, type AccessAnswer } from '../../../lib/library-access';
-import { isSampleTeam } from '../../../lib/demo';
 import { teamHref } from '../../../lib/team-path';
 import { teamDisplayName } from '../../../lib/demo';
 import '../../../styles/library-access.css';
@@ -36,12 +35,6 @@ export function useLibraryGate(team: { owner: string; repo: string } | null): Ga
     let live = true;
     void (async () => {
       const [{ hasWorkingToken }, api, { openLibrary }] = await Promise.all([import('../../../scripts/github-session'), import('../../../scripts/library-access-api'), import('../../../scripts/team-data')]);
-      // The sample team never asks the server: its Library stays open, with no call at all.
-      if (isSampleTeam(repo)) {
-        openLibrary(false);
-        if (live) setState({ step: 'open', answer: null });
-        return;
-      }
       const token = signInToken(location.hash);
       let expired = false;
       let unavailable = false;
@@ -58,7 +51,7 @@ export function useLibraryGate(team: { owner: string; repo: string } | null): Ga
       const answer = await api.libraryAccess(repo, Boolean(token));
       if (!live) return;
       if (unavailable && !answer.available) return setState({ step: 'unavailable' });
-      const kind = libraryGate({ sample: false, github: hasWorkingToken(), answer });
+      const kind = libraryGate({ github: hasWorkingToken(), answer });
       if (kind === 'open' || kind === 'open-bridge') openLibrary(kind === 'open-bridge');
       if (kind === 'email') setState({ step: 'email', domains: answer.setting?.domains ?? [], ...(expired ? { expired } : {}) });
       else if (kind === 'team') setState({ step: 'team' });

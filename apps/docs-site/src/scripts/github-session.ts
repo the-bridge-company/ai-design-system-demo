@@ -60,7 +60,6 @@ import {
   type TokenResponse,
 } from '../lib/github-signin';
 import { isTeamKey, studioHref } from '../lib/team-path';
-import { isSampleTeam } from '../lib/demo';
 import { linkedMember, RECONNECT_WORDS, type LinkedRole } from '../lib/linked-role';
 import { linkedRole, linkedRoleRead, onLinkedRole, readLinkedRole } from './linked-role';
 import { clearGuestReads, guestFetch } from './guest-activity';
@@ -203,8 +202,8 @@ const pageProductRepos = (): string[] => {
 };
 
 /**
- * The email contributor signed in on this page's team (lib/contribute.ts), when there is no GitHub sign-in: real teams
- * only, never the sample team, Bridge's demo or the browser workspace. Null otherwise.
+ * The email contributor signed in on this page's team (lib/contribute.ts), when there is no GitHub sign-in: any team of
+ * a hosted site (the sample team's visitor reads as its lead), never the browser workspace. Null otherwise.
  */
 export function currentContributor(): ContributeMember | null {
   if (typeof document === 'undefined' || githubToken() || document.documentElement.hasAttribute('data-no-repo')) return null;
@@ -212,11 +211,11 @@ export function currentContributor(): ContributeMember | null {
   return contributeEligible(repo, repoContext().hosted) ? contributorFor(repo) : null;
 }
 
-/** A page where a Bridge account's linked GitHub role is worth reading: a hosted repository team, never a sample. */
+/** A page where a Bridge account's linked GitHub role is worth reading: a hosted repository team. */
 function linkedEligible(): boolean {
   if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo')) return false;
   const repo = pageRepo();
-  return repoContext().hosted && !isSampleTeam(repo) && !isTeamKey(repo) && /^[\w.-]+\/[\w.-]+$/.test(repo);
+  return repoContext().hosted && !isTeamKey(repo) && /^[\w.-]+\/[\w.-]+$/.test(repo);
 }
 
 /**

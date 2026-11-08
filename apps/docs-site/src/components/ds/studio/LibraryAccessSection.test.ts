@@ -46,7 +46,7 @@ const real = (over: Partial<AccessData> = {}): AccessData => ({
   ...over,
 });
 
-const sample = (): AccessData => ({ ...real(), repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', setting: { mode: 'email', domains: ['acme.design'] }, stored: true, isPrivate: false });
+const sample = (): AccessData => ({ ...real(), repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', setting: { mode: 'email', domains: ['acme.example'] }, stored: true, isPrivate: false });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -65,11 +65,11 @@ describe('Settings, Library access', () => {
     expect(screen.queryByRole('textbox', { name: 'Work email domains' })).toBeNull();
     await user.click(screen.getByRole('radio', { name: /Anyone with a work email at/ }));
     const field = await screen.findByRole('textbox', { name: 'Work email domains' });
-    await user.type(field, '@Acme.design, acme.studio');
+    await user.type(field, '@Acme.example, acme.studio');
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(api.saveLibraryAccess).toHaveBeenCalledWith('acme/ds', 'email', ['acme.design', 'acme.studio']));
-    expect(await screen.findByText('Saved. Anyone with a work email at acme.design and acme.studio reads the library now.')).toBeInTheDocument();
-    expect(screen.getByText('Anyone with a work email at acme.design and acme.studio')).toBeInTheDocument();
+    await waitFor(() => expect(api.saveLibraryAccess).toHaveBeenCalledWith('acme/ds', 'email', ['acme.example', 'acme.studio']));
+    expect(await screen.findByText('Saved. Anyone with a work email at acme.example and acme.studio reads the library now.')).toBeInTheDocument();
+    expect(screen.getByText('Anyone with a work email at acme.example and acme.studio')).toBeInTheDocument();
     await expectNoAxeViolations(document.body);
   });
 
@@ -96,9 +96,9 @@ describe('Settings, Library access', () => {
   });
 
   it('a member reads the same card as an admin, with no Change, and who can change it', async () => {
-    page.data = real({ canManage: false, setting: { mode: 'email', domains: ['acme.design'] } });
+    page.data = real({ canManage: false, setting: { mode: 'email', domains: ['acme.example'] } });
     render(createElement(LibraryAccessSection));
-    expect(await screen.findByText('Anyone with a work email at acme.design')).toBeInTheDocument();
+    expect(await screen.findByText('Anyone with a work email at acme.example')).toBeInTheDocument();
     expect(screen.getByText('Who reads your design system library. Readers need no GitHub account.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
     expect(screen.getByText('Only an admin of this team can change this.')).toBeInTheDocument();
@@ -127,7 +127,7 @@ describe('Settings, Library access', () => {
   });
 
   it('says the files of a public repository stay readable on GitHub when the library is gated', async () => {
-    page.data = real({ isPrivate: false, setting: { mode: 'email', domains: ['acme.design'] } });
+    page.data = real({ isPrivate: false, setting: { mode: 'email', domains: ['acme.example'] } });
     render(createElement(LibraryAccessSection));
     expect(await screen.findByText('The repository is public on GitHub, so its files stay readable there.')).toBeInTheDocument();
   });
@@ -137,13 +137,13 @@ describe('Settings, Library access', () => {
     session.contributor = { visitor: true };
     const user = userEvent.setup();
     render(createElement(LibraryAccessSection));
-    expect(await screen.findByText('Anyone with a work email at acme.design')).toBeInTheDocument();
+    expect(await screen.findByText('Anyone with a work email at acme.example')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Change' }));
-    expect(screen.getByRole('textbox', { name: 'Work email domains' })).toHaveValue('acme.design');
+    expect(screen.getByRole('textbox', { name: 'Work email domains' })).toHaveValue('acme.example');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
     expect(api.saveLibraryAccess).not.toHaveBeenCalled();
-    expect(screen.getByText('Anyone with a work email at acme.design')).toBeInTheDocument();
+    expect(screen.getByText('Anyone with a work email at acme.example')).toBeInTheDocument();
     session.contributor = null;
   });
 });

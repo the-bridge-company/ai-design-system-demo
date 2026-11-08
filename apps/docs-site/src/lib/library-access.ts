@@ -29,13 +29,13 @@ export interface AccessSetting {
 /** Without a stored setting a team keeps what GitHub allows: anyone for a public repository, the team for a private one. */
 export const defaultSetting = (isPrivate: boolean): AccessSetting => ({ mode: isPrivate ? 'team' : 'anyone', domains: [] });
 
-/** "acme.design" or "acme.design and acme.studio" or "a.co, b.co and c.co". */
+/** "acme.example" or "acme.example and acme.studio" or "a.co, b.co and c.co". */
 export function domainList(domains: readonly string[]): string {
   if (domains.length <= 1) return domains[0] ?? '';
   return `${domains.slice(0, -1).join(', ')} and ${domains[domains.length - 1]}`;
 }
 
-/** The choice in one phrase: "Anyone with a work email at acme.design". */
+/** The choice in one phrase: "Anyone with a work email at acme.example". */
 export function settingLabel(s: AccessSetting): string {
   if (s.mode === 'email') return s.domains.length ? `${MODE_WORDS.email.label} ${domainList(s.domains)}` : MODE_WORDS.email.label;
   return MODE_WORDS[s.mode].label;
@@ -54,7 +54,7 @@ export const ACCESS_WORDS = {
   cancel: 'Cancel',
   domains: 'Work email domains',
   domainsHint: 'Separate several with a comma.',
-  domainsPlaceholder: 'acme.design',
+  domainsPlaceholder: 'acme.example',
   readOnly: 'Only admins can change who reads the library.',
   unavailable: 'Library access is not available yet on this site. The library opens as GitHub allows: anyone for a public repository, the team for a private one.',
   publicRepo: 'The repository is public on GitHub, so its files stay readable there.',
@@ -93,7 +93,7 @@ export const PUBLIC_EMAIL_DOMAINS: readonly string[] = [
 export const MAX_DOMAINS = 10;
 
 /**
- * The domains an admin typed ("@Acme.design, acme.studio"), checked before saving: the list, or the first problem in
+ * The domains an admin typed ("@Acme.example, acme.studio"), checked before saving: the list, or the first problem in
  * words. The server checks again.
  */
 export function parseDomainField(text: string): { domains: string[] } | { error: string } {
@@ -101,11 +101,11 @@ export function parseDomainField(text: string): { domains: string[] } | { error:
   for (const raw of text.split(/[\s,;]+/)) {
     const v = raw.trim().toLowerCase().replace(/^@/, '');
     if (!v) continue;
-    if (!DOMAIN.test(v)) return { error: `${raw.trim()} is not an email domain. Write it like acme.design.` };
+    if (!DOMAIN.test(v)) return { error: `${raw.trim()} is not an email domain. Write it like acme.example.` };
     if (PUBLIC_EMAIL_DOMAINS.includes(v)) return { error: `Anyone can get an email at ${v}. Pick your company domain, or choose Anyone with the link.` };
     if (!out.includes(v)) out.push(v);
   }
-  if (!out.length) return { error: 'Add your company email domain, like acme.design.' };
+  if (!out.length) return { error: 'Add your company email domain, like acme.example.' };
   if (out.length > MAX_DOMAINS) return { error: `Add at most ${MAX_DOMAINS} domains.` };
   return { domains: out };
 }
@@ -118,7 +118,7 @@ export function emailDomainIn(email: string, domains: readonly string[]): string
   return domains.includes(d) ? d : null;
 }
 
-/** "This library is open to @acme.design emails. Ask your design system team for access." (the server's words too). */
+/** "This library is open to @acme.example emails. Ask your design system team for access." (the server's words too). */
 export function wrongDomainWords(domains: readonly string[]): string {
   const list = domains.map((d) => `@${d}`);
   const names = list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} or ${list[list.length - 1]}`;
@@ -171,7 +171,7 @@ export function signInToken(hash: string): string | null {
   return m ? m[1]! : null;
 }
 
-/** "m•••@acme.design": enough to recognise the address on the "Check your inbox" screen. */
+/** "m•••@acme.example": enough to recognise the address on the "Check your inbox" screen. */
 export function maskEmail(email: string): string {
   const [local = '', domain = ''] = email.trim().toLowerCase().split('@');
   return `${local.slice(0, 1)}•••@${domain}`;

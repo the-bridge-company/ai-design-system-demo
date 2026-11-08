@@ -74,15 +74,15 @@ describe('caps', () => {
 describe('people the email field suggests', () => {
   it('keeps one entry per real email, never GitHub relays or bots', () => {
     const people = peopleFromCommits([
-      { author: { login: 'ann' }, commit: { author: { name: 'Ann Lind', email: 'Ann@Acme.design' } } },
-      { author: { login: 'ann' }, commit: { author: { name: 'Ann Lind', email: 'ann@acme.design' } } },
+      { author: { login: 'ann' }, commit: { author: { name: 'Ann Lind', email: 'Ann@Acme.example' } } },
+      { author: { login: 'ann' }, commit: { author: { name: 'Ann Lind', email: 'ann@acme.example' } } },
       { author: { login: 'leo' }, commit: { author: { name: 'Leo', email: '123+leo@users.noreply.github.com' } } },
       { author: { login: 'renovate[bot]' }, commit: { author: { name: 'renovate', email: 'bot@renovateapp.com' } } },
-      { author: null, commit: { author: { name: 'Sam', email: 'sam@acme.design' } } },
+      { author: null, commit: { author: { name: 'Sam', email: 'sam@acme.example' } } },
     ]);
     expect(people).toEqual([
-      { name: 'Ann Lind', email: 'ann@acme.design', login: 'ann' },
-      { name: 'Sam', email: 'sam@acme.design' },
+      { name: 'Ann Lind', email: 'ann@acme.example', login: 'ann' },
+      { name: 'Sam', email: 'sam@acme.example' },
     ]);
   });
 });

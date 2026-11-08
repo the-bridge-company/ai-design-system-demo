@@ -24,7 +24,7 @@ const api = vi.hoisted(() => {
     AccessUnavailable,
     answer: null as unknown as AccessAnswer,
     libraryAccess: vi.fn(async (): Promise<AccessAnswer> => api.answer),
-    verifySignIn: vi.fn(async () => ({ domain: 'acme.design' })),
+    verifySignIn: vi.fn(async () => ({ domain: 'acme.example' })),
     requestSignIn: vi.fn(async () => {}),
   };
 });
@@ -41,7 +41,7 @@ function Harness({ owner = 'acme', repo = 'ds' }: { owner?: string; repo?: strin
   return createElement(LibraryGate, { team, state });
 }
 
-const emailAnswer = (session: AccessAnswer['session'] = null): AccessAnswer => ({ available: true, setting: { mode: 'email', domains: ['acme.design'], source: 'bridge' }, session });
+const emailAnswer = (session: AccessAnswer['session'] = null): AccessAnswer => ({ available: true, setting: { mode: 'email', domains: ['acme.example'], source: 'bridge' }, session });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -55,10 +55,10 @@ describe('the Library gate', () => {
     const user = userEvent.setup();
     render(createElement(Harness));
     expect(await screen.findByRole('heading', { level: 1, name: 'Read the design system library' })).toBeInTheDocument();
-    expect(screen.getByText('This library is open to people with an @acme.design email. Enter yours and Bridge sends you a link to open it.')).toBeInTheDocument();
+    expect(screen.getByText('This library is open to people with an @acme.example email. Enter yours and Bridge sends you a link to open it.')).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(1);
     await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'mia@gmail.com{Enter}');
-    expect(await screen.findByText('This library is open to @acme.design emails. Ask your design system team for access.')).toBeInTheDocument();
+    expect(await screen.findByText('This library is open to @acme.example emails. Ask your design system team for access.')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Work email' })).toHaveAttribute('aria-invalid', 'true');
     expect(api.requestSignIn).not.toHaveBeenCalled();
     expect(data.openLibrary).not.toHaveBeenCalled();
@@ -68,11 +68,11 @@ describe('the Library gate', () => {
   it('sends the link and says to check the inbox, with the address masked', async () => {
     const user = userEvent.setup();
     render(createElement(Harness));
-    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'Mia@Acme.design');
+    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'Mia@Acme.example');
     await user.click(screen.getByRole('button', { name: 'Send me a link' }));
-    await waitFor(() => expect(api.requestSignIn).toHaveBeenCalledWith('acme/ds', 'Mia@Acme.design'));
+    await waitFor(() => expect(api.requestSignIn).toHaveBeenCalledWith('acme/ds', 'Mia@Acme.example'));
     expect(await screen.findByRole('heading', { name: 'Check your inbox' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Bridge sent a link to m•••@acme.design. Open it on this device. It works once, for 15 minutes.');
+    expect(screen.getByRole('status')).toHaveTextContent('Bridge sent a link to m•••@acme.example. Open it on this device. It works once, for 15 minutes.');
     expect(screen.getByRole('button', { name: 'Use another email' })).toHaveFocus();
     await expectNoAxeViolations(document.body);
     await user.click(screen.getByRole('button', { name: 'Use another email' }));
@@ -83,7 +83,7 @@ describe('the Library gate', () => {
     api.requestSignIn.mockRejectedValueOnce(new Error('Bridge already sent a few links to this email today. Use the latest one, or try again tomorrow.'));
     const user = userEvent.setup();
     render(createElement(Harness));
-    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'mia@acme.design{Enter}');
+    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'mia@acme.example{Enter}');
     expect(await screen.findByText('Bridge already sent a few links to this email today. Use the latest one, or try again tomorrow.')).toBeInTheDocument();
   });
 
@@ -91,7 +91,7 @@ describe('the Library gate', () => {
     api.requestSignIn.mockRejectedValueOnce(new api.AccessUnavailable());
     const user = userEvent.setup();
     render(createElement(Harness));
-    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'mia@acme.design{Enter}');
+    await user.type(await screen.findByRole('textbox', { name: 'Work email' }), 'mia@acme.example{Enter}');
     expect(await screen.findByText('Email sign-in is not available yet on this site. Ask your design system team how to read this library.')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).toBeNull();
   });
@@ -99,7 +99,7 @@ describe('the Library gate', () => {
   it('spends the link from the email, takes the token out of the address, and opens the library from this site', async () => {
     const token = 'k'.repeat(43);
     history.replaceState(null, '', `/library/acme/ds/#signin=${token}`);
-    api.libraryAccess.mockResolvedValueOnce(emailAnswer({ domain: 'acme.design' }));
+    api.libraryAccess.mockResolvedValueOnce(emailAnswer({ domain: 'acme.example' }));
     render(createElement(Harness));
     expect(await screen.findByText('the library')).toBeInTheDocument();
     expect(api.verifySignIn).toHaveBeenCalledWith('acme/ds', token);

@@ -177,8 +177,8 @@ describe('who approves Claude\'s fixes', () => {
       const r = await handleShip(new Request(`https://${HOST}/api/ship`, { method: 'POST', headers, body: JSON.stringify({ repo: 'acme/design', action: 'can-approve-fixes' }) }), ENV, { ...deps, redis, members });
       return r.json();
     };
-    expect(await asMember('mia@acme.design', 'edit')).toEqual({ canApprove: false });
-    expect(await asMember('ali@acme.design', 'admin')).toEqual({ canApprove: true });
+    expect(await asMember('mia@acme.example', 'edit')).toEqual({ canApprove: false });
+    expect(await asMember('ali@acme.example', 'admin')).toEqual({ canApprove: true });
   });
 
   it('nobody signed in: 401, and without the Bridge app nobody sees the button', async () => {

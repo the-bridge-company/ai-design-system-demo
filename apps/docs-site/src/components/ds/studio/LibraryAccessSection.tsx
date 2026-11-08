@@ -1,6 +1,6 @@
 // Settings, Library access: who reads the team's Library, for people without a GitHub account. A band like the others
 // (title and one sentence, then a DS Card of rows). Two rows, each with its action on its own line (proximity):
-//   Who reads the library  the choice in one phrase ("Anyone with a work email at acme.design") and one muted line;
+//   Who reads the library  the choice in one phrase ("Anyone with a work email at acme.example") and one muted line;
 //                          an admin's Change unfolds the three choices as a DS RadioGroup, and only the work email
 //                          choice unfolds its domains field (progressive disclosure), then Save and Cancel.
 //   Library link           the address, and Copy library link, so an admin shares it with the company.

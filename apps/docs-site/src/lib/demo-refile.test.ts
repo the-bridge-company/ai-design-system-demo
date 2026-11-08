@@ -181,7 +181,7 @@ describe('the refile-demo action', () => {
     const leo = gh.issues.get(101)!;
     expect(leo.body).toBe('Guidance.\n\nRequested by Leo through Bridge.');
     // The issue is Ann's in Bridge, as one she filed herself.
-    expect(await redis.cmd('GET', issueKey(DEMO, 100))).toBe('ann@acme.design');
+    expect(await redis.cmd('GET', issueKey(DEMO, 100))).toBe('ann@acme.example');
     expect(gh.pulls.get(20)!.body).toBe('## What changed\n\nCloses #100');
     expect(gh.issues.get(19)).toMatchObject({ state: 'closed', state_reason: 'not_planned' });
     expect(gh.issues.get(19)!.comments).toEqual(['Filed again through Bridge for Ann as #100, so Studio shows who asked for it. Follow it there. Nothing is lost: this issue stays in the history.']);

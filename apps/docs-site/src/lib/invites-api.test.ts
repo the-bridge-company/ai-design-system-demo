@@ -193,14 +193,14 @@ describe('not configured', () => {
 describe('admin checks on the server', () => {
   it('refuses a writer, whatever login the body names', async () => {
     const { deps, sent } = setup();
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.design' }], login: 'dana', caller: 'dana' }, 'ghu_leo01'), {}, deps);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.example' }], login: 'dana', caller: 'dana' }, 'ghu_leo01'), {}, deps);
     expect(r.status).toBe(403);
     expect(sent).toHaveLength(0);
   });
 
   it('reads the role with the app token, identity with the caller token', async () => {
     const { deps, w } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.example' }] }), {}, deps);
     expect(w.calls.find((c) => c.path === '/user')!.auth).toBe('Bearer ghu_dana');
     expect(w.calls.find((c) => c.path.endsWith('/collaborators/dana/permission'))!.auth).toBe('Bearer ghs_app');
   });
@@ -215,12 +215,12 @@ describe('admin checks on the server', () => {
 
   it('lists pending invites to people who can push, not to readers', async () => {
     const { deps } = setup({ users: { ghu_dana: { login: 'dana' }, ghu_leo01: { login: 'leo' }, ghu_ann01: { login: 'ann' } } });
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'Priya@Acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'Priya@Acme.example' }] }), {}, deps);
     const ok = await handleInvites(get(`?repo=${REPO}`, 'ghu_leo01'), {}, deps);
     const body = await ok.json();
     expect(body.personal).toBe(false);
     expect(body.invites).toHaveLength(1);
-    expect(body.invites[0]).toMatchObject({ email: 'priya@acme.design', role: 'edit', invitedBy: 'dana' });
+    expect(body.invites[0]).toMatchObject({ email: 'priya@acme.example', role: 'edit', invitedBy: 'dana' });
     expect(body.invites[0].tokenHash).toBeUndefined();
     expect((await handleInvites(get(`?repo=${REPO}`, 'ghu_ann01'), {}, deps)).status).toBe(403);
   });
@@ -228,13 +228,13 @@ describe('admin checks on the server', () => {
   it('offers Can view: the invite goes by email, says no GitHub is needed, and never touches GitHub', async () => {
     const { deps, sent, w } = setup();
     // Even for someone Bridge knows on GitHub (an organization member): Can view joins by email.
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'view', people: [{ email: 'x@acme.design', login: 'leo' }] }), {}, deps);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'view', people: [{ email: 'x@acme.example', login: 'leo' }] }), {}, deps);
     expect(r.status).toBe(200);
     expect(sent).toHaveLength(1);
     expect(sent[0]!.text).toContain('Your role: Can view. Sees everything in Studio and the library.');
     expect(sent[0]!.text).toContain('You join with this email, no GitHub account needed.');
     expect(w.calls.some((c) => c.method === 'PUT')).toBe(false);
-    const bad = await handleInvites(post({ action: 'invite', repo: REPO, role: 'owner', people: [{ email: 'y@acme.design' }] }), {}, deps);
+    const bad = await handleInvites(post({ action: 'invite', repo: REPO, role: 'owner', people: [{ email: 'y@acme.example' }] }), {}, deps);
     expect(bad.status).toBe(400);
     expect((await bad.json()).message).toBe('Pick a role: Can view, Can edit, Reviewer or Admin.');
   });
@@ -243,14 +243,14 @@ describe('admin checks on the server', () => {
     const { deps, store, w } = setup();
     const token = 'v'.repeat(43);
     const hash = createHash('sha256').update(token).digest('hex');
-    await store.put({ id: 'a'.repeat(16), repo: REPO, email: 'priya@acme.design', role: 'view', invitedBy: 'dana', createdAt: new Date(T0).toISOString(), sentAt: new Date(T0).toISOString(), expiresAt: new Date(T0 + INVITE_TTL_MS).toISOString(), tokenHash: hash }, 600);
+    await store.put({ id: 'a'.repeat(16), repo: REPO, email: 'priya@acme.example', role: 'view', invitedBy: 'dana', createdAt: new Date(T0).toISOString(), sentAt: new Date(T0).toISOString(), expiresAt: new Date(T0 + INVITE_TTL_MS).toISOString(), tokenHash: hash }, 600);
     expect(await accept(deps, token)).toMatchObject({ status: 'joined', role: 'view' });
     expect(w.calls.find((c) => c.method === 'PUT' && c.path === '/repos/acme/design/collaborators/priya')!.body).toEqual({ permission: 'pull' });
   });
 
   it('says when the app cannot manage people on the repository', async () => {
     const { deps } = setup({}, { app: { installationToken: async () => null } });
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.example' }] }), {}, deps);
     expect(r.status).toBe(409);
     expect((await r.json()).error).toBe('app_missing');
   });
@@ -259,10 +259,10 @@ describe('admin checks on the server', () => {
 describe('invite token lifecycle', () => {
   it('stores only the hash, emails a fragment link, and accepts once', async () => {
     const { deps, sent, store, w } = setup();
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
-    expect(await r.json()).toEqual({ results: [{ email: 'priya@acme.design', status: 'sent' }] });
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
+    expect(await r.json()).toEqual({ results: [{ email: 'priya@acme.example', status: 'sent' }] });
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.to).toBe('priya@acme.design');
+    expect(sent[0]!.to).toBe('priya@acme.example');
     expect(sent[0]!.subject).toBe('Dana invited you to Design on Bridge');
     expect(sent[0]!.text).toContain(`${ORIGIN}/studio/invite/#t=`);
     const token = tokenOf(sent[0]!);
@@ -282,12 +282,12 @@ describe('invite token lifecycle', () => {
 
   it('resend invalidates the old link and keeps the invite', async () => {
     const { deps, sent, store, tick } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     const [inv] = await store.list(REPO);
     tick(RESEND_COOLDOWN_MS);
     const r = await handleInvites(post({ action: 'resend', repo: REPO, id: inv!.id }), {}, deps);
     const body = await r.json();
-    expect(body.invite).toMatchObject({ id: inv!.id, email: 'priya@acme.design', createdAt: inv!.createdAt });
+    expect(body.invite).toMatchObject({ id: inv!.id, email: 'priya@acme.example', createdAt: inv!.createdAt });
     expect(body.invite.sentAt).toBe(new Date(T0 + RESEND_COOLDOWN_MS).toISOString());
     expect(sent).toHaveLength(2);
     expect(tokenOf(sent[1]!)).not.toBe(tokenOf(sent[0]!));
@@ -297,7 +297,7 @@ describe('invite token lifecycle', () => {
 
   it('changes the role of a pending invite without a new email, and the same link grants it', async () => {
     const { deps, sent, store, w } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     const [inv] = await store.list(REPO);
     const r = await handleInvites(post({ action: 'invite-role', repo: REPO, id: inv!.id, role: 'reviewer', reviewAs: 'tech' }), {}, deps);
     expect((await r.json()).invite).toMatchObject({ id: inv!.id, role: 'reviewer', reviewAs: 'tech' });
@@ -311,7 +311,7 @@ describe('invite token lifecycle', () => {
 
   it('cancel removes the invite and its link', async () => {
     const { deps, sent, store } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     const [inv] = await store.list(REPO);
     expect(await (await handleInvites(post({ action: 'cancel', repo: REPO, id: inv!.id }), {}, deps)).json()).toEqual({ ok: true });
     expect(await store.list(REPO)).toHaveLength(0);
@@ -321,33 +321,33 @@ describe('invite token lifecycle', () => {
 
   it('reports a failed email as failed, and keeps no invite nobody received', async () => {
     const { deps, store } = setup({}, { email: { send: async () => Promise.reject(new Error('provider down')) } });
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     const [result] = (await r.json()).results;
-    expect(result).toMatchObject({ email: 'priya@acme.design', status: 'failed' });
+    expect(result).toMatchObject({ email: 'priya@acme.example', status: 'failed' });
     expect(result.message).toMatch(/could not send/);
     expect(await store.list(REPO)).toHaveLength(0);
   });
 
   it('says already for a pending email, dedupes, and validates emails', async () => {
     const { deps, sent } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'PRIYA@acme.design' }, { email: 'new@acme.design' }, { email: 'new@acme.design' }, { email: 'not an email' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'PRIYA@acme.example' }, { email: 'new@acme.example' }, { email: 'new@acme.example' }, { email: 'not an email' }] }), {}, deps);
     expect((await r.json()).results.map((x: { status: string }) => x.status)).toEqual(['already', 'sent', 'failed']);
     expect(sent).toHaveLength(2);
-    const many = Array.from({ length: 11 }, (_, i) => ({ email: `p${i}@acme.design` }));
+    const many = Array.from({ length: 11 }, (_, i) => ({ email: `p${i}@acme.example` }));
     expect((await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: many }), {}, deps)).status).toBe(400);
-    expect((await handleInvites(post({ action: 'invite', repo: REPO, role: 'reviewer', people: [{ email: 'a@acme.design' }] }), {}, deps)).status).toBe(400);
+    expect((await handleInvites(post({ action: 'invite', repo: REPO, role: 'reviewer', people: [{ email: 'a@acme.example' }] }), {}, deps)).status).toBe(400);
   });
 
   it('sends the invitee to GitHub when the app cannot accept for them', async () => {
     const { deps, sent } = setup({ acceptStatus: 403 });
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     expect(await accept(deps, tokenOf(sent[0]!))).toEqual({ status: 'accept-on-github', repo: REPO, role: 'edit', acceptUrl: 'https://github.com/acme/design/invitations' });
   });
 
   it('a reviewer who accepts gets push and a pull request listing them as owner', async () => {
     const { deps, sent, w } = setup();
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'reviewer', reviewAs: 'design', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'reviewer', reviewAs: 'design', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     expect(sent[0]!.text).toContain('Your role: Reviewer: design. Also approves changes before they ship.');
     const a = await accept(deps, tokenOf(sent[0]!));
     expect(a).toMatchObject({ status: 'joined', role: 'reviewer', reviewAs: 'design', ownersPr: { number: 12 } });
@@ -361,16 +361,16 @@ describe('invite token lifecycle', () => {
 describe('organization members and personal repositories', () => {
   it('adds a known org member directly, without an email', async () => {
     const { deps, sent, w } = setup();
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'ann@acme.design', login: 'ann' }] }), {}, deps);
-    expect((await r.json()).results).toEqual([{ email: 'ann@acme.design', status: 'added' }]);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'ann@acme.example', login: 'ann' }] }), {}, deps);
+    expect((await r.json()).results).toEqual([{ email: 'ann@acme.example', status: 'added' }]);
     expect(sent).toHaveLength(0);
     expect(w.calls.find((c) => c.method === 'PUT' && c.path.endsWith('/collaborators/ann'))!.body).toEqual({ permission: 'push' });
   });
 
   it('falls back to an email when the login is not a member', async () => {
     const { deps, sent } = setup();
-    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'zoe@acme.design', login: 'zoe' }] }), {}, deps);
-    expect((await r.json()).results).toEqual([{ email: 'zoe@acme.design', status: 'sent' }]);
+    const r = await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'zoe@acme.example', login: 'zoe' }] }), {}, deps);
+    expect((await r.json()).results).toEqual([{ email: 'zoe@acme.example', status: 'sent' }]);
     expect(sent).toHaveLength(1);
   });
 
@@ -519,7 +519,7 @@ const invite = (deps: InvitesDeps, emails: string[], env: Record<string, string>
 
 describe('the invited email, masked', () => {
   it('masks an email to its first letter and domain', () => {
-    expect(maskEmail('maria@acme.design')).toBe('m•••@acme.design');
+    expect(maskEmail('maria@acme.example')).toBe('m•••@acme.example');
     expect(maskEmail('a@b.co')).toBe('a•••@b.co');
   });
 });
@@ -535,34 +535,34 @@ describe('daily caps', () => {
   it('stops an admin at their cap with 429, the reason and Retry-After, then resets the next day', async () => {
     const { deps, sent, tick } = setup();
     const env = { INVITES_MAX_PER_ADMIN_DAY: '2' };
-    expect((await invite(deps, ['a@acme.design', 'b@acme.design'], env)).status).toBe(200);
-    const r = await invite(deps, ['c@acme.design'], env);
+    expect((await invite(deps, ['a@acme.example', 'b@acme.example'], env)).status).toBe(200);
+    const r = await invite(deps, ['c@acme.example'], env);
     expect(r.status).toBe(429);
     expect(await r.json()).toEqual({ error: 'limit', message: LIMIT_WORDS.admin, limit: 'admin' });
     expect(LIMIT_WORDS.admin).toBe("You reached today's invite limit. Try again tomorrow.");
     expect(Number(r.headers.get('retry-after'))).toBe(14 * 3600);
     expect(sent).toHaveLength(2);
     tick(14 * 3600 * 1000);
-    expect((await invite(deps, ['c@acme.design'], env)).status).toBe(200);
+    expect((await invite(deps, ['c@acme.example'], env)).status).toBe(200);
   });
 
   it('refuses a batch larger than what is left, all or nothing, and says how many are left', async () => {
     const { deps, sent } = setup();
     const env = { INVITES_MAX_PER_ADMIN_DAY: '3' };
-    const r = await invite(deps, ['a@acme.design', 'b@acme.design', 'c@acme.design', 'd@acme.design', 'e@acme.design'], env);
+    const r = await invite(deps, ['a@acme.example', 'b@acme.example', 'c@acme.example', 'd@acme.example', 'e@acme.example'], env);
     expect(r.status).toBe(429);
     expect((await r.json()).message).toBe('You can send 3 more invites today. Remove some people, or try again tomorrow.');
     expect(sent).toHaveLength(0);
     // Nothing was kept from the refused batch.
-    expect((await invite(deps, ['a@acme.design', 'b@acme.design', 'c@acme.design'], env)).status).toBe(200);
+    expect((await invite(deps, ['a@acme.example', 'b@acme.example', 'c@acme.example'], env)).status).toBe(200);
   });
 
   it('caps a team across its admins', async () => {
     const { deps } = setup();
     const env = { INVITES_MAX_PER_TEAM_DAY: '2' };
-    expect((await invite(deps, ['a@acme.design'], env)).status).toBe(200);
-    expect((await invite(deps, ['b@acme.design'], env, 'ghu_kim01')).status).toBe(200);
-    const r = await invite(deps, ['c@acme.design'], env, 'ghu_kim01');
+    expect((await invite(deps, ['a@acme.example'], env)).status).toBe(200);
+    expect((await invite(deps, ['b@acme.example'], env, 'ghu_kim01')).status).toBe(200);
+    const r = await invite(deps, ['c@acme.example'], env, 'ghu_kim01');
     expect(r.status).toBe(429);
     expect(await r.json()).toMatchObject({ limit: 'team', message: "This team reached today's invite limit. Try again tomorrow." });
   });
@@ -570,8 +570,8 @@ describe('daily caps', () => {
   it('caps the whole site, whatever the team', async () => {
     const { deps } = setup();
     const env = { INVITES_MAX_SITE_DAY: '1' };
-    expect((await invite(deps, ['a@acme.design'], env)).status).toBe(200);
-    const r = await invite(deps, ['b@acme.design'], env, 'ghu_kim01');
+    expect((await invite(deps, ['a@acme.example'], env)).status).toBe(200);
+    const r = await invite(deps, ['b@acme.example'], env, 'ghu_kim01');
     expect(r.status).toBe(429);
     expect(await r.json()).toMatchObject({ limit: 'site', message: "Bridge reached today's invite limit for everyone. Try again tomorrow." });
   });
@@ -579,24 +579,24 @@ describe('daily caps', () => {
   it('counts only emails that went out: org members added, pending ones and failed sends are given back', async () => {
     const env = { INVITES_MAX_PER_ADMIN_DAY: '1' };
     const { deps } = setup();
-    expect((await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'ann@acme.design', login: 'ann' }] }), env, deps)).status).toBe(200);
-    expect((await invite(deps, ['a@acme.design'], env)).status).toBe(200);
+    expect((await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'ann@acme.example', login: 'ann' }] }), env, deps)).status).toBe(200);
+    expect((await invite(deps, ['a@acme.example'], env)).status).toBe(200);
     // Already pending: nothing to send, no cap hit.
-    expect((await invite(deps, ['a@acme.design'], env)).status).toBe(200);
+    expect((await invite(deps, ['a@acme.example'], env)).status).toBe(200);
 
     let fail = true;
     const flaky = setup({}, { email: { send: async () => (fail ? Promise.reject(new Error('down')) : undefined) } });
-    expect((await invite(flaky.deps, ['a@acme.design'], env)).status).toBe(200);
+    expect((await invite(flaky.deps, ['a@acme.example'], env)).status).toBe(200);
     fail = false;
-    expect((await (await invite(flaky.deps, ['a@acme.design'], env)).json()).results[0].status).toBe('sent');
+    expect((await (await invite(flaky.deps, ['a@acme.example'], env)).json()).results[0].status).toBe('sent');
   });
 
   it('still validates every email and caps recipients per request', async () => {
     const { deps, sent } = setup();
-    const r = await invite(deps, ['ok@acme.design', 'no spaces@acme.design', '<x>@acme.design', 'a@b', `${'x'.repeat(250)}@acme.design`]);
+    const r = await invite(deps, ['ok@acme.example', 'no spaces@acme.example', '<x>@acme.example', 'a@b', `${'x'.repeat(250)}@acme.example`]);
     expect((await r.json()).results.map((x: { status: string }) => x.status)).toEqual(['sent', 'failed', 'failed', 'failed', 'failed']);
     expect(sent).toHaveLength(1);
-    const many = Array.from({ length: 11 }, (_, i) => `p${i}@acme.design`);
+    const many = Array.from({ length: 11 }, (_, i) => `p${i}@acme.example`);
     expect((await invite(deps, many)).status).toBe(400);
   });
 });
@@ -604,7 +604,7 @@ describe('daily caps', () => {
 describe('resend frequency', () => {
   it('waits between two sends of the same invite', async () => {
     const { deps, sent, store, tick } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     const [inv] = await store.list(REPO);
     tick(RESEND_COOLDOWN_MS - 60_000);
     const r = await handleInvites(post({ action: 'resend', repo: REPO, id: inv!.id }), {}, deps);
@@ -620,7 +620,7 @@ describe('resend frequency', () => {
     let fail = false;
     const { deps, sent, store, tick } = setup({}, {});
     deps.email = { send: async (msg) => (fail ? Promise.reject(new Error('down')) : void sent.push(msg)) };
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     const [inv] = await store.list(REPO);
     const resend = () => handleInvites(post({ action: 'resend', repo: REPO, id: inv!.id }), {}, deps);
     tick(RESEND_COOLDOWN_MS);
@@ -640,7 +640,7 @@ describe('resend frequency', () => {
   it('counts resends toward the admin cap', async () => {
     const { deps, store, tick } = setup();
     const env = { INVITES_MAX_PER_ADMIN_DAY: '1' };
-    await invite(deps, ['priya@acme.design'], env);
+    await invite(deps, ['priya@acme.example'], env);
     const [inv] = await store.list(REPO);
     tick(RESEND_COOLDOWN_MS);
     const r = await handleInvites(post({ action: 'resend', repo: REPO, id: inv!.id }), env, deps);
@@ -654,21 +654,21 @@ describe('what is kept, and for how long', () => {
 
   it('keeps only the fields the flow needs', async () => {
     const { deps, store } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     const [inv] = await store.list(REPO);
     expect(Object.keys(inv!).sort()).toEqual(['createdAt', 'email', 'expiresAt', 'id', 'invitedBy', 'invitedByName', 'repo', 'role', 'sentAt', 'tokenHash']);
   });
 
   it("keeps the inviter's display name: GitHub profile name, else Bridge account name, else the login", async () => {
     const { deps, store } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     expect((await store.list(REPO))[0]).toMatchObject({ invitedBy: 'dana', invitedByName: 'Dana' });
 
     // No GitHub profile name: the Bridge account linked to that GitHub id.
     const a = setup({ users: { ghu_kim01: { login: 'kim', id: 44 } } as never });
     const asked: number[] = [];
     a.deps.accountName = async (id) => (asked.push(id), id === 44 ? 'Kim Park' : null);
-    await invite(a.deps, ['priya@acme.design'], {}, 'ghu_kim01');
+    await invite(a.deps, ['priya@acme.example'], {}, 'ghu_kim01');
     expect((await a.store.list(REPO))[0]).toMatchObject({ invitedBy: 'kim', invitedByName: 'Kim Park' });
     expect(asked).toEqual([44]);
     expect(a.sent[0]!.text).toContain('Kim Park');
@@ -678,13 +678,13 @@ describe('what is kept, and for how long', () => {
     b.deps.accountName = async () => {
       throw new Error('down');
     };
-    await invite(b.deps, ['priya@acme.design'], {}, 'ghu_kim01');
+    await invite(b.deps, ['priya@acme.example'], {}, 'ghu_kim01');
     expect((await b.store.list(REPO))[0]).toMatchObject({ invitedBy: 'kim', invitedByName: 'kim' });
   });
 
   it('deletes the record and its link on accept', async () => {
     const { deps, sent, store } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     expect(inviteKeys(store.keys())).toHaveLength(2);
     await accept(deps, tokenOf(sent[0]!));
     expect(inviteKeys(store.keys())).toEqual([]);
@@ -692,7 +692,7 @@ describe('what is kept, and for how long', () => {
 
   it('deletes the record and its link on cancel', async () => {
     const { deps, store } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     const [inv] = await store.list(REPO);
     await handleInvites(post({ action: 'cancel', repo: REPO, id: inv!.id }), {}, deps);
     expect(inviteKeys(store.keys())).toEqual([]);
@@ -700,7 +700,7 @@ describe('what is kept, and for how long', () => {
 
   it('lets the record and its link expire with the invite, and the counters a day later', async () => {
     const { deps, store, tick } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     tick(INVITE_TTL_MS - 1000);
     expect(inviteKeys(store.keys())).toHaveLength(2);
     tick(1000);
@@ -712,7 +712,7 @@ describe('what is kept, and for how long', () => {
 
   it('keeps the team and the inviter of a spent link, never the email', async () => {
     const { deps, sent, store } = setup();
-    await invite(deps, ['priya@acme.design']);
+    await invite(deps, ['priya@acme.example']);
     const hash = createHash('sha256').update(tokenOf(sent[0]!)).digest('hex');
     await accept(deps, tokenOf(sent[0]!));
     expect(await store.byTokenHash(hash)).toBeNull();
@@ -724,7 +724,7 @@ describe('what is kept, and for how long', () => {
   it('never logs an email or a token', async () => {
     const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((k) => vi.spyOn(console, k).mockImplementation(() => {}));
     const { deps, sent } = setup({}, { email: { send: async (m) => void sent.push(m) } });
-    await invite(deps, ['priya@acme.design', 'bad email']);
+    await invite(deps, ['priya@acme.example', 'bad email']);
     await accept(deps, tokenOf(sent[0]!));
     for (const s of spies) {
       expect(s).not.toHaveBeenCalled();
@@ -736,7 +736,7 @@ describe('what is kept, and for how long', () => {
 describe('email contributors in Members', () => {
   async function withMember() {
     const members = memberStore(memoryRedis());
-    await members.put(REPO, { email: 'mia@acme.design', name: 'Mia Chen', role: 'edit', version: 1, addedBy: 'dana', at: '2026-10-22T10:00:00.000Z' });
+    await members.put(REPO, { email: 'mia@acme.example', name: 'Mia Chen', role: 'edit', version: 1, addedBy: 'dana', at: '2026-10-22T10:00:00.000Z' });
     return { members, ...setup({}, { members }) };
   }
 
@@ -744,37 +744,37 @@ describe('email contributors in Members', () => {
     const { deps } = await withMember();
     const r = await handleInvites(get(`?repo=${REPO}`, 'ghu_leo01'), {}, deps);
     expect(r.status).toBe(200);
-    expect((await r.json()).members).toEqual([{ via: 'email', name: 'Mia Chen', email: 'mia@acme.design', role: 'edit', addedBy: 'dana', at: '2026-10-22T10:00:00.000Z' }]);
+    expect((await r.json()).members).toEqual([{ via: 'email', name: 'Mia Chen', email: 'mia@acme.example', role: 'edit', addedBy: 'dana', at: '2026-10-22T10:00:00.000Z' }]);
   });
 
   it('an admin removes one by email, which ends their sessions; a writer cannot', async () => {
     const { deps, members, w } = await withMember();
-    expect((await handleInvites(post({ action: 'remove', repo: REPO, email: 'mia@acme.design' }, 'ghu_leo01'), {}, deps)).status).toBe(403);
-    expect(await members.get(REPO, 'mia@acme.design')).not.toBeNull();
-    const r = await handleInvites(post({ action: 'remove', repo: REPO, email: 'MIA@acme.design' }), {}, deps);
+    expect((await handleInvites(post({ action: 'remove', repo: REPO, email: 'mia@acme.example' }, 'ghu_leo01'), {}, deps)).status).toBe(403);
+    expect(await members.get(REPO, 'mia@acme.example')).not.toBeNull();
+    const r = await handleInvites(post({ action: 'remove', repo: REPO, email: 'MIA@acme.example' }), {}, deps);
     expect(r.status).toBe(200);
-    expect(await members.get(REPO, 'mia@acme.design')).toBeNull();
+    expect(await members.get(REPO, 'mia@acme.example')).toBeNull();
     expect(await members.list(REPO)).toEqual([]);
     expect(w.calls.some((c) => c.method === 'DELETE')).toBe(false);
-    expect((await handleInvites(post({ action: 'remove', repo: REPO, email: 'mia@acme.design' }), {}, deps)).status).toBe(404);
+    expect((await handleInvites(post({ action: 'remove', repo: REPO, email: 'mia@acme.example' }), {}, deps)).status).toBe(404);
   });
 
   it('makes an email member admin or Can edit; Reviewer answers 409 github-required', async () => {
     const { deps, w } = await withMember();
-    const r = await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.design', role: 'reviewer', reviewAs: 'design' }), {}, deps);
+    const r = await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.example', role: 'reviewer', reviewAs: 'design' }), {}, deps);
     expect(r.status).toBe(409);
     expect((await r.json()).error).toBe('github-required');
-    const up = await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.design', role: 'admin' }), {}, deps);
+    const up = await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.example', role: 'admin' }), {}, deps);
     expect(await up.json()).toEqual({ ok: true, role: 'admin' });
-    expect((await deps.members!.get(REPO, 'mia@acme.design'))?.role).toBe('admin');
-    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.design', role: 'edit' }), {}, deps)).status).toBe(200);
-    expect((await deps.members!.get(REPO, 'mia@acme.design'))?.role).toBe('edit');
-    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'nobody@acme.design', role: 'edit' }), {}, deps)).status).toBe(404);
+    expect((await deps.members!.get(REPO, 'mia@acme.example'))?.role).toBe('admin');
+    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.example', role: 'edit' }), {}, deps)).status).toBe(200);
+    expect((await deps.members!.get(REPO, 'mia@acme.example'))?.role).toBe('edit');
+    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'nobody@acme.example', role: 'edit' }), {}, deps)).status).toBe(404);
     // To and from Can view.
-    expect(await (await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.design', role: 'view' }), {}, deps)).json()).toEqual({ ok: true, role: 'view' });
-    expect((await deps.members!.get(REPO, 'mia@acme.design'))?.role).toBe('view');
-    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.design', role: 'edit' }), {}, deps)).status).toBe(200);
-    expect((await deps.members!.get(REPO, 'mia@acme.design'))?.role).toBe('edit');
+    expect(await (await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.example', role: 'view' }), {}, deps)).json()).toEqual({ ok: true, role: 'view' });
+    expect((await deps.members!.get(REPO, 'mia@acme.example'))?.role).toBe('view');
+    expect((await handleInvites(post({ action: 'set-role', repo: REPO, email: 'mia@acme.example', role: 'edit' }), {}, deps)).status).toBe(200);
+    expect((await deps.members!.get(REPO, 'mia@acme.example'))?.role).toBe('edit');
     expect(w.calls.some((c) => c.method === 'PUT')).toBe(false);
   });
 
@@ -787,7 +787,7 @@ describe('email contributors in Members', () => {
 
   it('the email uses bridge.config.json name when the team set one', async () => {
     const { deps, sent } = setup({ config: CONFIG.replace('"version": 1,', '"version": 1,\n  "name": "Acme Studio",') });
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     expect(sent[0]!.subject).toBe('Dana invited you to Acme Studio on Bridge');
   });
 
@@ -808,11 +808,11 @@ describe('email contributors in Members', () => {
 
   it('joining with GitHub drops an email membership of the same address', async () => {
     const members = memberStore(memoryRedis());
-    await members.put(REPO, { email: 'priya@acme.design', name: 'Priya', role: 'edit', version: 1, addedBy: 'dana', at: '' });
+    await members.put(REPO, { email: 'priya@acme.example', name: 'Priya', role: 'edit', version: 1, addedBy: 'dana', at: '' });
     const { deps, sent } = setup({}, { members });
-    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.design' }] }), {}, deps);
+    await handleInvites(post({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'priya@acme.example' }] }), {}, deps);
     expect(await accept(deps, tokenOf(sent[0]!))).toMatchObject({ status: 'joined' });
-    expect(await members.get(REPO, 'priya@acme.design')).toBeNull();
+    expect(await members.get(REPO, 'priya@acme.example')).toBeNull();
   });
 });
 
@@ -827,7 +827,7 @@ describe('the sample team', () => {
 
   it("refuses its visitor's writes in the demo dialog's words (403 demo), as api/contribute does", async () => {
     const { deps, sent } = setup();
-    for (const body of [{ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.design' }] }, { action: 'set-role', repo: SAMPLE, email: 'leo@acme.design', role: 'admin' }, { action: 'cancel', repo: SAMPLE, id: 'abc' }]) {
+    for (const body of [{ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.example' }] }, { action: 'set-role', repo: SAMPLE, email: 'leo@acme.example', role: 'admin' }, { action: 'cancel', repo: SAMPLE, id: 'abc' }]) {
       const r = await handleInvites(visitor(body), {}, deps);
       expect(r.status).toBe(403);
       expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
@@ -837,9 +837,9 @@ describe('the sample team', () => {
 
   it('lets a GitHub sign-in through to the usual checks, and leaves any other team alone', async () => {
     const { deps } = setup();
-    const signedIn = await handleInvites(post({ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    const signedIn = await handleInvites(post({ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.example' }] }), {}, deps);
     expect((await signedIn.json()).error).not.toBe('demo');
-    const other = await handleInvites(visitor({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.design' }] }), {}, deps);
+    const other = await handleInvites(visitor({ action: 'invite', repo: REPO, role: 'edit', people: [{ email: 'x@acme.example' }] }), {}, deps);
     expect((await other.json()).error).not.toBe('demo');
   });
 });

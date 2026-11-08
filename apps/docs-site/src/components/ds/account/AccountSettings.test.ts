@@ -29,7 +29,7 @@ type Call = { method: string; body: Record<string, unknown> | null; headers: Rec
 let calls: Call[] = [];
 let reply: (c: Call) => Response;
 const ACCOUNT = {
-  email: 'leo@acme.design',
+  email: 'leo@acme.example',
   name: 'Leo',
   github: null,
   teams: [
@@ -79,7 +79,7 @@ describe('Account > Email', () => {
   });
   it('an older server without the choices: no Email row', async () => {
     render(createElement(AccountSettings));
-    expect(await screen.findByText('leo@acme.design')).toBeInTheDocument();
+    expect(await screen.findByText('leo@acme.example')).toBeInTheDocument();
     expect(screen.queryByText('Email')).toBeNull();
   });
 });
@@ -87,7 +87,7 @@ describe('Account > Email', () => {
 describe('the account', () => {
   it('shows the account, its teams and roles, and why to link GitHub', async () => {
     const { container } = render(createElement(AccountSettings));
-    expect(await screen.findByText('leo@acme.design')).toBeInTheDocument();
+    expect(await screen.findByText('leo@acme.example')).toBeInTheDocument();
     expect(screen.getByText('GitHub not linked')).toBeInTheDocument();
     expect(screen.getByText('Only needed to review changes on GitHub or connect a repository. You can propose and comment without it.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Acme Design' })).toHaveAttribute('href', '/studio/~/acme/ds/');
@@ -226,7 +226,7 @@ describe('the account menu', () => {
     await expectNoAxeViolations(container);
     await userEvent.setup().click(trigger);
     const menu = await screen.findByRole('menu');
-    expect(within(menu).getByText('leo@acme.design')).toBeInTheDocument();
+    expect(within(menu).getByText('leo@acme.example')).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Link GitHub' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Account settings' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();
@@ -238,7 +238,7 @@ describe('the account menu', () => {
     await user.click(await screen.findByRole('button', { name: 'Leo, Admin, account menu' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Account settings' }));
     const dialog = await screen.findByRole('dialog', { name: 'Account' });
-    expect(within(dialog).getByText('leo@acme.design')).toBeInTheDocument();
+    expect(within(dialog).getByText('leo@acme.example')).toBeInTheDocument();
     // Each sign-out button carries the line that says what it does, on its own row.
     expect(within(dialog).getByRole('button', { name: 'Sign out everywhere' })).toHaveAccessibleDescription('Ends your sessions on every device, this one included.');
     expect(within(dialog).getByRole('button', { name: 'Sign out' })).toHaveAccessibleDescription('Ends your session on this device.');

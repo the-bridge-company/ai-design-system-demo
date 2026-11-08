@@ -21,18 +21,18 @@ export const REFILE_LABELS: readonly string[] = ['component-change', 'bridge-bui
  * (Leo, Sofia, Ann) for design asks, Malik for the code-facing one. A body that already names a member keeps them.
  */
 export const DEMO_REQUESTERS: Readonly<Record<string, string>> = {
-  Avatar: 'sofia@acme.design',
-  Button: 'ann@acme.design',
-  Card: 'leo@acme.design',
-  EmptyState: 'leo@acme.design',
-  ProfileHeader: 'ann@acme.design',
-  Select: 'sofia@acme.design',
-  Table: 'malik@acme.design',
-  Toast: 'leo@acme.design',
+  Avatar: 'sofia@acme.example',
+  Button: 'ann@acme.example',
+  Card: 'leo@acme.example',
+  EmptyState: 'leo@acme.example',
+  ProfileHeader: 'ann@acme.example',
+  Select: 'sofia@acme.example',
+  Table: 'malik@acme.example',
+  Toast: 'leo@acme.example',
 };
 
 /** Anyone else's ask, when neither the body nor the table names someone. */
-export const DEFAULT_REQUESTER = 'leo@acme.design';
+export const DEFAULT_REQUESTER = 'leo@acme.example';
 
 /** The fields of GET /repos/{o}/{r}/issues and /pulls this reads. */
 export interface RefileIssue {
@@ -142,6 +142,46 @@ export function planDemoRefile(input: { issues: readonly RefileIssue[]; pulls: r
 /** "Closes #old" (any closing keyword) becomes "Closes #new"; everything else in the body stays. */
 export function relinkBody(body: string, from: number, to: number): string {
   return body.replace(new RegExp(`\\b(close[sd]?|fix(?:e[sd])?|resolve[sd]?)(\\s+)#${from}\\b`, 'gi'), `$1$2#${to}`);
+}
+
+/** An open pull request of a design copy, as GET /repos/{o}/{r}/pulls gives it. */
+export interface CopyPull {
+  number: number;
+  state: string;
+  body?: string | null;
+  head?: { ref?: string; repo?: { full_name?: string } | null } | null;
+  base?: { repo?: { full_name?: string } | null } | null;
+  labels?: ({ name?: string } | string)[] | null;
+}
+
+/**
+ * The sample team's explorations a member started, from a design copy's open pull requests: an explore/* branch of the
+ * copy itself, not archived, whose Bridge block names a member of the sample team (memberName, read by `nameOf`).
+ */
+export function demoExplorationsOf(pulls: readonly CopyPull[], nameOf: (body: string) => unknown): { items: { pull: number; branch: string; member: Pick<DemoMember, 'email' | 'name'> }[]; skipped: { pull: number; why: string }[] } {
+  const out = { items: [] as { pull: number; branch: string; member: Pick<DemoMember, 'email' | 'name'> }[], skipped: [] as { pull: number; why: string }[] };
+  for (const p of pulls) {
+    const branch = p.head?.ref ?? '';
+    if (p.state !== 'open' || !branch.startsWith('explore/')) continue;
+    const own = p.head?.repo?.full_name && p.base?.repo?.full_name && p.head.repo.full_name.toLowerCase() === p.base.repo.full_name.toLowerCase();
+    if (!own) {
+      out.skipped.push({ pull: p.number, why: 'its branch is in another repository' });
+      continue;
+    }
+    if (labelNames(p.labels ?? []).includes('archived')) {
+      out.skipped.push({ pull: p.number, why: 'archived' });
+      continue;
+    }
+    const name = nameOf(p.body ?? '');
+    const member = typeof name === 'string' ? byName(name) : undefined;
+    if (!member) {
+      out.skipped.push({ pull: p.number, why: 'it names no member of the sample team' });
+      continue;
+    }
+    out.items.push({ pull: p.number, branch, member: { email: member.email, name: member.name } });
+  }
+  out.items.sort((a, b) => a.pull - b.pull);
+  return out;
 }
 
 /** The comment left on the old issue before it closes as not planned. */

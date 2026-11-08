@@ -22,7 +22,7 @@ const HOOK_SECRET = 'whsec-test-0123456789abcdef';
 const TEAM = 'acme/design';
 const CODE = 'acme/shop';
 const COPY = 'acme/shop-design';
-const MIA = 'mia@acme.design';
+const MIA = 'mia@acme.example';
 const ENV = { LIBRARY_SESSION_SECRET: SECRET, GITHUB_WEBHOOK_SECRET: HOOK_SECRET, CRON_SECRET: 'cron-secret-123' };
 
 function setup() {

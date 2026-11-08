@@ -66,7 +66,7 @@ const boot = async () => {
 
 describe('the side nav account row', () => {
   it('opens a team never seen in this browser as its member: the server says so first, no guest check on GitHub', async () => {
-    member = { email: 'florian@acme.design', name: 'Florian', role: 'edit' };
+    member = { email: 'florian@acme.example', name: 'Florian', role: 'edit' };
     const session = await import('./github-session');
     const access: (string | null)[] = [];
     session.onAccess((a) => access.push(a?.state ?? null));
@@ -87,7 +87,7 @@ describe('the side nav account row', () => {
   });
 
   it('shows an email contributor signed in: name, email, Sign out, no sign-in button', async () => {
-    member = { email: 'florian@acme.design', name: 'Florian', role: 'edit' };
+    member = { email: 'florian@acme.example', name: 'Florian', role: 'edit' };
     localStorage.setItem('bridge.contribute.member:acme/ds', JSON.stringify(member));
     await boot();
     await vi.waitFor(() => expect(acct().dataset.state).toBe('connected'));
@@ -98,7 +98,7 @@ describe('the side nav account row', () => {
     expect(acct().querySelector<HTMLElement>('[data-gh-acct-team]')!.hidden).toBe(true);
     const emailLine = acct().querySelector<HTMLElement>('[data-gh-menu-email]')!;
     expect(emailLine.hidden).toBe(false);
-    expect(emailLine.textContent).toBe('florian@acme.design');
+    expect(emailLine.textContent).toBe('florian@acme.example');
     expect(acct().querySelector('[data-gh-perm]')!.textContent).toBe('Can edit');
     // The drawn face, never initials.
     expect(acct().querySelector<HTMLElement>('[data-gh-avatar]')!.hidden).toBe(false);
@@ -111,10 +111,10 @@ describe('the side nav account row', () => {
   });
 
   it('turns signed in when the server says so, with nothing remembered in this browser', async () => {
-    member = { email: 'florian@acme.design', name: 'Florian', role: 'edit' };
+    member = { email: 'florian@acme.example', name: 'Florian', role: 'edit' };
     await boot();
     await vi.waitFor(() => expect(acct().dataset.state).toBe('connected'));
-    expect(acct().querySelector<HTMLElement>('[data-gh-menu-email]')!.textContent).toBe('florian@acme.design');
+    expect(acct().querySelector<HTMLElement>('[data-gh-menu-email]')!.textContent).toBe('florian@acme.example');
   });
 
   it('shows a GitHub user by their profile name, the @login staying in the menu', async () => {

@@ -35,20 +35,20 @@ const owners = { design: ['ann', '@acme/design'], tech: ['Malik'] };
 /** A team with five members, one invite not joined yet, and two people of the organization not in it yet. */
 const acmeTeam = (): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } => ({
   members: [
-    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
-    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
-    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
-    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
-    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.example' },
+    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.example' },
+    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.example' },
+    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.example' },
+    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.example' },
   ],
-  pending: [{ id: 'p-priya', email: 'priya@acme.design', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
+  pending: [{ id: 'p-priya', email: 'priya@acme.example', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
   people: [
-    { name: 'Ann', email: 'ann@acme.design', login: '~ann-leroy' },
-    { name: 'Leo', email: 'leo@acme.design', login: '~leo-martin' },
-    { name: 'Malik', email: 'malik@acme.design', login: '~malik-haddad' },
-    { name: 'Sofia', email: 'sofia@acme.design', login: '~sofia-reyes' },
-    { name: 'Mal Reyes', email: 'mal.reyes@acme.design' },
-    { name: 'Jonas Berg', email: 'jonas.berg@acme.design' },
+    { name: 'Ann', email: 'ann@acme.example', login: '~ann-leroy' },
+    { name: 'Leo', email: 'leo@acme.example', login: '~leo-martin' },
+    { name: 'Malik', email: 'malik@acme.example', login: '~malik-haddad' },
+    { name: 'Sofia', email: 'sofia@acme.example', login: '~sofia-reyes' },
+    { name: 'Mal Reyes', email: 'mal.reyes@acme.example' },
+    { name: 'Jonas Berg', email: 'jonas.berg@acme.example' },
   ],
 });
 
@@ -160,7 +160,7 @@ describe('who may change what', () => {
 
 describe('the email field', () => {
   it('takes several emails at once, lower case, valid and new only', () => {
-    expect(parseEmails('Ann@Acme.design, leo@acme.design; nope bad@ <priya@acme.design>', ['leo@acme.design'])).toEqual(['ann@acme.design', 'priya@acme.design']);
+    expect(parseEmails('Ann@Acme.example, leo@acme.example; nope bad@ <priya@acme.example>', ['leo@acme.example'])).toEqual(['ann@acme.example', 'priya@acme.example']);
     expect(isEmail('a@b.co')).toBe(true);
     expect(isEmail('a@b')).toBe(false);
     expect(isEmail('a b@c.de')).toBe(false);
@@ -171,12 +171,12 @@ describe('the email field', () => {
     const f = { people: s.people, members: s.members, pending: s.pending, chosen: [] as string[], team: 'Acme Design' };
     const mal = inviteOptions('mal', f);
     expect(mal.map((o) => o.label)).toEqual(['Malik', 'Mal Reyes']);
-    expect(mal[0]).toMatchObject({ disabled: true, description: 'malik@acme.design · Already in Acme Design' });
-    expect(mal[1]).toMatchObject({ value: 'mal.reyes@acme.design' });
+    expect(mal[0]).toMatchObject({ disabled: true, description: 'malik@acme.example · Already in Acme Design' });
+    expect(mal[1]).toMatchObject({ value: 'mal.reyes@acme.example' });
     expect(mal[1]!.disabled).toBeUndefined();
-    expect(inviteOptions('new@acme.design', f)).toContainEqual({ value: 'new@acme.design', label: 'new@acme.design', description: 'Invite by email' });
+    expect(inviteOptions('new@acme.example', f)).toContainEqual({ value: 'new@acme.example', label: 'new@acme.example', description: 'Invite by email' });
     // Pending invites count as in the team.
-    expect(inviteOptions('priya@acme.design', f).at(-1)).toMatchObject({ disabled: true });
+    expect(inviteOptions('priya@acme.example', f).at(-1)).toMatchObject({ disabled: true });
     // A member: listed, disabled, already in.
     expect(inviteOptions('sofia', f)).toEqual([expect.objectContaining({ label: 'Sofia', disabled: true })]);
     // Two people the field suggests who are not in the team yet.
@@ -186,7 +186,7 @@ describe('the email field', () => {
   });
 
   it('sends the GitHub account of a known person along, so an organization member can be added directly', () => {
-    expect(inviteePeople(['ann@acme.design', 'new@acme.design'], [{ name: 'Ann', email: 'ann@acme.design', login: 'ann' }])).toEqual([{ email: 'ann@acme.design', login: 'ann' }, { email: 'new@acme.design' }]);
+    expect(inviteePeople(['ann@acme.example', 'new@acme.example'], [{ name: 'Ann', email: 'ann@acme.example', login: 'ann' }])).toEqual([{ email: 'ann@acme.example', login: 'ann' }, { email: 'new@acme.example' }]);
   });
 
   it('counts the invites on the button and words the outcome', () => {

@@ -9,7 +9,9 @@
 import type { MemberStore, EmailMember, EmailRole } from './members.js';
 import { pmOf, setPm } from './product-pm.js';
 import type { Redis } from './redis.js';
-import { canonicalEmail } from './canonical-email.js';
+import { canonicalEmail, emailSpellings, sameEmail } from './canonical-email.js';
+import { branchKey, issueKey, mineKey, scan } from './former-member.js';
+import { globEscape } from './redis.js';
 import { SAMPLE_REPO, isSampleTeam } from '../../src/lib/demo.js';
 
 export interface DemoMember {
@@ -25,18 +27,18 @@ export interface DemoMember {
  * reviews happen on GitHub, like any developer's: as an email member he can edit), Leo and Sofia design (can edit).
  */
 export const DEMO_MEMBERS: readonly DemoMember[] = [
-  { email: 'dana@acme.design', name: 'Dana', role: 'admin', lead: true },
-  { email: 'ann@acme.design', name: 'Ann', role: 'edit', lead: true },
-  { email: 'malik@acme.design', name: 'Malik', role: 'edit' },
-  { email: 'leo@acme.design', name: 'Leo', role: 'edit' },
-  { email: 'sofia@acme.design', name: 'Sofia', role: 'edit' },
+  { email: 'dana@acme.example', name: 'Dana', role: 'admin', lead: true },
+  { email: 'ann@acme.example', name: 'Ann', role: 'edit', lead: true },
+  { email: 'malik@acme.example', name: 'Malik', role: 'edit' },
+  { email: 'leo@acme.example', name: 'Leo', role: 'edit' },
+  { email: 'sofia@acme.example', name: 'Sofia', role: 'edit' },
 ];
 
 /** Who a signed-out visitor of the sample team reads as: its lead. */
-export const DEMO_VISITOR_EMAIL = 'dana@acme.design';
+export const DEMO_VISITOR_EMAIL = 'dana@acme.example';
 
 /** The product manager of the sample team's Account app (Settings > Products). */
-export const DEMO_PM = { product: 'account', email: 'ann@acme.design' } as const;
+export const DEMO_PM = { product: 'account', email: 'ann@acme.example' } as const;
 
 /** The member a signed-out visitor of `team` reads as, or null: only the sample team has one. */
 export const demoVisitorEmail = (team: string): string | null => (isSampleTeam(team) ? DEMO_VISITOR_EMAIL : null);
@@ -46,6 +48,64 @@ export interface SeedResult {
   updated: string[];
   kept: string[];
   pm: 'set' | 'kept';
+  /** Members moved from their old acme.design address (migrateLegacyDemo). */
+  migrated: string[];
+  /** Keys that held an old address and are gone: notifications kept or due, sign-in counts, team lists. */
+  forgot: number;
+}
+
+/**
+ * The domain the sample team's people first had: acme.design is a real, registered domain, so Bridge could have mailed
+ * strangers there. They now live under acme.example (RFC 2606, never routed); seedDemoTeam moves what the old one held.
+ */
+export const LEGACY_DEMO_DOMAIN = 'acme.design';
+export const DEMO_DOMAIN = 'acme.example';
+export const legacyDemoEmail = (email: string): string => email.replace(new RegExp(`@${DEMO_DOMAIN.replace('.', '\\.')}$`), `@${LEGACY_DEMO_DOMAIN}`);
+
+const OWNED_S = 365 * 24 * 60 * 60;
+
+/**
+ * Moves each sample team member stored under the old address to the new one: the same name, role, lead and who added
+ * them (their version moves, so a session of the old address ends); what they own through Bridge (branches, issues)
+ * becomes the new address's; every key that only served the old one goes (its member record and team list, notifications
+ * kept, due or sent within the hour, an opt-out, sign-in counts). Idempotent: nothing left under the old address, nothing
+ * done. The product manager is set again by seedDemoTeam, which compares the address.
+ */
+export async function migrateLegacyDemo(deps: { members: MemberStore; redis: Redis }): Promise<{ migrated: string[]; forgot: number }> {
+  const team = SAMPLE_REPO;
+  const out = { migrated: [] as string[], forgot: 0 };
+  for (const d of DEMO_MEMBERS) {
+    const old = legacyDemoEmail(d.email);
+    if (old === d.email) continue;
+    const was = await deps.members.get(team, old);
+    if (was) {
+      const now = await deps.members.get(team, d.email);
+      if (!now) await deps.members.put(team, { ...was, email: d.email, version: was.version + 1 });
+      await deps.members.remove(team, old);
+      out.migrated.push(d.email);
+    }
+    // What they own through Bridge, on the team and its products: the new address owns it.
+    const e = globEscape(canonicalEmail(old));
+    for (const key of await scan(deps.redis, `bridge:contrib:mine:*:${e}`)) {
+      const repo = key.slice('bridge:contrib:mine:'.length, key.length - canonicalEmail(old).length - 1);
+      const raw = await deps.redis.cmd('SMEMBERS', key);
+      const items = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : [];
+      const owned = items.map((it) => (it.startsWith('b:') ? branchKey(repo, it.slice(2)) : it.startsWith('i:') ? issueKey(repo, it.slice(2)) : null));
+      const holders = owned.length ? await deps.redis.pipe(owned.map((k) => ['GET', k ?? 'bridge:contrib:none'])) : [];
+      const moves = owned.filter((k, i): k is string => k !== null && sameEmail(holders[i], old)).map((k) => ['SET', k, d.email, 'EX', OWNED_S]);
+      await deps.redis.pipe([...moves, ...(items.length ? [['SADD', mineKey(repo, d.email), ...items], ['EXPIRE', mineKey(repo, d.email), OWNED_S]] : []), ['DEL', key]]);
+      out.forgot++;
+    }
+    // Keys that only served the old address.
+    const gone = [
+      ...emailSpellings(old).flatMap((s) => [`bridge:notify:digest:${s}`, `bridge:notify:off:${s}`, `bridge:account:teams:${s}`]),
+      ...(await scan(deps.redis, `bridge:notify:soon:${e}:*`)),
+      ...(await scan(deps.redis, `bridge:contrib:count:*:${e}:*`)),
+    ];
+    const res = await deps.redis.pipe([...gone.map((k) => ['DEL', k]), ...emailSpellings(old).map((s) => ['ZREM', 'bridge:notify:due', s])]);
+    out.forgot += res.filter((n) => Number(n) > 0).length;
+  }
+  return out;
 }
 
 /**
@@ -55,7 +115,8 @@ export interface SeedResult {
  */
 export async function seedDemoTeam(deps: { members: MemberStore; redis: Redis }, now: number, by = 'Bridge'): Promise<SeedResult> {
   const team = SAMPLE_REPO;
-  const out: SeedResult = { added: [], updated: [], kept: [], pm: 'kept' };
+  const moved = await migrateLegacyDemo(deps);
+  const out: SeedResult = { added: [], updated: [], kept: [], pm: 'kept', ...moved };
   const at = new Date(now).toISOString();
   for (const d of DEMO_MEMBERS) {
     const was = await deps.members.get(team, d.email);

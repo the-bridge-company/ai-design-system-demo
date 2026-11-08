@@ -32,11 +32,11 @@ const row = (n: number, author: string, over: Partial<ListRow> = {}): ListRow =>
 });
 
 const props = (over: Partial<BranchesListProps> = {}): BranchesListProps => ({
-  rows: [row(1, 'ann'), row(2, 'dana', { yourTurn: true }), row(3, 'leo@acme.design', { mine: true })],
+  rows: [row(1, 'ann'), row(2, 'dana', { yourTurn: true }), row(3, 'leo@acme.example', { mine: true })],
   closed: null,
   closedLimit: 20,
   loading: false,
-  viewer: 'leo@acme.design',
+  viewer: 'leo@acme.example',
   connected: false,
   admin: null,
   tokensRoot: 'packages/tokens/src',
@@ -146,7 +146,7 @@ describe('BranchesList tabs and filters', () => {
   it('filters by product: all products, then each product with something listed, by name', async () => {
     const user = userEvent.setup();
     const shop = { labels: [{ name: 'product: admin-app' }] };
-    const { container } = render(createElement(BranchesList, props({ products, rows: [row(1, 'ann', shop), row(2, 'dana', { yourTurn: true }), row(3, 'leo@acme.design', { mine: true })] })));
+    const { container } = render(createElement(BranchesList, props({ products, rows: [row(1, 'ann', shop), row(2, 'dana', { yourTurn: true }), row(3, 'leo@acme.example', { mine: true })] })));
     await user.click(screen.getAllByRole('combobox')[0]!);
     const options = screen.getAllByRole('option').map((o) => o.textContent);
     // Account app has nothing listed: left out.

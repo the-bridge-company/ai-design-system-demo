@@ -88,7 +88,7 @@ describe('canonicalEmail', () => {
   });
 
   it('other providers: lower case only, dots and plus kept', () => {
-    expect(canonicalEmail('First.Last+tag@Acme.Design')).toBe('first.last+tag@acme.design');
+    expect(canonicalEmail('First.Last+tag@Acme.Example')).toBe('first.last+tag@acme.example');
     expect(canonicalEmail('first.last@outlook.com')).toBe('first.last@outlook.com');
     expect(canonicalEmail('a.b@gmail.com.evil.io')).toBe('a.b@gmail.com.evil.io');
     expect(canonicalEmail('a.b@sub.gmail.com')).toBe('a.b@sub.gmail.com');
@@ -102,13 +102,13 @@ describe('canonicalEmail', () => {
 
   it('sameEmail, isGmail, emailSpellings', () => {
     expect(sameEmail(OLD, 'FlorianGouloubi+x@googlemail.com')).toBe(true);
-    expect(sameEmail('first.last@acme.design', 'firstlast@acme.design')).toBe(false);
+    expect(sameEmail('first.last@acme.example', 'firstlast@acme.example')).toBe(false);
     expect(sameEmail('', '')).toBe(false);
     expect(sameEmail(null, NEW)).toBe(false);
     expect(isGmail('a@googlemail.com')).toBe(true);
-    expect(isGmail('a@acme.design')).toBe(false);
+    expect(isGmail('a@acme.example')).toBe(false);
     expect(emailSpellings('Florian.Gouloubi@gmail.com')).toEqual([OLD, NEW]);
-    expect(emailSpellings('mia@acme.design')).toEqual(['mia@acme.design']);
+    expect(emailSpellings('mia@acme.example')).toEqual(['mia@acme.example']);
   });
 
   it('the scan pattern matches every spelling of the mailbox', () => {
@@ -142,11 +142,11 @@ describe('sign-in with either spelling', () => {
 
   it('other providers keep dots: two addresses, two accounts, nothing merged', async () => {
     const s = setup();
-    const a = await signIn(s, 'first.last@acme.design');
-    const b = await signIn(s, 'firstlast@acme.design');
+    const a = await signIn(s, 'first.last@acme.example');
+    const b = await signIn(s, 'firstlast@acme.example');
     expect(a.body.created && b.body.created).toBe(true);
-    expect((await getAccount(s.redis, 'first.last@acme.design'))!.id).not.toBe((await getAccount(s.redis, 'firstlast@acme.design'))!.id);
-    expect(await mergeEmailAccounts({ redis: s.redis, now: s.now }, 'first.last@acme.design')).toBe('not-gmail');
+    expect((await getAccount(s.redis, 'first.last@acme.example'))!.id).not.toBe((await getAccount(s.redis, 'firstlast@acme.example'))!.id);
+    expect(await mergeEmailAccounts({ redis: s.redis, now: s.now }, 'first.last@acme.example')).toBe('not-gmail');
   });
 });
 

@@ -42,7 +42,7 @@ import { cleanTitle, NEEDS_KINDS, type Notice, type NotifyKind } from './notify-
 import { digestEmail, instantEmail, unsubToken, type NotifyItem, type UnsubKind } from './notify-mail.js';
 import type { Redis, RedisArg } from './redis.js';
 import { getTeamNames } from './teams.js';
-import { teamDisplayName } from '../../src/lib/demo.js';
+import { isSampleTeam, teamDisplayName } from '../../src/lib/demo.js';
 import { STUDIO_ROOT, teamHref } from '../../src/lib/team-path.js';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ function linksFor(d: NotifyDeps, email: string, kind: UnsubKind, home: string): 
 export type Outcome =
   | { kind: NotifyKind; status: 'sent' }
   | { kind: NotifyKind; status: 'kept'; reason?: string }
-  | { kind: NotifyKind; status: 'skipped'; reason: 'unwatched' | 'not-library' | 'no-owner' | 'github' | 'not-member' | 'off' | 'repeat' | 'own' };
+  | { kind: NotifyKind; status: 'skipped'; reason: 'unwatched' | 'not-library' | 'no-owner' | 'github' | 'not-member' | 'off' | 'repeat' | 'own' | 'sample-team' };
 
 /** Who a notice is for: the first of its items Bridge keeps an author for, else the author of the exploration it links. */
 async function ownerOf(d: NotifyDeps, n: Notice): Promise<{ owner: string; item: number; meta: ItemMeta | null } | null> {
@@ -407,6 +407,11 @@ export async function deliverNotices(notices: readonly Notice[], d: NotifyDeps, 
       skip('unwatched');
       continue;
     }
+    // The sample team's people are not real (api/_lib/demo-members.ts): nothing about it is ever mailed or kept.
+    if (isSampleTeam(repoMeta.team)) {
+      skip('sample-team');
+      continue;
+    }
     if (n.scope === 'library' && repoMeta.kind !== 'team') {
       skip('not-library');
       continue;
@@ -525,6 +530,7 @@ export async function digestFor(d: NotifyDeps, email: string): Promise<{ items: 
     .map((r) => parse<NotifyItem>(r))
     .filter(isItem)
     .filter((i) => (NEEDS_KINDS.has(i.kind) ? prefs.needs !== 'off' : prefs.news !== 'off'))
+    .filter((i) => !isSampleTeam(i.teamRepo))
     .filter((i) => !seen.has(i.id) && Boolean(seen.add(i.id)))
     .slice(-DIGEST_MAX);
   return { items, raw, account };

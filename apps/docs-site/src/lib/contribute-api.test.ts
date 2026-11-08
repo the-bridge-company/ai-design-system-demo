@@ -142,7 +142,7 @@ const cookieOf = (r: Response) => (r.headers.get('set-cookie') ?? '').split(';')
  * A "Can edit" member joined (api/entry stores them, a version up on each join) and their session cookie, as
  * issueSession sets it.
  */
-async function join(s: ReturnType<typeof setup>, email = 'mia@acme.design', name = 'Mia Chen') {
+async function join(s: ReturnType<typeof setup>, email = 'mia@acme.example', name = 'Mia Chen') {
   const prev = await s.members.get(REPO, email);
   const member = { email, name, role: 'edit' as const, version: (prev?.version ?? 0) + 1, addedBy: 'dana', at: new Date(s.deps.now!()).toISOString() };
   await s.members.put(REPO, member);
@@ -152,7 +152,7 @@ async function join(s: ReturnType<typeof setup>, email = 'mia@acme.design', name
 const P = '/repos/acme/design';
 
 /** A "Can view" member joined by email and their session cookie: reads only. */
-async function joinViewer(s: ReturnType<typeof setup>, email = 'vic@acme.design', name = 'Vic Lund') {
+async function joinViewer(s: ReturnType<typeof setup>, email = 'vic@acme.example', name = 'Vic Lund') {
   const member = { email, name, role: 'view' as const, version: 1, addedBy: 'dana', at: new Date(s.deps.now!()).toISOString() };
   await s.members.put(REPO, member);
   return issueSession(member, REPO, SECRET, s.deps.now!()).split(';')[0]!;
@@ -163,7 +163,7 @@ describe('Can view: reads everything, writes nothing', () => {
     const s = setup();
     const cookie = await joinViewer(s);
     expect((await handleContribute(gh('GET', `${P}/pulls`, cookie), ENV, s.deps)).status).toBe(200);
-    expect((await (await handleContribute(status(cookie), ENV, s.deps)).json()).member).toMatchObject({ email: 'vic@acme.design', role: 'view' });
+    expect((await (await handleContribute(status(cookie), ENV, s.deps)).json()).member).toMatchObject({ email: 'vic@acme.example', role: 'view' });
   });
 
   it('every write through the proxy answers 403 view-only, and nothing reaches GitHub', async () => {
@@ -197,7 +197,7 @@ describe('Can view: reads everything, writes nothing', () => {
   it('made Can edit again, writes again (the role is read on every request)', async () => {
     const s = setup();
     const cookie = await joinViewer(s);
-    const m = (await s.members.get(REPO, 'vic@acme.design'))!;
+    const m = (await s.members.get(REPO, 'vic@acme.example'))!;
     await s.members.put(REPO, { ...m, role: 'edit' });
     expect((await handleContribute(gh('POST', `${P}/git/refs`, cookie, { ref: 'refs/heads/bridge/vic-1', sha: SHA }), ENV, s.deps)).status).toBe(201);
   });
@@ -229,12 +229,12 @@ describe('availability', () => {
 describe('session cookie and CSRF', () => {
   it('scopes the session cookie to the team and to /api/contribute', async () => {
     const s = setup();
-    const set = issueSession({ email: 'mia@acme.design', name: 'Mia Chen', role: 'edit', version: 1, addedBy: 'dana', at: '' }, REPO, SECRET, T0);
+    const set = issueSession({ email: 'mia@acme.example', name: 'Mia Chen', role: 'edit', version: 1, addedBy: 'dana', at: '' }, REPO, SECRET, T0);
     expect(set.startsWith(`${cookieName(REPO)}=v1.`)).toBe(true);
     expect(cookieName(REPO)).toBe(`bridge_contrib_${createHash('sha256').update(REPO).digest('hex').slice(0, 16)}`);
     for (const part of ['Path=/api/contribute', 'HttpOnly', 'Secure', 'SameSite=Lax', `Max-Age=${SESSION_TTL_MS / 1000}`]) expect(set).toContain(part);
     const cookie = await join(s);
-    expect(await (await handleContribute(status(cookie), ENV, s.deps)).json()).toEqual({ available: true, member: { email: 'mia@acme.design', name: 'Mia Chen', role: 'edit', ref: memberRef('mia@acme.design') }, reviewMode: 'one' });
+    expect(await (await handleContribute(status(cookie), ENV, s.deps)).json()).toEqual({ available: true, member: { email: 'mia@acme.example', name: 'Mia Chen', role: 'edit', ref: memberRef('mia@acme.example') }, reviewMode: 'one' });
   });
 
   it('needs the X-Bridge-Contribute header, JSON, and a page of this site when there is an Origin', async () => {
@@ -261,7 +261,7 @@ describe('sessions', () => {
     const s = setup();
     const cookie = await join(s);
     expect((await handleContribute(gh('GET', `${P}/pulls`, cookie), ENV, s.deps)).status).toBe(200);
-    await s.members.remove(REPO, 'mia@acme.design');
+    await s.members.remove(REPO, 'mia@acme.example');
     const r = await handleContribute(gh('GET', `${P}/pulls`, cookie), ENV, s.deps);
     expect(r.status).toBe(401);
     expect(r.headers.get('set-cookie')).toContain('Max-Age=0');
@@ -272,7 +272,7 @@ describe('sessions', () => {
     const s = setup();
     const old = await join(s);
     const fresh = await join(s);
-    expect((await s.members.get(REPO, 'mia@acme.design'))!.version).toBe(2);
+    expect((await s.members.get(REPO, 'mia@acme.example'))!.version).toBe(2);
     expect((await handleContribute(gh('GET', `${P}/pulls`, old), ENV, s.deps)).status).toBe(401);
     expect((await handleContribute(gh('GET', `${P}/pulls`, fresh), ENV, s.deps)).status).toBe(200);
   });
@@ -282,11 +282,11 @@ describe('sessions', () => {
     const cookie = await join(s);
     const [name, value] = cookie.split('=') as [string, string];
     const [v, claims, mac] = value.split('.') as [string, string, string];
-    const forged = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(claims, 'base64url').toString()), email: 'boss@acme.design' })).toString('base64url');
+    const forged = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(claims, 'base64url').toString()), email: 'boss@acme.example' })).toString('base64url');
     for (const bad of [`${name}=${v}.${forged}.${mac}`, `${name}=${v}.${claims}.${mac.slice(0, -2)}AA`, `${name}=garbage`]) {
       expect((await handleContribute(gh('GET', `${P}/pulls`, bad), ENV, s.deps)).status).toBe(401);
     }
-    const other = signSession({ repo: REPO, email: 'mia@acme.design', name: 'Mia', v: 1, exp: T0 + 1e9 }, 'z'.repeat(40));
+    const other = signSession({ repo: REPO, email: 'mia@acme.example', name: 'Mia', v: 1, exp: T0 + 1e9 }, 'z'.repeat(40));
     expect((await handleContribute(gh('GET', `${P}/pulls`, `${name}=${other}`), ENV, s.deps)).status).toBe(401);
     s.tick(SESSION_TTL_MS + 1);
     expect((await handleContribute(gh('GET', `${P}/pulls`, cookie), ENV, s.deps)).status).toBe(401);
@@ -297,7 +297,7 @@ describe('sessions', () => {
     const cookie = await join(s);
     const value = cookie.split('=')[1]!;
     // Under the other team's cookie name, the claims still name acme/design.
-    await s.members.put('acme/other', { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: '' });
+    await s.members.put('acme/other', { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: '' });
     const r = await handleContribute(gh('GET', '/repos/acme/other/pulls', `${cookieName('acme/other')}=${value}`, undefined, {}, 'acme/other'), ENV, s.deps);
     expect(r.status).toBe(401);
     // And with the right cookie, the path must stay in the session's repository.
@@ -315,7 +315,7 @@ describe('sessions', () => {
 describe('sign-in links', () => {
   it('answers ok for a non-member and sends nothing', async () => {
     const s = setup();
-    const r = await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'stranger@acme.design' }), ENV, s.deps);
+    const r = await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'stranger@acme.example' }), ENV, s.deps);
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ ok: true });
     expect(s.sent).toEqual([]);
@@ -324,21 +324,21 @@ describe('sign-in links', () => {
   it('emails a member a one-time link to Studio; verify sets the session, once, within 15 minutes', async () => {
     const s = setup();
     await join(s);
-    const r = await handleContribute(act({ action: 'sign-in', repo: 'Acme/design', email: ' MIA@acme.design ' }), ENV, s.deps);
+    const r = await handleContribute(act({ action: 'sign-in', repo: 'Acme/design', email: ' MIA@acme.example ' }), ENV, s.deps);
     expect(await r.json()).toEqual({ ok: true });
     expect(s.sent).toHaveLength(1);
-    expect(s.sent[0]!.to).toBe('mia@acme.design');
+    expect(s.sent[0]!.to).toBe('mia@acme.example');
     const token = /\/studio\/Acme\/design\/#contribute=([A-Za-z0-9_-]{43})/.exec(s.sent[0]!.text)![1]!;
     expect(s.sent[0]!.text).toContain(`${ORIGIN}/studio/Acme/design/#contribute=`);
     // Only the hash is stored.
     expect(s.redis.keys().some((k) => k.includes(token))).toBe(false);
     const v = await handleContribute(act({ action: 'verify', repo: REPO, token }), ENV, s.deps);
     expect(v.status).toBe(200);
-    expect(await v.json()).toEqual({ member: { email: 'mia@acme.design', name: 'Mia Chen', role: 'edit', ref: memberRef('mia@acme.design') } });
+    expect(await v.json()).toEqual({ member: { email: 'mia@acme.example', name: 'Mia Chen', role: 'edit', ref: memberRef('mia@acme.example') } });
     expect((await handleContribute(gh('GET', `${P}/pulls`, cookieOf(v)), ENV, s.deps)).status).toBe(200);
     expect((await handleContribute(act({ action: 'verify', repo: REPO, token }), ENV, s.deps)).status).toBe(410);
 
-    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, s.deps);
+    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, s.deps);
     const late = /#contribute=([A-Za-z0-9_-]+)/.exec(s.sent[1]!.text)![1]!;
     s.tick(SIGNIN_TTL_MS + 1000);
     expect((await handleContribute(act({ action: 'verify', repo: REPO, token: late }), ENV, s.deps)).status).toBe(410);
@@ -347,19 +347,19 @@ describe('sign-in links', () => {
   it('a link for one team does not open another, and a removed member cannot verify', async () => {
     const s = setup();
     await join(s);
-    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, s.deps);
+    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, s.deps);
     const token = /#contribute=([A-Za-z0-9_-]+)/.exec(s.sent[0]!.text)![1]!;
     expect((await handleContribute(act({ action: 'verify', repo: 'acme/other', token }), ENV, s.deps)).status).toBe(410);
-    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.design' }), ENV, s.deps);
+    await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'mia@acme.example' }), ENV, s.deps);
     const t2 = /#contribute=([A-Za-z0-9_-]+)/.exec(s.sent[1]!.text)![1]!;
-    await s.members.remove(REPO, 'mia@acme.design');
+    await s.members.remove(REPO, 'mia@acme.example');
     expect((await handleContribute(act({ action: 'verify', repo: REPO, token: t2 }), ENV, s.deps)).status).toBe(410);
   });
 
   it('caps links per email, member or not, with 429 and Retry-After; emails never stored in clear', async () => {
     const s = setup();
-    for (let i = 0; i < 3; i++) expect((await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'who@acme.design' }), ENV, s.deps)).status).toBe(200);
-    const r = await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'who@acme.design' }), ENV, s.deps);
+    for (let i = 0; i < 3; i++) expect((await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'who@acme.example' }), ENV, s.deps)).status).toBe(200);
+    const r = await handleContribute(act({ action: 'sign-in', repo: REPO, email: 'who@acme.example' }), ENV, s.deps);
     expect(r.status).toBe(429);
     expect((await r.json()).error).toBe('limit');
     expect(Number(r.headers.get('retry-after'))).toBeGreaterThan(0);
@@ -403,7 +403,7 @@ describe('proxy: what is allowed', () => {
     expect((await call('GET', `${P}/contents/tokens/a%20b.json?ref=main`)).r.status).toBe(200);
     expect((await call('GET', `${P}/compare/main...bridge/x`)).r.status).toBe(200);
     // A GET needs no CSRF header, and is not counted.
-    expect(await s.redis.cmd('GET', `bridge:contrib:count:${REPO}:mia@acme.design:2026-10-22`)).toBeNull();
+    expect(await s.redis.cmd('GET', `bridge:contrib:count:${REPO}:mia@acme.example:2026-10-22`)).toBeNull();
   });
 
   it('POST git/blobs and git/trees pass as they are', async () => {
@@ -418,15 +418,15 @@ describe('proxy: what is allowed', () => {
 
   it('POST git/commits: the member is the author (date kept), any committer dropped', async () => {
     const { call } = await ready();
-    const { r, sent } = await call('POST', `${P}/git/commits`, { message: 'm', tree: 't', parents: ['p'], author: { name: 'Boss', email: 'boss@acme.design', date: '2026-10-22T09:00:00Z' }, committer: { name: 'Boss', email: 'boss@acme.design' } });
+    const { r, sent } = await call('POST', `${P}/git/commits`, { message: 'm', tree: 't', parents: ['p'], author: { name: 'Boss', email: 'boss@acme.example', date: '2026-10-22T09:00:00Z' }, committer: { name: 'Boss', email: 'boss@acme.example' } });
     expect(r.status).toBe(201);
-    expect(sent!.body).toEqual({ message: 'm', tree: 't', parents: ['p'], author: { name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.design'), date: '2026-10-22T09:00:00Z' } });
+    expect(sent!.body).toEqual({ message: 'm', tree: 't', parents: ['p'], author: { name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.example'), date: '2026-10-22T09:00:00Z' } });
   });
 
   it('POST git/refs: a new branch, not the default, not existing; it becomes theirs', async () => {
     const { s, call, branch } = await ready();
     await branch('bridge/mia-1');
-    expect(await s.redis.cmd('GET', `bridge:contrib:branch:${REPO}:bridge/mia-1`)).toBe('mia@acme.design');
+    expect(await s.redis.cmd('GET', `bridge:contrib:branch:${REPO}:bridge/mia-1`)).toBe('mia@acme.example');
     for (const ref of ['refs/heads/main', 'refs/heads/MAIN', 'refs/heads/theirs', 'refs/heads/bridge/mia-1', 'refs/tags/v1', 'refs/heads/a..b', 'refs/heads/x.lock', 'main']) {
       expect((await call('POST', `${P}/git/refs`, { ref, sha: SHA })).r.status, ref).toBe(403);
     }
@@ -446,12 +446,12 @@ describe('proxy: what is allowed', () => {
   it('PUT and DELETE contents: on their branch only, with the member as author', async () => {
     const { call, branch } = await ready();
     await branch('bridge/mia-1');
-    const put = await call('PUT', `${P}/contents/design/tokens/color.tokens.json`, { message: 'm', content: 'e30=', sha: 'old', branch: 'bridge/mia-1', committer: { name: 'Boss', email: 'boss@acme.design' } });
+    const put = await call('PUT', `${P}/contents/design/tokens/color.tokens.json`, { message: 'm', content: 'e30=', sha: 'old', branch: 'bridge/mia-1', committer: { name: 'Boss', email: 'boss@acme.example' } });
     expect(put.r.status).toBe(200);
-    expect(put.sent!.body).toEqual({ message: 'm', content: 'e30=', sha: 'old', branch: 'bridge/mia-1', author: { name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.design') } });
+    expect(put.sent!.body).toEqual({ message: 'm', content: 'e30=', sha: 'old', branch: 'bridge/mia-1', author: { name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.example') } });
     const del = await call('DELETE', `${P}/contents/design/tokens/color.tokens.json`, { message: 'm', sha: 'old', branch: 'bridge/mia-1' });
     expect(del.r.status).toBe(200);
-    expect(del.sent!.body.author).toEqual({ name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.design') });
+    expect(del.sent!.body.author).toEqual({ name: 'Mia Chen', email: publicEmail(SECRET, REPO, 'mia@acme.example') });
     for (const b of [undefined, 'main', 'theirs']) {
       expect((await call('PUT', `${P}/contents/design/tokens/color.tokens.json`, { message: 'm', content: 'e30=', ...(b ? { branch: b } : {}) })).r.status, String(b)).toBe(403);
       expect((await call('DELETE', `${P}/contents/design/tokens/color.tokens.json`, { message: 'm', sha: 'old', ...(b ? { branch: b } : {}) })).r.status, String(b)).toBe(403);
@@ -465,7 +465,7 @@ describe('proxy: what is allowed', () => {
     const { r, sent } = await call('POST', `${P}/pulls`, { title: 'Ocean brand', head: 'acme:bridge/mia-1', base: 'main', body: 'Why', maintainer_can_modify: true, issue: 3 });
     expect(r.status).toBe(201);
     expect(sent!.body).toEqual({ title: 'Ocean brand', head: 'bridge/mia-1', base: 'main', body: 'Why\n\nRequested by Mia Chen through Bridge.' });
-    expect(await s.redis.cmd('GET', `bridge:contrib:issue:${REPO}:40`)).toBe('mia@acme.design');
+    expect(await s.redis.cmd('GET', `bridge:contrib:issue:${REPO}:40`)).toBe('mia@acme.example');
     expect((await call('POST', `${P}/pulls`, { title: 't', head: 'bridge/mia-2', base: 'bridge/mia-1' })).r.status).toBe(201);
     for (const b of [
       { head: 'evil:bridge/mia-1', base: 'main' },
@@ -486,9 +486,9 @@ describe('proxy: what is allowed', () => {
     const r = await mine(cookie);
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ branches: ['bridge/mia-1'], issues: [40], products: {} });
-    expect(await s.redis.cmd('SMEMBERS', `bridge:contrib:mine:${REPO}:mia@acme.design`)).toEqual(expect.arrayContaining(['b:bridge/mia-1', 'i:40']));
+    expect(await s.redis.cmd('SMEMBERS', `bridge:contrib:mine:${REPO}:mia@acme.example`)).toEqual(expect.arrayContaining(['b:bridge/mia-1', 'i:40']));
     // A branch that changed hands is no longer theirs.
-    await s.redis.cmd('SET', `bridge:contrib:branch:${REPO}:bridge/mia-1`, 'leo@acme.design');
+    await s.redis.cmd('SET', `bridge:contrib:branch:${REPO}:bridge/mia-1`, 'leo@acme.example');
     expect(await (await mine(cookie)).json()).toEqual({ branches: [], issues: [40], products: {} });
     expect((await mine('')).status).toBe(401);
   });
@@ -516,7 +516,7 @@ describe('proxy: what is allowed', () => {
     const { r, sent } = await call('POST', `${P}/issues`, { title: 'Add a chip', labels: ['request'], assignees: ['dana'] });
     expect(r.status).toBe(201);
     expect(sent!.body).toEqual({ title: 'Add a chip', labels: ['request'], body: 'Requested by Mia Chen through Bridge.' });
-    expect(await s.redis.cmd('GET', `bridge:contrib:issue:${REPO}:40`)).toBe('mia@acme.design');
+    expect(await s.redis.cmd('GET', `bridge:contrib:issue:${REPO}:40`)).toBe('mia@acme.example');
     expect((await call('PATCH', `${P}/issues/40`, { state: 'closed', labels: [] })).r.status).toBe(200);
     expect((await call('PATCH', `${P}/issues/40`, { assignees: ['dana'] })).r.status).toBe(403);
     expect((await call('PATCH', `${P}/issues/12`, { title: 'x' })).r.status).toBe(403);
@@ -657,10 +657,10 @@ async function readyAt(world: Partial<World> = {}) {
 describe('privacy on a public repository', () => {
   it('never publishes the work email: a stable .invalid address as author, the name alone in Requested by', async () => {
     const { call, branch } = await readyAt({ private: false });
-    const stand = publicEmail(SECRET, REPO, 'mia@acme.design');
+    const stand = publicEmail(SECRET, REPO, 'mia@acme.example');
     expect(stand).toMatch(/^[0-9a-f]{12}@contributors\.bridge\.invalid$/);
-    expect(publicEmail(SECRET, REPO, 'MIA@acme.design')).toBe(stand);
-    expect(publicEmail(SECRET, 'acme/other', 'mia@acme.design')).not.toBe(stand);
+    expect(publicEmail(SECRET, REPO, 'MIA@acme.example')).toBe(stand);
+    expect(publicEmail(SECRET, 'acme/other', 'mia@acme.example')).not.toBe(stand);
     const commit = await call('POST', `${P}/git/commits`, { message: 'm', tree: 't', parents: ['p'] });
     expect(commit.sent!.body.author).toEqual({ name: 'Mia Chen', email: stand });
     await branch('bridge/mia-1');
@@ -671,12 +671,12 @@ describe('privacy on a public repository', () => {
     const issue = await call('POST', `${P}/issues`, { title: 't' });
     expect(issue.sent!.body.body).toBe('Requested by Mia Chen through Bridge.');
     const all = JSON.stringify([commit, put, pr, issue].map((x) => x.sent!.body));
-    expect(all).not.toContain('mia@acme.design');
+    expect(all).not.toContain('mia@acme.example');
   });
 
   it('never publishes it on a private repository either', async () => {
     const { call } = await readyAt({ private: true });
-    expect((await call('POST', `${P}/git/commits`, { message: 'm', tree: 't', parents: [] })).sent!.body.author.email).toBe(publicEmail(SECRET, REPO, 'mia@acme.design'));
+    expect((await call('POST', `${P}/git/commits`, { message: 'm', tree: 't', parents: [] })).sent!.body.author.email).toBe(publicEmail(SECRET, REPO, 'mia@acme.example'));
     expect((await call('POST', `${P}/issues`, { title: 't' })).sent!.body.body).toBe('Requested by Mia Chen through Bridge.');
   });
 });
@@ -834,7 +834,7 @@ describe('GET ?members=1: the team for anyone on it', () => {
         if (u.pathname === '/repos/acme/design/collaborators') {
           expect(init.headers.Authorization).toBe('Bearer ghs_contrib');
           return res(200, [
-            { login: 'peterbono', avatar_url: 'https://avatars.githubusercontent.com/u/1', role_name: 'admin', permissions: { admin: true, push: true, pull: true }, email: 'leak@acme.design', site_admin: false },
+            { login: 'peterbono', avatar_url: 'https://avatars.githubusercontent.com/u/1', role_name: 'admin', permissions: { admin: true, push: true, pull: true }, email: 'leak@acme.example', site_admin: false },
           ]);
         }
         if (u.pathname === '/repos/acme/design' && init.headers.Authorization === 'Bearer gho_readerreaderreader01') return res(200, { permissions: { pull: true, push: false, admin: false } });
@@ -847,7 +847,7 @@ describe('GET ?members=1: the team for anyone on it', () => {
   it('lists GitHub people and email members by name to an email contributor, never another email', async () => {
     const s = setup();
     const cookie = await join(s);
-    await join(s, 'leo@acme.design', 'Leo Park');
+    await join(s, 'leo@acme.example', 'Leo Park');
     const r = await handleContribute(list({ cookie }), ENV, withPeople(s));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -856,7 +856,7 @@ describe('GET ?members=1: the team for anyone on it', () => {
     // Each with a reference to pick them as a product manager: a hash, never their email.
     for (const m of body.members) expect(m.ref).toMatch(/^[0-9a-f]{16}$/);
     expect(body.reviewMode).toBe('one');
-    expect(JSON.stringify(body)).not.toContain('@acme.design');
+    expect(JSON.stringify(body)).not.toContain('@acme.example');
   });
 
   it('lists them to a GitHub account that can read the repository, and refuses anyone else', async () => {

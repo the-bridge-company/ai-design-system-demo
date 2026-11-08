@@ -263,7 +263,7 @@ const EMAIL = /^[^\s@<>(),;:"[\]]+@[^\s@<>(),;:"[\]]+\.[A-Za-z]{2,}$/;
 /** A plausible work email (the server checks again). */
 export const isEmail = (s: string) => s.length <= 254 && EMAIL.test(s.trim());
 
-/** Emails pasted or typed at once ("ann@acme.design, leo@acme.design"), lower case, valid and new ones only. */
+/** Emails pasted or typed at once ("ann@acme.example, leo@acme.example"), lower case, valid and new ones only. */
 export function parseEmails(text: string, already: readonly string[] = []): string[] {
   const seen = new Set(already.map((e) => e.toLowerCase()));
   const out: string[] = [];

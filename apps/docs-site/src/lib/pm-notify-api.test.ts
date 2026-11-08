@@ -21,9 +21,9 @@ const TEAM = 'acme/design';
 const CODE = 'acme/shop';
 const COPY = 'acme/shop-design';
 const ENV = { LIBRARY_SESSION_SECRET: SECRET, GITHUB_WEBHOOK_SECRET: HOOK_SECRET };
-const MIA = 'mia@acme.design';
-const DINO = 'dino@acme.design';
-const FLO = 'flo@acme.design';
+const MIA = 'mia@acme.example';
+const DINO = 'dino@acme.example';
+const FLO = 'flo@acme.example';
 
 function setup(o: { pm?: boolean } = {}) {
   clearReadMemory();

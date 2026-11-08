@@ -84,6 +84,7 @@ import {
 import { meteredFromEnv } from '../_lib/github-quota.js';
 import { redisRest, type Redis } from '../_lib/redis.js';
 import { canonicalEmail } from '../_lib/canonical-email.js';
+import { isSampleTeam } from '../../src/lib/demo.js';
 import { cookieAttrs as attrsFor, readCookie, signClaims, verifyClaims } from '../_lib/session.js';
 
 export { appJwt } from '../_lib/github-app.js';
@@ -211,7 +212,7 @@ const STORAGE_DOWN = 'Bridge could not reach its storage. Try again in a minute.
 const APP_MISSING = 'Bridge cannot read this library yet. An admin of the repository gives the Bridge app access to it.';
 export const NOT_PUBLISHED = 'This library is not published yet. Its design system team publishes it with the Bridge snapshot workflow.';
 
-/** "This library is open to @acme.design emails. Ask your design system team for access." */
+/** "This library is open to @acme.example emails. Ask your design system team for access." */
 export function wrongDomainWords(domains: readonly string[]): string {
   const list = domains.map((d) => `@${d}`);
   const names = list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} or ${list[list.length - 1]}`;
@@ -235,7 +236,7 @@ const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 // ---------------------------------------------------------------------------------------------------------------
 // Domains
 
-/** A domain as an admin may type it ("@Acme.design ") made plain ("acme.design"), or null when it is not one. */
+/** A domain as an admin may type it ("@Acme.example ") made plain ("acme.example"), or null when it is not one. */
 export function normalizeDomain(raw: string): string | null {
   const d = raw.trim().toLowerCase().replace(/^@/, '');
   return DOMAIN.test(d) ? d : null;
@@ -243,23 +244,23 @@ export function normalizeDomain(raw: string): string | null {
 
 /** The domains a setting keeps: normalized, unique, at most MAX_DOMAINS, no consumer provider. Throws a sentence. */
 export function parseDomains(v: unknown): string[] {
-  if (!Array.isArray(v)) throw new HttpError(400, 'bad_request', 'Add your company email domain, like acme.design.');
+  if (!Array.isArray(v)) throw new HttpError(400, 'bad_request', 'Add your company email domain, like acme.example.');
   const out: string[] = [];
   for (const raw of v) {
     if (typeof raw !== 'string' || !raw.trim()) continue;
     const d = normalizeDomain(raw);
-    if (!d) throw new HttpError(400, 'bad_domain', `${raw.trim().slice(0, 80)} is not an email domain. Write it like acme.design.`);
+    if (!d) throw new HttpError(400, 'bad_domain', `${raw.trim().slice(0, 80)} is not an email domain. Write it like acme.example.`);
     if (PUBLIC_EMAIL_DOMAINS.includes(d)) throw new HttpError(400, 'public_domain', `Anyone can get an email at ${d}. Pick your company domain, or choose Anyone with the link.`);
     if (!out.includes(d)) out.push(d);
   }
-  if (!out.length) throw new HttpError(400, 'bad_request', 'Add your company email domain, like acme.design.');
+  if (!out.length) throw new HttpError(400, 'bad_request', 'Add your company email domain, like acme.example.');
   if (out.length > MAX_DOMAINS) throw new HttpError(400, 'bad_request', `Add at most ${MAX_DOMAINS} domains.`);
   return out;
 }
 
 /**
  * The domain of `email` when it is one of `domains`, else null. Exact match on the part after the @, case-insensitive:
- * a subdomain (eng.acme.design), a lookalike (acme.design.evil.com) or a second @ never match.
+ * a subdomain (eng.acme.example), a lookalike (acme.example.evil.com) or a second @ never match.
  */
 export function emailDomainIn(email: unknown, domains: readonly string[]): string | null {
   if (typeof email !== 'string' || email.length > 254) return null;
@@ -643,6 +644,8 @@ async function onPost(req: Request, env: LibraryEnv, deps: LibraryDeps): Promise
       const email = (body.email as string).trim().toLowerCase();
       const domain = emailDomainIn(email, setting.domains);
       if (!domain) return fail(403, 'domain', wrongDomainWords(setting.domains), { domains: setting.domains });
+      // The sample team mails nobody (api/_lib/demo-members.ts): no link is made, none is sent.
+      if (isSampleTeam(full)) return json(200, { sent: true });
       // Counted per mailbox: two spellings of one Gmail address share one cap.
       const release = await reserve(ctx, { email: canonicalEmail(email), ip: clientIp(req), team: full, site: 'all' });
       const token = b64url(Buffer.from(ctx.random(32)));

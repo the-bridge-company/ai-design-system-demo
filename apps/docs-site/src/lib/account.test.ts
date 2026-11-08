@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ACCOUNT_WORDS, accountErrorText, accountName, codeDigits, defaultNext, needsGitHub, parseAccount, readSignInQuery, roleWord, safeNext, signInHref, type Account } from './account';
 
-const acct = (over: Partial<Account> = {}): Account => ({ email: 'leo@acme.design', name: 'Leo', github: null, teams: [], ...over });
+const acct = (over: Partial<Account> = {}): Account => ({ email: 'leo@acme.example', name: 'Leo', github: null, teams: [], ...over });
 
 describe('accounts, rules and words', () => {
   it('reads an account from the server and drops what is not one', () => {
@@ -9,13 +9,13 @@ describe('accounts, rules and words', () => {
     expect(parseAccount({ name: 'x' })).toBeNull();
     expect(
       parseAccount({
-        email: 'leo@acme.design',
+        email: 'leo@acme.example',
         name: '',
         github: { login: 'leo', id: 7 },
         teams: [{ repo: 'acme/ds', name: 'Acme', role: 'admin', via: 'github' }, { repo: 'nope' }, null],
         secret: 'x',
       }),
-    ).toEqual({ email: 'leo@acme.design', name: null, nameSet: false, github: { login: 'leo', id: 7 }, aiTools: null, teams: [{ repo: 'acme/ds', name: 'Acme', role: 'admin', via: 'github' }] });
+    ).toEqual({ email: 'leo@acme.example', name: null, nameSet: false, github: { login: 'leo', id: 7 }, aiTools: null, teams: [{ repo: 'acme/ds', name: 'Acme', role: 'admin', via: 'github' }] });
   });
 
   it('only goes on to a same-site page, never back to the sign-in screen or the GitHub callback', () => {

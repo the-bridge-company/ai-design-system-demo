@@ -18,9 +18,26 @@ export interface EmailSender {
   send(msg: EmailMessage): Promise<void>;
 }
 
+/** Domains reserved for documentation and tests (RFC 2606, RFC 6761): nobody reads mail there. */
+const RESERVED_TLD = /\.(example|test|invalid|localhost)$/;
+const RESERVED_DOMAIN = /(^|\.)example\.(com|org|net)$/;
+
+/**
+ * Whether an address is one Bridge never mails: no domain, or a reserved one (the sample team's people are
+ * name@acme.example, fixtures name@example.com, stand-ins name@contributors.bridge.invalid). Both providers check it
+ * before anything leaves, so a demo or test address can never reach a stranger whatever the caller.
+ */
+export function neverMailed(to: string): boolean {
+  const at = to.trim().toLowerCase().lastIndexOf('@');
+  const domain = at < 0 ? '' : to.trim().toLowerCase().slice(at + 1).replace(/\.$/, '');
+  return !domain || !domain.includes('.') || RESERVED_TLD.test(domain) || RESERVED_DOMAIN.test(domain) || domain === 'localhost';
+}
+
 export function resendSender(apiKey: string, from: string, f: FetchLike): EmailSender {
   return {
     async send(msg) {
+      // Dropped without a word: to the caller it went, so nothing tries it again.
+      if (neverMailed(msg.to)) return;
       let res: Response;
       try {
         res = await f('https://api.resend.com/emails', {
@@ -52,6 +69,7 @@ export function brevoSender(apiKey: string, from: string, f: FetchLike): EmailSe
   const sender = parseSender(from);
   return {
     async send(msg) {
+      if (neverMailed(msg.to)) return;
       if (!sender) throw new Error('the notification sender address is not valid');
       let res: Response;
       try {

@@ -230,7 +230,7 @@ describe('a designer signed in with GitHub, through the proxy', () => {
     const { ownedWorkFor } = await import('../../api/contribute/index');
     expect((await call(s, DINA, 'POST', `${C}/git/refs`, { ref: 'refs/heads/explore/dina', sha: NOTE })).status).toBe(201);
     expect(await ownedWorkFor({ token: DINA }, TEAM, ENV, s.deps)).toEqual([{ repo: 'acme/shop-design', branch: 'explore/dina' }]);
-    expect(await ownedWorkFor({ email: 'nobody@acme.design' }, TEAM, ENV, s.deps)).toEqual([]);
+    expect(await ownedWorkFor({ email: 'nobody@acme.example' }, TEAM, ENV, s.deps)).toEqual([]);
     expect(await ownedWorkFor({ token: 'ghu_reader_token_eeeeeeeeeee' }, TEAM, ENV, s.deps)).toBeNull();
   });
 });

@@ -6,7 +6,7 @@ const s = vi.hoisted(() => ({ github: false, contributor: false, account: null a
 
 vi.mock('./github-session', () => ({
   signedInWithGitHub: () => s.github,
-  currentContributor: () => (s.contributor ? { email: 'ann@acme.design' } : null),
+  currentContributor: () => (s.contributor ? { email: 'ann@acme.example' } : null),
   getToken: () => (s.github ? 'ghu_test' : null),
   noteWrite: () => undefined,
 }));
@@ -38,7 +38,7 @@ describe('connector views for a visitor', () => {
     s.contributor = true;
     await listFixSessions('acme/ds');
     s.contributor = false;
-    s.account = { email: 'ann@acme.design' };
+    s.account = { email: 'ann@acme.example' };
     await listConnections('acme/ds');
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });

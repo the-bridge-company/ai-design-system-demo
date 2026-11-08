@@ -1,13 +1,31 @@
 # Hosted Bridge
 
-One Bridge site serves any team's design system repository at `/studio/<owner>/<repo>/`. Joining a team means
-opening that link and signing in with GitHub: GitHub repository permissions decide what each person can do, and roles
-stay in the repository's `bridge.config.json`. Bridge keeps no accounts. Its one store holds pending invites by
-email (see "Invites by email" below), each team's Library access setting and short-lived Library sign-in links (see
-"Library access" below), and nothing else.
+One Bridge site serves any team's design system repository at `/studio/<owner>/<repo>/`. People join a team in one of
+two ways. With GitHub, the repository's permissions decide what they can do. By email, an admin adds them with a
+role, and Bridge acts for them through its GitHub App (see "Email contributors" below). Team rules stay in the
+repository's `bridge.config.json`.
 
-This page grows with the hosted mode. It covers the snapshot a team can publish for it, the team's hosted Library,
-invites by email, and who reads a team's Library without a GitHub account.
+**What Bridge keeps, and what it never keeps.** Bridge never copies a team's code, tokens or docs: Studio and the
+Library read them from GitHub, live or from the team's own snapshot branch. Bridge's store (Upstash Redis, one region
+per environment, plus a private Vercel Blob store) holds only:
+
+- **People.** Bridge accounts (an email address, the name given, and the GitHub login when one is linked). For each
+  team: its email members (address, name, role, design lead flag, who added them), pending invites and join requests.
+- **Work done through Bridge.** Which member owns each branch and request Bridge opened for them, so it can name them
+  and let only them change it.
+- **Settings.** Each team's Library access setting, its product manager per product, and notification choices
+  (opt-outs, the pending daily summary).
+- **Short-lived records.** Sign-in links and codes, sessions, daily caps and sign-in counts, which expire on their own.
+- **Preview captures.** For a private design copy, a screenshot of each exploration's preview, so its card shows the
+  screen. The image sits in the private Blob store, its small index in Redis. A capture shows whatever the preview
+  renders, so a team that previews real data should know these screenshots exist (see `api/_lib/private-shots.ts`).
+  Public repositories keep their captures in their own `bridge-preview-shots` branch instead.
+
+- **Claude connector grants.** When someone connects Bridge inside Claude, the grant (team, who, dates) and their
+  GitHub tokens, sealed at rest and never sent to any client, kept 90 days after last use (see "Bridge inside Claude").
+
+The sections below say, for each feature, what it keeps and for how long. Outside the Claude connector, the GitHub
+token of a person signed in with GitHub stays in their browser.
 
 ## The snapshot: the `bridge-data` branch
 

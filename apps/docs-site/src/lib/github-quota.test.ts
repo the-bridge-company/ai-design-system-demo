@@ -86,26 +86,30 @@ describe('recording per installation', () => {
     let t = T0;
     const { redis, sent, raw } = counted(() => t);
     const m = quotaMeter(redis, { now: () => t, log: { warn: () => {} } });
-    await m.observe(who, limited({ remaining: 4000 }));
+    await m.observe(who, limited({ remaining: 3950 }));
     expect(sent.map((c) => c[0])).toEqual(['SET', 'SET']);
-    expect(JSON.parse(String(await raw.cmd('GET', quotaKey(42, 'core'))))).toMatchObject({ limit: 5000, remaining: 4000, used: 1000, reset: RESET });
+    expect(JSON.parse(String(await raw.cmd('GET', quotaKey(42, 'core'))))).toMatchObject({ limit: 5000, remaining: 3950, used: 1050, reset: RESET });
     expect(await raw.cmd('GET', quotaRepoKey('Acme/Design'))).toBe('42');
     sent.length = 0;
     // Unchanged values: nothing. Changed within the window: nothing either.
-    await m.observe(who, limited({ remaining: 4000 }));
+    await m.observe(who, limited({ remaining: 3950 }));
     t += 1000;
-    await m.observe(who, limited({ remaining: 3990 }));
+    await m.observe(who, limited({ remaining: 3940 }));
     expect(sent).toEqual([]);
     // Past the window and changed: one write.
     t += THROTTLE_MS;
-    await m.observe(who, limited({ remaining: 3980 }));
+    await m.observe(who, limited({ remaining: 3930 }));
     expect(sent).toHaveLength(1);
-    expect(JSON.parse(String(await raw.cmd('GET', quotaKey(42, 'core')))).remaining).toBe(3980);
+    expect(JSON.parse(String(await raw.cmd('GET', quotaKey(42, 'core')))).remaining).toBe(3930);
     sent.length = 0;
     // Past the window but unchanged: nothing.
     t += THROTTLE_MS;
-    await m.observe(who, limited({ remaining: 3980 }));
+    await m.observe(who, limited({ remaining: 3930 }));
     expect(sent).toEqual([]);
+    // Within the window, but a tenth of the limit went (from 78% left to 69%): one write, Settings stays close.
+    t += 1000;
+    await m.observe(who, limited({ remaining: 3450 }));
+    expect(sent).toHaveLength(1);
   });
 
   it('writes at once when the window resets or the installation turns low, and keeps resources apart', async () => {

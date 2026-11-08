@@ -15,6 +15,11 @@ on:
         description: Capture every open exploration again, even at a head already captured
         type: boolean
         default: false
+      migrate:
+        description: 'Once: move the screenshots kept in Redis to the Blob store (prints what it moves and frees)'
+        type: choice
+        default: 'no'
+        options: ['no', 'dry-run', 'yes']
 
 concurrency:
   group: private-shots
@@ -42,7 +47,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Move the screenshots kept in Redis to the Blob store
+        if: inputs.migrate == 'dry-run' || inputs.migrate == 'yes'
+        env:
+          MIGRATE: ${{ inputs.migrate }}
+        run: node scripts/private-shots.mjs --migrate $([ "$MIGRATE" = "dry-run" ] && echo --dry-run) | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Install the capture dependencies
+        if: inputs.migrate != 'dry-run' && inputs.migrate != 'yes'
         run: |
           mkdir -p "$RUNNER_TEMP/deps"
           cd "$RUNNER_TEMP/deps"
@@ -50,6 +62,7 @@ jobs:
           npm install --no-audit --no-fund --silent @bridge-ds/core@latest playwright-core@1.63.0
 
       - name: Capture
+        if: inputs.migrate != 'dry-run' && inputs.migrate != 'yes'
         env:
           BRIDGE_DEPS: ${{ runner.temp }}/deps
           BRIDGE_CHROME_CHANNEL: chrome

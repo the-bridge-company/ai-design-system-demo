@@ -29,7 +29,7 @@ const sections = [
 
 const RUNS = [
   { piece: 'Bridge Studio pages', where: 'Static pages on Vercel’s global network, run in the person’s browser', talks: 'GitHub’s API directly, with the person’s own GitHub sign-in; Bridge’s functions' },
-  { piece: 'Bridge functions (/api, /mcp, /oauth)', where: 'Vercel Functions in Frankfurt, Germany', talks: 'Upstash Redis (records), GitHub, Resend (sign-in and invite emails), Brevo (work notification emails), Vercel Blob (daily backup)' },
+  { piece: 'Bridge functions (/api, /mcp, /oauth)', where: 'Vercel Functions in Frankfurt, Germany', talks: 'Upstash Redis (records), GitHub, Resend (sign-in and invite emails), Brevo (work notification emails), Vercel Blob (daily backup, screenshots of private explorations)' },
   { piece: 'Figma plugin', where: 'Figma desktop, on the designer’s computer', talks: 'api.github.com and bridge.floriangouloubi.com only' },
   { piece: 'Connector for your AI assistant', where: 'A Vercel Function at /mcp', talks: 'GitHub, as the person who connected it; answers your assistant' },
   { piece: 'CLI and local MCP server', where: 'Your own machine, from npm', talks: 'GitHub with a token you pass, or files on disk. No Bridge server' },
@@ -53,13 +53,14 @@ const STORED = [
   { what: 'Email sign-in links for Library readers and email members', kept: '15 minutes, once', how: 'Only its SHA-256' },
   { what: 'Which branches and issues an email member made through Bridge', kept: '1 year', how: 'Record in Redis' },
   { what: 'Work notifications for an email member: what happened (kind, title, who did it, team, link), their email choices and time zone', kept: '30 days, or until the daily summary sends them; choices and time zone with the account', how: 'Record in Redis; names and titles, never a comment; the unsubscribe link is sealed (AES-256-GCM), never the address in clear' },
-  { what: 'Short-lived copies of GitHub reads for team pages', kept: '24 hours for most answers, only to ask GitHub whether they changed (shown without asking GitHub for 30 seconds, 10 minutes while GitHub’s change notices arrive, and for 20 minutes at most while GitHub is busy); 24 hours for public names and pictures and for answers that never change, 7 days at most for file contents', how: 'Cache in Redis' },
+  { what: 'Short-lived copies of GitHub reads for team pages', kept: '24 hours for most answers, only to ask GitHub whether they changed (shown without asking GitHub for 30 seconds, 10 minutes while GitHub’s change notices arrive, and for 20 minutes at most while GitHub is busy); 24 hours for public names and pictures, for answers that never change and for file contents', how: 'Cache in Redis' },
   { what: 'The Bridge GitHub App’s read-only token for a repository, shared by Bridge’s functions', kept: '50 minutes at most (GitHub ends it after an hour)', how: 'Encrypted (AES-256-GCM)' },
   { what: 'AI connector connection: team repository, app name, GitHub login, display name, dates, the person’s GitHub tokens', kept: '90 days after last use', how: 'GitHub tokens encrypted (AES-256-GCM); the rest as a record' },
   { what: 'AI connector tokens Bridge issues to the assistant', kept: '1 hour (access), 30 days (refresh, single use), 2 minutes (authorization code)', how: 'Only their SHA-256' },
   { what: 'Figma plugin sign-in hand-off: team and GitHub access token', kept: '5 minutes at most, removed when the plugin collects it', how: 'Code and poll secret: only their SHA-256. The token: encrypted (AES-256-GCM)' },
   { what: 'Fix session: the steps the team’s AI took on one component', kept: '7 days after the last step', how: 'Names, never emails' },
   { what: 'Daily backup of accounts, members, invites and team records', kept: '30 backups', how: 'Private Vercel Blob store' },
+  { what: 'Screenshots of the explorations of private products, shown to the team’s readers only', kept: '90 days after the capture, the image replaced by each new one', how: 'Private Vercel Blob store; Redis keeps only when and of which commit' },
 ];
 ---
 
@@ -92,7 +93,7 @@ const STORED = [
     <DevDetail id="what-dev" client:visible>
       <ul>
         <li>Public addresses and the daily backup job: <Link href={src('apps/docs-site/vercel.json')}><code>apps/docs-site/vercel.json</code></Link> (rewrites of <code>/mcp</code>, <code>/oauth/*</code> and <code>/.well-known/*</code> to <code>api/mcp</code>; crons on <code>/api/account?export=1</code> and <code>/api/account?digest=1</code>).</li>
-        <li>Storage: Upstash Redis over its REST API, <Link href={src('apps/docs-site/api/_lib/redis.ts')}><code>api/_lib/redis.ts</code></Link>. Email: Resend for access emails, Brevo for work notifications, both in <Link href={src('apps/docs-site/api/_lib/email.ts')}><code>api/_lib/email.ts</code></Link>; who gets a notification and when: <Link href={src('apps/docs-site/api/_lib/notify.ts')}><code>api/_lib/notify.ts</code></Link>. Backup: Vercel Blob with <code>access: 'private'</code>, <Link href={src('apps/docs-site/api/account/index.ts')}><code>api/account/index.ts</code></Link>.</li>
+        <li>Storage: Upstash Redis over its REST API, <Link href={src('apps/docs-site/api/_lib/redis.ts')}><code>api/_lib/redis.ts</code></Link>. Email: Resend for access emails, Brevo for work notifications, both in <Link href={src('apps/docs-site/api/_lib/email.ts')}><code>api/_lib/email.ts</code></Link>; who gets a notification and when: <Link href={src('apps/docs-site/api/_lib/notify.ts')}><code>api/_lib/notify.ts</code></Link>. Backup: Vercel Blob with <code>access: 'private'</code>, <Link href={src('apps/docs-site/api/account/index.ts')}><code>api/account/index.ts</code></Link>; screenshots of private explorations in the same private store, <Link href={src('apps/docs-site/api/_lib/private-shots.ts')}><code>api/_lib/private-shots.ts</code></Link>.</li>
         <li>Regions: functions run in <code>fra1</code> (Frankfurt), set by <code>regions</code> in <code>apps/docs-site/vercel.json</code>. The Upstash database’s primary region is Frankfurt, with no read copies elsewhere. The Vercel Blob backup store is in Paris (<code>cdg1</code>). These last two are settings of the stores, not of the code.</li>
         <li>CLI tokens: <Link href={src('packages/cli/src/auth.ts')}><code>packages/cli/src/auth.ts</code></Link>. A write only uses a token passed on purpose (<code>GITHUB_TOKEN</code>, <code>--token</code>, or <code>--use-gh-auth</code>).</li>
       </ul>
@@ -101,7 +102,7 @@ const STORED = [
 
   <section aria-labelledby="stored">
     <h2 id="stored">What Bridge stores</h2>
-    <p>Bridge keeps records about people and teams, not your design system. Everything below lives in one Upstash Redis database, except the session cookie (in the browser) and the backup (Vercel Blob). Bridge encrypts the GitHub tokens it keeps (for the AI connector and the plugin hand-off). Other records are not encrypted by Bridge itself, beyond what the storage provider does.</p>
+    <p>Bridge keeps records about people and teams, not your design system. Everything below lives in one Upstash Redis database, except the session cookie (in the browser), and the backup and the screenshots of private explorations (Vercel Blob). Bridge encrypts the GitHub tokens it keeps (for the AI connector and the plugin hand-off). Other records are not encrypted by Bridge itself, beyond what the storage provider does.</p>
     <Table caption="Records Bridge keeps" narrowLayout="stack" className="dc-table">
       <TableHeader>
         <TableRow>
@@ -146,7 +147,7 @@ const STORED = [
       <ul>
         <li>Token swap: <Link href={src('apps/docs-site/api/github/token.ts')}><code>api/github/token.ts</code></Link> (same-origin POST only, <code>Cache-Control: no-store</code>). Browser storage key <code>bridge.github.token.direct</code>: <Link href={src('apps/docs-site/src/scripts/github-session.ts')}><code>src/scripts/github-session.ts</code></Link>.</li>
         <li>Plugin storage: <code>figma.clientStorage</code> in <Link href={src('apps/figma-plugin/src/main/github-token.ts')}><code>apps/figma-plugin/src/main/github-token.ts</code></Link>.</li>
-        <li>Logs: <Link href={src('apps/docs-site/api/csp-report/index.ts')}><code>api/csp-report/index.ts</code></Link> logs Content-Security-Policy reports; <code>onExport</code> in <code>api/account/index.ts</code> warns when <code>BLOB_READ_WRITE_TOKEN</code> is missing. No other <code>console</code> call in <code>apps/docs-site/api</code>.</li>
+        <li>Logs: <Link href={src('apps/docs-site/api/csp-report/index.ts')}><code>api/csp-report/index.ts</code></Link> logs Content-Security-Policy reports; <code>onExport</code> in <code>api/account/index.ts</code> warns when <code>BLOB_READ_WRITE_TOKEN</code> is missing; <code>redisRest</code> in <code>api/_lib/redis.ts</code> logs why a storage call failed (Upstash’s error and the command names, never the token, keys or values). No other <code>console</code> call in <code>apps/docs-site/api</code>.</li>
       </ul>
     </DevDetail>
   </section>
@@ -318,9 +319,9 @@ const STORED = [
       <li><strong>Delete an account.</strong> In Studio, the menu with your name, Account settings, Delete my account. It removes the account, its memberships, join requests and sessions at once, and ends every AI connection the person made, with the GitHub tokens kept for them. Changes the person sent stay in the team’s history, signed “A former member”. Backups age out within 30 days.</li>
       <li><strong>Delete a team.</strong> A team made in Bridge: an admin opens Settings, Danger zone, Delete this team, and types the team’s name to confirm. Everyone on it loses access at once; its members, invites, requests to join, AI connections, name and settings go from Bridge’s storage at once.</li>
       <li><strong>Disconnect a team from Bridge.</strong> A team connected to a repository: an admin opens Settings, Danger zone, Disconnect this team, and types the team’s name. Bridge forgets the same things as for a deleted team. The repository, its history and its settings stay on GitHub: Bridge never changes them. People with access to the repository on GitHub can still open it in Bridge until a repository admin uninstalls the Bridge apps (see above).</li>
-      <li><strong>Remove your design system.</strong> Nothing to delete on Bridge’s side: it lives in your repository. Short-lived copies expire on their own within 7 days.</li>
+      <li><strong>Remove your design system.</strong> Nothing to delete on Bridge’s side: it lives in your repository. Short-lived copies expire on their own within 24 hours.</li>
     </ul>
-    <p>What deleting or disconnecting a team leaves: copies of what Bridge read from GitHub expire on their own within 7 days, Claude’s work in progress on a component within 7 days, notices already in people’s daily summaries within 30 days, and backups within 30 days.</p>
+    <p>What deleting or disconnecting a team leaves: copies of what Bridge read from GitHub expire on their own within 24 hours, Claude’s work in progress on a component within 7 days, notices already in people’s daily summaries within 30 days, and backups within 30 days.</p>
     <DevDetail id="offboarding-dev" client:visible>
       <ul>
         <li>Account deletion: <code>onDelete</code> in <Link href={src('apps/docs-site/api/account/index.ts')}><code>api/account/index.ts</code></Link> and <Link href={src('apps/docs-site/api/_lib/former-member.ts')}><code>api/_lib/former-member.ts</code></Link>. It ends the person’s connections first: <code>revokeAccountGrants</code> in <code>api/_lib/oauth.ts</code>.</li>

@@ -4,7 +4,7 @@ import { generateKeyPairSync, createSign } from 'node:crypto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { memoryRedis } from '../../api/_lib/redis';
 import { watchWrites } from '../../api/_lib/notify';
-import { clearJwks, fileHints, putShot, shotKeyOf, shotMeta, shotsTodo, workflowClaims, AUDIENCE, ISSUER, SHOTS_REPOSITORY, type ShotsCtx } from '../../api/_lib/private-shots';
+import { clearJwks, clearShotMemory, fileHints, memoryShotStore, migrateShots, putShot, shotImage, shotKeyOf, shotMeta, shotPathOf, shotsTodo, workflowClaims, AUDIENCE, ISSUER, KEEP_S, SHOTS_PREFIX, SHOTS_REPOSITORY, type ShotsCtx } from '../../api/_lib/private-shots';
 import { handleContribute, type ContribDeps } from '../../api/contribute/index';
 import { clearReadMemory } from '../../api/_lib/team-read';
 
@@ -36,13 +36,15 @@ function world() {
     if (u.pathname === `/repos/${TEAM}`) return Response.json({ private: false });
     return Response.json({ message: 'Not Found' }, { status: 404 });
   };
-  const ctx: ShotsCtx = { f, now: () => T0, redis, token: async () => 'ghs_x' };
-  return { redis, f, ctx };
+  const store = memoryShotStore();
+  const ctx: ShotsCtx = { f, now: () => T0, redis, store, token: async () => 'ghs_x' };
+  return { redis, f, ctx, store };
 }
 
 beforeEach(() => {
   clearJwks();
   clearReadMemory();
+  clearShotMemory();
 });
 
 describe('private shots: who sends them', () => {
@@ -90,7 +92,7 @@ describe('private shots: what to capture and what is kept', () => {
 
 describe('private shots: through api/contribute', () => {
   const ENV = { LIBRARY_SESSION_SECRET: 's'.repeat(40) };
-  const deps = (w: ReturnType<typeof world>): ContribDeps => ({ fetch: w.f, now: () => T0, redis: w.redis, app: { installationToken: async () => 'ghs_x' } });
+  const deps = (w: ReturnType<typeof world>): ContribDeps => ({ fetch: w.f, now: () => T0, redis: w.redis, shots: w.store, app: { installationToken: async () => 'ghs_x' } });
 
   it('the workflow needs its OIDC token; a demo visitor reads the capture of a product listed by the team, nothing else', async () => {
     const w = world();
@@ -109,6 +111,94 @@ describe('private shots: through api/contribute', () => {
     // A repository the team does not list, and a team that is not a demo for a visitor.
     expect((await handleContribute(req(`repo=${TEAM}&shot=someone/else&pr=1&meta=1`), ENV, deps(w))).status).toBe(403);
     expect((await handleContribute(req(`repo=acme/design&shot=${COPY}&pr=1&meta=1`), ENV, deps(w))).status).toBe(401);
+  });
+});
+
+describe('private shots: images in the Blob store, only an index in Redis', () => {
+  const bytes = (b64: string) => new Uint8Array(Buffer.from(b64, 'base64'));
+  const legacy = (image: string) => JSON.stringify({ sha: SHA, capturedAt: new Date(T0 - 1000).toISOString(), url: 'https://x.pages.dev/', image });
+
+  it('keeps the image in the store and a small index in Redis; a new capture replaces the old image', async () => {
+    const { redis, ctx, store } = world();
+    await redis.pipe(watchWrites([{ repo: COPY, meta: { team: TEAM, kind: 'copy', product: 'account' } }]));
+    expect((await putShot(ctx, { repo: COPY, pr: 1, sha: SHA, image: WEBP })).status).toBe(200);
+    const first = shotPathOf(COPY, 1, SHA, T0);
+    const index = String(await redis.cmd('GET', shotKeyOf(COPY, 1)));
+    expect(JSON.parse(index)).toMatchObject({ sha: SHA, blob: first });
+    expect(index).not.toContain(WEBP);
+    expect(index.length).toBeLessThan(400);
+    expect([...store.items.keys()]).toEqual([first]);
+    expect(Buffer.from((await (await shotImage(redis, store, COPY, 1)).arrayBuffer())).toString('base64')).toBe(WEBP);
+    // The next capture (a later head): its own pathname, the old image is deleted.
+    const later = { ...ctx, now: () => T0 + 60_000 };
+    expect((await putShot(later, { repo: COPY, pr: 1, sha: 'b'.repeat(40), image: WEBP })).status).toBe(200);
+    expect([...store.items.keys()]).toEqual([shotPathOf(COPY, 1, 'b'.repeat(40), T0 + 60_000)]);
+  });
+
+  it('refuses a capture when no store is configured, and serves 404 when the image is gone', async () => {
+    const { redis, ctx, store } = world();
+    await redis.pipe(watchWrites([{ repo: COPY, meta: { team: TEAM, kind: 'copy', product: 'account' } }]));
+    expect((await putShot({ ...ctx, store: null }, { repo: COPY, pr: 1, sha: SHA, image: WEBP })).status).toBe(503);
+    expect(await redis.cmd('GET', shotKeyOf(COPY, 1))).toBeNull();
+    await putShot(ctx, { repo: COPY, pr: 1, sha: SHA, image: WEBP });
+    store.items.clear();
+    await expect(shotImage(redis, store, COPY, 1)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('still serves a capture kept in Redis before the move', async () => {
+    const { redis, store } = world();
+    await redis.cmd('SET', shotKeyOf(COPY, 1), legacy(WEBP), 'EX', KEEP_S);
+    const res = await shotImage(redis, store, COPY, 1);
+    expect(res.headers.get('content-type')).toBe('image/webp');
+    expect(Buffer.from(await res.arrayBuffer()).toString('base64')).toBe(WEBP);
+  });
+
+  it('migrates every image out of Redis once, keeps the TTL, deletes orphans, and a second run moves nothing', async () => {
+    let t = T0;
+    const redis = memoryRedis(() => t);
+    const store = memoryShotStore();
+    const ctx = { redis, store, now: () => t };
+    // A real capture weighs tens of KB.
+    const BIG = Buffer.concat([Buffer.from(WEBP, 'base64'), Buffer.alloc(30_000, 7)]).toString('base64');
+    await redis.cmd('SET', shotKeyOf(COPY, 1), legacy(BIG), 'EX', 3600);
+    await redis.cmd('SET', shotKeyOf(CODE, 3), legacy(WEBP), 'EX', KEEP_S);
+    await store.put(`${SHOTS_PREFIX}${COPY}/9/old.webp`, bytes(WEBP));
+    const before = store.items.size;
+    const dry = await migrateShots(ctx, true);
+    expect(dry).toMatchObject({ dryRun: true, keys: 2, moved: 2, inStore: 0, orphansDeleted: 1 });
+    expect(dry.redisBytesFreed).toBeGreaterThan(BIG.length - 200);
+    expect(store.items.size).toBe(before);
+    expect(String(await redis.cmd('GET', shotKeyOf(COPY, 1)))).toContain(BIG);
+
+    const done = await migrateShots(ctx);
+    expect(done).toMatchObject({ dryRun: false, keys: 2, moved: 2, orphansDeleted: 1, orphanBytes: bytes(WEBP).byteLength });
+    const index = JSON.parse(String(await redis.cmd('GET', shotKeyOf(COPY, 1))));
+    expect(index.image).toBeUndefined();
+    expect(index).toMatchObject({ sha: SHA, url: 'https://x.pages.dev/', blob: shotPathOf(COPY, 1, SHA, T0 - 1000) });
+    expect(store.items.has(index.blob)).toBe(true);
+    expect(store.items.has(`${SHOTS_PREFIX}${COPY}/9/old.webp`)).toBe(false);
+    expect(Buffer.from((await (await shotImage(redis, store, COPY, 1)).arrayBuffer())).toString('base64')).toBe(BIG);
+
+    expect(await migrateShots(ctx)).toMatchObject({ keys: 2, moved: 0, inStore: 2, redisBytesFreed: 0, orphansDeleted: 0 });
+    // KEEPTTL: the moved index still expires when the capture would have.
+    t += 3601 * 1000;
+    expect(await redis.cmd('GET', shotKeyOf(COPY, 1))).toBeNull();
+    expect(await redis.cmd('GET', shotKeyOf(CODE, 3))).not.toBeNull();
+  });
+
+  it('runs the migration only for the workflow, through api/contribute', async () => {
+    const w = world();
+    await w.redis.cmd('SET', shotKeyOf(COPY, 1), legacy(WEBP), 'EX', KEEP_S);
+    const ENV = { LIBRARY_SESSION_SECRET: 's'.repeat(40) };
+    const deps: ContribDeps = { fetch: w.f, now: () => T0, redis: w.redis, shots: w.store, app: { installationToken: async () => 'ghs_x' } };
+    const req = (q: string, auth?: string) => new Request(`https://bridge.example.com/api/contribute?${q}`, { method: 'POST', headers: { host: 'bridge.example.com', ...(auth ? { authorization: auth } : {}) } });
+    expect((await handleContribute(req('shots=migrate'), ENV, deps)).status).toBe(401);
+    const dry = await handleContribute(req('shots=migrate&dry=1', jwt({})), ENV, deps);
+    expect(await dry.json()).toMatchObject({ dryRun: true, moved: 1 });
+    expect(w.store.items.size).toBe(0);
+    const run = await handleContribute(req('shots=migrate', jwt({})), ENV, deps);
+    expect(await run.json()).toMatchObject({ dryRun: false, moved: 1 });
+    expect(w.store.items.size).toBe(1);
   });
 });
 

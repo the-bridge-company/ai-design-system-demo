@@ -91,14 +91,15 @@ describe('the email session', () => {
 });
 
 describe("Studio's GitHub calls for an email contributor", () => {
-  it('carry the stand-in token, only on a real team without a GitHub sign-in', () => {
+  it('carry the stand-in token on a team without a GitHub sign-in, the sample team included (its visitor reads as Dana)', () => {
     expect(getToken()).toBeNull();
     signIn();
     expect(currentContributor()?.email).toBe('leo@acme.design');
     expect(getToken()).toBe(CONTRIB_TOKEN);
     history.replaceState(null, '', '/studio/acme-design-demo/bridge-demo-ds/');
-    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'leo@acme.design', name: 'Leo' }));
-    expect(getToken()).toBeNull();
+    localStorage.setItem('bridge.contribute.member:acme-design-demo/bridge-demo-ds', JSON.stringify({ email: 'dana@acme.design', name: 'Dana', role: 'edit', visitor: true }));
+    expect(currentContributor()).toMatchObject({ name: 'Dana', visitor: true });
+    expect(getToken()).toBe(CONTRIB_TOKEN);
   });
 
   it('go through the proxy, same method and body, the team only', async () => {

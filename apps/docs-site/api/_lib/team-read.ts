@@ -208,6 +208,11 @@ export interface Reader {
    * cookie. Their read budget id (memberBudgetId), and only the product repositories the pass names, read only.
    */
   pass?: { budget: string; repos: readonly string[] };
+  /**
+   * A signed-out visitor of a demo team reading as one of its members (api/contribute sessionOf): what that member
+   * reads, on the visitor's address's budget, never on the member's (every visitor reads as the same one).
+   */
+  visitor?: boolean;
 }
 
 /** The budget id of a member's reads (budgetOf): a read pass carries it instead of their email. */
@@ -370,7 +375,7 @@ export async function noteWrite(redis: Redis, repo: string, now: number): Promis
 /** Whose budget a read counts against: the signed-in member, else the address. */
 export function budgetOf(req: Request, reader: Reader): { kind: 'member' | 'ip' | 'guest'; who: string } {
   if (reader.kind === 'member' && reader.pass) return { kind: 'member', who: reader.pass.budget };
-  const email = reader.kind === 'member' && reader.email ? reader.email : undefined;
+  const email = reader.kind === 'member' && reader.email && !reader.visitor ? reader.email : undefined;
   if (email) return { kind: 'member', who: memberBudgetId(email) };
   return { kind: reader.kind === 'guest' ? 'guest' : 'ip', who: sha256(`read-ip:${clientIp(req)}`).slice(0, 24) };
 }

@@ -8,8 +8,6 @@
 // GitHub App under a strict policy: the person's own branches, pull requests, issues and comments, never an approval,
 // a merge or the default branch. Paths outside the team's repository never go to the proxy: they are read as a guest.
 
-import { isSampleTeam } from './demo';
-
 /** The stand-in token of an email contributor's session. Never sent to GitHub: the proxy rewrites every call. */
 export const CONTRIB_TOKEN = 'bridge-email-contributor';
 
@@ -65,6 +63,11 @@ export interface ContributeMember {
   decides?: boolean;
   /** Their stable member reference (api/_lib/exploration-member memberRef): how exploration blocks name them, never by email. */
   ref?: string;
+  /**
+   * A signed-out visitor of a demo team reading as this member (api/contribute sessionOf): every page reads as theirs,
+   * and the server refuses every write (403 `demo`, the demo dialog). The demo banner stays.
+   */
+  visitor?: boolean;
 }
 
 /**
@@ -105,11 +108,12 @@ export function contributeHashToken(hash: string): string | null {
 }
 
 /**
- * Whether a team page may offer or use an email session: real teams only. The sample team (Acme Design) and Bridge's
- * own demo have their own guided flow, and the browser workspace has no team yet.
+ * Whether a team page may offer or use an email session: any team of a hosted site, the sample team (Acme Design)
+ * included, whose signed-out visitors read as its lead through a read-only session (api/_lib/demo-members.ts). Not the
+ * browser workspace, which has no team yet.
  */
 export function contributeEligible(repo: string | null | undefined, hosted: boolean): boolean {
-  return hosted && Boolean(repo && /^[\w.-]+\/[\w.-]+$/.test(repo)) && !isSampleTeam(repo);
+  return hosted && Boolean(repo && /^[\w.-]+\/[\w.-]+$/.test(repo));
 }
 
 /**
@@ -129,7 +133,7 @@ export function parseMember(v: unknown, local = localDevHost()): ContributeMembe
   if (typeof m.email !== 'string' || !m.email.includes('@')) return null;
   const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : m.email;
   const ref = typeof m.ref === 'string' && /^[0-9a-f]{16}$/.test(m.ref) ? m.ref : null;
-  return { email: m.email, name, role: m.role === 'view' ? 'view' : local && m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}) };
+  return { email: m.email, name, role: m.role === 'view' ? 'view' : local && m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}), ...(m.visitor === true ? { visitor: true } : {}) };
 }
 
 /** Every designer-facing sentence of the email path, in one place. */

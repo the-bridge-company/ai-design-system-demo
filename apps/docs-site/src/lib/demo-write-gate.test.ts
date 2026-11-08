@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
-import { type ContribDeps, cookieName, DEMO_REFUSAL, handleContribute, signSession } from '../../api/contribute/index';
+import { type ContribDeps, contributorOf, cookieName, DEMO_REFUSAL, handleContribute, signSession } from '../../api/contribute/index';
+import { DEMO_MEMBERS, DEMO_VISITOR_EMAIL, seedDemoTeam } from '../../api/_lib/demo-members';
 import { DEMO_WORDS } from './demo';
 
 const HOST = 'bridge.example.com';
@@ -70,5 +71,164 @@ describe('the demo write gate', () => {
     const s = setup();
     const r = await s.post(`?repo=${encodeURIComponent(TEAM)}&gh=${encodeURIComponent(`/repos/${TEAM}/issues`)}`, { title: 'x' });
     expect((await r.json()).error).not.toBe(DEMO_REFUSAL);
+  });
+});
+
+// The demo visitor IS a member of the sample team (api/_lib/demo-members.ts): a signed-out visitor gets a read-only
+// session as Dana, its lead, and reads by every path an email member reads by; the one gate refuses each write.
+describe('the demo visitor reads as Dana', () => {
+  let t: { deps: ContribDeps; redis: ReturnType<typeof memoryRedis>; writes: string[] };
+  const fresh = async (seed = true) => {
+    const redis = memoryRedis(() => T0);
+    const writes: string[] = [];
+    const deps: ContribDeps = {
+      fetch: async (url, init) => {
+        const u = new URL(url);
+        if (init.method !== 'GET') writes.push(`${init.method} ${u.pathname}`);
+        if (/^\/repos\/[^/]+\/[^/]+$/.test(u.pathname)) return Response.json({ private: false, default_branch: 'main' });
+        if (u.pathname.endsWith('/collaborators')) return Response.json([]);
+        return Response.json({ ok: true }, { status: init.method === 'POST' ? 201 : 200 });
+      },
+      now: () => T0,
+      redis,
+      app: { installationToken: async () => 'ghs_x' },
+    };
+    t = { deps, redis, writes };
+    if (seed) await seedDemoTeam({ members: memberStore(redis), redis }, T0);
+  };
+  const get = (query: string, headers: Record<string, string> = {}) => handleContribute(new Request(`${ORIGIN}/api/contribute${query}`, { headers: { host: HOST, 'x-real-ip': '203.0.113.9', ...headers } }), ENV, t.deps);
+  const post = (query: string, body: unknown, headers: Record<string, string> = {}) =>
+    handleContribute(
+      new Request(`${ORIGIN}/api/contribute${query}`, { method: 'POST', headers: { host: HOST, origin: ORIGIN, 'content-type': 'application/json', 'x-bridge-contribute': '1', 'x-real-ip': '203.0.113.9', ...headers }, body: JSON.stringify(body) }),
+      ENV,
+      t.deps,
+    );
+  const cookieOf = (r: Response) => (r.headers.get('set-cookie') ?? '').split(';')[0]!;
+  const q = `?repo=${encodeURIComponent(DEMO)}`;
+
+  it('gives a signed-out visitor of the sample team a session as Dana, the member answer a signed-in member gets', async () => {
+    await fresh();
+    const r = await get(q);
+    expect((await r.json()).member).toMatchObject({ email: DEMO_VISITOR_EMAIL, name: 'Dana', visitor: true, lead: true, decides: true });
+    const cookie = cookieOf(r);
+    expect(cookie.startsWith(`${cookieName(DEMO)}=`)).toBe(true);
+    // With that session: the same member, no new cookie, and the team's people read as a member reads them.
+    const again = await get(q, { cookie });
+    expect((await again.json()).member).toMatchObject({ name: 'Dana', visitor: true });
+    expect(again.headers.get('set-cookie')).toBeNull();
+    const people = await (await get(`${q}&members=1`, { cookie })).json();
+    expect(people.members.map((m: { name: string }) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Malik', 'Sofia']);
+    expect(people.members.find((m: { you?: boolean }) => m.you)?.name).toBe('Dana');
+    expect(people.pms.account).toMatchObject({ name: 'Ann' });
+  });
+
+  it('refuses every write of the visitor session with the demo code, and sends nothing to GitHub', async () => {
+    await fresh();
+    const cookie = cookieOf(await get(q));
+    const r = await post(`${q}&gh=${encodeURIComponent(`/repos/${DEMO}/issues`)}`, { title: 'x' }, { cookie });
+    expect(r.status).toBe(403);
+    expect((await r.json()).error).toBe(DEMO_REFUSAL);
+    for (const action of [
+      { action: 'set-pm', repo: DEMO, product: 'account', pm: null },
+      { action: 'exploration-keeper', repo: DEMO },
+      { action: 'library-update', repo: DEMO, product: 'account' },
+    ]) {
+      const a = await post('', action, { cookie });
+      expect(a.status).toBe(403);
+      expect((await a.json()).error).toBe(DEMO_REFUSAL);
+    }
+    expect(t.writes).toEqual([]);
+    // The other functions that accept email members (api/ship, api/mcp, team-caller): read as Dana, refuse a write.
+    const asGet = new Request(`${ORIGIN}/api/ship?repo=${DEMO}`, { headers: { host: HOST, cookie } });
+    expect((await contributorOf(asGet, DEMO, ENV, t.deps))?.name).toBe('Dana');
+    const asPost = new Request(`${ORIGIN}/api/ship`, { method: 'POST', headers: { host: HOST, cookie } });
+    await expect(contributorOf(asPost, DEMO, ENV, t.deps)).rejects.toMatchObject({ status: 403, code: DEMO_REFUSAL });
+  });
+
+  it('never makes a GitHub sign-in Dana: the demo owner keeps their own identity', async () => {
+    await fresh();
+    const cookie = cookieOf(await get(q));
+    const bearer = { authorization: `Bearer ${'g'.repeat(40)}` };
+    const r = await get(q, bearer);
+    expect((await r.json()).member).toBeNull();
+    expect(r.headers.get('set-cookie')).toBeNull();
+    // A leftover visitor cookie does not count on a request signed in with GitHub either.
+    expect((await (await get(q, { cookie, ...bearer })).json()).member).toBeNull();
+  });
+
+  it('lets a real member session win over a visitor one, and write as on any team', async () => {
+    await fresh();
+    await memberStore(t.redis).put(DEMO, { email: 'mia@acme.design', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
+    const mia = `${cookieName(DEMO)}=${signSession({ repo: DEMO, email: 'mia@acme.design', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
+    const info = await (await get(q, { cookie: mia })).json();
+    expect(info.member).toMatchObject({ name: 'Mia' });
+    expect(info.member.visitor).toBeUndefined();
+    const r = await post(`${q}&gh=${encodeURIComponent(`/repos/${DEMO}/issues`)}`, { title: 'x' }, { cookie: mia });
+    expect((await r.clone().json().catch(() => ({}))).error).not.toBe(DEMO_REFUSAL);
+  });
+
+  it('leaves real teams as they were: no visitor session, nobody signed in', async () => {
+    await fresh();
+    const r = await get(`?repo=${encodeURIComponent(TEAM)}`);
+    expect((await r.json()).member).toBeNull();
+    expect(r.headers.get('set-cookie')).toBeNull();
+    // A visitor session signed for the sample team never opens another team.
+    const cookie = cookieOf(await get(q));
+    const moved = cookie.replace(`${cookieName(DEMO)}=`, `${cookieName(TEAM)}=`);
+    expect((await (await get(`?repo=${encodeURIComponent(TEAM)}`, { cookie: moved })).json()).member).toBeNull();
+  });
+
+  it('reads as a guest, as before, while the sample team has no seeded members', async () => {
+    await fresh(false);
+    const r = await get(q);
+    expect((await r.json()).member).toBeNull();
+    expect(r.headers.get('set-cookie')).toBeNull();
+  });
+});
+
+describe('seeding the sample team', () => {
+  it('writes its five members and its PM once, then keeps them as they are', async () => {
+    const redis = memoryRedis(() => T0);
+    const members = memberStore(redis);
+    const first = await seedDemoTeam({ members, redis }, T0);
+    expect(first.added).toEqual(DEMO_MEMBERS.map((m) => m.email));
+    expect(first.pm).toBe('set');
+    const again = await seedDemoTeam({ members, redis }, T0 + 1000);
+    expect(again).toEqual({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), pm: 'kept' });
+    expect(await members.get(DEMO, 'dana@acme.design')).toMatchObject({ role: 'admin', lead: true, version: 1 });
+    expect(await members.get(DEMO, 'malik@acme.design')).toMatchObject({ role: 'edit', version: 1 });
+    // A member changed since is set back with a new version (their sessions end), as an admin's change does.
+    await members.put(DEMO, { ...(await members.get(DEMO, 'leo@acme.design'))!, role: 'view' });
+    const fixed = await seedDemoTeam({ members, redis }, T0 + 2000);
+    expect(fixed.updated).toEqual(['leo@acme.design']);
+    expect(await members.get(DEMO, 'leo@acme.design')).toMatchObject({ role: 'edit', version: 2 });
+  });
+
+  it('runs only for a GitHub admin of the sample team', async () => {
+    const redis = memoryRedis(() => T0);
+    const deps = (admin: boolean): ContribDeps => ({
+      fetch: async (url) => {
+        const u = new URL(url);
+        if (u.pathname === '/user') return Response.json({ login: 'peterbono', name: 'Florian', id: 1 });
+        if (u.pathname === `/repos/${DEMO}`) return Response.json({ private: true, permissions: { admin, push: admin, pull: true } });
+        return Response.json({});
+      },
+      now: () => T0,
+      redis,
+      app: { installationToken: async () => 'ghs_x' },
+    });
+    const seed = (admin: boolean, token: string) =>
+      handleContribute(
+        new Request(`${ORIGIN}/api/contribute`, { method: 'POST', headers: { host: HOST, origin: ORIGIN, 'content-type': 'application/json', 'x-bridge-contribute': '1', authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'seed-demo', repo: DEMO }) }),
+        ENV,
+        deps(admin),
+      );
+    const no = await seed(false, 'n'.repeat(40));
+    expect(no.status).toBe(403);
+    expect(await memberStore(redis).list(DEMO)).toEqual([]);
+    const ok = await seed(true, 'y'.repeat(40));
+    expect(ok.status).toBe(200);
+    expect((await ok.json()).added).toHaveLength(5);
+    expect((await memberStore(redis).list(DEMO)).map((m) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Malik', 'Sofia']);
   });
 });

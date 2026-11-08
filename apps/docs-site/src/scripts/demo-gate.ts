@@ -24,6 +24,8 @@ export interface DemoGateDeps {
   signIn: () => boolean;
   /** False while a saved sign-in is still being checked: the Studio acts as usual until then. */
   known: () => boolean;
+  /** A signed-out visitor reading as a member of the demo team (its read-only session). */
+  visitor?: () => boolean;
   /** Calls `fn` whenever who is visiting, or what they can do, changes. */
   subscribe: (fn: () => void) => void;
 }
@@ -37,7 +39,7 @@ let deps: DemoGateDeps | null = null;
  */
 export function sampleVisitor(): boolean {
   const r = repoContext();
-  return isSampleTeam(`${r.owner}/${r.repo}`) && !document.documentElement.hasAttribute('data-no-repo') && !deps?.login();
+  return isSampleTeam(`${r.owner}/${r.repo}`) && !document.documentElement.hasAttribute('data-no-repo') && (!deps?.login() || Boolean(deps.visitor?.()));
 }
 
 /** True when this visitor explores the demo: write actions open the demo dialog. */

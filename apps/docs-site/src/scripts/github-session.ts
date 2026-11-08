@@ -1017,7 +1017,10 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
     // An email contributor (no GitHub) is a member: never a demo visitor. Nor is a Bridge account whose linked GitHub is
     // on the team (its writes ask to reconnect GitHub: the session's gated actions). Can view writes nothing.
     login: () => viewer?.login ?? currentContributor()?.email ?? (linkedMember(linkedGitHubRole()) ? 'linked' : null),
-    write: () => (currentContributor() ? currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
+    // A demo visitor reading as a member (lib/contribute.ts ContributeMember.visitor) still explores the demo: the banner
+    // stays, and the server refuses each write in the demo dialog's words.
+    write: () => (currentContributor() ? !currentContributor()!.visitor && currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
+    visitor: () => Boolean(currentContributor()?.visitor),
     signIn: prefersSignIn,
     // Not known while the saved sign-in or the account's linked GitHub role is still being read: an admin who just
     // signed in never sees the read-only banner meanwhile.

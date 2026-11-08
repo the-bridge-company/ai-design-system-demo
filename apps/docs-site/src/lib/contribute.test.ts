@@ -34,9 +34,9 @@ describe('the email session', () => {
     expect(contributeHashToken('#contribute=short')).toBeNull();
   });
 
-  it('is offered on real teams only, never the sample team, the demo or a page without a team', () => {
+  it('is offered on every team of a hosted site, the sample team included (its visitors read as its lead), never a page without a team', () => {
     expect(contributeEligible('acme/ds', true)).toBe(true);
-    expect(contributeEligible('acme-design-demo/bridge-demo-ds', true)).toBe(false);
+    expect(contributeEligible('acme-design-demo/bridge-demo-ds', true)).toBe(true);
     expect(contributeEligible('the-bridge-company/ai-design-system-demo', true)).toBe(true);
     expect(contributeEligible('acme/ds', false)).toBe(false);
     expect(contributeEligible(null, true)).toBe(false);

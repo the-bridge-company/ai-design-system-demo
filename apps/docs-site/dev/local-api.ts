@@ -504,7 +504,7 @@ export function bridgeLocal(opts: { root: string; log?: (s: string) => void }) {
           redis,
           email,
           env,
-          fetch: fixtureGithub(redis, () => gitFiles(join(root, '..', '..')), realFetch, Date.now, () => server.ssrLoadModule('/src/lib/building-sample.ts') as ReturnType<SampleBuilds>),
+          fetch: fixtureGithub(redis, () => gitFiles(join(root, '..', '..')), realFetch, Date.now, () => server.ssrLoadModule('/dev/build-requests.ts') as ReturnType<SampleBuilds>),
           localAdmins: localAdminStore(redis),
           ...(hasGithub ? {} : { app: fixtureApp(redis) }),
         };

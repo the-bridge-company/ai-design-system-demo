@@ -64,15 +64,6 @@ export function linkAuthors(commits: readonly BranchCommitLike[]): BranchCommitL
 }
 
 /**
- * The commits as `who` made them, Claude's own left as they are: a sample exploration's commits all come from the one
- * account behind the sample team, and its page names its sample person (lib/demo.ts isSampleExploration).
- */
-export function commitsAs(commits: readonly BranchCommitLike[], who: string): BranchCommitLike[] {
-  const name = isNameAuthor(who) ? nameOfAuthor(who) : who;
-  return commits.map((c) => (humanAuthorOf(c) ? { ...c, author: { ...c.author, login: who }, commit: { ...c.commit, author: { ...c.commit.author, name } } } : c));
-}
-
-/**
  * The face of an actor; a person's change Claude co-wrote reads "Florian with Claude" with the person's photo. Someone
  * known by name only (`nameOnly`, or an email address recorded as the author) gets the drawn face of their name, the
  * same one as on their cards and in the account menu (lib/people nameFace), never a GitHub account's photo.
@@ -157,10 +148,10 @@ export const pageLines = continueLines;
 /**
  * Who gets "Send to Figma": the team has a Figma file and the viewer can edit (a fact shows only to who can act on it):
  * a member who joined with their email unless they only view, a designer Bridge writes for, a reviewer, or GitHub write
- * access. Never on the sample team, an archived exploration or a shipped or closed one.
+ * access. Never on an archived exploration or a shipped or closed one.
  */
-export function canPutInFigma(v: { figmaFile: string | null | undefined; demo: boolean; archived: boolean; status: string; memberRole: string | null | undefined; designer: boolean; reviewer: boolean; write: boolean | null | undefined }): boolean {
-  if (!v.figmaFile?.trim() || v.demo || v.archived || v.status === 'shipped' || v.status === 'closed') return false;
+export function canPutInFigma(v: { figmaFile: string | null | undefined; archived: boolean; status: string; memberRole: string | null | undefined; designer: boolean; reviewer: boolean; write: boolean | null | undefined }): boolean {
+  if (!v.figmaFile?.trim() || v.archived || v.status === 'shipped' || v.status === 'closed') return false;
   if (v.memberRole) return v.memberRole !== 'view';
   return v.designer || v.reviewer || v.write === true;
 }
@@ -179,7 +170,7 @@ export function libraryPreviewApp(files: readonly string[] | null | undefined, a
 }
 
 /** The Done exploring card: what its button does for this viewer (never a technical blocker). */
-export type DoneAction = { kind: 'run' } | { kind: 'demo' } | { kind: 'note'; text: string } | null;
+export type DoneAction = { kind: 'run' } | { kind: 'note'; text: string } | null;
 
 /**
  * Who sees the Done exploring card. A signed-out visitor or a viewer without write access to the repository (a PM, a
@@ -187,10 +178,10 @@ export type DoneAction = { kind: 'run' } | { kind: 'demo' } | { kind: 'note'; te
  * with access who cannot keep it reads who can (`keeperNote`); the person who started it or a reviewer runs it.
  * `write`: null when unknown (a product's own repository), which leaves the decision to `keeper`.
  */
-export function doneActionFor(v: { direct: boolean; demo: boolean; connected: boolean; write: boolean | null; keeper: boolean; keeperNote: string; productNote?: string | null }): DoneAction {
+export function doneActionFor(v: { direct: boolean; connected: boolean; write: boolean | null; keeper: boolean; keeperNote: string; productNote?: string | null }): DoneAction {
   if (!v.direct) return null;
   if (v.productNote) return { kind: 'note', text: v.productNote };
-  if (!v.connected) return v.demo ? { kind: 'demo' } : null;
+  if (!v.connected) return null;
   if (v.write === false) return null;
   return v.keeper ? { kind: 'run' } : { kind: 'note', text: v.keeperNote };
 }

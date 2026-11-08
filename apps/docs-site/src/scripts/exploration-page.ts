@@ -17,7 +17,6 @@ import {
   reopenedOf,
   buildersOf,
   changedScreenOf,
-  commitsAs,
   checkInClaudeLine,
   doneActionFor,
   doneByOf,
@@ -76,14 +75,12 @@ import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet,
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { viewerRole } from './needs-you';
-import { sampleVisitor } from './demo-gate';
 import { copyText } from './explorer/util';
 import { loadVisualImpact } from './reviews/visual-impact';
 import { previewShotOf } from './preview-shots';
-import { isSampleTeam, type SampleSeat } from '../lib/demo';
-import { knownNames, onSampleTeam, sampleAuthor, sampleName } from './people';
+import { knownNames } from './people';
 import { isEmailAddress, loginKey } from '../lib/people';
-import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from '../lib/author';
+import { isNameAuthor, nameOfAuthor } from '../lib/author';
 import { siteApprovers } from './teams';
 import { studioHref } from '../lib/team-path';
 import { pullReviewsOf } from './review-reads';
@@ -141,8 +138,6 @@ export function emailAuthorName(author: string, body: string | null | undefined)
 }
 
 export function knownNamesOf(logins: readonly string[]): Record<string, string> {
-  // The sample team: its personas, never the repository's real accounts (scripts/people.ts sampleAuthor).
-  if (onSampleTeam()) return Object.fromEntries(logins.map((l) => [l, sampleName(l)]).filter((x): x is [string, string] => Boolean(x[1])));
   const cache = knownNames();
   const v = currentViewer();
   const out: Record<string, string> = {};
@@ -233,7 +228,7 @@ function leadViewOf(
   const repoAdmin = Boolean(viewer && connected() && currentAccess()?.admin && !sameLogin(viewer, asker) && !sameLogin(viewer, r.author));
   const isLead = Boolean(emailLead ? emailLead.decides && !startedByEmailMember(body, emailLead) : repoAdmin || (viewer && connected() && leads.some((l) => l.toLowerCase() === viewer.toLowerCase())));
   if (isLead) {
-    const who = block?.leadAskedByName ?? sampleName(block?.leadAskedBy) ?? block?.leadAskedBy ?? 'The designer';
+    const who = block?.leadAskedByName ?? block?.leadAskedBy ?? 'The designer';
     const leadName = viewer ? (knownNamesOf([viewer])[viewer] ?? undefined) : emailLead?.name;
     const me = { ...(viewer ? { lead: viewer } : {}), ...(leadName ? { leadName } : {}) };
     // Someone else answered first: the page shows what they said.
@@ -378,9 +373,8 @@ async function paintEarlyBuild(
     return;
   }
   const team = `${CFG.owner}/${CFG.repo}`;
-  const builder = sampleName(read.pull.builder ?? read.pull.builderName, 'developer') ?? read.pull.builderName ?? read.pull.builder ?? 'the developer';
-  // On the sample team the page's persona, never the name the server read for the account behind it.
-  const designerName = (onSampleTeam() ? null : read.designerName) ?? designer;
+  const builder = read.pull.builderName ?? read.pull.builder ?? 'the developer';
+  const designerName = read.designerName ?? designer;
   const pm = people?.pms[o.product.toLowerCase()]?.name ?? null;
   const code = o.products.find((p) => p.key === o.product);
   const buildUrl = read.pull.ref ? branchPreviewUrl(code?.preview, read.pull.ref) : null;
@@ -457,8 +451,8 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
   if (!read || current?.key !== key || !current.props.handoff) return;
   const pm = people?.pms[o.product.toLowerCase()]?.name ?? null;
   // The names Bridge's server knows (their GitHub profile) win over what the page could tell ("the developer").
-  const builder = sampleName(read.pull.builder ?? read.pull.builderName, 'developer') ?? read.pull.builderName ?? (o.builder === 'the developer' ? (read.pull.builder ?? o.builder) : o.builder);
-  const designer = (onSampleTeam() ? null : read.designerName) ?? o.designer;
+  const builder = read.pull.builderName ?? (o.builder === 'the developer' ? (read.pull.builder ?? o.builder) : o.builder);
+  const designer = read.designerName ?? o.designer;
   const check: BuildCheckView = {
     line: BUILD_WORDS.line(builder),
     builder,
@@ -495,7 +489,7 @@ function leadTalkOf(
   const out = { decisions: decisionRows(all, known), tag: decisionTag(open, designer), designerZone: null, notDoing: null } as ReturnType<typeof leadTalkOf>;
   if (!open) return out;
   const who = sayerName(open, known);
-  const face = faceOf(open.by ? sampleAuthor(open.by) : nameAuthor(who), false, known);
+  const face = faceOf(open.by ?? nameAuthor(who), false, known);
   const when = open.at ? startedWhen(open.at) : '';
   out.headline = { who: face, text: decisionRows([open], known)[0]!.verb, when };
   if (open.kind === 'not-doing') {
@@ -557,13 +551,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // Try it in the product, on a private product too: the toolbar there reads the change with the member's pass.
   installReadPass();
   mod ??= await import('../components/ds/studio/ExplorationPage');
-  const sample = isSampleTeam(`${CFG.owner}/${CFG.repo}`);
-  // On the sample team every exploration names its sample person, never the one account behind the sample team (its
-  // commits below too): the person its record names, else the persona that account plays (scripts/people sampleAuthor).
-  const samplePerson = sample;
-  if (samplePerson) r = { ...r, author: sampleAuthor(explorationAuthorFor(r.author, pull.body) ?? r.author) };
-  // A face for who acts on it: on the sample team the persona of `seat` for a real account (the developer of the code).
-  const faceAs = (login: string, names: Record<string, string>, seat: SampleSeat = 'lead', nameOnly?: ReadonlySet<string>) => faceOf(sample ? sampleAuthor(login, seat) : login, false, names, false, nameOnly);
+  // A face for who acts on it.
+  const faceAs = (login: string, names: Record<string, string>, nameOnly?: ReadonlySet<string>) => faceOf(login, false, names, false, nameOnly);
   const key = explorationKey(r);
   const own = productRepoByKey(r.product);
   const gh = own ? productClient(own.repo, pull.base?.ref) : dsClient();
@@ -577,13 +566,13 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // the Claude app with Bridge is theirs as well, Claude Code would need that access.
   const designer = Boolean(inCopy && !member && designerRoute());
   const codeUrl = (previewUrl: string | null) =>
-    inCopy && !member && !designer && !sampleVisitor() ? claudeCodeUrl({ copy: inCopy.copy, branch: r.branch, name: r.name, purpose: r.purpose, product: product.name, previewUrl }) : null;
+    inCopy && !member && !designer ? claudeCodeUrl({ copy: inCopy.copy, branch: r.branch, name: r.name, purpose: r.purpose, product: product.name, previewUrl }) : null;
   // Who may say Done exploring or archive it: the person who started it or a reviewer, with GitHub, in direct mode; in
   // the design team's copy, also the email member Bridge started it for (the proxy checks it again on each write).
   const emailKeeper = Boolean(inCopy && member && startedByEmailMember(pull.body, member));
   const designerKeeper = Boolean(designer && startedByDesigner(pull.body, viewer));
   // A lead signed in by email on someone else's work: the member record says so, the server checks it on each write.
-  const emailLeadOther = Boolean(member?.decides && !emailKeeper && !sampleVisitor());
+  const emailLeadOther = Boolean(member?.decides && !emailKeeper);
   const keeper = emailKeeper || designerKeeper || emailLeadOther || canKeepExploration({ viewer, author: r.author, reviewer: viewerRole() === 'reviewer', write: own ? null : (currentAccess()?.write ?? null) });
   const emailOnProduct = Boolean(own && member && !inCopy);
   const direct = changesModeOnPage() === 'direct';
@@ -593,7 +582,6 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // Signed out or without write access (a PM, a stakeholder): no Done exploring card, the preview and activity stay.
   const done: DoneAction = doneActionFor({
     direct,
-    demo: sampleVisitor(),
     connected: connected(),
     write: own ? null : (currentAccess()?.write ?? null),
     keeper,
@@ -601,7 +589,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     productNote: emailOnProduct ? productKeeperLine(product.name) : null,
   });
   // A design lead on someone else's work: what they do to it says why, and they can pass it on.
-  const leadOther = emailLeadOther || Boolean(viewer && !currentViewer()?.email && connected() && !sampleVisitor() && !sameLogin(viewer, r.author) && !designerKeeper && (currentAccess()?.admin || reviewersAsked({ approvers: siteApprovers().design, builders: [] }).some((l) => sameLogin(l, viewer))));
+  const leadOther = emailLeadOther || Boolean(viewer && !currentViewer()?.email && connected() && !sameLogin(viewer, r.author) && !designerKeeper && (currentAccess()?.admin || reviewersAsked({ approvers: siteApprovers().design, builders: [] }).some((l) => sameLogin(l, viewer))));
   // The person it belongs to: the lead's words wait on them.
   const answersLead = connected() || emailKeeper ? (emailKeeper || designerKeeper || sameLogin(viewer, r.author)) && !emailOnProduct : false;
   const isLibrary = !own && product.default === true;
@@ -609,7 +597,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const lines = pageLines({ number: r.number, name: r.name, productName: product.name, product: own?.product.key, repo: own?.repo });
   // "Send to Figma": for who can edit, only when the team has a Figma file (Bridge's rule: a fact goes to who can act on it).
   const figmaLine = (status: string) =>
-    canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, demo: sampleVisitor(), archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write })
+    canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write })
       ? figmaLines({ number: r.number, name: r.name, product: own?.product.key, repo: own?.repo })
       : null;
   // "Reopen as a new exploration": a new one from this one's work, named after it. This one stays as it ended.
@@ -751,8 +739,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
 
   // The preview capture (one raw file for every exploration, no API call) arrives with the reads it waits beside, so
   // the frame paints once: the capture, or the plate.
-  const [files, readCommits, sources, shot] = await Promise.all([changedFiles(r), branchCommits(r), previewSources(r), previewShotOf(r).catch(() => null)]);
-  const commits = samplePerson ? commitsAs(readCommits, r.author) : readCommits;
+  const [files, commits, sources, shot] = await Promise.all([changedFiles(r), branchCommits(r), previewSources(r), previewShotOf(r).catch(() => null)]);
   reported = sources;
   if (current?.key !== key) return;
   // "Where it stands": the handover notes, while it runs (after Done exploring they went to the developers as the spec).
@@ -800,11 +787,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     previewNote,
     previewBuilding,
     ...(inCopy ? { claudeCodeUrl: codeUrl(v.state === 'branch' ? v.url : null) } : {}),
-    // A signed-out visitor of the demo team: nothing to continue in, the preview only (the write gate, demo-gate.ts).
-    visitor: sampleVisitor(),
   });
-  // The product manager of its product (boards R1, R3): read once, painted when known. Never on the sample team.
-  if (!handedOff && own && !r.archived && !sample)
+  // The product manager of its product (boards R1, R3): read once, painted when known.
+  if (!handedOff && own && !r.archived)
     void paintPm(d, key, { r, body: pull.body, product: own.product.key, copy: own.repo, viewer: { ref: member?.ref ?? null, login: member ? null : viewer }, designer: emailKeeper || designerKeeper || (!member && sameLogin(viewer, r.author)), lead: leadOther || Boolean(lead?.bar), names, reopen: (line) => reopen(line) });
   // A branch started before its product moved to a toolbar that takes the read pass: that toolbar would leave the
   // pass in the address, and the product's hash router would show an empty page. The link opens without it, and says
@@ -862,10 +847,11 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const devRead = devRepo && task?.devPull ? await readDevPull(devRepo, task.devPull) : null;
   const fromTask = task ? taskStatus(task) : null;
   const status = (devRead && fromTask !== 'shipped' ? 'building' : fromTask ? (fromTask === 'closed' ? 'ready' : fromTask) : r.status) as 'ready' | 'building' | 'shipped';
-  const labelled = doneByOf(commits) ? null : await readyLabelEvent(r);
-  const label = labelled && samplePerson ? { ...labelled, login: r.author } : labelled;
+  const label = doneByOf(commits) ? null : await readyLabelEvent(r);
   // Validated by a lead: the commits and the label are theirs, the block keeps the designer who said it (who started it, for a member without GitHub).
-  const doneLogin = (block?.leadOkBy ? (block.doneBy ?? r.author) : null) ?? doneByOf(commits) ?? label?.login ?? r.author;
+  // An email member who said it themselves: the block records them (doneByMember), whoever's account wrote the commit.
+  const memberDone = block?.doneByMember && block.doneByMember === block.member && block.memberName?.trim() ? nameAuthor(block.memberName.trim()) : null;
+  const doneLogin = (block?.leadOkBy ? (block.doneBy ?? r.author) : null) ?? memberDone ?? doneByOf(commits) ?? label?.login ?? r.author;
   const doneAt = block?.doneAt ?? label?.at ?? null;
   // Who explored it: their own comments on the task are answers, never a question of the developers.
   const designers = [r.author, block?.author, block?.doneBy, doneLogin];
@@ -895,7 +881,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const allNames = { ...names, ...knownNamesOf([...asked, ...(verdict ? [verdict.login] : [])]), ...more };
   // Done exploring by someone known by name only (an email member's commit, or the requester of the app's pull
   // request): the name's face, never a GitHub account's photo of that name.
-  const doneBy = faceAs(doneLogin, allNames, 'lead', nameOnlyAuthors(commits));
+  const doneBy = faceAs(doneLogin, allNames, nameOnlyAuthors(commits));
   const shippedAt = task?.closedAt ?? (pull as { merged_at?: string | null }).merged_at ?? null;
   const review = {
     // Reviewers asked on a draft: the developers asked for a review all the same.
@@ -916,18 +902,18 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   };
   if (devRead) review.draft = devRead.pull.draft === true;
   // Who asked, by name, and their part on the team when its settings say (a lead): never "the developers" by default.
-  const askedBy = question?.login ? faceAs(question.login, allNames, 'developer') : null;
+  const askedBy = question?.login ? faceAs(question.login, allNames) : null;
   const questionOn = question ? { ...question, by: askedBy, role: askerRole(question.login, siteApprovers()) } : null;
   // A product added from its address: its developers work elsewhere and never see the task Bridge keeps. Team members
   // copy them one plain message from the "Developers build it" step (lib/developers-message).
   const address = isLibrary ? null : liveAddressOf(product);
-  const onTeam = teamMember({ emailMember: Boolean(member), signedIn: connected(), access: currentAccess()?.state ?? null, sample: sampleVisitor() });
+  const onTeam = teamMember({ emailMember: Boolean(member), signedIn: connected(), access: currentAccess()?.state ?? null });
   const forDevelopers =
     address && offersDevelopersMessage({ address, status, declined, archived: Boolean(r.archived), member: onTeam })
       ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: (v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch), shotUrl: shot?.src ?? null }) }
       : null;
   const leadOkBy = block?.leadOkBy ?? null;
-  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceAs(leadOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames, 'developer')), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
+  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceAs(leadOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames)), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
   const taskUrl = block?.task ?? null;
   const ref = r.product ? `${r.product}#${r.number}` : String(r.number);
   // Who may run the check: someone who can write it, in a team that writes branches. Bridge's server runs it for them:
@@ -1022,13 +1008,13 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
           }
         : null,
       forDevelopers,
-      declined: declined ? { note: declineNote ? { text: declineNote.text, by: faceAs(declineNote.login, allNames, 'developer'), when: declineNote.at ? startedWhen(declineNote.at) : '' } : null } : null,
+      declined: declined ? { note: declineNote ? { text: declineNote.text, by: faceAs(declineNote.login, allNames), when: declineNote.at ? startedWhen(declineNote.at) : '' } : null } : null,
     },
   });
   // Check the build (board R4): the developers' version is ready in the design team's copy. Read through Bridge's server,
   // who checks it and where each stands; the designer, the PM and the leads answer there (email members and PMs too).
   if (inCopy && own && devRead && !review.draft && status === 'building' && !declined) {
-    const builder = builders.length ? faceAs(builders[0]!, allNames, 'developer').name : 'the developer';
+    const builder = builders.length ? faceAs(builders[0]!, allNames).name : 'the developer';
     const designerName = block?.memberName ?? doneBy.name;
     void paintBuildCheck(d, key, { r, product: own.product.key, copy: own.repo, code: own.product.repo ?? null, builder, designer: designerName, devUrl: review.dev?.url ?? null, viewerRef: member?.ref ?? null, reopen: (line) => reopen(line), early: earlyBuild });
   }

@@ -72,16 +72,23 @@ describe('viewerClaudeLink', () => {
     expect(knownClaudeLink()).toBe('unknown');
   });
 
-  it('signed out, or on the sample team: never asked', async () => {
+  it('signed out: never asked', async () => {
     const f = vi.fn(async () => json(200, { connections: [] }));
     setConnectorFetch(f);
     session.login = null;
     expect(await viewerClaudeLink()).toBe('unknown');
-    session.login = 'dana';
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("on the sample team, its member (the visitor's read-only session as Dana) is asked as on any team", async () => {
     const { SAMPLE_REPO } = await import('../lib/demo');
     session.repo = SAMPLE_REPO;
-    expect(await viewerClaudeLink()).toBe('unknown');
-    expect(f).not.toHaveBeenCalled();
+    session.login = null;
+    session.member = { email: 'dana@acme.design', name: 'Dana', role: 'edit' };
+    const f = vi.fn(async () => json(200, { connections: [] }));
+    setConnectorFetch(f);
+    expect(await viewerClaudeLink()).toBe('no');
+    expect((f.mock.calls[0] as unknown as [string])[0]).toBe(`/api/mcp?view=connections&repo=${encodeURIComponent(SAMPLE_REPO)}`);
   });
 
   it('an email member is asked too', async () => {

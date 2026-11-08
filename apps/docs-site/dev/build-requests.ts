@@ -1,9 +1,8 @@
-// Sample build requests: the sample team of the demo (Acme Design, lib/demo.ts isSampleTeam) shows these on Being
-// built, read only, so a visitor sees every status without Bridge reading or writing GitHub for them. The local dev
-// fixtures (dev/local-github.ts) serve the same data for a fixture team, so `npm run dev:full` shows it through the real
-// read path. Dates are relative to `now`. Pure, covered by building-view.test.ts.
+// Fixture build requests, for the local dev fixture team (dev/local-github.ts serves them as its issues and pull
+// requests, `npm run dev:scenario S19`) and the Being built tests. Dates are relative to `now`. Never shown on a hosted
+// team: every team, the demo's sample team included, reads its own repositories.
 import { composeBuildRequestIssue, type BuildRequestInput } from '@bridge-ds/core';
-import type { RestIssue, RestPull } from './building-view';
+import type { RestIssue, RestPull } from '../src/lib/building-view';
 
 const DAY = 86_400_000;
 
@@ -11,7 +10,7 @@ const DAY = 86_400_000;
  * The sample people: Dana leads the design system and pushes from Figma, Malik (the sample team's code reviewer,
  * lib/invites.ts sampleTeam, face ~malik-haddad) builds, and Theo is a developer who works outside Bridge.
  */
-export const SAMPLE_BUILDERS: Record<string, string> = { dana: 'Dana', 'malik-haddad': 'Malik', theo: 'Theo' };
+export const FIXTURE_BUILDERS: Record<string, string> = { dana: 'Dana', 'malik-haddad': 'Malik', theo: 'Theo' };
 
 type Seed = { n: number; input: Omit<BuildRequestInput, 'source' | 'requestedBy' | 'figma'> & { figmaName: string }; ago: number; assignees?: string[]; closed?: { ago: number; reason: 'completed' | 'not_planned' }; pull?: { n: number; author: string; draft: boolean; ago: number; merged?: number } };
 
@@ -111,7 +110,7 @@ const sha = (n: number) => n.toString(16).padStart(40, '0');
 const BASE = { ref: 'main', sha: sha(1) };
 
 /** The sample issues and pull requests, as GitHub's REST API would answer for the sample team. */
-export function sampleBuildData(now: number, repo = 'acme/design-system'): { issues: RestIssue[]; pulls: RestPull[] } {
+export function fixtureBuildData(now: number, repo = 'acme/design-system'): { issues: RestIssue[]; pulls: RestPull[] } {
   const issues: RestIssue[] = [];
   const pulls: RestPull[] = [];
   for (const s of SEEDS) {

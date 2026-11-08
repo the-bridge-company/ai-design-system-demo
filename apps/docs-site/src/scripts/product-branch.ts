@@ -42,7 +42,6 @@ import { ASK_CLAUDE, developerLines, failedPreviewLine, pieceRows, productCrumbs
 import { ARCHIVED_LINE, UNARCHIVED_LINE, explorationKey, explorationPreviews, explorationStateLine, productPreviews, takeItLines, type ExplorationPullLike, type ExplorationRow } from '../lib/explorations-view';
 import { productClient, productRepoByKey } from './product-repos';
 import { touchesVisuals } from '../lib/visual-impact';
-import { isSampleTeam } from '../lib/demo';
 import { ghAction, sendButton, suggestionSentLine } from '../lib/gh-wording';
 import { assertBranchWrites, changesModeOnPage } from './changes-mode';
 import { shownJiraKey } from '../lib/vocabulary';
@@ -191,14 +190,10 @@ function repaint(d: HTMLElement, patch: Partial<ProductBranchProps>) {
   mod.paintProductBranch(d, current.props);
 }
 
-const sampleTeam = () => isSampleTeam(`${CFG.owner}/${CFG.repo}`);
-
 /** The before and after of the visual impact (the product's screens, against main) into #pb-visual; none: one column. */
 async function paintVisual(d: HTMLElement, r: ExplorationRow) {
   const slot = document.getElementById('pb-visual');
   if (!slot) return;
-  // The sample team runs no visual impact: its branch shows its capture (props.shot).
-  if (sampleTeam()) return repaint(d, { visual: 'none' });
   // The visual impact workflow runs in the design system repository only: the product preview is the comparison.
   if (r.product) return repaint(d, { visual: 'none' });
   try {

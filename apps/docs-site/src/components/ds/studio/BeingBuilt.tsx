@@ -138,12 +138,7 @@ function Builders({
         <Icon icon={Hammer} size="sm" />
       </span>
     );
-  // The sample team draws each builder's face from their sample login (~malik-haddad), the same face as in Members.
-  const people = v.builders.map((l) =>
-    data.sample
-      ? person(`~${l}`, data.nameOf(l), null)
-      : person(l, data.nameOf(l), avatar(l))
-  );
+  const people = v.builders.map((l) => person(l, data.nameOf(l), avatar(l)));
   if (people.length === 1) return <Who p={people[0]!} size={size} />;
   return (
     <AvatarGroup aria-label="Building it" max={2} size={size}>
@@ -154,11 +149,11 @@ function Builders({
   );
 }
 
-/** The one person a card names: who builds it, else who asked for it. The sample team's faces are its own. */
+/** The one person a card names: who builds it, else who asked for it. */
 function cardPerson(v: Row, data: BuildData) {
   const login = v.builders[0] ?? v.requestedBy ?? null;
   if (!login) return person("~bridge", "Waiting for a developer", null);
-  return data.sample ? person(`~${login}`, data.nameOf(login), null) : person(login, data.nameOf(login), avatar(login));
+  return person(login, data.nameOf(login), avatar(login));
 }
 
 /**
@@ -470,13 +465,7 @@ function Detail({
 
           <Accordion className="bb-dev" headingLevel={3}>
             <AccordionItem value="dev" title="For developers">
-              {data.sample && (
-                <p className="t-ui t-muted bb-measure">
-                  On a real team, these open the build request and its pull
-                  request on GitHub{JIRA_IN_BRIDGE ? ", and the ticket in Jira" : ""}.
-                </p>
-              )}
-              <ul className="t-ui bb-links" hidden={data.sample}>
+              <ul className="t-ui bb-links">
                 <li>
                   <Link href={safeUrl(v.url, "#")} {...external}>
                     {v.kind === "issue"
@@ -702,18 +691,11 @@ export default function BeingBuilt() {
   const shown = queue.filter((x) => inFilters(x, active)).map((x) => x.v);
   return (
     <div className="bb">
-      {(data.sample || data.stale) && (
+      {data.stale && (
         <div className="bb-notes">
-          {data.sample && (
-            <p className="t-ui t-muted">
-              Sample build requests of the sample team. Nothing here is sent.
-            </p>
-          )}
-          {data.stale && (
-            <p className="t-ui t-muted">
-              Shown as last read: GitHub is busy, it refreshes on its own.
-            </p>
-          )}
+          <p className="t-ui t-muted">
+            Shown as last read: GitHub is busy, it refreshes on its own.
+          </p>
         </div>
       )}
       <div className="bb-bar">

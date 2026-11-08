@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
-import { sampleBuildData, SAMPLE_BUILDERS } from './building-sample';
+import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
 import { ageLabel, buildDetail, explorationBuildRows, mergeRows, type RestPull, detailFromQuery, detailQuery, filterCounts, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, matchesBuildTab, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
 import type { DesignTaskRead } from './review-state';
 
 const NOW = Date.parse('2026-10-24T12:00:00Z');
-const sample = () => {
-  const { issues, pulls } = sampleBuildData(NOW);
-  return assembleBuildRequests({ issues: issues.map(slimIssue).map(toBuildIssue), pulls: pulls.map(slimPull).map(toBuildPull), now: NOW, nameOf: (l) => SAMPLE_BUILDERS[l] ?? l });
+const fixture = () => {
+  const { issues, pulls } = fixtureBuildData(NOW);
+  return assembleBuildRequests({ issues: issues.map(slimIssue).map(toBuildIssue), pulls: pulls.map(slimPull).map(toBuildPull), now: NOW, nameOf: (l) => FIXTURE_BUILDERS[l] ?? l });
 };
 
 describe('Being built', () => {
-  it('shows the sample team every status, through the real rules', () => {
-    const views = sample();
+  it('shows every status of the fixture requests, through the real rules', () => {
+    const views = fixture();
     expect(views.map((v) => `${v.component}:${v.status}${v.stale ? ':stale' : ''}`)).toEqual([
       'Tabs:requested:stale',
       'Button:requested',
@@ -33,7 +33,7 @@ describe('Being built', () => {
   });
 
   it('counts the filters and says the page in one sentence', () => {
-    const views = sample();
+    const views = fixture();
     expect(filterCounts(views, NOW)).toEqual({ all: 6, waiting: 2, 'in-progress': 2, 'in-review': 1, 'shipped-this-week': 1 });
     expect(pageSentence(views)).toBe('2 being built, 1 in review, 2 waiting for a developer, 1 for more than a week.');
     expect(pageSentence([])).toBe('Nothing is being built yet.');
@@ -41,7 +41,7 @@ describe('Being built', () => {
   });
 
   it('gives each row one tag and one line, the stale one highlighted', () => {
-    const views = sample();
+    const views = fixture();
     const stale = views[0]!;
     expect(statusTag(stale)).toEqual({ label: 'Requested 10 days ago', tone: 'warning' });
     expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet');
@@ -61,8 +61,8 @@ describe('Being built', () => {
   });
 
   it('reads what was sent and the brief back from the issue', () => {
-    const { issues } = sampleBuildData(NOW);
-    const v = sample().find((x) => x.component === 'Button')!;
+    const { issues } = fixtureBuildData(NOW);
+    const v = fixture().find((x) => x.component === 'Button')!;
     const d = buildDetail(issues.find((i) => i.number === v.number)!.body, v)!;
     expect(d.summary).toContain('Hero sections');
     expect(d.props.map(propLine)).toEqual(['Change size (variant): sm, md, lg. Default md.']);
@@ -72,7 +72,7 @@ describe('Being built', () => {
   });
 
   it('draws the status line with who and when', () => {
-    const views = sample();
+    const views = fixture();
     const shipped = timelineSteps(views[5]!);
     expect(shipped.every((s) => s.reached)).toBe(true);
     expect(shipped.at(-1)).toMatchObject({ status: 'shipped', current: true });
@@ -88,13 +88,13 @@ describe('Being built', () => {
   });
 
   it('gives the Library its line while a change is open', () => {
-    const views = sample();
-    expect(figmaAheadLine(views, 'Card', (l) => SAMPLE_BUILDERS[l] ?? l)?.sentence).toBe('Figma is ahead: 1 change being built (Malik).');
+    const views = fixture();
+    expect(figmaAheadLine(views, 'Card', (l) => FIXTURE_BUILDERS[l] ?? l)?.sentence).toBe('Figma is ahead: 1 change being built (Malik).');
     expect(figmaAheadLine(views, 'Avatar')).toBeNull();
   });
 
   it('never writes an em dash', () => {
-    const { issues } = sampleBuildData(NOW);
+    const { issues } = fixtureBuildData(NOW);
     for (const i of issues) expect(i.body).not.toMatch(/\u2014/);
   });
 
@@ -107,7 +107,7 @@ describe('Being built', () => {
       return { number: 489, title: r.title, body: r.body, html_url: 'https://github.com/acme/ds/issues/489', state: 'closed', state_reason: 'not_planned', labels: r.labels, user: { login: 'dana' }, assignees: [], created_at: new Date(NOW - closedDaysAgo * DAY).toISOString(), closed_at: new Date(NOW - closedDaysAgo * DAY).toISOString() };
     };
     const viewsWith = (closedDaysAgo: number) => {
-      const { issues, pulls } = sampleBuildData(NOW);
+      const { issues, pulls } = fixtureBuildData(NOW);
       return assembleBuildRequests({ issues: [...issues, tag(closedDaysAgo)].map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW });
     };
 
@@ -140,7 +140,7 @@ describe('Being built', () => {
     it('falls back to the component placeholder, labelled with the right component, never a default one', () => {
       const views = viewsWith(2);
       const button = views.find((x) => x.component === 'Button')!;
-      const { issues } = sampleBuildData(NOW);
+      const { issues } = fixtureBuildData(NOW);
       expect(rowThumb(button, issues.find((i) => i.number === 41)!.body)).toEqual({ kind: 'icon', icon: 'component', label: 'Button' });
       const v = views.find((x) => x.number === 489)!;
       expect(rowThumb(v, null)).toEqual({ kind: 'icon', icon: 'component', label: 'Tag' });
@@ -301,7 +301,7 @@ describe('Being built: explorations handed to developers', () => {
   it('waits more than a week: highlighted, and counted in the sentence and the merged list', () => {
     const late = rows([pull(14, { done: { doneAt: iso(9) } })]);
     expect(late[0]).toMatchObject({ status: 'requested', stale: true });
-    const views = sample();
+    const views = fixture();
     const all = listedRows(mergeRows(views, late), NOW);
     expect(all).toHaveLength(7);
     expect(pageSentence(all)).toBe('2 being built, 1 in review, 3 waiting for a developer, 2 for more than a week.');
@@ -358,7 +358,7 @@ describe('Being built: explorations handed to developers', () => {
   });
 
   it('carries the lifecycle onto build requests: In the next release, and who reviews', () => {
-    const views = sample();
+    const views = fixture();
     const shipped = views.find((v) => v.status === 'shipped')!;
     const review = views.find((v) => v.status === 'in-review')!;
     const pulls: RestPull[] = [
@@ -423,7 +423,7 @@ describe('the filters of Being built', () => {
   });
 
   it('reads the product from a label on the request or on its pull request, else the default product', () => {
-    const { issues, pulls } = sampleBuildData(NOW);
+    const { issues, pulls } = fixtureBuildData(NOW);
     const views = assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.map(toBuildPull), now: NOW });
     expect(new Set(withProducts(views, { issues, pulls, products }).map((v) => v.productKey))).toEqual(new Set(['library']));
     const labelled = issues.map((i) => (i.number === 41 ? { ...i, labels: [...i.labels, 'product: shop'] } : i));

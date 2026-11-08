@@ -37,6 +37,7 @@ import {
 import { currentViewer, getToken, hasWorkingToken, initGitHubConnect, onAccess, prefersSignIn, readRepo, studioClient, ghGet } from './github-session';
 import { loadTeams, siteApprovers, siteRoles, siteSoloOwner } from './teams';
 import { siteConfig } from './repo-context';
+import { nameFace } from '../lib/people';
 import { changeOrigin } from '../lib/product-branch';
 import { ghAction } from '../lib/gh-wording';
 import { canReview } from '../lib/access';
@@ -426,7 +427,9 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
       title,
       kind: kindLabel(payload.kind),
       summary: payload.summary,
-      author: { login: d.issue.author, name: authorName, avatarUrl: `https://github.com/${d.issue.author}.png?size=64`, agent: payload.source === 'mcp' && /claude/i.test(d.issue.author) },
+      // Asked by an email member (a name, no GitHub login): their face, never the account that opened the issue, as the
+      // branch page does.
+      author: asker?.name && !asker.login ? { login: nameFace(asker.name), name: authorName, avatarUrl: null, agent: false } : { login: d.issue.author, name: authorName, avatarUrl: `https://github.com/${d.issue.author}.png?size=64`, agent: payload.source === 'mcp' && /claude/i.test(d.issue.author) },
       source: payload.source,
       createdAt: d.issue.createdAt,
       status: statusBadge(status),

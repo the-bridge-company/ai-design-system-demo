@@ -161,7 +161,7 @@ describe('the refile-demo action', () => {
     expect(await memberStore(redis).list(DEMO)).toEqual([]);
   });
 
-  it('files each again through the member path, points the pull request at it, comments and closes the old one as not planned', async () => {
+  it('files each again through the member path, points the pull request at it, comments and closes the old one as a duplicate', async () => {
     const gh = github(true);
     const redis = memoryRedis(() => T0);
     const r = await run(gh, redis, { apply: true });
@@ -183,7 +183,7 @@ describe('the refile-demo action', () => {
     // The issue is Ann's in Bridge, as one she filed herself.
     expect(await redis.cmd('GET', issueKey(DEMO, 100))).toBe('ann@acme.example');
     expect(gh.pulls.get(20)!.body).toBe('## What changed\n\nCloses #100');
-    expect(gh.issues.get(19)).toMatchObject({ state: 'closed', state_reason: 'not_planned' });
+    expect(gh.issues.get(19)).toMatchObject({ state: 'closed', state_reason: 'duplicate' });
     expect(gh.issues.get(19)!.comments).toEqual(['Filed again through Bridge for Ann as #100, so Studio shows who asked for it. Follow it there. Nothing is lost: this issue stays in the history.']);
     expect(gh.writes.some((w) => w.startsWith('DELETE'))).toBe(false);
 

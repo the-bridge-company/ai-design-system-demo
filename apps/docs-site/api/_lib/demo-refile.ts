@@ -5,7 +5,7 @@
 // joined by email sees the designer: Bridge opens their issues with its GitHub App and a "Requested by <name> through
 // Bridge." line (api/contribute planCall, src/lib/author.ts authorFor). This plans the fix: each such open issue filed
 // again for one of the sample team's members (api/_lib/demo-members.ts), same title, body and labels, through the very
-// path a member's own request takes (api/contribute runAsMember); the old one closed as not planned with a comment that
+// path a member's own request takes (api/contribute runAsMember); the old one closed as a duplicate with a comment that
 // links its replacement, never deleted; a developer's pull request that closes it pointed at the replacement.
 //
 // Pure: planDemoRefile reads GitHub's REST shapes and says what to do, api/contribute action `refile-demo` does it
@@ -184,6 +184,6 @@ export function demoExplorationsOf(pulls: readonly CopyPull[], nameOf: (body: st
   return out;
 }
 
-/** The comment left on the old issue before it closes as not planned. */
+/** The comment left on the old issue before it closes as a duplicate. */
 export const refiledComment = (name: string, to: number): string =>
   `Filed again through Bridge for ${name} as #${to}, so Studio shows who asked for it. Follow it there. Nothing is lost: this issue stays in the history.`;

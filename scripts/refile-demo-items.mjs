@@ -5,7 +5,7 @@
 // sample team's repository (the GitHub CLI's, or GH_TOKEN). Nothing is written without --apply.
 //
 // Requests and suggestions (default): each open one an account opened is filed again for a member, with a "Requested
-// by <member> through Bridge." line. The old issue is closed as not planned with a comment linking its replacement
+// by <member> through Bridge." line. The old issue is closed as a duplicate with a comment linking its replacement
 // (never deleted), and a developer's pull request that closes it is pointed at the replacement.
 //
 // Explorations (--update-branches): each open exploration of the design copies is brought up to date from its product
@@ -55,7 +55,7 @@ function printRefile(body) {
   if (!body.items.length) console.log('Nothing to file again.');
   for (const i of body.items) {
     const relink = i.relink.length ? `, points ${i.relink.map((n) => `#${n}`).join(', ')} at it` : '';
-    const now = body.dryRun ? (i.new ? `reuses #${i.new}` : 'files it again') : i.error ? `FAILED: ${i.error}` : `${i.reused ? 'reused' : 'filed'} #${i.new}, closed #${i.old} as not planned`;
+    const now = body.dryRun ? (i.new ? `reuses #${i.new}` : 'files it again') : i.error ? `FAILED: ${i.error}` : `${i.reused ? 'reused' : 'filed'} #${i.new}, closed #${i.old} as a duplicate`;
     console.log(`#${i.old} ${i.title}: for ${i.member} (${i.why}), ${now}${relink}`);
   }
   for (const s of body.skipped) console.log(`Left as is: #${s.number} ${s.title} (${s.why})`);

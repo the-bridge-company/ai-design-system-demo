@@ -717,9 +717,8 @@ function Conversation({ p, onReply }: { p: BranchReviewProps; onReply: () => voi
 const CHECK_STATUS: Record<'pass' | 'fail' | 'pending', ChecklistStatus> = { pass: 'done', fail: 'failed', pending: 'waiting' };
 const APPROVAL_STATUS: Record<'approved' | 'changes' | 'waiting', ChecklistStatus> = { approved: 'done', changes: 'failed', waiting: 'waiting' };
 
-function ChecksRow({ checks, approvals }: { checks: ChecksLine; approvals: BranchReviewProps['approvals'] }) {
-  const [open, setOpen] = useState(false);
-  const tone = checks.state === 'pass' ? 'is-pass' : checks.state === 'fail' ? 'is-fail' : '';
+function ChecksRow({ checks, approvals, line }: { checks: ChecksLine; approvals: BranchReviewProps['approvals']; line: boolean }) {
+  if (!approvals.length && !line) return null;
   return (
     <section className="br-checks" aria-label="Checks and approvals">
       {/* The approvals it needs, always in view: who approves the design and who approves the code. */}
@@ -730,6 +729,20 @@ function ChecksRow({ checks, approvals }: { checks: ChecksLine; approvals: Branc
           ))}
         </Checklist>
       )}
+      {line && <ChecksSummary checks={checks} />}
+    </section>
+  );
+}
+
+/**
+ * The one line about checks ("All 304 contrast checks pass · Details") and its folded list. With a decision bar it
+ * sits in the bar, right above the decision it informs (as on a GitHub merge box): the sticky bar never covers it.
+ */
+function ChecksSummary({ checks }: { checks: ChecksLine }) {
+  const [open, setOpen] = useState(false);
+  const tone = checks.state === 'pass' ? 'is-pass' : checks.state === 'fail' ? 'is-fail' : '';
+  return (
+    <div className="br-checks-summary">
       <div className="br-line is-tight">
         <p className={`br-checks-line ${tone}`}>{checks.text}</p>
         {checks.rows.length > 0 && (
@@ -745,7 +758,7 @@ function ChecksRow({ checks, approvals }: { checks: ChecksLine; approvals: Branc
           ))}
         </Checklist>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -903,6 +916,7 @@ function DecisionBar({ p, leftLine, inputRef }: { p: BranchReviewProps; leftLine
   const primary = a.primary;
   return (
     <div className="br-bar" role="region" aria-label="Your review">
+      <ChecksSummary checks={p.checks} />
       <div className="br-bar-row">
         {leftLine && <span className="br-bar-left">{leftLine}</span>}
         {a.comment && (
@@ -1080,7 +1094,7 @@ export function BranchReview(p: BranchReviewProps) {
             {work && <ProductWork work={work} link={p.links.review} hasVisual={p.visual?.state === 'changes'} />}
             <MultiBody {...p} current={current} seen={looked} pick={pick} mark={mark} />
             <Conversation p={p} onReply={reply} />
-            <ChecksRow checks={p.checks} approvals={approvals} />
+            <ChecksRow checks={p.checks} approvals={approvals} line={Boolean(p.inQueue)} />
             {(p.developer || p.code) && <ForDevelopers dev={p.developer} code={p.code} />}
             {/* The visual impact reads into these (scripts/reviews.ts); on a busy branch the before and after shows per change. */}
             {p.visual && <div id="rv-visual" hidden />}
@@ -1096,7 +1110,7 @@ export function BranchReview(p: BranchReviewProps) {
           {!single && !work && <p className="br-muted">Nothing here for design review: the changes are code, a developer reviews them.</p>}
           {single?.kind === 'component' && <p className="br-muted">The code is a developer's to review.</p>}
           <Conversation p={p} onReply={reply} />
-          <ChecksRow checks={p.checks} approvals={approvals} />
+          <ChecksRow checks={p.checks} approvals={approvals} line={Boolean(p.inQueue)} />
           {(p.developer || p.code) && <ForDevelopers dev={p.developer} code={p.code} />}
         </div>
       )}

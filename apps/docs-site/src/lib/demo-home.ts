@@ -3,7 +3,7 @@
 // repository's activity (scripts/demo-home.ts readDemoActivity). Nothing is made up. Pure, covered by
 // demo-home.test.ts.
 import { isGuardedExploration, parseNeededBy, requesterOf } from '@bridge-ds/core';
-import { CLAUDE, changeNeed, person, requesterPerson, type NeedRow, type Person } from './home-model';
+import { CLAUDE, changeNeed, explorationPerson, person, requesterPerson, type NeedRow, type Person } from './home-model';
 import { isGuidanceChange } from './overview-todo';
 import { oneLineTitle } from './markdown';
 import { humanTitle } from './pr-title';
@@ -16,7 +16,6 @@ import { changeOrigin } from './product-branch';
 import type { ProductConfig } from '@bridge-ds/core';
 import type { ThumbSpec } from './branch-thumb';
 import type { LifecycleStage } from './review-state';
-import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 
 /** The fields of a pull request the demo home reads (GET /repos/{o}/{r}/pulls, or the activity snapshot). */
 export interface DemoPull {
@@ -180,11 +179,8 @@ export function teamExplorations(
     pulls.filter((p) => !isBotPull(p)),
     {
       products: opts.products ?? [],
-      author: (p) => {
-        // A product copy's exploration names its person in its block (a member by email, a sample persona).
-        const named = p.product ? explorationAuthorFor(p.user?.login, p.body) : null;
-        return named && isNameAuthor(named) ? person(named, nameOfAuthor(named), null) : askerOf(p, opts.people);
-      },
+      // An exploration names its person in its record (a member by email, a sample persona): the one rule.
+      author: (p) => explorationPerson(p.user?.login, p.body, (l) => who({ login: l }, opts.people)),
       preview: (p) => (p.product ? opts.productPreviews?.get(`${p.product}#${p.number}`) : opts.previews?.get(p.number)),
       ...(opts.files ? { files: opts.files } : {}),
       ...(opts.taskStage ? { taskStage: opts.taskStage as never } : {}),

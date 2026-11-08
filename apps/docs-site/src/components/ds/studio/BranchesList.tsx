@@ -38,7 +38,8 @@ import { SelectionBar, type ListedBranch } from './CombineChanges';
 import { activeFilters, ARCHIVED_NOTE, boxDisabled, changesFiltersParam, filterChoices, inFilters, listSummary, designRows, emptyTabLine, FULL_TIP, groupByMonth, groupByProduct, shippedAtOf, shippedByTask, isYours, knownNames, productOf, selectable, shippedCapLine, shippedOn, shippedRows, stateOf, visibleTabs, withChangesFilters, YOU, type ChangesFilters, type ListFilters, type StateTab } from '../../../lib/branches-page';
 import { onlyTokens, toggleChange } from '../../../lib/combine-changes';
 import { childLine, nestLinked } from '../../../lib/product-branch';
-import { CLAUDE, displayName, person, requesterPerson, SEP, type Person, type PillTone } from '../../../lib/home-model';
+import { isNameAuthor } from '../../../lib/author';
+import { authorPerson, CLAUDE, displayName, person, requesterPerson, SEP, type Person, type PillTone } from '../../../lib/home-model';
 import {
   categoryOf,
   designerKey,
@@ -158,7 +159,8 @@ function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number,
     void import('../../../scripts/home-data').then(({ personOf, thumbOf, filesOf }) => {
       const logins = new Set<string>();
       for (const r of rows) {
-        if (!r.agent) logins.add(r.author);
+        // A name-only author ("name:Leo") is never looked up on GitHub.
+        if (!r.agent && !isNameAuthor(r.author)) logins.add(r.author);
         if (r.requester?.login) logins.add(r.requester.login);
         // An exploration in a product's own repository: its files and screens are not in this repository.
         if (r.product) continue;
@@ -224,7 +226,7 @@ export function BranchesList(p: BranchesListProps) {
     return known && base.name === displayName(login) ? { ...base, name: displayName(login, known) } : base;
   };
   // The person of a row: who asked for it when Bridge recorded it, else Claude AI for its own work, else the author.
-  const personOf = (r: ListRow): Person => (r.requester && requesterPerson(r.requester, resolve)) ?? (r.agent ? CLAUDE : resolve(r.author));
+  const personOf = (r: ListRow): Person => (r.requester && requesterPerson(r.requester, resolve)) ?? (r.agent ? CLAUDE : authorPerson(r.author, resolve));
   const whoNode = (r: ListRow) => <Who p={personOf(r)} size="md" />;
   const nameOf = (r: ListRow) => personOf(r).name;
 

@@ -41,6 +41,7 @@ import {
   isOnlyReviewer,
   person,
   requesterPerson,
+  explorationPerson,
   sortNeeds,
   waitingSince,
   type BranchCard,
@@ -526,8 +527,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const check = t?.devPull?.check;
       const row = pmHomeRow(p.body, { buildReady: Boolean(t && taskStage(t) === 'in-review' && (!check || check.waiting.includes(pm!.name))) });
       if (!row) continue;
-      const block = parseExplorationBody(p.body);
-      const who = block?.memberName ? { login: p.user.login, name: block.memberName, avatar: null } : pick(block?.author ?? p.user.login)!;
+      const who = explorationPerson(p.user.login, p.body, (l) => pick(l)!);
       const href = studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`);
       needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line(who.name ?? 'The designer'), action: row.action });
     }
@@ -561,10 +561,8 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       viewer,
       viewerRef,
       files: (p) => (xpFiles.has(xpKey(p)) ? xpFiles.get(xpKey(p)) : undefined),
-      author: (p) => {
-        const r = requesterOf(p.body);
-        return (r && requesterPerson(r, (l) => pick(l)!)) ?? pick(p.user.login)!;
-      },
+      // Who the exploration names, whoever's account opened it (the one rule of every surface).
+      author: (p) => explorationPerson(p.user.login, p.body, (l) => pick(l)!),
       preview: (p) => shots.get(shotKeyOf(p)),
     });
     const branches: BranchCard[] = queue

@@ -80,8 +80,11 @@ export interface RepoRef {
 
 // The token, its check and its sign-in session live in one slot (lib/github-signin.ts slotKey):
 // 'bridge.github.token.direct' for a sign-in with Bridge Direct, no suffix without a GitHub App.
-/** An email contributor's role, in the words Members uses: "Can edit", or "Can view" for a read-only member. */
-const contributorRole = () => (contributorFor(pageRepo())?.role === 'view' ? ROLE_WORDS.view.label : ROLE_WORDS.edit.label);
+/** An email member's role, in the words Members uses: "Admin" for an email admin, "Can view" for a read-only member, else "Can edit". */
+const contributorRole = () => {
+  const role = contributorFor(pageRepo())?.role;
+  return role === 'admin' ? ROLE_WORDS.admin.label : role === 'view' ? ROLE_WORDS.view.label : ROLE_WORDS.edit.label;
+};
 const TOKEN_BASE = 'bridge.github.token';
 const CHECK_BASE = 'bridge.github.check';
 /** The sign-in session (expiry, refresh token) next to its token. Absent for a pasted token. */

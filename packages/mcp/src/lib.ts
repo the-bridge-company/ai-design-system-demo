@@ -34,6 +34,9 @@ export type { ClaudeDesignHost, ClaudeDesignManifest, TeamClaudeDesign } from '.
 // The docs logic the docs-draft GitHub Action (scripts/docs-draft.mjs) runs, from the core compiled into this bundle:
 // the workflow builds the MCP library, not core.
 export { DOCS_DRAFT_MODEL, anthropicReplyText, anthropicRequest, formatDocsJson, mergeDocsDraft, missingProse, parseDocsReply } from '@bridge-ds/core';
+// The exploration steps a designer takes in Studio (start, save, ask a lead, the lead's yes), from the core compiled into
+// this bundle: the hosted site runs them as the sample team's members (api/contribute `seed-demo-explorations`).
+export { EXPLORATION_USE_CASES, GitHubClient, askLeadOnGitHub, leadApproveOnGitHub, productMarks, productsOf, startExplorationOnGitHub, type Exploration, type ExplorationUseCase, type ProductConfig } from '@bridge-ds/core';
 
 /** Where the server's GitHub token came from: the environment, the gh sign-in, or nowhere. Never the token itself. */
 export type TokenSource = 'env' | 'gh' | 'none';

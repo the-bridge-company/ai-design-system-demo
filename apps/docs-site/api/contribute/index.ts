@@ -179,6 +179,8 @@ import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/sessi
 import { teamInSet } from '../_lib/members.js';
 import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
 import { demoExplorationsOf, planDemoRefile, refiledComment, relinkBody, type RefileIssue, type RefilePull } from '../_lib/demo-refile.js';
+import { parseSeedPlan, SEED_LIMITS, seedProductsFrom, type SeedState } from '../_lib/demo-explorations.js';
+import type { ExplorationUseCase } from '@bridge-ds/mcp';
 import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { addsPmWords, isPm, PM_ONLY, PRODUCT_KEY, pmOf, pmsOf, publicPm, setPm, withPmWord, type PmWord, type ProductPm } from '../_lib/product-pm.js';
@@ -588,7 +590,10 @@ const signInKey = (hash: string) => `bridge:contrib:signin:${hash}`;
 
 async function onAction(req: Request, ctx: Ctx): Promise<Response> {
   if (!/^application\/json\b/i.test(req.headers.get('content-type') ?? '')) return fail(415, 'content_type', 'Send JSON.');
-  const body = await readBody(req, MAX_ACTION_BODY);
+  // Actions are small; only the sample team's exploration plan carries files (SEED_LIMITS, demo-explorations.ts).
+  const raw = await req.text();
+  const body = await readBody(new Request(req.url, { method: 'POST', body: raw }), SEED_LIMITS.request);
+  if (raw.length > MAX_ACTION_BODY && body.action !== 'seed-demo-explorations') throw new HttpError(413, 'too_large', 'Request too large.');
   const { svc } = ctx;
 
   switch (body.action) {
@@ -670,6 +675,9 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
 
     case 'update-demo-branches':
       return await onUpdateDemoBranches(req, ctx, body);
+
+    case 'seed-demo-explorations':
+      return await onSeedDemoExplorations(req, ctx, body);
 
     case 'exploration-keeper': {
       // A lead signed in by email hands an exploration over: the member record says they lead, never the browser.
@@ -977,6 +985,154 @@ async function onUpdateDemoBranches(req: Request, ctx: Ctx, body: Record<string,
     }
   }
   return json(200, { dryRun: !apply, items: out, skipped }, { 'Cache-Control': 'private, no-store' });
+}
+
+/** What `seed-demo-explorations` says per item of the plan: in a dry run, what it would do; else what it did. */
+export interface SeedOutcome {
+  product: string;
+  copy: string;
+  branch: string;
+  member: string;
+  state: SeedState;
+  files: number;
+  /** Already in the copy (left as it is), to be started, or started by this run. */
+  status: 'exists' | 'starts' | 'started';
+  pr?: number;
+  url?: string;
+  /** In a run: the step that stopped it. What came before it stays, and the next run leaves it as it is. */
+  error?: string;
+}
+
+/** The core steps the seeding runs, from the MCP library bundle (this function ships without core itself). */
+type SeedLib = typeof import('@bridge-ds/mcp');
+type SeedRetry = { attempts: number; baseDelayMs: number; sleep: (ms: number) => Promise<void> };
+
+/**
+ * A GitHub client for one member in a product of the team, whose every call takes the member's path: a write goes
+ * through runAsMember (the proxy's policy, the App's token, the member's "Requested by" line, their block, their
+ * ownership and daily cap), as their browser's writes do through onProxy; a read goes out with the app's read token,
+ * as onTeamRead reads for them. A refusal comes back in GitHub's error shape, so the core step says it.
+ */
+function memberClient(ctx: Ctx, lib: SeedLib, team: { full: string }, pairs: readonly ProductPair[], member: ProxyMember, repo: string, retry: SeedRetry | undefined) {
+  const refuse = (status: number, message: string) => Response.json({ message }, { status });
+  const f = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
+    const u = new URL(url);
+    if (u.origin !== API) return refuse(403, "Bridge writes in the team's products only.");
+    const method = (init?.method ?? 'GET').toUpperCase();
+    try {
+      const any = parseAnyTarget(u.pathname + u.search);
+      const at = { owner: any.owner, repo: any.repo, full: `${any.owner}/${any.repo}`.toLowerCase() };
+      const scope = scopeOf(pairs, at.full);
+      if (!scope) throw notAllowed();
+      if (method === 'GET') {
+        const token = await ctx.svc.readApp.installationToken(at.owner, at.repo);
+        if (!token) return refuse(409, PRODUCT_APP_MISSING);
+        return await ctx.f(url, { method, headers: { Accept: init?.headers?.Accept ?? 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28' } });
+      }
+      const body = init?.body ? (JSON.parse(init.body) as Record<string, unknown>) : null;
+      return await runAsMember(ctx, { team: team.full, at, scope, member, method, target: { rest: any.rest, rawRest: any.rawRest, query: any.query }, body, accept: init?.headers?.Accept ?? null });
+    } catch (e) {
+      if (e instanceof HttpError) return refuse(e.status, e.message);
+      throw e;
+    }
+  };
+  return new lib.GitHubClient(repo, 'bridge-member', f, retry, { etags: false, protectedBranches: ['main', 'master'] });
+}
+
+/** Tests only: the retry policy of the seeding's GitHub clients (undefined: core's default). */
+let seedRetry: SeedRetry | undefined;
+export const setSeedRetry = (r: SeedRetry | undefined) => {
+  seedRetry = r;
+};
+
+/**
+ * POST { action: 'seed-demo-explorations', repo: <the sample team>, plan: { items: [...] }, apply?: true } with a GitHub
+ * token that administers the sample team's repository. Each item (api/_lib/demo-explorations.ts parseSeedPlan) is an
+ * exploration of one of its members in a product's design copy, made the way they make one in Studio, every step
+ * through their own path (memberClient, runAsMember): started with core's startExplorationOnGitHub (the branch, the
+ * note, the draft pull request with the product's labels), its files saved in one commit on the branch, then for
+ * `waiting-for-lead` Done exploring as asking a lead (askLeadOnGitHub), and for `done` also the lead's "Looks right"
+ * as that lead (leadApproveOnGitHub, which opens the developers' task in the product's repository). GitHub shows
+ * Bridge's App acting with the member's "Requested by" line, and the exploration block names the member. An
+ * exploration whose branch is already in the copy is left as it is, so a run said again starts only what is missing.
+ * Without `apply`, a dry run that writes nothing. Run by scripts/seed-demo-explorations.mjs; nobody else may.
+ */
+async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  if (!demoVisitorEmail(t.full)) return fail(404, 'not_found', 'Only the sample team has explorations to seed.');
+  const a = await githubAccountOn(ctx, req, t);
+  if (a?.kind === 'expired') return fail(401, 'signin', GITHUB_EXPIRED);
+  if (a?.kind !== 'account' || a.perms?.admin !== true) return fail(403, 'not-allowed', SEED_WORDS.notAdmin);
+  const apply = body.apply === true;
+  const token = await ctx.svc.app.installationToken(t.owner, t.repo);
+  if (!token) return fail(409, 'app_missing', APP_MISSING);
+  const cfg = await ctx
+    .f(`${API}/repos/${t.owner}/${t.repo}/contents/bridge.config.json`, { method: 'GET', headers: { Accept: 'application/vnd.github.raw', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28' } })
+    .catch(() => null);
+  const config: unknown = cfg?.status === 200 ? await cfg.json().catch(() => null) : null;
+  if (!config) return fail(502, 'unreachable', "Bridge could not read the sample team's settings on GitHub. Try again in a minute.");
+  const lib: SeedLib = await import('@bridge-ds/mcp');
+  const plan = parseSeedPlan(body.plan, seedProductsFrom(config), lib.EXPLORATION_USE_CASES.map((u) => u.value));
+  if (plan.problems.length) return fail(400, 'bad_plan', plan.problems.join(' '), { problems: plan.problems });
+  const products = lib.productsOf(config as Parameters<SeedLib['productsOf']>[0]);
+  const pairs = await productPairs(ctx, t);
+  if (apply) await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
+  const bases = new Map<string, string>();
+  const out: SeedOutcome[] = [];
+  for (const item of plan.items) {
+    const copy = item.product.copy;
+    const o: SeedOutcome = { product: item.product.name, copy, branch: item.branch, member: item.member.name, state: item.state, files: item.files.length, status: 'starts' };
+    out.push(o);
+    try {
+      const [owner, repo] = copy.split('/') as [string, string];
+      const copyToken = await ctx.svc.app.installationToken(owner, repo);
+      if (!copyToken) throw new Error('Bridge is not installed on this copy.');
+      const ref = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}/git/ref/heads/${encodeRef(item.branch)}`);
+      if (ref.status === 200) {
+        o.status = 'exists';
+        continue;
+      }
+      if (ref.status !== 404) throw new Error(`GitHub answered ${ref.status} when looking for the branch.`);
+      if (!apply) continue;
+      if (!bases.has(copy)) {
+        const info = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}`);
+        if (info.status !== 200 || typeof info.data?.default_branch !== 'string') throw new Error("GitHub did not say what the copy's default branch is.");
+        bases.set(copy, info.data.default_branch as string);
+      }
+      const base = bases.get(copy)!;
+      const member = await ctx.svc.members.get(t.full, item.member.email);
+      if (!member) throw new Error(`${item.member.name} is not on the team.`);
+      const product = products.find((p) => p.key.toLowerCase() === item.product.key);
+      if (!product) throw new Error(`The team's settings list no product ${item.product.key}.`);
+      const gh = memberClient(ctx, lib, t, pairs, member, copy, seedRetry);
+      const started = await lib.startExplorationOnGitHub(
+        gh,
+        { name: item.name, purpose: item.purpose, slug: item.slug, source: 'studio', ...(item.useCase ? { useCase: item.useCase as ExplorationUseCase } : {}) },
+        {
+          base,
+          packages: [],
+          apps: {},
+          labels: lib.productMarks(products, product).labels,
+          inProduct: { name: product.name, library: `${t.owner}/${t.repo}`, ...(product.design?.preview ? { preview: product.design.preview } : {}), copyOf: product.repo ?? item.product.code },
+          ...(seedRetry ? { retryMs: 0 } : {}),
+        },
+      );
+      o.status = 'started';
+      o.pr = started.pr;
+      o.url = started.url;
+      if (item.files.length) await gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: item.branch, message: item.message, files: item.files });
+      if (item.state === 'exploring') continue;
+      await lib.askLeadOnGitHub(gh, started.pr, { pieces: [], openedByName: member.name, leads: [] });
+      if (item.state !== 'done') continue;
+      const lead = item.lead ? await ctx.svc.members.get(t.full, item.lead.email) : null;
+      if (!lead) throw new Error('No lead of the team can say it looks right.');
+      await lib.leadApproveOnGitHub(memberClient(ctx, lib, t, pairs, lead, copy, seedRetry), started.pr, { products, leadName: lead.name, source: 'studio' });
+    } catch (e) {
+      o.error = e instanceof Error ? e.message : 'Something went wrong.';
+    }
+  }
+  return json(200, { dryRun: !apply, items: out }, { 'Cache-Control': 'private, no-store' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

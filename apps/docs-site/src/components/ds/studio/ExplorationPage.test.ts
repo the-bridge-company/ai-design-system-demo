@@ -701,6 +701,15 @@ describe('Send to Figma', () => {
     expect([...grid.children].map((c) => c.className.split(' ')[0])).toEqual(['xp-preview', 'xp-side', 'xp-activity']);
   });
 
+  it('carries the demo mark, so on the sample team a click opens the demo dialog instead (scripts/demo-gate.ts)', async () => {
+    for (const claudeLink of ['yes', 'no'] as const) {
+      paint({ ...exploring, figma, claudeLink });
+      const el = (await screen.findAllByText('Send to Figma'))[0]!.closest('[data-demo-write]');
+      expect(el?.getAttribute('data-demo-write')).toBe('send to Figma');
+      cleanup();
+    }
+  });
+
   it('no Figma file or no right to edit (no line): no button', () => {
     paint(exploring);
     expect(screen.queryByText('Send to Figma')).toBeNull();

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DEMO_REPOS, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName } from './demo';
+import { DEMO_ACTION_DEFAULT, demoActionLine, demoActionNames, DEMO_REPOS, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName } from './demo';
 
 describe('the demo', () => {
   it('is the self-hosted repository and the hosted demo team, any case', () => {
@@ -36,6 +36,39 @@ describe('the demo', () => {
   it("never calls Bridge's own design system the demo", () => {
     const own = demoDialog('the-bridge-company/ai-design-system-demo');
     expect(`${own.title} ${own.lead}`).not.toMatch(/demo|for real/i);
+  });
+});
+
+describe('demoActionLine: what an action does on a real team, in the sample-team dialog', () => {
+  it('names each action by its mark, the refused action, or the words clicked', () => {
+    expect(demoActionLine(['send to Figma'])).toMatch(/^Send to Figma puts this screen in your team's Figma file, built from your library's components/);
+    expect(demoActionLine(['Send to Figma again'])).toBe(demoActionLine(['send to Figma']));
+    expect(demoActionLine(['keep an exploration'])).toMatch(/^Done exploring tells your team/);
+    expect(demoActionLine(['Done exploring'])).toBe(demoActionLine(['keep an exploration']));
+    expect(demoActionLine(['Looks right'])).toMatch(/^Looks right tells/);
+    expect(demoActionLine(['Needs changes'])).toMatch(/^Needs changes sends/);
+    expect(demoActionLine(['review changes'])).toMatch(/^Approve says/);
+    expect(demoActionLine(['comment on changes'])).toMatch(/^Your comment/);
+    expect(demoActionLine(['start an exploration'])).toMatch(/^Start an exploration/);
+    expect(demoActionLine(['invite'])).toMatch(/^Invite emails/);
+    expect(demoActionLine(['set-pm'])).toMatch(/^The product manager/);
+    expect(demoActionLine(['library-update'])).toMatch(/^Update from the library/);
+    expect(demoActionLine(['edit the roles'])).toMatch(/^Roles decide/);
+  });
+
+  it('the first name it knows wins (the mark, then the newest click); none known: the line for any action', () => {
+    expect(demoActionLine([null, 'Send', 'Needs changes', 'Looks right'])).toBe(demoActionLine(['Needs changes']));
+    expect(demoActionLine(['send to Figma', 'Looks right'])).toBe(demoActionLine(['send to Figma']));
+    expect(demoActionLine([])).toBe(DEMO_ACTION_DEFAULT);
+    expect(demoActionLine([undefined, 'Open the preview'])).toBe(DEMO_ACTION_DEFAULT);
+  });
+
+  it('every line is one or two plain sentences in the Bridge voice: no em dash, no developer words', () => {
+    for (const line of [...demoActionNames().map((n) => demoActionLine([n])), DEMO_ACTION_DEFAULT]) {
+      expect(line).not.toMatch(/\u2014|GitHub|pull request|branch|commit|token|repo|merge|PR\b/i);
+      expect(line.split(/(?<=\.)\s+/).length).toBeLessThanOrEqual(2);
+      expect(line).toMatch(/^[A-Z].*\.$/);
+    }
   });
 });
 

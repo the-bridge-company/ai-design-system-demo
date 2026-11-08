@@ -18,6 +18,9 @@ export default defineConfig({
     pool: 'threads',
     maxWorkers: 2,
     testTimeout: 15000,
+    // The Bridge toolbar bundles the Bridge tokens as text (packages/toolbar/src/bridgeTokens.ts): keep that file's
+    // content, Vitest empties every other stylesheet.
+    css: { include: [/packages\/tokens\/dist\/tokens\.css/] },
     projects: [
       {
         extends: true,

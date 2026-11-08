@@ -1,0 +1,5 @@
+---
+"@bridge-ds/toolbar": patch
+---
+
+The toolbar looks the same on every product, whatever its design system. It used to take its look from the host page: token values from the host's `:root`, and its buttons from the host's component CSS (a design system forked from Bridge hashed identical class names), so on a product with its own design system Live product and This change showed as two separate pills with the host's radius and colours. The toolbar now brings its own: the Bridge components it renders and their CSS are bundled in its lazy chunk under class names of their own (`bridge-tb_*`), and the Bridge token values (Bridge brand, compact density, light and dark) are bundled from `@bridge-ds/tokens`, resolved to plain values and scoped to the toolbar's elements and popups at a specificity no token rule reaches. The run-time fetch of Studio's tokens.css to pin the toolbar's colours is gone. `@bridge-ds/react` is no longer a peer dependency; `@base-ui/react` (already installed with `@bridge-ds/react`) is now a dependency.

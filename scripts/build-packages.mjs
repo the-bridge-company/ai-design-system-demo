@@ -11,9 +11,10 @@
 // After building, every non-source export target is checked to exist, so a broken manifest fails here and not
 // in a product's install.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,7 +30,7 @@ if (unknown.length) {
 const pkgDir = (name) => join(ROOT, 'packages', name);
 const tsc = (args, cwd) => execFileSync(process.execPath, [join(ROOT, 'node_modules/typescript/bin/tsc'), ...args], { cwd, stdio: 'inherit' });
 
-async function viteLib(name, { external, css, entry = { index: 'src/index.ts' }, plugins = [], cssCodeSplit }) {
+async function viteLib(name, { external, css, entry = { index: 'src/index.ts' }, plugins = [], cssCodeSplit, scopedName }) {
   const { build, defaultClientConditions } = await import('vite');
   const dir = pkgDir(name);
   await build({
@@ -39,6 +40,7 @@ async function viteLib(name, { external, css, entry = { index: 'src/index.ts' },
     logLevel: 'warn',
     esbuild: { jsx: 'automatic' },
     resolve: { conditions: ['source', ...defaultClientConditions] },
+    ...(scopedName ? { css: { modules: { generateScopedName: scopedName } } } : {}),
     build: {
       outDir: 'dist',
       emptyOutDir: false,
@@ -65,6 +67,25 @@ const externalFor = (name) => {
 };
 // The toolbar's styles travel inside the lazy chunk that renders it: a product mounts one component and imports no
 // stylesheet, and a page without `?bridge=` loads neither. Each chunk's CSS becomes a <style> it adds once.
+// The toolbar bundles the library components it renders, so its look never depends on the host's stylesheets. Their
+// CSS Modules class names get a prefix of their own: never the names of the host's @bridge-ds/react (any version) nor
+// of a design system forked from it, whose identical files would otherwise hash to identical names.
+const toolbarScopedName = (local, file) => {
+  const where = relative(ROOT, file.split('?')[0]).replaceAll('\\', '/');
+  return `bridge-tb_${local}_${createHash('sha256').update(`${where}:${local}`).digest('base64url').slice(0, 6)}`;
+};
+
+// The Bridge tokens the toolbar bundles (`@bridge-ds/tokens/tokens.css?raw`, resolved by src/bridgeTokens.ts): without
+// their descriptions, which are half the file.
+const compactTokensCss = () => ({
+  name: 'bridge-compact-tokens-css',
+  transform(code, id) {
+    if (!/tokens\.css\?raw$/.test(id)) return null;
+    const css = JSON.parse(code.slice(code.indexOf('"'), code.lastIndexOf('"') + 1));
+    return { code: `export default ${JSON.stringify(css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n/g, '\n'))};`, map: null };
+  },
+});
+
 const injectCss = () => ({
   name: 'bridge-inject-css',
   enforce: 'post',
@@ -133,7 +154,9 @@ const BUILDERS = {
     rmSync(join(dir, 'dist'), { recursive: true, force: true });
     // Two entry points: the component (index, which lazy-loads the toolbar and its styles) and ./together (the
     // combination of changes tried together, with @bridge-ds/core), which a product passes back as a lazy loader.
-    await viteLib('toolbar', { external: externalFor('toolbar'), css: false, cssCodeSplit: true, plugins: [injectCss()], entry: { index: 'src/index.ts', together: 'src/together.ts' } });
+    // @bridge-ds/react and @bridge-ds/tokens are dev dependencies: bundled into the lazy chunk (components, their CSS,
+    // the Bridge token values), so the toolbar looks the same on a host with any design system.
+    await viteLib('toolbar', { external: externalFor('toolbar'), css: false, cssCodeSplit: true, scopedName: toolbarScopedName, plugins: [compactTokensCss(), injectCss()], entry: { index: 'src/index.ts', together: 'src/together.ts' } });
     tsc(['-p', 'tsconfig.build.json'], dir);
   },
   visual: esbuildPackage('visual'),

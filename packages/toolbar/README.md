@@ -26,6 +26,10 @@ off and on, **Esc** ends Isolate. None of them fires while you type in a field.
 Without `?bridge=` (or the session that remembers it) it renders nothing and loads nothing: the toolbar and its styles
 are one lazy chunk.
 
+The toolbar is Bridge's chrome and looks the same on any product, whatever its design system, tokens or global CSS:
+its chunk carries the Bridge components it renders (class names of their own, `bridge-tb_*`) and the Bridge token
+values, scoped to the toolbar's own elements. It never reads the page's tokens for its own look.
+
 ## Mount it
 
 ```sh

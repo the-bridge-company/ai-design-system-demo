@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// People in plain-script rows: on the sample team (Acme Design) a login reads as its persona, never the repository's
-// real account, and nothing is looked up on GitHub; on any other team, the profile name as before.
+// People in plain-script rows: every team, the sample team (Acme Design) included, reads a login by its profile name,
+// looked up on GitHub, and a member Bridge knows by name as written.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const s = vi.hoisted(() => ({ repo: { owner: 'peterbono', repo: 'bridge-demo-ds' }, site: { demo: { viewer: 'Dana' } } as Record<string, unknown>, ghGet: vi.fn() }));
+const s = vi.hoisted(() => ({ repo: { owner: 'acme-design-demo', repo: 'bridge-demo-ds' }, ghGet: vi.fn() }));
 
 vi.mock('./github-session', () => ({
   currentViewer: () => null,
@@ -11,7 +11,7 @@ vi.mock('./github-session', () => ({
   ghGet: s.ghGet,
   hasWorkingToken: () => false,
 }));
-vi.mock('./repo-context', () => ({ repoContext: () => ({ ...s.repo, defaultBranch: 'main', hosted: true }), siteConfig: () => s.site }));
+vi.mock('./repo-context', () => ({ repoContext: () => ({ ...s.repo, defaultBranch: 'main', hosted: true }), siteConfig: () => ({}) }));
 vi.mock('@bridge-ds/react/avatar-illustrated', () => ({ illustratedAvatarUri: (seed: string) => `data:image/svg+xml,${seed}` }));
 
 const { displayName, lookUpNames, paintPeople, personHtml } = await import('./people');
@@ -24,32 +24,26 @@ const host = (html: string) => {
 };
 
 beforeEach(() => {
-  s.repo = { owner: 'peterbono', repo: 'bridge-demo-ds' };
-  s.site = { demo: { viewer: 'Dana' } };
+  s.repo = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
   s.ghGet.mockReset();
   s.ghGet.mockResolvedValue({ data: { name: 'Florian G' } });
 });
 
-describe('personHtml on the sample team', () => {
-  it('reads Claude working from the real account as "Claude AI, with Dana"', async () => {
-    const el = host(personHtml('peterbono', { agent: true, withName: false }));
-    expect(el.textContent).toBe(', by Claude AI, with Dana');
-    await paintPeople(el);
-    expect(el.textContent).toBe(', by Claude AI, with Dana');
-    expect(el.innerHTML).not.toMatch(/peterbono/);
-  });
-
-  it('reads the real account as the lead, with her face', () => {
+describe('personHtml on the sample team, as on any team', () => {
+  it('reads a real account by its profile name, never a stand-in persona', async () => {
     const el = host(personHtml('peterbono'));
-    expect(el.querySelector('.person-name')?.textContent).toBe('Dana');
-    expect(el.innerHTML).not.toMatch(/peterbono/);
-    expect(el.querySelector('[data-face]')?.getAttribute('data-face')).toBe('~dana');
+    const name = () => el.querySelector('.person-name')?.textContent;
+    expect(name()).toBe('peterbono');
+    expect(el.querySelector('[data-face]')?.getAttribute('data-face')).toBe('peterbono');
+    await paintPeople(el);
+    expect(s.ghGet).toHaveBeenCalledWith('/users/peterbono');
+    expect(name()).toBe('Florian G');
   });
 
-  it('reads a sample member as that member, with the face Members shows', () => {
-    const el = host(personHtml('~ann-leroy'));
+  it('shows an email member Bridge recorded by name as written, never looked up', () => {
+    const el = host(personHtml('name:Ann'));
     expect(el.querySelector('.person-name')?.textContent).toBe('Ann');
-    expect(el.querySelector('[data-face]')?.getAttribute('data-face')).toBe('~ann-leroy');
+    expect(el.querySelector('[data-person]')).toBeNull();
   });
 
   it('keeps Claude as Claude AI', () => {
@@ -57,12 +51,9 @@ describe('personHtml on the sample team', () => {
     expect(displayName('claude', true)).toBe('Claude AI');
   });
 
-  it('repaints a mentioned login as the persona and never asks GitHub', async () => {
-    const el = host('<span data-person="peterbono">@peterbono</span>');
-    await paintPeople(el);
-    expect(el.textContent).toBe('Dana');
-    await lookUpNames(['peterbono', 'someone']);
-    expect(s.ghGet).not.toHaveBeenCalled();
+  it('looks names up the same way as on any team', async () => {
+    await lookUpNames(['someone']);
+    expect(s.ghGet).toHaveBeenCalledWith('/users/someone');
   });
 });
 

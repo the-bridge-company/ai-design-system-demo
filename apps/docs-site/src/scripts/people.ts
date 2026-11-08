@@ -1,16 +1,11 @@
 // People in Studio rows built by plain scripts: personHtml() writes the DS Avatar (initials at first) and the name
 // as the login; paintPeople() then swaps in the illustrated face (the drawings load on demand, so pages that show no
-// people never pay for them) and the profile name, looked up once a week per person (lib/people).
-// On the sample team (Acme Design) people are its personas, never the repository's real accounts (lib/demo.ts
-// samplePersonOf): a sample member's login reads as that member, any other human login as the lead (Dana), Claude
-// stays Claude AI ("Claude AI, with Dana"). Nothing is looked up on GitHub there.
+// people never pay for them) and the profile name, looked up once a week per person (lib/people). The same on every
+// team, the sample team included: its people are real members, named as Bridge knows them.
 import { avatarHtml, type AvatarSize } from '@bridge-ds/react/dom';
-import { AGENT_NAME, authorLine, isClaudeLogin, isEmailAddress, loginKey, nameFace, loginsToFetch, nameBudget, personName, readNameCache, type NameCache } from '../lib/people';
-import { isSampleTeam, samplePersonOf, type SampleSeat } from '../lib/demo';
-import { isNameAuthor, nameAuthor, nameOfAuthor } from '../lib/author';
-import { sampleTeam } from '../lib/invites';
+import { authorLine, isClaudeLogin, isEmailAddress, loginKey, nameFace, loginsToFetch, nameBudget, personName, readNameCache, type NameCache } from '../lib/people';
+import { isNameAuthor, nameOfAuthor } from '../lib/author';
 import { currentViewer, esc, ghGet, hasWorkingToken } from './github-session';
-import { repoContext, siteConfig } from './repo-context';
 
 const STORE = 'bridge.people.names.v1';
 
@@ -37,64 +32,16 @@ function save() {
   }
 }
 
-/** This page is the sample team's: its people are personas. */
-function onSample(): boolean {
-  try {
-    const r = repoContext();
-    return isSampleTeam(`${r.owner}/${r.repo}`);
-  } catch {
-    return false;
-  }
-}
-
-/** The lead's name on the sample team: its settings' persona (bridge.config.json "demo") once read, else Dana. */
-function sampleLead(): string | undefined {
-  try {
-    return (siteConfig() as { demo?: { viewer?: string } }).demo?.viewer?.trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** The sample persona a login reads as on the sample team, else null (another team, or Claude and bots). */
-function persona(login: string, seat: SampleSeat = 'lead'): { login: string; name: string } | null {
-  return onSample() ? samplePersonOf(login, sampleTeam(sampleLead()), seat) : null;
-}
-
 /**
- * Who a login is on this page, for every script that names people from GitHub (commit authors, a pull request's
- * opener, the developer of a product's code): on the sample team its persona, by name only ("name:Dana", lib/author),
- * so neither the real account's name nor its photo ever shows there; `seat` is the part a real account plays there
- * (lib/demo.ts SampleSeat). Any other team: the login unchanged.
- */
-export function sampleAuthor(login: string, seat: SampleSeat = 'lead'): string {
-  const p = login ? persona(login, seat) : null;
-  return p ? nameAuthor(p.name) : login;
-}
-
-/** The persona's name of a login on the sample team (`seat` as in sampleAuthor), else null: the caller keeps its own. */
-export function sampleName(login: string | null | undefined, seat: SampleSeat = 'lead'): string | null {
-  return login ? (persona(login, seat)?.name ?? null) : null;
-}
-
-/** True on the sample team's pages: its people are personas (sampleAuthor). */
-export const onSampleTeam = (): boolean => onSample();
-
-/**
- * What a designer reads for a login on this page: the profile name (lib/people personName), "Claude AI, with Ana"
- * when Claude worked from someone's account (`agent`), and the persona on the sample team.
+ * What a designer reads for a login on this page: the profile name (lib/people personName), and "Claude AI, with Ana"
+ * when Claude worked from someone's account (`agent`).
  */
 export function displayName(login: string, agent = false): string {
-  const p = persona(login);
-  if (!p) return agent ? authorLine(login, true, names()) : personName(login, names());
-  return agent ? `${AGENT_NAME}, with ${p.name}` : p.name;
+  return agent ? authorLine(login, true, names()) : personName(login, names());
 }
 
-/**
- * The key a row keeps for a login (its face seed and data-person): the persona's on the sample team ("~dana"), so faces
- * match its Members and the page never holds the repository's real account.
- */
-const personKey = (login: string): string => persona(login)?.login ?? loginKey(login);
+/** The key a row keeps for a login: its face seed and data-person. */
+const personKey = (login: string): string => loginKey(login);
 
 /** The profile names known so far (cached or the viewer's), for labels that are not repainted (select options). */
 export const knownNames = (): NameCache => names();
@@ -136,11 +83,9 @@ const loadIllustrator = () => (illustrator ??= import('@bridge-ds/react/avatar-i
 
 /**
  * The profile names of these logins, read from GitHub when not known yet (within the name budget), for text written
- * once (a sentence such as "Ana is on it"): the same names as paintPeople puts on avatars and rows. Never on the
- * sample team: its people are personas (displayName).
+ * once (a sentence such as "Ana is on it"): the same names as paintPeople puts on avatars and rows.
  */
 export async function lookUpNames(logins: string[]): Promise<NameCache> {
-  if (onSample()) return names();
   const want = loginsToFetch(logins, names(), nameBudget(hasWorkingToken()));
   if (want.length) {
     await Promise.all(

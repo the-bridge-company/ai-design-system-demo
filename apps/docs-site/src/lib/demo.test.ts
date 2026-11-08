@@ -1,8 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { sampleTeam } from './invites';
-import { isSampleExploration, nameOn, personaOn, sampleMembers, samplePersonOf } from './demo';
-import { DEMO_APPROVED_KEY, demoApprovedSet, markDemoApproved, DEMO_REPOS, demoApproved, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, demoTour, demoWaiting, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName, tourSteps } from './demo';
+import { DEMO_REPOS, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName } from './demo';
 
 describe('the demo', () => {
   it('is the self-hosted repository and the hosted demo team, any case', () => {
@@ -35,61 +33,9 @@ describe('the demo', () => {
     for (const t of Object.values(DEMO_WORDS)) expect(t).not.toMatch(/\u2014|pull request|token/);
   });
 
-  it('lets a visitor try Approve: the result, what happens next, nothing sent', () => {
-    expect(demoApproved('Ann Lee')).toEqual({
-      title: 'Approved',
-      next: 'On your team, Ann hears it at once, and a developer ships the change once the checks pass.',
-      note: 'Sample data, nothing is sent.',
-    });
-    expect(demoApproved(null).next).toMatch(/^On your team, the teammate who asked hears it/);
-    for (const t of Object.values(demoApproved('Ann'))) expect(t).not.toMatch(/\u2014|merge|pull request/);
-  });
-
-  it('says who checks the code next when the change still needs it (the Review rules)', () => {
-    expect(demoApproved('Ann Lee', 'Malik').next).toBe('On your team, Ann hears it at once. Malik checks the code next, then it ships once the checks pass.');
-    expect(demoApproved('Ann', null).next).toBe('On your team, Ann hears it at once, and a developer ships the change once the checks pass.');
-    for (const t of Object.values(demoApproved('Ann', 'Malik'))) expect(t).not.toMatch(/\u2014|merge|pull request/);
-  });
-
-  it('a token value needs no code check once approved (decision TV-1): Malik is never next', () => {
-    const w = demoApproved('Ann Lee', null, true);
-    expect(w.next).toBe('On your team, Ann hears it at once. A token value needs no code check: it reaches the library once the automatic checks pass.');
-    expect(demoApproved('Ann', 'Malik', true).next).not.toMatch(/Malik/);
-    for (const t of Object.values(w)) expect(t).not.toMatch(/\u2014|merge|pull request|branch/);
-  });
-
   it("never calls Bridge's own design system the demo", () => {
     const own = demoDialog('the-bridge-company/ai-design-system-demo');
     expect(`${own.title} ${own.lead}`).not.toMatch(/demo|for real/i);
-  });
-
-  it("frames the waiting line from the lead's seat (board D1b)", () => {
-    expect(demoWaiting(8, { names: 'Ann, Leo and Claude AI', rest: ' are waiting on you.' }, 'Dana')).toEqual({
-      count: '8 changes need your review.',
-      rest: ' Ann, Leo and Claude AI are waiting on you.',
-    });
-    // A visitor without a persona (Bridge's own design system) is never asked to review.
-    expect(demoWaiting(1, { names: 'Ann', rest: ' is waiting on you.' }, null)).toEqual({ count: '1 change waits for review.', rest: ' Ann is waiting on a reviewer.' });
-    expect(demoWaiting(3, null, null)).toEqual({ count: '3 changes wait for review.', rest: '' });
-    expect(demoWaiting(2, null, 'Dana')).toEqual({ count: '2 changes need your review.', rest: ' Dana leads this design system.' });
-    // Claude AI's documentation drafts are in the queue too: the line counts them, so it agrees with Review all.
-    expect(demoWaiting(15, null, 'Dana', 1).count).toBe('15 changes and 1 documentation draft need your review.');
-    expect(demoWaiting(1, null, null, 1).count).toBe('1 change and 1 documentation draft wait for review.');
-    expect(demoWaiting(0, null, null, 1).count).toBe('1 documentation draft waits for review.');
-    expect(demoWaiting(0, null, 'Dana', 2).count).toBe('2 documentation drafts need your review.');
-  });
-
-  it('tours what the page shows, in order', () => {
-    expect(tourSteps({ rows: true, more: true, branches: true })).toEqual(['rows', 'more', 'branches']);
-    expect(tourSteps({ rows: true, more: false, branches: true })).toEqual(['rows', 'branches']);
-  });
-
-});
-
-describe('the tour', () => {
-  it("names the persona's role on its first step", () => {
-    expect(demoTour('rows', 'DS lead').title).toBe('Changes wait for the DS lead');
-    expect(demoTour('rows', null).title).toBe('Changes wait for the lead');
   });
 });
 
@@ -169,96 +115,5 @@ describe('drafts on the sample team', () => {
     swapDemoDrafts(s, false);
     expect(s.dump()).toEqual({});
     expect(s.getItem(DEMO_VISIT_KEY)).toBeNull();
-  });
-
-  it('remembers Approve tried on sample branches for the visit, and drops it on leaving', () => {
-    const s = store();
-    swapDemoDrafts(s, true);
-    markDemoApproved(s, 12);
-    markDemoApproved(s, 7);
-    markDemoApproved(s, 12);
-    // Page after page of the visit.
-    expect(swapDemoDrafts(s, true)).toBe('none');
-    expect([...demoApprovedSet(s)].sort()).toEqual([12, 7].sort());
-    markDemoApproved(s, 7, false);
-    expect([...demoApprovedSet(s)]).toEqual([12]);
-    // Leaving the sample team: gone, nothing reaches a real team.
-    swapDemoDrafts(s, false);
-    expect(s.getItem(DEMO_APPROVED_KEY)).toBeNull();
-    expect(demoApprovedSet(s).size).toBe(0);
-    // A malformed value reads as nothing approved.
-    expect(demoApprovedSet(store({ [DEMO_APPROVED_KEY]: '{bad' })).size).toBe(0);
-  });
-});
-
-describe('samplePersonOf: people on the sample team', () => {
-  it('Sofia, who asks for work in the demo, is a member with her own face', () => {
-    expect(samplePersonOf('~sofia-reyes', sampleTeam())).toEqual({ login: '~sofia-reyes', name: 'Sofia' });
-  });
-
-  it('a sample member reads as that member, by the login Members uses', () => {
-    expect(samplePersonOf('~ann-leroy', sampleTeam())).toEqual({ login: '~ann-leroy', name: 'Ann' });
-    expect(samplePersonOf('malik-haddad', sampleTeam())).toEqual({ login: '~malik-haddad', name: 'Malik' });
-  });
-
-  it("any other human login, the repository's real accounts, reads as the lead persona", () => {
-    expect(samplePersonOf('peterbono', sampleTeam('Dana'))).toEqual({ login: '~dana', name: 'Dana' });
-    expect(samplePersonOf('@PeterBono', sampleTeam())).toEqual({ login: '~dana', name: 'Dana' });
-    expect(samplePersonOf('peterbono', sampleTeam('Robin'))).toEqual({ login: '~dana', name: 'Robin' });
-  });
-
-  it('Claude and bots are not people: they keep their own name', () => {
-    expect(samplePersonOf('claude', sampleTeam())).toBeNull();
-    expect(samplePersonOf('bridge-agent[bot]', sampleTeam())).toBeNull();
-    expect(samplePersonOf('github-actions[bot]', sampleTeam())).toBeNull();
-    expect(samplePersonOf(' ', sampleTeam())).toBeNull();
-  });
-});
-
-describe('personaOn: no real account on the sample team', () => {
-  const SAMPLE = 'acme-design-demo/bridge-demo-ds';
-
-  it('the developer of a product code pull request reads as the member who reviews tech, not the lead', () => {
-    expect(samplePersonOf('peterbono', sampleTeam(), 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
-    expect(personaOn(SAMPLE, 'peterbono', 'developer')).toEqual({ login: '~malik-haddad', name: 'Malik' });
-  });
-
-  it('the lead the design owners name (the repository owner) reads as Dana', () => {
-    expect(personaOn(SAMPLE, 'peterbono')).toEqual({ login: '~dana', name: 'Dana' });
-    expect(nameOn(SAMPLE, 'peterbono', 'Florian')).toBe('Dana');
-    expect(personaOn('peterbono/bridge-demo-ds', 'peterbono')?.name).toBe('Dana');
-  });
-
-  it('a member recorded by name is that member, whatever the seat', () => {
-    expect(samplePersonOf('name:Ann', sampleTeam())).toEqual({ login: '~ann-leroy', name: 'Ann' });
-    expect(samplePersonOf('Leo', sampleTeam(), 'developer')).toEqual({ login: '~leo-martin', name: 'Leo' });
-    expect(samplePersonOf('Sofia Reyes', sampleTeam())).toEqual({ login: '~sofia-reyes', name: 'Sofia' });
-    expect(samplePersonOf('~malik-haddad', sampleTeam())).toEqual({ login: '~malik-haddad', name: 'Malik' });
-  });
-
-  it('a real team keeps its real people: no persona, the name the caller had', () => {
-    expect(personaOn('acme/design-system', 'peterbono')).toBeNull();
-    expect(personaOn('acme/design-system', 'peterbono', 'developer')).toBeNull();
-    expect(nameOn('acme/design-system', 'peterbono', 'Florian')).toBe('Florian');
-    // Bridge's own design system is a demo, but its data is real: real names there too.
-    expect(personaOn('the-bridge-company/ai-design-system-demo', 'peterbono')).toBeNull();
-    expect(nameOn('the-bridge-company/ai-design-system-demo', 'peterbono', 'Florian')).toBe('Florian');
-  });
-
-  it('Claude and bots stay themselves on the sample team', () => {
-    expect(personaOn(SAMPLE, 'claude')).toBeNull();
-    expect(personaOn(SAMPLE, 'bridge-design-studio[bot]', 'developer')).toBeNull();
-  });
-
-  it('Members and the personas are one list', () => {
-    expect(sampleTeam('Robin').members.map((m) => [m.login, m.name])).toEqual(sampleMembers('Robin').map((m) => [m.login, m.name]));
-  });
-});
-
-describe('sample explorations', () => {
-  it('knows the sample explorations by branch, and no other branch', () => {
-    expect(isSampleExploration('explore/profile-page')).toBe(true);
-    expect(isSampleExploration('explore/my-own-idea')).toBe(false);
-    expect(isSampleExploration(null)).toBe(false);
   });
 });

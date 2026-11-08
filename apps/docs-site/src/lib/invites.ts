@@ -1,5 +1,5 @@
 // Invite collaborators and Settings > Members (boards I1 to I4): the roles in designer words, how each one maps to
-// GitHub, who may change what, the people in a team, the email field's suggestions and the sample team's people.
+// GitHub, who may change what, the people in a team and the email field's suggestions.
 // Pure: no DOM, no fetch, no storage, covered by invites.test.ts. The page side is scripts/members.ts (reads) and
 // scripts/invites-api.ts (the /api/invites calls); the screens are components/ds/studio/{InviteDialog,RolePicker,
 // MembersSection}.tsx.
@@ -22,7 +22,6 @@
 // account itself is admin), so the picker offers Admin only on an organization's repository (roleChoices) and says why.
 
 import { startedWhen, type Owners } from '@bridge-ds/core';
-import { sampleMembers } from './demo';
 import { loginKey, nameFace } from './people';
 
 export type MemberRole = 'view' | 'edit' | 'reviewer' | 'admin';
@@ -218,7 +217,7 @@ export interface PendingInvite {
   reviewAs?: ReviewAs;
   /** ISO time it was sent last. */
   sentAt: string;
-  /** Seed of the drawn face, when the person is known (the sample team's Priya); else the email seeds it. */
+  /** Seed of the drawn face, when the person is known; else the email seeds it. */
   face?: string;
 }
 
@@ -391,31 +390,6 @@ export const MEMBERS_WORDS = {
   /** A team with no repository yet: Reviewer waits (the invites server's REVIEWER_NEEDS_REPO). */
   limitReached: "You reached today's invite limit. Try again tomorrow.",
 } as const;
-
-// --- The sample team ------------------------------------------------------------------------------------------
-
-/**
- * Acme Design's people (boards I3, I4): the visitor sits in Dana's seat (the demo persona, bridge.config.json "demo"),
- * Ann reviews design, Leo and Sofia edit, Malik reviews code, and Priya (invited to edit) has not joined yet: she has
- * no work in the demo, while Sofia asks for branches and suggestions there ("Requested by Sofia Reyes."). Fixed sample
- * data, never read from GitHub, so a guest's Members page and invite dialog make no GitHub call. Their logins are the
- * ones the demo home gives them ("Requested by Ann Leroy." becomes ~ann-leroy, lib/home-model requesterPerson), so
- * each drawn face is the same person on the home, in Members and in the dialog.
- */
-export function sampleTeam(lead = 'Dana'): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } {
-  const members: Member[] = sampleMembers(lead);
-  const twoDaysAgo = new Date(Date.UTC(2026, 9, 20, 9)).toISOString();
-  const pending: PendingInvite[] = [{ id: 'sample-priya', email: 'priya@acme.design', role: 'edit', sentAt: twoDaysAgo, face: '~priya-natarajan' }];
-  // The organization's people the field suggests: the team itself (disabled, already in) and two who are not in it yet.
-  const people: KnownPerson[] = [
-    ...members.filter((m) => !m.you).map((m) => ({ name: m.name, email: m.email!, login: m.login })),
-    { name: 'Mal Reyes', email: 'mal.reyes@acme.design' },
-    { name: 'Jonas Berg', email: 'jonas.berg@acme.design' },
-  ];
-  return { members, pending, people };
-}
-
-
 
 /**
  * Settings > Members must not paint a stand-in list while the session is still being read: signed in (a token) but no

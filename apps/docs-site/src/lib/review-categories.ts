@@ -117,7 +117,7 @@ export function withQueueFilters(search: string, f: QueueFilters): string {
   return s ? `?${s}` : '';
 }
 
-/** A stable key for a designer, from a login (a persona's "~ann-leroy" too) or else a name: "ann-leroy", "annleroy". */
+/** A stable key for a designer, from a login (an email member's "~ann-leroy" too) or else a name: "ann-leroy", "annleroy". */
 export function designerKey(who: { login?: string | null; name?: string | null }): string {
   const raw = who.login || who.name || '';
   return raw

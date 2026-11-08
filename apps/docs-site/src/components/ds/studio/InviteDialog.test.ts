@@ -8,7 +8,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { sampleTeam } from '../../../lib/invites';
+import type { KnownPerson, Member, PendingInvite } from '../../../lib/invites';
 import type { MembersData } from '../../../scripts/members';
 import InviteDialog from './InviteDialog';
 import MembersSection from './MembersSection';
@@ -38,9 +38,29 @@ vi.mock('../../../scripts/members', () => ({ loadMembers: async () => page.data 
 vi.mock('../../../scripts/demo-gate', () => demo);
 vi.mock('../../../scripts/invites-api', () => api);
 
+/** A team with five members, one invite not joined yet, and two people of the organization not in it yet. */
+const acmeTeam = (): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } => ({
+  members: [
+    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
+    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
+    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
+    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
+    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+  ],
+  pending: [{ id: 'p-priya', email: 'priya@acme.design', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
+  people: [
+    { name: 'Ann', email: 'ann@acme.design', login: '~ann-leroy' },
+    { name: 'Leo', email: 'leo@acme.design', login: '~leo-martin' },
+    { name: 'Malik', email: 'malik@acme.design', login: '~malik-haddad' },
+    { name: 'Sofia', email: 'sofia@acme.design', login: '~sofia-reyes' },
+    { name: 'Mal Reyes', email: 'mal.reyes@acme.design' },
+    { name: 'Jonas Berg', email: 'jonas.berg@acme.design' },
+  ],
+});
+
 /** The sample team as any team reads it: its people, the visitor (Dana) an admin of it. */
 const sample = (): MembersData => {
-  const s = sampleTeam();
+  const s = acmeTeam();
   return { context: 'real', repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', ...s, canManage: true, personal: false, complete: true, invites: true };
 };
 /** The invites server's refusal of a write by the sample team's visitor (api/invites demoRefusal). */

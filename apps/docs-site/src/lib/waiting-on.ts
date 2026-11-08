@@ -1,7 +1,7 @@
 // The one rule for "waiting on me": what a change asks of the viewer now, if anything. Every surface that says
 // something waits on the viewer reads it: the Home rows (scripts/home-data.ts), the Branches nav badge
-// (scripts/needs-you.ts), the Branches "Waiting on me" filter (scripts/reviews.ts), the demo lead's queue
-// (lib/demo-home.ts leadQueue) and the Review page, which lists the Home rows. Pure: no DOM, no fetch. Unit tested in
+// (scripts/needs-you.ts), the Branches "Waiting on me" filter (scripts/reviews.ts)
+// and the Review page, which lists the Home rows. Pure: no DOM, no fetch. Unit tested in
 // waiting-on.test.ts.
 //
 // The rule, per viewer role:
@@ -26,8 +26,6 @@
 //   - A design copy exploration handed to developers whose developers asked a question on their task (lib/review-state
 //     devQuestionOf), not answered yet: it waits on whoever explored it (author: the explorer), never on anyone else.
 //     Explorations otherwise never wait on anyone.
-//   - The demo lead's seat (a visitor in the persona's place, statuses never read): every branch in review that is not
-//     an exploration, a draft or developer work waits on the lead, as their home says.
 import type { WhoActs } from './changes';
 import { claudeStage, isDraft } from './review-rules';
 import type { Lifecycle } from './change-status';
@@ -43,8 +41,6 @@ export interface WaitViewer {
   /** GitHub login, or the email of an email contributor. Null: nobody is connected, nothing waits on them. */
   login: string | null;
   role: ViewerRole;
-  /** The demo lead's seat: statuses are never read, a branch in review waits on the seat. */
-  seat?: boolean;
 }
 
 export interface WaitChange {
@@ -83,13 +79,13 @@ const same = (a: string | null | undefined, b: string | null | undefined) => Boo
 export const isReviewTask = (t: WaitTask | null | undefined): t is 'design' | 'tech' | 'ship' | 'guidance' | 'requested' | 'look-again' =>
   t === 'design' || t === 'tech' || t === 'ship' || t === 'guidance' || t === 'requested' || t === 'look-again';
 
-/** Whether the viewer may be waited on for a review at all: a reviewer, connected or in the demo seat. */
-const reviews = (v: WaitViewer) => v.role === 'reviewer' && (Boolean(v.login) || Boolean(v.seat));
+/** Whether the viewer may be waited on for a review at all: a connected reviewer. */
+const reviews = (v: WaitViewer) => v.role === 'reviewer' && Boolean(v.login);
 
 /** What the change asks of the viewer now, or null when it waits on someone else (or on nobody in the Studio). */
 export function waitingOn(c: WaitChange, v: WaitViewer): WaitTask | null {
-  // The developers wait on the person who explored it for an answer: theirs alone, the demo seat never.
-  if (c.devQuestion) return !c.devQuestion.answered && !v.seat && v.login && same(c.author, v.login) && c.lifecycle !== 'shipped' && c.lifecycle !== 'closed' ? 'dev-question' : null;
+  // The developers wait on the person who explored it for an answer: theirs alone.
+  if (c.devQuestion) return !c.devQuestion.answered && v.login && same(c.author, v.login) && c.lifecycle !== 'shipped' && c.lifecycle !== 'closed' ? 'dev-question' : null;
   if (c.exploration || c.autoShip || c.lifecycle === 'shipped' || c.lifecycle === 'closed') return null;
   // Spec only, no code yet: a developer builds it with Claude. Nobody in the Studio is waited on, the designer least.
   if (claudeStage(c.labels) === 'waiting') return null;
@@ -97,10 +93,6 @@ export function waitingOn(c: WaitChange, v: WaitViewer): WaitTask | null {
   const draft = isDraft(c);
   // Code only: no design decision waits on anyone in the Studio.
   if (c.nature === 'developer') return null;
-  if (v.seat) {
-    if (!reviews(v) || draft || c.lifecycle === 'draft' || c.lifecycle === 'waiting' || same(c.author, v.login)) return null;
-    return c.guidance ? 'guidance' : 'requested';
-  }
   const who = c.who;
   if (!v.login) return null;
   const author = same(c.author, v.login);

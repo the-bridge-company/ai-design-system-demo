@@ -23,14 +23,34 @@ import {
   roleOf,
   roleText,
   sameChoice,
-  sampleTeam,
   sendLabel,
   sentSummary,
   sortMembers,
   type Member,
 } from './invites';
+import type { KnownPerson, PendingInvite } from './invites';
 
 const owners = { design: ['ann', '@acme/design'], tech: ['Malik'] };
+
+/** A team with five members, one invite not joined yet, and two people of the organization not in it yet. */
+const acmeTeam = (): { members: Member[]; pending: PendingInvite[]; people: KnownPerson[] } => ({
+  members: [
+    { login: '~dana', name: 'Dana', role: 'admin', reviews: ['design'], you: true, email: 'dana@acme.design' },
+    { login: '~ann-leroy', name: 'Ann', role: 'reviewer', reviews: ['design'], email: 'ann@acme.design' },
+    { login: '~leo-martin', name: 'Leo', role: 'edit', reviews: [], email: 'leo@acme.design' },
+    { login: '~malik-haddad', name: 'Malik', role: 'reviewer', reviews: ['tech'], email: 'malik@acme.design' },
+    { login: '~sofia-reyes', name: 'Sofia', role: 'edit', reviews: [], email: 'sofia@acme.design' },
+  ],
+  pending: [{ id: 'p-priya', email: 'priya@acme.design', role: 'edit', sentAt: new Date(Date.UTC(2026, 9, 20, 9)).toISOString(), face: '~priya-natarajan' }],
+  people: [
+    { name: 'Ann', email: 'ann@acme.design', login: '~ann-leroy' },
+    { name: 'Leo', email: 'leo@acme.design', login: '~leo-martin' },
+    { name: 'Malik', email: 'malik@acme.design', login: '~malik-haddad' },
+    { name: 'Sofia', email: 'sofia@acme.design', login: '~sofia-reyes' },
+    { name: 'Mal Reyes', email: 'mal.reyes@acme.design' },
+    { name: 'Jonas Berg', email: 'jonas.berg@acme.design' },
+  ],
+});
 
 describe('roles', () => {
   it('maps each role to one GitHub permission, and Reviewer to an owner list', () => {
@@ -147,7 +167,7 @@ describe('the email field', () => {
   });
 
   it('suggests known people by name or email, marks people already in, and offers a new typed address', () => {
-    const s = sampleTeam();
+    const s = acmeTeam();
     const f = { people: s.people, members: s.members, pending: s.pending, chosen: [] as string[], team: 'Acme Design' };
     const mal = inviteOptions('mal', f);
     expect(mal.map((o) => o.label)).toEqual(['Malik', 'Mal Reyes']);
@@ -157,7 +177,7 @@ describe('the email field', () => {
     expect(inviteOptions('new@acme.design', f)).toContainEqual({ value: 'new@acme.design', label: 'new@acme.design', description: 'Invite by email' });
     // Pending invites count as in the team.
     expect(inviteOptions('priya@acme.design', f).at(-1)).toMatchObject({ disabled: true });
-    // Sofia is a member (she asks for work in the demo): listed, disabled, already in.
+    // A member: listed, disabled, already in.
     expect(inviteOptions('sofia', f)).toEqual([expect.objectContaining({ label: 'Sofia', disabled: true })]);
     // Two people the field suggests who are not in the team yet.
     expect(inviteOptions('', f).filter((o) => !o.disabled).map((o) => o.label)).toEqual(['Mal Reyes', 'Jonas Berg']);
@@ -192,17 +212,6 @@ describe('contexts', () => {
     expect(membersContext('acme/ds', false)).toBe('real');
     expect(membersContext('acme/ds', true)).toBe('none');
     expect(membersContext(null, false)).toBe('none');
-  });
-
-  it('the sample team is Dana (you, admin), Ann, Leo, Malik, Sofia and Priya not joined yet', () => {
-    const s = sampleTeam();
-    expect(s.members.map((m) => `${m.name}:${roleText(m)}`)).toEqual(['Dana:Admin', 'Ann:Reviewer: design', 'Leo:Can edit', 'Malik:Reviewer: code', 'Sofia:Can edit']);
-    expect(s.members[0]!.you).toBe(true);
-    // Sofia asks for work in the demo ("Requested by Sofia Reyes."), so she is a member; Priya has no work there.
-    expect(s.members.find((m) => m.name === 'Sofia')).toMatchObject({ login: '~sofia-reyes', email: 'sofia@acme.design' });
-    expect(s.pending).toEqual([expect.objectContaining({ email: 'priya@acme.design', role: 'edit', face: '~priya-natarajan' })]);
-    expect(s.people.some((p) => /priya/i.test(p.email ?? ''))).toBe(false);
-    expect(sampleTeam('Robin').members[0]!.name).toBe('Robin');
   });
 });
 

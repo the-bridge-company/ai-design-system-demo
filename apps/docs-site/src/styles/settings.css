@@ -399,14 +399,6 @@
   margin-top: var(--space-4);
 }
 
-/* A sample team's settings: the one line that says they are sample rules, above the bands. */
-.set-sample-note {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
 /* A copyable address (TeamLink UrlText) wraps at its own separators only; break-word is the last resort for a
    segment longer than the line. */
 .url-text {

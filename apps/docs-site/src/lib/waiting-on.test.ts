@@ -110,15 +110,6 @@ describe('waitingOn: one rule for every "waiting on me" surface', () => {
     expect(waitingOn({ author: 'sam', lifecycle: 'ready', who: w, requested: ['theo'] }, theo)).toBe('requested');
   });
 
-  it('puts every branch in review on the demo lead, never drafts, explorations or developer work', () => {
-    const seat: WaitViewer = { login: null, role: 'reviewer', seat: true };
-    expect(waitingOn({ author: 'ann', who: null }, seat)).toBe('requested');
-    expect(waitingOn({ author: 'ann', who: null, guidance: true }, seat)).toBe('guidance');
-    expect(waitingOn({ author: 'ann', who: null, draft: true }, seat)).toBeNull();
-    expect(waitingOn({ author: 'ann', who: null, exploration: true }, seat)).toBeNull();
-    expect(waitingOn({ author: 'ann', who: null, nature: 'developer' }, seat)).toBeNull();
-  });
-
   it('gives the badge count of review rows only, and the Waiting on me filter every row', () => {
     const changes = [
       change('sam', { kind: 'approve', roles: ['design'] }, 'ann'),
@@ -140,9 +131,8 @@ describe("the developers' question on an exploration handed off", () => {
     expect(waitingOn({ author: 'sam', who: null, exploration: true, devQuestion: { answered: true } }, sam)).toBeNull();
   });
 
-  it('never on anyone else, the demo seat, or once it shipped', () => {
+  it('never on anyone else, or once it shipped', () => {
     expect(waitingOn({ author: 'sam', who: null, exploration: true, devQuestion: asked }, ann)).toBeNull();
-    expect(waitingOn({ author: 'ann', who: null, exploration: true, devQuestion: asked }, { login: 'ann', role: 'reviewer', seat: true })).toBeNull();
     expect(waitingOn({ author: 'sam', who: null, exploration: true, devQuestion: asked, lifecycle: 'shipped' }, sam)).toBeNull();
     expect(waitingOn({ author: 'sam', who: null, exploration: true, devQuestion: asked }, { login: null, role: 'contributor' })).toBeNull();
   });
@@ -180,7 +170,6 @@ describe('waitingOn: branches opened from Figma (RT-1)', () => {
     // Even when GitHub no longer calls it a draft, nothing waits on a designer until the code is there.
     const open = change('sam', { kind: 'approve', roles: ['design'] }, 'ann', { labels: waiting, requested: ['ann'] });
     expect(waitingOn(open, ann)).toBeNull();
-    expect(waitingOn({ author: 'ann', who: null, labels: waiting }, { login: null, role: 'reviewer', seat: true })).toBeNull();
   });
 
   it('after the draft: ready for review though GitHub still calls it a draft, in the owners\' queue', () => {
@@ -195,8 +184,6 @@ describe('waitingOn: branches opened from Figma (RT-1)', () => {
     // design approval comes first, needs-design).
     expect(waitingOn({ author: 'sam', draft: true, labels: drafted, lifecycle, who: who(need, 'sam', 'sam') }, sam)).toBeNull();
     expect(waitingOn({ author: 'sam', draft: true, labels: drafted, lifecycle, who: who(need, 'sam', 'theo') }, theo)).toBeNull();
-    // The demo lead's seat reads it as in review too.
-    expect(waitingOn({ author: 'ann', who: null, draft: true, labels: drafted }, { login: null, role: 'reviewer', seat: true })).toBe('requested');
   });
 });
 

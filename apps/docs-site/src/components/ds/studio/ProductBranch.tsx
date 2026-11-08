@@ -78,7 +78,7 @@ export interface ProductBranchProps {
   status?: string | null;
   /** The key of the exploration: the plate's drawing matches its card on the home. */
   seed?: string | null;
-  /** A capture of the screen to show instead of the plate (the sample team's, the image of its card). */
+  /** A capture of the screen to show instead of the plate (the image of its card). */
   shot?: string | null;
   /** Why Done exploring and Archive are not offered to this viewer, and who can (lib/write-route keepExplorationLine). */
   keepNote?: string | null;

@@ -47,7 +47,7 @@ import { studioHref } from '../../../lib/team-path';
 import { productFolders } from '../../../lib/product-page';
 import { siteConfig } from '../../../scripts/repo-context';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
-import { demoTour, tourSteps, type TourAt } from '../../../lib/demo';
+import { leadTour, leadTourSteps, type LeadTourAt } from '../../../lib/lead-tour';
 import { useNarrow, useTour } from './HomeTour';
 
 // The rows of the queue (NeedList) and Approve and Decline on a join request live in NeedRows.tsx, shared with
@@ -312,7 +312,7 @@ export interface StudioHomeProps {
   branches: BranchCard[];
   /**
    * The team's explorations (lib/home-explorations), each marked `own`: a lead or reviewer sees them all under
-   * "Explorations", a contributor only their own under "Your explorations" (home by role). The demo: the team's.
+   * "Explorations", a contributor only their own under "Your explorations" (home by role).
    */
   explorations: ExplorationCard[];
   health: HealthLine | null;
@@ -360,8 +360,8 @@ export interface StudioHomeProps {
   recent?: boolean;
 }
 
-/** Where a tour step can point: the lead's (lib/demo TourAt) and the contributor's ("start", the ways to start). */
-export type HomeTourAt = TourAt | ContributorTourAt;
+/** Where a tour step can point: the lead's (lib/lead-tour LeadTourAt) and the contributor's ("start", the ways to start). */
+export type HomeTourAt = LeadTourAt | ContributorTourAt;
 /** The tour's popover for a step, anchored where it points, or nothing. */
 type HomeTour = (at: HomeTourAt) => ReactNode;
 
@@ -421,8 +421,8 @@ function HomeBody(p: StudioHomeProps) {
   const changeRows = p.needs.some(isChange);
   const split = splitNeeds(p.needs);
   const byRole = explorationsFor(p.explorations, Boolean(p.contributor));
-  const leadSteps = tourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
-  const lead = useTour<TourAt>(LEAD_TOUR_KEY, leadSteps, (at) => demoTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
+  const leadSteps = leadTourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
+  const lead = useTour<LeadTourAt>(LEAD_TOUR_KEY, leadSteps, (at) => leadTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
   const tour: HomeTour | undefined = p.contributor
     ? (at) => (at === 'branches' || at === 'start' ? own(at) : null)
     : p.lead

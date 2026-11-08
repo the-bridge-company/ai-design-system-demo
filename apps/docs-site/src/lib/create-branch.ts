@@ -40,10 +40,10 @@ export function startTargets(products: readonly ProductConfig[], opts: { library
 
 /**
  * May start an exploration in the library itself: a lead, that is an admin (an email admin included) or someone who
- * may approve (GitHub write, never an email contributor). The sample team's seat is its DS lead.
+ * may approve (GitHub write, never an email contributor).
  */
-export function libraryLead(access: { admin?: boolean; write?: boolean; contributor?: boolean } | null | undefined, sample = false): boolean {
-  return sample || Boolean(access?.admin) || Boolean(access?.write && !access.contributor);
+export function libraryLead(access: { admin?: boolean; write?: boolean; contributor?: boolean } | null | undefined): boolean {
+  return Boolean(access?.admin) || Boolean(access?.write && !access.contributor);
 }
 
 /**

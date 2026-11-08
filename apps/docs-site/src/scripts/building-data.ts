@@ -18,6 +18,7 @@ import { libraryScope } from './next-release';
 import { readReviews } from './review-reads';
 import { siteApprovers } from './teams';
 import { personName } from '../lib/people';
+import { isNameAuthor, nameOfAuthor } from '../lib/author';
 import { currentAccess, currentContributor, currentViewer, ghGet, hasWorkingToken, readRepo } from './github-session';
 import { teamMember } from '../lib/developers-message';
 import { previewShotOf } from './preview-shots';
@@ -172,7 +173,7 @@ async function read(): Promise<BuildData> {
     Promise.all(taskUrls.map(async (u) => [u, await readDesignTask(u, { comments: false })] as const)).then((all) => new Map(all)),
     readFixPulls(R, missingFixPulls(sessions, pulls.data)),
   ]);
-  const nameOf = (l: string) => personName(l, names);
+  const nameOf = (l: string) => (isNameAuthor(l) ? nameOfAuthor(l) : personName(l, names));
   // Products added from their address: team members copy their developers a message, with the preview's screenshot
   // when Bridge kept one (one raw file for every exploration, no GitHub API call).
   const products = (await productRepos)?.configuredProducts() ?? DEFAULT_PRODUCTS;
@@ -240,6 +241,6 @@ function approversNow(): string[] {
 /** The open build requests' views of a team read with its own client (a team's Library page). */
 export async function buildViewsFor(_repo: string, client: GitHubClient): Promise<{ views: BuildRequestView[]; nameOf: (login: string) => string }> {
   const names = knownNames();
-  const nameOf = (l: string) => personName(l, names);
+  const nameOf = (l: string) => (isNameAuthor(l) ? nameOfAuthor(l) : personName(l, names));
   return { views: await listBuildRequestsOnGitHub(client, { nameOf }), nameOf };
 }

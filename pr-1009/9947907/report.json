@@ -1,0 +1,115 @@
+{
+  "pr": 1009,
+  "sha": "99479075b1f2338aa452dbda8592eca45d0a5b09",
+  "baseSha": "0ffd9934d144ece4a0a850967c0e5f3f2aa8fe02",
+  "failed": false,
+  "failures": [],
+  "warnings": 0,
+  "screens": [
+    "building"
+  ],
+  "variants": [
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 1148,
+      "fullHeight": 1148,
+      "png": "building-desktop-light.png",
+      "axe": [],
+      "ms": 7108,
+      "webp": "building-desktop-light.webp",
+      "diff": {
+        "ratio": 0.35334467120181406,
+        "pixels": 897552,
+        "box": {
+          "x0": 296,
+          "y0": 291,
+          "x1": 1399,
+          "y1": 1147
+        },
+        "sizeChanged": true
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 1148,
+      "fullHeight": 1148,
+      "png": "building-desktop-dark.png",
+      "axe": [],
+      "ms": 7207,
+      "webp": "building-desktop-dark.webp",
+      "diff": {
+        "ratio": 0.3533867945326279,
+        "pixels": 897659,
+        "box": {
+          "x0": 296,
+          "y0": 291,
+          "x1": 1399,
+          "y1": 1147
+        },
+        "sizeChanged": true
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1370,
+      "fullHeight": 1370,
+      "png": "building-mobile-light.png",
+      "axe": [],
+      "ms": 5678,
+      "webp": "building-mobile-light.webp",
+      "diff": {
+        "ratio": 0.31754977147726393,
+        "pixels": 245955,
+        "box": {
+          "x0": 16,
+          "y0": 349,
+          "x1": 373,
+          "y1": 1369
+        },
+        "sizeChanged": true
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1370,
+      "fullHeight": 1370,
+      "png": "building-mobile-dark.png",
+      "axe": [],
+      "ms": 4012,
+      "webp": "building-mobile-dark.webp",
+      "diff": {
+        "ratio": 0.3175136209879412,
+        "pixels": 245927,
+        "box": {
+          "x0": 16,
+          "y0": 349,
+          "x1": 373,
+          "y1": 1369
+        },
+        "sizeChanged": true
+      }
+    }
+  ]
+}

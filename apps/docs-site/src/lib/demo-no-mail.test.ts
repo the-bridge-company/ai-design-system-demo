@@ -5,7 +5,7 @@ import { brevoSender, neverMailed, resendSender, type EmailMessage, type EmailSe
 import { branchKey, issueKey, mineKey } from '../../api/_lib/former-member';
 import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
-import { DEMO_MEMBERS, DEMO_PM, DEMO_VISITOR_EMAIL, seedDemoTeam } from '../../api/_lib/demo-members';
+import { DEMO_MEMBERS, DEMO_PM, DEMO_VISITOR_EMAIL, RETIRED_DEMO_MEMBERS, seedDemoTeam } from '../../api/_lib/demo-members';
 import { deliverNotices, digestFor, type NotifyDeps, watchWrites, itemWrite } from '../../api/_lib/notify';
 import { pmOf } from '../../api/_lib/product-pm';
 import type { Notice } from '../../api/_lib/notify-events';
@@ -100,5 +100,53 @@ describe('seeding moves the old acme.design records', () => {
     // Again: nothing left to move.
     const again = await seedDemoTeam({ members, redis }, T0 + 1000);
     expect(again).toMatchObject({ migrated: [], forgot: 0, added: [], updated: [], pm: 'kept' });
+  });
+});
+
+describe('seeding removes the people the sample team no longer lists', () => {
+  it('removes Malik, who joins with GitHub only, drops what Bridge kept for him, and leaves anyone else alone', async () => {
+    const redis = memoryRedis(() => T0);
+    const members = memberStore(redis);
+    expect(RETIRED_DEMO_MEMBERS.map((m) => m.email)).toEqual(['malik@acme.example']);
+    expect(DEMO_MEMBERS.some((m) => m.name === 'Malik')).toBe(false);
+    await seedDemoTeam({ members, redis }, T0);
+    // As prod has it: Malik seeded as an email member, owning an issue, with notifications and sign-in counts.
+    await members.put(DEMO, { email: 'malik@acme.example', name: 'Malik', role: 'edit', version: 2, addedBy: 'peterbono', at: '2026-11-01T00:00:00.000Z' });
+    await members.put(DEMO, { email: 'real@company.io', name: 'Real', role: 'edit', version: 1, addedBy: 'dana', at: '' });
+    await redis.pipe([
+      ['SET', issueKey(DEMO, 41), 'malik@acme.example'],
+      ['SET', issueKey(DEMO, 42), 'leo@acme.example'],
+      ['SADD', mineKey(DEMO, 'malik@acme.example'), 'i:41', 'i:42'],
+      ['ZADD', 'bridge:notify:digest:malik@acme.example', T0, '{}'],
+      ['ZADD', 'bridge:notify:due', T0, 'malik@acme.example'],
+      ['SET', 'bridge:account:teams:malik@acme.example', '[]'],
+      ['SET', `bridge:contrib:count:${DEMO}:malik@acme.example:2026-11-08`, '2'],
+    ]);
+    const r = await seedDemoTeam({ members, redis }, T0 + 1000);
+    expect(r.retired).toEqual(['malik@acme.example']);
+    expect(r.forgot).toBeGreaterThan(0);
+    expect(r).toMatchObject({ added: [], updated: [], kept: DEMO_MEMBERS.map((m) => m.email), migrated: [] });
+    expect(await members.get(DEMO, 'malik@acme.example')).toBeNull();
+    expect((await members.list(DEMO)).map((m) => m.name).sort()).toEqual(['Ann', 'Dana', 'Leo', 'Real', 'Sofia']);
+    // His issue is nobody's in Bridge now; someone else's stays theirs.
+    expect(await redis.cmd('GET', issueKey(DEMO, 41))).toBeNull();
+    expect(await redis.cmd('GET', issueKey(DEMO, 42))).toBe('leo@acme.example');
+    for (const k of [mineKey(DEMO, 'malik@acme.example'), 'bridge:notify:digest:malik@acme.example', 'bridge:account:teams:malik@acme.example', `bridge:contrib:count:${DEMO}:malik@acme.example:2026-11-08`]) {
+      expect(await redis.cmd('GET', k), k).toBeNull();
+      expect(await redis.cmd('SMEMBERS', k), k).toEqual([]);
+    }
+    expect(await redis.cmd('ZSCORE', 'bridge:notify:due', 'malik@acme.example')).toBeNull();
+    // Again: nothing left to remove.
+    expect(await seedDemoTeam({ members, redis }, T0 + 2000)).toMatchObject({ retired: [], forgot: 0, added: [], updated: [] });
+  });
+
+  it('removes him under the old acme.design address too', async () => {
+    const redis = memoryRedis(() => T0);
+    const members = memberStore(redis);
+    await members.put(DEMO, { email: 'malik@acme.design', name: 'Malik', role: 'edit', version: 1, addedBy: 'peterbono', at: '' });
+    const r = await seedDemoTeam({ members, redis }, T0);
+    expect(r.retired).toEqual(['malik@acme.example']);
+    expect(r.migrated).toEqual([]);
+    expect((await members.list(DEMO)).map((m) => m.email).sort()).toEqual(DEMO_MEMBERS.map((m) => m.email).sort());
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isIdenticonStamp, loginOfAvatar, PHOTO_TTL_MS, readPhotoCache } from './github-photo';
+import { avatarLogin, isIdenticonStamp, loginOfAvatar, PHOTO_TTL_MS, readPhotoCache } from './github-photo';
 
 describe('GitHub photo or generated pattern', () => {
   it('reads GitHub identicon stamps as no photo, any other date as a photo', () => {
@@ -16,6 +16,14 @@ describe('GitHub photo or generated pattern', () => {
     expect(loginOfAvatar('https://example.com/a.png')).toBeNull();
     expect(loginOfAvatar('data:image/svg+xml,x')).toBeNull();
     expect(loginOfAvatar(null)).toBeNull();
+  });
+
+  it('checks the address the GitHub API gives (/u/<id>) by the person login, never a drawn-face seed', () => {
+    expect(avatarLogin('https://avatars.githubusercontent.com/u/123456?v=4', 'Acme-Malik')).toBe('acme-malik');
+    expect(avatarLogin('https://github.com/dana.png?size=48', 'someone-else')).toBe('dana');
+    expect(avatarLogin('https://avatars.githubusercontent.com/u/123456?v=4', '~malik')).toBeNull();
+    expect(avatarLogin('https://example.com/u/1', 'malik')).toBeNull();
+    expect(avatarLogin(null, 'malik')).toBeNull();
   });
 
   it('keeps answers for a week and drops anything unreadable', () => {

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Seeds the sample team's people (acme-design-demo/bridge-demo-ds: Dana, Ann, Malik, Leo, Sofia) as its email members,
-// and Ann as the product manager of its Account app, on a Bridge site. Idempotent: run it again and only what differs
+// Seeds the sample team's people (acme-design-demo/bridge-demo-ds: Dana, Ann, Leo, Sofia) as its email members,
+// and Ann as the product manager of its Account app, on a Bridge site, and removes the email members it no longer lists
+// (Malik, its developer, who joins with GitHub only as acme-malik). Idempotent: run it again and only what differs
 // changes. The site writes them through the store it uses for every team (apps/docs-site/api/_lib/demo-members.ts,
 // api/contribute action `seed-demo`); this script only asks, with a GitHub token that administers the sample team's
 // repository (the GitHub CLI's, or GH_TOKEN). No storage secret leaves the site.
@@ -41,7 +42,9 @@ async function main() {
   console.log(`Updated: ${body.updated.join(', ') || 'none'}`);
   console.log(`Already there: ${body.kept.join(', ') || 'none'}`);
   console.log(`Account app product manager: ${body.pm === 'set' ? 'set to Ann' : 'already Ann'}`);
-  console.log(`Moved from acme.design to acme.example: ${body.migrated?.join(', ') || 'none'} (${body.forgot ?? 0} old keys removed)`);
+  console.log(`No longer email members: ${body.retired?.join(', ') || 'none'}`);
+  console.log(`Moved from acme.design to acme.example: ${body.migrated?.join(', ') || 'none'}`);
+  console.log(`Keys of old or removed addresses forgotten: ${body.forgot ?? 0}`);
 }
 
 main().catch((e) => {

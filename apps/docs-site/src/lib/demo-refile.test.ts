@@ -33,6 +33,7 @@ describe('the plan', () => {
         issue(37, 'Button: change the label while loading', ['component-change']),
         issue(38, 'Card: a subtle tone for secondary groups', ['component-change']),
         issue(30, 'Tokens: snappier dialogs and accordions', ['bridge-suggestion'], 'Dana: faster.\n\nRequested by Malik.\n'),
+        issue(31, 'Tokens: rounder cards', ['bridge-suggestion'], 'Dana: rounder.\n\nRequested by Sofia.\n'),
         issue(41, 'Table: keep the header visible on scroll', ['component-change']),
         issue(50, 'Mystery: no subject in the table', ['component-change']),
         issue(12, 'A question', ['question']),
@@ -46,15 +47,20 @@ describe('the plan', () => {
       ],
     });
     expect(plan.items.map((i) => [i.old, i.member.name, i.why, i.relink])).toEqual([
-      [30, 'Malik', 'body', []],
+      [31, 'Sofia', 'body', []],
       [37, 'Ann', 'subject', [22]],
       [38, 'Leo', 'subject', [24]],
-      [41, 'Malik', 'subject', []],
+      [41, 'Leo', 'subject', []],
       [50, 'Leo', 'default', []],
     ]);
-    expect(plan.skipped).toEqual([{ number: 12, title: 'A question', why: 'not a request or a suggestion' }]);
+    // Malik is the team's developer: he files from his GitHub account, never as an email member, so his ask stays as is.
+    expect(plan.skipped).toEqual([
+      { number: 12, title: 'A question', why: 'not a request or a suggestion' },
+      { number: 30, title: 'Tokens: snappier dialogs and accordions', why: 'requested by Malik, who files from his GitHub account (acme-malik), not as an email member' },
+    ]);
+    expect(plan.items.some((i) => i.member.email === 'malik@acme.example')).toBe(false);
     // The hand-written line goes: the member's own line, written by Bridge, replaces it.
-    expect(plan.items[0]!.body).toBe('Dana: faster.');
+    expect(plan.items[0]!.body).toBe('Dana: rounder.');
     expect(plan.items[1]!.labels).toEqual(['component-change']);
   });
 

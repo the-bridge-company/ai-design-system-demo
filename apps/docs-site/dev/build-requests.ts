@@ -7,8 +7,9 @@ import type { RestIssue, RestPull } from '../src/lib/building-view';
 const DAY = 86_400_000;
 
 /**
- * The sample people: Dana leads the design system and pushes from Figma, Malik (the sample team's code reviewer,
- * lib/invites.ts sampleTeam, face ~malik-haddad) builds, and Theo is a developer who works outside Bridge.
+ * The sample people: Dana leads the design system and pushes from Figma, Malik (the sample team's developer, who
+ * joins with GitHub only, api/_lib/demo-members.ts RETIRED_DEMO_MEMBERS; login malik-haddad in these fixtures) builds,
+ * and Theo is a developer who works outside Bridge.
  */
 export const FIXTURE_BUILDERS: Record<string, string> = { dana: 'Dana', 'malik-haddad': 'Malik', theo: 'Theo' };
 

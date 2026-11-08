@@ -102,6 +102,8 @@ import {
 import { FIX_ROW_TITLE, type FixRow } from "../../../lib/claude-connector";
 import { studioHref } from "../../../lib/team-path";
 import { setPageSummary } from "../../../lib/page-summary";
+import { isNameAuthor, nameOfAuthor } from "../../../lib/author";
+import { nameFace } from "../../../lib/people";
 import {
   loadBuildData,
   readFixes,
@@ -117,6 +119,9 @@ const TONE = {
 } as const;
 const avatar = (login: string) =>
   `https://github.com/${encodeURIComponent(login)}.png?size=64`;
+/** A person by login, or by name only ("name:Leo", lib/author): drawn face, plain name, never looked up on GitHub. */
+const personFor = (login: string, data: BuildData) =>
+  isNameAuthor(login) ? person(nameFace(nameOfAuthor(login)), nameOfAuthor(login), null) : person(login, data.nameOf(login), avatar(login));
 const external = { target: "_blank", rel: "noopener noreferrer" } as const;
 const POLL_MS = 10_000;
 type Row = (BuildRequestView | FixRow | ExplorationBuildRow) & LifecycleExtra;
@@ -138,7 +143,7 @@ function Builders({
         <Icon icon={Hammer} size="sm" />
       </span>
     );
-  const people = v.builders.map((l) => person(l, data.nameOf(l), avatar(l)));
+  const people = v.builders.map((l) => personFor(l, data));
   if (people.length === 1) return <Who p={people[0]!} size={size} />;
   return (
     <AvatarGroup aria-label="Building it" max={2} size={size}>
@@ -153,7 +158,7 @@ function Builders({
 function cardPerson(v: Row, data: BuildData) {
   const login = v.builders[0] ?? v.requestedBy ?? null;
   if (!login) return person("~bridge", "Waiting for a developer", null);
-  return person(login, data.nameOf(login), avatar(login));
+  return personFor(login, data);
 }
 
 /**

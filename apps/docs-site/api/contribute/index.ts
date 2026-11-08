@@ -139,7 +139,7 @@
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
-import { demoDialog, personaOn } from '../../src/lib/demo.js';
+import { demoDialog } from '../../src/lib/demo.js';
 import { putShot, shotImage, shotMeta, shotsTodo, workflowClaims, type ShotsCtx } from '../_lib/private-shots.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
@@ -177,17 +177,18 @@ import { sharedAppTokens } from '../_lib/shared-token.js';
 import { configName, putTeamName } from '../_lib/teams.js';
 import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/session.js';
 import { teamInSet } from '../_lib/members.js';
+import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
 import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { addsPmWords, isPm, PM_ONLY, PRODUCT_KEY, pmOf, pmsOf, publicPm, setPm, withPmWord, type PmWord, type ProductPm } from '../_lib/product-pm.js';
 import { deliverNotices, teamBase, type NotifyDeps } from '../_lib/notify.js';
-import { buildComment, buildPeopleOn, buildRecordOf, buildStateOf, buildSummary, designCheckStatus, mentionedIssues, NO_DESIGN, DESIGN_CHECK, DESIGN_TASK_BACK_COMMENT_SERVER, devPullOfEvents, reopenedBody, saveBuild, taskOfUrl, type BuildNeed, type BuildRole, type BuildWord } from '../_lib/build-check.js';
+import { buildComment, buildRecordOf, buildStateOf, buildSummary, designCheckStatus, mentionedIssues, NO_DESIGN, DESIGN_CHECK, DESIGN_TASK_BACK_COMMENT_SERVER, devPullOfEvents, reopenedBody, saveBuild, taskOfUrl, type BuildNeed, type BuildRole, type BuildWord } from '../_lib/build-check.js';
 import type { Notice } from '../_lib/notify-events.js';
 import { npmLatest, parseNpmNames, sendLibraryUpdate } from '../_lib/library-update.js';
 import { validPackageName } from '../../src/lib/library-update.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { mintReadPass, passOpens, verifyReadPass, type ReadPass } from '../_lib/read-pass.js';
-import { corsHeaders, isPublicRepo, memberBudgetId, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, type ReadCtx, type Reader } from '../_lib/team-read.js';
+import { budgetOf, corsHeaders, isPublicRepo, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, type ReadCtx, type Reader } from '../_lib/team-read.js';
 
 export type { FetchLike };
 
@@ -244,6 +245,11 @@ export interface ContribClaims {
   v: number;
   /** Expiry (ms). */
   exp: number;
+  /**
+   * 1 on the read-only session of a signed-out visitor of a demo team (api/_lib/demo-members.ts demoVisitorEmail): they
+   * read as that member, through every path a member reads by; demoWriteRefusal refuses each of their writes.
+   */
+  visit?: 1;
 }
 
 export const COOKIE_PATH = '/api/contribute';
@@ -392,8 +398,8 @@ const isClaims = (c: any) => typeof c.repo === 'string' && typeof c.email === 's
 export const signSession = (c: ContribClaims, secret: string) => signClaims(c, secret, PURPOSE);
 export const verifySession = (value: string, secret: string) => verifyClaims<ContribClaims>(value, secret, PURPOSE, isClaims);
 
-export function issueSession(m: EmailMember, repoFull: string, secret: string, now: number): string {
-  const value = signSession({ repo: repoFull.toLowerCase(), email: m.email, name: m.name, v: m.version, exp: now + SESSION_TTL_MS }, secret);
+export function issueSession(m: EmailMember, repoFull: string, secret: string, now: number, visit = false): string {
+  const value = signSession({ repo: repoFull.toLowerCase(), email: m.email, name: m.name, v: m.version, exp: now + SESSION_TTL_MS, ...(visit ? { visit: 1 as const } : {}) }, secret);
   return `${cookieName(repoFull)}=${value}; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}; ${cookieAttrs(COOKIE_PATH)}`;
 }
 
@@ -405,17 +411,53 @@ export const clearSession = (repoFull: string) => `${cookieName(repoFull)}=; Max
  * email is a member of this team counts as that member (the account's version ends it, deleting it removes it).
  */
 async function sessionMember(ctx: Ctx, req: Request, repoFull: string): Promise<EmailMember | null> {
+  return (await sessionOf(ctx, req, repoFull))?.member ?? null;
+}
+
+/** A GitHub sign-in on the request (a token of its own, not the email member's stand-in): never a demo visitor. */
+const githubAuth = (req: Request): boolean => {
+  const h = req.headers.get('authorization');
+  return Boolean(h && h.replace(/^(Bearer|token)\s+/i, '') !== 'bridge-email-contributor');
+};
+
+/**
+ * The member behind the request (sessionMember), and whether it is a demo visitor's read-only session as that member.
+ * A real membership comes first (the team's cookie of a member, then a Bridge account on the team); a visitor's session
+ * counts only after both, and never on a request signed in with GitHub (the demo's owner keeps their own identity).
+ */
+async function sessionOf(ctx: Ctx, req: Request, repoFull: string): Promise<{ member: EmailMember; visitor: boolean } | null> {
   const raw = readCookie(req, cookieName(repoFull));
   const c = raw ? verifySession(raw, ctx.svc.secret) : null;
-  if (c && c.repo === repoFull.toLowerCase() && c.exp > ctx.now()) {
-    const m = await ctx.svc.members.get(repoFull, c.email);
+  const live = c && c.repo === repoFull.toLowerCase() && c.exp > ctx.now() ? c : null;
+  const of = async (claims: ContribClaims) => {
+    const m = await ctx.svc.members.get(repoFull, claims.email);
     // Removed, or joined again since: the session ends.
-    if (m && m.version === c.v && sameEmail(m.email, c.email)) return m;
+    return m && m.version === claims.v && sameEmail(m.email, claims.email) ? m : null;
+  };
+  if (live && !live.visit) {
+    const m = await of(live);
+    if (m) return { member: m, visitor: false };
   }
   const a = await sessionAccount(req, ctx.svc.redis, ctx.svc.secret, ctx.now());
-  if (!a) return null;
-  const m = await ctx.svc.members.get(repoFull, a.email);
-  return m && sameEmail(m.email, a.email) ? m : null;
+  if (a) {
+    const m = await ctx.svc.members.get(repoFull, a.email);
+    if (m && sameEmail(m.email, a.email)) return { member: m, visitor: false };
+  }
+  if (live?.visit && !githubAuth(req) && demoVisitorEmail(repoFull) && sameEmail(live.email, demoVisitorEmail(repoFull)!)) {
+    const m = await of(live);
+    if (m) return { member: m, visitor: true };
+  }
+  return null;
+}
+
+/**
+ * A signed-out visitor of a demo team that has a visitor member (api/_lib/demo-members.ts): that member, to read as, or
+ * null (not a demo team, nobody seeded, or a request signed in with GitHub).
+ */
+async function visitorMemberOf(ctx: Ctx, req: Request, repoFull: string): Promise<EmailMember | null> {
+  const email = demoVisitorEmail(repoFull);
+  if (!email || githubAuth(req) || !isPublicTeam(repoFull)) return null;
+  return await ctx.svc.members.get(repoFull, email);
 }
 
 /**
@@ -464,7 +506,10 @@ export async function ownedWorkFor(who: { email: string } | { token: string }, t
 export async function contributorOf(req: Request, repoFull: string, env: ContribEnv, deps: ContribDeps): Promise<EmailMember | null> {
   const svc = services(env, deps);
   if (!svc) return null;
-  return sessionMember({ f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, req, repoFull);
+  const s = await sessionOf({ f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, req, repoFull);
+  // A demo visitor reads as their member everywhere; any other call is a write, refused as demoWriteRefusal does.
+  if (s?.visitor && req.method !== 'GET' && req.method !== 'HEAD') throw new HttpError(403, DEMO_REFUSAL, demoDialog(repoFull).lead);
+  return s?.member ?? null;
 }
 
 /**
@@ -611,6 +656,9 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
     case 'build-checks':
       return await onBuildChecks(req, ctx, body);
 
+    case 'seed-demo':
+      return await onSeedDemo(req, ctx, body);
+
     case 'exploration-keeper': {
       // A lead signed in by email hands an exploration over: the member record says they lead, never the browser.
       const team = parseRepo(body.repo);
@@ -680,11 +728,35 @@ export async function demoWriteRefusal(ctx: Ctx, req: Request, params: URLSearch
     return null;
   }
   if (!isPublicTeam(team.full)) return null;
-  if (await sessionMember(ctx, req, team.full)) return null;
+  // A member writes; a visitor reading as a member (a demo session) never does.
+  const s = await sessionOf(ctx, req, team.full);
+  if (s) return s.visitor ? fail(403, DEMO_REFUSAL, demoDialog(team.full).lead) : null;
   if (req.headers.get('authorization') && (await githubTeamReaderOf(ctx, req, { ...team, full: team.full.toLowerCase() }))) return null;
   const a = await sessionAccount(req, ctx.svc.redis, ctx.svc.secret, ctx.now());
   if (a && ((await teamInSet(ctx.svc.redis, a.email, team.full)) || (ctx.svc.localAdmins && (await ctx.svc.localAdmins.isAdmin(team.full, a.email))))) return null;
   return fail(403, DEMO_REFUSAL, demoDialog(team.full).lead);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The sample team's people (api/_lib/demo-members.ts)
+
+export const SEED_WORDS = { notAdmin: 'Only an admin of the sample team on GitHub seeds its members.' };
+
+/**
+ * POST { action: 'seed-demo', repo: <the sample team> } with a GitHub token (Authorization: Bearer) that administers
+ * the sample team's repository: writes its email members and its product manager (seedDemoTeam, idempotent) and says
+ * what changed. Run by scripts/seed-demo-members.mjs; nobody else may.
+ */
+async function onSeedDemo(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  if (!demoVisitorEmail(t.full)) return fail(404, 'not_found', 'Only the sample team has members to seed.');
+  const a = await githubAccountOn(ctx, req, t);
+  if (a?.kind === 'expired') return fail(401, 'signin', GITHUB_EXPIRED);
+  if (a?.kind !== 'account' || a.perms?.admin !== true) return fail(403, 'not-allowed', SEED_WORDS.notAdmin);
+  const r = await seedDemoTeam({ members: ctx.svc.members, redis: ctx.svc.redis }, ctx.now(), a.login);
+  await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
+  return json(200, r, { 'Cache-Control': 'private, no-store' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -939,12 +1011,10 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
       await deliverNotices(notices, nd, `build:${pair.code}:${dev.number}:${word.at}`).catch(() => undefined);
     }
   }
-  // On the sample team its personas, never the account behind its repositories (build-check buildPeopleOn).
-  const shown = buildPeopleOn(t.full, words, need);
-  const st = buildStateOf(shown.words, head, shown.need);
+  const st = buildStateOf(words, head, need);
   const target = `${teamBase(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), t.full)}changes/?exploration=${n}&product=${encodeURIComponent(product)}`;
   // The status needs the app's Commit statuses write permission: without it the comment still says it, and Studio too.
-  const named = designCheckStatus(st, shown.need.names, { designChanging: write && body.why === 'design' && body.kind === 'changes' });
+  const named = designCheckStatus(st, need.names, { designChanging: write && body.why === 'design' && body.kind === 'changes' });
   // The app's token for the proxy carries no status write: a token of its own, narrowed to it.
   // Written once per head and state: a read that changes nothing leaves GitHub alone (a page opens in a second, not three).
   const statusKey = `bridge:build:status:${canonicalRepo(pair.code).toLowerCase()}#${dev.number}`;
@@ -955,13 +1025,9 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   if (status.status === 201) await ctx.svc.redis.cmd('SET', statusKey, statusNow, 'EX', 30 * 24 * 3600).catch(() => undefined);
   // The people by the names they go by (their GitHub profile, kept by Bridge), never a login, for the page's first paint.
   const nameOf = async (login: string | null | undefined) => (login && /^[A-Za-z0-9-]{1,39}$/.test(login) ? ((await profileNameOf(readCtxOf(ctx), ro, rn, login).catch(() => null)) ?? login) : (login ?? null));
-  // The sample team: the developer of its code is the persona who reviews tech, the designer its persona (src/lib/demo.ts).
-  const devPersona = personaOn(t.full, builder, 'developer');
   const designerLogin = typeof block.author === 'string' ? block.author : typeof block.doneBy === 'string' ? block.doneBy : null;
-  const designerPersona = personaOn(t.full, typeof block.memberName === 'string' ? block.memberName : designerLogin);
-  const [builderName, designerShown] = await Promise.all([devPersona ? devPersona.name : nameOf(builder), designerPersona ? designerPersona.name : typeof block.memberName === 'string' ? Promise.resolve(block.memberName) : nameOf(designerLogin)]);
-  const builderShown = devPersona ? devPersona.login : builder;
-  return json(200, { ...st, head, pull: { number: dev.number, url: dev.url, ...(ref ? { ref } : {}), ...(builderShown ? { builder: builderShown } : {}), ...(builderName ? { builderName } : {}) }, ...(designerShown ? { designerName: designerShown } : {}), role, statusWritten: already || status.status === 201 });
+  const [builderName, designerShown] = await Promise.all([nameOf(builder), typeof block.memberName === 'string' ? Promise.resolve(block.memberName) : nameOf(designerLogin)]);
+  return json(200, { ...st, head, pull: { number: dev.number, url: dev.url, ...(ref ? { ref } : {}), ...(builder ? { builder } : {}), ...(builderName ? { builderName } : {}) }, ...(designerShown ? { designerName: designerShown } : {}), role, statusWritten: already || status.status === 201 });
 }
 
 const EXPLORATION_LABEL_SERVER = 'exploration';
@@ -993,8 +1059,7 @@ async function onBuildChecks(req: Request, ctx: Ctx, body: Record<string, unknow
       const pr = token ? await ghApp(ctx, token, 'GET', `/repos/${o}/${r}/pulls/${number}`) : null;
       const head = typeof pr?.data?.head?.sha === 'string' ? (pr.data.head.sha as string) : null;
       if (!head) return;
-      const shown = buildPeopleOn(t.full, rec.words, rec.need);
-      checks[k] = buildSummary(buildStateOf(shown.words, head, shown.need), shown.need.names);
+      checks[k] = buildSummary(buildStateOf(rec.words, head, rec.need), rec.need.names);
     }),
   );
   return json(200, { checks });
@@ -2311,9 +2376,10 @@ async function readerOf(ctx: Ctx, req: Request, full: string, rctx: ReadCtx, pas
   if (ctx.cross && pass) return { kind: 'member', pass: { budget: pass.m, repos: pass.r } };
   // A page of another origin reads as a visitor of a public demo team, whatever cookie the browser sent.
   if (ctx.cross) return isPublicTeam(full) && (openToVisitors(full) || (await isPublicRepo(rctx, ...(full.split('/') as [string, string])))) ? { kind: 'guest' } : null;
-  // A member reads on their own budget (api/_lib/team-read.ts budgetOf), not their address's.
-  const m = await sessionMember(ctx, req, full);
-  if (m) return { kind: 'member', email: m.email };
+  // A member reads on their own budget (api/_lib/team-read.ts budgetOf), not their address's; a demo visitor reading as
+  // a member on their address's.
+  const s = await sessionOf(ctx, req, full);
+  if (s) return { kind: 'member', email: s.member.email, ...(s.visitor ? { visitor: true } : {}) };
   // Anyone on the team signed in with GitHub (a designer, a lead, an admin) reads the team's products through Bridge:
   // a private product or design copy reads with the app, whatever their own token can see (githubTeamReaderOf).
   if (req.headers.get('authorization')) {
@@ -2357,7 +2423,7 @@ async function mintPass(ctx: Ctx, req: Request, full: string): Promise<Response>
   if (reader?.kind !== 'member' || !reader.email) return fail(401, 'signin', SIGNIN);
   const { owner, repo } = parseRepo(full);
   const config = await teamReadConfigOf(rctx, owner, repo);
-  const minted = mintReadPass({ team: full, repos: config.repos, member: memberBudgetId(reader.email) }, ctx.svc.secret, ctx.now());
+  const minted = mintReadPass({ team: full, repos: config.repos, member: budgetOf(req, reader).who }, ctx.svc.secret, ctx.now());
   return json(200, minted ? { pass: minted.pass, exp: minted.exp, origins: config.origins } : { pass: null }, { 'Cache-Control': 'private, no-store' });
 }
 
@@ -2566,8 +2632,7 @@ export function designCheckFor(ctx: Ctx): (event: string, payload: unknown) => P
     const designer = typeof block?.memberName === 'string' ? block.memberName : typeof block?.author === 'string' ? block.author : typeof block?.doneBy === 'string' ? block.doneBy : undefined;
     const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block?.leadPieces) && (block!.leadPieces as unknown[]).length > 0, names: { ...(designer ? { designer } : {}), ...(pm ? { pm: pm.name } : {}) } };
     const words = await saveBuild(ctx.svc.redis, repo, pr!.number as number, need);
-    const shown = buildPeopleOn(meta.team, words, need);
-    await write(designCheckStatus(buildStateOf(shown.words, head, shown.need), shown.need.names, { designChanging: Boolean(block && typeof block.doneAt !== 'string') }));
+    await write(designCheckStatus(buildStateOf(words, head, need), need.names, { designChanging: Boolean(block && typeof block.doneAt !== 'string') }));
     return 'linked';
   };
 }
@@ -2696,7 +2761,12 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       const { full } = parseRepo(repoArg);
       const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env };
       if (params.get('mint') === 'read-pass') return await mintPass(ctx, req, full);
-      const m = await sessionMember(ctx, req, full);
+      const s = await sessionOf(ctx, req, full);
+      // A signed-out visitor of a demo team gets a read-only session as its visitor member (api/_lib/demo-members.ts):
+      // from here on they read as that member, by the same paths; demoWriteRefusal refuses each write.
+      const visit = !s && params.get('members') === null && params.get('mine') === null ? await visitorMemberOf(ctx, req, full) : null;
+      const m = s?.member ?? visit;
+      const visitor = Boolean(s?.visitor || visit);
       if (params.get('members') === '1') return await membersOf(ctx, req, full, m);
       if (params.get('mine') === '1') {
         const d = m ? null : await githubDesignerOf(ctx, req, { ...parseRepo(full), full: full.toLowerCase() });
@@ -2715,7 +2785,8 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       // checks again on every admin action).
       const admin = Boolean(m && svc.localAdmins && (await svc.localAdmins.isAdmin(full, m.email)));
       const mode = m ? await reviewModeOf(svc.redis, full) : 'one';
-      return json(200, { available: true, member: m ? { ...publicMember(m, mode), ...(admin ? { role: 'admin', decides: true } : {}) } : null, ...(m ? { reviewMode: mode } : {}) });
+      const member = m ? { ...publicMember(m, mode), ...(admin ? { role: 'admin', decides: true } : {}), ...(visitor ? { visitor: true } : {}) } : null;
+      return json(200, { available: true, member, ...(m ? { reviewMode: mode } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true) } : {});
     }
 
     if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);

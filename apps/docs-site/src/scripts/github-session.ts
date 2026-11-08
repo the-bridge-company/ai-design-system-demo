@@ -80,8 +80,11 @@ export interface RepoRef {
 
 // The token, its check and its sign-in session live in one slot (lib/github-signin.ts slotKey):
 // 'bridge.github.token.direct' for a sign-in with Bridge Direct, no suffix without a GitHub App.
-/** An email contributor's role, in the words Members uses: "Can edit", or "Can view" for a read-only member. */
-const contributorRole = () => (contributorFor(pageRepo())?.role === 'view' ? ROLE_WORDS.view.label : ROLE_WORDS.edit.label);
+/** An email member's role, in the words Members uses: "Admin" for an email admin, "Can view" for a read-only member, else "Can edit". */
+const contributorRole = () => {
+  const role = contributorFor(pageRepo())?.role;
+  return role === 'admin' ? ROLE_WORDS.admin.label : role === 'view' ? ROLE_WORDS.view.label : ROLE_WORDS.edit.label;
+};
 const TOKEN_BASE = 'bridge.github.token';
 const CHECK_BASE = 'bridge.github.check';
 /** The sign-in session (expiry, refresh token) next to its token. Absent for a pasted token. */
@@ -1017,7 +1020,10 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
     // An email contributor (no GitHub) is a member: never a demo visitor. Nor is a Bridge account whose linked GitHub is
     // on the team (its writes ask to reconnect GitHub: the session's gated actions). Can view writes nothing.
     login: () => viewer?.login ?? currentContributor()?.email ?? (linkedMember(linkedGitHubRole()) ? 'linked' : null),
-    write: () => (currentContributor() ? currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
+    // A demo visitor reading as a member (lib/contribute.ts ContributeMember.visitor) still explores the demo: the banner
+    // stays, and the server refuses each write in the demo dialog's words.
+    write: () => (currentContributor() ? !currentContributor()!.visitor && currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
+    visitor: () => Boolean(currentContributor()?.visitor),
     signIn: prefersSignIn,
     // Not known while the saved sign-in or the account's linked GitHub role is still being read: an admin who just
     // signed in never sees the read-only banner meanwhile.

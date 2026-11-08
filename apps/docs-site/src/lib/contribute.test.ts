@@ -34,9 +34,9 @@ describe('the email session', () => {
     expect(contributeHashToken('#contribute=short')).toBeNull();
   });
 
-  it('is offered on real teams only, never the sample team, the demo or a page without a team', () => {
+  it('is offered on every team of a hosted site, the sample team included (its visitors read as its lead), never a page without a team', () => {
     expect(contributeEligible('acme/ds', true)).toBe(true);
-    expect(contributeEligible('acme-design-demo/bridge-demo-ds', true)).toBe(false);
+    expect(contributeEligible('acme-design-demo/bridge-demo-ds', true)).toBe(true);
     expect(contributeEligible('the-bridge-company/ai-design-system-demo', true)).toBe(true);
     expect(contributeEligible('acme/ds', false)).toBe(false);
     expect(contributeEligible(null, true)).toBe(false);
@@ -49,8 +49,9 @@ describe('the email session', () => {
     expect(isContribAuth(undefined)).toBe(false);
   });
 
-  it('keeps a member only with an email, always Can edit', () => {
-    expect(parseMember({ email: 'leo@acme.design', name: ' Leo ', role: 'admin' })).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'edit' });
+  it('keeps a member only with an email, as Admin, Can view or else Can edit', () => {
+    expect(parseMember({ email: 'leo@acme.design', name: ' Leo ', role: 'admin' })).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'admin' });
+    expect(parseMember({ email: 'leo@acme.design', name: 'Leo', role: 'owner' })).toEqual({ email: 'leo@acme.design', name: 'Leo', role: 'edit' });
     expect(parseMember({ email: 'leo@acme.design' })).toEqual({ email: 'leo@acme.design', name: 'leo@acme.design', role: 'edit' });
     // Can view stays Can view: it only takes rights away.
     expect(parseMember({ email: 'vic@acme.design', name: 'Vic', role: 'view' })).toEqual({ email: 'vic@acme.design', name: 'Vic', role: 'view' });

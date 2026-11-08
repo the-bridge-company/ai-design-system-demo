@@ -20,14 +20,13 @@
 //     every change and exploration that shipped, newest first, grouped by month ("October 2026"), each row with its
 //     preview capture when there is one, the product, the person and "Shipped Oct 30" (lib/branches-page groupByMonth).
 //     The library's token changelog is in the Library (Changelog), the next release on Being built.
-//   - Waiting on me (what "Review all" opens on the demo) is the lead's review list: one summary sentence, every change
+//   - Waiting on me (what "Review all" opens) is the lead's review list: one summary sentence, every change
 //     that waits (branches, suggestions, usage guidance drafts) under three kinds (lib/review-categories: In a product,
 //     Library components and tokens, Documentation). The designer is who asked for the change (the requester line),
 //     Claude AI's work included.
 // Mounted and repainted by scripts/reviews.ts (loadList), which reads GitHub; this file only enriches what is shown
 // (display names, before/after thumbnails and changed files, with a working token only: anonymous visitors have 60
-// GitHub reads an hour, kept for the statuses). The exception is the visitor in the demo lead's seat: the demo's
-// activity snapshot answers the before/after and the files, so a change looks the same here as on the demo home.
+// GitHub reads an hour, kept for the statuses).
 import { createRoot, type Root } from 'react-dom/client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Checkbox, Link, Skeleton, Tab, Tabs, TabsList, Tooltip, VisuallyHidden } from '@bridge-ds/react';
@@ -58,7 +57,6 @@ import type { ProductConfig, ToolingConfig } from '@bridge-ds/core';
 import { studioHref } from '../../../lib/team-path';
 import { LIFECYCLE_LABEL, type LifecycleStage } from '../../../lib/review-state';
 import { productHref } from '../../../lib/product-page';
-import { demoWaiting } from '../../../lib/demo';
 
 export interface ListRow {
   number: number;
@@ -132,11 +130,6 @@ export interface BranchesListProps {
   failure: (err: unknown) => string;
   /** Asks scripts/reviews.ts for the closed list (when Shipped opens before it was read). */
   readClosed: () => void;
-  /**
-   * The demo persona whose seat a visitor without an account takes ("Dana", lib/demo.ts): Waiting on me then lists
-   * what waits on them. Null everywhere else.
-   */
-  seat?: string | null;
   /** What waits on the viewer besides branches: suggestions and usage guidance drafts (Waiting on me only). */
   waiting?: WaitingExtra[];
 }
@@ -150,11 +143,10 @@ interface Extra {
 }
 
 /**
- * `read`: 'all' with a working token; 'seat' for the visitor in the demo lead's seat, whose reads the demo's activity
- * snapshot answers (the before/after and the files, as on the demo home; no profile reads); 'none' otherwise. The
- * profiles (display names) are read once per login, the author's and the requester's, products' own rows included.
+ * `read`: 'all' with a working token, 'none' otherwise. The profiles (display names) are read once per login, the
+ * author's and the requester's, products' own rows included.
  */
-function useExtras(rows: ListRow[], read: 'all' | 'seat' | 'none'): { extras: Map<number, Extra>; people: Map<string, Person> } {
+function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number, Extra>; people: Map<string, Person> } {
   const [extras, setExtras] = useState<Map<number, Extra>>(new Map());
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
   const key = rows.map((r) => `${r.number}@${r.head.sha}`).join(',');
@@ -166,10 +158,8 @@ function useExtras(rows: ListRow[], read: 'all' | 'seat' | 'none'): { extras: Ma
     void import('../../../scripts/home-data').then(({ personOf, thumbOf, filesOf }) => {
       const logins = new Set<string>();
       for (const r of rows) {
-        if (read === 'all') {
-          if (!r.agent) logins.add(r.author);
-          if (r.requester?.login) logins.add(r.requester.login);
-        }
+        if (!r.agent) logins.add(r.author);
+        if (r.requester?.login) logins.add(r.requester.login);
         // An exploration in a product's own repository: its files and screens are not in this repository.
         if (r.product) continue;
         void filesOf(r.number, r.head.sha).then((files) => put(r.number, { files }));
@@ -203,7 +193,7 @@ export function BranchesList(p: BranchesListProps) {
     // The cards carry no checkbox: what was picked for a shared preview is let go with the rows.
     if (v === 'grid') setSelected([]);
   };
-  const viewer = p.viewer ?? (p.seat ? `~${p.seat.toLowerCase()}` : null);
+  const viewer = p.viewer;
   const tab = picked.state;
   const archivedTab = tab === 'archived';
   const shippedTab = tab === 'shipped';
@@ -215,7 +205,7 @@ export function BranchesList(p: BranchesListProps) {
   const archived = useMemo(() => p.archived ?? [], [p.archived]);
   const shipped = useMemo(() => shippedRows([...(p.closed ?? []), ...byTask.shipped]), [p.closed, byTask.shipped]);
   const shown = archivedTab ? archived : shippedTab ? shipped : open;
-  const { extras, people } = useExtras(shown, p.connected ? 'all' : p.seat ? 'seat' : 'none');
+  const { extras, people } = useExtras(shown, p.connected ? 'all' : 'none');
   // Bridge's own pull requests stay out of every tab and count (lib/branches-page designRows): the files once read.
   const filesOfRow = (r: ListRow) => (r.product ? null : extras.get(r.number)?.files);
   const openDesign = designRows(open, filesOfRow, p.tooling);
@@ -302,19 +292,16 @@ export function BranchesList(p: BranchesListProps) {
         });
   useEffect(() => setPageSummary(summary), [summary]);
   const waitingView = tab === 'waiting' && Boolean(viewer);
-  // Waiting on me counts Claude's documentation drafts apart; in the demo lead's seat it says exactly what the demo
-  // Home says ("16 changes and 1 documentation draft need your review."), the same count with the same words.
+  // Waiting on me counts Claude's documentation drafts apart.
   const drafts = queue.filter((q) => q.kind === 'extra' && q.w.need.kind === 'guidance').length;
-  const waitingLine = p.seat && !filtered ? demoWaiting(queue.length - drafts, null, p.seat, drafts).count : queueSummary(kept.length, queue.length, filtered, drafts);
+  const waitingLine = queueSummary(kept.length, queue.length, filtered, drafts);
   const rowKey = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
   const rows = kept.flatMap((q) => (q.kind === 'branch' ? [q.x] : []));
-  // Token branches carry a checkbox to preview them together, except in the demo lead's read-only Waiting on me.
-  const picks = !(waitingView && p.seat);
   // Library branches a listed product branch needs follow it, one step in (lib/product-branch nestLinked).
   const groups = nestLinked(groupByProduct(rows, p.products));
 
   // Checked branches stay only while they are listed and still checkable.
-  const checkable = rows.filter((x) => picks && selectable(x));
+  const checkable = rows.filter((x) => selectable(x));
   const listedKey = checkable.map((x) => `${x.r.number}@${x.r.head.sha}\u0000${x.r.title}`).join('\u0001');
   const listed = useMemo(
     () =>
@@ -354,7 +341,7 @@ export function BranchesList(p: BranchesListProps) {
 
   // The checkbox (preview token branches together) leads a row; every row of a group that has one keeps its slot, so
   // thumbnails and avatars stay in one column.
-  const pickable = (x: { tokenOnly: boolean | null }) => picks && selectable(x);
+  const pickable = (x: { tokenOnly: boolean | null }) => selectable(x);
   const slot = <span className="bl-pick-slot" aria-hidden="true" />;
   // The same branch as a card, for the grid: the Home's card (ListCard). Its footer names who it belongs to and when
   // its screen was captured; on Shipped (grouped by month), its screen's corner names the product its heading does
@@ -378,7 +365,7 @@ export function BranchesList(p: BranchesListProps) {
   };
 
   const branchRow = ({ r, e, tokenOnly, child }: (typeof rows)[number] & { child: boolean }, line?: string, reserve = false) => {
-    const tok = picks && tokenOnly;
+    const tok = tokenOnly;
                 const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
                 const checked = selected.includes(r.number);
                 const full = boxDisabled(selected, r.number);

@@ -43,28 +43,16 @@ const props = (over: Partial<SuggestionReviewProps> = {}): SuggestionReviewProps
 
 beforeEach(() => localStorage.clear());
 
-describe('SuggestionReview on the sample team', () => {
-  it('lets the visitor try Approve: approved, what happens next, nothing sent, never a GitHub ask', async () => {
-    const p = props({ sample: { author: 'Ann', codeBy: 'Malik' } });
-    const { container } = render(createElement(SuggestionReview, p));
-    expect(screen.queryByText(/GitHub to review/)).toBeNull();
-    const approve = screen.getByRole('button', { name: 'Approve' });
-    expect(approve.hasAttribute('data-demo-write')).toBe(false);
-    await userEvent.click(approve);
-    expect(p.onApprove).not.toHaveBeenCalled();
-    expect(screen.getByText(/Sample data, nothing is sent/)).toBeTruthy();
-    expect(screen.getByText(/Malik checks the code next/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
-    await expectNoAxeViolations(container);
-  });
-
-  it('keeps the real Approve everywhere else', async () => {
+describe('SuggestionReview, the same on every team (the sample team included)', () => {
+  it('runs the real Approve: the server answers it (on the sample team, its write refusal), nothing is faked in the page', async () => {
     const p = props();
-    render(createElement(SuggestionReview, p));
+    const { container } = render(createElement(SuggestionReview, p));
     const approve = screen.getByRole('button', { name: 'Approve' });
     expect(approve.getAttribute('data-demo-write')).toBe('review suggestions');
+    expect(approve.hasAttribute('data-demo-try')).toBe(false);
     await userEvent.click(approve);
     expect(p.onApprove).toHaveBeenCalled();
+    expect(screen.queryByText(/Sample data, nothing is sent/)).toBeNull();
+    await expectNoAxeViolations(container);
   });
 });

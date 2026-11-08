@@ -3,7 +3,7 @@
 // tests, the branch on GitHub) folds under "For developers" for tech owners only.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { BranchReview, type BranchReviewProps } from './BranchReview';
@@ -52,16 +52,12 @@ describe('BranchReview', () => {
     expect(document.body.textContent).not.toMatch(/#17|developer tests?|GitHub/);
   });
 
-  it('names no visual checks on the sample team, and keeps the set-up line on a real team', () => {
+  it('keeps the set-up line on a repo without visual checks, the sample team too (the real path)', () => {
     const change = { kind: 'component' as const, meta: 'new component', paths: ['a.tsx'] };
     const changes = [
       { ...change, id: 'a', title: 'ProfileHeader', component: 'ProfileHeader' },
       { ...change, id: 'b', title: 'Avatar', component: 'Avatar' },
     ];
-    const { unmount } = render(createElement(BranchReview, { ...base, changes, visualSetUp: true, visualSample: true }));
-    expect(screen.getByText('On your own team, Bridge shows the before and after here.')).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/visual checks/);
-    unmount();
     render(createElement(BranchReview, { ...base, changes, visualSetUp: true }));
     expect(document.body.textContent).toContain('This repo has no visual checks yet.');
   });
@@ -100,21 +96,15 @@ describe('BranchReview', () => {
     expect(screen.queryByRole('link', { name: 'Try it in the product' })).toBeNull();
   });
 
-  it('on the sample team, a tried Approve still shows Approved when the branch is opened again in the visit', async () => {
-    localStorage.clear();
-    const sample = { ...base, sample: { author: 'Ann' }, actions: { ...base.actions, primary: { kind: 'approve' as const, label: 'Approve' } } };
-    render(createElement(BranchReview, sample));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Approve' }));
-    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
-    cleanup();
-    // Another page of the visit opens the same branch.
-    render(createElement(BranchReview, sample));
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0);
-    cleanup();
-    // Another branch still waits.
-    render(createElement(BranchReview, { ...sample, pr: 18 }));
-    expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
-    localStorage.clear();
+  it('Approve runs the real review action on every team: the server answers (on the sample team, its write refusal)', async () => {
+    const acts: string[] = [];
+    const p = { ...base, actions: { ...base.actions, primary: { kind: 'approve' as const, label: 'Approve' } }, onAct: async (kind: string) => (acts.push(kind), undefined) };
+    render(createElement(BranchReview, p as BranchReviewProps));
+    const approve = screen.getByRole('button', { name: 'Approve' });
+    expect(approve.getAttribute('data-act')).toBe('APPROVE');
+    await userEvent.setup().click(approve);
+    expect(acts).toEqual(['approve']);
+    // Nothing is faked in the page: no Approved state until the server says so.
+    expect(screen.queryByText('You approved')).toBeNull();
   });
 });

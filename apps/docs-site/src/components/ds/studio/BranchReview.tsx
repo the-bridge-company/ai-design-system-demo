@@ -3,7 +3,7 @@
 // highlighted and click-to-edit; tokens as before and after; components as before and after screens), the
 // conversation, one line about checks, and one sticky decision bar. A branch with several changes gets an outline
 // and a "looked at" reading aid. Rules: lib/review-page.ts. Data and GitHub writes: scripts/reviews.ts.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { Who } from './faces';
@@ -77,8 +77,6 @@ import { agoInSentence, VISUAL_CHECKS_DOCS } from '@bridge-ds/core';
 import type { ChangeOrigin } from '../../../lib/product-branch';
 import type { ShownValue } from '../../../lib/token-review';
 import type { Lifecycle, LifecycleTone } from '../../../lib/change-status';
-import { DEMO_WORDS, demoApproved } from '../../../lib/demo';
-import { demoApprovals, rememberDemoApproval } from '../../../scripts/demo-approvals';
 
 export interface PersonRef {
   login: string;
@@ -123,7 +121,6 @@ export interface BranchReviewProps {
   crumbs: { label: string; href?: string }[];
   title: string;
   jira: string | null;
-  /** Warning only in the demo seat: the list's "Waiting 1 day" pill for the same branch. */
   status: { label: string; tone: LifecycleTone | 'warning'; lifecycle: Lifecycle };
   who: { person: PersonRef | null; lead: string | null; rest: string };
   /** Back from the token editor: what was just added. */
@@ -142,8 +139,6 @@ export interface BranchReviewProps {
    * "set-up"): a quiet link to set them up, never an ask or a "No visual change" it cannot know.
    */
   visualSetUp?: boolean;
-  /** The sample team: no visual checks to set up, so that line says what a real team gets (lib/demo.ts). */
-  visualSample?: boolean;
   /** "Admin demo": where the screens are. */
   product: string;
   tryUrl: string | null;
@@ -183,13 +178,6 @@ export interface BranchReviewProps {
   productWork?: ProductWorkView | null;
   /** Product work's technical side, folded under "For developers" for everyone. */
   code?: { files: string[]; branch: string; url: string; number: number; install: string | null } | null;
-  /**
-   * The sample team (lib/demo.ts): Approve can be tried. It shows the approved state and what happens next, and
-   * writes nothing. `author` is who asked for the review; `codeBy` who checks the code next ("Malik"), when the change
-   * still needs that check.
-   */
-  /** `valuesOnly`: a token value change, the design approval is all it needs (core withTokenValueApprovals). */
-  sample?: { author: string | null; codeBy?: string | null; valuesOnly?: boolean | undefined } | null;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -537,7 +525,7 @@ function ChangeBody(p: BranchReviewProps & { change: ReviewChange; multi: boolea
       {p.visual ? (
         <WhereItShows visual={p.visual} product={p.product} tryUrl={p.tryUrl} component={change.component} components={components} compact />
       ) : p.visualSetUp ? (
-        <SetUpVisualChecks sample={p.visualSample} />
+        <SetUpVisualChecks />
       ) : (
         <p className="br-muted">No visual change.</p>
       )}
@@ -547,8 +535,7 @@ function ChangeBody(p: BranchReviewProps & { change: ReviewChange; multi: boolea
 }
 
 /** On a repo without visual checks: what it would take, calmly, in place of the before and after. */
-function SetUpVisualChecks({ sample }: { sample?: boolean | undefined }) {
-  if (sample) return <p className="br-muted">{DEMO_WORDS.noBeforeAfter}</p>;
+function SetUpVisualChecks() {
   return (
     <p className="br-muted">
       This repo has no visual checks yet.{' '}
@@ -871,17 +858,7 @@ function ProductWork({ work, link, hasVisual }: { work: ProductWorkView; link: s
 // ---------------------------------------------------------------------------------------------------------------
 // The decision bar
 
-/** Approve, tried on the sample team: approved, what happens next, and that nothing was sent. */
-function TriedApprove({ author, codeBy, valuesOnly }: { author: string | null; codeBy: string | null; valuesOnly?: boolean | undefined }) {
-  const w = demoApproved(author, codeBy, valuesOnly);
-  return (
-    <Alert tone="success" title={w.title} className="br-tried">
-      {w.next} {w.note}
-    </Alert>
-  );
-}
-
-function DecisionBar({ p, leftLine, inputRef, tried, onTry }: { p: BranchReviewProps; leftLine: string | null; inputRef: React.RefObject<HTMLInputElement>; tried: boolean; onTry: () => void }) {
+function DecisionBar({ p, leftLine, inputRef }: { p: BranchReviewProps; leftLine: string | null; inputRef: React.RefObject<HTMLInputElement> }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState<ActKind | null>(null);
   const [said, setSaid] = useState(p.said ?? '');
@@ -954,14 +931,7 @@ function DecisionBar({ p, leftLine, inputRef, tried, onTry }: { p: BranchReviewP
             Ask for changes
           </Button>
         )}
-        {primary && p.sample && (primary.kind === 'approve' || primary.kind === 'approve-merge') ? (
-          // The sample team: Approve is tried here, nothing is written (no data-demo-write: the demo gate lets it through).
-          !tried && (
-            <Button variant="primary" size="lg" onClick={onTry} data-demo-try="approve">
-              Approve
-            </Button>
-          )
-        ) : primary && (
+        {primary && (
           <Button
             variant="primary"
             size="lg"
@@ -1000,7 +970,6 @@ function DecisionBar({ p, leftLine, inputRef, tried, onTry }: { p: BranchReviewP
           </MenuContent>
         </Menu>
       </div>
-      {tried && p.sample && <TriedApprove author={p.sample.author} codeBy={p.sample.codeBy ?? null} valuesOnly={p.sample.valuesOnly} />}
       {(said || p.note) && (
         <p className="br-said" role="status" aria-live="polite">
           {said || p.note}
@@ -1043,19 +1012,7 @@ export function BranchReview(p: BranchReviewProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const [added, setAdded] = useState(p.added ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Approve tried on the sample team: the page shows the approved state, again on any page of the visit (the branch
-  // is remembered in this browser, scripts/demo-approvals.ts); nothing is sent.
-  const [tried, setTried] = useState(() => Boolean(p.sample) && demoApprovals().has(p.pr));
-  useEffect(() => setTried(Boolean(p.sample) && demoApprovals().has(p.pr)), [p.sample, p.pr]);
-  const tryApprove = () => {
-    rememberDemoApproval(p.pr);
-    setTried(true);
-  };
-  const status = tried && p.sample ? { label: 'Approved', tone: 'success' as const } : p.status;
-  // The line under the title follows: never "Ann asks for your review" once the visitor approved.
-  const who = tried && p.sample ? { person: null, lead: null, rest: 'You approved it.' } : p.who;
-  // Only the visitor's own row turns approved: the code check stays with whoever the Review rules name ("Waiting for Malik").
-  const approvals = tried && p.sample ? p.approvals.map((a) => (a.state === 'waiting' && a.text === 'Waiting for you' ? { ...a, state: 'approved' as const, text: 'You approved' } : a)) : p.approvals;
+  const { status, who, approvals } = p;
   const multi = p.changes.length > 1;
   const current = multi ? currentChange(p.changes, looked, picked) : (p.changes[0]?.id ?? null);
   const progress = lookedProgress(p.changes, looked);
@@ -1153,7 +1110,7 @@ export function BranchReview(p: BranchReviewProps) {
           <span id="rv-lib-act" />
         </div>
       )}
-      {!p.inQueue && <DecisionBar p={p} leftLine={multi ? progress.leftLine : null} inputRef={inputRef} tried={tried} onTry={tryApprove} />}
+      {!p.inQueue && <DecisionBar p={p} leftLine={multi ? progress.leftLine : null} inputRef={inputRef}/>}
     </div>
   );
 }

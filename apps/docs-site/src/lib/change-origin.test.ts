@@ -1,13 +1,13 @@
 // Every change says where it comes from, when Bridge knows it: the "Needed by" block of a real change or of the request
-// it closes, the seeded sample data on the sample team, and nothing at all otherwise.
-import { existsSync } from 'node:fs';
+// it closes, the seeded sample data on the demo home, and nothing at all otherwise. The sample team's branches carry
+// real "Needed by" blocks in their bodies, read by the branch page like any team's.
 import { describe, expect, it } from 'vitest';
 import { withNeededBy, type NeededBy } from '@bridge-ds/core';
 import { changeOrigin, neededByOfChange } from './product-branch';
 import { changeNeed, person } from './home-model';
 import { leadQueue, type DemoPull } from './demo-home';
 import { suggestionNeed } from './suggestions-view';
-import { SAMPLE_CHANGE_EFFECTS, SAMPLE_CHANGE_ORIGINS, SAMPLE_EFFECTS_BASE, isSampleExploration, sampleChangeOrigin } from './demo';
+import { SAMPLE_CHANGE_ORIGINS, isSampleExploration } from './demo';
 
 const needed: NeededBy = { pr: 12, title: 'Billing screen', branch: 'explore/billing', url: 'u', product: 'admin', productName: 'Admin demo', piece: 'p', pieceTitle: 'P' };
 const NOW = Date.parse('2026-11-06T12:00:00Z');
@@ -100,19 +100,14 @@ describe('on the demo', () => {
     expect(leadQueue([pull(13, blue, withNeededBy('Body', needed))], [], NOW)[0]?.line).toContain('from Billing screen');
   });
 
-  it('the seeds name a sample exploration, and every file they name ships with the site', () => {
-    const file = (p: string) => new URL(`../../public${p}`, import.meta.url);
-    for (const o of Object.values(SAMPLE_CHANGE_ORIGINS)) {
-      expect(isSampleExploration(o.branch)).toBe(true);
-    }
-    for (const e of Object.values(SAMPLE_CHANGE_EFFECTS)) {
-      if (e === 'none') continue;
-      expect(existsSync(file(`${SAMPLE_EFFECTS_BASE}/${e.before}`))).toBe(true);
-      expect(existsSync(file(`${SAMPLE_EFFECTS_BASE}/${e.after}`))).toBe(true);
-    }
+  it('the seeds name a sample exploration', () => {
+    for (const o of Object.values(SAMPLE_CHANGE_ORIGINS)) expect(isSampleExploration(o.branch)).toBe(true);
   });
 
-  it('every effect belongs to a change with an origin', () => {
-    for (const branch of Object.keys(SAMPLE_CHANGE_EFFECTS)) expect(sampleChangeOrigin(branch)).not.toBeNull();
+  it("the branch page reads a sample change's origin from its own Needed by block, as on any team", async () => {
+    const o = SAMPLE_CHANGE_ORIGINS['bridge/deepen-the-primary-blue-for-stronger-buttons']!;
+    const body = withNeededBy('Deeper blue for buttons.', { ...needed, pr: o.pr, title: o.title, branch: o.branch, product: o.product, productName: o.productName });
+    const origin = changeOrigin(await neededByOfChange(body, async () => null));
+    expect(origin).toMatchObject({ name: 'Profile page', product: 'Account app', number: 36 });
   });
 });

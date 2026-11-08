@@ -103,6 +103,8 @@ async function put(redis: Redis, s: FixSession, now: number): Promise<void> {
   await redis.pipe([
     ['SET', sessionKey(s.repo, s.component), JSON.stringify(s), 'EX', SESSION_TTL_S],
     ['ZADD', sessionsKey(s.repo), now, slug(s.component)],
+    // The index goes with its last session (it was kept forever, pruned only on read).
+    ['EXPIRE', sessionsKey(s.repo), SESSION_TTL_S],
   ]);
 }
 

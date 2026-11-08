@@ -160,5 +160,109 @@ export function demoDialog(repo: string | null | undefined): { title: string; le
   return isOwnTeam(repo) ? { title: DEMO_WORDS.ownDialogTitle, lead: DEMO_WORDS.ownDialogLead } : { title: DEMO_WORDS.dialogTitle, lead: DEMO_WORDS.dialogLead };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// What an action does on a real team: the sample-team dialog says it in one or two plain sentences, so a visitor
+// learns the product from the action they just tried. One map, keyed by what names the action: the mark on the
+// button ([data-demo-write], [data-gh-gate]), the action the server refused (api/contribute, api/invites,
+// api/entry: "set-pm", "invite"), or the words on the button the visitor clicked ("Looks right").
+
+const SEND_TO_FIGMA = "Send to Figma puts this screen in your team's Figma file, built from your library's components, so designers can pick it up there.";
+const DONE_EXPLORING = 'Done exploring tells your team this idea is ready: you pick what the library should keep, and developers get what they need to build it.';
+const LOOKS_RIGHT = 'Looks right tells whoever made it that it is good to go, so the work moves on to the next step.';
+const NEEDS_CHANGES = 'Needs changes sends them your notes, and the work waits for them to try again.';
+const APPROVE = 'Approve says this change is right for the library. Once the people who decide agree, every product that uses the library can take it.';
+const COMMENT = 'Your comment shows on the change for everyone working on it, and the people on it hear about it.';
+const START = 'Start an exploration gives you a safe place to try an idea with Claude on a live preview of your product. The library stays as it is.';
+const INVITE = 'Invite emails the people you add, so they join your team in Bridge with the role you pick.';
+const SET_PM = 'The product manager is the person who says an exploration is right for the product before developers build it.';
+const LIBRARY_UPDATE = 'Update from the library brings this product up to the latest library, with every change your team approved.';
+const HAND_OVER = 'Handing it over gives this exploration to someone else on the team, who picks it up from where it is.';
+
+const ACTION_LINES: Readonly<Record<string, string>> = {
+  'send to figma': SEND_TO_FIGMA,
+  'send to figma again': SEND_TO_FIGMA,
+  'keep an exploration': DONE_EXPLORING,
+  'done exploring': DONE_EXPLORING,
+  'say it is done exploring': DONE_EXPLORING,
+  'looks right': LOOKS_RIGHT,
+  'needs changes': NEEDS_CHANGES,
+  'ask for changes': NEEDS_CHANGES,
+  'request changes': NEEDS_CHANGES,
+  approve: APPROVE,
+  'review changes': APPROVE,
+  'review suggestions': APPROVE,
+  'comment on changes': COMMENT,
+  comment: COMMENT,
+  'pm word': 'Your answer goes to the designer of this exploration, next to its preview.',
+  'start an exploration': START,
+  'start explorations': START,
+  'start exploration': START,
+  invite: INVITE,
+  'invite collaborators': INVITE,
+  'invite people': INVITE,
+  'send invite': INVITE,
+  'send invites': INVITE,
+  resend: INVITE,
+  'set pm': SET_PM,
+  'set the product manager': SET_PM,
+  'library update': LIBRARY_UPDATE,
+  'update from the library': LIBRARY_UPDATE,
+  'send the library update': LIBRARY_UPDATE,
+  'update this feature': 'Update brings this feature up to the latest library, so it uses your newest components.',
+  'edit tokens in a change': 'Editing this change updates the colors, spacing and type every product shares, and asks for a review before anything ships.',
+  'send changes for review': 'Send for review asks the people who decide to look at your changes before they reach the library.',
+  'create a brand': 'A new brand gives a product its own colors and type on the same library. The people who decide review it first.',
+  'send a new brand': 'A new brand gives a product its own colors and type on the same library. The people who decide review it first.',
+  'undo a change': 'Undo puts the library back the way it was before this change, once the people who decide agree.',
+  'send a build request': 'A build request asks developers to build this component change, with your design attached.',
+  'assign requests': 'Assign gives this request to someone on the team, who then sees it waiting for them.',
+  'assign someone': 'Assign gives this request to someone on the team, who then sees it waiting for them.',
+  'decline requests': 'Decline closes this request and tells the person who asked why.',
+  'save usage guidance': 'Saving guidance changes how the library tells everyone to use this component.',
+  'edit the roles': 'Roles decide who reviews and who approves changes on your team.',
+  'change when it runs': 'This sets when Bridge compares your product screen by screen to catch changes nobody meant to make.',
+  'propose integrations': "Connecting a tool lets Bridge share your team's work with it, once the people who decide agree.",
+  'exploration keeper': HAND_OVER,
+  'hand over': HAND_OVER,
+  'take it over': 'Taking it over makes this exploration yours, and the person who had it hears why.',
+  'take it back': 'Taking it back stops the developers before they start, with your reason, so the design can change first.',
+  archive: 'Archive takes this exploration off the lists. Its preview keeps working.',
+  rename: 'Rename changes this name for everyone on the team.',
+  'back to exploring': 'Back to exploring opens this idea again, so you can keep changing it before developers start.',
+  'set role': 'A role decides what someone can do on your team: view, edit, or run it.',
+  'invite role': 'A role decides what someone can do on your team: view, edit, or run it.',
+  remove: 'Remove takes this person off your team.',
+  'set lead': 'A lead reviews the explorations of your team before developers build them.',
+  'set review mode': 'This decides who reviews explorations on your team: one lead, or any designer.',
+  'rename team': 'Renaming the team changes its name everywhere your people see it.',
+};
+
+/** The sample-team dialog's line for an action nobody named: still what a real team gets. */
+export const DEMO_ACTION_DEFAULT = 'On your own team, this changes your design system for everyone who works on it.';
+
+/** "Send to Figma again", "set-pm", "Looks right." read the same: lower case, words only. */
+const actionKey = (s: string): string =>
+  s
+    .toLowerCase()
+    .replace(/[-_]+/g, ' ')
+    .replace(/[^a-z ]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/**
+ * What the action would do on a real team, for the sample-team dialog: the line of the first name in `names` the map
+ * knows (the mark or refused action first, then what the visitor clicked, newest first), else a line for any action.
+ */
+export function demoActionLine(names: readonly (string | null | undefined)[]): string {
+  for (const n of names) {
+    const line = n ? ACTION_LINES[actionKey(n)] : undefined;
+    if (line) return line;
+  }
+  return DEMO_ACTION_DEFAULT;
+}
+
+/** The names the dialog has a line for (demo.test.ts checks every line reads in the Bridge voice). */
+export const demoActionNames = (): string[] => Object.keys(ACTION_LINES);
+
 /** Bridge's own design system: a demo repository that is not the sample team. */
 export const isOwnTeam = (repo: string | null | undefined): boolean => isDemoRepo(repo) && !isSampleTeam(repo);

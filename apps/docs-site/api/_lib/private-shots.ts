@@ -6,7 +6,11 @@
 //     repository, number, head commit, branch and preview template. It captures each preview and sends it back with
 //     POST /api/contribute?shots=put. Both calls carry the workflow's GitHub OIDC token (no stored secret): issued by
 //     GitHub Actions, for audience AUDIENCE, from Bridge's repository on its default branch (SHOTS_REPOSITORY).
-//   - Captures are kept in Redis, bridge:shot:<repo>#<pr> { sha, capturedAt, url, image (base64 webp) }, KEEP_S.
+//   - The image of a capture lives in Bridge's private Vercel Blob store (ShotStore, SHOTS_PREFIX<repo>/<pr>/<sha>-<ms>.webp,
+//     one pathname per capture so no cache ever serves an older one); Redis keeps only its small index,
+//     bridge:shot:<repo>#<pr> { sha, capturedAt, url, route, screen, blob (the pathname) }, KEEP_S. Captures kept before
+//     2026-11-08 carried the image itself (base64 in `image`): still served, and moved by migrateShots (POST
+//     ?shots=migrate from the same workflow), which also deletes the images no index names any more.
 //   - Studio reads GET ?repo=<team>&shot=<owner/repo>&pr=<n>&meta=1 (when it was taken, of which commit) and the image
 //     without meta=1: only for a reader of the team (a member, or a visitor of a demo team), only for a product
 //     repository the team's config lists (team-read productReadAllowed), never kept by a shared cache.
@@ -28,11 +32,86 @@ const REPO = /^[\w.-]+\/[\w.-]+$/;
 const SHA = /^[0-9a-f]{40}$/;
 
 export const shotKeyOf = (repo: string, pr: number) => `bridge:shot:${repo.toLowerCase()}#${pr}`;
+/** Where the images live in the Blob store. */
+export const SHOTS_PREFIX = 'private-shots/';
+export const shotPathOf = (repo: string, pr: number, sha: string, at: number) => `${SHOTS_PREFIX}${repo.toLowerCase()}/${pr}/${sha}-${at}.webp`;
+
+/** The images of the captures: Bridge's private Vercel Blob store in production, a Map in tests and local mode. */
+export interface ShotStore {
+  put(pathname: string, bytes: Uint8Array): Promise<void>;
+  /** The bytes, or null when the store has no such image. */
+  get(pathname: string): Promise<Uint8Array | null>;
+  del(pathnames: string[]): Promise<void>;
+  list(prefix: string): Promise<{ pathname: string; size: number }[]>;
+}
+
+/** Vercel Blob, private access: only this server (with the store's token) reads the images. */
+export function vercelShotStore(token: string): ShotStore {
+  const sdk = () => import('@vercel/blob');
+  return {
+    async put(pathname, bytes) {
+      const blob = await sdk();
+      await blob.put(pathname, Buffer.from(bytes), { access: 'private', contentType: 'image/webp', addRandomSuffix: false, allowOverwrite: true, token });
+    },
+    async get(pathname) {
+      const blob = await sdk();
+      const r = await blob.get(pathname, { access: 'private', token });
+      if (!r || r.statusCode !== 200) return null;
+      return new Uint8Array(await new Response(r.stream).arrayBuffer());
+    },
+    async del(pathnames) {
+      if (!pathnames.length) return;
+      const blob = await sdk();
+      await blob.del(pathnames, { token });
+    },
+    async list(prefix) {
+      const blob = await sdk();
+      const out: { pathname: string; size: number }[] = [];
+      let cursor: string | undefined;
+      for (let i = 0; i < 50; i++) {
+        const r = await blob.list({ prefix, token, limit: 1000, ...(cursor ? { cursor } : {}) });
+        out.push(...r.blobs.map((b) => ({ pathname: b.pathname, size: b.size })));
+        if (!r.hasMore || !r.cursor) break;
+        cursor = r.cursor;
+      }
+      return out;
+    },
+  };
+}
+
+/** A ShotStore in memory (tests, `npm run dev:full`). */
+export function memoryShotStore(): ShotStore & { items: Map<string, Uint8Array> } {
+  const items = new Map<string, Uint8Array>();
+  return {
+    items,
+    async put(p, b) {
+      items.set(p, new Uint8Array(b));
+    },
+    async get(p) {
+      return items.get(p) ?? null;
+    },
+    async del(ps) {
+      for (const p of ps) items.delete(p);
+    },
+    async list(prefix) {
+      return [...items].filter(([p]) => p.startsWith(prefix)).map(([pathname, b]) => ({ pathname, size: b.byteLength }));
+    },
+  };
+}
+
+/** The store: an injected one, else Vercel Blob from BLOB_READ_WRITE_TOKEN, else null (no capture is kept then). */
+export function shotStoreOf(token: string | undefined, injected?: ShotStore): ShotStore | null {
+  if (injected) return injected;
+  const t = token?.trim();
+  return t ? vercelShotStore(t) : null;
+}
 
 export interface ShotsCtx {
   f: FetchLike;
   now: () => number;
   redis: Redis;
+  /** Where the images go; null: the store is not configured, a capture is refused. */
+  store: ShotStore | null;
   /** An installation token of the Bridge app on that repository, or null. */
   token: (owner: string, repo: string) => Promise<string | null>;
 }
@@ -244,7 +323,8 @@ export async function putShot(ctx: ShotsCtx, body: Record<string, unknown>): Pro
   if (!image || image.length > MAX_IMAGE_CHARS || !/^[A-Za-z0-9+/]+={0,2}$/.test(image) || !Buffer.from(image.slice(0, 32), 'base64').subarray(8, 12).equals(Buffer.from('WEBP'))) {
     return json(400, { error: 'bad_image', message: 'Send a webp image, base64, under 300 KB.' });
   }
-  const meta = await ctx.redis.cmd('GET', repoMetaKey(repo));
+  if (!ctx.store) return json(503, { error: 'not_configured', message: 'Bridge has no screenshot storage yet.' });
+  const [meta, before] = (await ctx.redis.pipe([['GET', repoMetaKey(repo)], ['GET', shotKeyOf(repo, pr)]])) as [unknown, unknown];
   let kind: string | null = null;
   try {
     kind = typeof meta === 'string' ? JSON.parse(meta).kind : null;
@@ -252,32 +332,140 @@ export async function putShot(ctx: ShotsCtx, body: Record<string, unknown>): Pro
     kind = null;
   }
   if (kind !== 'copy' && kind !== 'code') return json(403, { error: 'not-allowed', message: 'Bridge does not watch this repository.' });
-  await ctx.redis.cmd('SET', shotKeyOf(repo, pr), JSON.stringify({ sha, capturedAt: new Date(ctx.now()).toISOString(), ...(url ? { url } : {}), ...(route ? { route } : {}), ...(screen ? { screen } : {}), image }), 'EX', KEEP_S);
+  const at = ctx.now();
+  const blob = shotPathOf(repo, pr, sha, at);
+  await ctx.store.put(blob, Buffer.from(image, 'base64'));
+  await ctx.redis.cmd('SET', shotKeyOf(repo, pr), JSON.stringify({ sha, capturedAt: new Date(at).toISOString(), ...(url ? { url } : {}), ...(route ? { route } : {}), ...(screen ? { screen } : {}), blob }), 'EX', KEEP_S);
+  // The image of the capture it replaces goes (a failure leaves an orphan that migrateShots deletes).
+  const old = parseShot(before)?.blob;
+  if (old && old !== blob) await ctx.store.del([old]).catch(() => undefined);
   return json(200, { ok: true });
+}
+
+interface KeptShot {
+  sha?: string;
+  capturedAt?: string;
+  url?: unknown;
+  route?: unknown;
+  screen?: unknown;
+  /** The image's pathname in the store. */
+  blob?: string;
+  /** A capture kept before the move to the Blob store: the image itself, base64. */
+  image?: string;
+}
+
+function parseShot(raw: unknown): KeptShot | null {
+  try {
+    const v = typeof raw === 'string' ? JSON.parse(raw) : null;
+    return v && typeof v === 'object' ? (v as KeptShot) : null;
+  } catch {
+    return null;
+  }
 }
 
 // --- Studio's reads ----------------------------------------------------------------------------------------------------
 
 /** When one capture was taken and of which commit, or null (none yet). */
 export async function shotMeta(redis: Redis, repo: string, pr: number): Promise<{ sha: string; capturedAt: string; route: string | null; screen: string | null } | null> {
-  const raw = await redis.cmd('GET', shotKeyOf(repo, pr));
-  try {
-    const v = typeof raw === 'string' ? JSON.parse(raw) : null;
-    return v?.sha && v?.capturedAt ? { sha: v.sha, capturedAt: v.capturedAt, route: typeof v.route === 'string' ? v.route : null, screen: typeof v.screen === 'string' ? v.screen : null } : null;
-  } catch {
-    return null;
-  }
+  const v = parseShot(await redis.cmd('GET', shotKeyOf(repo, pr)));
+  return v?.sha && v?.capturedAt ? { sha: v.sha, capturedAt: v.capturedAt, route: typeof v.route === 'string' ? v.route : null, screen: typeof v.screen === 'string' ? v.screen : null } : null;
 }
 
-/** The image of one capture, for a reader the caller already checked, or 404. Never kept by a shared cache. */
-export async function shotImage(redis: Redis, repo: string, pr: number): Promise<Response> {
-  const raw = await redis.cmd('GET', shotKeyOf(repo, pr));
-  let v: { image?: string } | null = null;
-  try {
-    v = typeof raw === 'string' ? JSON.parse(raw) : null;
-  } catch {
-    v = null;
+// Images by pathname, in this function's memory: a pathname names one capture forever, so a kept copy is never stale.
+const MEMORY_MAX_BYTES = 8 * 1024 * 1024;
+const memory = new Map<string, Uint8Array>();
+let memoryBytes = 0;
+function remember(pathname: string, bytes: Uint8Array) {
+  if (bytes.byteLength > MEMORY_MAX_BYTES / 4 || memory.has(pathname)) return;
+  memory.set(pathname, bytes);
+  memoryBytes += bytes.byteLength;
+  for (const [k, v] of memory) {
+    if (memoryBytes <= MEMORY_MAX_BYTES) break;
+    memory.delete(k);
+    memoryBytes -= v.byteLength;
   }
-  if (!v?.image) throw new HttpError(404, 'not_found', 'No screenshot yet.');
-  return new Response(Buffer.from(v.image, 'base64'), { status: 200, headers: { ...SECURITY_HEADERS, 'Content-Type': 'image/webp', 'Cache-Control': 'private, max-age=300' } });
+}
+/** Test seam: forget the images kept in memory. */
+export const clearShotMemory = () => {
+  memory.clear();
+  memoryBytes = 0;
+};
+
+/** The image of one capture, for a reader the caller already checked, or 404. Never kept by a shared cache. */
+export async function shotImage(redis: Redis, store: ShotStore | null, repo: string, pr: number): Promise<Response> {
+  const v = parseShot(await redis.cmd('GET', shotKeyOf(repo, pr)));
+  let bytes: Uint8Array | null = null;
+  if (v?.blob && store) {
+    bytes = memory.get(v.blob) ?? null;
+    if (!bytes) {
+      bytes = await store.get(v.blob).catch(() => null);
+      if (bytes) remember(v.blob, bytes);
+    }
+  } else if (v?.image) bytes = Buffer.from(v.image, 'base64');
+  if (!bytes) throw new HttpError(404, 'not_found', 'No screenshot yet.');
+  return new Response(Buffer.from(bytes), { status: 200, headers: { ...SECURITY_HEADERS, 'Content-Type': 'image/webp', 'Cache-Control': 'private, max-age=300' } });
+}
+
+// --- The move out of Redis (once, 2026-11-08) ---------------------------------------------------------------------------
+
+export interface ShotsMigration {
+  dryRun: boolean;
+  /** Index keys found. */
+  keys: number;
+  /** Captures whose image moved (or would move) from Redis to the store. */
+  moved: number;
+  /** Captures already in the store. */
+  inStore: number;
+  /** Bytes of Redis values freed (or that would be): each moved key's value length before minus after. */
+  redisBytesFreed: number;
+  /** Images in the store that no index names any more (expired, replaced): deleted (or that would be). */
+  orphansDeleted: number;
+  orphanBytes: number;
+}
+
+/**
+ * Moves every image still kept in Redis to the store and leaves only the index (its TTL kept), then deletes the
+ * store's images no index names. Idempotent: a second run moves nothing. `dryRun` only counts.
+ */
+export async function migrateShots(ctx: Pick<ShotsCtx, 'redis' | 'store' | 'now'>, dryRun = false): Promise<ShotsMigration> {
+  const out: ShotsMigration = { dryRun, keys: 0, moved: 0, inStore: 0, redisBytesFreed: 0, orphansDeleted: 0, orphanBytes: 0 };
+  if (!ctx.store) throw new HttpError(503, 'not_configured', 'Bridge has no screenshot storage yet.');
+  const keys = new Set<string>();
+  let cursor: string | number = 0;
+  for (let i = 0; i < 1000; i++) {
+    const r = (await ctx.redis.cmd('SCAN', cursor, 'MATCH', 'bridge:shot:*', 'COUNT', 500)) as [string | number, string[]] | null;
+    for (const k of r?.[1] ?? []) keys.add(k);
+    cursor = r?.[0] ?? 0;
+    if (String(cursor) === '0') break;
+  }
+  out.keys = keys.size;
+  const named = new Set<string>();
+  for (const key of keys) {
+    const raw = await ctx.redis.cmd('GET', key);
+    const v = parseShot(raw);
+    const m = /^bridge:shot:(.+)#(\d+)$/.exec(key);
+    if (!v || !m) continue;
+    if (v.blob) {
+      out.inStore++;
+      named.add(v.blob);
+      continue;
+    }
+    if (!v.image || !v.sha) continue;
+    const at = Date.parse(v.capturedAt ?? '') || ctx.now();
+    const blob = shotPathOf(m[1]!, Number(m[2]), v.sha, at);
+    const { image, ...rest } = v;
+    const next = JSON.stringify({ ...rest, blob });
+    out.moved++;
+    out.redisBytesFreed += String(raw).length - next.length;
+    named.add(blob);
+    if (dryRun) continue;
+    await ctx.store.put(blob, Buffer.from(image, 'base64'));
+    // KEEPTTL: the index expires when the capture would have.
+    await ctx.redis.cmd('SET', key, next, 'KEEPTTL');
+  }
+  const orphans = (await ctx.store.list(SHOTS_PREFIX)).filter((b) => !named.has(b.pathname));
+  out.orphansDeleted = orphans.length;
+  out.orphanBytes = orphans.reduce((n, b) => n + b.size, 0);
+  if (!dryRun) for (let i = 0; i < orphans.length; i += 100) await ctx.store.del(orphans.slice(i, i + 100).map((b) => b.pathname));
+  return out;
 }

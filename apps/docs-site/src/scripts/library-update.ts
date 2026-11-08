@@ -102,7 +102,9 @@ export async function sendLibraryUpdate(product: ProductConfig): Promise<SentUpd
   // A lead signed in with GitHub proves who they are with their own token; an email admin with the team's session.
   if (token && !isContribAuth(token)) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(CONTRIBUTE_API, { method: 'POST', headers, credentials: 'include', body: JSON.stringify({ action: 'library-update', repo: `${ds.owner}/${ds.repo}`, product: product.key }) });
-  const data = (await res.json().catch(() => ({}))) as Partial<SentUpdate> & { message?: string };
+  const data = (await res.json().catch(() => ({}))) as Partial<SentUpdate> & { message?: string; error?: string };
+  // Refused on a demo team (api/contribute demoWriteRefusal): the demo dialog says what the update does.
+  if (data.error === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours('library-update')).catch(() => undefined);
   if (!res.ok) throw new Error(typeof data.message === 'string' ? data.message : `Bridge answered ${res.status}`);
   return { state: data.state ?? 'current', pr: data.pr ?? null };
 }

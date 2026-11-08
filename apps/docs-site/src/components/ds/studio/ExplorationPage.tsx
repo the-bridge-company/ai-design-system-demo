@@ -728,6 +728,7 @@ function FigmaAction({ p, tool, say }: { p: ExplorationPageProps; tool: AiTool; 
           say={say}
           variant="ghost"
           size="lg"
+          demoWrite="send to Figma"
           {...(p.claudeLink ? { claudeLink: p.claudeLink } : {})}
           {...(p.connectorAddress ? { connectorAddress: p.connectorAddress } : {})}
           {...(p.onClaudeConnected ? { onClaudeConnected: p.onClaudeConnected } : {})}

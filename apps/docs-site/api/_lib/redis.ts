@@ -10,29 +10,56 @@ export interface Redis {
   pipe(cmds: RedisArg[][]): Promise<unknown[]>;
 }
 
-/** Every failure answers 503 with `message`, in the words of the feature that called. */
-export function redisRest(url: string, token: string, f: FetchLike, message: string): Redis {
+/** What a storage failure logs: the cause and the command names, never the token, the URL or the values. */
+export function storageLog(cause: string, token: string, commands: string[]): string {
+  const clean = cause.split(token).join('[token]').replace(/\s+/g, ' ').slice(0, 300);
+  return `redis: ${clean} (${commands.slice(0, 5).join(', ')}${commands.length > 5 ? `, +${commands.length - 5}` : ''})`;
+}
+
+/**
+ * Every failure answers 503 with `message`, in the words of the feature that called, and logs Upstash's own words
+ * (for instance "ERR max requests limit exceeded" or "OOM command not allowed") so the next incident shows its cause.
+ */
+export function redisRest(url: string, token: string, f: FetchLike, message: string, log: (line: string) => void = (l) => console.error(l)): Redis {
   const base = url.replace(/\/+$/, '');
-  const down = () => new HttpError(503, 'storage', message);
-  const call = async (path: string, body: unknown): Promise<any> => {
+  const down = (cause: string, commands: RedisArg[][]) => {
+    try {
+      log(storageLog(cause, token, commands.map((c) => String(c[0] ?? '?').toUpperCase())));
+    } catch {
+      /* logging never fails a request */
+    }
+    return new HttpError(503, 'storage', message);
+  };
+  const call = async (path: string, body: RedisArg[] | RedisArg[][], commands: RedisArg[][]): Promise<any> => {
     let res: Response;
     try {
       res = await f(`${base}${path}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    } catch {
-      throw down();
+    } catch (e) {
+      throw down(`unreachable: ${e instanceof Error ? e.message : String(e)}`, commands);
     }
-    if (!res.ok) throw down();
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      let said = text;
+      try {
+        said = (JSON.parse(text) as { error?: string }).error ?? text;
+      } catch {
+        /* not JSON: the text as is */
+      }
+      throw down(`HTTP ${res.status} ${said}`, commands);
+    }
     return res.json();
   };
   return {
     async cmd(...args) {
-      const r = (await call('', args)) as { result?: unknown; error?: string };
-      if (r.error) throw down();
+      const r = (await call('', args, [args])) as { result?: unknown; error?: string };
+      if (r.error) throw down(r.error, [args]);
       return r.result;
     },
     async pipe(cmds) {
-      const r = (await call('/pipeline', cmds)) as { result?: unknown; error?: string }[];
-      if (!Array.isArray(r) || r.some((x) => x?.error)) throw down();
+      const r = (await call('/pipeline', cmds, cmds)) as { result?: unknown; error?: string }[];
+      if (!Array.isArray(r)) throw down('pipeline answered no list', cmds);
+      const bad = r.find((x) => x?.error);
+      if (bad) throw down(String(bad.error), cmds);
       return r.map((x) => x.result);
     },
   };

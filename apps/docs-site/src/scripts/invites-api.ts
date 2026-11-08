@@ -65,7 +65,7 @@ async function call<T>(method: 'GET' | 'POST', query: string, body?: unknown, au
   if (res.status === 503 && data.error === 'not_configured') throw new InvitesUnavailable();
   if (!res.ok) {
     // Refused on a demo team (api/invites demoRefusal): the demo dialog says why.
-    if (data.error === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours()).catch(() => undefined);
+    if (data.error === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours((body as { action?: string } | undefined)?.action)).catch(() => undefined);
     // A daily cap or a resend too soon: never silent, and in the server's words when it gave some.
     const fallback = res.status === 429 ? MEMBERS_WORDS.limitReached : 'Something went wrong. Try again in a minute.';
     const message = typeof data.message === 'string' && data.message ? data.message : fallback;
@@ -144,7 +144,9 @@ export const removeEmailMember = (repo: string, email: string) => call<{ ok: boo
 /** The same for a lead signed in by email: their member record is checked on the server (api/contribute). */
 export async function leadExplorationKeeper(repo: string, to: { email?: string; login?: string; branch: string; number: number; copy?: string }): Promise<{ ok: boolean; ref?: string; name?: string }> {
   const res = await fetch(CONTRIBUTE_API, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', [CONTRIBUTE_HEADER]: '1' }, credentials: 'include', body: JSON.stringify({ action: 'exploration-keeper', repo, ...to }) });
-  const data = (await res.json().catch(() => ({}))) as { ok?: boolean; ref?: string; name?: string; message?: string };
+  const data = (await res.json().catch(() => ({}))) as { ok?: boolean; ref?: string; name?: string; message?: string; error?: string };
+  // Refused on a demo team (api/contribute demoWriteRefusal): the demo dialog says why.
+  if (data.error === 'demo') void import('./demo-gate').then(({ openMakeItYours }) => openMakeItYours('exploration-keeper')).catch(() => undefined);
   if (!res.ok) throw new Error(data.message ?? `Bridge answered ${res.status}`);
   return { ok: true, ...data };
 }

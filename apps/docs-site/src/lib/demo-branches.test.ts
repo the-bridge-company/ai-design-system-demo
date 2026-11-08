@@ -35,7 +35,7 @@ describe('the explorations to bring up to date', () => {
   });
 });
 
-function world(admin: boolean) {
+function world(admin: boolean, productAhead: number | null = null) {
   const writes: { method: string; path: string; body: any; auth: string }[] = [];
   const behind: Record<string, number> = { 'explore/plans': 3, 'explore/badges': 0 };
   const fetch: ContribDeps['fetch'] = async (url, init) => {
@@ -46,7 +46,8 @@ function world(admin: boolean) {
     if (p === '/user') return Response.json({ login: 'peterbono', name: 'Florian', id: 1 });
     if (p === `/repos/${DEMO}`) return Response.json({ private: false, default_branch: 'main', permissions: { admin, push: admin, pull: true } });
     if (p === `/repos/${DEMO}/contents/bridge.config.json`) return new Response(JSON.stringify({ products: [{ key: 'account', repo: CODE, design: { repo: COPY } }] }), { status: 200 });
-    if (p === `/repos/${COPY}`) return Response.json({ private: true, default_branch: 'main', fork: true });
+    if (p === `/repos/${COPY}`) return Response.json({ private: true, default_branch: 'main', fork: true, ...(productAhead === null ? {} : { parent: { full_name: CODE, default_branch: 'main' } }) });
+    if (productAhead !== null && p === `/repos/${COPY}/compare/main...${CODE.replace('/', ':')}:main`) return Response.json({ ahead_by: productAhead, status: 'identical', files: [] });
     if (p === `/repos/${COPY}/pulls` && init.method === 'GET') return Response.json([pull(5, 'explore/plans', block('Sofia')), pull(4, 'explore/badges', block('Leo')), pull(3, 'explore/old', block('Leo'), ['archived']), pull(2, 'explore/who', block('Someone'))]);
     const cmp = /\/compare\/(.+)\.\.\.main$/.exec(p);
     if (cmp) return Response.json({ ahead_by: behind[decodeURIComponent(cmp[1]!)] ?? 0, status: 'behind', files: [] });
@@ -104,6 +105,16 @@ describe('the update-demo-branches action', () => {
     expect(gh[0]!.body).toEqual({ branch: 'main' });
     expect(gh[2]!.body).toEqual({ base: 'explore/plans', head: 'main', commit_message: 'Bring the latest main into explore/plans' });
     expect(await redis.cmd('GET', branchKey(COPY, 'explore/plans'))).toBe('sofia@acme.example');
+  });
+
+  it('skips the Sync fork when the copy already has everything the product has', async () => {
+    const w = world(true, 0);
+    const out = await (await run(w, memoryRedis(() => T0), { apply: true })).json();
+    expect(out.items.map((i: { pull: number; done?: string; error?: string }) => [i.pull, i.done, i.error])).toEqual([
+      [4, 'up-to-date', undefined],
+      [5, 'merged', undefined],
+    ]);
+    expect(w.writes.filter((x) => x.path.startsWith(`/repos/${COPY}`)).map((x) => x.path)).toEqual([`/repos/${COPY}/merges`, `/repos/${COPY}/merges`]);
   });
 
   it('leaves alone an exploration Bridge keeps for someone else', async () => {

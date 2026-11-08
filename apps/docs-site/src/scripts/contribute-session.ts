@@ -8,7 +8,7 @@
 // feature, and the session's fetch sends each call that carries it here (contributeFetch). No feature changes.
 import { GitHubError } from '@bridge-ds/core';
 import { mineIn } from '../lib/branches-page';
-import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, localDevHost, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
+import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
 import { isDemoRepo } from '../lib/demo';
 
 /** The site cannot sign in with an email (no server piece, or not set up). */
@@ -265,7 +265,7 @@ export async function contributeTeam(repo: string, githubToken: string | null = 
         .filter((m) => m && typeof m.name === 'string')
         .map((m) => ({
           name: m.name.trim() || 'Contributor',
-          role: localDevHost() && m.role === 'admin' ? ('admin' as const) : m.role === 'view' ? ('view' as const) : ('edit' as const),
+          role: m.role === 'admin' ? ('admin' as const) : m.role === 'view' ? ('view' as const) : ('edit' as const),
           ...(m.you ? { you: true } : {}),
           ...(typeof m.ref === 'string' && /^[0-9a-f]{16}$/.test(m.ref) ? { ref: m.ref } : {}),
           ...(m.lead === true ? { lead: true } : {}),

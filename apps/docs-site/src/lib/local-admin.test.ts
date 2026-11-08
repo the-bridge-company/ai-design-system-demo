@@ -151,11 +151,9 @@ describe('Settings > Members (/api/invites)', () => {
 });
 
 describe('the browser side', () => {
-  it('reads a member as admin only on a local dev host, Can edit everywhere else', () => {
+  it('reads a member as the admin the server says they are, on any host', () => {
     const m = { email: 'sam@acme.com', name: 'Sam Rivera', role: 'admin' };
-    expect(parseMember(m)).toMatchObject({ role: 'edit' });
-    expect(parseMember(m, false)).toMatchObject({ role: 'edit' });
-    expect(parseMember(m, true)).toMatchObject({ role: 'admin' });
+    expect(parseMember(m)).toMatchObject({ role: 'admin' });
     expect(localDevHost('localhost')).toBe(true);
     expect(localDevHost('127.0.0.1')).toBe(true);
     for (const h of ['bridge.example.com', 'localhost.evil.com', '', null]) expect(localDevHost(h), String(h)).toBe(false);

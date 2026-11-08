@@ -50,8 +50,8 @@ export interface ContributeMember {
   email: string;
   name: string;
   /**
-   * 'view': Can view, reads only (the server refuses every write anyway). 'admin' only in `npm run dev:full`, for a
-   * member seeded as admin (api/_lib/local-admin.ts).
+   * 'view': Can view, reads only (the server refuses every write anyway). 'admin': an email admin of the team (or a
+   * member seeded as admin in `npm run dev:full`, api/_lib/local-admin.ts).
    */
   role: 'view' | 'edit' | 'admin';
   /**
@@ -124,16 +124,17 @@ export const localDevHost = (hostname: string | null | undefined = typeof locati
   hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
 
 /**
- * A member record read back from storage or the server, or null when it is not one. Can view stays Can view (it only
- * takes rights away); Admin only locally; anything else is Can edit.
+ * A member record read back from storage or the server, or null when it is not one. Can view stays Can view, Admin
+ * stays Admin (an email admin, api/_lib/members.ts: what the server says; it checks every admin action again, so a
+ * record that claims more only changes the page), anything else is Can edit.
  */
-export function parseMember(v: unknown, local = localDevHost()): ContributeMember | null {
+export function parseMember(v: unknown): ContributeMember | null {
   if (!v || typeof v !== 'object') return null;
   const m = v as Record<string, unknown>;
   if (typeof m.email !== 'string' || !m.email.includes('@')) return null;
   const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : m.email;
   const ref = typeof m.ref === 'string' && /^[0-9a-f]{16}$/.test(m.ref) ? m.ref : null;
-  return { email: m.email, name, role: m.role === 'view' ? 'view' : local && m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}), ...(m.visitor === true ? { visitor: true } : {}) };
+  return { email: m.email, name, role: m.role === 'view' ? 'view' : m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}), ...(m.visitor === true ? { visitor: true } : {}) };
 }
 
 /** Every designer-facing sentence of the email path, in one place. */

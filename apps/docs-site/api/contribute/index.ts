@@ -937,7 +937,16 @@ async function onUpdateDemoBranches(req: Request, ctx: Ctx, body: Record<string,
       const c = await ghApp(ctx, token, 'GET', `/repos/${pair.copy}/compare/${encodeRef(branch)}...${encodeRef(main)}`);
       return c.status === 200 && typeof c.data?.ahead_by === 'number' ? (c.data.ahead_by as number) : null;
     };
+    // The copy needs the product's latest only when the product has commits the copy lacks: a Sync fork with nothing
+    // to take is skipped (GitHub refuses it for an App on some copies even when there is nothing to do).
+    const parent = info.data?.parent as { full_name?: string; default_branch?: string } | undefined;
     let synced = false;
+    if (parent?.full_name && parent.default_branch) {
+      const [pOwner] = parent.full_name.split('/');
+      const pRepo = parent.full_name.split('/')[1];
+      const c = await ghApp(ctx, token, 'GET', `/repos/${pair.copy}/compare/${encodeRef(main)}...${pOwner}:${pRepo}:${encodeRef(parent.default_branch)}`);
+      if (c.status === 200 && c.data?.ahead_by === 0) synced = true;
+    }
     for (const w of work.items) {
       const o: BranchOutcome = { copy: pair.copy, pull: w.pull, branch: w.branch, member: w.member.name, behind: await behindOf(w.branch) };
       out.push(o);

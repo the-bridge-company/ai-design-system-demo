@@ -39,14 +39,6 @@ export function startTargets(products: readonly ProductConfig[], opts: { library
 }
 
 /**
- * May start an exploration in the library itself: a lead, that is an admin (an email admin included) or someone who
- * may approve (GitHub write, never an email contributor).
- */
-export function libraryLead(access: { admin?: boolean; write?: boolean; contributor?: boolean } | null | undefined): boolean {
-  return Boolean(access?.admin) || Boolean(access?.write && !access.contributor);
-}
-
-/**
  * The target picked when the dialog opens: the one the page came from (?product=, key or name; "library" for the
  * library), else the only product there is, else the library when there is no product, else none (the person picks).
  */

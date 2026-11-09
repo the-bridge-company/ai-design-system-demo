@@ -20,6 +20,7 @@ import { libraryFromPath } from '../lib/library-shells';
 import { latestProductRuns, productAudits, type AuditRun, type ProductAudit } from '../lib/components-studio';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { TEAM_PROGRESS_START, teamProgress, type TeamLoadEvent, type TeamProgress } from '../lib/load-progress';
+import { isDesignLead } from '../lib/design-lead';
 
 export interface TeamData {
   owner: string;
@@ -99,13 +100,13 @@ async function editRight(team: { owner: string; repo: string }, client: GitHubCl
 
 /**
  * A lead or an admin of the team, who can link its components to Figma (the "Not linked to Figma yet" line of its
- * Library pages and of Studio Components): GitHub write access, or an email admin. An email member who can edit is not
- * a lead (lib/create-branch libraryLead).
+ * Library pages and of Studio Components): GitHub write access, or an email member who leads (an admin or marked lead,
+ * lib/design-lead isDesignLead). Any other email member who can edit is not a lead.
  */
 export function teamLead(data: Pick<TeamData, 'canEdit' | 'owner' | 'repo'>): boolean {
   if (!data.canEdit) return false;
   const member = contributorFor(`${data.owner}/${data.repo}`);
-  return !member || member.role === 'admin';
+  return !member || isDesignLead({ access: null, member });
 }
 
 /** A client for the team, with the visitor's token when it works. */

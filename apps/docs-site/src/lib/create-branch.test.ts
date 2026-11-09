@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PRODUCTS, productMarks, productOfBranch, type ProductConfig } from '@bridge-ds/core';
 import { adminBlockedFix, askAdmin, blockIsAdmins, claudePrompt,
   connectorPrompt, featureHref, featureName, featurePurpose, featureProblems, featureProducts, featureRepo, initialTarget, LIBRARY_TARGET,
-  libraryLead, productParam, productRepoBlockedLine, startPageProblem, startTargets } from './create-branch';
+  productParam, productRepoBlockedLine, startPageProblem, startTargets } from './create-branch';
 
 const THREE: ProductConfig[] = [
   { key: 'admin', name: 'Admin demo', path: 'apps/admin' },
@@ -34,11 +34,6 @@ describe('start an exploration, in a product or the library', () => {
   it('keeps the library for a lead: a designer of the team gets the products, a team with no product keeps the library', () => {
     expect(startTargets(THREE, { library: false }).map((x) => x.value)).toEqual(['admin', 'shop']);
     expect(startTargets([{ key: 'ds', name: 'Design system', default: true }], { library: false }).map((x) => x.label)).toEqual(['The library']);
-    expect(libraryLead({ write: true, contributor: false })).toBe(true);
-    expect(libraryLead({ write: true, contributor: true, admin: true })).toBe(true);
-    expect(libraryLead({ write: true, contributor: true })).toBe(false);
-    expect(libraryLead({ write: false })).toBe(false);
-    expect(libraryLead(null)).toBe(false);
   });
 
   it('preselects the target the page came from, else the only product, else the library when there is no product', () => {

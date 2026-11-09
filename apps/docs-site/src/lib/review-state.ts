@@ -7,7 +7,7 @@
 // each reviewer's last say (approved or changes requested; changes requested wins, as on GitHub), and the draft flag.
 // The reviews themselves (GET pulls/{n}/reviews) are read only for open, handed-off pull requests that are not drafts
 // (needsReviewRead): a few per page, never one per row. Pure: no DOM, no fetch. Tested in review-state.test.ts.
-import { DESIGN_TASK_BACK_COMMENT, explorationStatus, isArchivedExploration, isExplorationPull, isWaitingForLead, parseExplorationBody, type ExplorationStatus } from '@bridge-ds/core';
+import { DESIGN_TASK_BACK_COMMENT, explorationStatus, isArchivedExploration, isExplorationPull, isWaitingForLead, parseExplorationBody, previewAtScreen, type ExplorationStatus } from '@bridge-ds/core';
 import { sameRepo } from './team-path.js';
 
 /** A review of the pull request as GitHub lists it (GET pulls/{n}/reviews). */
@@ -396,13 +396,14 @@ export interface DevPull {
 }
 
 /**
- * Where the developers' version opens: the deployment GitHub lists for their head first, else the product's own preview
- * pattern (the developers' repository, never the design team's copy) filled with their branch.
+ * Where the developers' version opens ("Open their version"): the deployment GitHub lists for their head first, else the
+ * product's own preview pattern (the developers' repository, never the design team's copy) filled with their branch. On
+ * `screen` (the exploration's screen, else the page its capture found) like Open the build and Approved version.
  */
-export function devVersionUrl(pull: Pick<DevPull, 'headRef' | 'deployedUrl'>, productPreview: string | undefined, fill: (template: string | undefined, branch: string) => string | null): string | null {
+export function devVersionUrl(pull: Pick<DevPull, 'headRef' | 'deployedUrl'>, productPreview: string | undefined, fill: (template: string | undefined, branch: string) => string | null, screen?: string | null): string | null {
   const deployed = pull.deployedUrl?.trim();
-  if (deployed && /^https:\/\//.test(deployed)) return deployed;
-  return pull.headRef ? fill(productPreview, pull.headRef) : null;
+  const url = deployed && /^https:\/\//.test(deployed) ? deployed : pull.headRef ? fill(productPreview, pull.headRef) : null;
+  return url ? previewAtScreen(url, screen) : null;
 }
 
 /** One event of an issue's timeline, the fields devPullOfTimeline reads (GitHub's cross-referenced shape). */

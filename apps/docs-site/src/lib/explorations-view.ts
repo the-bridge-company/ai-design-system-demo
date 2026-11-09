@@ -23,6 +23,7 @@ import {
   explorationSummary,
   explorationTryIt,
   findPreviewComment,
+  previewAtScreen,
   previewUrl,
   productRepos,
   isActiveExploration,
@@ -162,20 +163,24 @@ export function tagProductPulls<P extends ExplorationPullLike>(pulls: readonly P
   return pulls.filter(isExploration).map((p) => ({ ...p, repo: at.repo, product: at.product.key }));
 }
 
-/** The product's preview of an exploration (its `preview` template, as on the product's Vercel project), or none. */
-export function productPreviewLinks(product: ProductConfig, ctx: { branch: string; number: number; headSha: string }): { app: string; label: string; url: string }[] {
+/**
+ * The product's preview of an exploration (its `preview` template, as on the product's Vercel project), or none. It
+ * opens on the exploration's screen (core Exploration.screen) when one is chosen.
+ */
+export function productPreviewLinks(product: ProductConfig, ctx: { branch: string; number: number; headSha: string; screen?: string | null }): { app: string; label: string; url: string }[] {
   const url = previewUrl(product.preview, { branch: ctx.branch, pr: ctx.number, sha: ctx.headSha });
-  return url ? [{ app: product.key, label: product.name, url }] : [];
+  return url ? [{ app: product.key, label: product.name, url: previewAtScreen(url, ctx.screen) }] : [];
 }
 
 /**
  * The previews of a product's own exploration, with what Vercel reports in that repository (its statuses and comment
- * on the branch), read against the product's template the way the library's apps are. Named after the product.
+ * on the branch), read against the product's template the way the library's apps are. Named after the product, opened
+ * on the exploration's screen when one is chosen.
  */
-export function productPreviews(r: Pick<ExplorationRow, 'branch' | 'number' | 'headSha'>, product: ProductConfig, sources: BranchPreviewSources = {}): BranchPreview[] {
+export function productPreviews(r: Pick<ExplorationRow, 'branch' | 'number' | 'headSha' | 'screen'>, product: ProductConfig, sources: BranchPreviewSources = {}): BranchPreview[] {
   if (!product.preview) return [];
   // The admin slot carries the product's template: core matches Vercel projects by the template's host.
-  return resolveBranchPreviews({ admin: product.preview }, { branch: r.branch, pr: r.number, sha: r.headSha }, sources).map((p) => ({ ...p, app: product.key as keyof PreviewApps, label: product.name }));
+  return resolveBranchPreviews({ admin: product.preview }, { branch: r.branch, pr: r.number, sha: r.headSha }, sources).map((p) => ({ ...p, app: product.key as keyof PreviewApps, label: product.name, url: p.url ? previewAtScreen(p.url, r.screen) : p.url }));
 }
 
 const labelName = (l: { name?: string } | string) => (typeof l === 'string' ? l : (l.name ?? ''));
@@ -274,7 +279,7 @@ export function explorationRows(
         // Requests are filed in the design system repository: they name design system branches only.
         requests: opts.inProduct ? [] : linkedRequests(s.branch, reqs),
         ...(opts.inProduct
-          ? { repo: opts.inProduct.repo, product: opts.inProduct.product.key, previews: productPreviewLinks(opts.inProduct.product, { branch: s.branch, number: s.number, headSha: p.head.sha }) }
+          ? { repo: opts.inProduct.repo, product: opts.inProduct.product.key, previews: productPreviewLinks(opts.inProduct.product, { branch: s.branch, number: s.number, headSha: p.head.sha, screen: s.screen ?? null }) }
           : {}),
       };
     })
@@ -515,7 +520,7 @@ export function withTaskRow<R extends Pick<ExplorationRow, 'status' | 'statusLab
   return status ? { ...r, status, statusLabel: LIFECYCLE_LABEL[next] } : r;
 }
 
-/** "Show this screen" saved: what the person reads. */
+/** "Choose the screen it opens on" saved: what the person reads. */
 export const SCREEN_SAVED_LINE = 'The preview opens on this screen now. Its picture follows in a few minutes.';
 /** "Let Bridge pick": what the person reads. */
 export const SCREEN_CLEARED_LINE = 'Bridge picks the screen it opens on again.';

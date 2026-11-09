@@ -8,6 +8,7 @@ import {
   BUILD_FILTER_LABEL,
   BUILD_STALE_DAYS,
   branchPreviewUrl,
+  previewAtScreen,
   liveAddressOf,
   startPageOf,
   isArchivedExploration,
@@ -553,7 +554,8 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
               address,
               startPage: startPageOf(block),
               purpose: block?.purpose ?? null,
-              previewUrl: p.head?.ref ? branchPreviewUrl(productConfig.preview, p.head.ref) : null,
+              // On the exploration's screen when one is chosen, like every preview link.
+              previewUrl: p.head?.ref ? previewAtScreen(branchPreviewUrl(productConfig.preview, p.head.ref) ?? '', block?.screen) || null : null,
               shotUrl: ctx.shot?.(key) ?? null,
             }),
           }

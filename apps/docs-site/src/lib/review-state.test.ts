@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declineNoteOf, designReviewComment, designReviewOf, devPullOfTimeline, devQuestionOf, plainText, taskDeclined, taskStage, explorationLifecycle, explorationNameOf, lastSays, LIFECYCLE_LABEL, needsReviewRead, pullLifecycle, reviewAsked, reviewersAsked, reviewLine, reviewsFromStatus, reviewStateOf, reviewVerdictOf, waitsOnViewer, type LifecyclePull } from './review-state';
+import { declineNoteOf, designReviewComment, designReviewOf, devPullOfTimeline, devQuestionOf, devVersionUrl, plainText, taskDeclined, taskStage, explorationLifecycle, explorationNameOf, lastSays, LIFECYCLE_LABEL, needsReviewRead, pullLifecycle, reviewAsked, reviewersAsked, reviewLine, reviewsFromStatus, reviewStateOf, reviewVerdictOf, waitsOnViewer, type LifecyclePull } from './review-state';
 import { jargonIn } from './vocabulary';
 
 const r = (login: string, state: string) => ({ user: { login }, state });
@@ -135,6 +135,16 @@ describe('the lifecycle', () => {
 });
 
 describe("the developers' version of a design task", () => {
+  it('Open their version opens on the screen, like Open the build and Approved version', () => {
+    const fill = (t: string | undefined, b: string) => (t ? t.replace('{branch}', b) : null);
+    const preview = 'https://crm-{branch}.vercel.app';
+    expect(devVersionUrl({ headRef: 'build-31', deployedUrl: null }, preview, fill, '/#/contacts/31/show')).toBe('https://crm-build-31.vercel.app/#/contacts/31/show');
+    expect(devVersionUrl({ headRef: 'build-31', deployedUrl: 'https://crm-abc.vercel.app/' }, preview, fill, '/#/contacts/31/show')).toBe('https://crm-abc.vercel.app/#/contacts/31/show');
+    // No screen: the address as it is. Nothing to open: nothing.
+    expect(devVersionUrl({ headRef: 'build-31', deployedUrl: null }, preview, fill, null)).toBe('https://crm-build-31.vercel.app');
+    expect(devVersionUrl({ headRef: null, deployedUrl: null }, preview, fill, '/#/contacts/31/show')).toBeNull();
+  });
+
   const xref = (number: number, repo: string, state = 'open', extra: Record<string, unknown> = {}) => ({
     event: 'cross-referenced',
     source: { type: 'issue', issue: { number, html_url: `https://github.com/${repo}/pull/${number}`, state, pull_request: { merged_at: null }, repository: { full_name: repo }, ...extra } },

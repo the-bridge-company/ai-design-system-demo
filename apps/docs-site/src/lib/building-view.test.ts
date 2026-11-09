@@ -266,6 +266,10 @@ describe('Being built: explorations handed to developers', () => {
     expect(shipped!.exploration.forDevelopers).toBeUndefined();
     // Another product: no message.
     expect(rows([pull(43, {})])[0]!.exploration.forDevelopers).toBeUndefined();
+    // A screen chosen on the exploration: the preview in the message opens there, like every preview link.
+    const onScreen = { ...explored(44), body: block({ name: 'Bigger frame picker', purpose: 'Larger swatches', author: 'ann', startPage: 'https://posterstudio.com/frames', doneAt: iso(2), doneSha: 'h1', doneBy: 'ann', screen: '/#/frames/3' }) };
+    const [atScreen] = explorationBuildRows([onScreen], { products: withAddress, now: NOW, nameOf, member: true });
+    expect(atScreen!.exploration.forDevelopers!.message).toContain('The preview: https://poster-explore-frames.pages.dev/#/frames/3');
   });
 
   it('drops a task Bridge closed on Back to exploring: the exploration runs again, it is not Not planned', () => {

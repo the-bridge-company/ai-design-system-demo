@@ -643,13 +643,15 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('Renamed. Its link and preview stay the same.')).toBeTruthy();
   });
 
-  it('Show this screen: one quiet line under the preview for who keeps it, a dialog that takes the address', async () => {
+  it('Choose the screen it opens on: in the "..." menu for who keeps it, never a line under the preview', async () => {
     const onSave = vi.fn(async (_: string | null) => 'The preview opens on this screen now. Its picture follows in a few minutes.');
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', screen: { value: null, onSave } });
-    expect(screen.getByText(/Bridge picks the screen it opens on/)).toBeTruthy();
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', onRename: null, onArchive: null, onReopen: null, screen: { value: null, onSave } });
+    expect(screen.queryByText(/Bridge picks the screen/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show this screen' })).toBeNull();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Show this screen' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Choose the screen it opens on' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose the screen it opens on' });
     await expectNoAxeViolations(dialog);
     // Nothing chosen yet: no way to let Bridge pick again, and an empty field says what to do.
     expect(within(dialog).queryByRole('button', { name: 'Let Bridge pick' })).toBeNull();
@@ -661,22 +663,29 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('The preview opens on this screen now. Its picture follows in a few minutes.')).toBeTruthy();
   });
 
-  it('Show this screen once chosen: the address, Change, and the way back to Bridge picking', async () => {
+  it('Choose the screen it opens on, once chosen: the address prefilled and the way back to Bridge picking', async () => {
     const onSave = vi.fn(async (_: string | null) => 'Bridge picks the screen it opens on again.');
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave } });
-    expect(screen.getByText('/#/orders/12')).toBeTruthy();
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', onRename: async () => undefined, screen: { value: '/#/orders/12', onSave } });
+    expect(screen.queryByText(/Opens on/)).toBeNull();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Change' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await screen.findByRole('menuitem', { name: 'Rename' });
+    expect(screen.getAllByRole('menuitem').map((x) => x.textContent)).toEqual(['Rename', 'Choose the screen it opens on', 'Archive']);
+    await user.click(screen.getByRole('menuitem', { name: 'Choose the screen it opens on' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose the screen it opens on' });
     expect((within(dialog).getByRole('textbox', { name: 'Screen address' }) as HTMLInputElement).value).toBe('/#/orders/12');
     await user.click(within(dialog).getByRole('button', { name: 'Let Bridge pick' }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(null));
   });
 
-  it('Show this screen: nothing for who cannot change it, the links already open on it', () => {
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave: null } });
+  it('Choose the screen it opens on: not in the menu for who cannot change it, the links already open on it', async () => {
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', onRename: async () => undefined, screen: { value: '/#/orders/12', onSave: null } });
     expect(screen.queryByText(/Opens on/)).toBeNull();
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://x.pages.dev/#/orders/12');
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await screen.findByRole('menuitem', { name: 'Rename' });
+    expect(screen.queryByRole('menuitem', { name: 'Choose the screen it opens on' })).toBeNull();
   });
 
   it('Rename refused: the reason under the field, the dialog stays', async () => {
@@ -735,6 +744,13 @@ describe('Send to Figma', () => {
     expect(document.querySelector('.xp-act.is-third')!.textContent).toContain('Send to Figma');
     const grid = document.querySelector('.xp-board')!;
     expect([...grid.children].map((c) => c.className.split(' ')[0])).toEqual(['xp-preview', 'xp-side', 'xp-activity']);
+  });
+
+  it('the second place free (the lead answers below): Send to Figma sits beside the preview, not on a row of its own', () => {
+    paint({ ...exploring, figma, lead: { line: 'Sofia is done exploring.', bar: { onLooksRight: async () => 'ok', onChanges: async () => 'ok', onComment: async () => 'ok', onNotDoing: async () => undefined, onAskOther: null, link: 'https://x', onCopy: async () => undefined, changedSince: false } } });
+    const places = [...document.querySelectorAll('.xp-preview-acts > .xp-act')].map((el) => el.className.split(' ')[1]);
+    expect(places).toEqual(['is-main', 'is-second']);
+    expect(document.querySelector('.xp-act.is-second')!.textContent).toContain('Send to Figma');
   });
 
   it('carries the demo mark, so on the sample team a click opens the demo dialog instead (scripts/demo-gate.ts)', async () => {
@@ -803,6 +819,16 @@ describe('the talk with a lead on the page', () => {
     expect(screen.getByText('You asked Ann. Waiting for their answer.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
     expect(screen.queryByText(/Open in Claude Code|Continue in Claude/)).toBeNull();
+  });
+  it("the lead's bar is the one way to answer: no I'll look in the zone beside it; without the bar, I'll look stays", () => {
+    const take = { onTake: async () => undefined };
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring. Look at the preview, then answer.', bar, take } });
+    expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: "I'll look" })).toBeNull();
+    cleanup();
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring.', bar: null, take } });
+    expect(screen.getByRole('button', { name: "I'll look" })).toBeTruthy();
   });
   it('Not doing this shows its reason, and the way to start again, on the board', () => {
     paint({ stage: 'exploring', archived: true, tag: { label: 'Not doing this', tone: 'neutral' }, notDoing: { title: 'Florian decided not to do this', who: face, when: 'today', text: 'Billing covers it', onReopen: async () => undefined }, decisions: [{ key: '0', name: 'Florian', login: 'flo', verb: 'decided not to do this', why: 'Billing covers it', round: 1, at: '2026-11-07T00:00:00Z' }] });

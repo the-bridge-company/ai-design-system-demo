@@ -89,7 +89,7 @@ export function parseSeedNotes(v: unknown, at: string, problems: string[]): Seed
       problems.push(`${at}: notes ${what} is text of 1 to ${max} characters.`);
       return undefined;
     }
-    if (x.includes('—')) problems.push(`${at}: notes ${what} has an em dash; say it with a colon, a comma or two sentences.`);
+    if (x.includes('\u2014')) problems.push(`${at}: notes ${what} has an em dash; say it with a colon, a comma or two sentences.`);
     return x.trim();
   };
   const lines = (x: unknown, what: string): string[] | undefined => {

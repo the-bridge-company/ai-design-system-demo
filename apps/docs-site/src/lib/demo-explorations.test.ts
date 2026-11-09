@@ -104,7 +104,7 @@ describe('the seeding plan', () => {
           item({ notes: 'decided' }),
           item({ branch: 'explore/b', notes: { why: 'x' } }),
           item({ branch: 'explore/c', notes: { decisions: 'one' } }),
-          item({ branch: 'explore/d', notes: { nextStep: 'Ann looks — then ships.' } }),
+          item({ branch: 'explore/d', notes: { nextStep: 'Ann looks \u2014 then ships.' } }),
           item({ branch: 'explore/e', notes: { edgeCases: [{ component: 'Card', state: 'Empty' }] } }),
           item({ branch: 'explore/f', notes: {} }),
         ],

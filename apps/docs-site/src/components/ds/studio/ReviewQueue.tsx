@@ -268,9 +268,9 @@ function Capture({ shot }: { shot: { src: string; capturedAt: string | null; hre
   return (
     <figure className="rq-shot">
       {shot.href ? (
-        <a href={shot.href} target="_blank" rel="noopener" className="rq-shot-frame" aria-label="Open this screen in the preview (opens in a new tab)">
+        <Link variant="subtle" href={shot.href} target="_blank" rel="noopener" className="rq-shot-frame" aria-label="Open this screen in the preview (opens in a new tab)">
           {img}
-        </a>
+        </Link>
       ) : (
         <span className="rq-shot-frame">{img}</span>
       )}

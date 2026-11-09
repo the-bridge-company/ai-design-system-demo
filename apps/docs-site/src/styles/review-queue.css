@@ -261,6 +261,7 @@
 }
 
 .rq-shot-frame {
+  text-decoration: none;
   display: block;
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);

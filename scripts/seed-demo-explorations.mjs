@@ -27,11 +27,16 @@
 // against `base` (default main: git diff --name-only main...<branch>) are sent with their content. Deleted files and
 // Bridge's own exploration note (.bridge/explorations/) are left out: the site writes the note when it starts it.
 //
+// An item's `overlay` (a folder relative to the plan file) adds its files on top of the branch's, at the same paths
+// (`overlay/src/ui/Timeline.tsx` is saved as `src/ui/Timeline.tsx`): the next version of the exploration, without a
+// commit in the clone. An item's `check: true` runs Bridge's library check on it as its member once its files are saved
+// and records it (what the exploration page shows under "What this changes in the library"), as Studio runs it.
+//
 //   node scripts/seed-demo-explorations.mjs --plan explorations.json [--base https://bridge.floriangouloubi.com]   dry run
 //   node scripts/seed-demo-explorations.mjs --plan explorations.json --apply [--base ...]                          does it
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const TEAM = 'acme-design-demo/bridge-demo-ds';
@@ -66,6 +71,23 @@ export function branchFiles(clone, branch, base = 'main') {
   return { files, skipped };
 }
 
+/** Every text file under a folder, with its path relative to it (forward slashes), sorted. */
+export function overlayFiles(dir) {
+  const out = [];
+  const walk = (d) => {
+    for (const name of readdirSync(d).sort()) {
+      const full = join(d, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else {
+        const content = readFileSync(full);
+        if (!content.includes(0)) out.push({ path: relative(dir, full).split(sep).join('/'), content: content.toString('utf8') });
+      }
+    }
+  };
+  walk(dir);
+  return out;
+}
+
 /** The plan the site takes, from the plan file: each item's files read from its clone. */
 export function buildPlan(planPath) {
   const raw = JSON.parse(readFileSync(planPath, 'utf8'));
@@ -76,10 +98,14 @@ export function buildPlan(planPath) {
     if (typeof it.clone !== 'string' || typeof it.branch !== 'string') throw new Error(`Item ${i + 1}: give its clone (a local git clone) and its branch.`);
     const got = branchFiles(resolve(dir, it.clone), it.branch, it.base ?? 'main');
     for (const s of got.skipped) skipped.push(`${it.branch}: ${s} (not text)`);
+    // The overlay's files win over the branch's at the same path.
+    const over = typeof it.overlay === 'string' ? overlayFiles(resolve(dir, it.overlay)) : [];
+    const files = [...got.files.filter((f) => !over.some((o) => o.path === f.path)), ...over];
     const rest = { ...it };
     delete rest.clone;
     delete rest.base;
-    return { ...rest, files: got.files };
+    delete rest.overlay;
+    return { ...rest, files };
   });
   return { plan: { items }, skipped };
 }
@@ -113,15 +139,18 @@ async function ask(base, plan, apply) {
 const NOTES_WORDS = { writes: 'writes its notes', same: 'notes already say this', saved: 'notes saved' };
 /** What happened to an item's screen, in the run's words. */
 const SCREEN_WORDS = { writes: 'sets its screen', same: 'already opens on its screen', saved: 'screen set' };
+/** What happened to an item's library check, in the run's words. */
+const CHECK_WORDS = { checks: 'checks it against the library', checked: 'checked against the library' };
 
 export function printSeed(body) {
   if (!body.items.length) console.log('Nothing in the plan.');
   for (const i of body.items) {
-    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes || i.screen || i.updates ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
+    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes || i.screen || i.updates || i.check ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
     const notes = i.notes ? `, ${NOTES_WORDS[i.notes] ?? i.notes}` : '';
     const screen = i.screen ? `, ${SCREEN_WORDS[i.screen] ?? i.screen}` : '';
     const updates = i.updates ? `, ${body.dryRun ? 'updates' : 'updated'} ${i.updates} file${i.updates === 1 ? '' : 's'}` : '';
-    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${updates}${notes}${screen}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
+    const check = i.check ? `, ${CHECK_WORDS[i.check] ?? i.check}${typeof i.pieces === 'number' ? ` (${i.pieces} piece${i.pieces === 1 ? '' : 's'})` : ''}` : '';
+    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${updates}${notes}${screen}${check}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
   }
 }
 

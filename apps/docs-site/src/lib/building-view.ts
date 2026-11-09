@@ -4,6 +4,8 @@
 // into what core reads, and core's views into rows and words a designer reads. No DOM, no fetch: building-view.test.ts.
 //
 // Read only: developers split and track the work in GitHub or Jira, Bridge never writes to a build request.
+import type { LibraryNeed } from '@bridge-ds/core';
+import { waitingForLibraryLine } from './library-impact-view';
 import {
   BUILD_FILTER_LABEL,
   BUILD_STALE_DAYS,
@@ -505,6 +507,11 @@ export interface ExplorationRowsContext {
   member?: boolean;
   /** The captured screenshot of an exploration's preview ("product#number" or "number"), when Bridge kept one. */
   shot?: (key: string) => string | null | undefined;
+  /**
+   * The library released a request an exploration needs (core LibraryNeed: closed as done). Unset: nothing is known,
+   * and the row says nothing about the library.
+   */
+  released?: (need: LibraryNeed) => boolean;
 }
 
 /**
@@ -579,7 +586,11 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
     };
     // Waiting for developers who work elsewhere: what to do comes before who said done (the line is cut on one line).
     const elsewhere = Boolean(forDevelopers && !where[status]);
-    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, status === 'shipped' ? null : done, where[status]]).filter(Boolean).join(' · ');
+    // An approved exploration whose library piece is not released yet (board LI6): the developers wait on it, so the
+    // line says it before who said done.
+    const waiting = ctx.released && status !== 'shipped' && status !== 'not-planned' ? waitingForLibraryLine(p.body, ctx.released) : null;
+    // One wait per row: while the library holds it, the line does not also name who else it waits for.
+    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, waiting, status === 'shipped' || waiting ? null : done, waiting ? null : where[status]]).filter(Boolean).join(' · ');
     const sentence: Record<BuildStatus, string> = {
       requested: 'Waiting for a developer.',
       'picked-up': 'Developers are building it.',

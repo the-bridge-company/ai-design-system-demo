@@ -6,7 +6,7 @@
 // in prod-branch.ts; finding the pieces (the audit) is in audit/missing-pieces.ts.
 
 import type { ChangesMode } from './config';
-import { EXPLORATION_NOTES_DIR, EXPLORATION_PREFIX, isExplorationBranch } from './explorations';
+import { EXPLORATION_NOTES_DIR, EXPLORATION_PREFIX, isExplorationBranch, parseExplorationBody, withExplorationLibrary } from './explorations';
 import { startExplorationOnGitHub, type ExplorationSettings } from './explorations-github';
 import { GitHubError, type GitHubClient, type PullRequestSummary } from './github-client';
 import { defaultProduct, productOfBranch, productOfRepo, type ProductConfig } from './products';
@@ -30,8 +30,16 @@ import {
   type LibraryPreviewState,
   type ProductBranchRef,
 } from './prod-branch';
-import { composeRequestIssue, type RequestSource } from './requests';
+import { composeRequestIssue, type RequestOrigin, type RequestSource } from './requests';
+import { impactItemOf, withLibraryNeeds, type LibraryNeed } from './library-impact';
 import { suggestionStateFromLabels, suggestionStatus } from './suggestions';
+
+/** A piece's name as the exploration page shows it ("Timeline"), for the line Waiting for the library. */
+const impactTitleOf = (p: MissingPiece | undefined): string | undefined => {
+  if (!p) return undefined;
+  const i = impactItemOf(p);
+  return i.of ? i.of : i.title;
+};
 
 /** Files the audit reads (styles, scripts, markup). Kept here so this module never loads the audit. */
 const PRODUCT_FILE = /\.(css|scss|sass|less|tsx|jsx|ts|js|mjs|cjs|mts|cts|astro|vue|svelte)$/;
@@ -97,9 +105,9 @@ export async function readProductBranchOnGitHub(gh: GitHubClient, pr: number, op
 }
 
 /** Saves a check in the product branch body, keeping the library branches already opened for its pieces. */
-export async function recordPiecesOnGitHub(gh: GitHubClient, pr: number, check: { pieces: MissingPiece[]; fixes: number; headSha?: string | undefined; checkedAt?: string | undefined }): Promise<PiecesRecord> {
+export async function recordPiecesOnGitHub(gh: GitHubClient, pr: number, check: { pieces: MissingPiece[]; fixes: number; headSha?: string | undefined; checkedAt?: string | undefined; uses?: string[] | undefined }): Promise<PiecesRecord> {
   const pull = await gh.getPullRequest(pr);
-  const record = mergePiecesRecord(parsePiecesRecord(pull.body), { checkedAt: check.checkedAt ?? new Date().toISOString(), headSha: check.headSha ?? pull.headSha, pieces: check.pieces, fixes: check.fixes });
+  const record = mergePiecesRecord(parsePiecesRecord(pull.body), { checkedAt: check.checkedAt ?? new Date().toISOString(), headSha: check.headSha ?? pull.headSha, pieces: check.pieces, fixes: check.fixes, ...(check.uses?.length ? { uses: check.uses } : {}) });
   await gh.updatePullRequest(pr, { body: withPiecesRecord(pull.body, record) });
   return record;
 }
@@ -437,13 +445,15 @@ export async function proposePiecesOnGitHub(
   const lib = input.library ?? gh;
   const repo = repoOfProductBranch(gh, input.library);
   const ref = productBranchRef(pull, ownProduct(input.products, repo) ?? productOfBranch(input.products, { labels: pull.labels, files }), repo);
+  // Where each request comes from (requests.ts RequestOrigin): the Changes Library row says "Needed by <name> · <product>".
+  const origin: RequestOrigin = { kind: 'exploration', repo: gh.fullName, number: pull.number, product: ref.productKey, name: parseExplorationBody(pull.body)?.name ?? pull.title.replace(/^Exploration:\s*/i, '') };
   const todo: { piece: MissingPiece; ask: ReturnType<typeof pieceRequest> }[] = [];
   for (const id of ids) {
     const piece = record.pieces.find((p) => p.id === id);
     const link = record.links.find((l) => l.piece === id);
     if (!piece) out.unknown.push(id);
     else if (link) out.already.push({ piece: id, number: link.number });
-    else todo.push({ piece, ask: pieceRequest(piece, ref, { previewUrl: input.previewUrl, source: input.source, requestedBy: input.openedBy }) });
+    else todo.push({ piece, ask: pieceRequest(piece, ref, { previewUrl: input.previewUrl, source: input.source, requestedBy: input.openedBy, origin }) });
   }
   if (input.dryRun) return { ...out, proposed: todo.map((t) => ({ piece: t.piece.id, title: t.ask.request.title, number: 0, url: '' })) };
   if (!todo.length) return out;
@@ -460,7 +470,9 @@ export async function proposePiecesOnGitHub(
   try {
     const fresh = await gh.getPullRequest(pr);
     const next = links.reduce((rec, l) => withLink(rec, l), parsePiecesRecord(fresh.body) ?? record);
-    await gh.updatePullRequest(pr, { body: withPiecesRecord(fresh.body, next) });
+    // The exploration's own block says which library requests it needs: Waiting for the library reads it.
+    const needs: LibraryNeed[] = links.map((l) => ({ piece: l.piece, title: impactTitleOf(record.pieces.find((p) => p.id === l.piece)) ?? l.title, repo: lib.fullName, number: l.number, url: l.url }));
+    await gh.updatePullRequest(pr, { body: withExplorationLibrary(withPiecesRecord(fresh.body, next), (l) => withLibraryNeeds(l, needs)) });
   } catch (err) {
     if (err instanceof GitHubError && err.auth === 'rejected') throw err;
     out.warnings.push(`#${pr} does not list the requests yet (${(err as Error).message}). Add "Library: ${links.map((l) => `${repo ? lib.fullName : ''}#${l.number}`).join(', ')}" to #${pr} on GitHub, so they are not sent twice.`);

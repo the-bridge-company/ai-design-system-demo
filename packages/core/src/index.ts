@@ -44,6 +44,8 @@ export * from './requests';
 export * from './change-drafts';
 export * from './draft-exchange';
 export * from './explorations';
+export * from './library-impact';
+export * from './library-impact-github';
 export * from './explorations-github';
 export * from './exploration-done-github';
 export * from './exploration-resume';

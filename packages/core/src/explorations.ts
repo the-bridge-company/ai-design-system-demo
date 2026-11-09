@@ -19,6 +19,7 @@
 
 import type { BridgeConfig } from './config';
 import { githubLoginOf } from './github-login';
+import { cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
 import { slugify } from './pr-composer';
 import { previewUrl, readPreviewComment, resolveBranchPreviews, type PreviewApps } from './previews';
 import { classifyRisk, type ChangedFile, type RiskTier } from './risk';
@@ -152,6 +153,11 @@ export interface Exploration {
   decisions?: Decision[] | undefined;
   /** The lead who said it looks right, so the hand-off names them. */
   leadOkBy?: string | undefined;
+  /**
+   * What it changes in the library, as decided (library-impact.ts, decision 2026-11-09): the lead's answer per piece,
+   * the conflicts settled with another exploration, and the library requests it needs (Waiting for the library).
+   */
+  library?: ExplorationLibrary | undefined;
 }
 
 /** What was said about an exploration between its designer and its lead. */
@@ -542,6 +548,7 @@ function explorationBlock(e: Exploration): string {
     ...(e.leadAskedAt && e.leadTakenAt && e.leadTakenByName && !e.leadTakenByName.includes('@') ? { leadTakenByName: e.leadTakenByName.trim().slice(0, 80) } : {}),
     ...(e.decisions?.length ? { decisions: e.decisions.slice(-DECISIONS_MAX).map(cleanDecision) } : {}),
     ...(githubLoginOf(e.leadOkBy) ? { leadOkBy: githubLoginOf(e.leadOkBy) } : {}),
+    ...(cleanExplorationLibrary(e.library) ? { library: cleanExplorationLibrary(e.library) } : {}),
   };
   return `<!-- ${MARK} ${JSON.stringify(data).replace(/-->/g, '--\\u003e')} -->`;
 }
@@ -837,6 +844,11 @@ export function withoutDoneExploring(body: string | null | undefined, reopenedAt
 }
 
 /** The body once the block changed; a body without a Bridge block stays as it is. */
+/** The body with the library part of its block changed (library-impact.ts). A body without a Bridge block stays as it is. */
+export function withExplorationLibrary(body: string | null | undefined, next: (l: ExplorationLibrary | undefined) => ExplorationLibrary): string {
+  return withBlock(body, (e) => ({ ...e, library: next(cleanExplorationLibrary(e.library)) }));
+}
+
 function withBlock(body: string | null | undefined, next: (e: Exploration) => Exploration): string {
   const e = parseExplorationBody(body);
   const text = body ?? '';
@@ -1094,7 +1106,7 @@ export function explorationShareMessage(input: { name: string; branch: string; u
 export const CHANGE_MARKER_ATTR = 'data-bridge-change';
 
 /** The one instruction Claude gets about it, wherever it is told how to explore. No em dash: it is copied as is. */
-export const CHANGE_MARKER_RULE = `Mark each new or changed area of the UI with ${CHANGE_MARKER_ATTR}="<short plain label>" on its outermost element (${CHANGE_MARKER_ATTR}="Orders waiting to ship alert"), so the Bridge toolbar can point at it.`;
+export const CHANGE_MARKER_RULE = `Mark each new or changed area of the UI with ${CHANGE_MARKER_ATTR}="<short plain label>" on its outermost element (${CHANGE_MARKER_ATTR}="Orders waiting to ship alert"), so the Bridge toolbar can point at it. A piece you build because the library has nothing like it also gets data-bridge-piece="<its name>" there (data-bridge-piece="Timeline"), so the lead sees it in what the exploration changes in the library.`;
 
 /**
  * The rules Claude follows on an exploration branch (request briefs, docs drafts, token edits with a target branch):

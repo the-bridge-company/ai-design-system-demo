@@ -405,7 +405,7 @@ export function initReviewQueue() {
 
     render(
       sideEl,
-      rows.length ? h(QueueList, { rows, selected, outcomes, onSelect: (k: string) => show(k) }) : h(Skeleton, { variant: 'rect', className: 'sh-skel' }),
+      rows.length ? h(QueueList, { rows: rows.map((r) => ({ ...r, sub: subOf(r) })), selected, outcomes, onSelect: (k: string) => show(k) }) : h(Skeleton, { variant: 'rect', className: 'sh-skel' }),
     );
 
     // Phones: the list folds into one Select.
@@ -450,16 +450,28 @@ export function initReviewQueue() {
 
   /** An exploration row: its captured screen and next step, read once (scripts/queue-glance), 'loading' meanwhile. */
   const glances = new Map<string, ExplorationGlance>();
+  const pendingGlances = new Set<string>();
   function glanceOf(row: NeedRow): ExplorationGlance | 'loading' | null {
     const x = explorationOfKey(row.key);
     if (!x) return null;
     const got = glances.get(row.key);
     if (got) return got;
+    if (pendingGlances.has(row.key)) return 'loading';
+    pendingGlances.add(row.key);
     void explorationGlance(x).then((g) => {
       glances.set(row.key, g);
-      if (selected === row.key) paint();
+      pendingGlances.delete(row.key);
+      // The list shows every exploration's library line: a glance read for any row paints again.
+      paint();
     });
     return 'loading';
+  }
+
+  /** The line under an exploration's title in the list (board LI5), once its glance is read. */
+  function subOf(row: NeedRow): string | null {
+    if (!explorationOfKey(row.key)) return null;
+    const g = glanceOf(row);
+    return g && g !== 'loading' ? (g.library?.line ?? null) : null;
   }
 
   /** What the bar offers for the item on screen: the same places for every item, filled by what it allows. */

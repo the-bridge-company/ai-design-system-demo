@@ -1,0 +1,379 @@
+/* "What this changes in the library" (components/ds/studio/LibraryImpact.tsx, boards LI1 to LI5, LI8). One region
+   with a hairline edge; rows of one shape (what it is, before and after, one tag, its menu) so the same kind of thing
+   reads the same; a conflict sits inside the row it blocks. Tokens only. */
+
+.li-section {
+  display: grid;
+  overflow: hidden;
+  border: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  line-height: var(--typography-ui-line-height);
+}
+
+.li-head {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+
+.li-title {
+  margin: 0;
+  font-family: var(--typography-h3-family);
+  font-size: var(--typography-h3-size);
+  font-weight: var(--typography-h3-weight);
+  line-height: var(--typography-h3-line-height);
+}
+
+.li-muted {
+  color: var(--color-text-muted);
+}
+
+.li-quiet {
+  gap: var(--space-1);
+  padding: var(--space-5);
+}
+
+.li-skel {
+  min-height: calc(var(--space-12) * 2);
+}
+
+.li-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.li-item {
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+}
+
+.li-row {
+  display: grid;
+  /* The tag column fits its longest words ("Needs the DS lead"): never a tag cut at its edge. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(calc(var(--space-12) * 2.5), max-content) var(--control-height-md);
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+}
+
+.li-what {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.li-kind {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-kind-strong {
+  margin: 0;
+  color: var(--color-text-signal);
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-name {
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}
+
+.li-note {
+  color: var(--color-feedback-warning-text);
+}
+
+.li-details {
+  justify-self: stretch;
+}
+
+.li-dl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.li-dl > div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.li-dl dt {
+  color: var(--color-text-muted);
+}
+
+.li-dl dd {
+  margin: 0;
+}
+
+.li-mono {
+  font-family: var(--font-family-mono);
+}
+
+/* Before and after: two small plates and an arrow, the change at a glance. */
+.li-compare {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.li-side {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.li-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: calc(var(--space-12) * 2.5);
+  min-block-size: calc(var(--space-12) * 1.25);
+  padding: var(--space-2);
+  box-sizing: border-box;
+  border: var(--border-width-1) solid var(--color-border-emphasis);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h3-size);
+  line-height: var(--typography-h3-line-height);
+  text-align: center;
+}
+
+.li-plate.is-empty {
+  border-style: dashed;
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-family: var(--typography-ui-family);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-cap {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-arrow {
+  color: var(--color-text-muted);
+}
+
+.li-status {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.li-menu {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.li-menu-item {
+  display: grid;
+}
+
+/* A conflict, inside the row it blocks: the other exploration, the two ways and both, then the one action. */
+.li-conflict {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 var(--space-5) var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width-1) solid var(--color-feedback-danger-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-feedback-danger-bg);
+}
+
+.li-conflict-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.li-conflict-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.li-foot {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
+.li-foot strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-foot > :first-child {
+  flex: none;
+  margin-block-start: var(--space-0-5);
+}
+
+.li-ok {
+  color: var(--color-feedback-success-icon);
+}
+
+.li-reach {
+  background-color: var(--color-feedback-warning-bg);
+  color: var(--color-feedback-warning-text);
+}
+
+.li-reach strong {
+  color: var(--color-feedback-warning-text);
+}
+
+/* Nothing to change (LI1): the best outcome, a Field Guide moment. The blocks settle into the bridge once. */
+.li-nothing {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+  padding: var(--space-6) var(--space-8);
+  border-color: var(--color-bg-zone);
+  background-color: var(--color-bg-zone);
+}
+
+.li-art {
+  color: var(--color-text-default);
+}
+
+.li-nothing-text {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.li-display {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+  letter-spacing: var(--typography-h2-tracking);
+}
+
+.li-lead {
+  max-width: 65ch;
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.li-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Every chip on one line, whatever list spacing the page gives its items. */
+.li-chips > li {
+  display: flex;
+  margin: 0;
+}
+
+/* On the Harbor zone the chips are paper, as on the board: a grey fill reads muddy on blue. */
+.li-nothing .li-chips .li-chip {
+  --_bg: var(--color-surface-default);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .li-art path[data-fill] {
+    animation: li-settle var(--motion-duration-slow) var(--motion-easing-enter) both;
+  }
+
+  .li-art path[data-fill]:nth-of-type(2n) {
+    animation-delay: var(--motion-duration-fast);
+  }
+
+  .li-art path[data-fill]:nth-of-type(3n) {
+    animation-delay: var(--motion-duration-moderate);
+  }
+}
+
+@keyframes li-settle {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-2) * -1));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Narrow windows: the before and after under the text, the tag and the menu on the name's line. */
+@media (max-width: 960px) {
+  .li-row {
+    grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
+    grid-template-areas:
+      'what status menu'
+      'compare compare compare';
+    gap: var(--space-3) var(--space-4);
+  }
+
+  .li-what {
+    grid-area: what;
+  }
+
+  .li-compare {
+    grid-area: compare;
+  }
+
+  .li-status {
+    grid-area: status;
+    align-self: start;
+  }
+
+  .li-menu {
+    grid-area: menu;
+    align-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .li-head,
+  .li-row,
+  .li-foot {
+    padding-inline: var(--space-4);
+  }
+
+  .li-plate {
+    inline-size: calc(var(--space-12) * 2);
+  }
+
+  .li-conflict {
+    margin-inline: var(--space-4);
+    padding-inline: var(--space-4);
+  }
+
+  .li-nothing {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .li-display {
+    font-size: var(--typography-h3-size);
+    line-height: var(--typography-h3-line-height);
+  }
+}

@@ -50,10 +50,12 @@ export type NotifyKind =
   | 'lead-pm-call'
   | 'lead-build-changes'
   | 'lead-build-ready'
-  | 'lead-shipped';
+  | 'lead-shipped'
+  | 'lead-library-changes'
+  | 'lead-library-choice';
 
 /** The kinds that wait on the designer: sent right away by default. The others go in the daily summary. */
-export const NEEDS_KINDS: ReadonlySet<NotifyKind> = new Set(['question', 'look', 'changes', 'lead-ask', 'lead-answer', 'lead-delegated', 'lead-reminder', 'lead-question', 'lead-changes', 'lead-took-back', 'lead-not-doing', 'lead-handed', 'lead-pm-changes', 'lead-pm-call', 'lead-build-changes', 'lead-build-ready']);
+export const NEEDS_KINDS: ReadonlySet<NotifyKind> = new Set(['question', 'look', 'changes', 'lead-ask', 'lead-answer', 'lead-delegated', 'lead-reminder', 'lead-question', 'lead-changes', 'lead-took-back', 'lead-not-doing', 'lead-handed', 'lead-pm-changes', 'lead-pm-call', 'lead-build-changes', 'lead-build-ready', 'lead-library-changes']);
 
 /** Where the item lives: a library suggestion only counts in the team's own repository. */
 export type NoticeScope = 'any' | 'library';
@@ -235,6 +237,23 @@ export function leadNoticesOf(before: unknown, after: unknown, base: { repo: str
     } else if (leadKinds[d.kind]) {
       out.push({ ...common, kind: leadKinds[d.kind]!, actor: actor(d), ...named(d), ...quoted(d), stops: true });
     }
+  }
+  // The lead's word on one library piece of it (library-impact.ts): changes asked on that piece wait on the designer;
+  // a way chosen where two explorations changed the same component is news to both designers (each exploration's
+  // block gets the same choice), who may comment on it.
+  const libraryOf = (b: Record<string, unknown> | null) => (b?.library && typeof b.library === 'object' ? (b.library as { decisions?: unknown; choices?: unknown }) : null);
+  const listOf = (v: unknown) => (Array.isArray(v) ? (v as Record<string, unknown>[]).filter((x) => x && typeof x === 'object') : []);
+  const oldLib = libraryOf(was);
+  const newLib = libraryOf(now);
+  const seenDecision = new Set(listOf(oldLib?.decisions).map((d) => `${String(d.piece)}|${String(d.verdict)}|${String(d.at)}`));
+  for (const d of listOf(newLib?.decisions)) {
+    if (d.verdict !== 'changes' || seenDecision.has(`${String(d.piece)}|${String(d.verdict)}|${String(d.at)}`)) continue;
+    out.push({ ...common, kind: 'lead-library-changes', actor: actor(d as BlockDecision), ...named(d as BlockDecision), ...quoted(d as BlockDecision) });
+  }
+  const seenChoice = new Set(listOf(oldLib?.choices).map((c) => `${String(c.component)}|${String(c.property)}|${String(c.at)}`));
+  for (const c of listOf(newLib?.choices)) {
+    if (seenChoice.has(`${String(c.component)}|${String(c.property)}|${String(c.at)}`)) continue;
+    out.push({ ...common, kind: 'lead-library-choice', actor: actor(c as BlockDecision), ...named(c as BlockDecision) });
   }
   // "I'll look": nobody hears about it; the reminders move to the one who took it (notify.ts). Who waits stays the designer.
   if (typeof now.leadTakenAt === 'string' && typeof was?.leadTakenAt !== 'string' && typeof now.leadAskedAt === 'string') {

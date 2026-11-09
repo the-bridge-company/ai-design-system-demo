@@ -61,6 +61,31 @@ export interface ComponentChangeRequest {
   exploration?: string | undefined;
   /** Build request details (before and after images, props needed, spec path): build-requests.ts. */
   build?: import('./build-requests').BuildRequestExtra | undefined;
+  /**
+   * Where the change comes from, when an exploration needs it ("Add to the library" on its page, or its Looks right):
+   * the Changes Library row says "Needed by <name> · <product>". Unset for a change the DS lead starts.
+   */
+  origin?: RequestOrigin | undefined;
+}
+
+/**
+ * The exploration a library request comes from (decision 2026-11-09). `repo` is "owner/name" of the repository the
+ * exploration lives in (a product's design copy, or the design system's own), `number` its pull request, `product` the
+ * product's key in bridge.config.json ("prints"; its name comes from there), `name` the exploration's name ("Order
+ * fulfilment timeline").
+ */
+export interface RequestOrigin {
+  kind: 'exploration';
+  repo: string;
+  number: number;
+  product: string;
+  name: string;
+}
+
+/** The origin in a request's Bridge block, or null when it has none (or an unreadable one). */
+export function requestOriginOf(r: Pick<ComponentChangeRequest, 'origin'> | null | undefined): RequestOrigin | null {
+  const o = r?.origin;
+  return o && o.kind === 'exploration' && typeof o.repo === 'string' && typeof o.number === 'number' && typeof o.product === 'string' && typeof o.name === 'string' ? o : null;
 }
 
 export interface RequestIssue {

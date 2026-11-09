@@ -1,5 +1,0 @@
----
-"@bridge-ds/docs-site": patch
----
-
-Storage diet after the 2026-11-08 incident (Upstash free plan full, every `/api/contribute` call answered 503 "storage"). Screenshots of private explorations now keep their image in Bridge's private Vercel Blob store; Redis keeps only a small index (when, of which commit, the page). Readers and serving rules are unchanged: team readers and demo visitors, through the server, never a shared cache. A one-off migration moves the images already in Redis and deletes stored images no capture names (`node scripts/private-shots.mjs --migrate [--dry-run]`, run by the Private shots workflow with `migrate: dry-run|yes`). Team reads fetch every cached key with one `MGET` (a 100-blob batch went from 105 billed commands to 3), the GitHub quota meter writes at most every 2 minutes unless a tenth of the limit goes, file contents stay 24 hours in Redis instead of 7 days, and three keys that never expired now do. A storage failure now logs Upstash's own error and the command names (never the token).

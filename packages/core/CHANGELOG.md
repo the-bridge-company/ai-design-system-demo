@@ -1,5 +1,22 @@
 # @bridge-ds/core
 
+## 0.30.0
+
+### Minor Changes
+
+- c985137: The sample team's explorations can carry their "Where it stands" notes: a plan item of the admin-only `seed-demo-explorations` action may hold `notes` (context, decisions, edge cases, open questions, next step), saved as its member the way their Claude session saves them, right after its files or alone on an exploration already in its copy (nothing else of it changes, and notes that already say this write nothing). Core has the notes save Claude's `bridge_save_exploration` runs, `saveExplorationNotesOnGitHub` and `explorationNotesWithUpdate`, which the MCP library exports with `findExplorationOnGitHub`.
+- 6ffaa56: An exploration remembers the screen it changed, and every preview link and capture opens there.
+
+  - core: `Exploration.screen` in the exploration block (a place inside the product's preview: path, query and hash, never
+    a host), `explorationScreenOf`, `explorationScreenFrom` (reads a pasted preview address), `previewAtScreen` (the
+    query before the hash route, Bridge's toolbar parameters kept), `withExplorationScreen` and
+    `setExplorationScreenOnGitHub`. Explorations listed carry their screen.
+  - mcp: `bridge_save_exploration` takes `screen`, and its description asks Claude to pass the route of the screen it
+    changed. A save may change only the screen.
+  - docs-site: Show this screen under the preview for whoever keeps the exploration. Open the preview, Open the build,
+    See it in the product and Approved version open on the screen. The private capture opens there too and captures
+    again when it changes. The sample team's seed sets each item's `screen` as its member.
+
 ## 0.29.0
 
 ### Minor Changes

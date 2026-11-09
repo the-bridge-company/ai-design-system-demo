@@ -505,6 +505,11 @@
   margin-block-start: calc(-1 * var(--space-2));
 }
 
+/* "Opens on /#/orders/12": a long address wraps on a phone instead of widening the page. */
+.xp-screen-path {
+  overflow-wrap: anywhere;
+}
+
 .xp-side {
   display: flex;
   flex-direction: column;

@@ -77,6 +77,34 @@ describe('private shots: what to capture and what is kept', () => {
     expect(JSON.parse(String(await redis.cmd('GET', shotKeyOf(COPY, 1))))).toMatchObject({ sha: SHA });
   });
 
+  it("captures an exploration on the screen it chose, and again when another one is chosen", async () => {
+    const { redis, ctx } = world();
+    let screen: unknown = '/#/orders/XGZFHY3Z';
+    const block = () => `## Exploration: Team\n\n<!-- bridge-exploration ${JSON.stringify({ name: 'Team', purpose: '', screen })} -->`;
+    const f: ContribDeps['fetch'] = async (url, init) => {
+      if (new URL(url).pathname === `/repos/${COPY}/pulls`) return Response.json([{ number: 1, head: { sha: SHA, ref: 'explore/team' }, body: block() }]);
+      return ctx.f(url, init);
+    };
+    const c = { ...ctx, f };
+    await redis.pipe(watchWrites([{ repo: COPY, meta: { team: TEAM, kind: 'copy', product: 'account' } }]));
+    expect((await shotsTodo(c)).map((j) => [j.pr, j.screen])).toEqual([[1, '/#/orders/XGZFHY3Z']]);
+    // Kept with the screen it opened: the same head and screen ask for nothing more.
+    expect((await putShot(c, { repo: COPY, pr: 1, sha: SHA, image: WEBP, route: '/#/orders/XGZFHY3Z', at: '/#/orders/XGZFHY3Z' })).status).toBe(200);
+    expect(JSON.parse(String(await redis.cmd('GET', shotKeyOf(COPY, 1))))).toMatchObject({ at: '/#/orders/XGZFHY3Z' });
+    expect(await shotsTodo(c)).toEqual([]);
+    // Another screen chosen at the same head: captured again there.
+    screen = '/?workspace=new#/';
+    expect((await shotsTodo(c)).map((j) => [j.pr, j.screen])).toEqual([[1, '/?workspace=new#/']]);
+    // Taken away: captured again, the old way.
+    screen = undefined;
+    expect((await shotsTodo(c)).map((j) => [j.pr, j.screen])).toEqual([[1, null]]);
+    // Never another site, from the body nor from the capture.
+    screen = '//evil.example/x';
+    expect((await shotsTodo(c))[0]!.screen).toBeNull();
+    await putShot(c, { repo: COPY, pr: 1, sha: SHA, image: WEBP, at: 'https://evil.example/' });
+    expect(JSON.parse(String(await redis.cmd('GET', shotKeyOf(COPY, 1))))).not.toHaveProperty('at');
+  });
+
   it("captures the developers' ready builds on the product's previews, and keeps the page each capture shows", async () => {
     const { redis, ctx } = world();
     await redis.pipe(watchWrites([{ repo: CODE, meta: { team: TEAM, kind: 'code', product: 'account' } }]));

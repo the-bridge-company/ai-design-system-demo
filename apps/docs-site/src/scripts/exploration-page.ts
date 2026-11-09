@@ -9,7 +9,7 @@
 // reviews once the developers started), and the library part. A product exploration never checked against the
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
-import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
+import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
   canPutInFigma,
@@ -52,7 +52,7 @@ import { pieceRows, type PieceRowView } from '../lib/product-branch';
 import { checkPieces } from './connector-api';
 import { forgetClaudeLink, knownClaudeLink, viewerClaudeLink } from './claude-link';
 import { connectorUrl, copilotSetup, terminalSetup } from '../lib/claude-connector';
-import { ARCHIVED_LINE, BACK_TO_EXPLORING_LINE, LEAD_CHANGES_LINE, LEAD_OK_LINE, LEAD_QUESTION_LINE, NOT_DOING_LINE, TOLD_DEVELOPERS_LINE, TOOK_BACK_LINE, UNARCHIVED_LINE, askedOtherLine, explorationHref, explorationKey, RENAMED_LINE, takeItLines, type ExplorationPullLike, type ExplorationRow } from '../lib/explorations-view';
+import { ARCHIVED_LINE, BACK_TO_EXPLORING_LINE, LEAD_CHANGES_LINE, LEAD_OK_LINE, LEAD_QUESTION_LINE, NOT_DOING_LINE, TOLD_DEVELOPERS_LINE, TOOK_BACK_LINE, UNARCHIVED_LINE, askedOtherLine, explorationHref, explorationKey, RENAMED_LINE, SCREEN_CLEARED_LINE, SCREEN_SAVED_LINE, takeItLines, type ExplorationPullLike, type ExplorationRow } from '../lib/explorations-view';
 import { developerLines, productCrumbs, productProduction, productTodayUrl, tryInProductView, TRY_BUILDING_NOTE, TRY_UNAVAILABLE_NOTE } from '../lib/product-branch';
 import { touchesVisuals } from '../lib/visual-impact';
 import { shownJiraKey } from '../lib/vocabulary';
@@ -66,7 +66,7 @@ import type { ExplorationPageProps, LeadView } from '../components/ds/studio/Exp
 import { askDoneExploring } from './exploration-done';
 import { explorationsConfig } from './exploration-start';
 import { siteConfig } from './repo-context';
-import { changedFiles, namesOf, pieceActions, pieceActor, previewSources, productPreviewOf, readView, withToolbar } from './product-branch';
+import { changedFiles, namesOf, pieceActions, pieceActor, previewSources, productPreviewOf, readView, withToolbar, atRoute } from './product-branch';
 import { productClient, productRepoByKey } from './product-repos';
 import { newerPmSaid, isViewerPm, pmStatusLine, PM_WORDS } from '../lib/pm-view';
 import { BUILD_WORDS, buildRows, type BuildCheckView } from '../lib/build-check-view';
@@ -637,6 +637,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     };
   };
   let reported: Awaited<ReturnType<typeof previewSources>> = null;
+  // The screen the exploration changed (its block): every preview link opens there, before the page a capture found.
+  const screenNow = explorationScreenOf(parseExplorationBody(pull.body)?.screen);
   current = {
     key,
     props: {
@@ -677,6 +679,21 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
             return RENAMED_LINE;
           }
         : null,
+      // "Show this screen": who may rename it chooses the screen its preview and capture open on.
+      screen: {
+        value: screenNow,
+        onSave:
+          menu.rename && !r.archived
+            ? async (input: string | null) => {
+                const next = input === null ? null : explorationScreenFrom(input);
+                if (input !== null && !next) throw new Error(SCREEN_PROBLEM);
+                await setExplorationScreenOnGitHub(gh, r.number, next);
+                const line = next ? SCREEN_SAVED_LINE : SCREEN_CLEARED_LINE;
+                reopen(line);
+                return line;
+              }
+            : null,
+      },
       onReopen: menu.reopen && !r.archived && !leadOther
         ? async () => {
             const back = await reopenExplorationOnGitHub(gh, r.number, { by: currentViewer()?.email ? null : (currentViewer()?.login ?? null) });
@@ -765,8 +782,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // The branch's own build. Open the preview opens it with the Bridge toolbar (tryUrl) for a product
   // whose production Bridge knows (Live product, the Before side); never for the library's apps.
   const v = tryInProductView(preview, { tryUrl: (u) => safeUrl(u) || null, todayUrl, files });
-  const previewUrl = v.state === 'branch' ? v.url : v.state === 'today' ? todayUrl : null;
-  const tryUrl = v.state === 'branch' && v.url && !isLibrary && productProduction(product, own ? null : CFG.production) ? withToolbar(r, shot?.route)(v.url) : null;
+  const landsOn = screenNow ?? shot?.route ?? null;
+  const previewUrl = v.state === 'branch' && v.url ? atRoute(v.url, landsOn) : v.state === 'today' ? todayUrl : null;
+  const tryUrl = v.state === 'branch' && v.url && !isLibrary && productProduction(product, own ? null : CFG.production) ? withToolbar(r, landsOn)(v.url) : null;
   const previewBuilding = v.state === 'building';
   const talkNow = leadTalkOf(r, pull, { gh, designer: answersLead, names, reopen: (line) => reopen(line), onReopenNew });
   const previewNote = v.state === 'today' ? 'These changes do not show there yet: it opens the product as it is today.' : previewBuilding ? TRY_BUILDING_NOTE : v.state === 'failed' ? TRY_UNAVAILABLE_NOTE : v.state === 'unknown' ? 'Your preview appears a few minutes after each change.' : null;
@@ -890,7 +908,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     asked: asked.map((l) => faceAs(l, allNames)),
     verdict: verdict ? { kind: verdict.kind, by: faceAs(verdict.login, allNames) } : null,
     viewer,
-    compareUrl: v.state === 'branch' ? v.url : null,
+    compareUrl: v.state === 'branch' && v.url ? atRoute(v.url, landsOn) : null,
     dev: devRead
       ? {
           // The product's own preview pattern: the developers' version deploys from their repository, not the copy.
@@ -911,7 +929,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const onTeam = teamMember({ emailMember: Boolean(member), signedIn: connected(), access: currentAccess()?.state ?? null });
   const forDevelopers =
     address && offersDevelopersMessage({ address, status, declined, archived: Boolean(r.archived), member: onTeam })
-      ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: (v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch), shotUrl: shot?.src ?? null }) }
+      ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: atRoute((v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch) ?? '', screenNow) || null, shotUrl: shot?.src ?? null }) }
       : null;
   // The lead who validated it, by login or, for a lead who joined by email, by name.
   const leadOkBy = leadApproverOf(block);
@@ -968,7 +986,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     // Shipped: the product itself, where it lives now. "See it in the product" still opens the change with the Bridge
     // toolbar when its preview is there (tryUrl, painted above): This change and Live product, its marked areas,
     // Isolate. Without a preview, the product in production.
-    ...(status === 'shipped' ? { previewUrl: todayUrl, previewNote: null, previewBuilding: false } : {}),
+    ...(status === 'shipped' ? { previewUrl: todayUrl ? atRoute(todayUrl, screenNow) : null, previewNote: null, previewBuilding: false } : {}),
     handoff: {
       // What Check the build painted already (paintEarlyBuild) stays while the rest of the hand-off arrives.
       ...(current?.props.handoff?.check ? { check: current.props.handoff.check } : {}),

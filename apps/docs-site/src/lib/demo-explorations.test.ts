@@ -430,3 +430,59 @@ describe('the seed-demo-explorations action', () => {
     expect(head.tree.get('.bridge/explorations/gift-wrap.md')).toContain('Dana takes a look at the order summary.');
   });
 });
+
+describe('the screen of a seeded exploration', () => {
+  beforeAll(() => setSeedRetry({ attempts: 1, baseDelayMs: 0, sleep: async () => {} }));
+  afterAll(() => setSeedRetry(undefined));
+
+  it('takes a place in the preview, never another site', () => {
+    const ok = parseSeedPlan({ items: [item({ screen: ' /#/orders/XGZFHY3Z ' })] }, PRODUCTS, USE_CASES);
+    expect(ok.problems).toEqual([]);
+    expect(ok.items[0]!.screen).toBe('/#/orders/XGZFHY3Z');
+    expect(parseSeedPlan({ items: [item()] }, PRODUCTS, USE_CASES).items[0]).not.toHaveProperty('screen');
+    const bad = parseSeedPlan(
+      { items: [item({ screen: 'https://evil.example/#/orders' }), item({ branch: 'explore/b', screen: '//evil.example/x' }), item({ branch: 'explore/c', screen: 'orders' }), item({ branch: 'explore/d', screen: `/${'a'.repeat(200)}` })] },
+      PRODUCTS,
+      USE_CASES,
+    );
+    expect(bad.items).toEqual([]);
+    expect(bad.problems.filter((p) => /screen is the place/.test(p))).toHaveLength(4);
+  });
+
+  it('sets it on explorations already there as their members, once', async () => {
+    const w = world(true);
+    const redis = memoryRedis(() => T0);
+    const plan = { items: [item({ member: 'Leo', name: 'Frame picker', branch: 'explore/frame-picker', state: 'waiting-for-lead' })] };
+    await run(w, redis, { apply: true, plan });
+    const head = w.refs.get('explore/frame-picker');
+    const withScreen = { items: plan.items.map((i) => ({ ...i, screen: '/?workspace=new#/' })) };
+
+    const before = w.writes.length;
+    const dry = await (await run(w, redis, { plan: withScreen })).json();
+    expect(dry.items.map((i: any) => [i.status, i.screen])).toEqual([['exists', 'writes']]);
+    expect(w.writes.length).toBe(before);
+
+    const out = await (await run(w, redis, { apply: true, plan: withScreen })).json();
+    expect(w.unknown).toEqual([]);
+    expect(out.items.map((i: any) => [i.status, i.screen, i.error])).toEqual([['exists', 'saved', undefined]]);
+    const fresh = w.writes.slice(before);
+    // One description write, by the App for Leo: no commit, the branch head as it was.
+    expect(fresh.map((x) => `${x.method} ${x.path}`)).toEqual([`PATCH /repos/${COPY}/pulls/10`]);
+    expect(fresh[0]!.auth).toBe('Bearer ghs_app');
+    expect(w.refs.get('explore/frame-picker')).toBe(head);
+    expect(explorationBlockOf(w.pulls[0].body)).toMatchObject({ screen: '/?workspace=new#/', memberName: 'Leo', leadAskedByName: 'Leo' });
+    expect(w.pulls[0].body).toContain('Requested by Leo through Bridge.');
+
+    const again = w.writes.length;
+    const twice = await (await run(w, redis, { apply: true, plan: withScreen })).json();
+    expect(twice.items.map((i: any) => i.screen)).toEqual(['same']);
+    expect(w.writes.length).toBe(again);
+  });
+
+  it('sets it on a new exploration as it starts', async () => {
+    const w = world(true);
+    const out = await (await run(w, memoryRedis(() => T0), { apply: true, plan: { items: [item({ screen: '/#/orders/12' })] } })).json();
+    expect(out.items[0]).toMatchObject({ status: 'started', screen: 'saved' });
+    expect(explorationBlockOf(w.pulls[0].body)?.screen).toBe('/#/orders/12');
+  });
+});

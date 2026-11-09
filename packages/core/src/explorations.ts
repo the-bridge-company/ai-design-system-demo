@@ -93,6 +93,11 @@ export interface Exploration {
    * rebuilds it with the library first (startPageBrief), and the developers' task names it.
    */
   startPage?: string | undefined;
+  /**
+   * The screen the exploration changed, inside the product's preview: its path, query and hash ("/#/orders/XGZFHY3Z",
+   * "/?workspace=new#/"), never a host. Open the preview and the preview capture land there (explorationScreenOf).
+   */
+  screen?: string | undefined;
   /** ISO date someone said "Done exploring". */
   doneAt?: string | undefined;
   /** GitHub login of who said it, when known (Being built names them). */
@@ -399,6 +404,93 @@ export function startPageOf(e: Pick<Exploration, 'startPage'> | null | undefined
   return v;
 }
 
+/** Longest exploration screen (path, query and hash). */
+export const EXPLORATION_SCREEN_MAX = 200;
+
+const SCREEN_BASE = 'https://preview.bridge.invalid';
+
+/**
+ * The exploration's screen as the body may hold it: a place on the product's own preview, starting with "/" (a path,
+ * then its query, then its hash route), never a scheme, a host or "//", at most EXPLORATION_SCREEN_MAX characters, no
+ * spaces, quotes or backslashes. Else null.
+ */
+export function explorationScreenOf(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s || s.length > EXPLORATION_SCREEN_MAX || !s.startsWith('/') || s.startsWith('//')) return null;
+  // eslint-disable-next-line no-control-regex
+  if (/[\s<>"'`\\\u0000-\u001f\u007f]/.test(s)) return null;
+  try {
+    if (new URL(s, SCREEN_BASE).origin !== SCREEN_BASE) return null;
+  } catch {
+    return null;
+  }
+  return s;
+}
+
+/** A screen without Bridge's own query parameters (bridge, bridge-repo...): the links put them back. */
+function withoutBridgeParams(s: string): string {
+  const hashAt = s.indexOf('#');
+  const head = hashAt < 0 ? s : s.slice(0, hashAt);
+  const hash = hashAt < 0 ? '' : s.slice(hashAt);
+  const q = head.indexOf('?');
+  if (q < 0) return s;
+  const kept = head
+    .slice(q + 1)
+    .split('&')
+    .filter((x) => x && !/^bridge(?:[-_][^=]*)?(?:=|$)/i.test(x));
+  return `${head.slice(0, q)}${kept.length ? `?${kept.join('&')}` : ''}${hash}`;
+}
+
+/**
+ * What a person or a tool gave as the screen, made a screen (explorationScreenOf): a whole preview address pasted from
+ * the browser keeps its path, query and hash; a hash route ("#/orders") or a query ("?tab=new") gets its "/". Bridge's
+ * own parameters are left out. Null when nothing usable is left.
+ */
+export function explorationScreenFrom(input: string | null | undefined): string | null {
+  const raw = (input ?? '').trim();
+  if (!raw) return null;
+  let s = raw;
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      s = u.pathname + u.search + u.hash;
+    } catch {
+      return null;
+    }
+  } else if (raw.startsWith('#') || raw.startsWith('?')) s = `/${raw}`;
+  return explorationScreenOf(withoutBridgeParams(s));
+}
+
+/**
+ * A preview link opened on a screen ("/#/orders/12", "/?tenant=a#/orders"): the screen's path, its query added to the
+ * link's (Bridge's own parameters on the link kept, never overridden by the screen's), then its hash route, so the
+ * query stays before the hash. A screen that is not a place on the same preview leaves the link as it is.
+ */
+export function previewAtScreen(link: string, screen: string | null | undefined): string {
+  const s = explorationScreenOf(screen);
+  if (!link || !s) return link;
+  try {
+    const u = new URL(link);
+    const t = new URL(s, u.origin);
+    if (t.origin !== u.origin) return link;
+    u.pathname = t.pathname;
+    t.searchParams.forEach((v, k) => {
+      if (!k.toLowerCase().startsWith('bridge')) u.searchParams.set(k, v);
+    });
+    u.hash = t.hash;
+    return u.href;
+  } catch {
+    return link;
+  }
+}
+
+/** The body with the exploration's screen set, or taken away with null. A body without a Bridge block stays as it is. */
+export function withExplorationScreen(body: string | null | undefined, screen: string | null): string {
+  const s = screen === null ? null : explorationScreenOf(screen);
+  return withBlock(body, ({ screen: _was, ...e }) => (s ? { ...e, screen: s } : e));
+}
+
 /** A member reference as Bridge's server writes it (16 hex characters), else null. */
 const memberRefOf = (v: string | undefined): string | null => (typeof v === 'string' && /^[0-9a-f]{16}$/.test(v) ? v : null);
 
@@ -429,6 +521,7 @@ function explorationBlock(e: Exploration): string {
     ...(e.source ? { source: e.source } : {}),
     ...(e.agent ? { agent: e.agent } : {}),
     ...(startPageOf(e) ? { startPage: startPageOf(e) } : {}),
+    ...(explorationScreenOf(e.screen) ? { screen: explorationScreenOf(e.screen) } : {}),
     ...(e.doneAt ? { doneAt: e.doneAt } : {}),
     ...(doneBy ? { doneBy } : {}),
     ...(e.doneSha ? { doneSha: e.doneSha } : {}),

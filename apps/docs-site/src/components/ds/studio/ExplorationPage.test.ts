@@ -643,6 +643,42 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('Renamed. Its link and preview stay the same.')).toBeTruthy();
   });
 
+  it('Show this screen: one quiet line under the preview for who keeps it, a dialog that takes the address', async () => {
+    const onSave = vi.fn(async (_: string | null) => 'The preview opens on this screen now. Its picture follows in a few minutes.');
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', screen: { value: null, onSave } });
+    expect(screen.getByText(/Opens on the product's first page/)).toBeTruthy();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Show this screen' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    await expectNoAxeViolations(dialog);
+    // Nothing chosen yet: no way to go back to the first page, and an empty field says what to do.
+    expect(within(dialog).queryByRole('button', { name: 'Use the first page' })).toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await within(dialog).findByText('Paste the address of the screen, from the preview.')).toBeTruthy();
+    await user.type(within(dialog).getByRole('textbox', { name: 'Screen address' }), 'https://x.pages.dev/#/orders/12');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('https://x.pages.dev/#/orders/12'));
+    expect(await screen.findByText('The preview opens on this screen now. Its picture follows in a few minutes.')).toBeTruthy();
+  });
+
+  it('Show this screen once chosen: the address, Change, and the way back to the first page', async () => {
+    const onSave = vi.fn(async (_: string | null) => "The preview opens on the product's first page again.");
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave } });
+    expect(screen.getByText('/#/orders/12')).toBeTruthy();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Change' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    expect((within(dialog).getByRole('textbox', { name: 'Screen address' }) as HTMLInputElement).value).toBe('/#/orders/12');
+    await user.click(within(dialog).getByRole('button', { name: 'Use the first page' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(null));
+  });
+
+  it('Show this screen: nothing for who cannot change it, the links already open on it', () => {
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave: null } });
+    expect(screen.queryByText(/Opens on/)).toBeNull();
+    expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://x.pages.dev/#/orders/12');
+  });
+
   it('Rename refused: the reason under the field, the dialog stays', async () => {
     paint({ onRename: async () => Promise.reject(new Error('Keep the name under 60 characters.')) });
     const user = userEvent.setup();

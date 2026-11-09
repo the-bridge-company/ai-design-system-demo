@@ -172,6 +172,12 @@ export interface ExplorationPageProps {
   /** X2: the preview is building: the button reads "Preview is building" with a spinner, at full contrast. */
   previewBuilding?: boolean;
   /**
+   * The screen the exploration changed, in the product's preview (core Exploration.screen: "/#/orders/12"): the
+   * preview links and the capture open there. `onSave` ("Show this screen") for who keeps it, null for everyone else:
+   * they only get links that land on it.
+   */
+  screen?: { value: string | null; onSave: ((input: string | null) => Promise<string | void>) | null } | null;
+  /**
    * X2: a captured image of the change: the preview capture (lib/preview-shots), else the visual impact's after shot;
    * none: the plate. An image that does not load gives the plate back in the same frame.
    */
@@ -853,7 +859,7 @@ function ExplorationBody(p: ExplorationPageProps) {
   const line = lines[tab];
   const only = view.tools.length === 1 ? view.tools[0] : null;
   const withWhat = only === 'copilot' ? 'GitHub Copilot' : only ? 'Claude AI' : 'your AI tool';
-  const [ask, setAsk] = useState<'rename' | 'reopen' | 'take-back' | 'take-over' | 'hand-over' | 'archive' | null>(null);
+  const [ask, setAsk] = useState<'rename' | 'screen' | 'reopen' | 'take-back' | 'take-over' | 'hand-over' | 'archive' | null>(null);
   const [reopening, setReopening] = useState(false);
   const archive = () => {
     setSaid('');
@@ -1056,7 +1062,7 @@ function ExplorationBody(p: ExplorationPageProps) {
             <div className="xp-acts xp-preview-acts">
               <div className="xp-act is-main">
                 {handoff?.build?.url ? (
-                  <ButtonLink variant="primary" size="lg" href={atRoute(handoff.build.url, handoff.build.shot?.route)} target="_blank" rel="noopener" iconEnd={ExternalLink}>
+                  <ButtonLink variant="primary" size="lg" href={atRoute(handoff.build.url, p.screen?.value ?? handoff.build.shot?.route)} target="_blank" rel="noopener" iconEnd={ExternalLink}>
                     {BUILD_WORDS.openBuild}
                   </ButtonLink>
                 ) : previewButton}
@@ -1082,6 +1088,7 @@ function ExplorationBody(p: ExplorationPageProps) {
                 {p.previewNote}
               </p>
             )}
+            {!p.archived && p.screen?.onSave && <ScreenLine screen={p.screen.value} onOpen={() => setAsk('screen')} />}
             {!handoff && !p.archived && p.latest && <LatestLine latest={p.latest} say={setSaid} />}
           </section>
           <div className="xp-side">
@@ -1126,6 +1133,19 @@ function ExplorationBody(p: ExplorationPageProps) {
           description="It leaves the lists. Its preview stays, and whoever kept it reads your reason on this page."
           confirm="Archive"
           onConfirm={(why) => p.onArchive!(why).then((r) => setSaid(r ?? ''))}
+        />
+      )}
+      {p.screen?.onSave && (
+        <ScreenDialog
+          open={ask === 'screen'}
+          screen={p.screen.value}
+          onOpenChange={(o) => setAsk(o ? 'screen' : null)}
+          onSave={async (input) => {
+            setSaid('');
+            const r = await p.screen!.onSave!(input);
+            setAsk(null);
+            setSaid(r ?? '');
+          }}
         />
       )}
       {p.onRename && (
@@ -1180,6 +1200,102 @@ function ExplorationBody(p: ExplorationPageProps) {
       </Accordion>
     </div>
     </ToolContext.Provider>
+  );
+}
+
+/**
+ * Under the preview, for who keeps the exploration: which screen the preview and its picture open on, and the way to
+ * change it ("Show this screen"). One quiet line: the address itself only once one is chosen.
+ */
+function ScreenLine({ screen, onOpen }: { screen: string | null; onOpen: () => void }) {
+  return (
+    <p className="xp-muted xp-note xp-screen">
+      {screen ? (
+        <>
+          Opens on <span className="xp-mono xp-screen-path">{screen}</span>{' '}
+          <Button variant="link" size="sm" onClick={onOpen}>
+            Change
+          </Button>
+        </>
+      ) : (
+        <>
+          Opens on the product's first page.{' '}
+          <Button variant="link" size="sm" onClick={onOpen}>
+            Show this screen
+          </Button>
+        </>
+      )}
+    </p>
+  );
+}
+
+/**
+ * "Show this screen": the address of the changed screen, pasted from the preview (core explorationScreenFrom keeps
+ * what comes after the domain). Save writes it on the exploration; "Use the first page" takes it away.
+ */
+function ScreenDialog({ open, screen, onOpenChange, onSave }: { open: boolean; screen: string | null; onOpenChange: (open: boolean) => void; onSave: (input: string | null) => Promise<void> }) {
+  const formId = useId();
+  const input = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(screen ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setValue(screen ?? '');
+    setError(null);
+  }, [open, screen]);
+  const save = (next: string | null) => {
+    setBusy(true);
+    onSave(next)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setBusy(false));
+  };
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const next = value.trim();
+    if (!next) return setError('Paste the address of the screen, from the preview.');
+    if (next === (screen ?? '')) return onOpenChange(false);
+    save(next);
+  };
+  return (
+    <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
+      <DialogContent
+        title="Show this screen"
+        description="Open the preview, go to the screen you changed and copy its address. The preview and its picture open there for everyone."
+        size="sm"
+        initialFocus={input}
+        hideClose
+        footer={
+          <ButtonGroup align="end">
+            {screen && (
+              <Button variant="ghost" disabled={busy} onClick={() => save(null)}>
+                Use the first page
+              </Button>
+            )}
+            <DialogClose render={<Button variant="secondary" disabled={busy} />}>Cancel</DialogClose>
+            <Button type="submit" form={formId} variant="primary" loading={busy} disabled={busy}>
+              Save
+            </Button>
+          </ButtonGroup>
+        }
+      >
+        <form id={formId} onSubmit={submit} noValidate>
+          <Input
+            ref={input}
+            label="Screen address"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Paste it from the preview"
+            value={value}
+            onValueChange={(v) => {
+              setValue(v);
+              if (error) setError(null);
+            }}
+            error={error ?? undefined}
+          />
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

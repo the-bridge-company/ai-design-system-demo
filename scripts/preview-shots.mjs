@@ -86,12 +86,66 @@ export function labelledProduct(p, products) {
   return null;
 }
 
+const SCREEN_BASE = 'https://preview.bridge.invalid';
+
+/**
+ * An exploration's screen as @bridge-ds/core explorationScreenOf reads it, here so the capture runs with any released
+ * core: a place on the same preview starting with "/" ("/#/orders/12"), never "//", a scheme or a host, 200 characters
+ * at most, no spaces, quotes or backslashes. Else null.
+ */
+export function screenOf(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s || s.length > 200 || !s.startsWith('/') || s.startsWith('//')) return null;
+  // eslint-disable-next-line no-control-regex
+  if (/[\s<>"'`\\\u0000-\u001f\u007f]/.test(s)) return null;
+  try {
+    return new URL(s, SCREEN_BASE).origin === SCREEN_BASE ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The screen an exploration's pull request body chose (its `<!-- bridge-exploration {...} -->` block), else null. */
+export function bodyScreenOf(body) {
+  const m = typeof body === 'string' ? /<!-- bridge-exploration (\{[\s\S]*?\}) -->/.exec(body) : null;
+  if (!m) return null;
+  try {
+    return screenOf(JSON.parse(m[1]).screen);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The preview link opened on a screen (as core previewAtScreen): the screen's path, its query added before its hash
+ * route, the link's own parameters kept. A screen that is not a place on the same preview leaves the link as it is.
+ */
+export function atScreen(link, screen) {
+  const s = screenOf(screen);
+  if (!link || !s) return link;
+  try {
+    const u = new URL(link);
+    const t = new URL(s, u.origin);
+    if (t.origin !== u.origin) return link;
+    u.pathname = t.pathname;
+    t.searchParams.forEach((v, k) => {
+      if (!k.toLowerCase().startsWith('bridge')) u.searchParams.set(k, v);
+    });
+    u.hash = t.hash;
+    return u.href;
+  } catch {
+    return link;
+  }
+}
+
 /**
  * What to do with one exploration: skip it (already captured at this head, or tried too often) or capture it.
  * `stored` is its .json when there is one.
  */
-export function shotDecision({ sha, stored, force = false }) {
-  if (!force && stored?.sha === sha && stored?.image) return { action: 'skip', why: 'captured at this head' };
+export function shotDecision({ sha, stored, force = false, screen = null }) {
+  // Another screen chosen since (core Exploration.screen, kept as `at`): captured again on it.
+  if (!force && stored?.sha === sha && stored?.image && (stored.at ?? null) === (screen ?? null)) return { action: 'skip', why: 'captured at this head' };
   if (!force && stored?.failed?.sha === sha && (stored.failed.tries ?? 0) >= MAX_TRIES) return { action: 'skip', why: `failed ${stored.failed.tries} times at this head` };
   return { action: 'capture' };
 }
@@ -415,7 +469,8 @@ export async function run({ dir, configPath, force = false, dryRun = false, host
       const key = shotKey(t.repo, p.number);
       open.add(key);
       const meta = stored.get(key);
-      const d = shotDecision({ sha: p.head.sha, stored: meta, force });
+      const screen = bodyScreenOf(p.body);
+      const d = shotDecision({ sha: p.head.sha, stored: meta, force, screen });
       if (d.action === 'skip') {
         log(`${key}: skip (${d.why}).`);
         continue;
@@ -429,7 +484,7 @@ export async function run({ dir, configPath, force = false, dryRun = false, host
         log(`${key}: preview ${preview.state}, later.`);
         continue;
       }
-      jobs.push({ key, repo: t.repo, pull: p, url: preview.url, meta });
+      jobs.push({ key, repo: t.repo, pull: p, url: preview.url, meta, screen });
     }
   }
 
@@ -474,7 +529,8 @@ export async function run({ dir, configPath, force = false, dryRun = false, host
       for (const j of jobs) {
         const paths = shotPaths(j.repo, j.pull.number);
         try {
-          const shot = await captureOne(browser, j.url);
+          // The exploration's own screen when it chose one, captured there and nowhere else.
+          const shot = await captureOne(browser, j.screen ? atScreen(j.url, j.screen) : j.url, j.screen ? { crawl: false } : {});
           mkdirSync(dirname(join(dir, paths.image)), { recursive: true });
           writeFileSync(join(dir, paths.image), shot.webp);
           const meta = {
@@ -486,6 +542,7 @@ export async function run({ dir, configPath, force = false, dryRun = false, host
             url: j.url,
             route: shot.route,
             screen: shot.screen,
+            ...(j.screen ? { at: j.screen } : {}),
             capturedAt: new Date().toISOString(),
             image: paths.image,
             width: shot.width,

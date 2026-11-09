@@ -7,7 +7,8 @@
 //
 // Asks Bridge which explorations need a capture (GET /api/contribute?shots=todo), fills each preview template with
 // @bridge-ds/core previewUrl (the branch, as the host names it), captures it with scripts/preview-shots.mjs captureOne
-// and sends the webp back (POST ?shots=put). Both calls carry this workflow's GitHub OIDC token (audience
+// and sends the webp back (POST ?shots=put). An exploration that chose its screen (core Exploration.screen, the job's
+// `screen`) is captured on that screen (captureTarget), nowhere else; Bridge asks again when another one is chosen. Both calls carry this workflow's GitHub OIDC token (audience
 // bridge-shots): no stored secret. A preview that is not up yet, or that answers a sign-in page, is skipped and asked
 // again on the next run.
 //
@@ -17,7 +18,7 @@
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { captureOne, launch } from './preview-shots.mjs';
+import { atScreen, captureOne, launch, screenOf } from './preview-shots.mjs';
 
 export const AUDIENCE = 'bridge-shots';
 
@@ -50,6 +51,16 @@ function args(argv) {
     else if (argv[i] === '--migrate') o.migrate = true;
   }
   return o;
+}
+
+/**
+ * Where to capture one job and how: the exploration's own screen on its preview when it chose one (no guessing then),
+ * else the preview root with the changed files' names as hints.
+ */
+export function captureTarget(url, job) {
+  const screen = screenOf(job.screen);
+  if (screen) return { url: atScreen(url, screen), options: { crawl: false, hints: [] }, at: screen };
+  return { url, options: { hints: job.hints ?? [] }, at: null };
 }
 
 /** What a migration answer says, in one line per figure. */
@@ -92,21 +103,22 @@ async function main() {
         continue;
       }
       try {
-        const shot = await captureOne(browser, url, { hints: j.hints ?? [] });
+        const target = captureTarget(url, j);
+        const shot = await captureOne(browser, target.url, target.options);
         if (looksLikeAWall(new URL(shot.route, url).href)) {
           console.log(`- ${j.repo}#${j.pr}: ${url} asks to sign in, skipped`);
           continue;
         }
         if (o.dryRun) {
-          console.log(`- ${j.repo}#${j.pr}: captured ${url} (dry run, not sent)`);
+          console.log(`- ${j.repo}#${j.pr}: captured ${target.url} (dry run, not sent)`);
           continue;
         }
         const put = await fetch(`${o.base}/api/contribute?shots=put`, {
           method: 'POST',
           headers: { ...auth, 'content-type': 'application/json' },
-          body: JSON.stringify({ repo: j.repo, pr: j.pr, sha: j.sha, url, route: shot.route, screen: shot.screen, image: Buffer.from(shot.webp).toString('base64') }),
+          body: JSON.stringify({ repo: j.repo, pr: j.pr, sha: j.sha, url, route: shot.route, screen: shot.screen, ...(target.at ? { at: target.at } : {}), image: Buffer.from(shot.webp).toString('base64') }),
         });
-        console.log(`- ${j.repo}#${j.pr}: ${put.ok ? 'kept' : `refused (${put.status})`} ${url}`);
+        console.log(`- ${j.repo}#${j.pr}: ${put.ok ? 'kept' : `refused (${put.status})`} ${target.url}`);
         if (put.ok) kept++;
       } catch (e) {
         console.log(`- ${j.repo}#${j.pr}: ${url} could not be captured (${e.message})`);

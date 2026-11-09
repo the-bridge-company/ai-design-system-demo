@@ -8,7 +8,8 @@
 //     GitHub Actions, for audience AUDIENCE, from Bridge's repository on its default branch (SHOTS_REPOSITORY).
 //   - The image of a capture lives in Bridge's private Vercel Blob store (ShotStore, SHOTS_PREFIX<repo>/<pr>/<sha>-<ms>.webp,
 //     one pathname per capture so no cache ever serves an older one); Redis keeps only its small index,
-//     bridge:shot:<repo>#<pr> { sha, capturedAt, url, route, screen, blob (the pathname) }, KEEP_S. Captures kept before
+//     bridge:shot:<repo>#<pr> { sha, capturedAt, url, route, screen, at, blob (the pathname) }, KEEP_S. `at` is the
+//     exploration's own screen (core Exploration.screen) the capture opened, so choosing another one captures it again. Captures kept before
 //     2026-11-08 carried the image itself (base64 in `image`): still served, and moved by migrateShots (POST
 //     ?shots=migrate from the same workflow), which also deletes the images no index names any more.
 //   - Studio reads GET ?repo=<team>&shot=<owner/repo>&pr=<n>&meta=1 (when it was taken, of which commit) and the image
@@ -18,6 +19,7 @@ import { createPublicKey, createVerify } from 'node:crypto';
 import { HttpError, json, SECURITY_HEADERS, type FetchLike } from './http.js';
 import type { Redis } from './redis.js';
 import { NOTIFY_TEAMS_KEY, repoMetaKey } from './notify.js';
+import { pullScreenOf, screenOf } from './exploration-member.js';
 
 export const AUDIENCE = 'bridge-shots';
 export const SHOTS_REPOSITORY = 'the-bridge-company/ai-design-system-demo';
@@ -188,6 +190,11 @@ export interface ShotJob {
   template: string;
   /** The changed files' names ("billing" for src/pages/Billing.tsx): the page to open when no change marker shows one. */
   hints: string[];
+  /**
+   * The screen the exploration changed, from its block (core Exploration.screen: "/#/orders/12"): the capture opens
+   * there, never the root or a guessed page. Null when none is chosen.
+   */
+  screen: string | null;
 }
 
 /** Names worth looking for among a preview's links: the changed files' base names, never the app shell's. */
@@ -280,7 +287,7 @@ export async function shotsTodo(ctx: ShotsCtx, force = false): Promise<ShotJob[]
     if (!token) continue;
     const res = await gh(ctx, token, `/repos/${o}/${r}/pulls?state=open&per_page=50`);
     if (!res || res.status !== 200) continue;
-    const pulls = ((await res.json()) as { number?: unknown; head?: { sha?: unknown; ref?: unknown }; draft?: unknown }[]) ?? [];
+    const pulls = ((await res.json()) as { number?: unknown; head?: { sha?: unknown; ref?: unknown }; draft?: unknown; body?: unknown }[]) ?? [];
     const kept = pulls.length ? ((await ctx.redis.pipe(pulls.map((p) => ['GET', shotKeyOf(repo, Number(p.number))]))) as (string | null)[]) : [];
     pulls.forEach((p, i) => {
       const sha = typeof p.head?.sha === 'string' ? p.head.sha : '';
@@ -288,13 +295,17 @@ export async function shotsTodo(ctx: ShotsCtx, force = false): Promise<ShotJob[]
       if (!Number.isSafeInteger(p.number) || !SHA.test(sha) || !branch || jobs.length >= TODO_MAX) return;
       // A developers' draft is not a build to check yet.
       if (kind === 'code' && p.draft === true) return;
-      let have: string | null = null;
+      // The developers' own pull requests carry no exploration block: they open on the root, as before.
+      const screen = kind === 'copy' ? pullScreenOf(p.body) : null;
+      let have: { sha?: unknown; at?: unknown } | null = null;
       try {
-        have = kept[i] ? (JSON.parse(kept[i]!).sha as string) : null;
+        have = kept[i] ? (JSON.parse(kept[i]!) as { sha?: unknown; at?: unknown }) : null;
       } catch {
         have = null;
       }
-      if (force || have !== sha) jobs.push({ repo, pr: Number(p.number), sha, branch, template, hints: [] });
+      // A new head, or another screen chosen since the last capture: captured again.
+      const same = have?.sha === sha && (screenOf(have?.at) ?? null) === screen;
+      if (force || !same) jobs.push({ repo, pr: Number(p.number), sha, branch, template, hints: [], screen });
     });
     // The changed files of each exploration to capture: one read each, only for those.
     await Promise.all(
@@ -319,6 +330,8 @@ export async function putShot(ctx: ShotsCtx, body: Record<string, unknown>): Pro
   // The page the capture shows (path, query and hash route), so Open the preview lands there too; its change's label.
   const route = typeof body.route === 'string' && /^\/[^\s<>"'\\]*$/.test(body.route) && body.route.length <= 300 ? body.route : null;
   const screen = typeof body.screen === 'string' && body.screen.trim() ? body.screen.trim().slice(0, 80) : null;
+  // The exploration's own screen the capture opened (ShotJob.screen), so another choice is captured again.
+  const opened = screenOf(body.at);
   if (!REPO.test(repo) || !Number.isSafeInteger(pr) || pr < 1 || !SHA.test(sha)) return json(400, { error: 'bad_request', message: 'Say which exploration: repo, pr and sha.' });
   if (!image || image.length > MAX_IMAGE_CHARS || !/^[A-Za-z0-9+/]+={0,2}$/.test(image) || !Buffer.from(image.slice(0, 32), 'base64').subarray(8, 12).equals(Buffer.from('WEBP'))) {
     return json(400, { error: 'bad_image', message: 'Send a webp image, base64, under 300 KB.' });
@@ -335,7 +348,7 @@ export async function putShot(ctx: ShotsCtx, body: Record<string, unknown>): Pro
   const at = ctx.now();
   const blob = shotPathOf(repo, pr, sha, at);
   await ctx.store.put(blob, Buffer.from(image, 'base64'));
-  await ctx.redis.cmd('SET', shotKeyOf(repo, pr), JSON.stringify({ sha, capturedAt: new Date(at).toISOString(), ...(url ? { url } : {}), ...(route ? { route } : {}), ...(screen ? { screen } : {}), blob }), 'EX', KEEP_S);
+  await ctx.redis.cmd('SET', shotKeyOf(repo, pr), JSON.stringify({ sha, capturedAt: new Date(at).toISOString(), ...(url ? { url } : {}), ...(route ? { route } : {}), ...(screen ? { screen } : {}), ...(opened ? { at: opened } : {}), blob }), 'EX', KEEP_S);
   // The image of the capture it replaces goes (a failure leaves an orphan that migrateShots deletes).
   const old = parseShot(before)?.blob;
   if (old && old !== blob) await ctx.store.del([old]).catch(() => undefined);
@@ -348,6 +361,8 @@ interface KeptShot {
   url?: unknown;
   route?: unknown;
   screen?: unknown;
+  /** The exploration's own screen the capture opened. */
+  at?: unknown;
   /** The image's pathname in the store. */
   blob?: string;
   /** A capture kept before the move to the Blob store: the image itself, base64. */

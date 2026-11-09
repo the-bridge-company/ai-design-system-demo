@@ -6,12 +6,16 @@
 // administers the sample team's repository (the GitHub CLI's, or GH_TOKEN). Nothing is written without --apply, and an
 // exploration already in its copy is left as it is, so running it again starts only what is missing. An item's `notes`
 // ("Where it stands") are saved as its member, the way their Claude session saves them, on an exploration already
-// there too: only its note file changes, and notes that already say this write nothing.
+// there too: only its note file changes, and notes that already say this write nothing. An item's `screen` (the
+// screen it changed, where its preview and its capture open: "/#/orders/12") is set as its member the same way, on an
+// exploration already there too: only its description's Bridge block changes, and a screen it already shows writes
+// nothing.
 //
 // The plan file (--plan, JSON):
 //   { "items": [ { "clone": "../acme-prints-design", "branch": "explore/gift-wrap", "product": "prints",
 //                  "member": "Sofia", "name": "Gift wrap at checkout", "purpose": "...", "useCase": "user-test",
 //                  "state": "exploring" | "waiting-for-lead" | "done", "base": "main", "message": "...",
+//                  "screen": "/#/orders/XGZFHY3Z",
 //                  "notes": { "context": "...", "decisions": ["..."], "edgeCases": [ { "component": "Gift wrap",
 //                             "state": "Long message", "covered": false, "note": "..." } ], "openQuestions": ["..."],
 //                             "nextStep": "..." } } ] }
@@ -105,13 +109,16 @@ async function ask(base, plan, apply) {
 
 /** What happened to an item's notes, in the run's words. */
 const NOTES_WORDS = { writes: 'writes its notes', same: 'notes already say this', saved: 'notes saved' };
+/** What happened to an item's screen, in the run's words. */
+const SCREEN_WORDS = { writes: 'sets its screen', same: 'already opens on its screen', saved: 'screen set' };
 
 export function printSeed(body) {
   if (!body.items.length) console.log('Nothing in the plan.');
   for (const i of body.items) {
-    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
+    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes || i.screen ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
     const notes = i.notes ? `, ${NOTES_WORDS[i.notes] ?? i.notes}` : '';
-    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${notes}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
+    const screen = i.screen ? `, ${SCREEN_WORDS[i.screen] ?? i.screen}` : '';
+    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${notes}${screen}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
   }
 }
 

@@ -1,5 +1,30 @@
 # @bridge-ds/mcp
 
+## 0.16.0
+
+### Minor Changes
+
+- c985137: The sample team's explorations can carry their "Where it stands" notes: a plan item of the admin-only `seed-demo-explorations` action may hold `notes` (context, decisions, edge cases, open questions, next step), saved as its member the way their Claude session saves them, right after its files or alone on an exploration already in its copy (nothing else of it changes, and notes that already say this write nothing). Core has the notes save Claude's `bridge_save_exploration` runs, `saveExplorationNotesOnGitHub` and `explorationNotesWithUpdate`, which the MCP library exports with `findExplorationOnGitHub`.
+- 41eb789: The sample team's explorations on its products can be made the real way: an admin-only `seed-demo-explorations` action (scripts/seed-demo-explorations.mjs, dry run by default, a plan of explorations read from local clones) starts each one as one of its members through the same path a member's own exploration takes in Studio (the Bridge GitHub App, a "Requested by <member> through Bridge." line, the member named in the exploration), saves its files, and asks a lead or has the lead say it looks right when the plan says so. An exploration already in its copy is left as it is. The MCP library also exports the exploration steps Studio runs (start, ask a lead, the lead's yes) and the GitHub client.
+- 6ffaa56: An exploration remembers the screen it changed, and every preview link and capture opens there.
+
+  - core: `Exploration.screen` in the exploration block (a place inside the product's preview: path, query and hash, never
+    a host), `explorationScreenOf`, `explorationScreenFrom` (reads a pasted preview address), `previewAtScreen` (the
+    query before the hash route, Bridge's toolbar parameters kept), `withExplorationScreen` and
+    `setExplorationScreenOnGitHub`. Explorations listed carry their screen.
+  - mcp: `bridge_save_exploration` takes `screen`, and its description asks Claude to pass the route of the screen it
+    changed. A save may change only the screen.
+  - docs-site: Show this screen under the preview for whoever keeps the exploration. Open the preview, Open the build,
+    See it in the product and Approved version open on the screen. The private capture opens there too and captures
+    again when it changes. The sample team's seed sets each item's `screen` as its member.
+
+### Patch Changes
+
+- Updated dependencies [c985137]
+- Updated dependencies [6ffaa56]
+  - @bridge-ds/core@0.30.0
+  - @bridge-ds/visual@0.3.24
+
 ## 0.15.0
 
 ### Minor Changes

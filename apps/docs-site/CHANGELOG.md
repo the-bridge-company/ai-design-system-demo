@@ -1,5 +1,56 @@
 # @bridge-ds/docs-site
 
+## 0.29.0
+
+### Minor Changes
+
+- 6ffaa56: An exploration remembers the screen it changed, and every preview link and capture opens there.
+
+  - core: `Exploration.screen` in the exploration block (a place inside the product's preview: path, query and hash, never
+    a host), `explorationScreenOf`, `explorationScreenFrom` (reads a pasted preview address), `previewAtScreen` (the
+    query before the hash route, Bridge's toolbar parameters kept), `withExplorationScreen` and
+    `setExplorationScreenOnGitHub`. Explorations listed carry their screen.
+  - mcp: `bridge_save_exploration` takes `screen`, and its description asks Claude to pass the route of the screen it
+    changed. A save may change only the screen.
+  - docs-site: Show this screen under the preview for whoever keeps the exploration. Open the preview, Open the build,
+    See it in the product and Approved version open on the screen. The private capture opens there too and captures
+    again when it changes. The sample team's seed sets each item's `screen` as its member.
+
+### Patch Changes
+
+- 2295895: Being built no longer lists a request closed as a duplicate: another request carries the work.
+- 680855d: The sample team shows Send to Figma to its visitor even without a Figma file, and its demo dialog says what each action does on a real team ("Send to Figma puts this screen in your team's Figma file...") before "Get started".
+- 0ffd993: Bringing the sample team's explorations up to date no longer syncs a copy that already has everything its product has.
+- 8a4033c: The sample team's developer, Malik, joins with GitHub only, as a real team's developer does: seeding the sample team removes his email member (and what Bridge kept for that address), so Settings > Members lists him once. Settings shows a GitHub account without a photo with its drawn face in Members and Review rules too.
+- 29216eb: The sample team's requests and suggestions can be filed again the real way: an admin-only `refile-demo` action (scripts/refile-demo-items.mjs, dry run by default) files each open one an account opened again for a member, through the same server path an email member's own request takes (the Bridge GitHub App, a "Requested by <member> through Bridge." line), points a developer's pull request that closes it at the replacement, and closes the old one as not planned with a comment linking it. A member's GitHub write now runs through one function, `runAsMember`, for the browser proxy and this action alike.
+- 29216eb: The sample team's people move to the reserved acme.example domain (acme.design is a real, registered domain): seeding moves their old records, what they own and drops the notification keys of the old addresses. Bridge never mails a reserved or test domain (.example, .test, .invalid, .localhost, example.com, .org, .net), whichever provider, and never mails anything about the sample team (notifications, summaries, sign-in links, invites, join requests). A new admin-only `update-demo-branches` action (scripts/refile-demo-items.mjs --update-branches, dry run by default) brings the sample team's explorations up to date from their product as their member, through the same "Bring it in" path an email member takes, so the activity names the member.
+- c985137: The sample team's explorations can carry their "Where it stands" notes: a plan item of the admin-only `seed-demo-explorations` action may hold `notes` (context, decisions, edge cases, open questions, next step), saved as its member the way their Claude session saves them, right after its files or alone on an exploration already in its copy (nothing else of it changes, and notes that already say this write nothing). Core has the notes save Claude's `bridge_save_exploration` runs, `saveExplorationNotesOnGitHub` and `explorationNotesWithUpdate`, which the MCP library exports with `findExplorationOnGitHub`.
+- 41eb789: The sample team's explorations on its products can be made the real way: an admin-only `seed-demo-explorations` action (scripts/seed-demo-explorations.mjs, dry run by default, a plan of explorations read from local clones) starts each one as one of its members through the same path a member's own exploration takes in Studio (the Bridge GitHub App, a "Requested by <member> through Bridge." line, the member named in the exploration), saves its files, and asks a lead or has the lead say it looks right when the plan says so. An exploration already in its copy is left as it is. The MCP library also exports the exploration steps Studio runs (start, ask a lead, the lead's yes) and the GitHub client.
+- a458f5b: Studio Home no longer shows a wrong home for a second while it loads: it waits until it knows who is reading and has read what waits on them, their explorations and their products, holding their space meanwhile, so nothing says "Nothing in progress" or "no exploration" before it knows. The sample team (Acme Design) now reads the same for everyone: someone signed in with GitHub or with a Bridge account sees it exactly as a visitor does, as Dana with the sample data, from the first paint, never with their own name, changes or join requests. The review count remembered for the navigation stays with its own team.
+- 7c837a7: A GitHub account without a photo of its own shows its drawn face, never GitHub's generated pattern.
+- aa7ab0e: An exploration a design lead who joined by email said looks right names that lead ("Ann said done exploring", and in How it went), never Bridge's app account. The demo smoke test checks the sample team's two products, Acme Prints and Acme CRM.
+- 602eddf: Settings > Members names GitHub people by their profile name, as every other Studio page does.
+- 0113afb: Exploration page: the line under the preview about the screen it opens on is gone. Who keeps the exploration chooses
+  that screen from the "..." menu (Choose the screen it opens on), in the same dialog, with Let Bridge pick once one is
+  set. Open their version now opens on the screen like Open the build and Approved version, and so do the product
+  previews in the explorations list, the preview a request carries after Done exploring, and the preview in the message
+  for developers who work elsewhere.
+
+  Waiting for lead: the lead answers in the bar at the bottom only, so the zone beside the preview no longer shows a
+  second "I'll look" button when that bar is there. Send to Figma sits beside Open the preview when that place is free,
+  instead of alone on a row under it.
+
+- 64234e5: Sample team seed: an exploration already in its copy gets the plan's files that changed since, saved as its member in
+  one commit (their Claude session's save). Files that already say this write nothing; a dry run says how many it updates.
+- 605784f: Storage diet after the 2026-11-08 incident (Upstash free plan full, every `/api/contribute` call answered 503 "storage"). Screenshots of private explorations now keep their image in Bridge's private Vercel Blob store; Redis keeps only a small index (when, of which commit, the page). Readers and serving rules are unchanged: team readers and demo visitors, through the server, never a shared cache. A one-off migration moves the images already in Redis and deletes stored images no capture names (`node scripts/private-shots.mjs --migrate [--dry-run]`, run by the Private shots workflow with `migrate: dry-run|yes`). Team reads fetch every cached key with one `MGET` (a 100-blob batch went from 105 billed commands to 3), the GitHub quota meter writes at most every 2 minutes unless a tenth of the limit goes, file contents stay 24 hours in Redis instead of 7 days, and three keys that never expired now do. A storage failure now logs Upstash's own error and the command names (never the token).
+- e8d1bd0: Components shows "Used in" for a product kept in its own repository when the adoption audit names it only by its
+  label ("Account app" or "Account app, main"), as the Quality page already does. `bridge snapshot` up to 0.18.0 records
+  the product key only for a checkout beside the design system repository, so a team auditing its product inside the
+  repository (or a copy of it) had adoption on Quality and no "Used in" column on Components.
+- Updated dependencies [c985137]
+- Updated dependencies [6ffaa56]
+  - @bridge-ds/core@0.30.0
+
 ## 0.28.0
 
 ### Minor Changes

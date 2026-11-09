@@ -55,7 +55,7 @@ describe('teamQuality on this repository (parity with the build-time dashboard)'
   it('says there is no audit instead of a number, without a snapshot', () => {
     expect(q.adoption).toBeNull();
     expect(q.figures.map((f) => f.id)).toEqual(['contrast', 'adoption', 'guidance']);
-    expect(q.figures[1]!.value).toBe('No audit yet');
+    expect(q.figures[1]!.value).toBe('Not measured yet');
   });
 });
 
@@ -172,9 +172,9 @@ describe('adoption from the snapshot audits', () => {
       { key: 'crm', name: 'Acme CRM', repo: 'acme-design-demo/acme-crm' },
     ]);
     const fig = q.figures.find((f) => f.id === 'adoption')!;
-    expect(fig.value).toBe('No audit yet');
+    expect(fig.value).toBe('Not measured yet');
     expect(fig.detail).toBe('Acme Prints and Acme CRM are not measured yet.');
-    expect(q.pillars[1]).toMatchObject({ value: 'No audit yet', meter: null, viz: null });
+    expect(q.pillars[1]).toMatchObject({ value: 'Not measured yet', meter: null, viz: null });
     expect(JSON.stringify(q)).not.toContain('Account app');
   });
 

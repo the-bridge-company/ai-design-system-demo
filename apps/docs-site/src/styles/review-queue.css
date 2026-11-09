@@ -32,7 +32,7 @@
 
 .rq-list {
   display: grid;
-  /* The column's width, never the titles': a long title ends in an ellipsis instead of being cut at the edge. */
+  /* The column's width, never the titles': a long title wraps inside it. */
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
@@ -62,21 +62,42 @@
   margin-top: var(--space-1);
 }
 
-/* Inline, so the item label's own ellipsis (SidebarNav) ends a long title. */
+/* A title wraps to two lines before it ends in an ellipsis: the SidebarNav label keeps one line by default. */
+.rq-item-row {
+  align-items: flex-start;
+  padding-block: var(--space-2);
+}
+
+.rq-item-row > span:has(> .rq-item-text) {
+  display: flex;
+  align-items: flex-start;
+  overflow: visible;
+  white-space: normal;
+}
+
 .rq-item-text {
-  vertical-align: middle;
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.rq-mark,
+.rq-face {
+  flex: none;
 }
 
 .rq-mark {
+  margin-block-start: var(--space-0-5);
   margin-inline-end: var(--space-2);
   color: var(--color-text-muted);
-  vertical-align: middle;
 }
 
 /* Who waits, between the progress mark and the title (the same face as on the home and Branches rows). */
 .rq-face {
   margin-inline-end: var(--space-2);
-  vertical-align: middle;
 }
 
 .rq-item-row.is-approved .rq-mark {
@@ -109,31 +130,12 @@
   min-width: 0;
 }
 
-/* A row that is not a branch: what it is and the link that handles it. */
-.rq-item-body {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-3);
-}
-
-.rq-item-title {
-  margin: 0;
-  font-family: var(--typography-h3-family);
-  font-size: var(--typography-h3-size);
-  font-weight: var(--typography-h3-weight);
-  line-height: var(--typography-h3-line-height);
-}
-
-.rq-item-line {
-  margin: 0;
-}
-
-/* A join request: Decline and Approve on the same line, in the card. */
-.rq-join {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+/* Every item reads the same (components/ds/studio/BranchReview .br): a branch, a suggestion and the other rows share
+   one reading column, so the bar below spans the same width under each. */
+.rq-main > [data-rq-card],
+.rq-main > [data-rq-sg],
+.rq-main > .rq-detail {
+  min-width: 0;
 }
 
 /* The bar: about the item on screen only. */
@@ -150,6 +152,9 @@
 .rq-bar {
   display: grid;
   gap: var(--space-2);
+  max-width: calc(var(--size-240) + var(--size-10));
+  width: 100%;
+  margin-inline: auto;
 }
 
 .rq-bar-row {
@@ -161,6 +166,15 @@
 .rq-bar-field {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* In the comment's place, for an item reviewed on its own page: where it is reviewed. */
+.rq-bar-note {
+  margin: 0;
+}
+
+.rq-bar-note:empty {
+  display: none;
 }
 
 .rq-bar-keys {
@@ -212,11 +226,11 @@
     flex: 1 1 calc(100% - var(--size-11) - var(--space-4));
   }
 
-  .rq-bar-row > button[aria-label] {
+  .rq-bar-row .rq-bar-more {
     order: 1;
   }
 
-  .rq-bar-row > button:not([aria-label]) {
+  .rq-bar-row > .rq-bar-btn {
     flex: 1 0 auto;
     order: 2;
   }

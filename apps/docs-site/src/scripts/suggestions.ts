@@ -338,12 +338,23 @@ export interface OpenedSuggestion {
   status: SuggestionStatus;
   canApprove: boolean;
   canRequestChanges: boolean;
+  /**
+   * What the review queue's bar does with it (the queue decides; the card has no buttons there): its Approve words,
+   * whether Decline is offered, and the calls behind them. Absent on the copies passed to `decided`.
+   */
+  bar?: {
+    approveLabel: string;
+    canDecline: boolean;
+    approve: (text: string) => Promise<string | void>;
+    requestChanges: (text: string) => Promise<string>;
+    decline: () => void;
+  };
 }
 
 export interface SuggestionHost {
   /** Where the review paints. */
   el: HTMLElement;
-  /** Inside the review queue: the queue's own list and keys; the stacked cards are the next rows. */
+  /** Inside the review queue: its layout, the queue's own list, bar and keys (SuggestionReview QueueSuggestion). */
   inQueue?: boolean;
   next?: NextCard[];
   crumbs?: { label: string; href?: string }[];
@@ -419,7 +430,22 @@ export async function openSuggestion(n: number, host: SuggestionHost): Promise<v
   const render = (said?: string) => {
     if (mine !== seq) return;
     const gate = suggestionGate({ status, viewer, author: d.issue.author, owners, tier: payload.tier.tier, approvals: d.approvals, collaborator: write, names: nameMap, signInLine: ghAction('review', prefersSignIn()), soloOwner: siteSoloOwner(), override: overrideGate() });
-    const opened: OpenedSuggestion = { number: n, title, sha, role: gate.role, status, canApprove: gate.canApprove, canRequestChanges: gate.canRequestChanges };
+    const opened: OpenedSuggestion = {
+      number: n,
+      title,
+      sha,
+      role: gate.role,
+      status,
+      canApprove: gate.canApprove,
+      canRequestChanges: gate.canRequestChanges,
+      bar: {
+        approveLabel: approveLabel(gate, payload.tier.tier),
+        canDecline: gate.canDecline,
+        approve: (text) => approve(text),
+        requestChanges: (text) => review('request-changes', text),
+        decline: () => decline(),
+      },
+    };
     const props: SuggestionReviewProps = {
       n,
       origin: changeOrigin(parseNeededBy(d.issue.body)),

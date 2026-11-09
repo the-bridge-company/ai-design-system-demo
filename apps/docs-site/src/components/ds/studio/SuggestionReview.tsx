@@ -1,7 +1,8 @@
 // The suggestion review: a DS lead decides on one suggestion (a change filed as a GitHub issue, applied later by a
 // developer). Built on the "Decide in seconds" direction: one change at a time on a card, who suggests it, Before and
 // After, three proof chips (design system checks, contrast in light and dark, where it is used), a big Approve with
-// Ask for changes next to it, and the next items stacked behind the card. A suggestion approved for an older version,
+// Ask for changes next to it, and the next items stacked behind the card (Branches, ?suggestion=N). In the review queue
+// it takes the queue's layout instead (QueueSuggestion), the queue's bar decides. A suggestion approved for an older version,
 // or one main moved under, says so first. Approve and Ask for changes show only to owners; everyone else reads why.
 // Details (who approved, every token, previews, the GitHub link) stay folded. Opened from Branches (?suggestion=N) and
 // in the review queue. Data, GitHub writes and words: scripts/suggestions.ts, lib/suggestions-view.ts.
@@ -24,7 +25,6 @@ import {
   ChecklistRow,
   CodeBlock,
   IconButton,
-  Kbd,
   Link,
   Menu,
   MenuContent,
@@ -33,13 +33,12 @@ import {
   MenuTrigger,
   Skeleton,
   Textarea,
-  TokenValue,
   Tooltip,
   type ChecklistStatus,
 } from '@bridge-ds/react';
 import { Face, TokenRows, type PersonRef } from './BranchReview';
 import { Who, type Face as FaceData } from './faces';
-import { OWNER_OVERRIDE_WORDS, suggestionHref, SUGGESTION_WORDS, type ProofChip, type StaleView, type SuggestionGate, type SuggestionTokenRow } from '../../../lib/suggestions-view';
+import { OWNER_OVERRIDE_WORDS, plainSummary, suggestionHref, SUGGESTION_WORDS, tokenLabel, type ProofChip, type StaleView, type SuggestionGate, type SuggestionTokenRow } from '../../../lib/suggestions-view';
 import { valueName } from '../../../lib/review-page';
 
 /** A queue item waiting after this one, drawn as a card stacked behind. */
@@ -122,11 +121,12 @@ function TokenPane({ rows, side }: { rows: SuggestionTokenRow[]; side: 'before' 
           <li key={r.path} className="sg-pane-row">
             <Swatch hex={v?.hex ?? null} />
             <span className="sg-pane-text">
+              {/* What it paints, in words; the token path stays in Details. */}
               <span className="sg-pane-name">
-                {r.path}
+                {tokenLabel(r.path)}
                 {r.contexts.length > 0 && ` · ${r.contexts.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`}
               </span>
-              {v ? <TokenValue value={v.alias ? `{${v.alias}}` : (v.css ?? '')} resolved={v.alias ? (v.css ?? undefined) : undefined} swatch={false} size="sm" title={valueName(v)} /> : <span className="sg-muted">{side === 'before' ? 'Not in the library yet' : 'Removed'}</span>}
+              {v ? <span className="sg-pane-value">{valueName(v)}</span> : <span className="sg-muted">{side === 'before' ? 'Not in the library yet' : 'Removed'}</span>}
             </span>
           </li>
         );
@@ -166,7 +166,7 @@ function BeforeAfter({ p }: { p: SuggestionReviewProps }) {
       {p.docs.map((d) => (
         <li key={d.component} className="sg-pane-row is-text">
           <span className="sg-pane-text">
-            <span className="sg-pane-name">{d.component} docs</span>
+            <span className="sg-pane-name">{d.component} usage guidance</span>
             <span>{docsLine(d.after) ?? 'New usage guidance for this component.'}</span>
           </span>
         </li>
@@ -228,7 +228,7 @@ function Proof({ p }: { p: SuggestionReviewProps }) {
             <li key={c.key}>{c.detail}</li>
           ))}
         </ul>
-        {p.tokens.length > PANE_ROWS && <TokenRows rows={p.tokens} />}
+        {p.tokens.length > 0 && <TokenRows rows={p.tokens} />}
         {p.previews.length > 0 && (
           <p className="sg-links">
             {p.previews.map((x) => (
@@ -449,13 +449,78 @@ function Peeks({ next }: { next: NextCard[] }) {
 }
 
 /** The why the person wrote: the summary before any section Bridge appends ("## Docs to check"). */
-export const whyOf = (summary: string | null | undefined): string => (summary ?? '').split(/\n\s*#{1,6}\s/)[0]!.trim();
+export const whyOf = (summary: string | null | undefined): string => plainSummary((summary ?? '').split(/\n\s*#{1,6}\s/)[0]!.trim());
+
+/**
+ * In the review queue: the same layout as every other item there (board Q1, the branch review's head): the title in
+ * the display face with its status, who suggests it, then the change. No card, no stack, no buttons of its own: the
+ * queue's bar decides (scripts/review-queue-page.ts), with the same keys as every item.
+ */
+function QueueSuggestion({ p }: { p: SuggestionReviewProps }) {
+  const g = p.gate;
+  const acts = g.canApprove || g.canRequestChanges;
+  return (
+    <div className="br is-single is-queue sg-q">
+      <header className="br-head">
+        <h2 className="br-title" tabIndex={-1}>
+          {p.title}{' '}
+          <Badge tone={p.status.tone} className="br-status">
+            {p.status.label}
+          </Badge>
+        </h2>
+        <p className="br-who">
+          <Face person={p.author} size="sm" />
+          <span>
+            <strong>{p.author.name}</strong> suggests a change · {p.kind}
+          </span>
+        </p>
+        {p.origin && <OriginLine origin={p.origin} className="br-from" />}
+      </header>
+      <div className="br-main">
+        {p.stale.map((s) => (
+          <Alert key={s.title} tone={s.tone} title={s.title} announce="off" icon={s.tone === 'success' ? undefined : CircleAlert}>
+            {s.text}
+          </Alert>
+        ))}
+        {p.edited && (
+          <Alert tone="warning" title="Edited by hand on GitHub" announce="off">
+            Someone changed the suggestion on GitHub after Bridge wrote it. Check the details before you approve.
+          </Alert>
+        )}
+        <section className="sg-q-what" aria-labelledby={`sg-q-what-${p.n}`}>
+          <h3 id={`sg-q-what-${p.n}`} className="sg-q-h">
+            What changes
+          </h3>
+          {whyOf(p.summary) && <p className="sg-summary">{whyOf(p.summary)}</p>}
+          <BeforeAfter p={p} />
+        </section>
+        <Proof p={p} />
+        {p.apply && (
+          <section className="sg-apply" aria-label={SUGGESTION_WORDS.ready}>
+            <p className="sg-apply-title">{SUGGESTION_WORDS.ready}</p>
+            <p className="sg-muted">{SUGGESTION_WORDS.applyHint}</p>
+            {p.developer && (
+              <Accordion appearance="flush" headingLevel={3} className="sg-dev">
+                <AccordionItem value="developers" title="For developers">
+                  {p.apply.map((l) => (
+                    <CodeBlock key={l.label} label={l.label} code={l.value} />
+                  ))}
+                </AccordionItem>
+              </Accordion>
+            )}
+          </section>
+        )}
+        {/* Why the bar cannot decide, when it cannot: the reason, never a dead button without one. */}
+        {!acts && g.why && <p className="sg-why sg-muted">{g.why}</p>}
+      </div>
+    </div>
+  );
+}
 
 export function SuggestionReview(props: SuggestionReviewProps) {
   const p = props;
-  const keys = p.inQueue && p.gate.canApprove;
-  // In the review queue the page heading is the queue's: the suggestion title is one level down (as a branch).
-  const Heading = p.inQueue ? 'h2' : 'h1';
+  if (p.inQueue) return <QueueSuggestion p={p} />;
+  const Heading = 'h1';
   return (
     <div className="sg">
       {p.crumbs && <Breadcrumb items={p.crumbs} className="sg-crumbs" />}
@@ -479,19 +544,6 @@ export function SuggestionReview(props: SuggestionReviewProps) {
               </p>
               {p.origin && <OriginLine origin={p.origin} className="sg-muted" />}
             </div>
-            {keys && (
-              <p className="sg-keys sg-muted" aria-label="Keyboard: A approve, S ask for changes, J next">
-                <span className="sg-key">
-                  <Kbd keys="A" size="sm" /> approve
-                </span>
-                <span className="sg-key">
-                  <Kbd keys="S" size="sm" /> suggest
-                </span>
-                <span className="sg-key">
-                  <Kbd keys="J" size="sm" /> next
-                </span>
-              </p>
-            )}
           </header>
           <div className="sg-body">
             {p.stale.map((s) => (

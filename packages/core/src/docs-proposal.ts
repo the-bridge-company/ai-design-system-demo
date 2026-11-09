@@ -369,7 +369,8 @@ export function docsSuggestionPayload(
     schema: SUGGESTION_SCHEMA,
     kind: 'docs',
     title: opts.title?.trim() || (names.length === 1 ? 'Usage guidance' : `Usage guidance for ${list}`),
-    summary: [`Usage guidance for ${list}, written ${origin.where}.`, opts.notes?.trim() ?? ''].filter(Boolean).join('\n\n'),
+    // What a reviewer reads in Studio: the guidance, never the tool that filed it (the issue footer and label say that).
+    summary: [`Usage guidance for ${list}.`, opts.notes?.trim() ?? ''].filter(Boolean).join('\n\n'),
     source: opts.source ?? docsSource(origin),
     ...(by ? { suggestedBy: by } : {}),
     createdAt: date.toISOString(),

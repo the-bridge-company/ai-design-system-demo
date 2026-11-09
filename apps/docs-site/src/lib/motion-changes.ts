@@ -171,7 +171,7 @@ const SUBJECT: Record<string, (popup: boolean) => { subject: string; isVerb: boo
 export interface MotionHeadline {
   /** "Popups open faster". */
   lead: string;
-  /** The token in mono, when there is one. */
+  /** The token, when there is one: for Details, never in the sentence (headlineSentence). */
   token: string | null;
   before: string;
   after: string;
@@ -181,6 +181,11 @@ export interface MotionHeadline {
  * The plain sentence of a change: "Popups open faster: motion.duration.moderate goes from 200 ms to 150 ms". The
  * subject comes from the representative set's moment; faster or slower from the durations; a new curve for easings.
  */
+/** The headline in one sentence for a designer: "Popups open faster: from 200 ms to 150 ms." The token path is not in it. */
+export function headlineSentence(h: MotionHeadline): string {
+  return `${h.lead}: from ${h.before} to ${h.after}.`;
+}
+
 export function motionHeadline(change: MotionChange, specs: Specs | null | undefined, chainOf?: (path: string) => string[]): MotionHeadline {
   const moment = representativeMoment(change, specs, chainOf);
   const popup = !!change.components[0]?.endsWith('/Popup');
@@ -236,6 +241,42 @@ export function alsoChanges(change: MotionChange, specs: Specs | null | undefine
   const names = [...new Set(change.components.map((n) => componentOf(n, specs)))];
   const rest = names.slice(1);
   return { first: rest.slice(0, shown), all: names };
+}
+
+/** One frame of a preview loop: the styles that move (opacity, transform), its place in the loop and its curve. */
+export type LoopFrame = Record<string, string | number> & { offset: number; easing?: string };
+
+/**
+ * One loop of a preview, for the Web Animations API. The loop starts and ends on the frame where the component shows
+ * (an opening popup open, a closing one before it closes), so a preview that does not play (a tab in the background, a
+ * still capture, a browser that holds the first frame) shows the component, never an empty stage. Opening: shown, a
+ * quick hide, then the moment at its duration and curve, then hold. Closing: shown, the moment, a short hold hidden, back.
+ */
+export function loopFrames(
+  side: { ms: number; bezier: readonly [number, number, number, number] },
+  loop: number,
+  f: { from: Record<string, string | number>; to: Record<string, string | number> },
+  closing: boolean,
+): LoopFrame[] {
+  const start = 0.25;
+  const end = Math.min(0.9, start + side.ms / loop);
+  const easing = `cubic-bezier(${side.bezier.join(', ')})`;
+  if (closing)
+    return [
+      { ...f.from, offset: 0 },
+      { ...f.from, offset: start, easing },
+      { ...f.to, offset: end },
+      { ...f.to, offset: Math.min(0.97, end + 0.15) },
+      { ...f.from, offset: 1 },
+    ];
+  return [
+    { ...f.to, offset: 0 },
+    { ...f.to, offset: 0.12 },
+    { ...f.from, offset: 0.2 },
+    { ...f.from, offset: start, easing },
+    { ...f.to, offset: end },
+    { ...f.to, offset: 1 },
+  ];
 }
 
 export type { ComponentSpec };

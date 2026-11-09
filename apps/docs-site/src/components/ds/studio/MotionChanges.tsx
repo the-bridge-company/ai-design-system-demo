@@ -1,6 +1,8 @@
-// "Motion changes" for a branch review: one plain sentence per change ("Popups open faster: motion.duration.moderate
-// goes from 200 ms to 150 ms"), two looping previews side by side playing the same representative component at the
-// old and the new motion, Replay to restart both in sync, and the other components the change touches.
+// "Motion changes" for a branch review (board R4): one plain sentence per change ("Popups open faster: from 200 ms to
+// 150 ms"), two looping previews side by side playing the same representative component at the old and the new
+// motion, Replay to restart both in sync, the other components the change touches, and the token names folded under
+// Details for developers. A preview that does not play (a background tab, a still capture) shows the component: the
+// loop starts on its shown frame (lib/motion-changes loopFrames).
 // Self-contained: give it the changes (lib/motion-changes.ts motionChanges) and the head specs; it renders nothing when
 // the branch changes no motion. Under prefers-reduced-motion the previews are still frames with the durations written.
 // Mount from a page script with mountMotionChanges (scripts/reviews/motion-changes.ts).
@@ -8,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button, Link } from '@bridge-ds/react';
 import type { ComponentSpecsFile } from '@bridge-ds/core';
-import { alsoChanges, motionHeadline, motionPreview, type MotionChange, type MotionPreview, type PreviewSide } from '../../../lib/motion-changes';
+import { alsoChanges, headlineSentence, loopFrames, motionHeadline, motionPreview, type MotionChange, type MotionPreview, type PreviewSide } from '../../../lib/motion-changes';
 import '../../../styles/motion-changes.css';
 
 type Specs = Pick<ComponentSpecsFile, 'components'>;
@@ -54,18 +56,6 @@ function frames(shape: MotionPreview['shape'], verb: string): { target: string; 
   return { target: '[data-mc-move]', ...pair({ opacity: 0 }, { opacity: 1 }) };
 }
 
-/** One loop: rest, then the moment at its duration and easing, then hold. Both sides share the loop length. */
-function keyframes(side: PreviewSide, loop: number, f: { from: Keyframe; to: Keyframe }): Keyframe[] {
-  const start = 0.2;
-  const end = Math.min(0.95, start + side.ms / loop);
-  return [
-    { ...f.from, offset: 0 },
-    { ...f.from, offset: start, easing: `cubic-bezier(${side.bezier.join(', ')})` },
-    { ...f.to, offset: end },
-    { ...f.to, offset: 1 },
-  ];
-}
-
 function Sketch({ shape }: { shape: MotionPreview['shape'] }) {
   if (shape === 'popup')
     return (
@@ -109,22 +99,29 @@ function Previews({ preview, reduced, onPlaying }: { preview: MotionPreview; red
   const anims = useRef<Animation[]>([]);
   const loop = Math.max(2400, Math.ceil((Math.max(preview.before.ms, preview.after.ms) * 2.5) / 100) * 100);
 
+  // The same preview read again (a repaint of the review) must not restart the loop: the effect follows its values.
+  const key = `${preview.shape}|${preview.verb}|${preview.before.ms}|${preview.before.bezier.join()}|${preview.after.ms}|${preview.after.bezier.join()}`;
   useEffect(() => {
     anims.current.forEach((a) => a.cancel());
     anims.current = [];
     if (reduced) return onPlaying([]);
     const f = frames(preview.shape, preview.verb);
+    const closing = preview.verb === 'closes' || preview.verb === 'unchecks';
     for (const [host, side] of [
       [before.current, preview.before],
       [after.current, preview.after],
     ] as const) {
       const el = host?.querySelector<HTMLElement>(f.target);
       if (!el || typeof el.animate !== 'function') continue;
-      anims.current.push(el.animate(keyframes(side, loop, f), { duration: loop, iterations: Infinity }));
+      try {
+        anims.current.push(el.animate(loopFrames(side, loop, f as never, closing) as Keyframe[], { duration: loop, iterations: Infinity }));
+      } catch {
+        // A curve the browser refuses: the sketch stays still and shown, the captions keep the durations.
+      }
     }
     onPlaying(anims.current);
     return () => anims.current.forEach((a) => a.cancel());
-  }, [preview, reduced, loop, onPlaying]);
+  }, [key, reduced, loop, onPlaying]);
 
   const caption = (side: PreviewSide) => `${preview.component} ${preview.verb} in ${Math.round(side.ms)} ms`;
   return (
@@ -152,20 +149,31 @@ function Previews({ preview, reduced, onPlaying }: { preview: MotionPreview; red
 }
 
 function Headline({ change, specs, chainOf }: { change: MotionChange; specs: Specs | null; chainOf?: MotionChangesProps['chainOf'] }) {
-  const h = motionHeadline(change, specs, chainOf);
+  return <p className="mc-sentence">{headlineSentence(motionHeadline(change, specs, chainOf))}</p>;
+}
+
+/** The token names behind the sentences, folded: developers look for them, designers read the sentence. */
+function Tokens({ changes }: { changes: MotionChange[] }) {
+  const [open, setOpen] = useState(false);
+  const tokens = [...new Set(changes.map((c) => c.token).filter((t): t is string => Boolean(t)))];
+  if (!tokens.length) return null;
   return (
-    <p className="mc-sentence">
-      {h.lead}
-      {h.token ? (
-        <>
-          : <code className="mc-token">{h.token}</code> goes from <strong>{h.before}</strong> to <strong>{h.after}</strong>.
-        </>
-      ) : (
-        <>
-          : from <strong>{h.before}</strong> to <strong>{h.after}</strong>.
-        </>
+    <div className="mc-tokens">
+      <Button variant="link" size="sm" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {open ? 'Hide details' : 'Details'}
+      </Button>
+      {open && (
+        <p className="mc-also">
+          {tokens.length === 1 ? 'Design token: ' : 'Design tokens: '}
+          {tokens.map((t, i) => (
+            <span key={t}>
+              {i > 0 && ', '}
+              <code className="mc-token">{t}</code>
+            </span>
+          ))}
+        </p>
       )}
-    </p>
+    </div>
   );
 }
 
@@ -240,6 +248,7 @@ export default function MotionChanges({ changes, specs, chainOf, componentHref =
           ))}
         </ul>
       )}
+      <Tokens changes={changes} />
     </section>
   );
 }

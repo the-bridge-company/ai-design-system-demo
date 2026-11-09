@@ -56,16 +56,22 @@ export function afterApprove<T>(items: readonly T[], index: number): { items: T[
 /** What the viewer did to a row in this visit. Approved and suggested rows stay listed, marked. Declined: a suggestion. */
 export type QueueOutcome = 'approved' | 'suggested' | 'asked' | 'declined';
 
-/** How many rows to do show after the current one before "and N more". */
-export const QUEUE_AHEAD = 3;
+/** How many rows the list shows at most: the rest is counted once, as "and N more". */
+export const QUEUE_ROWS = 7;
+/** How many rows stay above the current one, when there are enough rows after it. */
+export const QUEUE_BEHIND = 2;
 
 /**
- * The rows the list shows: every row up to the current one, then the next QUEUE_AHEAD, at least `min` rows; the rest
- * is counted as "and N more" (the phone picker, J and K reach them).
+ * The rows the list shows: a window of the same size wherever the viewer is (at most QUEUE_ROWS rows), with
+ * QUEUE_BEHIND rows above the current one; it slides along as the viewer moves and stops at the ends. The rows left out
+ * are counted as "and N more", a number that never changes while the list does not (the phone picker, J and K reach
+ * them), so the list keeps its height from one item to the next.
  */
-export function queueWindow(length: number, index: number, min = 5): { end: number; more: number } {
-  const end = Math.min(length, Math.max(min, (index < 0 ? 0 : index + 1) + QUEUE_AHEAD));
-  return { end, more: length - end };
+export function queueWindow(length: number, index: number, size = QUEUE_ROWS): { start: number; end: number; more: number } {
+  const shown = Math.min(length, Math.max(1, size));
+  const at = index < 0 ? 0 : Math.min(index, length - 1);
+  const start = Math.max(0, Math.min(at - QUEUE_BEHIND, length - shown));
+  return { start, end: start + shown, more: length - shown };
 }
 
 /** "Approved Darker default background", the toast after a decision. */

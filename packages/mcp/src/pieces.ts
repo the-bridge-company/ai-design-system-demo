@@ -77,7 +77,7 @@ export async function missingPiecesOp(ctx: BridgeContext, a: { pr: number | stri
   const read = await readProductBranchOnGitHub(gh, n, { products: productsOf(config) });
   const [ds, set] = await Promise.all([designSystemIndex(ctx), ctx.tokens()]);
   const r = missingPieces({ files: read.files, ds, set });
-  const recorded = a.record ? await recordPiecesOnGitHub(gh, n, { pieces: r.pieces, fixes: r.fixes.length, headSha: read.pull.headSha }) : null;
+  const recorded = a.record ? await recordPiecesOnGitHub(gh, n, { pieces: r.pieces, fixes: r.fixes.length, headSha: read.pull.headSha, uses: r.uses }) : null;
   const linked = recorded?.links ?? read.record?.links ?? [];
   return {
     pr: n,

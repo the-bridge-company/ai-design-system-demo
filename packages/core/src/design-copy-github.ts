@@ -122,6 +122,11 @@ export function designTaskBody(t: {
   doneByName?: string | null | undefined;
   /** The design spec from the exploration's notes (exploration-notes.ts notesSpec): its own section when there is one. */
   spec?: string | null | undefined;
+  /**
+   * Pieces the design lead kept in this screen only (library-impact.ts): the developers build them inside the product,
+   * as local pieces the library may take later.
+   */
+  local?: readonly string[] | undefined;
 }): string {
   const login = githubLoginOf(t.doneBy);
   const by = login ? ` From @${login}.` : t.doneByName?.trim() ? ` From ${t.doneByName.trim()}, through Bridge.` : '';
@@ -139,7 +144,8 @@ export function designTaskBody(t: {
     ...specSection(t.spec),
     '### Library pieces it needed',
     '',
-    ...(t.pieces.length ? t.pieces.map((p) => `- [${p.title}](${p.url}): asked from the design system team`) : ['- None: everything it uses is in the library.']),
+    ...(t.pieces.length ? t.pieces.map((p) => `- [${p.title}](${p.url}): asked from the design system team`) : t.local?.length ? [] : ['- None: everything it uses is in the library.']),
+    ...(t.local?.length ? t.local.map((title) => `- ${title}: build it inside the product, as a local piece. The library may take it later: keep it in its own file, built from library tokens.`) : []),
     '',
     '### The prototype code, if you want it',
     '',

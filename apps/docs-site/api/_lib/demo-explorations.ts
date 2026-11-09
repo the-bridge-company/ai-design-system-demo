@@ -55,6 +55,11 @@ export interface SeedItem {
    * (bridge_save_exploration `screen`): Open the preview and its capture land there.
    */
   screen?: string;
+  /**
+   * Run Bridge's library check on it as its member once its files are saved, and record it (the exploration page's
+   * "What this changes in the library"), as Studio runs it after Done exploring.
+   */
+  check?: boolean;
 }
 
 /** One edge case of the notes (core EdgeCase): a component's state, covered or not, with a short note. */
@@ -238,6 +243,7 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
     }
     const notes = parseSeedNotes(o.notes, at, problems);
     const screen = o.screen === undefined ? undefined : screenOf(o.screen);
+    if (o.check !== undefined && typeof o.check !== 'boolean') problems.push(`${at}: check is true or false.`);
     if (o.screen !== undefined && !screen) problems.push(`${at}: screen is the place of the changed screen in the preview, starting with / ("/#/orders/12"), 200 characters at most, without the domain.`);
     if (product && member && name && m && SEED_STATES.includes(state as SeedState)) {
       items.push({
@@ -254,6 +260,7 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
         state: state as SeedState,
         ...(notes ? { notes } : {}),
         ...(screen ? { screen } : {}),
+        ...(o.check === true ? { check: true } : {}),
       });
     }
   });

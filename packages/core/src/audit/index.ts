@@ -14,3 +14,4 @@ export * from './style';
 export * from './ignore';
 export * from './markup';
 export * from './missing-pieces';
+export * from './library-edits';

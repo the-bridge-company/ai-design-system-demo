@@ -25,6 +25,11 @@ export interface LeadBarView {
   onCopy: (text: string) => Promise<void>;
   /** It changed since the designer asked: the preview already shows the new version. */
   changedSince?: boolean;
+  /**
+   * What Looks right waits for (error prevention, board LI4): "Pick a way for Card first". Looks right stays disabled
+   * with this line beside it until it is null.
+   */
+  blocked?: string | null;
 }
 
 type Busy = 'right' | 'changes' | 'comment' | null;
@@ -57,7 +62,12 @@ export function LeadBar({ bar, say }: { bar: LeadBarView; say: (s: string) => vo
         <Button variant="secondary" size="lg" disabled={!words || busy !== null} loading={busy === 'changes'} onClick={() => send('changes', bar.onChanges(words))}>
           Needs changes
         </Button>
-        <Button variant="primary" size="lg" disabled={busy !== null} loading={busy === 'right'} onClick={() => send('right', bar.onLooksRight(words))}>
+        {bar.blocked && (
+          <span className="xp-muted xp-lead-blocked" id="xp-lead-blocked">
+            {bar.blocked}
+          </span>
+        )}
+        <Button variant="primary" size="lg" disabled={busy !== null || Boolean(bar.blocked)} aria-describedby={bar.blocked ? 'xp-lead-blocked' : undefined} loading={busy === 'right'} onClick={() => send('right', bar.onLooksRight(words))}>
           Looks right
         </Button>
         <Menu>

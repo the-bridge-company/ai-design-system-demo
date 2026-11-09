@@ -392,6 +392,6 @@ export const P = ({ saved, toggle }: { saved: boolean; toggle: () => void }) => 
 
   test('removed files and files outside the audit are not read', () => {
     const r = missingPieces({ ds: ds(), files: [{ path: 'a.css', before: '.a{color:#c2410c}', after: null }, { path: 'README.md', before: null, after: '#c2410c' }] });
-    assert.deepEqual(r, { pieces: [], fixes: [], files: 0 });
+    assert.deepEqual(r, { pieces: [], fixes: [], files: 0, uses: [] });
   });
 });

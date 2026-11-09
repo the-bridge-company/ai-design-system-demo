@@ -37,6 +37,8 @@ import {
 import { findExplorationOnGitHub } from './explorations-github';
 import { GitHubError, type GitHubClient } from './github-client';
 import { proposePiecesOnGitHub, type ProposedPieces } from './prod-branch-github';
+import { parsePiecesRecord } from './prod-branch';
+import { impactItemOf, localPieces, piecesToAdd } from './library-impact';
 import { branchPreviewUrl } from './previews';
 import { liveAddressOf, productCodeRepoOf, productOfDesignCopy, type ProductConfig } from './products';
 import { addressTaskBody, designTaskBody, designTaskTitle, githubLoginOf, FROM_DESIGN_LABEL, FROM_DESIGN_LABEL_COLOR, FROM_DESIGN_LABEL_DESCRIPTION } from './design-copy-github';
@@ -68,6 +70,8 @@ export interface DoneExploringInput {
   library?: GitHubClient | undefined;
   /** The design lead who validated it, when one did: the hand-off names them. */
   leadOkBy?: string | undefined;
+  /** Pieces the lead kept in this screen only: the developers' task asks to build them as local pieces. */
+  local?: readonly string[] | undefined;
 }
 
 export interface DoneExploring {
@@ -169,6 +173,7 @@ export async function doneExploringOnGitHub(gh: GitHubClient, ref: string | numb
         doneBy: input.openedBy,
         doneByName: input.openedByName,
         spec,
+        ...(input.local?.length ? { local: input.local } : {}),
       });
     // Said again after Back to exploring: the same task comes back, never a second one next to it.
     const earlier = designTaskRef(e?.task, codeRepo);
@@ -283,7 +288,13 @@ export async function leadApproveOnGitHub(gh: GitHubClient, ref: string | number
   const e = parseExplorationBody(p.body);
   if (!isWaitingForLead(p.body)) throw new GitHubError(422, ALREADY_ANSWERED);
   const { lead, leadName, note, ...rest } = input;
-  const done = await doneExploringOnGitHub(gh, p.number, { ...rest, pieces: e?.leadPieces ?? [], ...(e?.leadAskedBy ? { openedBy: e.leadAskedBy } : {}), ...(e?.leadAskedByName ? { openedByName: e.leadAskedByName } : {}), ...(lead ? { leadOkBy: lead } : {}) });
+  // Looks right approves the screen and every library piece it needs, except the ones the lead answered on their own
+  // (library-impact.ts): kept in this screen (the developers build it in the product), an existing piece instead,
+  // changes asked. The pieces the designer ticked come along.
+  const record = parsePiecesRecord(p.body);
+  const pieces = piecesToAdd(record, e?.library, e?.leadPieces ?? []);
+  const local = localPieces(record, e?.library).map((x) => impactItemOf(x)).map((i) => (i.of ? `${i.of}: ${i.title}` : i.title));
+  const done = await doneExploringOnGitHub(gh, p.number, { ...rest, pieces, ...(local.length ? { local } : {}), ...(e?.leadAskedBy ? { openedBy: e.leadAskedBy } : {}), ...(e?.leadAskedByName ? { openedByName: e.leadAskedByName } : {}), ...(lead ? { leadOkBy: lead } : {}) });
   if (input.dryRun) return done;
   // The yes goes in the history, and its words to the developers: they build from them.
   const now = await findExplorationOnGitHub(gh, p.number);

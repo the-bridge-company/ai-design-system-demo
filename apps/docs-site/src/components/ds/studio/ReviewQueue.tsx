@@ -4,6 +4,8 @@
 // reviewed in place, and the one bar at the bottom, the same for every item: comment, Ask for changes, Approve, More
 // actions, then one keyboard line. The queue moves on after a decision; a toast says what was done, with Undo.
 // Rules: lib/queue-nav.ts.
+import { LibraryImpact } from './LibraryImpact';
+import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, Circle, CircleAlert, CircleDot, CircleX, Ellipsis, UserRoundPlus } from 'lucide-react';
 import { Badge, Button, Icon, IconButton, Input, Kbd, Link, Menu, MenuContent, MenuItem, MenuTrigger, Progress, SidebarNav, SidebarNavItem, SidebarNavSection, Skeleton, ToastProvider, Tooltip, useToast, type UseToastReturn } from '@bridge-ds/react';
@@ -18,6 +20,8 @@ export interface QueueRow {
   title: string;
   /** Who waits on the viewer (a person or Claude); no face for rows without one. */
   person?: Face | null;
+  /** A second line under the title: an exploration's library summary ("Screen + 1 new component", board LI5). */
+  sub?: string | null;
 }
 
 export interface QueueListProps {
@@ -69,7 +73,10 @@ export function QueueList({ rows, selected, outcomes, onSelect }: QueueListProps
               >
                 <Icon icon={m.icon} size="sm" className="rq-mark" label={m.label} />
                 {r.person && <Who p={r.person} size="xs" className="rq-face" />}
-                <span className="rq-item-text">{r.title}</span>
+                <span className="rq-item-label">
+                  <span className="rq-item-text">{r.title}</span>
+                  {r.sub && <span className="rq-item-sub">{r.sub}</span>}
+                </span>
               </SidebarNavItem>
             );
           })}
@@ -255,8 +262,8 @@ export interface QueueItemProps {
   line: string;
   detail?: string | null | undefined;
   pill?: { label: string; tone: 'warning' | 'danger' | 'success' | 'neutral' } | null | undefined;
-  /** An exploration: its captured screen (linked to that screen on its preview when known) and its next step. */
-  glance?: { shot: { src: string; capturedAt: string | null; href: string | null } | null; nextStep: string | null } | 'loading' | null;
+  /** An exploration: its captured screen (linked to that screen on its preview when known), its next step and what it changes in the library. */
+  glance?: { shot: { src: string; capturedAt: string | null; href: string | null } | null; nextStep: string | null; library?: { line: string; view: LibraryImpactView } | null } | 'loading' | null;
   /** A guidance draft: its first lines. */
   excerpt?: string | null | undefined;
 }
@@ -315,6 +322,8 @@ export function QueueItem(p: QueueItemProps) {
           )}
         </section>
       )}
+      {/* One exploration, one item (board LI5): its library changes travel with it, read here, answered on its page. */}
+      {g?.library && <LibraryImpact view={g.library.view} headingLevel={3} say={() => undefined} />}
       {p.excerpt && (
         <section className="rq-what" aria-labelledby="rq-draft">
           <h3 id="rq-draft" className="rq-what-h">

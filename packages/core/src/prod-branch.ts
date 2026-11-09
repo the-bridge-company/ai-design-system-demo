@@ -14,7 +14,7 @@
 import type { Exploration } from './explorations';
 import { slugify } from './pr-composer';
 import type { ChangesMode } from './config';
-import type { ComponentChangeRequest } from './requests';
+import type { ComponentChangeRequest, RequestOrigin } from './requests';
 import type { SuggestionStatus } from './suggestions';
 import type { TokenEdit } from './token-edits';
 
@@ -33,6 +33,8 @@ export interface PieceValue {
   value: string;
   /** The part of the component the value lands on, in plain words: "icon" for `.wishlist svg`. */
   part?: string | undefined;
+  /** What a token reference resolves to in the library ("12px" for var(--space-3)), when the check knows it. */
+  resolved?: string | undefined;
 }
 
 /** How a request names a value: "fill (icon)", "background-color", "color". */
@@ -75,6 +77,18 @@ export interface MissingPiece {
   restyle?: { state?: string | undefined; selector: string } | undefined;
   /** Token pieces: the token the library branch would add (one value, every file the closest token lives in). */
   token?: { path: string; type: string; value: string; files: string[] } | undefined;
+  /**
+   * The piece in plain words, when the check knows a better name than its title: "Padding inside cards" for a token
+   * edit (from the token's own description).
+   */
+  label?: string | undefined;
+  /**
+   * What the branch changes on something the library already has: a token edited in a design copy (its value before
+   * and after, and what each resolves to), or a size added to a component ("Default" to "compact").
+   */
+  change?: { before: string; after: string; beforeResolved?: string | undefined; afterResolved?: string | undefined } | undefined;
+  /** A new component the branch builds as a pattern (how things behave together) rather than one piece. */
+  pattern?: boolean | undefined;
 }
 
 /** Where the library side of a piece lives. A suggestion is an issue holding the exact token change (suggestions.ts). */
@@ -112,6 +126,8 @@ export interface PiecesRecord {
   links: LibraryLink[];
   /** Values and elements the library already has (a token or a component to use instead): fixes, not pieces. */
   fixes?: number | undefined;
+  /** Library components the branch's changed files use ("Card", "Badge"), when the check said. */
+  uses?: string[] | undefined;
 }
 
 const PIECES_MARK = 'bridge-pieces';
@@ -371,7 +387,7 @@ export function libraryBranchPlan(piece: MissingPiece, branch: ProductBranchRef,
  * component, a new component as one. The summary links the exploration's preview, so the DS lead sees the piece in
  * context. The "Needed by" block (withNeededBy, the plan's `neededBy`) goes on the issue too.
  */
-export function pieceRequest(piece: MissingPiece, branch: ProductBranchRef, opts: { previewUrl?: string | null | undefined; source?: ComponentChangeRequest['source']; requestedBy?: string | undefined } = {}): { request: ComponentChangeRequest; neededBy: NeededBy } {
+export function pieceRequest(piece: MissingPiece, branch: ProductBranchRef, opts: { previewUrl?: string | null | undefined; source?: ComponentChangeRequest['source']; requestedBy?: string | undefined; origin?: RequestOrigin | undefined } = {}): { request: ComponentChangeRequest; neededBy: NeededBy } {
   const plan = libraryBranchPlan(piece, branch, { ...(opts.source ? { source: opts.source } : {}), ...(opts.requestedBy ? { requestedBy: opts.requestedBy } : {}), mode: 'suggest' });
   // The closest library value is said once, in the "Needed by" line above the summary.
   const own = `${forLine(branch)}: ${withoutNear(piece.summary)}`;
@@ -395,6 +411,7 @@ export function pieceRequest(piece: MissingPiece, branch: ProductBranchRef, opts
   } else {
     request = { ...base, component: piece.component ?? cap(piece.name), kind: piece.component ? 'new-variant' : 'new-component', title: piece.title, summary: `${own}${context}` };
   }
+  if (opts.origin) request = { ...request, origin: opts.origin };
   return { request, neededBy: plan.neededBy };
 }
 

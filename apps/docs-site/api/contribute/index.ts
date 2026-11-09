@@ -1013,6 +1013,9 @@ export interface SeedOutcome {
    * would save (dry run) or saved, in one commit as the member. Absent when every file already says this.
    */
   updates?: number;
+  /** Its library check, when the plan asks for it: would run, or ran (with how many pieces it found). */
+  check?: 'checks' | 'checked';
+  pieces?: number;
 }
 
 /** The files of a plan item whose content on the exploration's branch is different, or missing there. */
@@ -1038,6 +1041,11 @@ type SeedRetry = { attempts: number; baseDelayMs: number; sleep: (ms: number) =>
  * as onTeamRead reads for them. A refusal comes back in GitHub's error shape, so the core step says it.
  */
 function memberClient(ctx: Ctx, lib: SeedLib, team: { full: string }, pairs: readonly ProductPair[], member: ProxyMember, repo: string, retry: SeedRetry | undefined) {
+  return new lib.GitHubClient(repo, 'bridge-member', memberFetch(ctx, team, pairs, member), retry, { etags: false, protectedBranches: ['main', 'master'] });
+}
+
+/** The fetch of memberClient: every call of one member in the team's products takes their path. */
+function memberFetch(ctx: Ctx, team: { full: string }, pairs: readonly ProductPair[], member: ProxyMember) {
   const refuse = (status: number, message: string) => Response.json({ message }, { status });
   const f = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
     const u = new URL(url);
@@ -1060,7 +1068,31 @@ function memberClient(ctx: Ctx, lib: SeedLib, team: { full: string }, pairs: rea
       throw e;
     }
   };
-  return new lib.GitHubClient(repo, 'bridge-member', f, retry, { etags: false, protectedBranches: ['main', 'master'] });
+  return f;
+}
+
+/**
+ * Bridge's library check on one seeded exploration, as Studio runs it for a member (api/mcp ?view=pieces): the MCP
+ * library's missingPiecesOp reads the team's library with the app's read token (tokens, components) and the
+ * exploration through the member's own path, then records what it found in the exploration's body. How many pieces.
+ */
+async function seedLibraryCheck(ctx: Ctx, lib: SeedLib, team: { owner: string; repo: string; full: string }, pairs: readonly ProductPair[], member: ProxyMember, ref: string): Promise<number> {
+  const own = memberFetch(ctx, team, pairs, member);
+  const lower = team.full.toLowerCase();
+  const f = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
+    const u = new URL(url);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const onTeam = (u.origin === API && u.pathname.toLowerCase().startsWith(`/repos/${lower}/`)) || (u.hostname === 'raw.githubusercontent.com' && u.pathname.toLowerCase().startsWith(`/${lower}/`));
+    if (!onTeam) return own(url, init);
+    // The library is only read here: the check writes on the exploration alone.
+    if (method !== 'GET' && method !== 'HEAD') return Response.json({ message: 'The library check only reads the library.' }, { status: 403 });
+    const token = await ctx.svc.readApp.installationToken(team.owner, team.repo);
+    if (!token) return Response.json({ message: APP_MISSING }, { status: 409 });
+    return await ctx.f(url, { method, headers: { Accept: init?.headers?.Accept ?? 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28' } });
+  };
+  const bctx = await lib.BridgeContext.create({ repo: `${team.owner}/${team.repo}`, token: 'bridge-email-member', surface: 'mcp', fetch: f as unknown as typeof fetch });
+  const r = await lib.pieces.missingPiecesOp(bctx, { pr: ref, record: true });
+  return r.pieces.length;
 }
 
 /** Tests only: the retry policy of the seeding's GitHub clients (undefined: core's default). */
@@ -1123,8 +1155,9 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
       if (ref.status === 200) {
         o.status = 'exists';
         // Already there: its changed files, its notes and its screen, saved as its member the way their Claude session
-        // saves them. Nothing else moves.
-        if (!item.files.length && !item.notes && !item.screen) continue;
+        // saves them, then its library check when the plan asks for it. Nothing else moves.
+        if (!item.files.length && !item.notes && !item.screen && !item.check) continue;
+        if (item.check) o.check = 'checks';
         const member = await ctx.svc.members.get(t.full, item.member.email);
         if (!member) {
           if (apply) throw new Error(`${item.member.name} is not on the team.`);
@@ -1160,11 +1193,17 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
           o.notes = saved.saved ? 'saved' : 'same';
         }
         if (item.screen) o.screen = (await lib.setExplorationScreenOnGitHub(gh, item.branch, item.screen)).changed ? 'saved' : 'same';
+        if (item.check) {
+          const p = await lib.findExplorationOnGitHub(gh, item.branch);
+          o.pieces = await seedLibraryCheck(ctx, lib, t, pairs, member, `${item.product.key}#${p.number}`);
+          o.check = 'checked';
+        }
         continue;
       }
       if (ref.status !== 404) throw new Error(`GitHub answered ${ref.status} when looking for the branch.`);
       if (item.notes) o.notes = 'writes';
       if (item.screen) o.screen = 'writes';
+      if (item.check) o.check = 'checks';
       if (!apply) continue;
       if (!bases.has(copy)) {
         const info = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}`);
@@ -1197,6 +1236,11 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
       if (item.notes) o.notes = (await lib.saveExplorationNotesOnGitHub(gh, started.pr, item.notes, { message: SEED_NOTES_MESSAGE })).saved ? 'saved' : 'same';
       // The screen it changed, where its preview and its capture open.
       if (item.screen) o.screen = (await lib.setExplorationScreenOnGitHub(gh, started.pr, item.screen)).changed ? 'saved' : 'same';
+      // What it changes in the library, before the lead is asked: the lead judges the screen and its pieces together.
+      if (item.check) {
+        o.pieces = await seedLibraryCheck(ctx, lib, t, pairs, member, `${item.product.key}#${started.pr}`);
+        o.check = 'checked';
+      }
       if (item.state === 'exploring') continue;
       await lib.askLeadOnGitHub(gh, started.pr, { pieces: [], openedByName: member.name, leads: [] });
       if (item.state !== 'done') continue;

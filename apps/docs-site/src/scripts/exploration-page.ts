@@ -9,6 +9,7 @@
 // reviews once the developers started), and the library part. A product exploration never checked against the
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
+import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, parsePiecesRecord, type LibraryConflict } from '@bridge-ds/core';
 import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
@@ -92,6 +93,9 @@ import { explorationState } from '../lib/exploration-state';
 import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskStatus, devVersionUrl, type DesignAnswer } from '../lib/review-state';
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
+import { conflictsOf, impactSourceOf, releasedSet } from './library-impact';
+import { conflictView, leadLibraryLine, libraryImpactView, looksRightBlock, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
+import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
 import { developersMessage, offersDevelopersMessage, teamMember } from '../lib/developers-message';
 import { OLD_TOOLBAR_NOTE, toolbarTakesPass } from '../lib/read-pass-link';
 
@@ -808,6 +812,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     previewBuilding,
     ...(inCopy ? { claudeCodeUrl: codeUrl(v.state === 'branch' ? v.url : null) } : {}),
   });
+  // What it changes in the library (boards LI1 to LI4): its recorded check, conflicts with the team's other open
+  // explorations, and for the lead the answer per piece. Painted when read, below the board.
+  if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line) });
   // The product manager of its product (boards R1, R3): read once, painted when known.
   if (!handedOff && own && !r.archived)
     void paintPm(d, key, { r, body: pull.body, product: own.product.key, copy: own.repo, viewer: { ref: member?.ref ?? null, login: member ? null : viewer }, designer: emailKeeper || designerKeeper || (!member && sameLogin(viewer, r.author)), lead: leadOther || Boolean(lead?.bar), names, reopen: (line) => reopen(line) });
@@ -1057,6 +1064,97 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     if (ok) return void refreshPieces();
   }
   repaint(d, key, { handoff: { ...current.props.handoff, pieces: first } });
+}
+
+/** The line a lead's answer on one library piece produces. */
+const PIECE_SAID: Record<PieceAction, (designer: string, input?: string) => string> = {
+  approve: () => 'Approved. Its library request is filed.',
+  changes: (designer) => `Sent to ${designer}. The screen still waits for your answer.`,
+  local: () => 'Kept in this screen. The developers build it inside the product.',
+  existing: (designer, use) => `${designer} is asked to use ${use ?? 'the existing piece'} instead.`,
+};
+
+/**
+ * "What this changes in the library" (boards LI1 to LI4, LI8): the recorded check, the conflicts with the team's other
+ * open explorations, and once approved what the library released. A lead answering (their bar is on the page) gets
+ * the ⋯ menu of each piece and the choice of a way in a conflict; Looks right waits for that choice, and the zone's line
+ * says what Looks right also does to the library. Running and never checked: nothing (no fact to act on); waiting for
+ * the lead and never checked: one quiet line.
+ */
+async function paintLibraryImpact(
+  d: HTMLElement,
+  key: string,
+  o: { r: ExplorationRow; pull: ExplorationPullLike; gh: GitHubClient; own: { repo: string } | null; product: ProductConfig; products: readonly ProductConfig[]; lead: LeadView | null; names: Record<string, string>; handedOff: boolean; previewUrl: string | null; reopen: (line: string) => void },
+): Promise<void> {
+  const body = o.pull.body;
+  const block = parseExplorationBody(body);
+  if (!parsePiecesRecord(body) && !(isWaitingForLead(body) && !o.handedOff)) return;
+  const repo = o.own?.repo ?? `${CFG.owner}/${CFG.repo}`;
+  const designer = block?.memberName ?? block?.leadAskedByName ?? o.names[o.r.author] ?? (isNameAuthor(o.r.author) ? nameOfAuthor(o.r.author) : o.r.author);
+  const decides = Boolean(o.lead?.bar);
+  const viewer = currentViewer()?.login ?? null;
+  const member = currentContributor();
+  const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
+  const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.leadAskedBy ?? o.r.author] });
+  const leadName = decides && myName ? myName : leads.length ? leads.map((l) => knownNamesOf([l])[l] ?? l).join(', ') : 'the lead';
+  const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
+  const conflicts = await conflictsOf(mine).catch(() => [] as LibraryConflict[]);
+  const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();
+  if (current?.key !== key) return;
+  const view = libraryImpactView({
+    body,
+    designer,
+    lead: leadName,
+    approved: o.handedOff,
+    canDecide: decides,
+    conflicts,
+    products: o.products.filter((p) => p.default !== true).map((p) => p.name),
+    released,
+    names: o.names,
+  });
+  const me = member ? { byName: member.name } : viewer ? { by: viewer, ...(myName ? { byName: myName } : {}) } : {};
+  const actions: LibraryImpactActions = decides
+    ? {
+        onPiece: async (piece, action, input) => {
+          await decidePieceOnGitHub(o.gh, o.r.number, {
+            piece,
+            verdict: VERDICT_OF[action],
+            ...(action === 'changes' ? { text: input } : {}),
+            ...(action === 'existing' ? { use: input } : {}),
+            ...me,
+            ...(o.own ? { library: dsClient() } : {}),
+            products: o.products,
+            previewUrl: o.previewUrl,
+            source: 'studio',
+          });
+          const line = PIECE_SAID[action](designer, input);
+          o.reopen(line);
+          return line;
+        },
+        onChoose: async (piece, pick) => {
+          const c = conflicts.find((x) => x.piece === piece);
+          if (!c) throw new Error('This choice is no longer needed. Look at the page again.');
+          const cv = conflictView(c);
+          const at = /^(.+)#(\d+)$/.exec(c.other.key);
+          if (!at) throw new Error('Bridge cannot find the other exploration.');
+          const otherRepo = at[1]!;
+          const otherGh = otherRepo.toLowerCase() === `${CFG.owner}/${CFG.repo}`.toLowerCase() ? dsClient() : productClient(otherRepo);
+          const label = cv.options.find((x) => x.value === pick);
+          const note = `${myName ?? 'The design lead'} chose ${label ? `${label.label.toLowerCase()} (${label.hint})` : 'one way'} for ${c.component}, where ${c.mine.designer} and ${c.other.designer} changed it differently. This answers both explorations: comment here if you see it otherwise.`;
+          await chooseLibraryWayOnGitHub(o.gh, o.r.number, { component: c.component, property: c.property, pick, ...me, other: { gh: otherGh, number: Number(at[2]) }, note });
+          const line = `Kept ${label?.label.toLowerCase() ?? 'that way'} for ${c.component}. ${c.mine.designer} and ${c.other.designer} are told.`;
+          o.reopen(line);
+          return line;
+        },
+      }
+    : {};
+  const lead = current.props.lead;
+  const leadLine = lead ? leadLibraryLine(view, designer) : null;
+  const blocked = looksRightBlock(conflicts);
+  repaint(d, key, {
+    impact: { view, actions },
+    ...(lead && (leadLine || lead.bar) ? { lead: { ...lead, ...(leadLine && !lead.heading ? { line: leadLine } : {}), ...(lead.bar ? { bar: { ...lead.bar, blocked } } : {}) } } : {}),
+  });
 }
 
 /**

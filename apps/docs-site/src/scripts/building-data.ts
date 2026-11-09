@@ -8,6 +8,8 @@
 // Explorations handed to developers (Done exploring) are rows of the same list too, read from the pull requests read
 // here (no read per row) and, for products with their own repository, from the one read of their open pull requests
 // that Changes and the home make too (scripts/product-repos.ts). They stay out of `views` as well.
+import type { LibraryNeed } from '@bridge-ds/core';
+import { requestReleased } from './library-impact';
 import { assembleBuildRequests, BUILD_REQUEST_LABEL, DEFAULT_PRODUCTS, liveAddressOf, parseExplorationBody, listBuildRequestsOnGitHub, REQUEST_LABEL, type BuildRequestView, type GitHubClient, type ProductConfig } from '@bridge-ds/core';
 import { fixRows, fixStaysListed, isLoginLike, missingFixPulls, parseSession, type FixRow, type Session } from '../lib/claude-connector';
 import { BUILD_CACHE_MS, buildCacheKey, explorationBuildRows, slimIssue, slimPull, toBuildIssue, toBuildPull, withLifecycle, withProducts, type ExplorationBuildRow, type LifecycleExtra, type RestIssue, type RestPull } from '../lib/building-view';
@@ -197,6 +199,10 @@ async function read(): Promise<BuildData> {
   const viewer = currentViewer()?.login ?? null;
   const lifecycle = { reviews: (k: string) => reviews.get(k) ?? null, nextRelease, nameOf, viewer };
   const task = (u: string) => tasks.get(u) ?? null;
+  // Waiting for the library (board LI6): one read per library request an approved exploration needs.
+  const needs = explored.flatMap((p) => parseExplorationBody(p.body)?.library?.neededBy ?? []);
+  const releasedKeys = new Set((await Promise.all(needs.map(async (n) => ((await requestReleased(n)) ? `${n.repo.toLowerCase()}#${n.number}` : null)))).filter((k): k is string => Boolean(k)));
+  const released = (n: LibraryNeed) => releasedKeys.has(`${n.repo.toLowerCase()}#${n.number}`);
   return {
     views: withProducts(withLifecycle(assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.data.map(toBuildPull), now, nameOf }), { pulls: pulls.data, ...lifecycle }), { issues, pulls: pulls.data, products }),
     bodies: new Map(issues.map((i) => [i.number, i.body ?? ''])),
@@ -205,7 +211,7 @@ async function read(): Promise<BuildData> {
     jiraBase: jiraBase(),
     fixes: withProducts(fixRows(sessions, fixPulls, now, nameOf).filter(fixStaysListed), { pulls: fixPulls, products }),
     pulls: fixPulls,
-    explorations: explorationBuildRows(explored, { products, now, approvers: approversNow(), ...lifecycle, task, member, shot: (k) => shots.get(k) ?? null }),
+    explorations: explorationBuildRows(explored, { products, now, approvers: approversNow(), ...lifecycle, task, member, shot: (k) => shots.get(k) ?? null, released }),
     products,
     ...viewerOf(),
   };

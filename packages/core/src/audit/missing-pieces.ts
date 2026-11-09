@@ -16,6 +16,7 @@ import { pieceId, proposedTokenPath, tokenLabel, type MissingPiece, type PieceAs
 import type { DesignSystemIndex } from './ds-index';
 import { blankComments, lineCol, scanCssText } from './css';
 import { auditFile, isAuditable } from './report';
+import { LIBRARY_COPY_DIR, libraryEdits, resolveCssVar } from './library-edits';
 import type { ComponentFinding, StyleFinding, TokenSuggestion } from './types';
 
 export interface BranchFile {
@@ -33,6 +34,8 @@ export interface MissingPiecesResult {
   fixes: { file: string; line: number; what: string; use: string }[];
   /** Files read. */
   files: number;
+  /** Library components the changed files use, by name, in the order met ("Card", "Badge"): what "Every piece comes from the library" lists. */
+  uses: string[];
 }
 
 const lines = (text: string) => text.split(/\r?\n/);
@@ -275,7 +278,8 @@ function branchLines(before: string | null, after: string): Set<number> {
  */
 export function missingPieces(input: { files: BranchFile[]; ds: DesignSystemIndex; set?: LayeredTokenSet | undefined }): MissingPiecesResult {
   const { ds } = input;
-  const files = input.files.filter((f) => f.after !== null && isAuditable(f.path));
+  // The vendored library of a design copy is not product code: its edits are library edits (library-edits.ts).
+  const files = input.files.filter((f) => f.after !== null && isAuditable(f.path) && !LIBRARY_COPY_DIR.test(f.path));
   const fixes: MissingPiecesResult['fixes'] = [];
   const variants = new Map<string, { component: string; name: string; hits: Hit[] }>();
   const tokens = new Map<string, { category: string; value: string; name: string | null; hits: Hit[] }>();
@@ -555,6 +559,12 @@ export function missingPieces(input: { files: BranchFile[]; ds: DesignSystemInde
       token: { path, type: TOKEN_TYPE[t.category] ?? 'dimension', value: t.value, files: tokenFiles },
     });
   }
+  pieces.push(...libraryEdits(input.files));
+  // A token reference reads as its value too ("12" for var(--space-3)): the exploration page compares two ways with it.
+  for (const p of pieces) for (const v of p.values) if (!v.resolved) {
+    const r = resolveCssVar(input.set, v.value);
+    if (r) v.resolved = r;
+  }
   // Variants and components first (they read as features), then values; ids stay unique.
   const order: Record<MissingPiece['kind'], number> = { variant: 0, component: 1, token: 2 };
   const seen = new Set<string>();
@@ -566,5 +576,8 @@ export function missingPieces(input: { files: BranchFile[]; ds: DesignSystemInde
       seen.add(id);
       return id === p.id ? p : { ...p, id };
     });
-  return { pieces: out, fixes, files: files.length };
+  // The library components the branch's screens are built with (any JSX tag the library has), for the section's chips.
+  const uses: string[] = [];
+  for (const f of files) for (const m of f.after!.matchAll(/<([A-Z][\w]*)[\s/>]/g)) if (ds.components.has(m[1]!) && !uses.includes(m[1]!)) uses.push(m[1]!);
+  return { pieces: out, fixes, files: files.length, uses: uses.slice(0, 24) };
 }

@@ -15,6 +15,8 @@ export interface LibraryImpactActions {
   onPiece?: ((piece: string, action: PieceAction, input?: string) => Promise<string | void>) | null;
   /** The lead keeps one way where two explorations change the same component differently. */
   onChoose?: ((piece: string, pick: string) => Promise<string | void>) | null;
+  /** The designer replies to the lead's "Use an existing piece instead": the piece goes back to the lead with the reason. */
+  onReply?: ((piece: string, text: string) => Promise<string | void>) | null;
 }
 
 export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { view: LibraryImpactView; actions?: LibraryImpactActions; say: (s: string) => void; headingLevel?: 2 | 3 }) {
@@ -72,7 +74,7 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { v
           const conflict = view.conflicts.find((c) => c.piece === r.id && !c.pick) ?? null;
           return (
             <li key={r.id} className={conflict ? 'li-item has-conflict' : 'li-item'}>
-              <Row row={r} onPiece={actions.onPiece ?? null} say={say} />
+              <Row row={r} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />
               {conflict && <Conflict c={conflict} onChoose={actions.onChoose ?? null} say={say} />}
             </li>
           );
@@ -107,8 +109,9 @@ function Side({ side }: { side: ImpactSide }) {
   );
 }
 
-function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpactActions['onPiece'] | null; say: (s: string) => void }) {
+function Row({ row, onPiece, onReply, say }: { row: ImpactRowView; onPiece: LibraryImpactActions['onPiece'] | null; onReply?: LibraryImpactActions['onReply'] | null; say: (s: string) => void }) {
   const [ask, setAsk] = useState<'changes' | 'existing' | null>(null);
+  const [replying, setReplying] = useState(false);
   const act = (a: PieceAction, input?: string) =>
     onPiece!(row.id, a, input)
       .then((r) => {
@@ -125,6 +128,13 @@ function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpact
         <strong className="li-name">{row.title}</strong>
         <span className="li-muted">{row.summary}</span>
         {row.note && <span className="li-note">{row.note}</span>}
+        {row.reply && onReply && (
+          <span className="li-reply">
+            <Button variant="secondary" size="sm" data-demo-write="reply to the lead" onClick={() => setReplying(true)}>
+              Reply to {row.reply}
+            </Button>
+          </span>
+        )}
         {row.details.length > 0 && (
           <Accordion className="li-details" appearance="flush">
             <AccordionItem value="details" title="Details">
@@ -175,6 +185,28 @@ function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpact
           </Menu>
         )}
       </div>
+      {row.reply && onReply && (
+        <AskDialog
+          open={replying}
+          onOpenChange={setReplying}
+          title={`Reply to ${row.reply}?`}
+          description={`${row.title} goes back to ${row.reply} with your reason. ${row.reply} still decides.`}
+          label="Why this piece, not the existing one"
+          multiline
+          confirm={`Reply to ${row.reply}`}
+          onConfirm={(text) =>
+            onReply(row.id, text).then(
+              (r) => {
+                if (r) say(r);
+              },
+              (err: Error) => {
+                say(err.message);
+                throw err;
+              },
+            )
+          }
+        />
+      )}
       {onPiece && (
         <AskDialog
           open={ask !== null}

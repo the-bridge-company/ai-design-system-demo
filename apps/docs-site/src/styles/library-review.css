@@ -1,0 +1,1030 @@
+/* Library review (pages/studio/library-review.astro, components/ds/studio/LibraryReview.tsx, boards LR2 to LR14).
+   The filters row (checkbox lists that read "Status  Waiting"), then One by one (the pieces on the start side of one
+   card, the piece in the main area, its decision under a hairline) or List (one card, a row per piece in groups, a
+   checkbox per row and per group, the floating selection bar of Changes, cg-bar). The empty state is the page's Harbor
+   zone with the lighthouse. Phones: One by one stacks, the list folds each row on two lines. */
+
+.lr {
+  display: grid;
+  gap: var(--space-5);
+  max-width: var(--studio-page-max);
+  min-width: 0;
+}
+
+.lr-skel {
+  min-height: var(--size-80);
+}
+
+.lr-muted {
+  color: var(--color-text-muted);
+}
+
+/* The view switch on the title line. */
+.lr-views {
+  flex: none;
+}
+
+/* --- Filters: a button per filter, its name quiet and its value strong, opening checkboxes ---------------------- */
+
+.lr-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* A DS secondary Button: its name quiet, its value strong (the Select look of the validated board). */
+.lr-filter {
+  font-weight: var(--font-weight-regular);
+}
+
+.lr-filter .lr-filter-name {
+  color: var(--color-text-muted);
+}
+
+.lr-filter .lr-filter-value {
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-count {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.lr-none {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* --- The designer's banner: who decides, nothing to do meanwhile --------------------------------------------------- */
+
+.lr-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-signal-subtle);
+}
+
+.lr-banner-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.lr-banner-text strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* --- The exploration chip: the exploration and its product, one click to its page ---------------------------------- */
+
+.lr-ask {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-signal-subtle);
+  color: var(--color-text-link);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  text-decoration: none;
+}
+
+.lr-ask:is(a):hover {
+  text-decoration: underline;
+}
+
+a.lr-ask {
+  text-decoration-line: none;
+}
+
+.lr-ask.is-lead {
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
+/* --- One by one ---------------------------------------------------------------------------------------------------- */
+
+.lr-one {
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-80)) minmax(0, 1fr);
+  align-items: start;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+.lr-side {
+  position: sticky;
+  top: calc(var(--layout-header-height) + var(--space-4));
+  display: grid;
+  align-content: start;
+  max-height: calc(100dvh - var(--layout-header-height) - var(--space-8));
+  overflow-y: auto;
+  border-inline-end: var(--border-width-default) solid var(--color-border-default);
+  overscroll-behavior: contain;
+}
+
+.lr-side-head {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-block-end: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-seen {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--typography-ui-size);
+}
+
+.lr-seen strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-seen .lr-muted {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-side-group {
+  padding-block: var(--space-3) var(--space-1);
+}
+
+.lr-side-label {
+  margin: 0;
+  padding: var(--space-1) var(--space-4) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-caption-line-height);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.lr-side-label .lr-muted {
+  font-weight: var(--font-weight-regular);
+}
+
+.lr-side-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lr-side-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--size-14);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-inline-start: var(--border-width-strong) solid transparent;
+  background: none;
+  color: var(--color-text-default);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .lr-side-row:hover {
+    background-color: var(--color-surface-hover);
+  }
+}
+
+.lr-side-row:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+.lr-side-row[aria-current="true"] {
+  border-inline-start-color: var(--color-action-primary-bg);
+  background-color: var(--color-surface-selected);
+}
+
+.lr-side-main {
+  display: grid;
+  flex: 1;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.lr-side-title {
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-side-sub,
+.lr-side-flag {
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.lr-side-flag {
+  flex: none;
+  color: var(--color-text-link);
+}
+
+.lr-side-flag.lr-muted {
+  color: var(--color-text-muted);
+}
+
+.lr-main {
+  position: sticky;
+  top: calc(var(--layout-header-height) + var(--space-4));
+  min-width: 0;
+  padding: var(--space-6);
+}
+
+.lr-detail {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.lr-eyebrow {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.lr-detail-title {
+  margin: var(--space-1) 0 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+  letter-spacing: var(--typography-h2-tracking);
+}
+
+.lr-detail-ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  font-size: var(--typography-caption-size);
+}
+
+.lr-lede {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* Before and after: two plates of the same shape, a third when the library already has something close. */
+.lr-plates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.lr-plates.has-match {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lr-plate {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.lr-plate-art {
+  display: grid;
+  place-items: center;
+  min-height: var(--size-40);
+  padding: var(--space-5);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-plate.is-match .lr-plate-art {
+  border-color: var(--color-border-emphasis);
+}
+
+.lr-plate-none {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+.lr-plate-cap {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.lr-plate-label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-plate-value {
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--typography-caption-size);
+}
+
+.lr-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-signal-subtle);
+}
+
+.lr-match-tag {
+  color: var(--color-text-link);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+}
+
+/* The decision: under a hairline, its buttons on one line with the keys at the end. */
+.lr-decide {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-decide > p {
+  margin: 0;
+}
+
+.lr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lr-actions-note {
+  margin-inline-start: auto;
+  font-size: var(--typography-caption-size);
+}
+
+.lr-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+@media (hover: none) {
+  .lr-keys {
+    display: none;
+  }
+}
+
+.lr-shared {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-comment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lr-comment > :first-child {
+  flex: 1 1 var(--size-60);
+}
+
+/* A conflict: the two ways side by side, each with its own pick. */
+.lr-ways {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.lr-way {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+}
+
+.lr-way.is-picked {
+  border-color: var(--color-border-emphasis);
+  background-color: var(--color-surface-selected);
+}
+
+.lr-way-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.lr-way-head > span:last-child {
+  display: grid;
+}
+
+.lr-way-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-way-from {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-way-value {
+  margin: 0;
+  font-size: var(--typography-body-size);
+}
+
+/* --- List ---------------------------------------------------------------------------------------------------------- */
+
+.lr-list {
+  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column. */
+  --lr-cols: var(--lr-cols-wide, minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr));
+
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  overflow: hidden;
+}
+
+
+.lr-row-state,
+.lr-row-next {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.lr-list-head,
+.lr-row {
+  display: grid;
+  grid-template-columns: var(--lr-cols);
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+}
+
+.lr-list-head {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.lr-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-list-group:first-child .lr-group-row {
+  border-block-start: 0;
+}
+
+.lr-list-head + .lr-list-group .lr-group-row {
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-group-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.lr-group-name {
+  font-family: var(--typography-display-family);
+  font-size: var(--typography-h3-size);
+  line-height: var(--typography-h3-line-height);
+}
+
+.lr-group-label .lr-muted {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-row {
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-row.is-selected {
+  background-color: var(--color-surface-selected);
+}
+
+.lr-col-box {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-width: var(--size-6);
+}
+
+.lr-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lr-mini {
+  display: inline-grid;
+  place-items: center;
+  width: var(--size-16);
+  height: var(--size-10);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-arrow {
+  color: var(--color-text-muted);
+}
+
+.lr-row-piece {
+  display: grid;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.lr-row-title {
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-row-kind,
+.lr-row-wait {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-row-ask {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.lr-col-end,
+.lr-row-end {
+  justify-self: end;
+  text-align: end;
+}
+
+.lr-row-end {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-1);
+  max-width: var(--size-60);
+}
+
+/* --- Empty: the page's one Harbor zone, the lighthouse, the week in one sentence ------------------------------------ */
+
+.lr-empty {
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-64)) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6) var(--space-10);
+  padding: var(--space-6) var(--space-10) var(--space-6) var(--space-6);
+}
+
+.lr-empty-art {
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.lr-empty-text {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.lr-empty-title {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+}
+
+.lr-empty-sentence {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* --- What was just decided, with Undo while it waits to be sent --------------------------------------------------- */
+
+.lr-toasts {
+  position: fixed;
+  inset-block-end: var(--space-7);
+  inset-inline-end: var(--space-6);
+  z-index: var(--layer-toast);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.lr-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-overlay);
+  background-color: var(--color-surface-inverse);
+  box-shadow: var(--elevation-overlay);
+  color: var(--color-text-inverse);
+  font-size: var(--typography-ui-size);
+
+  --button-ghost-text: var(--color-text-inverse);
+}
+
+body:has(.lr-bar) .lr-toasts {
+  inset-block-end: calc(var(--size-16) + var(--space-10));
+}
+
+.lr-notice {
+  margin: 0;
+  color: var(--color-feedback-danger-text);
+}
+
+/* --- Phones -------------------------------------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .lr-one {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lr-side,
+  .lr-main {
+    position: static;
+  }
+
+  /* On a phone the piece comes first, the list of pieces under it. */
+  .lr-main {
+    order: -1;
+  }
+
+  .lr-side {
+    max-height: var(--size-80);
+    overflow-y: auto;
+    border-inline-end: 0;
+    border-block-start: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-main {
+    padding: var(--space-4);
+  }
+
+  .lr-plates.has-match,
+  .lr-ways {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lr-plate-art {
+    min-height: var(--size-20);
+    padding: var(--space-3);
+  }
+
+  .lr-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .lr-banner-link {
+    grid-column: 2;
+  }
+
+  .lr-list-head {
+    display: none;
+  }
+
+  .lr-list,
+  .lr-list.is-decided {
+    --lr-cols: minmax(0, 1fr) auto;
+  }
+
+  .lr-list.is-lead {
+    --lr-cols: var(--size-6) minmax(0, 1fr) auto;
+  }
+
+  .lr-row,
+  .lr-group-row {
+    padding-inline: var(--space-4);
+  }
+
+  .lr-row .lr-col-thumb {
+    display: none;
+  }
+
+  /* Second line: who asked, the state and who acts next, under the piece. */
+  .lr-row-ask,
+  .lr-row-state,
+  .lr-row-next {
+    grid-column: 1 / -1;
+  }
+
+  .lr-list.is-lead :is(.lr-row-ask, .lr-row-state, .lr-row-next) {
+    grid-column: 2 / -1;
+  }
+
+  .lr-row .lr-col-box,
+  .lr-row-piece {
+    grid-row: 1;
+  }
+
+  .lr-row-end {
+    grid-row: 1;
+    grid-column: -2;
+  }
+
+  .lr-row-state:empty,
+  .lr-row-next:empty,
+  .lr-row-ask:empty {
+    display: none;
+  }
+
+  .lr-empty {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-5);
+  }
+
+  .lr-empty-art {
+    max-inline-size: var(--size-60);
+  }
+
+  .lr-toasts {
+    inset-inline: var(--space-4);
+    inset-block-end: var(--space-4);
+  }
+}
+
+/* --- Samples: one side of a piece, drawn from its data -------------------------------------------------------------- */
+
+.lr-swatch {
+  display: block;
+  width: var(--size-10);
+  height: var(--size-6);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-inset);
+}
+
+.lr-swatch.is-big {
+  width: 60%;
+  height: var(--size-16);
+  border-radius: var(--radius-control);
+}
+
+.lr-space {
+  display: block;
+  max-width: 100%;
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-action-primary-bg);
+}
+
+.lr-corner {
+  display: block;
+  width: var(--size-6);
+  height: var(--size-6);
+  border: var(--border-width-strong) solid var(--color-action-primary-bg);
+}
+
+.lr-corner.is-big {
+  width: var(--size-20);
+  height: var(--size-20);
+}
+
+.lr-glyph {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-none);
+}
+
+.lr-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.lr-plate-name {
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-mini.is-none {
+  border-style: dashed;
+  background-color: var(--color-surface-default);
+}
+
+.lr-plate-art > .bt {
+  border: 0;
+  background: none;
+}
+
+/* A way's preview: the exploration's screen, the same plate as its card. */
+.lr-way-art {
+  display: grid;
+  justify-self: stretch;
+}
+
+.lr-way .lr-way-art > .bt {
+  width: 100%;
+}
+
+/* A designer's list: one flat list, her pieces first (lr-designer). */
+.lr-list.is-designer .lr-list-group:first-child .lr-row:first-child {
+  border-block-start: 0;
+}
+
+/* Who acts next on the viewer's own piece: avatar and first name, the row's menu after it. */
+.lr-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--typography-ui-size);
+  white-space: nowrap;
+}
+
+/* The detail's title line: the switch of a conflict on its end. */
+.lr-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* A way next to today: two plates of the same shape, the way's own caption in the link colour. */
+.lr-way-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-way-side {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.lr-way-cap {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-way-cap.is-way {
+  color: var(--color-text-link);
+}
+
+/* While the selection bar shows, the list ends above it: the bar never covers the last rows. */
+.lr:has(.lr-bar) {
+  padding-block-end: calc(var(--size-16) + var(--space-10));
+}
+
+/* The phone's compact bar of One by one: hidden on wider screens, where the list stays beside the piece. */
+.lr-compact {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .lr-compact {
+    display: flex;
+    order: -2;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-block-end: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-compact-count {
+    min-width: var(--size-16);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+  }
+
+  .lr-compact-all {
+    margin-inline-start: auto;
+  }
+
+  .lr-side:not(.is-open) {
+    display: none;
+  }
+
+  .lr-side.is-open {
+    order: -1;
+    border-block-start: 0;
+    border-block-end: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-side .lr-side-head {
+    display: none;
+  }
+}
+
+/* A color in place (lr-onebyone): text on its surface, a filled card, or the main button. */
+.lr-look {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-inset);
+}
+
+.lr-look.is-big {
+  border-radius: var(--radius-control);
+}
+
+.lr-look-action {
+  width: var(--size-10);
+  height: var(--size-5);
+}
+
+.lr-look-action.is-big {
+  width: auto;
+  height: auto;
+  min-height: var(--control-height-lg);
+  padding-inline: var(--space-6);
+  color: var(--color-action-primary-text);
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-look-surface {
+  align-content: center;
+  justify-items: start;
+  gap: var(--space-1);
+  width: var(--size-10);
+  height: var(--size-7);
+  padding: var(--space-1);
+  border: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-look-surface.is-big {
+  gap: var(--space-2);
+  width: 70%;
+  height: auto;
+  min-height: var(--size-16);
+  padding: var(--space-4);
+}
+
+.lr-look-text {
+  padding: var(--space-0-5) var(--space-1);
+  background-color: var(--color-surface-default);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-look-text.is-big {
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--typography-body-size);
+}
+
+.lr-look.is-dark.lr-look-text {
+  background-color: var(--color-surface-inverse);
+}
+
+.lr-look-line {
+  display: block;
+  width: 70%;
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-text-default);
+  opacity: 0.6;
+}
+
+.lr-look-line.is-short {
+  width: 45%;
+  background-color: var(--color-border-strong);
+  opacity: 1;
+}
+
+/* A way of a conflict drawn as a card with its own room inside or corners. */
+.lr-mini-card {
+  display: grid;
+  gap: var(--space-1);
+  width: var(--size-20);
+  padding: var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+}
+
+.lr-mini-card.is-raised {
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--elevation-raised);
+}

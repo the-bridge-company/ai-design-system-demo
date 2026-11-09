@@ -9,7 +9,8 @@
 //     one last group (progressive disclosure: only what needs the lead is open).
 //   - By exploration: one folded group per exploration that asked for library pieces, then the lead's own.
 // Rows are the list's own rows (BranchRow), their status tag the exploration section's words (Needs Dana, Approved,
-// Being built, Kept in this screen). Styles: styles/changes.css (bl-lib-*).
+// Being built, Kept in this screen). Styles: styles/changes.css (bl-lib-*). A quiet "Open Library review" link under the
+// heading opens the lead's own queue (pages/studio/library-review.astro), which takes this group's place later.
 import { useState, type ReactNode } from 'react';
 import { Accordion, AccordionItem, Badge, Icon, Link, SegmentedControl } from '@bridge-ds/react';
 import { Library, Monitor } from 'lucide-react';
@@ -36,6 +37,7 @@ import {
   type OriginFilter,
 } from '../../../lib/library-origin';
 import { statusTagClass } from '../../../lib/status-tag';
+import { studioHref } from '../../../lib/team-path';
 
 /** What a library row needs from the list's row. */
 export interface LibraryRowFacts {
@@ -217,7 +219,13 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
         <h2 className="bl-h2" id="bl-library">
           {p.heading}
         </h2>
-        <p className="t-ui t-muted bl-reach">What every product will get, and where each change comes from.</p>
+        <p className="t-ui t-muted bl-reach">
+          What every product will get, and where each change comes from.{' '}
+          {/* The lead's one queue for library pieces lives on its own page (lib/library-review); this group stays until it replaces it. */}
+          <Link href={studioHref('library-review/')} data-keep-branch="">
+            Open Library review
+          </Link>
+        </p>
       </div>
       {(counts.explorations > 0 && counts.lead > 0) || p.lead.you ? (
         <div className="bl-lib-bar">

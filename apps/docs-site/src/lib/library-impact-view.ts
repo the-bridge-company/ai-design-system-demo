@@ -42,6 +42,11 @@ export interface ImpactRowView {
   details: { label: string; value: string }[];
   /** The ⋯ menu, for the lead while the screen waits on them. */
   menu: PieceAction[];
+  /**
+   * "Reply to Dana" (board LR11): the designer disagrees with the lead's "Use an existing piece instead"; the piece goes
+   * back to Library review with the reason. The lead's name, or null when the viewer cannot reply.
+   */
+  reply: string | null;
 }
 
 /** What the ⋯ menu of a piece offers (LI3). */
@@ -136,6 +141,8 @@ export interface ImpactInput {
   /** Requests the library released (their issue numbers), for "In the library". */
   released?: ReadonlySet<number>;
   names?: Record<string, string>;
+  /** The viewer is the exploration's designer: they may reply to the lead's answers, named so ("Dana"). */
+  replyTo?: string | null;
 }
 
 /** The section's view from the exploration's body (LI1 to LI4). */
@@ -165,6 +172,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
       note: noteOf(decision, names),
       details: i.token ? [{ label: 'Token', value: i.token }] : [],
       menu: open ? (['approve', 'changes', 'local', 'existing'] as PieceAction[]).filter((a) => !(a === 'approve' && (decision?.verdict === 'approved' || link))) : [],
+      reply: decision?.verdict === 'existing' && x.replyTo && !x.approved ? (decision.byName?.split(/\s+/)[0] ?? (decision.by ? (names[decision.by] ?? decision.by) : x.replyTo)) : null,
     };
   });
   const everywhere = items.some((i) => i.everywhere);

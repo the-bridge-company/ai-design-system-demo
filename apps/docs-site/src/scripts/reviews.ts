@@ -674,6 +674,8 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
   try {
     const f = await ghGet<Pull[]>(`${R}/pulls?state=open&per_page=100`);
     allOpen = openPulls(f.data);
+    // An answer GitHub could not refresh: the explorations may be missing from it.
+    if (f.stale) listUnread = true;
     // The review queue, and the running explorations listed with it under their own status.
     // An exploration handed to developers that is no longer a draft is In review: it stays an exploration row (its own
     // page, its lifecycle words), out of the branch rows.

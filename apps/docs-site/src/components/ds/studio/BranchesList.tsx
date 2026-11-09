@@ -235,7 +235,6 @@ export function BranchesList(p: BranchesListProps) {
   const kept = listed.filter((x) => passes(x, filters));
 
   const summary = p.loading && !p.rows.length ? '' : explorationsSummary(openItems.map((x) => x.status));
-  useEffect(() => setPageSummary(summary), [summary]);
 
   // The filters live in the address (lib/explorations-page addressWithFilters).
   const pick = (f: ExplorationFilters) => {
@@ -254,8 +253,9 @@ export function BranchesList(p: BranchesListProps) {
     if (wantsShipped && p.closed === null) readClosed();
   }, [wantsShipped, p.closed, readClosed]);
 
-  // The filter options, each with its count over what the other filters keep.
-  const countBy = (f: ExplorationFilters) => listed.filter((x) => passes(x, f));
+  // The filter options, each with its count over what the other filters keep (Waiting on you included: the same
+  // numbers as the header sentence).
+  const countBy = (f: ExplorationFilters) => items.filter((x) => passes(x, f));
   const statusOptions = STATES.map((s) => ({ value: s, label: STATE_LABEL[s], count: countBy({ ...filters, status: [s] }).length }));
   const productKeys = [...new Set([...products.map((pp) => pp.key.toLowerCase()), ...items.map((x) => x.product)])].filter((k) => items.some((x) => x.product === k) || filters.product.includes(k));
   const productOptions = productKeys.map((k) => ({ value: k, label: productName(k), count: countBy({ ...filters, product: [k] }).length }));
@@ -277,8 +277,10 @@ export function BranchesList(p: BranchesListProps) {
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
     return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
   };
+  // Say each state once: a shipped row says when on its line, so it carries no Shipped tag.
+  const shippedSaid = (x: Item) => x.status === 'shipped' && Boolean(x.shippedAt);
   const row = (x: Item, turn = false) => (
-    <BranchRow key={keyOf(x.r)} thumb={thumbOf(x)} who={<Who p={x.person} size="md" />} title={x.r.title} jira={x.r.jira} line={lineOf(x, turn)} href={hrefOf(x.r)} linkAttributes={linkOf(x.r)} pill={pillOf(x.status)} />
+    <BranchRow key={keyOf(x.r)} thumb={thumbOf(x)} who={<Who p={x.person} size="md" />} title={x.r.title} jira={x.r.jira} line={lineOf(x, turn)} href={hrefOf(x.r)} linkAttributes={linkOf(x.r)} pill={shippedSaid(x) ? null : pillOf(x.status)} />
   );
   const card = (x: Item, opts: { pill?: boolean; product?: boolean; turn?: boolean } = {}) => (
     <ListCard
@@ -289,14 +291,16 @@ export function BranchesList(p: BranchesListProps) {
       linkAttributes={linkOf(x.r)}
       person={x.person}
       product={opts.product ? productName(x.product) : null}
-      pill={opts.pill === false ? null : pillOf(x.status)}
-      note={opts.turn ? <span className="t-ui ex-turn">{lineOf(x, true)}</span> : undefined}
+      pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
+      note={opts.turn ? <span className="t-ui ex-turn">{lineOf(x, true)}</span> : shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
     />
   );
   const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);
 
   const loading = p.loading && !p.rows.length;
   const nothingYet = !loading && !p.unread && openItems.length === 0 && archivedItems.length === 0 && (p.closed === null ? !p.loading : shippedItems.length === 0) && !waiting.length;
+  // Say it once: with nothing yet, the empty state speaks and the header sentence stays out.
+  useEffect(() => setPageSummary(nothingYet ? '' : summary), [summary, nothingYet]);
   // One primary action per view: with nothing yet, the empty state's Start replaces the header's.
   useEffect(() => {
     document.dispatchEvent(new CustomEvent('bridge:start-change', { detail: { variant: 'primary', hidden: nothingYet } }));
@@ -327,9 +331,12 @@ export function BranchesList(p: BranchesListProps) {
         <p className="t-body t-muted ex-start-text">Pick a screen of one of your products and try an idea on it with Claude. Your team sees it here, with its real screens.</p>
         <div className="ex-start-actions">
           <StartExploration components={p.components ?? []} appearance="primary" />
-          <DsButtonLink variant="secondary" href={DEMO_HOME}>
-            See the sample team
-          </DsButtonLink>
+          {/* Three contexts never mixed: the sample team never links to itself. */}
+          {!location.pathname.startsWith(DEMO_HOME) && (
+            <DsButtonLink variant="secondary" href={DEMO_HOME}>
+              See the sample team
+            </DsButtonLink>
+          )}
         </div>
       </section>
     );

@@ -1,0 +1,87 @@
+/* Explorations (components/ds/studio/BranchesList.tsx): the Waiting on you section's line, the Board (one column per
+   status, read only) and the first-run empty state. The Board scrolls sideways inside its own region, never the page. */
+
+.ex-turn {
+  color: var(--color-text-default);
+}
+
+.ex-board {
+  display: grid;
+  grid-auto-columns: minmax(var(--size-60), 1fr);
+  grid-auto-flow: column;
+  gap: var(--space-4);
+  align-items: start;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-block-end: var(--space-2);
+  border-radius: var(--radius-container);
+}
+
+.ex-board:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.ex-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.ex-col-h {
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+}
+
+.ex-col-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ex-col-none {
+  margin: 0;
+}
+
+/* First run: one centred scene, one sentence, the start and the sample team. */
+.ex-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-inline-size: var(--size-120);
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  text-align: center;
+}
+
+.ex-start-title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-regular);
+}
+
+.ex-start-text {
+  margin: 0;
+}
+
+.ex-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
+}

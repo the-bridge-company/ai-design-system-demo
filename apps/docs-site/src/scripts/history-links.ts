@@ -12,4 +12,4 @@ export const tokenChangesLink = (q: { entry?: string | null; token?: string | nu
 
 /** Where an old History address of this page goes now, or null when it is not one. */
 export const historyRedirect = (): string | null =>
-  movedHistory(location.search, location.hash, { changes: studioHref('changes/'), building: studioHref('building/'), changelog: tokenChangesLink });
+  movedHistory(location.search, location.hash, { changes: studioHref('explorations/'), building: studioHref('building/'), changelog: tokenChangesLink });

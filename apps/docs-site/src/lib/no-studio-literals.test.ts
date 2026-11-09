@@ -1,6 +1,6 @@
 // Every Studio link, redirect and fetch of a Studio file goes through studioHref (lib/team-path.ts), so a team shell
 // (/studio/<owner>/<repo>/...) keeps its team on every click (multi-team plan, section 4.1). A new literal '/studio/...'
-// in code fails this test: write studioHref('changes/?pr=12') instead, or add the line here with the reason it must
+// in code fails this test: write studioHref('explorations/?pr=12') instead, or add the line here with the reason it must
 // stay a fixed path.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';

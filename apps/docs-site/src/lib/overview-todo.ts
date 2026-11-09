@@ -145,8 +145,8 @@ const norm = (x: string) => x.trim().toLowerCase().replace(/^@/, '');
 const same = (a: string | null | undefined, b: string | null | undefined) => Boolean(a && b && norm(a) === norm(b));
 const handle = (x: string) => `@${x.replace(/^@/, '')}`;
 const at = (xs: string[]) => (xs.length <= 2 ? xs.map(handle).join(' or ') : `${handle(xs[0]!)} or ${xs.length - 1} more`);
-const changeHref = (n: number) => studioHref(`changes/?pr=${n}`);
-const requestHref = (n: number) => studioHref(`changes/?request=${n}`);
+const changeHref = (n: number) => studioHref(`explorations/?pr=${n}`);
+const requestHref = (n: number) => studioHref(`explorations/?request=${n}`);
 
 /** The changeset check, the only failing check a designer can read in plain words: "the release note is missing". */
 const isReleaseNoteCheck = (name: string) => /changeset/i.test(name);

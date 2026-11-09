@@ -4,7 +4,8 @@
 // lib/branches-page (activeFilters, filterChoices, inFilters), the address ?product= and ?people=; each page says
 // what its rows are and keeps the filters with its own tabs.
 import type { ReactNode } from 'react';
-import { Badge, Button, Select } from '@bridge-ds/react';
+import { Badge, Button, Icon, Menu, MenuCheckboxItem, MenuContent, MenuSeparator, MenuTrigger, Select } from '@bridge-ds/react';
+import { ChevronDown } from 'lucide-react';
 import { ALL_PRODUCTS, type filterChoices, type ListFilters } from '../../../lib/branches-page';
 import { EVERYONE } from '../../../lib/review-categories';
 import '../../../styles/list-filters.css';
@@ -70,5 +71,57 @@ export function ListFiltersBar({ active, choices, onPick, summary, clear, end }:
       </p>
       {end}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Checkbox filters (Explorations): the small Select's look, a list of checkboxes behind it (DS Menu checkbox items),
+// several picked at once. The menu stays open while boxes are ticked; "reset" (Everyone, In progress) goes first.
+
+export interface MultiOption {
+  value: string;
+  label: string;
+  count?: number;
+}
+
+export interface MultiFilterProps {
+  /** The accessible name: "Status", "Product", "People". */
+  label: string;
+  /** What the trigger reads ("In progress", "Leo +1"). */
+  shown: string;
+  options: readonly MultiOption[];
+  picked: readonly string[];
+  onPick: (values: string[]) => void;
+  /** The first item that resets the filter ("Everyone", "In progress", "All products"), checked while it holds. */
+  reset?: { label: string; active: boolean; onReset: () => void };
+}
+
+export function MultiFilter({ label, shown, options, picked, onPick, reset }: MultiFilterProps) {
+  const toggle = (v: string, on: boolean) => onPick(on ? [...picked.filter((x) => x !== v), v] : picked.filter((x) => x !== v));
+  return (
+    <Menu>
+      <MenuTrigger className="bl-multi" aria-label={`${label}: ${shown}`}>
+        <span className="bl-multi-value">{shown}</span>
+        <Icon icon={ChevronDown} size="sm" className="bl-multi-chevron" />
+      </MenuTrigger>
+      <MenuContent aria-label={label} className="bl-multi-menu">
+        {reset && (
+          <>
+            <MenuCheckboxItem checked={reset.active} onCheckedChange={() => reset.onReset()}>
+              {reset.label}
+            </MenuCheckboxItem>
+            <MenuSeparator />
+          </>
+        )}
+        {options.map((o) => (
+          <MenuCheckboxItem key={o.value} checked={picked.includes(o.value)} onCheckedChange={(on) => toggle(o.value, on)}>
+            <span className="bl-multi-item">
+              <span>{o.label}</span>
+              {o.count !== undefined && count(o.count)}
+            </span>
+          </MenuCheckboxItem>
+        ))}
+      </MenuContent>
+    </Menu>
   );
 }

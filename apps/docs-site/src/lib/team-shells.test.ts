@@ -123,7 +123,7 @@ describe('checkTeamShells', () => {
 
   it('fails on a link to a Studio path no file serves, which the rewrite would open as a team', () => {
     const files = site();
-    files['studio/index.html'] += '<a href="/studio/quality/audits/gone/">Gone</a><a href="/studio/changes/?pr=1">PR</a><a href="/studio/~/x/y/">Esc</a>';
+    files['studio/index.html'] += '<a href="/studio/quality/audits/gone/">Gone</a><a href="/studio/explorations/?pr=1">PR</a><a href="/studio/~/x/y/">Esc</a>';
     expect(check(files)).toEqual([expect.stringContaining('links to /studio/quality/audits/gone/, which no page serves')]);
   });
 

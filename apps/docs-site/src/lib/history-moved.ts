@@ -1,6 +1,6 @@
 // Where the old Changes > History went (pure, browser-safe). History mixed three things that each moved to where it
 // belongs:
-//   - the history of the work (what shipped, explorations included): Changes, the Shipped tab (?state=shipped);
+//   - the history of the work (what shipped, explorations included): Explorations, Status Shipped (?status=shipped);
 //   - the next release and its "Review and publish": Being built, the end of the build pipeline (#next-release);
 //   - the token and usage guidance changes, by release: the Library changelog (#token-changes), read only.
 // Old addresses (?view=history with &entry= or &token=, and the History anchors) land on the right one.
@@ -34,7 +34,7 @@ export function tokenChangesHref(team: TeamPair | null, own: TeamPair | null, q:
  * this Studio (self-hosted or the team's): Changes, Being built and the Library changelog.
  *   - the release card anchor (#hs-next, #next-release): Being built, on the card;
  *   - an entry, a token filter or a timeline anchor (#hs-..., #token-changes): the Library changelog, on that entry;
- *   - anything else: Changes, the Shipped tab, other parameters kept (a person, a kind).
+ *   - anything else: Explorations with Status = Shipped, other parameters kept (a person, a product).
  */
 export function movedHistory(search: string, hash: string, at: { changes: string; building: string; changelog: (q: { entry: string | null; token: string | null }) => string }): string | null {
   const q = new URLSearchParams(search);
@@ -44,6 +44,6 @@ export function movedHistory(search: string, hash: string, at: { changes: string
   const token = q.get('token');
   if (entry || token || hash.startsWith('#hs-') || hash === `#${TOKEN_CHANGES_ID}`) return at.changelog({ entry, token });
   q.delete('view');
-  q.set('state', 'shipped');
+  q.set('status', 'shipped');
   return `${at.changes}?${q.toString()}`;
 }

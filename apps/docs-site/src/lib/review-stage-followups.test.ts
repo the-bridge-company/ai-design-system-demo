@@ -78,7 +78,7 @@ describe("a developers' question quoted on the page", () => {
 describe('the Needs you row for a question', () => {
   const sam = { login: 'sam', name: 'Sam', avatar: null } as unknown as Person;
   it('asks the explorer to answer, waits on them, and counts in the badge', () => {
-    const row = devQuestionNeed({ key: 'shop#12', name: 'Checkout flow', href: '/studio/changes/?exploration=12&product=shop', asker: sam, since: null, thumb: { kind: 'icon', icon: 'branch' } }, Date.now());
+    const row = devQuestionNeed({ key: 'shop#12', name: 'Checkout flow', href: '/studio/explorations/?exploration=12&product=shop', asker: sam, since: null, thumb: { kind: 'icon', icon: 'branch' } }, Date.now());
     expect(row).toMatchObject({ key: 'dev-question-shop#12', kind: 'own', title: 'Checkout flow', line: 'Sam asked a question', waitsOnYou: true, action: 'Answer', question: true });
     expect(badgeRows([row, { ...row, key: 'x', question: false }])).toBe(1);
     expect(jargonIn(`${row.title} ${row.line}`)).toEqual([]);

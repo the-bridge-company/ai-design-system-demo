@@ -65,7 +65,7 @@ const payload = (x: Partial<SuggestionPayloadV1> = {}): SuggestionPayloadV1 => (
 
 describe('links and keys', () => {
   it('opens in Branches and keys the queue row', () => {
-    expect(suggestionHref(42)).toBe('/studio/changes/?suggestion=42');
+    expect(suggestionHref(42)).toBe('/studio/library-review/?suggestion=42');
     expect(suggestionKey(42)).toBe('suggestion-42');
     expect(suggestionOfKey('suggestion-42')).toBe(42);
     expect(suggestionOfKey('change-42')).toBeNull();
@@ -127,7 +127,7 @@ describe('who it waits on', () => {
 
   it('builds the row Home and the queue show', () => {
     const row = suggestionNeed({ number: 42, title: 'Darker default background', createdAt: '2026-10-18T09:00:00Z' }, person('ann', 'Ann Leroy'), Date.parse('2026-10-21T09:00:00Z'));
-    expect(row).toMatchObject({ key: 'suggestion-42', kind: 'review', href: '/studio/changes/?suggestion=42', line: 'Ann suggests a change', waitsOnYou: true, pill: { label: 'Waiting 3 days', tone: 'warning' } });
+    expect(row).toMatchObject({ key: 'suggestion-42', kind: 'review', href: '/studio/library-review/?suggestion=42', line: 'Ann suggests a change', waitsOnYou: true, pill: { label: 'Waiting 3 days', tone: 'warning' } });
     expect(row.number).toBeUndefined();
   });
 

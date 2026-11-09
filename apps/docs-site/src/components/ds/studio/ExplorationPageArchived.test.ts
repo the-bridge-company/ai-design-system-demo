@@ -13,7 +13,7 @@ const florian = { login: 'florian', name: 'Florian', agent: false, avatar: null 
 
 const base: ExplorationPageProps = {
   number: 3,
-  crumbs: [{ label: 'Changes', href: '/studio/changes/' }, { label: 'Art print shop', href: '/studio/changes/' }, { label: 'Invoices header' }],
+  crumbs: [{ label: 'Changes', href: '/studio/explorations/' }, { label: 'Art print shop', href: '/studio/explorations/' }, { label: 'Invoices header' }],
   title: 'Invoices header',
   stage: 'exploring',
   author: florian,

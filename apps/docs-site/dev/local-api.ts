@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, s
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { dirname, join } from 'node:path';
 import { escHtml, type EmailMessage, type EmailSender } from '../api/_lib/email.js';
+import { REDIRECTS } from '../src/lib/redirects.js';
 import type { AppTokens } from '../api/_lib/github-app.js';
 import type { FetchLike } from '../api/_lib/http.js';
 import { localAdminStore, localAdminsOn, type LocalAdmins } from '../api/_lib/local-admin.js';
@@ -433,6 +434,8 @@ export function devReserved(dir: string): ReservedPaths {
     }
   };
   walk(dir, '');
+  // A Studio page that became a redirect (/studio/changes/, lib/redirects.ts) is still a built page: still reserved.
+  if (files.length) for (const from of Object.keys(REDIRECTS)) if (from.startsWith('/studio/')) files.push(`${from.slice('/studio/'.length)}/index.html`);
   return reservedFromFiles(files);
 }
 

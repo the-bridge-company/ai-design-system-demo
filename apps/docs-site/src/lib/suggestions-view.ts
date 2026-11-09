@@ -45,7 +45,7 @@ export function plainSummary(text: string): string {
 }
 
 /** Where a suggestion opens in Studio: Branches, in place (pages/studio/changes.astro). */
-export const suggestionHref = (n: number) => studioHref(`changes/?suggestion=${n}`);
+export const suggestionHref = (n: number) => studioHref(`library-review/?suggestion=${n}`);
 
 /** The queue key of a suggestion row (lib/queue-nav keyFromSearch reads it back from ?item=). */
 export const suggestionKey = (n: number) => `suggestion-${n}`;

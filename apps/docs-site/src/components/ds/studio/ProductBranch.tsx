@@ -157,7 +157,7 @@ export function ProductBranch(p: ProductBranchProps) {
   return (
     <div className="pb">
       <Breadcrumb items={p.crumbs} className="pb-crumbs" />
-      <Link variant="subtle" href={p.crumbs[0]!.href ?? studioHref('changes/')} className="pb-crumbs-phone" data-back="">
+      <Link variant="subtle" href={p.crumbs[0]!.href ?? studioHref('explorations/')} className="pb-crumbs-phone" data-back="">
         <Icon icon={ChevronLeft} size="sm" /> {p.crumbs[0]!.label}
       </Link>
       <header className="pb-head">

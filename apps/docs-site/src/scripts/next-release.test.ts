@@ -44,7 +44,7 @@ describe('the next release on Being built', () => {
     expect(card.hidden).toBe(false);
     expect(document.documentElement.hasAttribute('data-next-release')).toBe(true);
     expect(document.getElementById('bb-release-title')!.textContent).toMatch(/^Library update ready: /);
-    expect(document.getElementById('bb-release-cta')!.getAttribute('href')).toBe('/studio/changes/?pr=41');
+    expect(document.getElementById('bb-release-cta')!.getAttribute('href')).toBe('/studio/explorations/?pr=41');
     expect(card.querySelector('img')).toBeNull();
     expect(state.reads).toBe(1);
   });

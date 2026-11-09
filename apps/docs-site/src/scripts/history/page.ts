@@ -151,7 +151,7 @@ const teamDiff = (e: HistoryEntry, demo: boolean) => !demo && (isHosted() || tea
 
 /** A usage guidance change: what it changed in words, and the way to its page; no token diff. */
 function paintGuidanceDetail(e: HistoryEntry, ref: string) {
-  const at = e.pr ? studioOf(`changes/?pr=${e.pr.number}`) : null;
+  const at = e.pr ? studioOf(`explorations/?pr=${e.pr.number}`) : null;
   $('hs-detail').innerHTML = `<nav class="cg-crumbs" aria-label="Breadcrumb"><a href="${attrUrl(listHref())}" data-hs-back>Token changes</a><span aria-hidden="true">/</span><span>${esc(title(e))}</span></nav>
     <header class="fg-card cg-pr-open">
       <h3 class="cg-pr-title" tabindex="-1">${esc(withoutJiraKey(historySummary(e, { full: true })))}</h3>

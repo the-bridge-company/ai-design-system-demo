@@ -1536,7 +1536,7 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
     }
   }
   const st = buildStateOf(words, head, need);
-  const target = `${teamBase(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), t.full)}changes/?exploration=${n}&product=${encodeURIComponent(product)}`;
+  const target = `${teamBase(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), t.full)}explorations/?exploration=${n}&product=${encodeURIComponent(product)}`;
   // The status needs the app's Commit statuses write permission: without it the comment still says it, and Studio too.
   const named = designCheckStatus(st, need.names, { designChanging: write && body.why === 'design' && body.kind === 'changes' });
   // The app's token for the proxy carries no status write: a token of its own, narrowed to it.

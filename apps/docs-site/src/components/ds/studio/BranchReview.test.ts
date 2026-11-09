@@ -10,7 +10,7 @@ import { BranchReview, type BranchReviewProps } from './BranchReview';
 
 const base: BranchReviewProps = {
   pr: 17,
-  crumbs: [{ label: 'Branches', href: '/studio/changes/' }, { label: 'Add a highlight surface' }],
+  crumbs: [{ label: 'Branches', href: '/studio/explorations/' }, { label: 'Add a highlight surface' }],
   title: 'Add a highlight surface',
   jira: null,
   status: { label: 'Blocked by tests', tone: 'danger', lifecycle: 'ready' },

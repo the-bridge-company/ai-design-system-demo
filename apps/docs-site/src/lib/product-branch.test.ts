@@ -108,7 +108,7 @@ describe('why it already shows', () => {
 
 describe('page parts', () => {
   it('crumbs, developer lines and the ask', () => {
-    expect(productCrumbs('Admin demo', 'DS-87', 'Billing')).toEqual([{ label: 'Changes', href: '/studio/changes/' }, { label: 'Admin demo', href: '/studio/changes/' }, { label: 'DS-87' }]);
+    expect(productCrumbs('Admin demo', 'DS-87', 'Billing')).toEqual([{ label: 'Explorations', href: '/studio/explorations/' }, { label: 'Admin demo', href: '/studio/explorations/' }, { label: 'DS-87' }]);
     expect(productCrumbs('Admin demo', null, 'Billing').at(-1)).toEqual({ label: 'Billing' });
     expect(developerLines({ number: 12, branch: 'explore/billing', links: [{ kind: 'token-change', number: 40, branch: 'bridge/add-x' }, { kind: 'request', number: 101 }] })).toEqual([
       { label: 'Product branch', value: 'explore/billing (#12)' },

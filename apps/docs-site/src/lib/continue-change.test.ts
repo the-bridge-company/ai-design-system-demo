@@ -199,7 +199,7 @@ describe('3-way check against the change as it is now', () => {
     const d = { baseSha: 'x', edits: [edit('color.bg.default', 'light', '{palette.neutral.50}'), edit('color.text.muted', 'light', '{palette.neutral.700}')] };
     expect(dropEdits(d, ['color.bg.default']).edits.map((e) => e.path)).toEqual(['color.text.muted']);
     expect(dropEdits(d, ['color.bg.default']).baseSha).toBe('x');
-    expect(conflictHref(12)).toBe('/studio/changes/?pr=12');
+    expect(conflictHref(12)).toBe('/studio/explorations/?pr=12');
   });
 });
 

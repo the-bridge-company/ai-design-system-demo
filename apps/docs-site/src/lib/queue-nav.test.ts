@@ -150,7 +150,7 @@ describe('URL', () => {
 
 describe('branchOf', () => {
   it('reads the branch number of a branch review link only', () => {
-    expect(branchOf({ href: '/studio/changes/?pr=7' })).toBe(7);
+    expect(branchOf({ href: '/studio/explorations/?pr=7' })).toBe(7);
     // On a team shell too, so the branch opens in place there.
     expect(branchOf({ href: '/studio/acme/acme-design/changes/?pr=36' })).toBe(36);
     expect(branchOf({ href: '/studio/~/brands/ds/changes/?pr=4' })).toBe(4);

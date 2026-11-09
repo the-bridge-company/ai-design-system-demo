@@ -266,7 +266,7 @@ function wire() {
     try {
       const sent = await propose();
       if (sent.kind === 'branch') {
-        location.href = studioHref(`changes/?pr=${sent.number}`);
+        location.href = studioHref(`explorations/?pr=${sent.number}`);
         return;
       }
       // The suggestion is out: say so on the line of the action, keep the dialog's one primary off.

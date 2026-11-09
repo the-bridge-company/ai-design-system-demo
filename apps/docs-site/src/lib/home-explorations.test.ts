@@ -103,8 +103,8 @@ describe('the explorations of the Studio home', () => {
 
   it('opens the exploration page while it is one, the change page once it is a plain change', () => {
     const [p, b] = homeExplorations([profile, billing], { products, author: who });
-    expect(p!.href).toMatch(/changes\/\?exploration=36$/);
-    expect(b!.href).toMatch(/changes\/\?pr=45$/);
+    expect(p!.href).toMatch(/explorations\/\?exploration=36$/);
+    expect(b!.href).toMatch(/explorations\/\?pr=45$/);
   });
 
   it('keeps the explored screen when known, else a plate with the product and the changed screen: never a generic icon', () => {
@@ -181,14 +181,14 @@ describe('the explorations of the Studio home', () => {
       [48, 'Kept in the library'],
     ]);
     // Kept: it is a change of the library now, its page is the change page.
-    expect(cards[2]!.href).toMatch(/changes\/\?pr=48$/);
+    expect(cards[2]!.href).toMatch(/explorations\/\?pr=48$/);
   });
 
   it('gives a contributor their own only, a lead or reviewer the team', () => {
     const cards = homeExplorations([profile, billing], { products, author: who, viewer: 'peterbono' }).map((c, i) => ({ ...c, own: i === 0 }));
-    expect(explorationsFor(cards, true)).toMatchObject({ title: 'Your explorations', seeAll: '/studio/changes/?who=mine' });
+    expect(explorationsFor(cards, true)).toMatchObject({ title: 'Your explorations', seeAll: '/studio/explorations/?people=you' });
     expect(explorationsFor(cards, true).cards.map((c) => c.number)).toEqual([36]);
-    expect(explorationsFor(cards, false)).toMatchObject({ title: 'Recent explorations', seeAll: '/studio/changes/' });
+    expect(explorationsFor(cards, false)).toMatchObject({ title: 'Recent explorations', seeAll: '/studio/explorations/' });
     expect(explorationsFor(cards, false).cards).toHaveLength(2);
   });
 
@@ -319,7 +319,7 @@ describe('the quiet team Home', () => {
       ['1 of your explorations is still being explored', ownWorkHref('exploring')],
       ['1 waits for a developer to pick it up', ownWorkHref('code')],
     ]);
-    expect(ownWorkHref('code')).toMatch(/changes\/\?state=code&people=you$/);
+    expect(ownWorkHref('code')).toMatch(/explorations\/\?status=with-developers&people=you$/);
     expect(quietParts(null).some((p) => p.href)).toBe(false);
   });
 

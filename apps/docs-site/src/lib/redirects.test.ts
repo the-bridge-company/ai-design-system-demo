@@ -14,3 +14,14 @@ describe('Quality redirects', () => {
     expect(redirectTarget(REDIRECTS['/studio/checks']!, '', '')).toBe('/studio/quality/');
   });
 });
+
+describe('Changes became Explorations', () => {
+  it('sends /studio/changes/ and the older pages to Explorations, query and hash kept', () => {
+    for (const from of ['/studio/changes', '/studio/drafts', '/studio/reviews', '/studio/branches', '/studio/visual-impact', '/reviews', '/branches']) expect(REDIRECTS[from]).toBe('/studio/explorations/');
+    expect(redirectTarget(REDIRECTS['/studio/changes']!, '?pr=3', '')).toBe('/studio/explorations/?pr=3');
+    expect(redirectTarget(REDIRECTS['/studio/changes']!, '?exploration=4&product=crm', '')).toBe('/studio/explorations/?exploration=4&product=crm');
+    // The page then maps what moved (lib/explorations-page legacyTarget) and the old filters (filtersFromAddress).
+    expect(redirectTarget(REDIRECTS['/studio/changes']!, '?suggestion=7', '')).toBe('/studio/explorations/?suggestion=7');
+    expect(redirectTarget(REDIRECTS['/studio/changes']!, '?state=shipped', '')).toBe('/studio/explorations/?state=shipped');
+  });
+});

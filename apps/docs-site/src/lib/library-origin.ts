@@ -94,7 +94,7 @@ function bridgeBlocks(body: string): { mark: string; data: Record<string, unknow
 function explorationHref(number: number | null, productKey: string | null, products: readonly ProductConfig[]): string | null {
   if (!number) return null;
   if (productKey && !products.some((p) => p.key === productKey)) return null;
-  return studioHref(`changes/?exploration=${number}${productKey ? `&product=${encodeURIComponent(productKey)}` : ''}`);
+  return studioHref(`explorations/?exploration=${number}${productKey ? `&product=${encodeURIComponent(productKey)}` : ''}`);
 }
 
 const productName = (key: string | null, products: readonly ProductConfig[], fallback: string | null): string | null =>

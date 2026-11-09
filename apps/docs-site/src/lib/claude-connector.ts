@@ -140,7 +140,8 @@ export function parseSession(v: unknown): Session | null {
   const steps = s.steps.flatMap((x): SessionStep[] => {
     const t = x as Record<string, unknown>;
     if (!t || typeof t.text !== 'string' || typeof t.at !== 'string') return [];
-    const review = typeof t.review === 'string' && /^changes\/\?pr=\d{1,10}$/.test(t.review) ? t.review : undefined;
+    // Explorations (the old Changes): a session saved before the rename still says changes/, read as explorations/.
+    const review = typeof t.review === 'string' && /^(?:explorations|changes)\/\?pr=\d{1,10}$/.test(t.review) ? t.review.replace(/^changes\//, 'explorations/') : undefined;
     return [{ kind: typeof t.kind === 'string' ? t.kind : 'step', text: t.text, at: t.at, by: typeof t.by === 'string' ? t.by : '', ...(review ? { review } : {}) }];
   });
   return { component: s.component, state: s.state as SessionState, startedAt: typeof s.startedAt === 'string' ? s.startedAt : null, updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : null, elapsed: typeof s.elapsed === 'number' ? s.elapsed : 0, steps };

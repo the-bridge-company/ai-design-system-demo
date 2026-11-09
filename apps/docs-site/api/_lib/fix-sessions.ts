@@ -228,7 +228,7 @@ export function stepOf(c: ToolCallRecord, session: FixSession | null): FixStep |
   }
   if (r.status !== 'pr-opened' || typeof r.pr !== 'number' || typeof r.url !== 'string') return null;
   const pr = { number: r.pr, url: r.url };
-  const review = `changes/?pr=${r.pr}`;
+  const review = `explorations/?pr=${r.pr}`;
   if (statusOnly) {
     const reason = typeof fixes[0]?.reason === 'string' ? fixes[0].reason : 'no fix brought it closer to the code.';
     return { kind: 'stopped', text: STEP_WORDS.stopped(reason), at, by: c.by, pr, review, reason };

@@ -260,9 +260,9 @@ export function teamBase(origin: string, team: string): string {
 /** The Studio page of a notice: the exploration for a task, the change for a suggestion, else Being built. */
 export function hrefOf(origin: string, team: string, kind: NotifyKind, n: number, copy: ItemMeta['copy'] | null, product: string | undefined): string {
   const base = teamBase(origin, team);
-  if (kind === 'changes' || kind === 'suggestion-declined') return `${base}changes/?pr=${n}`;
-  if (kind.startsWith('lead-')) return `${base}changes/?exploration=${n}${product ? `&product=${encodeURIComponent(product)}` : ''}`;
-  if (copy && product) return `${base}changes/?exploration=${copy.number}&product=${encodeURIComponent(product)}`;
+  if (kind === 'changes' || kind === 'suggestion-declined') return `${base}explorations/?pr=${n}`;
+  if (kind.startsWith('lead-')) return `${base}explorations/?exploration=${n}${product ? `&product=${encodeURIComponent(product)}` : ''}`;
+  if (copy && product) return `${base}explorations/?exploration=${copy.number}&product=${encodeURIComponent(product)}`;
   return `${base}building/`;
 }
 

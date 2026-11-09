@@ -229,4 +229,4 @@ export const LIBRARY_ASKS = [
 export const archivedLine = (n: number): string => `${n} archived.`;
 
 /** "See archived": Changes' Archived tab, kept to this product. */
-export const archivedHref = (key: string): string => studioHref(`changes/?state=archived&product=${encodeURIComponent(key.toLowerCase())}`);
+export const archivedHref = (key: string): string => studioHref(`explorations/?status=archived&product=${encodeURIComponent(key.toLowerCase())}`);

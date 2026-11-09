@@ -5,7 +5,7 @@
 // The grid itself is the Home's grid (ul.sh-cards), so a card is the same size everywhere in Studio.
 // The switch between the two views sits in each list's filter bar (ViewSwitch).
 import { Badge, Card, Link, SegmentedControl } from '@bridge-ds/react';
-import { LayoutGrid, List } from 'lucide-react';
+import { Columns3, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Who } from './faces';
 import { BranchThumb, captureAgeOf } from './BranchThumb';
@@ -122,17 +122,19 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
 }
 
 /** The switch at the end of a list's filter bar: rows, or cards. */
-export function ViewSwitch({ view, onPick }: { view: ListView; onPick: (v: ListView) => void }) {
+/** List and Grid; `board` adds the Board (Explorations). A page without the Board reads a remembered Board as List. */
+export function ViewSwitch({ view, onPick, board = false }: { view: ListView; onPick: (v: ListView) => void; board?: boolean }) {
   return (
     <SegmentedControl
       className="bl-view"
       size="sm"
       label={LIST_VIEW_WORDS.label}
-      value={view}
-      onValueChange={(v) => onPick(v === 'grid' ? 'grid' : 'list')}
+      value={view === 'board' && !board ? 'list' : view}
+      onValueChange={(v) => onPick(v === 'grid' ? 'grid' : v === 'board' && board ? 'board' : 'list')}
       items={[
         { value: 'list', label: LIST_VIEW_WORDS.list, icon: List },
         { value: 'grid', label: LIST_VIEW_WORDS.grid, icon: LayoutGrid },
+        ...(board ? [{ value: 'board', label: LIST_VIEW_WORDS.board, icon: Columns3 }] : []),
       ]}
     />
   );

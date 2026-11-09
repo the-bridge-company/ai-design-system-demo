@@ -86,8 +86,8 @@ describe('start an exploration, in a product or the library', () => {
     expect(claudePrompt({ sentence: 'Cart', product: THREE[1]!, number: 3 })).toContain('"Cart" in Shop (acme/shop) and use');
     expect(claudePrompt({ sentence: 'x', product: { key: 'k', name: 'K' }, number: 1 })).toContain('"x" in K and use');
     expect(claudePrompt({ sentence: 'Pill buttons', product: THREE[2]!, number: 7, library: true })).toBe('Open Bridge exploration #7 "Pill buttons" in the Bridge library. I\'ll tell you what to explore.');
-    expect(featureHref(160)).toBe('/studio/changes/?exploration=160');
-    expect(featureHref(2, 'admin-app')).toBe('/studio/changes/?exploration=2&product=admin-app');
+    expect(featureHref(160)).toBe('/studio/explorations/?exploration=160');
+    expect(featureHref(2, 'admin-app')).toBe('/studio/explorations/?exploration=2&product=admin-app');
   });
 
   it('names the design team\'s copy and the branch, never the developers\' repository', () => {

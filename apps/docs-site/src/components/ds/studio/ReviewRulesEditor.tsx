@@ -76,7 +76,7 @@ export default function ReviewRulesEditor(p: ReviewRulesEditorProps) {
         {p.children}
         {sent && (
           <Alert tone="success" className="set-rules-sent">
-            Sent for review. {RULES_NEED_REVIEW}. <Link href={studioHref(`changes/?pr=${sent.number}`)}>See the change</Link>
+            Sent for review. {RULES_NEED_REVIEW}. <Link href={studioHref(`explorations/?pr=${sent.number}`)}>See the change</Link>
           </Alert>
         )}
         {can === true && (

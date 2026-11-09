@@ -100,14 +100,14 @@ describe('Change this component: forms', () => {
 });
 
 describe('Change this component: the message for the developer', () => {
-  const base = { component: 'Button', title: ' Add a ghost danger variant ', request: 14, exploration: 'https://bridge.test/studio/changes/?exploration=9' };
+  const base = { component: 'Button', title: ' Add a ghost danger variant ', request: 14, exploration: 'https://bridge.test/studio/explorations/?exploration=9' };
   it('names the change, the design, the team link and what to say to Claude', () => {
-    const m = developerMessage({ ...base, figma: 'https://www.figma.com/design/abc/X?node-id=1-2', image: 'https://github.com/a/b/blob/bridge-requests/x.png?raw=true', requestUrl: 'https://bridge.test/studio/changes/?request=14' });
+    const m = developerMessage({ ...base, figma: 'https://www.figma.com/design/abc/X?node-id=1-2', image: 'https://github.com/a/b/blob/bridge-requests/x.png?raw=true', requestUrl: 'https://bridge.test/studio/explorations/?request=14' });
     expect(m.split('\n')[0]).toBe('Hi, can you build this Button change with Claude? Add a ghost danger variant');
     expect(m).toContain('Figma frame: https://www.figma.com/design/abc/X?node-id=1-2');
     expect(m).toContain('Image: https://github.com/a/b/blob/bridge-requests/x.png?raw=true');
-    expect(m).toContain('Request: https://bridge.test/studio/changes/?request=14');
-    expect(m).toContain('Exploration in Studio: https://bridge.test/studio/changes/?exploration=9');
+    expect(m).toContain('Request: https://bridge.test/studio/explorations/?request=14');
+    expect(m).toContain('Exploration in Studio: https://bridge.test/studio/explorations/?exploration=9');
     expect(m).toContain('say "build Bridge request #14"');
     expect(hasEmDash(m)).toBe(false);
   });

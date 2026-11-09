@@ -71,7 +71,7 @@ describe('the address model: latest, view, edit', () => {
   });
 
   it('reads the latest library on other pages and for a malformed number', () => {
-    expect(scopeOf('?change=12', '/studio/changes/')).toEqual(LATEST);
+    expect(scopeOf('?change=12', '/studio/explorations/')).toEqual(LATEST);
     expect(scopeOf('?change=12', '/studio/')).toEqual(LATEST);
     for (const bad of ['?change=abc', '?change=0', '?change=-3', '?change=1.5', '?change=']) expect(scopeOf(bad, '/studio/tokens/')).toEqual(LATEST);
     expect(viewsChange('/studio/quality/audits/x/')).toBe(false);
@@ -95,7 +95,7 @@ describe('the address model: latest, view, edit', () => {
     const view = { kind: 'view', change: 5 } as const;
     expect(keepScopeHref('/studio/components/', view, base)).toBe('/studio/components/?change=5');
     expect(keepScopeHref('/studio/tokens/?component=button&edit=1', view, base)).toBe('/studio/tokens/?component=button&change=5');
-    expect(keepScopeHref('/studio/changes/?change=9', view, base)).toBe('/studio/changes/');
+    expect(keepScopeHref('/studio/explorations/?change=9', view, base)).toBe('/studio/explorations/');
     expect(keepScopeHref('https://github.com/x', view, base)).toBe('https://github.com/x');
     expect(keepScopeHref('#top', view, base)).toBe('#top');
     expect(keepScopeHref('/studio/components/', LATEST, base)).toBe('/studio/components/');
@@ -291,7 +291,7 @@ describe('several changes together in the address', () => {
   it('keeps the list and the picks on links between view pages, and drops them elsewhere', () => {
     const s = scopeOf('?change=101,118&use=118%3Aa%23b', '/studio/tokens/');
     expect(keepScopeHref('/studio/components/', s, 'https://bridge.test/studio/tokens/')).toBe('/studio/components/?change=101,118&use=118%3Aa%23b');
-    expect(keepScopeHref('/studio/changes/', s, 'https://bridge.test/studio/tokens/')).toBe('/studio/changes/');
+    expect(keepScopeHref('/studio/explorations/', s, 'https://bridge.test/studio/tokens/')).toBe('/studio/explorations/');
     expect(scopeHref({ pathname: '/studio/quality/', search: '?change=101,118&use=x&q=bg' }, LATEST)).toBe('/studio/quality/?q=bg');
     expect(scopeHref({ pathname: '/studio/tokens/', search: '?change=101,118&use=x' }, { kind: 'view', change: 118 })).toBe('/studio/tokens/?change=118');
   });

@@ -38,7 +38,7 @@ describe('pointLibraryLinks', () => {
       <a id="home" href="/library-shell/">Home</a>
       <a id="tokens" href="/library-shell/tokens/">Tokens</a>
       <a id="studio" href="/studio/">Open Studio</a>
-      <a id="other" href="/studio/changes/">Changes</a>
+      <a id="other" href="/studio/explorations/">Changes</a>
       <a id="gh" href="https://github.com/the-bridge-company/ai-design-system-demo" data-team-github>GitHub</a>
       <span data-team-name>owner/repo</span>`;
     const href = (id: string) => document.getElementById(id)!.getAttribute('href');
@@ -47,7 +47,7 @@ describe('pointLibraryLinks', () => {
     expect(href('tokens')).toBe('/library/acme/ds/tokens/');
     // Without the reserved list, the escape form, which always opens the team.
     expect(href('studio')).toBe('/studio/~/acme/ds/');
-    expect(href('other')).toBe('/studio/changes/');
+    expect(href('other')).toBe('/studio/explorations/');
     expect(href('gh')).toBe('https://github.com/acme/ds');
     expect(document.querySelector('[data-team-name]')!.textContent).toBe('acme/ds');
     // With it, the plain address.

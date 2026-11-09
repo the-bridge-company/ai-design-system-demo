@@ -23,7 +23,7 @@ const explo = (name: string, number: number): LibraryOrigin => ({
   product: 'Acme CRM',
   productKey: 'crm',
   number,
-  href: `/studio/changes/?exploration=${number}&product=crm`,
+  href: `/studio/explorations/?exploration=${number}&product=crm`,
   piece: null,
   component: null,
   kept: false,

@@ -243,7 +243,7 @@ export default function NewBrandFlow({ files, configText, contrastText, signIn =
           </h2>
           <p className="nb-lead">{draft.name} stays a draft until design and tech approve it. The Library shows it once it is approved and added.</p>
           <div className="nb-actions">
-            <Button variant="primary" iconStart={ArrowRight} render={<a href={studioHref(`changes/?pr=${done.number}`)} />}>
+            <Button variant="primary" iconStart={ArrowRight} render={<a href={studioHref(`explorations/?pr=${done.number}`)} />}>
               Open the change
             </Button>
           </div>

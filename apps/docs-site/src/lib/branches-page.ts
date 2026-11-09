@@ -1,4 +1,4 @@
-// The Branches page (/studio/changes/), the rules and the words: all the work, not a second triage page. One
+// The Branches page (/studio/explorations/), the rules and the words: all the work, not a second triage page. One
 // segmented control says where the work stands (All, Waiting on me, Exploring, Shipped), one select says whose it is
 // (Everyone, You, each designer), another which product (All products, then each configured product); the rows are
 // grouped by the product they belong to, and token branches can be checked to preview them

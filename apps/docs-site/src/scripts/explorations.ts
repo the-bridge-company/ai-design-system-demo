@@ -360,7 +360,7 @@ function section(id: string, title: string, meta: string, body: string, open = f
 /** "Changes / #12", or "Changes / Shop / #12" for an exploration in a product's own repository (board P2). */
 const crumbs = (n: number, product?: string | null) => {
   const name = product ? productRepoByKey(product)?.product.name : null;
-  return `<nav class="cg-crumbs" aria-label="Breadcrumb"><a href="${studioHref('changes/')}" data-back>Changes</a><span aria-hidden="true">/</span>${name ? `<span>${esc(name)}</span><span aria-hidden="true">/</span>` : ''}<span class="mono">#${n}</span></nav>`;
+  return `<nav class="cg-crumbs" aria-label="Breadcrumb"><a href="${studioHref('explorations/')}" data-back>Explorations</a><span aria-hidden="true">/</span>${name ? `<span>${esc(name)}</span><span aria-hidden="true">/</span>` : ''}<span class="mono">#${n}</span></nav>`;
 };
 
 /** The preview rows: one per app, a link with its designer name, or what is missing on the same line. */

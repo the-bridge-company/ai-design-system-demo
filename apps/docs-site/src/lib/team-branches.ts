@@ -1,4 +1,4 @@
-// Team Branches (team shell /studio/<owner>/<repo>/changes/): the words and the addresses of the page, pure.
+// Team Explorations (team shell /studio/<owner>/<repo>/explorations/, the old Changes): the words and the addresses of the page, pure.
 // scripts/team-branches.ts reads GitHub and routes; components/ds/studio/TeamSuggestions shows the suggestions.
 import type { Requester, SuggestionKind, SuggestionListItem } from '@bridge-ds/core';
 import type { ThumbSpec } from './branch-thumb';
@@ -44,7 +44,7 @@ export function teamBranchesRoute(search: string, requestTriage: boolean = REQUE
 }
 
 /** The page title per view, as on the self-hosted page. */
-export const TEAM_VIEW_TITLE = { list: 'Changes', requests: 'Requests', explorations: 'Explorations' } as const;
+export const TEAM_VIEW_TITLE = { list: 'Explorations', requests: 'Requests', explorations: 'Explorations' } as const;
 
 export interface SuggestionRow {
   number: number;

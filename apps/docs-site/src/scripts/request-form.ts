@@ -375,7 +375,7 @@ export function initChangeFlow(drawer: HTMLElement) {
       if (mode !== 'explore') {
         resetChangeFlow(drawer);
         done.innerHTML = `<p><strong>${esc(sentLine(mode, created.number))}</strong></p>
-          <p><a href="${studioHref(`changes/?request=${created.number}`)}">See the request</a></p>`;
+          <p><a href="${studioHref(`explorations/?request=${created.number}`)}">See the request</a></p>`;
         done.hidden = false;
         return;
       }
@@ -385,7 +385,7 @@ export function initChangeFlow(drawer: HTMLElement) {
       const { started, link } = await startLinkedExploration(explorationsConfig(), { ...ex, ...(author ? { author } : {}) }, { number: created.number, title: created.title });
       const s = startedLines(ex.name, created.number);
       const warn = link && 'error' in link ? ` <span class="cg-muted">The request could not be linked to it: ${esc(link.error)}</span>` : '';
-      const exploration = studioHref(`changes/?exploration=${started.pr}`);
+      const exploration = studioHref(`explorations/?exploration=${started.pr}`);
       resetChangeFlow(drawer);
       done.innerHTML = `<p><strong>${esc(s.lead)}</strong> ${esc(s.next)}${warn}</p>
         <p><a href="${exploration}">Open the exploration</a></p>`;
@@ -399,7 +399,7 @@ export function initChangeFlow(drawer: HTMLElement) {
           figma: request.figma?.url ?? null,
           image,
           exploration: new URL(exploration, location.origin).href,
-          requestUrl: new URL(studioHref(`changes/?request=${created.number}`), location.origin).href,
+          requestUrl: new URL(studioHref(`explorations/?request=${created.number}`), location.origin).href,
         }),
       );
     } catch (err) {
@@ -407,7 +407,7 @@ export function initChangeFlow(drawer: HTMLElement) {
         // The request exists: sending again would ask twice. Say so, and lead to the start from the request.
         resetChangeFlow(drawer);
         done.innerHTML = `<p><strong>Request #${sent} sent, but the exploration did not start.</strong> ${esc((err as Error).message)}</p>
-          <p><a href="${studioHref(`changes/?view=explorations&amp;for=${sent}`)}">Start the exploration from the request</a></p>`;
+          <p><a href="${studioHref(`explorations/?view=explorations&amp;for=${sent}`)}">Start the exploration from the request</a></p>`;
         done.hidden = false;
         return;
       }

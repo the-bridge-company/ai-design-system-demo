@@ -152,7 +152,7 @@ export default function ReviewView({ data }: { data: LibraryData }) {
         <Section id="explorations" title="Explorations" n={`${EXPLORE_STEPS.length} steps`}>
           <p>
             An exploration tries experimental variables and components in a real product staging branch without touching the library. Follow them in{' '}
-            <Link href={studioLink(data, 'changes/?view=explorations')}>Studio Changes, Explorations</Link>, or in GitHub by the <code>exploration</code> label.
+            <Link href={studioLink(data, 'explorations/?view=explorations')}>Studio Changes, Explorations</Link>, or in GitHub by the <code>exploration</code> label.
           </p>
           <Steps steps={EXPLORE_STEPS} />
         </Section>

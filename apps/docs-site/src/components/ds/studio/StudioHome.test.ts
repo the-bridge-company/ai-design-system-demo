@@ -17,11 +17,11 @@ const dana = person('dana', 'Dana Kim', null);
 const leo = person('leo@acme.example', 'Leo', null);
 
 const sentBack = changeNeed({ number: 42, title: 'Spacing scale for dense tables', author: leo, asker: leo, since: null, task: 'own-changes', changesBy: [dana], thumb: { kind: 'icon', icon: 'branch' } }, NOW);
-const branch: BranchCard = { number: 42, title: 'Spacing scale for dense tables', href: '/studio/changes/?pr=42', stage: 'ready', updated: '2026-10-21T10:00:00Z', reviewer: dana, thumb: { kind: 'icon', icon: 'branch' } };
+const branch: BranchCard = { number: 42, title: 'Spacing scale for dense tables', href: '/studio/explorations/?pr=42', stage: 'ready', updated: '2026-10-21T10:00:00Z', reviewer: dana, thumb: { kind: 'icon', icon: 'branch' } };
 const exploration = (n: number, over: Partial<ExplorationCard> = {}): ExplorationCard => ({
   number: n,
   title: `Profile page ${n}`,
-  href: `/studio/changes/?exploration=${n}`,
+  href: `/studio/explorations/?exploration=${n}`,
   product: 'Account',
   author: leo,
   stage: 'exploring',
@@ -132,7 +132,7 @@ describe('StudioHome, explorations by role', () => {
     render(createElement(StudioHome, props({ contributor: false, lead: true, explorations: many })));
     expect(screen.getByRole('heading', { level: 2, name: 'Recent explorations' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Team seats and roles' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'See all 5' }).getAttribute('href')).toBe('/studio/changes/');
+    expect(screen.getByRole('link', { name: 'See all 5' }).getAttribute('href')).toBe('/studio/explorations/');
   });
 
   it('shows a contributor only their own, under Your explorations', () => {
@@ -161,7 +161,7 @@ describe('StudioHome, explorations only', () => {
     expect(items[0]!.textContent).toBe('Start an exploration');
     expect(items[1]!.querySelector('img.bt-screen')?.getAttribute('src')).toBe('/sample/explorations/36.png');
     expect(items[1]!.querySelector('.bt--icon')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Billing screen' }).getAttribute('href')).toBe('/studio/changes/?exploration=37');
+    expect(screen.getByRole('link', { name: 'Billing screen' }).getAttribute('href')).toBe('/studio/explorations/?exploration=37');
     // The product in the screen's corner; then the DS tag of its page, then who explores it (and when the screen was
     // captured, when it is a capture).
     expect(items[2]!.querySelector('.bt .bt-chip')!.textContent).toBe('Account');
@@ -199,7 +199,7 @@ describe('StudioHome, explorations only', () => {
     expect(screen.queryByText('Spacing scale for dense tables')).toBeNull();
     expect(container.querySelectorAll('[aria-labelledby="sh-explorations"] .sh-cards > li').length).toBe(2);
     expect(screen.getByText('You have 2 library changes in progress.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'See your changes' }).getAttribute('href')).toBe('/studio/changes/?who=mine');
+    expect(screen.getByRole('link', { name: 'See your changes' }).getAttribute('href')).toBe('/studio/explorations/?people=you');
   });
 
   it('shows three cards, and "See all N" counts explorations only', () => {
@@ -269,7 +269,7 @@ describe('StudioHome, the sample team (its visitor reads as Dana, an email admin
     const items = container.querySelectorAll('[aria-labelledby="sh-explorations"] .sh-cards > li');
     expect(items[0]!.classList.contains('sh-create')).toBe(true);
     expect(items[0]!.querySelector('[data-demo-write="start explorations"]')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'See all 4' }).getAttribute('href')).toBe('/studio/changes/');
+    expect(screen.getByRole('link', { name: 'See all 4' }).getAttribute('href')).toBe('/studio/explorations/');
     expect(screen.queryByText('Sample')).toBeNull();
     expect(screen.queryByText(/library change/)).toBeNull();
   });
@@ -439,7 +439,7 @@ describe('StudioHome, quiet team Home (recent)', () => {
     expect(screen.getAllByRole('button', { name: 'Start an exploration' })).toHaveLength(1);
     expect(container.querySelector('.sh-zone')!.textContent).toContain('Good evening, Florian. Nothing needs you. 1 of your explorations waits for a developer to pick it up.');
     // The clause opens Changes on the viewer's own explorations waiting to be picked up.
-    expect(screen.getByRole('link', { name: '1 of your explorations waits for a developer to pick it up' }).getAttribute('href')).toMatch(/changes\/\?state=code&people=you$/);
+    expect(screen.getByRole('link', { name: '1 of your explorations waits for a developer to pick it up' }).getAttribute('href')).toMatch(/explorations\/\?status=with-developers&people=you$/);
     // Nothing needs the viewer: the zone is one window onto the harbor (water only on a phone), with the one primary
     // button "Start an exploration" under the headline, no card.
     expect(container.querySelector('.sh-zone .sh-window [data-scene="harbor"][data-layout="window"]')).toBeTruthy();
@@ -478,7 +478,7 @@ describe('StudioHome, quiet team Home (recent)', () => {
     const { container } = render(createElement(StudioHome, quiet({ explorations: cards })));
     const recent = container.querySelector('[aria-labelledby="sh-explorations"]')!;
     expect([...recent.querySelectorAll('.sh-card-title')].map((t) => t.textContent)).toEqual(['Profile page 6', 'Profile page 5', 'Profile page 4', 'Profile page 3']);
-    expect(screen.getByRole('link', { name: 'See all 6' }).getAttribute('href')).toBe('/studio/changes/');
+    expect(screen.getByRole('link', { name: 'See all 6' }).getAttribute('href')).toBe('/studio/explorations/');
     // None of them is the viewer's: nothing in progress of their own.
     expect(container.querySelector('.sh-zone')!.textContent).toContain('Nothing needs you, and you have nothing in progress.');
   });

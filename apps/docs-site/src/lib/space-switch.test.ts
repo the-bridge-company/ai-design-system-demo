@@ -76,7 +76,7 @@ describe('switchTarget from Studio', () => {
     expect(studio('/studio/tokens/', '?focus=color')).toEqual({ href: '/foundations/color/', item: 'Color' });
     expect(studio('/studio/quality/').href).toBe('/foundations/accessibility/');
     expect(studio('/studio/')).toEqual({ href: '/library/', item: null });
-    expect(studio('/studio/changes/', '?pr=12')).toEqual({ href: '/library/', item: null });
+    expect(studio('/studio/explorations/', '?pr=12')).toEqual({ href: '/library/', item: null });
   });
 
   it('opens the team Library from a team shell, with the component', () => {

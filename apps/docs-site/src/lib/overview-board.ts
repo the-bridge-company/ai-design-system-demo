@@ -98,9 +98,9 @@ const other = (login: string | null | undefined, viewer: string | null) => (logi
 
 const LABEL: Record<ColumnId, string> = { exploring: 'Exploring', review: 'In review', ready: 'Ready to add to the library', release: 'Next release' };
 const HREF: Record<ColumnId, string> = {
-  exploring: studioHref('changes/?view=explorations'),
-  review: studioHref('changes/'),
-  ready: studioHref('changes/'),
+  exploring: studioHref('explorations/?view=explorations'),
+  review: studioHref('explorations/'),
+  ready: studioHref('explorations/'),
   release: studioHref('building/#next-release'),
 };
 const EMPTY: Record<ColumnId, string> = {
@@ -114,7 +114,7 @@ const YOU: CardStatus = { tone: 'you', label: 'You' };
 
 /** The card of a change in review: the blocker on the card, else who acts now. */
 function reviewCard(c: BoardChange, viewer: string | null, loading: boolean): BoardCard {
-  const base = { key: `change-${c.number}`, title: c.title, who: other(c.author, viewer), href: studioHref(`changes/?pr=${c.number}`) };
+  const base = { key: `change-${c.number}`, title: c.title, who: other(c.author, viewer), href: studioHref(`explorations/?pr=${c.number}`) };
   const who: WhoActs | null = c.who;
   if (!who) return { ...base, note: loading ? 'Checking what it needs.' : 'Open it to see what it needs.', status: null };
   // Approved, waiting for code (lib/change-status): not blocked for designers, a developer finishes it.
@@ -141,7 +141,7 @@ function readyCard(c: BoardChange, viewer: string | null): BoardCard {
     key: `change-${c.number}`,
     title: c.title,
     who: other(c.author, viewer),
-    href: studioHref(`changes/?pr=${c.number}`),
+    href: studioHref(`explorations/?pr=${c.number}`),
     note: yours ? 'Approved and tested. Add it to the library to put it in the next release.' : `Approved and tested. ${c.who?.sentence.replace(/^Ready to add to the library: /, '') ?? ''}`.trim(),
     status: yours ? YOU : null,
   };
@@ -174,7 +174,7 @@ function allCards(input: BoardInput): [ColumnId, Natured[]][] {
     // Developer work: who is on it, no next step for a designer.
     note: e.nature === 'developer' ? explorationMakerLine(e.maker ?? makerOf({ author: e.author, viewer })) : explorationNote(e, viewer),
     status: null,
-    href: studioHref(`changes/?exploration=${e.number}`),
+    href: studioHref(`explorations/?exploration=${e.number}`),
     nature: e.nature ?? 'design',
   }));
   const release = input.release

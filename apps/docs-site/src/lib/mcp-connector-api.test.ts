@@ -238,7 +238,7 @@ describe('fix sessions: real steps from tool calls, never a percentage', () => {
     await mcpPost(w, access_token, rpc(3, 'bridge_propose_figma_fixes', { component: 'TextInput', fixes: [{ kind: 'part' }], summary: 'x' }));
     s = await read();
     expect(s.state).toBe('ready');
-    expect(s.steps.at(-1)).toMatchObject({ text: 'Claude opened its fix for review', pr: { number: 91 }, review: 'changes/?pr=91' });
+    expect(s.steps.at(-1)).toMatchObject({ text: 'Claude opened its fix for review', pr: { number: 91 }, review: 'explorations/?pr=91' });
     expect(s.elapsed).toBe(120);
     const all = await (await w.call('/api/mcp?view=sessions&repo=acme/design', { headers: plugin })).json();
     expect(all.sessions.map((x: { component: string }) => x.component)).toEqual(['TextInput']);

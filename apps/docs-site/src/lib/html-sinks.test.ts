@@ -15,7 +15,7 @@ const ALLOWED: Record<string, string> = {
   // Build-time JSON data blocks: jsonForScript.
   'components/explorer/ExplorerData.astro': 'jsonForScript',
   'layouts/Layout.astro': 'jsonForScript (siteRepoJson)',
-  'pages/studio/changes.astro': 'jsonForScript',
+  'pages/studio/explorations.astro': 'jsonForScript',
   'pages/studio/components/index.astro': 'jsonForScript',
   'pages/studio/index.astro': 'jsonForScript',
   'pages/studio/review.astro': 'jsonForScript',

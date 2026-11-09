@@ -157,7 +157,7 @@ export function authorizeUrl(o: { clientId: string; redirectUri: string; state: 
   return `${AUTHORIZE_URL}?${q}`;
 }
 
-/** Only a same-site path is a place to come back to ("/studio/changes/?pr=3"). Anything else: Studio home. */
+/** Only a same-site path is a place to come back to ("/studio/explorations/?pr=3"). Anything else: Studio home. */
 export function safeReturnTo(path: string | null | undefined): string {
   if (!path || !path.startsWith('/') || path.startsWith('//') || path.includes('\\') || path.startsWith(CALLBACK_PATH)) return studioHref();
   return path;

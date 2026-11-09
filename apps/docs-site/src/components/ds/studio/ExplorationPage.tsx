@@ -935,7 +935,7 @@ function ExplorationBody(p: ExplorationPageProps) {
     <div className="xp-page">
       <div className="xp-top">
         <Breadcrumb items={p.crumbs} className="xp-crumbs" />
-        <Link variant="subtle" href={p.crumbs[0]!.href ?? studioHref('changes/')} className="xp-crumbs-phone" data-back="">
+        <Link variant="subtle" href={p.crumbs[0]!.href ?? studioHref('explorations/')} className="xp-crumbs-phone" data-back="">
           <Icon icon={ChevronLeft} size="sm" /> {p.crumbs[0]!.label}
         </Link>
         <header className="xp-pagehead">

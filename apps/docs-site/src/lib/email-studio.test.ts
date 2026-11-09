@@ -15,7 +15,7 @@ describe('email member Studio', () => {
   it('knows which Studio pages a team address has', () => {
     expect(teamStudioRoute('/studio/')).toBe('');
     expect(teamStudioRoute('/studio')).toBe('');
-    expect(teamStudioRoute('/studio/changes/')).toBe('changes/');
+    expect(teamStudioRoute('/studio/explorations/')).toBe('explorations/');
     expect(teamStudioRoute('/studio/products/admin-app/')).toBe('products/admin-app/');
     for (const p of ['/studio/auth/', '/studio/invite/', '/studio/connect-claude/', '/studio/workspace/', '/studio/the-bridge-company/ai-design-system-demo/', '/components/button/'])
       expect(teamStudioRoute(p)).toBeNull();

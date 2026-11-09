@@ -117,7 +117,7 @@ export const viewTogetherHref = (numbers: number[], use: string, path = studioHr
 /** Studio Tokens scoped to a change for editing ("Edit tokens in this change"). */
 export const editInChangeHref = (n: number) => studioHref(`tokens/?change=${n}&edit=1`);
 /** The change page. */
-export const changePageHref = (n: number) => studioHref(`changes/?pr=${n}`);
+export const changePageHref = (n: number) => studioHref(`explorations/?pr=${n}`);
 
 // ---------------------------------------------------------------------------------------------------------------
 // The selector: "Viewing: Latest library", then the open changes with their status.

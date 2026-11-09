@@ -8,8 +8,7 @@
 // History address (?view=history) moved: Shipped, the next release on Being built, the Library changelog
 // (scripts/history-links historyRedirect).
 import { initWorkFilter } from './work-filter';
-import { closePr, initReviewAuth, loadList, openPr, setWaitingExtras } from './reviews';
-import { readWaitingExtras } from './waiting-extras';
+import { closePr, initReviewAuth, loadList, openPr } from './reviews';
 import { historyRedirect } from './history-links';
 import { initRequests, loadRequests, openRequest } from './requests';
 import { closeSuggestion, onViewerChange, openSuggestion } from './suggestions';
@@ -17,21 +16,15 @@ import { explorationParam } from '../lib/explorations-view';
 import { initExplorations, loadExplorations, openExploration, paintExplorationCount, startForRequest } from './explorations';
 import type { ExplorationPullLike } from '../lib/explorations-view';
 import type { PullLike } from '../lib/requests-view';
-import { draftCount } from './shell';
-import { docsEdits, draftSummary, tokenEdits } from '../lib/docs-draft-model';
-import type { Draft } from '../lib/editor-model';
-import { addableChanges, defaultTarget, draftDestination, type ChangePullLike } from '../lib/continue-change';
-import { currentViewer, initGitHubConnect, onAccess, readRepo } from './github-session';
+import { initGitHubConnect } from './github-session';
 import { REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
 import { studioHref } from '../lib/team-path';
-import { sendButton } from '../lib/gh-wording';
-import { changesModeOnPage } from './changes-mode';
+import { legacyTarget } from '../lib/explorations-page';
 
 type View = 'review' | 'requests' | 'explorations';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let listLoaded: Promise<{ number: number; head: { ref: string } }[]> | null = null;
-let extrasLoaded: Promise<void> | null = null;
 const VIEW_QUERY: Record<View, string> = { review: '', requests: '?view=requests', explorations: '?view=explorations' };
 
 /** The open pull requests In review already read (with their bodies), so Requests links them at no request. */
@@ -44,7 +37,7 @@ const openPullsForExplorations = () => {
   return listLoaded.then((pulls) => (pulls.every((p) => 'body' in p) ? (pulls as unknown as ExplorationPullLike[]) : null));
 };
 
-const VIEW_TITLE: Record<View, string> = { review: 'Changes', requests: 'Requests', explorations: 'Explorations' };
+const VIEW_TITLE: Record<View, string> = { review: 'Explorations', requests: 'Requests', explorations: 'Explorations' };
 
 function selectTab(view: View) {
   const title = document.querySelector<HTMLElement>('#cg-main .st-title');
@@ -65,48 +58,6 @@ function selectTab(view: View) {
   $('cg-explore').hidden = view !== 'explorations';
 }
 
-function readDraft(): Draft {
-  try {
-    return (JSON.parse(localStorage.getItem('bridge.draft.v1') ?? 'null') as Draft | null) ?? { edits: [] };
-  } catch {
-    return { edits: [] };
-  }
-}
-
-function paintDraft() {
-  const n = draftCount();
-  $('cg-draft').hidden = n === 0;
-  const draft = readDraft();
-  $('cg-draft-n').textContent = draftSummary(draft);
-  // Docs edits only: send them from the edit mode of the first one's Library page.
-  const docs = docsEdits(draft);
-  const cta = document.querySelector<HTMLAnchorElement>('#cg-draft a');
-  if (cta && docs.length && !tokenEdits(draft).length) cta.href = `/components/${docs[0]!.slug}/?edit=1`;
-  // The same verb as the editor it opens: "Send suggestion" in suggest mode, "Send for review" in direct mode.
-  const label = cta ? [...cta.querySelectorAll('*'), cta].find((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim())) : null;
-  const text = label && [...label.childNodes].find((n) => n.nodeType === 3 && n.textContent?.trim());
-  if (text) text.textContent = sendButton(docs.length && !tokenEdits(draft).length ? 'docs' : 'tokens', changesModeOnPage());
-  paintDestination(tokenEdits(draft).length);
-}
-
-let canWrite = false;
-/** Where the token draft goes when sent: the viewer's own branch in review (the default target), else a new one. */
-function paintDestination(edits: number) {
-  const dest = document.getElementById('cg-draft-dest');
-  if (!dest) return;
-  const viewer = currentViewer()?.login;
-  if (!edits || !viewer || !listLoaded) {
-    dest.textContent = '';
-    return;
-  }
-  void listLoaded.then((pulls) => {
-    const r = readRepo();
-    const targets = addableChanges(pulls as unknown as ChangePullLike[], { repo: `${r.owner}/${r.repo}`, viewer, write: canWrite });
-    const choice = defaultTarget(targets);
-    dest.textContent = draftDestination(choice.kind === 'change' ? (targets.find((t) => t.number === choice.number) ?? null) : null, edits);
-  });
-}
-
 /** The suggestion review host (pages/studio/changes.astro), beside #rv-detail. */
 const sgHost = () => document.getElementById('sg-detail');
 
@@ -117,7 +68,7 @@ function showSuggestion(n: number, push: boolean) {
   if (push) history.pushState({ suggestion: n }, '', `?suggestion=${n}`);
   window.scrollTo({ top: 0 });
   const el = sgHost();
-  if (el) void openSuggestion(n, { el, crumbs: [{ label: 'Changes', href: studioHref('changes/') }, { label: 'Suggestion' }] });
+  if (el) void openSuggestion(n, { el, crumbs: [{ label: 'Explorations', href: studioHref('explorations/') }, { label: 'Suggestion' }] });
 }
 
 function showView(view: View) {
@@ -129,13 +80,17 @@ function showView(view: View) {
   else if (view === 'explorations') void loadExplorations(openPullsForExplorations);
   else {
     listLoaded ??= loadList();
-    // Waiting on me also lists the suggestions that wait on the viewer (no guidance drafts here: Home has them).
-    extrasLoaded ??= listLoaded.then(() => readWaitingExtras({ ...readRepo(), guidance: [] })).then(setWaitingExtras, () => undefined);
   }
   void listLoaded?.then((pulls) => paintExplorationCount(pulls as unknown as ExplorationPullLike[]));
 }
 
 function route() {
+  // What moved to Library review (suggestions, the old Library group): there, the query kept (lib/explorations-page).
+  const away = legacyTarget(location.search, location.hash);
+  if (away) {
+    location.replace(studioHref(away));
+    return;
+  }
   // An old History address: Shipped here (the list opens on it), or another page.
   const moved = historyRedirect();
   if (moved) {
@@ -203,14 +158,7 @@ export function initChanges() {
   initReviewAuth();
   initExplorations();
   initRequests();
-  paintDraft();
-  initGitHubConnect(() => paintDraft());
-  onAccess((a) => {
-    canWrite = Boolean(a?.write);
-    paintDraft();
-  });
-  document.addEventListener('bridge:draft', paintDraft);
-  window.addEventListener('storage', paintDraft);
+  initGitHubConnect(() => undefined);
   document.addEventListener('bridge:changes-view', () => ($('cg-main').hidden = true));
 
   document.addEventListener('click', (e) => {
@@ -291,5 +239,4 @@ export function initChanges() {
     if (sg) showSuggestion(sg, false);
   });
   route();
-  paintDraft();
 }

@@ -152,7 +152,7 @@ export default function FigmaFileSetting({ prefix, protectedBranches }: FigmaFil
                 {FIGMA_FILE_WORDS.applies}
               </p>
               <p>
-                <Link href={studioHref(`changes/?pr=${sent.number}`)}>See the change</Link>
+                <Link href={studioHref(`explorations/?pr=${sent.number}`)}>See the change</Link>
               </p>
             </div>
           )}

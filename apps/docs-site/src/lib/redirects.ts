@@ -8,15 +8,17 @@ export const REDIRECTS: Record<string, string> = {
   '/foundations/lookup': '/tokens/',
   '/for-ai-agents': '/agents/',
   '/connect/mcp': '/agents/',
-  '/reviews': '/studio/changes/',
-  // History moved: the token changes to the Library changelog, what shipped to Changes > Shipped (lib/history-moved).
+  '/reviews': '/studio/explorations/',
+  // History moved: the token changes to the Library changelog, what shipped to Explorations, Status Shipped (lib/history-moved).
   '/history': '/changelog/#token-changes',
-  '/branches': '/studio/changes/#other-branches',
-  // Drafts, Branches, Reviews and Visual impact became one Changes page; Versions is the Library changelog's token changes.
-  '/studio/drafts': '/studio/changes/',
-  '/studio/reviews': '/studio/changes/',
-  '/studio/branches': '/studio/changes/#other-branches',
-  '/studio/visual-impact': '/studio/changes/',
+  '/branches': '/studio/explorations/',
+  // Drafts, Branches, Reviews and Visual impact became one Changes page, which became Explorations (2026-11-09: its old
+  // query links keep working, lib/explorations-page changesToExplorations); Versions is the Library changelog's token changes.
+  '/studio/changes': '/studio/explorations/',
+  '/studio/drafts': '/studio/explorations/',
+  '/studio/reviews': '/studio/explorations/',
+  '/studio/branches': '/studio/explorations/',
+  '/studio/visual-impact': '/studio/explorations/',
   '/studio/versions': '/changelog/#token-changes',
   '/adoption': '/studio/quality/',
   // Checks and Adoption became one Quality page; each audit report has its own route under it.
@@ -33,7 +35,7 @@ export const REDIRECTS: Record<string, string> = {
 
 /**
  * Where a redirect lands with the old URL's query and hash carried over: the old query wins key by key over the
- * target's own (/studio/reviews/?pr=3 -> /studio/changes/?pr=3), the old hash wins over the target's.
+ * target's own (/studio/reviews/?pr=3 -> /studio/explorations/?pr=3), the old hash wins over the target's.
  */
 export function redirectTarget(to: string, search: string, hash: string): string {
   const [pathAndQuery, toHash = ''] = to.split('#');

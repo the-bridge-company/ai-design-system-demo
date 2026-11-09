@@ -193,7 +193,7 @@ describe('Being built: explorations handed to developers', () => {
     ]);
     expect(list.map((r) => `${r.number}:${r.status}:${r.label}`)).toEqual(['611:requested:Waiting to be picked up', '2:in-progress:Being built', '3:in-review:In review', '4:shipped:Shipped']);
     const [ready, building, , shipped] = list;
-    expect(ready).toMatchObject({ title: 'Explore new design pr being built', requestedBy: 'ann', builders: [], stale: false, exploration: { href: 'changes/?exploration=611', product: 'Admin demo' } });
+    expect(ready).toMatchObject({ title: 'Explore new design pr being built', requestedBy: 'ann', builders: [], stale: false, exploration: { href: 'explorations/?exploration=611', product: 'Admin demo' } });
     expect(ready!.exploration.line).toMatch(/^Admin demo · Done exploring by Ann on /);
     expect(building!.builders).toEqual(['theo']);
     expect(building!.exploration.line).toMatch(/Developers are building it$/);
@@ -208,8 +208,8 @@ describe('Being built: explorations handed to developers', () => {
     const own = { ...pull(12, { name: 'Checkout flow' }), product: 'shop', html_url: 'https://github.com/acme/shop/pull/12' };
     const list = rows([pull(12, { name: 'Pill buttons' }), own]);
     expect(list.map((r) => [r.id, r.exploration.href, r.exploration.product])).toEqual([
-      ['exploration-12', 'changes/?exploration=12', null],
-      ['exploration-shop#12', 'changes/?exploration=12&product=shop', 'Shop'],
+      ['exploration-12', 'explorations/?exploration=12', null],
+      ['exploration-shop#12', 'explorations/?exploration=12&product=shop', 'Shop'],
     ]);
     expect(list[1]!.pull).toBeNull();
     // Without who said it (said before Bridge recorded it): the date alone.

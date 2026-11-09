@@ -128,7 +128,7 @@ describe('origins and callback', () => {
   });
 
   it('comes back only to a same-site path, never to the callback itself', () => {
-    expect(safeReturnTo('/studio/changes/?pr=3#top')).toBe('/studio/changes/?pr=3#top');
+    expect(safeReturnTo('/studio/explorations/?pr=3#top')).toBe('/studio/explorations/?pr=3#top');
     expect(safeReturnTo('//evil.example/')).toBe('/studio/');
     expect(safeReturnTo('https://evil.example/')).toBe('/studio/');
     expect(safeReturnTo('/\\evil')).toBe('/studio/');

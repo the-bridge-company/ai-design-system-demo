@@ -458,17 +458,18 @@ describe('an email lead says it looks right (Bridge\'s app account writes it)', 
   const block = { member: '0406ec723c59bb8d', memberName: 'Sofia', decisions: [{ kind: 'looks-right', byName: 'Ann' }] };
   const done = { sha: 'n', commit: { message: 'chore(explore): done exploring, remove the exploration note', author: { name: BOT, date: '2026-11-08T21:55:31Z' } }, author: { login: BOT } };
 
-  it('names the lead who approved it, never the app', () => {
+  it('names the designer, as with a GitHub lead, and never the app', () => {
     expect(leadApproverOf(block)).toBe('name:Ann');
-    expect(doneLoginOf({ block, commits: [done], labelLogin: BOT, author: 'name:Sofia' })).toBe('name:Ann');
-    expect(doneLoginOf({ block, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Ann');
+    expect(doneLoginOf({ block, commits: [done], labelLogin: BOT, author: 'name:Sofia' })).toBe('name:Sofia');
+    expect(doneLoginOf({ block, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Sofia');
+    expect(doneLoginOf({ block: { ...block, memberName: undefined }, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Ann');
   });
 
   it('reads the same in the header and in How it went', () => {
     const who = doneLoginOf({ block, commits: [done], labelLogin: BOT, author: 'name:Sofia' });
-    expect(faceOf(who, false).name).toBe('Ann');
+    expect(faceOf(who, false).name).toBe('Sofia');
     const rows = handoffActivity({ commits: [done], author: 'name:Sofia', doneBy: who, doneAt: '2026-11-08T21:55:31Z', now: new Date('2026-11-09T10:00:00Z') });
-    expect(rows[0]).toMatchObject({ text: 'said done exploring', who: { name: 'Ann' } });
+    expect(rows[0]).toMatchObject({ text: 'said done exploring', who: { name: 'Sofia' } });
     expect(JSON.stringify(rows)).not.toContain('[bot]');
   });
 

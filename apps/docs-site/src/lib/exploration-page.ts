@@ -294,9 +294,9 @@ export function doneLoginOf(input: { block: DoneBlockLike | null | undefined; co
   const memberDone = b?.doneByMember && b.doneByMember === b.member && b.memberName?.trim() ? nameAuthor(b.memberName) : null;
   const picked = (b?.leadOkBy ? (b.doneBy ?? input.author) : null) ?? memberDone ?? doneByOf(input.commits) ?? input.labelLogin ?? input.author;
   if (!isAppLogin(picked)) return picked;
+  if (b?.memberName?.trim()) return nameAuthor(b.memberName);
   const lead = leadApproverOf(b);
   if (lead) return lead;
-  if (b?.memberName?.trim()) return nameAuthor(b.memberName);
   if (!isAppLogin(input.author)) return input.author;
   return nameAuthor(TEAM_DONE_NAME);
 }

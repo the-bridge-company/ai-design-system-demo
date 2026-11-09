@@ -33,6 +33,12 @@ export interface QualityViewProps {
   adoption: AdoptionView | null;
   /** Shown instead of the products when there is no audit (who turns it on). */
   adoptionEmpty?: ReactNode;
+  /**
+   * Products the team lists that no audit measures yet: a row each after the measured ones, "Not measured yet" instead
+   * of numbers, then `adoptionMeasure` (how to measure them). Only with an audit; without one adoptionEmpty says it.
+   */
+  adoptionUnmeasured?: { key: string; name: string }[];
+  adoptionMeasure?: ReactNode;
   guidance: { lead: string; findings: Finding[] };
   tokens: { findings: Finding[]; unusedTotal: number; unusedHref: string; problems?: string[] };
 }
@@ -242,7 +248,7 @@ function RunRow({ r }: { r: AdoptionRun }) {
   );
 }
 
-function AdoptionSection({ adoption, empty }: { adoption: AdoptionView | null; empty?: ReactNode }) {
+function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adoption: AdoptionView | null; empty?: ReactNode; unmeasured?: { key: string; name: string }[]; measure?: ReactNode }) {
   return (
     <section aria-labelledby={HEALTH_SECTION.adoption} className="ql-section">
       <h2 id={HEALTH_SECTION.adoption} className="ql-h">
@@ -275,7 +281,21 @@ function AdoptionSection({ adoption, empty }: { adoption: AdoptionView | null; e
                 </li>
               );
             })}
+            {unmeasured.map((p) => (
+              <li key={`unmeasured-${p.key}`} className="ql-row-wrap">
+                <div className="ql-row">
+                  <span className="ql-main">
+                    <span className="ql-title">{p.name}</span>
+                    <span className="ql-detail">No audit of this product yet.</span>
+                  </span>
+                  <Badge tone="neutral" className="ql-badge">
+                    Not measured yet
+                  </Badge>
+                </div>
+              </li>
+            ))}
           </ul>
+          {unmeasured.length > 0 && measure}
           {adoption.earlier.length > 0 && (
             <Accordion headingLevel={3} className="ql-acc ql-earlier">
               <AccordionItem value="earlier" title="Earlier runs" meta={<span className="num">{adoption.earlier.length}</span>}>
@@ -361,7 +381,7 @@ export function QualityView(props: QualityViewProps) {
       <VerdictZone verdict={props.verdict} />
       <Pillars pillars={props.pillars} />
       <ContrastSection contrast={props.contrast} />
-      <AdoptionSection adoption={props.adoption} empty={props.adoptionEmpty} />
+      <AdoptionSection adoption={props.adoption} empty={props.adoptionEmpty} unmeasured={props.adoptionUnmeasured} measure={props.adoptionMeasure} />
       <GuidanceSection guidance={props.guidance} />
       <TokensSection tokens={props.tokens} />
     </>

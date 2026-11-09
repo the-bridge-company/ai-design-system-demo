@@ -4,9 +4,10 @@
 // Every link stays with the team: Studio pages through studioHref, files on GitHub at the commit the page was read
 // at, never the demo's Library. Adoption comes from the team's snapshot (bridge-data branch) when it has audits.
 // Pure: team-quality.test.ts covers it.
-import { tokenUsage, type RepoModel, type SnapshotAudit } from '@bridge-ds/core';
+import { DEFAULT_PRODUCTS, defaultProduct, productsOf, sameProducts, tokenUsage, type ProductConfig, type RepoModel, type SnapshotAudit } from '@bridge-ds/core';
 import type { ContrastFailRow } from '../components/ds/studio/ContrastFailTable';
 import type { GuidanceState } from './components';
+import { isBaselineRun, productOfRun } from './components-studio';
 import type { Issue } from './stats';
 import { qualityModel, type ComboResult, type Finding } from './quality';
 import { HEALTH_SECTION, combinedAdoption, healthFigures, healthSentence, type HealthFigure } from './library-health';
@@ -61,10 +62,25 @@ export interface TeamQuality {
   /** Studio Tokens filtered to the tokens nothing reads. */
   unusedHref: string;
   guidance: { total: number; reviewed: number; drafted: number; missing: number; rows: TeamGuidanceRow[] };
-  /** Null: no audit to show (no snapshot, or a snapshot without audits). Otherwise the latest run per product first. */
+  /**
+   * Null: no audit of a listed product to show (no snapshot, a snapshot without audits, or audits of apps that are not
+   * in bridge.config.json `products`). Otherwise the latest run per product first.
+   */
   adoption: AdoptionView | null;
+  /** The products of bridge.config.json (the library aside) without an audit yet, in config order. */
+  unmeasured: UnmeasuredProduct[];
   /** What the model could not read (invalid config, a docs.json that does not parse). */
   problems: string[];
+}
+
+/** A product of the team's config that no audit measures yet, with where its code lives (how to measure it). */
+export interface UnmeasuredProduct {
+  key: string;
+  name: string;
+  /** "owner/name" when the product lives in its own repository. */
+  repo?: string;
+  /** Its folder in the design system repository. */
+  path?: string;
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -213,25 +229,42 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
     rows: guidanceRows,
   };
 
-  const audits = input.audits?.length ? input.audits : null;
+  // Adoption: only the products the team lists today (bridge.config.json `products`, the library aside). A run is
+  // matched to a product as Studio Components' "Used in" does (components-studio productOfRun: its product key, the
+  // product folder that holds it, or the name its label starts with); a run of anything else, such as an app removed
+  // from the config, is dropped instead of lingering under its old label. A config that lists no products (Bridge's
+  // defaults stand in) names none to keep: every run shows, grouped by its folder, and nothing waits for an audit.
+  const products = productsOf(model.config);
+  const listsProducts = !sameProducts(products, DEFAULT_PRODUCTS);
+  const listed = listsProducts ? products.filter((p) => p.key !== defaultProduct(products).key) : [];
+  const mapped = (input.audits ?? []).flatMap((a): { a: SnapshotAudit; p: ProductConfig | null }[] => {
+    if (!listsProducts) return [{ a, p: null }];
+    const p = productOfRun(products, { product: a.product, target: a.target, label: a.label });
+    return p ? [{ a, p }] : [];
+  });
   const reportHref = (a: SnapshotAudit) => `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/blob/bridge-data/${a.path.split('/').map(encodeURIComponent).join('/')}`;
-  const adoption: AdoptionView | null = audits
+  const adoption: AdoptionView | null = mapped.length
     ? adoptionView(
-        audits.map((a) => ({
+        mapped.map(({ a, p }) => ({
           id: a.id,
           label: a.label ?? a.target.path,
-          product: a.target.path,
-          ...(a.label ? {} : { productName: a.target.path }),
+          product: p ? p.key : a.target.path,
+          ...(p ? { productName: p.name } : a.label ? {} : { productName: a.target.path }),
           generatedAt: a.generatedAt,
           token: a.metrics.tokenAdoption,
           component: a.metrics.componentAdoption,
           ds: a.metrics.dsComponentInstances,
           ui: a.metrics.uiComponentInstances,
           href: reportHref(a),
+          ...(isBaselineRun(a) ? { baseline: true } : {}),
         })),
         input.snapshotAt ? { liveSince: input.snapshotAt } : {},
       )
     : null;
+  const measured = new Set(adoption?.products.map((p) => p.product) ?? []);
+  const unmeasured: UnmeasuredProduct[] = listed
+    .filter((p) => !measured.has(p.key))
+    .map((p) => ({ key: p.key, name: p.name, ...(p.repo ? { repo: p.repo } : {}), ...(p.path ? { path: p.path } : {}) }));
 
   // The three figures: the same rules as the self-hosted page, with the team's two honest exceptions (no checks, no
   // audit) said in words instead of a zero.
@@ -259,8 +292,8 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
         id: 'adoption',
         value: 'No audit yet',
         label: 'adoption in products',
-        detail: audits ? 'The audits found no UI components.' : designer ? 'A developer of your team turns it on.' : 'Publish the Bridge snapshot with an audit.',
-        sentence: 'No adoption audit has been published yet.',
+        detail: adoption ? 'The audits found no UI components.' : unmeasured.length ? `${unmeasuredNames(unmeasured)} ${unmeasured.length === 1 ? 'is' : 'are'} not measured yet.` : designer ? 'A developer of your team turns it on.' : 'Publish the Bridge snapshot with an audit.',
+        sentence: unmeasured.length ? `No product is measured yet: ${unmeasuredNames(unmeasured)}.` : 'No adoption audit has been published yet.',
         tone: null,
         href: `#${HEALTH_SECTION.adoption}`,
       });
@@ -290,9 +323,35 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
     unusedHref: studioHref('tokens/?usage=unused'),
     guidance,
     adoption,
+    unmeasured,
     // What Bridge could not parse (a config or docs file) is for developers: they fix the file.
     problems: designer ? [] : [...model.problems],
   };
+}
+
+/** "Acme Prints and Acme CRM" for a sentence. */
+export const unmeasuredNames = (list: readonly { name: string }[]) =>
+  list.length < 2 ? (list[0]?.name ?? '') : `${list.slice(0, -1).map((p) => p.name).join(', ')} and ${list[list.length - 1]!.name}`;
+
+/**
+ * How the Bridge data workflow measures a product: a folder of this repository is audited where it is; a product in
+ * its own repository is checked out inside this one first (actions/checkout with `repository` and `path`), and
+ * `bridge snapshot` names it by that checkout's git origin.
+ */
+export function auditStep(p: UnmeasuredProduct): { checkout: string | null; flag: string } {
+  const folder = p.path ?? `products/${p.key}`;
+  return { checkout: p.path ? null : (p.repo ?? null), flag: `--audit "${folder}=${p.name}"` };
+}
+
+/** What a designer sends a developer to measure the products (copied from the Quality page). */
+export function auditAskMessage(repo: string, products: readonly UnmeasuredProduct[], templateUrl: string, docsUrl: string): string {
+  const steps = products.map((p) => {
+    const { checkout, flag } = auditStep(p);
+    return checkout ? `check out ${checkout} into ${flag.match(/"([^=]+)=/)![1]} and add ${flag}` : `add ${flag}`;
+  });
+  const what = products.length ? `for ${unmeasuredNames(products)} ` : '';
+  const how = steps.length ? `, then in its bridge snapshot step ${steps.join('; ')}` : ` and add --audit "<folder>=<label>" to its bridge snapshot step, once per product folder`;
+  return `Could you turn on the adoption audit in Bridge ${what}for ${repo}? Copy the Bridge data workflow (${templateUrl}) into .github/workflows/${how}. How it works: ${docsUrl}`;
 }
 
 /** "46 of 48 components have reviewed guidance." for the Guidance section lead. */

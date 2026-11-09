@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { loadRepoModel, memorySource, type SnapshotAudit } from '@bridge-ds/core';
+import { loadRepoModel, memorySource, type ProductConfig, type SnapshotAudit } from '@bridge-ds/core';
 import { repoModel } from './model';
 import { dashboard } from './stats';
-import { guidanceLead, pctLabel, teamQuality } from './team-quality';
+import { auditAskMessage, auditStep, guidanceLead, pctLabel, teamQuality } from './team-quality';
 import { HOSTED_DOCS_URL } from './team-load';
 
 const SHA = 'b'.repeat(40);
@@ -102,20 +102,30 @@ describe('adoption from the snapshot audits', () => {
     metrics: { tokenAdoption: 91.24, componentAdoption: ui ? (ds / ui) * 100 : null, tokenUsages: 10, hardcoded: 1, themeRefs: 0, dsComponentInstances: ds, uiComponentInstances: ui },
   });
 
-  it('one product per audited folder, the report on the bridge-data branch, the combined figure', () => {
-    const q = teamQuality({ model: repoModel, ...team, audits: [audit('web', 30, 40, 'Web app, main'), audit('admin', 10, 10)] });
+  // A team whose config lists its products: one in a folder of the repository, one in its own, the library last.
+  const withProducts = (products: ProductConfig[]) => ({ ...repoModel, config: { ...repoModel.config, products } });
+  const folders = withProducts([
+    { key: 'web', name: 'Web app', path: 'apps/web' },
+    { key: 'admin', name: 'Admin', path: 'apps/admin' },
+    { key: 'site', name: 'Bridge docs site', path: 'apps/docs-site' },
+    { key: 'library', name: 'Library', path: 'packages', default: true },
+  ]);
+
+  it('one row per listed product, named as the config names it, the report on the bridge-data branch, the combined figure', () => {
+    const q = teamQuality({ model: withProducts(folders.config.products.filter((p) => p.key !== 'site')), ...team, audits: [audit('web', 30, 40, 'Web app, main'), audit('admin', 10, 10)] });
     expect(q.adoption!.products.map((p) => [p.name, p.latest.component, p.latest.href])).toEqual([
-      ['apps/admin/src', 100, 'https://github.com/acme/ds/blob/bridge-data/audits/admin.json'],
+      ['Admin', 100, 'https://github.com/acme/ds/blob/bridge-data/audits/admin.json'],
       ['Web app', 75, 'https://github.com/acme/ds/blob/bridge-data/audits/web.json'],
     ]);
     expect(q.adoption!.earlier).toEqual([]);
+    expect(q.unmeasured).toEqual([]);
     expect(q.figures[1]!.value).toBe('80%');
     expect(q.pillars[1]).toMatchObject({ name: 'Adoption', value: '80%', meter: 80 });
     expect(pctLabel(91.24)).toBe('91.2%');
     expect(pctLabel(null)).toBe('n/a');
   });
 
-  it('the runs of this snapshot lead; a folder it no longer audits waits under earlier runs', () => {
+  it('the runs of this snapshot lead; earlier runs of a listed product wait under earlier runs, other apps are dropped', () => {
     const run = (id: string, path: string, at: string, ds: number, ui: number, label: string): SnapshotAudit => ({
       ...audit(id, ds, ui, label),
       generatedAt: at,
@@ -130,18 +140,76 @@ describe('adoption from the snapshot audits', () => {
       run('admin-main', 'apps/admin/src', '2026-10-31T14:08:08Z', 239, 262, 'Bridge admin, main'),
       run('site-main', 'apps/docs-site/src', '2026-10-31T14:08:09Z', 1818, 1818, 'Bridge docs site, main'),
     ];
-    const q = teamQuality({ model: repoModel, ...team, audits, snapshotAt: '2026-10-31T14:08:10Z' });
+    const q = teamQuality({ model: folders, ...team, audits, snapshotAt: '2026-10-31T14:08:10Z' });
     expect(q.adoption!.products.map((p) => [p.name, p.latest.id, p.previous?.id, p.runs])).toEqual([
-      ['Bridge admin', 'admin-main', 'admin-after', 2],
+      ['Admin', 'admin-main', 'admin-after', 3],
       ['Bridge docs site', 'site-main', 'site-after', 3],
     ]);
+    // The original MUI source (apps/admin/_original) belongs to the Admin folder, so it stays its earlier run.
     expect(q.adoption!.earlier.map((r) => r.id)).toEqual(['site-after', 'site-before', 'admin-after', 'admin-before']);
-    // The original MUI source is not a product any more: the figure counts the two current products only.
+    expect(q.unmeasured.map((p) => p.name)).toEqual(['Web app']);
     expect(q.figures[1]!.value).toBe('98.9%');
-    expect(q.figures[1]!.detail).toBe('Up from 80.8% at the first audit, across 2 products.');
   });
 
   it('an empty audit list counts as no audit', () => {
     expect(teamQuality({ model: repoModel, ...team, audits: [] }).adoption).toBeNull();
+  });
+
+  // The sample team: Account app was audited, then removed from bridge.config.json; Acme Prints and Acme CRM live in
+  // their own repositories and have no audit yet.
+  const sample = withProducts([
+    { key: 'library', name: 'Library', path: 'packages', framework: 'react', default: true },
+    { key: 'prints', name: 'Acme Prints', repo: 'acme-design-demo/acme-prints', framework: 'react' },
+    { key: 'crm', name: 'Acme CRM', repo: 'acme-design-demo/acme-crm', framework: 'react' },
+  ]);
+  const account: SnapshotAudit = { ...audit('account-app', 38, 38, 'Account app'), target: { path: 'apps/account/src', files: 6 } };
+
+  it('a product removed from the config does not linger: its audit is dropped, the listed products are not measured yet', () => {
+    const q = teamQuality({ model: sample, ...team, audits: [account], snapshotAt: '2026-10-20T10:00:01Z' });
+    expect(q.adoption).toBeNull();
+    expect(q.unmeasured).toEqual([
+      { key: 'prints', name: 'Acme Prints', repo: 'acme-design-demo/acme-prints' },
+      { key: 'crm', name: 'Acme CRM', repo: 'acme-design-demo/acme-crm' },
+    ]);
+    const fig = q.figures.find((f) => f.id === 'adoption')!;
+    expect(fig.value).toBe('No audit yet');
+    expect(fig.detail).toBe('Acme Prints and Acme CRM are not measured yet.');
+    expect(q.pillars[1]).toMatchObject({ value: 'No audit yet', meter: null, viz: null });
+    expect(JSON.stringify(q)).not.toContain('Account app');
+  });
+
+  it('a config that lists no products keeps every run, grouped by folder, and names nothing to measure', async () => {
+    const model = await loadRepoModel(memorySource({ 'README.md': '# hi' }, { owner: 'acme', repo: 'ds', sha: SHA }));
+    const q = teamQuality({ model, ...team, audits: [audit('web', 30, 40, 'Web app, main')] });
+    expect(q.adoption!.products.map((p) => p.name)).toEqual(['Web app']);
+    expect(q.unmeasured).toEqual([]);
+  });
+
+  it('a removed product key recorded by bridge snapshot is dropped too; a listed one is matched by its key or its label', () => {
+    const q = teamQuality({
+      model: sample,
+      ...team,
+      audits: [
+        { ...account, product: 'account' },
+        { ...audit('prints', 45, 60, 'Acme Prints, main'), target: { path: 'products/prints/src', files: 20 } },
+        { ...audit('crm', 9, 10), product: 'crm', target: { path: 'products/crm/src', files: 8 } },
+      ],
+    });
+    expect(q.adoption!.products.map((p) => [p.name, p.latest.component])).toEqual([
+      ['Acme CRM', 90],
+      ['Acme Prints', 75],
+    ]);
+    expect(q.adoption!.earlier).toEqual([]);
+    expect(q.unmeasured).toEqual([]);
+  });
+
+  it('says how to measure each product: a checkout for its own repository, its folder otherwise', () => {
+    expect(auditStep({ key: 'prints', name: 'Acme Prints', repo: 'acme-design-demo/acme-prints' })).toEqual({ checkout: 'acme-design-demo/acme-prints', flag: '--audit "products/prints=Acme Prints"' });
+    expect(auditStep({ key: 'web', name: 'Web app', path: 'apps/web' })).toEqual({ checkout: null, flag: '--audit "apps/web=Web app"' });
+    const msg = auditAskMessage('acme-design-demo/bridge-demo-ds', [{ key: 'prints', name: 'Acme Prints', repo: 'acme-design-demo/acme-prints' }, { key: 'web', name: 'Web app', path: 'apps/web' }], 'T', 'D');
+    expect(msg).toBe(
+      'Could you turn on the adoption audit in Bridge for Acme Prints and Web app for acme-design-demo/bridge-demo-ds? Copy the Bridge data workflow (T) into .github/workflows/, then in its bridge snapshot step check out acme-design-demo/acme-prints into products/prints and add --audit "products/prints=Acme Prints"; add --audit "apps/web=Web app". How it works: D',
+    );
+    expect(msg).not.toContain('\u2014');
   });
 });

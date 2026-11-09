@@ -15,6 +15,7 @@ vi.mock('./github-session', () => ({
   currentContributor: () => null,
   currentViewer: () => ({ login: 'sam', avatar_url: '' }),
   hasWorkingToken: () => true,
+  onSampleTeam: () => false,
   readRepo: () => ({ owner: 'acme', repo: 'product', defaultBranch: 'main' }),
   resolveAccess: async () => null,
   RateLimitError: class extends Error {},

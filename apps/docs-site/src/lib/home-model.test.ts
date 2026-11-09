@@ -284,7 +284,8 @@ describe('page state', () => {
   it('signed out, loading, busy, empty', () => {
     expect(homeState({ signedIn: false, loading: false, needs: 3, branches: 0 })).toBe('signed-out');
     expect(homeState({ signedIn: true, loading: true, needs: 0, branches: 0 })).toBe('loading');
-    expect(homeState({ signedIn: true, loading: true, needs: 1, branches: 0 })).toBe('busy');
+    expect(homeState({ signedIn: true, loading: true, needs: 1, branches: 0 })).toBe('loading');
+    expect(homeState({ signedIn: true, loading: true, needs: 0, branches: 10 })).toBe('loading');
     expect(homeState({ signedIn: true, loading: false, needs: 0, branches: 2 })).toBe('busy');
     expect(homeState({ signedIn: true, loading: false, needs: 0, branches: 0 })).toBe('empty');
   });

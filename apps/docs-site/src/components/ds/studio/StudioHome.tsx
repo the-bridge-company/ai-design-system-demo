@@ -14,7 +14,7 @@
 // Admins also get join requests (board E7b, scripts/team-home.ts): one row per person, Decline and Approve inline while
 // 3 things or fewer wait; more than that, it folds into "N more" like any row and Review all leads there.
 import { createRoot, type Root } from 'react-dom/client';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { Who } from './faces';
 import { Alert, AvatarGroup, Badge, Button, Icon, Link, Skeleton, ToastProvider } from '@bridge-ds/react';
@@ -23,6 +23,7 @@ import { Drawing } from './Drawing';
 import { QuietScene } from './QuietScene';
 import StartExploration from './StartExploration';
 import { BuildLine } from './BuildLine';
+import { loadBuildData } from '../../../scripts/building-data';
 import ButtonLink from '../ButtonLink';
 import {
   AVATARS_SHOWN,
@@ -510,8 +511,9 @@ function HomeBody(p: StudioHomeProps) {
         {quiet && <QuietScene scene="harbor" layout="window" />}
         <div className="sh-head">
           <div className="sh-head-text">
-            <h1 id="sh-hello" className="sh-hello">
-              {p.greeting}
+            {/* Who reads is not known yet: their name is held, never someone else's in the meantime. */}
+            <h1 id="sh-hello" className="sh-hello" aria-label={p.greeting ? undefined : 'Home'}>
+              {p.greeting || <Skeleton variant="text" className="sh-skel-line" />}
             </h1>
             {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{p.needs.length ? 'Your changes need you.' : QUIET_LINE}</p>}
           </div>
@@ -531,11 +533,19 @@ function HomeBody(p: StudioHomeProps) {
         )}
       </section>
       {p.failed && <p className="t-ui t-muted sh-health">{p.failed}</p>}
-      <Status health={p.health} setup={p.setup} />
-      {!loading && <WaitingOnOthers rows={p.waitingOnOthers ?? []} />}
-      {p.building && <BuildLine />}
-      {(byRole.cards.length > 0 || !loading) && explorations}
-      {!loading && <YourChanges n={p.branches.length} />}
+      {/* Until the read is done, nothing below the zone says anything: no empty explorations, no "Nothing in progress",
+          no count that is about to change. The space they take is held instead, so nothing jumps when they come. */}
+      {loading ? (
+        <HomeSkeleton building={Boolean(p.building)} />
+      ) : (
+        <>
+          <Status health={p.health} setup={p.setup} />
+          <WaitingOnOthers rows={p.waitingOnOthers ?? []} />
+          {p.building && <BuildLine />}
+          {explorations}
+          <YourChanges n={p.branches.length} />
+        </>
+      )}
       {/* The products, like project folders in Figma: each opens its page, with the explorations made in it. */}
       {!loading && <ProductFolders folders={productFolders(p.products ?? pageProducts(), p.explorations)} />}
     </div>
@@ -568,6 +578,35 @@ function WaitingOnOthers({ rows }: { rows: readonly HomeWaiting[] }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Cards held in place while the home reads: the exploration row and the products row, as many as a wide row shows. */
+export const SKELETON_CARDS = EXPLORATION_CARDS + 1;
+
+/** The space of the explorations and the products while the home reads: their headings and cards, drawn quiet. */
+function HomeSkeleton({ building }: { building: boolean }) {
+  // The Being built line reads meanwhile, so it is there with the rest instead of pushing the cards down after.
+  useEffect(() => {
+    if (building) void loadBuildData().catch(() => undefined);
+  }, [building]);
+  const row = (label: string) => (
+    <section className="sh-section" aria-hidden="true" data-home-skeleton={label}>
+      <Skeleton variant="text" className="sh-skel-heading" />
+      <ul className="sh-cards">
+        {Array.from({ length: SKELETON_CARDS }, (_, i) => (
+          <li key={i} className="sh-card-item">
+            <Skeleton variant="rect" className="sh-skel-card" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+  return (
+    <>
+      {row('explorations')}
+      {row('products')}
+    </>
   );
 }
 

@@ -6,7 +6,9 @@
 // sample-team dialog's words (403 `demo`, api/contribute demoWriteRefusal). The sample team has one banner and one call to
 // action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Edits stay in this browser as
 // drafts for the visit (scripts/demo-drafts.ts); every action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
-// scripts/demo-gate.ts). Someone who can write to the demo repository (its owner) keeps the normal Studio.
+// scripts/demo-gate.ts). Everyone reads the sample team that way, signed in or not: a GitHub sign-in or a Bridge account
+// of the browser never takes part there (scripts/github-session.ts onSampleTeam). On Bridge's own design system,
+// someone who can write to it keeps the normal Studio.
 
 import { canonicalRepo, isTeamKey } from './team-path.js';
 

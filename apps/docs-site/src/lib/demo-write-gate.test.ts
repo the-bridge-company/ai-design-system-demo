@@ -5,6 +5,7 @@ import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
 import { type ContribDeps, contributorOf, cookieName, DEMO_REFUSAL, handleContribute, signSession } from '../../api/contribute/index';
 import { DEMO_MEMBERS, DEMO_VISITOR_EMAIL, seedDemoTeam } from '../../api/_lib/demo-members';
+import { ACCOUNT_COOKIE, putAccount, signAccountSession } from '../../api/_lib/account';
 import { DEMO_WORDS } from './demo';
 
 const HOST = 'bridge.example.com';
@@ -165,6 +166,19 @@ describe('the demo visitor reads as Dana', () => {
     expect(info.member.visitor).toBeUndefined();
     const r = await post(`${q}&gh=${encodeURIComponent(`/repos/${DEMO}/issues`)}`, { title: 'x' }, { cookie: mia });
     expect((await r.clone().json().catch(() => ({}))).error).not.toBe(DEMO_REFUSAL);
+  });
+
+  it("reads the sample team as Dana for a signed-in Bridge account too, never as the account's own team", async () => {
+    await fresh();
+    const email = 'florian@example.com';
+    await putAccount(t.redis, { id: 'florian', email, name: 'Florian', github: null, createdAt: new Date(T0).toISOString(), version: 1 });
+    await memberStore(t.redis).put(DEMO, { email, name: 'Florian', role: 'admin', version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
+    const account = `${ACCOUNT_COOKIE}=${signAccountSession({ email, v: 1, exp: T0 + 3_600_000 }, SECRET)}`;
+    const r = await get(q, { cookie: account });
+    expect((await r.json()).member).toMatchObject({ name: 'Dana', visitor: true });
+    // On a real team the same account is itself.
+    await memberStore(t.redis).put(TEAM, { email, name: 'Florian', role: 'admin', version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
+    expect((await (await get(`?repo=${encodeURIComponent(TEAM)}`, { cookie: account })).json()).member).toMatchObject({ name: 'Florian' });
   });
 
   it('leaves real teams as they were: no visitor session, nobody signed in', async () => {

@@ -364,6 +364,7 @@
 .pf-art-pane {
   align-items: center;
   justify-content: center;
+  border: var(--border-width-default) solid var(--color-border-default);
   background: var(--color-bg-subtle);
   color: var(--color-text-default);
 }

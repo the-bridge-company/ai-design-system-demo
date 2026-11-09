@@ -1,5 +1,100 @@
 # @bridge-ds/docs-site
 
+## 0.30.0
+
+### Minor Changes
+
+- b2bf081: What an exploration changes in the library (boards LI1 to LI8). Every exploration page has the section "What this
+  changes in the library": one summary line, then one row per piece (new component or pattern, a new size or a change
+  to a component, a token change in plain words with its path under Details), before and after, and one status tag
+  (Needs the lead, Approved, Being built, Kept in this screen, Uses an existing piece, Changes asked, Two ways). Nothing
+  to change is celebrated with a Field Guide drawing and the pieces it uses.
+
+  - Looks right approves the screen and every library piece it needs; the lead answers one piece on its own from its ⋯
+    menu (Approve only this one, Ask for changes on this one, Keep it in this screen only, Use an existing piece
+    instead). The answers are kept in the exploration's Bridge block (`library.decisions`, backward compatible). A piece
+    kept in the screen goes to the developers' task as a local piece.
+  - Two open explorations that change the same part of the same component differently are a conflict: Looks right waits
+    until the lead keeps one way or both as two sizes; the choice is kept on both explorations and both designers are
+    told (a comment, and a notification for designers who joined by email).
+  - A token that reaches every product says so; the lead's approval is enough.
+  - Library requests filed for an exploration carry `origin` ({ kind: "exploration", repo, number, product, name }) in
+    their Bridge block, and the exploration records the requests it needs (`library.neededBy`). Being built shows
+    "Waiting for the library: <piece>" until the library releases it.
+  - Review all shows one item per exploration with its library line under the title and the section inside.
+  - Bridge's library check also finds pieces a branch marks with `data-bridge-piece` (or `data-bridge-pattern`), token
+    edits in a design copy's vendored library, and a new size on a component, and records the library components the
+    branch uses. Claude is told to mark what it builds outside the library.
+  - The demo seed takes an `overlay` folder per item and `check: true` to run the library check as the member.
+
+- e8a55e0: Changes: the Library group stays for everyone and every library change says where it comes from (boards LI6, LI7).
+  "Needed by Order fulfilment timeline · Acme Prints" links to the exploration; the rest reads "From the DS lead" with
+  the reason Bridge can tell (accessibility fix, new brand, from the Figma UI kit, docs, rule for every product). The
+  origin is read from an `origin` field in any Bridge block of the change (tolerant), else its "Needed by" block, else
+  inferred. A filter narrows it (All, From explorations, From the DS lead, with counts, kept in the address), and the
+  library rows wear the exploration section's tags (Needs Dana, Approved, Being built, Kept in this screen). The design
+  lead groups the library by component or by exploration: a component two explorations ask for in different ways opens
+  with Compare and pick, an exploration asking for what the lead already made opens with Approve, build once, the rest
+  stays folded. Library changes no longer hide under their exploration's row.
+
+### Patch Changes
+
+- 6808d39: One rule for who leads a team's design (lib/design-lead): an admin or a member marked lead signed in by email reads
+  the same Studio pages as an admin or design owner signed in with GitHub. The library's Explorations page now gives an
+  email lead "Start an exploration" in the library instead of the designer's "ask the leads" view, and the same rule
+  decides the library target of Start an exploration, the library update of a product, Settings > Products and the
+  Figma file, the Figma link of components, Home (the lead's home and Needs you for the explorations waiting on a lead,
+  an admin with GitHub included) and the empty Review all queue. On the sample team, every signed-out visitor reads as
+  Dana, its lead, and now sees her pages; every write still opens the sample team's dialog.
+- 8b596bd: Studio Quality for a team lists adoption only for the products in its bridge.config.json today. An audit of an app removed from the config (the sample team's Account app) no longer shows; each listed product without an audit says "Not measured yet", with how a developer measures it (a checkout of its repository and an `--audit` flag in the Bridge data workflow). A config that lists no products keeps every audit, as before.
+- 3ef1aac: Studio Quality: Share sits at the end of the page header's title line, right-aligned, on a team's Quality page too (it was under the title). On a phone it keeps the title's line.
+- 55ae983: Review all: every item of the queue reads the same (board Q1). A suggestion takes the branch review's layout (the title
+  in the display face, its status, who suggests it, What changes) instead of a card on a stack; explorations, guidance
+  drafts and the other rows show the same head. One bar for every item at the same place (comment, Ask for changes,
+  Approve, More actions) with one keyboard line: A approve, S ask for changes, J K next and previous. The list shows a
+  window of seven rows around the current one with a steady "and N more", and titles wrap to two lines. The motion
+  preview starts on the frame where the component shows, so it is never two empty boxes, and it no longer restarts when
+  the review repaints. Plain words for designers: what a token paints ("Emphasis border") instead of its path (kept in
+  Details), the motion sentence without the token name (under Details), "EmptyState usage guidance" instead of a mono
+  "EmptyState docs", and a docs suggestion's summary no longer names the tool that filed it.
+
+  An exploration in the queue shows its captured screen (linked to that screen on its preview) and its next step from
+  Where it stands; a guidance draft shows its first lines. The keyboard line lists only the keys that work on the item:
+  Enter opens an item reviewed on its own page.
+
+- 8845df2: Design review follow-ups on the library impact and Changes.
+
+  - Before Done exploring, every piece of "What this changes in the library" reads Exploring, for the lead too: "Needs
+    you" only once the exploration waits on the lead, the same moment Changes > Waiting on me counts it. Core
+    `impactStatus` takes `asked` (left out: asked) and has an `exploring` status. The exploration page asks
+    `viewerDecidesExplorations()` instead of its own copy of the rule.
+  - Home > Products > Library counts the library's own changes as Changes lists them under Library, in a product card's
+    words ("1 exploring · 4 being built · 9 in review"), never "Nothing in progress" next to 14 library changes.
+  - One status tag mapping in Studio (lib/status-tag): Exploring and Being built read in Harbor on every surface, as on
+    Home and the validated boards. The DS colours are unchanged.
+  - Plain words: a change behind the library reads "The library moved on since · Bring the latest in" (no update count);
+    Quality links the contrast checks on GitHub only for a viewer signed in with GitHub, anyone else reads what they mean.
+
+- 9535e7c: Studio consistency: one count, one verb, one meaning per tag colour.
+
+  - Build requests: the Studio home line and the Being built page header are one sentence over the same rows (build
+    requests, Claude's fixes, explorations handed to developers), in the Being built tabs' words: "1 in progress, 4 in
+    review, 3 waiting to be picked up." Core `buildSummaryLine` (also the MCP summary) counts In review on its own and
+    adds requests waiting for more than a week.
+  - One action, one name: "Bring the latest in" on the exploration's product line, the product page and library rows
+    (was "Bring it in" and "Get the latest").
+  - Status tags take their colour from what their state means, never from their words (lib/status-tag): blue is in
+    progress, amber waits on someone (Needs review, In review, Check the build, Waiting for lead), green is done, red is
+    blocked or two ways, grey is over. No Studio tag reads plum any more. Approved, waiting to ship is green.
+  - Quality on a phone: a finding's tag and action sit under its title instead of squeezing it.
+  - Home > Products: a folder with no screen of its own (the Library) shows its Field Guide drawing in the mosaic's place.
+
+- Updated dependencies [b2bf081]
+- Updated dependencies [55ae983]
+- Updated dependencies [8845df2]
+- Updated dependencies [9535e7c]
+  - @bridge-ds/core@0.31.0
+
 ## 0.29.0
 
 ### Minor Changes

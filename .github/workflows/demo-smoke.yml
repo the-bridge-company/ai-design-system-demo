@@ -1,9 +1,9 @@
 name: Demo smoke test
 
 # The demo team (acme-design-demo/bridge-demo-ds) read as a signed-out visitor after each production deploy of the
-# docs site, every morning and by hand: home, Changes, the Account app page and one exploration per state. Fails when
-# an exploration is missing, a card does not say its state, or a page logs an error of its own
-# (scripts/demo-smoke.mjs). Screenshots of every page are kept as an artifact.
+# docs site, every morning and by hand: home, Changes, the demo's product pages (Acme Prints and Acme CRM) and one
+# exploration per state. Fails when an exploration is missing, a card does not say its state, or a page logs an error
+# of its own (scripts/demo-smoke.mjs). Screenshots of every page are kept as an artifact.
 
 on:
   # Vercel reports each deploy as a commit status (no GitHub deployment): the docs site's, on main, is production.

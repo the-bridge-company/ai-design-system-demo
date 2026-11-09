@@ -69,7 +69,7 @@ import {
   EXPLORATION_STATUS_LABEL,
   explorationSlugFromBranch,
   figmaPageLink,
-  mergeExplorationNotes,
+  explorationNotesWithUpdate,
   explorationNotePathOf,
   noteFileOf,
   normalizeExplorationNotes,
@@ -724,12 +724,10 @@ export async function saveExploration(ctx: BridgeContext, a: { ref: string; mess
   // The notes merged into the note file, in the same commit: section by section, what a person wrote stays.
   if (withNotes) {
     const prFiles = await at.gh.listPullRequestFiles(p.number).then((f) => f.map((x) => x.filename)).catch(() => null);
-    const path = explorationNotePathOf(prFiles, p.headRef);
-    const sent = files.find((f) => f.path === path);
-    if (sent && sent.content === null) throw new Error(`${path} holds the exploration's notes: Bridge removes it on Done exploring, never in a save.`);
-    const before = await at.gh.getFileText(path, p.headRef);
-    const base = sent?.content ?? before ?? freshNote();
-    const md = mergeExplorationNotes(base, a.notes!);
+    const sent = files.find((f) => f.path === explorationNotePathOf(prFiles, p.headRef));
+    if (sent && sent.content === null) throw new Error(`${sent.path} holds the exploration's notes: Bridge removes it on Done exploring, never in a save.`);
+    // The same merge Bridge's own notes save runs (core explorationNotesWithUpdate, saveExplorationNotesOnGitHub).
+    const { path, before, md } = await explorationNotesWithUpdate(at.gh, p, a.notes!, { sent: sent?.content ?? undefined });
     notes = parseExplorationNotes(md);
     if (sent) sent.content = md;
     else if (md !== before) files.push({ path, content: md });

@@ -12,9 +12,11 @@ import {
   explorationPrTitle,
   explorationProblems,
   explorationSlug,
+  explorationSlugFromBranch,
   explorationStatus,
   explorationTryIt,
   isArchivedExploration,
+  isExplorationBranch,
   isExplorationPull,
   EXPLORATION_ARCHIVED_LABEL,
   parseExplorationBody,
@@ -30,6 +32,7 @@ import {
   type PromotionPlan,
 } from './explorations';
 import { GitHubError, type GitHubClient, type PullRequestSummary } from './github-client';
+import { explorationNotePathOf, mergeExplorationNotes, parseExplorationNotes, updateEmpty, type ExplorationNotes, type NotesUpdate } from './exploration-notes';
 import { findPreviewComment, previewLinks, previewsSettled, previewUrl, type BranchPreview, type PreviewApps } from './previews';
 import { productRepos, type ProductConfig } from './products';
 import { branchPreviewUrls } from './previews-github';
@@ -308,6 +311,50 @@ export async function findExplorationOnGitHub(gh: GitHubClient, ref: string | nu
   const open = await gh.findOpenPullRequest(branch);
   if (!open) throw new GitHubError(404, `No open exploration on ${branch}. \`bridge explore list\` shows the running ones.`);
   return gh.getPullRequest(open.number);
+}
+
+/**
+ * The note file of an exploration with a notes update merged in (exploration-notes.ts mergeExplorationNotes), section
+ * by section, what a person wrote kept: the note the branch carries, else a fresh one. `sent`: a note file the same
+ * save also sends, merged into instead of the one on the branch. What bridge_save_exploration writes with `notes`.
+ */
+export async function explorationNotesWithUpdate(
+  gh: GitHubClient,
+  p: { number: number; headRef: string; title: string; body: string },
+  update: NotesUpdate,
+  opts: { sent?: string | undefined } = {},
+): Promise<{ path: string; before: string | undefined; md: string }> {
+  const prFiles = await gh
+    .listPullRequestFiles(p.number)
+    .then((f) => f.map((x) => x.filename))
+    .catch(() => null);
+  const path = explorationNotePathOf(prFiles, p.headRef);
+  const before = await gh.getFileText(path, p.headRef);
+  const e = parseExplorationBody(p.body);
+  const fresh = () => explorationNote({ name: e?.name ?? p.title.replace(/^Exploration:\s*/i, ''), purpose: e?.purpose ?? '', slug: explorationSlugFromBranch(p.headRef) ?? undefined });
+  return { path, before, md: mergeExplorationNotes(opts.sent ?? before ?? fresh(), update) };
+}
+
+/**
+ * A save of "Where it stands" alone, the way Claude saves notes with no file (bridge_save_exploration with `notes`):
+ * the update merged into the note file and committed on the exploration's own branch, as whoever `gh` writes for.
+ * Nothing else changes: not its state, its block or its labels. Notes that already say this write nothing.
+ */
+export async function saveExplorationNotesOnGitHub(
+  gh: GitHubClient,
+  ref: string | number,
+  update: NotesUpdate,
+  opts: { message?: string | undefined } = {},
+): Promise<{ number: number; branch: string; path: string; saved: boolean; commit?: string; notes: ExplorationNotes }> {
+  if (updateEmpty(update)) throw new GitHubError(422, 'Say what the notes hold: decisions, edge cases, open questions or the next step.');
+  const p = await findExplorationOnGitHub(gh, ref);
+  if (!isExplorationBranch(p.headRef)) throw new GitHubError(422, `${p.headRef} is not an exploration branch: Bridge only saves on explore/ branches.`);
+  if (p.state !== 'open') throw new GitHubError(422, 'This exploration is closed, so nothing is saved on it.');
+  const { path, before, md } = await explorationNotesWithUpdate(gh, p, update);
+  const notes = parseExplorationNotes(md);
+  if (md === before) return { number: p.number, branch: p.headRef, path, saved: false, notes };
+  const res = await gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: p.headRef, message: opts.message?.trim() || 'Update where it stands', files: [{ path, content: md }] });
+  return { number: p.number, branch: p.headRef, path, saved: true, commit: res.sha, notes };
 }
 
 export interface PromotedExploration extends PromotionPlan {

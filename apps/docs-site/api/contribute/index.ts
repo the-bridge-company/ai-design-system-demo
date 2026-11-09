@@ -1001,7 +1001,12 @@ export interface SeedOutcome {
   url?: string;
   /** In a run: the step that stopped it. What came before it stays, and the next run leaves it as it is. */
   error?: string;
+  /** Its "Where it stands" notes, when the plan has some: would change them, already say this, or saved by this run. */
+  notes?: 'writes' | 'same' | 'saved';
 }
+
+/** The commit a seeded notes save makes on the branch, in the member's words. */
+export const SEED_NOTES_MESSAGE = 'Note where it stands';
 
 /** The core steps the seeding runs, from the MCP library bundle (this function ships without core itself). */
 type SeedLib = typeof import('@bridge-ds/mcp');
@@ -1055,6 +1060,9 @@ export const setSeedRetry = (r: SeedRetry | undefined) => {
  * as that lead (leadApproveOnGitHub, which opens the developers' task in the product's repository). GitHub shows
  * Bridge's App acting with the member's "Requested by" line, and the exploration block names the member. An
  * exploration whose branch is already in the copy is left as it is, so a run said again starts only what is missing.
+ * An item's `notes` ("Where it stands") are saved as the member the way their Claude session saves them (core
+ * saveExplorationNotesOnGitHub, the notes merge of bridge_save_exploration), after its files, or alone on an
+ * exploration already there: nothing else of it moves, and notes that already say this write nothing.
  * Without `apply`, a dry run that writes nothing. Run by scripts/seed-demo-explorations.mjs; nobody else may.
  */
 async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
@@ -1091,9 +1099,34 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
       const ref = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}/git/ref/heads/${encodeRef(item.branch)}`);
       if (ref.status === 200) {
         o.status = 'exists';
+        // Already there: only its notes, saved as its member the way their Claude session saves them. Nothing else moves.
+        if (!item.notes) continue;
+        const member = await ctx.svc.members.get(t.full, item.member.email);
+        if (!member) {
+          if (apply) throw new Error(`${item.member.name} is not on the team.`);
+          o.notes = 'writes';
+          continue;
+        }
+        const gh = memberClient(ctx, lib, t, pairs, member, copy, seedRetry);
+        if (!apply) {
+          const p = await lib.findExplorationOnGitHub(gh, item.branch);
+          const { before, md } = await lib.explorationNotesWithUpdate(gh, p, item.notes);
+          o.notes = md === before ? 'same' : 'writes';
+          continue;
+        }
+        // The member keeps their exploration (their ownership key, as when they started it), or Bridge refuses the save.
+        const keeper = await ctx.svc.redis.cmd('GET', branchKey(copy, item.branch));
+        if (keeper && !sameEmail(keeper, member.email)) throw new Error('Bridge keeps this exploration for someone else.');
+        if (!keeper) {
+          await ctx.svc.redis.cmd('SET', branchKey(copy, item.branch), member.email, 'EX', OWNERSHIP_TTL_S);
+          await rememberMine(ctx, copy, member.email, `b:${item.branch}`);
+        }
+        const saved = await lib.saveExplorationNotesOnGitHub(gh, item.branch, item.notes, { message: SEED_NOTES_MESSAGE });
+        o.notes = saved.saved ? 'saved' : 'same';
         continue;
       }
       if (ref.status !== 404) throw new Error(`GitHub answered ${ref.status} when looking for the branch.`);
+      if (item.notes) o.notes = 'writes';
       if (!apply) continue;
       if (!bases.has(copy)) {
         const info = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}`);
@@ -1122,6 +1155,8 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
       o.pr = started.pr;
       o.url = started.url;
       if (item.files.length) await gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: item.branch, message: item.message, files: item.files });
+      // Where it stands, while it is still being explored: what their Claude session saves next to the screens.
+      if (item.notes) o.notes = (await lib.saveExplorationNotesOnGitHub(gh, started.pr, item.notes, { message: SEED_NOTES_MESSAGE })).saved ? 'saved' : 'same';
       if (item.state === 'exploring') continue;
       await lib.askLeadOnGitHub(gh, started.pr, { pieces: [], openedByName: member.name, leads: [] });
       if (item.state !== 'done') continue;

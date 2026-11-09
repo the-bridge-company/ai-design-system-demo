@@ -382,3 +382,14 @@ describe('more than 3 waiting', () => {
     expect(moreNeedsAction(true)).toEqual({ label: 'See all', path: 'changes/?who=mine' });
   });
 });
+
+describe('guidanceExcerpt', () => {
+  it('the first lines of a draft: its summary, then when to use it, cut on a word', async () => {
+    const { guidanceExcerpt } = await import('./home-model');
+    expect(guidanceExcerpt({ summary: 'Hides text from sight.', whenToUse: ['A label for an icon-only button.', 'More'] })).toBe('Hides text from sight. A label for an icon-only button.');
+    expect(guidanceExcerpt(null)).toBeNull();
+    const long = guidanceExcerpt({ summary: 'word '.repeat(100) }, 40)!;
+    expect(long.length).toBeLessThanOrEqual(41);
+    expect(long.endsWith('…')).toBe(true);
+  });
+});

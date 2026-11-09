@@ -6,7 +6,8 @@
 // Rules: lib/queue-nav.ts.
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, Circle, CircleAlert, CircleDot, CircleX, Ellipsis, UserRoundPlus } from 'lucide-react';
-import { Badge, Button, Icon, IconButton, Input, Kbd, Link, Menu, MenuContent, MenuItem, MenuTrigger, Progress, SidebarNav, SidebarNavItem, SidebarNavSection, ToastProvider, Tooltip, useToast, type UseToastReturn } from '@bridge-ds/react';
+import { Badge, Button, Icon, IconButton, Input, Kbd, Link, Menu, MenuContent, MenuItem, MenuTrigger, Progress, SidebarNav, SidebarNavItem, SidebarNavSection, Skeleton, ToastProvider, Tooltip, useToast, type UseToastReturn } from '@bridge-ds/react';
+import { capturedLine } from '../../../lib/preview-shots';
 import ButtonLink from '../ButtonLink';
 import { positionLabel, queueWindow, type QueueOutcome } from '../../../lib/queue-nav';
 import { Who, type Face } from './faces';
@@ -127,16 +128,40 @@ export interface QueueBarProps {
   /** Approve, or the link that opens the item where it is reviewed. */
   primary: QueueBarAction | null;
   menu: QueueBarMenuItem[];
+  /** The keys that work on this item (QueueKeys). */
+  keys: readonly QueueKey[];
   said: string;
   /** Focus the comment field when it grows (S with an empty comment). */
   focusComment: number;
 }
 
-/** The keys of the queue: the same line under every item, the keys press what the bar offers. */
-export function QueueKeys() {
+/** A key the bar answers to: A approves, S asks for changes, Enter opens an item reviewed on its own page. */
+export type QueueKey = 'approve' | 'suggest' | 'open';
+
+/**
+ * The keys of the queue, one line at the same place under every item: only the keys that work on the item on screen,
+ * then J and K, which always move.
+ */
+export function QueueKeys({ keys }: { keys: readonly QueueKey[] }) {
   return (
     <p className="rq-bar-keys rq-muted">
-      Keyboard: <Kbd keys="A" /> approve · <Kbd keys="S" /> ask for changes · <Kbd keys="J" /> <Kbd keys="K" /> next and previous
+      Keyboard:{' '}
+      {keys.includes('approve') && (
+        <>
+          <Kbd keys="A" /> approve ·{' '}
+        </>
+      )}
+      {keys.includes('suggest') && (
+        <>
+          <Kbd keys="S" /> ask for changes ·{' '}
+        </>
+      )}
+      {keys.includes('open') && (
+        <>
+          <Kbd keys="Enter" /> open ·{' '}
+        </>
+      )}
+      <Kbd keys="J" /> <Kbd keys="K" /> next and previous
     </p>
   );
 }
@@ -172,7 +197,7 @@ export function QueueBar(p: QueueBarProps) {
   };
   const button = (a: QueueBarAction, variant: 'primary' | 'secondary') =>
     a.href ? (
-      <ButtonLink variant={variant} size="lg" href={a.href} className="rq-bar-btn">
+      <ButtonLink variant={variant} size="lg" href={a.href} className="rq-bar-btn" data-rq-open="">
         {a.label}
       </ButtonLink>
     ) : (
@@ -214,7 +239,7 @@ export function QueueBar(p: QueueBarProps) {
           </Menu>
         )}
       </div>
-      <QueueKeys />
+      <QueueKeys keys={p.keys} />
       <p className="rq-said" role="status" aria-live="polite">
         {said}
       </p>
@@ -230,14 +255,38 @@ export interface QueueItemProps {
   line: string;
   detail?: string | null | undefined;
   pill?: { label: string; tone: 'warning' | 'danger' | 'success' | 'neutral' } | null | undefined;
+  /** An exploration: its captured screen (linked to that screen on its preview when known) and its next step. */
+  glance?: { shot: { src: string; capturedAt: string | null; href: string | null } | null; nextStep: string | null } | 'loading' | null;
+  /** A guidance draft: its first lines. */
+  excerpt?: string | null | undefined;
+}
+
+function Capture({ shot }: { shot: { src: string; capturedAt: string | null; href: string | null } }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  const img = <img src={shot.src} alt="The latest captured screen of this exploration" loading="lazy" onError={() => setFailed(true)} />;
+  return (
+    <figure className="rq-shot">
+      {shot.href ? (
+        <a href={shot.href} target="_blank" rel="noopener" className="rq-shot-frame" aria-label="Open this screen in the preview (opens in a new tab)">
+          {img}
+        </a>
+      ) : (
+        <span className="rq-shot-frame">{img}</span>
+      )}
+      {shot.capturedAt && <figcaption className="rq-muted">{capturedLine(shot.capturedAt, Date.now())}</figcaption>}
+    </figure>
+  );
 }
 
 /**
  * A row that is not reviewed in place (an exploration, usage guidance drafts, library health, setup, a join request):
- * the same head as a branch or a suggestion (the title in the display face, its status, who waits), so every item of
+ * the same head as a branch or a suggestion (the title in the display face, its status, who waits), then what there is
+ * to see before opening it (an exploration's captured screen and next step, a draft's first lines), so every item of
  * the queue reads the same. Its action is in the bar.
  */
 export function QueueItem(p: QueueItemProps) {
+  const g = p.glance && p.glance !== 'loading' ? p.glance : null;
   return (
     <div className="br is-single is-queue rq-other">
       <header className="br-head">
@@ -255,6 +304,25 @@ export function QueueItem(p: QueueItemProps) {
         </p>
         {p.detail && <p className="br-from">{p.detail}</p>}
       </header>
+      {p.glance === 'loading' && <Skeleton variant="rect" className="rq-shot-skel" />}
+      {g && (g.shot || g.nextStep) && (
+        <section className="rq-what" aria-label="Where it stands">
+          {g.shot && <Capture shot={g.shot} />}
+          {g.nextStep && (
+            <p className="rq-next">
+              <strong>Next step:</strong> {g.nextStep}
+            </p>
+          )}
+        </section>
+      )}
+      {p.excerpt && (
+        <section className="rq-what" aria-labelledby="rq-draft">
+          <h3 id="rq-draft" className="rq-what-h">
+            The draft
+          </h3>
+          <p className="rq-excerpt">{p.excerpt}</p>
+        </section>
+      )}
     </div>
   );
 }

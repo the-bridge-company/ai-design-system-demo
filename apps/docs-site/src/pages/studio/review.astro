@@ -31,6 +31,7 @@ import { siteRepo } from '../../lib/config';
 import { PAGE_SOURCES, freshness } from '../../lib/sources';
 import { dashboard } from '../../lib/stats';
 import type { BranchesConfig } from '../../lib/branches';
+import { guidanceExcerpt } from '../../lib/home-model';
 import OverrideDialog from '../../components/OverrideDialog.astro';
 
 // The same build-time facts as the home (pages/studio/index.astro), so the queue lists the same rows.
@@ -38,7 +39,7 @@ const s = dashboard();
 const comps = loadComponents();
 /** When a file last changed on main (ISO), null when git has no answer (a shallow clone). */
 const changedAt = (path: string): string | null => git(['log', '-1', '--format=%cI', '--', path]) || null;
-const guidance = comps.filter((c) => guidanceState(c) === 'review').map((c) => ({ name: c.name, href: docsEditHref(c.slug), since: changedAt(c.files.docs) }));
+const guidance = comps.filter((c) => guidanceState(c) === 'review').map((c) => ({ name: c.name, href: docsEditHref(c.slug), since: changedAt(c.files.docs), excerpt: guidanceExcerpt(c.docs) }));
 const homeStatic = { contrastFail: s.contrast.fail };
 
 // What the branch review needs (pages/studio/changes.astro).

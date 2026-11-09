@@ -210,6 +210,8 @@ export interface NeedRow {
   request?: { id: string; name: string };
   /** The developers asked the viewer a question on what they build: counts in the nav badge with the reviews. */
   question?: boolean;
+  /** A guidance draft: its first lines, shown in the review queue. */
+  excerpt?: string | null;
 }
 
 /** The verb on a Needs you row's button: the row's own, else the kind's. */
@@ -426,6 +428,17 @@ export interface GuidanceDraft {
   slug?: string;
   href: string;
   since: string | null;
+  /** The first lines of the draft (guidanceExcerpt), for the review queue. */
+  excerpt?: string | null;
+}
+
+/** The first lines of a usage guidance draft: its summary, then when to use it, cut at about 280 characters. */
+export function guidanceExcerpt(docs: { summary?: string | null; whenToUse?: readonly string[] | null } | null | undefined, max = 280): string | null {
+  const text = [docs?.summary?.trim(), docs?.whenToUse?.[0]?.trim()].filter(Boolean).join(' ');
+  if (!text) return null;
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), max - 40)).trimEnd()}…`;
 }
 
 /**
@@ -457,7 +470,7 @@ export function guidanceChangeOf(
  * for review, it is in review like any other change.
  */
 export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChange | null = null): NeedRow {
-  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: `${g.name} usage guidance`, person: CLAUDE, thumb: { kind: 'text' as const } };
+  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: `${g.name} usage guidance`, person: CLAUDE, thumb: { kind: 'text' as const }, ...(g.excerpt ? { excerpt: g.excerpt } : {}) };
   if (change) {
     return {
       ...base,

@@ -12,6 +12,7 @@ const bar = (over: Partial<QueueBarProps> = {}): QueueBarProps => ({
   secondary: { label: 'Ask for changes', needsText: 'Say what to change in the comment first.', onClick: vi.fn() },
   primary: { label: 'Approve', onClick: vi.fn() },
   menu: [{ label: 'Copy link', onClick: vi.fn() }],
+  keys: ['approve', 'suggest'],
   said: '',
   focusComment: 0,
   ...over,
@@ -37,11 +38,29 @@ describe('the review queue: one layout for every item', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('an item reviewed on its own page: the same bar and keyboard line, its link in the primary place', () => {
-    const { container } = render(createElement(QueueBar, bar({ comment: false, note: 'You review it on its own page.', secondary: null, primary: { label: 'Open review', href: '/studio/explorations/?pr=1' }, menu: [] })));
+  it('an item reviewed on its own page: the same bar, its link in the primary place, only the keys that work there', () => {
+    const { container } = render(createElement(QueueBar, bar({ comment: false, note: 'You review it on its own page.', secondary: null, primary: { label: 'Open review', href: '/studio/explorations/?pr=1' }, menu: [], keys: ['open'] })));
     expect(screen.getByRole('link', { name: 'Open review' }).getAttribute('href')).toBe('/studio/explorations/?pr=1');
     expect(screen.getByText('You review it on its own page.')).toBeTruthy();
-    expect(keysOf(container)).toBe(keysLine);
+    expect(keysOf(container)).toMatch(/^Keyboard: \S+ open · J K next and previous$/);
+    expect(keysOf(container)).not.toContain('approve');
+  });
+
+  it('an exploration shows its captured screen, linked to that screen, and its next step; a draft its first lines', () => {
+    const { container, unmount } = render(
+      createElement(QueueItem, {
+        title: 'Order fulfilment timeline',
+        person: null,
+        line: 'Sofia is done exploring',
+        glance: { shot: { src: '/shot.webp', capturedAt: null, href: 'https://crm-git-x.vercel.app/orders' }, nextStep: 'Check the empty state with Malik.' },
+      }),
+    );
+    expect(container.querySelector('a[href="https://crm-git-x.vercel.app/orders"] img')).toBeTruthy();
+    expect(container.textContent).toContain('Next step: Check the empty state with Malik.');
+    unmount();
+    render(createElement(QueueItem, { title: 'VisuallyHidden usage guidance', person: null, line: 'Claude AI drafted it from the code', excerpt: 'Hide text from sight while keeping it for screen readers.' }));
+    expect(screen.getByRole('heading', { level: 3, name: 'The draft' })).toBeTruthy();
+    expect(screen.getByText('Hide text from sight while keeping it for screen readers.')).toBeTruthy();
   });
 
   it('an item that is not reviewed in place has the same head as a branch: the title, then who waits', () => {

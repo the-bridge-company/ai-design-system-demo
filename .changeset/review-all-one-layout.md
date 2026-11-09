@@ -12,3 +12,7 @@ preview starts on the frame where the component shows, so it is never two empty 
 the review repaints. Plain words for designers: what a token paints ("Emphasis border") instead of its path (kept in
 Details), the motion sentence without the token name (under Details), "EmptyState usage guidance" instead of a mono
 "EmptyState docs", and a docs suggestion's summary no longer names the tool that filed it.
+
+An exploration in the queue shows its captured screen (linked to that screen on its preview) and its next step from
+Where it stands; a guidance draft shows its first lines. The keyboard line lists only the keys that work on the item:
+Enter opens an item reviewed on its own page.

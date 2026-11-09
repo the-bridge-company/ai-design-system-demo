@@ -21,6 +21,7 @@ import { Button, EmptyState, Progress, Select, Skeleton, type UseToastReturn } f
 import { Inbox } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
 import { QueueBar, QueueItem, QueueList, QueueToasts, type QueueBarProps } from '../components/ds/studio/ReviewQueue';
+import { explorationGlance, explorationOfKey, type ExplorationGlance } from './queue-glance';
 import { currentViewer, initGitHubConnect, prefersSignIn, readRepo } from './github-session';
 import { joinHandlers } from './join-handlers';
 import { viewerRole } from './needs-you';
@@ -430,12 +431,31 @@ export function initReviewQueue() {
     const sg = suggestionOfKey(row?.key ?? selected);
     sgEl.hidden = !sg;
     cardEl.hidden = Boolean(branch) || Boolean(sg) || !row;
-    render(cardEl, !branch && !sg && row ? h(QueueItem, { title: row.title, person: row.person, line: row.line, detail: row.detail ?? null, pill: row.kind === 'join' ? row.pill : null }) : null);
+    render(
+      cardEl,
+      !branch && !sg && row
+        ? h(QueueItem, { title: row.title, person: row.person, line: row.line, detail: row.detail ?? null, pill: row.kind === 'join' ? row.pill : null, glance: glanceOf(row), excerpt: row.excerpt ?? null })
+        : null,
+    );
 
     const bar = barFor(row, branch, sg);
     footEl.hidden = !bar;
     // One bar per item: a new item starts with an empty comment.
     render(footEl, bar ? h(QueueBar, { key: selected ?? '', ...bar, said, focusComment }) : null);
+  }
+
+  /** An exploration row: its captured screen and next step, read once (scripts/queue-glance), 'loading' meanwhile. */
+  const glances = new Map<string, ExplorationGlance>();
+  function glanceOf(row: NeedRow): ExplorationGlance | 'loading' | null {
+    const x = explorationOfKey(row.key);
+    if (!x) return null;
+    const got = glances.get(row.key);
+    if (got) return got;
+    void explorationGlance(x).then((g) => {
+      glances.set(row.key, g);
+      if (selected === row.key) paint();
+    });
+    return 'loading';
   }
 
   /** What the bar offers for the item on screen: the same places for every item, filled by what it allows. */
@@ -455,6 +475,7 @@ export function initReviewQueue() {
         comment: true,
         secondary: { label: 'Ask for changes', disabled: !canSuggest || done || Boolean(busy), loading: busy === 'suggest', needsText: 'Say what to change in the comment first.', onClick: (text) => void act('suggest', text) },
         primary: { label: 'Approve', disabled: !canApprove || done || Boolean(busy), loading: busy === 'approve', onClick: (text) => approve(text) },
+        keys: ['approve', 'suggest'],
         menu: [
           { label: 'Ask someone else to review', disabled: !canApprove || Boolean(busy), onClick: () => void act('ask') },
           ...(links
@@ -481,6 +502,7 @@ export function initReviewQueue() {
           onClick: (text) => void sgAct(() => b!.requestChanges(text)),
         },
         primary: { label: b?.approveLabel ?? 'Approve', disabled: !can(sgState?.canApprove), demoWrite: 'review suggestions', onClick: (text) => void b?.approve(text) },
+        keys: ['approve', 'suggest'],
         menu: [
           { label: 'Copy link', onClick: () => copy(`${location.origin}${suggestionHref(sg)}`, 'Link to this suggestion') },
           { label: 'Open the full review', onClick: () => location.assign(suggestionHref(sg)) },
@@ -498,10 +520,11 @@ export function initReviewQueue() {
         primary: joinGitHub
           ? { label: ENTRY_WORDS.githubToManage, onClick: () => join.connectGitHub() }
           : { label: `${ENTRY_WORDS.approve} ${name}`, disabled: Boolean(joinBusy) || done, loading: joinBusy === 'approve', onClick: () => void decideJoin(row, true) },
+        keys: joinGitHub ? [] : ['approve'],
         menu: [],
       };
     }
-    return { comment: false, note: OPEN_NOTE[row.kind] || null, secondary: null, primary: { label: row.action ?? OPEN_LABEL[row.kind], href: row.href }, menu: [] };
+    return { comment: false, note: OPEN_NOTE[row.kind] || null, secondary: null, primary: { label: row.action ?? OPEN_LABEL[row.kind], href: row.href }, keys: ['open'], menu: [] };
   }
 
   /** Ask for changes on the open suggestion: the queue moves on once GitHub has it (showSuggestionRow `decided`). */
@@ -549,6 +572,15 @@ export function initReviewQueue() {
       if (to === null) return;
       e.preventDefault();
       go(to);
+      return;
+    }
+    // Enter opens an item reviewed on its own page (the bar's link), unless a control or a link has the focus.
+    if (e.key === 'Enter' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !footEl.hidden && !(e.target instanceof HTMLElement && e.target.closest('a, button, summary, [role="button"]'))) {
+      const open = footEl.querySelector<HTMLAnchorElement>('a[data-rq-open]');
+      if (open) {
+        e.preventDefault();
+        open.click();
+      }
       return;
     }
     // A and S press what the bar offers, the same for every item: A presses Approve when it can be pressed; S opens

@@ -1,13 +1,29 @@
 ---
 // Studio Tokens: the token explorer in edit mode is the whole page (its own compact header, one toolbar row,
-// compact rows). Edits land in a draft kept in this browser; the header's Drafts button opens it.
+// compact rows). Edits land in a draft kept in this browser; the header's Drafts button opens it, and the line above
+// the explorer says it is there (moved from Changes, scripts/token-draft-banner.ts).
+import '../../styles/token-draft.css';
 import Layout from '../../layouts/Layout.astro';
 import TokenExplorerSlot from '../../components/TokenExplorerSlot.astro';
+import ButtonLink from '../../components/ds/ButtonLink';
+import { Icon } from '@bridge-ds/react';
+import { siteIcon } from '../../brand/site-icons';
 import { PAGE_SOURCES, freshness } from '../../lib/sources';
+import { studioHref } from '../../lib/team-path';
+import { VOCAB } from '../../lib/vocabulary';
 
 const updated = freshness(PAGE_SOURCES.explorer);
 ---
 
 <Layout title="Tokens" description="Edit tokens into a draft: live preview of real components, the same guardrails as the build, and a branch to review when it is ready." sources={PAGE_SOURCES.explorer} updated={updated} wide>
+  <div class="tk-draft" id="tk-draft" hidden>
+    <Icon icon={siteIcon('draft')} size="md" className="icon" />
+    <p><strong>Your draft:</strong> <span id="tk-draft-n">token edits</span>, only in this browser.</p>
+    <ButtonLink size="sm" href={studioHref('tokens/#review')} data-keep-branch><span data-label>{VOCAB.requestReview}</span></ButtonLink>
+  </div>
   <TokenExplorerSlot mode="edit" />
+  <script>
+    import { initTokenDraftBanner } from '../../scripts/token-draft-banner';
+    initTokenDraftBanner();
+  </script>
 </Layout>

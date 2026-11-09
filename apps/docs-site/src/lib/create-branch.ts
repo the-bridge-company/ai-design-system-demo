@@ -147,7 +147,7 @@ export function startPageProblem(input: string, address: string): { page: string
 }
 
 /** Where the person lands once the exploration started: its page in Changes, with the product that holds it when it lives in a product's own repository. */
-export const featureHref = (n: number, product?: string | null) => studioHref(`changes/?exploration=${n}${product ? `&product=${encodeURIComponent(product)}` : ''}`);
+export const featureHref = (n: number, product?: string | null) => studioHref(`explorations/?exploration=${n}${product ? `&product=${encodeURIComponent(product)}` : ''}`);
 
 /**
  * Where a feature's exploration is created: the product's own repository when the team connected one (productRepoOf

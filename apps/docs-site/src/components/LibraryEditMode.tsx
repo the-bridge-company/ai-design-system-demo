@@ -1306,7 +1306,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
       {branch?.continues && branch.author && branch.pr && (
         <p className="le-bar-note">
           {continueLine(branch.author, viewer)}{' '}
-          <Link href={studio(`changes/?pr=${branch.pr}`)}>See the review</Link>
+          <Link href={studio(`explorations/?pr=${branch.pr}`)}>See the review</Link>
         </p>
       )}
       {drafting && (
@@ -1444,16 +1444,16 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
             {sent?.suggestion ? (
               <p className="le-sent">
                 {suggestionSentLine(sent.pr ?? 0)}{' '}
-                <Link href={sent.pr ? studio(`changes/?suggestion=${sent.pr}`) : sent.suggestion}>{SEE_SUGGESTION}</Link>
+                <Link href={sent.pr ? studio(`library-review/?suggestion=${sent.pr}`) : sent.suggestion}>{SEE_SUGGESTION}</Link>
               </p>
             ) : sent?.published ? (
               <p className="le-sent">
-                {sent.published.line} <Link href={sent.pr ? studio(`changes/?pr=${sent.pr}`) : studio('changes/')}>{sent.title}</Link>
+                {sent.published.line} <Link href={sent.pr ? studio(`explorations/?pr=${sent.pr}`) : studio('explorations/')}>{sent.title}</Link>
               </p>
             ) : sent ? (
               <p className="le-sent">
                 {sent.continued ? 'Added to the open proposal. ' : ''}
-                {review && !branch ? review.sent : 'Your team can review it in Studio:'} <Link href={sent.pr ? studio(`changes/?pr=${sent.pr}`) : studio('changes/')}>{sent.title}</Link>.
+                {review && !branch ? review.sent : 'Your team can review it in Studio:'} <Link href={sent.pr ? studio(`explorations/?pr=${sent.pr}`) : studio('explorations/')}>{sent.title}</Link>.
               </p>
             ) : (
               <div className="le-send">

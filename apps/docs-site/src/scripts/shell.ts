@@ -3,14 +3,15 @@
 // page" rail and, in the Studio, the view of a change (scripts/view-change), the nav counts and the GitHub connection.
 import { bindCodeBlocks, bindDialogs, bindTooltips, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
 import { currentContributor, getToken, initGitHubConnect } from './github-session';
-import { loadReviewNeedsYou, rememberedMine, viewerRole, type QueuePullFull } from './needs-you';
+import { rememberedMine, viewerRole } from './needs-you';
 import { viewerDecidesExplorations } from './design-lead';
 import { initMaintainer } from './maintainer';
 import { pointLinksAtTeam } from './team-links';
 import { initVanillaControls } from './vanilla-controls';
-import { initViewChange, readOpenPulls } from './view-change';
+import { initViewChange } from './view-change';
 import { followThemePref } from '../lib/theme-pref';
-import { reviewBadgeLabel } from '../lib/waiting-on';
+import { explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
+import { rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
 import { navGroupOpen, readNavGroup, writeNavGroup } from '../lib/nav-groups';
 
 interface SearchItem {
@@ -629,16 +630,20 @@ function reviewsHere(): boolean {
   }
 }
 
-function setCount(kind: 'drafts' | 'reviews', n: number | null) {
-  // The nav shows one number, on Library review: the changes in review that wait on the viewer (hidden at 0), for
-  // whoever holds the review right. Its link reads "Library review, 17 waiting for a review", never the clause alone.
+/** The Explorations badge: the explorations that wait on the viewer (Waiting on you), hidden at 0 (scripts/waiting-counts). */
+export const setExplorationsCount = (n: number | null) => setCount('explorations', n);
+
+function setCount(kind: 'drafts' | 'reviews' | 'explorations', n: number | null) {
+  // The nav shows two numbers, one source each (lib/waiting-counts): on Explorations what waits on the viewer there,
+  // on Library review the changes that wait on the viewer's decision (for whoever holds the review right). Hidden at 0.
+  // A link reads "Library review, 17 waiting for a review", never the clause alone.
   const shown = kind === 'reviews' ? Boolean(n) && reviewsHere() : Boolean(n);
   document.querySelectorAll<HTMLElement>(`[data-nav-count="${kind}"]`).forEach((el) => {
     el.hidden = !shown;
     const v = el.querySelector('[data-nav-count-value]');
     if (v) v.textContent = n ? String(n) : '';
     const said = el.querySelector('[data-nav-count-label]');
-    if (said) said.textContent = reviewBadgeLabel(n);
+    if (said) said.textContent = kind === 'explorations' ? explorationsBadgeLabel(n) : reviewBadgeLabel(n);
   });
   // The Drafts counter in the Studio header always shows its number, zero included.
   if (kind === 'drafts')
@@ -677,6 +682,10 @@ function initStudio() {
   if (document.documentElement.hasAttribute('data-no-repo')) return;
 
   setCount('drafts', draftCount());
+  // What waits on the viewer among the explorations: the set Home and Explorations remembered (one source).
+  const paintWaiting = () => setCount('explorations', rememberedWaitingExplorations()?.length ?? null);
+  initGitHubConnect(paintWaiting);
+  document.addEventListener(WAITING_EVENT, paintWaiting);
   // Paint the last known count at once, so the nav does not jump while GitHub answers (or when it cannot).
   setCount('reviews', getToken() ? rememberedMine() : null);
   // The Overview reads the same statuses for its Needs you list and sets the badge itself.
@@ -689,27 +698,14 @@ function initStudio() {
 
   // "Viewing: Latest library" on Tokens, Components and Quality, the view banner, and links that keep the view.
   initViewChange();
-  // One read of the open changes per page, shared with the view selector (scripts/view-change).
-  readOpenPulls()
-    .then((f) => {
-      // What waits on the viewer in the review queue (the same list as the In review tab and the Overview), with the
-      // Overview's rule (lib/overview-todo reviewNeedsYou).
-      if (!pageCounts)
-        initGitHubConnect((v) => {
-          // Signed out of GitHub nothing waits on you here; an email member's count comes from their home (the one
-          // Home last counted on this team, rememberedMine), never zero for want of a GitHub sign-in.
-          if (!v) {
-            setCount('reviews', currentContributor() ? rememberedMine() : null);
-            return;
-          }
-          void loadReviewNeedsYou(f.data.map((p) => ({ ...p, state: p.state ?? 'open' })) as unknown as QueuePullFull[])
-            .then((n) => setCount('reviews', n))
-            .catch(() => undefined);
-        });
-    })
-    .catch(() => {
-      // Rate limited with nothing in the request cache: keep the last count this browser saw.
-      setCount('reviews', getToken() ? rememberedMine() : null);
+  // The Library review count is Library review's own number (its loader and rule, scripts/library-waiting): Home and
+  // Library review refresh it, other pages show what this browser remembers for this team and viewer, and read it once
+  // when nothing is remembered yet. The view selector reads the open changes itself (scripts/view-change).
+  if (!pageCounts)
+    initGitHubConnect((v) => {
+      const known = rememberedMine(currentContributor() ? undefined : (v?.login ?? null));
+      setCount('reviews', known);
+      if (known === null && (v || currentContributor())) void import('./library-waiting').then((m) => m.countLibraryWaiting()).then((n) => n !== null && setCount('reviews', n));
     });
 }
 

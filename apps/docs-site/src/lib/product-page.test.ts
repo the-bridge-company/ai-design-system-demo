@@ -13,7 +13,7 @@ const card = (n: number, over: Partial<ExplorationCard> = {}): ExplorationCard =
   number: n,
   key: String(n),
   title: `Screen ${n}`,
-  href: `/studio/changes/?exploration=${n}`,
+  href: `/studio/explorations/?exploration=${n}`,
   product: 'Product admin',
   productKey: 'admin-app',
   author: person('ann', 'Ann', null),
@@ -32,7 +32,7 @@ describe('product page address', () => {
     expect(productKeyFromPath('/studio/products/admin-app/')).toBe('admin-app');
     expect(productKeyFromPath('/studio/acme/ds/products/library/')).toBe('library');
     expect(productKeyFromPath('/studio/~/acme/ds/products/library')).toBe('library');
-    expect(productKeyFromPath('/studio/changes/')).toBeNull();
+    expect(productKeyFromPath('/studio/explorations/')).toBeNull();
     expect(productKeyFromPath('/studio/products/bad%20key/')).toBeNull();
   });
 });
@@ -131,7 +131,7 @@ describe('product of an exploration', () => {
   it('counts the archived ones in one line, with the way to them on Changes', () => {
     expect(archivedLine(1)).toBe('1 archived.');
     expect(archivedLine(2)).toBe('2 archived.');
-    expect(archivedHref('Admin-app')).toBe('/studio/changes/?state=archived&product=admin-app');
+    expect(archivedHref('Admin-app')).toBe('/studio/explorations/?status=archived&product=admin-app');
   });
 });
 

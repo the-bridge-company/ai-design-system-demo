@@ -3,16 +3,17 @@
 //   Products        the team's products, like the project list in Figma's sidebar: the viewer's own first, at most
 //                   five, then "All products" with the total when the team has more (lib/nav-products.ts). The product
 //                   open on screen always shows.
-//   Design system   Components, Tokens, Quality, and Explorations: the library's own product page.
+//   Design system   Components, Tokens, Quality. The library's explorations are on Explorations, Product = Design
+//                   system (2026-11-09: the library's own "Explorations" entry left the nav).
 // Built from the build's products on the self-hosted Studio; on a team shell from the team's own settings once they are
 // read (scripts/repo-context.ts, the bridge:team-model event). The same rail is the phone's menu. DS SidebarNav parts.
 import { useEffect, useState } from 'react';
-import { Folder, LibraryBig, PanelsTopLeft } from 'lucide-react';
+import { Folder, PanelsTopLeft } from 'lucide-react';
 import { SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref, productKeyFromPath } from '../../../lib/product-page';
 import { isHosted, STUDIO_ROOT, studioBase, studioHref } from '../../../lib/team-path';
-import { libraryOf, navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, type ProductSignals } from '../../../lib/nav-products';
+import { navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, type ProductSignals } from '../../../lib/nav-products';
 import { siteIcon } from '../../../brand/site-icons';
 import type { IconName } from '../../../brand/icons';
 
@@ -28,8 +29,6 @@ export interface NavPage {
 /** The All products page (pages/studio/products/index.astro). */
 export const ALL_PRODUCTS_PATH = `${STUDIO_ROOT}products/`;
 
-/** Explorations: the library's product page, named for what it holds. */
-export const EXPLORATIONS_LABEL = 'Explorations';
 
 /** Whether the nav entry for `href` holds the page at `path` (itself, or a page under it). */
 const holds = (href: string, path: string) => path === href || (href !== STUDIO_ROOT && path.startsWith(href));
@@ -47,7 +46,6 @@ export interface ProductsNavViewProps {
 
 export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS }: ProductsNavViewProps) {
   const rows = navProductRows(products, signals, current);
-  const library = libraryOf(products);
   const allHere = path === ALL_PRODUCTS_PATH;
   return (
     <>
@@ -71,11 +69,6 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
             {p.label}
           </SidebarNavItem>
         ))}
-        {library && (
-          <SidebarNavItem href={productHref(library.key)} icon={LibraryBig} active={current === library.key} data-keep-branch="">
-            {EXPLORATIONS_LABEL}
-          </SidebarNavItem>
-        )}
       </SidebarNavSection>
     </>
   );

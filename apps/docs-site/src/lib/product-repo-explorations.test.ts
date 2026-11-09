@@ -105,8 +105,8 @@ describe('home cards', () => {
     const cards = homeExplorations([ds, own].map((p) => ({ ...p, user: { login: 'ann' } })), { products, author: () => person('ann', null, '') });
     expect(cards.map((c) => [c.key, c.product, c.href])).toEqual(
       expect.arrayContaining([
-        ['12', null, expect.stringMatching(/changes\/\?exploration=12$/)],
-        ['shop#12', 'Shop', expect.stringMatching(/changes\/\?exploration=12&product=shop$/)],
+        ['12', null, expect.stringMatching(/explorations\/\?exploration=12$/)],
+        ['shop#12', 'Shop', expect.stringMatching(/explorations\/\?exploration=12&product=shop$/)],
       ]),
     );
   });

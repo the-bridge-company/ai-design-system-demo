@@ -315,7 +315,7 @@ describe('reviewActions', () => {
 
 describe('reviewCrumbs', () => {
   it('files the branch under its product, the title last and not a link', () => {
-    expect(reviewCrumbs(['apps/admin/src/x.tsx'], 'T').map((c) => c.label)).toEqual(['Changes', 'Admin demo', 'T']);
+    expect(reviewCrumbs(['apps/admin/src/x.tsx'], 'T').map((c) => c.label)).toEqual(['Explorations', 'Admin demo', 'T']);
     const c = reviewCrumbs(null, 'T');
     expect(c[1]!.label).toBe('Library');
     expect(c[2]!.href).toBeUndefined();
@@ -327,12 +327,12 @@ describe('reviewCrumbs', () => {
   ] as ProductConfig[];
 
   it("reads the site's products and the product label, never Library for a product screen", () => {
-    expect(reviewCrumbs(['apps/account/src/pages/Billing.tsx'], 'T', { products: account }).map((c) => c.label)).toEqual(['Changes', 'Account app', 'T']);
+    expect(reviewCrumbs(['apps/account/src/pages/Billing.tsx'], 'T', { products: account }).map((c) => c.label)).toEqual(['Explorations', 'Account app', 'T']);
     expect(reviewCrumbs(null, 'T', { products: account, labels: [{ name: 'product: account' }] })[1]!.label).toBe('Account app');
   });
 
   it('files a running exploration under Explorations', () => {
-    expect(reviewCrumbs(['apps/account/src/pages/Profile.tsx'], 'Profile page', { products: account, exploration: true }).map((c) => c.label)).toEqual(['Changes', 'Explorations', 'Profile page']);
+    expect(reviewCrumbs(['apps/account/src/pages/Profile.tsx'], 'Profile page', { products: account, exploration: true }).map((c) => c.label)).toEqual(['Explorations', 'Profile page']);
   });
 });
 

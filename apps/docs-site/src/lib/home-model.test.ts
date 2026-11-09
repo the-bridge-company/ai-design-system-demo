@@ -142,9 +142,9 @@ const facts = (over: Partial<ChangeFacts>): ChangeFacts => ({ number: 1, title: 
 describe('rows', () => {
   it('a review asked of the viewer on an exploration: "Review <name>", opening the exploration page, one status tag', () => {
     const { title: _title, task: _task, ...base } = facts({});
-    const r = explorationReviewNeed({ ...base, number: 12, name: 'Denser tables', href: '/studio/changes/?exploration=12' }, NOW);
-    expect(r).toMatchObject({ key: 'exploration-review-12', kind: 'review', title: 'Review Denser tables', href: '/studio/changes/?exploration=12', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' } });
-    expect(explorationReviewNeed({ ...base, number: 12, product: 'shop', name: 'Checkout', href: '/studio/changes/?exploration=12&product=shop' }, NOW).key).toBe('exploration-review-shop#12');
+    const r = explorationReviewNeed({ ...base, number: 12, name: 'Denser tables', href: '/studio/explorations/?exploration=12' }, NOW);
+    expect(r).toMatchObject({ key: 'exploration-review-12', kind: 'review', title: 'Review Denser tables', href: '/studio/explorations/?exploration=12', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' } });
+    expect(explorationReviewNeed({ ...base, number: 12, product: 'shop', name: 'Checkout', href: '/studio/explorations/?exploration=12&product=shop' }, NOW).key).toBe('exploration-review-shop#12');
     // More than 3 waiting: the rows fold into "N more" and Review all leads (splitNeeds).
     const many = [1, 2, 3, 4].map((n) => explorationReviewNeed({ ...base, number: n, name: `X${n}`, href: `?exploration=${n}` }, NOW));
     expect(splitNeeds(many).shown).toHaveLength(3);
@@ -153,7 +153,7 @@ describe('rows', () => {
 
   it('a review: who asks, how long it waits', () => {
     const r = changeNeed(facts({}), NOW);
-    expect(r).toMatchObject({ kind: 'review', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' }, href: '/studio/changes/?pr=1' });
+    expect(r).toMatchObject({ kind: 'review', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' }, href: '/studio/explorations/?pr=1' });
     expect(changeNeed(facts({ task: 'ship' }), NOW).line).toBe('Ann waits for you to add it to the library');
     // Who asked, not the account that opened it (the Bridge app for an email member).
     expect(changeNeed(facts({ task: 'ship', asker: { ...facts({}).asker, name: 'Priya' } }), NOW).line).toBe('Priya waits for you to add it to the library');
@@ -194,7 +194,7 @@ describe('rows', () => {
       pill: { label: 'On its way to the library', tone: 'neutral' },
       action: 'Open',
     });
-    expect(guidanceNeed(vh, NOW, published).href).toContain('changes/?pr=610');
+    expect(guidanceNeed(vh, NOW, published).href).toContain('explorations/?pr=610');
     // The change's status wins once read: a failing check holds it, it is in review again.
     expect(guidanceChangeOf(vh, pulls, () => false)).toEqual({ number: 610, onItsWay: false });
     // Sent for review: in review, not waiting on you here (the change has its own row when it does).
@@ -383,7 +383,7 @@ describe('join requests on the home (board E7b)', () => {
 describe('more than 3 waiting', () => {
   it('opens the review queue for a reviewer, their own work on Changes for anyone else', () => {
     expect(moreNeedsAction(false)).toEqual({ label: 'Review all', path: 'review/' });
-    expect(moreNeedsAction(true)).toEqual({ label: 'See all', path: 'changes/?who=mine' });
+    expect(moreNeedsAction(true)).toEqual({ label: 'See all', path: 'explorations/?people=you' });
   });
 });
 

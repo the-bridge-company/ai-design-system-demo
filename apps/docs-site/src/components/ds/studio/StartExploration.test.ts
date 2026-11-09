@@ -237,7 +237,7 @@ describe('Start an exploration', () => {
     expect(startFromAddress('?start=1&product=admin')).toEqual({ target: 'admin' });
     expect(startFromAddress('?view=explorations&for=12&start=new')).toBeNull();
     expect(startFromAddress('?view=history')).toBeNull();
-    history.replaceState(null, '', '/studio/changes/?view=explorations&start=new');
+    history.replaceState(null, '', '/studio/explorations/?view=explorations&start=new');
     render(createElement(StartExploration, { components }));
     const dialog = await screen.findByRole('dialog');
     expect(dialog.textContent).toContain('What do you want to explore?');

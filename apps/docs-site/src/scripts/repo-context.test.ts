@@ -22,7 +22,7 @@ describe('repoFromPath', () => {
 
   it('refuses anything that is not a team address or a valid GitHub name', () => {
     expect(repoFromPath('/studio/')).toBeNull();
-    expect(repoFromPath('/studio/changes/')).toBeNull();
+    expect(repoFromPath('/studio/explorations/')).toBeNull();
     expect(repoFromPath('/library/acme/ds/')).toBeNull();
     expect(repoFromPath('/studio/-acme/ds/')).toBeNull();
     expect(repoFromPath('/studio/acme/../')).toBeNull();

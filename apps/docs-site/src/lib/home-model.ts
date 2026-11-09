@@ -249,7 +249,7 @@ export function holdsReviewRight(x: { viewer: string | null; contributor: boolea
  * review right never gets the queue (only reviewers do), so their own work opens on Changes, filtered to theirs.
  */
 export function moreNeedsAction(contributor: boolean): { label: string; path: string } {
-  return contributor ? { label: 'See all', path: 'changes/?who=mine' } : { label: 'Review all', path: 'review/' };
+  return contributor ? { label: 'See all', path: 'explorations/?people=you' } : { label: 'Review all', path: 'review/' };
 }
 
 export const waitsOnContributor = (task: ChangeFacts['task'] | null): boolean => task === 'own-changes';
@@ -357,7 +357,7 @@ export interface ChangeFacts {
 /** Before who asks on a review row: "from Profile page · ". Nothing when the origin is not known. */
 export const originPrefix = (origin: string | null | undefined): string => (origin?.trim() ? `from ${origin.trim()}${SEP}` : '');
 
-const changeHref = (n: number) => studioHref(`changes/?pr=${n}`);
+const changeHref = (n: number) => studioHref(`explorations/?pr=${n}`);
 
 /** One Needs you row for a change. */
 export function changeNeed(c: ChangeFacts, now: number): NeedRow {

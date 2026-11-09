@@ -126,7 +126,7 @@ export function whyItShows(rows: PieceRowView[]): { title: string; text: string 
 
 /** "Branches · Admin demo · DS-87": the way back and where the branch belongs. */
 export function productCrumbs(product: string, jira: string | null, title: string): { label: string; href?: string }[] {
-  return [{ label: 'Changes', href: studioHref('changes/') }, { label: product, href: studioHref('changes/') }, { label: jira ?? title }];
+  return [{ label: 'Explorations', href: studioHref('explorations/') }, { label: product, href: studioHref('explorations/') }, { label: jira ?? title }];
 }
 
 /** What a developer needs, in the "For developers" fold: the branch, the commands that check it and open library branches. */
@@ -258,7 +258,7 @@ export function changeOrigin(n: Pick<NeededBy, 'pr' | 'title' | 'branch' | 'prod
   return {
     name: n.title,
     product: n.productName,
-    href: studioHref(`changes/?exploration=${n.pr}${productKey ? `&product=${encodeURIComponent(productKey)}` : ''}`),
+    href: studioHref(`explorations/?exploration=${n.pr}${productKey ? `&product=${encodeURIComponent(productKey)}` : ''}`),
     exploration: isExplorationBranch(n.branch),
     number: n.pr,
     productKey,

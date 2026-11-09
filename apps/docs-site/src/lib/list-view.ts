@@ -3,10 +3,11 @@
 // picked, compared and reviewed one after the other (the checkboxes and "Review all" belong to a list).
 // The choice is this person's, on this browser, and holds for the page: it is remembered per page, not in the address,
 // so a link they share opens the way the person they send it to reads their lists. Tested in list-view.test.ts.
-export type ListView = 'list' | 'grid';
+/** 'board' only where a page offers it (Explorations: one column per status, read only). */
+export type ListView = 'list' | 'grid' | 'board';
 
 /** The words on the switch, and its accessible name. */
-export const LIST_VIEW_WORDS = { label: 'Show as', list: 'List', grid: 'Grid' } as const;
+export const LIST_VIEW_WORDS = { label: 'Show as', list: 'List', grid: 'Grid', board: 'Board' } as const;
 
 const key = (page: string) => `bridge.view.${page}`;
 
@@ -21,7 +22,8 @@ export interface ListViewChange {
 /** The view this person last picked on a page, List until they pick one. Unreadable storage counts as no choice. */
 export function readListView(page: string): ListView {
   try {
-    return localStorage.getItem(key(page)) === 'grid' ? 'grid' : 'list';
+    const v = localStorage.getItem(key(page));
+    return v === 'grid' || v === 'board' ? v : 'list';
   } catch {
     return 'list';
   }

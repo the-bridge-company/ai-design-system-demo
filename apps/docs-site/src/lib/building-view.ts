@@ -473,7 +473,7 @@ export function rowThumb(v: Pick<BuildRequestView, 'kind' | 'number' | 'url' | '
  */
 export interface ExplorationBuildRow extends BuildRequestView {
   exploration: {
-    /** The Studio path the row opens: `changes/?exploration=12`, with `&product=shop` in a product's own repository. */
+    /** The Studio path the row opens: `explorations/?exploration=12`, with `&product=shop` in a product's own repository. */
     href: string;
     /** Line 2: the product, who said Done exploring and when, then where it stands. */
     line: string;
@@ -634,7 +634,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
         jira: null,
         figmaUrl: null,
         timeline,
-        exploration: { href: `changes/${explorationHref({ number: Number(p.number), product: p.product })}`, line, product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, ...(forDevelopers ? { forDevelopers } : {}) },
+        exploration: { href: `explorations/${explorationHref({ number: Number(p.number), product: p.product })}`, line, product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, ...(forDevelopers ? { forDevelopers } : {}) },
         productKey: productConfig?.key ?? null,
         ...(reviewWords ? { reviewLine: reviewWords } : {}),
         ...(nextRelease ? { nextRelease: true } : {}),

@@ -58,7 +58,7 @@ function page(label: string, viewer: { isAuthor: boolean; asked?: boolean; canAp
   });
   return {
     pr: 17,
-    crumbs: [{ label: 'Branches', href: '/studio/changes/' }, { label: p.title }],
+    crumbs: [{ label: 'Branches', href: '/studio/explorations/' }, { label: p.title }],
     title: p.title,
     jira: null,
     status: { label: status.label, tone: status.tone, lifecycle: status.lifecycle },

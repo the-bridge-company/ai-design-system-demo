@@ -24,7 +24,7 @@ export function searchIndex(): SearchItem[] {
     '/tokens/': 'token lookup hex reverse lookup',
     '/foundations/accessibility/': 'contrast matrix wcag',
     '/agents/': 'for ai agents connect mcp claude',
-    [studioHref('changes/')]: 'history versions releases revert undo drafts branches reviews pull requests visual impact',
+    [studioHref('explorations/')]: 'history versions releases revert undo drafts branches reviews pull requests visual impact',
     [studioHref('settings/')]: `settings${JIRA_IN_BRIDGE ? ' integrations' : ''} github token connection figma plugin mcp repository bridge.config.json governance approvals risk tiers owners`,
     '/how-review-works/': 'governance review risk tiers approvals gates owner override agent rules',
     [studioHref('building/')]: `build requests component change requests figma push developers${JIRA_IN_BRIDGE ? ' jira' : ''} in progress shipped`,

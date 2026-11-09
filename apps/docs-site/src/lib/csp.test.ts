@@ -38,7 +38,7 @@ describe('Content-Security-Policy', () => {
   });
 
   it('every redirect page shares one script, whose hash is in the policy', () => {
-    const [a] = inlineScripts(redirectScript('/studio/changes/'));
+    const [a] = inlineScripts(redirectScript('/studio/explorations/'));
     const [b] = inlineScripts(redirectScript('/components/button/?edit=1&x="1"'));
     expect(a).toBe(REDIRECT_SCRIPT_BODY);
     expect(b).toBe(REDIRECT_SCRIPT_BODY);

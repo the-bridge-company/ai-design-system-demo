@@ -30,7 +30,7 @@ describe('overview board', () => {
     ]);
     const review = cols[1]!.cards;
     // The viewer's own change: no avatar of the viewer, and nobody is said to be on it.
-    expect(review[0]).toMatchObject({ title: 'Change 3', who: null, note: 'A test fails. No developer yet.', status: { tone: 'blocked', label: 'Blocked' }, href: '/studio/changes/?pr=3' });
+    expect(review[0]).toMatchObject({ title: 'Change 3', who: null, note: 'A test fails. No developer yet.', status: { tone: 'blocked', label: 'Blocked' }, href: '/studio/explorations/?pr=3' });
     expect(review[1]).toMatchObject({ who: null, note: 'It clashes with the library. @ana is on it.' });
     expect(review[2]).toMatchObject({ status: { tone: 'you', label: 'You' }, note: 'Your design review is next.' });
     expect(cols[1]!.blocked).toBe(2);
@@ -40,9 +40,9 @@ describe('overview board', () => {
     expect(columnMeta(cols[0]!)).toBe('1');
     expect(cols[2]!.cards[0]).toMatchObject({ status: { tone: 'you' }, note: 'Approved and tested. Add it to the library to put it in the next release.' });
     // The viewer's account, no Studio marker: never "You are trying it" from the login alone.
-    expect(cols[0]!.cards[0]).toMatchObject({ who: null, note: 'Started with your GitHub account. Request a review once it holds up.', href: '/studio/changes/?exploration=98' });
+    expect(cols[0]!.cards[0]).toMatchObject({ who: null, note: 'Started with your GitHub account. Request a review once it holds up.', href: '/studio/explorations/?exploration=98' });
     expect(cols[3]!.cards[0]).toMatchObject({ title: 'Textarea gets a new appearance option for editing existing text in place', note: 'Merged, goes out in the next release.', who: null });
-    expect(cols.map((c) => c.href)).toEqual(['/studio/changes/?view=explorations', '/studio/changes/', '/studio/changes/', '/studio/building/#next-release']);
+    expect(cols.map((c) => c.href)).toEqual(['/studio/explorations/?view=explorations', '/studio/explorations/', '/studio/explorations/', '/studio/building/#next-release']);
   });
 
   it('keeps Bridge app updates out of the next release column and says who acts for others', () => {

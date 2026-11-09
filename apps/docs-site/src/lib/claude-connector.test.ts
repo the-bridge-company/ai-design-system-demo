@@ -26,7 +26,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
   const NOW = Date.parse('2026-10-30T12:00:00Z');
   const steps = [
     { kind: 'read', text: 'Claude read the differences (3)', at: '2026-10-28T10:00:00Z', by: 'peterbono' },
-    { kind: 'proposed', text: 'Claude opened its fix for review', at: '2026-10-28T10:03:00Z', by: 'peterbono', review: 'changes/?pr=598' },
+    { kind: 'proposed', text: 'Claude opened its fix for review', at: '2026-10-28T10:03:00Z', by: 'peterbono', review: 'explorations/?pr=598' },
   ];
   const ready = parseSession({ component: 'Button', state: 'ready', startedAt: steps[0]!.at, updatedAt: steps[1]!.at, elapsed: 180, steps, percent: 80 })!;
   const names = (l: string) => (l === 'peterbono' ? 'Florian' : l);
@@ -34,7 +34,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
 
   it('reads a session, keeps only Studio review paths, and no percentage', () => {
     expect(ready).not.toHaveProperty('percent');
-    expect(reviewOf(ready)).toBe('changes/?pr=598');
+    expect(reviewOf(ready)).toBe('explorations/?pr=598');
     expect(parseSession({ component: 'X', state: 'ready', steps: [{ text: 't', at: 'a', review: 'https://evil.example' }] })!.steps[0]).not.toHaveProperty('review');
     expect(elapsedLabel(30)).toBe('under a minute');
     expect(elapsedLabel(3900)).toBe('1 h 5 min');
@@ -48,7 +48,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
     // Merged Oct 28, read Oct 30: two calendar days, as every screen counts them.
     expect(r!.fix.line).toBe("Claude's fix from Figma, asked by Florian · Shipped 2 days ago");
     expect(r!.fix.line).not.toContain('peterbono');
-    expect(r!.fix.href).toBe('changes/?pr=598');
+    expect(r!.fix.href).toBe('explorations/?pr=598');
     expect(r!.builders).toEqual(['claude']);
     expect(matchesBuildFilter(r!, 'shipped-this-week', NOW)).toBe(true);
     expect(matchesBuildFilter(r!, 'in-progress', NOW)).toBe(false);

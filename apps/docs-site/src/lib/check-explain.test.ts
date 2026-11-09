@@ -143,8 +143,8 @@ describe('approvalHelp', () => {
 
 describe('reviewAskMessage and shipWhen', () => {
   it('writes the message Ask for review copies', () => {
-    expect(reviewAskMessage({ title: 'Darker default background', number: 101, url: 'https://bridge.example/studio/changes/?pr=101', roles: ['design', 'tech'], others: ['ana'] })).toBe(
-      '@ana Could you review "Darker default background" (#101)? It needs a design and a tech approval. Bridge shows the before and after and the contrast checks: https://bridge.example/studio/changes/?pr=101',
+    expect(reviewAskMessage({ title: 'Darker default background', number: 101, url: 'https://bridge.example/studio/explorations/?pr=101', roles: ['design', 'tech'], others: ['ana'] })).toBe(
+      '@ana Could you review "Darker default background" (#101)? It needs a design and a tech approval. Bridge shows the before and after and the contrast checks: https://bridge.example/studio/explorations/?pr=101',
     );
   });
   it('says what unlocks shipping, in plain words', () => {

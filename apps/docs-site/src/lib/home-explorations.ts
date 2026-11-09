@@ -183,10 +183,10 @@ export { explorationTitle };
 /** Where its card opens: the exploration (or product branch) page while it is one, the change page once kept or a plain change. */
 export function explorationHref(p: ExplorationPull): string {
   // In a product's own repository it is always the exploration page: Studio reviews no branch there.
-  if (p.product) return studioHref(`changes/?exploration=${p.number}&product=${encodeURIComponent(p.product)}`);
+  if (p.product) return studioHref(`explorations/?exploration=${p.number}&product=${encodeURIComponent(p.product)}`);
   const kept = Boolean(p.merged_at) || p.state === 'merged';
   const exploration = !kept && isExplorationPull({ state: p.state ?? 'open', labels: p.labels ?? [], headRef: p.head?.ref, body: p.body });
-  return studioHref(exploration ? `changes/?exploration=${p.number}` : `changes/?pr=${p.number}`);
+  return studioHref(exploration ? `explorations/?exploration=${p.number}` : `explorations/?pr=${p.number}`);
 }
 
 /**
@@ -332,7 +332,7 @@ export function libraryChangesLine(n: number): string | null {
 }
 
 /** Changes, on the viewer's own work. */
-export const YOUR_CHANGES_HREF = () => studioHref('changes/?who=mine');
+export const YOUR_CHANGES_HREF = () => studioHref('explorations/?people=you');
 
 /**
  * The section by role (home by role): a contributor sees only their own explorations, under "Your explorations", and
@@ -341,7 +341,7 @@ export const YOUR_CHANGES_HREF = () => studioHref('changes/?who=mine');
 export function explorationsFor(cards: ExplorationCard[], contributor: boolean): { cards: ExplorationCard[]; title: string; seeAll: string } {
   return contributor
     ? { cards: cards.filter((c) => c.own), title: 'Your explorations', seeAll: YOUR_CHANGES_HREF() }
-    : { cards, title: 'Recent explorations', seeAll: studioHref('changes/') };
+    : { cards, title: 'Recent explorations', seeAll: studioHref('explorations/') };
 }
 
 /** Explorations on the quiet team Home: at most this many cards, under the ways to start. */
@@ -420,7 +420,7 @@ const STAGE_WORDS: Record<OpenStage, [string, string]> = {
 };
 
 /** Changes on the viewer's own work at one stage: where the counted things are. */
-export const ownWorkHref = (stage: OpenStage) => studioHref(`changes/?state=${stage}&people=you`);
+export const ownWorkHref = (stage: OpenStage) => studioHref(`explorations/?status=${stage === 'exploring' ? 'exploring' : 'with-developers'}&people=you`);
 
 /**
  * One sentence for one kind of work: "2 of your explorations wait for a developer to pick them up, 1 is being built

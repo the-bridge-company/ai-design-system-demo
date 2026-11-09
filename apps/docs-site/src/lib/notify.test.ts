@@ -160,7 +160,7 @@ describe('who a notice is for', () => {
     const m = w.sent[0]!;
     expect(m.to).toBe(MIA);
     expect(m.subject).toBe('ana has a question about Pill buttons');
-    expect(m.text).toContain('https://bridge.example.com/studio/~/acme/design/changes/?exploration=7&product=shop');
+    expect(m.text).toContain('https://bridge.example.com/studio/~/acme/design/explorations/?exploration=7&product=shop');
     expect(m.headers?.['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
     expect(m.headers?.['List-Unsubscribe']).toMatch(/^<https:\/\/bridge\.example\.com\/api\/account\?unsub=[A-Za-z0-9_.-]+>$/);
     // No tech word, no em dash, never the address in a link.
@@ -241,7 +241,7 @@ describe('who a notice is for', () => {
     expect(await deliverNotices([{ ...changes, repo: COPY }], w.d, 'd1')).toEqual([{ kind: 'changes', status: 'skipped', reason: 'not-library' }]);
     expect(await deliverNotices([changes], w.d, 'd2')).toEqual([{ kind: 'changes', status: 'sent' }]);
     expect(w.sent[0]!.subject).toBe('dana asked for changes on Badge: overdue tone');
-    expect(w.sent[0]!.text).toContain('/studio/~/acme/design/changes/?pr=5');
+    expect(w.sent[0]!.text).toContain('/studio/~/acme/design/explorations/?pr=5');
   });
 });
 
@@ -368,8 +368,8 @@ describe('the emails', () => {
     expect(m.text).toContain('Stop these emails: https://b/u');
   });
   it('links: the exploration of a task, the change of a suggestion, else Being built', () => {
-    expect(hrefOf('https://b', TEAM, 'look', 12, { repo: COPY, number: 7 }, 'shop')).toBe('https://b/studio/~/acme/design/changes/?exploration=7&product=shop');
-    expect(hrefOf('https://b', TEAM, 'changes', 5, null, undefined)).toBe('https://b/studio/~/acme/design/changes/?pr=5');
+    expect(hrefOf('https://b', TEAM, 'look', 12, { repo: COPY, number: 7 }, 'shop')).toBe('https://b/studio/~/acme/design/explorations/?exploration=7&product=shop');
+    expect(hrefOf('https://b', TEAM, 'changes', 5, null, undefined)).toBe('https://b/studio/~/acme/design/explorations/?pr=5');
     expect(hrefOf('https://b', TEAM, 'shipped', 12, null, undefined)).toBe('https://b/studio/~/acme/design/building/');
   });
 });
@@ -534,7 +534,7 @@ describe('the talk with a design lead', () => {
     const out = await deliverNotices(leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedByName: 'Mia', leadAskedTo: ['flo', 'dana'] }), base), d, 'e1');
     expect(out.map((o) => o.status)).toEqual(['sent', 'skipped']);
     expect(sent[0]!.to).toBe('florian@acme.example');
-    expect(sent[0]!.text).toContain('changes/?exploration=7&product=shop');
+    expect(sent[0]!.text).toContain('explorations/?exploration=7&product=shop');
   });
   it('the designer gets the lead\'s words; nobody hears about their own act', async () => {
     const { d, sent } = await setup();

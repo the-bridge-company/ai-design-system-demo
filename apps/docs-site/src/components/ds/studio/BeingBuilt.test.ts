@@ -126,7 +126,7 @@ describe('Being built', () => {
 
   it("lists Claude's fixes in the same list, reconciled with their pull request, counted by the filters", async () => {
     const at = new Date(NOW - 2 * 86_400_000).toISOString();
-    const session = parseSession({ component: 'Button', state: 'ready', startedAt: at, updatedAt: at, elapsed: 180, steps: [{ kind: 'proposed', text: 'Claude opened its fix for review', at, by: 'peterbono', review: 'changes/?pr=598' }] })!;
+    const session = parseSession({ component: 'Button', state: 'ready', startedAt: at, updatedAt: at, elapsed: 180, steps: [{ kind: 'proposed', text: 'Claude opened its fix for review', at, by: 'peterbono', review: 'explorations/?pr=598' }] })!;
     const base = fixture();
     const fixes = fixRows([session], [{ number: 598, state: 'closed', merged_at: at, updated_at: at }], NOW, (l) => (l === 'peterbono' ? 'Florian' : l));
     data = { ...base, fixes };
@@ -137,7 +137,7 @@ describe('Being built', () => {
     expect(container.textContent).not.toContain('peterbono');
     expect(container.textContent).not.toContain('Ready for review');
     expect(container.textContent).not.toContain("Claude's fixes\n");
-    expect(container.querySelector('a[href="/studio/changes/?pr=598"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/studio/explorations/?pr=598"]')).toBeTruthy();
     expect(container.innerHTML).not.toContain('github.com/peterbono');
     expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
     await userEvent.click(screen.getByRole('tab', { name: /Shipped this week/ }));
@@ -252,7 +252,7 @@ describe('Being built', () => {
     expect([...row.querySelectorAll('*')].some((e) => e.children.length === 0 && e.textContent === 'Exploration')).toBe(false);
     expect(row.textContent).toContain('Waiting to be picked up');
     expect(row.textContent).toContain('Admin demo · Done exploring by Florian on');
-    expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/changes/?exploration=611');
+    expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/explorations/?exploration=611');
     // No "How it works" fold under the title, on the self-hosted and the team page: the summary sentence is enough.
     for (const page of ['../../../pages/studio/building.astro', '../../../pages/team-shell/building.astro']) {
       const src = readFileSync(new URL(page, import.meta.url), 'utf8');
@@ -298,7 +298,7 @@ describe('Being built', () => {
     expect(row.textContent).toContain('Message copied. Paste it where your developers work.');
     expect(within(row).getByRole('button', { name: 'Message copied' })).toBeTruthy();
     // The row still opens the exploration.
-    expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/changes/?exploration=4&product=poster');
+    expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/explorations/?exploration=4&product=poster');
     await expectNoAxeViolations(container);
   });
 

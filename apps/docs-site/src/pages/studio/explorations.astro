@@ -1,19 +1,15 @@
 ---
-// Studio Branches: all the work, not a second triage page (triage lives on Home and the review queue). The header
-// holds the title and "Start an exploration" (the same flow as Home). The list (components/ds/studio/BranchesList,
-// read by scripts/reviews.ts loadList) shows every open branch, running explorations included under their own status,
-// grouped by product, with state tabs (All, Waiting on me, each state, Shipped, Archived), a kind and a people filter
-// (Everyone, You, each designer) and a checkbox on token branches to preview them together (the floating bar).
-// Shipped is the history of the work: what shipped, by month. The old History (?view=history) moved
-// (lib/history-moved): Shipped here, the next release on Being built, the token changes in the Library changelog.
-// Views that stay reachable by address, each with the same header: a branch in place (?pr=N), a suggestion in place
-// (?suggestion=N: a change filed as a GitHub issue that a developer applies once owners approve it,
-// components/ds/studio/SuggestionReview in #sg-detail, declined with RequestDecide), an exploration in place
-// (?exploration=N) and its start form (?view=explorations&for=N, from a request; an old &start=new opens the Start an
-// exploration dialog), and component change requests (?view=requests, only when request triage is on in Studio,
-// lib/studio-flags). Old ?status= and ?tier= links keep working (lib/branches-page changesFiltersParam). Designer words
-// only (lib/vocabulary, Figma branching); developer details stay on GitHub, one "Open on GitHub" link away on each
-// branch. Replaces Drafts, Branches, Reviews, Versions and Visual impact (lib/redirects.ts).
+// Studio Explorations (the old Changes, redesign phase 2, owner decisions 2026-11-09): every exploration of the team,
+// pinned "Waiting on you" first, then grouped by product; Status, Product and People checkbox filters; List, Grid and
+// Board (components/ds/studio/BranchesList, read by scripts/reviews.ts loadList, rules in lib/explorations-page). The
+// header holds the title and "Start an exploration" (the same flow as Home); a team with nothing yet sees "Start with one
+// screen" instead, and no header button. Library changes, docs drafts and suggestions are not explorations: they live
+// on Library review (/studio/library-review/), where old ?suggestion=, ?origin= and ?group= links go
+// (lib/explorations-page legacyTarget). The token draft line moved to Tokens. Views that stay reachable by address,
+// each with the same header: a branch in place (?pr=N), an exploration in place (?exploration=N) and its start form
+// (?view=explorations&for=N, from a request), and component change requests (?view=requests, only when request
+// triage is on in Studio, lib/studio-flags). /studio/changes/ and its old query links redirect here (lib/redirects.ts),
+// old ?status=, ?state=, ?tier= and History links land on the Status filter. Designer words only (lib/vocabulary).
 import { jsonForScript } from '../../lib/html';
 import '../../styles/reviews.css';
 import '../../styles/branch-review.css';
@@ -31,10 +27,7 @@ import Layout from '../../layouts/Layout.astro';
 import StudioHeader from '../../components/StudioHeader.astro';
 import ChangesRequests from '../../components/ChangesRequests.astro';
 import ChangesExplorations from '../../components/ChangesExplorations.astro';
-import Illustration from '../../components/Illustration.astro';
-import { siteIcon } from '../../brand/site-icons';
-import ButtonLink from '../../components/ds/ButtonLink';
-import { Icon, Link } from '@bridge-ds/react';
+import { Link } from '@bridge-ds/react';
 import StartExploration from '../../components/ds/studio/StartExploration';
 import { siteRepo } from '../../lib/config';
 import { lastUpdated, PREVIEW_APPS, PREVIEW_PACKAGES, PRODUCTION_APPS, readText } from '../../lib/repo';
@@ -44,8 +37,6 @@ import DoneExploring from '../../components/ds/studio/DoneExploring';
 import RequestDecide from '../../components/ds/studio/RequestDecide';
 import type { BranchesConfig } from '../../lib/branches';
 import { signInConfig } from '../../lib/signin-config';
-import { REQUEST_TRIAGE_IN_STUDIO } from '../../lib/studio-flags';
-import { VOCAB } from '../../lib/vocabulary';
 import { studioHref } from '../../lib/team-path';
 import OverrideDialog from '../../components/OverrideDialog.astro';
 
@@ -64,8 +55,8 @@ const signIn = Boolean(signInConfig());
 ---
 
 <Layout
-  title="Changes"
-  description="All the work in progress, grouped by product: your changes, the ones waiting on you, explorations, and everything that shipped, by month."
+  title="Explorations"
+  description="Every exploration of the team: what waits on you first, then each product's, from exploring to shipped."
   sources={sources}
   updated={lastUpdated(sources)}
   wide
@@ -73,32 +64,18 @@ const signIn = Boolean(signInConfig());
   <div class="rv cg">
     <p class="rv-notice" id="rv-notice" role="status" hidden></p>
     <div id="cg-main">
-      <StudioHeader title="Changes" scene="changes">
+      <StudioHeader title="Explorations" scene="changes">
         <Fragment slot="actions">
-          <Link href={studioHref('changes/')} id="cg-back-link" data-back hidden>All {VOCAB.branches}</Link>
+          <Link href={studioHref('explorations/')} id="cg-back-link" data-back hidden>All explorations</Link>
           <span class="cg-create" data-greet><StartExploration client:load components={startComponents} /></span>
         </Fragment>
       </StudioHeader>
 
-      <section class="cg-panel" id="cg-review" aria-label={VOCAB.Branches}>
-        <div class="cg-draft" id="cg-draft" hidden>
-          <Icon icon={siteIcon('draft')} size="md" className="icon" />
-          <p><strong>Your draft:</strong> <span id="cg-draft-n">token edits</span>, only in this browser. <span id="cg-draft-dest"></span></p>
-          <ButtonLink size="sm" href={studioHref('tokens/#review')} data-keep-branch>{VOCAB.requestReview}</ButtonLink>
-        </div>
+      <section class="cg-panel" id="cg-review" aria-label="Explorations">
         <p class="cg-muted" id="cg-asof" role="status" hidden></p>
-
-        {/* The list: components/ds/studio/BranchesList, painted by scripts/reviews.ts loadList. Old /studio/branches
-            links land here (#other-branches). */}
-        <div class="cg-list-mount" id="cg-list" data-admin={PRODUCTION_APPS.admin ?? ''} data-tokens-root={r.tokensRoot}>
-          <span id="other-branches"></span>
-        </div>
-
-        <div class="cg-empty" id="cg-empty" hidden>
-          <Illustration name="review" width={200} />
-          <p class="cg-empty-title">No open {VOCAB.branch}.</p>
-          <p class="cg-muted">Create one, or start from <Link href={studioHref('tokens/')} data-keep-branch>Tokens</Link>: every {VOCAB.branch} in progress lands here.</p>
-        </div>
+        {/* The list: components/ds/studio/BranchesList, painted by scripts/reviews.ts loadList (its empty state too). */}
+        <div class="cg-list-mount" id="cg-list" data-components={JSON.stringify(startComponents)}></div>
+        <div id="cg-empty" hidden></div>
       </section>
 
       <ChangesRequests previews={previews} />

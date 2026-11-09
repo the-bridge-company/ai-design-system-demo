@@ -1,66 +1,68 @@
-// Branches (/studio/changes/): all the work, not a second triage page (triage lives on Home and the review queue).
-//   - DS Tabs (underline), alone on their row, are the page's primary navigation: the designer's tabs All (the
-//     default), Waiting on me, Exploring and Shipped, always there with their counts (lib/branches-page STABLE_TABS,
-//     stateOf; ?state=). Waiting for code, Being built and In review are the developers' side: the Being built page
-//     owns them, so here they show only when an old ?state= link opens one. Archived shows when something is archived.
-//     An In review exploration names who must review on its line; one whose review is asked of the viewer is in
-//     Waiting on me. On a phone the tab list scrolls sideways inside its row, never the page.
-//   - A quieter second row under the tabs, left-aligned above the list: two small DS Selects narrow every tab, the
-//     product (?product=: All products, then each configured product by name, the library included with its usage
-//     guidance; a product at 0 is left out) and whose it is (?people=: Everyone, You, then each designer by display
-//     name), then the count of what is listed. Old ?kind=, ?who=mine, ?view=mine, ?who=waiting, ?by=, ?archived=1
-//     and ?status= links keep working (lib/branches-page changesFiltersParam).
-//   - The open branches, explorations included, grouped by the product they belong to (lib/branches-page productOf,
-//     bridge.config.json products), each group a heading with its count. Rows are the home row (BranchRow), the
-//     person always by display name (lib/branches-page knownNames), the login only when no name is known.
-//   - Token branches carry a checkbox to preview them together; the floating bar (CombineChanges SelectionBar) acts.
-//   - At the end of the filters row, how the list is shown: the rows, or the Home's cards (lib/list-view, ListCard).
-//     Every tab but Waiting on me offers it, where the rows are picked, compared and reviewed one after the other.
-//   - Shipped (?state=shipped; the old ?status=merged and History addresses land there) is the history of the work:
-//     every change and exploration that shipped, newest first, grouped by month ("October 2026"), each row with its
-//     preview capture when there is one, the product, the person and "Shipped Oct 30" (lib/branches-page groupByMonth).
-//     The library's token changelog is in the Library (Changelog), the next release on Being built.
-//   - Waiting on me (what "Review all" opens) is the lead's review list: one summary sentence, every change
-//     that waits (branches, suggestions, usage guidance drafts) under three kinds (lib/review-categories: In a product,
-//     Library components and tokens, Documentation). The designer is who asked for the change (the requester line),
-//     Claude AI's work included.
+// Explorations (/studio/explorations/, the old Changes): every exploration of the team, the rules and words in
+// lib/explorations-page (owner decisions 2026-11-09, phase 2 of the redesign).
+//   - One filters row, left-aligned: three checkbox dropdowns in the small Select's look (ListFilters MultiFilter):
+//     Status (default In progress, the first six statuses), Product, People (Everyone resets), then the count and
+//     Clear filters; at its end how the list is shown: List, Grid or Board (ListCard ViewSwitch). The address keeps
+//     them (?status=, ?product=, ?people=); old ?state=, ?status=, ?tier= and History links map to Status.
+//   - Waiting on you, pinned first whatever the filters, with its count: each row says "Your turn · <reason>". Its rows
+//     come from the one rule of every surface (row.yourTurn: lib/waiting-on and the lead's turn, lib/lead-decisions,
+//     the same as Home's queue and the nav badge). Not repeated in the groups below; not shown when nothing waits.
+//   - Then the explorations grouped by product, the Home's rows (BranchRow) or cards (ListCard) with their real
+//     screens and illustrated avatars, each with its one status tag. The Board instead: one column per status (read
+//     only, no drag), at most BOARD_CAP cards then "Show all N"; the column says the status, so its cards do not.
+//   - Library changes, docs drafts and suggestions are not explorations: they live on Library review. A team with no
+//     exploration yet sees "Start with one screen"; filters matching nothing say so with Clear filters.
 // Mounted and repainted by scripts/reviews.ts (loadList), which reads GitHub; this file only enriches what is shown
-// (display names, before/after thumbnails and changed files, with a working token only: anonymous visitors have 60
-// GitHub reads an hour, kept for the statuses).
+// (display names and thumbnails, with a working token only).
 import { createRoot, type Root } from 'react-dom/client';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Checkbox, Link, Skeleton, Tab, Tabs, TabsList, Tooltip, VisuallyHidden } from '@bridge-ds/react';
+import { useEffect, useMemo, useState } from 'react';
+import { Button, Skeleton } from '@bridge-ds/react';
+import DsButtonLink from '../ButtonLink';
 import { BranchRow } from './BranchRow';
 import { Who } from './faces';
-import { ClearFilters, ListFiltersBar, NO_FILTER_MATCH } from './ListFilters';
+import { MultiFilter } from './ListFilters';
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from './ListCard';
-import { SelectionBar, type ListedBranch } from './CombineChanges';
-import { activeFilters, ARCHIVED_NOTE, boxDisabled, changesFiltersParam, filterChoices, inFilters, listSummary, designRows, emptyTabLine, FULL_TIP, groupByMonth, groupByProduct, shippedAtOf, shippedByTask, isYours, knownNames, productOf, selectable, shippedCapLine, shippedOn, shippedRows, stateOf, visibleTabs, withChangesFilters, YOU, type ChangesFilters, type ListFilters, type StateTab } from '../../../lib/branches-page';
-import { onlyTokens, toggleChange } from '../../../lib/combine-changes';
-import { childLine } from '../../../lib/product-branch';
-import { libraryOrigin, type LibraryOrigin } from '../../../lib/library-origin';
-import { LibraryChanges } from './LibraryChanges';
-import { behindTag } from '../../../lib/library-sync';
-import { isNameAuthor } from '../../../lib/author';
+import { Drawing } from './Drawing';
+import StartExploration from './StartExploration';
+import { designRows, isYours, knownNames, productOf, shippedAtOf, shippedByTask, shippedOn } from '../../../lib/branches-page';
 import { authorPerson, CLAUDE, displayName, person, requesterPerson, SEP, type Person, type PillTone } from '../../../lib/home-model';
-import {
-  categoryOf,
-  designerKey,
-  groupByCategory,
-  queueSummary,
-  reachLine,
-  type WaitingExtra,
-} from '../../../lib/review-categories';
-import { DEFAULT_PRODUCTS, defaultProduct } from '@bridge-ds/core';
+import { designerKey } from '../../../lib/review-categories';
+import { isNameAuthor } from '../../../lib/author';
+import { defaultProduct, DEFAULT_PRODUCTS, isExplorationBranch, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
 import type { FileSignals } from '../../../lib/work-nature';
 import type { Lifecycle } from '../../../lib/change-status';
-import { VOCAB } from '../../../lib/vocabulary';
-import { changesSummary, setPageSummary } from '../../../lib/page-summary';
-import type { ProductConfig, ToolingConfig } from '@bridge-ds/core';
-import { studioHref } from '../../../lib/team-path';
-import { LIFECYCLE_LABEL, type LifecycleStage } from '../../../lib/review-state';
-import { productHref } from '../../../lib/product-page';
+import type { LifecycleStage } from '../../../lib/review-state';
+import type { LibraryOrigin } from '../../../lib/library-origin';
+import { setPageSummary } from '../../../lib/page-summary';
+import { DEMO_HOME } from '../../../lib/start';
+
+/** The header's one sentence (board ex-list): what the page holds; the count sits next to the filters. */
+export const EXPLORATIONS_LEDE = 'Every screen being explored, in every product. What they change in the library is decided in Library review.';
+import {
+  addressWithFilters,
+  BOARD_CAP,
+  boardColumns,
+  countLine,
+  DEFAULT_FILTERS,
+  emptyFilterLine,
+  filtersFromAddress,
+  IN_PROGRESS,
+  IN_PROGRESS_LABEL,
+  isFiltered,
+  multiTriggerLabel,
+  passes,
+  STATE_LABEL,
+  STATE_TONE,
+  STATES,
+  statusOf,
+  statusTriggerLabel,
+  YOU,
+  type ExplorationFilters,
+  type ExplorationState,
+} from '../../../lib/explorations-page';
+import { explorationKey, mergeWaiting, type WaitingExploration } from '../../../lib/waiting-counts';
+import '../../../styles/explorations-board.css';
 
 export interface ListRow {
   number: number;
@@ -79,10 +81,14 @@ export interface ListRow {
   pill: { label: string; tone: PillTone | 'info' } | null;
   lifecycle: Lifecycle | 'exploration';
   yourTurn: boolean;
+  /** Why it waits on the viewer, after "Your turn · " (lib/explorations-page turnReason). */
+  turnReason?: string | null;
+  /** Where it stands, in the page's words (lib/explorations-page statusOf), when the row's record was read. */
+  status?: ExplorationState | null;
   /** The viewer made it, when the author does not say so (an email contributor's own: lib/branches-page ownedBy). */
   mine?: boolean;
   behindBy: number | null;
-  /** What the status read says about the changed files (anonymous fallback for the checkbox). */
+  /** What the status read says about the changed files. */
   signals: FileSignals | null;
   guidance: boolean;
   head: { ref: string; sha: string };
@@ -90,74 +96,60 @@ export interface ListRow {
   merged_at?: string | null;
   /** Pull request labels: a `product: <key>` label puts the branch in that product's group. */
   labels?: { name: string }[] | null;
-  /** The product branch this library branch is needed by (its "Needed by" block): listed under it. */
   neededBy?: number | null;
-  /** The product key of that product branch when it lives in the product's own repository ("Needed by" owner/name#12). */
   neededByProduct?: string | null;
-  /**
-   * Set for an exploration in a product's own repository (bridge.config.json products[].repo): the product key. The
-   * row sits in that product's group and opens ?exploration=N&product=<key>; its number is the product's own.
-   */
+  /** An exploration in a product's own repository: the product key. Its number is the product's own. */
   product?: string | null;
   /** Who asked for it, as Bridge records it in the body ("Requested by Ann Leroy."): the designer of the change. */
   requester?: { name: string | null; login: string | null } | null;
-  /** An exploration's lifecycle stage once read (lib/review-state): its tab. */
+  /** An exploration's lifecycle stage once read (lib/review-state). */
   stage?: LifecycleStage | null;
   /** Shipped by the developers' task while the design pull request stays open (lib/exploration-state). */
   shippedAt?: string | null;
-  /** An In review exploration: who must review ("Waiting for Florian's review", "Changes requested by Lee"). */
   reviewLine?: string | null;
-  /** A library change: where it comes from (lib/library-origin), shown on its row in the Library group. */
   origin?: LibraryOrigin | null;
-  /** The review status kind (core ReviewStatusKind): the library's status tag (Needs Dana, Approved, Being built). */
   statusKind?: string | null;
-  /** The component a push from Figma names: the lead's By component group. */
   figmaComponent?: string | null;
 }
 
 export interface BranchesListProps {
   /** Open branches and running explorations, most urgent first. */
   rows: ListRow[];
-  /** The most recently closed branches (merged or not), null until read: the merged ones fill the Shipped tab. */
+  /** The most recently closed branches (merged or not), null until read: the merged ones are Shipped. */
   closed: ListRow[] | null;
-  /** Archived explorations (open pull requests, previews alive): listed only under the Archived tab (?state=archived). */
+  /** Archived explorations (open pull requests, previews alive). */
   archived?: ListRow[];
   closedLimit: number;
   loading: boolean;
   viewer: string | null;
-  /** The viewer's profile name, when they set one: their rows read with it even where only the login is recorded. */
   viewerName?: string | null;
-  /** A working GitHub token: names, thumbnails and files are read. */
+  /** A working GitHub token: names and thumbnails are read. */
   connected: boolean;
-  admin: string | null;
-  tokensRoot: string;
-  /** bridge.config.json products, in group order (lib/config). Absent: the default products. */
+  /** bridge.config.json products, in group order. Absent: the default products. */
   products?: ProductConfig[];
-  /** bridge.config.json tooling: pull requests that only change Bridge itself stay out of the list. Absent: none. */
+  /** bridge.config.json tooling: pull requests that only change Bridge itself stay out. */
   tooling?: ToolingConfig | null;
-  /** ?tier= keeps working: the one kind of change shown, in words, or null. */
-  tierLabel: string | null;
-  failure: (err: unknown) => string;
-  /** Asks scripts/reviews.ts for the closed list (when Shipped opens before it was read). */
+  /** Asks scripts/reviews.ts for the closed list (Shipped). */
   readClosed: () => void;
-  /** What waits on the viewer besides branches: suggestions and usage guidance drafts (Waiting on me only). */
-  waiting?: WaitingExtra[];
-  /** Who decides the library: the viewer ("Needs you", the lead's groups) or the lead by name ("Needs Dana"). */
-  lead?: { you: boolean; name: string | null };
+  /** Read only until connected: the empty state's primary is this verb ("Connect GitHub") instead of Start. */
+  connect?: string | null;
+  /** GitHub could not be read (rate limit, offline): the list may miss explorations, so no "Start with one screen". */
+  unread?: boolean;
+  /** The components of the library, for Start an exploration's component picker (empty state). */
+  components?: { name: string; slug: string; family?: string }[];
 }
 
 const avatarOf = (login: string) => `https://github.com/${encodeURIComponent(login)}.png?size=64`;
 
-/** Enrichment read once per branch version, shared by every paint. */
+/** The library product reads "Design system" on this page (the side nav's word for it). */
+const LIBRARY_NAME = 'Design system';
+
 interface Extra {
   thumb?: ThumbSpec;
   files?: string[] | null;
 }
 
-/**
- * `read`: 'all' with a working token, 'none' otherwise. The profiles (display names) are read once per login, the
- * author's and the requester's, products' own rows included.
- */
+/** Thumbnails, changed files and display names, read once per branch version with a working token only. */
 function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number, Extra>; people: Map<string, Person> } {
   const [extras, setExtras] = useState<Map<number, Extra>>(new Map());
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
@@ -170,10 +162,8 @@ function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number,
     void import('../../../scripts/home-data').then(({ personOf, thumbOf, filesOf }) => {
       const logins = new Set<string>();
       for (const r of rows) {
-        // A name-only author ("name:Leo") is never looked up on GitHub.
         if (!r.agent && !isNameAuthor(r.author)) logins.add(r.author);
         if (r.requester?.login) logins.add(r.requester.login);
-        // An exploration in a product's own repository: its files and screens are not in this repository.
         if (r.product) continue;
         void filesOf(r.number, r.head.sha).then((files) => put(r.number, { files }));
         if (r.base) void thumbOf({ number: r.number, head: r.head, base: r.base }, r.guidance).then((thumb) => put(r.number, { thumb }));
@@ -188,427 +178,341 @@ function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number,
   return { extras, people };
 }
 
-/** Whether a branch only edits tokens: its files when read, else what the status read said. */
-function tokenOnly(r: ListRow, e: Extra | undefined, tokensRoot: string): boolean | null {
-  if (r.opens !== 'pr' || r.lifecycle === 'shipped' || r.lifecycle === 'closed') return false;
-  if (e?.files) return onlyTokens(e.files, tokensRoot);
-  const s = r.signals;
-  if (s) return s.tokens && !s.visual && !s.guidance && !s.developer;
-  return null;
-}
+/** An exploration, or work started for a product: what this page lists. Library changes live on Library review. */
+const isExplorationRow = (r: ListRow, product: string, libraryKey: string) =>
+  r.opens === 'exploration' || Boolean(r.product) || isExplorationBranch(r.head.ref) || product.toLowerCase() !== libraryKey.toLowerCase();
+
+const pillOf = (s: ExplorationState): { label: string; tone: PillTone | 'info' } => {
+  const tone = STATE_TONE[s];
+  return { label: STATE_LABEL[s], tone };
+};
 
 export function BranchesList(p: BranchesListProps) {
-  const [picked, setPicked] = useState<ChangesFilters>(() => changesFiltersParam(location.search, p.products ?? DEFAULT_PRODUCTS));
-  const [selected, setSelected] = useState<number[]>([]);
+  const products = p.products ?? DEFAULT_PRODUCTS;
+  const libraryKey = defaultProduct(products).key.toLowerCase();
+  const [filters, setFilters] = useState<ExplorationFilters>(() => filtersFromAddress(location.search, libraryKey));
   const [view, setListView] = useListView('changes');
-  const pickView = (v: 'list' | 'grid') => {
-    setListView(v);
-    // The cards carry no checkbox: what was picked for a shared preview is let go with the rows.
-    if (v === 'grid') setSelected([]);
-  };
+  const [opened, setOpened] = useState<Set<string>>(new Set());
   const viewer = p.viewer;
-  const tab = picked.state;
-  const archivedTab = tab === 'archived';
-  const shippedTab = tab === 'shipped';
-  // Open rows; archived explorations and what shipped only under their own tab.
-  // An exploration the developers shipped (their task closed as done) is Shipped while its design pull request stays
-  // open for its preview: under Shipped, out of All and the open counts (lib/exploration-state).
-  const byTask = useMemo(() => shippedByTask(p.rows), [p.rows]);
-  const open = byTask.open;
-  const archived = useMemo(() => p.archived ?? [], [p.archived]);
-  const shipped = useMemo(() => shippedRows([...(p.closed ?? []), ...byTask.shipped]), [p.closed, byTask.shipped]);
-  const shown = archivedTab ? archived : shippedTab ? shipped : open;
-  const { extras, people } = useExtras(shown, p.connected ? 'all' : 'none');
-  // Bridge's own pull requests stay out of every tab and count (lib/branches-page designRows): the files once read.
-  const filesOfRow = (r: ListRow) => (r.product ? null : extras.get(r.number)?.files);
-  const openDesign = designRows(open, filesOfRow, p.tooling);
-  const shippedDesign = designRows(shipped, filesOfRow, p.tooling);
-  const shots = useExplorationShots(shown.filter((r) => r.opens === 'exploration').map((r) => ({ key: `${r.product ?? ''}#${r.number}`, number: r.number, product: r.product ?? null, branch: r.head.ref })));
-  const names = useMemo(
-    () => knownNames([...p.rows, ...archived, ...(p.closed ?? [])], p.viewer ? { login: p.viewer, name: p.viewerName ?? null } : null),
-    [p.rows, archived, p.closed, p.viewer, p.viewerName],
-  );
 
-  // A login as a person, by display name: the profile read, else a name recorded on another row, else the login.
+  const byTask = useMemo(() => shippedByTask(p.rows), [p.rows]);
+  const archived = useMemo(() => p.archived ?? [], [p.archived]);
+  const closedMerged = useMemo(() => [...(p.closed ?? []).filter((r) => r.merged_at), ...byTask.shipped], [p.closed, byTask.shipped]);
+  const all = useMemo(() => [...byTask.open, ...archived, ...closedMerged], [byTask.open, archived, closedMerged]);
+  const { extras, people } = useExtras(all, p.connected ? 'all' : 'none');
+  const filesOfRow = (r: ListRow) => (r.product ? null : extras.get(r.number)?.files);
+  const shots = useExplorationShots(all.filter((r) => r.opens === 'exploration' || isExplorationBranch(r.head.ref)).map((r) => ({ key: `${r.product ?? ''}#${r.number}`, number: r.number, product: r.product ?? null, branch: r.head.ref })));
+  const names = useMemo(() => knownNames(all, p.viewer ? { login: p.viewer, name: p.viewerName ?? null } : null), [all, p.viewer, p.viewerName]);
+
   const resolve = (login: string): Person => {
     const k = login.replace(/^@/, '').toLowerCase();
     const base = people.get(k) ?? person(login, null, avatarOf(login));
     const known = names.get(k);
     return known && base.name === displayName(login) ? { ...base, name: displayName(login, known) } : base;
   };
-  // The person of a row: who asked for it when Bridge recorded it, else Claude AI for its own work, else the author.
   const personOf = (r: ListRow): Person => (r.requester && requesterPerson(r.requester, resolve)) ?? (r.agent ? CLAUDE : authorPerson(r.author, resolve));
-  const whoNode = (r: ListRow) => <Who p={personOf(r)} size="md" />;
-  const nameOf = (r: ListRow) => personOf(r).name;
 
-  // Every row, classified once: its product, kind, person (the viewer as You) and state tab.
-  const products = p.products ?? DEFAULT_PRODUCTS;
-  const classify = (r: ListRow, fixed: 'archived' | 'shipped' | null) => {
-    // Extras are keyed by the design system's numbers: a product repository's #12 is another branch.
+  // Every row, classified once: its product, status and person.
+  const productName = (key: string) => (key === libraryKey ? LIBRARY_NAME : (products.find((pp) => pp.key.toLowerCase() === key)?.name ?? key));
+  const classify = (r: ListRow, fixed: ExplorationState | null) => {
     const e = r.product ? undefined : extras.get(r.number);
-    const x = { r, e, product: r.product ?? productOf(e?.files ?? null, p.products, r.labels), tokenOnly: tokenOnly(r, e, p.tokensRoot) };
-    const own = r.product ? (products.find((pp) => pp.key === r.product) ?? null) : null;
-    const c = own ? { category: 'product' as const, product: own } : categoryOf({ files: e?.files ?? null, labels: r.labels, headRef: r.head.ref, signals: r.signals, guidanceOnly: r.guidance }, products);
+    const product = (r.product ?? productOf(e?.files ?? null, p.products, r.labels)).toLowerCase();
     const pp = personOf(r);
     const yours = isYours(r, viewer, p.viewerName);
-    return {
-      kind: 'branch' as const,
-      x,
-      product: x.product.toLowerCase(),
-      category: c.category,
-      productName: c.product?.name ?? null,
-      designer: { key: yours ? YOU : designerKey(pp), name: pp.name },
-      state: (fixed ?? stateOf(r)) as StateTab | null,
-    };
+    const status: ExplorationState = fixed ?? r.status ?? statusOf({ lifecycle: r.lifecycle, stage: r.stage, statusKind: r.statusKind, merged_at: r.merged_at, shippedAt: r.shippedAt });
+    return { r, e, product, status, person: pp, people: [yours ? YOU : designerKey(pp)], shippedAt: shippedAtOf(r) };
   };
-  const openItems = openDesign.map((r) => classify(r, null));
-  // An archived exploration says so on its tag, never "Exploring" (its stage before it was archived).
-  const archivedItems = archived.map((r) => classify({ ...r, pill: { label: LIFECYCLE_LABEL.archived, tone: 'neutral' } }, 'archived'));
-  const shippedItems = shippedDesign.map((r) => classify(r, 'shipped'));
-  const waitingExtras = viewer
-    ? (p.waiting ?? []).map((w) => {
-        const pp = w.need.person ?? CLAUDE;
-        const yours = Boolean(pp.login && viewer && pp.login.replace(/^@/, '').toLowerCase() === viewer.replace(/^@/, '').toLowerCase());
-        return { kind: 'extra' as const, w, product: (w.product?.key ?? defaultProduct(products).key).toLowerCase(), category: w.category, productName: w.product?.name ?? null, designer: { key: yours ? YOU : designerKey(pp), name: pp.name } };
-      })
-    : [];
-  type Item = (typeof openItems)[number] | (typeof waitingExtras)[number];
-  const inTab = (t: StateTab): Item[] =>
-    t === 'all'
-      ? openItems
-      : t === 'waiting'
-        ? viewer
-          ? [...openItems.filter((q) => q.x.r.yourTurn), ...waitingExtras]
-          : []
-        : t === 'archived'
-          ? archivedItems
-          : t === 'shipped'
-            ? shippedItems
-            : openItems.filter((q) => q.state === t);
-  const queue = inTab(tab);
-  const active = activeFilters(picked, queue, products, Boolean(viewer));
-  const filtered = Boolean(active.product) || Boolean(active.by);
-  const passes = (q: Item) => inFilters(q, active);
-  const kept = queue.filter(passes);
-  const counts = Object.fromEntries(
-    (['all', 'waiting', 'exploring', 'code', 'building', 'review', 'shipped', 'archived'] as StateTab[]).map((t) => [t, inTab(t).filter(passes).length]),
-  ) as Record<StateTab, number>;
-  const tabs = visibleTabs(counts, tab);
-  // The page header's summary sentence (lib/page-summary): what is open, by where it stands, whatever the filters.
-  // Not planned has no tab, but the sentence still counts every open row it lists.
-  const summary =
-    p.loading && !p.rows.length
-      ? ''
-      : changesSummary({
-          ...Object.fromEntries((['exploring', 'code', 'building', 'review'] as const).map((t) => [t, openItems.filter((q) => q.state === t).length])),
-          notPlanned: openItems.filter((q) => q.x.r.stage === 'not-planned').length,
-        });
-  useEffect(() => setPageSummary(summary), [summary]);
-  const waitingView = tab === 'waiting' && Boolean(viewer);
-  // Waiting on me counts Claude's documentation drafts apart.
-  const drafts = queue.filter((q) => q.kind === 'extra' && q.w.need.kind === 'guidance').length;
-  const waitingLine = queueSummary(kept.length, queue.length, filtered, drafts);
-  const rowKey = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
-  const rows = kept.flatMap((q) => (q.kind === 'branch' ? [q.x] : []));
-  // Library changes stay in the Library group, each saying which exploration needs it (boards LI6, LI7): the
-  // product groups list the explorations, the Library what every product will get.
-  const groups = groupByProduct(rows, p.products).map((g) => ({ ...g, rows: g.rows.map((x) => ({ ...x, child: false })), count: g.rows.length }));
-  const libraryKey = defaultProduct(products).key;
+  type Item = ReturnType<typeof classify>;
+  const keep = (x: Item) => isExplorationRow(x.r, x.product, libraryKey);
+  const openItems = designRows(byTask.open, filesOfRow, p.tooling).map((r) => classify(r, null)).filter(keep);
+  const archivedItems = archived.map((r) => classify(r, 'archived')).filter(keep);
+  const shippedItems = designRows(closedMerged, filesOfRow, p.tooling)
+    .map((r) => classify(r, 'shipped'))
+    .filter(keep)
+    .sort((a, b) => Date.parse(b.shippedAt ?? '') - Date.parse(a.shippedAt ?? ''));
+  const items: Item[] = [...openItems, ...archivedItems, ...shippedItems];
 
-  // Checked branches stay only while they are listed and still checkable.
-  const checkable = rows.filter((x) => selectable(x));
-  const listedKey = checkable.map((x) => `${x.r.number}@${x.r.head.sha}\u0000${x.r.title}`).join('\u0001');
-  const listed = useMemo(
-    () =>
-      new Map<number, ListedBranch>(
-        listedKey
-          ? listedKey.split('\u0001').map((k) => {
-              const [id, title] = k.split('\u0000') as [string, string];
-              const [n, sha] = id.split('@') as [string, string];
-              return [Number(n), { number: Number(n), title, sha }];
-            })
-          : [],
-      ),
-    [listedKey],
-  );
+  // Waiting on you: pinned first, whatever the filters (open rows only: nothing archived or shipped waits). One source
+  // with Home and the nav badge (lib/waiting-counts): the list's own rule (row.yourTurn), plus what Home found that the
+  // list cannot read (a question on the developers' task, the PM's word), remembered by scripts/waiting-counts.
+  const ekey = (r: ListRow) => explorationKey(r.number, r.product ?? null);
+  const [homeWaiting, setHomeWaiting] = useState<WaitingExploration[] | null>(null);
   useEffect(() => {
-    setSelected((s) => (s.every((n) => listed.has(n)) ? s : s.filter((n) => listed.has(n))));
-  }, [listed]);
+    let live = true;
+    const read = () => void import('../../../scripts/waiting-counts').then((m) => live && setHomeWaiting(m.rememberedWaitingExplorations())).catch(() => undefined);
+    read();
+    document.addEventListener('bridge:waiting-explorations', read);
+    return () => {
+      live = false;
+      document.removeEventListener('bridge:waiting-explorations', read);
+    };
+  }, [viewer]);
+  const own = viewer ? openItems.filter((x) => x.r.yourTurn).map((x) => ({ key: ekey(x.r), line: x.r.turnReason ?? `${x.person.name} sent it for review` })) : [];
+  const merged = mergeWaiting(own, viewer ? homeWaiting : null, new Set(openItems.map((x) => ekey(x.r))));
+  const turnLine = new Map(merged.map((w) => [w.key, w.line]));
+  const waiting = openItems.filter((x) => turnLine.has(ekey(x.r)));
+  const pinned = new Set(waiting.map((x) => x.r));
+  const listed = items.filter((x) => !pinned.has(x.r));
+  const kept = listed.filter((x) => passes(x, filters));
+  // Once the list is read in full, what waits here is the badge's number too (written only when it changed).
+  const mergedKey = JSON.stringify(merged);
+  useEffect(() => {
+    if (p.loading || p.unread || !viewer) return;
+    if (JSON.stringify(homeWaiting ?? []) === mergedKey) return;
+    void import('../../../scripts/waiting-counts').then((m) => m.rememberWaitingExplorations(JSON.parse(mergedKey) as WaitingExploration[])).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergedKey, p.loading, p.unread, viewer]);
 
-  const toggle = (n: number, on: boolean) => setSelected((s) => toggleChange(s, n, on).selected);
-  const clear = useCallback(() => setSelected([]), []);
-  const drop = useCallback((ns: number[]) => setSelected((s) => s.filter((n) => !ns.includes(n))), []);
+  const summary = EXPLORATIONS_LEDE;
 
-  // The tab, product and person are kept together in the address (lib/branches-page withChangesFilters).
-  const pick = (f: ChangesFilters) => {
-    setPicked(f);
+  // The filters live in the address (lib/explorations-page addressWithFilters).
+  const pick = (f: ExplorationFilters) => {
+    setFilters(f);
     const url = new URL(location.href);
-    url.search = withChangesFilters(url.search, f);
+    url.search = addressWithFilters(url.search, f);
     history.replaceState(history.state, '', url);
   };
-  const pickTab = (v: string) => pick({ ...picked, state: v as StateTab });
-  const pickFilters = (f: ListFilters) => pick({ ...picked, product: f.product, by: f.by });
-  // Shipped reads the closed list when it was not read yet (the page reads it after the open one).
+  const clear = () => pick({ ...DEFAULT_FILTERS, status: [...DEFAULT_FILTERS.status] });
+  const filtered = isFiltered(filters);
+
+  // Shipped needs the closed list: read once the filter or the Board shows it.
+  const wantsShipped = filters.status.includes('shipped') || view === 'board';
   const readClosed = p.readClosed;
   useEffect(() => {
-    if (shippedTab && p.closed === null) readClosed();
-  }, [shippedTab, p.closed, readClosed]);
+    if (wantsShipped && p.closed === null) readClosed();
+  }, [wantsShipped, p.closed, readClosed]);
 
-  // The checkbox (preview token branches together) leads a row; every row of a group that has one keeps its slot, so
-  // thumbnails and avatars stay in one column.
-  const pickable = (x: { tokenOnly: boolean | null }) => selectable(x);
-  const slot = <span className="bl-pick-slot" aria-hidden="true" />;
-  // The same branch as a card, for the grid: the Home's card (ListCard). Its footer names who it belongs to and when
-  // its screen was captured; on Shipped (grouped by month), its screen's corner names the product its heading does
-  // not say ("Library" for a library change).
-  // A library change in Shipped's grid: it belongs to no product.
-  const LIBRARY_CORNER = 'Library';
-  // A library piece waits on the viewer when the exploration that asked for it does (Looks right accepts the screen and
-  // its library pieces): the same rule as Waiting on me and Home.
-  const waitingExplorations = new Set(openItems.filter((q) => q.x.r.lifecycle === 'exploration' && q.x.r.yourTurn).map((q) => `${q.x.r.product ?? ''}#${q.x.r.number}`));
-  const originKey = (o: { kind: string; number?: number | null; productKey?: string | null } | null) => (o?.kind === 'exploration' && o.number ? `${o.productKey ?? ''}#${o.number}` : '');
+  // The filter options, each with its count over what the other filters keep (Waiting on you included: the same
+  // numbers as the header sentence).
+  const countBy = (f: ExplorationFilters) => items.filter((x) => passes(x, f));
+  const statusOptions = STATES.map((s) => ({ value: s, label: STATE_LABEL[s], count: countBy({ ...filters, status: [s] }).length }));
+  const productKeys = [...new Set([...products.map((pp) => pp.key.toLowerCase()), ...items.map((x) => x.product)])].filter((k) => items.some((x) => x.product === k) || filters.product.includes(k));
+  const productOptions = productKeys.map((k) => ({ value: k, label: productName(k), count: countBy({ ...filters, product: [k] }).length }));
+  const personNames = new Map<string, string>();
+  for (const x of items) if (x.people[0] !== YOU) personNames.set(x.people[0]!, x.person.name);
+  const personOptions = [
+    ...(viewer ? [{ value: YOU, label: 'You', count: countBy({ ...filters, people: [YOU] }).length }] : []),
+    ...[...personNames.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => ({ value: k, label: n, count: countBy({ ...filters, people: [k] }).length })),
+  ];
+  const personLabel = (k: string) => (k === YOU ? 'You' : (personNames.get(k) ?? k));
 
-  const branchCard = ({ r, e }: (typeof rows)[number], product?: string | null, lib?: { note: ReactNode; pill: ListRow['pill'] }) => {
-    const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
+  const hrefOf = (r: ListRow) => (r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`);
+  const linkOf = (r: ListRow) => (r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) });
+  const thumbOf = (x: Item): ThumbSpec => shots.get(`${x.r.product ?? ''}#${x.r.number}`) ?? x.e?.thumb ?? { kind: 'icon', icon: x.r.guidance ? 'guidance' : 'branch' };
+  const keyOf = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
+  /** Line 2: who, then when it last moved or shipped; in Waiting on you, why it is the viewer's turn. */
+  const lineOf = (x: Item, turn = false) => {
+    if (turn) return turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`;
+    if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
+    return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
+  };
+  // Say each state once: a shipped row says when on its line, so it carries no Shipped tag.
+  const shippedSaid = (x: Item) => x.status === 'shipped' && Boolean(x.shippedAt);
+  // What waits on you carries its weight (boards ex-list, ex-grid, ex-board): "Your turn" in the accent on its own line
+  // above the title, an accent edge, the reason as the line. Its status tag stays out: the turn says it.
+  const turnMark = <span className="t-ui ex-turn-mark">Your turn</span>;
+  // On a phone the avatar column hides: a small face before the name keeps who it is (ListCard does the same).
+  const face = (x: Item) => (
+    <span className="ex-face" aria-hidden="true">
+      <Who p={x.person} size="xs" />
+    </span>
+  );
+  const row = (x: Item, turn = false) => (
+    <BranchRow
+      key={keyOf(x.r)}
+      className={turn ? 'ex-turn' : undefined}
+      eyebrow={turn ? turnMark : undefined}
+      thumb={thumbOf(x)}
+      who={<Who p={x.person} size="md" />}
+      title={x.r.title}
+      jira={x.r.jira}
+      lineLead={face(x)}
+      line={lineOf(x, turn)}
+      href={hrefOf(x.r)}
+      linkAttributes={linkOf(x.r)}
+      pill={turn || shippedSaid(x) ? null : pillOf(x.status)}
+    />
+  );
+  const card = (x: Item, opts: { pill?: boolean; product?: boolean; turn?: boolean } = {}) => (
+    <ListCard
+      key={keyOf(x.r)}
+      className={opts.turn ? 'ex-turn' : undefined}
+      eyebrow={opts.turn ? turnMark : undefined}
+      thumb={thumbOf(x)}
+      title={x.r.title}
+      href={hrefOf(x.r)}
+      linkAttributes={linkOf(x.r)}
+      person={x.person}
+      product={opts.product ? productName(x.product) : null}
+      pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
+      note={opts.turn ? <span className="t-ui t-muted">{lineOf(x, true)}</span> : shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
+    />
+  );
+  const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn, pill: !turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);
+
+  const loading = p.loading && !p.rows.length;
+  const nothingYet = !loading && !p.unread && openItems.length === 0 && archivedItems.length === 0 && (p.closed === null ? !p.loading : shippedItems.length === 0) && !waiting.length;
+  // Say it once: with nothing yet, the empty state speaks and the header sentence stays out.
+  useEffect(() => setPageSummary(nothingYet ? '' : summary), [summary, nothingYet]);
+  // One primary action per view: with nothing yet, the empty state's Start replaces the header's.
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent('bridge:start-change', { detail: { variant: 'primary', hidden: nothingYet } }));
+    const slot = document.querySelector<HTMLElement>('[data-greet]');
+    if (slot) slot.dataset.startHidden = String(nothingYet);
+  }, [nothingYet]);
+
+  if (loading) {
     return (
-      <ListCard
-        key={rowKey(r)}
-        thumb={shots.get(`${r.product ?? ''}#${r.number}`) ?? e?.thumb ?? { kind: 'icon', icon: r.guidance ? 'guidance' : 'branch' }}
-        title={r.title}
-        href={href}
-        linkAttributes={r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) }}
-        person={personOf(r)}
-        product={product === undefined ? null : (product ?? LIBRARY_CORNER)}
-        pill={lib ? lib.pill : r.pill}
-        note={lib?.note}
-      />
+      <ul className="sh-rows" aria-hidden="true">
+        <li className="sh-row-item">
+          <Skeleton variant="rect" className="sh-skel" />
+        </li>
+        <li className="sh-row-item">
+          <Skeleton variant="rect" className="sh-skel" />
+        </li>
+      </ul>
     );
-  };
+  }
 
-  const branchRow = ({ r, e, tokenOnly, child }: (typeof rows)[number] & { child: boolean }, line?: string, reserve = false, lib?: { note: ReactNode; pill: ListRow['pill'] }) => {
-    const tok = tokenOnly;
-                const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
-                const checked = selected.includes(r.number);
-                const full = boxDisabled(selected, r.number);
-                const box = (
-                  <Checkbox
-                    className="bl-pick"
-                    label={<VisuallyHidden>Select {r.title} to preview it</VisuallyHidden>}
-                    checked={checked}
-                    disabled={full}
-                    onCheckedChange={(on) => toggle(r.number, on)}
-                  />
-                );
-                const behind = r.behindBy && r.behindBy > 0 && r.lifecycle !== 'shipped' && r.lifecycle !== 'closed';
-                return (
-                  <BranchRow
-                    key={rowKey(r)}
-                    className={`bl-row${tok ? ' is-pickable' : ''}${child ? ' is-linked' : ''}`}
-                    selected={checked}
-                    lead={tok ? (full ? <Tooltip content={FULL_TIP}>{box}</Tooltip> : box) : reserve ? slot : undefined}
-                    thumb={shots.get(`${r.product ?? ''}#${r.number}`) ?? e?.thumb ?? { kind: 'icon', icon: r.guidance ? 'guidance' : 'branch' }}
-                    who={whoNode(r)}
-                    title={r.title}
-                    jira={r.jira}
-                    line={child ? childLine(nameOf(r)) : (line ?? (r.reviewLine ? `${nameOf(r)}${SEP}${r.reviewLine}` : r.ago ? `${nameOf(r)}${SEP}${r.ago}` : nameOf(r)))}
-                    href={href}
-                    linkAttributes={r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) }}
-                    pill={lib ? (lib.pill ?? r.pill) : r.pill}
-                    note={lib?.note}
-                    end={
-                      behind ? (
-                        <span className="t-ui bl-behind">
-                          <span className="t-muted">{behindTag(r.behindBy)}</span>
-                          <span className="t-muted" aria-hidden="true">
-                            {' · '}
-                          </span>
-                          <Link href={href} className="bl-update" data-open-pr={r.number}>
-                            {VOCAB.updateFromMain}
-                            <VisuallyHidden>: {r.title}</VisuallyHidden>
-                          </Link>
-                        </span>
-                      ) : null
-                    }
-                  />
-                );
-  };
-
-  const choices = filterChoices(queue, products, active, Boolean(viewer));
-  const reach = reachLine(products);
-
-  const extraRow = ({ w, productName }: (typeof waitingExtras)[number], reserve = false) => {
-    const pp = w.need.person ?? CLAUDE;
-    const s = w.suggestion;
-    const line = s ? `${productName ? `${productName} · ` : ''}${pp.name} · Suggestion` : w.need.line;
+  if (nothingYet) {
     return (
-      <BranchRow
-        key={w.need.key}
-        thumb={w.need.thumb}
-        who={<Who p={pp} size="md" />}
-        title={w.need.title}
-        line={line}
-        href={w.need.href}
-        linkAttributes={s ? { 'data-open-suggestion': s } : undefined}
-        pill={w.need.pill}
-        lead={reserve ? slot : undefined}
-      />
+      <section className="ex-start" aria-labelledby="ex-start-title">
+        <Drawing name="review" width={200} />
+        <h2 className="ex-start-title" id="ex-start-title">
+          Start with one screen
+        </h2>
+        <p className="t-body t-muted ex-start-text">Pick a screen of one of your products and try an idea on it with Claude. Your team sees it here, with its real screens.</p>
+        <div className="ex-start-actions">
+          {p.connect ? (
+            // Read only (signed out of a team that reads GitHub): connecting comes first, starting needs it.
+            <Button variant="primary" data-gh-open="">
+              {p.connect}
+            </Button>
+          ) : (
+            <StartExploration components={p.components ?? []} appearance="primary" />
+          )}
+          {/* Three contexts never mixed: the sample team never links to itself. */}
+          {!location.pathname.startsWith(DEMO_HOME) && (
+            <DsButtonLink variant="secondary" href={DEMO_HOME}>
+              See the sample team
+            </DsButtonLink>
+          )}
+        </div>
+      </section>
     );
-  };
+  }
 
-  const waitingList = (
-    <>
-      {groupByCategory(kept)
-        .filter((g) => g.rows.length > 0 || !filtered)
-        .map((g) => (
-          <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
-            <div className="bl-head">
-              <h2 className="bl-h2" id={`bl-${g.key}`}>
-                {g.label} <span className="bl-count">{g.rows.length}</span>
-              </h2>
-              {g.key === 'library' && reach && <p className="t-ui t-muted bl-reach">{reach}</p>}
-            </div>
-            {g.rows.length ? (
-              <ul className="sh-rows" aria-labelledby={`bl-${g.key}`}>
-                {g.rows.map((q) => {
-                  const reserve = g.rows.some((o) => o.kind === 'branch' && pickable(o.x));
-                  return q.kind === 'extra' ? extraRow(q, reserve) : branchRow({ ...q.x, child: false }, q.productName ? `${q.productName} · ${q.designer.name}` : undefined, reserve);
-                })}
-              </ul>
-            ) : (
-              <p className="t-ui t-muted bl-none">Nothing of this kind waits on you.</p>
+  const groups = productKeys
+    .map((k) => ({ key: k, label: productName(k), rows: kept.filter((x) => x.product === k) }))
+    .filter((g) => g.rows.length > 0);
+  const boardStatus = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)) ? [...IN_PROGRESS, 'shipped' as const] : filters.status;
+  // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there.
+  const columns = boardColumns([...waiting, ...kept], boardStatus);
+  const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
+
+  const board = (
+    <div className="ex-board" role="region" aria-label="Board, one column per status" tabIndex={0}>
+      {columns.map((c) => {
+        const open = opened.has(c.key);
+        const shown = open ? c.rows : c.rows.slice(0, BOARD_CAP);
+        const yours = c.rows.filter((x) => pinned.has(x.r)).length;
+        // An empty column folds to its heading and count, so the filled ones keep their width.
+        return (
+          <section className={c.rows.length ? 'ex-col' : 'ex-col is-empty'} key={c.key} aria-labelledby={`ex-col-${c.key}`}>
+            <h2 className="ex-col-h" id={`ex-col-${c.key}`}>
+              {c.label} <span className="bl-count">{c.rows.length}</span>
+              {yours > 0 && <span className="ex-col-yours"> · {yours} your turn</span>}
+            </h2>
+            {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>}
+            {c.rows.length > BOARD_CAP && !open && (
+              <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(c.key))}>
+                Show all {c.rows.length}
+              </Button>
             )}
           </section>
-        ))}
-    </>
+        );
+      })}
+    </div>
   );
 
   return (
-    <div className={waitingView ? 'bl is-waiting' : 'bl'}>
-      {/* The tabs alone on their row: the page's primary navigation. */}
-      <div className="bl-filters">
-        <Tabs className="bl-tabs" value={tab} onValueChange={(v) => v !== null && pickTab(String(v))}>
-          <TabsList aria-label={`Where the ${VOCAB.branches} stand`}>
-            {tabs.map((t) => (
-              <Tab key={t.value} value={t.value} count={t.count}>
-                {t.label}
-              </Tab>
-            ))}
-          </TabsList>
-        </Tabs>
+    <div className="bl ex">
+      <div className="bl-bar">
+        <span className="bl-narrow">
+          <MultiFilter
+            label="Status"
+            shown={statusTriggerLabel(filters.status)}
+            options={statusOptions}
+            picked={filters.status}
+            onPick={(v) => pick({ ...filters, status: v.length ? STATES.filter((s) => v.includes(s)) : [...IN_PROGRESS] })}
+            reset={{ label: IN_PROGRESS_LABEL, active: filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)), onReset: () => pick({ ...filters, status: [...IN_PROGRESS] }) }}
+          />
+          <MultiFilter
+            label="Product"
+            shown={multiTriggerLabel(filters.product, productName, 'All products')}
+            options={productOptions}
+            picked={filters.product}
+            onPick={(v) => pick({ ...filters, product: v })}
+            reset={{ label: 'All products', active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
+          />
+          <MultiFilter
+            label="People"
+            shown={multiTriggerLabel(filters.people, personLabel, 'Everyone')}
+            options={personOptions}
+            picked={filters.people}
+            onPick={(v) => pick({ ...filters, people: v })}
+            reset={{ label: 'Everyone', active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
+          />
+        </span>
+        <p className="t-ui t-muted bl-summary" aria-live="polite">
+          {countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}
+          {filtered && (
+            <>
+              {' '}
+              <Button variant="link" onClick={clear}>
+                Clear filters
+              </Button>
+            </>
+          )}
+        </p>
+        <ViewSwitch view={view} onPick={setListView} board />
       </div>
-      {/* The quieter row under the tabs: the filters, then the count. It shows once the tab holds something to narrow
-          (or while a filter is picked). */}
-      {!(p.loading && !p.rows.length) && !(shippedTab && p.closed === null) && (queue.length > 0 || filtered) && (
-        <ListFiltersBar
-          active={active}
-          choices={choices}
-          onPick={pickFilters}
-          summary={waitingView ? waitingLine : listSummary(kept.length, queue.length, filtered)}
-          clear={filtered && kept.length > 0}
-          /* Waiting on me is reviewed row by row: it is a list, and says so by having no switch. */
-          end={waitingView ? undefined : <ViewSwitch view={view} onPick={pickView} />}
-        />
+
+      {waiting.length > 0 && view !== 'board' && (
+        <section className="bl-group ex-waiting" aria-labelledby="bl-waiting">
+          <h2 className="bl-h2" id="bl-waiting">
+            Waiting on you <span className="bl-count">{waiting.length}</span>
+          </h2>
+          {asList(waiting, true)}
+        </section>
       )}
-      {p.tierLabel && (
-        <p className="t-ui t-muted bl-note">
-          Showing {p.tierLabel} only. <Link href={studioHref('changes/')}>Show all</Link>
-        </p>
-      )}
-      {archivedTab && archivedItems.length > 0 && <p className="t-ui t-muted bl-note">{ARCHIVED_NOTE}</p>}
-      {(p.loading && !p.rows.length) || (shippedTab && p.closed === null) ? (
-        <ul className="sh-rows" aria-hidden="true">
-          <li className="sh-row-item">
-            <Skeleton variant="rect" className="sh-skel" />
-          </li>
-          <li className="sh-row-item">
-            <Skeleton variant="rect" className="sh-skel" />
-          </li>
-        </ul>
-      ) : kept.length === 0 && filtered && queue.length > 0 ? (
+
+      {(view === 'board' ? shownCount === 0 : kept.length === 0) ? (
         <p className="t-body t-muted bl-none">
-          {NO_FILTER_MATCH} <ClearFilters onPick={pickFilters} />
+          {emptyFilterLine(filters, { person: personLabel, product: productName })} {filtered && <Button variant="link" onClick={clear}>Clear filters</Button>}
         </p>
-      ) : waitingView && queue.length > 0 ? (
-        waitingList
-      ) : groups.length === 0 ? (
-        <p className="t-body t-muted bl-none">{emptyTabLine(tab, Boolean(viewer))}</p>
-      ) : shippedTab ? (
-        <>
-          {groupByMonth(rows, (x) => shippedAtOf(x.r)).map((g) => (
-            <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
-              <h2 className="bl-h2" id={`bl-${g.key}`}>
-                {g.label} <span className="bl-count">{g.rows.length}</span>
-              </h2>
-              <ul className={view === 'grid' ? 'sh-cards' : 'sh-rows'} aria-labelledby={`bl-${g.key}`}>
-                {g.rows.map((x) => {
-                  const product = products.find((pp) => pp.key === x.product)?.name ?? null;
-                  const line = [product, nameOf(x.r), shippedOn(shippedAtOf(x.r)!)].filter(Boolean).join(SEP);
-                  // Shipped says when on the line; a library change the release has not published yet keeps its tag.
-                  const waits = x.r.pill?.label === LIFECYCLE_LABEL['next-release'];
-                  const one = { ...x, r: { ...x.r, pill: waits ? x.r.pill : null } };
-                  return view === 'grid' ? branchCard(one, product) : branchRow({ ...one, child: false }, line);
-                })}
-              </ul>
-            </section>
-          ))}
-          {shippedCapLine(p.closed?.length ?? 0, p.closedLimit) && <p className="t-ui t-muted bl-merged">{shippedCapLine(p.closed?.length ?? 0, p.closedLimit)}</p>}
-        </>
+      ) : view === 'board' ? (
+        board
       ) : (
-        groups.map((g) =>
-          g.key === libraryKey ? (
-            <LibraryChanges
-              key={g.key}
-              heading={
-                <>
-                  <Link href={productHref(g.key)} variant="subtle" data-product-link={g.key}>
-                    {g.label}
-                  </Link>{' '}
-                  <span className="bl-count">{g.count}</span>
-                </>
-              }
-              rows={g.rows}
-              facts={(x) => {
-                const origin = x.r.origin ?? libraryOrigin({ title: x.r.title, labels: x.r.labels ?? null, headRef: x.r.head.ref, guidance: x.r.guidance, files: x.e?.files ?? null }, products);
-                return {
-                  key: rowKey(x.r),
-                  title: x.r.title,
-                  origin,
-                  statusKind: x.r.statusKind ?? null,
-                  turn: x.r.yourTurn || waitingExplorations.has(originKey(origin)),
-                  draft: x.r.lifecycle === 'draft',
-                  figmaComponent: x.r.figmaComponent ?? null,
-                  mine: isYours(x.r, viewer, p.viewerName),
-                };
-              }}
-              renderRow={(x, o) => branchRow(x, undefined, g.rows.some(pickable), o)}
-              renderCard={view === 'grid' ? (x, o) => branchCard(x, undefined, o) : null}
-              lead={p.lead ?? { you: false, name: null }}
-            />
-          ) : (
+        groups.map((g) => (
           <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
-            {/* The product's name opens its page (lib/product-page.ts), like a project in Figma. */}
             <h2 className="bl-h2" id={`bl-${g.key}`}>
-              <Link href={productHref(g.key)} variant="subtle" data-product-link={g.key}>
-                {g.label}
-              </Link>{' '}
-              <span className="bl-count">{g.count}</span>
+              {g.label} <span className="bl-count">{g.rows.length}</span>
             </h2>
-            <ul className={view === 'grid' ? 'sh-cards' : 'sh-rows'} aria-labelledby={`bl-${g.key}`}>
-              {g.rows.map((x) => (view === 'grid' ? branchCard(x) : branchRow(x, undefined, g.rows.some(pickable))))}
-            </ul>
+            {asList(g.rows)}
           </section>
-          ),
-        )
+        ))
       )}
-      <SelectionBar selected={selected} listed={listed} admin={p.admin} failure={p.failure} onClear={clear} onDrop={drop} />
+      {filters.status.includes('shipped') && p.closed !== null && p.closed.length >= p.closedLimit && <p className="t-ui t-muted bl-merged">Shipped shows the most recent ones.</p>}
     </div>
   );
 }
 
 let root: Root | null = null;
 
-/** Mounts the list into `el` once; later calls repaint it with the new rows (its filter and selection stay). */
+/** Mounts the list into `el` once; later calls repaint it with the new rows (its filters stay). */
 export function paintBranchesList(el: HTMLElement, props: BranchesListProps) {
   root ??= createRoot(el);
   root.render(<BranchesList {...props} />);
 }
+

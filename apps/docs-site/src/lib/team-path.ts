@@ -1,10 +1,10 @@
 // Studio addresses in both modes (multi-team plan, section 4.1), and the old names of renamed repositories
 // (canonicalRepo). Pure and browser-safe: no Node API, no import.
 //
-// - Self-hosted (today's site, and every page at build time): Studio lives at /studio/, so studioHref('changes/')
-//   is '/studio/changes/', byte for byte the literal it replaces.
+// - Self-hosted (today's site, and every page at build time): Studio lives at /studio/, so studioHref('explorations/')
+//   is '/studio/explorations/', byte for byte the literal it replaces.
 // - Team shell (<html data-hosted>, address /studio/<owner>/<repo>/... or the escape form /studio/~/<owner>/<repo>/...):
-//   every Studio link keeps the team, so studioHref('changes/') is '/studio/<owner>/<repo>/changes/'.
+//   every Studio link keeps the team, so studioHref('explorations/') is '/studio/<owner>/<repo>/explorations/'.
 //
 // Every Studio link, redirect and fetch of a Studio file goes through studioHref. A literal '/studio/...' outside the
 // files listed in no-studio-literals.test.ts fails CI.
@@ -180,7 +180,7 @@ export function studioBase(pathname: string, hosted: boolean): string {
   return team ? `${STUDIO_ROOT}${team.escaped ? '~/' : ''}${team.owner}/${team.repo}/` : STUDIO_ROOT;
 }
 
-// A full self-hosted Studio path ('/studio/changes/', '/studio'), as the nav.ts constants spell them.
+// A full self-hosted Studio path ('/studio/explorations/', '/studio'), as the nav.ts constants spell them.
 const FULL = /^\/studio(?:\/|(?=[?#]|$))/;
 
 /** studioHref against an explicit Studio root (studioBase). Pure: what studioHref does once it knows the page. */
@@ -189,7 +189,7 @@ export function studioHrefAt(base: string, path = ''): string {
 }
 
 /**
- * A Studio address for this page. `path` is relative to the Studio root ('changes/?pr=12', 'tokens/', '' for Home,
+ * A Studio address for this page. `path` is relative to the Studio root ('explorations/?pr=12', 'tokens/', '' for Home,
  * '?setup=library', '#x'); a full '/studio/...' path (a nav.ts constant) is accepted too. In self-hosted mode and at
  * build time it returns '/studio/' + path, unchanged from the literal it replaces; on a team shell it keeps the team.
  */

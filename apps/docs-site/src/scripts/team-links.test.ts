@@ -11,7 +11,7 @@ const page = (path: string, hosted: boolean) => {
   history.replaceState(null, '', path);
   document.body.innerHTML = `
     <a id="home" href="/studio/">Home</a>
-    <a id="pr" href="/studio/changes/?pr=12">PR</a>
+    <a id="pr" href="/studio/explorations/?pr=12">PR</a>
     <a id="brand" href="/studio/brands/new/">New brand</a>
     <a id="cb" href="/studio/auth/callback/">Callback</a>
     <a id="lib" href="/library/">Library</a>
@@ -33,7 +33,7 @@ describe('pointLinksAtTeam', () => {
     page('/studio/acme/ds/tokens/', true);
     expect(pointLinksAtTeam()).toBe(3);
     expect(href('home')).toBe('/studio/acme/ds/');
-    expect(href('pr')).toBe('/studio/acme/ds/changes/?pr=12');
+    expect(href('pr')).toBe('/studio/acme/ds/explorations/?pr=12');
     expect(href('brand')).toBe('/studio/acme/ds/brands/new/');
     expect(href('cb')).toBe('/studio/auth/callback/');
     expect(href('lib')).toBe('/library/');
@@ -56,7 +56,7 @@ describe('pointLinksAtTeam', () => {
     expect(pointLinksAtTeam()).toBe(0);
     page('/studio/acme/ds/', false);
     expect(pointLinksAtTeam()).toBe(0);
-    expect(href('pr')).toBe('/studio/changes/?pr=12');
+    expect(href('pr')).toBe('/studio/explorations/?pr=12');
     expect(href('libopen')).toBe('/library/');
   });
 

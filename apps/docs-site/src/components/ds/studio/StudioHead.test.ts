@@ -104,8 +104,8 @@ describe('Studio page header', () => {
 
 describe('Studio pages use the one header pattern', () => {
   const pages: [string, string][] = [
-    ['../../../pages/studio/changes.astro', 'changes'],
-    ['../../../pages/team-shell/changes.astro', 'changes'],
+    ['../../../pages/studio/explorations.astro', 'changes'],
+    ['../../../pages/team-shell/explorations.astro', 'changes'],
     ['../../../pages/studio/building.astro', 'building'],
     ['../../../pages/team-shell/building.astro', 'building'],
     ['../../../pages/studio/components/index.astro', 'components'],

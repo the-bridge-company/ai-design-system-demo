@@ -23,15 +23,15 @@ describe('tokenChangesHref', () => {
 });
 
 describe('movedHistory', () => {
-  const at = { changes: '/studio/changes/', building: '/studio/building/', changelog: (q: { entry: string | null; token: string | null }) => tokenChangesHref(null, own, q) };
+  const at = { changes: '/studio/explorations/', building: '/studio/building/', changelog: (q: { entry: string | null; token: string | null }) => tokenChangesHref(null, own, q) };
   it('leaves any other address alone', () => {
     expect(movedHistory('', '', at)).toBeNull();
     expect(movedHistory('?state=shipped', '', at)).toBeNull();
     expect(movedHistory('?pr=3', '#hs-next', at)).toBeNull();
   });
   it('opens Shipped by default, other parameters kept', () => {
-    expect(movedHistory('?view=history', '', at)).toBe('/studio/changes/?state=shipped');
-    expect(movedHistory('?view=history&people=dana', '', at)).toBe('/studio/changes/?people=dana&state=shipped');
+    expect(movedHistory('?view=history', '', at)).toBe('/studio/explorations/?status=shipped');
+    expect(movedHistory('?view=history&people=dana', '', at)).toBe('/studio/explorations/?people=dana&status=shipped');
   });
   it('sends the release card to Being built', () => {
     expect(movedHistory('?view=history', '#hs-next', at)).toBe('/studio/building/#next-release');

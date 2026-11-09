@@ -7,11 +7,13 @@
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
 import { explorationWaitsOnViewer } from './design-lead';
+import { statusOf, turnReason } from '../lib/explorations-page';
+import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
 import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
-import { approvalNeedLong, effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
+import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
   allowedMergeMethods,
   canWrite,
@@ -37,12 +39,10 @@ import {
   asOf,
   byUrgency,
   approvalRows,
-  filterByTier,
   listSource,
   needFromDetail,
   isDeveloper,
   readSnapshot,
-  tierParam,
   whoActs,
   writeSnapshot,
   statusPill,
@@ -127,7 +127,6 @@ import { AGENT_NAME, isClaudeLogin, nameFace } from '../lib/people';
 import { safeUrl } from '../lib/html';
 import { siteConfig } from './repo-context';
 import { viewerRoles } from '../lib/suggestions-view';
-import type { WaitingExtra } from '../lib/review-categories';
 import { installReadPass } from './read-pass';
 
 interface User {
@@ -362,15 +361,6 @@ function pillOf(r: Row, lifecycle: Lifecycle | 'exploration'): ListRow['pill'] {
 /** The library changes the open release pull request lists (lib/release-view libraryRelease): In the next release. */
 let releaseIds: Set<string> = new Set();
 
-/** What waits on the viewer besides branches (suggestions, usage guidance drafts), set by the page that reads them. */
-let waitingExtras: WaitingExtra[] = [];
-
-/** Hands Waiting on me the suggestions and guidance drafts that wait on the viewer, and repaints the list. */
-export function setWaitingExtras(extras: WaitingExtra[]) {
-  waitingExtras = extras;
-  if (listMount) paintRows(openRows, listLoading);
-}
-
 /** Who the list is for: the GitHub account, else the email contributor (their email is their login in Studio). */
 const listViewer = (): string | null => currentViewer()?.login ?? currentContributor()?.email ?? null;
 
@@ -443,6 +433,9 @@ function listRow(r: Row): ListRow {
           figmaComponent: parseFigmaOrigin(r.body)?.component ?? null,
         }),
     requester: requesterOf(r.body),
+    // Where it stands and, when it waits on the viewer, why (lib/explorations-page: designer words only).
+    status: statusOf({ lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)) }),
+    turnReason: turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null,
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
     ...(r.reviewLine ? { reviewLine: r.reviewLine } : {}),
@@ -451,48 +444,32 @@ function listRow(r: Row): ListRow {
 
 let listMount: HTMLElement | null = null;
 
-/**
- * Who decides the library for the list (boards LI6, LI7): the viewer when they are a design lead (an email member who
- * decides, an email admin, a design approver), else the first design approver by name ("Needs Dana").
- */
-function libraryLead(): { you: boolean; name: string | null } {
-  const member = currentContributor();
-  const viewer = currentViewer()?.email ? null : (currentViewer()?.login ?? null);
-  const leads = OWNERS().design;
-  const you = member ? (member.decides ?? member.role === 'admin') : Boolean(viewer && leads.some((l) => l.toLowerCase() === viewer.toLowerCase()));
-  const first = leads[0];
-  return { you, name: first ? nameOf(first) : null };
-}
-
 function paintRows(rows: Row[], loading: boolean) {
   openRows = rows;
   listLoading = loading;
   const el = (listMount ??= document.getElementById('cg-list'));
   if (!el) return;
   readContribMine();
-  const tier = tierParam(location.search);
-  // Most urgent first, then waiting for code, then drafts (lib/change-status byLifecycle); explorations last.
-  const sorted = byLifecycle(filterByTier(byUrgency(rows), tier).map((r) => ({ r, lifecycle: lifecycleOfRow(r) }))).map((x) => x.r);
-  const closed = closedRows ? filterByTier(closedRows, tier) : null;
+  // Most urgent first, then waiting for code, then drafts (lib/change-status byLifecycle); explorations last. An old
+  // ?tier= link opens the default statuses (lib/explorations-page): library tiers belong to Library review.
+  const sorted = byLifecycle(byUrgency(rows).map((r) => ({ r, lifecycle: lifecycleOfRow(r) }))).map((x) => x.r);
+  const closed = closedRows;
   const props: BranchesListProps = {
-    rows: [...sorted, ...(tier ? [] : exploreRows)].map(listRow),
+    rows: [...sorted, ...exploreRows].map(listRow),
     closed: closed ? closed.map(listRow) : null,
-    archived: tier ? [] : archivedRows.map(listRow),
+    archived: archivedRows.map(listRow),
     closedLimit: CLOSED_LIMIT,
     loading,
     viewer: listViewer(),
     viewerName: currentViewer()?.name ?? null,
     connected: hasWorkingToken(),
-    admin: el.dataset.admin || null,
-    tokensRoot: el.dataset.tokensRoot || 'packages/tokens/src',
     ...(SITE.products?.length ? { products: SITE.products } : {}),
     tooling: siteTooling(),
-    tierLabel: tier ? approvalNeedLong(tier).toLowerCase() : null,
-    failure: (err) =>
-      err instanceof RateLimitError ? (limitLine(err, `A preview of ${VOCAB.branches} together`) ?? `GitHub limits anonymous reads to 60 an hour. ${ghVerb(prefersSignIn())} to preview ${VOCAB.branches} together.`) : `Could not read a checked ${VOCAB.branch}: ${(err as Error).message}`,
     readClosed: () => void loadClosed(),
-    waiting: waitingExtras,
-    lead: libraryLead(),
+    unread: listUnread,
+    // Read only until connected: the empty state asks to connect first (the rail's own verb).
+    connect: listViewer() ? null : ghVerb(prefersSignIn()),
+    components: startComponents ?? readStartComponents(el),
   };
   // Each call's module promise may settle in any order (Vite preloads its styles per call): paint the latest props,
   // never the ones a call captured, so a fast read never ends on an older list.
@@ -500,6 +477,22 @@ function paintRows(rows: Row[], loading: boolean) {
   void import('../components/ds/studio/BranchesList').then(({ paintBranchesList }) => latestList && paintBranchesList(el, latestList));
 }
 let latestList: BranchesListProps | null = null;
+/** GitHub could not be read: the list may be missing explorations, so it never says there are none. */
+let listUnread = false;
+
+/** The library's components for Start an exploration (empty state): the page's own list, or the team's (setStartComponents). */
+let startComponents: BranchesListProps['components'] | null = null;
+export function setStartComponents(list: NonNullable<BranchesListProps['components']>) {
+  startComponents = list;
+  if (listMount) paintRows(openRows, listLoading);
+}
+function readStartComponents(el: HTMLElement): NonNullable<BranchesListProps['components']> {
+  try {
+    return JSON.parse(el.dataset.components ?? '[]') as NonNullable<BranchesListProps['components']>;
+  } catch {
+    return [];
+  }
+}
 
 /** bridge.config.json tooling, read at paint time (a team shell knows its config once its model is read). */
 function siteTooling(): ToolingConfig | null {
@@ -510,9 +503,9 @@ function siteTooling(): ToolingConfig | null {
   }
 }
 
-function showEmpty(empty: boolean) {
-  $('cg-list').hidden = empty;
-  $('cg-empty').hidden = !empty;
+/** The list says itself when there is nothing yet ("Start with one screen", components/ds/studio/BranchesList). */
+function showEmpty(_empty: boolean) {
+  $('cg-list').hidden = false;
 }
 
 /** The muted line under the filters when GitHub cannot be read live. */
@@ -676,12 +669,15 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
   let live: { pulls: Pull[]; staleAt?: string | null } | null = null;
   let failure: unknown = null;
   let allOpen: Pull[] = [];
+  listUnread = false;
   paintRows([], true);
   // The explorations of each product repository, read in parallel (one read each, unreachable ones left out).
   const productRead = import('./product-repos').then((m) => m.productPulls()).catch(() => []);
   try {
     const f = await ghGet<Pull[]>(`${R}/pulls?state=open&per_page=100`);
     allOpen = openPulls(f.data);
+    // An answer GitHub could not refresh: the explorations may be missing from it.
+    if (f.stale) listUnread = true;
     // The review queue, and the running explorations listed with it under their own status.
     // An exploration handed to developers that is no longer a draft is In review: it stays an exploration row (its own
     // page, its lifecycle words), out of the branch rows.
@@ -706,6 +702,8 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
     void readExplorationReviews(exploreRows, [...allOpen, ...(own as unknown as LifecyclePullOf[])]);
   } catch (err) {
     failure = err;
+    // The explorations could not be read: never say the team has none.
+    listUnread = true;
   }
   // The closed list is one read, after the open one; the line it feeds sits at the end of the list.
   void loadClosed();
@@ -849,7 +847,7 @@ export async function openPr(n: number, push = true) {
       if (seq !== openSeq) return;
       // The Changes page opens it in place (scripts/changes.ts); any other page goes there.
       const handled = !document.dispatchEvent(new CustomEvent('bridge:open-exploration', { detail: { number: n }, cancelable: true }));
-      if (!handled) location.assign(studioHref(`changes/?exploration=${n}`));
+      if (!handled) location.assign(studioHref(`explorations/?exploration=${n}`));
       return;
     }
     // GitHub computes whether it merges cleanly on the first read (null meanwhile): read it once more while the rest

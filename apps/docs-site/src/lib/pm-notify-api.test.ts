@@ -79,7 +79,7 @@ describe('the PM and the lead hear about the build', () => {
       [DINO, 'Pill buttons is built: check it'],
       [MIA, 'Pill buttons is ready for your look'],
     ]);
-    expect(s.sent.find((m) => m.to === DINO)!.html).toContain('changes/?exploration=7&amp;product=shop');
+    expect(s.sent.find((m) => m.to === DINO)!.html).toContain('explorations/?exploration=7&amp;product=shop');
     // Once per task: the same build marked ready again tells the PM nothing new.
     await s.hook('pull_request', pr('ready_for_review'));
     expect(s.sent.filter((m) => m.to === DINO)).toHaveLength(1);

@@ -355,7 +355,7 @@ export function productConnectionRow(
 ): ProductConnectionRow {
   const label = x.product;
   if (x.state === 'checking') return { label, badge: { text: 'Checking', tone: 'neutral' }, value: `Explorations for ${x.product} live in ${x.repo}.`, ask: null };
-  if (x.state === 'connected') return { label, badge: { text: 'Connected', tone: 'success' }, value: `Explorations for ${x.product} start in ${x.repo} and show on Changes and the home.`, ask: null };
+  if (x.state === 'connected') return { label, badge: { text: 'Connected', tone: 'success' }, value: `Explorations for ${x.product} start in ${x.repo} and show on Explorations and the home.`, ask: null };
   if (x.state === 'read-only')
     return {
       label,

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // The side nav's two groups (option A): Products (the viewer's own first, five at most, "All products" with the total
-// beyond that, the product on screen always listed) and Design system (Components, Tokens, Quality, Explorations).
+// beyond that, the product on screen always listed) and Design system (Components, Tokens, Quality; the library's
+// explorations are on Explorations, Product = Design system).
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { render, screen, within } from '@testing-library/react';
@@ -29,7 +30,7 @@ const group = (name: string) => screen.getByText(name, { selector: 'div' }).pare
 const linksIn = (el: HTMLElement) => within(el).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')]);
 
 describe('ProductsNavView', () => {
-  it('lists the products under Products, and the library as Explorations under Design system', async () => {
+  it('lists the products under Products, and no library Explorations entry under Design system', async () => {
     const { container } = nav({ products: navProducts(two), current: 'library', path: '/studio/products/library/', pages: PAGES });
     expect(linksIn(group('Products'))).toEqual([
       ['Art print shop', '/studio/products/shop/'],
@@ -39,9 +40,8 @@ describe('ProductsNavView', () => {
       ['Components', '/studio/components/'],
       ['Tokens', '/studio/tokens/'],
       ['Quality', '/studio/quality/'],
-      ['Explorations', '/studio/products/library/'],
     ]);
-    expect(screen.getByRole('link', { name: 'Explorations' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.queryByRole('link', { name: 'Explorations' })).toBeNull();
     // Five or fewer: no All products.
     expect(screen.queryByRole('link', { name: /All products/ })).toBeNull();
     await expectNoAxeViolations(container);

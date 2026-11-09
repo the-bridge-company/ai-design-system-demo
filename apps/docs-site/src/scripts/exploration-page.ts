@@ -616,7 +616,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       { name: nextName(r.name), purpose: block?.purpose ?? r.purpose ?? '', source: 'studio', ...(viewer && !member ? { author: viewer } : {}) },
       { base: pull.base?.ref ?? CFG.defaultBranch, packages: [], apps: {}, labels, from: r.branch, ...(own ? { inProduct: { name: product.name, library: `${CFG.owner}/${CFG.repo}`, ...(inCopy ? { copyOf: inCopy.code } : {}) } } : {}) },
     );
-    location.assign(studioHref(`changes/${explorationHref({ number: started.pr, product: r.product })}`));
+    location.assign(studioHref(`explorations/${explorationHref({ number: started.pr, product: r.product })}`));
   };
   // Who a lead can give it to: the other leads, then the team's members who can edit once Bridge read them.
   const handOverPeople: HandOverPerson[] = leadOther ? reviewersAsked({ approvers: siteApprovers().design, builders: [viewer ?? '', r.author] }).map((l) => ({ value: `login:${l}`, label: knownNamesOf([l])[l] ?? l })) : [];

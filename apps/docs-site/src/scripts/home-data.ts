@@ -495,7 +495,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       if (x.exploration) {
         // Who asks: the developers on it (assigned), else the person who opened it.
         const dev = (p as { assignees?: { login: string }[] }).assignees?.[0]?.login;
-        needs.push(explorationReviewNeed({ ...facts, asker: dev ? pick(dev)! : facts.asker, name: explorationNameOf(p), href: studioHref(`changes/${explorationHref({ number: p.number })}`) }, now));
+        needs.push(explorationReviewNeed({ ...facts, asker: dev ? pick(dev)! : facts.asker, name: explorationNameOf(p), href: studioHref(`explorations/${explorationHref({ number: p.number })}`) }, now));
       } else needs.push(changeNeed(facts, now));
       asked.add(p.number);
     }
@@ -506,7 +506,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const state = reviewStateOf({ draft: p.draft ?? null, requested: p.requested_reviewers ?? [], approvers: [] });
       if (!state.requested.some((l) => same(l, viewer)) || !waitsOnViewer(state, viewer)) continue;
       const asker = pick(p.user.login)!;
-      needs.push(explorationReviewNeed({ number: p.number, product: p.product ?? null, author: asker, asker, since: null, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href: studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`) }, now));
+      needs.push(explorationReviewNeed({ number: p.number, product: p.product ?? null, author: asker, asker, since: null, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href: studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`) }, now));
     }
     // Done exploring asked the design lead: theirs to answer before anything reaches the developers (never the person
     // who asked: a lead's own exploration waits on another lead).
@@ -518,7 +518,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const asker = block.leadAskedBy ?? p.user.login;
       const row = leadHomeRow(p.body, { viewer, lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null });
       if (!row) continue;
-      const href = studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`);
+      const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`);
       if (row.where === 'waiting') {
         waitingOnOthers.push({ key: `${p.product ?? ''}#${p.number}`, title: explorationNameOf(p), line: row.line, href });
         continue;
@@ -540,7 +540,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const row = pmHomeRow(p.body, { buildReady: Boolean(t && taskStage(t) === 'in-review' && (!check || check.waiting.includes(pm!.name))) });
       if (!row) continue;
       const who = explorationPerson(p.user.login, p.body, (l) => pick(l)!);
-      const href = studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`);
+      const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`);
       needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line(who.name ?? 'The designer'), action: row.action });
     }
     // Someone asked a question on the task of an exploration the viewer handed off (named, never "the developers" by
@@ -555,7 +555,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const mine = isOwnExploration(p, viewer, viewerRef);
       if (!q || waitingOn({ author: mine ? (viewer ?? '') : p.user.login, devQuestion: q, who: null }, { login: viewer, role: reviewer ? 'reviewer' : 'contributor' }) !== 'dev-question') continue;
       questions.push(u);
-      needs.push(devQuestionNeed({ key: `${p.product ?? ''}#${p.number}`, name: explorationNameOf(p), href: studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`), asker: q.login ? pick(q.login) : null, role: askerRole(q.login, siteApprovers()), since: q.at, thumb: { kind: 'icon', icon: 'branch' } }, now));
+      needs.push(devQuestionNeed({ key: `${p.product ?? ''}#${p.number}`, name: explorationNameOf(p), href: studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`), asker: q.login ? pick(q.login) : null, role: askerRole(q.login, siteApprovers()), since: q.at, thumb: { kind: 'icon', icon: 'branch' } }, now));
     }
     if (taskReads.size) rememberQuestions(viewer, questions);
     // A guidance draft whose change already has its own row (a review waits on you) shows once, as that change.
@@ -585,7 +585,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
         const stage = c.lifecycle === 'waiting' ? 'waiting' : isDraft(p) || c.lifecycle === 'draft' ? 'draft' : 'ready';
         // The same pill as the branch's row in Branches and its page header (lib/changes statusPill).
         const status = st && stage === 'ready' ? statusPill(st.kind, rowWho(st.kind, { author: p.user.login, labels: p.labels, approvers: st.approvers, changesRequested: st.changesRequested, lookAgain: st.lookAgain, failing: st.failing, failingChecks: st.failingChecks, pending: st.pending, autoShip: st.autoShip })).label : null;
-        return { number: p.number, title: c.title, href: studioHref(`changes/?pr=${p.number}`), stage, updated: p.updated_at, reviewer: pick(reviewerLogin(p, st)), thumb: resolved.get(p.number) ?? { kind: 'icon', icon: 'branch' }, status };
+        return { number: p.number, title: c.title, href: studioHref(`explorations/?pr=${p.number}`), stage, updated: p.updated_at, reviewer: pick(reviewerLogin(p, st)), thumb: resolved.get(p.number) ?? { kind: 'icon', icon: 'branch' }, status };
       });
     // The library's own changes, the rows Changes lists under Library (not an exploration, not Bridge's own work, the
     // library's product), filed by Changes' own tab (lib/branches-page stateOf): the Library folder counts them.

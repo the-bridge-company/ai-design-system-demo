@@ -71,7 +71,7 @@ function paint() {
   lines.innerHTML = c.lines.map((l) => `<li>${esc(l)}</li>`).join('');
   lines.hidden = !lines.innerHTML;
   const cta = $('bb-release-cta') as HTMLAnchorElement | null;
-  if (cta) cta.href = studioHref(`changes/?pr=${release.number}`);
+  if (cta) cta.href = studioHref(`explorations/?pr=${release.number}`);
 }
 
 let started = false;

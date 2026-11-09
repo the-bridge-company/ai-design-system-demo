@@ -96,12 +96,12 @@ const failRows = s.contrast.failing.map(({ pair: p, brand, mode, result: r }) =>
         one line that points to the branch's own checks (html[data-view-change], set before the page paints). */}
     <section class="ql-view" data-change-only aria-label="Quality of this change">
       <EmptyState icon={ShieldCheck} title={QUALITY_IN_CHECKS} description={QUALITY_IN_CHECKS_BODY} headingLevel={2} align="start">
-        <ButtonLink slot="actions" variant="primary" href={studioHref('changes/')} data-change-href>See its checks</ButtonLink>
+        <ButtonLink slot="actions" variant="primary" href={studioHref('explorations/')} data-change-href>See its checks</ButtonLink>
       </EmptyState>
     </section>
     <section class="ql-view" data-together-only aria-label="Quality of these changes together">
       <EmptyState icon={ShieldCheck} title={QUALITY_TOGETHER} description={QUALITY_TOGETHER_BODY} headingLevel={2} align="start">
-        <ButtonLink slot="actions" variant="primary" href={studioHref('changes/')}>Go to Changes</ButtonLink>
+        <ButtonLink slot="actions" variant="primary" href={studioHref('explorations/')}>Go to Explorations</ButtonLink>
       </EmptyState>
     </section>
 

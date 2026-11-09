@@ -50,7 +50,7 @@ describe('statedOrigin', () => {
       productKey: 'prints',
       number: 7,
     });
-    expect(o?.kind === 'exploration' && o.href).toContain('changes/?exploration=7&product=prints');
+    expect(o?.kind === 'exploration' && o.href).toContain('explorations/?exploration=7&product=prints');
   });
 
   it('reads a bridge-origin block holding the origin itself', () => {

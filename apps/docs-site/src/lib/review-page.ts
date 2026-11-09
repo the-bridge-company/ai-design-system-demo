@@ -24,10 +24,12 @@ export function reviewCrumbs(
 ): { label: string; href?: string }[] {
   const products = opts.products?.length ? opts.products : DEFAULT_PRODUCTS;
   const key = productOf(files, products, opts.labels ?? null);
-  const group = opts.exploration ? 'Explorations' : (headingsOf(products).find((p) => p.key === key) ?? PRODUCTS.find((p) => p.key === key) ?? PRODUCTS[0]!).label;
+  // An exploration's own page is under Explorations already: no second "Explorations" crumb.
+  if (opts.exploration) return [{ label: 'Explorations', href: studioHref('explorations/') }, { label: title }];
+  const group = (headingsOf(products).find((p) => p.key === key) ?? PRODUCTS.find((p) => p.key === key) ?? PRODUCTS[0]!).label;
   return [
-    { label: 'Changes', href: studioHref('changes/') },
-    { label: group, href: studioHref('changes/') },
+    { label: 'Explorations', href: studioHref('explorations/') },
+    { label: group, href: studioHref('explorations/') },
     { label: title },
   ];
 }
@@ -656,4 +658,4 @@ export function reviewActions(x: ActionInput): ReviewActions {
 }
 
 /** The Studio address of a branch review ("Link to this review"). */
-export const reviewLink = (origin: string, pr: number) => `${origin}${studioHref(`changes/?pr=${pr}`)}`;
+export const reviewLink = (origin: string, pr: number) => `${origin}${studioHref(`explorations/?pr=${pr}`)}`;

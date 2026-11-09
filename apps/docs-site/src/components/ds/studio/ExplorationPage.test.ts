@@ -23,7 +23,7 @@ const claude = { login: 'claude', name: 'Claude', agent: true, avatar: null };
 
 const base: ExplorationPageProps = {
   number: 611,
-  crumbs: [{ label: 'Changes', href: '/studio/changes/' }, { label: 'Admin demo', href: '/studio/changes/' }, { label: 'Orders: bulk actions' }],
+  crumbs: [{ label: 'Changes', href: '/studio/explorations/' }, { label: 'Admin demo', href: '/studio/explorations/' }, { label: 'Orders: bulk actions' }],
   title: 'Orders: bulk actions',
   stage: 'not-started',
   author: florian,

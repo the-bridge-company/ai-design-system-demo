@@ -112,9 +112,9 @@ export function searchFor(row: { key: string; number?: number } | null): string 
   return row.number ? `?pr=${row.number}` : `?item=${encodeURIComponent(row.key)}`;
 }
 
-/** The branch number of a row that opens a branch review in place (its link is /studio/changes/?pr=N). */
+/** The branch number of a row that opens a branch review in place (its link is /studio/explorations/?pr=N). */
 export function branchOf(row: { href: string; number?: number }): number | null {
-  // A team shell keeps the team in the address (/studio/<owner>/<repo>/changes/?pr=N, lib/team-path studioHref).
-  const m = /^\/studio\/(?:(?:~\/)?[^/?]+\/[^/?]+\/)?changes\/\?pr=(\d+)$/.exec(row.href);
+  // A team shell keeps the team in the address (/studio/<owner>/<repo>/explorations/?pr=N, lib/team-path studioHref); old /changes/ links still read.
+  const m = /^\/studio\/(?:(?:~\/)?[^/?]+\/[^/?]+\/)?(?:explorations|changes)\/\?pr=(\d+)$/.exec(row.href);
   return m ? Number(m[1]) : null;
 }

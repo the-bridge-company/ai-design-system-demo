@@ -539,7 +539,7 @@ function paintScope() {
       : scope.state === 'loading'
         ? { title: `Opening ${scope.title}`, body: 'Reading its token values. Edits wait until they are in.' }
         : scopeBanner(scope.title);
-  mountInto(slot, createElement(ScopeBanner, { title: words.title, body: words.body, backHref: studioHref(`changes/?pr=${scope.number}`), viewHref: scopeHref(location, { kind: 'view', change: scope.number }) }));
+  mountInto(slot, createElement(ScopeBanner, { title: words.title, body: words.body, backHref: studioHref(`explorations/?pr=${scope.number}`), viewHref: scopeHref(location, { kind: 'view', change: scope.number }) }));
 }
 
 /** Reads the change and its token files, then swaps them in as the values the editor edits. */
@@ -654,7 +654,7 @@ async function addInto(into: number, keepMine: string[] = []) {
     // Token edits are in the change now; docs edits stay in the local draft (the docs editor sends them).
     S.draft = { edits: scope ? [] : S.draft.edits.filter((e) => e.kind === 'docs') };
     saveDraft();
-    location.href = studioHref(`changes/?pr=${r.number}&added=${r.added.length}`);
+    location.href = studioHref(`explorations/?pr=${r.number}&added=${r.added.length}`);
   } catch (err) {
     if (err instanceof ChangeConflictError) {
       out.textContent = '';
@@ -897,7 +897,7 @@ export function initTokenEditor() {
       S!.draft = { edits: S!.draft.edits.filter((e) => e.kind === 'docs') };
       saveDraft();
       if (sent.kind === 'branch') {
-        location.href = studioHref(`changes/?pr=${sent.number}`);
+        location.href = studioHref(`explorations/?pr=${sent.number}`);
         return;
       }
       recompute();

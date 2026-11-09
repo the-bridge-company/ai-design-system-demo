@@ -29,7 +29,7 @@ const workItems = WORK_FILTERS.map((f) => ({ value: f.value, label: f.label }));
 
   <form class="fg-card rq-form ex-form" id="ex-start" aria-label="Start an exploration" novalidate hidden>
     <p class="ex-for" id="ex-for" hidden></p>
-    <Input label="Name" name="name" autoComplete="off" maxLength={60} placeholder="Pill buttons" hint="Teammates see this name in Changes and in the Figma plugin." />
+    <Input label="Name" name="name" autoComplete="off" maxLength={60} placeholder="Pill buttons" hint="Teammates see this name in Explorations and in the Figma plugin." />
     <Textarea label="What do you want to learn?" name="purpose" rows={2} placeholder="Do rounder buttons read as friendlier in checkout?" />
     <div class="ex-uc">
       <BridgedSelect

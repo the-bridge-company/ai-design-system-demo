@@ -10,7 +10,7 @@ import { TRY_BUILDING_NOTE, TRY_TODAY_NOTE } from '../../../lib/product-branch';
 
 const base: ProductBranchProps = {
   number: 611,
-  crumbs: [{ label: 'Changes', href: '/studio/changes/' }, { label: 'Admin demo' }],
+  crumbs: [{ label: 'Changes', href: '/studio/explorations/' }, { label: 'Admin demo' }],
   title: 'Explore new design pr being built',
   sentence: { lead: 'Not checked against the library yet.', strong: '', rest: ' Ask Claude what is missing from the library.' },
   tryUrl: null,

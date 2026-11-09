@@ -36,7 +36,7 @@ const card = (n: number, over: Partial<ExplorationCard> = {}): ExplorationCard =
   number: n,
   key: `admin-app#${n}`,
   title: `Screen ${n}`,
-  href: `/studio/changes/?exploration=${n}&product=admin-app`,
+  href: `/studio/explorations/?exploration=${n}&product=admin-app`,
   product: 'Product admin',
   productKey: 'admin-app',
   author: person('ann', 'Ann Leroy', null),
@@ -84,7 +84,7 @@ describe('ProductPageView', () => {
     await waitFor(() => expect(container.querySelector('[data-st-actions]')!.textContent).toContain('Start an exploration'));
     const line = container.querySelector('[data-archived-line]')!;
     expect(line.textContent).toBe('1 archived. See archived');
-    expect(screen.getByRole('link', { name: 'See archived' }).getAttribute('href')).toBe('/studio/changes/?state=archived&product=admin-app');
+    expect(screen.getByRole('link', { name: 'See archived' }).getAttribute('href')).toBe('/studio/explorations/?status=archived&product=admin-app');
     expect(line.querySelector('.sh-card-item')).toBeNull();
     expect(screen.queryByRole('button', { name: /Archived/ })).toBeNull();
     await expectNoAxeViolations(container);

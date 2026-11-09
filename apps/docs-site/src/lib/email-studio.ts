@@ -14,7 +14,7 @@ export interface TeamPair {
 const STUDIO_BARE = STUDIO_ROOT.slice(0, -1);
 
 /** The Studio pages a team address has (pages/team-shell/): '' is Home. Other /studio/ pages are shared ones. */
-export const TEAM_STUDIO_ROUTES: readonly string[] = ['', 'brands', 'building', 'changes', 'components', 'products', 'quality', 'review', 'settings', 'tokens'];
+export const TEAM_STUDIO_ROUTES: readonly string[] = ['', 'brands', 'building', 'changes', 'components', 'explorations', 'products', 'quality', 'review', 'settings', 'tokens'];
 
 const pairOf = (repo: string): TeamPair | null => {
   const [owner, name, extra] = repo.split('/');
@@ -32,7 +32,7 @@ export function emailMemberTeam(emailTeams: readonly string[], recent: readonly 
 }
 
 /**
- * The route of a self-hosted Studio address ('/studio/changes/' -> 'changes/'), or null when the page is not one a
+ * The route of a self-hosted Studio address ('/studio/explorations/' -> 'explorations/'), or null when the page is not one a
  * team address has (sign-in callback, invite, Connect Claude, workspace, a team address itself).
  */
 export function teamStudioRoute(pathname: string): string | null {

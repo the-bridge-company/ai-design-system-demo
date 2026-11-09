@@ -52,7 +52,7 @@ describe('navigation data', () => {
   it('finds the group and entry for breadcrumbs, nested pages included', () => {
     expect(locate('/foundations/accessibility/')).toMatchObject({ space: 'library', group: 'Foundations', item: { label: 'Accessibility' } });
     expect(locate('/tokens/')).toMatchObject({ space: 'library', group: 'Foundations', item: { label: 'All tokens' } });
-    expect(locate('/studio/changes/')).toMatchObject({ space: 'studio', item: { label: 'Changes' } });
+    expect(locate('/studio/explorations/')).toMatchObject({ space: 'studio', item: { label: 'Explorations' } });
     expect(locate('/studio/review/')).toMatchObject({ space: 'studio', item: { label: 'Home' } });
     expect(locate('/components/button/').entry?.label).toBe('Components');
     expect(locate('/studio/settings/')).toMatchObject({ space: 'studio', item: { label: 'Settings' } });
@@ -113,21 +113,20 @@ describe('navigation shape', () => {
     expect(found.at(-1)).toMatchObject({ href: '/tokens/', label: 'All tokens', apart: true });
   });
 
-  it('shows one count in the Studio nav: reviews, on Library review', () => {
+  it('shows two counts in the Studio nav: Waiting on you on Explorations, the lead pieces on Library review', () => {
     const counted = navFor('studio').filter((e) => e.badge);
-    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Library review', 'reviews']]);
+    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Explorations', 'explorations'], ['Library review', 'reviews']]);
   });
 });
 
 describe('studio nav', () => {
   it('lists Home, Branches, Being built, Components, Tokens, Quality, Settings', () => {
-    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Changes', 'Library review', 'Being built', 'Components', 'Tokens', 'Quality', 'Settings']);
+    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Explorations', 'Library review', 'Being built', 'Components', 'Tokens', 'Quality', 'Settings']);
   });
 
-  it('makes Changes one page with the review count, and drops the pages it replaced', () => {
-    const changes = navFor('studio').find((e) => e.label === 'Changes')!;
-    expect(changes).toMatchObject({ href: '/studio/changes/' });
-    expect(changes.badge).toBeUndefined();
+  it('makes Explorations one page with its own count, and drops the pages it replaced', () => {
+    const changes = navFor('studio').find((e) => e.label === 'Explorations')!;
+    expect(changes).toMatchObject({ href: '/studio/explorations/', badge: 'explorations' });
     expect(navFor('studio').find((e) => e.label === 'Library review')).toMatchObject({ href: '/studio/library-review/', badge: 'reviews' });
     expect(changes.children).toBeUndefined();
     const hrefs = allPages().map((p) => p.href);
@@ -210,24 +209,24 @@ describe('redirects', () => {
   });
 
   it('sends the old Changes pages to the right view', () => {
-    expect(redirectTarget(REDIRECTS['/studio/drafts']!, '', '')).toBe('/studio/changes/');
-    expect(redirectTarget(REDIRECTS['/studio/reviews']!, '?pr=3', '')).toBe('/studio/changes/?pr=3');
-    expect(redirectTarget(REDIRECTS['/studio/branches']!, '', '')).toBe('/studio/changes/#other-branches');
-    expect(redirectTarget(REDIRECTS['/studio/visual-impact']!, '', '')).toBe('/studio/changes/');
+    expect(redirectTarget(REDIRECTS['/studio/drafts']!, '', '')).toBe('/studio/explorations/');
+    expect(redirectTarget(REDIRECTS['/studio/reviews']!, '?pr=3', '')).toBe('/studio/explorations/?pr=3');
+    expect(redirectTarget(REDIRECTS['/studio/branches']!, '', '')).toBe('/studio/explorations/');
+    expect(redirectTarget(REDIRECTS['/studio/visual-impact']!, '', '')).toBe('/studio/explorations/');
     // Versions and History are the Library changelog's token changes now (lib/history-moved).
     expect(redirectTarget(REDIRECTS['/studio/versions']!, '', '')).toBe('/changelog/#token-changes');
     expect(redirectTarget(REDIRECTS['/studio/versions']!, '?token=color.text.muted', '')).toBe('/changelog/?token=color.text.muted#token-changes');
     expect(redirectTarget(REDIRECTS['/history']!, '?entry=pr-1', '')).toBe('/changelog/?entry=pr-1#token-changes');
-    expect(redirectTarget(REDIRECTS['/reviews']!, '?pr=12', '')).toBe('/studio/changes/?pr=12');
+    expect(redirectTarget(REDIRECTS['/reviews']!, '?pr=12', '')).toBe('/studio/explorations/?pr=12');
   });
 
   it('keeps the old hash over the target one', () => {
-    expect(redirectTarget('/studio/changes/#other-branches', '', '#top')).toBe('/studio/changes/#top');
-    expect(redirectTarget('/studio/changes/#other-branches', '?branch=x', '')).toBe('/studio/changes/?branch=x#other-branches');
+    expect(redirectTarget('/studio/explorations/#other-branches', '', '#top')).toBe('/studio/explorations/#top');
+    expect(redirectTarget('/studio/explorations/#other-branches', '?branch=x', '')).toBe('/studio/explorations/?branch=x#other-branches');
   });
 
   it('inlines the same rules in the redirect page script', () => {
-    const script = redirectScript('/studio/changes/?state=shipped');
+    const script = redirectScript('/studio/explorations/?state=shipped');
     const m = script.match(/^<script data-to="([^"]*)">(.*)<\/script>$/)!;
     expect(m[2]).toBe(REDIRECT_SCRIPT_BODY);
     const to = m[1]!.replace(/&amp;/g, '&');
@@ -235,7 +234,7 @@ describe('redirects', () => {
     const fakeLocation = { search: '?entry=abc', hash: '', replace: (u: string) => (landed = u) };
     const fakeDocument = { currentScript: { getAttribute: () => to } };
     new Function('location', 'document', m[2]!)(fakeLocation, fakeDocument);
-    expect(landed).toBe(redirectTarget('/studio/changes/?state=shipped', '?entry=abc', ''));
+    expect(landed).toBe(redirectTarget('/studio/explorations/?state=shipped', '?entry=abc', ''));
   });
 
   it('never shadows a real page', () => {

@@ -7,14 +7,13 @@
 //   Studio   changes it: tokens, changes (in progress and shipped), being built, quality, settings. Its own header (Bridge Studio) and
 //            nav; "Library, view published library" at the bottom of its nav is the way back.
 //
-// Side nav rules (apps/docs-site/DESIGN.md): at most 7 top-level entries per space, one count (the reviews waiting on
-// the viewer, on Library review, for whoever holds the review right), two levels at most. The Studio's rail adds two headed groups under its first three entries (option A,
+// Side nav rules (apps/docs-site/DESIGN.md): at most 7 top-level entries per space, two counts (what waits on
+// the viewer: Waiting on you on Explorations, the pieces waiting on the lead on Library review), two levels at most. The Studio's rail adds two headed groups under its first three entries (option A,
 // 2026-11-04): Products (the team's, components/ds/studio/ProductsNav.tsx) and Design system (the entries placed
-// 'design-system' here, then Explorations); Settings ('foot') sits at the foot. A top-level entry is either a page (href) or a group of pages (children); only the group you
+// 'design-system' here); Settings ('foot') sits at the foot. A top-level entry is either a page (href) or a group of pages (children); only the group you
 // are in starts expanded. Deeper levels (each component) live as cards on their group page, not in the nav.
 import type { IconName } from '../brand/icons';
 import { loadComponents } from './components';
-import { VOCAB } from './vocabulary';
 import { START_PAGE, WORKSPACE_HOME, WORKSPACE_SETTINGS } from './start';
 import { LIBRARY_FOUNDATION_PAGES, LIBRARY_USE_PAGES } from './library-shells';
 
@@ -46,7 +45,7 @@ export interface NavEntry {
   /** Group entry: its pages, shown when the group is expanded. */
   children?: NavItem[];
   /** Live count filled in the browser: open pull requests waiting for a review. The one number the nav shows. */
-  badge?: 'reviews';
+  badge?: 'reviews' | 'explorations';
   /** Page entry that can show the library as an open change (see NavItem). */
   branchAware?: boolean;
   /**
@@ -86,10 +85,12 @@ export const FOUNDATIONS: NavItem[] = LIBRARY_FOUNDATION_PAGES.map((p) => ({ hre
 /** The Use pages: one list with a team's Library (lib/library-shells.ts), at this site's root. */
 export const LIBRARY_USE: NavItem[] = LIBRARY_USE_PAGES.map((p) => ({ href: `/${p.route}`, label: p.label, icon: p.icon as IconName, meta: p.meta }));
 
-/** Changes is one page, its tabs from in progress to Shipped; the old Drafts, Branches, Reviews and Visual impact pages
- * redirect to it, Versions and History to the Library changelog or the Shipped tab (lib/redirects.ts,
- * lib/history-moved). */
-export const STUDIO_CHANGES_HREF = '/studio/changes/';
+/** Explorations (the old Changes, 2026-11-09): every exploration, from exploring to shipped, filtered by status, product
+ * and people. /studio/changes/ and the old Drafts, Branches, Reviews and Visual impact pages redirect to it, Versions
+ * and History to the Library changelog or Status Shipped (lib/redirects.ts, lib/history-moved). */
+export const STUDIO_EXPLORATIONS_HREF = '/studio/explorations/';
+/** The old name of the same page, kept for callers not yet renamed. */
+export const STUDIO_CHANGES_HREF = STUDIO_EXPLORATIONS_HREF;
 
 /** Being built: the build requests sent from Figma (docs/BUILD-REQUESTS.md), read only, and on top the next release
  * for whoever may publish it. */
@@ -133,7 +134,7 @@ export function libraryNav(): NavEntry[] {
 export function studioNav(): NavEntry[] {
   return [
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
-    { href: STUDIO_CHANGES_HREF, label: VOCAB.Branches, icon: 'branch', meta: 'Changes in review, explorations, and everything that shipped, by month' },
+    { href: STUDIO_EXPLORATIONS_HREF, label: 'Explorations', icon: 'branch', badge: 'explorations', meta: 'Every exploration, what waits on you first, from exploring to shipped' },
     { href: STUDIO_LIBRARY_REVIEW_HREF, label: 'Library review', icon: 'review', badge: 'reviews', meta: 'What enters the library: every piece an exploration asks for, decided one by one or as a list' },
     { href: STUDIO_BUILDING_HREF, label: 'Being built', icon: 'wrench', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release' },
     { href: '/studio/components/', label: 'Components', icon: 'diamonds', branchAware: true, place: 'design-system', meta: 'Status, tokens, code and Figma links per component' },

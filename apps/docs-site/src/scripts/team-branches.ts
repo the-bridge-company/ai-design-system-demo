@@ -8,16 +8,14 @@
 // exploration start form (scripts/explorations.ts, against the team's repository, following its "changes" mode).
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { listSuggestionsOnGitHub, stalenessStatus } from '@bridge-ds/core';
 import { TeamLoadError, TeamLoadProgress } from '../components/ds/studio/TeamState';
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
-import { suggestionRows, TEAM_VIEW_TITLE, teamBranchesRoute } from '../lib/team-branches';
+import { TEAM_VIEW_TITLE, teamBranchesRoute } from '../lib/team-branches';
+import { legacyTarget } from '../lib/explorations-page';
 import { teamFailure } from '../lib/team-load';
 import type { PullLike } from '../lib/requests-view';
 import type { ExplorationPullLike } from '../lib/explorations-view';
 import { studioHref } from '../lib/team-path';
-import { teamGuidance } from '../lib/team-facts';
-import { readWaitingExtras } from './waiting-extras';
 import { historyRedirect } from './history-links';
 
 const $ = (id: string) => document.getElementById(id);
@@ -27,7 +25,7 @@ export async function initTeamBranches(): Promise<void> {
   const main = $('cg-main');
   if (!state || !main) return;
   let stateRoot: Root | null = createRoot(state);
-  stateRoot.render(createElement(TeamLoadProgress, { label: "Reading this team's changes" }));
+  stateRoot.render(createElement(TeamLoadProgress, { label: "Reading this team's explorations" }));
 
   let data: TeamData;
   try {
@@ -62,12 +60,12 @@ export async function initTeamBranches(): Promise<void> {
   }
   // Loaded once the team's settings are known: reviews.ts reads them when it loads.
   const reviews = await import('./reviews');
+  // Start an exploration (the empty state) picks among the team's components.
+  reviews.setStartComponents((data.model.components?.list ?? []).map((c) => ({ name: c.name, slug: c.slug, family: c.category })).sort((a, b) => a.name.localeCompare(b.name)));
   const suggestions = await import('./suggestions');
   const sgHost = $('sg-detail');
   const header = document.querySelector<HTMLElement>('[data-team-shell] > .st-head');
   let listLoaded: ReturnType<typeof reviews.loadList> | null = null;
-  let suggestionsLoaded: Promise<void> | null = null;
-  let extrasLoaded: Promise<void> | null = null;
 
   type MainView = keyof typeof TEAM_VIEW_TITLE;
   const panels: Record<MainView, HTMLElement | null> = { list: $('cg-review'), requests: $('cg-requests'), explorations: $('cg-explore') };
@@ -84,22 +82,6 @@ export async function initTeamBranches(): Promise<void> {
     const backLink = $('cg-back-link');
     if (backLink) backLink.hidden = view === 'list';
     for (const [k, el] of Object.entries(panels)) if (el) el.hidden = k !== view;
-  };
-
-  const paintSuggestions = async () => {
-    const el = $('tb-suggestions');
-    if (!el) return;
-    try {
-      const items = await listSuggestionsOnGitHub(data.client, { state: 'open' });
-      const { paintTeamSuggestions } = await import('../components/ds/studio/TeamSuggestions');
-      paintTeamSuggestions(el, suggestionRows(items));
-      if (items.length) $('cg-empty')?.setAttribute('hidden', '');
-      // Then whether main made any outdated (the status its page and the MCP server say), with a token only.
-      const outdated = await suggestions.outdatedOf(items, data.client).catch(() => new Set<number>());
-      if (outdated.size) paintTeamSuggestions(el, suggestionRows(items.map((i) => (outdated.has(i.number) ? { ...i, status: stalenessStatus(i.status, { outdated: true }) } : i))));
-    } catch {
-      // The branches list says when GitHub cannot be read; suggestions only add rows.
-    }
   };
 
   // The team's open pull requests, read once by the list, for requests (which close them) and explorations.
@@ -127,6 +109,12 @@ export async function initTeamBranches(): Promise<void> {
   };
 
   const route = async () => {
+    // What moved to Library review (suggestions, the old Library group): there, the query kept.
+    const away = legacyTarget(location.search, location.hash);
+    if (away) {
+      location.replace(studioHref(away));
+      return;
+    }
     // An old History address: Shipped here (the list opens on it), or another page.
     const moved = historyRedirect();
     if (moved) {
@@ -154,7 +142,7 @@ export async function initTeamBranches(): Promise<void> {
     }
     if (r.view === 'suggestion') {
       showMain(null);
-      if (sgHost) void suggestions.openSuggestion(r.n, { el: sgHost, crumbs: [{ label: 'Changes', href: studioHref('changes/') }, { label: 'Suggestion' }] });
+      if (sgHost) void suggestions.openSuggestion(r.n, { el: sgHost, crumbs: [{ label: 'Explorations', href: studioHref('explorations/') }, { label: 'Suggestion' }] });
       return;
     }
     if (r.view === 'request') {
@@ -183,8 +171,6 @@ export async function initTeamBranches(): Promise<void> {
     }
     showMain('list');
     listLoaded ??= reviews.loadList();
-    suggestionsLoaded ??= listLoaded.then(paintSuggestions);
-    extrasLoaded ??= listLoaded.then(() => readWaitingExtras({ owner: data.owner, repo: data.repo, guidance: teamGuidance(data) })).then(reviews.setWaitingExtras, () => undefined);
   };
   const go = (search: string) => {
     history.pushState({}, '', search || location.pathname);

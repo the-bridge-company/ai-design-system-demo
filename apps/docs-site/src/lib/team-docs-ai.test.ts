@@ -38,7 +38,7 @@ describe('a team component in edit mode', () => {
     const p = teamEditProps(team, button, null);
     expect(p.repo).toEqual({ owner: 'acme', repo: 'ds' });
     expect(p.path).toBe(button.files.docs);
-    expect(p.studio('changes/?pr=12')).toMatch(/^\/studio\/(~\/)?acme\/ds\/changes\/\?pr=12$/);
+    expect(p.studio('explorations/?pr=12')).toMatch(/^\/studio\/(~\/)?acme\/ds\/explorations\/\?pr=12$/);
   });
 
   it('drafts from the team files: conventions, the reference docs, the code', () => {

@@ -15,7 +15,7 @@ const facts = { number: 3, title: 'Deepen the blue', author: ann, asker: ann, si
 describe('changeOrigin', () => {
   it('names the exploration, its product and its page', () => {
     expect(changeOrigin(needed)).toMatchObject({ name: 'Billing screen', product: 'Admin demo', exploration: true, number: 12, productKey: null });
-    expect(changeOrigin(needed)?.href).toContain('changes/?exploration=12');
+    expect(changeOrigin(needed)?.href).toContain('explorations/?exploration=12');
   });
 
   it('a product branch is not called an exploration', () => {
@@ -25,7 +25,7 @@ describe('changeOrigin', () => {
   it('carries the product of a branch in the product own repository', () => {
     const o = changeOrigin({ ...needed, repo: 'acme/shop', product: 'shop' });
     expect(o?.productKey).toBe('shop');
-    expect(o?.href).toContain('changes/?exploration=12&product=shop');
+    expect(o?.href).toContain('explorations/?exploration=12&product=shop');
   });
 
   it('no block, no origin', () => {

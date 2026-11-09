@@ -1,0 +1,134 @@
+/* Explorations (components/ds/studio/BranchesList.tsx): the Waiting on you section's line, the Board (one column per
+   status, read only) and the first-run empty state. The Board scrolls sideways inside its own region, never the page. */
+
+/* What waits on the viewer (boards ex-list, ex-grid, ex-board): "Your turn" in the accent, bold, on its own line above
+   the title, and an accent edge on the row or card. */
+.ex-turn-mark {
+  display: block;
+  color: var(--color-text-link);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ex-turn > .sh-row,
+.ex-turn > .sh-card {
+  border-inline-start: var(--border-width-indicator) solid var(--color-action-primary-bg);
+}
+
+.sh-card-body > .ex-turn-mark {
+  margin-block-end: calc(-1 * var(--space-1));
+}
+
+/* A small face before the name, on phones only, where the avatar column hides (studio-home.css). */
+.ex-face {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .ex-face {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+  }
+
+  /* The three filters wrap to a second row rather than cut their words. */
+  .ex .bl-bar > .bl-narrow {
+    flex-wrap: wrap;
+  }
+
+  .ex .bl-narrow > * {
+    flex: 1 1 calc(var(--size-40) - var(--space-4));
+  }
+
+  /* On a phone a filled column keeps a card's width; the Board scrolls sideways inside its region. */
+  .ex-col {
+    min-inline-size: var(--size-60);
+  }
+}
+
+.ex-board {
+  display: flex;
+  gap: var(--space-3);
+  align-items: start;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-block-end: var(--space-2);
+  border-radius: var(--radius-container);
+}
+
+.ex-board:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.ex-col {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: var(--size-40);
+  padding: var(--space-3);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.ex-col-h {
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+}
+
+.ex-col-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* An empty column folds to its heading and count: the filled ones keep the room. */
+.ex-col.is-empty {
+  flex: 0 0 auto;
+  min-inline-size: 0;
+  max-inline-size: var(--size-40);
+}
+
+.ex-col-yours {
+  color: var(--color-text-link);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* First run: one centred scene, one sentence, the start and the sample team. */
+.ex-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-inline-size: var(--size-120);
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  text-align: center;
+}
+
+.ex-start-title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-regular);
+}
+
+.ex-start-text {
+  margin: 0;
+}
+
+.ex-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
+}

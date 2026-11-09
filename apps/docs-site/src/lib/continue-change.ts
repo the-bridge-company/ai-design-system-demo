@@ -173,7 +173,7 @@ export function dropEdits<D extends Draft>(draft: D, paths: string[]): D {
 }
 
 /** The change page, where both values show (its token diff) and the library conflict flow lives. */
-export const conflictHref = (n: number) => studioHref(`changes/?pr=${n}`);
+export const conflictHref = (n: number) => studioHref(`explorations/?pr=${n}`);
 
 // ---------------------------------------------------------------------------------------------------------------
 // Words

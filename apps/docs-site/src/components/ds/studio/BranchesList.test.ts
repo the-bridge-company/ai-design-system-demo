@@ -6,7 +6,7 @@ import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { BranchesList, type BranchesListProps, type ListRow } from './BranchesList';
 
@@ -61,6 +61,12 @@ const props = (over: Partial<BranchesListProps> = {}): BranchesListProps => ({
 
 beforeEach(() => history.replaceState(null, '', '/studio/explorations/'));
 
+// The list loads these lazily once painted (people and thumbnails, the nav count, Start an exploration). Loaded here
+// first, so a lazy load never outlives the test file on a busy runner ("Closing rpc while fetch was pending").
+beforeAll(async () => {
+  await Promise.all([import('../../../scripts/home-data'), import('../../../scripts/github-session'), import('../../../scripts/waiting-counts'), import('../../../scripts/design-lead')]);
+}, 60_000);
+
 describe('Explorations', () => {
   it('has no state tabs, three filters, the count and List, Grid, Board', async () => {
     const { container } = render(createElement(BranchesList, props()));
@@ -77,10 +83,12 @@ describe('Explorations', () => {
     const { container } = render(createElement(BranchesList, props()));
     const pinned = container.querySelector('.ex-waiting')!;
     expect(pinned.querySelector('h2')!.textContent).toBe('Waiting on you 1');
-    // "Your turn" on its own line, the reason as the line, an accent edge, and no status tag (the turn says it).
+    // Direction A: the tray says it; the row has no "Your turn" line, its reason once as the line, a Review button,
+    // and no status tag.
     const turnRow = pinned.querySelector('li.ex-turn')!;
-    expect(turnRow.querySelector('.ex-turn-mark')!.textContent).toBe('Your turn');
-    expect(turnRow.querySelector('.sh-row-line')!.textContent).toBe('Sofia sent it for review');
+    expect(turnRow.querySelector('.ex-turn-mark')).toBeNull();
+    expect(turnRow.querySelector('.sh-row-line')!.textContent).toMatch(/^Sofia sent it for review( · .+)?$/);
+    expect(within(turnRow as HTMLElement).getByRole('link', { name: 'Review Exploration 1' }).getAttribute('href')).toBeTruthy();
     expect(turnRow.textContent).not.toContain('Waiting for lead');
     expect(screen.getAllByText('Exploration 1')).toHaveLength(1);
     // Groups by product, in the products' order.
@@ -140,13 +148,16 @@ describe('Explorations', () => {
     await user.click(screen.getByRole('radio', { name: /Board/ }));
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
     // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
-    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1 · 1 your turn', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    // The column's count sits in the nav's pill when some of it waits on you; no "your turn" words.
+    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    expect(container.querySelector('.ex-col-num')!.getAttribute('aria-label')).toBe('1, 1 for you');
     // An empty column folds to its heading and count.
     expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
     expect(container.querySelector('.ex-waiting')).toBeNull();
     const lead = container.querySelectorAll('.ex-col')[1]!;
-    expect(lead.querySelector('.ex-turn .ex-turn-mark')!.textContent).toBe('Your turn');
-    expect(lead.textContent).toContain('Sofia sent it for review');
+    // The card is tinted (ex-turn) and does not repeat "sent it for review" above its name.
+    expect(lead.querySelector('.ex-turn')).toBeTruthy();
+    expect(lead.textContent).not.toContain('sent it for review');
     expect(container.querySelector('.bl-bar')!.textContent).toContain('15 explorations.');
     const exploring = container.querySelector('.ex-col')!;
     expect(exploring.querySelectorAll('li').length).toBe(10);
@@ -171,8 +182,11 @@ describe('Explorations', () => {
   });
 
   it('never says the team has nothing when GitHub could not be read', () => {
-    render(createElement(BranchesList, props({ rows: [], closed: [], unread: true })));
+    const { container } = render(createElement(BranchesList, props({ rows: [], closed: [], unread: true, unreadLine: 'Explorations will show at 22:10.' })));
     expect(screen.queryByRole('heading', { name: 'Start with one screen' })).toBeNull();
+    // Rate limited with nothing saved: one quiet line, never "Nothing in progress" nor a count of 0.
+    expect(container.textContent).toContain('Explorations will show at 22:10.');
+    expect(container.textContent).not.toMatch(/Nothing .*yet|0 explorations/);
   });
 
   it('shows one display name for one person, even where only the login is recorded', () => {

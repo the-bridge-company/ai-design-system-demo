@@ -57,6 +57,7 @@ import { cssValue } from '../lib/html';
 import { currentContributor, currentViewer, esc, getToken, ghGet, GitHubError, studioClient, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, showGhError, signedInWithGitHub } from './github-session';
 import { approvedSaid, askBridgeToShip, shipHeldLine, shouldAskToShip, type ShipAnswer } from '../lib/values-ship';
 import { ghAction, ghVerb } from '../lib/gh-wording';
+import { unreadListLine } from '../lib/explorations-page';
 import { analyzeTokenFiles, isTokenFile, type TokenReview } from './reviews/token-review';
 import { loadVisualImpact, visualWorkflowPresent } from './reviews/visual-impact';
 import { ciFor, loadStatuses, ON_ITS_WAY, rowWho, teamPeople, type PullStatus } from './pr-status';
@@ -467,6 +468,7 @@ function paintRows(rows: Row[], loading: boolean) {
     tooling: siteTooling(),
     readClosed: () => void loadClosed(),
     unread: listUnread,
+    unreadLine,
     // Read only until connected: the empty state asks to connect first (the rail's own verb).
     connect: listViewer() ? null : ghVerb(prefersSignIn()),
     components: startComponents ?? readStartComponents(el),
@@ -479,6 +481,8 @@ function paintRows(rows: Row[], loading: boolean) {
 let latestList: BranchesListProps | null = null;
 /** GitHub could not be read: the list may be missing explorations, so it never says there are none. */
 let listUnread = false;
+/** What the list says in place of its rows while it could not be read ("Explorations will show at 22:10."). */
+let unreadLine: string | null = null;
 
 /** The library's components for Start an exploration (empty state): the page's own list, or the team's (setStartComponents). */
 let startComponents: BranchesListProps['components'] | null = null;
@@ -652,6 +656,12 @@ function loadClosed(): Promise<void> {
         });
     } catch (err) {
       closedRows = [];
+      // Say it once: when the open list could not be read either, its own line already says GitHub is busy and when
+      // it is back; the closed list adds no second banner.
+      if (listUnread && err instanceof RateLimitError) {
+        paintRows(openRows, listLoading);
+        return;
+      }
       showNotice('warn', err instanceof RateLimitError ? (limitLine(err, `${VOCAB.Branches} added to the library or closed`) ?? `GitHub limits anonymous reads to 60 an hour. ${ghVerb(prefersSignIn())} to see ${VOCAB.branches} added to the library or closed.`) : `Could not read recent ${VOCAB.branches}: ${(err as Error).message}`);
     }
     paintRows(openRows, listLoading);
@@ -670,6 +680,7 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
   let failure: unknown = null;
   let allOpen: Pull[] = [];
   listUnread = false;
+  unreadLine = null;
   paintRows([], true);
   // The explorations of each product repository, read in parallel (one read each, unreachable ones left out).
   const productRead = import('./product-repos').then((m) => m.productPulls()).catch(() => []);
@@ -702,8 +713,9 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
     void readExplorationReviews(exploreRows, [...allOpen, ...(own as unknown as LifecyclePullOf[])]);
   } catch (err) {
     failure = err;
-    // The explorations could not be read: never say the team has none.
+    // The explorations could not be read: never say the team has none, nor count 0.
     listUnread = true;
+    unreadLine = unreadListLine(err instanceof RateLimitError ? err.resetAt : null);
   }
   // The closed list is one read, after the open one; the line it feeds sits at the end of the list.
   void loadClosed();
@@ -714,7 +726,7 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
     paintRows([], false);
     paintAsOf(
       failure instanceof RateLimitError
-        ? (limitLine(failure, VOCAB.Branches) ?? `GitHub limits anonymous reads to 60 an hour and this browser has used them, with no saved list yet. ${ghVerb(prefersSignIn())}, or try again later.`)
+        ? (limitLine(failure, 'Explorations') ?? `GitHub limits anonymous reads to 60 an hour and this browser has used them. ${failure.resetAt && Number.isFinite(failure.resetAt.getTime()) ? `It is back at ${failure.resetAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. ${ghVerb(prefersSignIn())} to read it now.` : `${ghVerb(prefersSignIn())}, or try again later.`}`)
         : `Could not load ${VOCAB.branches}: ${(failure as Error | null)?.message ?? 'GitHub did not answer'}.`,
     );
     return [];

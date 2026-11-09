@@ -1369,6 +1369,7 @@ body:has(.lr-bar) .lr-toasts {
 
 .lr-reach-card {
   display: grid;
+  text-decoration-line: none;
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
@@ -1378,7 +1379,8 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 @media (hover: hover) {
-  a.lr-reach-card:hover {
+  a.lr-reach-card:hover,
+  .lr-reach-card:is(a):hover {
     border-color: var(--color-border-hover);
   }
 }

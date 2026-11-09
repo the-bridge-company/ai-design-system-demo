@@ -1,21 +1,62 @@
 /* Explorations (components/ds/studio/BranchesList.tsx): the Waiting on you section's line, the Board (one column per
    status, read only) and the first-run empty state. The Board scrolls sideways inside its own region, never the page. */
 
-/* What waits on the viewer (boards ex-list, ex-grid, ex-board): "Your turn" in the accent, bold, on its own line above
-   the title, and an accent edge on the row or card. */
-.ex-turn-mark {
-  display: block;
-  color: var(--color-text-link);
-  font-weight: var(--font-weight-semibold);
+/* What waits on the viewer (direction A, 2026-11-09): one pale tray holds it in List and Grid, plain cards inside; on
+   the Board the card body takes the same pale tint. No stripe, no "Your turn" line. */
+.ex-waiting {
+  padding: var(--space-4);
+  border-radius: var(--radius-container);
+  background-color: var(--color-signal-subtle);
 }
 
-.ex-turn > .sh-row,
-.ex-turn > .sh-card {
-  border-inline-start: var(--border-width-indicator) solid var(--color-action-primary-bg);
+.ex-waiting > .bl-h2 {
+  margin-block-start: 0;
 }
 
-.sh-card-body > .ex-turn-mark {
-  margin-block-end: calc(-1 * var(--space-1));
+.ex-waiting .bl-count {
+  color: var(--color-text-signal);
+}
+
+.ex-waiting .ex-turn > :is(.sh-row, .sh-card) {
+  border-color: transparent;
+}
+
+.ex-board .ex-turn > .sh-card {
+  border-color: var(--color-border-emphasis);
+  background-color: var(--color-signal-subtle);
+}
+
+.ex-col-num {
+  display: inline-block;
+  margin-inline-start: var(--space-1);
+}
+
+/* Review: on hover or keyboard focus of a waiting card, always on touch (a 44px target there). */
+.ex-review {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.sh-card-foot > .ex-review {
+  margin-inline-start: var(--space-2);
+}
+
+@media (hover: hover) {
+  .ex-turn .ex-review {
+    opacity: 0;
+  }
+
+  .ex-turn:is(:hover, :focus-within) .ex-review {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .ex-turn .ex-review {
+    min-height: var(--size-11);
+  }
 }
 
 /* A small face before the name, on phones only, where the avatar column hides (studio-home.css). */
@@ -97,10 +138,6 @@
   max-inline-size: var(--size-40);
 }
 
-.ex-col-yours {
-  color: var(--color-text-link);
-  font-weight: var(--font-weight-semibold);
-}
 
 /* First run: one centred scene, one sentence, the start and the sample team. */
 .ex-start {

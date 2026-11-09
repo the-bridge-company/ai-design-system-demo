@@ -1236,7 +1236,7 @@ export default function LibraryReview() {
   }, []);
   // Local development only: ?fixture=many-askers puts 12 explorations on one piece (lib/library-review-fixtures).
   const load = useMemo(() => {
-    const fixture = import.meta.env.DEV && new URLSearchParams(location.search).get('fixture') === 'many-askers';
+    const fixture = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV === true && new URLSearchParams(location.search).get('fixture') === 'many-askers';
     return fixture ? (paint: (d: ReviewData) => void) => loadLibraryReview((d) => paint({ ...d, pieces: withManyAskers(d.pieces) })) : loadLibraryReview;
   }, []);
   return (

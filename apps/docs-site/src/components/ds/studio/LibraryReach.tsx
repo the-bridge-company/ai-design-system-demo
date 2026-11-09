@@ -42,9 +42,9 @@ function ScreenCard({ s, p, mode, spec, thumbs }: { s: ReachScreen; p: ReviewPie
     </>
   );
   return s.href ? (
-    <a className="lr-reach-card" href={s.href}>
+    <Link className="lr-reach-card" href={s.href} variant="subtle">
       {body}
-    </a>
+    </Link>
   ) : (
     <span className="lr-reach-card">{body}</span>
   );

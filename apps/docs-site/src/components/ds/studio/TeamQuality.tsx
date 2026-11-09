@@ -13,24 +13,47 @@ import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './
 import { loadTeamSnapshot } from '../../../scripts/team-data';
 import { currentViewer, initGitHubConnect } from '../../../scripts/github-session';
 import { viewerRoles } from '../../../lib/suggestions-view';
-import { teamQuality, guidanceLead } from '../../../lib/team-quality';
+import { auditAskMessage, auditStep, guidanceLead, teamQuality, unmeasuredNames, type UnmeasuredProduct } from '../../../lib/team-quality';
 import { ADOPTION_MEANING } from '../../../lib/quality';
 import { HOSTED_DOCS_URL, SNAPSHOT_TEMPLATE_URL } from '../../../lib/team-load';
 import { studioHref } from '../../../lib/team-path';
 
-/** What a designer sends a developer to turn the adoption audit on (copied from the Quality page). */
-export function auditAskMessage(repo: string): string {
-  return `Could you turn on the adoption audit in Bridge for ${repo}? Copy the Bridge data workflow (${SNAPSHOT_TEMPLATE_URL}) into .github/workflows/ and add --audit "<folder>=<label>" to its bridge snapshot step, once per product folder. How it works: ${HOSTED_DOCS_URL}`;
-}
-
-/** The setup a developer does: the workflow and the audit flag, then a push. */
-function AuditSetup() {
+/** The setup a developer does: the workflow, then one audit per product (a checkout first for its own repo), then a push. */
+function AuditSetup({ products }: { products: UnmeasuredProduct[] }) {
   return (
     <>
-      <p>
-        Copy the Bridge data workflow into <span className="mono">.github/workflows/</span> and add <span className="mono">--audit "&lt;folder&gt;=&lt;label&gt;"</span> to its{' '}
-        <span className="mono">bridge snapshot</span> step, once per product folder. The results show here after the next push.
-      </p>
+      {products.length ? (
+        <>
+          <p>
+            Copy the Bridge data workflow into <span className="mono">.github/workflows/</span>, then in its <span className="mono">bridge snapshot</span> step:
+          </p>
+          <ul className="ql-steps">
+            {products.map((p) => {
+              const { checkout, flag } = auditStep(p);
+              return (
+                <li key={p.key}>
+                  {p.name}:{' '}
+                  {checkout ? (
+                    <>
+                      check out <span className="mono">{checkout}</span> inside the repository (<span className="mono">actions/checkout</span> with <span className="mono">repository</span> and <span className="mono">path</span>), then add <span className="mono">{flag}</span>
+                    </>
+                  ) : (
+                    <>
+                      add <span className="mono">{flag}</span>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p>The results show here after the next push.</p>
+        </>
+      ) : (
+        <p>
+          Copy the Bridge data workflow into <span className="mono">.github/workflows/</span> and add <span className="mono">--audit "&lt;folder&gt;=&lt;label&gt;"</span> to its{' '}
+          <span className="mono">bridge snapshot</span> step, once per product folder. The results show here after the next push.
+        </p>
+      )}
       <p>
         <Link href={SNAPSHOT_TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
           Get the workflow
@@ -44,35 +67,65 @@ function AuditSetup() {
   );
 }
 
+/** The "For developers" fold a designer forwards: the message to send and the setup. */
+function ForDevelopers({ repo, products }: { repo: string; products: UnmeasuredProduct[] }) {
+  return (
+    <Accordion className="ql-dev" headingLevel={3}>
+      <AccordionItem value="dev" title="For developers">
+        <CodeBlock code={auditAskMessage(repo, products, SNAPSHOT_TEMPLATE_URL, HOSTED_DOCS_URL)} label="Message for a developer" wrap />
+        <AuditSetup products={products} />
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
 /**
- * No audit to show: what adoption is, and who turns it on. A tech owner reads what could not be found and gets the
- * setup; anyone else (a designer) reads that a developer turns it on, and the message to send them and the setup wait
- * in a "For developers" fold: no branch, workflow or flag in a designer's words.
+ * No audit to show: what adoption is, which of the team's products wait for one, and who turns it on. A tech owner
+ * reads what could not be found and gets the setup; anyone else (a designer) reads that a developer turns it on, and
+ * the message to send them and the setup wait in a "For developers" fold: no branch, workflow or flag in a designer's
+ * words.
  */
-function NoAudit({ snapshot, repo, developer }: { snapshot: boolean; repo: string; developer: boolean }) {
+function NoAudit({ snapshot, repo, developer, products }: { snapshot: boolean; repo: string; developer: boolean; products: UnmeasuredProduct[] }) {
+  const waiting = products.length ? `${unmeasuredNames(products)} ${products.length === 1 ? 'is' : 'are'} not measured yet.` : null;
   if (developer) {
     return (
       <div className="tp-locked">
         <p>
-          <strong>No adoption audit yet.</strong>{' '}
-          {snapshot ? 'Bridge read this repository\'s Bridge snapshot, and it carries no adoption audit.' : 'Bridge could not find a Bridge snapshot (the bridge-data branch) in this repository, and audits come from it.'}{' '}
+          <strong>{waiting ?? 'No adoption audit yet.'}</strong>{' '}
+          {snapshot
+            ? waiting
+              ? "This repository's Bridge snapshot carries no audit of them."
+              : "Bridge read this repository's Bridge snapshot, and it carries no adoption audit."
+            : 'Bridge could not find a Bridge snapshot (the bridge-data branch) in this repository, and audits come from it.'}{' '}
           {ADOPTION_MEANING}
         </p>
-        <AuditSetup />
+        <AuditSetup products={products} />
       </div>
     );
   }
   return (
     <div className="tp-locked">
       <p>
-        <strong>No adoption audit yet.</strong> {ADOPTION_MEANING} A developer of your team turns it on: the message to send them is under For developers.
+        <strong>{waiting ?? 'No adoption audit yet.'}</strong> {ADOPTION_MEANING} A developer of your team turns it on: the message to send them is under For developers.
       </p>
-      <Accordion className="ql-dev" headingLevel={3}>
-        <AccordionItem value="dev" title="For developers">
-          <CodeBlock code={auditAskMessage(repo)} label="Message for a developer" wrap />
-          <AuditSetup />
-        </AccordionItem>
-      </Accordion>
+      <ForDevelopers repo={repo} products={products} />
+    </div>
+  );
+}
+
+/** Below the measured products: how to measure the rest, in the viewer's words. */
+function MeasureRest({ repo, developer, products }: { repo: string; developer: boolean; products: UnmeasuredProduct[] }) {
+  if (developer) {
+    return (
+      <div className="ql-measure">
+        <AuditSetup products={products} />
+      </div>
+    );
+  }
+  return (
+    <div className="ql-measure">
+      <p className="ql-muted">A developer of your team adds an audit for each product not measured yet: the message to send them is under For developers.</p>
+      <ForDevelopers repo={repo} products={products} />
     </div>
   );
 }
@@ -122,7 +175,9 @@ export default function TeamQuality() {
         pillars={q.pillars}
         contrast={{ hasChecks: q.hasChecks, gate: q.gate, combos: q.contrast.combos, failRows: q.failRows }}
         adoption={q.adoption}
-        adoptionEmpty={audits === undefined ? <p className="ql-muted">Looking for the Bridge snapshot of this repository.</p> : <NoAudit snapshot={audits !== null} repo={`${data.owner}/${data.repo}`} developer={developer} />}
+        adoptionEmpty={audits === undefined ? <p className="ql-muted">Looking for the Bridge snapshot of this repository.</p> : <NoAudit snapshot={audits !== null} repo={`${data.owner}/${data.repo}`} developer={developer} products={q.unmeasured} />}
+        adoptionUnmeasured={q.unmeasured}
+        adoptionMeasure={<MeasureRest repo={`${data.owner}/${data.repo}`} developer={developer} products={q.unmeasured} />}
         guidance={{ lead: guidanceLead(q.guidance), findings: q.guidanceFindings }}
         tokens={{ findings: q.tokenFindings, unusedTotal: q.unusedTotal, unusedHref: q.unusedHref, problems: q.problems }}
       />

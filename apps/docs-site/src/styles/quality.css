@@ -564,3 +564,29 @@ a.ql-next {
     width: 100%;
   }
 }
+
+/* Team Quality: how to measure the products listed without an audit, under the measured ones. */
+.ql-measure {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.ql-measure p {
+  margin: 0;
+}
+
+/* One line per product to audit; a long repository name or flag wraps instead of widening the page on a phone. */
+.ql-steps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.ql-steps .mono {
+  overflow-wrap: anywhere;
+}

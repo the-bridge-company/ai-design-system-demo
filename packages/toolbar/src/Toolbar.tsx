@@ -1,8 +1,9 @@
 // The Bridge toolbar: opened from Bridge Studio ("Try it in the product") with `?bridge=<change>`, it lets a designer
 // browse the real product and flip between the live product and this change. Token changes swap the live tokens in
 // without a reload; code changes move between the product in production and the change's preview on the same screen.
-// Production renders nothing on its own. It opens collapsed, bottom right of the content column, and moves away from
-// the page's primary and submit buttons. Several token changes tried together (`?bridge=101,118,120`, from Studio's
+// Production renders nothing on its own. It opens expanded (collapsed once the person chose so in this browser), bottom
+// right of the content column, stands on the product's own bottom bar, and moves away from the page's primary and
+// submit buttons. Several token changes tried together (`?bridge=101,118,120`, from Studio's
 // Changes list) run on the product in production: their combined tokens are applied live (useTogether), each change can
 // be switched off, and Before/After and "Show what changed" work on what is switched on.
 // The changes of a screen are outlined as soon as the toolbar is open, counted in the bar ("3 changes") and stepped
@@ -10,7 +11,7 @@
 // measured (its live side is another origin): its exploration marks each new or changed area with data-bridge-change,
 // and This change outlines, counts and steps through those areas the same way (markers.ts).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Button, Checkbox, Icon, IconButton, Kbd, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, ThemeProvider, Tooltip, type SegmentAttributes } from '@bridge-ds/react';
+import { Button, ButtonGroup, Checkbox, Icon, IconButton, Kbd, Link, Popover, PopoverContent, PopoverTrigger, ThemeProvider, Tooltip } from '@bridge-ds/react';
 import { Check, ChevronUp, GripVertical, Info, ListChecks, Minimize2, ScanSearch } from 'lucide-react';
 import { loadChange, type ChangeFacts } from './github';
 import { tabPass, withPass } from './pass';
@@ -68,7 +69,7 @@ import { ChangeOutlines, type Shown } from './ChangeOutlines';
 import { ChangeNav } from './ChangeNav';
 import { PIN_ATTR, PIN_CLASS, usePinnedBridgeTokens } from './pin';
 import { useTogether } from './useTogether';
-import { createRoom, roomFor, scrollerUnder } from './room';
+import { bottomBars, createRoom, roomFor, scrollerUnder } from './room';
 import styles from './BridgeToolbar.module.css';
 
 type Side = 'before' | 'after';
@@ -88,6 +89,24 @@ function session(): Storage | null {
 function remember(key: string, value: string) {
   try {
     window.sessionStorage.setItem(key, value);
+  } catch {
+    // Storage blocked: the choice lasts for this page only.
+  }
+}
+
+/** Whether the bar opens: yes, unless the person collapsed it in this browser (localStorage, blocked storage: open). */
+function readOpen(): boolean {
+  try {
+    return window.localStorage.getItem(OPEN_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+/** Keeps the person's open or collapsed choice in this browser, across tabs and visits. */
+function rememberOpen(open: boolean) {
+  try {
+    window.localStorage.setItem(OPEN_KEY, open ? '1' : '0');
   } catch {
     // Storage blocked: the choice lasts for this page only.
   }
@@ -253,7 +272,7 @@ function noDifferenceText(d: NoDifference, shops: ToolbarShop[]): string {
 }
 
 /** Primary and submit buttons of the page, in the viewport: the toolbar never covers them. */
-function pageObstacles(own: HTMLElement | null): Rect[] {
+function pageObstacles(own: HTMLElement | null, under: Element[] = []): Rect[] {
   const probeEl = document.createElement('span');
   probeEl.style.backgroundColor = 'var(--color-action-primary-bg)';
   probeEl.hidden = true;
@@ -263,6 +282,8 @@ function pageObstacles(own: HTMLElement | null): Rect[] {
   const out: Rect[] = [];
   for (const el of document.querySelectorAll<HTMLElement>('button, a[href], [role="button"]')) {
     if (own?.contains(el) || el.closest('[data-bridge-toolbar], [role="dialog"], [role="menu"], [role="listbox"]')) continue;
+    // A button on a bottom bar the toolbar stands on is below it already.
+    if (under.some((bar) => bar.contains(el))) continue;
     const isSubmit = el instanceof HTMLButtonElement && el.type === 'submit';
     if (!isSubmit && getComputedStyle(el).backgroundColor !== primary) continue;
     const r = el.getBoundingClientRect();
@@ -324,13 +345,9 @@ function Toolbar({
   }, [T?.list, T?.result, T?.included, change]);
   const facts = tg ? togetherFacts : oneFacts;
   const error = tg ? Boolean(T?.error) : oneError;
-  const [open, setOpen] = useState(() => {
-    try {
-      return window.sessionStorage.getItem(OPEN_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
+  // Open by default: the whole bar, with what changed on this screen. Collapsing it to the pill is the person's choice,
+  // kept in this browser until they open it again.
+  const [open, setOpen] = useState(readOpen);
   const [dock, setDock] = useState<Dock>(() => readDock(session()));
   const [place, setPlace] = useState<{ dock: Dock; lift: number }>({ dock, lift: 0 });
   const [drag, setDrag] = useState<number | null>(null);
@@ -509,38 +526,49 @@ function Toolbar({
     const anchor = el?.parentElement;
     if (!el || !anchor) return;
     let frame = 0;
-    const measure = () => {
+    // The product's own bottom bars, found again on every change but a scroll (a scroll does not move them).
+    let bars: { bars: Element[]; floor: number } | null = null;
+    const measure = (again = true) => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const box = el.getBoundingClientRect();
         const area = anchor.getBoundingClientRect();
+        const vh = window.innerHeight;
         const gutter = window.innerWidth <= 760 ? (open ? 0 : 8) : 16;
-        const next = placeToolbar({ left: area.left, right: area.right, vh: window.innerHeight, w: box.width, h: box.height, gutter, preferred: dock, obstacles: [...pageObstacles(el), ...outlineBoxes.current] });
+        // A product's own bar on the bottom edge (a sticky Save changes): the toolbar stands on it, at its usual dock,
+        // instead of moving next to it or covering it.
+        if (again || !bars) bars = bottomBars(area, vh, el);
+        const { floor } = bars;
+        const obstacles = [...pageObstacles(el, bars.bars), ...outlineBoxes.current].filter((o) => o.top < vh - floor);
+        const placed = placeToolbar({ left: area.left, right: area.right, vh: vh - floor, w: box.width, h: box.height, gutter, preferred: dock, obstacles });
+        const next = { dock: placed.dock, lift: placed.lift + floor };
         setPlace((p) => (p.dock === next.dock && p.lift === next.lift ? p : next));
         // Open or collapsed, the page gets room for the toolbar at the end of what scrolls under it (the document, or
         // an app shell's scrolling column), so its last row can always scroll clear of the bar (room.ts).
         const bottom = parseFloat(getComputedStyle(anchor).bottom) || 0;
-        room.current.reserve(scrollerUnder(box, el), roomFor({ height: box.height, bottom, gap: Math.max(gutter, 8) }));
+        room.current.reserve(scrollerUnder(box, el), roomFor({ height: box.height, bottom, gap: Math.max(gutter, 8), floor }));
       });
     };
+    const onScroll = () => measure(false);
+    const onChange = () => measure();
     measure();
-    const later = window.setTimeout(measure, 600);
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    const later = window.setTimeout(onChange, 600);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onChange);
     ro?.observe(el);
     ro?.observe(document.body);
-    window.addEventListener('resize', measure);
+    window.addEventListener('resize', onChange);
     // Captured: an app shell's scrolling column scrolls without the window.
-    window.addEventListener('scroll', measure, { passive: true, capture: true });
-    window.addEventListener('hashchange', measure);
-    window.addEventListener('popstate', measure);
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('hashchange', onChange);
+    window.addEventListener('popstate', onChange);
     return () => {
       cancelAnimationFrame(frame);
       window.clearTimeout(later);
       ro?.disconnect();
-      window.removeEventListener('resize', measure);
-      window.removeEventListener('scroll', measure, { capture: true });
-      window.removeEventListener('hashchange', measure);
-      window.removeEventListener('popstate', measure);
+      window.removeEventListener('resize', onChange);
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('hashchange', onChange);
+      window.removeEventListener('popstate', onChange);
     };
   }, [dock, open, facts, shown, showing]);
   // The room goes back to the page when the toolbar goes away.
@@ -548,7 +576,7 @@ function Toolbar({
 
   const toggleOpen = (next: boolean) => {
     setOpen(next);
-    remember(OPEN_KEY, next ? '1' : '0');
+    rememberOpen(next);
   };
   const moveTo = (next: Dock) => {
     setDock(next);
@@ -790,35 +818,43 @@ function Toolbar({
       : side === 'after'
         ? "Bridge does not know where this product runs in production. Add its production URL to bridge.config.json."
         : 'Open this change from Studio to come back to it.';
-  // The two sides: one segmented control (a radio group: arrow keys move between them, B flips from anywhere), the
-  // same in the collapsed pill and the open bar, so flipping is always one click. The side shown is the filled segment.
-  // Its tooltip speaks of the other side: what it shows, or why it cannot be opened yet.
-  const other: Side = side === 'after' ? 'before' : 'after';
-  const sidesTip = !canFlip ? (
-    <>
-      {sideLabel(other)} is not available yet. {flipBlocked}
-    </>
-  ) : (
-    <>
-      {sideLabel(other)}: {other === 'before' ? 'what customers see today.' : modeDetail(facts, 'after', 'idle')} <Kbd keys="B" size="sm" /> flips sides on the same screen.
-    </>
-  );
+  // The two sides: one switch, the same in the collapsed pill and the open bar, so flipping is always one click.
   const sides = (
-    <Tooltip className={PIN_CLASS} content={sidesTip}>
-      <SegmentedControl
-        label="Compare"
-        appearance="strong"
-        className={styles.sides}
-        value={side}
-        onValueChange={(v) => choose(v as Side)}
-        items={(['before', 'after'] as const).map((s) => ({
-          value: s,
-          label: sideLabel(s),
-          disabled: !canFlip && side !== s,
-          attributes: { 'aria-keyshortcuts': 'B' } as SegmentAttributes,
-        }))}
-      />
-    </Tooltip>
+    <ButtonGroup appearance="attached" aria-label="Compare" className={styles.sides}>
+      {(['before', 'after'] as const).map((s) => {
+        const blocked = !canFlip && side !== s;
+        return (
+          <Tooltip
+            className={PIN_CLASS}
+            key={s}
+            content={
+              blocked ? (
+                <>
+                  {sideLabel(s)} is not available yet. {flipBlocked}
+                </>
+              ) : (
+                <>
+                  {sideLabel(s)}: {s === 'before' ? 'what customers see today.' : modeDetail(facts, 'after', 'idle')} <Kbd keys="B" size="sm" /> flips sides on the same screen.
+                </>
+              )
+            }
+          >
+            <Button
+              variant="secondary"
+              size="md"
+              pressed={side === s}
+              aria-keyshortcuts="B"
+              disabled={blocked}
+              // Stays focusable and hoverable while disabled (aria-disabled), so its tooltip can say why.
+              {...{ focusableWhenDisabled: true }}
+              onClick={() => choose(s)}
+            >
+              {sideLabel(s)}
+            </Button>
+          </Tooltip>
+        );
+      })}
+    </ButtonGroup>
   );
 
   return (

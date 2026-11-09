@@ -30,9 +30,40 @@ export function scrollerUnder(bar: DOMRect, own: Element | null): HTMLElement {
   return document.body;
 }
 
-/** The room the bar takes at the bottom of the viewport: its height, its offset from the bottom edge, and a gap above. */
-export function roomFor(input: { height: number; bottom: number; gap: number }): number {
-  return Math.ceil(input.height + Math.max(0, input.bottom) + Math.max(0, input.gap));
+/**
+ * The room the bar takes at the bottom of the viewport: its height, its offset from the bottom edge, and a gap above,
+ * plus the floor it stands on (the product's own bottom bar, bottomBars).
+ */
+export function roomFor(input: { height: number; bottom: number; gap: number; floor?: number }): number {
+  return Math.ceil(input.height + Math.max(0, input.bottom) + Math.max(0, input.gap) + Math.max(0, input.floor ?? 0));
+}
+
+/**
+ * The product's own bars pinned to the bottom of the viewport (a sticky "Save changes" bar, a fixed bottom nav): the
+ * toolbar stands on them instead of sitting next to them or over them. Returns the bars and the floor they make, the
+ * height from the viewport's bottom edge to the top of the highest one. A sticky bar counts by its stuck height (its
+ * height plus its bottom offset) whether or not it is stuck right now, so the toolbar never jumps while scrolling.
+ * Only bars under the content column the toolbar lives in, at least a quarter of its width (not a toast or a chip).
+ */
+export function bottomBars(area: { left: number; right: number }, vh: number, own: Element | null): { bars: Element[]; floor: number } {
+  const bars: Element[] = [];
+  let floor = 0;
+  const minWidth = Math.max(0, area.right - area.left) / 4;
+  for (const el of document.body.querySelectorAll('*')) {
+    if (own?.contains(el) || el.closest('[data-bridge-toolbar], [data-bridge-pin]')) continue;
+    const cs = getComputedStyle(el);
+    if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+    if (!cs.bottom || cs.bottom === 'auto' || cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const r = el.getBoundingClientRect();
+    if (r.height < 8 || r.width < minWidth || r.right <= area.left || r.left >= area.right) continue;
+    const offset = parseFloat(cs.bottom) || 0;
+    if (offset < 0 || offset > vh / 4 || r.height > vh / 3) continue;
+    // A fixed bar counts where it is (on the bottom edge); a sticky one where it sticks.
+    if (cs.position === 'fixed' && vh - r.bottom > offset + 2) continue;
+    bars.push(el);
+    floor = Math.max(floor, Math.ceil(r.height + offset));
+  }
+  return { bars, floor };
 }
 
 /**

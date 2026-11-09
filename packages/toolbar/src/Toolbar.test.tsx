@@ -40,17 +40,41 @@ const mount = () =>
 // Base UI tooltips render in a portal, without a tooltip role: the text of the open ones.
 const openTips = () => [...document.querySelectorAll('[data-base-ui-portal] [data-open] [data-open]')].map((t) => t.textContent ?? '');
 const bar = () => screen.getByRole('region', { name: /^Bridge:/ });
-const sideButton = (name: string) => within(screen.getByRole('radiogroup', { name: 'Compare' })).getByRole('radio', { name });
+const sideButton = (name: string) => within(screen.getByRole('group', { name: 'Compare' })).getByRole('button', { name });
 
 beforeEach(() => {
   window.history.replaceState(null, '', `/?bridge=${N}#/`);
   window.sessionStorage.clear();
-  window.sessionStorage.setItem(OPEN_KEY, '0');
+  window.localStorage.setItem(OPEN_KEY, '0');
   loadChange.mockReset();
 });
 
 afterEach(() => {
   window.sessionStorage.clear();
+  window.localStorage.clear();
+});
+
+describe('opening', () => {
+  it('opens expanded by default, and stays collapsed in this browser once the person collapses it', async () => {
+    window.localStorage.removeItem(OPEN_KEY);
+    loadChange.mockResolvedValue(facts());
+    const user = userEvent.setup();
+    const first = mount();
+    const collapse = await screen.findByRole('button', { name: 'Collapse the Bridge toolbar' });
+    expect(screen.queryByRole('button', { name: 'Show Bridge details' })).toBeNull();
+    await user.click(collapse);
+    expect(screen.getByRole('button', { name: 'Show Bridge details' })).toBeInTheDocument();
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('0');
+    first.unmount();
+    // Another visit in this browser: still collapsed, until opened again.
+    window.sessionStorage.clear();
+    const second = mount();
+    await user.click(await screen.findByRole('button', { name: 'Show Bridge details' }));
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('1');
+    second.unmount();
+    mount();
+    expect(await screen.findByRole('button', { name: 'Collapse the Bridge toolbar' })).toBeInTheDocument();
+  });
 });
 
 describe('the collapsed toolbar', () => {
@@ -60,8 +84,8 @@ describe('the collapsed toolbar', () => {
     await waitFor(() => expect(bar()).toHaveAccessibleName('Bridge: This change, Warmer primary buttons'));
     expect(within(bar()).getByText('Bridge')).toBeInTheDocument();
     expect(within(bar()).getByText('Warmer primary buttons')).toBeInTheDocument();
-    expect(sideButton('This change')).toHaveAttribute('aria-checked', 'true');
-    expect(sideButton('Live product')).toHaveAttribute('aria-checked', 'false');
+    expect(sideButton('This change')).toHaveAttribute('aria-pressed', 'true');
+    expect(sideButton('Live product')).toHaveAttribute('aria-pressed', 'false');
     expect(sideButton('Live product')).toHaveAttribute('aria-keyshortcuts', 'B');
     // No status chip that looks like a button: the pressed side says where the person is.
     expect(within(bar()).queryByText('This change', { selector: '[class*="badge"]' })).toBeNull();
@@ -83,31 +107,15 @@ describe('the collapsed toolbar', () => {
     loadChange.mockResolvedValue(facts());
     const user = userEvent.setup();
     mount();
-    await waitFor(() => expect(sideButton('Live product')).toBeEnabled());
+    await waitFor(() => expect(sideButton('Live product')).not.toHaveAttribute('aria-disabled', 'true'));
     await user.click(sideButton('Live product'));
-    expect(sideButton('Live product')).toHaveAttribute('aria-checked', 'true');
+    expect(sideButton('Live product')).toHaveAttribute('aria-pressed', 'true');
     expect(bar()).toHaveAttribute('data-side', 'before');
     expect(bar()).toHaveAccessibleName('Bridge: Live product, Warmer primary buttons');
     // Still collapsed: the details stay one click away.
     expect(screen.getByRole('button', { name: 'Show Bridge details' })).toBeInTheDocument();
     await user.keyboard('b');
-    expect(sideButton('This change')).toHaveAttribute('aria-checked', 'true');
-    expect(bar()).toHaveAttribute('data-side', 'after');
-  });
-
-  it('is one segmented control: arrow keys move between the sides, the shown side is the checked one', async () => {
-    loadChange.mockResolvedValue(facts());
-    const user = userEvent.setup();
-    mount();
-    await waitFor(() => expect(sideButton('Live product')).toBeEnabled());
-    expect(screen.getAllByRole('radiogroup', { name: 'Compare' })).toHaveLength(1);
-    sideButton('This change').focus();
-    await user.keyboard('{ArrowLeft}');
-    expect(sideButton('Live product')).toHaveAttribute('aria-checked', 'true');
-    expect(sideButton('Live product')).toHaveFocus();
-    expect(bar()).toHaveAttribute('data-side', 'before');
-    await user.keyboard('{ArrowRight}');
-    expect(sideButton('This change')).toHaveAttribute('aria-checked', 'true');
+    expect(sideButton('This change')).toHaveAttribute('aria-pressed', 'true');
     expect(bar()).toHaveAttribute('data-side', 'after');
   });
 
@@ -139,11 +147,11 @@ describe('the collapsed toolbar', () => {
     const user = userEvent.setup();
     mount();
     const live = sideButton('Live product');
-    expect(live).toBeDisabled();
+    expect(live).toHaveAttribute('aria-disabled', 'true');
     await user.hover(live);
     await waitFor(() => expect(openTips()).toContain('Live product is not available yet. Reading the change. You can switch sides once it has loaded.'));
     await user.click(live);
-    expect(sideButton('This change')).toHaveAttribute('aria-checked', 'true');
+    expect(sideButton('This change')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('when the change cannot be read, says what helps: Studio for access, never a reload that cannot help', async () => {
@@ -162,13 +170,13 @@ describe('the collapsed toolbar', () => {
     mount();
     await user.click(screen.getByRole('button', { name: 'Show Bridge details' }));
     expect(screen.getByRole('button', { name: 'Collapse the Bridge toolbar' })).toBeInTheDocument();
-    expect(window.sessionStorage.getItem(OPEN_KEY)).toBe('1');
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('1');
   });
 
   it('has no axe violations', async () => {
     loadChange.mockResolvedValue(facts());
     const { container } = mount();
-    await waitFor(() => expect(sideButton('Live product')).toBeEnabled());
+    await waitFor(() => expect(sideButton('Live product')).not.toHaveAttribute('aria-disabled', 'true'));
     await act(async () => {
       await expectNoAxeViolations(container);
     });

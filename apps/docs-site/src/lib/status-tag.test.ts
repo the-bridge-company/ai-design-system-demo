@@ -6,6 +6,10 @@ describe('statusTagClass', () => {
     expect(statusTagClass('Exploring')).toBe('st-tag-harbor');
     expect(statusTagClass('Being built', 'sh-row-pill')).toBe('sh-row-pill st-tag-harbor');
   });
+  it('reads a build picked up or in progress (the Being built page words for that stage) in Harbor too', () => {
+    expect(statusTagClass('In progress')).toBe('st-tag-harbor');
+    expect(statusTagClass('Picked up')).toBe('st-tag-harbor');
+  });
   it('leaves every other tag its tone', () => {
     expect(statusTagClass('Needs you')).toBeUndefined();
     expect(statusTagClass('In review', 'sh-card-tag')).toBe('sh-card-tag');

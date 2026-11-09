@@ -20,7 +20,8 @@
 .anchor {
   position: fixed;
   inset-inline: var(--space-4);
-  bottom: var(--space-4);
+  /* Clear of the home indicator on phones with one: the page's room for the bar (room.ts) reads this offset. */
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, var(--space-0)));
   z-index: var(--layer-sticky);
   display: flex;
   justify-content: flex-end;
@@ -507,7 +508,7 @@
 @media (max-width: 760px) {
   .anchor {
     inset-inline: var(--space-2);
-    bottom: var(--space-2);
+    bottom: calc(var(--space-2) + env(safe-area-inset-bottom, var(--space-0)));
   }
 
   /* Phone, open: docked to the bottom edge. Row 1: sides, Changes, collapse. Row 2, for a token change: the count,
@@ -529,6 +530,7 @@
     padding: 0 var(--space-1);
     border-width: var(--border-width-default) 0 0;
     border-radius: 0;
+    padding-block-end: env(safe-area-inset-bottom, var(--space-0));
   }
 
   .title {

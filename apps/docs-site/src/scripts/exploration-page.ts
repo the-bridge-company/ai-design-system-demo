@@ -1096,8 +1096,15 @@ async function paintLibraryImpact(
   const member = currentContributor();
   const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
   const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.leadAskedBy ?? o.r.author] });
-  // The viewer decides on explorations (a lead, by GitHub or by email): the pieces wait on them, by their name.
-  const leadName = (decides || member?.decides) && myName ? myName : leads.length ? leads.map((l) => knownNamesOf([l])[l] ?? l).join(', ') : 'the lead';
+  // The viewer decides on explorations (a lead, by GitHub or by email: an email admin or lead too, as the sample team's
+  // visitor reads as Dana): the pieces wait on them, "Needs you", the words of Review all and the Changes Library row.
+  // Anyone else reads the lead's name, never a GitHub login: unknown, "the DS lead".
+  const viewerLeads = decides || Boolean(member && (member.decides || member.lead === true || member.role === 'admin'));
+  const leadNames = leads.flatMap((l) => {
+    const n = knownNamesOf([l])[l];
+    return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
+  });
+  const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
   const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
   const conflicts = await conflictsOf(mine).catch(() => [] as LibraryConflict[]);
   const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();

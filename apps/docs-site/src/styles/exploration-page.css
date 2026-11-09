@@ -474,6 +474,20 @@
   grid-area: activity;
 }
 
+/* What this changes in the library: under the preview and the zone, the width of both, before the activity. */
+.xp-board.has-library {
+  grid-template-areas:
+    'preview side'
+    'library library'
+    'activity .';
+  grid-template-rows: auto auto 1fr;
+}
+
+.xp-board > .xp-library {
+  grid-area: library;
+  min-width: 0;
+}
+
 .xp-preview {
   display: flex;
   flex-direction: column;
@@ -878,6 +892,16 @@
   .xp-board {
     grid-template-areas:
       'preview'
+      'side'
+      'activity';
+    grid-template-rows: auto;
+  }
+
+  /* Phones (board LI8): the preview, what it changes in the library, then the zone and the activity. */
+  .xp-board.has-library {
+    grid-template-areas:
+      'preview'
+      'library'
       'side'
       'activity';
     grid-template-rows: auto;

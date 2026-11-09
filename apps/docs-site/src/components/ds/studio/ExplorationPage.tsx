@@ -1055,7 +1055,7 @@ function ExplorationBody(p: ExplorationPageProps) {
         // One skeleton in every state: the preview, its one action row and the activity on the left; the Harbor zone (only
         // its content changes) then Where it stands on the right. Phones: preview, the zone, then the activity
         // (styles/exploration-page.css).
-        <div className="xp-board">
+        <div className={p.impact ? 'xp-board has-library' : 'xp-board'}>
           <section className="xp-preview" aria-label="Preview">
             {handoff?.build ? (
               // Check the build: the approved version and the developers' build, side by side (board R4).
@@ -1112,10 +1112,16 @@ function ExplorationBody(p: ExplorationPageProps) {
             {p.decisions && <Decisions rows={p.decisions} when={startedWhen} />}
             {p.notes && (!handoff || p.notes.notes) && <WhereItStands view={p.notes} say={setSaid} />}
           </div>
+          {/* What this changes in the library is half of the lead's review (boards LI2 to LI4, LI8): right under the
+              preview, full width, before the activity. */}
+          {p.impact && (
+            <div className="xp-library">
+              <LibraryImpact view={p.impact.view} actions={p.impact.actions} say={setSaid} />
+            </div>
+          )}
           <ActivityList rows={p.activity} />
         </div>
       )}
-      {(p.stage === 'exploring' || handoff) && p.impact && <LibraryImpact view={p.impact.view} actions={p.impact.actions} say={setSaid} />}
       {p.lead?.bar && !p.archived && <LeadBar bar={p.lead.bar} say={setSaid} />}
       <p className="xp-said" role="status" aria-live="polite">
         {said}

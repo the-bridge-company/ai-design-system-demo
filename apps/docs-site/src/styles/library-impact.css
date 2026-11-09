@@ -50,7 +50,8 @@
 
 .li-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto calc(var(--space-12) * 2.5) var(--control-height-md);
+  /* The tag column fits its longest words ("Needs the DS lead"): never a tag cut at its edge. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(calc(var(--space-12) * 2.5), max-content) var(--control-height-md);
   gap: var(--space-6);
   align-items: center;
   padding: var(--space-4) var(--space-5);
@@ -244,6 +245,7 @@
   align-items: center;
   padding: var(--space-6) var(--space-8);
   border-color: var(--color-bg-zone);
+  background-color: var(--color-bg-zone);
 }
 
 .li-art {
@@ -280,6 +282,17 @@
   margin: var(--space-1) 0 0;
   padding: 0;
   list-style: none;
+}
+
+/* Every chip on one line, whatever list spacing the page gives its items. */
+.li-chips > li {
+  display: flex;
+  margin: 0;
+}
+
+/* On the Harbor zone the chips are paper, as on the board: a grey fill reads muddy on blue. */
+.li-nothing .li-chips .li-chip {
+  --_bg: var(--color-surface-default);
 }
 
 @media (prefers-reduced-motion: no-preference) {

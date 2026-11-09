@@ -39,7 +39,7 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { v
             <ul className="li-chips" aria-label="Pieces it uses from the library">
               {view.uses.map((u) => (
                 <li key={u}>
-                  <Badge tone="neutral" size="md">
+                  <Badge tone="neutral" size="md" className="li-chip">
                     {u}
                   </Badge>
                 </li>

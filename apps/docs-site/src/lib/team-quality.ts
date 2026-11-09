@@ -4,6 +4,7 @@
 // Every link stays with the team: Studio pages through studioHref, files on GitHub at the commit the page was read
 // at, never the demo's Library. Adoption comes from the team's snapshot (bridge-data branch) when it has audits.
 // Pure: team-quality.test.ts covers it.
+import { VOCAB } from './vocabulary';
 import { DEFAULT_PRODUCTS, defaultProduct, productsOf, sameProducts, tokenUsage, type ProductConfig, type RepoModel, type SnapshotAudit } from '@bridge-ds/core';
 import type { ContrastFailRow } from '../components/ds/studio/ContrastFailTable';
 import type { GuidanceState } from './components';
@@ -31,6 +32,12 @@ export interface TeamQualityInput {
    * Default developer.
    */
   audience?: 'developer' | 'designer';
+  /**
+   * The viewer signed in with GitHub: the contrast checks link to their file there ("Open on GitHub"). Anyone else (an
+   * email member, a signed-out visitor) reads what the checks mean, with no link to a place they cannot open.
+   * Default true.
+   */
+  github?: boolean;
 }
 
 export interface TeamGuidanceRow {
@@ -201,10 +208,19 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
     editHref: (slug) => docsHref(bySlug.get(slug)!),
   });
 
-  // The contrast finding: the checks file on GitHub instead of the demo's contrast grid; no checks is not a pass.
+  // The contrast finding: the checks file on GitHub instead of the demo's contrast grid, for a viewer with GitHub only;
+  // no checks is not a pass.
   const checksHref = model.contrast.path ? fileUrl(owner, repo, sha, model.contrast.path) : HOSTED_DOCS_URL;
+  const contrastFinding = findings.find((f) => f.kind === 'contrast')!;
+  const withGitHub = input.github !== false;
   const gate: Finding = hasChecks
-    ? { ...findings.find((f) => f.kind === 'contrast')!, action: { label: 'Open the checks on GitHub', href: checksHref } }
+    ? withGitHub
+      ? { ...contrastFinding, action: { label: VOCAB.openOnGitHub, href: checksHref } }
+      : {
+          ...contrastFinding,
+          action: undefined,
+          ...(contrastFinding.severity === 'fail' ? { detail: 'Colors that fail stay out of the library until a developer fixes them.' } : {}),
+        }
     : {
         id: 'contrast',
         kind: 'contrast',

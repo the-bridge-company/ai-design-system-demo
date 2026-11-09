@@ -361,14 +361,6 @@
   margin: var(--space-2) 0 0;
 }
 
-/* "Exploring" in Harbor, as on the validated board: the selected surface and the link text, its dot the same. */
-.xp-page .xp-pagehead .xp-exploring {
-  --_bg: var(--color-surface-selected);
-  --_border: transparent;
-  --_text: var(--color-text-link);
-  --_mark: var(--color-text-link);
-}
-
 .xp-today {
   font-weight: var(--font-weight-medium);
 }

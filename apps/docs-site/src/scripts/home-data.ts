@@ -5,7 +5,7 @@
 // the before/after (the token diff, else the visual impact run). Paints progressively through `onUpdate`. The rules
 // are pure in lib/home-model.ts and lib/branch-thumb.ts. Admins of a real team on the hosted site also get the people
 // asking to join it (board E7b, GET /api/entry?requests=), first in the list.
-import { closingIssueNumbers, isGuardedExploration, isHandedOff, isToolingPull, parseNeededBy, productsOf, requesterOf, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
+import { closingIssueNumbers, defaultProduct, isGuardedExploration, isHandedOff, isToolingPull, parseNeededBy, productsOf, requesterOf, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
 import { siteConfig } from './repo-context';
 import { designTaskReads, rememberQuestions, taskUrlOf } from './design-task';
 import { askerRole, devQuestionOf, taskStage, type DesignTaskRead } from '../lib/review-state';
@@ -18,6 +18,11 @@ import { loadTeams, siteApprovers } from './teams';
 import { loadOwnSuggestions, loadSuggestionNeeds } from './suggestions';
 import { todoChange, viewerRole, type QueuePullFull } from './needs-you';
 import { reviewQueue } from '../lib/review-queue';
+import { productOf, stateOf } from '../lib/branches-page';
+import { libraryChangeState, type ProductStateKey } from '../lib/product-page';
+import { rowLifecycle } from '../lib/change-status';
+import { claudeStage } from '../lib/review-rules';
+import { LIFECYCLE_LABEL } from '../lib/review-state';
 import { isDraft } from '../lib/review-rules';
 import { byUrgency, statusPill } from '../lib/changes';
 import { isReviewTask, waitingOn } from '../lib/waiting-on';
@@ -98,6 +103,8 @@ export interface HomeData {
   branches: BranchCard[];
   /** The viewer's own explorations (lib/home-explorations): the home's cards. */
   explorations: ExplorationCard[];
+  /** Where each of the library's own changes stands, as Changes lists them under Library (the Library folder's line). */
+  libraryWork?: ProductStateKey[];
   /** What a lead asked and waits for: nothing to do, it moves up to Needs you with the answer. */
   waitingOnOthers?: HomeWaiting[];
   /** Review decisions among the needs, for the Branches nav badge. */
@@ -580,10 +587,23 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
         const status = st && stage === 'ready' ? statusPill(st.kind, rowWho(st.kind, { author: p.user.login, labels: p.labels, approvers: st.approvers, changesRequested: st.changesRequested, lookAgain: st.lookAgain, failing: st.failing, failingChecks: st.failingChecks, pending: st.pending, autoShip: st.autoShip })).label : null;
         return { number: p.number, title: c.title, href: studioHref(`changes/?pr=${p.number}`), stage, updated: p.updated_at, reviewer: pick(reviewerLogin(p, st)), thumb: resolved.get(p.number) ?? { kind: 'icon', icon: 'branch' }, status };
       });
+    // The library's own changes, the rows Changes lists under Library (not an exploration, not Bridge's own work, the
+    // library's product), filed by Changes' own tab (lib/branches-page stateOf): the Library folder counts them.
+    const libraryKey = defaultProduct(products).key;
+    const libraryWork = queue
+      .filter((p) => !isHomeExploration(p, products) && !needsReviewRead(p as never) && designWork(p) && productOf(homeFiles.get(p.number) ?? null, products, p.labels ?? null) === libraryKey)
+      .flatMap((p) => {
+        const st = statuses.get(p.number);
+        const lifecycle = todoChange(p, st).lifecycle ?? rowLifecycle(p, { kind: null, nature: 'design', tier: null });
+        // Changes' pill: a draft Claude waits to pick up reads Waiting to be picked up (scripts/reviews pillOf).
+        const pill = lifecycle === 'draft' && claudeStage(p.labels) === 'waiting' ? { label: LIFECYCLE_LABEL['waiting-for-code'] } : null;
+        const k = libraryChangeState(stateOf({ lifecycle, pill }));
+        return k ? [k] : [];
+      });
     // Suggestions wait on their reviewers only.
     if (reviewer) needs.push(...suggestions);
     const sorted = sortNeeds(needs);
-    onUpdate({ viewer, loading, settled, failed: null, needs: sorted, branches: [...branches, ...ownSuggestions], explorations, waitingOnOthers, decisions: badgeRows(sorted), reviewer });
+    onUpdate({ viewer, loading, settled, failed: null, needs: sorted, branches: [...branches, ...ownSuggestions], explorations, libraryWork, waitingOnOthers, decisions: badgeRows(sorted), reviewer });
   };
 
   repaint = paint;

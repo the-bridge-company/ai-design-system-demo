@@ -92,6 +92,16 @@ describe('teamQuality for a designer (anyone but a tech owner)', () => {
   });
 });
 
+describe('teamQuality contrast link', () => {
+  it('links the checks on GitHub only for a viewer with GitHub', () => {
+    const gh = teamQuality({ model: repoModel, ...team, audits: null });
+    const email = teamQuality({ model: repoModel, ...team, audits: null, github: false });
+    expect(gh.gate.action?.label).toBe('Open on GitHub');
+    expect(email.gate.action).toBeUndefined();
+    expect(JSON.stringify(email.gate)).not.toMatch(/GitHub/);
+  });
+});
+
 describe('adoption from the snapshot audits', () => {
   const audit = (id: string, ds: number, ui: number, label?: string): SnapshotAudit => ({
     id,

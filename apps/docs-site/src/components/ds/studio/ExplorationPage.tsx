@@ -78,6 +78,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { Decisions, DesignerZone, HandOverDialog, LeadBar, NotDoingZone, PmStatus, PmZone, TellDevelopers, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export { claudeNewUrl };
 
@@ -479,7 +480,7 @@ function SaidToast({ said }: { said: string | undefined }) {
 function StatusTag({ status, notStarted, stage }: { status: string; notStarted?: boolean; stage?: LifecycleStage | null }) {
   const t = explorationTag(status, { ...(notStarted ? { notStarted } : {}), stage: stage ?? null });
   return (
-    <Badge tone={t.tone} size="md" dot={t.dot} className={status === 'active' && !notStarted && !stage ? 'xp-exploring' : undefined}>
+    <Badge tone={t.tone} size="md" dot={t.dot} className={statusTagClass(t.label)}>
       {t.label}
     </Badge>
   );
@@ -503,7 +504,7 @@ function PieceItem({ piece, onPiece, say }: { piece: SentPiece; onPiece: Handoff
               <strong>{piece.title}</strong>
             )}
             {piece.line ? (
-              <Badge tone={piece.tone} size="md" className="xp-piece-tag">
+              <Badge tone={piece.tone} size="md" className={statusTagClass(piece.line, 'xp-piece-tag')}>
                 {piece.line}
               </Badge>
             ) : (
@@ -942,7 +943,7 @@ function ExplorationBody(p: ExplorationPageProps) {
           </h1>
           {p.stage !== 'loading' &&
             (p.tag ? (
-              <Badge tone={p.tag.tone} size="md">
+              <Badge tone={p.tag.tone} size="md" className={statusTagClass(p.tag.label)}>
                 {p.tag.label}
               </Badge>
             ) : p.archived ? (

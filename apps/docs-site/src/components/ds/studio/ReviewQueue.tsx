@@ -14,6 +14,7 @@ import ButtonLink from '../ButtonLink';
 import { positionLabel, queueWindow, type QueueOutcome } from '../../../lib/queue-nav';
 import { Who, type Face } from './faces';
 import { studioHref } from '../../../lib/team-path';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export interface QueueRow {
   key: string;
@@ -300,7 +301,7 @@ export function QueueItem(p: QueueItemProps) {
         <h2 className="br-title" tabIndex={-1}>
           {p.title}{' '}
           {p.pill && (
-            <Badge tone={p.pill.tone} className="br-status">
+            <Badge tone={p.pill.tone} className={statusTagClass(p.pill.label, 'br-status')}>
               {p.pill.label}
             </Badge>
           )}

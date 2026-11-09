@@ -301,11 +301,11 @@ export const openConflicts = (c: readonly LibraryConflict[]) => c.filter((x) => 
 // ---------------------------------------------------------------------------------------------------------------
 // Status per piece
 
-export type ImpactStatusKey = 'needs-lead' | 'approved' | 'changes' | 'local' | 'existing' | 'building' | 'conflict' | 'released';
+export type ImpactStatusKey = 'exploring' | 'needs-lead' | 'approved' | 'changes' | 'local' | 'existing' | 'building' | 'conflict' | 'released';
 
 export interface ImpactStatus {
   key: ImpactStatusKey;
-  /** The tag: "Needs Dana", "Approved", "Being built", "Kept in this screen", "Uses Badge", "Two ways". */
+  /** The tag: "Exploring", "Needs Dana", "Approved", "Being built", "Kept in this screen", "Uses Badge", "Two ways". */
   label: string;
   tone: 'warning' | 'success' | 'info' | 'neutral' | 'danger';
 }
@@ -313,7 +313,9 @@ export interface ImpactStatus {
 /**
  * Where a piece stands. A conflict nobody settled comes first (it blocks Looks right). Then the lead's own answer on
  * the piece. Then, once the screen was approved (Looks right said), the piece is approved, and Being built when its
- * library request is filed; released once the library shipped it. Before that, it waits for the lead.
+ * library request is filed; released once the library shipped it. Before that, it waits for the lead once the
+ * designer said Done exploring (`asked`), and reads Exploring for everyone while they are still at it: nobody is
+ * asked yet, so nothing needs the lead (the same rule as Home's Needs you and Changes > Waiting on me).
  */
 export function impactStatus(x: {
   item: Pick<ImpactItem, 'id'>;
@@ -325,6 +327,8 @@ export function impactStatus(x: {
   released?: boolean | undefined;
   /** The lead's name, for "Needs Dana"; "you" for the lead themself. */
   lead: string;
+  /** Done exploring was said: the lead is asked. Left out, the lead is asked (Review all lists only those). */
+  asked?: boolean | undefined;
 }): ImpactStatus {
   if (x.conflict && !x.conflict.pick) return { key: 'conflict', label: 'Two ways', tone: 'danger' };
   const d = x.decision;
@@ -333,6 +337,7 @@ export function impactStatus(x: {
   if (d?.verdict === 'changes') return { key: 'changes', label: 'Changes asked', tone: 'warning' };
   if (x.released) return { key: 'released', label: 'In the library', tone: 'success' };
   if (d?.verdict === 'approved' || x.approved) return x.link ? { key: 'building', label: 'Being built', tone: 'info' } : { key: 'approved', label: 'Approved', tone: 'success' };
+  if (x.asked === false) return { key: 'exploring', label: 'Exploring', tone: 'info' };
   return { key: 'needs-lead', label: `Needs ${x.lead}`, tone: 'warning' };
 }
 

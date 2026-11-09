@@ -12,6 +12,7 @@ import { BranchThumb, captureAgeOf } from './BranchThumb';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
 import { SEP, type Person, type PillTone } from '../../../lib/home-model';
 import { LIST_VIEW_EVENT, LIST_VIEW_WORDS, readListView, rememberListView, type ListView, type ListViewChange } from '../../../lib/list-view';
+import { statusTagClass } from '../../../lib/status-tag';
 
 /**
  * The view a page is read in: List until this person picks the grid. Read after the first paint (the server renders
@@ -96,7 +97,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
             <span className="sh-card-tagline">
               {tags}
               {pill && (
-                <Badge tone={TONE[pill.tone]} size="sm" className="sh-card-tag">
+                <Badge tone={TONE[pill.tone]} size="sm" className={statusTagClass(pill.label, 'sh-card-tag')}>
                   {pill.label}
                 </Badge>
               )}

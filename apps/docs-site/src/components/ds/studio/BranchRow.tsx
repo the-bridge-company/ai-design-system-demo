@@ -10,6 +10,7 @@ import { Badge, Card, CardBody, Link } from '@bridge-ds/react';
 import { BranchThumb } from './BranchThumb';
 import { SEP, type PillTone } from '../../../lib/home-model';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
+import { statusTagClass } from '../../../lib/status-tag';
 
 const TONE = { warning: 'warning', danger: 'danger', success: 'success', neutral: 'neutral', info: 'info' } as const;
 
@@ -48,7 +49,7 @@ export interface BranchRowProps {
 
 export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note }: BranchRowProps) {
   const chip = pill && (
-    <Badge tone={TONE[pill.tone]} size="md" className="sh-row-pill">
+    <Badge tone={TONE[pill.tone]} size="md" className={statusTagClass(pill.label, 'sh-row-pill')}>
       {pill.label}
     </Badge>
   );

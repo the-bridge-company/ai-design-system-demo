@@ -166,6 +166,10 @@ describe('status per piece', () => {
     expect(impactStatus({ ...base, approved: true, link: { number: 7 } }).label).toBe('Being built');
     expect(impactStatus({ ...base, approved: true, link: { number: 7 }, released: true }).label).toBe('In the library');
   });
+  it('reads Exploring for everyone before Done exploring: nobody is asked yet', () => {
+    expect(impactStatus({ ...base, lead: 'you', approved: false, asked: false })).toEqual({ key: 'exploring', label: 'Exploring', tone: 'info' });
+    expect(impactStatus({ ...base, lead: 'you', approved: false, asked: true }).label).toBe('Needs you');
+  });
 
   it("puts the lead's own answer and an open conflict first", () => {
     expect(impactStatus({ ...base, approved: true, decision: { piece: 'x', verdict: 'local', at: 'x' } }).label).toBe('Kept in this screen');

@@ -34,6 +34,7 @@ import { explorationTag } from '../../../lib/exploration-page';
 import { ScreenPlate } from './ExplorationPage';
 import { studioHref } from '../../../lib/team-path';
 import { sampleVisitor } from '../../../scripts/demo-gate';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export interface ProductBranchProps {
   number: number;
@@ -108,7 +109,7 @@ function PieceRow({ row, p, busy, run }: { row: PieceRowView; p: ProductBranchPr
             )}
             <span className="pb-row-line">
               {row.library ? (
-                <Badge tone={row.library.tone} size="md">
+                <Badge tone={row.library.tone} size="md" className={statusTagClass(row.library.line)}>
                   {row.library.line}
                 </Badge>
               ) : (
@@ -206,7 +207,7 @@ export function ProductBranch(p: ProductBranchProps) {
       {p.state && (
         <p className="pb-status">
           {tag && (
-            <Badge tone={tag.tone} size="md" dot={tag.dot}>
+            <Badge tone={tag.tone} size="md" dot={tag.dot} className={statusTagClass(tag.label)}>
               {tag.label}
             </Badge>
           )}

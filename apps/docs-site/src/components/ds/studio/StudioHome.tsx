@@ -45,9 +45,9 @@ import {
 } from '../../../lib/home-model';
 import { explorationsFor, libraryChangesLine, ownOpenWork, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
 import { studioHref } from '../../../lib/team-path';
-import { productFolders } from '../../../lib/product-page';
+import { productFolders, type ProductStateKey } from '../../../lib/product-page';
 import { siteConfig } from '../../../scripts/repo-context';
-import { productsOf, type ProductConfig } from '@bridge-ds/core';
+import { defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { leadTour, leadTourSteps, type LeadTourAt } from '../../../lib/lead-tour';
 import { useNarrow, useTour } from './HomeTour';
 
@@ -316,6 +316,11 @@ export interface StudioHomeProps {
    * "Explorations", a contributor only their own under "Your explorations" (home by role).
    */
   explorations: ExplorationCard[];
+  /**
+   * Where each of the library's own changes stands (lib/product-page libraryChangeState), the ones Changes lists under
+   * Library: the Library folder counts them with its explorations, in the same words as a product's folder.
+   */
+  libraryWork?: readonly ProductStateKey[];
   health: HealthLine | null;
   /** What a lead asked and waits for, quiet and without buttons (board L6). */
   waitingOnOthers?: readonly HomeWaiting[];
@@ -401,6 +406,12 @@ function JoinedNote({ text }: { text: string }) {
       {text}
     </Alert>
   );
+}
+
+/** The products' folders, the library's own changes counted on the Library folder as Changes lists them. */
+function homeFolders(p: StudioHomeProps) {
+  const products = p.products ?? pageProducts();
+  return productFolders(products, p.explorations, undefined, { [defaultProduct(products).key.toLowerCase()]: p.libraryWork ?? [] });
 }
 
 export function StudioHome(p: StudioHomeProps) {
@@ -495,7 +506,7 @@ function HomeBody(p: StudioHomeProps) {
           <>
             <RecentExplorations cards={byRole.cards} title={byRole.title} seeAll={byRole.seeAll} />
             {/* The products, like project folders in Figma, counted on all the team's explorations. */}
-            <ProductFolders folders={productFolders(p.products ?? pageProducts(), p.explorations)} />
+            <ProductFolders folders={homeFolders(p)} />
           </>
         )}
       </div>
@@ -547,7 +558,7 @@ function HomeBody(p: StudioHomeProps) {
         </>
       )}
       {/* The products, like project folders in Figma: each opens its page, with the explorations made in it. */}
-      {!loading && <ProductFolders folders={productFolders(p.products ?? pageProducts(), p.explorations)} />}
+      {!loading && <ProductFolders folders={homeFolders(p)} />}
     </div>
   );
 }

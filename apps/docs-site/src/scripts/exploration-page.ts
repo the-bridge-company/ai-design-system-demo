@@ -75,7 +75,7 @@ import type { PmView } from '../components/ds/studio/LeadDecisions';
 import { bringLatestIntoExploration, copyRepos, explorationBehind } from './design-copy';
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
 import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, studioClient } from './github-session';
-import { viewerIsDesignLead } from './design-lead';
+import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { viewerRole } from './needs-you';
@@ -1097,10 +1097,11 @@ async function paintLibraryImpact(
   const member = currentContributor();
   const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
   const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.leadAskedBy ?? o.r.author] });
-  // The viewer decides on explorations (a lead, by GitHub or by email: an email admin or lead too, as the sample team's
-  // visitor reads as Dana): the pieces wait on them, "Needs you", the words of Review all and the Changes Library row.
-  // Anyone else reads the lead's name, never a GitHub login: unknown, "the DS lead".
-  const viewerLeads = decides || Boolean(member && (member.decides || member.lead === true || member.role === 'admin'));
+  // The viewer decides on explorations (scripts/design-lead viewerDecidesExplorations, the one rule: a lead by GitHub or
+  // by email, the sample team's visitor reading as Dana): once Done exploring asked, the pieces wait on them, "Needs
+  // you", the words of Review all and the Changes Library row. Anyone else reads the lead's name, never a GitHub login:
+  // unknown, "the DS lead". Before Done exploring, every piece reads Exploring for everyone (nobody is asked yet).
+  const viewerLeads = decides || viewerDecidesExplorations();
   const leadNames = leads.flatMap((l) => {
     const n = knownNamesOf([l])[l];
     return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
@@ -1115,6 +1116,7 @@ async function paintLibraryImpact(
     designer,
     lead: leadName,
     approved: o.handedOff,
+    asked: o.handedOff || isWaitingForLead(body),
     canDecide: decides,
     conflicts,
     products: o.products.filter((p) => p.default !== true).map((p) => p.name),

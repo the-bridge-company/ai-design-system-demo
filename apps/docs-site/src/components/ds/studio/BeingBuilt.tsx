@@ -109,6 +109,7 @@ import {
   readFixes,
   type BuildData,
 } from "../../../scripts/building-data";
+import { statusTagClass } from '../../../lib/status-tag';
 
 const TONE = {
   warning: "warning",
@@ -378,7 +379,7 @@ function Detail({
           {viewTitle(v)}
         </h2>
         <p className="t-body bb-sub">
-          <Badge tone={TONE[tag.tone]} size="md">
+          <Badge tone={TONE[tag.tone]} size="md" className={statusTagClass(tag.label)}>
             {tag.label}
           </Badge>{" "}
           {v.sentence}

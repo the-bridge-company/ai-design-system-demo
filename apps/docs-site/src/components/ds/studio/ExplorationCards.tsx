@@ -11,6 +11,7 @@ import { BranchThumb, captureAgeOf } from './BranchThumb';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
+import { statusTagClass } from '../../../lib/status-tag';
 
 /** The corner of a library exploration's screen: it belongs to no product. */
 const LIBRARY = 'Library';
@@ -34,7 +35,7 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {c.state && (
-                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={c.state === 'Exploring' ? 'sh-card-tag xp-exploring' : 'sh-card-tag'}>
+                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={statusTagClass(c.state, 'sh-card-tag')}>
                   {c.state}
                 </Badge>
               )}

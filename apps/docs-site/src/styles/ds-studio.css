@@ -130,3 +130,12 @@
   margin: 0 0 var(--space-4);
   color: var(--color-text-muted);
 }
+
+/* Status tags in motion, Exploring and Being built, read in Harbor on every Studio surface (lib/status-tag.ts): the
+   selected surface and the link text, its dot the same, as on the validated boards. Over the Badge's own tone. */
+:root .st-tag-harbor.st-tag-harbor {
+  --_bg: var(--color-surface-selected);
+  --_border: transparent;
+  --_text: var(--color-text-link);
+  --_mark: var(--color-text-link);
+}

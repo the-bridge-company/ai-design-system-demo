@@ -177,7 +177,7 @@ const COMMENT = 'Your comment shows on the change for everyone working on it, an
 const START = 'Start an exploration gives you a safe place to try an idea with Claude on a live preview of your product. The library stays as it is.';
 const INVITE = 'Invite emails the people you add, so they join your team in Bridge with the role you pick.';
 const SET_PM = 'The product manager is the person who says an exploration is right for the product before developers build it.';
-const LIBRARY_UPDATE = 'Update from the library brings this product up to the latest library, with every change your team approved.';
+const LIBRARY_UPDATE = 'Bring the latest in: this product gets everything the library gained since, every change your team approved.';
 const HAND_OVER = 'Handing it over gives this exploration to someone else on the team, who picks it up from where it is.';
 
 const ACTION_LINES: Readonly<Record<string, string>> = {
@@ -209,6 +209,7 @@ const ACTION_LINES: Readonly<Record<string, string>> = {
   'set the product manager': SET_PM,
   'library update': LIBRARY_UPDATE,
   'update from the library': LIBRARY_UPDATE,
+  'bring the latest in': LIBRARY_UPDATE,
   'send the library update': LIBRARY_UPDATE,
   'update this feature': 'Update brings this feature up to the latest library, so it uses your newest components.',
   'edit tokens in a change': 'Editing this change updates the colors, spacing and type every product shares, and asks for a review before anything ships.',

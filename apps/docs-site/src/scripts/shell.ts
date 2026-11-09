@@ -3,12 +3,12 @@
 // page" rail and, in the Studio, the view of a change (scripts/view-change), the nav counts and the GitHub connection.
 import { bindCodeBlocks, bindDialogs, bindTooltips, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
 import { currentContributor, getToken, initGitHubConnect } from './github-session';
-import { loadReviewNeedsYou, rememberedMine, viewerRole, type QueuePullFull } from './needs-you';
+import { rememberedMine, viewerRole } from './needs-you';
 import { viewerDecidesExplorations } from './design-lead';
 import { initMaintainer } from './maintainer';
 import { pointLinksAtTeam } from './team-links';
 import { initVanillaControls } from './vanilla-controls';
-import { initViewChange, readOpenPulls } from './view-change';
+import { initViewChange } from './view-change';
 import { followThemePref } from '../lib/theme-pref';
 import { explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
 import { rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
@@ -698,27 +698,14 @@ function initStudio() {
 
   // "Viewing: Latest library" on Tokens, Components and Quality, the view banner, and links that keep the view.
   initViewChange();
-  // One read of the open changes per page, shared with the view selector (scripts/view-change).
-  readOpenPulls()
-    .then((f) => {
-      // What waits on the viewer in the review queue (the same list as the In review tab and the Overview), with the
-      // Overview's rule (lib/overview-todo reviewNeedsYou).
-      if (!pageCounts)
-        initGitHubConnect((v) => {
-          // Signed out of GitHub nothing waits on you here; an email member's count comes from their home (the one
-          // Home last counted on this team, rememberedMine), never zero for want of a GitHub sign-in.
-          if (!v) {
-            setCount('reviews', currentContributor() ? rememberedMine() : null);
-            return;
-          }
-          void loadReviewNeedsYou(f.data.map((p) => ({ ...p, state: p.state ?? 'open' })) as unknown as QueuePullFull[])
-            .then((n) => setCount('reviews', n))
-            .catch(() => undefined);
-        });
-    })
-    .catch(() => {
-      // Rate limited with nothing in the request cache: keep the last count this browser saw.
-      setCount('reviews', getToken() ? rememberedMine() : null);
+  // The Library review count is Library review's own number (its loader and rule, scripts/library-waiting): Home and
+  // Library review refresh it, other pages show what this browser remembers for this team and viewer, and read it once
+  // when nothing is remembered yet. The view selector reads the open changes itself (scripts/view-change).
+  if (!pageCounts)
+    initGitHubConnect((v) => {
+      const known = rememberedMine(currentContributor() ? undefined : (v?.login ?? null));
+      setCount('reviews', known);
+      if (known === null && (v || currentContributor())) void import('./library-waiting').then((m) => m.countLibraryWaiting()).then((n) => n !== null && setCount('reviews', n));
     });
 }
 

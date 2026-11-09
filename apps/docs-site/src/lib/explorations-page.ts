@@ -378,11 +378,3 @@ export function changesToExplorations(search: string, hash = '', libraryKey = 'l
   return `${EXPLORATIONS_ROUTE}${addressWithFilters(search, filtersFromAddress(search, libraryKey))}${h}`;
 }
 
-/** The header's one sentence: what is in progress, by status, whatever the filters. "4 exploring, 2 waiting for lead." */
-export function explorationsSummary(statuses: readonly ExplorationState[]): string {
-  const parts = IN_PROGRESS.map((s) => {
-    const n = statuses.filter((x) => x === s).length;
-    return n ? `${n} ${STATE_LABEL[s].toLowerCase()}` : '';
-  }).filter(Boolean);
-  return parts.length ? `${parts.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'Nothing in progress right now.';
-}

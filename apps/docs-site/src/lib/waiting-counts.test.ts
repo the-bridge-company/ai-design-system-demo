@@ -12,10 +12,9 @@ describe('the two waiting counts, one source each', () => {
     expect(explorationOfNeed(need('dev-question-#4'))).toBe('#4');
     expect(explorationOfNeed(need('change-31'))).toBeNull();
   });
-  it("splits Home's list: explorations once each, the library rows counted as before", () => {
+  it("reads Home's list: the explorations once each, nothing of the library", () => {
     const c = waitingCounts([need('exploration-review-crm#12', 'review', 'Sofia is done exploring'), need('dev-question-crm#12', 'own'), need('change-31'), need('guidance-x', 'guidance'), need('own-2', 'own')]);
     expect(c.explorations).toEqual([{ key: 'crm#12', line: 'Sofia is done exploring' }]);
-    expect(c.library).toBe(2);
   });
   it("adds what Home found that the list cannot read, only for listed explorations", () => {
     const merged = mergeWaiting([{ key: 'crm#1', line: 'a' }], [{ key: 'crm#1', line: 'b' }, { key: 'shop#2', line: 'Leo asked you a question' }, { key: 'x#9', line: 'gone' }], new Set(['crm#1', 'shop#2']));

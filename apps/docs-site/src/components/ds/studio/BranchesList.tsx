@@ -36,6 +36,9 @@ import type { LifecycleStage } from '../../../lib/review-state';
 import type { LibraryOrigin } from '../../../lib/library-origin';
 import { setPageSummary } from '../../../lib/page-summary';
 import { DEMO_HOME } from '../../../lib/start';
+
+/** The header's one sentence (board ex-list): what the page holds; the count sits next to the filters. */
+export const EXPLORATIONS_LEDE = 'Every screen being explored, in every product. What they change in the library is decided in Library review.';
 import {
   addressWithFilters,
   BOARD_CAP,
@@ -43,7 +46,6 @@ import {
   countLine,
   DEFAULT_FILTERS,
   emptyFilterLine,
-  explorationsSummary,
   filtersFromAddress,
   IN_PROGRESS,
   IN_PROGRESS_LABEL,
@@ -129,6 +131,8 @@ export interface BranchesListProps {
   tooling?: ToolingConfig | null;
   /** Asks scripts/reviews.ts for the closed list (Shipped). */
   readClosed: () => void;
+  /** Read only until connected: the empty state's primary is this verb ("Connect GitHub") instead of Start. */
+  connect?: string | null;
   /** GitHub could not be read (rate limit, offline): the list may miss explorations, so no "Start with one screen". */
   unread?: boolean;
   /** The components of the library, for Start an exploration's component picker (empty state). */
@@ -259,7 +263,7 @@ export function BranchesList(p: BranchesListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mergedKey, p.loading, p.unread, viewer]);
 
-  const summary = p.loading && !p.rows.length ? '' : explorationsSummary(openItems.map((x) => x.status));
+  const summary = EXPLORATIONS_LEDE;
 
   // The filters live in the address (lib/explorations-page addressWithFilters).
   const pick = (f: ExplorationFilters) => {
@@ -298,18 +302,42 @@ export function BranchesList(p: BranchesListProps) {
   const keyOf = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
   /** Line 2: who, then when it last moved or shipped; in Waiting on you, why it is the viewer's turn. */
   const lineOf = (x: Item, turn = false) => {
-    if (turn) return `Your turn${SEP}${turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`}`;
+    if (turn) return turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`;
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
     return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
   };
   // Say each state once: a shipped row says when on its line, so it carries no Shipped tag.
   const shippedSaid = (x: Item) => x.status === 'shipped' && Boolean(x.shippedAt);
+  // What waits on you carries its weight (boards ex-list, ex-grid, ex-board): "Your turn" in the accent on its own line
+  // above the title, an accent edge, the reason as the line. Its status tag stays out: the turn says it.
+  const turnMark = <span className="t-ui ex-turn-mark">Your turn</span>;
+  // On a phone the avatar column hides: a small face before the name keeps who it is (ListCard does the same).
+  const face = (x: Item) => (
+    <span className="ex-face" aria-hidden="true">
+      <Who p={x.person} size="xs" />
+    </span>
+  );
   const row = (x: Item, turn = false) => (
-    <BranchRow key={keyOf(x.r)} thumb={thumbOf(x)} who={<Who p={x.person} size="md" />} title={x.r.title} jira={x.r.jira} line={lineOf(x, turn)} href={hrefOf(x.r)} linkAttributes={linkOf(x.r)} pill={shippedSaid(x) ? null : pillOf(x.status)} />
+    <BranchRow
+      key={keyOf(x.r)}
+      className={turn ? 'ex-turn' : undefined}
+      eyebrow={turn ? turnMark : undefined}
+      thumb={thumbOf(x)}
+      who={<Who p={x.person} size="md" />}
+      title={x.r.title}
+      jira={x.r.jira}
+      lineLead={face(x)}
+      line={lineOf(x, turn)}
+      href={hrefOf(x.r)}
+      linkAttributes={linkOf(x.r)}
+      pill={turn || shippedSaid(x) ? null : pillOf(x.status)}
+    />
   );
   const card = (x: Item, opts: { pill?: boolean; product?: boolean; turn?: boolean } = {}) => (
     <ListCard
       key={keyOf(x.r)}
+      className={opts.turn ? 'ex-turn' : undefined}
+      eyebrow={opts.turn ? turnMark : undefined}
       thumb={thumbOf(x)}
       title={x.r.title}
       href={hrefOf(x.r)}
@@ -317,10 +345,10 @@ export function BranchesList(p: BranchesListProps) {
       person={x.person}
       product={opts.product ? productName(x.product) : null}
       pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
-      note={opts.turn ? <span className="t-ui ex-turn">{lineOf(x, true)}</span> : shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
+      note={opts.turn ? <span className="t-ui t-muted">{lineOf(x, true)}</span> : shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
     />
   );
-  const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);
+  const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn, pill: !turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);
 
   const loading = p.loading && !p.rows.length;
   const nothingYet = !loading && !p.unread && openItems.length === 0 && archivedItems.length === 0 && (p.closed === null ? !p.loading : shippedItems.length === 0) && !waiting.length;
@@ -355,7 +383,14 @@ export function BranchesList(p: BranchesListProps) {
         </h2>
         <p className="t-body t-muted ex-start-text">Pick a screen of one of your products and try an idea on it with Claude. Your team sees it here, with its real screens.</p>
         <div className="ex-start-actions">
-          <StartExploration components={p.components ?? []} appearance="primary" />
+          {p.connect ? (
+            // Read only (signed out of a team that reads GitHub): connecting comes first, starting needs it.
+            <Button variant="primary" data-gh-open="">
+              {p.connect}
+            </Button>
+          ) : (
+            <StartExploration components={p.components ?? []} appearance="primary" />
+          )}
           {/* Three contexts never mixed: the sample team never links to itself. */}
           {!location.pathname.startsWith(DEMO_HOME) && (
             <DsButtonLink variant="secondary" href={DEMO_HOME}>
@@ -380,16 +415,15 @@ export function BranchesList(p: BranchesListProps) {
       {columns.map((c) => {
         const open = opened.has(c.key);
         const shown = open ? c.rows : c.rows.slice(0, BOARD_CAP);
+        const yours = c.rows.filter((x) => pinned.has(x.r)).length;
+        // An empty column folds to its heading and count, so the filled ones keep their width.
         return (
-          <section className="ex-col" key={c.key} aria-labelledby={`ex-col-${c.key}`}>
+          <section className={c.rows.length ? 'ex-col' : 'ex-col is-empty'} key={c.key} aria-labelledby={`ex-col-${c.key}`}>
             <h2 className="ex-col-h" id={`ex-col-${c.key}`}>
               {c.label} <span className="bl-count">{c.rows.length}</span>
+              {yours > 0 && <span className="ex-col-yours"> · {yours} your turn</span>}
             </h2>
-            {c.rows.length ? (
-              <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>
-            ) : (
-              <p className="t-ui t-muted ex-col-none">None</p>
-            )}
+            {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>}
             {c.rows.length > BOARD_CAP && !open && (
               <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(c.key))}>
                 Show all {c.rows.length}

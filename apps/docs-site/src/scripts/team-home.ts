@@ -8,7 +8,9 @@ import { createElement, Fragment } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { currentContributor, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from './github-session';
 import { setReviewCount } from './shell';
-import { rememberMine } from './needs-you';
+import { countLibraryWaiting } from './library-waiting';
+
+let libraryCounted = false;
 import { rememberWaitingExplorations } from './waiting-counts';
 import { waitingCounts } from '../lib/waiting-counts';
 import { viewerIsDesignLead } from './design-lead';
@@ -173,12 +175,13 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         data = d;
         paint();
         if (!d.loading && !d.failed && d.viewer) {
-          // One source per count (lib/waiting-counts): the explorations that wait for the Explorations badge and
-          // page, the rest for Library review.
-          const counts = waitingCounts(d.needs);
-          rememberWaitingExplorations(counts.explorations);
-          setReviewCount(counts.library);
-          rememberMine(counts.library);
+          // One source per count (lib/waiting-counts): the explorations that wait for the Explorations badge and page.
+          rememberWaitingExplorations(waitingCounts(d.needs).explorations);
+          // Library review's own count, with its own loader and rule (once per Home load).
+          if (!libraryCounted) {
+            libraryCounted = true;
+            void countLibraryWaiting().then((n) => n !== null && setReviewCount(n));
+          }
         }
         if (!d.viewer) setReviewCount(null);
       },

@@ -188,10 +188,3 @@ describe('old Changes links', () => {
   });
 });
 
-describe('the summary sentence', () => {
-  it('counts what is in progress by status', async () => {
-    const { explorationsSummary } = await import('./explorations-page');
-    expect(explorationsSummary(['exploring', 'exploring', 'with-developers', 'shipped'])).toBe('2 exploring, 1 with developers.');
-    expect(explorationsSummary([])).toBe('Nothing in progress right now.');
-  });
-});

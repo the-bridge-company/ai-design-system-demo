@@ -77,7 +77,11 @@ describe('Explorations', () => {
     const { container } = render(createElement(BranchesList, props()));
     const pinned = container.querySelector('.ex-waiting')!;
     expect(pinned.querySelector('h2')!.textContent).toBe('Waiting on you 1');
-    expect(pinned.textContent).toMatch(/Your turn\s·\sSofia sent it for review/);
+    // "Your turn" on its own line, the reason as the line, an accent edge, and no status tag (the turn says it).
+    const turnRow = pinned.querySelector('li.ex-turn')!;
+    expect(turnRow.querySelector('.ex-turn-mark')!.textContent).toBe('Your turn');
+    expect(turnRow.querySelector('.sh-row-line')!.textContent).toBe('Sofia sent it for review');
+    expect(turnRow.textContent).not.toContain('Waiting for lead');
     expect(screen.getAllByText('Exploration 1')).toHaveLength(1);
     // Groups by product, in the products' order.
     expect([...container.querySelectorAll('.bl-group:not(.ex-waiting) h2')].map((h) => h.textContent)).toEqual(['Acme CRM 1', 'Acme Prints 1']);
@@ -136,10 +140,13 @@ describe('Explorations', () => {
     await user.click(screen.getByRole('radio', { name: /Board/ }));
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
     // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
-    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1 · 1 your turn', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    // An empty column folds to its heading and count.
+    expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
     expect(container.querySelector('.ex-waiting')).toBeNull();
     const lead = container.querySelectorAll('.ex-col')[1]!;
-    expect(lead.textContent).toMatch(/Your turn\s·\sSofia sent it for review/);
+    expect(lead.querySelector('.ex-turn .ex-turn-mark')!.textContent).toBe('Your turn');
+    expect(lead.textContent).toContain('Sofia sent it for review');
     expect(container.querySelector('.bl-bar')!.textContent).toContain('15 explorations.');
     const exploring = container.querySelector('.ex-col')!;
     expect(exploring.querySelectorAll('li').length).toBe(10);
@@ -155,6 +162,12 @@ describe('Explorations', () => {
     expect(screen.getByRole('heading', { name: 'Start with one screen' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'See the sample team' }).getAttribute('href')).toBe('/studio/acme-design-demo/bridge-demo-ds/');
     expect(screen.queryByRole('button', { name: /^Status/ })).toBeNull();
+  });
+
+  it('asks to connect first when the team is read only until connected', () => {
+    render(createElement(BranchesList, props({ rows: [], closed: [], viewer: null, connect: 'Connect GitHub' })));
+    expect(screen.getByRole('button', { name: 'Connect GitHub' }).hasAttribute('data-gh-open')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Start an exploration' })).toBeNull();
   });
 
   it('never says the team has nothing when GitHub could not be read', () => {

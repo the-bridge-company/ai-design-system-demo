@@ -467,6 +467,8 @@ function paintRows(rows: Row[], loading: boolean) {
     tooling: siteTooling(),
     readClosed: () => void loadClosed(),
     unread: listUnread,
+    // Read only until connected: the empty state asks to connect first (the rail's own verb).
+    connect: listViewer() ? null : ghVerb(prefersSignIn()),
     components: startComponents ?? readStartComponents(el),
   };
   // Each call's module promise may settle in any order (Vite preloads its styles per call): paint the latest props,

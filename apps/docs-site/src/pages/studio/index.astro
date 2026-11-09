@@ -123,7 +123,8 @@ const onboarding = {
     import { teamLink } from '../../lib/access-view';
     import { isHosted, isHostedSite, teamShareBase } from '../../lib/team-path';
     import { setReviewCount } from '../../scripts/shell';
-    import { rememberMine } from '../../scripts/needs-you';
+    import { countLibraryWaiting } from '../../scripts/library-waiting';
+    let libraryCounted = false;
     import { rememberWaitingExplorations } from '../../scripts/waiting-counts';
     import { waitingCounts } from '../../lib/waiting-counts';
     import { loadHome, type HomeData, type HomeStatic } from '../../scripts/home-data';
@@ -335,12 +336,13 @@ const onboarding = {
         data = d;
         paint();
         if (!d.loading && !d.failed && d.viewer) {
-          // One source per count (lib/waiting-counts): the explorations that wait for the Explorations badge and
-          // page, the rest for Library review.
-          const counts = waitingCounts(d.needs);
-          rememberWaitingExplorations(counts.explorations);
-          setReviewCount(counts.library);
-          rememberMine(counts.library);
+          // One source per count (lib/waiting-counts): the explorations that wait for the Explorations badge and page.
+          rememberWaitingExplorations(waitingCounts(d.needs).explorations);
+          // Library review's own count, with its own loader and rule (once per Home load).
+          if (!libraryCounted) {
+            libraryCounted = true;
+            void countLibraryWaiting().then((n) => n !== null && setReviewCount(n));
+          }
         }
         if (!d.viewer) setReviewCount(null);
       });

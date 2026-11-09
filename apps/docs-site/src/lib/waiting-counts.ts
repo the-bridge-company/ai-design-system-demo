@@ -1,11 +1,12 @@
 // The two counts of what waits on the viewer, one source each (owner rule "one source", 2026-11-09), pure:
 //   - explorations: what the Explorations page pins as "Waiting on you" (the lead's turn, a review asked, a question
 //     from the developers, the PM's word). Its nav badge is on Explorations.
-//   - library: the pieces waiting on the lead (Library review, phase 1). Its nav badge is on Library review.
-// Home's Needs you list holds both: its exploration rows are keyed by exploration (explorationNeedKey), the rest is
-// the library's. Home, Explorations and the nav read and write the same remembered sets (scripts/waiting-counts.ts),
-// so the three never say two numbers. Tested in waiting-counts.test.ts.
-import { badgeRows, type NeedRow } from './home-model';
+//   - library: the pieces waiting on the lead, Library review's own count with its own loader and rule
+//     (scripts/library-waiting). Its nav badge is on Library review.
+// Home's Needs you rows of an exploration are keyed by exploration (explorationOfNeed). Home, Explorations and the nav
+// read and write the same remembered sets (scripts/waiting-counts.ts), so the three never say two numbers. Tested in
+// waiting-counts.test.ts.
+import type { NeedRow } from './home-model';
 
 /** One exploration, wherever it lives: "<product>#<number>", the product empty in the design system's repository. */
 export const explorationKey = (number: number, product?: string | null): string => `${(product ?? '').toLowerCase()}#${number}`;
@@ -25,16 +26,14 @@ export interface WaitingExploration {
   line: string;
 }
 
-/** Home's Needs you list as the two sources: the explorations that wait (once each), and the library count. */
-export function waitingCounts(needs: readonly NeedRow[]): { explorations: WaitingExploration[]; library: number } {
+/** The explorations of Home's Needs you list that wait on the viewer, once each, with Home's words. */
+export function waitingCounts(needs: readonly NeedRow[]): { explorations: WaitingExploration[] } {
   const explorations: WaitingExploration[] = [];
-  const rest: NeedRow[] = [];
   for (const r of needs) {
     const key = explorationOfNeed(r);
-    if (!key) rest.push(r);
-    else if (!explorations.some((e) => e.key === key)) explorations.push({ key, line: r.line });
+    if (key && !explorations.some((e) => e.key === key)) explorations.push({ key, line: r.line });
   }
-  return { explorations, library: badgeRows(rest) };
+  return { explorations };
 }
 
 /**

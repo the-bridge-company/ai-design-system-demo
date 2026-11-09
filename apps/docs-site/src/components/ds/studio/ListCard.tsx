@@ -78,15 +78,20 @@ export interface ListCardProps {
   tags?: ReactNode;
   /** A line under the title: where a library change comes from (LibraryChanges OriginNote). */
   note?: ReactNode;
+  /** A line above the title ("Your turn" on Explorations). */
+  eyebrow?: ReactNode;
+  /** On the card's list item ("ex-turn": what waits on the viewer). */
+  className?: string;
 }
 
-export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note }: ListCardProps) {
+export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note, eyebrow, className }: ListCardProps) {
   const age = captureAgeOf(thumb);
   return (
-    <li className="sh-card-item">
+    <li className={className ? `sh-card-item ${className}` : 'sh-card-item'}>
       <Card interactive padding="none" className="sh-card">
         <BranchThumb spec={thumb} size="card" chip={product ?? null} />
         <div className="sh-card-body">
+          {eyebrow}
           <span className="sh-card-head">
             <Link href={href} variant="subtle" className="t-body sh-card-title" title={title} data-card-primary onClick={onClick} {...linkAttributes}>
               <span className="sh-strong">{title}</span>

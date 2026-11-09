@@ -24,6 +24,16 @@
   gap: var(--space-2) var(--space-3);
 }
 
+/* On a phone Share keeps the title's line, at its end (the header's actions otherwise go under the summary). */
+@media (max-width: 640px) {
+  .st-head-actions:has(> .ql-share) {
+    grid-row: 1;
+    grid-column: 2;
+    order: 0;
+    padding-top: 0;
+  }
+}
+
 .ql-said {
   margin: 0;
   color: var(--color-text-muted);

@@ -1,13 +1,14 @@
 // Studio Quality for a team (multi-team PR 3b): the self-hosted page (pages/studio/quality/index.astro) as an island
-// that reads the team's repository in the browser. A quiet line first (where the data was read, Share), then the page
-// body shared with the self-hosted page (QualityView: the verdict with the lighthouse, the three pillars, one section
-// each). Adoption comes from the team's Bridge snapshot, or says who turns it on. Numbers: lib/team-quality.ts. Repo
+// that reads the team's repository in the browser. Share at the end of the header's title line (HeaderActions), then
+// a quiet line (where the data was read), then the page body shared with the self-hosted page (QualityView: the
+// verdict with the lighthouse, the three pillars, one section each). Adoption comes from the team's Bridge snapshot, or says who turns it on. Numbers: lib/team-quality.ts. Repo
 // content as React text only; repo links through safeUrl.
 import { useEffect, useState } from 'react';
 import { Accordion, AccordionItem, CodeBlock, Link } from '@bridge-ds/react';
 import type { SnapshotAudit } from '@bridge-ds/core';
 import { QualityShare } from './QualityShare';
 import { QualityView } from './QualityView';
+import { HeaderActions } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
 import { loadTeamSnapshot } from '../../../scripts/team-data';
 import { currentViewer, initGitHubConnect } from '../../../scripts/github-session';
@@ -112,8 +113,10 @@ export default function TeamQuality() {
     <div className="ql">
       <div className="tq-top">
         <TeamSourceNote data={data} refreshing={refreshing} onRefresh={retry} />
-        <QualityShare figures={q.figures} sentence={q.sentence} path={studioHref('quality/')} />
       </div>
+      <HeaderActions>
+        <QualityShare figures={q.figures} sentence={q.sentence} path={studioHref('quality/')} />
+      </HeaderActions>
       <QualityView
         verdict={q.verdict}
         pillars={q.pillars}

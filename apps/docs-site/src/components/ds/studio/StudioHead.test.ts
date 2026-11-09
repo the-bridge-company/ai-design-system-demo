@@ -5,10 +5,10 @@
 import '../../../../../../packages/react/src/test/setup';
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { StudioHead } from './StudioHead';
+import { HeaderActions, StudioHead } from './StudioHead';
 import { QuietScene, SECTION_SCENES } from './QuietScene';
 import { setPageSummary } from '../../../lib/page-summary';
 
@@ -139,5 +139,20 @@ describe('Studio pages use the one header pattern', () => {
   it('the header is not a Harbor zone', () => {
     expect(read('../../StudioHeader.astro')).not.toMatch(/class="[^"]*\bzone\b/);
     expect(read('./StudioHead.tsx')).not.toMatch(/className="[^"]*\bzone\b/);
+  });
+
+  it("an island's action goes to the end of the page header's title line (Quality's Share), or stays put without a header", async () => {
+    const page = render(
+      createElement('div', null, createElement(StudioHead, { title: 'Quality' }), createElement('div', { className: 'body' }, createElement(HeaderActions, null, createElement('button', { type: 'button' }, 'Share')))),
+    );
+    await waitFor(() => expect(page.container.querySelector('.st-title-row [data-st-actions] button')?.textContent).toBe('Share'));
+    expect(page.container.querySelector('.body button')).toBeNull();
+    page.unmount();
+    const alone = render(createElement('div', { className: 'body' }, createElement(HeaderActions, null, createElement('button', { type: 'button' }, 'Share'))));
+    await waitFor(() => expect(alone.container.querySelector('.body button')?.textContent).toBe('Share'));
+  });
+
+  it('Quality for a team puts Share in the header, not in the line under it', () => {
+    expect(read('./TeamQuality.tsx')).toMatch(/<HeaderActions>\s*<QualityShare/);
   });
 });

@@ -1055,12 +1055,25 @@ body:has(.cg-bar) {
   margin: 0;
 }
 
-/* A group's summary on its trigger, the shared tag right after it. A conflict says so in danger text. */
+/* A group's trigger: its name, then its summary and shared tag on a second muted line. A conflict says so in danger text. */
+.bl-lib-trigger {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.bl-lib-label {
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
 .bl-lib-meta {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
 }
 
 .bl-lib-sum.is-conflict {
@@ -1091,5 +1104,14 @@ body:has(.cg-bar) {
   .bl-lib-act > a,
   .bl-lib-bar > * {
     flex: 1 1 100%;
+  }
+
+  /* On a phone the origin wraps rather than hiding the exploration's name. */
+  .bl-origin {
+    align-items: flex-start;
+  }
+
+  .bl-origin > span {
+    white-space: normal;
   }
 }

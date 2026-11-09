@@ -569,6 +569,7 @@ export function BranchesList(p: BranchesListProps) {
                 statusKind: x.r.statusKind ?? null,
                 draft: x.r.lifecycle === 'draft',
                 figmaComponent: x.r.figmaComponent ?? null,
+                mine: isYours(x.r, viewer, p.viewerName),
               })}
               renderRow={(x, o) => branchRow(x, undefined, g.rows.some(pickable), o)}
               renderCard={view === 'grid' ? (x) => branchCard(x) : null}

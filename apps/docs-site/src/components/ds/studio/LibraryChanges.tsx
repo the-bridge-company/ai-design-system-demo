@@ -44,6 +44,8 @@ export interface LibraryRowFacts {
   statusKind: string | null;
   draft: boolean;
   figmaComponent: string | null;
+  /** The viewer made it. */
+  mine: boolean;
 }
 
 export interface LibraryChangesProps<X> {
@@ -117,6 +119,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
         figmaComponent: f.figmaComponent,
       }),
       tag: libraryTag({ kind: f.statusKind, draft: f.draft, kept }, p.lead),
+      mine: f.mine,
       row: x,
     };
   });
@@ -182,21 +185,24 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
     return null;
   };
 
-  const meta = (g: LibraryGroup<X>) => (
-    <span className="bl-lib-meta">
-      <span className={g.conflict ? 'bl-lib-sum is-conflict' : 'bl-lib-sum'}>{g.summary}</span>
-      {g.conflict ? (
-        <Badge tone="danger" size="md">
-          Two ways
-        </Badge>
-      ) : (
-        g.tag &&
-        !isOpen(g) && (
-          <Badge tone={g.tag.tone} size="md">
-            {g.tag.label}
+  // The trigger: the component (or exploration) on line 1, its summary and shared tag on line 2, like every row.
+  const trigger = (g: LibraryGroup<X>) => (
+    <span className="bl-lib-trigger">
+      <span className="bl-lib-label">{g.label}</span>
+      <span className="t-ui bl-lib-meta">
+        <span className={g.conflict ? 'bl-lib-sum is-conflict' : 'bl-lib-sum'}>{g.summary}</span>
+        {g.conflict ? (
+          <Badge tone="danger" size="md">
+            Two ways
           </Badge>
-        )
-      )}
+        ) : (
+          g.tag && (
+            <Badge tone={g.tag.tone} size="md">
+              {g.tag.label}
+            </Badge>
+          )
+        )}
+      </span>
     </span>
   );
 
@@ -251,7 +257,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
           onValueChange={onOpen}
         >
           {groups.map((g) => (
-            <AccordionItem key={g.key} value={g.key} title={g.label} meta={meta(g)}>
+            <AccordionItem key={g.key} value={g.key} title={trigger(g)}>
               {g.conflict && action(g)}
               <ul className="sh-rows">{g.items.map(row)}</ul>
               {!g.conflict && action(g)}

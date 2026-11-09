@@ -39,7 +39,7 @@ const ROWS: Row[] = [
 const props = (over: Partial<LibraryChangesProps<Row>> = {}): LibraryChangesProps<Row> => ({
   heading: 'Library',
   rows: ROWS,
-  facts: (r) => ({ key: String(r.n), title: r.title, origin: r.origin, statusKind: r.kind, draft: false, figmaComponent: null }),
+  facts: (r) => ({ key: String(r.n), title: r.title, origin: r.origin, statusKind: r.kind, draft: false, figmaComponent: null, mine: r.origin.kind === 'lead' }),
   renderRow: (r, o) =>
     createElement('li', { key: r.n, 'data-row': r.n }, createElement('span', null, r.title), o.note, o.pill ? createElement('span', { className: 'pill' }, o.pill.label) : null),
   lead: { you: false, name: 'Dana' },

@@ -294,6 +294,7 @@ const item = (key: string, title: string, origin: LibraryOrigin, tag: LibraryTag
   origin,
   component,
   tag,
+  mine: origin.kind === 'lead',
   row: key,
 });
 
@@ -354,7 +355,15 @@ describe('groupByComponent', () => {
   it('another viewer reads the DS lead, not you', () => {
     const g = groupByComponent(LI7, { you: false });
     expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the DS lead');
-    expect(g.at(-1)!.label).toBe("The DS lead's own changes");
+    expect(g.at(-1)!.label).toBe('More from the DS lead');
+  });
+
+  it("the lead never reads 'you' for a change someone else made", () => {
+    const others = LI7.map((i) => ({ ...i, mine: false }));
+    const g = groupByComponent(others, { you: true });
+    expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the DS lead');
+    expect(g.at(-1)!.label).toBe('More from the DS lead');
+    expect(groupByExploration(others, { you: true }).at(-1)!.label).toBe('From the DS lead');
   });
 
   it('one approved exploration and another waiting is no conflict', () => {

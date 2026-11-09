@@ -310,6 +310,8 @@ export interface LibraryItem<R = unknown> {
   origin: LibraryOrigin;
   component: string | null;
   tag: LibraryTag | null;
+  /** The viewer made it: a lead's own change reads "from you", anyone else's "from the DS lead". */
+  mine?: boolean;
   row: R;
 }
 
@@ -343,7 +345,8 @@ function sharedTag<R>(items: LibraryItem<R>[]): LibraryTag | null {
 }
 
 /** Words of the DS lead's own changes: "you" for the lead, else "the DS lead". */
-const leadWords = (you: boolean) => (you ? 'you' : 'the DS lead');
+/** Who made the DS lead's changes, in words: "you" only when the lead viewing made every one of them. */
+const leadWords = <R>(items: readonly LibraryItem<R>[], o: { you: boolean }) => (o.you && items.length > 0 && items.every((i) => i.mine) ? 'you' : 'the DS lead');
 
 /**
  * The lead's view by component (board LI7): one group per component, conflicts first, then what waits on the lead,
@@ -377,11 +380,11 @@ export function groupByComponent<R>(items: readonly LibraryItem<R>[], o: { you: 
     const parts: string[] = [];
     if (explorations.size > 1) parts.push(`asked by ${plural(explorations.size, 'exploration')}${conflict ? ', two different ways' : ''}`);
     else if (fromExplorations[0]) parts.push(`asked by ${fromExplorations[0].origin.name}`);
-    if (fromLead.length) parts.push(`${plural(fromLead.length, 'change')} from ${leadWords(o.you)}`);
+    if (fromLead.length) parts.push(`${plural(fromLead.length, 'change')} from ${leadWords(fromLead, o)}`);
     const single = list.length === 1 ? list[0]! : null;
     const summary =
       single && !fromExplorations.length
-        ? `from ${leadWords(o.you)}${single.origin.kind === 'lead' && single.origin.reason ? ` · ${LEAD_REASON_LABEL[single.origin.reason]}` : ''}`
+        ? `from ${leadWords(list, o)}${single.origin.kind === 'lead' && single.origin.reason ? ` · ${LEAD_REASON_LABEL[single.origin.reason]}` : ''}`
         : parts.join(' and ');
     const target = conflict ? fromExplorations[0] : buildOnce ?? fromExplorations[0];
     groups.push({
@@ -403,7 +406,7 @@ export function groupByComponent<R>(items: readonly LibraryItem<R>[], o: { you: 
     const reasons = [...new Set(quietLead.flatMap((i) => (i.origin.kind === 'lead' && i.origin.reason ? [LEAD_REASON_LABEL[i.origin.reason]] : [])))];
     groups.push({
       key: 'lead-own',
-      label: o.you ? 'Your own changes' : "The DS lead's own changes",
+      label: leadWords(quietLead, o) === 'you' ? 'Your own changes' : 'More from the DS lead',
       items: quietLead,
       summary: [plural(quietLead.length, 'change'), reasons.join(', ')].filter(Boolean).join(' · '),
       conflict: false,
@@ -453,7 +456,7 @@ export function groupByExploration<R>(items: readonly LibraryItem<R>[], o: { you
     const needsLead = lead.some((i) => i.tag?.state === 'needs');
     groups.push({
       key: 'lead',
-      label: o.you ? 'From you' : 'From the DS lead',
+      label: leadWords(lead, o) === 'you' ? 'From you' : 'From the DS lead',
       items: lead,
       summary: plural(lead.length, 'change'),
       conflict: false,

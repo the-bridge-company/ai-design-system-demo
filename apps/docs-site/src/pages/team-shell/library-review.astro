@@ -1,0 +1,16 @@
+---
+// Team shell of Studio Library review (lib/team-shells.ts): served for /studio/<owner>/<repo>/library-review/ by the
+// vercel.json rewrite. The same island as the self-hosted page (components/ds/studio/LibraryReview), reading the team's
+// library changes and explorations in the browser (scripts/library-review-data.ts), the sample team included.
+import '../../styles/studio-home.css';
+import '../../styles/branch-thumb.css';
+import '../../styles/changes.css';
+import '../../styles/quality.css';
+import '../../styles/library-review.css';
+import TeamShell from '../../components/TeamShell.astro';
+import LibraryReview from '../../components/ds/studio/LibraryReview';
+---
+
+<TeamShell route="library-review/" title="Library review" scene="changes" what="library pieces to review" description="What enters this team's library: every piece an exploration asks for and every library change.">
+  <div data-review-count-owner><LibraryReview client:only="react" /></div>
+</TeamShell>

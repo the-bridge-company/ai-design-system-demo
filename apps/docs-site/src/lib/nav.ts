@@ -8,7 +8,7 @@
 //            nav; "Library, view published library" at the bottom of its nav is the way back.
 //
 // Side nav rules (apps/docs-site/DESIGN.md): at most 7 top-level entries per space, one count (the reviews waiting on
-// Changes), two levels at most. The Studio's rail adds two headed groups under its first three entries (option A,
+// the viewer, on Library review, for whoever holds the review right), two levels at most. The Studio's rail adds two headed groups under its first three entries (option A,
 // 2026-11-04): Products (the team's, components/ds/studio/ProductsNav.tsx) and Design system (the entries placed
 // 'design-system' here, then Explorations); Settings ('foot') sits at the foot. A top-level entry is either a page (href) or a group of pages (children); only the group you
 // are in starts expanded. Deeper levels (each component) live as cards on their group page, not in the nav.
@@ -95,6 +95,10 @@ export const STUDIO_CHANGES_HREF = '/studio/changes/';
  * for whoever may publish it. */
 export const STUDIO_BUILDING_HREF = '/studio/building/';
 
+/** Library review: the DS lead's one queue for library pieces (lib/library-review.ts), visible to everyone. Its count is
+ * Home's review count (the one number of the nav), shown to whoever holds the review right only. */
+export const STUDIO_LIBRARY_REVIEW_HREF = '/studio/library-review/';
+
 /** Quality is one page: the contrast gate, token validation, docs completeness and adoption. The old Checks and
  * Adoption pages redirect to it (lib/redirects.ts); each audit report opens under /studio/quality/audits/. */
 export const STUDIO_QUALITY_HREF = '/studio/quality/';
@@ -129,7 +133,8 @@ export function libraryNav(): NavEntry[] {
 export function studioNav(): NavEntry[] {
   return [
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
-    { href: STUDIO_CHANGES_HREF, label: VOCAB.Branches, icon: 'branch', badge: 'reviews', meta: 'Changes in review, explorations, and everything that shipped, by month' },
+    { href: STUDIO_CHANGES_HREF, label: VOCAB.Branches, icon: 'branch', meta: 'Changes in review, explorations, and everything that shipped, by month' },
+    { href: STUDIO_LIBRARY_REVIEW_HREF, label: 'Library review', icon: 'review', badge: 'reviews', meta: 'What enters the library: every piece an exploration asks for, decided one by one or as a list' },
     { href: STUDIO_BUILDING_HREF, label: 'Being built', icon: 'wrench', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release' },
     { href: '/studio/components/', label: 'Components', icon: 'diamonds', branchAware: true, place: 'design-system', meta: 'Status, tokens, code and Figma links per component' },
     { href: '/studio/tokens/', label: 'Tokens', icon: 'grid', branchAware: true, place: 'design-system', meta: 'Edit tokens into a draft, with live preview and guardrails' },

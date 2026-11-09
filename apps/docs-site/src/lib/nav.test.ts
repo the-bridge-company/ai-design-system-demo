@@ -42,7 +42,9 @@ describe('navigation data', () => {
   it('keeps the side nav short: at most 7 top-level entries, two levels', () => {
     for (const space of ['library', 'studio'] as const) {
       const nav = navFor(space);
-      expect(nav.length).toBeLessThanOrEqual(7);
+      // Top-level entries: the ones not placed under a headed group of the Studio rail (Design system) or at its foot.
+      expect(nav.filter((e) => !e.place).length).toBeLessThanOrEqual(7);
+      expect(nav.length).toBeLessThanOrEqual(8);
       for (const e of nav) expect(Boolean(e.href) !== Boolean(e.children), e.label).toBe(true);
     }
   });
@@ -111,20 +113,22 @@ describe('navigation shape', () => {
     expect(found.at(-1)).toMatchObject({ href: '/tokens/', label: 'All tokens', apart: true });
   });
 
-  it('shows one count in the Studio nav: reviews, on Changes', () => {
+  it('shows one count in the Studio nav: reviews, on Library review', () => {
     const counted = navFor('studio').filter((e) => e.badge);
-    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Changes', 'reviews']]);
+    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Library review', 'reviews']]);
   });
 });
 
 describe('studio nav', () => {
   it('lists Home, Branches, Being built, Components, Tokens, Quality, Settings', () => {
-    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Changes', 'Being built', 'Components', 'Tokens', 'Quality', 'Settings']);
+    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Changes', 'Library review', 'Being built', 'Components', 'Tokens', 'Quality', 'Settings']);
   });
 
   it('makes Changes one page with the review count, and drops the pages it replaced', () => {
     const changes = navFor('studio').find((e) => e.label === 'Changes')!;
-    expect(changes).toMatchObject({ href: '/studio/changes/', badge: 'reviews' });
+    expect(changes).toMatchObject({ href: '/studio/changes/' });
+    expect(changes.badge).toBeUndefined();
+    expect(navFor('studio').find((e) => e.label === 'Library review')).toMatchObject({ href: '/studio/library-review/', badge: 'reviews' });
     expect(changes.children).toBeUndefined();
     const hrefs = allPages().map((p) => p.href);
     for (const gone of ['/studio/drafts/', '/studio/branches/', '/studio/reviews/', '/studio/versions/', '/studio/visual-impact/']) expect(hrefs).not.toContain(gone);

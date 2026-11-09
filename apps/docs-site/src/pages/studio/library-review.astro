@@ -1,0 +1,32 @@
+---
+// Studio Library review (boards LR2 to LR14, decided 2026-11-09): the DS lead's one queue for library pieces, visible to
+// everyone. Every piece that would enter the library, whoever asked for it: the library changes (the Library group of
+// Changes) and the pieces explorations recorded that wait on the lead, conflicts included. One island
+// (components/ds/studio/LibraryReview) reads and writes through scripts/library-review-data.ts; the rules are
+// lib/library-review.ts. Two views from the title line, One by one and List (?view=list); filters are checkbox lists
+// (?status=, ?asked=, ?product=). A decision here is the exploration's own decision (core decidePieceOnGitHub), shown on
+// both pages. The nav count next to it is Home's review count, for whoever holds the review right. Team shell:
+// pages/team-shell/library-review.astro.
+import '../../styles/studio-home.css';
+import '../../styles/branch-thumb.css';
+import '../../styles/changes.css';
+import '../../styles/quality.css';
+import '../../styles/library-review.css';
+import Layout from '../../layouts/Layout.astro';
+import StudioHeader from '../../components/StudioHeader.astro';
+import LibraryReview from '../../components/ds/studio/LibraryReview';
+import { lastUpdated } from '../../lib/repo';
+
+const sources = ['docs/GOVERNANCE.md', 'docs/EXPLORATIONS.md'];
+---
+
+<Layout
+  title="Library review"
+  description="What enters the library: every piece an exploration asks for and every library change, decided one by one or as a list."
+  sources={sources}
+  updated={lastUpdated(sources)}
+  wide
+>
+  <StudioHeader title="Library review" scene="changes" />
+  <div data-review-count-owner><LibraryReview client:only="react" /></div>
+</Layout>

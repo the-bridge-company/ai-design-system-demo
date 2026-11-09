@@ -2,8 +2,9 @@
 // the theme (light, dark or System, picked in Settings), copy buttons, the mobile navigation sheet, the Cmd+K command palette, header menus, the "On this
 // page" rail and, in the Studio, the view of a change (scripts/view-change), the nav counts and the GitHub connection.
 import { bindCodeBlocks, bindDialogs, bindTooltips, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
-import { getToken, initGitHubConnect } from './github-session';
-import { loadReviewNeedsYou, rememberedMine, type QueuePullFull } from './needs-you';
+import { currentContributor, getToken, initGitHubConnect } from './github-session';
+import { loadReviewNeedsYou, rememberedMine, viewerRole, type QueuePullFull } from './needs-you';
+import { viewerDecidesExplorations } from './design-lead';
 import { initMaintainer } from './maintainer';
 import { pointLinksAtTeam } from './team-links';
 import { initVanillaControls } from './vanilla-controls';
@@ -612,14 +613,28 @@ export function draftCount(): number {
   }
 }
 
-/** The Changes badge: the changes in review that wait on the viewer's decision (scripts/needs-you), hidden at 0. */
+/**
+ * The Library review badge: Home's review count, the changes in review that wait on the viewer's decision
+ * (scripts/needs-you), hidden at 0. Only whoever holds the review right sees it (a design lead, a reviewer): a designer
+ * reads Library review without a number, the decisions are not hers.
+ */
 export const setReviewCount = (n: number | null) => setCount('reviews', n);
 
+/** The viewer holds the review right here, the rule of Home's review queue and of Library review's buttons. */
+function reviewsHere(): boolean {
+  try {
+    return viewerRole() === 'reviewer' || viewerDecidesExplorations();
+  } catch {
+    return false;
+  }
+}
+
 function setCount(kind: 'drafts' | 'reviews', n: number | null) {
-  // The nav shows one number, on Changes: the changes in review that wait on the viewer (hidden at 0). Its link reads
-  // "Changes, 17 waiting for a review", never the clause without its number.
+  // The nav shows one number, on Library review: the changes in review that wait on the viewer (hidden at 0), for
+  // whoever holds the review right. Its link reads "Library review, 17 waiting for a review", never the clause alone.
+  const shown = kind === 'reviews' ? Boolean(n) && reviewsHere() : Boolean(n);
   document.querySelectorAll<HTMLElement>(`[data-nav-count="${kind}"]`).forEach((el) => {
-    el.hidden = !n;
+    el.hidden = !shown;
     const v = el.querySelector('[data-nav-count-value]');
     if (v) v.textContent = n ? String(n) : '';
     const said = el.querySelector('[data-nav-count-label]');
@@ -681,9 +696,10 @@ function initStudio() {
       // Overview's rule (lib/overview-todo reviewNeedsYou).
       if (!pageCounts)
         initGitHubConnect((v) => {
-          // Signed out of GitHub nothing waits on you here (an email member's count comes from their home).
+          // Signed out of GitHub nothing waits on you here; an email member's count comes from their home (the one
+          // Home last counted on this team, rememberedMine), never zero for want of a GitHub sign-in.
           if (!v) {
-            setCount('reviews', null);
+            setCount('reviews', currentContributor() ? rememberedMine() : null);
             return;
           }
           void loadReviewNeedsYou(f.data.map((p) => ({ ...p, state: p.state ?? 'open' })) as unknown as QueuePullFull[])

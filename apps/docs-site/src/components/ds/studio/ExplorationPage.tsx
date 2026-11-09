@@ -1219,7 +1219,7 @@ function ScreenLine({ screen, onOpen }: { screen: string | null; onOpen: () => v
         </>
       ) : (
         <>
-          Opens on the product's first page.{' '}
+          Bridge picks the screen it opens on.{' '}
           <Button variant="link" size="sm" onClick={onOpen}>
             Show this screen
           </Button>
@@ -1231,7 +1231,7 @@ function ScreenLine({ screen, onOpen }: { screen: string | null; onOpen: () => v
 
 /**
  * "Show this screen": the address of the changed screen, pasted from the preview (core explorationScreenFrom keeps
- * what comes after the domain). Save writes it on the exploration; "Use the first page" takes it away.
+ * what comes after the domain). Save writes it on the exploration; "Let Bridge pick" takes it away.
  */
 function ScreenDialog({ open, screen, onOpenChange, onSave }: { open: boolean; screen: string | null; onOpenChange: (open: boolean) => void; onSave: (input: string | null) => Promise<void> }) {
   const formId = useId();
@@ -1269,7 +1269,7 @@ function ScreenDialog({ open, screen, onOpenChange, onSave }: { open: boolean; s
           <ButtonGroup align="end">
             {screen && (
               <Button variant="ghost" disabled={busy} onClick={() => save(null)}>
-                Use the first page
+                Let Bridge pick
               </Button>
             )}
             <DialogClose render={<Button variant="secondary" disabled={busy} />}>Cancel</DialogClose>

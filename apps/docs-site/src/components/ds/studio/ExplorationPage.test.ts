@@ -646,13 +646,13 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
   it('Show this screen: one quiet line under the preview for who keeps it, a dialog that takes the address', async () => {
     const onSave = vi.fn(async (_: string | null) => 'The preview opens on this screen now. Its picture follows in a few minutes.');
     paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', screen: { value: null, onSave } });
-    expect(screen.getByText(/Opens on the product's first page/)).toBeTruthy();
+    expect(screen.getByText(/Bridge picks the screen it opens on/)).toBeTruthy();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Show this screen' }));
     const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
     await expectNoAxeViolations(dialog);
-    // Nothing chosen yet: no way to go back to the first page, and an empty field says what to do.
-    expect(within(dialog).queryByRole('button', { name: 'Use the first page' })).toBeNull();
+    // Nothing chosen yet: no way to let Bridge pick again, and an empty field says what to do.
+    expect(within(dialog).queryByRole('button', { name: 'Let Bridge pick' })).toBeNull();
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
     expect(await within(dialog).findByText('Paste the address of the screen, from the preview.')).toBeTruthy();
     await user.type(within(dialog).getByRole('textbox', { name: 'Screen address' }), 'https://x.pages.dev/#/orders/12');
@@ -661,15 +661,15 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('The preview opens on this screen now. Its picture follows in a few minutes.')).toBeTruthy();
   });
 
-  it('Show this screen once chosen: the address, Change, and the way back to the first page', async () => {
-    const onSave = vi.fn(async (_: string | null) => "The preview opens on the product's first page again.");
+  it('Show this screen once chosen: the address, Change, and the way back to Bridge picking', async () => {
+    const onSave = vi.fn(async (_: string | null) => 'Bridge picks the screen it opens on again.');
     paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave } });
     expect(screen.getByText('/#/orders/12')).toBeTruthy();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Change' }));
     const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
     expect((within(dialog).getByRole('textbox', { name: 'Screen address' }) as HTMLInputElement).value).toBe('/#/orders/12');
-    await user.click(within(dialog).getByRole('button', { name: 'Use the first page' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Let Bridge pick' }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(null));
   });
 

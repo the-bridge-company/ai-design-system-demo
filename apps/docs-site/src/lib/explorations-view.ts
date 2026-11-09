@@ -517,5 +517,5 @@ export function withTaskRow<R extends Pick<ExplorationRow, 'status' | 'statusLab
 
 /** "Show this screen" saved: what the person reads. */
 export const SCREEN_SAVED_LINE = 'The preview opens on this screen now. Its picture follows in a few minutes.';
-/** "Use the first page": what the person reads. */
-export const SCREEN_CLEARED_LINE = "The preview opens on the product's first page again.";
+/** "Let Bridge pick": what the person reads. */
+export const SCREEN_CLEARED_LINE = 'Bridge picks the screen it opens on again.';

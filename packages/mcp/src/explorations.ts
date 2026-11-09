@@ -48,6 +48,11 @@ import {
   startExplorationOnGitHub,
   startPageBrief,
   startPageOf,
+  explorationScreenFrom,
+  explorationScreenOf,
+  previewAtScreen,
+  setExplorationScreenOnGitHub,
+  SCREEN_PROBLEM,
   type BridgeConfig,
   type Exploration,
   type ExplorationSource,
@@ -691,16 +696,31 @@ export function saveFilesOf(files: SaveFileInput[]): CommitFile[] {
 }
 
 /**
+ * The `screen` of a save: the place in the product's preview the step changed ("/#/orders/12"), a hash route or a query
+ * given its "/", Bridge's own parameters left out; empty or null takes it away. A whole address is refused: only the
+ * place inside the preview, never another site.
+ */
+export function saveScreenOf(v: string | null): string | null {
+  if (v === null || !v.trim()) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v.trim()) || v.trim().startsWith('//')) throw new Error(`screen takes the place inside the preview only, without its domain: "/#/orders/12", not ${JSON.stringify(v.trim().slice(0, 80))}.`);
+  const s = explorationScreenFrom(v);
+  if (!s) throw new Error(`screen: ${SCREEN_PROBLEM.replace(' or the whole address copied from the browser', '')} (a path starting with /, 200 characters at most, no spaces).`);
+  return s;
+}
+
+/**
  * bridge_save_exploration: one commit with the given files on the exploration's explore/* branch, fast-forwarded,
  * never forced, never another branch. It goes through the session's GitHub client: the person's own access, or for a
  * designer who joined with their email the team's Bridge proxy (its copy policy decides). Returns the commit and where
  * to see it.
  */
-export async function saveExploration(ctx: BridgeContext, a: { ref: string; message: string; files?: SaveFileInput[] | undefined; notes?: NotesUpdate | undefined }) {
+export async function saveExploration(ctx: BridgeContext, a: { ref: string; message: string; files?: SaveFileInput[] | undefined; notes?: NotesUpdate | undefined; screen?: string | null | undefined }) {
   const withNotes = !updateEmpty(a.notes);
+  // The screen it changed: a place in the product's preview, never another site. Empty takes it away.
+  const screen = a.screen === undefined ? undefined : saveScreenOf(a.screen);
   if (a.notes?.figmaPage !== undefined && !figmaPageLink(a.notes.figmaPage)) throw new Error('notes.figmaPage takes the figma.com link of the page.');
   // Notes alone are a save too (a decision taken, an edge case covered): the files then may be none.
-  const files = withNotes && !a.files?.length ? [] : saveFilesOf(a.files ?? []);
+  const files = (withNotes || screen !== undefined) && !a.files?.length ? [] : saveFilesOf(a.files ?? []);
   const message = a.message.trim();
   if (!message) throw new Error('Say what this step changes in the message, in a few words ("Orders: success toast when an order ships").');
   const at = await located(ctx, a.ref.replace(/^\s*continue\s+bridge\s+exploration\s+/i, '').replace(/\s+".*$/, '').trim());
@@ -732,22 +752,29 @@ export async function saveExploration(ctx: BridgeContext, a: { ref: string; mess
     if (sent) sent.content = md;
     else if (md !== before) files.push({ path, content: md });
   } else if (sentNoteFiles.length) notes = parseExplorationNotes(sentNoteFiles[0]!.content);
-  if (!files.length) throw new Error('Nothing changed: the notes already say this, and no file was sent.');
-  const res = await at.gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: p.headRef, message, files });
+  const was = explorationScreenOf(e?.screen);
+  const screenChanges = screen !== undefined && screen !== was;
+  if (!files.length && !screenChanges) throw new Error(screen !== undefined ? 'Nothing changed: the exploration already shows this screen, the notes already say this, and no file was sent.' : 'Nothing changed: the notes already say this, and no file was sent.');
+  const res = files.length ? await at.gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: p.headRef, message, files }) : null;
+  // The screen goes in the exploration's description: Studio's Open the preview and its capture land there.
+  if (screenChanges) await setExplorationScreenOnGitHub(at.gh, p.number, screen);
+  const shown = screen === undefined ? was : screen;
   const ref = explorationRefLabel({ number: p.number, product: at.product?.key, repo: at.repo });
-  const preview = at.product ? branchPreviewUrl(at.product.preview, p.headRef) : null;
+  const base = at.product ? branchPreviewUrl(at.product.preview, p.headRef) : null;
+  const preview = base ? previewAtScreen(base, shown) : null;
   const removed = files.filter((f) => f.content === null).length;
   return {
     status: 'saved' as const,
     ref,
     branch: p.headRef,
-    commit: res.sha,
+    ...(res ? { commit: res.sha } : {}),
     saved: files.length - removed,
     removed,
     url: p.url,
     preview,
+    screen: shown,
     ...(notes ? { notes: notesOut(notes) } : {}),
-    next: `Saved on ${ref}. ${preview ? `The preview updates in a few minutes: ${preview}` : 'Its previews rebuild in a few minutes.'} Tell the designer in one plain sentence what changed and where to look; nothing reached the developers or the library.${sentNoteFiles.length ? ` You wrote the note file yourself: Bridge rewrote it in its format. Next save, pass the notes in notes (decisions, edgeCases, nextStep...), never as ${sentNoteFiles[0]!.path} in files.` : notes ? '' : ' Next save, update the notes too (notes: decisions taken, edge cases covered or open, the next step), so whoever carries on knows where it stands.'}`,
+    next: `Saved on ${ref}. ${preview ? `The preview updates in a few minutes: ${preview}` : 'Its previews rebuild in a few minutes.'} Tell the designer in one plain sentence what changed and where to look; nothing reached the developers or the library.${sentNoteFiles.length ? ` You wrote the note file yourself: Bridge rewrote it in its format. Next save, pass the notes in notes (decisions, edgeCases, nextStep...), never as ${sentNoteFiles[0]!.path} in files.` : notes ? '' : ' Next save, update the notes too (notes: decisions taken, edge cases covered or open, the next step), so whoever carries on knows where it stands.'}${shown ? '' : ' Also pass screen next save: the address of the screen you changed in the preview (/#/orders/12), so Studio opens it there.'}`,
   };
 }
 

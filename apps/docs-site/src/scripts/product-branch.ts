@@ -150,7 +150,7 @@ export { atRoute };
 export const withToolbar =
   (r: ExplorationRow, route?: string | null) =>
   (url: string): string | null =>
-    safeUrl(atRoute(tryInProductUrl(url, r.number, null, copyRepoOf(r)), route)) || null;
+    safeUrl(atRoute(tryInProductUrl(url, r.number, null, copyRepoOf(r)), route ?? r.screen)) || null;
 
 
 /** The design team's copy an exploration lives in, else null (the design system's or the developers' own repository). */

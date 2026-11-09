@@ -54,6 +54,31 @@ describe('bridge_save_exploration', () => {
     expect(shop.log.find((l) => l.method === 'POST' && l.path === '/git/commits')!.body.message).toBe('Orders: success toast when an order ships');
   });
 
+  it('keeps the screen the step changed, so the preview link and Studio open there; alone it saves too', async () => {
+    const { shop, rw } = setup();
+    const ctx = await rw();
+    const r = await explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Orders: timeline on top', files: [{ path: 'src/orders/OrderList.tsx', content: 'export const OrderList = () => <Timeline />;\n' }], screen: '#/orders/XGZFHY3Z' });
+    expect(r).toMatchObject({ status: 'saved', screen: '/#/orders/XGZFHY3Z', preview: 'https://shop-git-explore-order-toast-acme.vercel.app/#/orders/XGZFHY3Z' });
+    expect(r.next).not.toContain('Also pass screen');
+    expect(shop.pulls[0]!.body).toContain('"screen":"/#/orders/XGZFHY3Z"');
+    // The screen alone: only the description changes, no commit.
+    const head = shop.refs.get('explore/order-toast');
+    const alone = await explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Open on a new workspace', screen: '/?workspace=new#/' });
+    expect(alone).toMatchObject({ saved: 0, screen: '/?workspace=new#/', preview: 'https://shop-git-explore-order-toast-acme.vercel.app/?workspace=new#/' });
+    expect(alone).not.toHaveProperty('commit');
+    expect(shop.refs.get('explore/order-toast')).toBe(head);
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Same', screen: '/?workspace=new#/' })).rejects.toThrow(/already shows this screen/);
+    // Never another site, never a whole address.
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'x', screen: 'https://evil.example/#/x' })).rejects.toThrow(/without its domain/);
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'x', screen: '//evil.example/x' })).rejects.toThrow(/without its domain/);
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'x', screen: 'orders list' })).rejects.toThrow(/screen:/);
+    // Without one, the answer asks for it.
+    const plain = await explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Clear it', screen: '' });
+    expect(plain.screen).toBeNull();
+    const next = await explorations.saveExploration(ctx, { ref: 'shop#1', message: 'More', files: [{ path: 'a.ts', content: 'a' }] });
+    expect(next.next).toContain('Also pass screen');
+  });
+
   it('refuses CI, hosting settings, node_modules, paths outside the repository and unclear entries, before any write', async () => {
     const { shop, rw } = setup();
     const ctx = await rw();

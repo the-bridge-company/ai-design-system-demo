@@ -87,4 +87,13 @@ describe("an exploration in the design team's copy opens with the copy named (br
     expect(atRoute(`${preview}?bridge=9`, '//evil.example/x')).toBe(`${preview}?bridge=9`);
     expect(atRoute(`${preview}?bridge=9`, '/?bridge=1')).toBe(`${preview}?bridge=9`);
   });
+
+  it('opens on the screen the exploration chose, with the copy named before the hash route', () => {
+    repos = [{ product: shop, repo: COPY }];
+    const row = { ...r, number: 1, product: 'admin-app', screen: '/#/orders/XGZFHY3Z' } as ExplorationRow;
+    expect(withToolbar(row)(preview)).toBe(`${preview}?bridge=1&bridge-repo=${encodeURIComponent(COPY)}#/orders/XGZFHY3Z`);
+    expect(withToolbar({ ...row, screen: '/?workspace=new#/' })(preview)).toBe(`${preview}?bridge=1&bridge-repo=${encodeURIComponent(COPY)}&workspace=new#/`);
+    // A page given for this link wins (the exploration page passes the screen first, then the capture's page).
+    expect(withToolbar(row, '/plans')(preview)).toBe(`${preview}plans?bridge=1&bridge-repo=${encodeURIComponent(COPY)}`);
+  });
 });

@@ -56,6 +56,12 @@ import {
   withDoneExploring,
   withPiecesRecord,
   mergeExplorationNotes,
+  setExplorationScreenOnGitHub,
+  explorationScreenOf,
+  explorationScreenFrom,
+  previewAtScreen,
+  withExplorationScreen,
+  EXPLORATION_SCREEN_MAX,
   type MissingPiece,
 } from '../src/index';
 import { EXPLORATION_STARTING_POINT, explorationStartingPoint } from '../src/explorations';
@@ -366,6 +372,53 @@ describe('done exploring and archive on GitHub', () => {
     await expect(renameExplorationOnGitHub(gh.client(''), 1, 'New')).rejects.toThrow(/needs a GitHub token/);
     gh.pulls[0].state = 'closed';
     await expect(renameExplorationOnGitHub(c, 1, 'New')).rejects.toThrow(/only an open exploration is renamed/);
+  });
+
+  it('the screen it changed: kept in the block, set and taken away on GitHub, never another site', async () => {
+    const gh = fakeGitHub();
+    const c = gh.client();
+    await startExplorationOnGitHub(c, { name: 'Order timeline', purpose: 'Where an order stands.', screen: '/#/orders/XGZFHY3Z' }, settings);
+    expect(parseExplorationBody(gh.pulls[0].body)!.screen).toBe('/#/orders/XGZFHY3Z');
+    const r = await setExplorationScreenOnGitHub(c, 1, '/?workspace=new#/');
+    expect(r).toMatchObject({ number: 1, screen: '/?workspace=new#/', changed: true });
+    expect(parseExplorationBody(gh.pulls[0].body)).toMatchObject({ name: 'Order timeline', purpose: 'Where an order stands.', screen: '/?workspace=new#/' });
+    const body = gh.pulls[0].body;
+    expect((await setExplorationScreenOnGitHub(c, 1, '/?workspace=new#/')).changed).toBe(false);
+    expect(gh.pulls[0].body).toBe(body);
+    // Done exploring and Back to exploring keep it.
+    expect(parseExplorationBody(withDoneExploring(body, { branch: 'explore/order-timeline', doneAt: '2026-11-09T10:00:00Z' }))!.screen).toBe('/?workspace=new#/');
+    expect(parseExplorationBody(withoutDoneExploring(body, '2026-11-09T10:00:00Z'))!.screen).toBe('/?workspace=new#/');
+    expect((await listExplorationsOnGitHub(c, settings))[0]!.screen).toBe('/?workspace=new#/');
+    await expect(setExplorationScreenOnGitHub(c, 1, 'https://evil.example/x')).rejects.toThrow(/address of the screen in the preview/);
+    expect((await setExplorationScreenOnGitHub(c, 1, null)).changed).toBe(true);
+    expect(parseExplorationBody(gh.pulls[0].body)!.screen).toBeUndefined();
+    await expect(setExplorationScreenOnGitHub(gh.client(''), 1, '/x')).rejects.toThrow(/needs a GitHub token/);
+    gh.pulls[0].state = 'closed';
+    await expect(setExplorationScreenOnGitHub(c, 1, '/x')).rejects.toThrow(/only an open exploration changes its screen/);
+  });
+
+  it('the screen: only a place in the preview, read from what people paste, put on preview links before the hash', () => {
+    for (const ok of ['/', '/#/orders/XGZFHY3Z', '/?workspace=new#/', '/contacts/31/show', '/settings/billing?tab=plans']) expect(explorationScreenOf(ok)).toBe(ok);
+    for (const bad of ['', 'orders', '//evil.example/x', 'https://evil.example/', 'javascript:alert(1)', '/a b', '/"x"', '/\\evil', `/${'a'.repeat(EXPLORATION_SCREEN_MAX)}`, 12, null]) expect(explorationScreenOf(bad)).toBeNull();
+    // A block that holds a bad one never writes it back.
+    const body = explorationPrBody({ name: 'X', purpose: '', screen: '//evil.example/x' }, { owner: 'acme', repo: 'ds', packages: [], apps: {} });
+    expect(parseExplorationBody(body)!.screen).toBeUndefined();
+    expect(parseExplorationBody(withExplorationScreen(body, 'https://evil.example/'))!.screen).toBeUndefined();
+    // What a designer pastes: the whole address from the browser, a hash route, a query. Bridge's own parameters go.
+    expect(explorationScreenFrom('https://explore-x.acme-prints-design.pages.dev/?bridge=12&bridge-repo=acme%2Fprints#/orders/XGZFHY3Z')).toBe('/#/orders/XGZFHY3Z');
+    expect(explorationScreenFrom('https://crm.pages.dev/?workspace=new&bridge=3#/')).toBe('/?workspace=new#/');
+    expect(explorationScreenFrom('#/deals')).toBe('/#/deals');
+    expect(explorationScreenFrom('?tab=new')).toBe('/?tab=new');
+    expect(explorationScreenFrom('  ')).toBeNull();
+    expect(explorationScreenFrom('ftp://x/y')).toBeNull();
+    // On a preview link: the query goes before the hash, Bridge's toolbar parameters stay, the screen never overrides them.
+    const link = 'https://explore-x.acme-prints-design.pages.dev/?bridge=12&bridge-repo=acme%2Fprints';
+    expect(previewAtScreen(link, '/#/orders/XGZFHY3Z')).toBe(`${link}#/orders/XGZFHY3Z`);
+    expect(previewAtScreen(link, '/?workspace=new#/')).toBe(`${link}&workspace=new#/`);
+    expect(previewAtScreen('https://x.pages.dev/', '/contacts/31/show')).toBe('https://x.pages.dev/contacts/31/show');
+    expect(previewAtScreen(link, '/?bridge=1#/x')).toBe(`${link}#/x`);
+    expect(previewAtScreen(link, '//evil.example/x')).toBe(link);
+    expect(previewAtScreen(link, null)).toBe(link);
   });
 
   it('rename and back to exploring: pure body and title rules', () => {

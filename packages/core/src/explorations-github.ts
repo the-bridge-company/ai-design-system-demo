@@ -24,6 +24,8 @@ import {
   renamedExplorationTitle,
   withDecision,
   withExplorationName,
+  withExplorationScreen,
+  explorationScreenOf,
   type Exploration,
   type ExplorationSource,
   type ExplorationStatus,
@@ -77,6 +79,8 @@ export interface ExplorationSummary {
   /** Where it was started and the AI agent that started it, when the exploration block says so. */
   source?: ExplorationSource | undefined;
   agent?: string | undefined;
+  /** The screen it changed in the product's preview (Exploration.screen), when one is set. */
+  screen?: string | undefined;
   updatedAt: string;
   /** Head commit of the branch. */
   headSha: string;
@@ -111,6 +115,7 @@ export function explorationSummary(p: PullRequestSummary, _owner: string, _repo:
     author: e?.author ?? p.author,
     ...(e?.source ? { source: e.source } : {}),
     ...(e?.agent ? { agent: e.agent } : {}),
+    ...(explorationScreenOf(e?.screen) ? { screen: explorationScreenOf(e?.screen)! } : {}),
     updatedAt: p.updatedAt,
     headSha: p.headSha,
     previews: previewLinks(s.apps, { branch: p.headRef, pr: p.number, sha: p.headSha }),
@@ -435,6 +440,27 @@ export async function renameExplorationOnGitHub(gh: GitHubClient, ref: string | 
   const title = renamedExplorationTitle(p.title, next);
   await gh.updatePullRequest(p.number, { title, body: withExplorationName(p.body, next) });
   return { number: p.number, url: p.url, branch: p.headRef, name: next, title };
+}
+
+/** What a person reads when the screen they gave is not a place in the product's preview. */
+export const SCREEN_PROBLEM = 'Give the address of the screen in the preview, for example /#/orders/12 or the whole address copied from the browser.';
+
+/**
+ * Sets the screen an exploration changed (Exploration.screen), or takes it away with null: Open the preview and its
+ * capture land there. Only its body's block changes; a screen it already has writes nothing. Refused on a closed or
+ * shipped one.
+ */
+export async function setExplorationScreenOnGitHub(gh: GitHubClient, ref: string | number, screen: string | null): Promise<{ number: number; url: string; branch: string; screen: string | null; changed: boolean }> {
+  const next = screen === null ? null : explorationScreenOf(screen);
+  if (screen !== null && !next) throw new GitHubError(422, SCREEN_PROBLEM);
+  if (!gh.canWrite) throw new GitHubError(401, 'Choosing the screen of an exploration needs a GitHub token (pull requests: write).');
+  const p = await findExplorationOnGitHub(gh, ref);
+  if (p.state !== 'open') throw new GitHubError(422, `#${p.number} is ${p.state === 'merged' ? 'shipped' : 'closed'}: only an open exploration changes its screen.`);
+  const was = explorationScreenOf(parseExplorationBody(p.body)?.screen);
+  if (!parseExplorationBody(p.body)) throw new GitHubError(422, `#${p.number} has no Bridge description to keep its screen in.`);
+  if (was === next) return { number: p.number, url: p.url, branch: p.headRef, screen: next, changed: false };
+  await gh.updatePullRequest(p.number, { body: withExplorationScreen(p.body, next) });
+  return { number: p.number, url: p.url, branch: p.headRef, screen: next, changed: true };
 }
 
 /**

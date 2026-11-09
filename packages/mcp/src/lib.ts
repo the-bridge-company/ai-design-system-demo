@@ -46,6 +46,8 @@ export {
   productMarks,
   productsOf,
   saveExplorationNotesOnGitHub,
+  setExplorationScreenOnGitHub,
+  explorationScreenOf,
   startExplorationOnGitHub,
   type EdgeCase,
   type Exploration,

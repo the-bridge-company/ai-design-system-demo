@@ -5,11 +5,13 @@
 // lead, and the lead says it looks right: every step goes through Bridge's proxy as them (api/contribute runAsMember),
 // so GitHub shows Bridge's App acting with their "Requested by <name> through Bridge." line and the exploration block
 // names them (member, memberName). Their "Where it stands" notes are saved the way their Claude session saves them
-// (bridge_save_exploration `notes`), on an exploration already there too. This reads the plan an admin sends (scripts/seed-demo-explorations.mjs) and says
+// (bridge_save_exploration `notes`), on an exploration already there too, and so is the screen it changed (`screen`:
+// where its preview and its capture open, bridge_save_exploration `screen`). This reads the plan an admin sends (scripts/seed-demo-explorations.mjs) and says
 // what is wrong with it, before anything is written; api/contribute action `seed-demo-explorations` does the steps.
 //
 // Pure. Covered by src/lib/demo-explorations.test.ts.
 import { DEMO_MEMBERS, RETIRED_DEMO_MEMBERS, type DemoMember } from './demo-members.js';
+import { screenOf } from './exploration-member.js';
 
 /** Where an exploration of the plan ends up: still being explored, waiting for a lead, or handed to the developers. */
 export type SeedState = 'exploring' | 'waiting-for-lead' | 'done';
@@ -48,6 +50,11 @@ export interface SeedItem {
   state: SeedState;
   /** "Where it stands", as the member's Claude session saves it (bridge_save_exploration `notes`), when the plan has some. */
   notes?: SeedNotes;
+  /**
+   * The screen it changed in the product's preview ("/#/orders/12"), as the member's Claude session saves it
+   * (bridge_save_exploration `screen`): Open the preview and its capture land there.
+   */
+  screen?: string;
 }
 
 /** One edge case of the notes (core EdgeCase): a component's state, covered or not, with a short note. */
@@ -230,6 +237,8 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
       files.push({ path, content: file.content });
     }
     const notes = parseSeedNotes(o.notes, at, problems);
+    const screen = o.screen === undefined ? undefined : screenOf(o.screen);
+    if (o.screen !== undefined && !screen) problems.push(`${at}: screen is the place of the changed screen in the preview, starting with / ("/#/orders/12"), 200 characters at most, without the domain.`);
     if (product && member && name && m && SEED_STATES.includes(state as SeedState)) {
       items.push({
         product,
@@ -244,6 +253,7 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
         files,
         state: state as SeedState,
         ...(notes ? { notes } : {}),
+        ...(screen ? { screen } : {}),
       });
     }
   });

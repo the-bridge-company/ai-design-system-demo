@@ -40,3 +40,33 @@ describe('the page a capture opens', () => {
     expect(hintedTarget(account, 'https://x.pages.dev', ['billing', 'account'])).toBe('https://x.pages.dev/billing');
   });
 });
+
+import { captureTarget } from './private-shots.mjs';
+import { atScreen, bodyScreenOf, shotDecision } from './preview-shots.mjs';
+
+describe('the screen an exploration chose', () => {
+  it('is where the capture opens, nowhere else; without one, the root and the hints', () => {
+    expect(captureTarget('https://explore-x.acme-prints-design.pages.dev/', { screen: '/#/orders/XGZFHY3Z', hints: ['orders'] })).toEqual({
+      url: 'https://explore-x.acme-prints-design.pages.dev/#/orders/XGZFHY3Z',
+      options: { crawl: false, hints: [] },
+      at: '/#/orders/XGZFHY3Z',
+    });
+    expect(captureTarget('https://x.pages.dev/', { screen: '/?workspace=new#/' }).url).toBe('https://x.pages.dev/?workspace=new#/');
+    expect(captureTarget('https://x.pages.dev/', { screen: null, hints: ['billing'] })).toEqual({ url: 'https://x.pages.dev/', options: { hints: ['billing'] }, at: null });
+    // Another site is never opened.
+    expect(captureTarget('https://x.pages.dev/', { screen: '//evil.example/x', hints: [] }).url).toBe('https://x.pages.dev/');
+  });
+
+  it('reads the screen from the exploration block, and captures again when another one is chosen', () => {
+    const body = (screen) => `## Exploration: X\n\n<!-- bridge-exploration ${JSON.stringify({ name: 'X', purpose: '', screen })} -->`;
+    expect(bodyScreenOf(body('/#/deals'))).toBe('/#/deals');
+    expect(bodyScreenOf(body('https://evil.example/'))).toBeNull();
+    expect(bodyScreenOf('no block')).toBeNull();
+    expect(atScreen('https://x.pages.dev/?bridge=1', '/?w=new#/')).toBe('https://x.pages.dev/?bridge=1&w=new#/');
+    const stored = { sha: 'a', image: 'a.webp', at: '/#/deals' };
+    expect(shotDecision({ sha: 'a', stored, screen: '/#/deals' }).action).toBe('skip');
+    expect(shotDecision({ sha: 'a', stored, screen: '/#/contacts/31/show' }).action).toBe('capture');
+    expect(shotDecision({ sha: 'a', stored: { sha: 'a', image: 'a.webp' } }).action).toBe('skip');
+    expect(shotDecision({ sha: 'a', stored: { sha: 'a', image: 'a.webp' }, screen: '/#/deals' }).action).toBe('capture');
+  });
+});

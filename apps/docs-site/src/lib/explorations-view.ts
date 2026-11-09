@@ -116,6 +116,8 @@ export interface ExplorationRow {
    */
   repo?: string;
   product?: string;
+  /** The screen it changed in the product's preview (core Exploration.screen): its preview links open there. */
+  screen?: string | null;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -265,6 +267,7 @@ export function explorationRows(
         author: s.author,
         source: s.source ?? null,
         agent: s.agent ?? null,
+        ...(s.screen ? { screen: s.screen } : {}),
         updatedAt: s.updatedAt,
         previews: s.previews.map((v) => ({ ...v, label: previewName(v.app as keyof PreviewApps, v.label) })),
         headSha: p.head.sha,
@@ -511,3 +514,8 @@ export function withTaskRow<R extends Pick<ExplorationRow, 'status' | 'statusLab
   const status: ExplorationStatus | null = next === 'waiting-for-code' ? 'ready' : next === 'being-built' || next === 'in-review' || next === 'approved' ? 'building' : next === 'shipped' ? 'shipped' : null;
   return status ? { ...r, status, statusLabel: LIFECYCLE_LABEL[next] } : r;
 }
+
+/** "Show this screen" saved: what the person reads. */
+export const SCREEN_SAVED_LINE = 'The preview opens on this screen now. Its picture follows in a few minutes.';
+/** "Let Bridge pick": what the person reads. */
+export const SCREEN_CLEARED_LINE = 'Bridge picks the screen it opens on again.';

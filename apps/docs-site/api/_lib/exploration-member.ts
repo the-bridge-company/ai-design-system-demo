@@ -53,3 +53,27 @@ export function withMemberInBlock(body: string, who: { ref: string; name: string
   const block = `<!-- ${MARK} ${JSON.stringify(e).replace(/-->/g, '--\\u003e')} -->`;
   return body.slice(0, m.index) + block + body.slice(m.index + m[0].length);
 }
+
+/** Longest exploration screen, as core's EXPLORATION_SCREEN_MAX. */
+const SCREEN_MAX = 200;
+const SCREEN_BASE = 'https://preview.bridge.invalid';
+
+/**
+ * An exploration screen as core's explorationScreenOf reads it (the API does not import core): a place on the same
+ * preview, starting with "/", never "//", a scheme or a host, no spaces, quotes or backslashes. Else null.
+ */
+export function screenOf(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s || s.length > SCREEN_MAX || !s.startsWith('/') || s.startsWith('//')) return null;
+  // eslint-disable-next-line no-control-regex
+  if (/[\s<>"'`\\\u0000-\u001f\u007f]/.test(s)) return null;
+  try {
+    return new URL(s, SCREEN_BASE).origin === SCREEN_BASE ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The screen an exploration's pull request body chose (its Bridge block), else null. */
+export const pullScreenOf = (body: unknown): string | null => screenOf(explorationBlockOf(body)?.screen);

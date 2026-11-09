@@ -11,6 +11,8 @@ import {
   checkInClaudeLine,
   doneActionFor,
   doneByOf,
+  doneLoginOf,
+  leadApproverOf,
   explorationTag,
   faceOf,
   gitNamesOf,
@@ -447,5 +449,46 @@ describe('stageOfRunning', () => {
   it('shows the board once a lead answered, even with no change yet', () => {
     expect(stageOfRunning('not-started', { talked: true })).toBe('exploring');
     expect(stageOfRunning('exploring', { talked: false })).toBe('exploring');
+  });
+});
+
+describe('an email lead says it looks right (Bridge\'s app account writes it)', () => {
+  const BOT = 'bridge-design-studio[bot]';
+  // The block of acme-crm-design #2: Sofia explored, Ann (an email lead) said it looks right, no GitHub login anywhere.
+  const block = { member: '0406ec723c59bb8d', memberName: 'Sofia', decisions: [{ kind: 'looks-right', byName: 'Ann' }] };
+  const done = { sha: 'n', commit: { message: 'chore(explore): done exploring, remove the exploration note', author: { name: BOT, date: '2026-11-08T21:55:31Z' } }, author: { login: BOT } };
+
+  it('names the designer, as with a GitHub lead, and never the app', () => {
+    expect(leadApproverOf(block)).toBe('name:Ann');
+    expect(doneLoginOf({ block, commits: [done], labelLogin: BOT, author: 'name:Sofia' })).toBe('name:Sofia');
+    expect(doneLoginOf({ block, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Sofia');
+    expect(doneLoginOf({ block: { ...block, memberName: undefined }, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Ann');
+  });
+
+  it('reads the same in the header and in How it went', () => {
+    const who = doneLoginOf({ block, commits: [done], labelLogin: BOT, author: 'name:Sofia' });
+    expect(faceOf(who, false).name).toBe('Sofia');
+    const rows = handoffActivity({ commits: [done], author: 'name:Sofia', doneBy: who, doneAt: '2026-11-08T21:55:31Z', now: new Date('2026-11-09T10:00:00Z') });
+    expect(rows[0]).toMatchObject({ text: 'said done exploring', who: { name: 'Sofia' } });
+    expect(JSON.stringify(rows)).not.toContain('[bot]');
+  });
+
+  it('keeps the people it named before', () => {
+    // A lead with a GitHub login: the designer the block keeps.
+    expect(doneLoginOf({ block: { leadOkBy: 'dana', doneBy: 'ann' }, commits: [], author: 'ann' })).toBe('ann');
+    expect(leadApproverOf({ leadOkBy: 'dana' })).toBe('dana');
+    // An email member who said it themselves.
+    expect(doneLoginOf({ block: { member: 'm1', memberName: 'Dino', doneByMember: 'm1' }, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Dino');
+    // A person's ready label.
+    expect(doneLoginOf({ block: null, commits: [], labelLogin: 'florian', author: 'florian' })).toBe('florian');
+    expect(leadApproverOf({ decisions: [{ kind: 'changes', byName: 'Ann' }] })).toBeNull();
+  });
+
+  it('falls back to who started it, then to the team, never to the app', () => {
+    expect(doneLoginOf({ block: { memberName: 'Sofia' }, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Sofia');
+    expect(doneLoginOf({ block: null, commits: [], labelLogin: BOT, author: 'florian' })).toBe('florian');
+    expect(faceOf(doneLoginOf({ block: null, commits: [], labelLogin: BOT, author: BOT }), false).name).toBe('Your team');
+    expect(faceOf(BOT, false).name).not.toContain('bot');
+    expect(faceOf('app/bridge-design-studio', false).name).toBe('Your team');
   });
 });

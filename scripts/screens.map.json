@@ -8,7 +8,7 @@
     "exploration": { "label": "An exploration", "path": "/studio/peterbono/bridge-demo-ds/changes/?exploration=47" },
     "building": { "label": "Being built", "path": "/studio/peterbono/bridge-demo-ds/building/" },
     "settings": { "label": "Settings", "path": "/studio/peterbono/bridge-demo-ds/settings/" },
-    "product": { "label": "Product page", "path": "/studio/peterbono/bridge-demo-ds/products/account/" },
+    "product": { "label": "Product page", "path": "/studio/peterbono/bridge-demo-ds/products/prints/" },
     "review": { "label": "Review queue", "path": "/studio/peterbono/bridge-demo-ds/review/" },
     "components": { "label": "Studio components", "path": "/studio/peterbono/bridge-demo-ds/components/" },
     "quality": { "label": "Quality", "path": "/studio/peterbono/bridge-demo-ds/quality/" },

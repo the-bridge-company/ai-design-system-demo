@@ -41,7 +41,7 @@ async function main() {
   console.log(`Added: ${body.added.join(', ') || 'none'}`);
   console.log(`Updated: ${body.updated.join(', ') || 'none'}`);
   console.log(`Already there: ${body.kept.join(', ') || 'none'}`);
-  console.log(`Account app product manager: ${body.pm === 'set' ? 'set to Ann' : 'already Ann'}`);
+  console.log(`Acme Prints product manager: ${body.pm === 'set' ? 'set to Ann' : 'already Ann'}`);
   console.log(`No longer email members: ${body.retired?.join(', ') || 'none'}`);
   console.log(`Moved from acme.design to acme.example: ${body.migrated?.join(', ') || 'none'}`);
   console.log(`Keys of old or removed addresses forgotten: ${body.forgot ?? 0}`);

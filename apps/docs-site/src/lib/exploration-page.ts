@@ -6,7 +6,7 @@ import { DEV_VERSION_READY, LIFECYCLE_LABEL, LIFECYCLE_TONE, questionLine, type 
 import { changedThings, continueLines, explorationActivity, humanAuthorOf, parseExplorationBody, lastActivity, shortAgo, startedWhen, type BranchCommitLike, type PreviewApps } from '@bridge-ds/core';
 import { emailMemberFace, isEmailAddress, nameFace } from './people';
 import { DEV_MESSAGE_WORDS } from './developers-message';
-import { isNameAuthor, nameOfAuthor } from './author';
+import { isAppLogin, isNameAuthor, nameAuthor, nameOfAuthor } from './author';
 
 /** A person or Claude on the page: the login (for the face), the name to show, and whether it is Claude. */
 export interface PageFace {
@@ -76,6 +76,8 @@ export const faceOf = (who: string, claude: boolean, names: Record<string, strin
     return { login: emailMemberFace(names[who], who), name: `${name}${tail}`, agent: false, avatar: null };
   }
   if (isNameAuthor(who)) return { login: nameFace(nameOfAuthor(who)), name: `${nameOfAuthor(names[who] ?? who)}${tail}`, agent: false, avatar: null };
+  // Bridge's app account wrote it for someone the page could not name: never its login.
+  if (isAppLogin(who)) return { login: nameFace(TEAM_DONE_NAME), name: `${TEAM_DONE_NAME}${tail}`, agent: false, avatar: null };
   if (nameOnly.has(who)) return { login: nameFace(who), name: `${names[who] ?? who}${tail}`, agent: false, avatar: null };
   return { login: who, name: `${names[who] ?? who}${tail}`, agent: false, avatar: avatarOf(who) };
 };
@@ -254,6 +256,49 @@ export const isDoneCommit = (c: BranchCommitLike): boolean => /^chore\(explore\)
 export function doneByOf(commits: readonly BranchCommitLike[]): string | null {
   const c = commits.find(isDoneCommit);
   return c ? humanAuthorOf(c) : null;
+}
+
+/** What doneLoginOf reads of the exploration block: who started it, who said done, and the lead's answers. */
+export interface DoneBlockLike {
+  doneBy?: string | undefined;
+  doneByMember?: string | undefined;
+  member?: string | undefined;
+  memberName?: string | undefined;
+  leadOkBy?: string | undefined;
+  decisions?: readonly { kind: string; by?: string | undefined; byName?: string | undefined }[] | undefined;
+}
+
+/** Said when nobody on the team is named (only Bridge's app account wrote it): never the app's login. */
+export const TEAM_DONE_NAME = 'Your team';
+
+/**
+ * The lead who said it looks right, as an author: their GitHub login, else their name ("name:Ann") for a lead who
+ * joined by email (leadApproveOnGitHub records only their name in the decision). Null when no lead approved it.
+ */
+export function leadApproverOf(block: DoneBlockLike | null | undefined): string | null {
+  if (block?.leadOkBy?.trim() && !isAppLogin(block.leadOkBy)) return block.leadOkBy.trim();
+  const ok = [...(block?.decisions ?? [])].reverse().find((d) => d.kind === 'looks-right');
+  if (!ok) return null;
+  if (ok.by?.trim() && !isAppLogin(ok.by)) return ok.by.trim();
+  return ok.byName?.trim() ? nameAuthor(ok.byName) : null;
+}
+
+/**
+ * Who said Done exploring, as the page names them (the header and "How it went"). A lead with a GitHub login who
+ * validated it: the designer the block keeps. An email member who said it themselves: their name. Else Bridge's own
+ * commit, the ready label's author, the pull request's author. Whenever that is Bridge's app account (an email lead's
+ * "Looks right" goes through it), the lead who approved, else the member who started it: never the app's login.
+ */
+export function doneLoginOf(input: { block: DoneBlockLike | null | undefined; commits: readonly BranchCommitLike[]; labelLogin?: string | null | undefined; author: string }): string {
+  const b = input.block;
+  const memberDone = b?.doneByMember && b.doneByMember === b.member && b.memberName?.trim() ? nameAuthor(b.memberName) : null;
+  const picked = (b?.leadOkBy ? (b.doneBy ?? input.author) : null) ?? memberDone ?? doneByOf(input.commits) ?? input.labelLogin ?? input.author;
+  if (!isAppLogin(picked)) return picked;
+  if (b?.memberName?.trim()) return nameAuthor(b.memberName);
+  const lead = leadApproverOf(b);
+  if (lead) return lead;
+  if (!isAppLogin(input.author)) return input.author;
+  return nameAuthor(TEAM_DONE_NAME);
 }
 
 const names = (people: readonly PageFace[]) => (people.length <= 2 ? people.map((p) => p.name).join(' and ') : `${people[0]!.name} and ${people.length - 1} more`);

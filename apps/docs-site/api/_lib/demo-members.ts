@@ -39,7 +39,7 @@ export const DEMO_MEMBERS: readonly DemoMember[] = [
 export const DEMO_VISITOR_EMAIL = 'dana@acme.example';
 
 /** The product manager of the sample team's Account app (Settings > Products). */
-export const DEMO_PM = { product: 'account', email: 'ann@acme.example' } as const;
+export const DEMO_PM = { product: 'prints', email: 'ann@acme.example' } as const;
 
 /** The member a signed-out visitor of `team` reads as, or null: only the sample team has one. */
 export const demoVisitorEmail = (team: string): string | null => (isSampleTeam(team) ? DEMO_VISITOR_EMAIL : null);

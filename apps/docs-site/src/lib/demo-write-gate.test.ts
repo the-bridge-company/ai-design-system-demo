@@ -119,7 +119,7 @@ describe('the demo visitor reads as Dana', () => {
     const people = await (await get(`${q}&members=1`, { cookie })).json();
     expect(people.members.map((m: { name: string }) => m.name)).toEqual(['Ann', 'Dana', 'Leo', 'Sofia']);
     expect(people.members.find((m: { you?: boolean }) => m.you)?.name).toBe('Dana');
-    expect(people.pms.account).toMatchObject({ name: 'Ann' });
+    expect(people.pms.prints).toMatchObject({ name: 'Ann' });
   });
 
   it('refuses every write of the visitor session with the demo code, and sends nothing to GitHub', async () => {

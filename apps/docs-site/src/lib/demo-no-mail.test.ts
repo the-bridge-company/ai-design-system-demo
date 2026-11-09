@@ -87,7 +87,7 @@ describe('seeding moves the old acme.design records', () => {
     expect((await members.list(DEMO)).map((m) => m.email).sort()).toEqual(DEMO_MEMBERS.map((m) => m.email).sort());
     expect(await members.get(DEMO, 'dana@acme.example')).toMatchObject({ name: 'Dana', role: 'admin', lead: true, version: 4, addedBy: 'peterbono', at: '2026-11-01T00:00:00.000Z' });
     expect(await members.get(DEMO, 'dana@acme.design')).toBeNull();
-    expect((await pmOf(redis, DEMO, 'account'))?.email).toBe('ann@acme.example');
+    expect((await pmOf(redis, DEMO, 'prints'))?.email).toBe('ann@acme.example');
     expect(await redis.cmd('GET', issueKey(DEMO, 51))).toBe('leo@acme.example');
     expect(await redis.cmd('GET', branchKey('acme-design-demo/acme-account-design', 'explore/x'))).toBe('leo@acme.example');
     expect(await redis.cmd('SMEMBERS', mineKey(DEMO, 'leo@acme.example'))).toEqual(['i:51']);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductConfig } from '@bridge-ds/core';
-import { archivedHref, archivedLine, emptyProductLine, folderLine, productFacts, productFolders, productGroups, productHref, productKeyFromPath, productSummary, stateOfCard } from './product-page';
+import { archivedHref, archivedLine, emptyProductLine, folderLine, libraryChangeState, productFacts, productFolders, productGroups, productHref, productKeyFromPath, productSummary, stateOfCard } from './product-page';
 import { explorationProductKey, homeExplorations, type ExplorationCard } from './home-explorations';
 import { person } from './home-model';
 
@@ -70,6 +70,14 @@ describe('grouping by where explorations stand', () => {
     expect(folderLine([card(1, { stage: 'with-devs', state: 'Being built', lifecycle: 'being-built' })])).toBe('1 being built');
     expect(folderLine([card(1, { stage: 'in-review', state: 'In review', lifecycle: 'in-review' })])).toBe('1 in review');
     expect(folderLine([card(1, { stage: 'found', state: '2 new pieces found', lifecycle: 'exploring' })])).toBe('1 exploring');
+  });
+
+  it("counts the library's own changes on the Library folder, filed as Changes files them", () => {
+    const more = (['review', 'building', 'code', null] as const).map(libraryChangeState).filter((k) => k !== null);
+    expect(more).toEqual(['review', 'building', 'waiting']);
+    expect(folderLine([card(1)], ' · ', more)).toBe('1 exploring · 1 waiting to be picked up · 1 being built · 1 in review');
+    const lib = { key: 'library', name: 'Library', default: true } as ProductConfig;
+    expect(productFolders([lib], [], undefined, { library: ['review', 'review'] })[0]).toMatchObject({ line: '2 in review', total: 2 });
   });
 });
 

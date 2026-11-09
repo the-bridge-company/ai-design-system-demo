@@ -125,6 +125,11 @@ export interface ImpactInput {
   approved: boolean;
   /** The lead reads it and may answer each piece (the ⋯ menu). */
   canDecide: boolean;
+  /**
+   * Done exploring was said: the pieces wait on the lead ("Needs you", "Needs Dana"). Before that they read Exploring
+   * for everyone, the lead included. Left out: asked (Review all lists only explorations that wait on the lead).
+   */
+  asked?: boolean;
   conflicts?: readonly LibraryConflict[];
   /** The names of the team's products, for a token that reaches all of them. */
   products?: readonly string[];
@@ -148,7 +153,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     const decision = block?.library?.decisions?.find((d) => d.piece === i.id);
     const link = record.links.find((l) => l.piece === i.id);
     const conflict = conflicts.find((c) => c.piece === i.id) ?? null;
-    const status = impactStatus({ item: i, decision, conflict, approved: x.approved, link, released: Boolean(link && x.released?.has(link.number)), lead: x.lead });
+    const status = impactStatus({ item: i, decision, conflict, approved: x.approved, link, released: Boolean(link && x.released?.has(link.number)), lead: x.lead, asked: x.asked ?? true });
     const open = !x.approved && x.canDecide && status.key !== 'conflict';
     return {
       id: i.id,

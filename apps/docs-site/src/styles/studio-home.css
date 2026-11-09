@@ -479,14 +479,6 @@
   color: var(--color-text-muted);
 }
 
-/* "Exploring" in Harbor, as on the exploration page's title row. */
-.sh-card .sh-card-tag.xp-exploring {
-  --_bg: var(--color-surface-selected);
-  --_border: transparent;
-  --_text: var(--color-text-link);
-  --_mark: var(--color-text-link);
-}
-
 /* The card's title. */
 .sh-card-head {
   display: flex;

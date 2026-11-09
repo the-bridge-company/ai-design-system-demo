@@ -12,6 +12,7 @@ import { STUDIO_ROOT, studioHref } from './team-path';
 import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
 import type { ExplorationCard } from './home-explorations';
 import type { ThumbSpec } from './branch-thumb';
+import type { StageTab } from './branches-page';
 
 /** A product key as bridge.config.json writes it, and as a product page address carries it. */
 export const PRODUCT_KEY_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
@@ -83,29 +84,44 @@ export function productGroups<C extends Pick<ExplorationCard, 'lifecycle'>>(card
   return PRODUCT_STATES.map((s) => ({ key: s.key, label: s.label, cards: cards.filter((c) => stateOfCard(c) === s.key) })).filter((g) => g.cards.length > 0);
 }
 
-/** How many cards stand in each state. */
-export function productCounts(cards: readonly Pick<ExplorationCard, 'lifecycle'>[]): Record<ProductStateKey, number> {
+/** How many cards stand in each state, with `more`: the states of the product's other work (the library's changes). */
+export function productCounts(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: readonly ProductStateKey[] = []): Record<ProductStateKey, number> {
   const out: Record<ProductStateKey, number> = { running: 0, lead: 0, review: 0, waiting: 0, building: 0, shipped: 0, 'not-planned': 0 };
   for (const c of cards) {
     const k = stateOfCard(c);
     if (k) out[k] += 1;
   }
+  for (const k of more) out[k] += 1;
   return out;
 }
 
 /** The work in progress of a product, in words: ["2 exploring", "1 waiting to be picked up"]. Done work is not in progress. */
-function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[]): string[] {
-  const n = productCounts(cards);
+function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: readonly ProductStateKey[] = []): string[] {
+  const n = productCounts(cards, more);
   return PRODUCT_STATES.filter((s) => s.open && n[s.key] > 0).map((s) => s.count(n[s.key]));
 }
 
-/** A folder card's line: "2 exploring · 1 waiting to be picked up", "3 shipped", or "Nothing in progress". */
-export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = ' · '): string {
-  const parts = inProgress(cards);
+/**
+ * A folder card's line: "2 exploring · 1 waiting to be picked up", "3 shipped", or "Nothing in progress". `more`: the
+ * states of the product's work that is not an exploration card, the library's own changes (libraryChangeState), so
+ * the Library folder counts what Changes lists under Library.
+ */
+export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = ' · ', more: readonly ProductStateKey[] = []): string {
+  const parts = inProgress(cards, more);
   if (parts.length) return parts.join(sep);
-  const shipped = productCounts(cards).shipped;
+  const shipped = productCounts(cards, more).shipped;
   return shipped ? `${shipped} shipped` : 'Nothing in progress';
 }
+
+/**
+ * Where a library change stands, as a product group of Changes (lib/branches-page stateOf, the tab Changes files it
+ * under): Exploring, Waiting to be picked up, Being built, In review. Null for a row Changes lists under no open tab.
+ */
+export function libraryChangeState(tab: StageTab | null): ProductStateKey | null {
+  return tab ? TAB_STATE[tab] : null;
+}
+
+const TAB_STATE: Record<StageTab, ProductStateKey | null> = { exploring: 'running', code: 'waiting', building: 'building', review: 'review' };
 
 /** The product page header's summary: "2 exploring, 1 waiting to be picked up.", or why the page is quiet. */
 export function productSummary(cards: readonly Pick<ExplorationCard, 'lifecycle'>[]): string {
@@ -134,7 +150,7 @@ export interface ProductFolder {
  * The Home's product folders: one per configured product, in the configured order, each with the screens of its
  * latest explorations and what is in progress. A product without any exploration keeps its folder (it is a real app).
  */
-export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS): ProductFolder[] {
+export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS, more: Readonly<Record<string, readonly ProductStateKey[]>> = {}): ProductFolder[] {
   return products.map((p) => {
     const mine = cards.filter((c) => cardProductKey(c, products) === p.key.toLowerCase());
     const latest = [...mine].sort((a, b) => b.updated.localeCompare(a.updated));
@@ -143,8 +159,8 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       name: p.name,
       href: productHref(p.key),
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
-      line: folderLine(mine),
-      total: mine.length,
+      line: folderLine(mine, ' · ', more[p.key.toLowerCase()] ?? []),
+      total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
     };
   });
 }

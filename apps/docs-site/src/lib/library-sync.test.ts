@@ -58,15 +58,15 @@ describe('freshness', () => {
 
 describe('libraryLine and behindTag', () => {
   it('names the number of updates, singular and plural', () => {
-    expect(libraryLine({ state: 'behind', behindBy: 1, mergeBase: null })).toBe('The library has moved on: 1 update since this change started.');
-    expect(libraryLine({ state: 'conflict', behindBy: 12, mergeBase: null })).toBe('The library has moved on: 12 updates since this change started.');
+    expect(libraryLine({ state: 'behind', behindBy: 1, mergeBase: null })).toBe('The library moved on since this change started.');
+    expect(libraryLine({ state: 'conflict', behindBy: 12, mergeBase: null })).toBe('The library moved on since this change started.');
     expect(libraryLine({ state: 'current', behindBy: 0, mergeBase: null })).toBeNull();
     expect(libraryLine({ state: 'unknown', behindBy: null, mergeBase: null })).toBeNull();
   });
 
   it('tags list rows only when behind', () => {
-    expect(behindTag(4)).toBe('The library moved on: 4 updates');
-    expect(behindTag(1)).toBe('The library moved on: 1 update');
+    expect(behindTag(4)).toBe('The library moved on since');
+    expect(behindTag(1)).toBe('The library moved on since');
     expect(behindTag(0)).toBeNull();
     expect(behindTag(null)).toBeNull();
   });
@@ -101,7 +101,7 @@ describe('overlap and conflictRoute', () => {
     expect(conflictLine({ kind: 'tokens', files: [] }, 0)).toMatch(/Bridge can combine them/);
     expect(resolveLabel(1)).toBe('Resolve 1 conflict');
     expect(resolveLabel(3)).toBe('Resolve 3 conflicts');
-    expect(resolveLabel(0)).toBe('Update from the library');
+    expect(resolveLabel(0)).toBe('Bring the latest in');
   });
 });
 

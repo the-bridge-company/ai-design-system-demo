@@ -8,6 +8,7 @@ import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
 import { Accordion, AccordionItem, Badge, Button, ButtonGroup, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Menu, MenuContent, MenuItem, MenuTrigger, Radio, RadioGroup, Skeleton, Textarea, Tooltip } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { PIECE_ACTION_HINT, PIECE_ACTION_LABEL, type ConflictView, type ImpactRowView, type ImpactSide, type LibraryImpactView, type PieceAction } from '../../../lib/library-impact-view';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export interface LibraryImpactActions {
   /** The lead answers one piece; `input` is what to change, or the piece to use instead. */
@@ -147,7 +148,7 @@ function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpact
         </div>
       )}
       <div className="li-status">
-        <Badge tone={row.status.tone} size="md">
+        <Badge tone={row.status.tone} size="md" className={statusTagClass(row.status.label)}>
           {row.status.label}
         </Badge>
       </div>

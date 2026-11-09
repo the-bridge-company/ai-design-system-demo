@@ -34,7 +34,9 @@ export const VOCAB = {
   /** Done: the change is in the library (merged into main on GitHub). */
   merged: 'Added to the library',
   /** Bring what the library gained since the change started (update from main on GitHub). */
-  updateFromMain: 'Update from the library',
+  updateFromMain: 'Bring the latest in',
+  /** The library gained changes since this one started (behind main on GitHub), said without counting commits. */
+  mainMovedOn: 'The library moved on since',
   /** The package release, the only "publish" (Figma: publish a library). */
   publish: 'Publish',
   save: 'Save',

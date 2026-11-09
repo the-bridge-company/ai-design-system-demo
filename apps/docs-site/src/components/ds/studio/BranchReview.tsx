@@ -77,6 +77,7 @@ import { agoInSentence, VISUAL_CHECKS_DOCS } from '@bridge-ds/core';
 import type { ChangeOrigin } from '../../../lib/product-branch';
 import type { ShownValue } from '../../../lib/token-review';
 import type { Lifecycle, LifecycleTone } from '../../../lib/change-status';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export interface PersonRef {
   login: string;
@@ -1066,7 +1067,7 @@ export function BranchReview(p: BranchReviewProps) {
         {/* The status follows the last word of the title, wherever the title wraps. */}
         <Heading className="br-title">
           {p.title}{' '}
-          <Badge tone={status.tone} className="br-status">
+          <Badge tone={status.tone} className={statusTagClass(status.label, 'br-status')}>
             {status.label}
           </Badge>
         </Heading>

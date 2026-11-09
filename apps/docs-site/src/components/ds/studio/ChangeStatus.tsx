@@ -6,6 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { CircleSlash, Eye, Hourglass, PackageCheck, PencilLine } from 'lucide-react';
 import { Badge, Button } from '@bridge-ds/react';
 import type { Lifecycle, LifecycleTone } from '../../../lib/change-status';
+import { statusTagClass } from '../../../lib/status-tag';
 
 const ICON = { draft: PencilLine, ready: Eye, waiting: Hourglass, shipped: PackageCheck, closed: CircleSlash } as const;
 
@@ -42,7 +43,7 @@ export function ChangeStatus({ lifecycle, label, tone, sentence, action, yourTur
     <>
       <div className="cs-line" data-lifecycle={lifecycle}>
         <div className="cs-what">
-          <Badge tone={tone} icon={ICON[lifecycle]}>
+          <Badge tone={tone} icon={ICON[lifecycle]} className={statusTagClass(label)}>
             {label}
           </Badge>
           <p className="cs-sentence" data-who={yourTurn ? 'you' : undefined}>

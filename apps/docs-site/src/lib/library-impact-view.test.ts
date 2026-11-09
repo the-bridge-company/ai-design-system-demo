@@ -38,6 +38,13 @@ describe('the section on the exploration page', () => {
     expect(leadLibraryLine(v, 'Sofia')).toBe('Sofia is done exploring. Looks right also accepts the Timeline into the library. To answer one on its own, use its menu.');
   });
 
+  it('reads Exploring for the lead too while the designer is still exploring: Needs you only once asked', () => {
+    const v = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'you', approved: false, asked: false, canDecide: false });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.rows[0]!.status).toMatchObject({ key: 'exploring', label: 'Exploring' });
+    expect(leadLibraryLine(v, 'Sofia')).toBeNull();
+  });
+
   it('shows a token change and a new size in plain words, the token path under Details, and where it reaches (LI3)', () => {
     const v = libraryImpactView({ body: bodyWith([inset, compact]), designer: 'Sofia', lead: 'Dana', approved: false, canDecide: true, products: ['Acme Prints', 'Acme CRM'] });
     if (v.state !== 'rows') throw new Error(v.state);

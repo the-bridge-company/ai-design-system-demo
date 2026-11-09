@@ -52,7 +52,7 @@ describe('demoActionLine: what an action does on a real team, in the sample-team
     expect(demoActionLine(['start an exploration'])).toMatch(/^Start an exploration/);
     expect(demoActionLine(['invite'])).toMatch(/^Invite emails/);
     expect(demoActionLine(['set-pm'])).toMatch(/^The product manager/);
-    expect(demoActionLine(['library-update'])).toMatch(/^Update from the library/);
+    expect(demoActionLine(['library-update'])).toMatch(/^Bring the latest in/);
     expect(demoActionLine(['edit the roles'])).toMatch(/^Roles decide/);
   });
 

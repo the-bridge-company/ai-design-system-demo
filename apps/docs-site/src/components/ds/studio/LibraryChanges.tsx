@@ -35,6 +35,7 @@ import {
   type LibraryTag,
   type OriginFilter,
 } from '../../../lib/library-origin';
+import { statusTagClass } from '../../../lib/status-tag';
 
 /** What a library row needs from the list's row. */
 export interface LibraryRowFacts {
@@ -201,7 +202,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
           </Badge>
         ) : (
           g.tag && (
-            <Badge tone={g.tag.tone} size="md">
+            <Badge tone={g.tag.tone} size="md" className={statusTagClass(g.tag.label)}>
               {g.tag.label}
             </Badge>
           )

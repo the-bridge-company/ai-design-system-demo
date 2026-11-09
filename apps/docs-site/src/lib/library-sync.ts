@@ -39,15 +39,18 @@ export interface CompareLike {
 // How a change stands against main: one rule with the MCP server and the CLI (@bridge-ds/core library-update).
 export { freshness, type Freshness, type LibraryState } from '@bridge-ds/core';
 
-/** "The library has moved on: 3 updates since this change started." Null when there is nothing to say. */
+/**
+ * "The library moved on since this change started. Bring the latest in to see it with the rest." Null when there is
+ * nothing to say. No count: how many commits is a developer's number, the designer only needs to know it moved.
+ */
 export function libraryLine(f: Freshness): string | null {
   if (!f.behindBy || (f.state !== 'behind' && f.state !== 'conflict')) return null;
-  return `${VOCAB.Main} has moved on: ${plural(f.behindBy, 'update')} since this ${VOCAB.branch} started.`;
+  return `${VOCAB.mainMovedOn} this ${VOCAB.branch} started.`;
 }
 
-/** The row tag of the Changes list, in the words of the detail line: "The library moved on: 12 updates". Null when up to date or unknown. */
+/** The row words of the Changes list, as the detail line says it: "The library moved on since". Null when up to date or unknown. */
 export function behindTag(behindBy: number | null | undefined): string | null {
-  return behindBy && behindBy > 0 ? `${VOCAB.Main} moved on: ${plural(behindBy, 'update')}` : null;
+  return behindBy && behindBy > 0 ? VOCAB.mainMovedOn : null;
 }
 
 /** The conflict row sentence, in designer words. `conflicts` is null while the tokens are being read. */

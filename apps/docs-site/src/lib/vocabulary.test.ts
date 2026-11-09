@@ -7,7 +7,7 @@ describe('vocabulary', () => {
   it('speaks changes and the library, never git', () => {
     expect(VOCAB.startExploration).toBe('Start an exploration');
     expect(VOCAB.requestReview).toBe('Send for review');
-    expect(VOCAB.updateFromMain).toBe('Update from the library');
+    expect(VOCAB.updateFromMain).toBe('Bring the latest in');
     expect(VOCAB.reviewAndMerge).toBe('Review and add to the library');
     expect(VOCAB.merge).toBe('Add to the library');
     expect(VOCAB.readyToMerge).toBe('Ready to add to the library');

@@ -40,6 +40,7 @@ import { onlyTokens, toggleChange } from '../../../lib/combine-changes';
 import { childLine } from '../../../lib/product-branch';
 import { libraryOrigin, type LibraryOrigin } from '../../../lib/library-origin';
 import { LibraryChanges } from './LibraryChanges';
+import { behindTag } from '../../../lib/library-sync';
 import { isNameAuthor } from '../../../lib/author';
 import { authorPerson, CLAUDE, displayName, person, requesterPerson, SEP, type Person, type PillTone } from '../../../lib/home-model';
 import {
@@ -417,9 +418,7 @@ export function BranchesList(p: BranchesListProps) {
                     end={
                       behind ? (
                         <span className="t-ui bl-behind">
-                          <span className="t-muted">
-                            {r.behindBy} {r.behindBy === 1 ? 'update' : 'updates'} on {VOCAB.main}
-                          </span>
+                          <span className="t-muted">{behindTag(r.behindBy)}</span>
                           <span className="t-muted" aria-hidden="true">
                             {' · '}
                           </span>

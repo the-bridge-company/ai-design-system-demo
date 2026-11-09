@@ -11,7 +11,7 @@ import { QualityView } from './QualityView';
 import { HeaderActions } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
 import { loadTeamSnapshot } from '../../../scripts/team-data';
-import { currentViewer, initGitHubConnect } from '../../../scripts/github-session';
+import { currentViewer, initGitHubConnect, signedInWithGitHub } from '../../../scripts/github-session';
 import { viewerRoles } from '../../../lib/suggestions-view';
 import { auditAskMessage, auditStep, guidanceLead, teamQuality, unmeasuredNames, type UnmeasuredProduct } from '../../../lib/team-quality';
 import { ADOPTION_MEANING } from '../../../lib/quality';
@@ -161,7 +161,7 @@ export default function TeamQuality() {
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   const { data, refreshing } = load;
   const developer = viewerRoles(viewer, data.model.config.governance.owners).includes('tech');
-  const q = teamQuality({ model: data.model, owner: data.owner, repo: data.repo, sha: data.sha, audits: audits ?? null, ...(snapshotAt ? { snapshotAt } : {}), audience: developer ? 'developer' : 'designer' });
+  const q = teamQuality({ model: data.model, owner: data.owner, repo: data.repo, sha: data.sha, audits: audits ?? null, ...(snapshotAt ? { snapshotAt } : {}), audience: developer ? 'developer' : 'designer', github: Boolean(viewer && !currentViewer()?.email && signedInWithGitHub()) });
   return (
     <div className="ql">
       <div className="tq-top">

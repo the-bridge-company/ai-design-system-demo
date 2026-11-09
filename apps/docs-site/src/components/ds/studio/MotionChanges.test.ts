@@ -29,7 +29,7 @@ describe('MotionChanges', () => {
     const html = renderToStaticMarkup(createElement(MotionChanges, { changes: [change], specs }));
     const t = text(html);
     expect(t).toContain('Motion changes');
-    expect(t).toContain('Popups open faster: from 200 ms to 150 ms.');
+    expect(t).toContain('Popups open faster: from 200\u00a0ms to 150\u00a0ms.');
     // No token path in the sentence a designer reads: it waits under Details.
     expect(t).not.toContain('motion.duration.moderate');
     expect(t).toContain('BeforeDialog opens in 200 ms');

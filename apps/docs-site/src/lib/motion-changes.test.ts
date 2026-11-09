@@ -117,6 +117,6 @@ describe('the preview loop', () => {
   });
 
   it('the headline says what changes in words, without the token path', () => {
-    expect(headlineSentence({ lead: 'Popups open faster', token: 'motion.duration.moderate', before: '250 ms', after: '200 ms' })).toBe('Popups open faster: from 250 ms to 200 ms.');
+    expect(headlineSentence({ lead: 'Popups open faster', token: 'motion.duration.moderate', before: '250 ms', after: '200 ms' })).toBe('Popups open faster: from 250\u00a0ms to 200\u00a0ms.');
   });
 });

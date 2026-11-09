@@ -183,7 +183,9 @@ export interface MotionHeadline {
  */
 /** The headline in one sentence for a designer: "Popups open faster: from 200 ms to 150 ms." The token path is not in it. */
 export function headlineSentence(h: MotionHeadline): string {
-  return `${h.lead}: from ${h.before} to ${h.after}.`;
+  // A value stays on one line with its unit ("200 ms" never breaks before "ms").
+  const v = (s: string) => s.replace(/ (ms|s|px)\b/g, '\u00a0$1');
+  return `${h.lead}: from ${v(h.before)} to ${v(h.after)}.`;
 }
 
 export function motionHeadline(change: MotionChange, specs: Specs | null | undefined, chainOf?: (path: string) => string[]): MotionHeadline {

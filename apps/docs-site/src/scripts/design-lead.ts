@@ -3,6 +3,9 @@
 // with GitHub get the same pages.
 import { isDesignLead, leadsLibrary, type LeadViewer } from '../lib/design-lead';
 import { currentAccess, currentContributor, currentViewer } from './github-session';
+import { parseExplorationBody } from '@bridge-ds/core';
+import { leadHomeRow } from '../lib/lead-decisions';
+import { isOwnExploration } from '../lib/home-explorations';
 import { siteConfig } from './repo-context';
 import { siteApprovers } from './teams';
 import type { RepoAccess } from '../lib/access';
@@ -26,3 +29,23 @@ export const viewerLeadsLibrary = (a?: RepoAccess | null): boolean => leadsLibra
  * decidesOnExplorations). The exploration page and Home's Needs you read it the same way.
  */
 export const viewerDecidesExplorations = (): boolean => currentContributor()?.decides === true || viewerIsDesignLead();
+
+/**
+ * Whether an exploration waits on the viewer as its lead: Done exploring asked them, or the designer answered them
+ * (lib/lead-decisions leadHomeRow, a Needs you row). Home's rows, the nav badge and Changes > Waiting on me read it
+ * here, so the three count the same explorations.
+ */
+export function explorationWaitsOnViewer(p: { body?: string | null; user: { login: string } }): boolean {
+  const block = parseExplorationBody(p.body ?? null);
+  if (!block || (block.leadAskedAt === undefined && !block.decisions?.length && !block.leadNote)) return false;
+  const viewer = currentViewer()?.login ?? null;
+  const asker = block.leadAskedBy ?? p.user.login;
+  const same = (a?: string | null, b?: string | null) => Boolean(a && b && a.toLowerCase() === b.toLowerCase());
+  const row = leadHomeRow(p.body, {
+    viewer,
+    lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)),
+    own: isOwnExploration({ user: p.user, body: p.body ?? null }, viewer, currentContributor()?.ref ?? null),
+    viewerName: currentContributor()?.name ?? null,
+  });
+  return row?.where === 'needs';
+}

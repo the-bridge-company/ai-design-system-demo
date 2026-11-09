@@ -20,6 +20,29 @@ import { branchThumb } from './branch-thumb';
 import type { ShownValue } from './token-review';
 import { originPrefix, waitingLabel, type BranchCard, type NeedRow, type Person } from './home-model';
 import { studioHref } from './team-path';
+import { tokenNoun } from './propose-copy';
+
+/**
+ * What a token paints, in words, for a designer ("color.border.emphasis" reads "Emphasis border"). The path itself stays
+ * in Details, for developers.
+ */
+export function tokenLabel(path: string): string {
+  const w = tokenNoun(path).trim();
+  return w ? w.charAt(0).toUpperCase() + w.slice(1) : path;
+}
+
+/**
+ * The why of a suggestion without the tool that filed it: Bridge used to end its own summary with how it was written
+ * ("Usage guidance for EmptyState, written with Claude through the Bridge MCP server."). That part is for the
+ * developers' record (the issue footer keeps it); a reviewer reads "Usage guidance for EmptyState."
+ */
+export function plainSummary(text: string): string {
+  return text
+    .replace(/,?\s*(?:written|proposed|drafted)\s+(?:with|in|through)\s+(?:an AI tool|Claude|the Bridge|the bridge)[^.\n]*\./gi, '.')
+    .replace(/\s*\b(?:Proposed|Written|Drafted) (?:with|through|in) (?:an AI tool|Claude|the Bridge|the bridge)[^.\n]*\./g, '')
+    .replace(/\.\./g, '.')
+    .trim();
+}
 
 /** Where a suggestion opens in Studio: Branches, in place (pages/studio/changes.astro). */
 export const suggestionHref = (n: number) => studioHref(`changes/?suggestion=${n}`);

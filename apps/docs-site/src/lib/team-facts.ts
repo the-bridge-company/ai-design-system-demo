@@ -3,6 +3,7 @@
 // review. Shared by team Home (scripts/team-home.ts) and team Review (scripts/team-review.ts). Pure.
 import type { RepoModel } from '@bridge-ds/core';
 import { libraryHref } from './library-shells';
+import { guidanceExcerpt } from './home-model';
 
 /** Failing contrast checks of a model: one per pair, brand and theme, as the build gate counts them. */
 export function contrastFailures(model: Pick<RepoModel, 'contrast'>): number {
@@ -16,8 +17,8 @@ export function contrastFailures(model: Pick<RepoModel, 'contrast'>): number {
 }
 
 /** Drafted guidance waiting for review: each row opens the draft on GitHub (the docs editor is the demo Library's). */
-export function teamGuidance(data: { owner: string; repo: string; sha: string; model: Pick<RepoModel, 'components'> }): { name: string; slug: string; href: string; since: string | null }[] {
+export function teamGuidance(data: { owner: string; repo: string; sha: string; model: Pick<RepoModel, 'components'> }): { name: string; slug: string; href: string; since: string | null; excerpt: string | null }[] {
   return (data.model.components?.list ?? [])
     .filter((c) => c.docs?.needsReview)
-    .map((c) => ({ name: c.name, slug: c.slug, href: `${libraryHref(data.owner, data.repo, `components/${encodeURIComponent(c.slug.toLowerCase())}/`)}?edit=1`, since: null }));
+    .map((c) => ({ name: c.name, slug: c.slug, href: `${libraryHref(data.owner, data.repo, `components/${encodeURIComponent(c.slug.toLowerCase())}/`)}?edit=1`, since: null, excerpt: guidanceExcerpt(c.docs) }));
 }

@@ -340,3 +340,19 @@ describe('the owner override on a suggestion', () => {
     for (const t of Object.values(OWNER_OVERRIDE_WORDS)) expect(t).not.toMatch(/\b(PR|pull request|branch|merge|GitHub)\b|—/i);
   });
 });
+
+describe('plain words for a reviewer', () => {
+  it('names what a token paints, never its path', async () => {
+    const { tokenLabel } = await import('./suggestions-view');
+    expect(tokenLabel('color.border.emphasis')).toBe('Emphasis border');
+    expect(tokenLabel('color.bg.default')).toBe('Default background');
+  });
+
+  it("drops the tool Bridge used to name at the end of its own summary", async () => {
+    const { plainSummary } = await import('./suggestions-view');
+    expect(plainSummary('Usage guidance for EmptyState, written with Claude through the Bridge MCP server.')).toBe('Usage guidance for EmptyState.');
+    expect(plainSummary('Usage guidance for Tabs, written with an AI tool through the Bridge MCP server.')).toBe('Usage guidance for Tabs.');
+    expect(plainSummary('Usage guidance for Tabs, written in the Bridge docs editor.')).toBe('Usage guidance for Tabs.');
+    expect(plainSummary('Buttons read washed out on grey.')).toBe('Buttons read washed out on grey.');
+  });
+});

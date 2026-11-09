@@ -1,24 +1,27 @@
-// The review queue page (pages/studio/review.astro). Reads the same rows as the Studio home (scripts/home-data.ts
-// loadHome), lists them on the start side with what the viewer did to each (components/ds/studio/ReviewQueue
-// QueueList), and opens the selected one in the main area:
+// The review queue page (pages/studio/review.astro), board Q1 "Review all: Approve and next". Reads the same rows as
+// the Studio home (scripts/home-data.ts loadHome), lists them on the start side with what the viewer did to each
+// (components/ds/studio/ReviewQueue QueueList), and opens the selected one in the main area. Every item reads the same:
+// its title in the display face with its status and who waits, the change, and one bar at the bottom (comment, Ask
+// for changes, Approve, More actions, then one keyboard line):
 //   - a branch row opens the branch review of Branches in place (scripts/reviews.ts openPr into #rv-detail), without
 //     its own bar: the queue's bar replaces it;
 //   - a suggestion row (a change a developer applies once owners approve it) opens the suggestion review in place
-//     (scripts/suggestions.ts openSuggestion into [data-rq-sg]), with its own decision on the card: the queue bar is for
-//     branches; A and S press its Approve and Ask for changes, an approval waits for Undo the same way;
-//   - usage guidance drafts, library health and setup rows show a short card with the link that handles them.
-// The bar is about the item on screen only: comment, Ask for changes, Approve, More actions (Ask someone else to
-// review, Copy link, Open the full review). After a decision the queue moves on: the list mark changes, the next item
-// opens, focus goes to its title, and a toast says what was done. Approve waits UNDO_MS before anything is sent, so
-// Undo only cancels: nothing reached GitHub, nobody was notified (dismissing a sent approval would leave a trace on
-// the branch and notify its author). Leaving the page sends what waits. A approves, S suggests changes, J and K move.
+//     (scripts/suggestions.ts openSuggestion into [data-rq-sg], its queue layout): the bar approves it, asks for
+//     changes with the comment, and declines it from More actions; an approval waits for Undo the same way;
+//   - an exploration, usage guidance drafts, library health and setup rows show the same head, and the bar's primary
+//     action opens the page that handles them; a join request is approved or declined from the bar.
+// After a decision the queue moves on: the list mark changes, the next item opens, focus goes to its title, and a toast
+// says what was done. Approve waits UNDO_MS before anything is sent, so Undo only cancels: nothing reached GitHub,
+// nobody was notified (dismissing a sent approval would leave a trace on the branch and notify its author). Leaving
+// the page sends what waits. A approves, S asks for changes, J and K move, for every item.
 // The URL keeps the selection (?pr=N or ?item=key) with replaceState only. Rules: lib/queue-nav.ts.
 import { createElement as h, Fragment, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Badge, Button, Card, CardBody, EmptyState, Progress, Select, Skeleton, type UseToastReturn } from '@bridge-ds/react';
+import { Button, EmptyState, Progress, Select, Skeleton, type UseToastReturn } from '@bridge-ds/react';
 import { Inbox } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
-import { QueueBar, QueueList, QueueToasts } from '../components/ds/studio/ReviewQueue';
+import { QueueBar, QueueItem, QueueList, QueueToasts, type QueueBarProps } from '../components/ds/studio/ReviewQueue';
+import { explorationGlance, explorationOfKey, type ExplorationGlance } from './queue-glance';
 import { currentViewer, initGitHubConnect, prefersSignIn, readRepo } from './github-session';
 import { joinHandlers } from './join-handlers';
 import { viewerRole } from './needs-you';
@@ -27,14 +30,14 @@ import { setReviewCount } from './shell';
 import { loadHome, type HomeStatic } from './home-data';
 import { approveBranch, askSomeoneElse, closePr, openPr, suggestChanges } from './reviews';
 import { closeSuggestion, forgetSuggestions, openSuggestion, type OpenedSuggestion } from './suggestions';
-import { suggestionOfKey } from '../lib/suggestions-view';
+import { suggestionHref, suggestionOfKey } from '../lib/suggestions-view';
 import { branchOf, keyDecision, keyFromSearch, keyMove, moveIndex, nextOpen, outcomeLine, positionLabel, searchFor, UNDO_MS, type QueueOutcome } from '../lib/queue-nav';
 import { reviewLink } from '../lib/review-page';
 import { ghAction, ghButton } from '../lib/gh-wording';
 import type { NeedKind, NeedRow } from '../lib/home-model';
 import { studioHref } from '../lib/team-path';
 
-/** The link of a row that does not open a branch review, by kind. */
+/** The bar's primary action of a row that is not reviewed in place, by kind: the page that handles it. */
 const OPEN_LABEL: Record<NeedKind, string> = {
   guidance: 'Review guidance',
   health: 'Open Quality',
@@ -42,6 +45,16 @@ const OPEN_LABEL: Record<NeedKind, string> = {
   review: 'Open review',
   own: 'Open change',
   join: 'Open Members',
+};
+
+/** In the comment's place, for a row that is reviewed on its own page. */
+const OPEN_NOTE: Record<NeedKind, string> = {
+  guidance: 'You review the guidance on its own page.',
+  health: 'You fix it on the Quality page.',
+  setup: 'You set it up in Settings.',
+  review: 'You review it on its own page.',
+  own: 'It opens on its own page.',
+  join: '',
 };
 
 const read = <T>(id: string): T | null => {
@@ -123,16 +136,6 @@ export function initReviewQueue() {
   const index = () => rows.findIndex((r) => r.key === selected);
   const rowOf = (key: string | null) => rows.find((r) => r.key === key) ?? null;
 
-  /** The rows waiting after the current one, drawn stacked behind the suggestion card. */
-  const nextCards = () => {
-    const i = index();
-    return rows
-      .slice(i + 1)
-      .filter((r) => !outcomes.has(r.key))
-      .slice(0, 3)
-      .map((r) => ({ key: r.key, title: r.title, person: r.person }));
-  };
-
   function showSuggestionRow(sg: number | null) {
     if (sg === openedSg) return;
     openedSg = sg;
@@ -144,7 +147,6 @@ export function initReviewQueue() {
     void openSuggestion(sg, {
       el: sgEl,
       inQueue: true,
-      next: nextCards(),
       approve: (_s, go) => approveLater(go),
       decided: (s, event) => {
         // An approval moved on when it was pressed (it waited for Undo); the others move on once GitHub has them.
@@ -158,7 +160,7 @@ export function initReviewQueue() {
         sgState = s;
         if (s && focusTitle) {
           focusTitle = false;
-          requestAnimationFrame(() => sgEl.querySelector<HTMLElement>('.sg-title')?.focus());
+          requestAnimationFrame(() => sgEl.querySelector<HTMLElement>('.br-title')?.focus());
         }
       },
     });
@@ -191,7 +193,7 @@ export function initReviewQueue() {
     paint();
     if (focusTitle && !n && !sg) {
       focusTitle = false;
-      requestAnimationFrame(() => cardEl.querySelector<HTMLElement>('.rq-item-title')?.focus());
+      requestAnimationFrame(() => cardEl.querySelector<HTMLElement>('.br-title')?.focus());
     }
   }
 
@@ -425,60 +427,120 @@ export function initReviewQueue() {
         : null,
     );
 
-    // Not a branch nor a suggestion: what it is and the link that handles it.
+    // Not a branch nor a suggestion: the same head as every item, its action in the bar.
     const sg = suggestionOfKey(row?.key ?? selected);
     sgEl.hidden = !sg;
     cardEl.hidden = Boolean(branch) || Boolean(sg) || !row;
     render(
       cardEl,
       !branch && !sg && row
-        ? h(
-            Card,
-            { className: 'rq-item' },
-            h(
-              CardBody,
-              { className: 'rq-item-body' },
-              h('h2', { className: 'rq-item-title', tabIndex: -1 }, row.title),
-              h('p', { className: 't-body t-muted rq-item-line' }, row.line),
-              // A join request: the role it gets and how long it waits, then Decline and Approve right here.
-              row.kind === 'join' && row.detail ? h('p', { className: 't-ui t-muted rq-item-line' }, row.detail) : null,
-              row.kind === 'join' && row.pill ? h(Badge, { tone: row.pill.tone, size: 'sm' }, row.pill.label) : null,
-              row.kind === 'join' && row.request
-                ? h(
-                    'div',
-                    { className: 'rq-join' },
-                    joinSaid ? h('p', { className: 't-ui t-muted', role: 'status' }, joinSaid) : null,
-                    joinGitHub
-                      ? h(Button, { variant: 'link', onClick: () => join.connectGitHub() }, ENTRY_WORDS.githubToManage)
-                      : h(
-                          Fragment,
-                          null,
-                          h(Button, { variant: 'secondary', loading: joinBusy === 'decline', disabled: Boolean(joinBusy), 'aria-label': `${ENTRY_WORDS.decline} ${row.request.name}`, onClick: () => void decideJoin(row, false) }, ENTRY_WORDS.decline),
-                          h(Button, { variant: 'primary', loading: joinBusy === 'approve', disabled: Boolean(joinBusy), 'aria-label': `${ENTRY_WORDS.approve} ${row.request.name}`, onClick: () => void decideJoin(row, true) }, ENTRY_WORDS.approve),
-                        ),
-                  )
-                : h(ButtonLink, { variant: 'primary', href: row.href }, OPEN_LABEL[row.kind]),
-            ),
-          )
+        ? h(QueueItem, { title: row.title, person: row.person, line: row.line, detail: row.detail ?? null, pill: row.kind === 'join' ? row.pill : null, glance: glanceOf(row), excerpt: row.excerpt ?? null })
         : null,
     );
 
-    footEl.hidden = !branch;
-    render(
-      footEl,
-      h(QueueBar, {
-        canApprove: Boolean(branch) && canApprove && !outcomes.has(selected ?? ''),
-        canSuggest: Boolean(branch) && canSuggest && !outcomes.has(selected ?? ''),
-        branch: Boolean(branch),
-        busy,
-        said,
-        onApprove: approve,
-        onSuggest: (text: string) => void act('suggest', text),
-        onAsk: () => void act('ask'),
-        links: branch && detail.dataset.developer ? { review: reviewLink(location.origin, branch), developer: detail.dataset.developer } : null,
-        focusComment,
-      }),
-    );
+    const bar = barFor(row, branch, sg);
+    footEl.hidden = !bar;
+    // One bar per item: a new item starts with an empty comment.
+    render(footEl, bar ? h(QueueBar, { key: selected ?? '', ...bar, said, focusComment }) : null);
+  }
+
+  /** An exploration row: its captured screen and next step, read once (scripts/queue-glance), 'loading' meanwhile. */
+  const glances = new Map<string, ExplorationGlance>();
+  function glanceOf(row: NeedRow): ExplorationGlance | 'loading' | null {
+    const x = explorationOfKey(row.key);
+    if (!x) return null;
+    const got = glances.get(row.key);
+    if (got) return got;
+    void explorationGlance(x).then((g) => {
+      glances.set(row.key, g);
+      if (selected === row.key) paint();
+    });
+    return 'loading';
+  }
+
+  /** What the bar offers for the item on screen: the same places for every item, filled by what it allows. */
+  function barFor(row: NeedRow | null, branch: number | null, sg: number | null): Omit<QueueBarProps, 'said' | 'focusComment'> | null {
+    const done = outcomes.has(selected ?? '');
+    const copy = async (url: string, what: string) => {
+      try {
+        await navigator.clipboard.writeText(url);
+        return `${what} copied.`;
+      } catch {
+        return 'Copy is not available in this browser. Copy the address from the address bar.';
+      }
+    };
+    if (branch) {
+      const links = detail.dataset.developer ? { review: reviewLink(location.origin, branch), developer: detail.dataset.developer } : null;
+      return {
+        comment: true,
+        secondary: { label: 'Ask for changes', disabled: !canSuggest || done || Boolean(busy), loading: busy === 'suggest', needsText: 'Say what to change in the comment first.', onClick: (text) => void act('suggest', text) },
+        primary: { label: 'Approve', disabled: !canApprove || done || Boolean(busy), loading: busy === 'approve', onClick: (text) => approve(text) },
+        keys: ['approve', 'suggest'],
+        menu: [
+          { label: 'Ask someone else to review', disabled: !canApprove || Boolean(busy), onClick: () => void act('ask') },
+          ...(links
+            ? [
+                { label: 'Copy link to this review', onClick: () => copy(links.review, 'Link to this review') },
+                { label: 'Copy link for a developer', onClick: () => copy(links.developer, 'Link for a developer') },
+                { label: 'Open the full review', onClick: () => location.assign(links.review) },
+              ]
+            : []),
+        ],
+      };
+    }
+    if (sg) {
+      const b = sgState?.bar;
+      const can = (x: boolean | undefined) => Boolean(x) && !done && !busy;
+      return {
+        comment: true,
+        secondary: {
+          label: 'Ask for changes',
+          disabled: !can(sgState?.canRequestChanges),
+          loading: busy === 'suggest',
+          needsText: 'Say what should change in the comment first: the author reads it.',
+          demoWrite: 'review suggestions',
+          onClick: (text) => void sgAct(() => b!.requestChanges(text)),
+        },
+        primary: { label: b?.approveLabel ?? 'Approve', disabled: !can(sgState?.canApprove), demoWrite: 'review suggestions', onClick: (text) => void b?.approve(text) },
+        keys: ['approve', 'suggest'],
+        menu: [
+          { label: 'Copy link', onClick: () => copy(`${location.origin}${suggestionHref(sg)}`, 'Link to this suggestion') },
+          { label: 'Open the full review', onClick: () => location.assign(suggestionHref(sg)) },
+          ...(b?.canDecline && !done ? [{ label: 'Decline', tone: 'danger' as const, onClick: () => b.decline() }] : []),
+        ],
+      };
+    }
+    if (!row) return null;
+    if (row.kind === 'join' && row.request) {
+      const name = row.request.name;
+      return {
+        comment: false,
+        note: joinSaid || null,
+        secondary: joinGitHub ? null : { label: ENTRY_WORDS.decline, disabled: Boolean(joinBusy) || done, loading: joinBusy === 'decline', onClick: () => void decideJoin(row, false) },
+        primary: joinGitHub
+          ? { label: ENTRY_WORDS.githubToManage, onClick: () => join.connectGitHub() }
+          : { label: `${ENTRY_WORDS.approve} ${name}`, disabled: Boolean(joinBusy) || done, loading: joinBusy === 'approve', onClick: () => void decideJoin(row, true) },
+        keys: joinGitHub ? [] : ['approve'],
+        menu: [],
+      };
+    }
+    return { comment: false, note: OPEN_NOTE[row.kind] || null, secondary: null, primary: { label: row.action ?? OPEN_LABEL[row.kind], href: row.href }, keys: ['open'], menu: [] };
+  }
+
+  /** Ask for changes on the open suggestion: the queue moves on once GitHub has it (showSuggestionRow `decided`). */
+  async function sgAct(go: () => Promise<unknown>) {
+    if (busy) return;
+    busy = 'suggest';
+    said = '';
+    paint();
+    try {
+      await go();
+      busy = null;
+    } catch (err) {
+      busy = null;
+      said = (err as Error).message;
+      paint();
+    }
   }
 
   // What the open review offers (scripts/reviews.ts marks #rv-detail), and focus on its title after a move.
@@ -512,20 +574,24 @@ export function initReviewQueue() {
       go(to);
       return;
     }
-    const decision = keyDecision(e);
-    if (decision && openedSg && sgState) {
-      // A suggestion: its own buttons, when the viewer may press them.
-      const btn = sgEl.querySelector<HTMLButtonElement>(decision === 'approve' ? '[data-sg-approve]' : '[data-sg-suggest]');
-      if (!btn || btn.disabled) return;
-      e.preventDefault();
-      btn.click();
+    // Enter opens an item reviewed on its own page (the bar's link), unless a control or a link has the focus.
+    if (e.key === 'Enter' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !footEl.hidden && !(e.target instanceof HTMLElement && e.target.closest('a, button, summary, [role="button"]'))) {
+      const open = footEl.querySelector<HTMLAnchorElement>('a[data-rq-open]');
+      if (open) {
+        e.preventDefault();
+        open.click();
+      }
       return;
     }
-    if (!decision || !opened) return;
+    // A and S press what the bar offers, the same for every item: A presses Approve when it can be pressed; S opens
+    // the comment, which says what to change, when the item takes one and Ask for changes can be pressed.
+    const decision = keyDecision(e);
+    if (!decision || footEl.hidden) return;
+    const btn = footEl.querySelector<HTMLButtonElement>(`button[data-rq-act="${decision}"]`);
+    if (!btn || btn.disabled) return;
     e.preventDefault();
-    if (decision === 'approve') approve('');
-    else {
-      // S: the comment says what to change, so it opens the field first.
+    if (decision === 'approve') btn.click();
+    else if (footEl.querySelector('[data-rq-comment]')) {
       focusComment++;
       paint();
     }

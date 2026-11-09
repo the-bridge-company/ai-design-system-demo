@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildTokenSet, layoutOptions, loadConfig, parseComponentSpecs, type ComponentSpec } from '@bridge-ds/core';
 import { tokenFiles } from './explorer';
-import { alsoChanges, durationMs, motionChanges, motionHeadline, motionPreview } from './motion-changes';
+import { alsoChanges, durationMs, headlineSentence, loopFrames, motionChanges, motionHeadline, motionPreview } from './motion-changes';
 import { exists, readText } from './repo';
 
 const options = layoutOptions(loadConfig(exists('bridge.config.json') ? readText('bridge.config.json') : '{}'));
@@ -90,5 +90,33 @@ describe('motion changes of a branch', () => {
     expect(durationMs({ value: 0.2, unit: 's' })).toBe(200);
     expect(durationMs('150ms')).toBe(150);
     expect(durationMs('nope')).toBeUndefined();
+  });
+});
+
+describe('the preview loop', () => {
+  const side = { ms: 200, bezier: [0.16, 1, 0.3, 1] as const };
+  const popup = { from: { opacity: 0, transform: 'scale(0.96)' }, to: { opacity: 1, transform: 'scale(1)' } };
+
+  it('starts and ends on the shown frame, so a preview that does not play is never an empty stage', () => {
+    const f = loopFrames(side, 2400, popup, false);
+    expect(f[0]).toMatchObject({ opacity: 1, offset: 0 });
+    expect(f[f.length - 1]).toMatchObject({ opacity: 1, offset: 1 });
+    // The moment itself plays at its duration and curve.
+    const at = f.findIndex((x) => x.easing);
+    expect(f[at]).toMatchObject({ opacity: 0, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+    expect(f[at + 1]!.offset - f[at]!.offset).toBeCloseTo(200 / 2400);
+    for (let i = 1; i < f.length; i++) expect(f[i]!.offset).toBeGreaterThanOrEqual(f[i - 1]!.offset);
+  });
+
+  it('a closing moment starts shown too, and comes back before the loop ends', () => {
+    const shown = { opacity: 1, transform: 'scale(1)' };
+    const hidden = { opacity: 0, transform: 'scale(0.96)' };
+    const f = loopFrames(side, 2400, { from: shown, to: hidden }, true);
+    expect(f[0]).toMatchObject({ opacity: 1, offset: 0 });
+    expect(f[f.length - 1]).toMatchObject({ opacity: 1, offset: 1 });
+  });
+
+  it('the headline says what changes in words, without the token path', () => {
+    expect(headlineSentence({ lead: 'Popups open faster', token: 'motion.duration.moderate', before: '250 ms', after: '200 ms' })).toBe('Popups open faster: from 250\u00a0ms to 200\u00a0ms.');
   });
 });

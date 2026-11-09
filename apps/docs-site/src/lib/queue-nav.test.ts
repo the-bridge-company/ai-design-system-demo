@@ -2,11 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { afterApprove, branchOf, keyDecision, keyFromSearch, keyMove, moveIndex, nextIndex, nextOpen, outcomeLine, positionLabel, previousIndex, queueWindow, searchFor, skipIndex, type QueueOutcome } from './queue-nav';
 
 describe('the list with outcomes', () => {
-  it('shows the rows up to the current one and the next three, the rest counted', () => {
-    expect(queueWindow(20, 2)).toEqual({ end: 6, more: 14 });
-    expect(queueWindow(20, -1)).toEqual({ end: 5, more: 15 });
-    expect(queueWindow(3, 0)).toEqual({ end: 3, more: 0 });
-    expect(queueWindow(20, 18)).toEqual({ end: 20, more: 0 });
+  it('shows a window of seven rows around the current one, the rest counted once', () => {
+    expect(queueWindow(20, 2)).toEqual({ start: 0, end: 7, more: 13 });
+    expect(queueWindow(20, -1)).toEqual({ start: 0, end: 7, more: 13 });
+    expect(queueWindow(3, 0)).toEqual({ start: 0, end: 3, more: 0 });
+    expect(queueWindow(20, 18)).toEqual({ start: 13, end: 20, more: 13 });
+    // The window slides with the current row, two rows above it, and keeps its size: the list never changes height.
+    expect(queueWindow(20, 9)).toEqual({ start: 7, end: 14, more: 13 });
+    expect(queueWindow(8, 3)).toEqual({ start: 1, end: 8, more: 1 });
+    expect(queueWindow(8, 5)).toEqual({ start: 1, end: 8, more: 1 });
+    for (let i = 0; i < 20; i++) {
+      const w = queueWindow(20, i);
+      expect(w.end - w.start).toBe(7);
+      expect(i >= w.start && i < w.end).toBe(true);
+    }
   });
   it('moves to the next row without an outcome, wrapping to the ones left before', () => {
     const o = new Map<string, QueueOutcome>([

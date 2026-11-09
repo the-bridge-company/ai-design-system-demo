@@ -1072,6 +1072,17 @@ function memberFetch(ctx: Ctx, team: { full: string }, pairs: readonly ProductPa
 }
 
 /**
+ * Whether a request of the library check reads the team's library: the repository itself (/repos/<team>, which every
+ * Bridge context reads first for its default branch) or anything under it, on the API or the raw host.
+ */
+export function onTeamLibrary(u: URL, team: string): boolean {
+  const path = u.pathname.toLowerCase();
+  const t = team.toLowerCase();
+  if (u.origin === API) return path === `/repos/${t}` || path.startsWith(`/repos/${t}/`);
+  return u.hostname === 'raw.githubusercontent.com' && path.startsWith(`/${t}/`);
+}
+
+/**
  * Bridge's library check on one seeded exploration, as Studio runs it for a member (api/mcp ?view=pieces): the MCP
  * library's missingPiecesOp reads the team's library with the app's read token (tokens, components) and the
  * exploration through the member's own path, then records what it found in the exploration's body. How many pieces.
@@ -1082,7 +1093,7 @@ async function seedLibraryCheck(ctx: Ctx, lib: SeedLib, team: { owner: string; r
   const f = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
     const u = new URL(url);
     const method = (init?.method ?? 'GET').toUpperCase();
-    const onTeam = (u.origin === API && u.pathname.toLowerCase().startsWith(`/repos/${lower}/`)) || (u.hostname === 'raw.githubusercontent.com' && u.pathname.toLowerCase().startsWith(`/${lower}/`));
+    const onTeam = onTeamLibrary(u, lower);
     if (!onTeam) return own(url, init);
     // The library is only read here: the check writes on the exploration alone.
     if (method !== 'GET' && method !== 'HEAD') return Response.json({ message: 'The library check only reads the library.' }, { status: 403 });

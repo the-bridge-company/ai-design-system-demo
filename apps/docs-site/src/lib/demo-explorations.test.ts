@@ -6,7 +6,7 @@ import { memoryRedis } from '../../api/_lib/redis';
 import { branchKey } from '../../api/_lib/former-member';
 import { explorationBlockOf, memberRef } from '../../api/_lib/exploration-member';
 import { parseSeedPlan, seedLeadFor, seedMemberOf, seedProductsFrom, SEED_LIMITS } from '../../api/_lib/demo-explorations';
-import { clearProductPairCache, setSeedRetry, type ContribDeps, handleContribute } from '../../api/contribute/index';
+import { clearProductPairCache, onTeamLibrary, setSeedRetry, type ContribDeps, handleContribute } from '../../api/contribute/index';
 
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
@@ -527,5 +527,20 @@ describe('the screen of a seeded exploration', () => {
     const out = await (await run(w, memoryRedis(() => T0), { apply: true, plan: { items: [item({ screen: '/#/orders/12' })] } })).json();
     expect(out.items[0]).toMatchObject({ status: 'started', screen: 'saved' });
     expect(explorationBlockOf(w.pulls[0].body)?.screen).toBe('/#/orders/12');
+  });
+});
+
+describe('onTeamLibrary (the seed library check reads the library with the app read token)', () => {
+  const team = 'Acme-Design-Demo/bridge-demo-ds';
+  it('counts the repository itself, read first by every Bridge context', () => {
+    expect(onTeamLibrary(new URL('https://api.github.com/repos/acme-design-demo/bridge-demo-ds'), team)).toBe(true);
+  });
+  it('counts anything under it, on the API and the raw host', () => {
+    expect(onTeamLibrary(new URL('https://api.github.com/repos/acme-design-demo/bridge-demo-ds/contents/tokens'), team)).toBe(true);
+    expect(onTeamLibrary(new URL('https://raw.githubusercontent.com/acme-design-demo/bridge-demo-ds/main/x.json'), team)).toBe(true);
+  });
+  it('leaves the products and look-alike names to the member path', () => {
+    expect(onTeamLibrary(new URL('https://api.github.com/repos/acme-design-demo/acme-prints-design/pulls/1'), team)).toBe(false);
+    expect(onTeamLibrary(new URL('https://api.github.com/repos/acme-design-demo/bridge-demo-ds-old'), team)).toBe(false);
   });
 });

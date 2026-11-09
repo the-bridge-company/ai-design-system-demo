@@ -569,7 +569,8 @@ a.ql-next {
   }
 
   /* The same on the clean-up line: the sentence takes the full width, its action under it. */
-  .ql-note {
+  /* Two classes: quality.css can load in two bundles, and the base .ql-note of the later one must not win. */
+  .fg-card.ql-note {
     grid-template-columns: minmax(0, 1fr);
     padding: var(--space-3) var(--space-4);
   }

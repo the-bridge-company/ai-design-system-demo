@@ -55,6 +55,7 @@ import { isHosted, studioHref } from '../lib/team-path';
 import { explorationNameOf, needsReviewRead, reviewersAsked, reviewsFromStatus, reviewStateOf, waitsOnViewer } from '../lib/review-state';
 import { explorationHref } from '../lib/explorations-view';
 import { leadHomeRow } from '../lib/lead-decisions';
+import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import type { HomeWaiting } from '../components/ds/studio/StudioHome';
 import { mineFromCards, noteMine } from '../lib/nav-products';
 import { busyText } from '../lib/team-load';
@@ -302,7 +303,9 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   // Library checks and guidance drafts wait on the reviewers, not on someone who cannot approve them.
   const staticNeeds = (): NeedRow[] => {
     const f = facts();
-    return [...joins, ...(reviewer ? [...(contrastNeed(f.contrastFail) ? [contrastNeed(f.contrastFail)!] : []), ...f.guidance.map((g) => guidanceNeed(g, now, guidanceChangeOf(g, open, onItsWay)))] : [])];
+    // A design lead (scripts/design-lead: an email admin or lead too) reviews the library's checks and guidance drafts,
+    // as Changes > Waiting on me lists them (scripts/waiting-extras).
+    return [...joins, ...(reviewer || viewerIsDesignLead() ? [...(contrastNeed(f.contrastFail) ? [contrastNeed(f.contrastFail)!] : []), ...f.guidance.map((g) => guidanceNeed(g, now, guidanceChangeOf(g, open, onItsWay)))] : [])];
   };
   const empty: HomeData = { viewer, loading: true, settled: false, failed: null, needs: [], branches: [], explorations: [], decisions: 0, reviewer };
   if (!viewer || !hasWorkingToken()) {
@@ -506,7 +509,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       const block = parseExplorationBody(p.body);
       if (!block || (block.leadAskedAt === undefined && !block.decisions?.length && !block.leadNote)) continue;
       const asker = block.leadAskedBy ?? p.user.login;
-      const row = leadHomeRow(p.body, { viewer, lead: Boolean(currentContributor()?.lead) || reviewersAsked({ approvers: siteApprovers().design, builders: [asker] }).some((l) => same(l, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null });
+      const row = leadHomeRow(p.body, { viewer, lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null });
       if (!row) continue;
       const href = studioHref(`changes/${explorationHref({ number: p.number, product: p.product })}`);
       if (row.where === 'waiting') {

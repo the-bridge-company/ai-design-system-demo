@@ -3,7 +3,7 @@
 // (lib/product-name canRenameProduct, a product the team's settings list: it opens the name in place on the product's
 // page, #rename). "Add a product" on the title's line (it adds to the whole list, never to the last row), the same
 // dialog as the setup step (AddProduct.tsx), for the admins it lets in. Facts only to who can act on them: the whole band is a lead's or an admin's (lib/create-branch
-// libraryLead, an admin by email too); a designer gains nothing from it and never sees it.
+// lib/design-lead, an admin by email too); a designer gains nothing from it and never sees it.
 // The repositories behind each product wait in "For developers". Words: lib/settings-view.ts PRODUCTS_WORDS.
 import { useEffect, useState } from 'react';
 import { Card, CardBody, Link, Select } from '@bridge-ds/react';
@@ -43,14 +43,14 @@ export default function TeamProducts() {
       });
     read();
     document.addEventListener('bridge:team-model', read);
-    void Promise.all([import('../../../scripts/github-session'), import('../../../lib/create-branch'), import('../../../lib/product-name')])
-      .then(([{ onAccess, designerRoute }, { libraryLead }, { canRenameProduct }]) => {
+    void Promise.all([import('../../../scripts/github-session'), import('../../../scripts/design-lead'), import('../../../lib/product-name')])
+      .then(([{ onAccess }, { viewerLeadsLibrary }, { canRenameProduct }]) => {
         let last: Parameters<Parameters<typeof onAccess>[0]>[0] = null;
         const paint = () => {
           if (!live) return;
           // A lead or an admin (an email admin too), the same people who send a product its library update. Who leads
           // is known once the team's settings are read: painted again then.
-          setLead((libraryLead(last) && !designerRoute()) || Boolean(last?.admin));
+          setLead(viewerLeadsLibrary(last) || Boolean(last?.admin));
           setRename(canRenameProduct(last));
         };
         onAccess((a) => {

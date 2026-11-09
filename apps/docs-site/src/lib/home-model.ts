@@ -76,13 +76,17 @@ export function person(login: string, profileName?: string | null, avatar?: stri
   return { login, name: displayName(login, profileName), avatar: avatar ?? null };
 }
 
-/** Distinct people, first seen first (the oldest wait leads, since rows come sorted). */
+/**
+ * Distinct people, first seen first (the oldest wait leads, since rows come sorted). A GitHub account is one person; the
+ * designers who joined by email share the app's account and no picture, so their name tells them apart ("Sofia and Leo
+ * are waiting on you", never "Sofia" alone for two people).
+ */
 export function uniquePeople(people: (Person | null | undefined)[]): Person[] {
   const seen = new Set<string>();
   const out: Person[] = [];
   for (const p of people) {
     if (!p) continue;
-    const k = p.agent ? '#agent' : p.login.toLowerCase();
+    const k = p.agent ? '#agent' : p.avatar ? p.login.toLowerCase() : `${p.login.toLowerCase()}|${p.name.trim().toLowerCase()}`;
     if (seen.has(k)) continue;
     seen.add(k);
     out.push(p);
@@ -419,8 +423,11 @@ export function devQuestionNeed(c: { key: string; name: string; href: string; as
   };
 }
 
-/** The Needs you rows the nav badge counts: the reviews, and the developers' questions. */
-export const badgeRows = (rows: readonly NeedRow[]): number => rows.filter((r) => r.kind === 'review' || r.question).length;
+/**
+ * The Needs you rows the nav badge counts: the reviews, the usage guidance drafts and the developers' questions. The
+ * same things Changes > Waiting on me lists, so the badge and the tab say one number.
+ */
+export const badgeRows = (rows: readonly NeedRow[]): number => rows.filter((r) => r.kind === 'review' || r.kind === 'guidance' || r.question).length;
 
 /** A usage guidance draft by Claude, as the home reads it (the component's slug finds its open change). */
 export interface GuidanceDraft {

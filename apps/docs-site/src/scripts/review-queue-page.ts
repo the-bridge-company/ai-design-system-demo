@@ -36,6 +36,7 @@ import { reviewLink } from '../lib/review-page';
 import { ghAction, ghButton } from '../lib/gh-wording';
 import type { NeedKind, NeedRow } from '../lib/home-model';
 import { studioHref } from '../lib/team-path';
+import { viewerIsDesignLead } from './design-lead';
 
 /** The bar's primary action of a row that is not reviewed in place, by kind: the page that handles it. */
 const OPEN_LABEL: Record<NeedKind, string> = {
@@ -372,9 +373,12 @@ export function initReviewQueue() {
         failed ??
         (!signedIn
           ? `${ghAction('see what waits on you', signIn)}.`
-          : viewerRole() !== 'reviewer'
-            ? 'Reviewers look at changes here. When one sends your change back, it shows on Home.'
-            : 'New reviews, usage guidance drafts and library checks land here.'),
+          : viewerRole() === 'reviewer'
+            ? 'New reviews, usage guidance drafts and library checks land here.'
+            : // A design lead without a review right on GitHub (a lead by email): the explorations they decide on land here.
+              viewerIsDesignLead()
+              ? 'Explorations that wait on a design lead land here.'
+              : 'Reviewers look at changes here. When one sends your change back, it shows on Home.'),
       actions: signedIn
         ? h(ButtonLink, { variant: 'primary', href: studioHref() }, 'Back to Home')
         : h(

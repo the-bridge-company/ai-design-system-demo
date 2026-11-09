@@ -83,6 +83,10 @@ describe('people', () => {
   it('keeps each person once, Claude once', () => {
     expect(uniquePeople([ann, null, person('ANN-LEE', 'Ann'), CLAUDE, { ...CLAUDE }, dana]).map((p) => p.name)).toEqual(['Ann', 'Claude AI', 'Dana']);
   });
+  it('tells apart the designers who joined by email, who share the app account', () => {
+    const app = (name: string) => ({ login: 'bridge-studio-app', name, avatar: null });
+    expect(uniquePeople([app('Sofia'), app('Leo'), app('Sofia')]).map((p) => p.name)).toEqual(['Sofia', 'Leo']);
+  });
   it('says who waits in one sentence', () => {
     expect(waitingSentence([])).toBeNull();
     expect(waitingSentence([ann])).toEqual({ names: 'Ann', rest: ' is waiting on you.' });

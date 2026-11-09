@@ -6,9 +6,10 @@
 // onboarding of hosted teams, multi-team PR 3c).
 import { createElement, Fragment } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { currentAccess, currentContributor, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from './github-session';
+import { currentContributor, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from './github-session';
 import { setReviewCount } from './shell';
 import { rememberMine } from './needs-you';
+import { viewerIsDesignLead } from './design-lead';
 import { loadHome, type HomeData, type HomeStatic } from './home-data';
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
 import { paintStudioHome, type HealthLine, type HomeComponent, type JoinHandlers, type StudioHomeProps } from '../components/ds/studio/StudioHome';
@@ -144,11 +145,11 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         signedOut: { line: signedOutLine(signIn), button: ghButton(signIn), signIn },
         failed: d?.failed ?? null,
         startHrefs: f.startHrefs,
-        // No review right and not an admin: only what waits on them, and their tour (once the owner teams are read). An
-        // admin (an email admin included) or a reviewer is a lead: the lead tour.
-        contributor: Boolean(d && !d.loading && !d.reviewer && !currentAccess()?.admin && !viewOnly()),
+        // No review right and not a design lead: only what waits on them, and their tour (once the owner teams are read).
+        // A design lead (lib/design-lead: an admin or lead by email or GitHub) or a reviewer: the lead tour.
+        contributor: Boolean(d && !d.loading && !d.reviewer && !viewerIsDesignLead() && !viewOnly()),
         viewOnly: viewOnly(),
-        lead: Boolean(d && !d.loading && (d.reviewer || currentAccess()?.admin)),
+        lead: Boolean(d && !d.loading && (d.reviewer || viewerIsDesignLead())),
         join,
         note,
         recent: true,

@@ -6,6 +6,7 @@
 // "Copy link", "Link for a developer"; the page itself never links to GitHub.
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
+import { explorationWaitsOnViewer } from './design-lead';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
 import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
@@ -393,7 +394,8 @@ function listRow(r: Row): ListRow {
   // Waiting on me: the one rule of every surface (lib/waiting-on). An email contributor's own branches come from the
   // server's list.
   const turn =
-    (lifecycle === 'exploration' ? Boolean(r.reviewWaits) : true) &&
+    // An exploration: its review on GitHub waits on the viewer, or it waits on them as its lead (as on Home).
+    (lifecycle === 'exploration' ? Boolean(r.reviewWaits) || explorationWaitsOnViewer({ body: r.body, user: r.user }) : true) &&
     (lifecycle === 'exploration' ||
       waitsOnMe(
         { author: own ? (listViewer() ?? r.user.login) : r.user.login, draft: r.draft, labels: r.labels, nature: r.nature, guidance: r.guidance, lifecycle, who: rowWho(r.kind, facts(r)), requested: r.requested, changesRequested: r.changesRequested },

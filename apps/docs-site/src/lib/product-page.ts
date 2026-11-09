@@ -183,7 +183,7 @@ export function productFacts(product: ProductConfig, ownRepo: string | null, rea
 
 /**
  * The empty product page: why it is worth starting, in one sentence, under the one action (the header says it is
- * empty). The library is a lead's to change (create-branch libraryLead): a designer of the team (`lead` false) gets no
+ * empty). The library is a lead's to change (lib/design-lead): a designer of the team (`lead` false) gets no
  * start action there, so the line is the page's lead instead: what the page is for, and where their asks go.
  */
 export function emptyProductLine(product: ProductConfig, library: boolean, lead = true): string {

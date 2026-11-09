@@ -74,6 +74,7 @@ import type { PmView } from '../components/ds/studio/LeadDecisions';
 import { bringLatestIntoExploration, copyRepos, explorationBehind } from './design-copy';
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
 import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, studioClient } from './github-session';
+import { viewerIsDesignLead } from './design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { viewerRole } from './needs-you';
@@ -591,7 +592,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     productNote: emailOnProduct ? productKeeperLine(product.name) : null,
   });
   // A design lead on someone else's work: what they do to it says why, and they can pass it on.
-  const leadOther = emailLeadOther || Boolean(viewer && !currentViewer()?.email && connected() && !sameLogin(viewer, r.author) && !designerKeeper && (currentAccess()?.admin || reviewersAsked({ approvers: siteApprovers().design, builders: [] }).some((l) => sameLogin(l, viewer))));
+  const leadOther = emailLeadOther || Boolean(viewer && !currentViewer()?.email && connected() && !sameLogin(viewer, r.author) && !designerKeeper && viewerIsDesignLead());
   // The person it belongs to: the lead's words wait on them.
   const answersLead = connected() || emailKeeper ? (emailKeeper || designerKeeper || sameLogin(viewer, r.author)) && !emailOnProduct : false;
   const isLibrary = !own && product.default === true;

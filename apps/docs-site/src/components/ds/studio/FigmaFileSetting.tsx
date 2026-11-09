@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { Button, Card, CardBody, Input, Link } from '@bridge-ds/react';
 import { figmaFileProblem } from '@bridge-ds/core';
 import { FIGMA_FILE_WORDS, figmaFileLabel } from '../../../lib/figma-file';
-import { libraryLead } from '../../../lib/create-branch';
 import { studioHref } from '../../../lib/team-path';
 import { AdminOnlyNote } from './SettingsParts';
 
@@ -46,11 +45,12 @@ export default function FigmaFileSetting({ prefix, protectedBranches }: FigmaFil
       });
     read();
     document.addEventListener('bridge:team-model', read);
-    void import('../../../scripts/github-session').then(({ onAccess }) => {
+    void Promise.all([import('../../../scripts/github-session'), import('../../../scripts/design-lead')]).then(([{ onAccess }, { viewerLeadsLibrary }]) => {
       onAccess((a) => {
         if (!live) return;
-        setLead(libraryLead(a) && !a?.contributor);
-        setEmailLead(Boolean(a?.contributor && a.admin));
+        // The file is a GitHub change: a lead with GitHub sends it, a lead by email (an admin or marked lead) reads why not.
+        setLead(viewerLeadsLibrary(a) && !a?.contributor);
+        setEmailLead(Boolean(a?.contributor) && viewerLeadsLibrary(a));
       });
     });
     return () => {

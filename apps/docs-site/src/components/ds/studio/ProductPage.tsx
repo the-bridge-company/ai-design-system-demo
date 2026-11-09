@@ -108,7 +108,7 @@ export interface ProductPageViewProps {
    * everyone else, and once the copy is there.
    */
   copySetup?: CopySetup | null;
-  /** Whether the viewer may change the library (create-branch libraryLead): false for a designer of the team. */
+  /** Whether the viewer may change the library (lib/design-lead): false for a designer of the team. */
   lead?: boolean;
   /** Reads the page again (GitHub busy: Try again, and once on its own after the reset). */
   onRetry?: () => void;
@@ -844,13 +844,14 @@ export default function ProductPage({
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [{ onAccess, designerRoute }, { libraryLead }] = await Promise.all([import('../../../scripts/github-session'), import('../../../lib/create-branch')]);
+      const [{ onAccess }, { viewerLeadsLibrary }] = await Promise.all([import('../../../scripts/github-session'), import('../../../scripts/design-lead')]);
       onAccess((a) => {
         if (!live) return;
         setCanLatest(a?.write === true);
-        setLead(libraryLead(a) && !designerRoute());
+        // One rule for a lead by email and a lead by GitHub (lib/design-lead).
+        setLead(viewerLeadsLibrary(a));
         // Leads and admins (an email admin too) send the library update; the server checks again.
-        setCanSend((libraryLead(a) && !designerRoute()) || Boolean(a?.admin));
+        setCanSend(viewerLeadsLibrary(a) || Boolean(a?.admin));
       });
     })().catch(() => undefined);
     return () => {

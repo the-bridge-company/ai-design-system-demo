@@ -1,6 +1,6 @@
 // "Start an exploration" (VOCAB.startExploration): the one way to start work in Studio, on the Changes header and the
 // Studio home (rules and words: lib/create-branch.ts). A DS Dialog, one question: "What do you want to explore?"
-//   - Where: a product, or, for a lead (libraryLead), the library itself (a token, a component or its guidance). A change
+//   - Where: a product, or, for a lead (lib/design-lead), the library itself (a token, a component or its guidance). A change
 //     to the library is an exploration whose target is the library. A designer of the team only sees products, and
 //     with one product no Where at all. Preselected from ?product= (key, name, or "library"), else the only
 //     product, else the library when the team lists no product. For whoever may add a product (an admin with GitHub,
@@ -45,7 +45,6 @@ import {
   featureProblems,
   featureRepo,
   initialTarget,
-  libraryLead,
   productParam,
   productRepoBlockedLine,
   startPageProblem,
@@ -262,14 +261,14 @@ export default function StartExploration({ components, appearance = 'menu', prod
 
   useEffect(() => {
     // Setting state after an unmount is a no-op in React 18: no guard, so a remount never loses the access.
-    void import('../../../scripts/github-session')
-      .then((m) => {
+    void Promise.all([import('../../../scripts/github-session'), import('../../../scripts/design-lead')])
+      .then(([m, { viewerLeadsLibrary }]) => {
         setEmail(Boolean(m.currentContributor()));
-        // A designer signed in with GitHub works like an email member in the products (through Bridge) and, like
-        // them, is not a lead of the library.
+        // A designer signed in with GitHub works like an email member in the products (through Bridge). Who leads the
+        // library is one rule for a lead by email and a lead by GitHub (lib/design-lead).
         m.onAccess((a) => {
           const designer = m.designerRoute();
-          setLead(libraryLead(a) && !designer);
+          setLead(viewerLeadsLibrary(a));
           setAdmin(Boolean(a?.admin));
           if (designer) setEmail(true);
         });

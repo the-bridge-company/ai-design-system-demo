@@ -71,7 +71,8 @@ export interface ComponentChangeRequest {
 /**
  * The exploration a library request comes from (decision 2026-11-09). `repo` is "owner/name" of the repository the
  * exploration lives in (a product's design copy, or the design system's own), `number` its pull request, `product` the
- * product's name as people read it ("Acme Prints"), `name` the exploration's name ("Order fulfilment timeline").
+ * product's key in bridge.config.json ("prints"; its name comes from there), `name` the exploration's name ("Order
+ * fulfilment timeline").
  */
 export interface RequestOrigin {
   kind: 'exploration';

@@ -446,7 +446,7 @@ export async function proposePiecesOnGitHub(
   const repo = repoOfProductBranch(gh, input.library);
   const ref = productBranchRef(pull, ownProduct(input.products, repo) ?? productOfBranch(input.products, { labels: pull.labels, files }), repo);
   // Where each request comes from (requests.ts RequestOrigin): the Changes Library row says "Needed by <name> · <product>".
-  const origin: RequestOrigin = { kind: 'exploration', repo: gh.fullName, number: pull.number, product: ref.productName, name: parseExplorationBody(pull.body)?.name ?? pull.title.replace(/^Exploration:\s*/i, '') };
+  const origin: RequestOrigin = { kind: 'exploration', repo: gh.fullName, number: pull.number, product: ref.productKey, name: parseExplorationBody(pull.body)?.name ?? pull.title.replace(/^Exploration:\s*/i, '') };
   const todo: { piece: MissingPiece; ask: ReturnType<typeof pieceRequest> }[] = [];
   for (const id of ids) {
     const piece = record.pieces.find((p) => p.id === id);

@@ -202,7 +202,7 @@ describe('Looks right and the library', () => {
 describe('a library request says which exploration it comes from', () => {
   const branch: ProductBranchRef = { pr: 1, title: 'Exploration: Order fulfilment timeline', branch: 'explore/order-fulfillment-timeline', url: 'https://github.com/acme/prints-design/pull/1', productKey: 'prints', productName: 'Acme Prints', repo: 'acme/prints-design' };
   it('carries origin in its Bridge block, read back as it was written', () => {
-    const origin = { kind: 'exploration' as const, repo: 'acme/prints-design', number: 1, product: 'Acme Prints', name: 'Order fulfilment timeline' };
+    const origin = { kind: 'exploration' as const, repo: 'acme/prints-design', number: 1, product: 'prints', name: 'Order fulfilment timeline' };
     const { request } = pieceRequest(timeline, branch, { origin });
     const parsed = parseRequestIssue(composeRequestIssue(request).body);
     expect(requestOriginOf(parsed)).toEqual(origin);

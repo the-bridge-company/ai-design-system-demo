@@ -487,3 +487,28 @@ describe('StudioHome, quiet team Home (recent)', () => {
     expect(container.querySelector('[aria-labelledby="sh-explorations"]')).toBeNull();
   });
 });
+
+// The home never paints a state it is not sure of: while it reads, a row known early (a guidance draft) or a count of
+// changes never shows as the whole home, and nothing says "empty" or "Nothing in progress" before the read is done.
+describe('StudioHome, while it reads', () => {
+  it('holds the space of the explorations and the products, and says nothing about them yet', async () => {
+    const { container } = render(createElement(StudioHome, props({ state: 'loading', needs: [sentBack], branches: Array(10).fill(branch), explorations: [], health: { text: 'Library healthy.', tone: 'ok', href: '#q', link: 'Open Quality' }, contributor: false })));
+    expect(screen.getByText('Checking what needs you.')).toBeTruthy();
+    expect(container.textContent).not.toContain('Spacing scale for dense tables');
+    expect(container.textContent).not.toContain('need you');
+    expect(container.textContent).not.toContain(EXPLORE_LINE);
+    expect(container.textContent).not.toContain('Nothing in progress');
+    expect(container.textContent).not.toContain('library changes in progress');
+    expect(container.textContent).not.toContain('Library healthy.');
+    expect(container.querySelector('[data-home-skeleton="explorations"]')).not.toBeNull();
+    expect(container.querySelector('[data-home-skeleton="products"]')).not.toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
+  it('holds the greeting until it knows who reads, never a name it is not sure of', () => {
+    const { container } = render(createElement(StudioHome, props({ state: 'loading', greeting: '' })));
+    const h1 = container.querySelector('h1')!;
+    expect(h1.getAttribute('aria-label')).toBe('Home');
+    expect(h1.textContent).toBe('');
+  });
+});

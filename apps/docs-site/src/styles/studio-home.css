@@ -795,3 +795,13 @@
 .sh-choices > li {
   margin: 0;
 }
+
+/* The home while it reads (StudioHome HomeSkeleton): a section heading and a row of cards, the size of the real ones. */
+.sh-skel-heading {
+  max-width: var(--size-40);
+}
+
+.sh-skel-card {
+  width: 100%;
+  min-height: var(--size-64);
+}

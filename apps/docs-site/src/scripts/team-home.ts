@@ -126,12 +126,13 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
     const d = data && gone.size ? { ...data, needs: data.needs.filter((r) => !gone.has(r.key)) } : data;
     // Nothing needs the viewer: the ways to start stay on top, their work follows under them (`recent`), so their
     // explorations and library changes never turn the quiet home into the busy one.
-    const state = homeState({ signedIn, loading: !d || d.loading, needs: d?.needs.length ?? 0, branches: 0 });
+    // Who reads is not known yet (the sign-in is being checked): the home waits, never a signed-out or someone else's.
+    const state = !known ? 'loading' : homeState({ signedIn, loading: !d || d.loading, needs: d?.needs.length ?? 0, branches: 0 });
     root = paintStudioHome(
       el,
       {
         state,
-        greeting: greeting(new Date(now).getHours(), v?.name ?? null),
+        greeting: known ? greeting(new Date(now).getHours(), v?.name ?? null) : '',
         needs: d?.needs ?? [],
         branches: d?.branches ?? [],
         explorations: d?.explorations ?? [],

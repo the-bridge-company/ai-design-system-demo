@@ -622,7 +622,9 @@ export type HomeState = 'signed-out' | 'loading' | 'busy' | 'empty';
 /** Signed out, still reading, something to show, or nothing at all (the three ways to start). */
 export function homeState(x: { signedIn: boolean; loading: boolean; needs: number; branches: number }): HomeState {
   if (!x.signedIn) return 'signed-out';
-  if (x.loading && !x.needs && !x.branches) return 'loading';
+  // Still reading: the home says nothing it is not sure of yet. A row known early (a guidance draft from the repo)
+  // never shows as the whole of what waits, next to explorations and counts that are not read yet.
+  if (x.loading) return 'loading';
   return x.needs || x.branches ? 'busy' : 'empty';
 }
 

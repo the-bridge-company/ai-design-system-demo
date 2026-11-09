@@ -293,12 +293,13 @@ const onboarding = {
               quiet: true,
             })
           : undefined;
-      const state = homeState({ signedIn, loading: !d || d.loading, needs: d?.needs.length ?? 0, branches: (d?.branches.length ?? 0) + (d?.explorations.length ?? 0) });
+      // Who reads is not known yet (the sign-in is being checked): the home waits, never a signed-out or someone else's.
+      const state = !known ? 'loading' : homeState({ signedIn, loading: !d || d.loading, needs: d?.needs.length ?? 0, branches: (d?.branches.length ?? 0) + (d?.explorations.length ?? 0) });
       root = paintStudioHome(
         el,
         {
           state,
-          greeting: greeting(new Date(now).getHours(), v?.name ?? null),
+          greeting: known ? greeting(new Date(now).getHours(), v?.name ?? null) : '',
           needs: d?.needs ?? [],
           branches: d?.branches ?? [],
           explorations: d?.explorations ?? [],

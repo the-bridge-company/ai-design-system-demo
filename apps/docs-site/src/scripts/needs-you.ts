@@ -8,7 +8,7 @@ import { isGuidanceChange, type TodoChange } from '../lib/overview-todo';
 import { reviewCount, type ViewerRole, type WaitChange } from '../lib/waiting-on';
 import { holdsReviewRight } from '../lib/home-model';
 import { reviewQueue } from '../lib/review-queue';
-import { currentAccess, currentContributor, currentViewer, hasWorkingToken } from './github-session';
+import { currentAccess, currentContributor, currentViewer, hasWorkingToken, readRepo } from './github-session';
 import { loadStatuses, owners, rowWho, shippers, type PullForStatus, type PullStatus } from './pr-status';
 import { loadTeams } from './teams';
 import { rememberedQuestions } from './design-task';
@@ -79,21 +79,30 @@ export function todoChange(p: QueuePullFull, st: PullStatus | null | undefined, 
   };
 }
 
-/** Remembers the badge count for the next page. */
+/** The team a remembered count belongs to ("owner/repo", lower case): another team's count never shows here. */
+const pageTeam = (): string => {
+  const r = readRepo();
+  return `${r.owner}/${r.repo}`.toLowerCase();
+};
+
+/** Remembers the badge count for the next page of this team. */
 export function rememberMine(n: number) {
   try {
-    localStorage.setItem(MINE_COUNT_KEY, JSON.stringify({ n, at: new Date().toISOString(), viewer: currentViewer()?.login ?? null }));
+    localStorage.setItem(MINE_COUNT_KEY, JSON.stringify({ n, at: new Date().toISOString(), viewer: currentViewer()?.login ?? null, team: pageTeam() }));
   } catch {
     /* private mode: the badge waits for GitHub on the next page */
   }
 }
 
-/** The last count this browser saw, for the same viewer (undefined: whoever it was, before the check answers). */
+/**
+ * The last count this browser saw on this team, for the same viewer (undefined: whoever it was, before the check
+ * answers). A count of another team, or one kept before counts named their team, is not this page's.
+ */
 export function rememberedMine(viewer?: string | null): number | null {
   if (viewer === null) return null;
   try {
-    const v = JSON.parse(localStorage.getItem(MINE_COUNT_KEY) || 'null') as { n?: unknown; viewer?: unknown } | null;
-    return v && typeof v.n === 'number' && (viewer === undefined || v.viewer === viewer) ? v.n : null;
+    const v = JSON.parse(localStorage.getItem(MINE_COUNT_KEY) || 'null') as { n?: unknown; viewer?: unknown; team?: unknown } | null;
+    return v && typeof v.n === 'number' && v.team === pageTeam() && (viewer === undefined || v.viewer === viewer) ? v.n : null;
   } catch {
     return null;
   }

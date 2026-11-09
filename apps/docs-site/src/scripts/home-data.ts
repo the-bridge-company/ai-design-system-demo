@@ -11,7 +11,7 @@ import { designTaskReads, rememberQuestions, taskUrlOf } from './design-task';
 import { askerRole, devQuestionOf, taskStage, type DesignTaskRead } from '../lib/review-state';
 import { parseExplorationBody } from '@bridge-ds/core';
 import { homeExplorations, isHomeExploration, isOwnExploration, type ExplorationCard } from '../lib/home-explorations';
-import { currentAccess, currentContributor, currentViewer, getToken, ghGet, hasWorkingToken, limitLine, readRepo, RateLimitError, resolveAccess } from './github-session';
+import { currentAccess, currentContributor, currentViewer, getToken, ghGet, hasWorkingToken, limitLine, onSampleTeam, readRepo, RateLimitError, resolveAccess } from './github-session';
 import { isViewerPm, pmHomeRow, type PmPerson } from '../lib/pm-view';
 import { loadStatuses, owners, rowWho, shippers, type PullStatus } from './pr-status';
 import { loadTeams, siteApprovers } from './teams';
@@ -239,7 +239,9 @@ interface Classified {
 export async function loadJoinNeeds(now: number): Promise<NeedRow[]> {
   const { owner, repo } = readRepo();
   const full = `${owner}/${repo}`;
-  if (!isHosted()) return [];
+  // The sample team reads the same for everyone (github-session onSampleTeam): never the join requests of the
+  // Bridge account signed in on this browser.
+  if (!isHosted() || onSampleTeam()) return [];
   // The access may still be on its way (an email admin's is known without GitHub): wait for it, never fail on it.
   const a = currentAccess() ?? (await resolveAccess({ owner, repo }, { anonymous: true }).catch(() => null));
   if (!a?.admin && !a?.repoAdmin) return [];
@@ -592,6 +594,8 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     ownSuggestionsRead,
     productRead,
     pmsRead,
+    // The explorations kept lately are cards too: the home never says "no exploration" before they are read.
+    closedRead,
   ]);
   loading = false;
   paint();

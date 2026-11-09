@@ -68,6 +68,7 @@ import { ROLE_WORDS } from '../lib/invites';
 import { contributeFetch, contributeInfo, contributorFor, contributorKey, onContributeChange, publicTeamRead, signOutEmail, takeContributeHash, verifyEmailSignIn } from './contribute-session';
 import { busyText } from '../lib/team-load';
 import { emailMemberFace } from '../lib/people';
+import { isSampleTeam } from '../lib/demo';
 
 export { GitHubError };
 
@@ -173,8 +174,20 @@ export function readRepo(): RepoRef {
   return { owner, repo, defaultBranch };
 }
 
+/**
+ * This page is the sample team (lib/demo.ts SAMPLE_REPO, Acme Design): everyone reads it as its visitor does, as
+ * Dana with the sample data, from the first paint. A GitHub sign-in or a linked account of this browser never takes
+ * part there, so nothing of the person's own account (their name, their changes, their role) mixes with the demo.
+ */
+export function onSampleTeam(): boolean {
+  if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo')) return false;
+  const r = repoContext();
+  return r.hosted && isSampleTeam(`${r.owner}/${r.repo}`);
+}
+
 /** The GitHub token saved in this browser (Sign in with GitHub or a pasted token), never the email stand-in. */
 function githubToken(): string | null {
+  if (onSampleTeam()) return null;
   try {
     return localStorage.getItem(key(TOKEN_BASE));
   } catch {
@@ -213,7 +226,7 @@ export function currentContributor(): ContributeMember | null {
 
 /** A page where a Bridge account's linked GitHub role is worth reading: a hosted repository team. */
 function linkedEligible(): boolean {
-  if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo')) return false;
+  if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo') || onSampleTeam()) return false;
   const repo = pageRepo();
   return repoContext().hosted && !isTeamKey(repo) && /^[\w.-]+\/[\w.-]+$/.test(repo);
 }
@@ -289,6 +302,8 @@ export function setToken(token: string | null) {
 }
 
 export function readAppSession(): AppSession | null {
+  // The sample team holds no GitHub sign-in (onSampleTeam): nothing to renew there.
+  if (onSampleTeam()) return null;
   try {
     const raw = localStorage.getItem(key(APP_BASE));
     const s = raw ? (JSON.parse(raw) as AppSession) : null;

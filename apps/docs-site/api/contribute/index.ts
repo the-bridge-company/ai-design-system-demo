@@ -441,11 +441,14 @@ async function sessionOf(ctx: Ctx, req: Request, repoFull: string): Promise<{ me
     // Removed, or joined again since: the session ends.
     return m && m.version === claims.v && sameEmail(m.email, claims.email) ? m : null;
   };
+  // The sample team (src/lib/demo.ts SAMPLE_REPO) is read the same way by everyone who did not join it: as its visitor
+  // member. A Bridge account signed in on this browser never turns it into its own team there.
+  const sample = isSampleTeam(repoFull);
   if (live && !live.visit) {
     const m = await of(live);
     if (m) return { member: m, visitor: false };
   }
-  const a = await sessionAccount(req, ctx.svc.redis, ctx.svc.secret, ctx.now());
+  const a = sample ? null : await sessionAccount(req, ctx.svc.redis, ctx.svc.secret, ctx.now());
   if (a) {
     const m = await ctx.svc.members.get(repoFull, a.email);
     if (m && sameEmail(m.email, a.email)) return { member: m, visitor: false };

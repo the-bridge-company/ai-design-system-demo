@@ -84,11 +84,9 @@ function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; k
     <Menu>
       <MenuTrigger
         render={
-          <button type="button" className="lr-filter" aria-label={`${name}: ${value}`}>
-            <span className="lr-filter-name">{name}</span>
-            <span className="lr-filter-value">{value}</span>
-            <Icon icon={ChevronDown} size="sm" aria-hidden="true" />
-          </button>
+          <Button variant="secondary" size="md" className="lr-filter" iconEnd={ChevronDown} aria-label={`${name}: ${value}`}>
+            <span className="lr-filter-name">{name}</span> <span className="lr-filter-value">{value}</span>
+          </Button>
         }
       />
       <MenuContent align="start">
@@ -125,7 +123,7 @@ function AskedChip({ p }: { p: ReviewPiece }) {
   );
 }
 
-function Tag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean }) {
+function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean }) {
   const d = decidedTag(p);
   if (d)
     return (
@@ -268,7 +266,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
         <p className="lr-detail-ask">
           <AskedChip p={p} />
           {p.asked?.designer && <span className="lr-muted">{p.mine ? 'You asked for it' : `${p.asked.designer} asked for it`}</span>}
-          {(p.state === 'decided' || !decides) && <Tag p={p} viewerReviews={viewer.reviews} />}
+          {(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
         </p>
       )}
       {p.conflict ? (
@@ -413,6 +411,7 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail }: 
             <ul className="lr-side-list">
               {g.pieces.map((p) => (
                 <li key={p.key}>
+                  {/* bridge-audit-ignore-next-line: the whole piece row (title, who asked, its flag) is one target that shows the piece, like the review queue rows; the DS has no row button and Button would cut it to one label */}
                   <button type="button" className="lr-side-row" aria-current={current === p.key ? 'true' : undefined} onClick={() => onPick(p.key)}>
                     <span className="lr-side-main">
                       <span className="lr-side-title">{p.title}</span>

@@ -33,38 +33,16 @@
   gap: var(--space-2) var(--space-3);
 }
 
+/* A DS secondary Button: its name quiet, its value strong (the Select look of the validated board). */
 .lr-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-height-md);
-  padding-inline: var(--space-3);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  font: inherit;
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  cursor: pointer;
+  font-weight: var(--font-weight-regular);
 }
 
-@media (hover: hover) {
-  .lr-filter:hover {
-    background-color: var(--color-surface-hover);
-  }
-}
-
-.lr-filter:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.lr-filter-name {
+.lr-filter .lr-filter-name {
   color: var(--color-text-muted);
 }
 
-.lr-filter-value {
+.lr-filter .lr-filter-value {
   font-weight: var(--font-weight-medium);
 }
 

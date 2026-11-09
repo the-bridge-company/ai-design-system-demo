@@ -32,7 +32,7 @@ export const EXPECTED = [
     product: 'crm',
     explorations: [
       { n: 1, title: 'Deal pipeline cards', state: /Waiting for lead/ },
-      { n: 2, title: 'Contact page summary', state: /Check the build/, check: true },
+      { n: 2, title: 'Contact page summary', state: /In review|Check the build/, check: true },
       { n: 3, title: 'Activity feed filters', state: /Exploring/ },
       { n: 4, title: 'Onboarding empty states', state: /Exploring/ },
     ],

@@ -188,3 +188,12 @@ describe('old Changes links', () => {
   });
 });
 
+describe('a list GitHub could not read', () => {
+  it('says when it will show, never that nothing is there', async () => {
+    const { unreadListLine } = await import('./explorations-page');
+    const now = Date.parse('2026-11-09T21:00:00Z');
+    expect(unreadListLine(null, now)).toBe('Explorations will show as soon as GitHub answers.');
+    expect(unreadListLine(new Date(now + 10_000), now)).toBe('Explorations will show in a moment.');
+    expect(unreadListLine(new Date(now + 3_600_000), now)).toMatch(/^Explorations will show at \d{1,2}[:.]\d{2}( [AP]M)?\.$/);
+  });
+});

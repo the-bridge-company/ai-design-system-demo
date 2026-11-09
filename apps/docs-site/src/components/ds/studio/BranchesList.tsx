@@ -135,6 +135,8 @@ export interface BranchesListProps {
   connect?: string | null;
   /** GitHub could not be read (rate limit, offline): the list may miss explorations, so no "Start with one screen". */
   unread?: boolean;
+  /** While unread with nothing to show: the quiet line in place of the rows ("Explorations will show at 22:10."). */
+  unreadLine?: string | null;
   /** The components of the library, for Start an exploration's component picker (empty state). */
   components?: { name: string; slug: string; family?: string }[];
 }
@@ -169,6 +171,9 @@ function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number,
         if (r.base) void thumbOf({ number: r.number, head: r.head, base: r.base }, r.guidance).then((thumb) => put(r.number, { thumb }));
       }
       for (const l of logins) if (!l.includes('[bot]') && !l.includes('@')) void personOf(l, avatarOf(l)).then(putPerson);
+    }).catch((err: unknown) => {
+      // Unreadable or unloaded (a page or a test closing): the rows keep their plate and login. Said in development.
+      if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) console.warn('Explorations: people and screens could not be read', err);
     });
     return () => {
       live = false;
@@ -300,17 +305,25 @@ export function BranchesList(p: BranchesListProps) {
   const linkOf = (r: ListRow) => (r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) });
   const thumbOf = (x: Item): ThumbSpec => shots.get(`${x.r.product ?? ''}#${x.r.number}`) ?? x.e?.thumb ?? { kind: 'icon', icon: x.r.guidance ? 'guidance' : 'branch' };
   const keyOf = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
-  /** Line 2: who, then when it last moved or shipped; in Waiting on you, why it is the viewer's turn. */
+  /** Line 2: who, then when it last moved or shipped; in Waiting on you, why it is the viewer's turn and since when. */
   const lineOf = (x: Item, turn = false) => {
-    if (turn) return turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`;
+    if (turn) {
+      const why = turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`;
+      return x.r.ago ? `${why}${SEP}${x.r.ago}` : why;
+    }
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
     return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
   };
   // Say each state once: a shipped row says when on its line, so it carries no Shipped tag.
   const shippedSaid = (x: Item) => x.status === 'shipped' && Boolean(x.shippedAt);
-  // What waits on you carries its weight (boards ex-list, ex-grid, ex-board): "Your turn" in the accent on its own line
-  // above the title, an accent edge, the reason as the line. Its status tag stays out: the turn says it.
-  const turnMark = <span className="t-ui ex-turn-mark">Your turn</span>;
+  // What waits on you (direction A, 2026-11-09): one pale tray holds it in List and Grid, a pale card body on the Board;
+  // no stripe, no "Your turn" line. The row says why and since when once; a Review button shows on hover or focus
+  // (always on touch) and opens the exploration. Its status tag stays out: the tray or the tint says it.
+  const review = (x: Item) => (
+    <DsButtonLink variant="secondary" size="sm" className="ex-review" href={hrefOf(x.r)} aria-label={`Review ${x.r.title}`} {...(linkOf(x.r) as Record<string, string | number>)}>
+      Review
+    </DsButtonLink>
+  );
   // On a phone the avatar column hides: a small face before the name keeps who it is (ListCard does the same).
   const face = (x: Item) => (
     <span className="ex-face" aria-hidden="true">
@@ -321,9 +334,9 @@ export function BranchesList(p: BranchesListProps) {
     <BranchRow
       key={keyOf(x.r)}
       className={turn ? 'ex-turn' : undefined}
-      eyebrow={turn ? turnMark : undefined}
       thumb={thumbOf(x)}
       who={<Who p={x.person} size="md" />}
+      end={turn ? review(x) : undefined}
       title={x.r.title}
       jira={x.r.jira}
       lineLead={face(x)}
@@ -337,15 +350,15 @@ export function BranchesList(p: BranchesListProps) {
     <ListCard
       key={keyOf(x.r)}
       className={opts.turn ? 'ex-turn' : undefined}
-      eyebrow={opts.turn ? turnMark : undefined}
       thumb={thumbOf(x)}
+      action={opts.turn ? review(x) : undefined}
       title={x.r.title}
       href={hrefOf(x.r)}
       linkAttributes={linkOf(x.r)}
       person={x.person}
       product={opts.product ? productName(x.product) : null}
       pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
-      note={opts.turn ? <span className="t-ui t-muted">{lineOf(x, true)}</span> : shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
+      note={shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
     />
   );
   const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn, pill: !turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);
@@ -409,6 +422,8 @@ export function BranchesList(p: BranchesListProps) {
   // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there.
   const columns = boardColumns([...waiting, ...kept], boardStatus);
   const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
+  // GitHub could not be read and nothing was saved: no count of 0, no "Nothing in progress", one quiet line instead.
+  const blind = Boolean(p.unread) && openItems.length === 0 && !waiting.length;
 
   const board = (
     <div className="ex-board" role="region" aria-label="Board, one column per status" tabIndex={0}>
@@ -420,8 +435,15 @@ export function BranchesList(p: BranchesListProps) {
         return (
           <section className={c.rows.length ? 'ex-col' : 'ex-col is-empty'} key={c.key} aria-labelledby={`ex-col-${c.key}`}>
             <h2 className="ex-col-h" id={`ex-col-${c.key}`}>
-              {c.label} <span className="bl-count">{c.rows.length}</span>
-              {yours > 0 && <span className="ex-col-yours"> · {yours} your turn</span>}
+              {c.label}{' '}
+              {/* What waits on you in the column: the count in the nav's own pill; the tinted cards say which. */}
+              {yours > 0 ? (
+                <span className="rail-num ex-col-num" aria-label={`${c.rows.length}, ${yours} for you`}>
+                  {c.rows.length}
+                </span>
+              ) : (
+                <span className="bl-count">{c.rows.length}</span>
+              )}
             </h2>
             {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>}
             {c.rows.length > BOARD_CAP && !open && (
@@ -465,8 +487,8 @@ export function BranchesList(p: BranchesListProps) {
           />
         </span>
         <p className="t-ui t-muted bl-summary" aria-live="polite">
-          {countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}
-          {filtered && (
+          {!blind && countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}
+          {filtered && !blind && (
             <>
               {' '}
               <Button variant="link" onClick={clear}>
@@ -487,7 +509,9 @@ export function BranchesList(p: BranchesListProps) {
         </section>
       )}
 
-      {(view === 'board' ? shownCount === 0 : kept.length === 0) ? (
+      {blind ? (
+        <p className="t-body t-muted bl-none">{p.unreadLine ?? 'Explorations will show as soon as GitHub answers.'}</p>
+      ) : (view === 'board' ? shownCount === 0 : kept.length === 0) ? (
         <p className="t-body t-muted bl-none">
           {emptyFilterLine(filters, { person: personLabel, product: productName })} {filtered && <Button variant="link" onClick={clear}>Clear filters</Button>}
         </p>

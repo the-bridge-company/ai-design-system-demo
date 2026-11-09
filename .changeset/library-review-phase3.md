@@ -1,0 +1,5 @@
+---
+'@bridge-ds/docs-site': minor
+---
+
+Studio: Library review phase 3. A read-only Map view (where each piece comes from, what changes in the library, who gets it; a click narrows the list, a conflict is two amber links; List on a phone). A "Who gets it" page per piece, opened from its reach link: the origin in one sentence, the screens Bridge knows per product (the asking explorations' preview captures) with Today, With this change and Side by side, and plain words when Bridge cannot list a product's screens. The old review queue (Home's Review all, /studio/review/) is now Library review: its ?pr= and ?item= links open the library change there, an exploration on Explorations, the other rows on Home, where they unfold in place. Library review reads ?suggestion=, ?origin= and ?group=. The List is grouped in blocks (Foundations, Components, Docs) under one sticky header, with checkboxes and Decide on row hover or focus; many explorations asking for one piece read on one line ("+11 more"). Decisions sit right under the piece on a phone.

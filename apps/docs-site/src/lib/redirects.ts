@@ -20,6 +20,10 @@ export const REDIRECTS: Record<string, string> = {
   '/studio/branches': '/studio/explorations/',
   '/studio/visual-impact': '/studio/explorations/',
   '/studio/versions': '/changelog/#token-changes',
+  // The review queue (Home's "Review all") became Library review, the one queue of library pieces (2026-11-09). Its
+  // ?pr= and ?item= links are read there (lib/library-review-links): a library change opens, an exploration's row goes
+  // to Explorations, the other rows to Home.
+  '/studio/review': '/studio/library-review/',
   '/adoption': '/studio/quality/',
   // Checks and Adoption became one Quality page; each audit report has its own route under it.
   '/studio/checks': '/studio/quality/',

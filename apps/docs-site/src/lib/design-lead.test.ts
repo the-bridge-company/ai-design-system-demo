@@ -42,7 +42,7 @@ describe('one rule for a design lead, by email or by GitHub', () => {
     expect(views(emailLead)).toEqual(views(githubLead));
     expect(views(emailLead).explorations).toMatch(/^Try a token, a variant or a new component with Claude AI/);
     expect(views(emailLead).start).toContain('library');
-    expect(views(emailLead).home).toEqual({ label: 'Review all', path: 'review/' });
+    expect(views(emailLead).home).toEqual({ label: 'Review all', path: 'library-review/' });
   });
 
   it('reads an email member marked lead as a lead, and a GitHub design owner who is not an admin too', () => {

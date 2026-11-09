@@ -169,9 +169,9 @@ export function spaceOf(path: string): Space {
 /** Every page entry of one top-level entry: itself when it is a page, else its children. */
 const pagesOf = (e: NavEntry): NavItem[] => (e.children ?? (e.href ? [{ href: e.href, label: e.label, icon: e.icon, meta: e.meta, branchAware: e.branchAware }] : []));
 
-/** Pages outside the nav that belong to an entry: the review queue opens from the Overview's "Review all"; the
+/** Pages outside the nav that belong to an entry: the old review queue's address (it became Library review); the
  * browser workspace is a Studio home. */
-const BELONGS_TO: Record<string, string> = { '/studio/review/': STUDIO_HOME, [WORKSPACE_HOME]: STUDIO_HOME };
+const BELONGS_TO: Record<string, string> = { '/studio/review/': STUDIO_LIBRARY_REVIEW_HREF, [WORKSPACE_HOME]: STUDIO_HOME };
 
 /**
  * Where a page sits: its top-level entry and page, for breadcrumbs, the expanded group and the current link.

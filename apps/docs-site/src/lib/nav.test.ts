@@ -53,7 +53,7 @@ describe('navigation data', () => {
     expect(locate('/foundations/accessibility/')).toMatchObject({ space: 'library', group: 'Foundations', item: { label: 'Accessibility' } });
     expect(locate('/tokens/')).toMatchObject({ space: 'library', group: 'Foundations', item: { label: 'All tokens' } });
     expect(locate('/studio/explorations/')).toMatchObject({ space: 'studio', item: { label: 'Explorations' } });
-    expect(locate('/studio/review/')).toMatchObject({ space: 'studio', item: { label: 'Home' } });
+    expect(locate('/studio/review/')).toMatchObject({ space: 'studio', item: { label: 'Library review' } });
     expect(locate('/components/button/').entry?.label).toBe('Components');
     expect(locate('/studio/settings/')).toMatchObject({ space: 'studio', item: { label: 'Settings' } });
     expect(locate(HOW_REVIEW_WORKS)).toMatchObject({ space: 'library', group: 'Use', item: { label: 'How review works' } });

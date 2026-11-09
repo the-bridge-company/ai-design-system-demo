@@ -378,3 +378,12 @@ export function changesToExplorations(search: string, hash = '', libraryKey = 'l
   return `${EXPLORATIONS_ROUTE}${addressWithFilters(search, filtersFromAddress(search, libraryKey))}${h}`;
 }
 
+/**
+ * What the list says, quietly, in place of its rows when GitHub could not be read and no list was saved: when it will
+ * show, never "Nothing in progress" nor a count of 0 (the banner above already says why, once).
+ */
+export function unreadListLine(resetAt: Date | null, now = Date.now()): string {
+  if (!resetAt || !Number.isFinite(resetAt.getTime())) return 'Explorations will show as soon as GitHub answers.';
+  if (resetAt.getTime() <= now + 30_000) return 'Explorations will show in a moment.';
+  return `Explorations will show at ${resetAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+}

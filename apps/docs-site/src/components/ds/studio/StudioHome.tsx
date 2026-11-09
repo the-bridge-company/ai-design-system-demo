@@ -123,6 +123,9 @@ function OnlyReviewerHint({ needs, snoozed }: { needs: NeedRow[]; snoozed: boole
 function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRow[]; now: number; snoozed: boolean; tour?: HomeTour; join?: JoinHandlers; contributor?: boolean }) {
   const { shown, more } = splitNeeds(needs);
   const moreAction = moreNeedsAction(Boolean(contributor));
+  // A reviewer's Review all opens Library review, the one queue of library pieces: the other rows (a usage guidance
+  // draft, a library check, an exploration's review) unfold here, each row acting on its own.
+  const [unfolded, setUnfolded] = useState(false);
   // On a phone the rows can fill the first screen: the first step sits above them, in view where the page opens (a
   // card in the flow, HomeTour.tsx). On a wide screen it floats under the rows it talks about.
   const narrow = useNarrow();
@@ -144,13 +147,19 @@ function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRo
               </span>
             )}
           </p>
-          {/* A reviewer: the Review page, the one queue, the same rows as this list. Someone
-              without a review right: their own work on Changes (only reviewers get the review queue). */}
+          {/* A reviewer: Library review, the one queue of library pieces. Someone without a review right: their own work
+              on Explorations (only reviewers get the queue). */}
+          {!contributor && (
+            <Button variant="ghost" size="md" aria-expanded={unfolded} onClick={() => setUnfolded((o) => !o)}>
+              {unfolded ? 'Fold them' : 'Show them here'}
+            </Button>
+          )}
           <ButtonLink variant="primary" href={studioHref(moreAction.path)} className="sh-more-btn">
             {moreAction.label}
           </ButtonLink>
         </div>
       )}
+      {more && unfolded && !contributor && <NeedList rows={needs.slice(shown.length)} compact join={join} />}
       {more && tour?.('more')}
       <OnlyReviewerHint needs={needs} snoozed={snoozed} />
     </>

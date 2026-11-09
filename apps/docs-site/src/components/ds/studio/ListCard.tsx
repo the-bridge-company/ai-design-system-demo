@@ -82,9 +82,11 @@ export interface ListCardProps {
   eyebrow?: ReactNode;
   /** On the card's list item ("ex-turn": what waits on the viewer). */
   className?: string;
+  /** An action at the end of the footer ("Review" on what waits on the viewer). */
+  action?: ReactNode;
 }
 
-export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note, eyebrow, className }: ListCardProps) {
+export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note, eyebrow, className, action }: ListCardProps) {
   const age = captureAgeOf(thumb);
   return (
     <li className={className ? `sh-card-item ${className}` : 'sh-card-item'}>
@@ -119,6 +121,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
                 ) : null}
               </span>
             </span>
+            {action}
           </span>
         </div>
       </Card>

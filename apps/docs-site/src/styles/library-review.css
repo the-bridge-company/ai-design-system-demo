@@ -455,13 +455,61 @@ a.lr-ask {
 /* --- List ---------------------------------------------------------------------------------------------------------- */
 
 .lr-list {
-  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column. */
+  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column, the same in every block. */
   --lr-cols: var(--lr-cols-wide, minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr));
 
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* One column header row, sticky while the blocks scroll under it. */
+.lr-list-head {
+  position: sticky;
+  top: var(--layout-header-height);
+  z-index: var(--layer-sticky);
+  padding-inline: calc(var(--space-5) + var(--border-width-default));
+  border-block-end: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-default);
+}
+
+/* A family (Foundations, Components, Docs): a small overline, then its blocks with room between them. */
+.lr-family {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.lr-family-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-block-end: calc(var(--space-6) * -1 + var(--space-2));
+  padding-inline: var(--space-5);
+}
+
+.lr-overline {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-caption-line-height);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.lr-list-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* A block: the rows of one group in one card. */
+.lr-block {
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
   background-color: var(--color-surface-default);
   overflow: hidden;
+}
+
+.lr-block > .lr-row:first-child {
+  border-block-start: 0;
 }
 
 
@@ -489,21 +537,12 @@ a.lr-ask {
   text-transform: uppercase;
 }
 
+/* A group's heading above its block: a plain heading (Fraunces, with its count), its checkbox on the same line. */
 .lr-group-row {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-5);
-  border-block-start: var(--border-width-default) solid var(--color-border-default);
-  background-color: var(--color-bg-subtle);
-}
-
-.lr-list-group:first-child .lr-group-row {
-  border-block-start: 0;
-}
-
-.lr-list-head + .lr-list-group .lr-group-row {
-  border-block-start: var(--border-width-default) solid var(--color-border-default);
+  padding-inline: var(--space-5);
 }
 
 .lr-group-label {
@@ -830,9 +869,11 @@ body:has(.lr-bar) .lr-toasts {
   background-color: var(--color-surface-default);
 }
 
-.lr-plate-art > .bt {
+.lr-plate-art > .bt,
+.lr-mini > .bt {
   border: 0;
   background: none;
+  box-shadow: none;
 }
 
 /* A way's preview: the exploration's screen, the same plate as its card. */
@@ -845,10 +886,6 @@ body:has(.lr-bar) .lr-toasts {
   width: 100%;
 }
 
-/* A designer's list: one flat list, her pieces first (lr-designer). */
-.lr-list.is-designer .lr-list-group:first-child .lr-row:first-child {
-  border-block-start: 0;
-}
 
 /* Who acts next on the viewer's own piece: avatar and first name, the row's menu after it. */
 .lr-who {
@@ -1027,4 +1064,684 @@ body:has(.lr-bar) .lr-toasts {
 .lr-mini-card.is-raised {
   border-color: var(--color-border-emphasis);
   box-shadow: var(--elevation-raised);
+}
+
+/* --- Who gets it: the reach link (One by one, List) ---------------------------------------------------------------- */
+
+.lr-reach-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  font-size: var(--typography-caption-size);
+  white-space: nowrap;
+}
+
+.lr-detail-reach {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  margin-inline-start: auto;
+}
+
+.lr-row-reach {
+  display: inline-flex;
+  min-width: 0;
+}
+
+/* --- Map: where it comes from, what changes, who gets it (lr-map) --------------------------------------------------- */
+
+.lr-map {
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+.lr-map-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+  gap: var(--space-16);
+}
+
+.lr-map-links {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.lr-map-link {
+  fill: transparent;
+  stroke: var(--color-border-strong);
+  stroke-width: var(--border-width-strong);
+}
+
+.lr-map-link.is-quiet {
+  stroke: var(--color-border-subtle);
+}
+
+.lr-map-link.is-lit {
+  stroke: var(--color-action-primary-bg);
+}
+
+/* A conflict: two amber links into one piece, lit or not. */
+.lr-map-link.is-conflict {
+  stroke: var(--color-feedback-warning-border);
+}
+
+.lr-map-col {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.lr-map-head {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-caption-line-height);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.lr-map-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lr-map-stack.is-spread {
+  justify-content: space-around;
+  gap: var(--space-4);
+}
+
+.lr-map-box {
+  display: grid;
+  gap: var(--space-0-5);
+  width: 100%;
+  min-height: var(--size-10);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-default);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.lr-map-box.is-piece {
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-map-box.is-product {
+  min-height: var(--size-12);
+  padding-inline: var(--space-4);
+}
+
+.lr-map-box.is-product .lr-map-label {
+  font-size: var(--typography-body-size);
+}
+
+.lr-map-box.is-dashed {
+  border-style: dashed;
+}
+
+.lr-map-box.is-conflict {
+  border-color: var(--color-feedback-warning-border);
+}
+
+.lr-map-box.is-conflict .lr-map-sub {
+  color: var(--color-feedback-warning-text);
+}
+
+.lr-map-box.is-lit {
+  border-color: var(--color-border-emphasis);
+  background-color: var(--color-surface-selected);
+}
+
+.lr-map-box.is-pressed {
+  border-color: var(--color-action-primary-bg);
+  background-color: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+}
+
+.lr-map-box.is-pressed .lr-map-sub {
+  color: inherit;
+}
+
+.lr-map-box.is-quiet {
+  color: var(--color-text-muted);
+}
+
+@media (hover: hover) {
+  .lr-map-box:not(.is-pressed):hover {
+    border-color: var(--color-border-hover);
+    background-color: var(--color-surface-hover);
+  }
+}
+
+.lr-map-box:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.lr-map-label {
+  overflow: hidden;
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-ui-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-map-sub {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-map-none {
+  margin: 0;
+  font-size: var(--typography-caption-size);
+}
+
+/* The list the map narrows: a banner says what it shows, once, then the same blocks as List. */
+.lr-map-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.lr-map-focus {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-signal-subtle);
+}
+
+.lr-map-focus-text {
+  margin: 0;
+  font-size: var(--typography-body-size);
+}
+
+.lr-map-focus-text strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-map-focus-count {
+  margin-inline-start: var(--space-2);
+  font-size: var(--typography-caption-size);
+}
+
+/* --- Who gets it, the page (lr-reach) ------------------------------------------------------------------------------- */
+
+.lr-reach {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.lr-reach-back {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-1);
+  min-height: var(--size-6);
+}
+
+/* The title and, top right on its row, the Today / With this change / Side by side switch. */
+.lr-reach-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3) var(--space-5);
+}
+
+/* The same size as every Studio page title (Library review's own). */
+.lr-reach-title {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+  letter-spacing: var(--typography-h2-tracking);
+}
+
+.lr-reach-title:focus {
+  outline: none;
+}
+
+.lr-reach-sentence,
+.lr-reach-origin,
+.lr-reach-note,
+.lr-reach-unknown {
+  margin: 0;
+}
+
+.lr-reach-sentence {
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.lr-reach-origin,
+.lr-reach-note {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-reach-product {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-3);
+}
+
+.lr-reach-product-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--typography-caption-size);
+}
+
+.lr-reach-product-name {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-reach-more {
+  margin-inline-start: auto;
+}
+
+.lr-reach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--size-64)), 1fr));
+  gap: var(--space-4);
+}
+
+.lr-reach-card,
+a.lr-reach-card,
+a.lr-reach-card :is(span) {
+  text-decoration-line: none;
+}
+
+.lr-reach-card {
+  display: grid;
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-default);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  a.lr-reach-card:hover,
+  .lr-reach-card:is(a):hover {
+    border-color: var(--color-border-hover);
+  }
+}
+
+a.lr-reach-card:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.lr-reach-art {
+  display: grid;
+  border-block-end: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-reach-art .bt {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.lr-reach-today {
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--space-24) + var(--space-10));
+  padding: var(--space-4);
+}
+
+.lr-reach-side {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lr-reach-side > .lr-reach-today {
+  border-inline-end: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-reach-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.lr-reach-name {
+  overflow: hidden;
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-reach-by {
+  flex: none;
+  font-size: var(--typography-caption-size);
+}
+
+.lr-reach-unknown {
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width-default) dashed var(--color-border-default);
+  border-radius: var(--radius-container);
+  font-size: var(--typography-body-size);
+}
+
+.lr-reach-unknown strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-reach-decide {
+  margin-block-start: var(--space-2);
+}
+
+/* --- Phones: Library review at 390 --------------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .lr-row-reach {
+    grid-column: 1 / -1;
+  }
+
+  .lr-list.is-lead .lr-row-reach {
+    grid-column: 2 / -1;
+  }
+
+  .lr-detail-reach {
+    margin-inline-start: 0;
+  }
+
+  .lr-reach-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The decision stays in reach on a phone: right under what names the piece, before the plates, the list of who
+     asked and the screens, however long they are. */
+  .lr-detail > *,
+  .lr-reach > * {
+    order: 3;
+  }
+
+  .lr-detail > .lr-detail-head,
+  .lr-reach > .lr-reach-back,
+  .lr-reach > .lr-reach-head {
+    order: 0;
+  }
+
+  .lr-detail > .lr-detail-ask,
+  .lr-detail > .lr-lede,
+  .lr-reach > .lr-reach-sentence,
+  .lr-reach > .lr-reach-origin {
+    order: 1;
+  }
+
+  .lr-detail > .lr-decide,
+  .lr-reach > .lr-reach-decide {
+    order: 2;
+    margin-block-start: 0;
+    padding-block: var(--space-3);
+    border-block: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-reach-decide .lr-actions > :not(.lr-actions-note),
+  .lr-main .lr-decide .lr-actions > :not(.lr-keys, .lr-actions-note) {
+    flex: 1 1 auto;
+  }
+
+  .lr-actions-note {
+    margin-inline-start: 0;
+  }
+
+  .lr-map-focus {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* --- List: checkboxes and the row's action on hover or focus (owner, 2026-11-09, the Gmail pattern) ------------------
+   Idle, they are visually hidden but keep their slot (no shift) and stay in the tab order and the accessibility tree.
+   A row shows its own on hover or keyboard focus; once something is selected, every checkbox stays; the header's select
+   all shows only while a selection exists. On touch screens they always show. */
+@media (hover: hover) {
+  .lr-list:not(.has-selection) .lr-hover-ctl > *,
+  .lr-list .lr-row-end.lr-hover-ctl > *,
+  .lr-list:not(.has-selection) .lr-list-head .lr-hover-ctl > * {
+    opacity: 0;
+  }
+
+  .lr-list .lr-row:is(:hover, :focus-within) .lr-hover-ctl > *,
+  .lr-list .lr-group-row:is(:hover, :focus-within) .lr-hover-ctl > *,
+  .lr-list .lr-list-head .lr-hover-ctl:focus-within > *,
+  .lr-list.has-selection .lr-row .lr-col-box > *,
+  .lr-list.has-selection .lr-group-row .lr-col-box > *,
+  .lr-list.has-selection .lr-list-head .lr-col-box > * {
+    opacity: 1;
+  }
+}
+
+/* The quiet row action: a small secondary button, not a link on every row. */
+.lr-row-act {
+  white-space: nowrap;
+}
+
+/* --- Asked by on one line: the most recent tag, then a quiet "+N more" --------------------------------------------- */
+
+.lr-ask-cell {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.lr-ask-cell > .lr-ask {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-row-ask .lr-ask {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-ask-more {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  white-space: nowrap;
+}
+
+.lr-ask-more.is-static {
+  padding-inline: var(--space-1);
+}
+
+/* Every exploration that asked: by product, a face per row; scrolls inside past about 8 rows. */
+.lr-askers-pop {
+  max-width: min(var(--size-96), calc(100vw - var(--space-8)));
+}
+
+.lr-askers {
+  display: grid;
+  gap: var(--space-3);
+  max-height: calc(var(--size-10) * 8 + var(--space-8));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lr-askers-group {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.lr-askers-product {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-wide);
+  text-transform: uppercase;
+}
+
+.lr-askers-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lr-askers-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-8);
+  font-size: var(--typography-ui-size);
+}
+
+.lr-askers-name {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-askers-by {
+  flex: none;
+  margin-inline-start: auto;
+  font-size: var(--typography-caption-size);
+}
+
+.lr-detail .lr-askers {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+}
+
+/* --- Who gets it in the List: plain muted words, a link only on row hover or focus ---------------------------------- */
+
+.lr-reach-link.is-quiet {
+  color: var(--color-text-muted);
+  text-decoration-line: none;
+}
+
+.lr-reach-link.is-quiet .lr-reach-chev {
+  visibility: hidden;
+}
+
+.lr-row:is(:hover, :focus-within) .lr-reach-link.is-quiet {
+  color: var(--color-text-link);
+  text-decoration-line: underline;
+}
+
+.lr-row:is(:hover, :focus-within) .lr-reach-link.is-quiet .lr-reach-chev {
+  visibility: visible;
+}
+
+@media (hover: hover) {
+  .lr-row .lr-reach-link.is-hover-only {
+    opacity: 0;
+  }
+
+  .lr-row:is(:hover, :focus-within) .lr-reach-link.is-hover-only {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .lr-reach-link.is-quiet .lr-reach-chev {
+    visibility: visible;
+  }
+}
+
+/* The products every row reaches, named once in the column header. */
+.lr-head-reach {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-regular);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* The piece's subline, a conflict's ways inline after it. */
+.lr-row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A product: its initial in a small Deep Harbor mark, then its name. */
+.lr-product {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-product-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-map-box .lr-product {
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-reach-unknown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.lr-reach-unknown-names {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.lr-map-hint {
+  margin: 0;
+  font-size: var(--typography-ui-size);
 }

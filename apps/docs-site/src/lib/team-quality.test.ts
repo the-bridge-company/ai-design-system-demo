@@ -173,7 +173,7 @@ describe('adoption from the snapshot audits', () => {
     ]);
     const fig = q.figures.find((f) => f.id === 'adoption')!;
     expect(fig.value).toBe('Not measured yet');
-    expect(fig.detail).toBe('Acme Prints and Acme CRM are not measured yet.');
+    expect(fig.detail).toBe('Turn it on for Acme Prints and Acme CRM.');
     expect(q.pillars[1]).toMatchObject({ value: 'Not measured yet', meter: null, viz: null });
     expect(JSON.stringify(q)).not.toContain('Account app');
   });

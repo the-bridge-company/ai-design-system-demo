@@ -293,7 +293,7 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
         // The same words as the line under it and the Adoption section: "not measured yet", never "audit".
         value: unmeasured.length ? 'Not measured yet' : 'No audit yet',
         label: 'adoption in products',
-        detail: adoption ? 'The audits found no UI components.' : unmeasured.length ? `${unmeasuredNames(unmeasured)} ${unmeasured.length === 1 ? 'is' : 'are'} not measured yet.` : designer ? 'A developer of your team turns it on.' : 'Publish the Bridge snapshot with an audit.',
+        detail: adoption ? 'The audits found no UI components.' : unmeasured.length ? (designer ? `A developer of your team turns it on for ${unmeasuredNames(unmeasured)}.` : `Turn it on for ${unmeasuredNames(unmeasured)}.`) : designer ? 'A developer of your team turns it on.' : 'Publish the Bridge snapshot with an audit.',
         sentence: unmeasured.length ? `No product is measured yet: ${unmeasuredNames(unmeasured)}.` : 'No adoption audit has been published yet.',
         tone: null,
         href: `#${HEALTH_SECTION.adoption}`,

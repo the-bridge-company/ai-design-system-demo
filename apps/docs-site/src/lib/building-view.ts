@@ -589,7 +589,8 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
     // An approved exploration whose library piece is not released yet (board LI6): the developers wait on it, so the
     // line says it before who said done.
     const waiting = ctx.released && status !== 'shipped' && status !== 'not-planned' ? waitingForLibraryLine(p.body, ctx.released) : null;
-    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, waiting, status === 'shipped' || waiting ? null : done, where[status]]).filter(Boolean).join(' · ');
+    // One wait per row: while the library holds it, the line does not also name who else it waits for.
+    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, waiting, status === 'shipped' || waiting ? null : done, waiting ? null : where[status]]).filter(Boolean).join(' · ');
     const sentence: Record<BuildStatus, string> = {
       requested: 'Waiting for a developer.',
       'picked-up': 'Developers are building it.',

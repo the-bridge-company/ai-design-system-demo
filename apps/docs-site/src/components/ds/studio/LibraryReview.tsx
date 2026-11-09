@@ -10,12 +10,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, Badge, Button, Checkbox, Icon, IconButton, Input, Kbd, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Progress, SegmentedControl, Skeleton, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, ChevronDown, Ellipsis } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import ButtonLink from '../ButtonLink';
 import { BranchThumb } from './BranchThumb';
 import { QuietScene } from './QuietScene';
 import {
   batchable,
+  colorLook,
+  keepMissing,
   canDecide,
   conflictLede,
   countLine,
@@ -107,7 +109,7 @@ function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; k
 
 /** The exploration that asked, as a chip that opens it. */
 function AskedChip({ p }: { p: ReviewPiece }) {
-  if (!p.asked) return <span className="lr-ask is-lead">{p.mine ? 'From you' : p.by ? `From ${p.by}` : 'From the DS lead'}</span>;
+  if (!p.asked) return <span className="lr-ask is-lead">{p.mine ? 'From you' : p.by ? `From ${p.by}` : 'From a lead'}</span>;
   const words = (
     <>
       {p.asked.name}
@@ -133,7 +135,7 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
     );
   if (p.conflict)
     return (
-      <Badge tone="danger" size="md" className={statusTagClass('danger')}>
+      <Badge tone="warning" size="md" className={statusTagClass('warning')}>
         2 ways
       </Badge>
     );
@@ -152,11 +154,32 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
  * One side of a piece, drawn from its data: a color as a swatch, a space as a bar, a corner as a shape, a type size as
  * "Aa"; anything else as the change's own thumbnail (a component, docs). Data values, not style literals.
  */
-function Sample({ spec, side, size }: { spec: ThumbSpec; side: 'before' | 'after'; size: 'row' | 'card' }) {
+function Sample({ spec, side, size, title = '' }: { spec: ThumbSpec; side: 'before' | 'after'; size: 'row' | 'card'; title?: string }) {
   const big = size === 'card';
   if (spec.kind === 'color') {
     const hex = spec[side];
-    return hex ? <span className={`lr-swatch${big ? ' is-big' : ''}`} style={{ background: hex }} /> : <span className="lr-plate-none">none</span>;
+    if (!hex) return <span className="lr-plate-none">none</span>;
+    // The token in place (data colours, not style literals): text on its surface, a filled card, or the main button.
+    const { look, dark } = colorLook(title);
+    const cls = `lr-look lr-look-${look}${big ? ' is-big' : ''}${dark ? ' is-dark' : ''}`;
+    if (look === 'text')
+      return (
+        <span className={cls}>
+          <span style={{ color: hex }}>{big ? 'Last touch 2 days ago' : 'Aa'}</span>
+        </span>
+      );
+    if (look === 'surface')
+      return (
+        <span className={cls} style={{ background: hex }}>
+          <span className="lr-look-line" />
+          {big && <span className="lr-look-line is-short" />}
+        </span>
+      );
+    return (
+      <span className={cls} style={{ background: hex }}>
+        {big ? 'Save' : ''}
+      </span>
+    );
   }
   if (spec.kind === 'space' || spec.kind === 'radius' || spec.kind === 'type') {
     const v = spec[side];
@@ -173,6 +196,24 @@ function Sample({ spec, side, size }: { spec: ThumbSpec; side: 'before' | 'after
   }
   if (spec.kind === 'image') return <img className="lr-img" src={spec[side]} alt="" loading="lazy" decoding="async" />;
   return <BranchThumb spec={spec} size={size} />;
+}
+
+/**
+ * A card drawn with one way's value (its room inside, its corners): the look itself, not the number. Data values from
+ * the explorations' checks; a value Bridge does not know (today's, before a check records it) draws the card as the
+ * library ships it.
+ */
+function MiniCard({ property, value, raised }: { property: string; value: string | null | undefined; raised?: boolean }) {
+  const n = Number(value);
+  const known = value !== null && value !== undefined && Number.isFinite(n);
+  const prop = property.toLowerCase();
+  const style = !known ? undefined : prop.startsWith('padding') || prop === 'gap' ? { padding: `${Math.min(Math.max(n, 2), 32)}px` } : prop === 'border-radius' ? { borderRadius: `${Math.min(n, 24)}px` } : undefined;
+  return (
+    <span className={`lr-mini-card${raised ? ' is-raised' : ''}`} style={style}>
+      <span className="lr-look-line" />
+      <span className="lr-look-line is-short" />
+    </span>
+  );
 }
 
 /** The before side is empty for something new. */
@@ -288,12 +329,12 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
                   {withToday ? (
                     <span className="lr-way-pair">
                       <span className="lr-way-side">
-                        <span className="lr-way-plate">{p.conflict!.today ?? 'Default'}</span>
+                        <MiniCard property={p.conflict!.property} value={p.conflict!.today} />
                         <span className="lr-muted lr-way-cap">Today</span>
                       </span>
                       <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
                       <span className="lr-way-side">
-                        <span className="lr-way-plate is-way">{w.value}</span>
+                        <MiniCard property={p.conflict!.property} value={w.value} raised />
                         <span className="lr-way-cap is-way">{w.designer}'s way</span>
                       </span>
                     </span>
@@ -325,10 +366,10 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
         <>
           <div className={`lr-plates${p.match ? ' has-match' : ''}`}>
             <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before}>
-              {valued || !isNew(p) ? <Sample spec={spec} side="before" size="card" /> : none}
+              {valued || !isNew(p) ? <Sample spec={spec} side="before" size="card" title={p.title} /> : none}
             </Plate>
             <Plate caption={p.match ? 'Asked for' : 'With this change'} value={valueOf(spec, 'after') ?? p.after}>
-              <Sample spec={spec} side="after" size="card" />
+              <Sample spec={spec} side="after" size="card" title={p.title} />
             </Plate>
             {p.match && (
               <Plate caption="Already in the library" value={p.match.label} tone="match">
@@ -393,9 +434,26 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
 
 function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail }: { groups: ReturnType<typeof joinSmallGroups>; all: ReviewPiece[]; current: string | null; seen: Set<string>; decidedCount: number; onPick: (k: string) => void; detail: ReactNode }) {
   const seenN = all.filter((p) => seen.has(p.key)).length;
+  // On a phone: a compact "1 of 12" bar with previous and next above the piece, the list behind "All pieces".
+  const [listOpen, setListOpen] = useState(false);
+  const at = all.findIndex((p) => p.key === current);
+  const go = (step: number) => {
+    const n = all[at + step];
+    if (n) onPick(n.key);
+  };
   return (
     <div className="lr-one">
-      <nav className="lr-side" aria-label="Pieces">
+      <div className="lr-compact">
+        <IconButton icon={ChevronLeft} label="Previous piece" variant="secondary" size="md" disabled={at <= 0} onClick={() => go(-1)} />
+        <span className="lr-compact-count">
+          {at + 1} of {all.length}
+        </span>
+        <IconButton icon={ChevronRight} label="Next piece" variant="secondary" size="md" disabled={at >= all.length - 1} onClick={() => go(1)} />
+        <Button variant="ghost" size="md" className="lr-compact-all" aria-expanded={listOpen} aria-controls="lr-side" onClick={() => setListOpen((o) => !o)}>
+          {listOpen ? 'Hide pieces' : 'All pieces'}
+        </Button>
+      </div>
+      <nav className={`lr-side${listOpen ? ' is-open' : ''}`} id="lr-side" aria-label="Pieces">
         <div className="lr-side-head">
           <p className="lr-seen">
             <strong>{seenLine(seenN, all.length)}</strong>
@@ -412,13 +470,13 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail }: 
               {g.pieces.map((p) => (
                 <li key={p.key}>
                   {/* bridge-audit-ignore-next-line: the whole piece row (title, who asked, its flag) is one target that shows the piece, like the review queue rows; the DS has no row button and Button would cut it to one label */}
-                  <button type="button" className="lr-side-row" aria-current={current === p.key ? 'true' : undefined} onClick={() => onPick(p.key)}>
+                  <button type="button" className="lr-side-row" aria-current={current === p.key ? 'true' : undefined} onClick={() => (onPick(p.key), setListOpen(false))}>
                     <span className="lr-side-main">
                       <span className="lr-side-title">{p.title}</span>
-                      <span className="lr-muted lr-side-sub">{p.conflict ? p.conflict.ways.map((w) => w.exploration).join(', ') : (p.asked?.name ?? (p.mine ? 'From you' : 'From the DS lead'))}</span>
+                      <span className="lr-muted lr-side-sub">{p.conflict ? p.conflict.ways.map((w) => w.exploration).join(', ') : (p.asked?.name ?? (p.mine ? 'From you' : p.by ? `From ${p.by}` : 'From a lead'))}</span>
                     </span>
                     {p.conflict && !p.conflict.pick ? (
-                      <Badge tone="danger" size="sm" className={statusTagClass('danger')}>
+                      <Badge tone="warning" size="sm" className={statusTagClass('warning')}>
                         2 ways
                       </Badge>
                     ) : p.match && p.state === 'waiting' ? (
@@ -456,16 +514,16 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   const someOn = pickable.some((p) => selected.has(p.key));
   const mode = !viewer.reviews ? 'designer' : decided ? 'decided' : 'lead';
   const boxes = mode === 'lead';
-  const thumbsCol = mode !== 'lead';
+  const thumbsCol = true;
   const pair = (p: ReviewPiece) => {
     const spec = thumbOf(p, thumbs);
     const none = isNew(p) && !(spec.kind === 'color' || spec.kind === 'space');
     return (
       <span role="cell" className="lr-col-thumb lr-pair" aria-hidden="true">
-        <span className={`lr-mini${none ? ' is-none' : ''}`}>{none ? <span className="lr-plate-none">none</span> : <Sample spec={spec} side="before" size="row" />}</span>
+        <span className={`lr-mini${none ? ' is-none' : ''}`}>{none ? <span className="lr-plate-none">none</span> : <Sample spec={spec} side="before" size="row" title={p.title} />}</span>
         <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
         <span className="lr-mini">
-          <Sample spec={spec} side="after" size="row" />
+          <Sample spec={spec} side="after" size="row" title={p.title} />
         </span>
       </span>
     );
@@ -473,7 +531,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   const state = (p: ReviewPiece) => {
     if (p.conflict && !p.conflict.pick)
       return (
-        <Badge tone="danger" size="md" className={statusTagClass('danger')}>
+        <Badge tone="warning" size="md" className={statusTagClass('warning')}>
           2 ways
         </Badge>
       );
@@ -518,8 +576,24 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       );
     return null;
   };
+  // A column shows only when a row fills it (no empty State, Next or action column).
+  const rows = groups.flatMap((g) => g.pieces);
+  const showState = rows.some((p) => state(p) !== null || (mode === 'designer' && p.exception));
+  const showNext = mode === 'lead' && rows.some((p) => nextActor(p, { tech, secondLead }) !== null);
+  const showAction = mode !== 'designer' && rows.some((p) => action(p) !== null);
+  const cols = [
+    boxes ? 'var(--size-6)' : null,
+    'minmax(0, var(--size-40))',
+    'minmax(0, 1.4fr)',
+    'minmax(0, 1.2fr)',
+    showState ? 'minmax(0, 0.8fr)' : null,
+    showNext ? 'minmax(0, 0.8fr)' : null,
+    showAction ? 'minmax(var(--size-16), auto)' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <div className={`lr-list is-${mode}`} role="table" aria-label="Library pieces">
+    <div className={`lr-list is-${mode}`} role="table" aria-label="Library pieces" style={{ ['--lr-cols-wide' as string]: cols }}>
       {mode !== 'designer' && (
         <div className="lr-list-head" role="row">
           {boxes && (
@@ -534,11 +608,13 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           )}
           <span role="columnheader">Piece</span>
           <span role="columnheader">Asked by</span>
-          <span role="columnheader">{mode === 'decided' ? 'Result' : 'State'}</span>
-          {mode === 'lead' && <span role="columnheader">Next</span>}
-          <span role="columnheader" className="lr-col-end">
-            <VisuallyHidden>Action</VisuallyHidden>
-          </span>
+          {showState && <span role="columnheader">{mode === 'decided' ? 'Result' : 'State'}</span>}
+          {showNext && <span role="columnheader">Next</span>}
+          {showAction && (
+            <span role="columnheader" className="lr-col-end">
+              <VisuallyHidden>Action</VisuallyHidden>
+            </span>
+          )}
         </div>
       )}
       {groups.map((g) => {
@@ -577,10 +653,12 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                   <span role="cell" className="lr-row-ask">
                     {p.conflict ? p.conflict.ways.map((w) => <span key={w.key} className="lr-ask">{w.exploration}</span>) : p.mine && !p.asked ? null : <AskedChip p={p} />}
                   </span>
-                  <span role="cell" className="lr-row-state">
-                    {mode === 'designer' ? (decidedTag(p) || (p.conflict && !p.conflict.pick) ? state(p) : p.exception ? <span className="lr-muted">{p.exception}</span> : null) : state(p)}
-                  </span>
-                  {mode === 'lead' && (
+                  {showState && (
+                    <span role="cell" className="lr-row-state">
+                      {mode === 'designer' ? (decidedTag(p) || (p.conflict && !p.conflict.pick) ? state(p) : p.exception ? <span className="lr-muted">{p.exception}</span> : null) : state(p)}
+                    </span>
+                  )}
+                  {showNext && (
                     <span role="cell" className="lr-row-next">
                       {actor && (
                         <span className="lr-who">
@@ -590,7 +668,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                       )}
                     </span>
                   )}
-                  {mode !== 'designer' && (
+                  {showAction && (
                     <span role="cell" className="lr-col-end lr-row-end">
                       {action(p)}
                     </span>
@@ -613,6 +691,7 @@ function SelectionBar({ pieces, busy, onKeep, onAdd, onClear }: { pieces: Review
       <p className="cg-bar-text">
         <span className="cg-bar-title">{s.what}</span>
         <span>{s.touches}</span>
+        {!keepable && <span>{keepMissing(pieces)}</span>}
       </p>
       <div className="cg-bar-actions">
         <Button variant="ghost" size="md" onClick={onClear}>

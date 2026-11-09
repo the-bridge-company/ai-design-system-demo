@@ -78,14 +78,19 @@ const PART_WORDS: Record<string, string> = { padding: 'room inside', 'border-rad
  * One way of a conflict in words: compared to today when the check knows today's value, else to the other way.
  */
 export function wayLine(property: string, value: string, today: string | null, other?: { designer: string; value: string }): string {
-  const part = PART_WORDS[property.toLowerCase()] ?? property.toLowerCase();
   const a = Number(value);
   const b = today === null ? NaN : Number(today);
-  if (Number.isFinite(a) && Number.isFinite(b) && a !== b) return `${a > b ? 'More' : 'Less'} ${part} than today: ${value} instead of ${today}.`;
-  if (today !== null && today !== value) return `${cap(part)} ${value} instead of ${today} today.`;
   const c = other ? Number(other.value) : NaN;
-  if (other && Number.isFinite(a) && Number.isFinite(c) && a !== c) return `${a > c ? 'More' : 'Less'} ${part}: ${value}, where ${other.designer}'s way has ${other.value}. Today's library has no such option.`;
-  return `${cap(part)} set to ${value}. Today's library has no such option.`;
+  const ref = Number.isFinite(b) && a !== b ? { n: b, words: 'today' } : other && Number.isFinite(c) && a !== c ? { n: c, words: `${other.designer}'s way` } : null;
+  const prop = property.toLowerCase();
+  if (ref && Number.isFinite(a)) {
+    const more = a > ref.n;
+    if (prop.startsWith('padding') || prop === 'gap') return `${more ? 'More room inside' : 'Tighter'} than ${ref.words}.`;
+    if (prop === 'border-radius') return `${more ? 'Rounder corners' : 'Squarer corners'} than ${ref.words}.`;
+    if (prop === 'font-size') return `${more ? 'Bigger text' : 'Smaller text'} than ${ref.words}.`;
+  }
+  const part = PART_WORDS[prop] ?? prop;
+  return `A different ${part} than ${today !== null ? 'today' : (other ? `${other.designer}'s way` : 'today')}.`;
 }
 
 export interface ReviewPiece {
@@ -156,10 +161,42 @@ const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** A piece title the way the exploration names it, without "New component:" or "Avatar:" in front when it says more. */
 export function pieceWords(t: string): string {
-  const s = cleanTitle(t);
+  const s = designerWords(cleanTitle(t));
   const created = /^new component:?\s+(.+)$/i.exec(s);
   if (created) return created[1]!.trim();
   return cap(s);
+}
+
+/** Token path parts in words: "bg" reads "background", "fg" "text". */
+const PART_NAMES: Record<string, string> = { bg: 'background', fg: 'text', sm: 'small', md: 'medium', lg: 'large', xl: 'extra large' };
+/** The first part of a token path that names its kind, left out of the words ("color.bg.zone" reads "zone background"). */
+const KIND_PARTS = new Set(['color', 'colour', 'space', 'spacing', 'radius', 'font', 'typography', 'size', 'motion', 'elevation', 'shadow']);
+
+/** A token path in designer words: "color.bg.zone" reads "zone background". */
+export function tokenPathWords(path: string): string {
+  const parts = path.split('.').filter((x, i) => !(i === 0 && KIND_PARTS.has(x.toLowerCase())));
+  return parts
+    .map((x) => PART_NAMES[x.toLowerCase()] ?? x.replace(/[-_]+/g, ' '))
+    .reverse()
+    .join(' ');
+}
+
+/**
+ * A title in designer words (Studio never shows developer words): a token path reads as words, a prop name in
+ * camelCase as words, and "Deprecate" or "Remove" a token reads "Retire the old ...".
+ * "Deprecate color.bg.zone" reads "Retire the old zone background"; "Button: loadingLabel announces the action while it
+ * runs" reads "Button: loading text says what is happening".
+ */
+export function designerWords(title: string): string {
+  let t = title.trim();
+  const path = /\b[a-z][a-z0-9-]*(?:\.[a-z0-9-]+){1,5}\b/i;
+  const retire = /^(deprecate|remove|delete)\s+(the\s+)?/i;
+  if (retire.test(t) && path.test(t)) t = t.replace(retire, 'Retire the old ');
+  t = t.replace(new RegExp(path.source, 'gi'), (m) => tokenPathWords(m));
+  // A prop that announces something: what the person reads, not the prop's name.
+  t = t.replace(/\bloadingLabel announces the action while it runs\b/, 'loading text says what is happening');
+  t = t.replace(/\b([a-z]+)([A-Z][a-zA-Z]*)\b/g, (_m, a: string, b: string) => `${a} ${b.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}`);
+  return t.replace(/\s+/g, ' ').trim();
 }
 
 /** Removing, renaming or adding a token: Tier 3, design and tech approve it. */
@@ -172,9 +209,9 @@ export function kindOf(x: { title: string; component: string | null; reason: str
   if (x.reason === 'brand' || /\bbrand\b/i.test(t)) return 'New brand';
   if (/new component|component$/i.test(t) && x.component) return 'New component';
   if (/\b(xl|xs|sm|md|lg|size)\b/i.test(t) && x.component) return 'New size';
-  if (/\b(deprecate|remove|delete)\b/i.test(t)) return 'Token removed';
-  if (/\brename\b/i.test(t)) return 'Token renamed';
   const g = tokenGroup(t);
+  if (/\b(deprecate|remove|delete|retire)\b/i.test(t)) return g ? `${cap(g.word)} removed` : 'Removed';
+  if (/\brename\b/i.test(t)) return g ? `${cap(g.word)} renamed` : 'Renamed';
   if (g) return /^(add|new)\b/i.test(t) ? `New ${g.word}` : /\bfix\b/i.test(t) ? `${cap(g.word)} fix` : `${cap(g.word)} change`;
   if (x.component) return `Change to ${x.component}`;
   return 'Library change';
@@ -338,7 +375,7 @@ export function pieceOfExploration(x: ExplorationPieceInput): ReviewPiece | null
   const close = x.nearest && (x.nearest.level === 'exact' || x.nearest.level === 'high') ? { label: cap(x.nearest.label) } : null;
   return {
     key: `p:${x.repo.toLowerCase()}#${x.number}:${i.id}`,
-    title: i.of && i.title.startsWith('New size') ? `${i.of}: ${i.title.charAt(0).toLowerCase()}${i.title.slice(1)}` : i.title,
+    title: designerWords(i.of && i.title.startsWith('New size') ? `${i.of}: ${i.title.charAt(0).toLowerCase()}${i.title.slice(1)}` : i.title),
     kind: itemKind(i),
     category,
     source: { kind: 'piece', repo: x.repo, number: x.number, piece: i.id },
@@ -645,7 +682,7 @@ export function summaryLine(v: Viewer, lead: string | null): string {
 /** The designer's banner (lr-designer): who decides, and that there is nothing to do meanwhile. */
 export function designerBanner(lead: string | null): { strong: string; rest: string } {
   const who = lead ?? 'The design lead';
-  return { strong: `${who} reviews library pieces, usually within 2 days.`, rest: 'You will see the decision here and on your exploration. Nothing to do meanwhile.' };
+  return { strong: `${who} reviews library pieces.`, rest: 'You will see the decision here and on your exploration. Nothing to do meanwhile.' };
 }
 
 /** "2 of 6 seen": the One by one progress. */
@@ -685,7 +722,28 @@ export function selectionLine(selected: readonly ReviewPiece[]): { what: string;
 }
 
 /** The pieces a batch may decide: only the ones the viewer may decide, never a conflict (it needs its own pick). */
-export const batchable = (p: ReviewPiece, v: Viewer): boolean => canDecide(p, v) && !p.conflict;
+export const batchable = (p: ReviewPiece, v: Viewer): boolean => canDecide(p, v) && !p.conflict && !isRemoval(p);
+
+/** A token removed or renamed: decided one at a time, never in a batch with additions (its verb is not "Add"). */
+export const isRemoval = (p: Pick<ReviewPiece, 'kind'>): boolean => /(removed|renamed)$/i.test(p.kind);
+
+/** How a color piece is drawn in place: as text on its surface, as a filled card, or as the main button. */
+export type ColorLook = 'text' | 'surface' | 'action';
+
+export function colorLook(title: string): { look: ColorLook; dark: boolean } {
+  const t = title.toLowerCase();
+  const dark = /\bdark\b/.test(t);
+  if (/\btext\b|\blabel\b|\bink\b/.test(t)) return { look: 'text', dark };
+  if (/surface|background|zone|highlight|\bfill\b|\bcard\b|panel/.test(t)) return { look: 'surface', dark };
+  return { look: 'action', dark };
+}
+
+/** Why the selection bar offers no Keep: some selected pieces were not asked for by an exploration. */
+export function keepMissing(selected: readonly ReviewPiece[]): string | null {
+  const lead = selected.filter((p) => !p.asked).length;
+  if (!lead) return null;
+  return lead === selected.length ? 'Made by a lead, not asked by a screen: they can only be added.' : `${lead} of these ${lead === 1 ? 'was' : 'were'} made by a lead, not asked by a screen: untick ${lead === 1 ? 'it' : 'them'} to keep the rest in their screens.`;
+}
 
 /** "Keep in Leo's screen", "Keep in their screens". */
 export function keepLabel(p: ReviewPiece | readonly ReviewPiece[]): string {
@@ -721,5 +779,5 @@ export function keyAction(key: string): 'add' | 'keep' | 'next' | 'prev' | null 
 export const decidedTag = (p: ReviewPiece): { label: string; tone: 'success' | 'info' | 'neutral' } | null => {
   if (!p.decided) return null;
   const label = p.decidedLabel ?? DECIDED_LABEL[p.decided];
-  return { label, tone: p.decided === 'added' || p.decided === 'shipped' || p.decided === 'published' ? 'success' : p.decided === 'building' ? 'info' : 'neutral' };
+  return { label, tone: p.decided === 'added' || p.decided === 'shipped' || p.decided === 'published' ? 'success' : 'neutral' };
 };

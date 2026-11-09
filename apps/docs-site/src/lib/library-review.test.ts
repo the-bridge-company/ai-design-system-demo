@@ -11,6 +11,8 @@ import {
   filterValue,
   groupPieces,
   isTokenStructure,
+  designerWords,
+  keepMissing,
   joinSmallGroups,
   keepLabel,
   keyAction,
@@ -85,6 +87,9 @@ describe('a library change as a piece', () => {
     expect(p.waitsOn).toBe('tech');
     expect(canDecide(p, LEAD)).toBe(false);
     expect(waitLine(p, { lead: null, tech: 'Malik' })).toBe('Waiting on Malik, tech owner: removing a token needs both');
+    expect(p.title).toBe('Retire the old zone background');
+    expect(p.kind).toBe('Color removed');
+    expect(batchable({ ...p, state: 'waiting', designApproved: false, waitsOn: 'you' }, LEAD)).toBe(false);
     expect(isTokenStructure('feat(tokens): Add a highlight surface for new items')).toBe(true);
     expect(isTokenStructure('Deepen the primary blue')).toBe(false);
   });
@@ -135,12 +140,12 @@ const conflict = () =>
 describe('a conflict', () => {
   it('is one piece with two ways, each said against today', () => {
     const c = conflict();
-    expect(c.conflict?.ways.map((w) => w.line)).toEqual(['More room inside than today: 24 instead of 16.', 'Less room inside than today: 12 instead of 16.']);
+    expect(c.conflict?.ways.map((w) => w.line)).toEqual(['More room inside than today.', 'Tighter than today.']);
     expect(c.conflict?.ways[1]?.piece).toBe('card-room');
     expect(batchable(c, LEAD)).toBe(false);
     expect(canDecide(c, LEAD)).toBe(true);
-    expect(wayLine('padding', '24', null)).toBe("Room inside set to 24. Today's library has no such option.");
-    expect(wayLine('padding', '20', null, { designer: 'Leo', value: '12' })).toBe("More room inside: 20, where Leo's way has 12. Today's library has no such option.");
+    expect(wayLine('padding', '24', null)).toBe('A different room inside than today.');
+    expect(wayLine('padding', '20', null, { designer: 'Leo', value: '12' })).toBe("More room inside than Leo's way.");
   });
 
   it('opens with today’s context when Bridge knows it', () => {
@@ -153,6 +158,21 @@ describe('a conflict', () => {
     const side = pieceOfExploration({ repo: 'acme/crm-design', number: 1, name: 'Deal pipeline cards', product: 'Acme CRM', productKey: 'crm', href: null, designer: 'Leo', item: { id: 'card-room', kind: 'variant', title: 'Room inside', of: 'Card', property: 'padding', after: '12' }, decision: null, nearest: null, asked: true, mine: false })!;
     const other = xp();
     expect(mergePieces([], [side, other!], [c], new Set()).map((p) => p.key)).toEqual([c.key, other!.key]);
+  });
+});
+
+describe('designer words', () => {
+  it('never shows a token path, a prop name or a developer verb', () => {
+    expect(designerWords('Deprecate color.bg.zone')).toBe('Retire the old zone background');
+    expect(designerWords('Button: loadingLabel announces the action while it runs')).toBe('Button: loading text says what is happening');
+    expect(designerWords('Add a highlight surface for new items')).toBe('Add a highlight surface for new items');
+    expect(designerWords('Card: iconPosition option')).toBe('Card: icon position option');
+  });
+
+  it('says why the bar offers no Keep', () => {
+    const lead = pieceOfChange(change({ body: null, number: 20, title: 'Deepen the link blue' }));
+    expect(keepMissing([lead])).toBe('Made by a lead, not asked by a screen: they can only be added.');
+    expect(keepMissing([pieceOfChange(change())])).toBeNull();
   });
 });
 

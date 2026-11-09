@@ -455,7 +455,8 @@ a.lr-ask {
 /* --- List ---------------------------------------------------------------------------------------------------------- */
 
 .lr-list {
-  --lr-cols: minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column. */
+  --lr-cols: var(--lr-cols-wide, minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr));
 
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
@@ -463,14 +464,6 @@ a.lr-ask {
   overflow: hidden;
 }
 
-/* One column per kind: the box, the piece, who asked, its state (a tag), who acts next (a person), the action. */
-.lr-list.is-lead {
-  --lr-cols: var(--size-6) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(var(--size-16), auto);
-}
-
-.lr-list.is-decided {
-  --lr-cols: minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(var(--size-16), auto);
-}
 
 .lr-row-state,
 .lr-row-next {
@@ -892,28 +885,146 @@ body:has(.lr-bar) .lr-toasts {
   gap: var(--space-2);
 }
 
-.lr-way-plate {
-  display: grid;
-  place-items: center;
-  min-width: var(--size-20);
-  min-height: var(--size-14);
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-default);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-ui-size);
-}
-
-.lr-way-plate.is-way {
-  border-color: var(--color-border-emphasis);
-  box-shadow: var(--elevation-raised);
-}
-
 .lr-way-cap {
   font-size: var(--typography-caption-size);
 }
 
 .lr-way-cap.is-way {
   color: var(--color-text-link);
+}
+
+/* While the selection bar shows, the list ends above it: the bar never covers the last rows. */
+.lr:has(.lr-bar) {
+  padding-block-end: calc(var(--size-16) + var(--space-10));
+}
+
+/* The phone's compact bar of One by one: hidden on wider screens, where the list stays beside the piece. */
+.lr-compact {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .lr-compact {
+    display: flex;
+    order: -2;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-block-end: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-compact-count {
+    min-width: var(--size-16);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+  }
+
+  .lr-compact-all {
+    margin-inline-start: auto;
+  }
+
+  .lr-side:not(.is-open) {
+    display: none;
+  }
+
+  .lr-side.is-open {
+    order: -1;
+    border-block-start: 0;
+    border-block-end: var(--border-width-default) solid var(--color-border-default);
+  }
+
+  .lr-side .lr-side-head {
+    display: none;
+  }
+}
+
+/* A color in place (lr-onebyone): text on its surface, a filled card, or the main button. */
+.lr-look {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-inset);
+}
+
+.lr-look.is-big {
+  border-radius: var(--radius-control);
+}
+
+.lr-look-action {
+  width: var(--size-10);
+  height: var(--size-5);
+}
+
+.lr-look-action.is-big {
+  width: auto;
+  height: auto;
+  min-height: var(--control-height-lg);
+  padding-inline: var(--space-6);
+  color: var(--color-action-primary-text);
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-look-surface {
+  align-content: center;
+  justify-items: start;
+  gap: var(--space-1);
+  width: var(--size-10);
+  height: var(--size-7);
+  padding: var(--space-1);
+  border: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-look-surface.is-big {
+  gap: var(--space-2);
+  width: 70%;
+  height: auto;
+  min-height: var(--size-16);
+  padding: var(--space-4);
+}
+
+.lr-look-text {
+  padding: var(--space-0-5) var(--space-1);
+  background-color: var(--color-surface-default);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-look-text.is-big {
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--typography-body-size);
+}
+
+.lr-look.is-dark.lr-look-text {
+  background-color: var(--color-surface-inverse);
+}
+
+.lr-look-line {
+  display: block;
+  width: 70%;
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-text-default);
+  opacity: 0.6;
+}
+
+.lr-look-line.is-short {
+  width: 45%;
+  background-color: var(--color-border-strong);
+  opacity: 1;
+}
+
+/* A way of a conflict drawn as a card with its own room inside or corners. */
+.lr-mini-card {
+  display: grid;
+  gap: var(--space-1);
+  width: var(--size-20);
+  padding: var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+}
+
+.lr-mini-card.is-raised {
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--elevation-raised);
 }

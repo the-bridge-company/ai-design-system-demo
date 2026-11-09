@@ -25,3 +25,11 @@ describe('Changes became Explorations', () => {
     expect(redirectTarget(REDIRECTS['/studio/changes']!, '?state=shipped', '')).toBe('/studio/explorations/?state=shipped');
   });
 });
+
+describe('the review queue became Library review', () => {
+  it('sends /studio/review/ (Home’s Review all) to Library review, its ?pr= and ?item= carried', () => {
+    expect(REDIRECTS['/studio/review']).toBe('/studio/library-review/');
+    expect(redirectTarget(REDIRECTS['/studio/review']!, '?pr=13', '')).toBe('/studio/library-review/?pr=13');
+    expect(redirectTarget(REDIRECTS['/studio/review']!, '?item=exploration-review-crm%234', '')).toBe('/studio/library-review/?item=exploration-review-crm%234');
+  });
+});

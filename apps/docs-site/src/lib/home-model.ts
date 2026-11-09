@@ -245,11 +245,12 @@ export function holdsReviewRight(x: { viewer: string | null; contributor: boolea
  * the reviewers' queue.
  */
 /**
- * The action under more than 3 waiting rows: a reviewer opens the review queue ("Review all"); someone without a
- * review right never gets the queue (only reviewers do), so their own work opens on Changes, filtered to theirs.
+ * The action under more than 3 waiting rows: a reviewer opens Library review ("Review all", the one queue of library
+ * pieces since 2026-11-09; the other rows unfold in place on Home); someone without a review right never gets the
+ * queue (only reviewers do), so their own work opens on Explorations, filtered to theirs.
  */
 export function moreNeedsAction(contributor: boolean): { label: string; path: string } {
-  return contributor ? { label: 'See all', path: 'explorations/?people=you' } : { label: 'Review all', path: 'review/' };
+  return contributor ? { label: 'See all', path: 'explorations/?people=you' } : { label: 'Review all', path: 'library-review/' };
 }
 
 export const waitsOnContributor = (task: ChangeFacts['task'] | null): boolean => task === 'own-changes';

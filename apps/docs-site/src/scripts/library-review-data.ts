@@ -53,6 +53,9 @@ import {
   type Viewer,
 } from '../lib/library-review';
 import type { ThumbSpec } from '../lib/branch-thumb';
+import { askingScreens, type ReachProductInput } from '../lib/library-reach';
+import { previewOf } from '../lib/home-explorations';
+import { shotThumb } from '../lib/preview-shots';
 
 interface Pull {
   number: number;
@@ -84,7 +87,14 @@ export interface ReviewData {
   failed: string | null;
   /** Before and after of a library change, once read (by piece key). */
   thumbs: Map<string, ThumbSpec>;
+  /** The team's products, for Who gets it and the Map (lib/library-reach). */
+  products: ReachProductInput[];
+  /** The preview capture of each exploration that asked for a piece, by screenKey (its plate while none exists). */
+  screens: Map<string, ThumbSpec>;
 }
+
+/** The key of an asking exploration's screen in ReviewData.screens. */
+export const screenKey = (s: { productKey: string | null; number: number }) => `${(s.productKey ?? '').toLowerCase()}#${s.number}`;
 
 const same = (a?: string | null, b?: string | null) => Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase());
 
@@ -157,8 +167,19 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
   const products = teamProducts();
   const productName = (key: string | null) => (key ? (products.find((p) => p.key.toLowerCase() === key.toLowerCase())?.name ?? key) : null);
   let viewer = readViewer();
-  const data: ReviewData = { pieces: [], viewer, lead: null, tech: null, secondLead: null, loading: true, failed: null, thumbs: new Map() };
-  const emit = () => paint({ ...data, viewer, pieces: [...data.pieces], thumbs: new Map(data.thumbs) });
+  const data: ReviewData = {
+    pieces: [],
+    viewer,
+    lead: null,
+    tech: null,
+    secondLead: null,
+    loading: true,
+    failed: null,
+    thumbs: new Map(),
+    products: products.map((p) => ({ key: p.key, name: p.name, default: Boolean(p.default) })),
+    screens: new Map(),
+  };
+  const emit = () => paint({ ...data, viewer, pieces: [...data.pieces], thumbs: new Map(data.thumbs), screens: new Map(data.screens) });
 
   let open: Pull[];
   try {
@@ -206,6 +227,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
         by: byOf(p),
         designer: byOf(p),
         nearest: parseNeededBy(p.body)?.nearest ?? null,
+        at: p.updated_at ?? null,
       },
       products,
     );
@@ -248,6 +270,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
           nearest: raw?.nearest ? { label: raw.nearest.label, level: raw.nearest.level } : null,
           asked: isWaitingForLead(p.body),
           mine,
+          at: (p as { updated_at?: string }).updated_at ?? null,
         });
         if (piece) xpPieces.push(piece);
       }
@@ -294,14 +317,24 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
   data.loading = false;
   build();
   emit();
-  // Before and after of each library change, read after the list (the home's own read and cache).
+  // Before and after of each library change, read after the list (the home's own read and cache), and the preview
+  // capture of each exploration that asked for a piece (Who gets it): the same capture as its card and its page.
   const { thumbOf } = await import('./home-data');
-  await Promise.all(
-    changes.map(async (p) => {
+  const { previewShotOf } = await import('./preview-shots');
+  const asking = new Map<string, { number: number; productKey: string | null; name: string; product: string | null }>();
+  for (const p of data.pieces)
+    for (const sc of askingScreens(p, data.products)) if (sc.number) asking.set(screenKey(sc), { number: sc.number, productKey: sc.productKey, name: sc.name, product: productName(sc.productKey) });
+  await Promise.all([
+    ...changes.map(async (p) => {
       const spec = await thumbOf(p as never, false).catch(() => null);
       if (spec) data.thumbs.set(`c:${ds.toLowerCase()}#${p.number}`, spec);
     }),
-  );
+    ...[...asking].map(async ([k, sc]) => {
+      const shot = await previewShotOf({ number: sc.number, product: sc.productKey }).catch(() => null);
+      const plate = { product: sc.product ?? '', screen: sc.name, seed: k };
+      data.screens.set(k, previewOf(shot ? shotThumb(shot, plate) : null, plate));
+    }),
+  ]);
   emit();
 }
 

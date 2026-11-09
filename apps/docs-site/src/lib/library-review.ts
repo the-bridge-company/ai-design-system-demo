@@ -57,6 +57,8 @@ export interface AskedBy {
   href: string | null;
   /** Who explores it, by name ("Leo"), when known. */
   designer: string | null;
+  /** When the exploration last moved (ISO), for "the most recent first" when several ask for one piece. */
+  at?: string | null;
 }
 
 /** One way of a conflict: an exploration's value for the same part of the same component. */
@@ -103,8 +105,10 @@ export interface ReviewPiece {
   /** The group it sits in: "Colors", "Spacing", a component's name. */
   category: string;
   source: PieceSource;
-  /** The exploration that asked for it, or null for a lead's own change. */
+  /** The exploration that asked for it (the most recent when several did), or null for a lead's own change. */
   asked: AskedBy | null;
+  /** The other explorations that asked for the same piece (lib/library-askers), most recent first. */
+  also?: AskedBy[];
   /** Who made it, by name, when it is a lead's change. */
   by: string | null;
   /** The viewer made or asked for it: never theirs to decide. */
@@ -134,6 +138,8 @@ export interface ReviewPiece {
   why: string | null;
   /** The exception a designer's row shows ("Dana asked for changes"). */
   exception: string | null;
+  /** When it last moved (ISO), when known: the List orders its blocks by the most recent. */
+  at?: string | null;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -241,6 +247,8 @@ export interface ChangeInput {
   designer?: string | null;
   /** The closest thing the library has today, as the exploration's check named it ("info surface"). */
   nearest?: string | null;
+  /** When it last moved (ISO). */
+  at?: string | null;
 }
 
 /** Review kinds that wait on the design side. */
@@ -311,6 +319,7 @@ export function pieceOfChange(c: ChangeInput, products: Parameters<typeof librar
     swatch: null,
     why: null,
     exception: k === 'changes-requested' ? 'Changes asked' : null,
+    at: c.at ?? null,
   };
 }
 
@@ -336,6 +345,8 @@ export interface ExplorationPieceInput {
   asked: boolean;
   /** The viewer explores it. */
   mine: boolean;
+  /** When the exploration last moved (ISO). */
+  at?: string | null;
 }
 
 /** "Highlight surface" from "New surface: highlight" and the like: the words people use for it. */
@@ -379,7 +390,7 @@ export function pieceOfExploration(x: ExplorationPieceInput): ReviewPiece | null
     kind: itemKind(i),
     category,
     source: { kind: 'piece', repo: x.repo, number: x.number, piece: i.id },
-    asked: { key: `${x.repo.toLowerCase()}#${x.number}`, name: x.name, product: x.product, productKey: x.productKey, href: x.href, designer: x.designer },
+    asked: { key: `${x.repo.toLowerCase()}#${x.number}`, name: x.name, product: x.product, productKey: x.productKey, href: x.href, designer: x.designer, at: x.at ?? null },
     by: null,
     mine: x.mine,
     tier: i.kind === 'token' && !i.before ? 3 : 2,
@@ -395,6 +406,7 @@ export function pieceOfExploration(x: ExplorationPieceInput): ReviewPiece | null
     swatch: (i.before && HEX.test(i.before)) || (i.after && HEX.test(i.after)) ? { before: i.before && HEX.test(i.before) ? i.before : null, after: i.after && HEX.test(i.after) ? i.after : null } : null,
     why: null,
     exception: d?.verdict === 'changes' ? `${d.byName ?? 'The lead'} asked for changes` : null,
+    at: x.at ?? null,
   };
 }
 
@@ -415,7 +427,8 @@ export function pieceOfConflict(
   return {
     key: `x:${c.component.toLowerCase()}|${c.property.toLowerCase()}`,
     title: c.component,
-    kind: 'Two ways',
+    // The part that changes, in words ("Room inside change"): the "2 ways" tag says the conflict, once.
+    kind: `${cap(PART_WORDS[c.property.toLowerCase()] ?? c.property)} change`,
     category: c.component,
     source: { kind: 'piece', repo: at?.[1] ?? '', number: Number(at?.[2] ?? 0), piece: c.piece },
     asked: { key: c.mine.key, name: mine.name, product: mine.product, productKey: mine.productKey, href: mine.href, designer: c.mine.designer },
@@ -449,13 +462,26 @@ export function mergePieces(changes: readonly ReviewPiece[], pieces: readonly Re
   for (const c of conflicts) if (!seen.has(c.key)) (seen.add(c.key), out.push(c));
   // The component parts in conflict, per exploration: each side's own piece of that part is the conflict.
   const conflictParts = new Set(conflicts.flatMap((c) => (c.conflict ? c.conflict.ways.map((w) => `${w.key.toLowerCase()}|${c.conflict!.component.toLowerCase()}`) : [])));
+  // The same piece asked by several explorations (the same thing, the same value) is one piece with several askers.
+  const same = new Map<string, number>();
   for (const p of pieces) {
     if (p.source.kind !== 'piece') continue;
     const at = `${p.source.repo.toLowerCase()}#${p.source.number}`;
     if (linked.has(`${at}:${p.source.piece}`)) continue;
     if (inConflict.has(at) && conflictPieces.has(p.source.piece)) continue;
     if (conflictParts.has(`${at}|${p.category.toLowerCase()}`) && p.kind.startsWith('Change to')) continue;
-    if (!seen.has(p.key)) (seen.add(p.key), out.push(p));
+    if (seen.has(p.key)) continue;
+    const id = `${p.kind}|${p.category}|${p.title}|${p.after ?? ''}|${p.state}`.toLowerCase();
+    const i = same.get(id);
+    if (i !== undefined && p.asked) {
+      const first = out[i]!;
+      out[i] = { ...first, also: [...(first.also ?? []), p.asked, ...(p.also ?? [])], mine: first.mine || p.mine };
+      seen.add(p.key);
+      continue;
+    }
+    seen.add(p.key);
+    same.set(id, out.length);
+    out.push(p);
   }
   for (const c of changes) if (!seen.has(c.key)) (seen.add(c.key), out.push(c));
   return out;
@@ -490,7 +516,10 @@ export const publishesWithoutReview = (p: ReviewPiece, v: Viewer): boolean => p.
 // ---------------------------------------------------------------------------------------------------------------
 // Filters (checkbox lists) and the address
 
-export type ReviewView = 'one' | 'list';
+/** One by one (leads), List, and the read-only Map (phase 3). */
+export type ReviewView = 'one' | 'list' | 'map';
+
+const viewOf = (v: string | null): ReviewView => (v === 'list' ? 'list' : v === 'map' ? 'map' : 'one');
 
 export interface ReviewFilters {
   /** Empty: every status. */
@@ -516,7 +545,7 @@ export function reviewParams(search: string, o: { reviews: boolean }): { filters
   const status = q.has('status') ? listParam(q, 'status').filter((s): s is PieceState => s === 'waiting' || s === 'decided') : ['waiting' as const];
   const asked = q.has('asked') ? listParam(q, 'asked').filter((s) => s !== 'anyone') : o.reviews ? [] : [YOU];
   const product = listParam(q, 'product');
-  return { filters: { status, asked, product }, view: q.get('view') === 'list' ? 'list' : 'one' };
+  return { filters: { status, asked, product }, view: viewOf(q.get('view')) };
 }
 
 /** The address with these filters and view: the defaults are left out, so a plain link opens the plain page. */
@@ -530,8 +559,8 @@ export function withReviewParams(search: string, f: ReviewFilters, view: ReviewV
   set('asked', f.asked, o.reviews ? [] : [YOU]);
   if (f.product.length) q.set('product', f.product.join(','));
   else q.delete('product');
-  if (view === 'list') q.set('view', 'list');
-  else q.delete('view');
+  if (view === 'one') q.delete('view');
+  else q.set('view', view);
   const s = q.toString();
   return s ? `?${s}` : '';
 }
@@ -540,7 +569,7 @@ export const productKeyOf = (p: ReviewPiece): string => p.asked?.productKey ?? (
 
 export function passes(p: ReviewPiece, f: ReviewFilters): boolean {
   if (f.status.length && !f.status.includes(p.state)) return false;
-  if (f.asked.length && !f.asked.some((a) => (a === YOU ? p.mine : p.asked?.key === a || p.conflict?.ways.some((w) => w.key === a)))) return false;
+  if (f.asked.length && !f.asked.some((a) => (a === YOU ? p.mine : p.asked?.key === a || p.also?.some((x) => x.key === a) || p.conflict?.ways.some((w) => w.key === a)))) return false;
   if (f.product.length && !f.product.includes(productKeyOf(p))) return false;
   return true;
 }
@@ -556,7 +585,7 @@ export function filterChoices(pieces: readonly ReviewPiece[]): { asked: FilterCh
   const product = new Map<string, string>();
   for (const p of pieces) {
     if (p.conflict) for (const w of p.conflict.ways) asked.set(w.key, w.exploration);
-    else if (p.asked) asked.set(p.asked.key, p.asked.name);
+    else for (const x of p.asked ? [p.asked, ...(p.also ?? [])] : []) asked.set(x.key, x.name);
     product.set(productKeyOf(p), p.asked?.product ?? 'Library');
   }
   const byLabel = (a: FilterChoice, b: FilterChoice) => a.label.localeCompare(b.label);

@@ -382,7 +382,7 @@ describe('join requests on the home (board E7b)', () => {
 
 describe('more than 3 waiting', () => {
   it('opens the review queue for a reviewer, their own work on Changes for anyone else', () => {
-    expect(moreNeedsAction(false)).toEqual({ label: 'Review all', path: 'review/' });
+    expect(moreNeedsAction(false)).toEqual({ label: 'Review all', path: 'library-review/' });
     expect(moreNeedsAction(true)).toEqual({ label: 'See all', path: 'explorations/?people=you' });
   });
 });

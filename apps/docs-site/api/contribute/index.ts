@@ -179,7 +179,7 @@ import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/sessi
 import { teamInSet } from '../_lib/members.js';
 import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
 import { demoExplorationsOf, planDemoRefile, refiledComment, relinkBody, type RefileIssue, type RefilePull } from '../_lib/demo-refile.js';
-import { parseSeedPlan, SEED_LIMITS, seedProductsFrom, type SeedState } from '../_lib/demo-explorations.js';
+import { parseSeedPlan, SEED_LIMITS, seedProductsFrom, type SeedFile, type SeedState } from '../_lib/demo-explorations.js';
 import type { ExplorationUseCase } from '@bridge-ds/mcp';
 import { addsLeadWords, handsOff, LEAD_ONLY } from '../_lib/lead-gate.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
@@ -1005,6 +1005,17 @@ export interface SeedOutcome {
   notes?: 'writes' | 'same' | 'saved';
   /** The screen it changed, when the plan names one: would set it, already shows it, or set by this run. */
   screen?: 'writes' | 'same' | 'saved';
+  /**
+   * An exploration already there whose branch holds other content than the plan's files: how many of them a run
+   * would save (dry run) or saved, in one commit as the member. Absent when every file already says this.
+   */
+  updates?: number;
+}
+
+/** The files of a plan item whose content on the exploration's branch is different, or missing there. */
+async function changedSeedFiles(gh: { getFileText(path: string, ref: string): Promise<string | undefined> }, branch: string, files: readonly SeedFile[]): Promise<SeedFile[]> {
+  const now = await Promise.all(files.map((f) => gh.getFileText(f.path, branch).catch(() => undefined)));
+  return files.filter((f, i) => now[i] !== f.content);
 }
 
 /** The screen an exploration's body names (its Bridge block), unchecked: core explorationScreenOf checks it. */
@@ -1064,7 +1075,9 @@ export const setSeedRetry = (r: SeedRetry | undefined) => {
  * `waiting-for-lead` Done exploring as asking a lead (askLeadOnGitHub), and for `done` also the lead's "Looks right"
  * as that lead (leadApproveOnGitHub, which opens the developers' task in the product's repository). GitHub shows
  * Bridge's App acting with the member's "Requested by" line, and the exploration block names the member. An
- * exploration whose branch is already in the copy is left as it is, so a run said again starts only what is missing.
+ * exploration whose branch is already in the copy is not started again, so a run said again starts only what is
+ * missing; its files that differ from the plan's are saved as the member in one commit (their Claude session's save),
+ * and files that already say this write nothing.
  * An item's `notes` ("Where it stands") are saved as the member the way their Claude session saves them (core
  * saveExplorationNotesOnGitHub, the notes merge of bridge_save_exploration), after its files, or alone on an
  * exploration already there: nothing else of it moves, and notes that already say this write nothing. An item's `screen`
@@ -1106,17 +1119,21 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
       const ref = await ghApp(ctx, copyToken, 'GET', `/repos/${copy}/git/ref/heads/${encodeRef(item.branch)}`);
       if (ref.status === 200) {
         o.status = 'exists';
-        // Already there: only its notes and its screen, saved as its member the way their Claude session saves them.
-        // Nothing else moves.
-        if (!item.notes && !item.screen) continue;
+        // Already there: its changed files, its notes and its screen, saved as its member the way their Claude session
+        // saves them. Nothing else moves.
+        if (!item.files.length && !item.notes && !item.screen) continue;
         const member = await ctx.svc.members.get(t.full, item.member.email);
         if (!member) {
           if (apply) throw new Error(`${item.member.name} is not on the team.`);
+          if (item.files.length) o.updates = item.files.length;
           if (item.notes) o.notes = 'writes';
           if (item.screen) o.screen = 'writes';
           continue;
         }
         const gh = memberClient(ctx, lib, t, pairs, member, copy, seedRetry);
+        // The plan's files whose content on the branch differs (or that it lacks): only those are saved.
+        const changed = await changedSeedFiles(gh, item.branch, item.files);
+        if (changed.length) o.updates = changed.length;
         if (!apply) {
           const p = await lib.findExplorationOnGitHub(gh, item.branch);
           if (item.notes) {
@@ -1133,6 +1150,8 @@ async function onSeedDemoExplorations(req: Request, ctx: Ctx, body: Record<strin
           await ctx.svc.redis.cmd('SET', branchKey(copy, item.branch), member.email, 'EX', OWNERSHIP_TTL_S);
           await rememberMine(ctx, copy, member.email, `b:${item.branch}`);
         }
+        // One commit of the changed files, the same as their Claude session's save (bridge_save_exploration).
+        if (changed.length) await gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: item.branch, message: item.message, files: changed });
         if (item.notes) {
           const saved = await lib.saveExplorationNotesOnGitHub(gh, item.branch, item.notes, { message: SEED_NOTES_MESSAGE });
           o.notes = saved.saved ? 'saved' : 'same';

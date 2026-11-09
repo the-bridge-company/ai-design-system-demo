@@ -359,12 +359,55 @@ describe('the seed-demo-explorations action', () => {
     expect(w.issues[0].body).toContain('through Bridge.');
   });
 
-  it('leaves an exploration already in the copy as it is', async () => {
+  it('leaves an exploration already in the copy as it is when its files already say this', async () => {
     const w = world(true);
-    w.refs.set('explore/gift-wrap', w.refs.get('main')!);
-    const out = await (await run(w, memoryRedis(() => T0), { apply: true, plan: { items: [item()] } })).json();
+    const redis = memoryRedis(() => T0);
+    await run(w, redis, { apply: true, plan: { items: [item()] } });
+    const before = w.writes.length;
+    const out = await (await run(w, redis, { apply: true, plan: { items: [item()] } })).json();
     expect(out.items[0]).toMatchObject({ status: 'exists' });
-    expect(w.writes.filter((x) => x.path.startsWith(`/repos/${COPY}`))).toEqual([]);
+    expect(out.items[0]).not.toHaveProperty('updates');
+    expect(w.writes.length).toBe(before);
+  });
+
+  it('saves the changed files of an exploration already there as its member, in one commit, once', async () => {
+    const w = world(true);
+    const redis = memoryRedis(() => T0);
+    const plan = { items: [item({ member: 'Leo', name: 'Frame picker', branch: 'explore/frame-picker', state: 'waiting-for-lead', files: [{ path: 'src/a.tsx', content: 'a\n' }, { path: 'src/b.tsx', content: 'b\n' }] })] };
+    await run(w, redis, { apply: true, plan });
+    const head = w.refs.get('explore/frame-picker')!;
+    const body = w.pulls[0].body;
+    // Ownership expired since: the member gets it back, as when they started it.
+    await redis.cmd('DEL', branchKey(COPY, 'explore/frame-picker'));
+    const next = { items: [{ ...plan.items[0], files: [{ path: 'src/a.tsx', content: 'a\n' }, { path: 'src/b.tsx', content: 'b, list view\n' }, { path: 'src/c.tsx', content: 'c\n' }] }] };
+
+    const before = w.writes.length;
+    const dry = await (await run(w, redis, { plan: next })).json();
+    expect(dry.items.map((i: any) => [i.status, i.updates])).toEqual([['exists', 2]]);
+    expect(w.writes.length).toBe(before);
+
+    const out = await (await run(w, redis, { apply: true, plan: next })).json();
+    expect(w.unknown).toEqual([]);
+    expect(out.items.map((i: any) => [i.status, i.updates, i.error])).toEqual([['exists', 2, undefined]]);
+    const fresh = w.writes.slice(before);
+    expect(fresh.every((x) => x.auth === 'Bearer ghs_app')).toBe(true);
+    expect(JSON.stringify(fresh)).not.toMatch(/peterbono|Florian/);
+    // One commit on top of what was there, with the two files that changed, authored by Leo.
+    const now = w.commits.get(w.refs.get('explore/frame-picker')!)!;
+    expect(now.parents).toEqual([head]);
+    expect(now.author).toMatchObject({ name: 'Leo' });
+    const was = w.commits.get(head)!.tree;
+    expect([...now.tree.keys()].filter((p) => now.tree.get(p) !== was.get(p)).sort()).toEqual(['src/b.tsx', 'src/c.tsx']);
+    expect(now.tree.get('src/b.tsx')).toBe('b, list view\n');
+    expect(await redis.cmd('GET', branchKey(COPY, 'explore/frame-picker'))).toBe('leo@acme.example');
+    // Its state, block and labels as they were.
+    expect(w.pulls[0].body).toBe(body);
+
+    // Said again: the files already say this, nothing is written.
+    const again = w.writes.length;
+    const twice = await (await run(w, redis, { apply: true, plan: next })).json();
+    expect(twice.items[0]).not.toHaveProperty('updates');
+    expect(w.writes.length).toBe(again);
   });
 
   const NOTES = {

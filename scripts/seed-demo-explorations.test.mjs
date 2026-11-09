@@ -84,4 +84,21 @@ describe('seed-demo-explorations plan', () => {
       'acme/prints-design explore/c: as Ann, 1 file, already there, left as it is',
     ]);
   });
+
+  it('says how many files of an exploration already there it updates', () => {
+    const lines = [];
+    const log = console.log;
+    console.log = (s) => lines.push(s);
+    try {
+      const items = [{ copy: 'acme/prints-design', branch: 'explore/a', member: 'Leo', files: 4, status: 'exists', state: 'exploring', updates: 2, screen: 'writes' }];
+      printSeed({ dryRun: true, items });
+      printSeed({ dryRun: false, items: [{ ...items[0], updates: 1, screen: 'saved' }] });
+    } finally {
+      console.log = log;
+    }
+    expect(lines).toEqual([
+      'acme/prints-design explore/a: as Leo, 4 files, already there, updates 2 files, sets its screen',
+      'acme/prints-design explore/a: as Leo, 4 files, already there, updated 1 file, screen set',
+    ]);
+  });
 });

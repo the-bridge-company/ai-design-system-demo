@@ -4,7 +4,9 @@
 // it off as the plan says (apps/docs-site/api/contribute action `seed-demo-explorations`, plan checks in
 // api/_lib/demo-explorations.ts). This script only builds the plan from local clones and asks, with a GitHub token that
 // administers the sample team's repository (the GitHub CLI's, or GH_TOKEN). Nothing is written without --apply, and an
-// exploration already in its copy is left as it is, so running it again starts only what is missing. An item's `notes`
+// exploration already in its copy is not started again: running it again starts only what is missing. Its files that
+// differ from the plan (or that its branch lacks) are saved as its member in one commit, the way their Claude session
+// saves them; files that already say this write nothing. An item's `notes`
 // ("Where it stands") are saved as its member, the way their Claude session saves them, on an exploration already
 // there too: only its note file changes, and notes that already say this write nothing. An item's `screen` (the
 // screen it changed, where its preview and its capture open: "/#/orders/12") is set as its member the same way, on an
@@ -115,10 +117,11 @@ const SCREEN_WORDS = { writes: 'sets its screen', same: 'already opens on its sc
 export function printSeed(body) {
   if (!body.items.length) console.log('Nothing in the plan.');
   for (const i of body.items) {
-    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes || i.screen ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
+    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes || i.screen || i.updates ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
     const notes = i.notes ? `, ${NOTES_WORDS[i.notes] ?? i.notes}` : '';
     const screen = i.screen ? `, ${SCREEN_WORDS[i.screen] ?? i.screen}` : '';
-    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${notes}${screen}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
+    const updates = i.updates ? `, ${body.dryRun ? 'updates' : 'updated'} ${i.updates} file${i.updates === 1 ? '' : 's'}` : '';
+    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${updates}${notes}${screen}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
   }
 }
 

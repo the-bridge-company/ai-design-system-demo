@@ -5,7 +5,7 @@
 // lead, and the lead says it looks right: every step goes through Bridge's proxy as them (api/contribute runAsMember),
 // so GitHub shows Bridge's App acting with their "Requested by <name> through Bridge." line and the exploration block
 // names them (member, memberName). Their "Where it stands" notes are saved the way their Claude session saves them
-// (bridge_save_exploration `notes`), on an exploration already there too, and so is the screen it changed (`screen`:
+// (bridge_save_exploration `notes`), on an exploration already there too (so are its files that changed since), and so is the screen it changed (`screen`:
 // where its preview and its capture open, bridge_save_exploration `screen`). This reads the plan an admin sends (scripts/seed-demo-explorations.mjs) and says
 // what is wrong with it, before anything is written; api/contribute action `seed-demo-explorations` does the steps.
 //

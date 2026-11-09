@@ -746,6 +746,13 @@ describe('Send to Figma', () => {
     expect([...grid.children].map((c) => c.className.split(' ')[0])).toEqual(['xp-preview', 'xp-side', 'xp-activity']);
   });
 
+  it('the second place free (the lead answers below): Send to Figma sits beside the preview, not on a row of its own', () => {
+    paint({ ...exploring, figma, lead: { line: 'Sofia is done exploring.', bar: { onLooksRight: async () => 'ok', onChanges: async () => 'ok', onComment: async () => 'ok', onNotDoing: async () => undefined, onAskOther: null, link: 'https://x', onCopy: async () => undefined, changedSince: false } } });
+    const places = [...document.querySelectorAll('.xp-preview-acts > .xp-act')].map((el) => el.className.split(' ')[1]);
+    expect(places).toEqual(['is-main', 'is-second']);
+    expect(document.querySelector('.xp-act.is-second')!.textContent).toContain('Send to Figma');
+  });
+
   it('carries the demo mark, so on the sample team a click opens the demo dialog instead (scripts/demo-gate.ts)', async () => {
     for (const claudeLink of ['yes', 'no'] as const) {
       paint({ ...exploring, figma, claudeLink });
@@ -812,6 +819,16 @@ describe('the talk with a lead on the page', () => {
     expect(screen.getByText('You asked Ann. Waiting for their answer.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
     expect(screen.queryByText(/Open in Claude Code|Continue in Claude/)).toBeNull();
+  });
+  it("the lead's bar is the one way to answer: no I'll look in the zone beside it; without the bar, I'll look stays", () => {
+    const take = { onTake: async () => undefined };
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring. Look at the preview, then answer.', bar, take } });
+    expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: "I'll look" })).toBeNull();
+    cleanup();
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring.', bar: null, take } });
+    expect(screen.getByRole('button', { name: "I'll look" })).toBeTruthy();
   });
   it('Not doing this shows its reason, and the way to start again, on the board', () => {
     paint({ stage: 'exploring', archived: true, tag: { label: 'Not doing this', tone: 'neutral' }, notDoing: { title: 'Florian decided not to do this', who: face, when: 'today', text: 'Billing covers it', onReopen: async () => undefined }, decisions: [{ key: '0', name: 'Florian', login: 'flo', verb: 'decided not to do this', why: 'Billing covers it', round: 1, at: '2026-11-07T00:00:00Z' }] });

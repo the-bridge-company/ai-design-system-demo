@@ -203,8 +203,8 @@
 
 /* The actions under the preview, as wide as the frame, in three fixed places in every state: the main action and the
    second one on one row (two equal columns, so the main action keeps its width whether a second one is there or
-   not), then Send to Figma, a tertiary action at its own width, centered on its own row under them, so no label is
-   ever cut. Stacked on phones. A grid, so each button fills its place (Button itself never grows in a flex row). */
+   not), then Send to Figma: in the second place when that one is free, else a tertiary action at its own width,
+   centered on its own row under them, so no label is ever cut. Stacked on phones. A grid, so each button fills its place (Button itself never grows in a flex row). */
 .xp-preview-acts {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

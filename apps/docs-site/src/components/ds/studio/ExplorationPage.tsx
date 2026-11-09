@@ -314,7 +314,8 @@ function LeadCard({ lead, say }: { lead: LeadView; say: (s: string) => void }) {
       </h2>
       <p>{lead.line}</p>
       {lead.take?.line && <p className="xp-muted">{lead.take.line}</p>}
-      {lead.take?.onTake && (
+      {/* With the review bar shown, its Looks right and Needs changes are the one way to answer: no second button here. */}
+      {lead.take?.onTake && !lead.bar && (
         <Button
           variant="inverse"
           size="md"
@@ -898,6 +899,11 @@ function ExplorationBody(p: ExplorationPageProps) {
   // The lead's bar at the bottom holds Looks right: the preview steps back the same way.
   const answersBelow = Boolean(p.lead?.bar);
   const zoneLeads = declined || waitsOnAnswer(handoff) || reviewsVersion(handoff) || answers || answersBelow;
+  // The places under the preview: the AI tool second while exploring; Send to Figma beside the preview when that
+  // place is free and it is one action (See it in Figma and Send again keep their own row, so no label is cut).
+  const secondContinue = !handoff && !p.archived && !answers && !answersBelow && !p.pm?.mine;
+  const figmaShown = !p.archived && !answers && Boolean(p.notes?.notes?.figmaPage || p.figma);
+  const figmaBeside = figmaShown && !handoff?.build?.url && !secondContinue && !(p.notes?.notes?.figmaPage && p.figma);
   // The preview's own button: with the Bridge toolbar when the product has one (Live product and This change live in
   // its toolbar), a status while it builds, else disabled with the reason under it.
   const previewButton = p.previewUrl ? (
@@ -1072,14 +1078,15 @@ function ExplorationBody(p: ExplorationPageProps) {
                 <div className="xp-act is-second">{previewButton}</div>
               ) : (
                 /* Archived: the preview still opens, nothing offers to keep working on it (Unarchive first). */
-                !handoff && !p.archived && !answers && !answersBelow && !p.pm?.mine && (
+                secondContinue && (
                   <div className="xp-act is-second">
                     <ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" />
                   </div>
                 )
               )}
-              {!p.archived && !answers && (p.notes?.notes?.figmaPage || p.figma) && (
-                <div className="xp-act is-third">
+              {/* One Figma action with the second place free: beside the preview, not alone on a row under it. */}
+              {figmaShown && (
+                <div className={`xp-act ${figmaBeside ? 'is-second' : 'is-third'}`}>
                   <FigmaAction p={p} tool={tab} say={setSaid} />
                 </div>
               )}

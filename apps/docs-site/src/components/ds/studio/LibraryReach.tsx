@@ -9,13 +9,25 @@ import { Button, Icon, Link, SegmentedControl } from '@bridge-ds/react';
 import { ChevronLeft } from 'lucide-react';
 import { BranchThumb } from './BranchThumb';
 import { isNew, Sample, thumbOf } from './LibraryReviewSample';
-import { listWords, originSentence, shownScreens, type Reach, type ReachScreen } from '../../../lib/library-reach';
+import { effectLine, originSentence, shownScreens, type Reach, type ReachScreen } from '../../../lib/library-reach';
 import { canDecide, keepLabel, tokenGroup, type ReviewPiece, type Viewer } from '../../../lib/library-review';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
 
 type Mode = 'today' | 'with' | 'side';
 
 export type ReachAct = { kind: 'add' | 'keep' | 'existing' };
+
+/** A product as a chip: its initial in a small mark, then its name (the Map's product boxes, Who gets it's sections). */
+export function ProductChip({ name, as: Tag = 'span', id }: { name: string; as?: 'span' | 'h2'; id?: string }) {
+  return (
+    <Tag className="lr-product" id={id}>
+      <span className="lr-product-mark" aria-hidden="true">
+        {name.trim().replace(/^acme\s+/i, '').charAt(0).toUpperCase() || '?'}
+      </span>
+      <span className="lr-product-name">{name}</span>
+    </Tag>
+  );
+}
 
 function ScreenCard({ s, p, mode, spec, thumbs }: { s: ReachScreen; p: ReviewPiece; mode: Mode; spec: ThumbSpec | undefined; thumbs: Map<string, ThumbSpec> }) {
   const screen: ThumbSpec = spec ?? { kind: 'screen', src: null, screen: s.name, seed: s.key };
@@ -92,11 +104,11 @@ export function ReachPage({ p, reach, screens, thumbs, viewer, busy, onBack, bac
           />
         )}
       </div>
-      <p className="lr-reach-sentence">{reach.sentence}</p>
-      <p className="lr-muted lr-reach-origin">
+      {/* One line: where it comes from, then what it does to screens. The products are the sections below. */}
+      <p className="lr-reach-origin">
         {origin.before}
         {origin.link && (origin.link.href ? <Link href={origin.link.href}>{origin.link.label}</Link> : origin.link.label)}
-        {origin.after}
+        {origin.after} <span className="lr-muted">{effectLine(reach)}</span>
       </p>
       {withScreens.length > 0 && mode !== 'with' && <p className="lr-muted lr-reach-note">Bridge keeps each screen with the change only. Today shows the piece as the library has it now.</p>}
       {withScreens.map((x) => {
@@ -104,9 +116,7 @@ export function ReachPage({ p, reach, screens, thumbs, viewer, busy, onBack, bac
         return (
           <section key={x.key} className="lr-reach-product" aria-labelledby={`lr-reach-${x.key}`}>
             <header className="lr-reach-product-head">
-              <h2 className="lr-reach-product-name" id={`lr-reach-${x.key}`}>
-                {x.name}
-              </h2>
+              <ProductChip as="h2" name={x.name} id={`lr-reach-${x.key}`} />
               <span className="lr-muted">
                 {x.screens.length} {x.screens.length === 1 ? 'screen asked for it' : 'screens asked for it'}
               </span>
@@ -126,8 +136,12 @@ export function ReachPage({ p, reach, screens, thumbs, viewer, busy, onBack, bac
       })}
       {without.length > 0 && (
         <p className="lr-reach-unknown">
-          <strong>{listWords(without.map((x) => x.name))}</strong>
-          <span className="lr-muted">{withScreens.length ? `: no screen listed yet. Bridge does not know which of ${without.length === 1 ? 'its' : 'their'} screens use it.` : `: Bridge does not know which of ${without.length === 1 ? 'its' : 'their'} screens use it yet.`}</span>
+          <span className="lr-reach-unknown-names">
+            {without.map((x) => (
+              <ProductChip key={x.key} name={x.name} />
+            ))}
+          </span>
+          <span className="lr-muted">{`No screen listed yet: Bridge does not know which of ${without.length === 1 ? 'its' : 'their'} screens use it.`}</span>
         </p>
       )}
       {(decides || p.conflict) && (

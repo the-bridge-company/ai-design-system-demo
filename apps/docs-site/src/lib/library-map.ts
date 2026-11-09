@@ -1,7 +1,8 @@
 // The Map view of Library review (board lr-map, phase 3): one picture of where each piece comes from and who gets it,
 // in three columns linked by curves:
-//   where it comes from   the explorations that asked (one box each), and each lead's own changes as one dashed box;
-//   what changes          the pieces (a lead's own changes fold into one box, "8 from you", when there are several);
+//   where it comes from   the explorations that asked (one box each), and a lead's own changes as one dashed box per
+//                         kind, saying who and where from once ("Leo, in Figma", "Leo, docs drafts");
+//   what changes          the pieces (past 3, a lead's changes of one kind fold into one box: "4 docs drafts");
 //   who gets it           the products (lib/library-reach).
 // A conflict is two links into one piece, drawn amber. Clicking a box narrows the list under the map ("Showing what
 // <exploration> asks for · 3 of 14 · Show all"). Read only: nobody decides from the map.
@@ -54,7 +55,21 @@ export interface MapGraph {
  */
 const sourceId = (name: string, product: string | null) => `s:${name.toLowerCase()}|${(product ?? '').toLowerCase()}`;
 
-const leadId = (p: ReviewPiece) => `s:lead:${p.mine ? 'you' : (p.by ?? 'lead').toLowerCase()}`;
+/** Where a lead's own change comes from, in words: "in Figma", "docs drafts". */
+const KIND_WORDS: Record<string, { from: string; many: string }> = {
+  figma: { from: 'in Figma', many: 'Figma changes' },
+  docs: { from: 'docs drafts', many: 'docs drafts' },
+  a11y: { from: 'accessibility fixes', many: 'accessibility fixes' },
+  brand: { from: 'a new brand', many: 'brand changes' },
+  rule: { from: 'library rules', many: 'library rules' },
+};
+const kindWords = (reason: string | null | undefined) => KIND_WORDS[reason ?? ''] ?? { from: 'library changes', many: 'library changes' };
+
+/** One box per lead and kind ("Leo, in Figma"): who made it and where it comes from, said once. */
+const leadId = (p: ReviewPiece) => `s:lead:${p.mine ? 'you' : (p.by ?? 'lead').toLowerCase()}:${p.leadReason ?? 'other'}`;
+
+/** A lead's own changes past this many fold into one box named by their kind ("4 docs drafts"). */
+export const LEAD_PIECES_SHOWN = 3;
 
 /** The graph of the pieces on screen (the filters already applied), in the order the list groups them. */
 export function buildMap(pieces: readonly ReviewPiece[], products: readonly ReachProductInput[], v: Pick<Viewer, 'name'>): MapGraph {
@@ -89,22 +104,26 @@ export function buildMap(pieces: readonly ReviewPiece[], products: readonly Reac
       addLink({ from: sid, to: id, conflict: false });
     }
   }
-  // Each lead's own changes: one dashed box, and one folded piece box when there are several.
+  // Each lead's own changes: one dashed box per person and kind ("Leo, in Figma"). The pieces themselves sit in the
+  // middle; past LEAD_PIECES_SHOWN they fold into one box named by their kind, never by the person again.
   for (const [sid, list] of leadPieces) {
     const first = list[0]!;
-    const you = first.mine;
-    const who = you ? (v.name ?? 'You') : (first.by ?? 'A lead');
-    sources.set(sid, { id: sid, label: you ? 'From you' : `From ${who}`, sub: `${who} · ${list.length} ${list.length === 1 ? 'change' : 'changes'}`, lead: true });
-    if (list.length === 1) {
-      const id = `n:${first.key}`;
-      nodes.push({ id, label: first.title, keys: [first.key], conflict: false, folded: false });
-      addLink({ from: sid, to: id, conflict: false });
+    const who = first.mine ? 'You' : (first.by ?? 'A lead');
+    const words = kindWords(first.leadReason);
+    sources.set(sid, { id: sid, label: `${who}, ${words.from}`, sub: `${list.length} ${list.length === 1 ? 'change' : 'changes'}`, lead: true });
+    if (list.length <= LEAD_PIECES_SHOWN) {
+      for (const p of list) {
+        const id = `n:${p.key}`;
+        nodes.push({ id, label: p.title, keys: [p.key], conflict: false, folded: false });
+        addLink({ from: sid, to: id, conflict: false });
+      }
     } else {
       const id = `n:${sid.slice(2)}`;
-      nodes.push({ id, label: `${list.length} from ${you ? 'you' : who}`, keys: list.map((p) => p.key), conflict: false, folded: true });
+      nodes.push({ id, label: `${list.length} ${words.many}`, keys: list.map((p) => p.key), conflict: false, folded: true });
       addLink({ from: sid, to: id, conflict: false });
     }
   }
+
   // Who gets each piece box: the union of its pieces' products.
   const byKey = new Map(pieces.map((p) => [p.key, p]));
   const productIds = new Set<string>();
@@ -160,7 +179,7 @@ export function focusOf(g: MapGraph, id: string): MapFocus | null {
     ? { before: 'Showing ', strong: node.label, after: '' }
     : source
       ? source.lead
-        ? { before: 'Showing what ', strong: source.label === 'From you' ? 'you' : source.label.replace(/^From /, ''), after: ' made' }
+        ? { before: 'Showing ', strong: source.label, after: '' }
         : { before: 'Showing what ', strong: source.label, after: ' asks for' }
       : { before: 'Showing what ', strong: product!.label, after: ' gets' };
   return { keys, lit, line };

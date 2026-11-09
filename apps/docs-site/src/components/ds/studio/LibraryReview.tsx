@@ -18,7 +18,7 @@ import { isNew, Sample, thumbOf } from './LibraryReviewSample';
 import { MapView } from './LibraryMap';
 import { ReachPage } from './LibraryReach';
 import { mapAvailable } from '../../../lib/library-map';
-import { reachOf, type Reach } from '../../../lib/library-reach';
+import { reachCell, reachColumn, reachOf, type Reach } from '../../../lib/library-reach';
 import { hasLegacy, itemTarget, landing, readLegacy, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
 import { askedCell, askedCountLine, askedSubline, askersOf, FACES_SHOWN, groupAskers, waysTag } from '../../../lib/library-askers';
@@ -191,11 +191,11 @@ const valueOf = (spec: ThumbSpec, side: 'before' | 'after'): string | null => {
 };
 
 /** The reach link of a piece ("2 products · 1 screen ›"): opens Who gets it. */
-function ReachLink({ p, reach, onReach, label }: { p: ReviewPiece; reach: Reach; onReach: (p: ReviewPiece) => void; label?: string }) {
+function ReachLink({ p, reach, onReach, label, text, quiet, hoverOnly }: { p: ReviewPiece; reach: Reach; onReach: (p: ReviewPiece) => void; label?: string; text?: string; quiet?: boolean; hoverOnly?: boolean }) {
   return (
     <Link
       href={reachHref(p.key)}
-      className="lr-reach-link"
+      className={`lr-reach-link${quiet ? ' is-quiet' : ''}${hoverOnly ? ' is-hover-only' : ''}`}
       onClick={(e) => {
         e.preventDefault();
         onReach(p);
@@ -203,8 +203,8 @@ function ReachLink({ p, reach, onReach, label }: { p: ReviewPiece; reach: Reach;
       aria-label={`Who gets ${p.title}: ${reach.link}`}
     >
       {label ? `${label} ` : ''}
-      {reach.link}
-      <Icon icon={ChevronRight} size="xs" />
+      {text ?? reach.link}
+      <Icon icon={ChevronRight} size="xs" className="lr-reach-chev" />
     </Link>
   );
 }
@@ -584,13 +584,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       </span>
     );
   };
+  // A conflict says its ways inline after the piece's subline: the State column never holds it alone.
   const state = (p: ReviewPiece) => {
-    if (p.conflict && !p.conflict.pick)
-      return (
-        <Badge tone="warning" size="md" className={statusTagClass('warning')}>
-          {waysTag(p.conflict.ways.length)}
-        </Badge>
-      );
     const d = decidedTag(p);
     if (d)
       return (
@@ -635,7 +630,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   };
   // A column shows only when a row fills it (no empty State, Next or action column).
   const rows = groups.flatMap((g) => g.pieces);
-  const stateOf = (p: ReviewPiece) => (mode === 'designer' ? (decidedTag(p) || (p.conflict && !p.conflict.pick) ? state(p) : p.exception ? <span className="lr-muted">{p.exception}</span> : null) : state(p));
+  const stateOf = (p: ReviewPiece) => (mode === 'designer' ? (decidedTag(p) ? state(p) : p.exception ? <span className="lr-muted">{p.exception}</span> : null) : state(p));
+  const reachCol = reachColumn(rows.map(reach));
   const cols = shownColumns({
     state: rows.some((p) => stateOf(p) !== null),
     next: mode === 'lead' && rows.some((p) => nextActor(p, { tech, secondLead }) !== null),
@@ -649,7 +645,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     'var(--size-40)',
     'minmax(var(--size-64), 3fr)',
     'minmax(0, 1.7fr)',
-    'minmax(0, 1fr)',
+    'minmax(var(--size-40), 1fr)',
     // Fixed widths where content varies, so every block's grid lines up with the one header row.
     showState ? 'var(--size-40)' : null,
     showNext ? 'minmax(0, 0.8fr)' : null,
@@ -671,7 +667,10 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         </span>
         <span role="columnheader">Piece</span>
         <span role="columnheader">Asked by</span>
-        <span role="columnheader">Who gets it</span>
+        <span role="columnheader">
+          Who gets it
+          {reachCol.shared && <span className="lr-head-reach">{reachCol.shared}</span>}
+        </span>
         {showState && <span role="columnheader">{mode === 'decided' ? 'Result' : 'State'}</span>}
         {showNext && <span role="columnheader">Next</span>}
         {showAction && (
@@ -684,6 +683,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         <div key={f.family} role="rowgroup" className="lr-family" aria-label={f.label ?? undefined}>
           {f.label && (
             <div role="row" className="lr-family-row">
+              {/* The checkbox slot, so the overline starts where the block headings start. */}
+              {boxes && <span className="lr-col-box" aria-hidden="true" />}
               <span role="cell" className="lr-overline">
                 {f.label}
               </span>
@@ -719,13 +720,23 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                         {pair(p)}
                         <span role="cell" className="lr-row-piece">
                           <span className="lr-row-title">{p.title}</span>
-                          <span className="lr-muted lr-row-kind">{p.kind}</span>
+                          <span className="lr-row-sub">
+                            <span className="lr-muted lr-row-kind">{p.kind}</span>
+                            {p.conflict && !p.conflict.pick && (
+                              <Badge tone="warning" size="sm" className={statusTagClass('warning')}>
+                                {waysTag(p.conflict.ways.length)}
+                              </Badge>
+                            )}
+                          </span>
                         </span>
                         <span role="cell" className="lr-row-ask">
                           <AskedCell p={p} />
                         </span>
                         <span role="cell" className="lr-row-reach">
-                          <ReachLink p={p} reach={reach(p)} onReach={onReach} />
+                          {(() => {
+                            const c = reachCell(reach(p), Boolean(reachCol.shared));
+                            return <ReachLink p={p} reach={reach(p)} onReach={onReach} text={c.label} quiet hoverOnly={c.hoverOnly} />;
+                          })()}
                         </span>
                         {showState && (
                           <span role="cell" className="lr-row-state">

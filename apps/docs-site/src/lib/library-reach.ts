@@ -141,3 +141,28 @@ export function shownScreens<T>(screens: readonly T[], open: boolean, max = REAC
   if (open || screens.length <= max) return { shown: [...screens], more: null };
   return { shown: screens.slice(0, max), more: `Show all ${screens.length}` };
 }
+
+/** What the piece does to screens, said once on the Who gets it origin line ("Nothing changes until a screen uses it."). */
+export function effectLine(r: Reach): string {
+  if (r.stays || !r.products.length) return r.sentence;
+  return r.everywhere ? 'Every screen that uses it changes.' : 'Nothing changes until a screen uses it.';
+}
+
+/**
+ * The List's Who gets it column: when every row reaches the same products, the header names them once ("Acme Prints
+ * and Acme CRM") and a row says only what differs (its screen count), else nothing until hovered.
+ */
+export function reachColumn(reaches: readonly Reach[]): { shared: string | null } {
+  const sets = reaches.map((r) => r.products.map((p) => p.key).join('|'));
+  if (!reaches.length || !sets[0] || sets.some((x) => x !== sets[0])) return { shared: null };
+  const names = reaches[0]!.products.map((p) => p.name);
+  // Short enough for a column header: "Acme Prints, Acme CRM".
+  return { shared: names.length <= 2 ? names.join(', ') : `${names.length} products` };
+}
+
+/** A row's cell in that column: its own words, or, with the products named in the header, only its screens. */
+export function reachCell(r: Reach, shared: boolean): { label: string; hoverOnly: boolean } {
+  if (!shared) return { label: r.link, hoverOnly: false };
+  if (r.screens && !r.everywhere && !r.stays) return { label: `${r.screens} ${r.screens === 1 ? 'screen' : 'screens'}`, hoverOnly: false };
+  return { label: 'See screens', hoverOnly: true };
+}

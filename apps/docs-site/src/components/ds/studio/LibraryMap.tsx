@@ -9,6 +9,7 @@ import { buildMap, focusOf, mapLinkId, type MapGraph } from '../../../lib/librar
 import type { ReachProductInput } from '../../../lib/library-reach';
 import type { ReviewPiece, Viewer } from '../../../lib/library-review';
 import { foldColumn, waysTag } from '../../../lib/library-askers';
+import { ProductChip } from './LibraryReach';
 
 interface Curve {
   id: string;
@@ -22,7 +23,7 @@ function MapBox({ id, label, sub, kind, pressed, lit, quiet, conflict, dashed, o
   return (
     // bridge-audit-ignore-next-line: a map box is one toggle target holding a name and a line under it; the DS has no toggle card and Button would cut it to one label
     <button type="button" className={cls} aria-pressed={pressed} ref={(el) => refOf(id, el)} onClick={() => onPick(id)}>
-      <span className="lr-map-label">{label}</span>
+      {kind === 'product' ? <ProductChip name={label} /> : <span className="lr-map-label">{label}</span>}
       {sub && <span className="lr-map-sub">{sub}</span>}
     </button>
   );
@@ -121,7 +122,9 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
           </div>
         </div>
       </section>
-      <section className="lr-map-list" aria-label={focus ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : 'Every piece on the map'}>
+      {/* The list shows only what a picked box narrows to: the map itself is the overview. */}
+      <section className="lr-map-list" aria-label={focus ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : 'What a box asks for'}>
+        {!focus && <p className="lr-muted lr-map-hint">Click a box to see what it asks for.</p>}
         {focus && (
           <div className="lr-map-focus" role="status">
             <p className="lr-map-focus-text">
@@ -137,7 +140,7 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
             </Button>
           </div>
         )}
-        {list(shown)}
+        {focus && list(shown)}
       </section>
     </>
   );

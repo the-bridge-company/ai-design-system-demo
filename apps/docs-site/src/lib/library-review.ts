@@ -111,6 +111,8 @@ export interface ReviewPiece {
   also?: AskedBy[];
   /** Who made it, by name, when it is a lead's change. */
   by: string | null;
+  /** Why a lead made it, when no exploration asked (lib/library-origin LeadReason: figma, docs, a11y, brand, rule). */
+  leadReason?: string | null;
   /** The viewer made or asked for it: never theirs to decide. */
   mine: boolean;
   /** 1: docs and descriptions; 2: a value or a component; 3: a token added, renamed or removed. */
@@ -305,6 +307,7 @@ export function pieceOfChange(c: ChangeInput, products: Parameters<typeof librar
     source: { kind: 'change', repo: c.repo, number: c.number },
     asked: origin.kind === 'exploration' ? askedOf(origin, c.repo, c.designer ?? null) : null,
     by: c.by,
+    leadReason: origin.kind === 'exploration' ? null : reason,
     mine: c.mine,
     tier,
     state,

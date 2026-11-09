@@ -479,6 +479,9 @@ a.lr-ask {
 }
 
 .lr-family-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
   margin-block-end: calc(var(--space-6) * -1 + var(--space-2));
   padding-inline: var(--space-5);
 }
@@ -1298,21 +1301,22 @@ body:has(.lr-bar) .lr-toasts {
   min-height: var(--size-6);
 }
 
+/* The title and, top right on its row, the Today / With this change / Side by side switch. */
 .lr-reach-head {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--space-3) var(--space-5);
 }
 
+/* The same size as every Studio page title (Library review's own). */
 .lr-reach-title {
   margin: 0;
-  font-family: var(--typography-h1-family);
-  font-size: var(--typography-h1-size);
-  font-weight: var(--typography-h1-weight);
-  line-height: var(--typography-h1-line-height);
-  letter-spacing: var(--typography-h1-tracking);
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+  letter-spacing: var(--typography-h2-tracking);
 }
 
 .lr-reach-title:focus {
@@ -1367,9 +1371,14 @@ body:has(.lr-bar) .lr-toasts {
   gap: var(--space-4);
 }
 
+.lr-reach-card,
+a.lr-reach-card,
+a.lr-reach-card :is(span) {
+  text-decoration-line: none;
+}
+
 .lr-reach-card {
   display: grid;
-  text-decoration-line: none;
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
@@ -1468,13 +1477,8 @@ a.lr-reach-card:focus-visible {
     margin-inline-start: 0;
   }
 
-  .lr-reach-title {
-    font-size: var(--typography-h2-size);
-    line-height: var(--typography-h2-line-height);
-  }
-
-  .lr-reach-head > * {
-    max-width: 100%;
+  .lr-reach-head {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   /* The decision stays in reach on a phone: right under what names the piece, before the plates, the list of who
@@ -1639,4 +1643,105 @@ a.lr-reach-card:focus-visible {
   padding: var(--space-3) var(--space-4);
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
+}
+
+/* --- Who gets it in the List: plain muted words, a link only on row hover or focus ---------------------------------- */
+
+.lr-reach-link.is-quiet {
+  color: var(--color-text-muted);
+  text-decoration-line: none;
+}
+
+.lr-reach-link.is-quiet .lr-reach-chev {
+  visibility: hidden;
+}
+
+.lr-row:is(:hover, :focus-within) .lr-reach-link.is-quiet {
+  color: var(--color-text-link);
+  text-decoration-line: underline;
+}
+
+.lr-row:is(:hover, :focus-within) .lr-reach-link.is-quiet .lr-reach-chev {
+  visibility: visible;
+}
+
+@media (hover: hover) {
+  .lr-row .lr-reach-link.is-hover-only {
+    opacity: 0;
+  }
+
+  .lr-row:is(:hover, :focus-within) .lr-reach-link.is-hover-only {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .lr-reach-link.is-quiet .lr-reach-chev {
+    visibility: visible;
+  }
+}
+
+/* The products every row reaches, named once in the column header. */
+.lr-head-reach {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-regular);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* The piece's subline, a conflict's ways inline after it. */
+.lr-row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A product: its initial in a small Deep Harbor mark, then its name. */
+.lr-product {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-product-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-map-box .lr-product {
+  font-weight: var(--font-weight-medium);
+}
+
+.lr-reach-unknown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.lr-reach-unknown-names {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.lr-map-hint {
+  margin: 0;
+  font-size: var(--typography-ui-size);
 }

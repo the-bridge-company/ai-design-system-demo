@@ -171,7 +171,10 @@ function useExtras(rows: ListRow[], read: 'all' | 'none'): { extras: Map<number,
         if (r.base) void thumbOf({ number: r.number, head: r.head, base: r.base }, r.guidance).then((thumb) => put(r.number, { thumb }));
       }
       for (const l of logins) if (!l.includes('[bot]') && !l.includes('@')) void personOf(l, avatarOf(l)).then(putPerson);
-    }).catch(() => undefined); // Unreadable or unloaded (a page or a test closing): the rows keep their plate and login.
+    }).catch((err: unknown) => {
+      // Unreadable or unloaded (a page or a test closing): the rows keep their plate and login. Said in development.
+      if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) console.warn('Explorations: people and screens could not be read', err);
+    });
     return () => {
       live = false;
     };

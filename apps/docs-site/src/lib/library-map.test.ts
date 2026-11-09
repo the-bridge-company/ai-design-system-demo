@@ -13,9 +13,10 @@ describe('the map graph', () => {
       ['Deal pipeline cards', 'Leo · Acme CRM', false],
       ['Bulk actions on products', 'Leo · Acme Prints', false],
       ['Contact page summary', 'Sofia · Acme CRM', false],
-      ['From you', 'Dana · 2 changes', true],
+      ['You, library changes', '2 changes', true],
     ]);
-    expect(g.pieces.map((n) => n.label)).toEqual(['Card', 'Deeper primary blue', 'ProfileHeader', '2 from you']);
+    // The lead's own pieces themselves in the middle: who made them is said once, on the left.
+    expect(g.pieces.map((n) => n.label)).toEqual(['Card', 'Deeper primary blue', 'ProfileHeader', 'Deepen the blue', 'Lighter border']);
     expect(g.products.map((p) => p.label)).toEqual(['Acme Prints', 'Acme CRM']);
   });
 
@@ -27,10 +28,14 @@ describe('the map graph', () => {
     expect(g.pieces[0]!.conflict).toBe(true);
   });
 
-  it('keeps a single lead change as its own piece', () => {
+  it('says where a lead’s change comes from by its kind, and folds many of one kind by that kind', () => {
     const g = buildMap([leadChange(30, 'Deepen the blue')], PRODUCTS, LEAD);
     expect(g.pieces.map((n) => [n.label, n.folded])).toEqual([['Deepen the blue', false]]);
-    expect(g.sources[0]!.sub).toBe('Dana · 1 change');
+    expect(g.sources[0]!.sub).toBe('1 change');
+    const docs = [40, 41, 42, 43].map((n) => ({ ...leadChange(n, `Tabs: when tabs are the wrong choice ${n}`), mine: false, by: 'Leo', leadReason: 'docs' }));
+    const d = buildMap(docs, PRODUCTS, LEAD);
+    expect(d.sources.map((x) => x.label)).toEqual(['Leo, docs drafts']);
+    expect(d.pieces.map((n) => [n.label, n.folded])).toEqual([['4 docs drafts', true]]);
   });
 
   it('links nothing to a product for a piece kept in its screen', () => {
@@ -57,7 +62,7 @@ describe('a click on a box', () => {
     expect(focusOf(g, 'd:crm')!.line.strong).toBe('Acme CRM');
     const mine = focusOf(g, g.sources.find((s) => s.lead)!.id)!;
     expect(mine.keys.size).toBe(2);
-    expect(mine.line).toEqual({ before: 'Showing what ', strong: 'you', after: ' made' });
+    expect(mine.line).toEqual({ before: 'Showing ', strong: 'You, library changes', after: '' });
     expect(focusOf(g, 'nothing')).toBeNull();
   });
 

@@ -39,8 +39,24 @@
   margin-inline-start: auto;
 }
 
-.sh-card-foot > .ex-review {
-  margin-inline-start: var(--space-2);
+/* A waiting card's footer: the face and name, Review at the end of the same line (no extra row when it is hidden). */
+.ex-turn .sh-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-height-sm);
+}
+
+.ex-turn .sh-card-tagline:empty {
+  display: none;
+}
+
+.ex-turn .sh-card-who {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (hover: hover) {

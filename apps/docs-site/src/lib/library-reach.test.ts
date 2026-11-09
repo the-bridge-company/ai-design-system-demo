@@ -58,3 +58,19 @@ describe('who gets a piece', () => {
     expect(listWords(['A', 'B', 'C'])).toBe('A, B and C');
   });
 });
+
+describe('the List column and the origin line', () => {
+  it('names a shared product set once in the header, and only what differs in a row', async () => {
+    const { reachColumn, reachCell, effectLine } = await import('./library-reach');
+    const a = reachOf(change(), PRODUCTS);
+    const b = reachOf(newComponent(), PRODUCTS);
+    expect(reachColumn([a, b]).shared).toBe('Acme Prints, Acme CRM');
+    expect(reachCell(a, true)).toEqual({ label: 'See screens', hoverOnly: true });
+    expect(reachCell(b, true)).toEqual({ label: '1 screen', hoverOnly: false });
+    expect(reachCell(a, false)).toEqual({ label: '2 products', hoverOnly: false });
+    const kept = reachOf({ ...newComponent(), state: 'decided', decided: 'kept' }, PRODUCTS);
+    expect(reachColumn([a, kept]).shared).toBeNull();
+    expect(effectLine(a)).toBe('Every screen that uses it changes.');
+    expect(effectLine(b)).toBe('Nothing changes until a screen uses it.');
+  });
+});

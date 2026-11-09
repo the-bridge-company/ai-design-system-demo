@@ -28,7 +28,7 @@
 // (display names, before/after thumbnails and changed files, with a working token only: anonymous visitors have 60
 // GitHub reads an hour, kept for the statuses).
 import { createRoot, type Root } from 'react-dom/client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Checkbox, Link, Skeleton, Tab, Tabs, TabsList, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { BranchRow } from './BranchRow';
 import { Who } from './faces';
@@ -37,7 +37,9 @@ import { ListCard, useExplorationShots, useListView, ViewSwitch } from './ListCa
 import { SelectionBar, type ListedBranch } from './CombineChanges';
 import { activeFilters, ARCHIVED_NOTE, boxDisabled, changesFiltersParam, filterChoices, inFilters, listSummary, designRows, emptyTabLine, FULL_TIP, groupByMonth, groupByProduct, shippedAtOf, shippedByTask, isYours, knownNames, productOf, selectable, shippedCapLine, shippedOn, shippedRows, stateOf, visibleTabs, withChangesFilters, YOU, type ChangesFilters, type ListFilters, type StateTab } from '../../../lib/branches-page';
 import { onlyTokens, toggleChange } from '../../../lib/combine-changes';
-import { childLine, nestLinked } from '../../../lib/product-branch';
+import { childLine } from '../../../lib/product-branch';
+import { libraryOrigin, type LibraryOrigin } from '../../../lib/library-origin';
+import { LibraryChanges } from './LibraryChanges';
 import { isNameAuthor } from '../../../lib/author';
 import { authorPerson, CLAUDE, displayName, person, requesterPerson, SEP, type Person, type PillTone } from '../../../lib/home-model';
 import {
@@ -104,6 +106,12 @@ export interface ListRow {
   shippedAt?: string | null;
   /** An In review exploration: who must review ("Waiting for Florian's review", "Changes requested by Lee"). */
   reviewLine?: string | null;
+  /** A library change: where it comes from (lib/library-origin), shown on its row in the Library group. */
+  origin?: LibraryOrigin | null;
+  /** The review status kind (core ReviewStatusKind): the library's status tag (Needs Dana, Approved, Being built). */
+  statusKind?: string | null;
+  /** The component a push from Figma names: the lead's By component group. */
+  figmaComponent?: string | null;
 }
 
 export interface BranchesListProps {
@@ -133,6 +141,8 @@ export interface BranchesListProps {
   readClosed: () => void;
   /** What waits on the viewer besides branches: suggestions and usage guidance drafts (Waiting on me only). */
   waiting?: WaitingExtra[];
+  /** Who decides the library: the viewer ("Needs you", the lead's groups) or the lead by name ("Needs Dana"). */
+  lead?: { you: boolean; name: string | null };
 }
 
 const avatarOf = (login: string) => `https://github.com/${encodeURIComponent(login)}.png?size=64`;
@@ -299,8 +309,10 @@ export function BranchesList(p: BranchesListProps) {
   const waitingLine = queueSummary(kept.length, queue.length, filtered, drafts);
   const rowKey = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
   const rows = kept.flatMap((q) => (q.kind === 'branch' ? [q.x] : []));
-  // Library branches a listed product branch needs follow it, one step in (lib/product-branch nestLinked).
-  const groups = nestLinked(groupByProduct(rows, p.products));
+  // Library changes stay in the Library group, each saying which exploration needs it (boards LI6, LI7): the
+  // product groups list the explorations, the Library what every product will get.
+  const groups = groupByProduct(rows, p.products).map((g) => ({ ...g, rows: g.rows.map((x) => ({ ...x, child: false })), count: g.rows.length }));
+  const libraryKey = defaultProduct(products).key;
 
   // Checked branches stay only while they are listed and still checkable.
   const checkable = rows.filter((x) => selectable(x));
@@ -366,7 +378,7 @@ export function BranchesList(p: BranchesListProps) {
     );
   };
 
-  const branchRow = ({ r, e, tokenOnly, child }: (typeof rows)[number] & { child: boolean }, line?: string, reserve = false) => {
+  const branchRow = ({ r, e, tokenOnly, child }: (typeof rows)[number] & { child: boolean }, line?: string, reserve = false, lib?: { note: ReactNode; pill: ListRow['pill'] }) => {
     const tok = tokenOnly;
                 const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
                 const checked = selected.includes(r.number);
@@ -394,7 +406,8 @@ export function BranchesList(p: BranchesListProps) {
                     line={child ? childLine(nameOf(r)) : (line ?? (r.reviewLine ? `${nameOf(r)}${SEP}${r.reviewLine}` : r.ago ? `${nameOf(r)}${SEP}${r.ago}` : nameOf(r)))}
                     href={href}
                     linkAttributes={r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) }}
-                    pill={r.pill}
+                    pill={lib ? (lib.pill ?? r.pill) : r.pill}
+                    note={lib?.note}
                     end={
                       behind ? (
                         <span className="t-ui bl-behind">
@@ -536,7 +549,32 @@ export function BranchesList(p: BranchesListProps) {
           {shippedCapLine(p.closed?.length ?? 0, p.closedLimit) && <p className="t-ui t-muted bl-merged">{shippedCapLine(p.closed?.length ?? 0, p.closedLimit)}</p>}
         </>
       ) : (
-        groups.map((g) => (
+        groups.map((g) =>
+          g.key === libraryKey ? (
+            <LibraryChanges
+              key={g.key}
+              heading={
+                <>
+                  <Link href={productHref(g.key)} variant="subtle" data-product-link={g.key}>
+                    {g.label}
+                  </Link>{' '}
+                  <span className="bl-count">{g.count}</span>
+                </>
+              }
+              rows={g.rows}
+              facts={(x) => ({
+                key: rowKey(x.r),
+                title: x.r.title,
+                origin: x.r.origin ?? libraryOrigin({ title: x.r.title, labels: x.r.labels ?? null, headRef: x.r.head.ref, guidance: x.r.guidance, files: x.e?.files ?? null }, products),
+                statusKind: x.r.statusKind ?? null,
+                draft: x.r.lifecycle === 'draft',
+                figmaComponent: x.r.figmaComponent ?? null,
+              })}
+              renderRow={(x, o) => branchRow(x, undefined, g.rows.some(pickable), o)}
+              renderCard={view === 'grid' ? (x) => branchCard(x) : null}
+              lead={p.lead ?? { you: false, name: null }}
+            />
+          ) : (
           <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
             {/* The product's name opens its page (lib/product-page.ts), like a project in Figma. */}
             <h2 className="bl-h2" id={`bl-${g.key}`}>
@@ -549,7 +587,8 @@ export function BranchesList(p: BranchesListProps) {
               {g.rows.map((x) => (view === 'grid' ? branchCard(x) : branchRow(x, undefined, g.rows.some(pickable))))}
             </ul>
           </section>
-        ))
+          ),
+        )
       )}
       <SelectionBar selected={selected} listed={listed} admin={p.admin} failure={p.failure} onClear={clear} onDrop={drop} />
     </div>

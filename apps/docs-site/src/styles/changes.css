@@ -1021,3 +1021,75 @@ body:has(.cg-bar) {
 .rv-what-quiet {
   color: var(--color-text-muted);
 }
+
+/* The Library group (components/ds/studio/LibraryChanges, boards LI6 and LI7): every change says where it comes from
+   under its title; a toolbar narrows it by origin and, for the design lead, groups it by component or exploration. */
+.bl-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.bl-origin > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The origin filter on the left, the lead's grouping on the right: one toolbar for the section. */
+.bl-lib-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.bl-lib-bar > * {
+  max-inline-size: 100%;
+}
+
+.bl-lib-groups .sh-rows {
+  margin: 0;
+}
+
+/* A group's summary on its trigger, the shared tag right after it. A conflict says so in danger text. */
+.bl-lib-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bl-lib-sum.is-conflict {
+  color: var(--color-feedback-danger-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* A group's one action, on the line that says why, inside the group. */
+.bl-lib-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-container);
+  background: var(--color-bg-subtle);
+}
+
+.bl-lib-act p {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .bl-lib-act p,
+  .bl-lib-act > a,
+  .bl-lib-bar > * {
+    flex: 1 1 100%;
+  }
+}

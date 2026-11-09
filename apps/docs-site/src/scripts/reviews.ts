@@ -8,7 +8,7 @@
 // stays on screen, labelled with its time (lib/changes.ts).
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { approvalNeedLong, effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -78,6 +78,7 @@ import {
 } from '../lib/check-explain';
 import { productPreview, topScreen, tryInProductUrl } from '../lib/try-in-product';
 import { changeOrigin, neededByOfChange, productContextOf } from '../lib/product-branch';
+import { libraryOrigin } from '../lib/library-origin';
 import { canShare, shareState, showShare, type ShareState } from '../lib/share-change';
 import { addedNotice, canAddTo, dismissedApprovals, dismissedSentence, editInChangeHref, isTokenChange } from '../lib/continue-change';
 import { backToDraft, detailStatus, statusActionFor, takeSaid, type StatusActionRun } from './change-status';
@@ -431,6 +432,14 @@ function listRow(r: Row): ListRow {
       return n?.repo ? n.product : null;
     })(),
     ...(r.product ? { product: r.product } : {}),
+    // Where a library change comes from (lib/library-origin): the Library group says it on every row.
+    ...(r.exploration
+      ? {}
+      : {
+          origin: libraryOrigin({ title: r.title, labels: r.labels ?? null, headRef: r.head?.ref ?? null, guidance: Boolean(r.guidance), body: r.body ?? null }, SITE.products?.length ? SITE.products : DEFAULT_PRODUCTS),
+          statusKind: r.kind ?? null,
+          figmaComponent: parseFigmaOrigin(r.body)?.component ?? null,
+        }),
     requester: requesterOf(r.body),
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
@@ -439,6 +448,19 @@ function listRow(r: Row): ListRow {
 }
 
 let listMount: HTMLElement | null = null;
+
+/**
+ * Who decides the library for the list (boards LI6, LI7): the viewer when they are a design lead (an email member who
+ * decides, an email admin, a design approver), else the first design approver by name ("Needs Dana").
+ */
+function libraryLead(): { you: boolean; name: string | null } {
+  const member = currentContributor();
+  const viewer = currentViewer()?.email ? null : (currentViewer()?.login ?? null);
+  const leads = OWNERS().design;
+  const you = member ? (member.decides ?? member.role === 'admin') : Boolean(viewer && leads.some((l) => l.toLowerCase() === viewer.toLowerCase()));
+  const first = leads[0];
+  return { you, name: first ? nameOf(first) : null };
+}
 
 function paintRows(rows: Row[], loading: boolean) {
   openRows = rows;
@@ -468,6 +490,7 @@ function paintRows(rows: Row[], loading: boolean) {
       err instanceof RateLimitError ? (limitLine(err, `A preview of ${VOCAB.branches} together`) ?? `GitHub limits anonymous reads to 60 an hour. ${ghVerb(prefersSignIn())} to preview ${VOCAB.branches} together.`) : `Could not read a checked ${VOCAB.branch}: ${(err as Error).message}`,
     readClosed: () => void loadClosed(),
     waiting: waitingExtras,
+    lead: libraryLead(),
   };
   // Each call's module promise may settle in any order (Vite preloads its styles per call): paint the latest props,
   // never the ones a call captured, so a fast read never ends on an older list.

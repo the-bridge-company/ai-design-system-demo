@@ -1,5 +1,5 @@
 /* Studio Quality for a team (components/ds/studio/TeamQuality.tsx): the rest is styles/quality.css. One line above the
-   opener: where the data was read (with Refresh) at the start, Share at the end. */
+   opener: where the data was read (with Refresh). Share sits on the header's title line (StudioHead HeaderActions). */
 
 .tq-top {
   display: flex;
@@ -8,4 +8,8 @@
   justify-content: space-between;
   gap: var(--space-2) var(--space-3);
   margin-bottom: var(--space-5);
+}
+
+.tq-top:empty {
+  display: none;
 }

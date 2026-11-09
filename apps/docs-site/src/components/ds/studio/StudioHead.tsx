@@ -4,8 +4,10 @@
 // its line (the product page's Rename). `more`: the "..." More actions button for what the page shows (the product
 // page's menu), last on the title line at every width: on a phone the actions move under the summary, the "..." stays
 // by the title it acts on. No drawing: the primary action owns the end of the title line.
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { SectionSceneName } from './QuietScene';
+import { ACTIONS_SELECTOR } from '../../../lib/page-summary';
 
 export function StudioHead({
   title,
@@ -53,6 +55,18 @@ export function StudioHead({
       </div>
     </header>
   );
+}
+
+/**
+ * An island's primary action on the page header's title line, at its end (the header is StudioHeader.astro, rendered
+ * by the page or the team shell around the island). Without a header on the page the action stays where it is
+ * rendered.
+ */
+export function HeaderActions({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null | undefined>(undefined);
+  useEffect(() => setSlot(document.querySelector<HTMLElement>(ACTIONS_SELECTOR)), []);
+  if (slot === undefined) return null;
+  return slot ? createPortal(children, slot) : <>{children}</>;
 }
 
 export default StudioHead;

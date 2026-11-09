@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { args, buildPlan } from './seed-demo-explorations.mjs';
+import { args, buildPlan, printSeed } from './seed-demo-explorations.mjs';
 
 const dir = mkdtempSync(join(tmpdir(), 'seed-plan-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -55,5 +55,33 @@ describe('seed-demo-explorations plan', () => {
       },
     ]);
     expect(skipped).toEqual(['explore/gift-wrap: logo.png (not text)']);
+
+    // Notes go to the site as written: it checks them and saves them as the member.
+    const notes = { decisions: ['Gift wrap sits under the total.'], nextStep: 'Ann takes a look.' };
+    writeFileSync(planPath, JSON.stringify({ items: [{ clone: 'copy', branch: 'explore/gift-wrap', product: 'prints', member: 'Sofia', name: 'Gift wrap at checkout', notes }] }));
+    expect(buildPlan(planPath).plan.items[0].notes).toEqual(notes);
+  });
+
+  it('says what happened to the notes', () => {
+    const lines = [];
+    const log = console.log;
+    console.log = (s) => lines.push(s);
+    try {
+      printSeed({
+        dryRun: false,
+        items: [
+          { copy: 'acme/prints-design', branch: 'explore/a', member: 'Sofia', files: 2, status: 'exists', state: 'done', notes: 'saved' },
+          { copy: 'acme/prints-design', branch: 'explore/b', member: 'Leo', files: 1, status: 'exists', state: 'exploring', notes: 'same' },
+          { copy: 'acme/prints-design', branch: 'explore/c', member: 'Ann', files: 1, status: 'exists', state: 'exploring' },
+        ],
+      });
+    } finally {
+      console.log = log;
+    }
+    expect(lines).toEqual([
+      'acme/prints-design explore/a: as Sofia, 2 files, already there, notes saved',
+      'acme/prints-design explore/b: as Leo, 1 file, already there, notes already say this',
+      'acme/prints-design explore/c: as Ann, 1 file, already there, left as it is',
+    ]);
   });
 });

@@ -92,6 +92,35 @@ describe('the seeding plan', () => {
     const { problems } = parseSeedPlan({ items: [item({ files: [{ path: 'a.ts', content: big }] }), item({ branch: 'explore/b', files: [{ path: 'b.ts', content: big }] })] }, PRODUCTS, USE_CASES);
     expect(problems.join(' ')).toMatch(/kB at most/);
   });
+
+  it('takes notes in the shape a save takes, and says what is wrong with them', () => {
+    const ok = parseSeedPlan({ items: [item({ notes: { decisions: [' Keep the price on one line. '], edgeCases: [{ component: 'Gift wrap', state: 'Long message', covered: false }], nextStep: 'Ann takes a look.' } })] }, PRODUCTS, USE_CASES);
+    expect(ok.problems).toEqual([]);
+    expect(ok.items[0]!.notes).toEqual({ decisions: ['Keep the price on one line.'], edgeCases: [{ component: 'Gift wrap', state: 'Long message', covered: false }], nextStep: 'Ann takes a look.' });
+    expect(parseSeedPlan({ items: [item()] }, PRODUCTS, USE_CASES).items[0]).not.toHaveProperty('notes');
+    const bad = parseSeedPlan(
+      {
+        items: [
+          item({ notes: 'decided' }),
+          item({ branch: 'explore/b', notes: { why: 'x' } }),
+          item({ branch: 'explore/c', notes: { decisions: 'one' } }),
+          item({ branch: 'explore/d', notes: { nextStep: 'Ann looks \u2014 then ships.' } }),
+          item({ branch: 'explore/e', notes: { edgeCases: [{ component: 'Card', state: 'Empty' }] } }),
+          item({ branch: 'explore/f', notes: {} }),
+        ],
+      },
+      PRODUCTS,
+      USE_CASES,
+    );
+    expect(bad.items).toEqual([]);
+    const said = bad.problems.join('\n');
+    expect(said).toMatch(/Item 1: notes is an object/);
+    expect(said).toMatch(/Item 2: notes has no section "why"/);
+    expect(said).toMatch(/Item 3: notes decision is a list/);
+    expect(said).toMatch(/Item 4: notes nextStep has an em dash/);
+    expect(said).toMatch(/Item 5: notes edge case 1 says covered/);
+    expect(said).toMatch(/Item 6: notes say nothing/);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -336,5 +365,68 @@ describe('the seed-demo-explorations action', () => {
     const out = await (await run(w, memoryRedis(() => T0), { apply: true, plan: { items: [item()] } })).json();
     expect(out.items[0]).toMatchObject({ status: 'exists' });
     expect(w.writes.filter((x) => x.path.startsWith(`/repos/${COPY}`))).toEqual([]);
+  });
+
+  const NOTES = {
+    decisions: ['Gift wrap sits under the order total, not in a step of its own.'],
+    edgeCases: [{ component: 'Gift wrap', state: 'Long gift message', covered: false, note: 'cut at two lines for now' }],
+    nextStep: 'Dana takes a look at the order summary.',
+  };
+
+  it("saves the notes of explorations already there as their members, and nothing else of them", async () => {
+    const w = world(true);
+    const redis = memoryRedis(() => T0);
+    const plan = { items: [item({ member: 'Leo', name: 'Frame picker', branch: 'explore/frame-picker', state: 'waiting-for-lead' }), item({ member: 'ann@acme.example', name: 'Order tracking', branch: 'explore/order-tracking', state: 'done' })] };
+    await run(w, redis, { apply: true, plan });
+    const [leo, ann] = w.pulls.map((p: any) => ({ body: p.body, labels: [...p.labels] }));
+    const heads = ['explore/frame-picker', 'explore/order-tracking'].map((b) => w.refs.get(b));
+    // Ownership expired since: the member gets it back, as when they started it.
+    await redis.cmd('DEL', branchKey(COPY, 'explore/order-tracking'));
+    const withNotes = { items: plan.items.map((i) => ({ ...i, notes: NOTES })) };
+
+    // A dry run reads the note and says it would change it, writing nothing.
+    const before = w.writes.length;
+    const dry = await (await run(w, redis, { plan: withNotes })).json();
+    expect(dry.items.map((i: any) => [i.status, i.notes])).toEqual([['exists', 'writes'], ['exists', 'writes']]);
+    expect(w.writes.length).toBe(before);
+
+    const out = await (await run(w, redis, { apply: true, plan: withNotes })).json();
+    expect(w.unknown).toEqual([]);
+    expect(out.items.map((i: any) => [i.status, i.notes, i.error])).toEqual([['exists', 'saved', undefined], ['exists', 'saved', undefined]]);
+    const fresh = w.writes.slice(before);
+    expect(fresh.every((x) => x.auth === 'Bearer ghs_app')).toBe(true);
+    expect(JSON.stringify(fresh)).not.toMatch(/peterbono|Florian/);
+    // One commit each, on top of what was there, holding only the note file, authored by the member.
+    for (const [i, branch] of ['explore/frame-picker', 'explore/order-tracking'].entries()) {
+      const head = w.commits.get(w.refs.get(branch)!)!;
+      expect(head.parents).toEqual([heads[i]]);
+      const was = w.commits.get(heads[i]!)!.tree;
+      expect([...head.tree.keys()].filter((p) => head.tree.get(p) !== was.get(p))).toEqual([`.bridge/explorations/${branch.slice(8)}.md`]);
+      const md = head.tree.get(`.bridge/explorations/${branch.slice(8)}.md`)!;
+      expect(md).toContain('## Decisions\n\n- Gift wrap sits under the order total, not in a step of its own.');
+      expect(md).toContain('- [ ] Long gift message: cut at two lines for now');
+      expect(md).toContain('## Next step\n\nDana takes a look at the order summary.');
+    }
+    expect(w.commits.get(w.refs.get('explore/frame-picker')!)!.author).toMatchObject({ name: 'Leo' });
+    expect(w.commits.get(w.refs.get('explore/order-tracking')!)!.author).toMatchObject({ name: 'Ann' });
+    expect(await redis.cmd('GET', branchKey(COPY, 'explore/order-tracking'))).toBe('ann@acme.example');
+    // Its state, block and labels as they were.
+    expect(w.pulls.map((p: any) => ({ body: p.body, labels: p.labels }))).toEqual([leo, ann]);
+
+    // Said again: the notes already say this, nothing is written.
+    const again = w.writes.length;
+    const twice = await (await run(w, redis, { apply: true, plan: withNotes })).json();
+    expect(twice.items.map((i: any) => i.notes)).toEqual(['same', 'same']);
+    expect(w.writes.filter((x) => x.path.startsWith(`/repos/${COPY}`)).length).toBe(w.writes.slice(0, again).filter((x) => x.path.startsWith(`/repos/${COPY}`)).length);
+  });
+
+  it('notes a new exploration right after its files', async () => {
+    const w = world(true);
+    const out = await (await run(w, memoryRedis(() => T0), { apply: true, plan: { items: [item({ notes: NOTES })] } })).json();
+    expect(out.items[0]).toMatchObject({ status: 'started', notes: 'saved' });
+    const head = w.commits.get(w.refs.get('explore/gift-wrap')!)!;
+    expect(head.message).toBe('Note where it stands');
+    expect(w.commits.get(head.parents[0]!)!.tree.get('src/checkout/GiftWrap.tsx')).toBeTruthy();
+    expect(head.tree.get('.bridge/explorations/gift-wrap.md')).toContain('Dana takes a look at the order summary.');
   });
 });

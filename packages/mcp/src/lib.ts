@@ -36,7 +36,23 @@ export type { ClaudeDesignHost, ClaudeDesignManifest, TeamClaudeDesign } from '.
 export { DOCS_DRAFT_MODEL, anthropicReplyText, anthropicRequest, formatDocsJson, mergeDocsDraft, missingProse, parseDocsReply } from '@bridge-ds/core';
 // The exploration steps a designer takes in Studio (start, save, ask a lead, the lead's yes), from the core compiled into
 // this bundle: the hosted site runs them as the sample team's members (api/contribute `seed-demo-explorations`).
-export { EXPLORATION_USE_CASES, GitHubClient, askLeadOnGitHub, leadApproveOnGitHub, productMarks, productsOf, startExplorationOnGitHub, type Exploration, type ExplorationUseCase, type ProductConfig } from '@bridge-ds/core';
+export {
+  EXPLORATION_USE_CASES,
+  GitHubClient,
+  askLeadOnGitHub,
+  explorationNotesWithUpdate,
+  findExplorationOnGitHub,
+  leadApproveOnGitHub,
+  productMarks,
+  productsOf,
+  saveExplorationNotesOnGitHub,
+  startExplorationOnGitHub,
+  type EdgeCase,
+  type Exploration,
+  type ExplorationUseCase,
+  type NotesUpdate,
+  type ProductConfig,
+} from '@bridge-ds/core';
 
 /** Where the server's GitHub token came from: the environment, the gh sign-in, or nowhere. Never the token itself. */
 export type TokenSource = 'env' | 'gh' | 'none';

@@ -4,7 +4,8 @@
 // design team's copies). A real team's designers who joined by email start them in Studio, save their screens, ask a
 // lead, and the lead says it looks right: every step goes through Bridge's proxy as them (api/contribute runAsMember),
 // so GitHub shows Bridge's App acting with their "Requested by <name> through Bridge." line and the exploration block
-// names them (member, memberName). This reads the plan an admin sends (scripts/seed-demo-explorations.mjs) and says
+// names them (member, memberName). Their "Where it stands" notes are saved the way their Claude session saves them
+// (bridge_save_exploration `notes`), on an exploration already there too. This reads the plan an admin sends (scripts/seed-demo-explorations.mjs) and says
 // what is wrong with it, before anything is written; api/contribute action `seed-demo-explorations` does the steps.
 //
 // Pure. Covered by src/lib/demo-explorations.test.ts.
@@ -45,6 +46,91 @@ export interface SeedItem {
   message: string;
   files: SeedFile[];
   state: SeedState;
+  /** "Where it stands", as the member's Claude session saves it (bridge_save_exploration `notes`), when the plan has some. */
+  notes?: SeedNotes;
+}
+
+/** One edge case of the notes (core EdgeCase): a component's state, covered or not, with a short note. */
+export interface SeedEdgeCase {
+  component: string;
+  state: string;
+  covered: boolean;
+  note?: string;
+}
+
+/**
+ * The notes a plan item may carry: the shape of core's NotesUpdate (exploration-notes.ts) that a save takes, its five
+ * sections, each optional. Lists add to what the note already says, text sections replace it.
+ */
+export interface SeedNotes {
+  context?: string;
+  decisions?: string[];
+  edgeCases?: SeedEdgeCase[];
+  openQuestions?: string[];
+  nextStep?: string;
+}
+
+const NOTE_KEYS = ['context', 'decisions', 'edgeCases', 'openQuestions', 'nextStep'] as const;
+const NOTE_LIMITS = { text: 600, line: 300, lines: 20 } as const;
+
+/** The notes of a plan item, checked: known sections only, plain text, no em dash (Bridge never writes one). */
+export function parseSeedNotes(v: unknown, at: string, problems: string[]): SeedNotes | undefined {
+  if (v === undefined) return undefined;
+  if (!v || typeof v !== 'object' || Array.isArray(v)) {
+    problems.push(`${at}: notes is an object (${NOTE_KEYS.join(', ')}).`);
+    return undefined;
+  }
+  const o = v as Record<string, unknown>;
+  const before = problems.length;
+  for (const k of Object.keys(o)) if (!(NOTE_KEYS as readonly string[]).includes(k)) problems.push(`${at}: notes has no section "${k}" (${NOTE_KEYS.join(', ')}).`);
+  const text = (x: unknown, what: string, max: number): string | undefined => {
+    if (x === undefined) return undefined;
+    if (typeof x !== 'string' || !x.trim() || x.length > max) {
+      problems.push(`${at}: notes ${what} is text of 1 to ${max} characters.`);
+      return undefined;
+    }
+    if (x.includes('\u2014')) problems.push(`${at}: notes ${what} has an em dash; say it with a colon, a comma or two sentences.`);
+    return x.trim();
+  };
+  const lines = (x: unknown, what: string): string[] | undefined => {
+    if (x === undefined) return undefined;
+    if (!Array.isArray(x) || x.length > NOTE_LIMITS.lines) {
+      problems.push(`${at}: notes ${what} is a list of ${NOTE_LIMITS.lines} lines at most.`);
+      return undefined;
+    }
+    return x.map((l, i) => text(l, `${what} ${i + 1}`, NOTE_LIMITS.line)).filter((l): l is string => Boolean(l));
+  };
+  const out: SeedNotes = {};
+  const context = text(o.context, 'context', NOTE_LIMITS.text);
+  if (context) out.context = context;
+  const decisions = lines(o.decisions, 'decision');
+  if (decisions?.length) out.decisions = decisions;
+  const openQuestions = lines(o.openQuestions, 'open question');
+  if (openQuestions?.length) out.openQuestions = openQuestions;
+  const nextStep = text(o.nextStep, 'nextStep', NOTE_LIMITS.text);
+  if (nextStep) out.nextStep = nextStep;
+  if (o.edgeCases !== undefined) {
+    if (!Array.isArray(o.edgeCases) || o.edgeCases.length > NOTE_LIMITS.lines) problems.push(`${at}: notes edgeCases is a list of ${NOTE_LIMITS.lines} at most.`);
+    else {
+      const cases: SeedEdgeCase[] = [];
+      o.edgeCases.forEach((e: unknown, i) => {
+        const c = e && typeof e === 'object' ? (e as Record<string, unknown>) : {};
+        const what = `edge case ${i + 1}`;
+        const component = text(c.component, `${what} component`, 80);
+        const state = text(c.state, `${what} state`, 120);
+        if (typeof c.covered !== 'boolean') problems.push(`${at}: notes ${what} says covered: true or false.`);
+        const note = c.note === undefined ? undefined : text(c.note, `${what} note`, NOTE_LIMITS.line);
+        if (component && state && typeof c.covered === 'boolean') cases.push({ component, state, covered: c.covered, ...(note ? { note } : {}) });
+      });
+      if (cases.length) out.edgeCases = cases;
+    }
+  }
+  if (problems.length > before) return undefined;
+  if (!Object.keys(out).length) {
+    problems.push(`${at}: notes say nothing.`);
+    return undefined;
+  }
+  return out;
 }
 
 const BRANCH = /^explore\/([a-z0-9][a-z0-9-]{0,62})$/;
@@ -143,6 +229,7 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
       bytes += Buffer.byteLength(file.content, 'utf8');
       files.push({ path, content: file.content });
     }
+    const notes = parseSeedNotes(o.notes, at, problems);
     if (product && member && name && m && SEED_STATES.includes(state as SeedState)) {
       items.push({
         product,
@@ -156,6 +243,7 @@ export function parseSeedPlan(plan: unknown, products: readonly SeedProduct[], u
         message,
         files,
         state: state as SeedState,
+        ...(notes ? { notes } : {}),
       });
     }
   });

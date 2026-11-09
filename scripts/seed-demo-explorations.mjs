@@ -4,12 +4,19 @@
 // it off as the plan says (apps/docs-site/api/contribute action `seed-demo-explorations`, plan checks in
 // api/_lib/demo-explorations.ts). This script only builds the plan from local clones and asks, with a GitHub token that
 // administers the sample team's repository (the GitHub CLI's, or GH_TOKEN). Nothing is written without --apply, and an
-// exploration already in its copy is left as it is, so running it again starts only what is missing.
+// exploration already in its copy is left as it is, so running it again starts only what is missing. An item's `notes`
+// ("Where it stands") are saved as its member, the way their Claude session saves them, on an exploration already
+// there too: only its note file changes, and notes that already say this write nothing.
 //
 // The plan file (--plan, JSON):
 //   { "items": [ { "clone": "../acme-prints-design", "branch": "explore/gift-wrap", "product": "prints",
 //                  "member": "Sofia", "name": "Gift wrap at checkout", "purpose": "...", "useCase": "user-test",
-//                  "state": "exploring" | "waiting-for-lead" | "done", "base": "main", "message": "..." } ] }
+//                  "state": "exploring" | "waiting-for-lead" | "done", "base": "main", "message": "...",
+//                  "notes": { "context": "...", "decisions": ["..."], "edgeCases": [ { "component": "Gift wrap",
+//                             "state": "Long message", "covered": false, "note": "..." } ], "openQuestions": ["..."],
+//                             "nextStep": "..." } } ] }
+// `notes` takes the sections of core's NotesUpdate (exploration-notes.ts), each optional: lists add to the note,
+// context and nextStep replace what it says.
 // `clone` is a local git clone (relative to the plan file) with `branch` in it; the files the branch adds or changes
 // against `base` (default main: git diff --name-only main...<branch>) are sent with their content. Deleted files and
 // Bridge's own exploration note (.bridge/explorations/) are left out: the site writes the note when it starts it.
@@ -96,11 +103,15 @@ async function ask(base, plan, apply) {
   return body;
 }
 
+/** What happened to an item's notes, in the run's words. */
+const NOTES_WORDS = { writes: 'writes its notes', same: 'notes already say this', saved: 'notes saved' };
+
 export function printSeed(body) {
   if (!body.items.length) console.log('Nothing in the plan.');
   for (const i of body.items) {
-    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? 'already there, left as it is' : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
-    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
+    const now = i.error ? `FAILED: ${i.error}` : i.status === 'exists' ? (i.notes ? 'already there' : 'already there, left as it is') : body.dryRun ? `starts it, then ${i.state}` : `started #${i.pr} (${i.state})`;
+    const notes = i.notes ? `, ${NOTES_WORDS[i.notes] ?? i.notes}` : '';
+    console.log(`${i.copy} ${i.branch}: as ${i.member}, ${i.files} file${i.files === 1 ? '' : 's'}, ${now}${notes}${i.pr && i.error ? ` (#${i.pr})` : ''}`);
   }
 }
 

@@ -301,7 +301,7 @@ export function QueueItem(p: QueueItemProps) {
         <h2 className="br-title" tabIndex={-1}>
           {p.title}{' '}
           {p.pill && (
-            <Badge tone={p.pill.tone} className={statusTagClass(p.pill.label, 'br-status')}>
+            <Badge tone={p.pill.tone} className={statusTagClass(p.pill.tone, 'br-status')}>
               {p.pill.label}
             </Badge>
           )}

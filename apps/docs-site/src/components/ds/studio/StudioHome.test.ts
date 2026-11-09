@@ -459,13 +459,15 @@ describe('StudioHome, quiet team Home (recent)', () => {
     expect(recent.querySelector('.sh-create')).toBeNull();
     expect(recent.textContent).toContain('Dashboard: orders waiting to ship');
     expect(screen.queryByRole('link', { name: /See all/ })).toBeNull();
-    // The product with an exploration waiting to be picked up says so; a product without any shows no empty mosaic block.
+    // The product with an exploration waiting to be picked up says so; a product without any shows its Field Guide
+    // drawing in the mosaic's place, never an empty plate, so the row reads as one family.
     const folders = [...container.querySelectorAll('[aria-labelledby="sh-products"] .sh-cards > li')];
     expect(folders[0]!.textContent).toContain('Art print shop');
     expect(folders[0]!.textContent).toContain('1 waiting to be picked up');
     expect(folders[0]!.textContent).not.toContain('Nothing in progress');
     expect(folders[0]!.querySelectorAll('.pf-pane').length).toBe(1);
-    expect(folders[1]!.querySelector('.pf-mosaic')).toBeNull();
+    expect(folders[1]!.querySelector('.pf-mosaic .bt')).toBeNull();
+    expect(folders[1]!.querySelector('.pf-art svg.ill')).toBeTruthy();
     expect(folders[1]!.textContent).toContain('Nothing in progress');
     await expectNoAxeViolations(container);
   });

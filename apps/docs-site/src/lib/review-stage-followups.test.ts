@@ -58,9 +58,9 @@ describe('lists take the task words', () => {
     expect(withTaskStage(handed, 'not-planned').state).toBe('Not planned');
     expect(withTaskStage(handed, 'approved').state).toBe('Approved, waiting to ship');
     expect(cardTag('with-devs', 'Not planned')).toEqual({ tone: 'neutral', dot: false });
-    expect(cardTag('with-devs', 'Approved, waiting to ship')).toEqual({ tone: 'info', dot: false });
+    expect(cardTag('with-devs', 'Approved, waiting to ship')).toEqual({ tone: 'success', dot: false });
     expect(explorationTag('ready', { stage: 'not-planned' })).toEqual({ label: 'Not planned', tone: 'neutral', dot: false });
-    expect(explorationTag('building', { stage: 'approved' })).toEqual({ label: 'Approved, waiting to ship', tone: 'info', dot: false });
+    expect(explorationTag('building', { stage: 'approved' })).toEqual({ label: 'Approved, waiting to ship', tone: 'success', dot: false });
   });
 });
 
@@ -142,7 +142,10 @@ describe('a library exploration', () => {
 describe('bringing the latest into a running exploration', () => {
   it('says it in designer words', () => {
     expect(COPY_WORDS.explorationBehind('Art print shop')).toBe('Art print shop changed since this exploration started.');
-    expect(COPY_WORDS.bringConflict).toBe('Bridge could not bring it in on its own. Ask a developer.');
+    expect(COPY_WORDS.bringConflict).toBe('Bridge could not bring the latest in on its own. Ask a developer.');
+    // One action, one name: the exploration line, the product page and a library change behind the library.
+    expect(COPY_WORDS.bringIn).toBe('Bring the latest in');
+    expect(COPY_WORDS.getLatest).toBe(COPY_WORDS.bringIn);
     for (const w of [COPY_WORDS.bringIn, COPY_WORDS.broughtIn, COPY_WORDS.bringConflict, COPY_WORDS.bringFailed]) expect(w).not.toMatch(/branch|merge|fork|repositor/i);
   });
 });

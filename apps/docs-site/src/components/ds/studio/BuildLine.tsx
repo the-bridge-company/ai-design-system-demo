@@ -1,14 +1,16 @@
-// The calm Being built line of the Studio home (StudioHome `building`): "Build requests: 3 being built, 1 waiting to be
-// picked up." (from the Figma plugin or from Components, Change this component)
+// The calm Being built line of the Studio home (StudioHome `building`): "Build requests: 1 in progress, 4 in review, 3
+// waiting to be picked up." The same rows and the same sentence as the Being built page header (lib/building-view
+// pageRows, core buildSummaryLine): build requests, Claude's fixes and explorations handed to developers.
 // with a link to the page, under the Harbor zone. Never a Needs you row: a build request waits on developers, not on
 // the viewer. Nothing shows while nothing is open, or when the build requests could not be read. Data:
 // scripts/building-data.ts, the same on every team.
 import { useEffect, useState } from 'react';
 import { Icon, Link } from '@bridge-ds/react';
 import { Wrench } from 'lucide-react';
-import { buildSummaryLine } from '@bridge-ds/core';
+import { buildSummaryLine, type BuildRequestView } from '@bridge-ds/core';
 import { studioHref } from '../../../lib/team-path';
 import { loadBuildData } from '../../../scripts/building-data';
+import { pageRows } from '../../../lib/building-view';
 import '../../../styles/building.css';
 
 export function BuildLine() {
@@ -16,7 +18,7 @@ export function BuildLine() {
   useEffect(() => {
     let live = true;
     loadBuildData()
-      .then((d) => live && setLine(buildSummaryLine(d.views)))
+      .then((d) => live && setLine(buildSummaryLine(pageRows<BuildRequestView>(d, Date.now()))))
       .catch(() => {});
     return () => {
       live = false;

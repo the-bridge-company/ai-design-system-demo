@@ -14,8 +14,9 @@ import { HEALTH_SECTION } from '../../../lib/library-health';
 import { pctLabel as formatPct, productTrend, runDate, unusedLine, type AdoptionRun, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
 import type { StatusGroup } from '../../../lib/changes';
+import { statusTagClass } from '../../../lib/status-tag';
 
-const TONE: Record<StatusGroup, 'danger' | 'info' | 'success' | 'neutral'> = { blocked: 'danger', waiting: 'info', ready: 'success', neutral: 'neutral' };
+const TONE: Record<StatusGroup, 'danger' | 'warning' | 'success' | 'neutral'> = { blocked: 'danger', waiting: 'warning', ready: 'success', neutral: 'neutral' };
 
 /** Links that leave Bridge (GitHub) open in a new tab; Studio links stay. */
 const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank', rel: 'noopener noreferrer' } : {});
@@ -56,12 +57,12 @@ function Go({ href, label, title }: { href: string; label: string; title: string
 function FindingRow({ f }: { f: Finding }) {
   return (
     <li className={`ql-row-wrap is-${f.severity}`}>
-      <div className="ql-row">
+      <div className="ql-row ql-finding">
         <span className="ql-main">
           <span className="ql-title">{f.title}</span>
           {f.detail && <span className="ql-detail">{f.detail}</span>}
         </span>
-        <Badge tone={TONE[f.status.group]} className="ql-badge">
+        <Badge tone={TONE[f.status.group]} className={statusTagClass(TONE[f.status.group], "ql-badge")}>
           {f.status.label}
         </Badge>
         {f.action ? <Go href={f.action.href} label={f.action.label} title={f.title} /> : <span />}

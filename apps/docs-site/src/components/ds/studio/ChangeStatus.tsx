@@ -43,7 +43,7 @@ export function ChangeStatus({ lifecycle, label, tone, sentence, action, yourTur
     <>
       <div className="cs-line" data-lifecycle={lifecycle}>
         <div className="cs-what">
-          <Badge tone={tone} icon={ICON[lifecycle]} className={statusTagClass(label)}>
+          <Badge tone={tone} icon={ICON[lifecycle]} className={statusTagClass(tone)}>
             {label}
           </Badge>
           <p className="cs-sentence" data-who={yourTurn ? 'you' : undefined}>

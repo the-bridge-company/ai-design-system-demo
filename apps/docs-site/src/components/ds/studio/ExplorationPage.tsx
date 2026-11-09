@@ -62,6 +62,7 @@ import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { DesignAnswer, LifecycleStage } from '../../../lib/review-state';
 import { atRoute } from '../../../lib/at-route';
+import { COPY_WORDS } from '../../../lib/design-copy';
 import { clipQuote, explorationTag, questionWords, type ActivityRow, type DoneAction, type HandoffStatus, type HandoffStep, type LibraryPieces, type PageFace, type SentPiece } from '../../../lib/exploration-page';
 import { studioHref } from '../../../lib/team-path';
 import { ARCHIVED_LINE } from '../../../lib/explorations-view';
@@ -169,7 +170,7 @@ export interface ExplorationPageProps {
   previewNote: string | null;
   /**
    * A running exploration of the design team's copy that misses changes the product made since it started: the quiet
-   * line and "Bring it in" (merges the copy's main into it). Null when it is up to date or Bridge cannot say.
+   * line and "Bring the latest in" (merges the copy's main into it). Null when it is up to date or Bridge cannot say.
    */
   latest?: { line: string; onBring: () => Promise<string> } | null;
   /** X2: the preview is building: the button reads "Preview is building" with a spinner, at full contrast. */
@@ -200,7 +201,7 @@ export interface ExplorationPageProps {
   /** Ended by a lead, with the reason (board L5). */
   notDoing?: NotDoingView | null;
   /** The tag while the talk decides what it is ("Needs changes"), over the lifecycle's own. */
-  tag?: { label: string; tone: 'danger' | 'neutral' | 'info' } | null;
+  tag?: { label: string; tone: 'danger' | 'neutral' | 'warning' } | null;
   /** Everything the designer and their lead said, newest first. */
   decisions?: readonly DecisionRowView[];
   /** "Take it back", for a lead on someone else's exploration no developer started (board L2). */
@@ -221,7 +222,7 @@ export interface ExplorationPageProps {
   /**
    * Archived: hidden from the lists, its preview still works. The page keeps its layout (the preview, the activity),
    * the tag reads Archived, one line says so with Unarchive, and nothing offers Done exploring or to keep working
-   * (no Open in Claude Code, Continue in your AI tool or Bring it in): the preview is the bar's one action.
+   * (no Open in Claude Code, Continue in your AI tool or Bring the latest in): the preview is the bar's one action.
    */
   archived?: boolean;
   /** Unarchive, beside the archived line; null when this viewer cannot. */
@@ -480,7 +481,7 @@ function SaidToast({ said }: { said: string | undefined }) {
 function StatusTag({ status, notStarted, stage }: { status: string; notStarted?: boolean; stage?: LifecycleStage | null }) {
   const t = explorationTag(status, { ...(notStarted ? { notStarted } : {}), stage: stage ?? null });
   return (
-    <Badge tone={t.tone} size="md" dot={t.dot} className={statusTagClass(t.label)}>
+    <Badge tone={t.tone} size="md" dot={t.dot} className={statusTagClass(t.tone)}>
       {t.label}
     </Badge>
   );
@@ -504,7 +505,7 @@ function PieceItem({ piece, onPiece, say }: { piece: SentPiece; onPiece: Handoff
               <strong>{piece.title}</strong>
             )}
             {piece.line ? (
-              <Badge tone={piece.tone} size="md" className={statusTagClass(piece.line, 'xp-piece-tag')}>
+              <Badge tone={piece.tone} size="md" className={statusTagClass(piece.tone, 'xp-piece-tag')}>
                 {piece.line}
               </Badge>
             ) : (
@@ -695,7 +696,7 @@ function DevQuestion({ q, say }: { q: NonNullable<HandoffView['question']>; say:
   );
 }
 
-/** "Art print shop changed since this exploration started. Bring it in": quiet, one link-sized action. */
+/** "Art print shop changed since this exploration started. Bring the latest in": quiet, one link-sized action. */
 function LatestLine({ latest, say }: { latest: NonNullable<ExplorationPageProps['latest']>; say: (s: string) => void }) {
   const [busy, setBusy] = useState(false);
   return (
@@ -713,7 +714,7 @@ function LatestLine({ latest, say }: { latest: NonNullable<ExplorationPageProps[
             .finally(() => setBusy(false));
         }}
       >
-        Bring it in
+        {COPY_WORDS.bringIn}
       </Button>
     </p>
   );
@@ -943,7 +944,7 @@ function ExplorationBody(p: ExplorationPageProps) {
           </h1>
           {p.stage !== 'loading' &&
             (p.tag ? (
-              <Badge tone={p.tag.tone} size="md" className={statusTagClass(p.tag.label)}>
+              <Badge tone={p.tag.tone} size="md" className={statusTagClass(p.tag.tone)}>
                 {p.tag.label}
               </Badge>
             ) : p.archived ? (

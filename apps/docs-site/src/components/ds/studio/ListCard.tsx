@@ -97,7 +97,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
             <span className="sh-card-tagline">
               {tags}
               {pill && (
-                <Badge tone={TONE[pill.tone]} size="sm" className={statusTagClass(pill.label, 'sh-card-tag')}>
+                <Badge tone={TONE[pill.tone]} size="sm" className={statusTagClass(TONE[pill.tone], 'sh-card-tag')}>
                   {pill.label}
                 </Badge>
               )}

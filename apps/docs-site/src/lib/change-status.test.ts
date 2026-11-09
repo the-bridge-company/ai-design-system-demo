@@ -103,7 +103,7 @@ describe('changeLifecycle and rowLifecycle', () => {
   });
 
   it('tones the lifecycle state alone: Ready for review is never red because a check fails', () => {
-    expect(lifecycleTone('ready')).toBe('info');
+    expect(lifecycleTone('ready')).toBe('warning');
     expect(lifecycleTone('waiting')).toBe('neutral');
     expect(lifecycleTone('shipped')).toBe('neutral');
     expect(lifecycleTone('draft')).toBe('neutral');
@@ -205,7 +205,7 @@ describe('statusOpener', () => {
 
 describe('todoBadge', () => {
   it('says the lifecycle in the status line words and tone, whatever the row asks', () => {
-    expect(todoBadge('ready')).toEqual({ label: 'In review', tone: 'info' });
+    expect(todoBadge('ready')).toEqual({ label: 'In review', tone: 'warning' });
     expect(todoBadge('draft')).toEqual({ label: 'Draft', tone: 'neutral' });
     expect(todoBadge('waiting')).toEqual({ label: 'Approved, waiting for code', tone: 'neutral' });
   });

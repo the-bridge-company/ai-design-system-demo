@@ -202,7 +202,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
           </Badge>
         ) : (
           g.tag && (
-            <Badge tone={g.tag.tone} size="md" className={statusTagClass(g.tag.label)}>
+            <Badge tone={g.tag.tone} size="md" className={statusTagClass(g.tag.tone)}>
               {g.tag.label}
             </Badge>
           )

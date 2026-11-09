@@ -4,7 +4,8 @@
 //     explores it and the product on one line).
 //   - ProductFolderCard: one product, like a project folder in Figma: a mosaic of its latest explorations' screens
 //     (their captures, else their plates), the product name and what is in progress ("2 exploring · 1 waiting for
-//     code"). The whole card opens the product page (lib/product-page.ts).
+//     code"). The whole card opens the product page (lib/product-page.ts). With no screen yet (the library has none of
+//     its own), a Field Guide drawing holds the mosaic's place.
 import { Badge, Card, Link } from '@bridge-ds/react';
 import { Who } from './faces';
 import { BranchThumb, captureAgeOf } from './BranchThumb';
@@ -12,6 +13,7 @@ import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
 import { statusTagClass } from '../../../lib/status-tag';
+import { Drawing } from './Drawing';
 
 /** The corner of a library exploration's screen: it belongs to no product. */
 const LIBRARY = 'Library';
@@ -35,7 +37,7 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {c.state && (
-                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={statusTagClass(c.state, 'sh-card-tag')}>
+                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
                   {c.state}
                 </Badge>
               )}
@@ -56,7 +58,8 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
 
 /**
  * One product as a folder: the mosaic of its latest screens (one, two, or the newest large and the next two stacked),
- * its name and what is in progress. Content first: nothing explored yet shows only the name and the line, no empty pane.
+ * its name and what is in progress. No screen yet: the Field Guide drawing of the library (or of a product), never an
+ * empty plate.
  */
 export function ProductFolderCard({ f }: { f: ProductFolder }) {
   // The mosaic is decorative (aria-hidden): who explores its screens is said once, in words, for screen readers.
@@ -64,7 +67,15 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card pf-card">
-        {/* No capture and no exploration yet: no grey block, only the name and the line. */}
+        {/* No screen to show (the library, or a product nothing explored yet): a Field Guide drawing in the mosaic's
+            place, so every folder of the row has the same top and the row reads as one family. */}
+        {f.shots.length === 0 && (
+          <span className="pf-mosaic pf-art" data-panes="1" aria-hidden="true">
+            <span className="pf-pane pf-art-pane">
+              <Drawing name={f.library ? 'components' : 'address'} width={112} className="pf-art-drawing" />
+            </span>
+          </span>
+        )}
         {f.shots.length > 0 && (
           <span className="pf-mosaic" data-panes={f.shots.length} aria-hidden="true">
             {f.shots.map((s, i) => (

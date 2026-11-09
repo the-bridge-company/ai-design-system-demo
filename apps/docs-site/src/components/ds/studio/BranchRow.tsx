@@ -49,7 +49,7 @@ export interface BranchRowProps {
 
 export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note }: BranchRowProps) {
   const chip = pill && (
-    <Badge tone={TONE[pill.tone]} size="md" className={statusTagClass(pill.label, 'sh-row-pill')}>
+    <Badge tone={TONE[pill.tone]} size="md" className={statusTagClass(TONE[pill.tone], 'sh-row-pill')}>
       {pill.label}
     </Badge>
   );

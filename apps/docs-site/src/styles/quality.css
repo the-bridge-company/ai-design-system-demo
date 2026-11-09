@@ -551,6 +551,34 @@ a.ql-next {
     grid-column: 1 / -1;
     justify-self: start;
   }
+
+  /* A finding on a phone: the title takes the full width, its tag and its action share the line under it. */
+  .ql-finding > .ql-main {
+    grid-column: 1 / -1;
+  }
+
+  .ql-finding > .ql-badge {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .ql-finding > .ql-act {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  /* The same on the clean-up line: the sentence takes the full width, its action under it (column 1, not the
+     column 2 every other row action takes above). */
+  .ql-note {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .ql-note > .ql-act {
+    grid-column: 1;
+    justify-self: start;
+  }
 }
 
 /* Phones: Share stays on the title line, and the lone primary fills its bar. */

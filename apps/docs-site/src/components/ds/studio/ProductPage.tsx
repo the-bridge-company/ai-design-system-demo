@@ -101,7 +101,7 @@ export interface ProductPageViewProps {
   rename?: ProductRename | null;
   /** Removing the product from Bridge, for an admin (never the library). Absent: no Remove. */
   remove?: ProductRemove | null;
-  /** Get the latest into the team's copy: absent for a viewer who cannot. */
+  /** Bring the latest in into the team's copy: absent for a viewer who cannot. */
   copy?: CopyActions | null;
   /**
    * The designers' copy Bridge makes right after Add a product, for the admin or lead who added it. Absent for

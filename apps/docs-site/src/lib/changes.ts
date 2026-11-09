@@ -12,12 +12,13 @@ import { CONFLICT_REASON, mergeGate, REVIEW_STATUS, type ApprovalSummary, type C
 import type { TokenReview } from './token-review';
 import { ghAction } from './gh-wording';
 import { branchCount, VOCAB } from './vocabulary';
+import { toneOf } from './status-tag';
 import { eligibleReviewers, entriesFor, hasOwnerApproval, LOOK_AGAIN_STATUS_LABEL, pendingApprovals, requiredApprovals, soloOwnerSentence, type ApprovalRole, type TeamStates } from '@bridge-ds/core';
 
 export type StatusGroup = 'blocked' | 'waiting' | 'ready' | 'neutral';
 
 /** The DS Badge tones a status can take: one per status group. */
-export type StatusTone = 'danger' | 'info' | 'success' | 'neutral';
+export type StatusTone = 'danger' | 'info' | 'warning' | 'success' | 'neutral';
 
 export const STATUS_GROUP: Record<ReviewStatusKind, StatusGroup> = {
   'ci-failing': 'blocked',
@@ -36,7 +37,7 @@ export const STATUS_GROUP: Record<ReviewStatusKind, StatusGroup> = {
 };
 
 /** DS Badge tone of each group. */
-export const GROUP_TONE: Record<StatusGroup, StatusTone> = { blocked: 'danger', waiting: 'info', ready: 'success', neutral: 'neutral' };
+export const GROUP_TONE: Record<StatusGroup, StatusTone> = { blocked: toneOf('blocked'), waiting: toneOf('waiting'), ready: toneOf('done'), neutral: toneOf('over') };
 
 export const statusGroup = (kind: ReviewStatusKind | null | undefined): StatusGroup => (kind ? STATUS_GROUP[kind] : 'neutral');
 export const statusTone = (kind: ReviewStatusKind | null | undefined): StatusTone => GROUP_TONE[statusGroup(kind)];

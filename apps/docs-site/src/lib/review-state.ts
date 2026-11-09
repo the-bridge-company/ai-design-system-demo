@@ -9,6 +9,7 @@
 // (needsReviewRead): a few per page, never one per row. Pure: no DOM, no fetch. Tested in review-state.test.ts.
 import { DESIGN_TASK_BACK_COMMENT, explorationStatus, isArchivedExploration, isExplorationPull, isWaitingForLead, parseExplorationBody, previewAtScreen, type ExplorationStatus } from '@bridge-ds/core';
 import { sameRepo } from './team-path.js';
+import { toneOf } from './status-tag';
 
 /** A review of the pull request as GitHub lists it (GET pulls/{n}/reviews). */
 export interface PullReviewLike {
@@ -151,22 +152,23 @@ export const LIFECYCLE_LABEL: Record<LifecycleStage, string> = {
 export type StageTone = 'neutral' | 'info' | 'warning' | 'success';
 
 /**
- * The colour of each stage's tag, on every page (Home, Changes, Being built, product and exploration pages): the same
- * words always wear the same colour. Amber is work that waits on someone (to be picked up, to be reviewed), Harbor is
- * work moving, green is shipped, grey is over.
+ * The colour of each stage's tag, on every page (Home, Changes, Being built, product and exploration pages), from what
+ * the stage means (lib/status-tag, one meaning per tone): Harbor (info) is work moving, amber is work that waits on
+ * someone (the lead, a developer to pick it up, a review), green is done (approved, shipped), grey is over.
  */
 export const LIFECYCLE_TONE: Record<LifecycleStage, StageTone> = {
-  exploring: 'info',
-  'waiting-for-lead': 'warning',
-  'waiting-for-code': 'warning',
-  'being-built': 'info',
-  'in-review': 'warning',
-  approved: 'info',
-  'next-release': 'info',
-  shipped: 'success',
-  archived: 'neutral',
-  closed: 'neutral',
-  'not-planned': 'neutral',
+  exploring: toneOf('in-progress'),
+  'waiting-for-lead': toneOf('waiting'),
+  'waiting-for-code': toneOf('waiting'),
+  'being-built': toneOf('in-progress'),
+  'in-review': toneOf('waiting'),
+  // The design part is done: the designer said the developers' version looks right.
+  approved: toneOf('done'),
+  'next-release': toneOf('in-progress'),
+  shipped: toneOf('done'),
+  archived: toneOf('over'),
+  closed: toneOf('over'),
+  'not-planned': toneOf('over'),
 };
 
 /**

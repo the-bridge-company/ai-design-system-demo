@@ -109,7 +109,7 @@ function PieceRow({ row, p, busy, run }: { row: PieceRowView; p: ProductBranchPr
             )}
             <span className="pb-row-line">
               {row.library ? (
-                <Badge tone={row.library.tone} size="md" className={statusTagClass(row.library.line)}>
+                <Badge tone={row.library.tone} size="md" className={statusTagClass(row.library.tone)}>
                   {row.library.line}
                 </Badge>
               ) : (
@@ -207,7 +207,7 @@ export function ProductBranch(p: ProductBranchProps) {
       {p.state && (
         <p className="pb-status">
           {tag && (
-            <Badge tone={tag.tone} size="md" dot={tag.dot} className={statusTagClass(tag.label)}>
+            <Badge tone={tag.tone} size="md" dot={tag.dot} className={statusTagClass(tag.tone)}>
               {tag.label}
             </Badge>
           )}

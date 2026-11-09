@@ -1067,7 +1067,7 @@ export function BranchReview(p: BranchReviewProps) {
         {/* The status follows the last word of the title, wherever the title wraps. */}
         <Heading className="br-title">
           {p.title}{' '}
-          <Badge tone={status.tone} className={statusTagClass(status.label, 'br-status')}>
+          <Badge tone={status.tone} className={statusTagClass(status.tone, 'br-status')}>
             {status.label}
           </Badge>
         </Heading>

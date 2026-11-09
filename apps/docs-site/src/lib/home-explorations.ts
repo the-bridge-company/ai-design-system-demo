@@ -15,7 +15,7 @@ import { studioHref } from './team-path';
 import type { Person } from './home-model';
 import type { ThumbSpec } from './branch-thumb';
 import { changedScreenOf, explorationTag, type TagTone } from './exploration-page';
-import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
+import { LIFECYCLE_LABEL, LIFECYCLE_TONE, type LifecycleStage } from './review-state';
 import { explorationState, withDevTask } from './exploration-state';
 
 /** The fields of an open (or closed) pull request the home reads. */
@@ -212,7 +212,7 @@ export const SCREEN_SKETCH: ThumbSpec = { kind: 'screen', src: null };
 /** The tag of a card's state: the exploration page's words and tones (lib/exploration-page explorationTag). */
 export function cardTag(stage: ExplorationStage, state: string): { tone: TagTone; dot: boolean } {
   const byWord: Record<string, string> = { 'Not started': 'active', Exploring: 'active', 'Waiting for code': 'ready', 'Waiting to be picked up': 'ready', 'Being built': 'building', Shipped: 'shipped', 'In review': 'promoted', 'Kept in the library': 'kept', 'Not planned': 'closed' };
-  if (state === LIFECYCLE_LABEL.approved) return { tone: 'info', dot: false };
+  if (state === LIFECYCLE_LABEL.approved) return { tone: LIFECYCLE_TONE.approved, dot: false };
   const status = byWord[state];
   if (status) {
     const t = explorationTag(status, { notStarted: state === 'Not started' });

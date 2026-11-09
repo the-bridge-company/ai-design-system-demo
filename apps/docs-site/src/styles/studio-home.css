@@ -359,7 +359,16 @@
   line-height: var(--typography-caption-line-height);
 }
 
-/* Nothing explored yet: one quiet pane, the same size, no art. */
+/* No screen yet (the library, a product nothing explored): the Field Guide drawing on the subtle surface, the same
+   size and corners as a capture, so the folder row reads as one family. */
+.pf-art-pane {
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-default) solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-default);
+}
+
 /* Panes narrower than a card show the screen, not the plate's caption (it would end in "I.." and "A."). */
 .pf-mosaic:not([data-panes='1']) .bt-plate-text,
 .pf-mosaic[data-panes='3'] .pf-pane-1 .bt-captured,

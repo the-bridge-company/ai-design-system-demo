@@ -21,7 +21,7 @@
   margin: var(--space-2) 0 0;
 }
 
-/* "Art print shop changed since your copy. Get the latest": the sentence and its action on one line. */
+/* "Art print shop changed since your copy. Bring the latest in": the sentence and its action on one line. */
 .pp-behind {
   display: inline-flex;
   flex-wrap: wrap;
@@ -29,7 +29,7 @@
   gap: var(--space-1);
 }
 
-/* The line's actions (Open the live product, Get the latest, Send the update): never a target under 24px. */
+/* The line's actions (Open the live product, Bring the latest in, Send the update): never a target under 24px. */
 .pp-facts a,
 .pp-facts button {
   display: inline-flex;

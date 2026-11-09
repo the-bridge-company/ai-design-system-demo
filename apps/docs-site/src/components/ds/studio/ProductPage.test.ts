@@ -213,12 +213,12 @@ describe('ProductPageView', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('the product moved on since the copy: one quiet line and Get the latest, nothing when up to date', async () => {
+  it('the product moved on since the copy: one quiet line and Bring the latest in, nothing when up to date', async () => {
     const latest = vi.fn(async () => 'Your copy is up to date.');
     const { container, unmount } = render(createElement(ProductPageView, { productKey: 'admin-app', components: [], data: data({ cards: [card(1)], copy: { kind: 'ready', behind: 2 } }), copy: { latest } }));
     expect(container.querySelector('[data-copy-behind]')!.textContent).toContain('Product admin changed since your copy.');
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Get the latest' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Bring the latest in' }));
     });
     expect(latest).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(container.querySelector('.pp-facts')!.textContent).toContain('Your copy is up to date.'));
@@ -242,7 +242,7 @@ describe('ProductPageView', () => {
     const email = render(createElement(ProductPageView, { productKey: 'admin-app', components: [], data: behind, copy: { latest: vi.fn(async () => 'Your copy is up to date.') } }));
     const line = email.container.querySelector('[data-copy-behind]')!;
     expect(line.textContent).toContain('Product admin changed since your copy.');
-    expect(within(line as HTMLElement).getByRole('button', { name: 'Get the latest' })).toBeTruthy();
+    expect(within(line as HTMLElement).getByRole('button', { name: 'Bring the latest in' })).toBeTruthy();
   });
 
   it('says "2 archived." in the plural, and nothing at all without archived ones', () => {

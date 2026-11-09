@@ -42,6 +42,8 @@ export interface LibraryRowFacts {
   title: string;
   origin: LibraryOrigin;
   statusKind: string | null;
+  /** It waits on the viewer (lib/waiting-on, as Waiting on me): the only change tagged "Needs you". */
+  turn?: boolean;
   draft: boolean;
   figmaComponent: string | null;
   /** The viewer made it. */
@@ -62,7 +64,7 @@ export interface LibraryChangesProps<X> {
     }
   ) => ReactNode;
   /** The grid's card, when the list shows cards: no groups there. */
-  renderCard?: ((x: X) => ReactNode) | null;
+  renderCard?: ((x: X, o: { note: ReactNode; pill: { label: string; tone: LibraryTag['tone'] } | null }) => ReactNode) | null;
   lead: { you: boolean; name: string | null };
 }
 
@@ -88,6 +90,8 @@ export function OriginNote({ origin }: { origin: LibraryOrigin }) {
             origin.name
           )}
           {origin.product ? ` · ${origin.product}` : ''}
+          {/* No link: its product is not one of the team's products any more. Said, so the plain name is not a dead end. */}
+          {!origin.href && origin.product ? ', no longer in Studio' : ''}
         </span>
       </span>
     );
@@ -118,7 +122,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
         origin: f.origin,
         figmaComponent: f.figmaComponent,
       }),
-      tag: libraryTag({ kind: f.statusKind, draft: f.draft, kept }, p.lead),
+      tag: libraryTag({ kind: f.statusKind, draft: f.draft, kept, turn: f.turn }, p.lead),
       mine: f.mine,
       row: x,
     };
@@ -245,7 +249,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
       ) : null}
       {cards ? (
         <ul className="sh-cards" aria-labelledby="bl-library">
-          {shown.map((i) => p.renderCard!(i.row))}
+          {shown.map((i) => p.renderCard!(i.row, { note: <OriginNote origin={i.origin} />, pill: i.tag ? { label: i.tag.label, tone: i.tag.tone } : null }))}
         </ul>
       ) : grouped ? (
         <Accordion

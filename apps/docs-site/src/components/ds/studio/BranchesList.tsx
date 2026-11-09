@@ -362,7 +362,12 @@ export function BranchesList(p: BranchesListProps) {
   // not say ("Library" for a library change).
   // A library change in Shipped's grid: it belongs to no product.
   const LIBRARY_CORNER = 'Library';
-  const branchCard = ({ r, e }: (typeof rows)[number], product?: string | null) => {
+  // A library piece waits on the viewer when the exploration that asked for it does (Looks right accepts the screen and
+  // its library pieces): the same rule as Waiting on me and Home.
+  const waitingExplorations = new Set(openItems.filter((q) => q.x.r.lifecycle === 'exploration' && q.x.r.yourTurn).map((q) => `${q.x.r.product ?? ''}#${q.x.r.number}`));
+  const originKey = (o: { kind: string; number?: number | null; productKey?: string | null } | null) => (o?.kind === 'exploration' && o.number ? `${o.productKey ?? ''}#${o.number}` : '');
+
+  const branchCard = ({ r, e }: (typeof rows)[number], product?: string | null, lib?: { note: ReactNode; pill: ListRow['pill'] }) => {
     const href = r.opens === 'pr' ? `?pr=${r.number}` : r.product ? `?exploration=${r.number}&product=${encodeURIComponent(r.product)}` : `?exploration=${r.number}`;
     return (
       <ListCard
@@ -373,7 +378,8 @@ export function BranchesList(p: BranchesListProps) {
         linkAttributes={r.opens === 'pr' ? { 'data-open-pr': r.number } : { 'data-open-exploration': r.number, ...(r.product ? { 'data-product': r.product } : {}) }}
         person={personOf(r)}
         product={product === undefined ? null : (product ?? LIBRARY_CORNER)}
-        pill={r.pill}
+        pill={lib ? lib.pill : r.pill}
+        note={lib?.note}
       />
     );
   };
@@ -562,17 +568,21 @@ export function BranchesList(p: BranchesListProps) {
                 </>
               }
               rows={g.rows}
-              facts={(x) => ({
-                key: rowKey(x.r),
-                title: x.r.title,
-                origin: x.r.origin ?? libraryOrigin({ title: x.r.title, labels: x.r.labels ?? null, headRef: x.r.head.ref, guidance: x.r.guidance, files: x.e?.files ?? null }, products),
-                statusKind: x.r.statusKind ?? null,
-                draft: x.r.lifecycle === 'draft',
-                figmaComponent: x.r.figmaComponent ?? null,
-                mine: isYours(x.r, viewer, p.viewerName),
-              })}
+              facts={(x) => {
+                const origin = x.r.origin ?? libraryOrigin({ title: x.r.title, labels: x.r.labels ?? null, headRef: x.r.head.ref, guidance: x.r.guidance, files: x.e?.files ?? null }, products);
+                return {
+                  key: rowKey(x.r),
+                  title: x.r.title,
+                  origin,
+                  statusKind: x.r.statusKind ?? null,
+                  turn: x.r.yourTurn || waitingExplorations.has(originKey(origin)),
+                  draft: x.r.lifecycle === 'draft',
+                  figmaComponent: x.r.figmaComponent ?? null,
+                  mine: isYours(x.r, viewer, p.viewerName),
+                };
+              }}
               renderRow={(x, o) => branchRow(x, undefined, g.rows.some(pickable), o)}
-              renderCard={view === 'grid' ? (x) => branchCard(x) : null}
+              renderCard={view === 'grid' ? (x, o) => branchCard(x, undefined, o) : null}
               lead={p.lead ?? { you: false, name: null }}
             />
           ) : (

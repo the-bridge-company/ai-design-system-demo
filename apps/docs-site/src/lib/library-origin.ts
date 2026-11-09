@@ -240,7 +240,7 @@ export function originCounts(origins: readonly LibraryOrigin[]): Record<OriginFi
 // ---------------------------------------------------------------------------------------------------------------
 // Status tags: the same words as the exploration's "What this changes in the library"
 
-export type LibraryTagState = 'needs' | 'approved' | 'building' | 'kept';
+export type LibraryTagState = 'needs' | 'review' | 'approved' | 'building' | 'kept';
 
 export interface LibraryTag {
   state: LibraryTagState;
@@ -256,19 +256,21 @@ const APPROVED_KINDS = new Set(['needs-tech', 'ready']);
 const BUILDING_KINDS = new Set(['draft', 'ci-failing', 'ci-running', 'conflict', 'changes-requested']);
 
 /**
- * The tag of one library change: "Needs Dana" (or "Needs you" for the lead), "Approved", "Being built", "Kept in
- * this screen". Null when the change is in none of these (merged, still being checked): its own status stays.
+ * The tag of one library change: "Needs you" when it waits on the viewer (`turn`: the one rule of lib/waiting-on, the
+ * same that counts Changes > Waiting on me and the nav badge), "Needs Dana" for someone else when the lead decides,
+ * "In review" for a lead it does not wait on yet, "Approved", "Being built", "Kept in this screen". Null when the change
+ * is in none of these (merged, still being checked): its own status stays.
  */
-export function libraryTag(x: { kind?: string | null; draft?: boolean; kept?: boolean }, lead: { you: boolean; name: string | null }): LibraryTag | null {
+export function libraryTag(x: { kind?: string | null; draft?: boolean; kept?: boolean; turn?: boolean }, lead: { you: boolean; name: string | null }): LibraryTag | null {
   if (x.kept) return { state: 'kept', label: 'Kept in this screen', tone: 'neutral' };
   if (x.draft) return { state: 'building', label: 'Being built', tone: 'info' };
   const k = x.kind ?? '';
-  if (NEEDS_KINDS.has(k))
-    return {
-      state: 'needs',
-      label: lead.you ? 'Needs you' : lead.name ? `Needs ${lead.name}` : 'Needs the DS lead',
-      tone: 'warning',
-    };
+  if (NEEDS_KINDS.has(k)) {
+    if (x.turn) return { state: 'needs', label: 'Needs you', tone: 'warning' };
+    // Never "Needs you" on a change that is not on the viewer's Waiting on me: one count everywhere.
+    if (lead.you) return { state: 'review', label: 'In review', tone: 'warning' };
+    return { state: 'needs', label: lead.name ? `Needs ${lead.name}` : 'Needs the DS lead', tone: 'warning' };
+  }
   if (APPROVED_KINDS.has(k)) return { state: 'approved', label: 'Approved', tone: 'success' };
   if (BUILDING_KINDS.has(k)) return { state: 'building', label: 'Being built', tone: 'info' };
   return null;
@@ -339,6 +341,9 @@ export interface LibraryGroup<R = unknown> {
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const explorationKey = (o: ExplorationOrigin) => (o.number ? `${o.productKey ?? ''}#${o.number}` : `name:${o.name.toLowerCase()}`);
 
+/** Still waiting on a design decision, whoever it waits on. */
+const pendingTag = (t: LibraryTag | null) => t?.state === 'needs' || t?.state === 'review';
+
 function sharedTag<R>(items: LibraryItem<R>[]): LibraryTag | null {
   const first = items[0]?.tag ?? null;
   return first && items.every((i) => i.tag?.label === first.label) ? first : null;
@@ -371,12 +376,12 @@ export function groupByComponent<R>(items: readonly LibraryItem<R>[], o: { you: 
     const explorations = new Set(fromExplorations.map((i) => explorationKey(i.origin)));
     // A conflict: explorations still waiting on the lead ask for the same component in different ways (one already
     // approved is the library's way now), or the block says so.
-    const pending = fromExplorations.filter((i) => i.tag?.state === 'needs');
+    const pending = fromExplorations.filter((i) => pendingTag(i.tag));
     const conflict =
       fromExplorations.some((i) => i.origin.conflict) ||
       (new Set(pending.map((i) => explorationKey(i.origin))).size > 1 && new Set(pending.map((i) => changeOf(i.title, i.component))).size > 1);
     const leadChanges = new Set(fromLead.map((i) => changeOf(i.title, i.component)));
-    const buildOnce = conflict ? null : fromExplorations.find((i) => i.tag?.state === 'needs' && leadChanges.has(changeOf(i.title, i.component))) ?? null;
+    const buildOnce = conflict ? null : fromExplorations.find((i) => pendingTag(i.tag) && leadChanges.has(changeOf(i.title, i.component))) ?? null;
     const parts: string[] = [];
     if (explorations.size > 1) parts.push(`asked by ${plural(explorations.size, 'exploration')}${conflict ? ', two different ways' : ''}`);
     else if (fromExplorations[0]) parts.push(`asked by ${fromExplorations[0].origin.name}`);

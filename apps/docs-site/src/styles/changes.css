@@ -1037,6 +1037,20 @@ body:has(.cg-bar) {
   white-space: nowrap;
 }
 
+/* On a card (the grid), the origin sits under the title and may wrap: a card is narrow. */
+.sh-card-note {
+  display: flex;
+  min-width: 0;
+}
+
+.sh-card-note .bl-origin {
+  align-items: flex-start;
+}
+
+.sh-card-note .bl-origin > span {
+  white-space: normal;
+}
+
 /* The origin filter on the left, the lead's grouping on the right: one toolbar for the section. */
 .bl-lib-bar {
   display: flex;

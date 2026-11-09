@@ -228,12 +228,19 @@ describe('libraryTag', () => {
   const lead = { you: false, name: 'Dana' };
   it('uses the exploration section words', () => {
     expect(libraryTag({ kind: 'needs-design' }, lead)?.label).toBe('Needs Dana');
-    expect(libraryTag({ kind: 'needs-approval' }, { you: true, name: 'Dana' })?.label).toBe('Needs you');
+    expect(libraryTag({ kind: 'needs-approval', turn: true }, { you: true, name: 'Dana' })?.label).toBe('Needs you');
     expect(libraryTag({ kind: 'needs-tech' }, lead)?.label).toBe('Approved');
     expect(libraryTag({ kind: 'ci-failing' }, lead)?.label).toBe('Being built');
     expect(libraryTag({ draft: true }, lead)?.label).toBe('Being built');
     expect(libraryTag({ kept: true, kind: 'needs-design' }, lead)?.label).toBe('Kept in this screen');
     expect(libraryTag({ kind: 'merged' }, lead)).toBeNull();
+  });
+
+  it('says "Needs you" only for what waits on the viewer, as Waiting on me counts it', () => {
+    const you = { you: true, name: 'Dana' };
+    expect(libraryTag({ kind: 'needs-design' }, you)).toMatchObject({ state: 'review', label: 'In review' });
+    expect(libraryTag({ kind: 'needs-design', turn: true }, you)).toMatchObject({ state: 'needs', label: 'Needs you' });
+    expect(libraryTag({ kind: 'needs-design', turn: true }, lead)?.label).toBe('Needs you');
   });
 });
 

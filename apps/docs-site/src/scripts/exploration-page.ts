@@ -20,6 +20,8 @@ import {
   checkInClaudeLine,
   doneActionFor,
   doneByOf,
+  doneLoginOf,
+  leadApproverOf,
   explorationMenu,
   faceOf,
   nameOnlyAuthors,
@@ -848,10 +850,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const fromTask = task ? taskStatus(task) : null;
   const status = (devRead && fromTask !== 'shipped' ? 'building' : fromTask ? (fromTask === 'closed' ? 'ready' : fromTask) : r.status) as 'ready' | 'building' | 'shipped';
   const label = doneByOf(commits) ? null : await readyLabelEvent(r);
-  // Validated by a lead: the commits and the label are theirs, the block keeps the designer who said it (who started it, for a member without GitHub).
-  // An email member who said it themselves: the block records them (doneByMember), whoever's account wrote the commit.
-  const memberDone = block?.doneByMember && block.doneByMember === block.member && block.memberName?.trim() ? nameAuthor(block.memberName.trim()) : null;
-  const doneLogin = (block?.leadOkBy ? (block.doneBy ?? r.author) : null) ?? memberDone ?? doneByOf(commits) ?? label?.login ?? r.author;
+  // Who said it (lib/exploration-page doneLoginOf): the designer a GitHub lead validated, an email member by name, and
+  // when only Bridge's app account wrote it (an email lead's Looks right), the lead who approved: never the app's login.
+  const doneLogin = doneLoginOf({ block, commits, labelLogin: label?.login ?? null, author: r.author });
   const doneAt = block?.doneAt ?? label?.at ?? null;
   // Who explored it: their own comments on the task are answers, never a question of the developers.
   const designers = [r.author, block?.author, block?.doneBy, doneLogin];
@@ -912,7 +913,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     address && offersDevelopersMessage({ address, status, declined, archived: Boolean(r.archived), member: onTeam })
       ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: (v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch), shotUrl: shot?.src ?? null }) }
       : null;
-  const leadOkBy = block?.leadOkBy ?? null;
+  // The lead who validated it, by login or, for a lead who joined by email, by name.
+  const leadOkBy = leadApproverOf(block);
   const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceAs(leadOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames)), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
   const taskUrl = block?.task ?? null;
   const ref = r.product ? `${r.product}#${r.number}` : String(r.number);

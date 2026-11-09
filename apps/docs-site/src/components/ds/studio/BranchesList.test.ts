@@ -102,6 +102,8 @@ describe('Explorations', () => {
     await user.click(screen.getByRole('button', { name: 'Status: In progress' }));
     const menu = await screen.findByRole('menu');
     const items = within(menu).getAllByRole('menuitemcheckbox');
+    // Counts include what waits on you (Exploration 1 is pinned, and still counts as Waiting for lead).
+    expect(within(menu).getByRole('menuitemcheckbox', { name: /^Waiting for lead/ }).textContent).toMatch(/1$/);
     expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['In progress', 'Exploring', 'Waiting for lead', 'Needs changes', 'Waiting for the library', 'Looks right', 'With developers', 'Shipped', 'Not doing this', 'Archived']);
     await user.click(within(menu).getByRole('menuitemcheckbox', { name: /^Exploring/ }));
     expect(new URLSearchParams(location.search).get('status')).toBe('waiting-for-lead,needs-changes,waiting-for-library,looks-right,with-developers');
@@ -133,7 +135,12 @@ describe('Explorations', () => {
     const { container } = render(createElement(BranchesList, props({ rows: [...props().rows, ...many] })));
     await user.click(screen.getByRole('radio', { name: /Board/ }));
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
-    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 0', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
+    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    expect(container.querySelector('.ex-waiting')).toBeNull();
+    const lead = container.querySelectorAll('.ex-col')[1]!;
+    expect(lead.textContent).toMatch(/Your turn\s·\sSofia sent it for review/);
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('15 explorations.');
     const exploring = container.querySelector('.ex-col')!;
     expect(exploring.querySelectorAll('li').length).toBe(10);
     await user.click(within(exploring as HTMLElement).getByRole('button', { name: 'Show all 13' }));

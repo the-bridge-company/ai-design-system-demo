@@ -113,7 +113,7 @@ describe('navigation shape', () => {
     expect(found.at(-1)).toMatchObject({ href: '/tokens/', label: 'All tokens', apart: true });
   });
 
-  it('shows two counts in the Studio nav: Waiting on you on Explorations, the lead's pieces on Library review', () => {
+  it('shows two counts in the Studio nav: Waiting on you on Explorations, the lead pieces on Library review', () => {
     const counted = navFor('studio').filter((e) => e.badge);
     expect(counted.map((e) => [e.label, e.badge])).toEqual([['Explorations', 'explorations'], ['Library review', 'reviews']]);
   });

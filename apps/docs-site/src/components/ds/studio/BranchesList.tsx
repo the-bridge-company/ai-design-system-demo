@@ -50,7 +50,6 @@ import {
   isFiltered,
   multiTriggerLabel,
   passes,
-  splitWaiting,
   STATE_LABEL,
   STATE_TONE,
   STATES,
@@ -60,6 +59,7 @@ import {
   type ExplorationFilters,
   type ExplorationState,
 } from '../../../lib/explorations-page';
+import { explorationKey, mergeWaiting, type WaitingExploration } from '../../../lib/waiting-counts';
 import '../../../styles/explorations-board.css';
 
 export interface ListRow {
@@ -228,11 +228,36 @@ export function BranchesList(p: BranchesListProps) {
     .sort((a, b) => Date.parse(b.shippedAt ?? '') - Date.parse(a.shippedAt ?? ''));
   const items: Item[] = [...openItems, ...archivedItems, ...shippedItems];
 
-  // Waiting on you: pinned first, whatever the filters (open rows only: nothing archived or shipped waits).
-  const { waiting } = splitWaiting(openItems.map((x) => ({ ...x, yourTurn: Boolean(viewer) && x.r.yourTurn })));
+  // Waiting on you: pinned first, whatever the filters (open rows only: nothing archived or shipped waits). One source
+  // with Home and the nav badge (lib/waiting-counts): the list's own rule (row.yourTurn), plus what Home found that the
+  // list cannot read (a question on the developers' task, the PM's word), remembered by scripts/waiting-counts.
+  const ekey = (r: ListRow) => explorationKey(r.number, r.product ?? null);
+  const [homeWaiting, setHomeWaiting] = useState<WaitingExploration[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    const read = () => void import('../../../scripts/waiting-counts').then((m) => live && setHomeWaiting(m.rememberedWaitingExplorations())).catch(() => undefined);
+    read();
+    document.addEventListener('bridge:waiting-explorations', read);
+    return () => {
+      live = false;
+      document.removeEventListener('bridge:waiting-explorations', read);
+    };
+  }, [viewer]);
+  const own = viewer ? openItems.filter((x) => x.r.yourTurn).map((x) => ({ key: ekey(x.r), line: x.r.turnReason ?? `${x.person.name} sent it for review` })) : [];
+  const merged = mergeWaiting(own, viewer ? homeWaiting : null, new Set(openItems.map((x) => ekey(x.r))));
+  const turnLine = new Map(merged.map((w) => [w.key, w.line]));
+  const waiting = openItems.filter((x) => turnLine.has(ekey(x.r)));
   const pinned = new Set(waiting.map((x) => x.r));
   const listed = items.filter((x) => !pinned.has(x.r));
   const kept = listed.filter((x) => passes(x, filters));
+  // Once the list is read in full, what waits here is the badge's number too (written only when it changed).
+  const mergedKey = JSON.stringify(merged);
+  useEffect(() => {
+    if (p.loading || p.unread || !viewer) return;
+    if (JSON.stringify(homeWaiting ?? []) === mergedKey) return;
+    void import('../../../scripts/waiting-counts').then((m) => m.rememberWaitingExplorations(JSON.parse(mergedKey) as WaitingExploration[])).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergedKey, p.loading, p.unread, viewer]);
 
   const summary = p.loading && !p.rows.length ? '' : explorationsSummary(openItems.map((x) => x.status));
 
@@ -273,7 +298,7 @@ export function BranchesList(p: BranchesListProps) {
   const keyOf = (r: ListRow) => (r.product ? `${r.product}#${r.number}` : String(r.number));
   /** Line 2: who, then when it last moved or shipped; in Waiting on you, why it is the viewer's turn. */
   const lineOf = (x: Item, turn = false) => {
-    if (turn) return `Your turn${SEP}${x.r.turnReason ?? `${x.person.name} sent it for review`}`;
+    if (turn) return `Your turn${SEP}${turnLine.get(ekey(x.r)) ?? `${x.person.name} sent it for review`}`;
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
     return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
   };
@@ -346,8 +371,9 @@ export function BranchesList(p: BranchesListProps) {
     .map((k) => ({ key: k, label: productName(k), rows: kept.filter((x) => x.product === k) }))
     .filter((g) => g.rows.length > 0);
   const boardStatus = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)) ? [...IN_PROGRESS, 'shipped' as const] : filters.status;
-  const columns = boardColumns(kept, boardStatus);
-  const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : kept.length;
+  // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there.
+  const columns = boardColumns([...waiting, ...kept], boardStatus);
+  const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
 
   const board = (
     <div className="ex-board" role="region" aria-label="Board, one column per status" tabIndex={0}>
@@ -360,7 +386,7 @@ export function BranchesList(p: BranchesListProps) {
               {c.label} <span className="bl-count">{c.rows.length}</span>
             </h2>
             {c.rows.length ? (
-              <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true }))}</ul>
+              <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>
             ) : (
               <p className="t-ui t-muted ex-col-none">None</p>
             )}
@@ -405,7 +431,7 @@ export function BranchesList(p: BranchesListProps) {
           />
         </span>
         <p className="t-ui t-muted bl-summary" aria-live="polite">
-          {countLine(waiting.length + shownCount, filtered ? waiting.length + listed.length : waiting.length + shownCount)}
+          {countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}
           {filtered && (
             <>
               {' '}
@@ -418,7 +444,7 @@ export function BranchesList(p: BranchesListProps) {
         <ViewSwitch view={view} onPick={setListView} board />
       </div>
 
-      {waiting.length > 0 && (
+      {waiting.length > 0 && view !== 'board' && (
         <section className="bl-group ex-waiting" aria-labelledby="bl-waiting">
           <h2 className="bl-h2" id="bl-waiting">
             Waiting on you <span className="bl-count">{waiting.length}</span>
@@ -427,7 +453,7 @@ export function BranchesList(p: BranchesListProps) {
         </section>
       )}
 
-      {kept.length === 0 ? (
+      {(view === 'board' ? shownCount === 0 : kept.length === 0) ? (
         <p className="t-body t-muted bl-none">
           {emptyFilterLine(filters, { person: personLabel, product: productName })} {filtered && <Button variant="link" onClick={clear}>Clear filters</Button>}
         </p>

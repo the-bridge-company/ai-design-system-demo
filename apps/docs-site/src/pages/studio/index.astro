@@ -124,6 +124,8 @@ const onboarding = {
     import { isHosted, isHostedSite, teamShareBase } from '../../lib/team-path';
     import { setReviewCount } from '../../scripts/shell';
     import { rememberMine } from '../../scripts/needs-you';
+    import { rememberWaitingExplorations } from '../../scripts/waiting-counts';
+    import { waitingCounts } from '../../lib/waiting-counts';
     import { loadHome, type HomeData, type HomeStatic } from '../../scripts/home-data';
     import { paintStudioHome, type HealthLine, type HomeComponent, type StudioHomeProps } from '../../components/ds/studio/StudioHome';
     import { adoptionDropLine, greeting, homeState } from '../../lib/home-model';
@@ -333,8 +335,12 @@ const onboarding = {
         data = d;
         paint();
         if (!d.loading && !d.failed && d.viewer) {
-          setReviewCount(d.decisions);
-          rememberMine(d.decisions);
+          // One source per count (lib/waiting-counts): the explorations that wait for the Explorations badge and
+          // page, the rest for Library review.
+          const counts = waitingCounts(d.needs);
+          rememberWaitingExplorations(counts.explorations);
+          setReviewCount(counts.library);
+          rememberMine(counts.library);
         }
         if (!d.viewer) setReviewCount(null);
       });

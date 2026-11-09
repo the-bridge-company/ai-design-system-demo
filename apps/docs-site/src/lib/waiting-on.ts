@@ -143,3 +143,6 @@ export const countsInBadge = (t: WaitTask | null | undefined): boolean => isRevi
  * count is shown (never the clause without its number).
  */
 export const reviewBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} waiting for a review` : '');
+
+/** What a screen reader hears after "Explorations" for its nav badge: ", 2 waiting on you", or nothing at 0. */
+export const explorationsBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} waiting on you` : '');

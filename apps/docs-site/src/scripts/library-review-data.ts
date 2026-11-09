@@ -230,7 +230,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
       if (!record?.pieces.length) continue;
       for (const l of record.links) linked.add(`${p.repo.toLowerCase()}#${p.number}:${l.piece}`);
       const block = parseExplorationBody(p.body);
-      const href = studioHref(`changes/${explorationHref({ number: p.number, product: p.repo.toLowerCase() === ds.toLowerCase() ? null : p.product })}`);
+      const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.repo.toLowerCase() === ds.toLowerCase() ? null : p.product })}`);
       const mine = same(designerOf(s), viewer.name) || same(p.user?.login, currentViewer()?.login);
       for (const item of impactItems(record)) {
         const raw = record.pieces.find((x) => x.id === item.id);

@@ -10,7 +10,8 @@ import { pointLinksAtTeam } from './team-links';
 import { initVanillaControls } from './vanilla-controls';
 import { initViewChange, readOpenPulls } from './view-change';
 import { followThemePref } from '../lib/theme-pref';
-import { reviewBadgeLabel } from '../lib/waiting-on';
+import { explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
+import { rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
 import { navGroupOpen, readNavGroup, writeNavGroup } from '../lib/nav-groups';
 
 interface SearchItem {
@@ -629,16 +630,20 @@ function reviewsHere(): boolean {
   }
 }
 
-function setCount(kind: 'drafts' | 'reviews', n: number | null) {
-  // The nav shows one number, on Library review: the changes in review that wait on the viewer (hidden at 0), for
-  // whoever holds the review right. Its link reads "Library review, 17 waiting for a review", never the clause alone.
+/** The Explorations badge: the explorations that wait on the viewer (Waiting on you), hidden at 0 (scripts/waiting-counts). */
+export const setExplorationsCount = (n: number | null) => setCount('explorations', n);
+
+function setCount(kind: 'drafts' | 'reviews' | 'explorations', n: number | null) {
+  // The nav shows two numbers, one source each (lib/waiting-counts): on Explorations what waits on the viewer there,
+  // on Library review the changes that wait on the viewer's decision (for whoever holds the review right). Hidden at 0.
+  // A link reads "Library review, 17 waiting for a review", never the clause alone.
   const shown = kind === 'reviews' ? Boolean(n) && reviewsHere() : Boolean(n);
   document.querySelectorAll<HTMLElement>(`[data-nav-count="${kind}"]`).forEach((el) => {
     el.hidden = !shown;
     const v = el.querySelector('[data-nav-count-value]');
     if (v) v.textContent = n ? String(n) : '';
     const said = el.querySelector('[data-nav-count-label]');
-    if (said) said.textContent = reviewBadgeLabel(n);
+    if (said) said.textContent = kind === 'explorations' ? explorationsBadgeLabel(n) : reviewBadgeLabel(n);
   });
   // The Drafts counter in the Studio header always shows its number, zero included.
   if (kind === 'drafts')
@@ -677,6 +682,10 @@ function initStudio() {
   if (document.documentElement.hasAttribute('data-no-repo')) return;
 
   setCount('drafts', draftCount());
+  // What waits on the viewer among the explorations: the set Home and Explorations remembered (one source).
+  const paintWaiting = () => setCount('explorations', rememberedWaitingExplorations()?.length ?? null);
+  initGitHubConnect(paintWaiting);
+  document.addEventListener(WAITING_EVENT, paintWaiting);
   // Paint the last known count at once, so the nav does not jump while GitHub answers (or when it cannot).
   setCount('reviews', getToken() ? rememberedMine() : null);
   // The Overview reads the same statuses for its Needs you list and sets the badge itself.

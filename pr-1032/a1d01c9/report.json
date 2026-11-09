@@ -1,6 +1,6 @@
 {
   "pr": 1032,
-  "sha": "a27b11593ea619bead440b6c910ae5f6df9cac58",
+  "sha": "a1d01c9463d875be9cfbc6bb7beead591d0d10aa",
   "baseSha": "8845df2d5173165d78f5896b5f743132f16b25cc",
   "failed": false,
   "failures": [],
@@ -27,7 +27,7 @@
       "fullHeight": 1148,
       "png": "building-desktop-light.png",
       "axe": [],
-      "ms": 17828,
+      "ms": 18519,
       "webp": "building-desktop-light.webp",
       "diff": {
         "ratio": 0.0016623112659698025,
@@ -52,7 +52,7 @@
       "fullHeight": 1148,
       "png": "building-desktop-dark.png",
       "axe": [],
-      "ms": 19067,
+      "ms": 17490,
       "webp": "building-desktop-dark.webp",
       "diff": {
         "ratio": 0.0016973964382500967,
@@ -78,7 +78,7 @@
       "fullHeight": 1370,
       "png": "building-mobile-light.png",
       "axe": [],
-      "ms": 15677,
+      "ms": 15566,
       "webp": "building-mobile-light.webp",
       "diff": {
         "ratio": 0.005474452554744526,
@@ -104,7 +104,7 @@
       "fullHeight": 1370,
       "png": "building-mobile-dark.png",
       "axe": [],
-      "ms": 4064,
+      "ms": 3757,
       "webp": "building-mobile-dark.webp",
       "diff": {
         "ratio": 0.005597978663672095,
@@ -129,7 +129,7 @@
       "fullHeight": 962,
       "png": "review-desktop-light.png",
       "axe": [],
-      "ms": 3991,
+      "ms": 4369,
       "webp": "review-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -149,7 +149,7 @@
       "fullHeight": 962,
       "png": "review-desktop-dark.png",
       "axe": [],
-      "ms": 3902,
+      "ms": 3378,
       "webp": "review-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -170,7 +170,7 @@
       "fullHeight": 954,
       "png": "review-mobile-light.png",
       "axe": [],
-      "ms": 3950,
+      "ms": 3653,
       "webp": "review-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -191,7 +191,7 @@
       "fullHeight": 954,
       "png": "review-mobile-dark.png",
       "axe": [],
-      "ms": 3810,
+      "ms": 3735,
       "webp": "review-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -211,7 +211,7 @@
       "fullHeight": 2146,
       "png": "changes-desktop-light.png",
       "axe": [],
-      "ms": 11264,
+      "ms": 11219,
       "webp": "changes-desktop-light.webp",
       "diff": {
         "ratio": 0.00048410479444962204,
@@ -236,7 +236,7 @@
       "fullHeight": 2146,
       "png": "changes-desktop-dark.png",
       "axe": [],
-      "ms": 11262,
+      "ms": 11100,
       "webp": "changes-desktop-dark.webp",
       "diff": {
         "ratio": 0.0017374055089572332,
@@ -262,7 +262,7 @@
       "fullHeight": 2950,
       "png": "changes-mobile-light.png",
       "axe": [],
-      "ms": 10504,
+      "ms": 9907,
       "webp": "changes-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -283,7 +283,7 @@
       "fullHeight": 2950,
       "png": "changes-mobile-dark.png",
       "axe": [],
-      "ms": 11347,
+      "ms": 10101,
       "webp": "changes-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -303,7 +303,7 @@
       "fullHeight": 962,
       "png": "home-desktop-light.png",
       "axe": [],
-      "ms": 4219,
+      "ms": 3619,
       "webp": "home-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -323,7 +323,7 @@
       "fullHeight": 962,
       "png": "home-desktop-dark.png",
       "axe": [],
-      "ms": 4066,
+      "ms": 5007,
       "webp": "home-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -344,7 +344,7 @@
       "fullHeight": 954,
       "png": "home-mobile-light.png",
       "axe": [],
-      "ms": 3365,
+      "ms": 2861,
       "webp": "home-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -365,7 +365,7 @@
       "fullHeight": 954,
       "png": "home-mobile-dark.png",
       "axe": [],
-      "ms": 3314,
+      "ms": 3493,
       "webp": "home-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -385,7 +385,7 @@
       "fullHeight": 962,
       "png": "exploration-desktop-light.png",
       "axe": [],
-      "ms": 9853,
+      "ms": 9406,
       "webp": "exploration-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -405,7 +405,7 @@
       "fullHeight": 962,
       "png": "exploration-desktop-dark.png",
       "axe": [],
-      "ms": 10164,
+      "ms": 9455,
       "webp": "exploration-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -426,7 +426,7 @@
       "fullHeight": 954,
       "png": "exploration-mobile-light.png",
       "axe": [],
-      "ms": 9571,
+      "ms": 9491,
       "webp": "exploration-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -447,7 +447,7 @@
       "fullHeight": 954,
       "png": "exploration-mobile-dark.png",
       "axe": [],
-      "ms": 10286,
+      "ms": 9106,
       "webp": "exploration-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -467,7 +467,7 @@
       "fullHeight": 962,
       "png": "product-desktop-light.png",
       "axe": [],
-      "ms": 3595,
+      "ms": 3354,
       "webp": "product-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -487,7 +487,7 @@
       "fullHeight": 962,
       "png": "product-desktop-dark.png",
       "axe": [],
-      "ms": 3593,
+      "ms": 3434,
       "webp": "product-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -508,7 +508,7 @@
       "fullHeight": 954,
       "png": "product-mobile-light.png",
       "axe": [],
-      "ms": 3550,
+      "ms": 3356,
       "webp": "product-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -529,7 +529,7 @@
       "fullHeight": 954,
       "png": "product-mobile-dark.png",
       "axe": [],
-      "ms": 3447,
+      "ms": 3454,
       "webp": "product-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -549,7 +549,7 @@
       "fullHeight": 3429,
       "png": "components-desktop-light.png",
       "axe": [],
-      "ms": 5216,
+      "ms": 3903,
       "webp": "components-desktop-light.webp",
       "diff": {
         "ratio": 0.00028935185185185184,
@@ -574,7 +574,7 @@
       "fullHeight": 3429,
       "png": "components-desktop-dark.png",
       "axe": [],
-      "ms": 3904,
+      "ms": 4852,
       "webp": "components-desktop-dark.webp",
       "diff": {
         "ratio": 0.0009372427983539095,
@@ -600,7 +600,7 @@
       "fullHeight": 3440,
       "png": "components-mobile-light.png",
       "axe": [],
-      "ms": 4442,
+      "ms": 4044,
       "webp": "components-mobile-light.webp",
       "diff": {
         "ratio": 0.0006329242111232633,
@@ -626,7 +626,7 @@
       "fullHeight": 3440,
       "png": "components-mobile-dark.png",
       "axe": [],
-      "ms": 4834,
+      "ms": 3592,
       "webp": "components-mobile-dark.webp",
       "diff": {
         "ratio": 0.001826872442986187,
@@ -651,7 +651,7 @@
       "fullHeight": 1561,
       "png": "quality-desktop-light.png",
       "axe": [],
-      "ms": 4261,
+      "ms": 5347,
       "webp": "quality-desktop-light.webp",
       "diff": {
         "ratio": 0.0007113495622464233,
@@ -676,7 +676,7 @@
       "fullHeight": 1561,
       "png": "quality-desktop-dark.png",
       "axe": [],
-      "ms": 6842,
+      "ms": 3444,
       "webp": "quality-desktop-dark.webp",
       "diff": {
         "ratio": 0.0024147626165563385,
@@ -702,11 +702,11 @@
       "fullHeight": 2401,
       "png": "quality-mobile-light.png",
       "axe": [],
-      "ms": 3498,
+      "ms": 2954,
       "webp": "quality-mobile-light.webp",
       "diff": {
-        "ratio": 0.05628312777453121,
-        "pixels": 54898,
+        "ratio": 0.05628005208173141,
+        "pixels": 54895,
         "box": {
           "x0": 16,
           "y0": 2045,
@@ -728,11 +728,11 @@
       "fullHeight": 2401,
       "png": "quality-mobile-dark.png",
       "axe": [],
-      "ms": 3267,
+      "ms": 2823,
       "webp": "quality-mobile-dark.webp",
       "diff": {
-        "ratio": 0.059700222475112516,
-        "pixels": 58231,
+        "ratio": 0.059697146782312714,
+        "pixels": 58228,
         "box": {
           "x0": 16,
           "y0": 2045,

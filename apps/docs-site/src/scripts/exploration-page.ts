@@ -1096,7 +1096,8 @@ async function paintLibraryImpact(
   const member = currentContributor();
   const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
   const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.leadAskedBy ?? o.r.author] });
-  const leadName = decides && myName ? myName : leads.length ? leads.map((l) => knownNamesOf([l])[l] ?? l).join(', ') : 'the lead';
+  // The viewer decides on explorations (a lead, by GitHub or by email): the pieces wait on them, by their name.
+  const leadName = (decides || member?.decides) && myName ? myName : leads.length ? leads.map((l) => knownNamesOf([l])[l] ?? l).join(', ') : 'the lead';
   const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
   const conflicts = await conflictsOf(mine).catch(() => [] as LibraryConflict[]);
   const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();

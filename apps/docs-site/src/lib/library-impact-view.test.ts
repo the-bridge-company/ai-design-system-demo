@@ -20,6 +20,8 @@ describe('the section on the exploration page', () => {
     expect(v.state).toBe('nothing');
     if (v.state !== 'nothing') return;
     expect(v.uses).toEqual(['Badge', 'Card']);
+    const words = libraryImpactView({ body: bodyWith([], [], ['SegmentedControl', 'EmptyState']), designer: 'Ann', lead: 'Dana', approved: false, canDecide: false });
+    if (words.state === 'nothing') expect(words.uses).toEqual(['Segmented control', 'Empty state']);
     expect(v.line).toContain('Ann built it with the pieces the library already has');
     expect(v.line).not.toMatch(/\d/);
   });

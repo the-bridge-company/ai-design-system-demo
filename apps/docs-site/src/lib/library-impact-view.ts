@@ -3,6 +3,7 @@
 // record, the block and the conflicts in, the view out. Painted by components/ds/studio/LibraryImpact.tsx; read and
 // written by scripts/library-impact.ts. Tested in library-impact-view.test.ts.
 import {
+  componentWords,
   impactItems,
   impactStatus,
   impactSummary,
@@ -138,7 +139,8 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   if (!record) return { state: 'unchecked', line: 'Bridge has not checked this exploration against the library yet.' };
   const block = parseExplorationBody(x.body);
   const items = impactItems(record);
-  const uses = record.uses ?? [];
+  // The library's pieces in words ("Segmented control"), the way designers name them.
+  const uses = (record.uses ?? []).map(componentWords);
   if (!items.length) return { state: 'nothing', line: `The best kind of exploration: ${x.designer} built it with the pieces the library already has. Nothing to decide here, and the developers can build it right away.`, uses };
   const conflicts = x.conflicts ?? [];
   const names = x.names ?? {};

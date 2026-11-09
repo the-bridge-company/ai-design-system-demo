@@ -125,7 +125,7 @@ function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpact
         <span className="li-muted">{row.summary}</span>
         {row.note && <span className="li-note">{row.note}</span>}
         {row.details.length > 0 && (
-          <Accordion className="li-details">
+          <Accordion className="li-details" appearance="flush">
             <AccordionItem value="details" title="Details">
               <dl className="li-dl">
                 {row.details.map((d) => (

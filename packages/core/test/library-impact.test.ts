@@ -89,7 +89,8 @@ describe('the rows in plain words', () => {
     expect(impactItemOf(timeline)).toMatchObject({ kind: 'component', title: 'Timeline' });
     expect(impactItemOf(compact)).toMatchObject({ kind: 'variant', of: 'Stat card', title: 'New size: Compact', before: 'Default', after: 'Compact' });
     expect(impactItemOf(inset)).toMatchObject({ kind: 'token', title: 'Padding inside cards', before: '16', after: '12', token: 'layout.inset', everywhere: true });
-    expect(impactItemOf(cardRestyle('var(--space-3)', '12px'))).toMatchObject({ kind: 'variant', of: 'Card', title: 'Room inside', after: '12', property: 'padding' });
+    expect(impactItemOf(cardRestyle('var(--space-3)', '12px'))).toMatchObject({ kind: 'variant', of: 'Card', title: 'Room inside', after: '12', property: 'padding', summary: 'Room inside of Card set to 12 in this screen. The library Card has no such option yet.' });
+    expect(impactItemOf(compact).summary).toBe('A compact size for Stat card. The current size stays the default.');
     expect(impactItemOf({ ...timeline, id: 'pattern-drag', pattern: true, component: 'Drag cards between columns' }).kind).toBe('pattern');
   });
 
@@ -225,6 +226,7 @@ describe("Bridge's check finds what an exploration changes in the library", () =
     const before = ':root {\n  --space-3: 12px;\n  --space-4: 16px;\n  --layout-inset: var(--space-4); /** Padding inside cards, dialogs, popovers. */\n}\n';
     const after = before.replace('--layout-inset: var(--space-4)', '--layout-inset: var(--space-3)');
     const [t] = libraryEdits([{ path: 'design-system/tokens/tokens.css', before, after }]);
+    expect(t!.summary).toBe('From 16 to 12, everywhere the library uses it, not only in this screen.');
     expect(t).toMatchObject({ kind: 'token', label: 'Padding inside cards', token: { path: 'layout.inset' }, change: { before: 'var(--space-4)', after: 'var(--space-3)', beforeResolved: '16px', afterResolved: '12px' } });
     expect(impactItemOf(t!)).toMatchObject({ title: 'Padding inside cards', before: '16', after: '12' });
   });

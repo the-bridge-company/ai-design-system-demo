@@ -10,6 +10,7 @@
 // Pure: file texts in, pieces out (missing-pieces.ts adds them to the check).
 import type { LayeredTokenSet } from '../layered';
 import { pieceId, type MissingPiece } from '../prod-branch';
+import { valueWords } from '../library-impact';
 
 export interface EditedFile {
   path: string;
@@ -105,7 +106,7 @@ function tokenEdits(files: readonly EditedFile[]): MissingPiece[] {
         id: pieceId(['token', path]),
         kind: 'token',
         title: `Token change: ${label ?? path}`,
-        summary: `From ${beforeResolved ?? was.value} to ${afterResolved ?? now.value}, everywhere the library uses it, not only in this screen.`,
+        summary: `From ${valueWords(was.value, beforeResolved)} to ${valueWords(now.value, afterResolved)}, everywhere the library uses it, not only in this screen.`,
         name: label ?? path,
         values: [{ category: 'token', value: now.value, ...(afterResolved ? { resolved: afterResolved } : {}) }],
         where: [{ file: f.path, line: now.line }],

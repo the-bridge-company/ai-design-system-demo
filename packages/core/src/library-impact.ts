@@ -209,11 +209,15 @@ export function impactItemOf(p: MissingPiece): ImpactItem {
   }
   const of = componentWords(p.component ?? p.name);
   if (p.aspect === 'size' && p.change) {
-    return { id: p.id, kind: 'variant', of, title: `New size: ${cap(p.change.after)}`, summary: p.summary, before: cap(p.change.before), after: cap(p.change.after), property: 'size' };
+    return { id: p.id, kind: 'variant', of, title: `New size: ${cap(p.change.after)}`, summary: `A ${p.change.after.toLowerCase()} size for ${of}. The current size stays the default.`, before: cap(p.change.before), after: cap(p.change.after), property: 'size' };
   }
   const property = value?.property ?? value?.category;
   const words = property ? (PROPERTY_WORDS[property.toLowerCase()] ?? cap(pieceValueField(value!))) : 'Look';
-  return { id: p.id, kind: 'variant', of, title: words, summary: p.summary, ...(value ? { after: valueWords(value.value, value.resolved) } : {}), ...(property ? { property } : {}) };
+  const after = value ? valueWords(value.value, value.resolved) : null;
+  const state = p.restyle?.state ? ` when ${p.restyle.state}` : '';
+  // The audit's own summary names CSS: the row says it in words, the values stay in the before and after.
+  const summary = after ? `${words} of ${of} set to ${after}${state} in this screen. The library ${of} has no such option yet.` : `${of} looks different${state} in this screen. The library ${of} has no such option yet.`;
+  return { id: p.id, kind: 'variant', of, title: words, summary, ...(after ? { after } : {}), ...(property ? { property } : {}) };
 }
 
 /** The rows of a record, in reading order: new components, then changes to components, then tokens. */

@@ -201,6 +201,8 @@ const valueOf = (spec: ThumbSpec, side: 'before' | 'after'): string | null => {
 function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: ReviewPiece; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; lead: string | null; tech: string | null; onAct: (p: ReviewPiece, a: Act) => void; onComment: (p: ReviewPiece, text: string) => Promise<void>; busy: boolean }) {
   const [commenting, setCommenting] = useState(false);
   const [text, setText] = useState('');
+  // A conflict's two ways, each next to today (the default), or the ways alone (lr-conflict).
+  const [withToday, setWithToday] = useState(true);
   useEffect(() => {
     setCommenting(false);
     setText('');
@@ -242,10 +244,26 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
   const eyebrow = p.conflict ? `${p.category} · two explorations change it differently` : `${p.category === p.title ? 'Components' : p.category} · ${p.kind.toLowerCase()}`;
   return (
     <article className="lr-detail" aria-labelledby="lr-detail-title">
-      <p className="lr-eyebrow">{eyebrow}</p>
-      <h2 className="lr-detail-title" id="lr-detail-title">
-        {p.title}
-      </h2>
+      <div className="lr-detail-head">
+        <div>
+          <p className="lr-eyebrow">{eyebrow}</p>
+          <h2 className="lr-detail-title" id="lr-detail-title">
+            {p.title}
+          </h2>
+        </div>
+        {p.conflict && (
+          <SegmentedControl
+            size="sm"
+            label="What each way is shown with"
+            value={withToday ? 'today' : 'ways'}
+            onValueChange={(v) => setWithToday(v === 'today')}
+            items={[
+              { value: 'today', label: 'With today' },
+              { value: 'ways', label: 'Ways only' },
+            ]}
+          />
+        )}
+      </div>
       {!p.conflict && (
         <p className="lr-detail-ask">
           <AskedChip p={p} />
@@ -269,7 +287,21 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
                   </span>
                 </header>
                 <div className="lr-way-art">
-                  <BranchThumb spec={{ kind: 'screen', src: null, screen: w.exploration, product: w.product, seed: w.key }} size="card" chip={null} />
+                  {withToday ? (
+                    <span className="lr-way-pair">
+                      <span className="lr-way-side">
+                        <span className="lr-way-plate">{p.conflict!.today ?? 'Default'}</span>
+                        <span className="lr-muted lr-way-cap">Today</span>
+                      </span>
+                      <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
+                      <span className="lr-way-side">
+                        <span className="lr-way-plate is-way">{w.value}</span>
+                        <span className="lr-way-cap is-way">{w.designer}'s way</span>
+                      </span>
+                    </span>
+                  ) : (
+                    <BranchThumb spec={{ kind: 'screen', src: null, screen: w.exploration, product: w.product, seed: w.key }} size="card" chip={null} />
+                  )}
                 </div>
                 <p className="lr-way-value">{w.line}</p>
                 {decides && (
@@ -340,6 +372,11 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy }: { p: 
                   <Kbd keys="A" size="sm" /> add {p.asked && (<><Kbd keys="K" size="sm" /> keep</>)} <Kbd keys="↓" size="sm" /> next
                 </span>
               </div>
+              {p.match && p.asked?.designer && (
+                <p className="lr-muted lr-shared">
+                  {p.asked.designer} is told on the exploration and can disagree there: "Reply to {viewer.name ?? 'you'}" puts the piece back here with the reason. You still decide.
+                </p>
+              )}
               {commentBox}
               {sharedLine(p) && <p className="lr-muted lr-shared">{sharedLine(p)}</p>}
             </div>
@@ -407,25 +444,101 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail }: 
 // ---------------------------------------------------------------------------------------------------------------
 // List
 
-function ListView({ groups, thumbs, viewer, tech, secondLead, selected, onSelect, onAsk }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void }) {
+/**
+ * The list (lr-list, lr-yours, lr-decided, lr-designer): one column per kind, never two kinds in one column.
+ *   Waiting, lead:  [box] | Piece | Asked by | State (a tag) | Next (avatar and first name) | action
+ *   Decided:        Today › after | Piece | Asked by | Result (a tag) | action
+ *   Designer:       Today › after | Piece | Asked by | what changed (an exception)
+ * A group header says the state once; a row shows only what differs.
+ */
+function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected, onSelect, onAsk, onOpen }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; decided: boolean; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void; onOpen: (p: ReviewPiece) => void }) {
   const pickable = groups.flatMap((g) => g.pieces.filter((p) => batchable(p, viewer)));
   const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
   const someOn = pickable.some((p) => selected.has(p.key));
-  const lead_ = viewer.reviews;
+  const mode = !viewer.reviews ? 'designer' : decided ? 'decided' : 'lead';
+  const boxes = mode === 'lead';
+  const thumbsCol = mode !== 'lead';
+  const pair = (p: ReviewPiece) => {
+    const spec = thumbOf(p, thumbs);
+    const none = isNew(p) && !(spec.kind === 'color' || spec.kind === 'space');
+    return (
+      <span role="cell" className="lr-col-thumb lr-pair" aria-hidden="true">
+        <span className={`lr-mini${none ? ' is-none' : ''}`}>{none ? <span className="lr-plate-none">none</span> : <Sample spec={spec} side="before" size="row" />}</span>
+        <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
+        <span className="lr-mini">
+          <Sample spec={spec} side="after" size="row" />
+        </span>
+      </span>
+    );
+  };
+  const state = (p: ReviewPiece) => {
+    if (p.conflict && !p.conflict.pick)
+      return (
+        <Badge tone="danger" size="md" className={statusTagClass('danger')}>
+          2 ways
+        </Badge>
+      );
+    const d = decidedTag(p);
+    if (d)
+      return (
+        <Badge tone={d.tone} size="md" className={statusTagClass(d.tone)}>
+          {d.label}
+        </Badge>
+      );
+    if (p.mine && p.designApproved)
+      return (
+        <Badge tone="success" size="md" className={statusTagClass('success')}>
+          You approved
+        </Badge>
+      );
+    if (p.exception)
+      return (
+        <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+          {p.exception}
+        </Badge>
+      );
+    return null;
+  };
+  const action = (p: ReviewPiece) => {
+    if (canDecide(p, viewer))
+      return (
+        <Button variant="link" onClick={() => onOpen(p)} aria-label={`${p.conflict ? 'Compare' : 'Decide'} ${p.title}`}>
+          {p.conflict ? 'Compare' : 'Decide'}
+        </Button>
+      );
+    if (p.mine && p.state === 'waiting' && p.source.kind === 'change')
+      return (
+        <Menu>
+          <MenuTrigger render={<IconButton icon={Ellipsis} label={`More actions on ${p.title}`} variant="ghost" size="sm" />} />
+          <MenuContent align="end">
+            <MenuItem onClick={() => onAsk(p)} data-demo-write="ask someone else to review">
+              Ask someone else
+            </MenuItem>
+          </MenuContent>
+        </Menu>
+      );
+    return null;
+  };
   return (
-    <div className={`lr-list${lead_ ? ' is-lead' : ''}`} role="table" aria-label="Library pieces">
-      {lead_ && (
+    <div className={`lr-list is-${mode}`} role="table" aria-label="Library pieces">
+      {mode !== 'designer' && (
         <div className="lr-list-head" role="row">
-          <span role="columnheader" className="lr-col-box">
-            {pickable.length > 0 && <Checkbox label={<VisuallyHidden>{"Select every piece you can decide"}</VisuallyHidden>} checked={allOn} indeterminate={!allOn && someOn} onCheckedChange={(on) => onSelect(pickable.map((p) => p.key), on)} />}
-          </span>
-          <span role="columnheader" className="lr-col-thumb">
-            Today › After
-          </span>
+          {boxes && (
+            <span role="columnheader" className="lr-col-box">
+              {pickable.length > 0 && <Checkbox label={<VisuallyHidden>Select every piece you can decide</VisuallyHidden>} checked={allOn} indeterminate={!allOn && someOn} onCheckedChange={(on) => onSelect(pickable.map((p) => p.key), on)} />}
+            </span>
+          )}
+          {thumbsCol && (
+            <span role="columnheader" className="lr-col-thumb">
+              Today › After
+            </span>
+          )}
           <span role="columnheader">Piece</span>
           <span role="columnheader">Asked by</span>
+          <span role="columnheader">{mode === 'decided' ? 'Result' : 'State'}</span>
+          {mode === 'lead' && <span role="columnheader">Next</span>}
           <span role="columnheader" className="lr-col-end">
-            Status
+            <VisuallyHidden>Action</VisuallyHidden>
           </span>
         </div>
       )}
@@ -435,34 +548,29 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, selected, onSelect
         const some = inGroup.some((p) => selected.has(p.key));
         return (
           <div key={g.key} role="rowgroup" className="lr-list-group">
-            {lead_ && <div role="row" className="lr-group-row">
-              {lead_ && (
-                <span role="cell" className="lr-col-box">
-                  {inGroup.length > 0 && <Checkbox label={<VisuallyHidden>{`Select ${g.label}`}</VisuallyHidden>} checked={on} indeterminate={!on && some} onCheckedChange={(v) => onSelect(inGroup.map((p) => p.key), v)} />}
+            {mode !== 'designer' && (
+              <div role="row" className="lr-group-row">
+                {boxes && (
+                  <span role="cell" className="lr-col-box">
+                    {inGroup.length > 0 && <Checkbox label={<VisuallyHidden>{`Select ${g.label}`}</VisuallyHidden>} checked={on} indeterminate={!on && some} onCheckedChange={(v) => onSelect(inGroup.map((p) => p.key), v)} />}
+                  </span>
+                )}
+                <span role="cell" className="lr-group-label">
+                  <span className="lr-group-name">{g.label}</span>
+                  <span className="lr-muted">{g.note ?? g.pieces.length}</span>
                 </span>
-              )}
-              <span role="cell" className="lr-group-label">
-                <span className="lr-group-name">{g.label}</span>
-                <span className="lr-muted">{g.note ?? `${g.pieces.length} ${g.pieces.length === 1 ? 'piece' : 'pieces'}`}</span>
-              </span>
-            </div>}
+              </div>
+            )}
             {g.pieces.map((p) => {
-              const spec = thumbOf(p, thumbs);
-              const actor = viewer.reviews ? nextActor(p, { tech, secondLead }) : null;
+              const actor = mode === 'lead' ? nextActor(p, { tech, secondLead }) : null;
               return (
                 <div role="row" key={p.key} className={`lr-row${selected.has(p.key) ? ' is-selected' : ''}`}>
-                  {lead_ && (
+                  {boxes && (
                     <span role="cell" className="lr-col-box">
                       {batchable(p, viewer) && <Checkbox label={<VisuallyHidden>{`Select ${p.title}`}</VisuallyHidden>} checked={selected.has(p.key)} onCheckedChange={(v) => onSelect([p.key], v)} />}
                     </span>
                   )}
-                  <span role="cell" className="lr-col-thumb lr-pair" aria-hidden="true">
-                    <span className={`lr-mini${isNew(p) && !(spec.kind === 'color' || spec.kind === 'space') ? ' is-none' : ''}`}>{isNew(p) && !(spec.kind === 'color' || spec.kind === 'space') ? <span className="lr-plate-none">none</span> : <Sample spec={spec} side="before" size="row" />}</span>
-                    <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
-                    <span className="lr-mini">
-                      <Sample spec={spec} side="after" size="row" />
-                    </span>
-                  </span>
+                  {thumbsCol && pair(p)}
                   <span role="cell" className="lr-row-piece">
                     <span className="lr-row-title">{p.title}</span>
                     <span className="lr-muted lr-row-kind">{p.kind}</span>
@@ -470,33 +578,24 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, selected, onSelect
                   <span role="cell" className="lr-row-ask">
                     {p.conflict ? p.conflict.ways.map((w) => <span key={w.key} className="lr-ask">{w.exploration}</span>) : p.mine && !p.asked ? null : <AskedChip p={p} />}
                   </span>
-                  {/* Only what differs from the group's state: an exception, who acts next, a decided tag. */}
-                  <span role="cell" className="lr-col-end lr-row-end">
-                    {p.conflict && !p.conflict.pick ? (
-                      <Badge tone="danger" size="md" className={statusTagClass('danger')}>
-                        2 ways
-                      </Badge>
-                    ) : decidedTag(p) ? (
-                      <Tag p={p} viewerReviews={false} />
-                    ) : actor ? (
-                      <span className="lr-who">
-                        <Avatar name={actor.name} size="xs" decorative />
-                        <span>{actor.label}</span>
-                        {p.source.kind === 'change' && (
-                          <Menu>
-                            <MenuTrigger render={<IconButton icon={Ellipsis} label={`More actions on ${p.title}`} variant="ghost" size="sm" />} />
-                            <MenuContent align="end">
-                              <MenuItem onClick={() => onAsk(p)} data-demo-write="ask someone else to review">
-                                Ask someone else
-                              </MenuItem>
-                            </MenuContent>
-                          </Menu>
-                        )}
-                      </span>
-                    ) : p.exception ? (
-                      <span className="lr-muted">{p.exception}</span>
-                    ) : null}
+                  <span role="cell" className="lr-row-state">
+                    {mode === 'designer' ? (decidedTag(p) || (p.conflict && !p.conflict.pick) ? state(p) : p.exception ? <span className="lr-muted">{p.exception}</span> : null) : state(p)}
                   </span>
+                  {mode === 'lead' && (
+                    <span role="cell" className="lr-row-next">
+                      {actor && (
+                        <span className="lr-who">
+                          <Avatar name={actor.name} size="xs" decorative />
+                          <span>{actor.label}</span>
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {mode !== 'designer' && (
+                    <span role="cell" className="lr-col-end lr-row-end">
+                      {action(p)}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -798,7 +897,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               detail={<Detail p={cur} thumbs={data.thumbs} viewer={v} lead={data.lead} tech={data.tech} onAct={act} busy={busy} onComment={(p, t) => (demo() ? Promise.resolve(openDemo()) : comment(p, t).then(setNotice, (e: Error) => setNotice(e.message)))} />}
             />
           ) : (
-            <ListView groups={groups} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} />
+            <ListView groups={groups} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={(p) => { setCurrent(p.key); update(filters, 'one'); }} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} />
           )}
         </>
       )}

@@ -281,7 +281,7 @@ a.lr-ask {
 }
 
 .lr-detail-title {
-  margin: calc(var(--space-3) * -1) 0 0;
+  margin: var(--space-1) 0 0;
   font-family: var(--typography-h2-family);
   font-size: var(--typography-h2-size);
   font-weight: var(--typography-h2-weight);
@@ -477,7 +477,7 @@ a.lr-ask {
 /* --- List ---------------------------------------------------------------------------------------------------------- */
 
 .lr-list {
-  --lr-cols: minmax(0, var(--size-40)) minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  --lr-cols: minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
 
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
@@ -485,8 +485,20 @@ a.lr-ask {
   overflow: hidden;
 }
 
+/* One column per kind: the box, the piece, who asked, its state (a tag), who acts next (a person), the action. */
 .lr-list.is-lead {
-  --lr-cols: var(--size-6) minmax(0, var(--size-40)) minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  --lr-cols: var(--size-6) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(var(--size-16), auto);
+}
+
+.lr-list.is-decided {
+  --lr-cols: minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(var(--size-16), auto);
+}
+
+.lr-row-state,
+.lr-row-next {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .lr-list-head,
@@ -692,11 +704,16 @@ body:has(.lr-bar) .lr-toasts {
     position: static;
   }
 
+  /* On a phone the piece comes first, the list of pieces under it. */
+  .lr-main {
+    order: -1;
+  }
+
   .lr-side {
     max-height: var(--size-80);
     overflow-y: auto;
     border-inline-end: 0;
-    border-block-end: var(--border-width-default) solid var(--color-border-default);
+    border-block-start: var(--border-width-default) solid var(--color-border-default);
   }
 
   .lr-main {
@@ -726,11 +743,11 @@ body:has(.lr-bar) .lr-toasts {
   }
 
   .lr-list,
-  .lr-list.is-lead {
+  .lr-list.is-decided {
     --lr-cols: minmax(0, 1fr) auto;
   }
 
-  .lr-list.is-lead .lr-row {
+  .lr-list.is-lead {
     --lr-cols: var(--size-6) minmax(0, 1fr) auto;
   }
 
@@ -743,13 +760,31 @@ body:has(.lr-bar) .lr-toasts {
     display: none;
   }
 
-  .lr-row-ask {
+  /* Second line: who asked, the state and who acts next, under the piece. */
+  .lr-row-ask,
+  .lr-row-state,
+  .lr-row-next {
     grid-column: 1 / -1;
-    grid-row: 2;
   }
 
-  .lr-list.is-lead .lr-row-ask {
+  .lr-list.is-lead :is(.lr-row-ask, .lr-row-state, .lr-row-next) {
     grid-column: 2 / -1;
+  }
+
+  .lr-row .lr-col-box,
+  .lr-row-piece {
+    grid-row: 1;
+  }
+
+  .lr-row-end {
+    grid-row: 1;
+    grid-column: -2;
+  }
+
+  .lr-row-state:empty,
+  .lr-row-next:empty,
+  .lr-row-ask:empty {
+    display: none;
   }
 
   .lr-empty {
@@ -840,7 +875,7 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 /* A designer's list: one flat list, her pieces first (lr-designer). */
-.lr-list:not(.is-lead) .lr-list-group:first-child .lr-row:first-child {
+.lr-list.is-designer .lr-list-group:first-child .lr-row:first-child {
   border-block-start: 0;
 }
 
@@ -851,4 +886,56 @@ body:has(.lr-bar) .lr-toasts {
   gap: var(--space-2);
   font-size: var(--typography-ui-size);
   white-space: nowrap;
+}
+
+/* The detail's title line: the switch of a conflict on its end. */
+.lr-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* A way next to today: two plates of the same shape, the way's own caption in the link colour. */
+.lr-way-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-way-side {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.lr-way-plate {
+  display: grid;
+  place-items: center;
+  min-width: var(--size-20);
+  min-height: var(--size-14);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  font-family: var(--font-family-mono);
+  font-size: var(--typography-ui-size);
+}
+
+.lr-way-plate.is-way {
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--elevation-raised);
+}
+
+.lr-way-cap {
+  font-size: var(--typography-caption-size);
+}
+
+.lr-way-cap.is-way {
+  color: var(--color-text-link);
 }

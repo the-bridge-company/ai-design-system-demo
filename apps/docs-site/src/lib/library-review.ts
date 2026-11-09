@@ -561,6 +561,13 @@ const CATEGORY_ORDER = ['Colors', 'Spacing', 'Corners', 'Type', 'Elevation', 'Mo
  * group. The viewer's own pieces that wait on someone else and their Tier 1 pieces published without review get a
  * group each at the end (lr-yours).
  */
+/**
+ * Inside a group: a conflict first (it blocks two screens), then changes to what exists, then new pieces, then a token
+ * removed or renamed (it needs two owners).
+ */
+const kindRank = (p: ReviewPiece) => (p.conflict ? 0 : /(change|fix)$/i.test(p.kind) ? 1 : /removed|renamed/i.test(p.kind) ? 3 : 2);
+const byWeight = (a: ReviewPiece, b: ReviewPiece) => kindRank(a) - kindRank(b);
+
 export function groupPieces(pieces: readonly ReviewPiece[], v: Viewer): PieceGroup[] {
   const yours = pieces.filter((p) => p.mine && p.state === 'waiting' && v.reviews);
   const published = pieces.filter((p) => publishesWithoutReview(p, v) && p.state === 'decided' && p.decided === 'published');
@@ -568,7 +575,7 @@ export function groupPieces(pieces: readonly ReviewPiece[], v: Viewer): PieceGro
   // With the viewer's own pieces on the page, the sections say the state once (lr-yours): what is theirs to decide,
   // what of theirs waits on someone else, what they published. Otherwise the groups say what changes (lr-list).
   if ((yours.length || published.length) && rest.length) {
-    const sections: PieceGroup[] = [{ key: 'decide', label: 'For you to decide', section: 'decide', note: null, pieces: [...rest].sort((a, b) => Number(Boolean(b.conflict)) - Number(Boolean(a.conflict))) }];
+    const sections: PieceGroup[] = [{ key: 'decide', label: 'For you to decide', section: 'decide', note: null, pieces: [...rest].sort(byWeight) }];
     if (yours.length) sections.push({ key: 'yours', label: 'Yours, waiting on someone else', section: 'yours', note: 'You never approve your own change', pieces: yours });
     if (published.length) sections.push({ key: 'published', label: 'Published without review', section: 'published', note: 'Docs and descriptions: you can publish them yourself', pieces: published });
     return sections;
@@ -582,7 +589,7 @@ export function groupPieces(pieces: readonly ReviewPiece[], v: Viewer): PieceGro
   // Components that share an exploration's request read together ("Avatar and ProfileHeader").
   const groups: PieceGroup[] = [...by]
     .sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]))
-    .map(([label, list]) => ({ key: `g:${label.toLowerCase()}`, label, section: 'decide' as const, note: null, pieces: [...list].sort((a, b) => Number(Boolean(b.conflict)) - Number(Boolean(a.conflict))) }));
+    .map(([label, list]) => ({ key: `g:${label.toLowerCase()}`, label, section: 'decide' as const, note: null, pieces: [...list].sort(byWeight) }));
   if (yours.length) groups.push({ key: 'yours', label: 'Yours, waiting on someone else', section: 'yours', note: 'You never approve your own change', pieces: yours });
   if (published.length) groups.push({ key: 'published', label: 'Published without review', section: 'published', note: 'Docs and descriptions: you can publish them yourself', pieces: published });
   return groups;

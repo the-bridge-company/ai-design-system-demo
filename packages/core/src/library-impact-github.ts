@@ -7,7 +7,7 @@ import { findExplorationOnGitHub } from './explorations-github';
 import { parseExplorationBody, withExplorationLibrary } from './explorations';
 import { GitHubError, type GitHubClient } from './github-client';
 import { githubLoginOf } from './github-login';
-import { withLibraryChoice, withPieceDecision, type LibraryChoice, type PieceVerdict } from './library-impact';
+import { withLibraryChoice, withoutPieceDecision, withPieceDecision, type LibraryChoice, type PieceVerdict } from './library-impact';
 import { parsePiecesRecord } from './prod-branch';
 import { proposePiecesOnGitHub, type ProposedPieces } from './prod-branch-github';
 import type { ProductConfig } from './products';
@@ -106,4 +106,31 @@ export async function chooseLibraryWayOnGitHub(gh: GitHubClient, ref: string | n
     await gh.createIssueComment(p.number, words).catch(() => undefined);
     if (o) await input.other.gh.createIssueComment(o.number, words).catch(() => undefined);
   }
+}
+
+export interface PieceReplyInput {
+  piece: string;
+  /** The designer's reason, said to the lead. */
+  text: string;
+  /** Who replies, by name, for the comment's first words. */
+  byName?: string | null | undefined;
+  /** The lead the reply is for ("Dana"). */
+  to?: string | null | undefined;
+}
+
+/**
+ * The designer disagrees with the lead's "Use an existing piece instead" (board LR11): the answer is taken off the
+ * piece, so it waits on the lead again in Library review, and the reason is posted on the exploration for the lead to
+ * read. Only that answer can be replied to; the lead still decides.
+ */
+export async function replyOnPieceOnGitHub(gh: GitHubClient, ref: string | number, input: PieceReplyInput): Promise<void> {
+  if (!gh.canWrite) throw new GitHubError(401, 'Replying needs a GitHub token (pull requests: write).');
+  const words = input.text.trim();
+  if (!words) throw new GitHubError(422, 'Say why, so the lead can decide again.');
+  const p = await findExplorationOnGitHub(gh, ref);
+  const decision = parseExplorationBody(p.body)?.library?.decisions?.find((d) => d.piece === input.piece);
+  if (!decision || decision.verdict !== 'existing') throw new GitHubError(422, 'There is no answer to reply to on this piece any more. Look at the page again.');
+  await gh.updatePullRequest(p.number, { body: withExplorationLibrary(p.body, (l) => withoutPieceDecision(l, input.piece)) });
+  const who = input.byName?.trim() || 'The designer';
+  await gh.createIssueComment(p.number, `${who} replied${input.to ? ` to ${input.to}` : ''} about using ${decision.use ?? 'an existing piece'} instead: ${words}`);
 }

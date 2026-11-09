@@ -9,7 +9,7 @@
 // reviews once the developers started), and the library part. A product exploration never checked against the
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
-import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, parsePiecesRecord, type LibraryConflict } from '@bridge-ds/core';
+import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, type LibraryConflict } from '@bridge-ds/core';
 import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
@@ -1111,10 +1111,15 @@ async function paintLibraryImpact(
   const conflicts = await conflictsOf(mine).catch(() => [] as LibraryConflict[]);
   const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();
   if (current?.key !== key) return;
+  // The exploration's designer may reply to the lead's "Use an existing piece instead" (board LR11): the piece goes back
+  // to the lead in Library review with the reason.
+  const sameName = (a?: string | null, b?: string | null) => Boolean(a && b && a.trim().split(/\s+/)[0]!.toLowerCase() === b.trim().split(/\s+/)[0]!.toLowerCase());
+  const designerHere = !viewerLeads && Boolean((member && sameName(member.name, designer)) || (viewer && (viewer.toLowerCase() === (block?.author ?? o.r.author).toLowerCase())));
   const view = libraryImpactView({
     body,
     designer,
     lead: leadName,
+    replyTo: designerHere ? (leadNames[0] ?? 'the lead') : null,
     approved: o.handedOff,
     asked: o.handedOff || isWaitingForLead(body),
     canDecide: decides,
@@ -1124,7 +1129,18 @@ async function paintLibraryImpact(
     names: o.names,
   });
   const me = member ? { byName: member.name } : viewer ? { by: viewer, ...(myName ? { byName: myName } : {}) } : {};
-  const actions: LibraryImpactActions = decides
+  const reply: LibraryImpactActions['onReply'] = designerHere
+    ? async (piece, text) => {
+        const to = view.state === 'rows' ? (view.rows.find((r) => r.id === piece)?.reply ?? null) : null;
+        await replyOnPieceOnGitHub(o.gh, o.r.number, { piece, text, byName: myName ?? designer, to });
+        const line = `Sent to ${to ?? 'the lead'}. The piece is back in Library review with your reason.`;
+        o.reopen(line);
+        return line;
+      }
+    : null;
+  const actions: LibraryImpactActions = reply
+    ? { onReply: reply }
+    : decides
     ? {
         onPiece: async (piece, action, input) => {
           await decidePieceOnGitHub(o.gh, o.r.number, {

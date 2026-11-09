@@ -22,6 +22,7 @@ import {
   waitingLine,
   withLibraryChoice,
   withLibraryNeeds,
+  withoutPieceDecision,
   withPieceDecision,
   type ImpactSource,
 } from '../src/library-impact';
@@ -265,5 +266,14 @@ describe("Bridge's check finds what an exploration changes in the library", () =
     expect(restyle?.values[0]).toMatchObject({ property: 'padding', value: 'var(--space-3)' });
     expect(restyle?.values[0]?.resolved).toMatch(/px$/);
     expect(r.pieces.some((p) => p.where.some((w) => w.file.startsWith('design-system/')))).toBe(false);
+  });
+});
+
+describe('a reply to the lead (Library review, LR11)', () => {
+  it('takes the answer off the piece, so it waits on the lead again, and keeps the others', () => {
+    const at = '2026-11-09T10:00:00Z';
+    const l = withPieceDecision(withPieceDecision(undefined, { piece: 'a', verdict: 'existing', use: 'Info surface', at }), { piece: 'b', verdict: 'local', at });
+    expect(withoutPieceDecision(l, 'a').decisions?.map((d) => d.piece)).toEqual(['b']);
+    expect(withoutPieceDecision(undefined, 'a').decisions).toEqual([]);
   });
 });

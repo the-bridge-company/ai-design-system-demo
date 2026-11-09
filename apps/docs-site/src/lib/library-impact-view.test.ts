@@ -69,6 +69,16 @@ describe('the section on the exploration page', () => {
     const released = libraryImpactView({ body, designer: 'Sofia', lead: 'Dana', approved: true, canDecide: false, released: new Set([7]) });
     if (released.state === 'rows') expect(released.rows[0]!.status.label).toBe('In the library');
   });
+
+  it('lets the designer reply to "Use an existing piece instead" (LR11), never to another answer', () => {
+    let body = bodyWith([timeline, compact]);
+    body = withExplorationLibrary(body, (l) => withPieceDecision(withPieceDecision(l, { piece: 'component-timeline', verdict: 'existing', use: 'Badge', at: 'x', byName: 'Dana Reyes' }), { piece: 'statcard-size-compact', verdict: 'local', at: 'x', byName: 'Dana' }));
+    const v = libraryImpactView({ body, designer: 'Sofia', lead: 'Dana', approved: false, canDecide: false, replyTo: 'Dana' });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.rows.map((r) => r.reply)).toEqual(['Dana', null]);
+    const lead = libraryImpactView({ body, designer: 'Sofia', lead: 'you', approved: false, canDecide: true });
+    if (lead.state === 'rows') expect(lead.rows.every((r) => r.reply === null)).toBe(true);
+  });
 });
 
 describe('a conflict (LI4)', () => {

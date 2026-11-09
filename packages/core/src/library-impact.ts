@@ -115,6 +115,14 @@ export function withPieceDecision(l: ExplorationLibrary | undefined, d: PieceDec
   return { ...(l ?? {}), decisions: [...(l?.decisions ?? []).filter((x) => x.piece !== d.piece), d] };
 }
 
+/**
+ * The library part without the lead's answer on a piece: the designer replied to "Use an existing piece instead", and
+ * the piece waits on the lead again (Library review lists it with the reply).
+ */
+export function withoutPieceDecision(l: ExplorationLibrary | undefined, piece: string): ExplorationLibrary {
+  return { ...(l ?? {}), decisions: (l?.decisions ?? []).filter((x) => x.piece !== piece) };
+}
+
 /** The library part with a conflict settled (replacing an earlier choice on the same component part). */
 export function withLibraryChoice(l: ExplorationLibrary | undefined, c: LibraryChoice): ExplorationLibrary {
   const same = (x: LibraryChoice) => x.component.toLowerCase() === c.component.toLowerCase() && x.property.toLowerCase() === c.property.toLowerCase();

@@ -2,7 +2,7 @@
 // addresses and nests them: lib/explorations-view.ts, lib/home-explorations.ts, lib/product-branch.ts,
 // lib/team-branches.ts and Settings > Products (lib/settings-view.ts).
 import { describe, expect, it } from 'vitest';
-import { explorationPrBody, withNeededBy, type ProductConfig } from '@bridge-ds/core';
+import { explorationPrBody, withExplorationScreen, withNeededBy, type ProductConfig } from '@bridge-ds/core';
 import {
   explorationHref,
   explorationKey,
@@ -86,6 +86,15 @@ describe('rows across repositories', () => {
     const reported = productPreviews(r, shop, { statuses: [{ context: 'Vercel – shop', state: 'success', target_url: 'https://shop-abc123-acme.vercel.app' }] });
     expect(reported[0]).toMatchObject({ label: 'Shop', url: 'https://shop-abc123-acme.vercel.app/', state: 'ready', source: 'status' });
     expect(productPreviews(r, { ...shop, preview: undefined } as ProductConfig)).toEqual([]);
+  });
+
+  it("opens the product's preview on the exploration's screen once one is chosen", () => {
+    const r = { branch: 'explore/checkout-flow', number: 12, headSha: 'a'.repeat(40), screen: '/#/contacts/31/show' };
+    expect(productPreviews(r, shop)[0]!.url).toBe('https://shop-git-explore-checkout-flow-acme.vercel.app/#/contacts/31/show');
+    const reported = productPreviews(r, shop, { statuses: [{ context: 'Vercel – shop', state: 'success', target_url: 'https://shop-abc123-acme.vercel.app' }] });
+    expect(reported[0]!.url).toBe('https://shop-abc123-acme.vercel.app/#/contacts/31/show');
+    const own = explorationRows(tagProductPulls([{ ...pull(12, 'Checkout flow'), body: withExplorationScreen(pull(12, 'Checkout flow').body, '/#/contacts/31/show') }], at), cfg, { inProduct: at });
+    expect(own[0]!.previews[0]!.url).toBe('https://shop-git-explore-checkout-flow-acme.vercel.app/#/contacts/31/show');
   });
 });
 

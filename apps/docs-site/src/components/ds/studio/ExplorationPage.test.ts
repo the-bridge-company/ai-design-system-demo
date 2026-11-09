@@ -643,13 +643,15 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('Renamed. Its link and preview stay the same.')).toBeTruthy();
   });
 
-  it('Show this screen: one quiet line under the preview for who keeps it, a dialog that takes the address', async () => {
+  it('Choose the screen it opens on: in the "..." menu for who keeps it, never a line under the preview', async () => {
     const onSave = vi.fn(async (_: string | null) => 'The preview opens on this screen now. Its picture follows in a few minutes.');
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', screen: { value: null, onSave } });
-    expect(screen.getByText(/Bridge picks the screen it opens on/)).toBeTruthy();
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/', onRename: null, onArchive: null, onReopen: null, screen: { value: null, onSave } });
+    expect(screen.queryByText(/Bridge picks the screen/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show this screen' })).toBeNull();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Show this screen' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Choose the screen it opens on' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose the screen it opens on' });
     await expectNoAxeViolations(dialog);
     // Nothing chosen yet: no way to let Bridge pick again, and an empty field says what to do.
     expect(within(dialog).queryByRole('button', { name: 'Let Bridge pick' })).toBeNull();
@@ -661,22 +663,29 @@ describe('the "..." menu: Rename, Back to exploring, Archive', () => {
     expect(await screen.findByText('The preview opens on this screen now. Its picture follows in a few minutes.')).toBeTruthy();
   });
 
-  it('Show this screen once chosen: the address, Change, and the way back to Bridge picking', async () => {
+  it('Choose the screen it opens on, once chosen: the address prefilled and the way back to Bridge picking', async () => {
     const onSave = vi.fn(async (_: string | null) => 'Bridge picks the screen it opens on again.');
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave } });
-    expect(screen.getByText('/#/orders/12')).toBeTruthy();
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', onRename: async () => undefined, screen: { value: '/#/orders/12', onSave } });
+    expect(screen.queryByText(/Opens on/)).toBeNull();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Change' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Show this screen' });
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await screen.findByRole('menuitem', { name: 'Rename' });
+    expect(screen.getAllByRole('menuitem').map((x) => x.textContent)).toEqual(['Rename', 'Choose the screen it opens on', 'Archive']);
+    await user.click(screen.getByRole('menuitem', { name: 'Choose the screen it opens on' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose the screen it opens on' });
     expect((within(dialog).getByRole('textbox', { name: 'Screen address' }) as HTMLInputElement).value).toBe('/#/orders/12');
     await user.click(within(dialog).getByRole('button', { name: 'Let Bridge pick' }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(null));
   });
 
-  it('Show this screen: nothing for who cannot change it, the links already open on it', () => {
-    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', screen: { value: '/#/orders/12', onSave: null } });
+  it('Choose the screen it opens on: not in the menu for who cannot change it, the links already open on it', async () => {
+    paint({ stage: 'exploring', activity: [], previewUrl: 'https://x.pages.dev/#/orders/12', onRename: async () => undefined, screen: { value: '/#/orders/12', onSave: null } });
     expect(screen.queryByText(/Opens on/)).toBeNull();
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://x.pages.dev/#/orders/12');
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await screen.findByRole('menuitem', { name: 'Rename' });
+    expect(screen.queryByRole('menuitem', { name: 'Choose the screen it opens on' })).toBeNull();
   });
 
   it('Rename refused: the reason under the field, the dialog stays', async () => {

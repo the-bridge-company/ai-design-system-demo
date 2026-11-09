@@ -679,7 +679,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
             return RENAMED_LINE;
           }
         : null,
-      // "Show this screen": who may rename it chooses the screen its preview and capture open on.
+      // "Choose the screen it opens on" (the "..." menu): who may rename it chooses the screen its preview and capture open on.
       screen: {
         value: screenNow,
         onSave:
@@ -783,7 +783,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // whose production Bridge knows (Live product, the Before side); never for the library's apps.
   const v = tryInProductView(preview, { tryUrl: (u) => safeUrl(u) || null, todayUrl, files });
   const landsOn = screenNow ?? shot?.route ?? null;
-  const previewUrl = v.state === 'branch' && v.url ? atRoute(v.url, landsOn) : v.state === 'today' ? todayUrl : null;
+  const previewUrl = v.state === 'branch' && v.url ? atRoute(v.url, landsOn) : v.state === 'today' && todayUrl ? atRoute(todayUrl, screenNow) : null;
   const tryUrl = v.state === 'branch' && v.url && !isLibrary && productProduction(product, own ? null : CFG.production) ? withToolbar(r, landsOn)(v.url) : null;
   const previewBuilding = v.state === 'building';
   const talkNow = leadTalkOf(r, pull, { gh, designer: answersLead, names, reopen: (line) => reopen(line), onReopenNew });
@@ -912,7 +912,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     dev: devRead
       ? {
           // The product's own preview pattern: the developers' version deploys from their repository, not the copy.
-          url: devVersionUrl(devRead.pull, (products.find((p) => p.key === product.key) ?? product).preview, branchPreviewUrl),
+          // Open their version lands on the same screen as Open the build and Approved version.
+          url: devVersionUrl(devRead.pull, (products.find((p) => p.key === product.key) ?? product).preview, branchPreviewUrl, landsOn),
           answer: answer?.login ? { kind: answer.kind, by: faceAs(answer.login, allNames) } : null,
         }
       : shippedAnswer?.login

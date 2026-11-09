@@ -15,7 +15,7 @@
 //   runs that check itself, the page shows it while it runs). The activity under it. A write's line is a DS toast.
 // - "Send to Figma", one of the actions under the preview for who can edit when the team has a Figma file: it hands the
 //   request to the viewer's own Claude, which rebuilds the exploration in Figma. Once Claude recorded the page, the link.
-// The "..." menu holds Rename (a DS Dialog), Back to exploring (a confirmation, waiting for code only) and Archive. "For developers" folds the branch and the commands. Data: scripts/exploration-page.ts
+// The "..." menu holds Rename (a DS Dialog), Choose the screen it opens on, Back to exploring (a confirmation, waiting for code only) and Archive. "For developers" folds the branch and the commands. Data: scripts/exploration-page.ts
 // over lib/exploration-page.ts. Styles: styles/exploration-page.css.
 import { createContext, useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -173,7 +173,7 @@ export interface ExplorationPageProps {
   previewBuilding?: boolean;
   /**
    * The screen the exploration changed, in the product's preview (core Exploration.screen: "/#/orders/12"): the
-   * preview links and the capture open there. `onSave` ("Show this screen") for who keeps it, null for everyone else:
+   * preview links and the capture open there. `onSave` (the "..." menu's "Choose the screen it opens on") for who keeps it, null for everyone else:
    * they only get links that land on it.
    */
   screen?: { value: string | null; onSave: ((input: string | null) => Promise<string | void>) | null } | null;
@@ -939,7 +939,7 @@ function ExplorationBody(p: ExplorationPageProps) {
               <StatusTag status={handoff ? handoff.status : 'active'} notStarted={notStarted} stage={handoff?.stage ?? (p.lead ? 'waiting-for-lead' : null)} />
             ))}
           <span className="xp-spacer" />
-          {(p.onRename || p.onReopen || p.onArchive || p.onTakeOver || p.handOver) && (
+          {(p.onRename || p.screen?.onSave || p.onReopen || p.onArchive || p.onTakeOver || p.handOver) && (
             // Last on the title's line, on a phone too (the title wraps beside it).
             <span className="xp-more">
               <Menu>
@@ -948,6 +948,7 @@ function ExplorationBody(p: ExplorationPageProps) {
                 </Tooltip>
                 <MenuContent align="end">
                   {p.onRename && <MenuItem onClick={() => setAsk('rename')}>Rename</MenuItem>}
+                  {p.screen?.onSave && <MenuItem onClick={() => setAsk('screen')}>{SCREEN_TITLE}</MenuItem>}
                   {p.onReopen && <MenuItem onClick={() => setAsk('reopen')}>Back to exploring</MenuItem>}
                   {p.onTakeOver && <MenuItem onClick={() => setAsk('take-over')}>Take it over</MenuItem>}
                   {p.handOver && <MenuItem onClick={() => setAsk('hand-over')}>Hand over</MenuItem>}
@@ -1088,7 +1089,6 @@ function ExplorationBody(p: ExplorationPageProps) {
                 {p.previewNote}
               </p>
             )}
-            {!p.archived && p.screen?.onSave && <ScreenLine screen={p.screen.value} onOpen={() => setAsk('screen')} />}
             {!handoff && !p.archived && p.latest && <LatestLine latest={p.latest} say={setSaid} />}
           </section>
           <div className="xp-side">
@@ -1203,34 +1203,11 @@ function ExplorationBody(p: ExplorationPageProps) {
   );
 }
 
-/**
- * Under the preview, for who keeps the exploration: which screen the preview and its picture open on, and the way to
- * change it ("Show this screen"). One quiet line: the address itself only once one is chosen.
- */
-function ScreenLine({ screen, onOpen }: { screen: string | null; onOpen: () => void }) {
-  return (
-    <p className="xp-muted xp-note xp-screen">
-      {screen ? (
-        <>
-          Opens on <span className="xp-mono xp-screen-path">{screen}</span>{' '}
-          <Button variant="link" size="sm" onClick={onOpen}>
-            Change
-          </Button>
-        </>
-      ) : (
-        <>
-          Bridge picks the screen it opens on.{' '}
-          <Button variant="link" size="sm" onClick={onOpen}>
-            Show this screen
-          </Button>
-        </>
-      )}
-    </p>
-  );
-}
+/** The "..." menu item and its dialog's title: the screen the preview, its picture and the build links open on. */
+const SCREEN_TITLE = 'Choose the screen it opens on';
 
 /**
- * "Show this screen": the address of the changed screen, pasted from the preview (core explorationScreenFrom keeps
+ * "Choose the screen it opens on" (the "..." menu): the address of the changed screen, pasted from the preview (core explorationScreenFrom keeps
  * what comes after the domain). Save writes it on the exploration; "Let Bridge pick" takes it away.
  */
 function ScreenDialog({ open, screen, onOpenChange, onSave }: { open: boolean; screen: string | null; onOpenChange: (open: boolean) => void; onSave: (input: string | null) => Promise<void> }) {
@@ -1260,8 +1237,8 @@ function ScreenDialog({ open, screen, onOpenChange, onSave }: { open: boolean; s
   return (
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent
-        title="Show this screen"
-        description="Open the preview, go to the screen you changed and copy its address. The preview and its picture open there for everyone."
+        title={SCREEN_TITLE}
+        description="Open the preview, go to the screen you changed and copy its address. The preview, its picture and the build open there for everyone."
         size="sm"
         initialFocus={input}
         hideClose

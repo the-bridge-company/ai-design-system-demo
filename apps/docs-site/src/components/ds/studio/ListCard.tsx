@@ -75,9 +75,11 @@ export interface ListCardProps {
   pill?: { label: string; tone: PillTone | 'info' } | null;
   /** A chip before the tag ("Exploration", "Sample"). */
   tags?: ReactNode;
+  /** A line under the title: where a library change comes from (LibraryChanges OriginNote). */
+  note?: ReactNode;
 }
 
-export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags }: ListCardProps) {
+export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note }: ListCardProps) {
   const age = captureAgeOf(thumb);
   return (
     <li className="sh-card-item">
@@ -89,6 +91,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
               <span className="sh-strong">{title}</span>
             </Link>
           </span>
+          {note ? <span className="sh-card-note">{note}</span> : null}
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {tags}

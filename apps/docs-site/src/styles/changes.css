@@ -1021,3 +1021,111 @@ body:has(.cg-bar) {
 .rv-what-quiet {
   color: var(--color-text-muted);
 }
+
+/* The Library group (components/ds/studio/LibraryChanges, boards LI6 and LI7): every change says where it comes from
+   under its title; a toolbar narrows it by origin and, for the design lead, groups it by component or exploration. */
+.bl-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.bl-origin > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On a card (the grid), the origin sits under the title and may wrap: a card is narrow. */
+.sh-card-note {
+  display: flex;
+  min-width: 0;
+}
+
+.sh-card-note .bl-origin {
+  align-items: flex-start;
+}
+
+.sh-card-note .bl-origin > span {
+  white-space: normal;
+}
+
+/* The origin filter on the left, the lead's grouping on the right: one toolbar for the section. */
+.bl-lib-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.bl-lib-bar > * {
+  max-inline-size: 100%;
+}
+
+.bl-lib-groups .sh-rows {
+  margin: 0;
+}
+
+/* A group's trigger: its name, then its summary and shared tag on a second muted line. A conflict says so in danger text. */
+.bl-lib-trigger {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.bl-lib-label {
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.bl-lib-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+.bl-lib-sum.is-conflict {
+  color: var(--color-feedback-danger-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* A group's one action, on the line that says why, inside the group. */
+.bl-lib-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-container);
+  background: var(--color-bg-subtle);
+}
+
+.bl-lib-act p {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .bl-lib-act p,
+  .bl-lib-act > a,
+  .bl-lib-bar > * {
+    flex: 1 1 100%;
+  }
+
+  /* On a phone the origin wraps rather than hiding the exploration's name. */
+  .bl-origin {
+    align-items: flex-start;
+  }
+
+  .bl-origin > span {
+    white-space: normal;
+  }
+}

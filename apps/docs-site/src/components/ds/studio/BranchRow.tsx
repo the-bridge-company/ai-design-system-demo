@@ -40,11 +40,13 @@ export interface BranchRowProps {
   compact?: boolean;
   /** Chips before the pill ("Sample" on the demo). */
   tags?: ReactNode;
+  /** Two-line rows: after the line, before the tags (a library change's origin, with its exploration link). */
+  note?: ReactNode;
   /** Compact rows only: a second muted line under the title (a join request's email and role). */
   detail?: string | null;
 }
 
-export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail }: BranchRowProps) {
+export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note }: BranchRowProps) {
   const chip = pill && (
     <Badge tone={TONE[pill.tone]} size="md" className="sh-row-pill">
       {pill.label}
@@ -98,10 +100,11 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             <Link href={href} variant="subtle" className="t-body sh-row-title" title={hint ?? title} data-card-primary onClick={onClick} aria-current={selected ? 'true' : undefined} {...linkAttributes}>
               <span className="sh-strong">{title}</span>
             </Link>
-            {(jira || line || pill || tags) && (
+            {(jira || line || pill || tags || note) && (
               <span className="sh-row-sub">
                 {jira && <span className="t-ui t-muted sh-mono sh-row-jira">{jira}</span>}
                 {line && <span className="t-ui t-muted sh-row-line">{line}</span>}
+                {note}
                 {tags}
                 {chip}
               </span>

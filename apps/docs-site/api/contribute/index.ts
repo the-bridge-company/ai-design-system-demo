@@ -1090,7 +1090,21 @@ export function onTeamLibrary(u: URL, team: string): boolean {
 async function seedLibraryCheck(ctx: Ctx, lib: SeedLib, team: { owner: string; repo: string; full: string }, pairs: readonly ProductPair[], member: ProxyMember, ref: string): Promise<number> {
   const own = memberFetch(ctx, team, pairs, member);
   const lower = team.full.toLowerCase();
+  // The last request GitHub (or the member path) refused: said with the error, so a failed check names its step.
+  let refused = '';
   const f = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
+    const res = await go(url, init);
+    if (!res.ok && res.status !== 404 && res.status !== 304) {
+      const why = await res
+        .clone()
+        .json()
+        .then((j: { message?: unknown }) => (typeof j?.message === 'string' ? j.message.slice(0, 160) : ''))
+        .catch(() => '');
+      refused = `${(init?.method ?? 'GET').toUpperCase()} ${new URL(url).pathname} answered ${res.status}${why ? `: ${why}` : ''}`;
+    }
+    return res;
+  };
+  const go = async (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }): Promise<Response> => {
     const u = new URL(url);
     const method = (init?.method ?? 'GET').toUpperCase();
     const onTeam = onTeamLibrary(u, lower);
@@ -1101,9 +1115,13 @@ async function seedLibraryCheck(ctx: Ctx, lib: SeedLib, team: { owner: string; r
     if (!token) return Response.json({ message: APP_MISSING }, { status: 409 });
     return await ctx.f(url, { method, headers: { Accept: init?.headers?.Accept ?? 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-contribute', 'X-GitHub-Api-Version': '2022-11-28' } });
   };
-  const bctx = await lib.BridgeContext.create({ repo: `${team.owner}/${team.repo}`, token: 'bridge-email-member', surface: 'mcp', fetch: f as unknown as typeof fetch });
-  const r = await lib.pieces.missingPiecesOp(bctx, { pr: ref, record: true });
-  return r.pieces.length;
+  try {
+    const bctx = await lib.BridgeContext.create({ repo: `${team.owner}/${team.repo}`, token: 'bridge-email-member', surface: 'mcp', fetch: f as unknown as typeof fetch });
+    const r = await lib.pieces.missingPiecesOp(bctx, { pr: ref, record: true });
+    return r.pieces.length;
+  } catch (e) {
+    throw new Error(`${(e as Error).message}${refused ? ` (library check: ${refused})` : ''}`);
+  }
 }
 
 /** Tests only: the retry policy of the seeding's GitHub clients (undefined: core's default). */

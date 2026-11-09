@@ -45,12 +45,36 @@ const sideButton = (name: string) => within(screen.getByRole('group', { name: 'C
 beforeEach(() => {
   window.history.replaceState(null, '', `/?bridge=${N}#/`);
   window.sessionStorage.clear();
-  window.sessionStorage.setItem(OPEN_KEY, '0');
+  window.localStorage.setItem(OPEN_KEY, '0');
   loadChange.mockReset();
 });
 
 afterEach(() => {
   window.sessionStorage.clear();
+  window.localStorage.clear();
+});
+
+describe('opening', () => {
+  it('opens expanded by default, and stays collapsed in this browser once the person collapses it', async () => {
+    window.localStorage.removeItem(OPEN_KEY);
+    loadChange.mockResolvedValue(facts());
+    const user = userEvent.setup();
+    const first = mount();
+    const collapse = await screen.findByRole('button', { name: 'Collapse the Bridge toolbar' });
+    expect(screen.queryByRole('button', { name: 'Show Bridge details' })).toBeNull();
+    await user.click(collapse);
+    expect(screen.getByRole('button', { name: 'Show Bridge details' })).toBeInTheDocument();
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('0');
+    first.unmount();
+    // Another visit in this browser: still collapsed, until opened again.
+    window.sessionStorage.clear();
+    const second = mount();
+    await user.click(await screen.findByRole('button', { name: 'Show Bridge details' }));
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('1');
+    second.unmount();
+    mount();
+    expect(await screen.findByRole('button', { name: 'Collapse the Bridge toolbar' })).toBeInTheDocument();
+  });
 });
 
 describe('the collapsed toolbar', () => {
@@ -95,6 +119,16 @@ describe('the collapsed toolbar', () => {
     expect(bar()).toHaveAttribute('data-side', 'after');
   });
 
+  it('gives the page room at its end while collapsed, and gives it back when it goes away', async () => {
+    loadChange.mockResolvedValue(facts());
+    document.body.style.paddingBottom = '';
+    const { unmount } = mount();
+    await waitFor(() => expect(document.body.style.paddingBottom).toMatch(/^\d+px$/));
+    expect(parseFloat(document.body.style.paddingBottom)).toBeGreaterThan(0);
+    unmount();
+    expect(document.body.style.paddingBottom).toBe('');
+  });
+
   it('shows the full title in a tooltip and Show Bridge details on the chevron', async () => {
     const long = 'Make the primary action colour warmer across every checkout and order screen, and soften the focus ring';
     loadChange.mockResolvedValue(facts({ title: long }));
@@ -136,7 +170,7 @@ describe('the collapsed toolbar', () => {
     mount();
     await user.click(screen.getByRole('button', { name: 'Show Bridge details' }));
     expect(screen.getByRole('button', { name: 'Collapse the Bridge toolbar' })).toBeInTheDocument();
-    expect(window.sessionStorage.getItem(OPEN_KEY)).toBe('1');
+    expect(window.localStorage.getItem(OPEN_KEY)).toBe('1');
   });
 
   it('has no axe violations', async () => {

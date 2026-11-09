@@ -391,7 +391,7 @@ describe('the list, filters and lines', () => {
   });
 
   it('gives the home a calm line and the Library its "Figma is ahead" line', () => {
-    expect(buildSummaryLine(list)).toBe('2 being built, 2 waiting to be picked up.');
+    expect(buildSummaryLine(list)).toBe('2 in progress, 2 waiting to be picked up, 1 for more than a week.');
     expect(buildSummaryLine([])).toBeNull();
     expect(figmaAheadLine(list, 'Button', (l) => (l === 'ana' ? 'Ana' : l))).toEqual({ count: 2, builders: ['Ana'], sentence: 'Figma is ahead: 2 changes being built (Ana).' });
     expect(figmaAheadLine(list, 'Avatar')).toBeNull();

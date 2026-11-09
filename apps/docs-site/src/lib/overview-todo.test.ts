@@ -293,8 +293,8 @@ describe('For you: the change lifecycle (lib/change-status)', () => {
   it('badges each change row with its state, in the status line words and tone', () => {
     const t = todo({ changes: [change(1, 'ready', 'ana', 'peterbono', { lifecycle: 'ready' }), change(2, 'needs-design', 'ana', 'peterbono', { lifecycle: 'ready' })], requests: [], viewer: 'peterbono', owners: ['peterbono'] });
     expect(t.mine.map((r) => r.state)).toEqual([
-      { lifecycle: 'ready', label: 'In review', tone: 'info' },
-      { lifecycle: 'ready', label: 'In review', tone: 'info' },
+      { lifecycle: 'ready', label: 'In review', tone: 'warning' },
+      { lifecycle: 'ready', label: 'In review', tone: 'warning' },
     ]);
     // Unknown lifecycle: no badge rather than a guess.
     expect(todo({ changes: [change(1, 'ready', 'ana', 'peterbono')], requests: [], viewer: 'peterbono', owners: ['peterbono'] }).mine[0]!.state).toBeUndefined();

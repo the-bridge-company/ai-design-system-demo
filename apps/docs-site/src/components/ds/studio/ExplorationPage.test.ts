@@ -237,11 +237,11 @@ describe('ExplorationPage, exploring (X2)', () => {
     expect(screen.queryByRole('heading', { name: 'Nothing built yet' })).toBeNull();
   });
 
-  it('the product moved since it started: a quiet line, and Bring it in says what happened', async () => {
+  it('the product moved since it started: a quiet line, and Bring the latest in says what happened', async () => {
     const onBring = vi.fn(async () => 'The latest is in. Your preview updates in a few minutes.');
     paint({ ...exploring, latest: { line: 'Art print shop changed since this exploration started.', onBring } });
     expect(screen.getByText('Art print shop changed since this exploration started.', { exact: false })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Bring it in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bring the latest in' }));
     await waitFor(() => expect(onBring).toHaveBeenCalledOnce());
     await waitFor(() => expect(screen.getByText('The latest is in. Your preview updates in a few minutes.')).toBeTruthy());
   });
@@ -814,7 +814,7 @@ describe('the talk with a lead on the page', () => {
   const bar = { onLooksRight: async () => 'ok', onChanges: async () => 'ok', onComment: async () => 'ok', onNotDoing: async () => undefined, onAskOther: null, link: 'https://x', onCopy: async () => undefined, changedSince: false };
   const face = { login: 'flo', name: 'Florian', agent: false, avatar: null };
   it('a lead whose question waits keeps the bar, reads their own words, and gets no way into Claude', () => {
-    paint({ stage: 'exploring', tag: { label: 'Waiting for Ann', tone: 'info' }, lead: { heading: 'With Ann', line: 'You asked Ann. Waiting for their answer.', bar } });
+    paint({ stage: 'exploring', tag: { label: 'Waiting for Ann', tone: 'warning' }, lead: { heading: 'With Ann', line: 'You asked Ann. Waiting for their answer.', bar } });
     expect(screen.getByRole('heading', { name: 'With Ann' })).toBeTruthy();
     expect(screen.getByText('You asked Ann. Waiting for their answer.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
@@ -822,12 +822,12 @@ describe('the talk with a lead on the page', () => {
   });
   it("the lead's bar is the one way to answer: no I'll look in the zone beside it; without the bar, I'll look stays", () => {
     const take = { onTake: async () => undefined };
-    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring. Look at the preview, then answer.', bar, take } });
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'warning' }, lead: { line: 'Sofia is done exploring. Look at the preview, then answer.', bar, take } });
     expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: "I'll look" })).toBeNull();
     cleanup();
-    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'info' }, lead: { line: 'Sofia is done exploring.', bar: null, take } });
+    paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'warning' }, lead: { line: 'Sofia is done exploring.', bar: null, take } });
     expect(screen.getByRole('button', { name: "I'll look" })).toBeTruthy();
   });
   it('Not doing this shows its reason, and the way to start again, on the board', () => {

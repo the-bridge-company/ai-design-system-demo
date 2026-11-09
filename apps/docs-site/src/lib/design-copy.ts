@@ -7,6 +7,7 @@
 
 import type { AppInstallation } from './access-view';
 import type { GitHubBusy } from './github-busy';
+import { VOCAB } from './vocabulary';
 
 /**
  * Where the copy stands for the page: none needed (no design copy set), missing, there (with how far behind), or not
@@ -27,15 +28,16 @@ export const COPY_WORDS = {
   /** Start an exploration on a product added before copies were made at add time: the one short wait. */
   startMaking: (product: string) => `Getting ${product} ready to explore. It takes about a minute.`,
   behind: (product: string) => `${product} changed since your copy.`,
-  getLatest: 'Get the latest',
+  /** The same action and words as a library change behind the library (VOCAB.updateFromMain). */
+  getLatest: VOCAB.updateFromMain,
   upToDate: 'Your copy is up to date.',
   conflict: 'Bridge could not bring the latest in on its own. Ask a developer to update your copy.',
   /** A running exploration of the copy that misses changes the product made since it started. */
   explorationBehind: (product: string) => `${product} changed since this exploration started.`,
-  bringIn: 'Bring it in',
+  bringIn: VOCAB.updateFromMain,
   broughtIn: 'The latest is in. Your preview updates in a few minutes.',
-  bringConflict: 'Bridge could not bring it in on its own. Ask a developer.',
-  bringFailed: 'Bridge could not bring it in. Try again in a minute.',
+  bringConflict: 'Bridge could not bring the latest in on its own. Ask a developer.',
+  bringFailed: 'Bridge could not bring the latest in. Try again in a minute.',
   failed: 'Bridge could not reach GitHub. Try again in a moment.',
   /** The copy is made but Bridge may not open it yet (Bridge sees only the products ticked on GitHub). Admins only. */
   access: (copyName: string) => `One more step: let Bridge open the designers' copy. Tick ${copyName} on GitHub, then Save.`,

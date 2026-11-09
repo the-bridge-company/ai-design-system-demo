@@ -156,7 +156,7 @@ describe('every screen says the same for M1 and M7', () => {
       [1, 'requested', 'Waiting to be picked up'],
     ]);
     expect(filterCounts(rows, NOW)).toMatchObject({ waiting: 1, 'shipped-this-week': 1 });
-    expect(pageSentence(rows)).toBe('1 waiting for a developer.');
+    expect(pageSentence(rows)).toBe('1 waiting to be picked up.');
   });
 
   it('the Explorations rows', () => {

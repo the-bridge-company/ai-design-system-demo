@@ -83,10 +83,10 @@ export function filterTeamRows<T extends Pick<TeamComponentRow, 'name' | 'family
 }
 
 /** The badges of a row: only what waits for someone or is not stable. */
-export function rowExceptions(r: Pick<TeamComponentRow, 'guidance' | 'status'>): { label: string; tone: 'neutral' | 'info' }[] {
-  const out: { label: string; tone: 'neutral' | 'info' }[] = [];
+export function rowExceptions(r: Pick<TeamComponentRow, 'guidance' | 'status'>): { label: string; tone: 'neutral' | 'warning' }[] {
+  const out: { label: string; tone: 'neutral' | 'warning' }[] = [];
   if (r.guidance === 'missing') out.push({ label: 'No guidance', tone: 'neutral' });
-  if (r.guidance === 'review') out.push({ label: 'Draft to review', tone: 'info' });
+  if (r.guidance === 'review') out.push({ label: 'Draft to review', tone: 'warning' });
   if (r.status === 'beta') out.push({ label: 'Beta', tone: 'neutral' });
   if (r.status === 'deprecated') out.push({ label: 'Deprecated', tone: 'neutral' });
   return out;

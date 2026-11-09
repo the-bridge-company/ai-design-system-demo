@@ -54,10 +54,10 @@ export function decisionRows(all: readonly Decision[], names: Record<string, str
 }
 
 /** The tag of the page while the talk decides what it is, over the lifecycle's own. */
-export function decisionTag(open: Pick<Decision, 'kind'> | null, designer: string): { label: string; tone: 'danger' | 'neutral' | 'info' } | null {
+export function decisionTag(open: Pick<Decision, 'kind'> | null, designer: string): { label: string; tone: 'danger' | 'neutral' | 'warning' } | null {
   if (!open) return null;
   if (open.kind === 'not-doing') return { label: 'Not doing this', tone: 'neutral' };
-  if (open.kind === 'question') return { label: `Waiting for ${designer}`, tone: 'info' };
+  if (open.kind === 'question') return { label: `Waiting for ${designer}`, tone: 'warning' };
   return open.kind === 'changes' || open.kind === 'take-back' ? { label: 'Needs changes', tone: 'danger' } : null;
 }
 

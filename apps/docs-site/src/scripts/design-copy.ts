@@ -142,7 +142,7 @@ async function copyAccessNeeded(copy: string, opts: { sleep?: (ms: number) => Pr
   }
 }
 
-/** "Get the latest": brings the copy up to date with the product. */
+/** "Bring the latest in": brings the copy up to date with the product. */
 export async function getLatest(p: ProductConfig): Promise<'ok' | 'conflict' | 'failed'> {
   const at = copyRepos(p);
   if (!at) return 'failed';
@@ -169,7 +169,7 @@ export async function explorationBehind(copy: string, branch: string): Promise<n
   }
 }
 
-/** "Bring it in": merges the copy's main into the exploration's branch (GitHub's merges API). Conflict: a developer. */
+/** "Bring the latest in": merges the copy's main into the exploration's branch (GitHub's merges API). Conflict: a developer. */
 export async function bringLatestIntoExploration(copy: string, branch: string): Promise<'ok' | 'conflict' | 'failed'> {
   try {
     const main = (await studioClient(copy, getToken() ?? '').getRepo()).defaultBranch;

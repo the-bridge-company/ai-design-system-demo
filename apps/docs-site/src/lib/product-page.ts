@@ -144,6 +144,8 @@ export interface ProductFolder {
   /** "2 exploring · 1 waiting for code". */
   line: string;
   total: number;
+  /** The library (the default product): with no screen of its own, its folder shows the library's Field Guide drawing. */
+  library: boolean;
 }
 
 /**
@@ -151,6 +153,7 @@ export interface ProductFolder {
  * latest explorations and what is in progress. A product without any exploration keeps its folder (it is a real app).
  */
 export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS, more: Readonly<Record<string, readonly ProductStateKey[]>> = {}): ProductFolder[] {
+  const library = products.length ? defaultProduct(products).key.toLowerCase() : null;
   return products.map((p) => {
     const mine = cards.filter((c) => cardProductKey(c, products) === p.key.toLowerCase());
     const latest = [...mine].sort((a, b) => b.updated.localeCompare(a.updated));
@@ -161,6 +164,7 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
       line: folderLine(mine, ' · ', more[p.key.toLowerCase()] ?? []),
       total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
+      library: p.key.toLowerCase() === library,
     };
   });
 }

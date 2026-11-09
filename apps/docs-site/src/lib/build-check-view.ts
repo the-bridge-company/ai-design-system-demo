@@ -1,5 +1,6 @@
 // Check the build (board R4): the words of the step and who checks it, from what Bridge's server says
 // (api/_lib/build-check.ts, action build-state). Pure: no DOM, no fetch. Designer words only: never a commit or a status.
+import { toneOf } from './status-tag';
 
 export type BuildWhy = 'build' | 'design';
 export type BuildRoleName = 'designer' | 'pm' | 'lead';
@@ -35,6 +36,8 @@ export interface BuildCheckView {
 
 export const BUILD_WORDS = {
   tag: 'Check the build',
+  /** Its tag waits on someone (the designer checks the developers' version): amber (lib/status-tag). */
+  tagTone: toneOf('waiting'),
   title: 'Ready to ship?',
   /** While Bridge reads who checks the build: the section's place, never a blank zone. */
   reading: 'Reading who checks the build…',

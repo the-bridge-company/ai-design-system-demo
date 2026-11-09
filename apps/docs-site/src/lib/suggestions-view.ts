@@ -89,7 +89,7 @@ export const kindLabel = (k: SuggestionKind | undefined) => (k ? KIND_LABEL[k] :
 export type SuggestionTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 const STATUS_TONE: Record<SuggestionStatus, SuggestionTone> = {
-  'needs-review': 'info',
+  'needs-review': 'warning',
   'changes-requested': 'warning',
   approved: 'success',
   applying: 'info',

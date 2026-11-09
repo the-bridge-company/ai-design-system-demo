@@ -796,14 +796,20 @@ export function matchesBuildFilter(v: Pick<BuildRequestView, 'status' | 'shipped
 /** Build requests still open (not shipped, not closed). */
 export const openBuildRequests = <V extends Pick<BuildRequestView, 'status'>>(views: readonly V[]): V[] => views.filter((v) => v.status !== 'shipped' && v.status !== 'not-planned');
 
-/** The calm summary line of the home: "3 being built, 1 waiting to be picked up." Null when nothing is open. */
+/**
+ * Where the open build requests stand, in the Being built tabs' words, one sentence for the Studio home line and the
+ * Being built page header (and the MCP summary): "1 in progress, 4 in review, 3 waiting to be picked up." A request
+ * open for more than a week adds ", 2 for more than a week". Null when nothing is open.
+ */
 export function buildSummaryLine(views: readonly Pick<BuildRequestView, 'status' | 'stale'>[]): string | null {
   const open = openBuildRequests(views);
   if (!open.length) return null;
   const waiting = open.filter((v) => v.status === 'requested').length;
-  const building = open.length - waiting;
-  const parts = [...(building ? [`${building} being built`] : []), ...(waiting ? [`${waiting} waiting to be picked up`] : [])];
-  return `${parts.join(', ')}.`.replace(/^./, (c) => c.toUpperCase());
+  const review = open.filter((v) => v.status === 'in-review').length;
+  const moving = open.length - waiting - review;
+  const stale = open.filter((v) => v.stale).length;
+  const parts = [...(moving ? [`${moving} in progress`] : []), ...(review ? [`${review} in review`] : []), ...(waiting ? [`${waiting} waiting to be picked up`] : [])];
+  return `${parts.join(', ')}${stale ? `, ${stale} for more than a week` : ''}.`.replace(/^./, (c) => c.toUpperCase());
 }
 
 /**

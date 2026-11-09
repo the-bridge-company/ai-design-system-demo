@@ -148,7 +148,7 @@ function Row({ row, onPiece, say }: { row: ImpactRowView; onPiece: LibraryImpact
         </div>
       )}
       <div className="li-status">
-        <Badge tone={row.status.tone} size="md" className={statusTagClass(row.status.label)}>
+        <Badge tone={row.status.tone} size="md" className={statusTagClass(row.status.tone)}>
           {row.status.label}
         </Badge>
       </div>

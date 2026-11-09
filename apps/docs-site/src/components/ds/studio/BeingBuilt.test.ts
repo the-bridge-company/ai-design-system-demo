@@ -243,7 +243,7 @@ describe('Being built', () => {
     summary.setAttribute('data-st-summary', '');
     const { container } = render(createElement(BeingBuilt));
     const title = await screen.findByText('Explore new design pr being built');
-    expect(summary.textContent).toMatch(/^\d+ being built, \d+ in review, \d+ waiting for a developer/);
+    expect(summary.textContent).toMatch(/^\d+ in progress, \d+ in review, \d+ waiting to be picked up/);
     summary.remove();
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(9);
     expect(screen.queryByText('Still running')).toBeNull();

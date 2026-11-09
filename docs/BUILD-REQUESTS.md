@@ -182,7 +182,8 @@ out a token push that ships by itself until something holds it (a failing check,
   the GitHub and Jira links and **Copy brief for Claude**. Read only. On top, for whoever may publish it (the merge
   right, else the owners) and only while there is one, the next release: what it holds in plain words and **Review
   and publish**, which opens the release in Changes. Built, then released: it is the end of the same pipeline.
-- **Home:** a calm line under the zone ("Build requests: 3 being built, 1 waiting to be picked up."), never a Needs you
+- **Home:** a calm line under the zone ("Build requests: 1 in progress, 4 in review, 3 waiting to be picked up."), the sentence of the
+  Being built page header over the same rows (build requests, Claude's fixes, explorations handed to developers), never a Needs you
   row. A token push that ships by itself (`autoShip`) waits on nobody until something holds it (a failing check, a
   conflict, changes requested), like `bridge_what_needs_me`.
 - **Components, Change this component (a team):** the drawer of a team's component asks what she wants to change,

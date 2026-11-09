@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { Check, CircleAlert, Ellipsis, Minus, TriangleAlert, X } from 'lucide-react';
+import { statusTagClass } from '../../../lib/status-tag';
 import {
   Accordion,
   AccordionItem,
@@ -464,7 +465,7 @@ function QueueSuggestion({ p }: { p: SuggestionReviewProps }) {
       <header className="br-head">
         <h2 className="br-title" tabIndex={-1}>
           {p.title}{' '}
-          <Badge tone={p.status.tone} className="br-status">
+          <Badge tone={p.status.tone} className={statusTagClass(p.status.tone, "br-status")}>
             {p.status.label}
           </Badge>
         </h2>
@@ -537,7 +538,7 @@ export function SuggestionReview(props: SuggestionReviewProps) {
                 {p.title}
               </Heading>
               <p className="sg-meta">
-                <Badge tone={p.status.tone} size="sm">
+                <Badge tone={p.status.tone} size="sm" className={statusTagClass(p.status.tone)}>
                   {p.status.label}
                 </Badge>
                 <span className="sg-muted">{p.kind}</span>

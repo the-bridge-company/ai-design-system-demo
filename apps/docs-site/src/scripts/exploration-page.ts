@@ -402,7 +402,7 @@ async function paintEarlyBuild(
     note: read.role ? BUILD_WORDS.pushNote : null,
   };
   const h = current.props.handoff ?? EARLY_HANDOFF;
-  repaint(d, key, { stage: 'handed-off', tag: { label: BUILD_WORDS.tag, tone: 'info' }, handoff: { ...h, check, build: { ...h.build, url: h.build?.url ?? buildUrl, builder: h.build?.builder ?? builder } } });
+  repaint(d, key, { stage: 'handed-off', tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...h, check, build: { ...h.build, url: h.build?.url ?? buildUrl, builder: h.build?.builder ?? builder } } });
   if (code?.repo) void paintBuildShot(d, key, code.repo, read.pull.number);
 }
 
@@ -475,7 +475,7 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
       : null,
     note: read.role ? BUILD_WORDS.pushNote : null,
   };
-  repaint(d, key, { tag: { label: BUILD_WORDS.tag, tone: 'info' }, handoff: { ...current.props.handoff, check, build: { ...current.props.handoff.build, url: o.devUrl ?? current.props.handoff.build?.url ?? null, builder } } });
+  repaint(d, key, { tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...current.props.handoff, check, build: { ...current.props.handoff.build, url: o.devUrl ?? current.props.handoff.build?.url ?? null, builder } } });
   if (o.code && !current.props.handoff.build?.shot) void paintBuildShot(d, key, o.code, read.pull.number);
 }
 
@@ -821,7 +821,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     void paintPm(d, key, { r, body: pull.body, product: own.product.key, copy: own.repo, viewer: { ref: member?.ref ?? null, login: member ? null : viewer }, designer: emailKeeper || designerKeeper || (!member && sameLogin(viewer, r.author)), lead: leadOther || Boolean(lead?.bar), names, reopen: (line) => reopen(line) });
   // A branch started before its product moved to a toolbar that takes the read pass: that toolbar would leave the
   // pass in the address, and the product's hash router would show an empty page. The link opens without it, and says
-  // how to get the change's details (Bring it in). One read of package.json at the branch, kept by Bridge's cache.
+  // how to get the change's details (Bring the latest in). One read of package.json at the branch, kept by Bridge's cache.
   if (tryUrl && own) {
     void gh
       .getFileText('package.json', r.branch)
@@ -836,7 +836,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const shotProps = shot ? { thumb: shot.src, thumbCapturedAt: shot.capturedAt } : {};
   if (!handedOff) {
     repaint(d, key, { plate, ...shotProps });
-    // In the design team's copy: the product moved since it started? A quiet "Bring it in" (its main into the branch).
+    // In the design team's copy: the product moved since it started? A quiet "Bring the latest in" (its main into the branch).
     if (inCopy && writable && !r.archived) {
       void explorationBehind(inCopy.copy, r.branch).then((behind) => {
         if (!behind || current?.key !== key) return;

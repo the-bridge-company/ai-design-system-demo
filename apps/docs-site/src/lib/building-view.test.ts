@@ -35,9 +35,10 @@ describe('Being built', () => {
   it('counts the filters and says the page in one sentence', () => {
     const views = fixture();
     expect(filterCounts(views, NOW)).toEqual({ all: 6, waiting: 2, 'in-progress': 2, 'in-review': 1, 'shipped-this-week': 1 });
-    expect(pageSentence(views)).toBe('2 being built, 1 in review, 2 waiting for a developer, 1 for more than a week.');
+    expect(pageSentence(views)).toBe('2 in progress, 1 in review, 2 waiting to be picked up, 1 for more than a week.');
     expect(pageSentence([])).toBe('Nothing is being built yet.');
-    expect(buildSummaryLine(views)).toBe('3 being built, 2 waiting to be picked up.');
+    // The Studio home line and the page header are one sentence over the same rows.
+    expect(buildSummaryLine(views)).toBe(pageSentence(views));
   });
 
   it('gives each row one tag and one line, the stale one highlighted', () => {
@@ -285,7 +286,7 @@ describe('Being built: explorations handed to developers', () => {
     const read: DesignTaskRead = { assignees: [{ login: 'theo' }], state: 'open', stateReason: null, closedAt: null, devPull: { number: 96, url: 'https://github.com/acme/shop/pull/96', draft: false, answer: { kind: 'looks-right', login: 'ann' } } };
     const [row] = explorationBuildRows([copy], { products, now: NOW, nameOf, task: () => read });
     expect(row).toMatchObject({ status: 'in-review', label: 'Approved, waiting to ship', approved: true });
-    expect(statusTag(row!)).toEqual({ label: 'Approved, waiting to ship', tone: 'info' });
+    expect(statusTag(row!)).toEqual({ label: 'Approved, waiting to ship', tone: 'success' });
     expect(row!.exploration.line).toMatch(/said it looks right$/);
   });
 
@@ -308,7 +309,7 @@ describe('Being built: explorations handed to developers', () => {
     const views = fixture();
     const all = listedRows(mergeRows(views, late), NOW);
     expect(all).toHaveLength(7);
-    expect(pageSentence(all)).toBe('2 being built, 1 in review, 3 waiting for a developer, 2 for more than a week.');
+    expect(pageSentence(all)).toBe('2 in progress, 1 in review, 3 waiting to be picked up, 2 for more than a week.');
   });
 
   it('keeps the exploration block of a long body in the session cache, and the head commit', () => {

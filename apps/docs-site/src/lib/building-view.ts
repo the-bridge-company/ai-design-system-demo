@@ -20,6 +20,7 @@ import {
   BUILD_STEPS,
   BUILD_STATUS_LABEL,
   buildRequestBrief,
+  buildSummaryLine,
   defaultProduct,
   matchesBuildFilter,
   parseBuildRequestIssue,
@@ -305,6 +306,15 @@ export function mergeRows<V extends BuildRequestView>(views: readonly BuildReque
  */
 export const listedRows = <V extends BuildRequestView>(rows: readonly V[], now: number): V[] => rows.filter((v) => matchesBuildFilter(v, 'all', now));
 
+/**
+ * The rows Being built lists, from what scripts/building-data reads: the build requests, Claude's fixes and the
+ * explorations handed to developers (listedRows of mergeRows). The page header and the Studio home line both count
+ * these, so they never disagree.
+ */
+export function pageRows<V extends BuildRequestView>(data: { views: readonly BuildRequestView[]; fixes?: readonly V[]; explorations?: readonly V[] }, now: number): (BuildRequestView | V)[] {
+  return listedRows(mergeRows<V>(data.views, [...(data.fixes ?? []), ...(data.explorations ?? [])]), now);
+}
+
 /** The counts on the tabs: "In progress 3", "In review 1". */
 export function filterCounts(views: readonly (BuildRequestView & LifecycleExtra)[], now: number): Record<BuildTab, number> {
   const out = { all: 0, waiting: 0, 'in-progress': 0, 'in-review': 0, 'shipped-this-week': 0 } as Record<BuildTab, number>;
@@ -312,22 +322,18 @@ export function filterCounts(views: readonly (BuildRequestView & LifecycleExtra)
   return out;
 }
 
-/** The sentence under the page title, from the rows the page lists (listedRows). */
+/**
+ * The sentence under the page title, from the rows the page lists (listedRows): core buildSummaryLine, the same
+ * sentence as the Studio home line (components/ds/studio/BuildLine), so both always count the same rows.
+ */
 export function pageSentence(views: readonly BuildRequestView[]): string {
-  const open = views.filter((v) => v.status !== 'shipped' && v.status !== 'not-planned');
-  const stale = open.filter((v) => v.stale).length;
   if (!views.length) return 'Nothing is being built yet.';
-  if (!open.length) {
-    // Shipped is in the library; a declined request is not, so it never reads as "everything is in the library".
-    const declined = views.filter((v) => v.status === 'not-planned').length;
-    if (!declined) return 'Everything handed to developers is in the library.';
-    return `Nothing is being built right now. ${declined === 1 ? 'One change was' : `${declined} changes were`} closed without being built this week.`;
-  }
-  const waiting = open.filter((v) => v.status === 'requested').length;
-  const review = open.filter((v) => v.status === 'in-review').length;
-  const building = open.length - waiting - review;
-  const parts = [...(building ? [`${building} being built`] : []), ...(review ? [`${review} in review`] : []), ...(waiting ? [`${waiting} waiting for a developer`] : [])];
-  return `${parts.join(', ')}${stale ? `, ${stale} for more than a week` : ''}.`.replace(/^./, (c) => c.toUpperCase());
+  const line = buildSummaryLine(views);
+  if (line) return line;
+  // Shipped is in the library; a declined request is not, so it never reads as "everything is in the library".
+  const declined = views.filter((v) => v.status === 'not-planned').length;
+  if (!declined) return 'Everything handed to developers is in the library.';
+  return `Nothing is being built right now. ${declined === 1 ? 'One change was' : `${declined} changes were`} closed without being built this week.`;
 }
 
 /** What a filter with nothing in it says. */

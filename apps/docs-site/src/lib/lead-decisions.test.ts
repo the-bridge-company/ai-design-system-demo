@@ -30,7 +30,7 @@ describe('the Decisions list', () => {
 describe('the tag and the zone', () => {
   it('says what the talk made of it', () => {
     expect(decisionTag({ kind: 'changes' }, 'Ann')).toEqual({ label: 'Needs changes', tone: 'danger' });
-    expect(decisionTag({ kind: 'question' }, 'Ann')).toEqual({ label: 'Waiting for Ann', tone: 'info' });
+    expect(decisionTag({ kind: 'question' }, 'Ann')).toEqual({ label: 'Waiting for Ann', tone: 'warning' });
     expect(decisionTag({ kind: 'not-doing' }, 'Ann')).toEqual({ label: 'Not doing this', tone: 'neutral' });
     expect(decisionTag(null, 'Ann')).toBeNull();
     expect(designerZoneTitle('changes', 'Florian')).toBe('Florian asks for changes');

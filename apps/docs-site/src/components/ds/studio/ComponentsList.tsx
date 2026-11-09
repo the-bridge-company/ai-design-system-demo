@@ -13,6 +13,7 @@ import type { ComponentType, KeyboardEvent } from 'react';
 import { Avatar, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tag, type BadgeTone } from '@bridge-ds/react';
 import type { ExampleNode, GuidanceState } from '../../../lib/components';
 import { thumbnailNode, usedInCell } from '../../../lib/components-studio';
+import { statusTagClass } from '../../../lib/status-tag';
 
 export interface ComponentListRow {
   slug: string;
@@ -36,7 +37,7 @@ export interface ComponentListRow {
 export function exceptions(r: Pick<ComponentListRow, 'guidance' | 'status'>): { label: string; tone: BadgeTone; short?: string; agent?: boolean }[] {
   const out: { label: string; tone: BadgeTone; short?: string; agent?: boolean }[] = [];
   if (r.guidance === 'missing') out.push({ label: 'Missing guidance', tone: 'neutral', short: 'No guidance' });
-  if (r.guidance === 'review') out.push({ label: 'Draft by Claude, needs review', tone: 'info', short: 'Needs review', agent: true });
+  if (r.guidance === 'review') out.push({ label: 'Draft by Claude, needs review', tone: 'warning', short: 'Needs review', agent: true });
   if (r.status === 'beta') out.push({ label: 'Beta', tone: 'neutral' });
   if (r.status === 'deprecated') out.push({ label: 'Deprecated', tone: 'neutral' });
   return out;
@@ -135,7 +136,7 @@ export default function ComponentsList({ rows, products, Thumb, onOpen, openSlug
                       {exceptions(r).map((b) => (
                         <span key={b.label} className="cm-flag">
                         {b.agent && <Avatar kind="agent" brand="claude" size="xs" decorative />}
-                        <Badge tone={b.tone} size="sm" className="cm-pill">
+                        <Badge tone={b.tone} size="sm" className={statusTagClass(b.tone, "cm-pill")}>
                           {b.short ? (
                             <>
                               <span className="cm-pill-full">{b.label}</span>

@@ -30,6 +30,7 @@ import { libraryHref } from '../../../lib/library-shells';
 import { readWorkspace, onWorkspaceChange } from '../../../scripts/workspace';
 import { loadTeamProductUsage, teamLead, type TeamData } from '../../../scripts/team-data';
 import { FigmaLink, figmaLinkFor } from '../library/FigmaLink';
+import { statusTagClass } from '../../../lib/status-tag';
 
 const words = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
@@ -218,7 +219,7 @@ function ComponentDrawer({
             {rowExceptions(row).length > 0 && (
               <p className="tcm-badges">
                 {rowExceptions(row).map((b) => (
-                  <Badge key={b.label} tone={b.tone} size="sm">
+                  <Badge key={b.label} tone={b.tone} size="sm" className={statusTagClass(b.tone)}>
                     {b.label}
                   </Badge>
                 ))}

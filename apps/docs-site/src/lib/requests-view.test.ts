@@ -94,7 +94,7 @@ describe('requestRows', () => {
       [4, 'declined'],
     ]);
     const first = rows[0]!;
-    expect(first).toMatchObject({ component: 'Button', kindLabel: 'New variant', title: 'Add a danger ghost variant', requester: 'designer', statusLabel: 'Requested', tone: 'info' });
+    expect(first).toMatchObject({ component: 'Button', kindLabel: 'New variant', title: 'Add a danger ghost variant', requester: 'designer', statusLabel: 'Requested', tone: 'warning' });
     expect(rows[1]!.prs[0]!.number).toBe(40);
     expect(rows[1]!.jiraKey).toBe('DS-12');
     expect(rows[2]!.tone).toBe('success');

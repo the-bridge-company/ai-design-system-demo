@@ -82,10 +82,9 @@ import {
   detailQuery,
   filterCounts,
   jiraLink,
-  listedRows,
   matchesBuildTab,
-  mergeRows,
   pageSentence,
+  pageRows,
   propLine,
   rowLine,
   rowPeople,
@@ -379,7 +378,7 @@ function Detail({
           {viewTitle(v)}
         </h2>
         <p className="t-body bb-sub">
-          <Badge tone={TONE[tag.tone]} size="md" className={statusTagClass(tag.label)}>
+          <Badge tone={TONE[tag.tone]} size="md" className={statusTagClass(TONE[tag.tone])}>
             {tag.label}
           </Badge>{" "}
           {v.sentence}
@@ -619,17 +618,7 @@ export default function BeingBuilt() {
   }, [run]);
 
   // The page header's summary sentence (lib/page-summary): what waits for a developer and what is being built.
-  const summary = data
-    ? pageSentence(
-        listedRows(
-          mergeRows<FixRow | ExplorationBuildRow>(data.views, [
-            ...(data.fixes ?? []),
-            ...(data.explorations ?? []),
-          ]),
-          now
-        )
-      )
-    : "";
+  const summary = data ? pageSentence(pageRows<FixRow | ExplorationBuildRow>(data, now)) : "";
   useEffect(() => setPageSummary(summary), [summary]);
 
   // The filters stay in the address while a detail is open, and when it closes.
@@ -673,13 +662,7 @@ export default function BeingBuilt() {
   if (current)
     return <Detail v={current} data={data} onBack={() => go(null)} />;
   // Only what "All" lists counts: a request declined more than a week ago has left the page (sentence, counts, empty).
-  const rows = listedRows(
-    mergeRows<FixRow | ExplorationBuildRow>(data.views, [
-      ...(data.fixes ?? []),
-      ...(data.explorations ?? []),
-    ]),
-    now
-  );
+  const rows = pageRows<FixRow | ExplorationBuildRow>(data, now);
   if (!rows.length) return <Empty />;
 
   // The two filters of Changes (lib/branches-page), over what the tab lists; the tab counts follow them.

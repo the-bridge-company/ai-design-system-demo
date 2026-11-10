@@ -17,13 +17,17 @@
 // what each waiting library change does to them), sends each image (POST ?reachRun=image) and then the summary
 // (POST ?reachRun=done). Same OIDC identity, asked again when it gets old (a run can take several minutes).
 //
+// Check the build (api/_lib/build-review.ts): then the same run asks which developers' builds Studio opened a check for
+// (GET ?buildRun=todo), opens the approved design and the build on the same screen at three sizes with preview-shots.mjs
+// measureBuild, sends each image (POST ?buildRun=image) and the summary (POST ?buildRun=done).
+//
 // --migrate (once, 2026-11-08): asks Bridge to move the images it still keeps in Redis to its private Blob store and to
 // delete the stored images no capture names (POST ?shots=migrate, dry=1 with --dry-run), and prints what it moved and
 // freed. Safe to run again: a second run moves nothing.
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { atScreen, captureOne, launch, measureReach, screenOf } from './preview-shots.mjs';
+import { atScreen, captureOne, launch, measureBuild, measureReach, screenOf } from './preview-shots.mjs';
 
 export const AUDIENCE = 'bridge-shots';
 
@@ -184,6 +188,62 @@ async function reach(o, core, auth) {
   }
 }
 
+/** The two addresses of a build job: the approved design (the exploration's preview) and the developers' build. */
+export function buildAddresses(job, previewUrl) {
+  if (!previewUrl) return null;
+  const approved = job.approved?.template && job.approved?.branch ? previewUrl(job.approved.template, { branch: job.approved.branch }) : null;
+  const build = job.build?.template && job.build?.branch ? previewUrl(job.build.template, { branch: job.build.branch, pr: job.pull }) : null;
+  return approved && build ? { approved, build } : null;
+}
+
+async function builds(o, core, auth) {
+  const todo = await fetch(`${o.base}/api/contribute?buildRun=todo${o.force ? '&force=1' : ''}`, { headers: { ...(await auth()), accept: 'application/json' } });
+  if (!todo.ok) {
+    console.log(`Check the build: Bridge answered ${todo.status} to the todo list.`);
+    return;
+  }
+  const { jobs = [] } = await todo.json();
+  console.log(`${jobs.length} build(s) to check.`);
+  if (!jobs.length) return;
+  const browser = await launch();
+  try {
+    for (const j of jobs) {
+      const at = buildAddresses(j, core.previewUrl);
+      if (!at) {
+        console.log(`- ${j.code}#${j.pull}: no preview address for the build or the approved design`);
+        continue;
+      }
+      let sent = 0;
+      try {
+        const summary = await measureBuild(browser, { approved: at.approved, build: at.build, route: j.route ?? null }, async (name, webp) => {
+          if (o.dryRun) return;
+          const r = await fetch(`${o.base}/api/contribute?buildRun=image`, {
+            method: 'POST',
+            headers: { ...(await auth()), 'content-type': 'application/json' },
+            body: JSON.stringify({ code: j.code, pull: j.pull, run: j.run, name, image: Buffer.from(webp).toString('base64') }),
+          });
+          if (!r.ok) throw new Error(`Bridge refused image ${name} (${r.status})`);
+          sent++;
+        });
+        if (o.dryRun) {
+          console.log(`- ${j.code}#${j.pull}: ${summary.items.length} difference(s) (dry run, not sent)`);
+          continue;
+        }
+        const done = await fetch(`${o.base}/api/contribute?buildRun=done`, {
+          method: 'POST',
+          headers: { ...(await auth()), 'content-type': 'application/json' },
+          body: JSON.stringify({ code: j.code, pull: j.pull, run: j.run, head: j.head, approvedSha: j.approved?.sha ?? null, summary }),
+        });
+        console.log(`- ${j.code}#${j.pull}: ${done.ok ? 'kept' : `refused (${done.status})`}, ${sent} image(s), ${summary.items.length} difference(s)`);
+      } catch (e) {
+        console.log(`- ${j.code}#${j.pull}: could not be checked (${e.message})`);
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
 async function main() {
   const o = args(process.argv.slice(2));
   if (o.migrate) return migrate(o);
@@ -193,6 +253,8 @@ async function main() {
   await captures(o, core, auth);
   // Who gets it never fails the captures' run: a refusal is said in the log.
   await reach(o, core, auth).catch((e) => console.log(`Who gets it: ${e.message}`));
+  // Check the build never fails the run either.
+  await builds(o, core, auth).catch((e) => console.log(`Check the build: ${e.message}`));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main();

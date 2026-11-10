@@ -1,0 +1,11 @@
+---
+// Team shell of Check the build, region by region (lib/team-shells.ts): /studio/<owner>/<repo>/explorations/review/,
+// the same island as the self-hosted page (components/ds/studio/BuildReview), reading the team in the browser.
+import '../../../styles/build-review.css';
+import TeamShell from '../../../components/TeamShell.astro';
+import BuildReview from '../../../components/ds/studio/BuildReview';
+---
+
+<TeamShell route="explorations/review/" title="Check the build" scene="changes" what="build check" description="The developers' build beside the approved design, one difference at a time.">
+  <BuildReview client:only="react" />
+</TeamShell>

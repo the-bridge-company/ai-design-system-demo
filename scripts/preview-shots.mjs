@@ -1016,6 +1016,898 @@ export async function reachRun({ dir, config, api, host, force = false, dryRun =
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Check the build (Studio review mode): the approved design (the exploration's preview) and the developers' build (their
+// pull request's preview) opened on the same screen, at three sizes, in the same browser. Each page says what it shows
+// element by element (BUILD_EXTRACT: text, role, box, computed styles, the data-bridge-change marker around it); the
+// pure part below matches the elements of the two pages (markers first, then text, then role and place), compares the
+// matched ones, drops the noise (images, charts, live dates, rounding) and groups what differs by region of the page,
+// each with one plain sentence and its measured facts. Images: the whole page per size and side, and one crop per
+// region and side, named by plain names; where they live is the caller's (Bridge's private store, private-shots.mjs).
+
+/** The three sizes a build is checked at: laptop, small laptop, phone. */
+export const BUILD_SIZES = [
+  { key: 'laptop', label: 'Laptop', width: 1280, height: 800, scale: 1, maxPage: 2200, imageWidth: 1024 },
+  { key: 'small', label: 'Small laptop', width: 1024, height: 768, scale: 1, maxPage: 2200, imageWidth: 1024 },
+  { key: 'phone', label: 'Phone', width: 390, height: 844, scale: 2, maxPage: 1700, imageWidth: 780 },
+];
+/** Widest crop of one region (a review panel shows it at most 400 px wide on a 2x screen). */
+export const BUILD_CROP_WIDTH = 640;
+/** Computed styles compared per matched element. */
+export const BUILD_PROPS = [
+  'color',
+  'background-color',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'font-style',
+  'text-transform',
+  'text-decoration-line',
+  'border-top-width',
+  'border-right-width',
+  'border-bottom-width',
+  'border-left-width',
+  'border-top-color',
+  'border-top-left-radius',
+  'padding-top',
+  'padding-right',
+  'padding-bottom',
+  'padding-left',
+  'box-shadow',
+];
+/** At most this many differences per page (a page that differs everywhere is said in a few sentences, not 300). */
+export const BUILD_MAX_ITEMS = 24;
+
+/** Lower case, letters and digits only: "Football fan" and "football-fan" read the same. */
+export const normText = (t) =>
+  String(t ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const MONTHS = 'jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december';
+const DATE_SHAPES = [
+  ['relative', new RegExp(`^(about |in |over |almost )?(a|an|\\d+) (second|minute|hour|day|week|month|year)s?( ago)?$|^(just now|now|today|yesterday|tomorrow)$|^(last|next) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)( at .+)?$`, 'i')],
+  ['numeric', /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/],
+  ['words', new RegExp(`^((mon|tue|wed|thu|fri|sat|sun)[a-z]*,? )?(\\d{1,2} (${MONTHS})\\.?|(${MONTHS})\\.? \\d{1,2})(,? \\d{4})?$`, 'i')],
+  ['time', /^\d{1,2}:\d{2}( ?[ap]\.?m\.?)?$/i],
+];
+/**
+ * The shape of a date or time a page writes ("13/12/2026" numeric, "Dec 13, 2026" words, "3 days ago" relative), or
+ * null when the text is not one. A date's value moves with the day the page is opened; its shape does not.
+ */
+export function dateShape(text) {
+  const t = String(text ?? '')
+    .replace(/\s+/g, ' ')
+    .replace(/^(due|due on|added on|last activity on|on|since|at|until)\s+/i, '')
+    .trim();
+  if (!t || t.length > 40) return null;
+  const parts = t.split(/ at /i);
+  for (const [shape, re] of DATE_SHAPES) if (re.test(t) || (parts.length === 2 && re.test(parts[0].trim()))) return shape;
+  return null;
+}
+
+/** "Follow up on the unsigned purchase order" -> "Follow up on the unsigned…": a text short enough for a sentence. */
+export const shortText = (t, max = 28) => {
+  const s = String(t ?? '').replace(/\s+/g, ' ').trim();
+  return s.length <= max ? s : `${s.slice(0, max - 1).trimEnd()}…`;
+};
+
+const px = (v) => {
+  const n = parseFloat(String(v ?? ''));
+  return Number.isFinite(n) ? n : 0;
+};
+const rgba = (v) => {
+  const m = /rgba?\(([^)]+)\)/.exec(String(v ?? ''));
+  if (!m) return null;
+  const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+  return [p[0] ?? 0, p[1] ?? 0, p[2] ?? 0, p.length > 3 ? p[3] : 1];
+};
+/** Two colors differ when a channel moves by more than `t` (0 to 255) or the opacity by more than 0.1. */
+export function colorsDiffer(a, b, t = 8) {
+  const x = rgba(a);
+  const y = rgba(b);
+  if (!x || !y) return String(a ?? '') !== String(b ?? '');
+  if (x[3] < 0.05 && y[3] < 0.05) return false;
+  return Math.abs(x[0] - y[0]) > t || Math.abs(x[1] - y[1]) > t || Math.abs(x[2] - y[2]) > t || Math.abs(x[3] - y[3]) > 0.1;
+}
+const firstFamily = (v) =>
+  String(v ?? '')
+    .split(',')[0]
+    .replace(/["']/g, '')
+    .trim()
+    .toLowerCase();
+const borderSum = (st) => px(st['border-top-width']) + px(st['border-right-width']) + px(st['border-bottom-width']) + px(st['border-left-width']);
+const padSum = (st) => px(st['padding-top']) + px(st['padding-right']) + px(st['padding-bottom']) + px(st['padding-left']);
+const round = (n) => String(Math.round(n));
+
+/** What one element is, for a fact: "Button", "Link", "Field", "Text". */
+const elementWord = (e) => (e.kind === 'field' ? 'Field' : e.kind === 'control' ? (e.tag === 'a' || e.role === 'link' ? 'Link' : 'Button') : 'Text');
+
+/**
+ * What differs between two matched elements (a approved, b built), as facts, and how many differences were too small
+ * to say (rounding, anti-aliasing). Text properties count only on an element that writes text itself or is a control.
+ */
+export function compareElements(a, b) {
+  const facts = [];
+  let tiny = 0;
+  const sa = a.st ?? {};
+  const sb = b.st ?? {};
+  const word = elementWord(b);
+  const speaks = Boolean(a.text || b.text || a.kind === 'control' || a.kind === 'field');
+  const ta = a.text || a.label || '';
+  const tb = b.text || b.label || '';
+  if (ta !== tb && (ta || tb)) {
+    const da = dateShape(ta);
+    const db = dateShape(tb);
+    // "12/13/2026" and "13/12/2026": the same numbers in another order is another date format, not another day.
+    const nums = (t) => (String(t).match(/\d+/g) ?? []).join('/');
+    const sorted = (t) => (String(t).match(/\d+/g) ?? []).sort().join('/');
+    if (da && db) {
+      if (da !== db || (da === 'numeric' && nums(ta) !== nums(tb) && sorted(ta) === sorted(tb))) facts.push({ k: 'date', label: 'Date', was: ta, now: tb });
+      else tiny++;
+    } else if (ta.replace(/\s+/g, ' ').trim() !== tb.replace(/\s+/g, ' ').trim()) facts.push({ k: 'text', label: word === 'Text' ? 'Text' : `${word} text`, was: ta, now: tb });
+  }
+  if (speaks) {
+    const fa = px(sa['font-size']);
+    const fb = px(sb['font-size']);
+    if (Math.abs(fa - fb) > 1) facts.push({ k: 'size', label: 'Text size', was: round(fa), now: round(fb) });
+    else if (fa !== fb) tiny++;
+    const wa = px(sa['font-weight']);
+    const wb = px(sb['font-weight']);
+    if (Math.abs(wa - wb) >= 100) facts.push({ k: 'weight', label: 'Weight', was: round(wa), now: round(wb) });
+    if (firstFamily(sa['font-family']) !== firstFamily(sb['font-family'])) facts.push({ k: 'font', label: 'Font', was: firstFamily(sa['font-family']), now: firstFamily(sb['font-family']) });
+    if (colorsDiffer(sa.color, sb.color)) facts.push({ k: 'color', label: `${word} color`, was: sa.color, now: sb.color });
+    else if (sa.color !== sb.color) tiny++;
+    if ((sa['text-transform'] ?? 'none') !== (sb['text-transform'] ?? 'none')) facts.push({ k: 'case', label: 'Letter case', was: sa['text-transform'] ?? 'none', now: sb['text-transform'] ?? 'none' });
+    if (/underline/.test(sa['text-decoration-line'] ?? '') !== /underline/.test(sb['text-decoration-line'] ?? '')) facts.push({ k: 'underline', label: 'Underline', was: /underline/.test(sa['text-decoration-line'] ?? '') ? 'yes' : 'no', now: /underline/.test(sb['text-decoration-line'] ?? '') ? 'yes' : 'no' });
+  }
+  if (colorsDiffer(sa['background-color'], sb['background-color'])) facts.push({ k: 'fill', label: 'Background', was: sa['background-color'], now: sb['background-color'] });
+  const ba = borderSum(sa);
+  const bb = borderSum(sb);
+  if ((ba === 0) !== (bb === 0)) facts.push({ k: 'outline', label: 'Outline', was: ba ? 'yes' : 'none', now: bb ? 'yes' : 'none' });
+  else if (ba && bb && colorsDiffer(sa['border-top-color'], sb['border-top-color'], 16)) facts.push({ k: 'border', label: 'Outline color', was: sa['border-top-color'], now: sb['border-top-color'] });
+  const ra = px(sa['border-top-left-radius']);
+  const rb = px(sb['border-top-left-radius']);
+  if (Math.abs(ra - rb) > 2 && (ba || bb || sa['background-color'] !== 'rgba(0, 0, 0, 0)')) facts.push({ k: 'radius', label: 'Corners', was: round(ra), now: round(rb) });
+  const pa = padSum(sa);
+  const pb = padSum(sb);
+  if (Math.abs(pa - pb) > 4) facts.push({ k: 'space', label: 'Space inside', was: round(pa), now: round(pb) });
+  else if (pa !== pb) tiny++;
+  if ((sa['box-shadow'] ?? 'none') === 'none' && (sb['box-shadow'] ?? 'none') !== 'none') facts.push({ k: 'shadow', label: 'Shadow', was: 'none', now: 'yes' });
+  else if ((sa['box-shadow'] ?? 'none') !== 'none' && (sb['box-shadow'] ?? 'none') === 'none') facts.push({ k: 'shadow', label: 'Shadow', was: 'yes', now: 'none' });
+  if (a.kind === 'control' || a.kind === 'field') {
+    const ha = a.box?.[3] ?? 0;
+    const hb = b.box?.[3] ?? 0;
+    // A link's height follows its words wrapping: only buttons and fields have a height of their own.
+    if (word !== 'Link' && Math.abs(ha - hb) > 3) facts.push({ k: 'height', label: `${word} height`, was: round(ha), now: round(hb) });
+    else if (ha !== hb) tiny++;
+    if ((a.icons ?? 0) !== (b.icons ?? 0)) facts.push({ k: 'icon', label: `${word} icon`, was: a.icons ? 'yes' : 'none', now: b.icons ? 'yes' : 'none' });
+  }
+  return { facts, tiny };
+}
+
+/** A region's name: its marker's words, its heading, a header or the navigation, else the first words in it. */
+function regionName(block, ex) {
+  if (!block) return 'Page';
+  if (block.mk && block.mkRoot) return shortText(block.mk, 40);
+  if (block.nav) return 'Navigation';
+  if (block.tag === 'header' || block.role === 'banner') return block.box?.[1] < 8 ? 'Top bar' : 'Header';
+  if (block.head) return shortText(block.head, 40);
+  const inside = (e) => (e.text || e.label) && e.box && block.box && e.box[1] >= block.box[1] && e.box[1] < block.box[1] + block.box[3] && e.box[0] >= block.box[0] && e.box[0] < block.box[0] + block.box[2];
+  const first = (ex.els ?? []).find(inside);
+  return first ? shortText(first.text || first.label, 32) : 'Section';
+}
+
+/**
+ * The region of every element (Map i -> { id, name, box }): its marked area (data-bridge-change), else the card-sized
+ * block around it, else (in a block with several headings, or none) the section its nearest heading above opens in the
+ * same column, else the page. `box` is the block's, null for a heading's section (its members say where it is).
+ */
+export function regionsOf(ex) {
+  const els = (ex.els ?? []).filter((e) => e.box);
+  const byI = new Map(els.map((e) => [e.i, e]));
+  const up = (e) => (e && e.p >= 0 ? (byI.get(e.p) ?? null) : null);
+  const area = (ex.w || 1) * Math.min(ex.h || 1, (ex.vh || 800) * 1.6);
+  const fits = (e) => e.blk && e.box[2] * e.box[3] <= area * 0.42 && e.box[2] <= (ex.w || 1) * 0.96;
+  const heads = els.filter((e) => e.hd);
+  const headCount = new Map();
+  for (const h of heads) for (let x = up(h); x; x = up(x)) if (x.blk) headCount.set(x.i, (headCount.get(x.i) ?? 0) + 1);
+  const out = new Map();
+  for (const e of els) {
+    let mk = null;
+    let blk = null;
+    let guard = 0;
+    for (let x = e; x && guard++ < 80; x = up(x)) {
+      if (!mk && x.mk && x.mkRoot) mk = x;
+      if (!blk && fits(x)) blk = x;
+    }
+    if (mk) {
+      out.set(e.i, { id: `m${mk.i}`, name: regionName(mk, ex), box: mk.box });
+      continue;
+    }
+    if (blk && (blk.nav || (headCount.get(blk.i) ?? 0) <= 1)) {
+      out.set(e.i, { id: `b${blk.i}`, name: regionName(blk, ex), box: blk.box });
+      continue;
+    }
+    const within = (h) => !blk || (h.box[1] >= blk.box[1] - 2 && h.box[1] < blk.box[1] + blk.box[3] && h.box[0] >= blk.box[0] - 2 && h.box[0] < blk.box[0] + blk.box[2]);
+    let best = null;
+    for (const h of heads) {
+      if (h.box[1] > e.box[1] + Math.max(2, e.box[3]) || e.box[1] - h.box[1] > 700 || !within(h)) continue;
+      // Its column: the heading starts at or left of the element and covers it; or it sits on the element's row.
+      const row = Math.abs(h.box[1] + h.box[3] / 2 - (e.box[1] + e.box[3] / 2)) <= 24 && h.box[0] - (e.box[0] + e.box[2]) <= 32 && h.box[0] >= e.box[0];
+      const column = h.box[0] <= e.box[0] + 12 && e.box[0] < h.box[0] + Math.max(h.box[2], 240);
+      if (!row && !column) continue;
+      if (!best || h.box[1] > best.box[1]) best = h;
+    }
+    if (best) out.set(e.i, { id: `h${best.i}`, name: shortText(best.text || best.label, 40), box: null });
+    else out.set(e.i, blk ? { id: `b${blk.i}`, name: regionName(blk, ex), box: blk.box } : { id: 'page', name: 'Page', box: null });
+  }
+  return out;
+}
+
+/** Reading order: rows first (two boxes whose middles sit within half the smaller height share a row), then left to right. */
+const readingOrder = (a, b) => {
+  const ma = a.box[1] + a.box[3] / 2;
+  const mb = b.box[1] + b.box[3] / 2;
+  if (Math.abs(ma - mb) <= Math.max(4, Math.min(a.box[3], b.box[3]) / 2)) return a.box[0] - b.box[0];
+  return ma - mb;
+};
+const unionBox = (boxes) => {
+  const bs = boxes.filter(Boolean);
+  if (!bs.length) return null;
+  const x = Math.min(...bs.map((b) => b[0]));
+  const y = Math.min(...bs.map((b) => b[1]));
+  const r = Math.max(...bs.map((b) => b[0] + b[2]));
+  const btm = Math.max(...bs.map((b) => b[1] + b[3]));
+  return [x, y, r - x, btm - y];
+};
+
+/** The words a fact says in a sentence. */
+function factSentence(f) {
+  const q = (t) => shortText(t, 28);
+  switch (f.k) {
+    case 'text':
+      return `Shows ${q(f.now)} where the design says ${q(f.was)}`;
+    case 'date':
+      return `Dates read ${q(f.now)} where the design says ${q(f.was)}`;
+    case 'added':
+      return `Adds ${q(f.now)}, not in the design`;
+    case 'missing':
+      return `${q(f.was)} is missing`;
+    case 'icon':
+      return f.now === 'none' ? `The ${f.label.replace(/ icon$/, '').toLowerCase()} lost its icon` : `The ${f.label.replace(/ icon$/, '').toLowerCase()} gained an icon`;
+    case 'order':
+      return `${q(f.now)} now comes before ${q(f.was)}`;
+    case 'size':
+      return `Text is ${Number(f.now) > Number(f.was) ? 'larger' : 'smaller'}, ${f.was} to ${f.now}`;
+    case 'height':
+      return `The ${f.label.replace(/ height$/, '').toLowerCase()} is ${Number(f.now) > Number(f.was) ? 'taller' : 'shorter'}, ${f.was} to ${f.now}`;
+    case 'outline':
+      return f.now === 'none' ? 'An outline is gone' : 'An outline was added';
+    case 'border':
+      return 'An outline changed color';
+    case 'color':
+      return `${f.label} changed`;
+    case 'fill':
+      return 'The background changed';
+    case 'weight':
+      return `Text is ${Number(f.now) > Number(f.was) ? 'bolder' : 'lighter'}`;
+    case 'font':
+      return `Another font: ${f.now}`;
+    case 'case':
+      return 'Letter case changed';
+    case 'underline':
+      return f.now === 'yes' ? 'Text is underlined' : 'Text lost its underline';
+    case 'space':
+      return `${Number(f.now) > Number(f.was) ? 'More' : 'Less'} space inside, ${f.was} to ${f.now}`;
+    case 'radius':
+      return `${Number(f.now) > Number(f.was) ? 'Rounder' : 'Squarer'} corners`;
+    case 'shadow':
+      return f.now === 'none' ? 'The shadow is gone' : 'A shadow was added';
+    default:
+      return 'Looks different';
+  }
+}
+const FACT_ORDER = ['text', 'date', 'added', 'missing', 'icon', 'order', 'size', 'height', 'outline', 'fill', 'color', 'weight', 'font', 'case', 'underline', 'border', 'space', 'radius', 'shadow'];
+
+/** One plain sentence for a region: its two strongest kinds of difference. */
+export function regionLine(facts) {
+  const seen = new Set();
+  const picked = [];
+  for (const k of FACT_ORDER) {
+    const f = facts.find((x) => x.k === k);
+    if (f && !seen.has(k)) {
+      seen.add(k);
+      picked.push(f);
+    }
+    if (picked.length === 2) break;
+  }
+  if (!picked.length) return 'Looks different';
+  const [a, b] = picked.map(factSentence);
+  // The second part goes lower case only when it starts with Bridge's own word, never with the page's words.
+  const own = /^(Text|The|An|A|More|Less|Rounder|Squarer|Another|Letter|Dates|Shows|Adds)\b/.test(b ?? '');
+  const line = b ? `${a}, and ${own ? `${b.charAt(0).toLowerCase()}${b.slice(1)}` : b}` : a;
+  return line.length <= 140 ? line : a;
+}
+
+/**
+ * What differs between the approved page (`a`) and the build (`b`), both as BUILD_EXTRACT says them: regions, each
+ * with its name, its sentence, its facts and its box on each side (page coordinates), in the build's reading order;
+ * and how many differences were too small or too live to say. Pure (tested).
+ */
+export function buildDiff(a, b) {
+  const pages = { a, b };
+  const els = { a: (a.els ?? []).filter((e) => e.box), b: (b.els ?? []).filter((e) => e.box) };
+  const reg = { a: regionsOf(a), b: regionsOf(b) };
+  const rname = (s, e) => reg[s].get(e.i)?.name ?? 'Page';
+  const rkey = (s, e) => normText(rname(s, e)) || 'page';
+  // Where each region starts on each side: positions inside a region compare, not positions on the page.
+  const origin = { a: new Map(), b: new Map() };
+  const members = { a: new Map(), b: new Map() };
+  for (const s of ['a', 'b']) {
+    for (const e of els[s]) {
+      const r = reg[s].get(e.i);
+      const k = rkey(s, e);
+      if (!members[s].has(k)) members[s].set(k, []);
+      members[s].get(k).push(e.box);
+      const o = origin[s].get(k);
+      const box = r?.box ?? e.box;
+      if (!o || box[1] < o[1] || (box[1] === o[1] && box[0] < o[0])) origin[s].set(k, [box[0], box[1]]);
+    }
+  }
+  const rel = (s, e) => {
+    const o = origin[s].get(rkey(s, e)) ?? [0, 0];
+    return [e.box[0] - o[0], e.box[1] - o[1]];
+  };
+  const pairs = [];
+  const used = { a: new Set(), b: new Set() };
+  const speaking = (e) => Boolean(e.text || e.label);
+  const words = (e) => e.text || e.label;
+  const pairBy = (keyOf, accept = () => true) => {
+    const pool = new Map();
+    for (const e of els.a) {
+      if (used.a.has(e.i)) continue;
+      const k = keyOf(e, 'a');
+      if (!k) continue;
+      if (!pool.has(k)) pool.set(k, []);
+      pool.get(k).push(e);
+    }
+    for (const e of els.b) {
+      if (used.b.has(e.i)) continue;
+      const k = keyOf(e, 'b');
+      const q = k ? pool.get(k) : null;
+      if (!q?.length) continue;
+      const at = q.findIndex((m) => accept(m, e));
+      if (at < 0) continue;
+      const [m] = q.splice(at, 1);
+      used.a.add(m.i);
+      used.b.add(e.i);
+      pairs.push([m, e]);
+    }
+  };
+  // 1. Marked areas first (the exploration named what it changed), then the same words in the same region, then the
+  // same words anywhere, then the same words read loosely ("Football fan", "football-fan").
+  pairBy((e) => (e.mk && speaking(e) ? `${normText(e.mk)}|${e.kind}|${words(e)}` : null));
+  pairBy((e, s) => (speaking(e) ? `${rkey(s, e)}|${e.kind}|${words(e)}` : null));
+  pairBy((e) => (speaking(e) ? `${e.kind}|${words(e)}` : null));
+  pairBy((e, s) => (speaking(e) ? `${rkey(s, e)}|${normText(words(e))}` : null));
+  pairBy((e) => (speaking(e) ? normText(words(e)) : null));
+  // 2. Dates and times of the same region, in order (their values move with the day the page opens).
+  pairBy((e, s) => (dateShape(e.text) ? `date|${rkey(s, e)}` : null));
+  // 3. Controls and fields of the same region and kind, in reading order.
+  pairBy((e, s) => (e.kind === 'control' || e.kind === 'field' ? `${e.kind}|${e.tag}|${rkey(s, e)}` : null));
+  // 4. Words that changed: the same kind of element at the same place in the same region.
+  pairBy(
+    (e, s) => (e.kind === 'text' && e.text && !dateShape(e.text) ? `t|${e.tag}|${rkey(s, e)}` : null),
+    (m, e) => {
+      const ra = rel('a', m);
+      const rb = rel('b', e);
+      return Math.abs(ra[0] - rb[0]) <= 24 && Math.abs(ra[1] - rb[1]) <= 24;
+    },
+  );
+
+  const regions = new Map();
+  let ignored = 0;
+  const regionFor = (name) => {
+    const k = normText(name) || 'page';
+    if (!regions.has(k)) regions.set(k, { key: k, name, facts: [], boxes: { a: [], b: [] }, firstY: Infinity });
+    return regions.get(k);
+  };
+  const addFact = (r, f, ea, eb) => {
+    const same = r.facts.find((x) => x.k === f.k && x.was === f.was && x.now === f.now);
+    if (same) same.n = (same.n ?? 1) + 1;
+    else r.facts.push({ ...f, n: 1, at: eb?.box ?? ea?.box ?? null });
+    if (ea?.box) r.boxes.a.push(ea.box);
+    if (eb?.box) {
+      r.boxes.b.push(eb.box);
+      r.firstY = Math.min(r.firstY, eb.box[1]);
+    } else if (ea?.box) r.firstY = Math.min(r.firstY, ea.box[1]);
+  };
+  for (const [ea, eb] of pairs) {
+    if (ea.kind === 'media' || eb.kind === 'media') continue;
+    const { facts, tiny } = compareElements(ea, eb);
+    ignored += tiny;
+    if (!facts.length) continue;
+    const r = regionFor(rname('b', eb));
+    for (const f of facts) addFact(r, f, ea, eb);
+  }
+  // Unmatched words: added in the build, or missing from it. Pictures and charts alone are noise; live dates too.
+  for (const e of els.b) {
+    if (used.b.has(e.i) || !speaking(e) || e.kind === 'media') continue;
+    if (dateShape(e.text)) {
+      ignored++;
+      continue;
+    }
+    addFact(regionFor(rname('b', e)), { k: 'added', label: 'New', was: '', now: words(e) }, null, e);
+  }
+  for (const e of els.a) {
+    if (used.a.has(e.i) || !speaking(e) || e.kind === 'media') continue;
+    if (dateShape(e.text)) {
+      ignored++;
+      continue;
+    }
+    addFact(regionFor(rname('a', e)), { k: 'missing', label: 'Missing', was: words(e), now: '' }, e, null);
+  }
+  // The order of neighbours: two matched words close together in both pages that read the other way round.
+  const near = (x, y) => Math.abs(x.box[1] - y.box[1]) <= 40 && Math.abs(x.box[0] - y.box[0]) <= 360;
+  const orderDone = new Set();
+  // Written words only (a control's hidden label has no place to read), in one region on both sides.
+  const speakingPairs = pairs.filter(([ea, eb]) => ea.text && eb.text && ea.kind !== 'media' && !dateShape(eb.text) && rkey('a', ea) === rkey('b', eb));
+  for (let i = 0; i < speakingPairs.length; i++) {
+    for (let j = i + 1; j < speakingPairs.length; j++) {
+      const [a1, b1] = speakingPairs[i];
+      const [a2, b2] = speakingPairs[j];
+      if (rkey('b', b1) !== rkey('b', b2) || !near(a1, a2) || !near(b1, b2)) continue;
+      if (Math.min(b1.text.length, b2.text.length) <= 3) continue;
+      const before = Math.sign(readingOrder(a1, a2));
+      const after = Math.sign(readingOrder(b1, b2));
+      if (!before || !after || before === after) continue;
+      const k = rkey('b', b1);
+      if (orderDone.has(k)) continue;
+      orderDone.add(k);
+      const [first, second] = after < 0 ? [b1, b2] : [b2, b1];
+      addFact(regionFor(rname('b', b1)), { k: 'order', label: 'Order', was: words(second), now: words(first) }, after < 0 ? a1 : a2, first);
+    }
+  }
+  const pad = (box) => (box ? [Math.max(0, box[0] - 12), Math.max(0, box[1] - 12), box[2] + 24, box[3] + 24] : null);
+  const blockOf = (s, k) => {
+    for (const e of els[s]) if (rkey(s, e) === k && reg[s].get(e.i)?.box) return reg[s].get(e.i).box;
+    return null;
+  };
+  const out = [...regions.values()]
+    .filter((r) => r.facts.length)
+    .map((r) => {
+      const box = (side) => {
+        const own = unionBox(r.boxes[side]);
+        // The whole region: its block, else the section its heading opens (all its members), when it holds the differences.
+        const whole = blockOf(side, r.key) ?? unionBox(members[side].get(r.key) ?? []);
+        if (whole && own && whole[3] <= 900 && own[0] >= whole[0] - 2 && own[1] >= whole[1] - 2 && own[0] + own[2] <= whole[0] + whole[2] + 2 && own[1] + own[3] <= whole[1] + whole[3] + 2) return pad(whole);
+        return pad(own ?? (whole && whole[3] <= 900 ? whole : null));
+      };
+      // A control's label that repeats a text change of the same region says nothing more.
+      const texts = r.facts.filter((f) => f.k === 'text');
+      const facts = r.facts
+        .filter((f) => !(f.k === 'text' && texts.some((g) => g !== f && g.was.length < f.was.length && f.was.includes(g.was) && f.now.includes(g.now))))
+        .sort((x, y) => FACT_ORDER.indexOf(x.k) - FACT_ORDER.indexOf(y.k))
+        .slice(0, 8);
+      // The focus: the strongest difference itself, with room around it (the entry's tile shows it legibly).
+      const own = facts.find((f) => !isMinor(f) && f.at)?.at ?? unionBox(r.boxes.b) ?? unionBox(r.boxes.a);
+      let fb = null;
+      if (own) {
+        const w = Math.max(own[2] + 64, 240);
+        const h = Math.max(own[3] + 64, 150);
+        fb = [Math.max(0, Math.round(own[0] + own[2] / 2 - w / 2)), Math.max(0, Math.round(own[1] + own[3] / 2 - h / 2)), Math.round(Math.min(w, 900)), Math.round(Math.min(h, 600))];
+      }
+      return { key: r.key, name: r.name, line: regionLine(facts), facts: facts.map(({ at: _at, ...f }) => f), a: box('a'), b: box('b'), fb, y: Number.isFinite(r.firstY) ? r.firstY : 0 };
+    })
+    .sort((x, y) => x.y - y.y)
+    .slice(0, BUILD_MAX_ITEMS);
+  void pages;
+  return { regions: out, ignored };
+}
+
+/** A short stable name for what a region says: the same difference on the next build gets the same one. */
+export function regionSig(name, facts) {
+  const s = `${normText(name)}|${facts
+    .map((f) => `${f.k}:${f.was}>${f.now}`)
+    .sort()
+    .join(',')}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `r${h.toString(16).padStart(8, '0')}`;
+}
+
+/**
+ * The regions of every size as one list of things to look at: a region of the same name at several sizes is one item
+ * (its facts from the widest size, the others' added), laptop sizes first in the build's reading order, then what
+ * differs only on a phone. `perSize`: [{ key, regions }] widest first.
+ */
+export function mergeSizes(perSize) {
+  // One item per region and size first.
+  const all = [];
+  for (const { key, regions } of perSize) {
+    for (const r of regions ?? []) all.push({ key: r.key, name: r.name, facts: [...r.facts], sizes: [key], strong: r.facts.some((f) => !isMinor(f)) ? [key] : [], boxes: { [key]: { a: r.a, b: r.b, ...(r.fb ? { f: r.fb } : {}) } }, y: { [key]: r.y } });
+  }
+  const order = perSize.map((s) => s.key);
+  // Then one difference across sizes: the same region saying something in common, or the same words added, missing
+  // or changed in two regions (a header named by its heading on a phone, the page around it). The region seen first
+  // at the widest size keeps it, with every size. A region of the same name saying nothing in common at another size
+  // (the page on a phone) stays its own.
+  const together = (x, y) => (x.key === y.key && x.facts.some((f) => y.facts.some((g) => sameFact(f, g)))) || x.facts.some((f) => SAY.has(f.k) && y.facts.some((g) => sameFact(f, g)));
+  for (let i = 0; i < all.length; i++) {
+    const keep = all[i];
+    if (!keep) continue;
+    for (let j = i + 1; j < all.length; j++) {
+      const other = all[j];
+      if (!other || !together(keep, other)) continue;
+      const [win, lose] = rank(keep, order) <= rank(other, order) ? [keep, other] : [other, keep];
+      // The page around a named region gives up only what they both say; the rest of it stays its own.
+      if (['page', 'section'].includes(lose.key)) {
+        lose.facts = lose.facts.filter((f) => !win.facts.some((g) => sameFact(f, g)));
+        if (lose.facts.length) continue;
+      }
+      for (const s of lose.sizes) {
+        if (!win.sizes.includes(s)) win.sizes.push(s);
+        if (!win.boxes[s]) {
+          win.boxes[s] = lose.boxes[s];
+          win.y[s] = lose.y[s];
+        }
+      }
+      for (const f of lose.facts) if (!win.facts.some((x) => sameFact(x, f))) win.facts.push(f);
+      for (const s of lose.strong) if (!win.strong.includes(s)) win.strong.push(s);
+      all[all.indexOf(lose)] = null;
+      if (lose === keep) break;
+    }
+  }
+  const phoneOnly = (it) => it.sizes.every((s) => s === 'phone');
+  for (const it of all) if (it && it.key === 'page') it.name = it.strong.every((x) => x === 'phone') ? 'The page on a phone' : 'The page';
+  const list = all
+    .filter(Boolean)
+    .filter((it) => it.facts.some((f) => !isMinor(f)))
+    .map((it) => {
+      const facts = it.facts.sort((x, y) => Number(isMinor(x)) - Number(isMinor(y)) || FACT_ORDER.indexOf(x.k) - FACT_ORDER.indexOf(y.k)).slice(0, 8);
+      // The sizes where it shows something that is not minor: "seen at every size" says only that, and the crop is
+      // taken at the first of them.
+      const shown = order.filter((s) => it.strong.includes(s));
+      return { ...it, facts, line: regionLine(facts.filter((f) => !isMinor(f))), sig: regionSig(it.name, facts), sizes: shown.length ? shown : order.filter((s) => it.sizes.includes(s)) };
+    });
+  const first = (it) => it.sizes[0];
+  list.sort((x, y) => Number(phoneOnly(x)) - Number(phoneOnly(y)) || order.indexOf(first(x)) - order.indexOf(first(y)) || (x.y[first(x)] ?? 0) - (y.y[first(y)] ?? 0));
+  return list.slice(0, BUILD_MAX_ITEMS).map((it, i) => ({ n: i + 1, sig: it.sig, name: it.name, line: it.line, facts: it.facts, sizes: it.sizes, boxes: it.boxes }));
+}
+
+/** How many regions were only minor style shifts, per size merged as mergeSizes does: what the page leaves out. */
+export function minorCount(perSize) {
+  const names = new Set();
+  for (const { regions } of perSize) for (const r of regions ?? []) if (r.facts.length && r.facts.every(isMinor)) names.add(r.key);
+  return names.size;
+}
+
+const SAY = new Set(['text', 'date', 'added', 'missing']);
+const sameFact = (x, f) => x.k === f.k && x.was === f.was && x.now === f.now;
+/** Generic names lose to a named region; then the widest size, then higher on the page. */
+const rank = (it, order) => (['page', 'section'].includes(it.key) ? 100 : 0) + order.indexOf(it.sizes[0]) * 10;
+
+const channelGap = (a, b) => {
+  const x = /rgba?\(([^)]+)\)/.exec(String(a ?? ''))?.[1]?.split(/[\s,/]+/).map(Number) ?? [];
+  const y = /rgba?\(([^)]+)\)/.exec(String(b ?? ''))?.[1]?.split(/[\s,/]+/).map(Number) ?? [];
+  if (x.length < 3 || y.length < 3) return 255;
+  if ((x[3] ?? 1) < 0.05 || (y[3] ?? 1) < 0.05) return 255;
+  return Math.max(Math.abs(x[0] - y[0]), Math.abs(x[1] - y[1]), Math.abs(x[2] - y[2]));
+};
+/**
+ * A minor style shift: a component a little taller or roomier, softer corners, a shadow, a background or outline tint,
+ * a weight, a near color. Said under a region that also differs in what it shows; a region of only these is left out
+ * (counted). What the page shows (words, dates, icons, order) and clear changes (text 2 sizes up, a new hue) never are.
+ */
+export function isMinor(f) {
+  if (['space', 'radius', 'shadow', 'border', 'weight', 'font', 'case', 'underline'].includes(f.k)) return true;
+  // A background that appears or goes on the same page color is not seen: transparent counts as minor.
+  if (f.k === 'fill') return channelGap(f.was, f.now) <= 48 || /rgba\([^)]*,\s*0\)$/.test(String(f.was)) || /rgba\([^)]*,\s*0\)$/.test(String(f.now));
+  if (f.k === 'color') return channelGap(f.was, f.now) <= 48;
+  if (f.k === 'size') return Math.abs(Number(f.now) - Number(f.was)) <= 2;
+  if (f.k === 'height') return Math.abs(Number(f.now) - Number(f.was)) <= 8;
+  if (f.k === 'outline') return true;
+  return false;
+}
+
+/** The library's name for a color of a page (its CSS custom properties, read on the page), else null. */
+export function colorName(rgb, colors) {
+  const hits = (colors ?? []).filter(([, v]) => v === rgb).map(([n]) => n);
+  if (!hits.length) return null;
+  // Semantic names before ramp steps ("--color-text-default" before "--color-ink-900"), then the shortest.
+  hits.sort((x, y) => Number(/\d/.test(x)) - Number(/\d/.test(y)) || x.length - y.length);
+  return hits[0].replace(/^--(color-)?/, '').replace(/-/g, ' ');
+}
+
+/** Each color fact of the regions with its library names, from the colors each page defines. */
+export function nameColors(regions, colorsA, colorsB) {
+  for (const r of regions) {
+    for (const f of r.facts) {
+      if (!['color', 'fill', 'border'].includes(f.k)) continue;
+      const was = colorName(f.was, colorsA);
+      const now = colorName(f.now, colorsB);
+      if (was) f.wasName = was;
+      if (now) f.nowName = now;
+    }
+  }
+  return regions;
+}
+
+/** A page that is not the product: a host's sign-in wall, an error page, or nearly nothing written on it. */
+export function missingPage(ex, finalUrl) {
+  if (looksLikeAWallUrl(finalUrl)) return 'wall';
+  if (!ex || (ex.words ?? 0) < 12) return 'empty';
+  if (/^(404|not found|page not found|this page could not be found)/i.test(String(ex.title ?? '').trim())) return 'not-found';
+  return null;
+}
+
+// In the page: every element that writes, acts, shows a picture or holds a region, with its box and styles.
+const BUILD_EXTRACT = ({ props, maxH, marker }) => {
+  const sy = window.scrollY;
+  const sx = window.scrollX;
+  const docW = document.documentElement.scrollWidth;
+  const docH = Math.min(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight), maxH);
+  const CONTROL = 'a[href], button, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="switch"], summary';
+  const FIELD = 'input, select, textarea, [role="textbox"], [role="combobox"]';
+  const BLOCK = 'header, nav, aside, section, form, article, fieldset, dialog, [role="region"], [role="dialog"], [role="navigation"], [role="banner"], [role="complementary"], [role="group"], [role="tabpanel"]';
+  const HEAD = 'h1, h2, h3, h4, h5, h6, [role="heading"], legend, caption';
+  const kept = new Map();
+  const els = [];
+  let words = 0;
+  const own = (el) => {
+    let t = '';
+    for (const n of el.childNodes) if (n.nodeType === 3) t += n.textContent;
+    return t.replace(/\s+/g, ' ').trim();
+  };
+  const clear = (c) => !c || c === 'transparent' || c === 'rgba(0, 0, 0, 0)';
+  const bgUnder = (el) => {
+    for (let x = el.parentElement; x; x = x.parentElement) {
+      const c = getComputedStyle(x).backgroundColor;
+      if (!clear(c)) return c;
+    }
+    return 'rgb(255, 255, 255)';
+  };
+  for (const el of document.body.querySelectorAll('*')) {
+    if (els.length >= 4000) break;
+    const tag = el.tagName.toLowerCase();
+    if (/^(script|style|noscript|template|link|meta|br|path|g|use|defs|circle|rect|line|polyline|polygon|ellipse|text|tspan|clippath|mask|lineargradient|stop)$/.test(tag)) continue;
+    if (el.closest('[data-bridge-toolbar], vercel-live-feedback, #vercel-live-feedback')) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const y = r.top + sy;
+    if (y > docH || r.left + sx > docW) continue;
+    let text = own(el);
+    if (/^(input|textarea|select)$/.test(tag)) text = '';
+    const media = /^(img|picture|video|canvas|iframe|svg)$/.test(tag) || el.getAttribute('role') === 'img';
+    const control = !media && el.matches(CONTROL);
+    const field = !media && el.matches(FIELD);
+    const sides = ['top', 'right', 'bottom', 'left'].filter((s) => cs.getPropertyValue(`border-${s}-style`) !== 'none' && parseFloat(cs.getPropertyValue(`border-${s}-width`)) > 0).length;
+    const painted = sides >= 2 || (cs.boxShadow && cs.boxShadow !== 'none') || (!clear(cs.backgroundColor) && cs.backgroundColor !== bgUnder(el));
+    const markRoot = el.hasAttribute(marker);
+    const blk = !media && !control && !field && (markRoot || el.matches(BLOCK) || (painted && r.width >= 120 && r.height >= 40));
+    if (!text && !control && !field && !media && !blk) continue;
+    let p = -1;
+    for (let x = el.parentElement; x && x !== document.body; x = x.parentElement) {
+      if (kept.has(x)) {
+        p = kept.get(x);
+        break;
+      }
+    }
+    const label = (el.getAttribute('aria-label') || el.getAttribute('alt') || el.getAttribute('placeholder') || (tag === 'input' && /^(button|submit|reset)$/i.test(el.getAttribute('type') || '') ? el.value : '') || '').trim().slice(0, 120);
+    let head = null;
+    if (blk) {
+      const h = el.getAttribute('aria-label') ? null : [...el.querySelectorAll(HEAD)].find((x) => x.getBoundingClientRect().height > 0);
+      head = (el.getAttribute('aria-label') || h?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60) || null;
+    }
+    const mkEl = el.closest(`[${marker}]`);
+    const i = els.length;
+    kept.set(el, i);
+    if (text) words += text.split(' ').length;
+    els.push({
+      i,
+      p,
+      tag,
+      role: el.getAttribute('role') || '',
+      text: text.slice(0, 160),
+      label,
+      kind: field ? 'field' : control ? 'control' : media ? 'media' : text ? 'text' : 'block',
+      blk,
+      head,
+      // A heading: its tag or role, or short words set bold (a section label), never a control or initials.
+      hd: Boolean(text) && !control && (el.matches(HEAD) || (text.length >= 3 && text.length <= 32 && parseFloat(cs.fontWeight) >= 600 && parseFloat(cs.fontSize) >= 12)),
+      nav: blk && (el.matches('nav, [role="navigation"]') || Boolean(el.querySelector('nav, [role="navigation"]'))),
+      mk: mkEl ? mkEl.getAttribute(marker) || 'Marked change' : null,
+      mkRoot: markRoot,
+      icons: control ? el.querySelectorAll('svg, img').length : 0,
+      box: [Math.round(r.left + sx), Math.round(y), Math.round(r.width), Math.round(r.height)],
+      st: Object.fromEntries(props.map((q) => [q, cs.getPropertyValue(q)])),
+    });
+  }
+  // The library's colors on this page: every --color-* custom property its style sheets set, as computed rgb.
+  const names = new Set();
+  const walk = (rules) => {
+    for (const r of rules ?? []) {
+      if (names.size >= 800) return;
+      if (r.style) for (let i = 0; i < r.style.length; i++) if (r.style[i].startsWith('--color-')) names.add(r.style[i]);
+      if (r.cssRules) walk(r.cssRules);
+    }
+  };
+  for (const sh of document.styleSheets) {
+    try {
+      walk(sh.cssRules);
+    } catch {
+      /* another origin's sheet: not readable */
+    }
+  }
+  const root = getComputedStyle(document.documentElement);
+  const probe = document.createElement('span');
+  document.body.appendChild(probe);
+  const colors = [];
+  for (const n of names) {
+    const v = root.getPropertyValue(n).trim();
+    if (!v) continue;
+    probe.style.color = '';
+    probe.style.color = v;
+    if (probe.style.color) colors.push([n, getComputedStyle(probe).color]);
+  }
+  probe.remove();
+  return { w: docW, h: docH, vh: window.innerHeight, words, title: (document.querySelector('h1')?.textContent ?? document.title ?? '').trim().slice(0, 80), els, colors };
+};
+
+/** Waits until the words on the page stop changing (an app that fetches its data after load), 8 seconds at most. */
+async function settleWords(page, { quiet = 700, max = 8000 } = {}) {
+  const start = Date.now();
+  let last = -1;
+  let since = Date.now();
+  while (Date.now() - start < max) {
+    const n = await page.evaluate(() => (document.body?.innerText ?? '').length).catch(() => 0);
+    if (n !== last) {
+      last = n;
+      since = Date.now();
+    } else if (n > 40 && Date.now() - since >= quiet) return;
+    await page.waitForTimeout(150);
+  }
+}
+
+/**
+ * The whole page and the crops of a capture, encoded in the browser: one load of the PNG, then each crop
+ * ([x, y, w, h] in page pixels times `scale`) at most `maxW` wide. WebP, quality lowered until each fits `maxBytes`.
+ */
+async function encodeShots(helper, png, { scale, fullWidth, crops, maxBytes = 290_000 }) {
+  return helper.evaluate(
+    async ({ b64, scale, fullWidth, crops, maxBytes }) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const enc = (sx, sy, sw, sh, w) => {
+        const h = Math.max(1, Math.round((sh * w) / sw));
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const g = c.getContext('2d');
+        g.imageSmoothingEnabled = true;
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+        for (const q of [0.82, 0.7, 0.55, 0.4]) {
+          const out = c.toDataURL('image/webp', q).split(',')[1];
+          if (out.length * 0.75 <= maxBytes) return { b64: out, w, h };
+        }
+        return null;
+      };
+      const full = enc(0, 0, img.width, img.height, Math.min(fullWidth, img.width));
+      const out = {};
+      for (const c of crops) {
+        const x = Math.max(0, Math.round(c.box[0] * scale));
+        const y = Math.max(0, Math.round(c.box[1] * scale));
+        const w = Math.min(img.width - x, Math.round(c.box[2] * scale));
+        const h = Math.min(img.height - y, Math.round(c.box[3] * scale));
+        if (w < 4 || h < 4) continue;
+        out[c.name] = enc(x, y, w, h, Math.min(c.maxW, w));
+      }
+      return { full, crops: out };
+    },
+    { b64: png.toString('base64'), scale, fullWidth, crops, maxBytes },
+  );
+}
+
+/**
+ * Measures one build against its approved design: `job` { approved, build, route } (both preview addresses, the route
+ * the exploration chose). `save(name, webp)` keeps an image. Returns the summary (BUILD_SUMMARY): per size the two
+ * pages (or why one is missing), and the items, each with its sentence, its facts, its boxes and its two crops.
+ */
+export async function measureBuild(browser, job, save, { log: say = log, sizes = BUILD_SIZES, now = () => Date.now() } = {}) {
+  const helperCtx = await browser.newContext({ viewport: { width: 400, height: 300 }, deviceScaleFactor: 1 });
+  const helper = await helperCtx.newPage();
+  await helper.setContent('<!doctype html><title>build</title>');
+  const perSize = [];
+  try {
+    for (const s of sizes) {
+      const context = await browser.newContext({ viewport: { width: s.width, height: s.height }, deviceScaleFactor: s.scale, isMobile: s.key === 'phone', hasTouch: s.key === 'phone', colorScheme: 'light', reducedMotion: 'reduce', serviceWorkers: 'block' });
+      const sides = {};
+      try {
+        for (const side of ['a', 'b']) {
+          const url = atScreen(side === 'a' ? job.approved : job.build, job.route);
+          const page = await context.newPage();
+          try {
+            await settle(page, url);
+            await settleWords(page);
+            await page.addStyleTag({ content: HIDE_CSS }).catch(() => undefined);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.waitForTimeout(300);
+            const ex = await page.evaluate(BUILD_EXTRACT, { props: BUILD_PROPS, maxH: s.maxPage, marker: MARKER_ATTR });
+            if (process.env.BRIDGE_BUILD_DEBUG) writeFileSync(join(process.env.BRIDGE_BUILD_DEBUG, `ex-${s.key}-${side}.json`), JSON.stringify(ex));
+            const missing = missingPage(ex, page.url());
+            if (missing) {
+              sides[side] = { missing };
+              continue;
+            }
+            const png = await page.screenshot({ type: 'png', fullPage: true, clip: { x: 0, y: 0, width: s.width, height: Math.max(s.height, ex.h) } });
+            sides[side] = { ex, png };
+          } catch (e) {
+            sides[side] = { missing: 'error' };
+            say(`${s.key} ${side === 'a' ? 'approved' : 'build'}: ${url} could not be opened (${String(e?.message ?? e).slice(0, 160)}).`);
+          } finally {
+            await page.close().catch(() => undefined);
+          }
+        }
+      } finally {
+        await context.close();
+      }
+      const diff = sides.a?.ex && sides.b?.ex ? buildDiff(sides.a.ex, sides.b.ex) : { regions: [], ignored: 0 };
+      if (sides.a?.ex && sides.b?.ex) nameColors(diff.regions, sides.a.ex.colors, sides.b.ex.colors);
+      perSize.push({ s, sides, diff });
+      say(`${s.key}: ${sides.a?.missing ? `approved ${sides.a.missing}` : 'approved ok'}, ${sides.b?.missing ? `build ${sides.b.missing}` : 'build ok'}, ${diff.regions.length} region(s) differ.`);
+    }
+    const items = mergeSizes(perSize.map((p) => ({ key: p.s.key, regions: p.diff.regions })));
+    const minor = minorCount(perSize.map((p) => ({ key: p.s.key, regions: p.diff.regions })));
+    const summary = { version: 1, measuredAt: new Date(now()).toISOString(), route: job.route ?? null, urls: { approved: atScreen(job.approved, job.route), build: atScreen(job.build, job.route) }, sizes: [], items: [], ignored: perSize.reduce((n, p) => n + p.diff.ignored, 0) + minor };
+    for (const { s, sides } of perSize) {
+      const entry = { key: s.key, width: s.width, height: s.height, missing: {}, regions: perSize.find((p) => p.s === s).diff.regions.length };
+      for (const side of ['a', 'b']) {
+        const got = sides[side];
+        if (!got?.png) {
+          entry.missing[side] = got?.missing ?? 'error';
+          entry[side] = null;
+          continue;
+        }
+        // The crops of the items first seen at this size.
+        const crops = items.filter((it) => it.sizes[0] === s.key && it.boxes[s.key]?.[side]).map((it) => ({ name: `r${it.n}-${side}`, box: it.boxes[s.key][side], maxW: BUILD_CROP_WIDTH }));
+        // The focus crop of the build: what the exploration page's tile shows.
+        if (side === 'b') for (const it of items) if (it.sizes[0] === s.key && it.boxes[s.key]?.f) crops.push({ name: `r${it.n}-f`, box: it.boxes[s.key].f, maxW: 480 });
+        const enc = await encodeShots(helper, got.png, { scale: s.scale, fullWidth: s.imageWidth, crops });
+        if (enc.full) {
+          const name = `p-${s.key}-${side}`;
+          await save(name, Buffer.from(enc.full.b64, 'base64'));
+          entry[side] = { image: name, w: enc.full.w, h: enc.full.h, pageW: got.ex.w, pageH: got.ex.h };
+        } else {
+          entry[side] = null;
+          entry.missing[side] = 'too-large';
+        }
+        for (const [name, c] of Object.entries(enc.crops)) if (c) await save(name, Buffer.from(c.b64, 'base64'));
+        for (const it of items) {
+          if (it.sizes[0] !== s.key) continue;
+          if (enc.crops[`r${it.n}-${side}`]) it.crop = { ...(it.crop ?? { size: s.key }), [side]: `r${it.n}-${side}` };
+          if (side === 'b' && enc.crops[`r${it.n}-f`]) it.crop = { ...(it.crop ?? { size: s.key }), f: `r${it.n}-f` };
+        }
+      }
+      summary.sizes.push(entry);
+    }
+    summary.items = items.map((it) => ({ ...it, crop: it.crop ?? { size: it.sizes[0] } }));
+    return summary;
+  } finally {
+    await helperCtx.close();
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Run.
 
 export function targetsOf(config, hostRepo) {
@@ -1276,8 +2168,20 @@ async function main() {
     } finally {
       await browser.close();
     }
+  } else if (cmd === 'build') {
+    // Local run of Check the build: the approved preview and the build on the same screen, into a folder. Nothing sent.
+    if (!a.approved || !a.build || !a.out) throw new Error('--approved <url> --build <url> --out <dir> are required (--route /#/screen optional)');
+    mkdirSync(a.out, { recursive: true });
+    const browser = await launch();
+    try {
+      const summary = await measureBuild(browser, { approved: a.approved, build: a.build, route: typeof a.route === 'string' ? a.route : null }, async (name, webp) => writeFileSync(join(a.out, `${name}.webp`), webp));
+      writeJson(join(a.out, 'summary.json'), summary);
+      for (const it of summary.items) log(`${it.n}. ${it.name} (${it.sizes.join(', ')}): ${it.line}`);
+    } finally {
+      await browser.close();
+    }
   } else {
-    console.error('Usage: node scripts/preview-shots.mjs run --shots <dir> | capture --url <url> --out <file.webp> | reach --repo <owner/name> --out <dir>');
+    console.error('Usage: node scripts/preview-shots.mjs run --shots <dir> | capture --url <url> --out <file.webp> | reach --repo <owner/name> --out <dir> | build --approved <url> --build <url> --out <dir>');
     process.exit(1);
   }
 }

@@ -1,0 +1,150 @@
+/* The way into Check the build, region by region, on the exploration page (components/ds/studio/BuildReviewEntry.tsx):
+   the three facts, a row of crops the same height (the first four, then "+N"; two on a phone), then the actions at the
+   end, the secondary first. */
+
+.bre {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bre-line {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.bre-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--size-40), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bre-facts li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.bre-facts strong {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-600);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-tight);
+}
+
+.bre-facts span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-200);
+}
+
+.bre-crops {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--size-40) * 3 / 4), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bre-crop {
+  position: relative;
+  display: block;
+  height: calc(var(--size-12) * 2);
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-default);
+  color: inherit;
+  text-decoration: none;
+}
+
+.bre-crop.is-meant {
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+}
+
+.bre-crop img,
+.bre-wait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.bre-wait {
+  background: var(--color-bg-muted);
+}
+
+.bre-pin {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  display: grid;
+  place-items: center;
+  width: var(--size-6);
+  height: var(--size-6);
+  border-radius: var(--radius-full);
+  background: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+  font-size: var(--font-size-100);
+  font-weight: var(--font-weight-bold);
+}
+
+.bre-crop.is-meant .bre-pin {
+  outline: var(--border-width-1) solid var(--color-border-strong);
+  background: var(--color-surface-default);
+  color: var(--color-text-default);
+}
+
+.bre-plus {
+  display: grid;
+  place-items: center;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-400);
+}
+
+@media (hover: hover) {
+  .bre-crop:hover {
+    border-color: var(--color-border-hover);
+  }
+}
+
+.bre-more-only,
+.bre-phone-only,
+.bre-plus-phone {
+  display: none;
+}
+
+.bre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 700px) {
+  .bre-crops {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bre-crop {
+    height: var(--size-20);
+  }
+
+  .bre-wide,
+  .bre-plus-wide {
+    display: none;
+  }
+
+  .bre-phone-only {
+    display: block;
+  }
+
+  .bre-plus-phone {
+    display: inline;
+  }
+}

@@ -59,6 +59,7 @@ import {
 } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { BuildCheck } from './BuildCheck';
+import { BuildReviewEntry } from './BuildReviewEntry';
 import { BUILD_WORDS, type BuildCheckView } from '../../../lib/build-check-view';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
@@ -1142,7 +1143,7 @@ function ExplorationBody(p: ExplorationPageProps) {
           </>
         ) : null
       }
-      entry={p.checkEntry ?? null}
+      entry={p.checkEntry ?? (handoff?.check?.review ? <BuildReviewEntry product={handoff.check.review.product} number={handoff.check.review.number} builder={handoff.check.builder} /> : null)}
       foot={stageFoot}
     />
   ) : (

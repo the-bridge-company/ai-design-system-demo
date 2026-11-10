@@ -876,8 +876,27 @@ export async function buildState(repo: string, x: BuildTarget, githubToken: stri
   return call<BuildStateRead>('POST', '', { action: 'build-state', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
 }
 
-export async function sayBuild(repo: string, x: BuildTarget & { kind: 'looks-right' | 'changes'; why?: 'build' | 'design'; text?: string }, githubToken: string | null = null): Promise<BuildStateRead> {
+export async function sayBuild(repo: string, x: BuildTarget & { kind: 'looks-right' | 'changes'; why?: 'build' | 'design'; text?: string; fixes?: boolean }, githubToken: string | null = null): Promise<BuildStateRead> {
   return call<BuildStateRead>('POST', '', { action: 'build-word', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
+}
+
+/** Check the build, region by region (the review mode, lib/build-review-view): everything the page shows. */
+export async function buildReview(repo: string, x: BuildTarget, githubToken: string | null = null): Promise<import('../lib/build-review-view').ReviewRead | { ready: false; message?: string }> {
+  return call('POST', '', { action: 'build-review', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
+}
+
+/** One person's word on one difference this round (null takes it back). */
+export async function sayBuildItem(repo: string, x: BuildTarget & { sig: string; verdict: 'fine' | 'fix' | null }, githubToken: string | null = null): Promise<{ items: import('../lib/build-review-view').ItemState[] }> {
+  return call('POST', '', { action: 'build-item', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
+}
+
+/** A comment pinned on a difference, an answer to one, or resolving it. */
+export async function buildNote(
+  repo: string,
+  x: BuildTarget & ({ op: 'add'; sig: string; size: string; side: 'a' | 'b'; x: number; y: number; text: string } | { op: 'reply'; id: string; text: string } | { op: 'resolve'; id: string; resolved: boolean }),
+  githubToken: string | null = null,
+): Promise<{ notes: import('../lib/build-review-view').NoteThread[] }> {
+  return call('POST', '', { action: 'build-note', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
 }
 
 /** Where the check of each developers' build stands, for the lists (keys "owner/repo#number"); null when not opened yet. */

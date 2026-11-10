@@ -83,7 +83,7 @@ export function BuildReviewEntry({ product, number, builder: builderHint }: { pr
                 <li key={it.sig} className={`${i >= 2 ? 'bre-wide' : ''} ${i >= 4 ? 'bre-more-only' : ''}`}>
                   {/* bridge-audit-ignore-next-line: a crop of the build is the link itself, at a fixed height with its number; a DS Link would underline a picture */}
                   <a href={href(it.sig)} className={`bre-crop ${d.meant.includes(it.sig) ? 'is-meant' : ''}`} aria-label={`${it.n}. ${it.name}: ${it.line}`}>
-                    {it.crop.b ? <Crop url={img(it.crop.b)} alt="" /> : <span className="bre-wait" />}
+                    {it.crop.f || it.crop.b ? <Crop url={img((it.crop.f ?? it.crop.b)!)} alt="" /> : <span className="bre-wait" />}
                     <span className="bre-pin" aria-hidden="true">
                       {it.n}
                     </span>

@@ -14,6 +14,15 @@ export interface ReviewFact {
   was: string;
   now: string;
   n: number;
+  wasName?: string;
+  nowName?: string;
+}
+
+/** One side of a measured color: the swatch, the library's name when it is one, the hex for the tooltip. */
+export interface ColorWord {
+  css: string;
+  name: string;
+  hex: string;
 }
 export interface ReviewItem {
   n: number;
@@ -23,7 +32,7 @@ export interface ReviewItem {
   facts: ReviewFact[];
   sizes: SizeKey[];
   boxes: Partial<Record<SizeKey, { a: Box | null; b: Box | null }>>;
-  crop: { size: SizeKey; a?: string; b?: string };
+  crop: { size: SizeKey; a?: string; b?: string; f?: string };
 }
 export interface ReviewShot {
   image: string;
@@ -122,7 +131,7 @@ export const REVIEW_WORDS = {
   edgeCase: 'Edge case',
   openYourself: 'Open the build yourself',
   sendAnswer: 'Send your answer',
-  lookFirst: (n: number) => `${n === 1 ? '1 difference' : `${n} differences`} still to look at.`,
+  lookFirst: (n: number) => `${n} still to look at.`,
   allLooked: 'You looked at each one. Send your answer.',
   canvas: 'Show',
   build: 'Build',
@@ -238,14 +247,24 @@ export function colorWord(v: string): string {
   return `#${hex}`;
 }
 
-/** A measured fact as the panel says it: its label, what the design says (null when nothing), what the build shows. */
-export function factWords(f: ReviewFact): { label: string; was: string | null; now: string } {
-  const color = ['color', 'fill', 'border'].includes(f.k);
-  const word = (v: string) => (color ? colorWord(v) : v);
+/**
+ * A measured fact as the panel says it: its label, what the design says (null when nothing), what the build shows.
+ * A color comes as a swatch with the library's name (text default), never a hex to read: the hex is the tooltip.
+ */
+export function factWords(f: ReviewFact): { label: string; was: string | null; now: string; colors?: { was: ColorWord; now: ColorWord } } {
   if (f.k === 'added') return { label: 'Not in the design', was: null, now: f.now };
   if (f.k === 'missing') return { label: 'Missing', was: f.was, now: 'not in the build' };
   if (f.k === 'order') return { label: 'Order', was: null, now: `${f.now} before ${f.was}` };
-  return { label: f.label, was: f.was ? word(f.was) : null, now: word(f.now) || 'none' };
+  if (['color', 'fill', 'border'].includes(f.k)) {
+    const side = (v: string, name?: string): ColorWord => {
+      const hex = colorWord(v);
+      return { css: hex === 'none' ? 'transparent' : hex, hex, name: hex === 'none' ? 'none' : (name ?? 'not a library color') };
+    };
+    const was = side(f.was, f.wasName);
+    const now = side(f.now, f.nowName);
+    return { label: f.label, was: was.name, now: now.name, colors: { was, now } };
+  }
+  return { label: f.label, was: f.was || null, now: f.now || 'none' };
 }
 
 /** The list's groups: what differs at laptop sizes (any size but phone alone), then on a phone only. Pure. */

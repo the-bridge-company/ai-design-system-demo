@@ -1180,7 +1180,8 @@ export function compareElements(a, b) {
   if (a.kind === 'control' || a.kind === 'field') {
     const ha = a.box?.[3] ?? 0;
     const hb = b.box?.[3] ?? 0;
-    if (Math.abs(ha - hb) > 3) facts.push({ k: 'height', label: `${word} height`, was: round(ha), now: round(hb) });
+    // A link's height follows its words wrapping: only buttons and fields have a height of their own.
+    if (word !== 'Link' && Math.abs(ha - hb) > 3) facts.push({ k: 'height', label: `${word} height`, was: round(ha), now: round(hb) });
     else if (ha !== hb) tiny++;
     if ((a.icons ?? 0) !== (b.icons ?? 0)) facts.push({ k: 'icon', label: `${word} icon`, was: a.icons ? 'yes' : 'none', now: b.icons ? 'yes' : 'none' });
   }
@@ -1417,7 +1418,7 @@ export function buildDiff(a, b) {
   const addFact = (r, f, ea, eb) => {
     const same = r.facts.find((x) => x.k === f.k && x.was === f.was && x.now === f.now);
     if (same) same.n = (same.n ?? 1) + 1;
-    else r.facts.push({ ...f, n: 1 });
+    else r.facts.push({ ...f, n: 1, at: eb?.box ?? ea?.box ?? null });
     if (ea?.box) r.boxes.a.push(ea.box);
     if (eb?.box) {
       r.boxes.b.push(eb.box);
@@ -1459,6 +1460,7 @@ export function buildDiff(a, b) {
       const [a1, b1] = speakingPairs[i];
       const [a2, b2] = speakingPairs[j];
       if (rkey('b', b1) !== rkey('b', b2) || !near(a1, a2) || !near(b1, b2)) continue;
+      if (Math.min(b1.text.length, b2.text.length) <= 3) continue;
       const before = Math.sign(readingOrder(a1, a2));
       const after = Math.sign(readingOrder(b1, b2));
       if (!before || !after || before === after) continue;
@@ -1490,7 +1492,15 @@ export function buildDiff(a, b) {
         .filter((f) => !(f.k === 'text' && texts.some((g) => g !== f && g.was.length < f.was.length && f.was.includes(g.was) && f.now.includes(g.now))))
         .sort((x, y) => FACT_ORDER.indexOf(x.k) - FACT_ORDER.indexOf(y.k))
         .slice(0, 8);
-      return { key: r.key, name: r.name, line: regionLine(facts), facts, a: box('a'), b: box('b'), y: Number.isFinite(r.firstY) ? r.firstY : 0 };
+      // The focus: the strongest difference itself, with room around it (the entry's tile shows it legibly).
+      const own = facts.find((f) => !isMinor(f) && f.at)?.at ?? unionBox(r.boxes.b) ?? unionBox(r.boxes.a);
+      let fb = null;
+      if (own) {
+        const w = Math.max(own[2] + 64, 240);
+        const h = Math.max(own[3] + 64, 150);
+        fb = [Math.max(0, Math.round(own[0] + own[2] / 2 - w / 2)), Math.max(0, Math.round(own[1] + own[3] / 2 - h / 2)), Math.round(Math.min(w, 900)), Math.round(Math.min(h, 600))];
+      }
+      return { key: r.key, name: r.name, line: regionLine(facts), facts: facts.map(({ at: _at, ...f }) => f), a: box('a'), b: box('b'), fb, y: Number.isFinite(r.firstY) ? r.firstY : 0 };
     })
     .sort((x, y) => x.y - y.y)
     .slice(0, BUILD_MAX_ITEMS);
@@ -1518,27 +1528,115 @@ export function regionSig(name, facts) {
  * differs only on a phone. `perSize`: [{ key, regions }] widest first.
  */
 export function mergeSizes(perSize) {
-  const items = new Map();
+  // One item per region and size first.
+  const all = [];
   for (const { key, regions } of perSize) {
-    for (const r of regions ?? []) {
-      const k = r.key;
-      if (!items.has(k)) items.set(k, { key: k, name: r.name, facts: [], sizes: [], boxes: {}, y: {} });
-      const it = items.get(k);
-      it.sizes.push(key);
-      it.boxes[key] = { a: r.a, b: r.b };
-      it.y[key] = r.y;
-      for (const f of r.facts) if (!it.facts.some((x) => x.k === f.k && x.was === f.was && x.now === f.now)) it.facts.push(f);
-    }
+    for (const r of regions ?? []) all.push({ key: r.key, name: r.name, facts: [...r.facts], sizes: [key], strong: r.facts.some((f) => !isMinor(f)) ? [key] : [], boxes: { [key]: { a: r.a, b: r.b, ...(r.fb ? { f: r.fb } : {}) } }, y: { [key]: r.y } });
   }
   const order = perSize.map((s) => s.key);
+  // Then one difference across sizes: the same region saying something in common, or the same words added, missing
+  // or changed in two regions (a header named by its heading on a phone, the page around it). The region seen first
+  // at the widest size keeps it, with every size. A region of the same name saying nothing in common at another size
+  // (the page on a phone) stays its own.
+  const together = (x, y) => (x.key === y.key && x.facts.some((f) => y.facts.some((g) => sameFact(f, g)))) || x.facts.some((f) => SAY.has(f.k) && y.facts.some((g) => sameFact(f, g)));
+  for (let i = 0; i < all.length; i++) {
+    const keep = all[i];
+    if (!keep) continue;
+    for (let j = i + 1; j < all.length; j++) {
+      const other = all[j];
+      if (!other || !together(keep, other)) continue;
+      const [win, lose] = rank(keep, order) <= rank(other, order) ? [keep, other] : [other, keep];
+      // The page around a named region gives up only what they both say; the rest of it stays its own.
+      if (['page', 'section'].includes(lose.key)) {
+        lose.facts = lose.facts.filter((f) => !win.facts.some((g) => sameFact(f, g)));
+        if (lose.facts.length) continue;
+      }
+      for (const s of lose.sizes) {
+        if (!win.sizes.includes(s)) win.sizes.push(s);
+        if (!win.boxes[s]) {
+          win.boxes[s] = lose.boxes[s];
+          win.y[s] = lose.y[s];
+        }
+      }
+      for (const f of lose.facts) if (!win.facts.some((x) => sameFact(x, f))) win.facts.push(f);
+      for (const s of lose.strong) if (!win.strong.includes(s)) win.strong.push(s);
+      all[all.indexOf(lose)] = null;
+      if (lose === keep) break;
+    }
+  }
   const phoneOnly = (it) => it.sizes.every((s) => s === 'phone');
-  const list = [...items.values()].map((it) => {
-    const facts = it.facts.sort((x, y) => FACT_ORDER.indexOf(x.k) - FACT_ORDER.indexOf(y.k)).slice(0, 8);
-    return { ...it, facts, line: regionLine(facts), sig: regionSig(it.name, facts), sizes: order.filter((s) => it.sizes.includes(s)) };
-  });
+  for (const it of all) if (it && it.key === 'page') it.name = it.strong.every((x) => x === 'phone') ? 'The page on a phone' : 'The page';
+  const list = all
+    .filter(Boolean)
+    .filter((it) => it.facts.some((f) => !isMinor(f)))
+    .map((it) => {
+      const facts = it.facts.sort((x, y) => Number(isMinor(x)) - Number(isMinor(y)) || FACT_ORDER.indexOf(x.k) - FACT_ORDER.indexOf(y.k)).slice(0, 8);
+      // The sizes where it shows something that is not minor: "seen at every size" says only that, and the crop is
+      // taken at the first of them.
+      const shown = order.filter((s) => it.strong.includes(s));
+      return { ...it, facts, line: regionLine(facts.filter((f) => !isMinor(f))), sig: regionSig(it.name, facts), sizes: shown.length ? shown : order.filter((s) => it.sizes.includes(s)) };
+    });
   const first = (it) => it.sizes[0];
   list.sort((x, y) => Number(phoneOnly(x)) - Number(phoneOnly(y)) || order.indexOf(first(x)) - order.indexOf(first(y)) || (x.y[first(x)] ?? 0) - (y.y[first(y)] ?? 0));
   return list.slice(0, BUILD_MAX_ITEMS).map((it, i) => ({ n: i + 1, sig: it.sig, name: it.name, line: it.line, facts: it.facts, sizes: it.sizes, boxes: it.boxes }));
+}
+
+/** How many regions were only minor style shifts, per size merged as mergeSizes does: what the page leaves out. */
+export function minorCount(perSize) {
+  const names = new Set();
+  for (const { regions } of perSize) for (const r of regions ?? []) if (r.facts.length && r.facts.every(isMinor)) names.add(r.key);
+  return names.size;
+}
+
+const SAY = new Set(['text', 'date', 'added', 'missing']);
+const sameFact = (x, f) => x.k === f.k && x.was === f.was && x.now === f.now;
+/** Generic names lose to a named region; then the widest size, then higher on the page. */
+const rank = (it, order) => (['page', 'section'].includes(it.key) ? 100 : 0) + order.indexOf(it.sizes[0]) * 10;
+
+const channelGap = (a, b) => {
+  const x = /rgba?\(([^)]+)\)/.exec(String(a ?? ''))?.[1]?.split(/[\s,/]+/).map(Number) ?? [];
+  const y = /rgba?\(([^)]+)\)/.exec(String(b ?? ''))?.[1]?.split(/[\s,/]+/).map(Number) ?? [];
+  if (x.length < 3 || y.length < 3) return 255;
+  if ((x[3] ?? 1) < 0.05 || (y[3] ?? 1) < 0.05) return 255;
+  return Math.max(Math.abs(x[0] - y[0]), Math.abs(x[1] - y[1]), Math.abs(x[2] - y[2]));
+};
+/**
+ * A minor style shift: a component a little taller or roomier, softer corners, a shadow, a background or outline tint,
+ * a weight, a near color. Said under a region that also differs in what it shows; a region of only these is left out
+ * (counted). What the page shows (words, dates, icons, order) and clear changes (text 2 sizes up, a new hue) never are.
+ */
+export function isMinor(f) {
+  if (['space', 'radius', 'shadow', 'border', 'weight', 'font', 'case', 'underline'].includes(f.k)) return true;
+  // A background that appears or goes on the same page color is not seen: transparent counts as minor.
+  if (f.k === 'fill') return channelGap(f.was, f.now) <= 48 || /rgba\([^)]*,\s*0\)$/.test(String(f.was)) || /rgba\([^)]*,\s*0\)$/.test(String(f.now));
+  if (f.k === 'color') return channelGap(f.was, f.now) <= 48;
+  if (f.k === 'size') return Math.abs(Number(f.now) - Number(f.was)) <= 2;
+  if (f.k === 'height') return Math.abs(Number(f.now) - Number(f.was)) <= 8;
+  if (f.k === 'outline') return true;
+  return false;
+}
+
+/** The library's name for a color of a page (its CSS custom properties, read on the page), else null. */
+export function colorName(rgb, colors) {
+  const hits = (colors ?? []).filter(([, v]) => v === rgb).map(([n]) => n);
+  if (!hits.length) return null;
+  // Semantic names before ramp steps ("--color-text-default" before "--color-ink-900"), then the shortest.
+  hits.sort((x, y) => Number(/\d/.test(x)) - Number(/\d/.test(y)) || x.length - y.length);
+  return hits[0].replace(/^--(color-)?/, '').replace(/-/g, ' ');
+}
+
+/** Each color fact of the regions with its library names, from the colors each page defines. */
+export function nameColors(regions, colorsA, colorsB) {
+  for (const r of regions) {
+    for (const f of r.facts) {
+      if (!['color', 'fill', 'border'].includes(f.k)) continue;
+      const was = colorName(f.was, colorsA);
+      const now = colorName(f.now, colorsB);
+      if (was) f.wasName = was;
+      if (now) f.nowName = now;
+    }
+  }
+  return regions;
 }
 
 /** A page that is not the product: a host's sign-in wall, an error page, or nearly nothing written on it. */
@@ -1633,7 +1731,35 @@ const BUILD_EXTRACT = ({ props, maxH, marker }) => {
       st: Object.fromEntries(props.map((q) => [q, cs.getPropertyValue(q)])),
     });
   }
-  return { w: docW, h: docH, vh: window.innerHeight, words, title: (document.querySelector('h1')?.textContent ?? document.title ?? '').trim().slice(0, 80), els };
+  // The library's colors on this page: every --color-* custom property its style sheets set, as computed rgb.
+  const names = new Set();
+  const walk = (rules) => {
+    for (const r of rules ?? []) {
+      if (names.size >= 800) return;
+      if (r.style) for (let i = 0; i < r.style.length; i++) if (r.style[i].startsWith('--color-')) names.add(r.style[i]);
+      if (r.cssRules) walk(r.cssRules);
+    }
+  };
+  for (const sh of document.styleSheets) {
+    try {
+      walk(sh.cssRules);
+    } catch {
+      /* another origin's sheet: not readable */
+    }
+  }
+  const root = getComputedStyle(document.documentElement);
+  const probe = document.createElement('span');
+  document.body.appendChild(probe);
+  const colors = [];
+  for (const n of names) {
+    const v = root.getPropertyValue(n).trim();
+    if (!v) continue;
+    probe.style.color = '';
+    probe.style.color = v;
+    if (probe.style.color) colors.push([n, getComputedStyle(probe).color]);
+  }
+  probe.remove();
+  return { w: docW, h: docH, vh: window.innerHeight, words, title: (document.querySelector('h1')?.textContent ?? document.title ?? '').trim().slice(0, 80), els, colors };
 };
 
 /** Waits until the words on the page stop changing (an app that fetches its data after load), 8 seconds at most. */
@@ -1736,11 +1862,13 @@ export async function measureBuild(browser, job, save, { log: say = log, sizes =
         await context.close();
       }
       const diff = sides.a?.ex && sides.b?.ex ? buildDiff(sides.a.ex, sides.b.ex) : { regions: [], ignored: 0 };
+      if (sides.a?.ex && sides.b?.ex) nameColors(diff.regions, sides.a.ex.colors, sides.b.ex.colors);
       perSize.push({ s, sides, diff });
       say(`${s.key}: ${sides.a?.missing ? `approved ${sides.a.missing}` : 'approved ok'}, ${sides.b?.missing ? `build ${sides.b.missing}` : 'build ok'}, ${diff.regions.length} region(s) differ.`);
     }
     const items = mergeSizes(perSize.map((p) => ({ key: p.s.key, regions: p.diff.regions })));
-    const summary = { version: 1, measuredAt: new Date(now()).toISOString(), route: job.route ?? null, urls: { approved: atScreen(job.approved, job.route), build: atScreen(job.build, job.route) }, sizes: [], items: [], ignored: perSize.reduce((n, p) => n + p.diff.ignored, 0) };
+    const minor = minorCount(perSize.map((p) => ({ key: p.s.key, regions: p.diff.regions })));
+    const summary = { version: 1, measuredAt: new Date(now()).toISOString(), route: job.route ?? null, urls: { approved: atScreen(job.approved, job.route), build: atScreen(job.build, job.route) }, sizes: [], items: [], ignored: perSize.reduce((n, p) => n + p.diff.ignored, 0) + minor };
     for (const { s, sides } of perSize) {
       const entry = { key: s.key, width: s.width, height: s.height, missing: {}, regions: perSize.find((p) => p.s === s).diff.regions.length };
       for (const side of ['a', 'b']) {
@@ -1752,6 +1880,8 @@ export async function measureBuild(browser, job, save, { log: say = log, sizes =
         }
         // The crops of the items first seen at this size.
         const crops = items.filter((it) => it.sizes[0] === s.key && it.boxes[s.key]?.[side]).map((it) => ({ name: `r${it.n}-${side}`, box: it.boxes[s.key][side], maxW: BUILD_CROP_WIDTH }));
+        // The focus crop of the build: what the exploration page's tile shows.
+        if (side === 'b') for (const it of items) if (it.sizes[0] === s.key && it.boxes[s.key]?.f) crops.push({ name: `r${it.n}-f`, box: it.boxes[s.key].f, maxW: 480 });
         const enc = await encodeShots(helper, got.png, { scale: s.scale, fullWidth: s.imageWidth, crops });
         if (enc.full) {
           const name = `p-${s.key}-${side}`;
@@ -1763,8 +1893,9 @@ export async function measureBuild(browser, job, save, { log: say = log, sizes =
         }
         for (const [name, c] of Object.entries(enc.crops)) if (c) await save(name, Buffer.from(c.b64, 'base64'));
         for (const it of items) {
-          if (it.sizes[0] !== s.key || !enc.crops[`r${it.n}-${side}`]) continue;
-          it.crop = { ...(it.crop ?? { size: s.key }), [side]: `r${it.n}-${side}` };
+          if (it.sizes[0] !== s.key) continue;
+          if (enc.crops[`r${it.n}-${side}`]) it.crop = { ...(it.crop ?? { size: s.key }), [side]: `r${it.n}-${side}` };
+          if (side === 'b' && enc.crops[`r${it.n}-f`]) it.crop = { ...(it.crop ?? { size: s.key }), f: `r${it.n}-f` };
         }
       }
       summary.sizes.push(entry);

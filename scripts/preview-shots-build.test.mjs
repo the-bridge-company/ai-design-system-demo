@@ -1,7 +1,7 @@
 // Check the build, the robot's pure parts (scripts/preview-shots.mjs measureBuild): which elements of the approved
 // design and of the build are the same, what differs between them, how it is grouped and said.
 import { describe, expect, it } from 'vitest';
-import { buildDiff, colorsDiffer, compareElements, dateShape, mergeSizes, missingPage, normText, regionLine, regionSig, regionsOf, shortText } from './preview-shots.mjs';
+import { buildDiff, colorName, colorsDiffer, compareElements, dateShape, isMinor, mergeSizes, minorCount, missingPage, nameColors, normText, regionLine, regionSig, regionsOf, shortText } from './preview-shots.mjs';
 import { buildAddresses } from './private-shots.mjs';
 
 const ST = { color: 'rgb(21, 32, 43)', 'background-color': 'rgba(0, 0, 0, 0)', 'font-family': 'Instrument Sans, sans-serif', 'font-size': '14px', 'font-weight': '400', 'text-transform': 'none', 'text-decoration-line': 'none', 'border-top-width': '0px', 'border-right-width': '0px', 'border-bottom-width': '0px', 'border-left-width': '0px', 'border-top-color': 'rgb(0, 0, 0)', 'border-top-left-radius': '0px', 'padding-top': '0px', 'padding-right': '0px', 'padding-bottom': '0px', 'padding-left': '0px', 'box-shadow': 'none' };
@@ -111,10 +111,11 @@ describe('what differs between the approved design and the build', () => {
 });
 
 describe('every size as one list', () => {
+  const text = (was, now) => ({ k: 'text', label: 'Text', was, now, n: 1 });
   it('one item per region across sizes, laptop first, phone only after, a stable signature', () => {
-    const f = [{ k: 'text', label: 'Text', was: 'A', now: 'B', n: 1 }];
+    const f = [text('A', 'B')];
     const items = mergeSizes([
-      { key: 'laptop', regions: [{ key: 'tags', name: 'Tags', facts: f, a: [1, 1, 1, 1], b: [2, 2, 2, 2], y: 500 }, { key: 'header', name: 'Header', facts: f, a: null, b: [0, 0, 1, 1], y: 80 }] },
+      { key: 'laptop', regions: [{ key: 'tags', name: 'Tags', facts: f, a: [1, 1, 1, 1], b: [2, 2, 2, 2], y: 500 }, { key: 'header', name: 'Header', facts: [{ k: 'added', label: 'New', was: '', now: 'SK', n: 1 }], a: null, b: [0, 0, 1, 1], y: 80 }] },
       { key: 'small', regions: [{ key: 'tags', name: 'Tags', facts: f, a: null, b: null, y: 500 }] },
       { key: 'phone', regions: [{ key: 'status', name: 'Note status', facts: [{ k: 'missing', label: 'Missing', was: 'Cold', now: '', n: 1 }], a: null, b: [3, 3, 3, 3], y: 100 }] },
     ]);
@@ -125,7 +126,37 @@ describe('every size as one list', () => {
     ]);
     expect(items[1].sig).toBe(regionSig('Tags', f));
     expect(regionSig('Tags', f)).toMatch(/^r[0-9a-f]{8}$/);
-    expect(regionSig('Tags', f)).not.toBe(regionSig('Tags', [{ ...f[0], now: 'C' }]));
+    expect(regionSig('Tags', f)).not.toBe(regionSig('Tags', [text('A', 'C')]));
+  });
+
+  it('the same words in two regions are one difference; the page around a named region keeps only its own', () => {
+    const sk = { k: 'added', label: 'New', was: '', now: 'SK', n: 1 };
+    const items = mergeSizes([
+      { key: 'laptop', regions: [{ key: 'header', name: 'Header', facts: [sk], a: null, b: [0, 0, 1, 1], y: 80 }, { key: 'page', name: 'Page', facts: [sk, { k: 'missing', label: 'Missing', was: 'Deals', now: '', n: 1 }], a: null, b: [0, 0, 9, 9], y: 0 }] },
+      { key: 'phone', regions: [{ key: 'cletus doyle', name: 'Cletus Doyle', facts: [sk], a: null, b: [0, 0, 1, 1], y: 60 }] },
+    ]);
+    expect(items.map((i) => [i.name, i.sizes, i.facts.map((f) => f.now || f.was)])).toEqual([
+      ['The page', ['laptop'], ['Deals']],
+      ['Header', ['laptop', 'phone'], ['SK']],
+    ]);
+  });
+
+  it('a region of only minor style shifts is left out; a clear one stays', () => {
+    const items = mergeSizes([{ key: 'laptop', regions: [{ key: 'status', name: 'Status', facts: [{ k: 'height', label: 'Field height', was: '36', now: '44', n: 1 }, { k: 'space', label: 'Space inside', was: '20', now: '30', n: 1 }], a: null, b: null, y: 0 }] }]);
+    expect(items).toEqual([]);
+    expect(minorCount([{ key: 'laptop', regions: [{ key: 'status', facts: [{ k: 'radius', was: '12', now: '18' }] }] }])).toBe(1);
+    expect(isMinor({ k: 'size', was: '30', now: '44' })).toBe(false);
+    expect(isMinor({ k: 'color', was: 'rgb(21, 32, 43)', now: 'rgb(11, 74, 139)' })).toBe(false);
+    expect(isMinor({ k: 'color', was: 'rgb(50, 62, 76)', now: 'rgb(21, 32, 43)' })).toBe(true);
+    expect(isMinor({ k: 'fill', was: 'rgba(0, 0, 0, 0)', now: 'rgb(255, 255, 255)' })).toBe(true);
+  });
+
+  it('names a color by the library the page defines, a semantic name first', () => {
+    const colors = [['--color-ink-900', 'rgb(21, 32, 43)'], ['--color-text-default', 'rgb(21, 32, 43)'], ['--color-text-link', 'rgb(11, 74, 139)']];
+    expect(colorName('rgb(21, 32, 43)', colors)).toBe('text default');
+    expect(colorName('rgb(1, 2, 3)', colors)).toBeNull();
+    const regions = nameColors([{ facts: [{ k: 'color', was: 'rgb(21, 32, 43)', now: 'rgb(11, 74, 139)' }] }], colors, colors);
+    expect(regions[0].facts[0]).toMatchObject({ wasName: 'text default', nowName: 'text link' });
   });
 });
 

@@ -41,7 +41,7 @@
 
 .bre-crops {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--size-40) * 3 / 4), 1fr));
   gap: var(--space-3);
   margin: 0;
   padding: 0;
@@ -51,7 +51,7 @@
 .bre-crop {
   position: relative;
   display: block;
-  height: var(--size-20);
+  height: calc(var(--size-12) * 2);
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-lg);
@@ -129,6 +129,10 @@
 @media (max-width: 700px) {
   .bre-crops {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bre-crop {
+    height: var(--size-20);
   }
 
   .bre-wide,

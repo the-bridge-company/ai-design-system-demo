@@ -548,6 +548,20 @@
   overflow-wrap: anywhere;
 }
 
+.brv-color {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.brv-swatch {
+  flex: none;
+  width: var(--size-4);
+  height: var(--size-4);
+  border: var(--border-width-default) solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
 .brv-ask {
   display: grid;
   gap: var(--space-2);

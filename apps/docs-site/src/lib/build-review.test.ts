@@ -139,7 +139,13 @@ describe('the page', () => {
   it('says a fact and a color as a designer reads them', () => {
     expect(colorWord('rgb(11, 74, 139)')).toBe('#0B4A8B');
     expect(colorWord('rgba(0, 0, 0, 0)')).toBe('none');
-    expect(factWords({ k: 'fill', label: 'Background', was: 'rgba(0, 0, 0, 0)', now: 'rgb(255, 255, 255)', n: 1 })).toEqual({ label: 'Background', was: 'none', now: '#FFFFFF' });
+    expect(factWords({ k: 'color', label: 'Text color', was: 'rgb(21, 32, 43)', now: 'rgb(11, 74, 139)', n: 1, wasName: 'text default' })).toEqual({
+      label: 'Text color',
+      was: 'text default',
+      now: 'not a library color',
+      colors: { was: { css: '#15202B', hex: '#15202B', name: 'text default' }, now: { css: '#0B4A8B', hex: '#0B4A8B', name: 'not a library color' } },
+    });
+    expect(factWords({ k: 'fill', label: 'Background', was: 'rgba(0, 0, 0, 0)', now: 'rgb(255, 255, 255)', n: 1 }).colors?.was).toEqual({ css: 'transparent', hex: 'none', name: 'none' });
     expect(factWords({ k: 'added', label: 'New', was: '', now: 'SK', n: 1 })).toEqual({ label: 'Not in the design', was: null, now: 'SK' });
     expect(possessive('Malik')).toBe("Malik's");
     expect(possessive('Charles')).toBe("Charles'");

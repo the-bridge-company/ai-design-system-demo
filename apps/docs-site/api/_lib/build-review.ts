@@ -45,6 +45,7 @@ const NAME = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const RUN = /^\d{10,16}$/;
 const SIG = /^r[0-9a-f]{8}$/;
 const ROUTE = /^\/[^\s<>"'\\]*$/;
+const TOKEN_NAME = /^[a-z0-9][a-z0-9 ]{0,59}$/;
 const BRANCH = /^[\w./-]{1,200}$/;
 
 const pk = (code: string, pull: number) => `${code.toLowerCase()}#${pull}`;
@@ -187,6 +188,9 @@ export interface BuildFact {
   was: string;
   now: string;
   n: number;
+  /** A color's name in the product's library ("text default"), read on the page, when it is one. */
+  wasName?: string;
+  nowName?: string;
 }
 
 export interface BuildItem {
@@ -197,7 +201,8 @@ export interface BuildItem {
   facts: BuildFact[];
   sizes: SizeKey[];
   boxes: Partial<Record<SizeKey, { a: Box | null; b: Box | null }>>;
-  crop: { size: SizeKey; a?: string; b?: string };
+  /** The crops of the item at its first size: each side's region, and the build's focus (the entry's tile). */
+  crop: { size: SizeKey; a?: string; b?: string; f?: string };
 }
 
 export interface BuildShot {
@@ -269,7 +274,7 @@ export function cleanBuildSummary(raw: unknown, o: { run: string; head: string; 
     const sig = str(it?.sig);
     if (!SIG.test(sig)) return [];
     const facts = (Array.isArray(it.facts) ? (it.facts as Record<string, unknown>[]) : []).slice(0, 8).flatMap((f) =>
-      (FACT_KINDS as readonly string[]).includes(String(f?.k)) ? [{ k: f.k as BuildFact['k'], label: str(f.label, 40), was: str(f.was, 160), now: str(f.now, 160), n: Math.max(1, int(f.n, 999)) }] : [],
+      (FACT_KINDS as readonly string[]).includes(String(f?.k)) ? [{ k: f.k as BuildFact['k'], label: str(f.label, 40), was: str(f.was, 160), now: str(f.now, 160), n: Math.max(1, int(f.n, 999)), ...(TOKEN_NAME.test(str(f.wasName, 60)) ? { wasName: str(f.wasName, 60) } : {}), ...(TOKEN_NAME.test(str(f.nowName, 60)) ? { nowName: str(f.nowName, 60) } : {}) }] : [],
     );
     const itemSizes = (Array.isArray(it.sizes) ? it.sizes : []).map(sizeOf).filter((x): x is SizeKey => Boolean(x));
     if (!itemSizes.length) return [];
@@ -280,6 +285,7 @@ export function cleanBuildSummary(raw: unknown, o: { run: string; head: string; 
     const crop: BuildItem['crop'] = { size: sizeOf(c.size) ?? itemSizes[0]! };
     if (NAME.test(str(c.a))) crop.a = str(c.a);
     if (NAME.test(str(c.b))) crop.b = str(c.b);
+    if (NAME.test(str(c.f))) crop.f = str(c.f);
     return [{ n: int(it.n, 99) || i + 1, sig, name: str(it.name, 60) || 'Section', line: str(it.line, 200), facts, sizes: itemSizes, boxes, crop }];
   });
   const route = str(v.route, 300);
@@ -309,7 +315,7 @@ export async function readBuildReview(redis: Redis, code: string, pull: number):
 export function imagesOf(r: BuildReview): Set<string> {
   const out = new Set<string>();
   for (const s of r.sizes) for (const side of [s.a, s.b]) if (side) out.add(side.image);
-  for (const it of r.items) for (const n of [it.crop.a, it.crop.b]) if (n) out.add(n);
+  for (const it of r.items) for (const n of [it.crop.a, it.crop.b, it.crop.f]) if (n) out.add(n);
   return out;
 }
 
@@ -568,7 +574,11 @@ export function fixesComment(o: { byName: string; role: BuildRole; round: number
   const lines = [`${plainText(o.byName)} (${PART[o.role]}) checked the build, round ${o.round}: ${o.fixes.length === 1 ? '1 thing' : `${o.fixes.length} things`} to fix.`, ''];
   for (const f of o.fixes) {
     lines.push(`**${f.n}. ${plainText(f.name)}**: ${plainText(f.line)}`);
-    for (const x of f.facts.slice(0, 4)) lines.push(`- ${plainText(x.label)}: ${x.was ? `${plainText(x.was)} → ` : ''}${plainText(x.now || 'none')}`);
+    for (const x of f.facts.slice(0, 4)) {
+      const was = x.wasName ? `${x.wasName} (${x.was})` : x.was;
+      const now = x.nowName ? `${x.nowName} (${x.now})` : x.now;
+      lines.push(`- ${plainText(x.label)}: ${was ? `${plainText(was)} → ` : ''}${plainText(now || 'none')}`);
+    }
     if (f.image) lines.push('', `![${plainText(f.name)}](${f.image})`);
     lines.push('');
   }

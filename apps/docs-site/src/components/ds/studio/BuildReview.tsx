@@ -636,12 +636,28 @@ function ItemPanel({ d, it, index, total, verdict, builder, canAnswer, notes, on
             <div key={i}>
               <dt>{w.label}</dt>
               <dd>
-                {w.was !== null && (
+                {w.colors ? (
                   <>
-                    <s>{w.was}</s> →{' '}
+                    <span className="brv-color" title={w.colors.was.hex}>
+                      <span className="brv-swatch" style={{ background: w.colors.was.css }} aria-hidden="true" />
+                      <s>{w.colors.was.name}</s>
+                    </span>{' '}
+                    →{' '}
+                    <span className="brv-color" title={w.colors.now.hex}>
+                      <span className="brv-swatch" style={{ background: w.colors.now.css }} aria-hidden="true" />
+                      {w.colors.now.name}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {w.was !== null && (
+                      <>
+                        <s>{w.was}</s> →{' '}
+                      </>
+                    )}
+                    {w.now}
                   </>
                 )}
-                {w.now}
                 {f.n > 1 ? ` (${f.n} places)` : ''}
               </dd>
             </div>

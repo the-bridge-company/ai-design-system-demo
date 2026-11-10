@@ -9,10 +9,9 @@ describe('the map graph', () => {
   it('has one box per exploration, the lead’s own changes as one dashed box, and the products', () => {
     const g = buildMap(pieces(), PRODUCTS, LEAD);
     expect(g.sources.map((s) => [s.label, s.sub, s.lead])).toEqual([
-      ['Order fulfilment timeline', 'Sofia · Acme Prints', false],
+      ['Contact page summary', 'Sofia · Acme CRM', false],
       ['Deal pipeline cards', 'Leo · Acme CRM', false],
       ['Bulk actions on products', 'Leo · Acme Prints', false],
-      ['Contact page summary', 'Sofia · Acme CRM', false],
       ['You, library changes', '2 changes', true],
     ]);
     // The lead's own pieces themselves in the middle: who made them is said once, on the left.
@@ -50,7 +49,7 @@ describe('a click on a box', () => {
     const g = buildMap(pieces(), PRODUCTS, LEAD);
     const src = g.sources.find((s) => s.label === 'Contact page summary')!;
     const f = focusOf(g, src.id)!;
-    expect([...f.keys]).toEqual([newComponent().key]);
+    expect([...f.keys]).toEqual([conflict().key, newComponent().key]);
     expect(f.line).toEqual({ before: 'Showing what ', strong: 'Contact page summary', after: ' asks for' });
     expect(f.lit.has(src.id)).toBe(true);
     expect(f.lit.has('d:crm')).toBe(true);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { explorationKeyOf, explorationPrBody, libraryConflicts, withExplorationLibrary, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
-import { conflictView, leadLibraryLine, libraryImpactView, looksRightBlock, waitingForLibraryLine } from './library-impact-view';
+import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
+import { keepLabel, keptKeys, leadLibraryLine, libraryImpactView, lookOf, looksRightBlock, namesLine, pickOf, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen. The library has nothing like it yet.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 const compact: MissingPiece = { id: 'statcard-size-compact', kind: 'variant', title: 'StatCard: compact size', summary: 'A compact size for StatCard.', name: 'compact', component: 'StatCard', aspect: 'size', values: [{ category: 'size', property: 'size', value: 'compact' }], where: [], change: { before: 'default', after: 'compact' } };
@@ -81,34 +81,125 @@ describe('the section on the exploration page', () => {
   });
 });
 
-describe('a conflict (LI4)', () => {
-  const leoBody = bodyWith([restyle('var(--space-3)', '12px', 'card-deal')]);
-  const leo = { key: explorationKeyOf('acme/crm-design', 1), name: 'Deal pipeline cards', product: 'Acme CRM', designer: 'Leo', record: { checkedAt: 'x', pieces: [restyle('var(--space-3)', '12px', 'card-deal')], links: [] } };
-  const sofia = { key: explorationKeyOf('acme/crm-design', 2), name: 'Contact page summary', product: 'Acme CRM', designer: 'Sofia', record: { checkedAt: 'x', pieces: [restyle('var(--space-5)', '20px', 'card-summary')], links: [] } };
-  const conflicts = libraryConflicts(leo, [sofia]);
-
-  it('blocks Looks right until the lead picks a way, and says why in the bar and the zone', () => {
-    const v = libraryImpactView({ body: leoBody, designer: 'Leo', lead: 'Dana', approved: false, canDecide: true, conflicts });
+describe('several ways for one component part (EB1 to EB4)', () => {
+  const restyleOf = (id: string, values: MissingPiece['values']): MissingPiece => ({ id, kind: 'variant', title: 'Card: restyle', summary: 'Card restyled from outside the library.', name: 'card', component: 'Card', values, where: [], restyle: { selector: '.x' } });
+  const pad = (v: string, px: string) => ({ category: 'spacing', property: 'padding', value: v, resolved: px });
+  const leoPiece = restyleOf('card-deal', [pad('var(--space-3)', '12px')]);
+  const leoBody = bodyWith([leoPiece]);
+  const src = (n: number, name: string, designer: string, piece: MissingPiece) => ({ key: explorationKeyOf('acme/crm-design', n), name, product: 'Acme CRM', designer, record: { checkedAt: 'x', pieces: [piece], links: [] } });
+  const leo = src(1, 'Deal pipeline cards', 'Leo', leoPiece);
+  const sofia = src(2, 'Contact page summary', 'Sofia', restyleOf('card-summary', [pad('var(--space-5)', '20px')]));
+  // Ann's way: a filled card with no border, the room inside of today.
+  const ann = src(3, 'Activity feed filters', 'Ann', restyleOf('card-feed', [pad('var(--space-4)', '16px'), { category: 'color', property: 'background-color', value: 'var(--color-bg-subtle)', resolved: '#f4f4f5' }, { category: 'border', property: 'border', value: 'none' }]));
+  const two = libraryConflicts(leo, [sofia]);
+  const three = libraryConflicts(leo, [sofia, ann]);
+  const base = { body: leoBody, designer: 'Leo', screen: 'Deal pipeline cards', product: 'Acme CRM', approved: false, now: new Date('2026-11-10T10:00:30Z') };
+  const conflictOf = (v: ReturnType<typeof libraryImpactView>): ConflictView => {
     if (v.state !== 'rows') throw new Error(v.state);
-    expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Two ways' });
-    expect(v.rows[0]!.menu).toEqual([]);
-    expect(v.conflicts).toHaveLength(1);
-    expect(looksRightBlock(conflicts)).toBe('Pick a way for Card first');
-    expect(leadLibraryLine(v, 'Leo')).toBe('Leo is done exploring. Pick a way for Card below, then answer. Looks right waits for that choice.');
-  });
+    return v.conflicts[0]!;
+  };
 
-  it("offers Leo's way, Sofia's way and both, in plain words", () => {
-    const c = conflictView(conflicts[0]!);
-    expect(c.options.map((o) => [o.label, o.hint])).toEqual([
-      ["Leo's way", 'Less room inside: 12'],
-      ["Sofia's way", 'More room inside: 20'],
-      ['Both, as two sizes', "Compact and roomy, today's stays the default"],
+  it('gives the lead one card: today, each way, both as sizes, and a button that says the outcome', () => {
+    const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.summary).toBe('1 change');
+    expect(v.rows[0]).toMatchObject({ kind: 'Change to', title: 'Card', summary: 'Tighter cards on this screen. The library Card has no tighter size yet.', before: null, after: null, menu: [] });
+    expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Your choice', tone: 'warning' });
+    const c = conflictOf(v);
+    expect(c.ways.map((w) => [w.label, w.hint])).toEqual([
+      ["Leo's way", 'Tighter · this screen'],
+      ["Sofia's way", 'Roomier · Contact page summary'],
     ]);
-    expect(c.note).toBe('Your choice answers both explorations. Sofia and Leo are told.');
+    expect(c.question).toBe('Which way does Card take?');
+    expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes Card roomier.");
+    expect(c.context[0]!.face).toBe('Sofia');
+    expect(c.note).toBe('Answers both screens. Leo and Sofia are told.');
+    expect(c.comment).toBe('Comment to both');
+    expect(c.todayHint).toBe('In the library now');
+    expect(keepLabel('one', [c.ways[0]!.key], c.ways)).toBe("Keep Leo's way");
+    expect(keepLabel('sizes', c.ways.map((w) => w.key), c.ways)).toBe('Keep both as sizes');
   });
 
-  it('opens Looks right again once settled', () => {
-    expect(looksRightBlock([{ ...conflicts[0]!, pick: 'both' }])).toBeNull();
+  it('says tighter or roomier than today when Bridge knows today', () => {
+    expect(wayWords([lookOf(leoPiece), lookOf(sofia.record.pieces[0])], 16)).toEqual([
+      { size: 'Tighter', thanToday: true },
+      { size: 'Roomier', thanToday: true },
+    ]);
+  });
+
+  it('shows the designer the same block, read only, their way marked theirs, the lead deciding', () => {
+    const c = conflictOf(libraryImpactView({ ...base, lead: 'Dana', canDecide: false, designerHere: true, conflicts: two, others: [sofia] }));
+    expect(c.decides).toBe(false);
+    expect(c.tag).toBe('Dana picks');
+    expect(c.ways[0]!.label).toBe("Leo's way (yours)");
+    expect(c.question).toBe("Sofia's screen makes Card roomier");
+    expect(c.context.map((s) => s.text).join('')).toBe('Contact page summary · Acme CRM');
+    expect(c.note).toBe("Tell Dana why yours fits this screen. Dana's choice answers both screens.");
+    expect(c.comment).toBe('Comment');
+  });
+
+  it('puts three designers in one card: one way, or several as sizes; Ann reads filled with no border', () => {
+    const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: three, others: [sofia, ann] }));
+    expect(c.several).toBe(true);
+    expect(c.ways.map((w) => w.size)).toEqual(['Tighter', 'Roomier', 'Filled, no border']);
+    expect(c.ways[2]!.look).toEqual({ padding: 16, gap: 8, radius: null, borderless: true, filled: true, shadowless: false });
+    // Each plate draws its way's own values: tighter and roomier differ from each other, room and spacing alike.
+    expect(c.ways.map((w) => [w.look.padding, w.look.gap])).toEqual([
+      [12, 6],
+      [20, 10],
+      [16, 8],
+    ]);
+    expect(c.context.map((s) => s.text).join('')).toBe("Two more screens change Card: Sofia's Contact page summary makes it roomier, Ann's Activity feed filters makes it filled, no border. All in Acme CRM.");
+    expect(c.note).toBe('Answers 3 screens. Leo, Sofia and Ann are told.');
+    expect(c.todayHint).toBe('Stays the default');
+    const kept = [c.ways[0]!.key, c.ways[1]!.key];
+    expect(keepLabel('sizes', kept, c.ways)).toBe('Keep 2 sizes: Tighter and Roomier');
+    expect(pickOf('sizes', kept, c.ways)).toBe(`sizes:${kept.join(' ')}`);
+    expect(pickOf('sizes', c.ways.map((w) => w.key), c.ways)).toBe('both');
+    expect(pickOf('one', [c.ways[2]!.key], c.ways)).toBe(c.ways[2]!.key);
+    expect(pickOf('sizes', [], c.ways)).toBeNull();
+  });
+
+  it('reads a way the check recorded as a space token, a gap or a radius', () => {
+    expect(lookOf({ values: [{ category: 'spacing', property: 'padding', value: 'var(--space-3)' }] })).toMatchObject({ padding: 12, gap: 6 });
+    expect(lookOf({ values: [{ category: 'spacing', property: 'padding', value: '24px' }, { category: 'spacing', property: 'gap', value: '4px' }, { category: 'radius', property: 'border-radius', value: '6px' }] })).toMatchObject({ padding: 24, gap: 4, radius: 6, borderless: false });
+    expect(lookOf(null, 'var(--space-5)')).toMatchObject({ padding: 20, gap: 10 });
+  });
+
+  it('stays one short line for ten screens or more', () => {
+    const many = Array.from({ length: 10 }, (_, i) => src(10 + i, `Screen ${i}`, `P${i}`, restyleOf(`p${i}`, [pad(`${20 + i}px`, `${20 + i}px`)])));
+    const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: libraryConflicts(leo, many), others: many }));
+    expect(c.ways).toHaveLength(11);
+    expect(c.context.map((s) => s.text).join('')).toMatch(/^Ten more screens change Card: P0's Screen 0 makes it .*, P1's Screen 1 makes it .* and 8 more\. All in Acme CRM\.$/);
+    expect(c.note).toBe('Answers 11 screens. Everyone who asked is told.');
+    expect(namesLine(['Leo', 'Sofia', 'Ann', 'Max', 'Kim'])).toBe('Leo, Sofia and 3 others');
+  });
+
+  it('once decided: two lines, the plates kept, this screen ringed, who chose and who is told', () => {
+    const pick = 'both';
+    const body = withExplorationLibrary(leoBody, (l) => withLibraryChoice(l, { component: 'Card', property: 'padding', pick, at: '2026-11-10T10:00:00Z', byName: 'Dana' }));
+    const settled = libraryConflicts({ ...leo, library: parseExplorationBody(body)?.library ?? null }, [sofia]);
+    const v = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, conflicts: settled, others: [sofia] });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.rows[0]!.status).toMatchObject({ label: 'Decided', tone: 'success' });
+    const d = v.conflicts[0]!.decided!;
+    expect(d.title).toBe('Card gets two new sizes');
+    expect(d.by).toBe('Dana, just now');
+    expect(d.told).toBe('Leo and Sofia are told');
+    expect(d.plates.map((p) => [p.label, p.sub, p.chip])).toEqual([
+      ['Today', 'Stays the default', null],
+      ['Tighter', null, 'This screen'],
+      ['Roomier', 'Contact page summary', null],
+    ]);
+    expect(looksRightBlock(settled)).toBeNull();
+    const one = keptKeys(sofia.key, v.conflicts[0]!.ways);
+    expect(one).toEqual({ mode: 'one', keys: [sofia.key] });
+  });
+
+  it('offers the choice in the library section only: the zone says nothing of it, the bar points to it', () => {
+    const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
+    expect(leadLibraryLine(v, 'Leo')).toBeNull();
+    expect(looksRightBlock(two)).toBe('Waits for the Card choice above');
   });
 });
 

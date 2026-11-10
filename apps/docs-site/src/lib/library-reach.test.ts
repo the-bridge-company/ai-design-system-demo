@@ -27,8 +27,8 @@ describe('who gets a piece', () => {
   it('lists both screens of a conflict, each in its product', () => {
     const r = reachOf(conflict(), PRODUCTS);
     expect(r.products.map((p) => [p.key, p.screens.map((s) => s.designer)])).toEqual([
-      ['prints', ['Sofia']],
-      ['crm', ['Leo']],
+      ['prints', []],
+      ['crm', ['Sofia', 'Leo']],
     ]);
   });
 
@@ -49,7 +49,7 @@ describe('who gets a piece', () => {
   it('says the origin in one sentence, never as chips', () => {
     expect(originSentence(change(), 'Dana')).toEqual({ before: 'Asked by Leo in ', link: { label: 'Bulk actions on products', href: expect.any(String) }, after: ', Acme Prints. A color change.' });
     expect(originSentence(leadChange(30, 'Deepen the blue'), 'Dana').before).toBe('Made by you. A color change.');
-    expect(originSentence(conflict(), 'Dana').before).toBe('Asked two ways: Sofia in Order fulfilment timeline, Leo in Deal pipeline cards.');
+    expect(originSentence(conflict(), 'Dana').before).toBe('Asked two ways: Sofia in Contact page summary, Leo in Deal pipeline cards.');
   });
 
   it('shows 4 screens per product, then Show all N', () => {

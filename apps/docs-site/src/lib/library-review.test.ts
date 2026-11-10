@@ -131,8 +131,8 @@ describe('an exploration’s piece', () => {
 
 const conflict = () =>
   pieceOfConflict(
-    { component: 'Card', property: 'padding', piece: 'card-padding', mine: { key: 'acme/prints-design#1', designer: 'Sofia', value: '24' }, other: { key: 'acme/crm-design#1', name: 'Deal pipeline cards', product: 'Acme CRM', designer: 'Leo', value: '12' }, pick: null },
-    { name: 'Order fulfilment timeline', product: 'Acme Prints', href: null, productKey: 'prints' },
+    { component: 'Card', property: 'padding', piece: 'card-padding', mine: { key: 'acme/crm-design#7', designer: 'Sofia', value: '20' }, other: { key: 'acme/crm-design#1', name: 'Deal pipeline cards', product: 'Acme CRM', designer: 'Leo', value: '12' }, pick: null },
+    { name: 'Contact page summary', product: 'Acme CRM', href: null, productKey: 'crm' },
     'Dana',
     { otherPiece: 'card-room', today: '16' },
   );

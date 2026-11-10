@@ -719,14 +719,16 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                         )}
                         {pair(p)}
                         <span role="cell" className="lr-row-piece">
-                          <span className="lr-row-title">{p.title}</span>
-                          <span className="lr-row-sub">
-                            <span className="lr-muted lr-row-kind">{p.kind}</span>
+                          <span className="lr-row-head">
+                            <span className="lr-row-title">{p.title}</span>
                             {p.conflict && !p.conflict.pick && (
                               <Badge tone="warning" size="sm" className={statusTagClass('warning')}>
                                 {waysTag(p.conflict.ways.length)}
                               </Badge>
                             )}
+                          </span>
+                          <span className="lr-row-sub">
+                            <span className="lr-muted lr-row-kind">{p.kind}</span>
                           </span>
                         </span>
                         <span role="cell" className="lr-row-ask">

@@ -599,7 +599,17 @@ a.lr-ask {
 
 .lr-row-piece {
   display: grid;
+  align-content: center;
   gap: var(--space-0-5);
+  min-width: 0;
+}
+
+/* The piece's name, then its one tag on the same line ("Card  2 ways"): the tag reads with the name. */
+.lr-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -610,6 +620,7 @@ a.lr-ask {
 .lr-row-kind,
 .lr-row-wait {
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .lr-row-ask {

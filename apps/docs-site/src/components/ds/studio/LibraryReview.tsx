@@ -448,7 +448,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
                 )}
                 {comment}
                 <span className="lr-keys" aria-hidden="true">
-                  <Kbd keys="A" size="sm" /> add {p.asked && (<><Kbd keys="K" size="sm" /> keep</>)} <Kbd keys="↓" size="sm" /> next
+                  <span className="lr-kh"><Kbd keys="A" /> add</span>{p.asked && (<span className="lr-kh"><Kbd keys="K" /> keep</span>)}<span className="lr-kh"><Kbd keys="↓" /> next</span>
                 </span>
               </div>
               {p.match && p.asked?.designer && (

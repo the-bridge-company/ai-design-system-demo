@@ -417,11 +417,17 @@ a.lr-ask {
 .lr-keys {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1-5);
+  gap: var(--space-4);
   margin-inline-start: auto;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+}
+
+.lr-kh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
 }
 
 @media (hover: none) {

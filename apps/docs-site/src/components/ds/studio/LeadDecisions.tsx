@@ -8,7 +8,7 @@
 // - WhyDialog, a reason before a lead's act on someone else's work, and HandOverDialog.
 // Words and rules: lib/lead-decisions.ts. Styles: styles/exploration-page.css (xp-lead-*).
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
-import { Button, ButtonGroup, Dialog, DialogClose, DialogContent, IconButton, Input, Menu, MenuContent, MenuItem, MenuTrigger, Select, Textarea, Tooltip } from '@bridge-ds/react';
+import { Button, ButtonGroup, Dialog, DialogClose, DialogContent, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Select, Textarea, Tooltip } from '@bridge-ds/react';
 import { Ellipsis } from 'lucide-react';
 import { Who } from './faces';
 import type { PageFace } from '../../../lib/exploration-page';
@@ -63,9 +63,10 @@ export function LeadBar({ bar, say }: { bar: LeadBarView; say: (s: string) => vo
           Needs changes
         </Button>
         {bar.blocked && (
-          <span className="xp-muted xp-lead-blocked" id="xp-lead-blocked">
+          // A pointer, never a second place to choose: the choice lives in the library section (EB1).
+          <Link variant="standalone" href="#xp-library" className="xp-lead-blocked" id="xp-lead-blocked">
             {bar.blocked}
-          </span>
+          </Link>
         )}
         <Button variant="primary" size="lg" disabled={busy !== null || Boolean(bar.blocked)} aria-describedby={bar.blocked ? 'xp-lead-blocked' : undefined} loading={busy === 'right'} onClick={() => send('right', bar.onLooksRight(words))}>
           Looks right

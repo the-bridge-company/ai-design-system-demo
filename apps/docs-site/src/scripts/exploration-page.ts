@@ -9,7 +9,7 @@
 // reviews once the developers started), and the library part. A product exploration never checked against the
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
-import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, type LibraryConflict } from '@bridge-ds/core';
+import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
 import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
@@ -94,8 +94,8 @@ import { explorationState } from '../lib/exploration-state';
 import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskStatus, devVersionUrl, type DesignAnswer } from '../lib/review-state';
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
-import { conflictsOf, impactSourceOf, releasedSet } from './library-impact';
-import { conflictView, leadLibraryLine, libraryImpactView, looksRightBlock, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
+import { conflictsWithOthers, impactSourceOf, releasedSet } from './library-impact';
+import { keepLabel, keptKeys, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
 import { developersMessage, offersDevelopersMessage, teamMember } from '../lib/developers-message';
 import { OLD_TOOLBAR_NOTE, toolbarTakesPass } from '../lib/read-pass-link';
@@ -1106,9 +1106,17 @@ async function paintLibraryImpact(
     const n = knownNamesOf([l])[l];
     return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
   });
+  // A team whose lead signs in by email ("Dana picks"): the member list names them, as Library review reads it.
+  if (!viewerLeads && !leadNames.length && parsePiecesRecord(body)?.pieces.length) {
+    const { contributeTeam } = await import('./contribute-session');
+    const { getToken } = await import('./github-session');
+    const people = await contributeTeam(`${CFG.owner}/${CFG.repo}`, member ? null : getToken()).catch(() => null);
+    const emailLead = people?.members.find((m) => m.lead) ?? people?.members.find((m) => m.role === 'admin');
+    if (emailLead?.name.trim()) leadNames.push(emailLead.name.trim().split(/\s+/)[0]!);
+  }
   const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
   const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
-  const conflicts = await conflictsOf(mine).catch(() => [] as LibraryConflict[]);
+  const { conflicts, others } = await conflictsWithOthers(mine).catch(() => ({ conflicts: [] as LibraryConflict[], others: [] as ImpactSource[] }));
   const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();
   if (current?.key !== key) return;
   // The exploration's designer may reply to the lead's "Use an existing piece instead" (board LR11): the piece goes back
@@ -1124,10 +1132,38 @@ async function paintLibraryImpact(
     asked: o.handedOff || isWaitingForLead(body),
     canDecide: decides,
     conflicts,
+    others,
+    screen: mine.name,
+    product: o.product.name,
+    designerHere,
     products: o.products.filter((p) => p.default !== true).map((p) => p.name),
     released,
     names: o.names,
   });
+  // Every exploration a conflict names, as a client and a number: the choice, its undo and a comment reach each one.
+  const explorationAt = (k: string): { gh: GitHubClient; number: number } | null => {
+    if (k === mine.key) return { gh: o.gh, number: o.r.number };
+    const at = /^(.+)#(\d+)$/.exec(k);
+    if (!at) return null;
+    const repo = at[1]!;
+    return { gh: repo.toLowerCase() === `${CFG.owner}/${CFG.repo}`.toLowerCase() ? dsClient() : productClient(repo), number: Number(at[2]) };
+  };
+  const conflictOf = (piece: string) => {
+    const cv = view.state === 'rows' ? view.conflicts.find((c) => c.piece === piece) : null;
+    if (!cv) throw new Error('This choice is no longer needed. Look at the page again.');
+    return cv;
+  };
+  const comment = async (piece: string, text: string) => {
+    const cv = conflictOf(piece);
+    // The lead writes to every screen that asked; a designer writes on their own exploration, where the lead reads it.
+    const to = cv.decides ? cv.ways.map((w) => explorationAt(w.key)).filter((x): x is { gh: GitHubClient; number: number } => x !== null) : [{ gh: o.gh, number: o.r.number }];
+    const words = `On ${cv.component}: ${text}`;
+    await to[0]!.gh.createIssueComment(to[0]!.number, words);
+    await Promise.all(to.slice(1).map((x) => x.gh.createIssueComment(x.number, words).catch(() => undefined)));
+    const line = cv.decides ? `Sent to ${namesLine(cv.ways.map((w) => w.designer))}.` : `Sent. ${leadNames[0] ?? 'The DS lead'} reads it here.`;
+    o.reopen(line);
+    return line;
+  };
   const me = member ? { byName: member.name } : viewer ? { by: viewer, ...(myName ? { byName: myName } : {}) } : {};
   const reply: LibraryImpactActions['onReply'] = designerHere
     ? async (piece, text) => {
@@ -1139,7 +1175,7 @@ async function paintLibraryImpact(
       }
     : null;
   const actions: LibraryImpactActions = reply
-    ? { onReply: reply }
+    ? { onReply: reply, onComment: comment }
     : decides
     ? {
         onPiece: async (piece, action, input) => {
@@ -1159,22 +1195,51 @@ async function paintLibraryImpact(
           return line;
         },
         onChoose: async (piece, pick) => {
-          const c = conflicts.find((x) => x.piece === piece);
-          if (!c) throw new Error('This choice is no longer needed. Look at the page again.');
-          const cv = conflictView(c);
-          const at = /^(.+)#(\d+)$/.exec(c.other.key);
-          if (!at) throw new Error('Bridge cannot find the other exploration.');
-          const otherRepo = at[1]!;
-          const otherGh = otherRepo.toLowerCase() === `${CFG.owner}/${CFG.repo}`.toLowerCase() ? dsClient() : productClient(otherRepo);
-          const label = cv.options.find((x) => x.value === pick);
-          const note = `${myName ?? 'The design lead'} chose ${label ? `${label.label.toLowerCase()} (${label.hint})` : 'one way'} for ${c.component}, where ${c.mine.designer} and ${c.other.designer} changed it differently. This answers both explorations: comment here if you see it otherwise.`;
-          await chooseLibraryWayOnGitHub(o.gh, o.r.number, { component: c.component, property: c.property, pick, ...me, other: { gh: otherGh, number: Number(at[2]) }, note });
-          const line = `Kept ${label?.label.toLowerCase() ?? 'that way'} for ${c.component}. ${c.mine.designer} and ${c.other.designer} are told.`;
+          const cv = conflictOf(piece);
+          const others = cv.ways.filter((w) => !w.mine).map((w) => explorationAt(w.key));
+          if (!others.length || others.some((x) => !x)) throw new Error('Bridge cannot find the other exploration.');
+          const { mode, keys } = keptKeys(pick, cv.ways);
+          const kept = cv.ways.filter((w) => keys.includes(w.key));
+          const what = mode === 'one' ? `${kept[0]?.designer ?? 'one'}'s way` : `${kept.length === 1 ? 'one new size' : `${kept.length} new sizes`} (${kept.map((w) => w.size).join(', ')}), today's stays the default`;
+          const told = namesLine(cv.ways.map((w) => w.designer));
+          const note = `${myName ?? 'The design lead'} chose ${what} for ${cv.component}, where ${told} changed it differently. This answers every screen that asked: comment here if you see it otherwise.`;
+          // The first other exploration through core (both records and both comments), the rest the same way after it.
+          const [first, ...rest] = others as { gh: GitHubClient; number: number }[];
+          await chooseLibraryWayOnGitHub(o.gh, o.r.number, { component: cv.component, property: cv.property, pick, ...me, other: first!, note });
+          await Promise.all(
+            rest.map(async (x) => {
+              const p = await findExplorationOnGitHub(x.gh, x.number).catch(() => null);
+              if (!p) return;
+              const choice = { component: cv.component, property: cv.property, pick, at: new Date().toISOString(), ...(me.byName ? { byName: me.byName } : {}) };
+              await x.gh.updatePullRequest(p.number, { body: withExplorationLibrary(p.body, (l) => withLibraryChoice(l, choice)) }).catch(() => undefined);
+              await x.gh.createIssueComment(p.number, note).catch(() => undefined);
+            }),
+          );
+          const line = `${keepLabel(mode, keys, cv.ways).replace(/^Keep/, 'Kept')}. ${told} ${cv.ways.length === 1 ? 'is' : 'are'} told.`;
           o.reopen(line);
           return line;
         },
+        onUndo: async (piece) => {
+          const cv = conflictOf(piece);
+          const same = (c: { component: string; property: string }) => c.component.toLowerCase() === cv.component.toLowerCase() && c.property.toLowerCase() === cv.property.toLowerCase();
+          const at = cv.ways.map((w) => explorationAt(w.key)).filter((x): x is { gh: GitHubClient; number: number } => x !== null);
+          await Promise.all(
+            at.map(async (x, i) => {
+              const p = await findExplorationOnGitHub(x.gh, x.number);
+              const next = withExplorationLibrary(p.body, (l) => ({ ...(l ?? {}), choices: (l?.choices ?? []).filter((c) => !same(c)) }));
+              // This exploration must change; another one that refuses still reads open through this one's record.
+              if (next !== p.body) await (i === 0 ? x.gh.updatePullRequest(p.number, { body: next }) : x.gh.updatePullRequest(p.number, { body: next }).catch(() => undefined));
+            }),
+          );
+          const line = `Undone. ${cv.component} waits for your choice again.`;
+          o.reopen(line);
+          return line;
+        },
+        onComment: comment,
       }
-    : {};
+    : designerHere
+      ? { onComment: comment }
+      : {};
   const lead = current.props.lead;
   const leadLine = lead ? leadLibraryLine(view, designer) : null;
   const blocked = looksRightBlock(conflicts);

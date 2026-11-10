@@ -11,10 +11,18 @@
   line-height: var(--typography-ui-line-height);
 }
 
+/* The title and its count on one line (EB1): the count is the summary, read after the title. */
 .li-head {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-5) var(--space-5) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+}
+
+.li-head > p {
+  margin: 0;
 }
 
 .li-title {
@@ -54,7 +62,17 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(calc(var(--space-12) * 2.5), max-content) var(--control-height-md);
   gap: var(--space-6);
   align-items: center;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4) var(--space-6);
+}
+
+/* A row whose ways sit under it: what it is, and its one tag at the end of its first line. */
+.has-conflict > .li-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.has-conflict > .li-row .li-menu {
+  display: none;
 }
 
 .li-what {
@@ -177,31 +195,380 @@
   display: grid;
 }
 
-/* A conflict, inside the row it blocks: the other exploration, the two ways and both, then the one action. */
-.li-conflict {
+/* Several ways for one component part (EB1, EB2): in the same card, under the row, past a hairline. */
+.li-decide {
   display: grid;
-  gap: var(--space-4);
-  margin: 0 var(--space-5) var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  border: var(--border-width-1) solid var(--color-feedback-danger-border);
-  border-radius: var(--radius-control);
-  background-color: var(--color-feedback-danger-bg);
+  margin: 0 var(--space-6);
+  padding: var(--space-4) 0 var(--space-5);
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
-.li-conflict-line {
+.li-q {
+  margin: 0 0 var(--space-1);
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}
+
+.li-ctx {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+}
+
+.li-ctx strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-face {
+  margin-inline-end: var(--space-1-5);
+  vertical-align: middle;
+}
+
+.li-mode {
+  margin-block-end: var(--space-4);
+}
+
+.li-ways-set > [role='radiogroup'] {
+  display: block;
+}
+
+/* Today, then each way: equal columns, today a little narrower; the plates share one height. */
+.li-ways {
+  --_ways: 3;
+
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) repeat(var(--_ways), minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.li-way-li {
+  display: grid;
+  min-width: 0;
+}
+
+.li-way {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.li-stage {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  block-size: calc(var(--space-12) * 3.5);
+  padding: var(--space-2);
+  border-radius: var(--radius-xl);
+  /* One step off the panel in light and dark alike (bg-subtle is the panel itself in dark). */
+  background-color: var(--color-surface-hover);
+  cursor: pointer;
+}
+
+.li-ways > .li-way-li .li-stage,
+.li-stage.is-today {
+  cursor: default;
+}
+
+/* Today is what the library has now: an outline, nothing to pick. */
+.li-stage.is-today {
+  outline: var(--border-width-1) dashed var(--color-border-strong);
+  outline-offset: calc(var(--border-width-1) * -1);
+  background-color: transparent;
+}
+
+/* The way kept: a ring on its plate, with the checked control under it (colour is never the only signal). */
+.li-way.is-on > .li-stage {
+  outline: var(--border-width-2) solid var(--color-signal-default);
+  outline-offset: calc(var(--border-width-2) * -1);
+}
+
+@media (hover: hover) {
+  .li-way:not(.is-on) > .li-stage:not(.is-today):hover {
+    outline: var(--border-width-1) solid var(--color-border-hover);
+    outline-offset: calc(var(--border-width-1) * -1);
+  }
+
+  .li-way-li .li-way > .li-stage:hover {
+    outline: none;
+  }
+}
+
+/* Both, as two sizes: the two cards share the plate, each as wide as half of it. */
+.li-stage-both {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: var(--space-2);
-  margin: 0;
+  padding: var(--space-1-5);
 }
 
-.li-conflict-act {
+.li-pair {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.li-pair .li-spec {
+  inline-size: 100%;
+  max-inline-size: calc(var(--space-12) * 2.6);
+}
+
+.li-way-text {
+  display: grid;
+  gap: var(--space-0-5);
+  padding-inline: var(--space-0-5);
+}
+
+.li-way-name {
+  display: inline-flex;
+  align-items: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-way-hint {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-ghost {
+  display: none;
+}
+
+.li-more {
+  justify-self: start;
+  margin-block-start: var(--space-3);
+}
+
+.li-act {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-block-start: var(--space-4);
+}
+
+.li-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+}
+
+.li-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The small library card each plate draws: the same card everywhere, only the way's change differs. */
+.li-spec {
+  flex: none;
+  inline-size: calc(var(--space-12) * 3);
+  padding: var(--_pad, var(--space-4));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.li-spec.is-borderless {
+  border-color: transparent;
+}
+
+.li-spec.is-filled {
+  background-color: var(--color-surface-pressed);
+}
+
+.li-spec-in {
+  display: grid;
+  gap: var(--space-1-5);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-spec-title,
+.li-spec-value {
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+/* Settled (EB3, EB4): the room inside shows as a tinted band, the content inset concentric with the card. */
+.li-spec.is-decided {
+  inline-size: calc(var(--space-12) * 2.9);
+  background-color: var(--color-signal-subtle);
+}
+
+.li-spec.is-decided .li-spec-in {
+  border-radius: max(var(--radius-xs), calc(var(--card-radius) - var(--_pad, var(--space-4))));
+  background-color: var(--card-bg);
+}
+
+.li-decided {
+  display: grid;
+  grid-template-columns: var(--space-12) minmax(0, 1fr);
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.li-dart {
+  inline-size: var(--space-12);
+  block-size: var(--space-12);
+  color: var(--color-text-signal);
+}
+
+.li-dart .d4,
+.li-dart .d5 {
+  stroke: var(--color-feedback-success-icon);
+}
+
+.li-dart .d4 {
+  fill: var(--color-surface-default);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .li-dart .d1,
+  .li-dart .d2,
+  .li-dart .d3 {
+    stroke-dasharray: 140;
+    stroke-dashoffset: 140;
+    animation: li-draw var(--motion-duration-slow) var(--motion-easing-enter) forwards;
+  }
+
+  .li-dart .d2 {
+    animation-delay: var(--motion-duration-fast);
+  }
+
+  .li-dart .d3 {
+    animation-delay: var(--motion-duration-moderate);
+  }
+
+  .li-dart .d4 {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: li-pop var(--motion-duration-moderate) var(--motion-easing-enter) var(--motion-duration-slow) forwards;
+  }
+
+  .li-dart .d5 {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    animation: li-draw var(--motion-duration-moderate) var(--motion-easing-enter) var(--motion-duration-slow) forwards;
+  }
+}
+
+@keyframes li-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes li-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.li-decided-body {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+}
+
+.li-decided-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.li-decided-title {
+  margin: 0;
+  font-size: var(--font-size-400);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-h3-line-height);
+}
+
+.li-decided-by {
+  margin: var(--space-1) 0 0;
+  font-size: var(--typography-ui-size);
+}
+
+.li-undo {
+  vertical-align: baseline;
+}
+
+.li-dgrid {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--space-12) * 3.65));
   gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.li-dfig {
+  display: grid;
+  grid-template-rows: calc(var(--space-12) * 3.65) auto;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.li-dplate {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  padding-block-start: var(--space-4);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-hover);
+}
+
+/* The way this screen takes: ringed, on the selected surface. */
+.li-dfig.is-mine .li-dplate {
+  outline: var(--border-width-2) solid var(--color-signal-default);
+  outline-offset: calc(var(--border-width-2) * -1);
+  background-color: var(--color-surface-selected);
+}
+
+.li-dfig:not(.is-mine) .li-spec {
+  opacity: 0.8;
+}
+
+.li-dlab {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  padding-inline: var(--space-0-5);
+  font-size: var(--typography-ui-size);
+}
+
+.li-dname {
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-dfig:not(.is-mine) .li-dname {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
 }
 
 .li-foot {
@@ -209,9 +576,8 @@
   align-items: flex-start;
   gap: var(--space-2);
   margin: 0;
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-6) var(--space-4);
   border-block-start: var(--border-width-1) solid var(--color-border-default);
-  background-color: var(--color-bg-subtle);
   color: var(--color-text-muted);
 }
 
@@ -226,7 +592,7 @@
 }
 
 .li-ok {
-  color: var(--color-feedback-success-icon);
+  color: var(--color-text-muted);
 }
 
 .li-reach {
@@ -348,22 +714,117 @@
     grid-area: menu;
     align-self: start;
   }
+
+  .has-conflict > .li-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'what status';
+  }
 }
 
-@media (max-width: 640px) {
+/* Phone (EB1 at 390): the ways stack, each plate compares with today's card before it; actions fill the width. */
+@media (max-width: 720px) {
   .li-head,
   .li-row,
   .li-foot {
     padding-inline: var(--space-4);
   }
 
-  .li-plate {
-    inline-size: calc(var(--space-12) * 2);
+  .has-conflict > .li-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'what'
+      'status';
   }
 
-  .li-conflict {
+  .li-decide {
     margin-inline: var(--space-4);
-    padding-inline: var(--space-4);
+  }
+
+  .li-ways {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  .li-way-today,
+  .li-today-li {
+    display: none;
+  }
+
+  .li-way {
+    grid-template-rows: auto auto;
+  }
+
+  .li-stage {
+    justify-content: flex-start;
+    block-size: auto;
+    padding: var(--space-3);
+  }
+
+  .li-stage-both {
+    padding: var(--space-3);
+  }
+
+  .li-ghost {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    opacity: 0.75;
+  }
+
+  .li-stage .li-spec {
+    inline-size: calc(var(--space-12) * 2.35);
+  }
+
+  .li-stage-both {
+    justify-content: start;
+    grid-template-columns: repeat(2, calc(var(--space-12) * 2.45));
+  }
+
+  .li-pair .li-spec {
+    max-inline-size: none;
+  }
+
+  .li-act,
+  .li-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .li-decided {
+    grid-template-columns: var(--space-10) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+  }
+
+  .li-dart {
+    inline-size: var(--space-10);
+    block-size: var(--space-10);
+  }
+
+  /* The plates take the card's full width, under the drawing too. */
+  .li-dgrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+    justify-self: stretch;
+    margin-inline-start: calc((var(--space-10) + var(--space-3)) * -1);
+  }
+
+  .li-dfig {
+    grid-template-rows: calc(var(--space-12) * 2.65) auto;
+  }
+
+  .li-dplate {
+    padding-block-start: var(--space-3);
+  }
+
+  .li-spec.is-decided {
+    zoom: 0.7;
+  }
+}
+
+@media (max-width: 640px) {
+  .li-plate {
+    inline-size: calc(var(--space-12) * 2);
   }
 
   .li-nothing {

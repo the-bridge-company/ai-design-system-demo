@@ -31,8 +31,17 @@ export async function otherExplorations(): Promise<ImpactSource[]> {
 
 /** The conflicts of one exploration with the team's other open explorations. None when they cannot be read. */
 export async function conflictsOf(mine: ImpactSource): Promise<LibraryConflict[]> {
-  if (!mine.record?.pieces.length) return [];
-  return libraryConflicts(mine, await otherExplorations().catch(() => []));
+  return (await conflictsWithOthers(mine)).conflicts;
+}
+
+/**
+ * The conflicts, with the other explorations as read for them: the exploration page draws each way from its own
+ * recorded piece (how it looks) and names who chose from either side's record.
+ */
+export async function conflictsWithOthers(mine: ImpactSource): Promise<{ conflicts: LibraryConflict[]; others: ImpactSource[] }> {
+  if (!mine.record?.pieces.length) return { conflicts: [], others: [] };
+  const others = await otherExplorations().catch(() => [] as ImpactSource[]);
+  return { conflicts: libraryConflicts(mine, others), others };
 }
 
 const releasedBy = new Map<string, Promise<boolean>>();

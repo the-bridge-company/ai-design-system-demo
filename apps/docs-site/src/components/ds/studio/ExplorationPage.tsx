@@ -1117,7 +1117,7 @@ function ExplorationBody(p: ExplorationPageProps) {
           {/* What this changes in the library is half of the lead's review (boards LI2 to LI4, LI8): right under the
               preview, full width, before the activity. */}
           {p.impact && (
-            <div className="xp-library">
+            <div className="xp-library" id="xp-library">
               <LibraryImpact view={p.impact.view} actions={p.impact.actions} say={setSaid} />
             </div>
           )}

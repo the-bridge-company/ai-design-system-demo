@@ -478,6 +478,8 @@
 .xp-board > .xp-library {
   grid-area: library;
   min-width: 0;
+  /* The answer bar's "Waits for the Card choice above" lands here, clear of the page header. */
+  scroll-margin-block-start: var(--space-16);
 }
 
 .xp-preview {

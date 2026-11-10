@@ -33,6 +33,18 @@ export async function loadReview(t: ReviewTarget): Promise<ReviewRead | null> {
   return r.ready ? (r as ReviewRead) : null;
 }
 
+const kept = new Map<string, { at: number; read: Promise<ReviewRead | null> }>();
+/** The same read for the parts of one page (the exploration page's entry and its zone's actions), kept 30 seconds. */
+export function loadReviewKept(t: ReviewTarget): Promise<ReviewRead | null> {
+  const k = `${t.product}#${t.number}`;
+  const held = kept.get(k);
+  if (held && Date.now() - held.at < 30_000) return held.read;
+  const read = loadReview(t);
+  kept.set(k, { at: Date.now(), read });
+  read.catch(() => kept.delete(k));
+  return read;
+}
+
 export async function sayItem(t: ReviewTarget, sig: string, verdict: Verdict | null): Promise<ItemState[]> {
   const { team, token } = await who();
   const { sayBuildItem } = await import('./contribute-session');

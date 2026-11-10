@@ -461,27 +461,33 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
       <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setChanges(true)}>
         Needs changes
       </Button>
-      <Button
-        variant="primary"
-        size="md"
-        disabled={busy !== null || Boolean(bar.blocked)}
-        aria-describedby={bar.blocked ? 'xp-lead-blocked' : undefined}
-        loading={busy === 'right'}
-        data-demo-write="send to the developers"
-        onClick={() =>
-          run('right', async () => {
-            if (apply) await apply();
-            return bar.onLooksRight('');
-          })
-        }
-      >
-        Send to the developers
-      </Button>
-      {bar.blocked && (
-        // What the primary waits for, right beside it: a pointer to the library block, never a second place to choose.
-        <Link href="#xp-library" id="xp-lead-blocked" className="xp-turn-helper">
+      {bar.blocked ? (
+        // What sending waits for is the primary itself: it takes the lead to the choice in the library section, and
+        // turns back into Send to the developers once the piece is decided. Never a disabled button.
+        <Button variant="primary" size="md" disabled={busy !== null} aria-describedby="xp-lead-blocked" onClick={goToLibraryChoice}>
           {bar.blocked}
-        </Link>
+        </Button>
+      ) : (
+        <Button
+          variant="primary"
+          size="md"
+          disabled={busy !== null}
+          loading={busy === 'right'}
+          data-demo-write="send to the developers"
+          onClick={() =>
+            run('right', async () => {
+              if (apply) await apply();
+              return bar.onLooksRight('');
+            })
+          }
+        >
+          Send to the developers
+        </Button>
+      )}
+      {bar.blocked && (
+        <p id="xp-lead-blocked" className="xp-turn-helper">
+          Then send it to the developers.
+        </p>
       )}
     </>
   );
@@ -505,6 +511,15 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
  * name in the display face, the product, and a Field Guide drawing (the one of its card, lib/branch-thumb plateDrawing).
  * The frame has the ratio of a capture, so a capture arriving later, or failing to load, moves nothing.
  */
+/** Scroll to the library section and put focus on its first choice (a checkbox or field), so the next key acts. */
+function goToLibraryChoice() {
+  const sec = document.getElementById('xp-library');
+  if (!sec) return;
+  sec.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  const first = sec.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled])');
+  first?.focus({ preventScroll: true });
+}
+
 export function ScreenPlate({ product, screen, seed }: { product: string; screen: string | null; seed?: string | null }) {
   return (
     <div className="xp-frame xp-plate" aria-hidden="true">

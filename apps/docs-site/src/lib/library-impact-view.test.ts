@@ -304,7 +304,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   it('offers the choice in the library section only: the zone says nothing of it, the bar points to it', () => {
     const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
     expect(leadLibraryLine(v, 'Leo')).toBeNull();
-    expect(looksRightBlock(two)).toBe('Pick the Card way first');
+    expect(looksRightBlock(two)).toBe('Choose Card padding');
   });
 });
 

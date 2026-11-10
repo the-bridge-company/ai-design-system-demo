@@ -1,6 +1,6 @@
 // One by one, a conflict: the compare stage and its one radio list (direction D2).
 import { describe, expect, it } from 'vitest';
-import { BOTH, compareKeepLabel, compareView } from './library-review-compare';
+import { BOTH, compareKeepLabel, compareView, stageLabels } from './library-review-compare';
 import { conflict } from './library-fixtures.test-helpers';
 
 describe('the compare view of a conflict', () => {
@@ -33,6 +33,23 @@ describe('the compare view of a conflict', () => {
     expect(compareView({ ...p, conflict: { ...p.conflict!, property: 'border-radius' } }, 'x')!.overlay).toBe(false);
     expect(compareView({ ...p, conflict: { ...p.conflict!, property: 'border-radius' } }, 'x')!.ways.map((w) => w.words)).toEqual(['rounder', 'squarer']);
     expect(compareView({ ...p, conflict: null }, 'x')).toBeNull();
+  });
+
+  it('says a way equal to today: same as today, one shared outline label, and the primary keeps today’s component', () => {
+    const p = conflict();
+    const none = { ...p, conflict: { ...p.conflict!, today: null } };
+    // The demo: today measured at 20, Sofia's way is 20.
+    const v = compareView(none, 'Every screen', 20)!;
+    expect(v.ways.map((w) => [w.valueText, w.words, w.sameAsToday])).toEqual([
+      ['20 px', 'same as today', true],
+      ['12 px', 'tighter', false],
+    ]);
+    expect(stageLabels(v).map((l) => l.label)).toEqual(['20 Today, Sofia', '12 Leo']);
+    expect(stageLabels(v)[0]!.keys).toEqual(['today', v.ways[0]!.key]);
+    expect(compareKeepLabel(v.ways[0]!.key, v.ways, v.component)).toBe("Keep today's Card");
+    expect(compareKeepLabel(v.ways[1]!.key, v.ways, v.component)).toBe("Keep Leo's way");
+    // Different values keep one label each.
+    expect(stageLabels(compareView(p, 'Every screen')!).map((l) => l.label)).toEqual(['20 Sofia', '16 Today', '12 Leo']);
   });
 
   it('names the outcome on the one primary', () => {

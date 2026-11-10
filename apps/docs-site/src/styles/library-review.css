@@ -820,33 +820,19 @@ a.lr-asked:hover .lr-asked-name {
 }
 
 .lr-face {
-  position: relative;
   display: inline-grid;
   flex: none;
 }
 
-.lr-face:has(.lr-face-badge) {
-  margin-inline-end: var(--space-2);
-}
-
-/* The product's mark on the face's corner, ringed with the surface so it reads as a badge. */
-.lr-face-badge.lr-product-mark {
-  position: absolute;
-  inset-block-end: calc(var(--space-1) * -1);
-  inset-inline-end: calc(var(--space-2) * -1);
+/* The product's small mark right after the exploration's name: never on the face, so the initial stays whole. */
+.lr-asked-mark.lr-product-mark {
   width: auto;
   min-width: var(--size-4);
   height: var(--size-4);
   padding-inline: var(--space-0-5);
   border-radius: var(--radius-xs);
-  box-shadow: 0 0 0 var(--border-width-2) var(--color-surface-default);
   font-size: var(--typography-caption-size);
   line-height: var(--size-4);
-}
-
-.lr-face.is-xs .lr-face-badge.lr-product-mark {
-  inset-block-end: calc(var(--space-1) * -1);
-  inset-inline-end: calc(var(--space-3) * -1);
 }
 
 .lr-faces {
@@ -2080,10 +2066,6 @@ a.lr-reach-card:focus-visible {
   inset-block-start: 0;
   visibility: hidden;
   pointer-events: none;
-}
-
-.lr-face.is-xs:has(.lr-face-badge) {
-  margin-inline-end: var(--space-3);
 }
 
 .lr-stage-card {

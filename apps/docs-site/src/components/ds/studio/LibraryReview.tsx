@@ -24,7 +24,7 @@ import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy,
 import { studioHref } from '../../../lib/team-path';
 import { askedCountLine, askedFaces, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
 import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, tallyOf, type Tally } from '../../../lib/library-review-list';
-import { BOTH, compareKeepLabel, compareView, STAGE_SCALE, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
+import { BOTH, compareKeepLabel, compareView, STAGE_SCALE, stageLabels, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
   batchable,
@@ -153,16 +153,21 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
 /** A product's mark for an exploration's product name ("Acme CRM" C), or null when Bridge knows no product. */
 type MarkOf = (product: string | null | undefined) => string | null;
 
-/** A person's face (the DS Avatar), wearing the product's mark as a corner badge when an exploration of it asked. */
-function Face({ name, mark, product, size = 'sm' }: { name: string; mark?: string | null; product?: string | null; size?: 'xs' | 'sm' }) {
+/** A person's face (the DS Avatar), whole: nothing sits on it. */
+function Face({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm' }) {
   return (
-    <span className={`lr-face is-${size}`} title={product ? `${name}, ${product}` : name}>
+    <span className="lr-face" title={name}>
       <Avatar name={name} size={size} decorative />
-      {mark && (
-        <span className="lr-product-mark lr-face-badge" aria-hidden="true">
-          {mark}
-        </span>
-      )}
+    </span>
+  );
+}
+
+/** The product an exploration belongs to, as its small mark right after the exploration's name (never on the face). */
+function ProductMark({ mark, product }: { mark: string | null; product: string | null }) {
+  if (!mark) return null;
+  return (
+    <span className="lr-product-mark lr-asked-mark" title={product ?? undefined} aria-hidden="true">
+      {mark}
     </span>
   );
 }
@@ -232,8 +237,9 @@ function AskedLine({ p, mark }: { p: ReviewPiece; mark: MarkOf }) {
   const more = f.kind === 'many' ? moreTag(f.askers.length - 1) : null;
   return (
     <>
-      <Face name={faceName(a)} mark={mark(a.product)} product={a.product} size="xs" />
+      <Face name={faceName(a)} size="xs" />
       <span className="lr-line-t">{a.name}</span>
+      <ProductMark mark={mark(a.product)} product={a.product} />
       {more && (
         <>
           <Badge tone="neutral" size="sm" className="lr-more-tag" aria-hidden="true">
@@ -476,7 +482,7 @@ function OptionRow({ o, mark }: { o: CompareOption; mark: MarkOf }) {
         <strong>{o.name}</strong>
       </span>
       <span className="lr-opt-val">
-        {o.valueText && <strong>{o.valueText}</strong>} {o.words}
+        {o.valueText && <strong>{o.valueText}</strong>} {o.sameAsToday ? `· ${o.words}` : o.words}
       </span>
       <span className="lr-opt-where">
         {'text' in o.where ? (
@@ -545,38 +551,38 @@ function useLibraryInset(on: boolean): [number | null, ReactNode] {
  * content boxes outlined in their colour and labelled ("20 Sofia", "16 Today"); Side by side draws each option.
  */
 function Stage({ view, mode, pick, component }: { view: CompareView; mode: 'overlay' | 'side'; pick: string; component: string }) {
-  const known = [view.today, ...view.ways].filter((o) => o.value !== null);
+  // One outline and one label per value: a way equal to today shares today's ("20 Today, Sofia").
+  const labels = stageLabels(view);
   if (mode === 'side')
     return (
       <div className="lr-stage is-side">
-        {known.map((o) => (
-          <figure key={o.key} className={`lr-stage-way${o.key === pick ? ' is-pick' : ''}`}>
-            <Specimen component={component} value={o.value} />
+        {labels.map((l) => (
+          <figure key={l.label} className={`lr-stage-way${l.keys.includes(pick) ? ' is-pick' : ''}`}>
+            <Specimen component={component} value={l.value} />
             <figcaption className="lr-stage-cap">
-              <span className={`lr-key is-hue-${o.hue}`} aria-hidden="true" />
-              {o.value} {o.who ?? 'Today'}
+              <span className={`lr-key is-hue-${l.hue}`} aria-hidden="true" />
+              {l.label}
             </figcaption>
           </figure>
         ))}
       </div>
     );
   const base = view.ways.find((w) => w.key === pick) ?? view.ways[0]!;
-  const byValue = [...known].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
   return (
     <div className="lr-stage">
       <div className="lr-stage-row">
         <div className="lr-stage-art" style={{ ['--lr-scale' as string]: STAGE_SCALE }}>
           <span className="lr-stage-card">
             <Specimen component={component} value={base.value} />
-            {known.map((o) => (
-              <span key={o.key} className={`lr-ol is-hue-${o.hue}${o.key === base.key ? ' is-base' : ''}`} style={{ inset: `${o.value}px` }} aria-hidden="true" />
+            {labels.map((l) => (
+              <span key={l.label} className={`lr-ol is-hue-${l.hue}${l.keys.includes(base.key) ? ' is-base' : ''}`} style={{ inset: `${l.value}px` }} aria-hidden="true" />
             ))}
           </span>
         </div>
         <ul className="lr-stage-keys" aria-label="The content box of each way">
-          {byValue.map((o) => (
-            <li key={o.key} className={`lr-ol-tag is-hue-${o.hue}`}>
-              {o.value} {o.who ?? 'Today'}
+          {labels.map((l) => (
+            <li key={l.label} className={`lr-ol-tag is-hue-${l.hue}`}>
+              {l.label}
             </li>
           ))}
         </ul>
@@ -671,7 +677,7 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
         )}
         {open && (
           <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
-            {compareKeepLabel(pick, view.ways)}
+            {compareKeepLabel(pick, view.ways, view.component)}
           </Button>
         )}
       </div>
@@ -828,7 +834,9 @@ function AskedCell({ p, mark }: { p: ReviewPiece; mark: MarkOf }) {
     const a = f.asker;
     const inner = (
       <>
-        <Face name={faceName(a)} mark={mark(a.product)} product={a.product} />
+        <Face name={faceName(a)} />
+        {/* The product's mark before the name in the narrow column, so a long name never pushes it away. */}
+        <ProductMark mark={mark(a.product)} product={a.product} />
         <span className="lr-asked-name">
           {a.designer && <VisuallyHidden>{`${a.designer}${a.product ? `, ${a.product}` : ''}: `}</VisuallyHidden>}
           {a.name}

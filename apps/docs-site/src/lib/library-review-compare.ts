@@ -33,9 +33,13 @@ export interface CompareOption {
   where: { exploration: string; product: string; href: string | null } | { text: string };
   /** The colour key of the way: 0 for today, 1, 2... for each way in order; null for Both. */
   hue: number | null;
+  /** A way whose value is today's: keeping it changes nothing in the library ("20 px · same as today"). */
+  sameAsToday: boolean;
 }
 
 export interface CompareView {
+  /** The component the ways change ("Card"). */
+  component: string;
   /** "Room inside": the part that differs, said once above the stage. */
   part: string;
   /** Overlay can draw it: room inside or the space between items, every value known. */
@@ -84,16 +88,21 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
   const values = c.ways.map((w) => num(w.value));
   const known = values.filter((v): v is number => v !== null);
   const part = p.kind.replace(/\s+change$/i, '') || 'This part';
-  const ways: CompareOption[] = c.ways.map((w, i) => ({
-    key: w.key,
-    who: w.designer,
-    name: `${w.designer}'s way`,
-    value: values[i] ?? null,
-    valueText: values[i] === null ? w.value : `${values[i]} px`,
-    words: wordOf(c.property, values[i] ?? null, today, known),
-    where: { exploration: w.exploration, product: w.product, href: w.key === p.asked?.key ? (p.asked?.href ?? null) : null },
-    hue: i + 1,
-  }));
+  const ways: CompareOption[] = c.ways.map((w, i) => {
+    const value = values[i] ?? null;
+    const same = value !== null && today !== null && value === today;
+    return {
+      key: w.key,
+      who: w.designer,
+      name: `${w.designer}'s way`,
+      value,
+      valueText: value === null ? w.value : `${value} px`,
+      words: same ? 'same as today' : wordOf(c.property, value, today, known),
+      where: { exploration: w.exploration, product: w.product, href: w.key === p.asked?.key ? (p.asked?.href ?? null) : null },
+      hue: i + 1,
+      sameAsToday: same,
+    };
+  });
   const sorted = [...known].sort((a, b) => a - b);
   const all = known.length === c.ways.length && c.ways.length >= 2;
   const both: CompareOption | null = all
@@ -106,13 +115,15 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
         words: today !== null ? `today's ${today} stays the default` : '',
         where: { text: 'Each screen keeps its way' },
         hue: null,
+        sameAsToday: false,
       }
     : null;
   const people = [...new Set(c.ways.map((w) => w.designer))];
   return {
+    component: c.component,
     part,
     overlay: PAD.test(c.property.toLowerCase()) && all,
-    today: { key: 'today', who: null, name: 'Today', value: today, valueText: today === null ? null : `${today} px`, words: 'in the library', where: { text: todayWhere }, hue: 0 },
+    today: { key: 'today', who: null, name: 'Today', value: today, valueText: today === null ? null : `${today} px`, words: 'in the library', where: { text: todayWhere }, hue: 0, sameAsToday: false },
     ways,
     both,
     told: `${peopleWords(people)} ${people.length === 1 ? 'is' : 'are'} told.`,
@@ -120,9 +131,31 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
   };
 }
 
-/** The one primary: it names the outcome. "Keep Sofia's way", "Keep both as sizes". */
-export function compareKeepLabel(pick: string, ways: readonly { key: string; who: string | null }[]): string {
+/**
+ * The one primary: it names the outcome. "Keep Sofia's way", "Keep both as sizes"; a way equal to today changes
+ * nothing in the library, so it says that: "Keep today's Card".
+ */
+export function compareKeepLabel(pick: string, ways: readonly Pick<CompareOption, 'key' | 'who' | 'sameAsToday'>[], component = 'piece'): string {
   if (pick === BOTH) return ways.length === 2 ? 'Keep both as sizes' : 'Keep all as sizes';
   const w = ways.find((x) => x.key === pick);
+  if (w?.sameAsToday) return `Keep today's ${component}`;
   return w?.who ? `Keep ${w.who}'s way` : 'Keep this way';
+}
+
+/**
+ * The stage's outlines and their labels, one per value: options with the same value share one outline and one label,
+ * today first ("20 Today, Sofia"), so no two outlines or labels sit on top of each other. Largest first.
+ */
+export function stageLabels(view: Pick<CompareView, 'today' | 'ways'>): { value: number; hue: number; keys: string[]; label: string }[] {
+  const out: { value: number; hue: number; keys: string[]; names: string[] }[] = [];
+  for (const o of [view.today, ...view.ways]) {
+    if (o.value === null || o.hue === null) continue;
+    const at = out.find((x) => x.value === o.value);
+    const name = o.who ?? 'Today';
+    if (at) {
+      at.keys.push(o.key);
+      at.names.push(name);
+    } else out.push({ value: o.value, hue: o.hue, keys: [o.key], names: [name] });
+  }
+  return out.sort((a, b) => b.value - a.value).map((x) => ({ value: x.value, hue: x.hue, keys: x.keys, label: `${x.value} ${x.names.join(', ')}` }));
 }

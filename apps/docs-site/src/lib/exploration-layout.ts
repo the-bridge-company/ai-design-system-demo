@@ -212,6 +212,20 @@ export function sameScreen(a: string | null | undefined, b: string | null | unde
   return norm(a) === norm(b);
 }
 
+/**
+ * Whether the screen's name only repeats the page title ("Fulfilment timeline" under "Order fulfilment timeline"):
+ * every word of the shorter one sits in the longer one. The stage then shows its line alone, the name stays for
+ * screen readers.
+ */
+export function repeatsTitle(screen: string | null | undefined, title: string | null | undefined): boolean {
+  const words = (t: string) => t.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const a = words(screen ?? '');
+  const b = words(title ?? '');
+  if (!a.length || !b.length) return false;
+  const [short, long] = a.length <= b.length ? [a, new Set(b)] : [b, new Set(a)];
+  return short.every((w) => long.has(w));
+}
+
 /** The words of the screen stage. */
 export const SCREEN_WORDS = {
   open: 'Open the preview',

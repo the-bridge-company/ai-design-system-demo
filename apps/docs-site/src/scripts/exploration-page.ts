@@ -99,6 +99,7 @@ import { keepLabel, keptKeys, leadLibraryLine, libraryImpactView, looksRightBloc
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
 import { developersMessage, offersDevelopersMessage, teamMember } from '../lib/developers-message';
 import { OLD_TOOLBAR_NOTE, toolbarTakesPass } from '../lib/read-pass-link';
+import { SEND_TO_FIGMA_IN_STUDIO } from '../lib/studio-flags';
 
 const CFG = explorationsConfig();
 const R = `/repos/${CFG.owner}/${CFG.repo}`;
@@ -604,7 +605,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const lines = pageLines({ number: r.number, name: r.name, productName: product.name, product: own?.product.key, repo: own?.repo });
   // "Send to Figma": for who can edit, only when the team has a Figma file (Bridge's rule: a fact goes to who can act on it).
   const figmaLine = (status: string) =>
-    canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write, visitor: Boolean(member?.visitor) })
+    SEND_TO_FIGMA_IN_STUDIO && canPutInFigma({ figmaFile: (siteConfig() as { figma?: { file?: string } }).figma?.file, archived: Boolean(r.archived), status, memberRole: member?.role, designer, reviewer: viewerRole() === 'reviewer', write: currentAccess()?.write, visitor: Boolean(member?.visitor) })
       ? figmaLines({ number: r.number, name: r.name, product: own?.product.key, repo: own?.repo })
       : null;
   // "Reopen as a new exploration": a new one from this one's work, named after it. This one stays as it ended.

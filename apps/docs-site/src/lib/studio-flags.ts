@@ -15,3 +15,10 @@ export const REQUEST_TRIAGE_IN_STUDIO = false;
  * it back on.
  */
 export const JIRA_IN_BRIDGE = false;
+
+/**
+ * "Send to Figma" on the exploration page (put the screen in the team's Figma file, built from the library). Off for
+ * now (owner, 2026-11-10): the work is kept (lib/exploration-page canPutInFigma, figmaLines, the button in
+ * ExplorationPage.tsx), only the button is not shown. One edit turns it back on.
+ */
+export const SEND_TO_FIGMA_IN_STUDIO = false;

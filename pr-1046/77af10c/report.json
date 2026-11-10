@@ -1,0 +1,95 @@
+{
+  "pr": 1046,
+  "sha": "77af10c6707f119deec08e6cb730526b2b69831a",
+  "baseSha": "b6b5459835a149c448275d0e32ba5fb6f31d9d74",
+  "failed": false,
+  "failures": [],
+  "warnings": 0,
+  "screens": [
+    "landing"
+  ],
+  "variants": [
+    {
+      "screen": "landing",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 6051,
+      "png": "landing-desktop-light.png",
+      "axe": [],
+      "ms": 5509,
+      "webp": "landing-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 6051,
+      "png": "landing-desktop-dark.png",
+      "axe": [],
+      "ms": 5449,
+      "webp": "landing-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 7937,
+      "png": "landing-mobile-light.png",
+      "axe": [],
+      "ms": 4362,
+      "webp": "landing-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 7937,
+      "png": "landing-mobile-dark.png",
+      "axe": [],
+      "ms": 3450,
+      "webp": "landing-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    }
+  ]
+}

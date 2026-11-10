@@ -65,7 +65,7 @@ describe('the List column and the origin line', () => {
     const a = reachOf(change(), PRODUCTS);
     const b = reachOf(newComponent(), PRODUCTS);
     expect(reachColumn([a, b]).shared).toBe('Acme Prints, Acme CRM');
-    expect(reachCell(a, true)).toEqual({ label: 'See screens', hoverOnly: true });
+    expect(reachCell(a, true)).toEqual({ label: 'Every screen', hoverOnly: false });
     expect(reachCell(b, true)).toEqual({ label: '1 screen', hoverOnly: false });
     expect(reachCell(a, false)).toEqual({ label: '2 products', hoverOnly: false });
     const kept = reachOf({ ...newComponent(), state: 'decided', decided: 'kept' }, PRODUCTS);

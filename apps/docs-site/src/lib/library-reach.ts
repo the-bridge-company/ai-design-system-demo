@@ -163,6 +163,8 @@ export function reachColumn(reaches: readonly Reach[]): { shared: string | null 
 /** A row's cell in that column: its own words, or, with the products named in the header, only its screens. */
 export function reachCell(r: Reach, shared: boolean): { label: string; hoverOnly: boolean } {
   if (!shared) return { label: r.link, hoverOnly: false };
-  if (r.screens && !r.everywhere && !r.stays) return { label: `${r.screens} ${r.screens === 1 ? 'screen' : 'screens'}`, hoverOnly: false };
-  return { label: 'See screens', hoverOnly: true };
+  // Always visible, never a hover-only link: every row says what it does to screens (owner, 2026-11-10).
+  if (r.everywhere) return { label: 'Every screen', hoverOnly: false };
+  if (r.screens && !r.stays) return { label: `${r.screens} ${r.screens === 1 ? 'screen' : 'screens'}`, hoverOnly: false };
+  return { label: 'No screen yet', hoverOnly: false };
 }

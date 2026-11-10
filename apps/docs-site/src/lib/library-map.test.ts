@@ -1,6 +1,6 @@
 // The Map (lr-map): where each piece comes from, what changes, who gets it, and what a click narrows to.
 import { describe, expect, it } from 'vitest';
-import { buildMap, focusOf, mapAvailable } from './library-map';
+import { buildMap, focusOf, mapAvailable, mapListOf, readMapFocus, withMapFocus } from './library-map';
 import { change, conflict, LEAD, leadChange, newComponent, PRODUCTS } from './library-fixtures.test-helpers';
 
 const pieces = () => [conflict(), change(), newComponent(), leadChange(30, 'Deepen the blue'), leadChange(31, 'Lighter border')];
@@ -69,5 +69,24 @@ describe('a click on a box', () => {
     expect(mapAvailable({ narrow: false, pieces: 3 })).toBe(true);
     expect(mapAvailable({ narrow: true, pieces: 3 })).toBe(false);
     expect(mapAvailable({ narrow: false, pieces: 0 })).toBe(false);
+  });
+});
+
+describe('the list under the map', () => {
+  it('shows the hint, what a box narrows to, one piece’s own row, or every piece after Show all', () => {
+    const g = buildMap(pieces(), PRODUCTS, LEAD);
+    expect(mapListOf(null, false)).toEqual({ kind: 'hint' });
+    // Show all: the whole list, no box picked (it used to clear the box and show nothing at all).
+    expect(mapListOf(null, true)).toEqual({ kind: 'all' });
+    expect(mapListOf(focusOf(g, g.pieces[1]!.id), false)).toEqual({ kind: 'one', key: g.pieces[1]!.keys[0] });
+    expect(mapListOf(focusOf(g, 'd:crm'), false).kind).toBe('some');
+  });
+
+  it('keeps the picked box in the address, and takes it off on Show all', () => {
+    expect(readMapFocus('?view=map&focus=p%3Ax')).toBe('p:x');
+    expect(readMapFocus('?view=map')).toBeNull();
+    expect(withMapFocus('?view=map', 'p:x')).toBe('?view=map&focus=p%3Ax');
+    expect(withMapFocus('?view=map&focus=p%3Ax', null)).toBe('?view=map');
+    expect(withMapFocus('?focus=a', null)).toBe('');
   });
 });

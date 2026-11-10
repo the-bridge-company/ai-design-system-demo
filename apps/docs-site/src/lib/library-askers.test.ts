@@ -1,9 +1,27 @@
 // Many explorations asking for one piece: one line in the List, grouped in the popover, counted in One by one and
 // folded on the Map.
 import { describe, expect, it } from 'vitest';
-import { askedCell, askedCountLine, askedSubline, askersOf, foldColumn, groupAskers, waysTag } from './library-askers';
+import { askedCell, askedCountLine, askedFaces, askedSubline, askersOf, foldColumn, groupAskers, moreTag, peopleWords, waysTag } from './library-askers';
 import { manyAskers, withManyAskers } from './library-review-fixtures';
-import { change, newComponent } from './library-fixtures.test-helpers';
+import { change, conflict, newComponent } from './library-fixtures.test-helpers';
+
+describe('who asked, as faces', () => {
+  it('is one kind of content: an exploration, a person, people, or three faces and +N', () => {
+    expect(askedFaces(newComponent())).toMatchObject({ kind: 'one', asker: { name: 'Contact page summary', designer: 'Sofia' } });
+    expect(askedFaces({ ...change(), asked: null, by: 'Leo' })).toEqual({ kind: 'person', person: 'Leo' });
+    expect(askedFaces(conflict())).toEqual({ kind: 'people', people: ['Sofia', 'Leo'], words: 'Sofia and Leo' });
+    const [a, ...rest] = manyAskers();
+    const many = askedFaces({ ...change(), asked: a!, also: rest, conflict: null });
+    expect(many).toMatchObject({ kind: 'many', more: 9, words: '+9' });
+    if (many.kind === 'many') expect(many.faces).toHaveLength(3);
+  });
+
+  it('says more as a compact tag, and in words to a screen reader', () => {
+    expect(moreTag(3)).toEqual({ tag: '+3', label: '3 more explorations' });
+    expect(moreTag(1, 'products')).toEqual({ tag: '+1', label: '1 more product' });
+    expect(peopleWords(['Sofia', 'Leo', 'Ann', 'Maya'])).toBe('Sofia, Leo and 2 others');
+  });
+});
 
 describe('several explorations on one piece', () => {
   it('lists every asker once, the most recent first', () => {

@@ -187,3 +187,30 @@ export function focusOf(g: MapGraph, id: string): MapFocus | null {
 
 /** The Map is offered only where it can be read: wide enough, and with something to draw. */
 export const mapAvailable = (o: { narrow: boolean; pieces: number }): boolean => !o.narrow && o.pieces > 0;
+
+/**
+ * The list under the map (owner, 2026-11-10): nothing picked shows the hint; a box picked shows what it narrows to,
+ * with "Show all N"; one piece picked is that piece's own compact row (no chapter, no rail, no column header: the
+ * piece is said once); "Show all" shows the whole list, in the same view.
+ */
+export type MapList = { kind: 'hint' } | { kind: 'all' } | { kind: 'some'; keys: Set<string> } | { kind: 'one'; key: string };
+
+export function mapListOf(focus: Pick<MapFocus, 'keys'> | null, all: boolean): MapList {
+  if (focus) {
+    const keys = [...focus.keys];
+    return keys.length === 1 ? { kind: 'one', key: keys[0]! } : { kind: 'some', keys: focus.keys };
+  }
+  return all ? { kind: 'all' } : { kind: 'hint' };
+}
+
+/** The box a map address picks (?focus=<box id>), or null. */
+export const readMapFocus = (search: string): string | null => new URLSearchParams(search).get('focus')?.trim() || null;
+
+/** The address with the picked box (?focus=), or without it once "Show all" clears it. */
+export function withMapFocus(search: string, id: string | null): string {
+  const q = new URLSearchParams(search);
+  if (id) q.set('focus', id);
+  else q.delete('focus');
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}

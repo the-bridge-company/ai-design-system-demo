@@ -78,3 +78,40 @@ export function foldColumn<T>(items: readonly T[], open: boolean, max = MAP_SOUR
 
 /** How many rows the popover shows before it scrolls inside. */
 export const POPOVER_ROWS = 8;
+
+/**
+ * Who asked, as the List's Asked by cell and the side list's sub line read it (owner, 2026-11-10, one kind of content
+ * per column): the person's face wearing the product's mark, then the exploration's name; a lead's own change is the
+ * person alone; a conflict is its people ("Sofia and Leo"); several explorations are three faces and "+N".
+ */
+export type AskedFaces =
+  | { kind: 'person'; person: string }
+  | { kind: 'one'; asker: AskedBy }
+  | { kind: 'people'; people: string[]; words: string }
+  | { kind: 'many'; askers: AskedBy[]; faces: AskedBy[]; more: number; words: string };
+
+/** "Sofia and Leo", "Sofia, Leo and Ann", "Sofia, Leo and 2 others". */
+export function peopleWords(names: readonly string[]): string {
+  const list = [...new Set(names)];
+  if (list.length <= 1) return list[0] ?? '';
+  if (list.length <= 3) return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+  return `${list.slice(0, 2).join(', ')} and ${list.length - 2} others`;
+}
+
+export function askedFaces(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' | 'mine' | 'by'>): AskedFaces {
+  if (p.conflict) {
+    const people = [...new Set(p.conflict.ways.map((w) => w.designer))];
+    return { kind: 'people', people, words: peopleWords(people) };
+  }
+  const list = askersOf(p);
+  if (!list.length) return { kind: 'person', person: p.mine ? 'You' : (p.by ?? 'A lead') };
+  if (list.length === 1) return { kind: 'one', asker: list[0]! };
+  const more = Math.max(list.length - FACES_SHOWN, 0);
+  return { kind: 'many', askers: list, faces: list.slice(0, FACES_SHOWN), more, words: more ? `+${more}` : `${list.length} explorations` };
+}
+
+/** A compact "+N" tag (owner, 2026-11-10: never "+N more" text) and what it says to a screen reader. */
+export const moreTag = (n: number, what = 'explorations'): { tag: string; label: string } => ({ tag: `+${n}`, label: `${n} more ${n === 1 ? what.replace(/s$/, '') : what}` });
+
+/** The face of an asker: the designer, else the exploration (an exploration Bridge knows no designer for). */
+export const faceName = (a: Pick<AskedBy, 'designer' | 'name'>): string => a.designer ?? a.name;

@@ -416,6 +416,7 @@ async function paintEarlyBuild(
   const h = current.props.handoff ?? EARLY_HANDOFF;
   repaint(d, key, { stage: 'handed-off', tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...h, check, build: { ...h.build, url: h.build?.url ?? buildUrl, builder: h.build?.builder ?? builder } } });
   if (code?.repo) void paintBuildShot(d, key, code.repo, read.pull.number);
+  void paintMeasuredShots(d, key, o.product, o.r.number);
 }
 
 /** The developers' build as Bridge captured it (its preview), beside the approved version, once it is there. */
@@ -490,6 +491,7 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
   };
   repaint(d, key, { tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...current.props.handoff, check, build: { ...current.props.handoff.build, url: o.devUrl ?? current.props.handoff.build?.url ?? null, builder } } });
   if (o.code && !current.props.handoff.build?.shot) void paintBuildShot(d, key, o.code, read.pull.number);
+  void paintMeasuredShots(d, key, o.product, o.r.number);
 }
 
 /**
@@ -547,8 +549,37 @@ const TAKEN_BY_YOU_LINE = 'You said you would look at it.';
 
 function repaint(d: HTMLElement, key: string, patch: Partial<ExplorationPageProps>) {
   if (!current || current.key !== key || !mod) return;
-  current.props = { ...current.props, ...patch };
+  current.props = withMeasured(key, { ...current.props, ...patch });
   mod.paintExplorationPage(d, current.props);
+}
+
+/**
+ * Check the build, measured: the approved design and the build captured on the same screen (the exploration's route,
+ * laptop size) by Bridge's review workflow (lib/build-review-view). Once there, they are the two versions the page
+ * compares, whatever older stored capture a later read brings: the page never says the two sides show different
+ * screens while it counts the differences between them.
+ */
+const measuredShots = new Map<string, { thumb: string; build: string; capturedAt: string; route: string | null }>();
+
+/** The props with the measured captures in place of the stored ones, for the exploration they were measured on. */
+export function withMeasured(key: string, p: ExplorationPageProps): ExplorationPageProps {
+  const m = measuredShots.get(key);
+  if (!m || !p.handoff?.build) return p;
+  return { ...p, thumb: m.thumb, thumbCapturedAt: m.capturedAt, thumbRoute: m.route, handoff: { ...p.handoff, build: { ...p.handoff.build, shot: { src: m.build, capturedAt: m.capturedAt, route: m.route } } } };
+}
+
+/** Reads the check's measure and, when both laptop captures are there, paints them as the two versions. */
+async function paintMeasuredShots(d: HTMLElement, key: string, product: string, number: number): Promise<void> {
+  const m = await import('./build-review-data');
+  const read = await m.loadReviewKept({ product, number }).catch(() => null);
+  const laptop = read?.review?.sizes.find((s) => s.key === 'laptop');
+  if (!read?.review || !laptop?.a || !laptop.b || current?.key !== key) return;
+  const team = await m.teamOfPage();
+  const url = (name: string) => m.imageUrl(team, read.code, read.pull.number, read.review!.run, name);
+  const [thumb, build] = await Promise.all([m.imageSrc(url(laptop.a.image)), m.imageSrc(url(laptop.b.image))]).catch(() => [null, null]);
+  if (!thumb || !build) return;
+  measuredShots.set(key, { thumb, build, capturedAt: read.review.measuredAt, route: read.review.route ?? read.exploration.screen ?? null });
+  if (current?.key === key) repaint(d, key, {});
 }
 
 /** A captured image of the change: the visual impact's biggest change, after. Null when Bridge has none. */

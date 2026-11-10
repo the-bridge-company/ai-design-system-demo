@@ -1496,8 +1496,8 @@ export function buildDiff(a, b) {
       const own = facts.find((f) => !isMinor(f) && f.at)?.at ?? unionBox(r.boxes.b) ?? unionBox(r.boxes.a);
       let fb = null;
       if (own) {
-        const w = Math.max(own[2] + 64, 240);
-        const h = Math.max(own[3] + 64, 150);
+        const w = Math.max(own[2] + 40, 150);
+        const h = Math.max(own[3] + 40, 120);
         fb = [Math.max(0, Math.round(own[0] + own[2] / 2 - w / 2)), Math.max(0, Math.round(own[1] + own[3] / 2 - h / 2)), Math.round(Math.min(w, 900)), Math.round(Math.min(h, 600))];
       }
       return { key: r.key, name: r.name, line: regionLine(facts), facts: facts.map(({ at: _at, ...f }) => f), a: box('a'), b: box('b'), fb, y: Number.isFinite(r.firstY) ? r.firstY : 0 };

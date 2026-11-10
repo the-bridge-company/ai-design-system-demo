@@ -23,6 +23,7 @@ const faceProps = (p: PageFace) => ({ login: p.login, name: p.name, agent: p.age
 export function ShotLink({ href, label, children, chip = true }: { href: string | null; label: string; children: ReactNode; chip?: boolean }) {
   if (!href) return <>{children}</>;
   return (
+    // bridge-audit-ignore-next-line: the whole capture is one link to its version (a block with a scrim and a pill on hover); DS Link styles inline text with an underline, so a block link is requested in the PR
     <a className="xp-shotlink" href={href} target="_blank" rel="noopener" aria-label={`${label} (opens in a new tab)`}>
       {children}
       <span className="xp-shotlink-pill" aria-hidden="true">

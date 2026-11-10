@@ -10,7 +10,7 @@
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Kbd, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Kbd, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
@@ -988,7 +988,19 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       <div role="row" key={p.key} className={`lr-row${selected.has(p.key) ? ' is-selected' : ''}`}>
         {boxes && (
           <span role="cell" className="lr-col-box lr-hover-ctl">
-            {batchable(p, viewer) && <Checkbox label={<VisuallyHidden>{`Select ${p.title}`}</VisuallyHidden>} checked={selected.has(p.key)} onCheckedChange={(v) => onSelect([p.key], v)} />}
+            {batchable(p, viewer) ? (
+              <Checkbox label={<VisuallyHidden>{`Select ${p.title}`}</VisuallyHidden>} checked={selected.has(p.key)} onCheckedChange={(v) => onSelect([p.key], v)} />
+            ) : (
+              // A piece the lead decides alone (a conflict picks a way, a removal needs its own answer): the box shows,
+              // off, and says why, so the row never looks like it lost its checkbox.
+              canDecide(p, viewer) && (
+                <Tooltip content={p.conflict ? 'Pick a way first: Compare' : 'Decided on its own'}>
+                  <span className="lr-box-off">
+                    <Checkbox disabled label={<VisuallyHidden>{p.conflict ? `${p.title}: pick a way first` : `${p.title}: decided on its own`}</VisuallyHidden>} checked={false} />
+                  </span>
+                </Tooltip>
+              )
+            )}
           </span>
         )}
         {pair(p)}

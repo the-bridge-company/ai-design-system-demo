@@ -82,7 +82,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, PmZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, Journey, People, ScreenStage, Timeline, TurnZone, type PersonRow } from './ExplorationParts';
-import { codeShown, devLineOf, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
+import { codeShown, devLineOf, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
 import { nameFace } from '../../../lib/people';
@@ -933,6 +933,7 @@ function ExplorationBody(p: ExplorationPageProps) {
   };
   const previewHref = p.previewUrl ? (p.tryUrl ?? p.previewUrl) : null;
   const screenName = p.plate?.screen ?? p.plate?.product ?? 'The screen';
+  const nameHidden = repeatsTitle(screenName, p.title);
   const isOwner = role === 'owner';
   const builder = handoff?.build?.builder ?? handoff?.check?.builder ?? null;
   const checkQuote = handoff?.question?.text && handoff.question.by ? handoff.question : null;
@@ -1120,6 +1121,7 @@ function ExplorationBody(p: ExplorationPageProps) {
   const screen = build ? (
     <ScreenStage
       name={screenName}
+      nameHidden={nameHidden}
       sub={stageSub}
       compare={{
         a: { label: BUILD_WORDS.approved, when: handoff!.doneWhen, approved: true, frame: <ShotFrame p={p} />, src: p.thumb, href: previewHref },
@@ -1148,7 +1150,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       foot={stageFoot}
     />
   ) : (
-    <ScreenStage name={screenName} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
+    <ScreenStage name={screenName} nameHidden={nameHidden} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
   );
   const showCode = codeShown(role, stage);
   const devLine = devLineOf(role, stage);

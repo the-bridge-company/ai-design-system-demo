@@ -1271,6 +1271,12 @@
   min-width: 0;
 }
 
+/* The screen's name repeated the page title: its line leads the stage, at the body size, in the ink colour. */
+.xp-st-sub.is-alone {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-medium);
+}
+
 /* Check the build: each version shows its first screenful, cropped, the rest fading out (a long page never stretches
    the column); the review mode opens the whole of it. */
 .xp-stage.has-two .xp-frame.is-shot::after {

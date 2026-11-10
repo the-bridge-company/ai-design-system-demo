@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeShown, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, notesContext, ownerLine, pageRoleOf, pageStageOf, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { codeShown, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -137,5 +137,14 @@ describe('the screen', () => {
     ];
     expect(stagedPieces(rows, true).map((r) => r.id)).toEqual(['t']);
     expect(stagedPieces(rows, false)).toEqual([]);
+  });
+});
+
+describe('repeatsTitle', () => {
+  it('spots a screen name that only repeats the page title', () => {
+    expect(repeatsTitle('Fulfilment timeline', 'Order fulfilment timeline')).toBe(true);
+    expect(repeatsTitle('Contact summary', 'Contact page summary')).toBe(true);
+    expect(repeatsTitle('Order details', 'Order fulfilment timeline')).toBe(false);
+    expect(repeatsTitle(null, 'Order fulfilment timeline')).toBe(false);
   });
 });

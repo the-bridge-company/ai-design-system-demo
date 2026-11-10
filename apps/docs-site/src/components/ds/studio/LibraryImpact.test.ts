@@ -54,6 +54,22 @@ describe('the library block, ledger', () => {
     await expectNoAxeViolations(container);
   });
 
+  it("the lead's other answers on a new piece sit behind its ⋯, and the open part is marked for Choose Card padding", async () => {
+    const onPiece = vi.fn().mockResolvedValue('Asked Sofia.');
+    const view = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, conflicts: libraryConflicts(sofia, [leo]) });
+    const { container } = render(createElement(LibraryImpact, { view, actions: { onChoose: vi.fn(), onComment: vi.fn(), onPiece }, say: vi.fn(), screen: shot, newPieces: { capture: null, designer: 'Sofia', choices: {}, onChoice: vi.fn() } }));
+    await userEvent.click(screen.getByRole('button', { name: 'More about Timeline' }));
+    expect(await screen.findByRole('menuitem', { name: /Ask for changes/ })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /existing piece/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('menuitem', { name: /Ask for changes/ }));
+    await userEvent.type(await screen.findByRole('textbox', { name: 'What to change' }), 'Tighter steps');
+    await userEvent.click(screen.getByRole('button', { name: 'Ask for changes' }));
+    expect(onPiece).toHaveBeenCalledWith('component-timeline', 'changes', 'Tighter steps');
+    const waiting = container.querySelectorAll('[data-waiting]');
+    expect(waiting).toHaveLength(1);
+    expect(waiting[0]!.querySelector('h3, h4')!.textContent).toBe('Card padding');
+  });
+
   it('the designer reads the same rows, without ticks or the primary button', () => {
     const view = libraryImpactView({ ...base, body, lead: 'Dana', canDecide: false, designerHere: true, conflicts: libraryConflicts(sofia, [leo]) });
     render(createElement(LibraryImpact, { view, actions: { onComment: vi.fn() }, say: vi.fn(), screen: shot }));

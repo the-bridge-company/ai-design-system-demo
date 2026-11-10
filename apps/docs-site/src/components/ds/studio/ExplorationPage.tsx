@@ -511,12 +511,14 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
  * name in the display face, the product, and a Field Guide drawing (the one of its card, lib/branch-thumb plateDrawing).
  * The frame has the ratio of a capture, so a capture arriving later, or failing to load, moves nothing.
  */
-/** Scroll to the library section and put focus on its first choice (a checkbox or field), so the next key acts. */
+/** Scroll to the piece still waiting in the library section and put focus on its first choice (a checkbox or field), so the next key acts. */
 function goToLibraryChoice() {
   const sec = document.getElementById('xp-library');
   if (!sec) return;
-  sec.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-  const first = sec.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled])');
+  // The piece still waiting on the lead (LibraryImpact marks it), not the block's first box.
+  const target = sec.querySelector<HTMLElement>('[data-waiting]') ?? sec;
+  target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  const first = target.querySelector<HTMLElement>('input:not([disabled]), [role="checkbox"]:not([aria-disabled="true"]), button:not([disabled])');
   first?.focus({ preventScroll: true });
 }
 

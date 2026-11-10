@@ -944,12 +944,16 @@ export function leadBuildLine(view: LibraryImpactView, lead: string): { waiting:
 }
 
 /**
- * What Looks right waits for (error prevention, LI4), beside the disabled button: it points to the library section,
- * where the choice is made, and never asks it a second time. Null when nothing does.
+ * What Send to the developers waits for (error prevention, LI4). The zone's primary becomes that next step itself
+ * ("Choose Card padding") and takes the lead to the library section, where the choice is made: never a disabled
+ * button with an explanation beside it. Null when nothing waits.
  */
 export function looksRightBlock(conflicts: readonly LibraryConflict[]): string | null {
   const open = openConflicts(conflicts);
-  return open.length ? `Pick the ${open[0]!.component} way first` : null;
+  if (!open.length) return null;
+  if (open.length > 1) return `Choose ${open.length} library pieces`;
+  const c = open[0]!;
+  return `Choose ${c.component}${c.property ? ` ${c.property}` : ''}`;
 }
 
 /** "Waiting for the library: Timeline" for an approved exploration's task, from its block and the released requests. */

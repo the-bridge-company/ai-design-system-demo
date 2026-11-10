@@ -18,7 +18,7 @@ import { isNew, Sample, thumbOf } from './LibraryReviewSample';
 import { MapView } from './LibraryMap';
 import { ReachPage } from './LibraryReach';
 import { mapAvailable } from '../../../lib/library-map';
-import { reachCell, reachColumn, reachOf, type Reach } from '../../../lib/library-reach';
+import { measuredReach, reachCell, reachColumn, reachOf, type Measured, type Reach, type ReachData } from '../../../lib/library-reach';
 import { hasLegacy, itemTarget, landing, readLegacy, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
 import { askedCell, askedCountLine, askedSubline, askersOf, FACES_SHOWN, groupAskers, waysTag } from '../../../lib/library-askers';
@@ -190,8 +190,8 @@ const valueOf = (spec: ThumbSpec, side: 'before' | 'after'): string | null => {
   return null;
 };
 
-/** The reach link of a piece ("2 products · 1 screen ›"): opens Who gets it. */
-function ReachLink({ p, reach, onReach, label, text, quiet, hoverOnly }: { p: ReviewPiece; reach: Reach; onReach: (p: ReviewPiece) => void; label?: string; text?: string; quiet?: boolean; hoverOnly?: boolean }) {
+/** The reach link of a piece ("11 screens ›", "Measuring ›"): opens Who gets it. */
+function ReachLink({ p, cell, onReach, label, text, quiet, hoverOnly }: { p: ReviewPiece; cell: string; onReach: (p: ReviewPiece) => void; label?: string; text?: string; quiet?: boolean; hoverOnly?: boolean }) {
   return (
     <Link
       href={reachHref(p.key)}
@@ -200,16 +200,16 @@ function ReachLink({ p, reach, onReach, label, text, quiet, hoverOnly }: { p: Re
         e.preventDefault();
         onReach(p);
       }}
-      aria-label={`Who gets ${p.title}: ${reach.link}`}
+      aria-label={`Who gets ${p.title}: ${cell}`}
     >
       {label ? `${label} ` : ''}
-      {text ?? reach.link}
+      {text ?? cell}
       <Icon icon={ChevronRight} size="xs" className="lr-reach-chev" />
     </Link>
   );
 }
 
-function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, reach, onReach }: { p: ReviewPiece; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; lead: string | null; tech: string | null; onAct: (p: ReviewPiece, a: Act) => void; onComment: (p: ReviewPiece, text: string) => Promise<void>; busy: boolean; reach: Reach; onReach: (p: ReviewPiece) => void }) {
+function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measured, onReach }: { p: ReviewPiece; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; lead: string | null; tech: string | null; onAct: (p: ReviewPiece, a: Act) => void; onComment: (p: ReviewPiece, text: string) => Promise<void>; busy: boolean; measured: Measured; onReach: (p: ReviewPiece) => void }) {
   const [commenting, setCommenting] = useState(false);
   const [text, setText] = useState('');
   // A conflict's two ways, each next to today (the default), or the ways alone (lr-conflict).
@@ -300,7 +300,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, reach, 
           )}
           {(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
           <span className="lr-detail-reach">
-            <span className="lr-muted">Who gets it</span> <ReachLink p={p} reach={reach} onReach={onReach} />
+            <span className="lr-muted">Who gets it</span> <ReachLink p={p} cell={measured.cell} onReach={onReach} />
           </span>
         </p>
       )}
@@ -308,7 +308,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, reach, 
       {p.conflict ? (
         <>
           <p className="lr-lede">
-            {conflictLede(p)} <ReachLink p={p} reach={reach} onReach={onReach} label="Who gets it:" />
+            {conflictLede(p)} <ReachLink p={p} cell={measured.cell} onReach={onReach} label="Who gets it:" />
           </p>
           <div className="lr-ways">
             {p.conflict.ways.map((w) => (
@@ -564,7 +564,7 @@ function AskedCell({ p }: { p: ReviewPiece }) {
  * A column shows only when a row fills it. Checkboxes and the row action (a quiet Decide) show on row hover or
  * keyboard focus, and stay once something is selected; always on touch screens.
  */
-function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected, onSelect, onAsk, onOpen, reach, onReach, readOnly = false }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; decided: boolean; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void; onOpen: (p: ReviewPiece) => void; reach: (p: ReviewPiece) => Reach; onReach: (p: ReviewPiece) => void; readOnly?: boolean }) {
+function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected, onSelect, onAsk, onOpen, reach, measure, onReach, readOnly = false }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; decided: boolean; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void; onOpen: (p: ReviewPiece) => void; reach: (p: ReviewPiece) => Reach; measure: (p: ReviewPiece) => Measured; onReach: (p: ReviewPiece) => void; readOnly?: boolean }) {
   const pickable = readOnly ? [] : groups.flatMap((g) => g.pieces.filter((p) => batchable(p, viewer)));
   const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
   const someOn = pickable.some((p) => selected.has(p.key));
@@ -736,8 +736,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                         </span>
                         <span role="cell" className="lr-row-reach">
                           {(() => {
-                            const c = reachCell(reach(p), Boolean(reachCol.shared));
-                            return <ReachLink p={p} reach={reach(p)} onReach={onReach} text={c.label} quiet hoverOnly={c.hoverOnly} />;
+                            const c = reachCell(measure(p));
+                            return <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />;
                           })()}
                         </span>
                         {showState && (
@@ -945,6 +945,30 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
     if (!r) reachCache.set(p.key, (r = reachOf(p, products)));
     return r;
   };
+  // Who gets it, measured (scripts/library-reach-data.ts): undefined while read, null when the team has none yet.
+  const [reachData, setReachData] = useState<ReachData | null | undefined>(undefined);
+  useEffect(() => {
+    if (!data) return;
+    let live = true;
+    void import('../../../scripts/library-reach-data')
+      .then(({ loadReach }) => loadReach())
+      .catch(() => null)
+      .then((d) => live && setReachData(d));
+    return () => {
+      live = false;
+    };
+  }, [Boolean(data)]);
+  const asking = useMemo(() => {
+    const out = new Map<string, { spec: ThumbSpec; route: string | null }>();
+    for (const [k, spec] of data?.screens ?? []) out.set(k, { spec, route: data?.screenRoutes.get(k) ?? null });
+    return out;
+  }, [data]);
+  const measureCache = useMemo(() => new Map<string, Measured>(), [pieces, products, reachData, asking]);
+  const measure = (p: ReviewPiece): Measured => {
+    let m = measureCache.get(p.key);
+    if (!m) measureCache.set(p.key, (m = measuredReach(p, reach(p), reachData ?? null, asking)));
+    return m;
+  };
   const openReach = (p: ReviewPiece) => {
     history.pushState(history.state, '', reachHref(p.key));
     setReachKey(p.key);
@@ -1107,9 +1131,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
       {reachPiece ? (
         <ReachPage
           p={reachPiece}
-          reach={reach(reachPiece)}
-          screens={data.screens}
-          thumbs={data.thumbs}
+          measured={measure(reachPiece)}
           viewer={v}
           busy={busy}
           backHref={(() => {
@@ -1195,7 +1217,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               seen={seen}
               decidedCount={local.size}
               onPick={setCurrent}
-              detail={<Detail p={cur} thumbs={data.thumbs} viewer={v} lead={data.lead} tech={data.tech} onAct={act} busy={busy} reach={reach(cur)} onReach={openReach} onComment={(p, t) => (demo() ? Promise.resolve(openDemo()) : comment(p, t).then(setNotice, (e: Error) => setNotice(e.message)))} />}
+              detail={<Detail p={cur} thumbs={data.thumbs} viewer={v} lead={data.lead} tech={data.tech} onAct={act} busy={busy} measured={measure(cur)} onReach={openReach} onComment={(p, t) => (demo() ? Promise.resolve(openDemo()) : comment(p, t).then(setNotice, (e: Error) => setNotice(e.message)))} />}
             />
           ) : view === 'map' ? (
             <MapView
@@ -1203,11 +1225,11 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               products={products}
               viewer={v}
               list={(subset) => (
-                <ListView readOnly groups={joinSmallGroups(groupPieces(subset, v))} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={() => undefined} onAsk={() => undefined} selected={new Set()} onSelect={() => undefined} reach={reach} onReach={openReach} />
+                <ListView readOnly groups={joinSmallGroups(groupPieces(subset, v))} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={() => undefined} onAsk={() => undefined} selected={new Set()} onSelect={() => undefined} reach={reach} measure={measure} onReach={openReach} />
               )}
             />
           ) : (
-            <ListView groups={groups} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={(p) => { setCurrent(p.key); update(filters, 'one'); }} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} reach={reach} onReach={openReach} />
+            <ListView groups={groups} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={(p) => { setCurrent(p.key); update(filters, 'one'); }} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} reach={reach} measure={measure} onReach={openReach} />
           )}
         </>
       )}

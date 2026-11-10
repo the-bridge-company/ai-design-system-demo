@@ -12,13 +12,18 @@
 // bridge-shots): no stored secret. A preview that is not up yet, or that answers a sign-in page, is skipped and asked
 // again on the next run.
 //
+// Who gets it (api/_lib/private-reach.ts): after the captures, the same run asks Bridge which teams' product screens
+// are due (GET ?reachRun=todo), measures each team with preview-shots.mjs measureReach (the products' live screens and
+// what each waiting library change does to them), sends each image (POST ?reachRun=image) and then the summary
+// (POST ?reachRun=done). Same OIDC identity, asked again when it gets old (a run can take several minutes).
+//
 // --migrate (once, 2026-11-08): asks Bridge to move the images it still keeps in Redis to its private Blob store and to
 // delete the stored images no capture names (POST ?shots=migrate, dry=1 with --dry-run), and prints what it moved and
 // freed. Safe to run again: a second run moves nothing.
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { atScreen, captureOne, launch, screenOf } from './preview-shots.mjs';
+import { atScreen, captureOne, launch, measureReach, screenOf } from './preview-shots.mjs';
 
 export const AUDIENCE = 'bridge-shots';
 
@@ -81,14 +86,17 @@ async function migrate(o) {
   console.log(migrationReport(await res.json()));
 }
 
-async function main() {
-  const o = args(process.argv.slice(2));
-  if (o.migrate) return migrate(o);
-  const require = createRequire(resolve(process.env.BRIDGE_DEPS ?? '.', 'package.json'));
-  const core = await import(pathToFileURL(require.resolve('@bridge-ds/core')).href);
-  const token = await oidcToken();
-  const auth = { authorization: `Bearer ${token}` };
-  const todo = await fetch(`${o.base}/api/contribute?shots=todo${o.force ? '&force=1' : ''}`, { headers: { ...auth, accept: 'application/json' } });
+/** A fresh OIDC token for each call once the last one is two minutes old: a run can outlast one. */
+function identity(get = oidcToken) {
+  let held = null;
+  return async () => {
+    if (!held || Date.now() - held.at > 120_000) held = { at: Date.now(), token: await get() };
+    return { authorization: `Bearer ${held.token}` };
+  };
+}
+
+async function captures(o, core, auth) {
+  const todo = await fetch(`${o.base}/api/contribute?shots=todo${o.force ? '&force=1' : ''}`, { headers: { ...(await auth()), accept: 'application/json' } });
   if (!todo.ok) throw new Error(`Bridge answered ${todo.status} to the todo list: ${await todo.text()}`);
   const { jobs = [] } = await todo.json();
   console.log(`${jobs.length} exploration(s) to capture.`);
@@ -115,7 +123,7 @@ async function main() {
         }
         const put = await fetch(`${o.base}/api/contribute?shots=put`, {
           method: 'POST',
-          headers: { ...auth, 'content-type': 'application/json' },
+          headers: { ...(await auth()), 'content-type': 'application/json' },
           body: JSON.stringify({ repo: j.repo, pr: j.pr, sha: j.sha, url, route: shot.route, screen: shot.screen, ...(target.at ? { at: target.at } : {}), image: Buffer.from(shot.webp).toString('base64') }),
         });
         console.log(`- ${j.repo}#${j.pr}: ${put.ok ? 'kept' : `refused (${put.status})`} ${target.url}`);
@@ -128,6 +136,63 @@ async function main() {
     await browser.close();
   }
   console.log(`${kept} capture(s) kept by Bridge.`);
+}
+
+/** The products of a reach job with an address: the live one, else the preview of the default branch. */
+export function reachProductsOf(job, previewUrl) {
+  return (job.products ?? []).map((p) => ({ ...p, url: p.url ?? (p.template && previewUrl ? previewUrl(p.template, { branch: p.branch ?? 'main' }) : null) })).filter((p) => p.url);
+}
+
+async function reach(o, core, auth) {
+  const todo = await fetch(`${o.base}/api/contribute?reachRun=todo${o.force ? '&force=1' : ''}`, { headers: { ...(await auth()), accept: 'application/json' } });
+  if (!todo.ok) {
+    console.log(`Who gets it: Bridge answered ${todo.status} to the todo list.`);
+    return;
+  }
+  const { jobs = [] } = await todo.json();
+  console.log(`${jobs.length} team(s) whose screens to measure.`);
+  if (!jobs.length) return;
+  const browser = await launch();
+  try {
+    for (const j of jobs) {
+      const products = reachProductsOf(j, core.previewUrl);
+      let sent = 0;
+      const summary = await measureReach(browser, { products, changes: j.changes, modes: j.modes, cssVar: j.cssVar }, async (name, webp) => {
+        if (o.dryRun) return;
+        const r = await fetch(`${o.base}/api/contribute?reachRun=image`, {
+          method: 'POST',
+          headers: { ...(await auth()), 'content-type': 'application/json' },
+          body: JSON.stringify({ team: j.team, run: j.run, name, image: Buffer.from(webp).toString('base64') }),
+        });
+        if (!r.ok) throw new Error(`Bridge refused image ${name} (${r.status})`);
+        sent++;
+      });
+      const line = summary.changes.map((c) => `#${c.pr} ${c.state}${c.state === 'measured' ? ` (${c.screens.length} screen(s))` : ''}`).join(', ');
+      if (o.dryRun) {
+        console.log(`- ${j.team}: measured (dry run, not sent): ${line || 'no change'}`);
+        continue;
+      }
+      const done = await fetch(`${o.base}/api/contribute?reachRun=done`, {
+        method: 'POST',
+        headers: { ...(await auth()), 'content-type': 'application/json' },
+        body: JSON.stringify({ team: j.team, run: j.run, summary }),
+      });
+      console.log(`- ${j.team}: ${done.ok ? 'kept' : `refused (${done.status})`}, ${sent} image(s), ${line || 'no change'}`);
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
+async function main() {
+  const o = args(process.argv.slice(2));
+  if (o.migrate) return migrate(o);
+  const require = createRequire(resolve(process.env.BRIDGE_DEPS ?? '.', 'package.json'));
+  const core = await import(pathToFileURL(require.resolve('@bridge-ds/core')).href);
+  const auth = identity();
+  await captures(o, core, auth);
+  // Who gets it never fails the captures' run: a refusal is said in the log.
+  await reach(o, core, auth).catch((e) => console.log(`Who gets it: ${e.message}`));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main();

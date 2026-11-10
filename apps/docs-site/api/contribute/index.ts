@@ -141,6 +141,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
 import { demoDialog, isSampleTeam } from '../../src/lib/demo.js';
 import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, workflowClaims, type ShotsCtx, type ShotStore } from '../_lib/private-shots.js';
+import { productOfImage, putReachImage, putReachSummary, reachImageBytes, reachTodo, readReach, summaryFor } from '../_lib/private-reach.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
 import { branchKey, issueKey, mineItems, mineKey } from '../_lib/former-member.js';
@@ -716,6 +717,41 @@ async function onShot(req: Request, ctx: Ctx, params: URLSearchParams, store: Sh
   await productReadAllowed(rctx, { owner, repo }, { owner: po, repo: pn }, reader);
   if (params.get('meta') === '1') return json(200, { shot: await shotMeta(ctx.svc.redis, target, pr) }, { 'Cache-Control': 'private, no-cache' });
   return await shotImage(ctx.svc.redis, store, target, pr);
+}
+
+/**
+ * Who gets it, measured (api/_lib/private-reach.ts), for a reader of the team: GET ?repo=<team>&reach=summary, the
+ * screens of the products the reader may read and what each waiting library change does to them; and
+ * ?reach=image&run=<run>&name=<name>, one of those images. Never kept by a shared cache.
+ */
+async function onReach(req: Request, ctx: Ctx, params: URLSearchParams, store: ShotStore | null): Promise<Response> {
+  const { owner, repo, full } = parseRepo(params.get('repo'));
+  const rctx = readCtxOf(ctx);
+  const reader = await readerOf(ctx, req, full, rctx);
+  if (!reader) return json(401, { error: 'signin', message: SIGNIN });
+  const summary = await readReach(ctx.svc.redis, full);
+  const may = async (productRepo: string) => {
+    const [po, pn] = productRepo.split('/') as [string, string];
+    try {
+      await productReadAllowed(rctx, { owner, repo }, { owner: po, repo: pn }, reader);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (params.get('reach') === 'image') {
+    const run = String(params.get('run') ?? '');
+    const name = String(params.get('name') ?? '');
+    const product = summary && summary.run === run ? productOfImage(summary, name) : null;
+    if (!product || !(await may(product.repo))) return fail(404, 'not_found', 'No such screen.');
+    const bytes = await reachImageBytes(store, full, run, name);
+    if (!bytes) return fail(404, 'not_found', 'No such screen.');
+    return new Response(Buffer.from(bytes), { status: 200, headers: { ...SECURITY_HEADERS, 'Content-Type': 'image/webp', 'Cache-Control': 'private, max-age=86400, immutable' } });
+  }
+  if (!summary) return json(200, { reach: null }, { 'Cache-Control': 'private, no-cache' });
+  const allowed = new Set<string>();
+  for (const p of summary.products) if (await may(p.repo)) allowed.add(p.repo);
+  return json(200, { reach: summaryFor(summary, allowed) }, { 'Cache-Control': 'private, no-cache' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -3289,6 +3325,18 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       if (shotsAction === 'migrate' && method === 'POST') return json(200, await migrateShots(sctx, params.get('dry') === '1'));
       return fail(405, 'method', 'GET the todo list, POST a capture.');
     }
+    // The same workflow measures Who gets it (api/_lib/private-reach.ts): same identity, same store.
+    const reachAction = params.get('reachRun');
+    if (reachAction === 'todo' || reachAction === 'image' || reachAction === 'done') {
+      const svc0 = services(env, deps);
+      if (!svc0) return fail(503, 'not_configured', NOT_CONFIGURED);
+      const sctx = shotsCtxOf({ f: deps.fetch, now: deps.now ?? Date.now, svc: svc0, store: shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots) });
+      if (!(await workflowClaims(sctx, req.headers.get('authorization')))) return fail(401, 'signin', 'Only Bridge\'s capture workflow sends screenshots.');
+      if (reachAction === 'todo' && method === 'GET') return json(200, { jobs: await reachTodo(sctx, params.get('force') === '1') });
+      if (reachAction === 'image' && method === 'POST') return await putReachImage(sctx, await readBody(req, 600_000));
+      if (reachAction === 'done' && method === 'POST') return await putReachSummary(sctx, await readBody(req, 400_000));
+      return fail(405, 'method', 'GET the todo list, POST an image or the summary.');
+    }
     if (method !== 'GET') requireCsrf(req);
     const svc = services(env, deps);
     const gh = params.get('gh');
@@ -3302,6 +3350,7 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
     if (method === 'GET' && params.get('npm') !== null && gh === null && blobs === null) {
       return json(200, { latest: await npmLatest(deps.fetch, svc?.redis ?? null, parseNpmNames(params.get('npm'))) });
     }
+    if (method === 'GET' && (params.get('reach') === 'summary' || params.get('reach') === 'image') && svc && !cross) return await onReach(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
     if (method === 'GET' && params.get('shot') !== null && svc && !cross) return await onShot(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
     if (method === 'GET' && gh === null && blobs === null && users === null && changes === null) {
       const repoArg = params.get('repo');

@@ -1354,10 +1354,14 @@ body:has(.lr-bar) .lr-toasts {
   outline: none;
 }
 
+.lr-reach-titles {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .lr-reach-sentence,
-.lr-reach-origin,
-.lr-reach-note,
-.lr-reach-unknown {
+.lr-reach-origin {
   margin: 0;
 }
 
@@ -1366,8 +1370,7 @@ body:has(.lr-bar) .lr-toasts {
   line-height: var(--typography-body-line-height);
 }
 
-.lr-reach-origin,
-.lr-reach-note {
+.lr-reach-origin {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
 }
@@ -1393,7 +1396,7 @@ body:has(.lr-bar) .lr-toasts {
   font-weight: var(--font-weight-semibold);
 }
 
-.lr-reach-more {
+.lr-reach-product-head .lr-reach-more {
   margin-inline-start: auto;
 }
 
@@ -1443,20 +1446,57 @@ a.lr-reach-card:focus-visible {
   box-shadow: none;
 }
 
-.lr-reach-today {
-  display: grid;
-  place-items: center;
-  min-height: calc(var(--space-24) + var(--space-10));
-  padding: var(--space-4);
+/* A screen: the top of the page, 16 by 10, as the robot captured it at 1440 by 900. */
+.lr-reach-img,
+.lr-reach-none {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: var(--color-bg-subtle);
 }
 
-.lr-reach-side {
+.lr-reach-img {
+  object-fit: cover;
+  object-position: top left;
+}
+
+.lr-reach-none {
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  text-align: center;
+}
+
+/* Side by side: the same screen today, then with the change. */
+.lr-reach-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.lr-reach-side > .lr-reach-today {
+.lr-reach-pair > :first-child {
   border-inline-end: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-reach.is-side .lr-reach-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--size-120)), 1fr));
+}
+
+/* While Bridge measures: the cards' places, quiet. */
+.lr-reach-wait .lr-reach-skel {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+}
+
+.lr-reach-end {
+  margin: 0;
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-reach-foot {
@@ -1478,17 +1518,6 @@ a.lr-reach-card:focus-visible {
   flex: none;
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
-}
-
-.lr-reach-unknown {
-  padding: var(--space-4) var(--space-5);
-  border: var(--border-width-default) dashed var(--color-border-default);
-  border-radius: var(--radius-container);
-  font-size: var(--typography-body-size);
-}
-
-.lr-reach-unknown strong {
-  font-weight: var(--font-weight-semibold);
 }
 
 .lr-reach-decide {
@@ -1763,19 +1792,6 @@ a.lr-reach-card:focus-visible {
 
 .lr-map-box .lr-product {
   font-weight: var(--font-weight-medium);
-}
-
-.lr-reach-unknown {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-}
-
-.lr-reach-unknown-names {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
 }
 
 .lr-map-hint {

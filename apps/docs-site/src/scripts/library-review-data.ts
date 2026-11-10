@@ -91,6 +91,8 @@ export interface ReviewData {
   products: ReachProductInput[];
   /** The preview capture of each exploration that asked for a piece, by screenKey (its plate while none exists). */
   screens: Map<string, ThumbSpec>;
+  /** Where on its preview each of those captures is ("/?t=a#/products"), by screenKey, when known. */
+  screenRoutes: Map<string, string | null>;
 }
 
 /** The key of an asking exploration's screen in ReviewData.screens. */
@@ -178,8 +180,9 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
     thumbs: new Map(),
     products: products.map((p) => ({ key: p.key, name: p.name, default: Boolean(p.default) })),
     screens: new Map(),
+    screenRoutes: new Map(),
   };
-  const emit = () => paint({ ...data, viewer, pieces: [...data.pieces], thumbs: new Map(data.thumbs), screens: new Map(data.screens) });
+  const emit = () => paint({ ...data, viewer, pieces: [...data.pieces], thumbs: new Map(data.thumbs), screens: new Map(data.screens), screenRoutes: new Map(data.screenRoutes) });
 
   let open: Pull[];
   try {
@@ -333,6 +336,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
       const shot = await previewShotOf({ number: sc.number, product: sc.productKey }).catch(() => null);
       const plate = { product: sc.product ?? '', screen: sc.name, seed: k };
       data.screens.set(k, previewOf(shot ? shotThumb(shot, plate) : null, plate));
+      data.screenRoutes.set(k, shot?.route ?? null);
     }),
   ]);
   emit();

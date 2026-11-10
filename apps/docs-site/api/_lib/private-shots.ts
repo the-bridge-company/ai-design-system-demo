@@ -239,7 +239,7 @@ async function gh(ctx: ShotsCtx, token: string, path: string, accept = 'applicat
  * The product repositories Bridge watches (api/_lib/notify.ts), each with its team: the design copies (the explorations)
  * and the developers' repositories (their builds, shown beside the approved version in Check the build).
  */
-async function watchedCopies(redis: Redis): Promise<{ repo: string; team: string; kind: 'copy' | 'code' }[]> {
+export async function watchedCopies(redis: Redis): Promise<{ repo: string; team: string; kind: 'copy' | 'code' }[]> {
   const repos = ((await redis.cmd('SMEMBERS', NOTIFY_TEAMS_KEY)) as string[] | null) ?? [];
   const metas = repos.length ? ((await redis.pipe(repos.map((r) => ['GET', repoMetaKey(r)]))) as (string | null)[]) : [];
   const out: { repo: string; team: string; kind: 'copy' | 'code' }[] = [];

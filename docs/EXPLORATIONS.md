@@ -389,6 +389,28 @@ The workflow uses its own `GITHUB_TOKEN` only.
 nothing is stored (and any older capture is removed): Studio keeps the plate, the drawing with the changed screen's
 name. The plate also shows while no capture exists yet, or when an image does not load.
 
+### Who gets it, measured
+
+Library review's Who gets it page (`?reach=<piece>`) shows the real screens of each product a waiting library change
+alters, never a guess. The same robot (`scripts/preview-shots.mjs` `measureReach`) opens each product's live address
+(`products[].production`, else its preview of the default branch), finds its main screens with a small crawl of the
+navigation (each section's first page, then one detail page per section, 12 per product at most), and for each open
+library pull request that changes token values it applies the new values to the page (the CSS variables of the changed
+tokens, under the modes their file applies to; dark-only changes are measured in dark) and compares every visible
+element's computed style. A screen whose elements change gets the change; Studio says what changed ("2 buttons,
+links"). A change that only adds tokens, a new component or size changes only the screens of the explorations that
+asked for it. Screens are measured again when a change or a product address moves, and at least once a day.
+
+- **Public products** (product repository public): `preview-shots.yml` writes `reach/summary.json` and
+  `reach/<run>/<name>.webp` to `bridge-shots` (no workflow change: `run` does it).
+- **Private products** (the sample team's Acme Prints and Acme CRM): Bridge's own `private-shots.yml`
+  (`scripts/private-shots.mjs`) asks `GET /api/contribute?reachRun=todo`, sends each image and the summary back with its
+  OIDC token, and Bridge keeps them in its private Blob store (`api/_lib/private-reach.ts`), readable only by the
+  team's readers. It runs on `main` only: the first measurement lands on the next scheduled run after merge, or run the
+  workflow by hand.
+- **Locally**, nothing published or sent: `node scripts/preview-shots.mjs reach --repo <owner/name> --out <dir>`
+  (`--change <n>`, `--product <key>`, `--max <n>` to narrow it) writes `summary.json` and the images into a folder.
+
 ## Guardrails
 
 - **Not mergeable as is.** The CI job **Exploration not merged as is** fails while the `exploration` label is on,

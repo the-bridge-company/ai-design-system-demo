@@ -59,10 +59,13 @@ export interface ShortcutEvent {
 
 const TYPING = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
-/** Whether a key press is the rail shortcut: `[` alone, never while typing, never with Ctrl, Cmd or Alt. */
+/**
+ * Whether a key press is the rail shortcut: `[`, never while typing, never with Ctrl or Cmd. Alt is allowed: on a
+ * French keyboard `[` is typed with Alt (Option) held.
+ */
 export function isRailShortcut(e: ShortcutEvent): boolean {
   if (e.key !== RAIL_SHORTCUT) return false;
-  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.defaultPrevented) return false;
+  if (e.ctrlKey || e.metaKey || e.isComposing || e.defaultPrevented) return false;
   const t = e.target;
   if (t && (t.isContentEditable || TYPING.has((t.tagName ?? '').toUpperCase()))) return false;
   return true;
@@ -80,7 +83,7 @@ export function railTipText(label: string, count?: number | null): string {
 /**
  * Two letters for a product in the collapsed rail, instead of the same folder icon on every row. A word every product
  * starts with (the team's, "Acme" in "Acme CRM", "Acme Prints") says nothing and is dropped. Two words or more: their
- * first letters ("Field Ops" FO); one word: its first two letters as written ("CRM" CR, "Prints" Pr).
+ * first letters ("Field Ops" FO); one word: its first two letters ("CRM" CR, "Prints" PR), always in capitals.
  */
 export function productInitials(name: string, all: readonly string[] = []): string {
   const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
@@ -93,5 +96,5 @@ export function productInitials(name: string, all: readonly string[] = []): stri
   if (own.length === 0) return '';
   if (own.length >= 2) return (own[0]![0]! + own[1]![0]!).toUpperCase();
   const w = [...own[0]!];
-  return (w[0]!.toUpperCase() + (w[1] ?? '')).trim();
+  return (w[0]! + (w[1] ?? '')).toUpperCase().trim();
 }

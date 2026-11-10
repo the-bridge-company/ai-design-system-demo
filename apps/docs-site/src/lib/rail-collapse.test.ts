@@ -37,7 +37,7 @@ describe('isRailShortcut', () => {
     expect(isRailShortcut({ key: ']' })).toBe(false);
     expect(isRailShortcut({ key: '[', ctrlKey: true })).toBe(false);
     expect(isRailShortcut({ key: '[', metaKey: true })).toBe(false);
-    expect(isRailShortcut({ key: '[', altKey: true })).toBe(false);
+    expect(isRailShortcut({ key: '[', altKey: true })).toBe(true);
     expect(isRailShortcut({ key: '[', isComposing: true })).toBe(false);
     expect(isRailShortcut({ key: '[', defaultPrevented: true })).toBe(false);
   });
@@ -65,12 +65,12 @@ describe('productInitials', () => {
   const acme = ['Acme CRM', 'Acme Prints'];
   it('drops the word every product shares', () => {
     expect(productInitials('Acme CRM', acme)).toBe('CR');
-    expect(productInitials('Acme Prints', acme)).toBe('Pr');
+    expect(productInitials('Acme Prints', acme)).toBe('PR');
   });
 
   it('keeps the first word when products differ', () => {
     expect(productInitials('Acme CRM', ['Acme CRM', 'Checkout'])).toBe('AC');
-    expect(productInitials('Checkout', ['Acme CRM', 'Checkout'])).toBe('Ch');
+    expect(productInitials('Checkout', ['Acme CRM', 'Checkout'])).toBe('CH');
     expect(productInitials('Field ops app')).toBe('FO');
   });
 

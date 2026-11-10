@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
-import { keepLabel, keptKeys, leadLibraryLine, libraryImpactView, lookOf, looksRightBlock, namesLine, pickOf, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
+import { keepLabel, keptKeys, leadBuildLine, leadLibraryLine, libraryImpactView, lookOf, looksRightBlock, namesLine, pickOf, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen. The library has nothing like it yet.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 const compact: MissingPiece = { id: 'statcard-size-compact', kind: 'variant', title: 'StatCard: compact size', summary: 'A compact size for StatCard.', name: 'compact', component: 'StatCard', aspect: 'size', values: [{ category: 'size', property: 'size', value: 'compact' }], where: [], change: { before: 'default', after: 'compact' } };
@@ -132,10 +132,45 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(c.decides).toBe(false);
     expect(c.tag).toBe('Dana picks');
     expect(c.ways[0]!.label).toBe("Leo's way (yours)");
-    expect(c.question).toBe("Sofia's screen makes Card roomier");
-    expect(c.context.map((s) => s.text).join('')).toBe('Contact page summary · Acme CRM');
+    expect(c.question).toBe('Card, two ways');
+    expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes it roomier; yours makes it tighter.");
+    expect(c.context[0]!.face).toBe('Sofia');
     expect(c.note).toBe("Tell Dana why yours fits this screen. Dana's choice answers both screens.");
     expect(c.comment).toBe('Comment');
+  });
+
+  it('never says "Your choice" where the viewer cannot choose: the lead past their answer picks in Library review', () => {
+    const href = '/studio/acme/library-review/?asked=o%2Fr%2310';
+    // Dana reads Leo's exploration at Check the build: the page offers no choice (approved, no answer bar).
+    const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, approved: true, conflicts: two, others: [sofia], reviewHref: href });
+    if (v.state !== 'rows') throw new Error(v.state);
+    const c = conflictOf(v);
+    expect(c.decides).toBe(false);
+    expect(c.tag).toBe('Needs you');
+    expect(v.rows[0]!.status.label).toBe('Needs you');
+    expect(c.question).toBe('Card, two ways');
+    expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes it roomier; this screen makes it tighter.");
+    expect(c.noteParts).toEqual([{ text: 'Pick in Library review', href }, { text: ': it answers both screens. Leo and Sofia are told.' }]);
+    expect(c.note).not.toMatch(/your choice|exploration's page/i);
+  });
+
+  it('names the lead and where they pick for anyone else, linked to Library review', () => {
+    const href = '/studio/acme/library-review/?asked=o%2Fr%2310';
+    const c = conflictOf(libraryImpactView({ ...base, lead: 'Dana', canDecide: false, conflicts: two, others: [sofia], reviewHref: href }));
+    expect(c.tag).toBe('Dana picks');
+    expect(c.noteParts).toEqual([{ text: 'Dana picks in ' }, { text: 'Library review', href }, { text: ', for both screens.' }]);
+    const unknown = conflictOf(libraryImpactView({ ...base, lead: 'the DS lead', canDecide: false, conflicts: two, others: [sofia] }));
+    expect(unknown.tag).toBe('The DS lead picks');
+    expect(unknown.note).toBe('The DS lead picks in Library review, for both screens.');
+  });
+
+  it("tells the build check what the library pieces wait for, instead of 'no library piece changed'", () => {
+    const waiting = libraryImpactView({ ...base, lead: 'Dana', canDecide: false, approved: true, conflicts: two, others: [sofia] });
+    expect(leadBuildLine(waiting, 'Dana')).toEqual({ waiting: true, line: 'Card waits on Dana in Library review' });
+    expect(leadBuildLine(libraryImpactView({ ...base, lead: 'you', canDecide: false, approved: true, conflicts: two, others: [sofia] }), 'you')).toEqual({ waiting: true, line: 'Card waits on you in Library review' });
+    const settled = libraryImpactView({ ...base, body: bodyWith([timeline]), lead: 'Dana', canDecide: false, approved: true });
+    expect(leadBuildLine(settled, 'Dana')).toEqual({ waiting: false, line: 'Not needed: the library pieces are decided' });
+    expect(leadBuildLine(libraryImpactView({ ...base, body: bodyWith([]), lead: 'Dana', canDecide: false, approved: true }), 'Dana')).toBeNull();
   });
 
   it('puts three designers in one card: one way, or several as sizes; Ann reads filled with no border', () => {

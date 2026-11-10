@@ -112,6 +112,12 @@ export interface Said {
   face?: string;
 }
 
+/** A run of a note; with an href, a link ("Library review"). */
+export interface NotePart {
+  text: string;
+  href?: string;
+}
+
 /** A settled conflict (boards EB3, EB4): what the library gets, who chose and when, and the plates kept. */
 export interface DecidedView {
   /** "Card gets two new sizes", "Card takes Sofia's way". */
@@ -154,6 +160,11 @@ export interface ConflictView {
   context: Said[];
   /** Beside the actions: "Answers both screens. Leo and Sofia are told." */
   note: string;
+  /**
+   * The same sentence in runs, one of them a link when the choice is made elsewhere: "Dana picks in [Library review],
+   * for both screens." or "[Pick in Library review]: it answers both screens."
+   */
+  noteParts: NotePart[];
   /** "Comment to both", "Comment to all", "Comment". */
   comment: string;
   /** The row's one tag while open: "Your choice", "Dana picks". */
@@ -234,6 +245,11 @@ export interface ImpactInput {
   replyTo?: string | null;
   /** The viewer is the exploration's designer: their own way reads "(yours)". */
   designerHere?: boolean;
+  /**
+   * This exploration's pieces in Library review, where a choice is made when this page does not offer it (the
+   * exploration is past the lead's answer, or the viewer is not the lead).
+   */
+  reviewHref?: string | null;
   now?: Date;
 }
 
@@ -255,6 +271,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     lead: x.lead,
     canDecide: x.canDecide && !x.approved,
     designerHere: Boolean(x.designerHere),
+    reviewHref: x.reviewHref ?? null,
     screen: x.screen ?? block?.name ?? 'This screen',
     product: x.product ?? '',
     now: x.now ?? new Date(),
@@ -439,6 +456,7 @@ interface ConflictContext {
   lead: string;
   canDecide: boolean;
   designerHere: boolean;
+  reviewHref: string | null;
   screen: string;
   product: string;
   now: Date;
@@ -496,26 +514,36 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const manyContext: Said[] = [{ text: `${cap(count(others.length))} more ${others.length === 1 ? 'screen changes' : 'screens change'} ${component}: ` }, ...listed, ...tail];
   const other = others[0]!;
   const decides = x.canDecide;
+  // The viewer is the lead, but this page does not offer the choice (the exploration is past the lead's answer).
+  const leadElsewhere = !decides && !x.designerHere && leadName === null;
+  // What this screen does, from the reader's side: "yours" for its designer, else "this screen".
+  const mineWay = ways.find((w) => w.mine);
+  const mineSaid: Said[] = mineWay ? [{ text: `; ${x.designerHere ? 'yours' : 'this screen'} makes it ${effect(mineWay)}.` }] : [{ text: '.' }];
   let question: string;
   let context: Said[];
-  if (several) {
-    question = decides ? `Which way does ${component} take?` : `${cap(count(others.length))} more screens change ${component}`;
-    context = decides ? manyContext : [...listed, ...tail];
-  } else if (decides) {
+  if (decides) {
     question = `Which way does ${component} take?`;
-    context = [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes ${component} ${effect(other)}.` }];
+    context = several
+      ? manyContext
+      : [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes ${component} ${effect(other)}.` }];
   } else {
-    question = `${other.designer}'s screen makes ${component} ${effect(other)}`;
-    context = [{ text: '', face: other.designer }, { text: other.screen, strong: true }, ...(other.product ? [{ text: ` · ${other.product}` }] : [])];
+    // Everyone else reads the same two lines as the lead (EB1): the component and its ways, then who makes it what.
+    question = `${component}, ${count(ways.length)} ways`;
+    context = several
+      ? [...listed, ...tail]
+      : [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes it ${effect(other)}` }, ...mineSaid];
   }
   const told = `${namesLine(ways.map((w) => w.designer))} ${ways.length === 1 ? 'is' : 'are'} told`;
-  const note = decides
-    ? `Answers ${ways.length === 2 ? 'both screens' : `${ways.length} screens`}. ${ways.length > 3 ? 'Everyone who asked is told.' : `${told}.`}`
+  const toldLine = ways.length > 3 ? 'Everyone who asked is told.' : `${told}.`;
+  const where = x.reviewHref;
+  const noteParts: NotePart[] = decides
+    ? [{ text: `Answers ${ways.length === 2 ? 'both screens' : `${ways.length} screens`}. ${toldLine}` }]
     : x.designerHere
-      ? `Tell ${leadName && leadName !== 'The DS lead' ? leadName : 'the DS lead'} why yours fits this screen. ${leadName ?? 'The DS lead'}'s choice answers ${screens}.`
-      : leadName
-        ? `${leadName}'s choice answers ${screens}.`
-        : `Your choice answers ${screens}. Choose on the exploration's page.`;
+      ? [{ text: `Tell ${leadName && leadName !== 'The DS lead' ? leadName : 'the DS lead'} why yours fits this screen. ${leadName ?? 'The DS lead'}'s choice answers ${screens}.` }]
+      : leadElsewhere
+        ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}. ${toldLine}` }]
+        : [{ text: `${leadName ?? 'The DS lead'} picks in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
+  const note = noteParts.map((p) => p.text).join('');
   const pick = group.find((c) => c.pick)?.pick ?? null;
   return {
     piece: first.piece,
@@ -527,8 +555,10 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     question,
     context,
     note,
+    noteParts,
     comment: decides ? (ways.length === 2 ? 'Comment to both' : 'Comment to all') : 'Comment',
-    tag: decides || !leadName ? 'Your choice' : `${leadName} picks`,
+    // Who picks, said once: the lead deciding here reads "Your choice", the lead who picks in Library review "Needs you".
+    tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The DS lead'} picks`,
     todayHint: several ? 'Stays the default' : 'In the library now',
     pick,
     decided: pick ? decidedView(pick, ways, component, property, x, told) : null,
@@ -575,6 +605,20 @@ export function leadLibraryLine(view: LibraryImpactView, designer: string): stri
   if (!pending.length) return null;
   const what = pending.length === 1 ? `the ${pending[0]!.title.replace(/^New size: /, 'new size ')}` : `the ${pending.length} library changes below`;
   return `${designer} is done exploring. Looks right also accepts ${what} into the library. To answer one on its own, use its menu.`;
+}
+
+/**
+ * The design lead's line in Check the build when the exploration has library pieces: the build check never asks the
+ * lead (the screen was approved), but a piece still open waits on them in Library review. "Card waits on Dana in
+ * Library review", "2 library pieces wait on you in Library review"; every piece settled, "Not needed: the library
+ * pieces are decided". Null when nothing changes in the library (the build check's own line stays).
+ */
+export function leadBuildLine(view: LibraryImpactView, lead: string): { waiting: boolean; line: string } | null {
+  if (view.state !== 'rows' || !view.rows.length) return null;
+  const open = view.rows.filter((r) => r.status.key === 'conflict' || r.status.key === 'needs-lead');
+  if (!open.length) return { waiting: false, line: 'Not needed: the library pieces are decided' };
+  const who = /^you$/i.test(lead) ? 'you' : lead;
+  return { waiting: true, line: open.length === 1 ? `${open[0]!.title} waits on ${who} in Library review` : `${open.length} library pieces wait on ${who} in Library review` };
 }
 
 /**

@@ -70,7 +70,7 @@ import { siteConfig } from './repo-context';
 import { changedFiles, namesOf, pieceActions, pieceActor, previewSources, productPreviewOf, readView, withToolbar, atRoute } from './product-branch';
 import { productClient, productRepoByKey } from './product-repos';
 import { newerPmSaid, isViewerPm, pmStatusLine, PM_WORDS } from '../lib/pm-view';
-import { BUILD_WORDS, buildRows, type BuildCheckView } from '../lib/build-check-view';
+import { BUILD_WORDS, buildRows, withLibraryWait, type BuildCheckView } from '../lib/build-check-view';
 import type { PmView } from '../components/ds/studio/LeadDecisions';
 import { bringLatestIntoExploration, copyRepos, explorationBehind } from './design-copy';
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
@@ -87,6 +87,7 @@ import { isEmailAddress, loginKey } from '../lib/people';
 import { isNameAuthor, nameOfAuthor } from '../lib/author';
 import { siteApprovers } from './teams';
 import { studioHref } from '../lib/team-path';
+import { LIBRARY_REVIEW_ROUTE } from '../lib/explorations-page';
 import { pullReviewsOf } from './review-reads';
 import { libraryScope } from './next-release';
 import { inNextRelease, libraryRelease, parseReleaseBody } from '../lib/release-view';
@@ -95,7 +96,7 @@ import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskS
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
 import { conflictsWithOthers, impactSourceOf, releasedSet } from './library-impact';
-import { keepLabel, keptKeys, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
+import { keepLabel, keptKeys, leadBuildLine, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
 import { developersMessage, offersDevelopersMessage, teamMember } from '../lib/developers-message';
 import { OLD_TOOLBAR_NOTE, toolbarTakesPass } from '../lib/read-pass-link';
@@ -107,6 +108,13 @@ const R = `/repos/${CFG.owner}/${CFG.repo}`;
 type Module = typeof import('../components/ds/studio/ExplorationPage');
 let mod: Module | null = null;
 let current: { key: string; props: ExplorationPageProps } | null = null;
+
+/**
+ * What the library pieces of the open exploration wait for, once "What this changes in the library" was read: the
+ * build check's design lead line says it instead of "Not needed" (the two paint in either order).
+ */
+let libraryWait: { key: string; wait: ReturnType<typeof leadBuildLine> } | null = null;
+const waitOf = (key: string) => (libraryWait?.key === key ? libraryWait.wait : null);
 
 const connected = () => Boolean(hasWorkingToken() && currentViewer());
 const dsClient = () => studioClient(`${CFG.owner}/${CFG.repo}`, undefined, { protectedBranches: [CFG.defaultBranch] });
@@ -390,7 +398,7 @@ async function paintEarlyBuild(
     line: BUILD_WORDS.line(builder),
     builder,
     designer: designerName,
-    rows: buildRows(read.rows, { designer: designerName, pm, lead: null }),
+    rows: withLibraryWait(buildRows(read.rows, { designer: designerName, pm, lead: null }), waitOf(key)),
     onSay: read.role
       ? async (a) => {
           const [{ sayBuild }, { getToken }] = await Promise.all([import('./contribute-session'), import('./github-session')]);
@@ -465,7 +473,7 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
     line: BUILD_WORDS.line(builder),
     builder,
     designer,
-    rows: buildRows(read.rows, { designer, pm, lead: null }),
+    rows: withLibraryWait(buildRows(read.rows, { designer, pm, lead: null }), waitOf(key)),
     onSay: read.role
       ? async (a) => {
           await sayBuild(team, { ...target, ...a }, token);
@@ -1137,6 +1145,8 @@ async function paintLibraryImpact(
     screen: mine.name,
     product: o.product.name,
     designerHere,
+    // Where a choice this page does not offer is made: this exploration's pieces in Library review.
+    reviewHref: studioHref(`${LIBRARY_REVIEW_ROUTE}?asked=${encodeURIComponent(mine.key)}`),
     products: o.products.filter((p) => p.default !== true).map((p) => p.name),
     released,
     names: o.names,
@@ -1243,9 +1253,14 @@ async function paintLibraryImpact(
       : {};
   const lead = current.props.lead;
   const leadLine = lead ? leadLibraryLine(view, designer) : null;
+  const wait = leadBuildLine(view, leadName);
+  libraryWait = { key, wait };
+  const check = current.props.handoff?.check;
+  const handoff = check && current.props.handoff ? { handoff: { ...current.props.handoff, check: { ...check, rows: withLibraryWait(check.rows, wait) } } } : {};
   const blocked = looksRightBlock(conflicts);
   repaint(d, key, {
     impact: { view, actions },
+    ...handoff,
     ...(lead && (leadLine || lead.bar) ? { lead: { ...lead, ...(leadLine && !lead.heading ? { line: leadLine } : {}), ...(lead.bar ? { bar: { ...lead.bar, blocked } } : {}) } } : {}),
   });
 }

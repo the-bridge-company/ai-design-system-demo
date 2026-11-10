@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { buildComment, buildStateOf, devPullOfEvents, taskOfUrl, type BuildWord } from '../../api/_lib/build-check';
 import { designReviewOf, devReviewLine, taskStage } from './review-state';
 import { reopenedBody } from '../../api/_lib/build-check';
-import { buildRows } from './build-check-view';
+import { buildRows, withLibraryWait } from './build-check-view';
 import { pmHomeRow } from './pm-view';
 
 const w = (role: BuildWord['role'], kind: BuildWord['kind'], sha: string, extra: Partial<BuildWord> = {}): BuildWord => ({ role, kind, sha, byName: role, at: '2026-11-07T10:00:00Z', ...extra });
@@ -59,6 +59,17 @@ describe('in words', () => {
       ['Dino', 'product manager', 'Waiting'],
       ['Design lead', '', 'Not needed: no library piece changed'],
     ]);
+  });
+
+  it('says a library piece still waits on the lead instead of "no library piece changed"', () => {
+    const rows = buildRows([{ role: 'designer', required: true, state: 'waiting' }], { designer: 'Sofia', pm: null, lead: null });
+    const waiting = withLibraryWait(rows, { waiting: true, line: 'Card waits on Dana in Library review' });
+    expect(waiting.map((r) => [r.role, r.state, r.stateLine])).toEqual([
+      ['designer', 'waiting', 'Waiting'],
+      ['lead', 'waiting', 'Card waits on Dana in Library review'],
+    ]);
+    expect(withLibraryWait(rows, null)).toEqual(rows);
+    expect(withLibraryWait(rows, { waiting: false, line: 'Not needed: the library pieces are decided' })[1]).toMatchObject({ state: 'not-needed', stateLine: 'Not needed: the library pieces are decided' });
   });
 
   it("the PM's Home: their opinion while it runs, the build once ready", () => {

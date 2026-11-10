@@ -7,7 +7,7 @@
 // scripts/library-impact.ts. Styles: styles/library-impact.css.
 import { useEffect, useId, useState, type CSSProperties, type FormEvent } from 'react';
 import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
-import { Accordion, AccordionItem, Avatar, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Menu, MenuContent, MenuItem, MenuTrigger, Radio, RadioGroup, Skeleton, Textarea, Tooltip } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Avatar, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Radio, RadioGroup, Skeleton, Textarea, Tooltip } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import { keepLabel, pickOf, PIECE_ACTION_HINT, PIECE_ACTION_LABEL, type ConflictView, type DecidedView, type ImpactRowView, type ImpactSide, type LibraryImpactView, type PieceAction, type Said, type WayLook, type WayView } from '../../../lib/library-impact-view';
@@ -454,7 +454,17 @@ function Conflict({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: 
         </Button>
       )}
       <div className="li-act">
-        <p className="li-note">{c.note}</p>
+        <p className="li-note">
+          {c.noteParts.map((p, i) =>
+            p.href ? (
+              <Link key={i} href={p.href} data-keep-branch="">
+                {p.text}
+              </Link>
+            ) : (
+              <span key={i}>{p.text}</span>
+            ),
+          )}
+        </p>
         {(onComment || decides) && (
           <div className="li-btns">
             {onComment && (

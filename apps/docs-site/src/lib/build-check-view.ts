@@ -81,3 +81,12 @@ export function buildRows(rows: readonly BuildRowRead[], names: { designer: stri
   }
   return out;
 }
+
+/**
+ * The lead's row once the page knows what the exploration changes in the library (library-impact-view leadBuildLine):
+ * "Not needed: no library piece changed" is only true when nothing changed. A piece still open waits on the lead.
+ */
+export function withLibraryWait(rows: readonly BuildCheckRow[], wait: { waiting: boolean; line: string } | null): BuildCheckRow[] {
+  if (!wait) return [...rows];
+  return rows.map((r) => (r.role === 'lead' && r.state === 'not-needed' ? { ...r, state: wait.waiting ? 'waiting' : 'not-needed', stateLine: wait.line } : r));
+}

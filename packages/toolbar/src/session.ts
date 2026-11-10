@@ -303,10 +303,10 @@ export function readScroll(search: string): number | null {
 export type Dock = 'start' | 'center' | 'end';
 const DOCKS: Dock[] = ['start', 'center', 'end'];
 
-/** Bottom right by default: the corner a back office leaves free most often. */
+/** Bottom centre by default, like Figma's action bar; the person can move it left or right and it stays there. */
 export function readDock(storage: StorageLike | null): Dock {
   const v = storage ? safe(() => storage.getItem(DOCK_KEY), null) : null;
-  return DOCKS.includes(v as Dock) ? (v as Dock) : 'end';
+  return DOCKS.includes(v as Dock) ? (v as Dock) : 'center';
 }
 
 /** One step left (-1) or right (+1), stopping at the edges. */
@@ -360,7 +360,8 @@ export function placeToolbar(input: { left: number; right: number; vh: number; w
     const bottom = vh - gutter - lift;
     return { left, right: left + w, top: bottom - h, bottom };
   };
-  const opposite: Dock = preferred === 'start' ? 'end' : 'start';
+  // From the centre, the bottom right comes next: the corner a back office leaves free most often.
+  const opposite: Dock = preferred === 'start' ? 'end' : preferred === 'center' ? 'end' : 'start';
   const order: Dock[] = [preferred, opposite, ...DOCKS.filter((d) => d !== preferred && d !== opposite)];
   for (const dock of order) {
     const r = rectAt(dock);

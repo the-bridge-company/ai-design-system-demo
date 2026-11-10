@@ -142,7 +142,13 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: three, others: [sofia, ann] }));
     expect(c.several).toBe(true);
     expect(c.ways.map((w) => w.size)).toEqual(['Tighter', 'Roomier', 'Filled, no border']);
-    expect(c.ways[2]!.look).toEqual({ padding: 16, borderless: true, filled: true, shadowless: false });
+    expect(c.ways[2]!.look).toEqual({ padding: 16, gap: 8, radius: null, borderless: true, filled: true, shadowless: false });
+    // Each plate draws its way's own values: tighter and roomier differ from each other, room and spacing alike.
+    expect(c.ways.map((w) => [w.look.padding, w.look.gap])).toEqual([
+      [12, 6],
+      [20, 10],
+      [16, 8],
+    ]);
     expect(c.context.map((s) => s.text).join('')).toBe("Two more screens change Card: Sofia's Contact page summary makes it roomier, Ann's Activity feed filters makes it filled, no border. All in Acme CRM.");
     expect(c.note).toBe('Answers 3 screens. Leo, Sofia and Ann are told.');
     expect(c.todayHint).toBe('Stays the default');
@@ -152,6 +158,12 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(pickOf('sizes', c.ways.map((w) => w.key), c.ways)).toBe('both');
     expect(pickOf('one', [c.ways[2]!.key], c.ways)).toBe(c.ways[2]!.key);
     expect(pickOf('sizes', [], c.ways)).toBeNull();
+  });
+
+  it('reads a way the check recorded as a space token, a gap or a radius', () => {
+    expect(lookOf({ values: [{ category: 'spacing', property: 'padding', value: 'var(--space-3)' }] })).toMatchObject({ padding: 12, gap: 6 });
+    expect(lookOf({ values: [{ category: 'spacing', property: 'padding', value: '24px' }, { category: 'spacing', property: 'gap', value: '4px' }, { category: 'radius', property: 'border-radius', value: '6px' }] })).toMatchObject({ padding: 24, gap: 4, radius: 6, borderless: false });
+    expect(lookOf(null, 'var(--space-5)')).toMatchObject({ padding: 20, gap: 10 });
   });
 
   it('stays one short line for ten screens or more', () => {

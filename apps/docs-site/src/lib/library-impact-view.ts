@@ -76,6 +76,10 @@ export const VERDICT_OF: Record<PieceAction, PieceVerdict> = { approve: 'approve
 export interface WayLook {
   /** Room inside, in pixels, when the change sets it. */
   padding: number | null;
+  /** Space between the card's lines, in pixels: the change's own value, else half the room inside (a tighter way is tighter throughout). */
+  gap: number | null;
+  /** Corner radius, in pixels, when the change sets it. */
+  radius: number | null;
   borderless: boolean;
   filled: boolean;
   shadowless: boolean;
@@ -334,17 +338,28 @@ const NONE = /^(none|0|0px|transparent)$/i;
 
 /** How a recorded piece looks: its room inside, and whether it drops the border, the shadow or adds a fill. */
 export function lookOf(piece: Pick<MissingPiece, 'values'> | null | undefined, fallback?: string): WayLook {
-  const look: WayLook = { padding: null, borderless: false, filled: false, shadowless: false };
+  const look: WayLook = { padding: null, gap: null, radius: null, borderless: false, filled: false, shadowless: false };
+  const px = (v: { value?: string; resolved?: string }) => pixels(v.resolved) ?? pixels(v.value) ?? spacePixels(v.value);
   for (const v of piece?.values ?? []) {
     const prop = (v.property ?? v.category ?? '').toLowerCase();
     const value = (v.resolved ?? v.value ?? '').trim();
-    if (prop.startsWith('padding')) look.padding = pixels(v.resolved) ?? pixels(v.value) ?? look.padding;
-    else if (prop.startsWith('border') && !prop.includes('radius') && NONE.test(value)) look.borderless = true;
+    if (prop.startsWith('padding')) look.padding = px(v) ?? look.padding;
+    else if (prop === 'gap' || prop === 'row-gap') look.gap = px(v) ?? look.gap;
+    else if (prop.includes('radius')) look.radius = px(v) ?? look.radius;
+    else if (prop.startsWith('border') && NONE.test(value)) look.borderless = true;
     else if (prop.startsWith('background') && value && !NONE.test(value)) look.filled = true;
     else if (prop === 'box-shadow' && NONE.test(value)) look.shadowless = true;
   }
-  if (look.padding === null && fallback !== undefined) look.padding = pixels(fallback);
+  if (look.padding === null && fallback !== undefined) look.padding = pixels(fallback) ?? spacePixels(fallback);
+  // The space between lines follows the room inside when the change does not set it: a tighter card is tighter throughout.
+  if (look.gap === null && look.padding !== null) look.gap = Math.round(look.padding / 2);
   return look;
+}
+
+/** A space token's size when no resolved value was recorded ("var(--space-3)" is 12): the usual 4-pixel scale. */
+function spacePixels(v: string | undefined): number | null {
+  const m = /^var\(--space-(\d+)(?:-(5))?\)$/.exec((v ?? '').trim());
+  return m ? (Number(m[1]) + (m[2] ? 0.5 : 0)) * 4 : null;
 }
 
 /** The recorded piece of a source that changes this component part. */

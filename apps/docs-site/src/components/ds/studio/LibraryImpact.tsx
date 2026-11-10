@@ -256,9 +256,15 @@ function SaidLine({ parts }: { parts: readonly Said[] }) {
  * A small library card drawn with a way's change: its room inside, a fill, no border. The same card on every plate,
  * so only the change differs. Decorative: the words under each plate say the same.
  */
-function Specimen({ look, decided = false }: { look: WayLook | null; decided?: boolean }) {
-  const style = look?.padding != null ? ({ '--_pad': `${look.padding}px` } as CSSProperties) : undefined;
-  const cls = ['li-spec', look?.borderless && 'is-borderless', look?.filled && 'is-filled', decided && 'is-decided'].filter(Boolean).join(' ');
+function Specimen({ look }: { look: WayLook | null }) {
+  // The way's own values, as recorded (pixels from the check, not from this page's scale): the card is sized by them, so
+  // a tighter way draws a smaller card than today's and a roomier one a larger card.
+  const vars: Record<string, string> = {};
+  if (look?.padding != null) vars['--_pad'] = `${look.padding}px`;
+  if (look?.gap != null) vars['--_gap'] = `${look.gap}px`;
+  if (look?.radius != null) vars['--_radius'] = `${look.radius}px`;
+  const style = Object.keys(vars).length ? (vars as CSSProperties) : undefined;
+  const cls = ['li-spec', look?.borderless && 'is-borderless', look?.filled && 'is-filled'].filter(Boolean).join(' ');
   return (
     <Card padding="none" className={cls} style={style} aria-hidden="true">
       <span className="li-spec-in">
@@ -543,7 +549,7 @@ function Decided({ d, piece, tag, onUndo, say, headingLevel }: { d: DecidedView;
           {d.plates.map((p) => (
             <li key={p.key} className={p.chip ? 'li-dfig is-mine' : p.today ? 'li-dfig is-today' : 'li-dfig'}>
               <div className="li-dplate">
-                <Specimen look={p.look} decided />
+                <Specimen look={p.look} />
               </div>
               <span className="li-dlab">
                 <span className="li-dname">{p.label}</span>

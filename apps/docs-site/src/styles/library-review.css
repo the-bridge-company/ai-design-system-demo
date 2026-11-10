@@ -91,8 +91,8 @@
   border-radius: var(--radius-pill);
   background-color: var(--color-signal-subtle);
   color: var(--color-text-link);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-decoration: none;
 }
 
@@ -153,6 +153,7 @@ a.lr-ask {
 
 .lr-seen .lr-muted {
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .lr-side-group {
@@ -224,7 +225,11 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-.lr-side-sub,
+.lr-side-sub {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
 .lr-side-flag {
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
@@ -273,7 +278,8 @@ a.lr-ask {
   align-items: center;
   gap: var(--space-2) var(--space-3);
   margin: 0;
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-lede {
@@ -316,7 +322,8 @@ a.lr-ask {
 
 .lr-plate-none {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-plate-cap {
@@ -334,6 +341,7 @@ a.lr-ask {
   color: var(--color-text-muted);
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .lr-match {
@@ -350,6 +358,7 @@ a.lr-ask {
 .lr-match-tag {
   color: var(--color-text-link);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -374,7 +383,8 @@ a.lr-ask {
 
 .lr-actions-note {
   margin-inline-start: auto;
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-keys {
@@ -383,7 +393,8 @@ a.lr-ask {
   gap: var(--space-1-5);
   margin-inline-start: auto;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 @media (hover: none) {
@@ -393,7 +404,8 @@ a.lr-ask {
 }
 
 .lr-shared {
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-comment {
@@ -444,7 +456,8 @@ a.lr-ask {
 }
 
 .lr-way-from {
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-way-value {
@@ -532,6 +545,7 @@ a.lr-ask {
 .lr-list-head {
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--font-tracking-wide);
   text-transform: uppercase;
@@ -560,6 +574,7 @@ a.lr-ask {
 
 .lr-group-label .lr-muted {
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .lr-row {
@@ -619,8 +634,8 @@ a.lr-ask {
 
 .lr-row-kind,
 .lr-row-wait {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-row-ask {
@@ -934,7 +949,8 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 .lr-way-cap {
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-way-cap.is-way {
@@ -1033,7 +1049,8 @@ body:has(.lr-bar) .lr-toasts {
 .lr-look-text {
   padding: var(--space-0-5) var(--space-1);
   background-color: var(--color-surface-default);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -1083,7 +1100,8 @@ body:has(.lr-bar) .lr-toasts {
   display: inline-flex;
   align-items: center;
   gap: var(--space-0-5);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   white-space: nowrap;
 }
 
@@ -1254,15 +1272,16 @@ body:has(.lr-bar) .lr-toasts {
 .lr-map-sub {
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lr-map-none {
   margin: 0;
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The list the map narrows: a banner says what it shows, once, then the same blocks as List. */
@@ -1294,6 +1313,7 @@ body:has(.lr-bar) .lr-toasts {
 .lr-map-focus-count {
   margin-inline-start: var(--space-2);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 /* --- Who gets it, the page (lr-reach) ------------------------------------------------------------------------------- */
@@ -1364,6 +1384,7 @@ body:has(.lr-bar) .lr-toasts {
   align-items: baseline;
   gap: var(--space-1) var(--space-3);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .lr-reach-product-name {
@@ -1455,7 +1476,8 @@ a.lr-reach-card:focus-visible {
 
 .lr-reach-by {
   flex: none;
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-reach-unknown {
@@ -1588,6 +1610,7 @@ a.lr-reach-card:focus-visible {
   flex: none;
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   white-space: nowrap;
 }
 
@@ -1616,7 +1639,8 @@ a.lr-reach-card:focus-visible {
 .lr-askers-product {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--font-tracking-wide);
   text-transform: uppercase;
@@ -1647,7 +1671,8 @@ a.lr-reach-card:focus-visible {
 .lr-askers-by {
   flex: none;
   margin-inline-start: auto;
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-detail .lr-askers {
@@ -1732,6 +1757,7 @@ a.lr-reach-card:focus-visible {
   background-color: var(--color-action-primary-bg);
   color: var(--color-action-primary-text);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-semibold);
 }
 

@@ -20,7 +20,7 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { ChevronLeft, Ellipsis, ExternalLink } from 'lucide-react';
+import { Archive, ArrowRightLeft, ChevronLeft, Ellipsis, ExternalLink, MonitorSmartphone, Pencil, Undo2, UserCheck } from 'lucide-react';
 import {
   Accordion,
   AccordionItem,
@@ -45,6 +45,7 @@ import {
   Menu,
   MenuContent,
   MenuItem,
+  MenuSeparator,
   MenuTrigger,
   Skeleton,
   Spinner,
@@ -963,12 +964,18 @@ function ExplorationBody(p: ExplorationPageProps) {
                   <MenuTrigger render={<IconButton icon={Ellipsis} label="More actions" variant="secondary" size="lg" />} />
                 </Tooltip>
                 <MenuContent align="end">
-                  {p.onRename && <MenuItem onClick={() => setAsk('rename')}>Rename</MenuItem>}
-                  {p.screen?.onSave && <MenuItem onClick={() => setAsk('screen')}>{SCREEN_TITLE}</MenuItem>}
-                  {p.onReopen && <MenuItem onClick={() => setAsk('reopen')}>Back to exploring</MenuItem>}
-                  {p.onTakeOver && <MenuItem onClick={() => setAsk('take-over')}>Take it over</MenuItem>}
-                  {p.handOver && <MenuItem onClick={() => setAsk('hand-over')}>Hand over</MenuItem>}
-                  {p.onArchive && <MenuItem onClick={() => (p.archiveAsksWhy ? setAsk('archive') : archive())}>Archive</MenuItem>}
+                  {p.onRename && <MenuItem icon={Pencil} onClick={() => setAsk('rename')}>Rename</MenuItem>}
+                  {p.screen?.onSave && <MenuItem icon={MonitorSmartphone} onClick={() => setAsk('screen')}>{SCREEN_TITLE}</MenuItem>}
+                  {p.onReopen && <MenuItem icon={Undo2} onClick={() => setAsk('reopen')}>Back to exploring</MenuItem>}
+                  {p.onTakeOver && <MenuItem icon={UserCheck} onClick={() => setAsk('take-over')}>Take it over</MenuItem>}
+                  {p.handOver && <MenuItem icon={ArrowRightLeft} onClick={() => setAsk('hand-over')}>Hand over</MenuItem>}
+                  {/* Archive last, apart and in the danger tone: it takes the exploration off everyone's list. */}
+                  {p.onArchive && (p.onRename || p.screen?.onSave || p.onReopen || p.onTakeOver || p.handOver) && <MenuSeparator />}
+                  {p.onArchive && (
+                    <MenuItem icon={Archive} tone="danger" onClick={() => (p.archiveAsksWhy ? setAsk('archive') : archive())}>
+                      Archive
+                    </MenuItem>
+                  )}
                 </MenuContent>
               </Menu>
             </span>

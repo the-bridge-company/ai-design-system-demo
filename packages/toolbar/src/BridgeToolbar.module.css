@@ -1,4 +1,4 @@
-/* The Bridge toolbar floats over the admin's content column: bottom right by default, docked left or centre on demand,
+/* The Bridge toolbar floats over the admin's content column: bottom centre by default, docked left or right on demand,
    lifted above the page's primary buttons and the outlined surfaces when every dock would cover one. One row, 44px,
    on desktop; compact density so every control is 36px. The border stays neutral. Text: 14 and 12, plus the wordmark.
    Tokens only. */

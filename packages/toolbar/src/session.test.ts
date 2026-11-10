@@ -191,8 +191,8 @@ describe('dock and keys', () => {
     expect(stepDock('start', -1)).toBe('start');
     expect(stepDock('center', 1)).toBe('end');
     expect(readDock(memoryStorage({ 'bridge-admin:toolbar-dock': 'end' }))).toBe('end');
-    expect(readDock(memoryStorage({ 'bridge-admin:toolbar-dock': 'top' }))).toBe('end');
-    expect(readDock(throwing)).toBe('end');
+    expect(readDock(memoryStorage({ 'bridge-admin:toolbar-dock': 'top' }))).toBe('center');
+    expect(readDock(throwing)).toBe('center');
   });
 
   it('flips on B, never while typing or with a modifier', () => {
@@ -218,6 +218,7 @@ describe('placeToolbar', () => {
   const base = { left: 256, right: 1424, vh: 900, w: 600, h: 80, gutter: 16 };
   it('keeps the chosen dock when nothing is in the way', () => {
     expect(placeToolbar({ ...base, preferred: 'end', obstacles: [] })).toEqual({ dock: 'end', lift: 0 });
+    expect(placeToolbar({ ...base, preferred: 'center', obstacles: [] })).toEqual({ dock: 'center', lift: 0 });
   });
 
   it('moves to the opposite corner of the content column when it would cover a primary button', () => {

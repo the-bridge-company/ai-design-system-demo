@@ -45,14 +45,6 @@
 .lr-filter .lr-filter-value {
   font-weight: var(--font-weight-medium);
 }
-
-.lr-count {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-}
-
 .lr-none {
   margin: 0;
   color: var(--color-text-muted);
@@ -160,15 +152,38 @@ a.lr-ask {
   padding-block: var(--space-3) var(--space-1);
 }
 
+/* A family in the side list: its icon, its name in Fraunces and its count, the side list's size of the List's chapter. */
+.lr-side-fam {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-6) var(--space-4) var(--space-1);
+  font-family: var(--typography-display-family);
+  font-size: var(--typography-h3-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-h3-line-height);
+}
+
+.lr-side-head + .lr-side-chapter .lr-side-fam {
+  padding-block-start: var(--space-4);
+}
+
+.lr-side-fam-count {
+  color: var(--color-text-muted);
+  font-family: var(--typography-body-family);
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-regular);
+}
+
+/* A group under its family: plain sans, semibold, its count quiet. */
 .lr-side-label {
   margin: 0;
-  padding: var(--space-1) var(--space-4) var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-caption-line-height);
-  letter-spacing: var(--font-tracking-wide);
-  text-transform: uppercase;
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-side-label .lr-muted {
@@ -225,9 +240,29 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
+/* The sub line: one kind of content (a face and the exploration, a person, or people). */
 .lr-side-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+}
+
+.lr-line-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Seen: a quiet check on the row's end, on seen rows only. */
+.lr-side-seen {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  color: var(--color-text-muted);
 }
 
 .lr-side-flag {
@@ -281,14 +316,6 @@ a.lr-ask {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
 }
-
-.lr-lede {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
-}
-
 /* Before and after: two plates of the same shape, a third when the library already has something close. */
 .lr-plates {
   display: grid;
@@ -420,120 +447,133 @@ a.lr-ask {
 }
 
 /* A conflict: the two ways side by side, each with its own pick. */
-.lr-ways {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.lr-way {
-  display: grid;
-  align-content: start;
-  justify-items: start;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-}
-
-.lr-way.is-picked {
-  border-color: var(--color-border-emphasis);
-  background-color: var(--color-surface-selected);
-}
-
-.lr-way-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-
-.lr-way-head > span:last-child {
-  display: grid;
-}
-
-.lr-way-name {
-  font-weight: var(--font-weight-semibold);
-}
-
-.lr-way-from {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.lr-way-value {
-  margin: 0;
-  font-size: var(--typography-body-size);
-}
-
-/* --- List ---------------------------------------------------------------------------------------------------------- */
+/* --- List: chapters with a group rail (direction C) ----------------------------------------------------------------
+   A family is a chapter: its icon in an outlined circle, its name in Fraunces with its count, one plain line, and on
+   its end the products it reaches, named once. Then one card: the column header (sentence case, on the row grid), and
+   each group's name in a sticky rail on the start side of its rows. */
 
 .lr-list {
-  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column, the same in every block. */
+  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column, the same in every card. */
   --lr-cols: var(--lr-cols-wide, minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr));
+  --lr-rail: var(--size-40);
 
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-12);
 }
 
-/* One column header row, sticky while the blocks scroll under it. */
-.lr-list-head {
-  position: sticky;
-  top: var(--layout-header-height);
-  z-index: var(--layer-sticky);
-  padding-inline: calc(var(--space-5) + var(--border-width-default));
-  border-block-end: var(--border-width-default) solid var(--color-border-default);
-  background-color: var(--color-bg-default);
-}
-
-/* A family (Foundations, Components, Docs): a small overline, then its blocks with room between them. */
-.lr-family {
+.lr-chapter {
   display: grid;
-  gap: var(--space-6);
-}
-
-.lr-family-row {
-  display: flex;
-  align-items: center;
   gap: var(--space-4);
-  margin-block-end: calc(var(--space-6) * -1 + var(--space-2));
-  padding-inline: var(--space-5);
-}
-
-.lr-overline {
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-caption-line-height);
-  letter-spacing: var(--font-tracking-wide);
-  text-transform: uppercase;
-}
-
-.lr-list-group {
-  display: grid;
-  gap: var(--space-2);
-}
-
-/* A block: the rows of one group in one card. */
-.lr-block {
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-surface-default);
-  overflow: hidden;
-}
-
-.lr-block > .lr-row:first-child {
-  border-block-start: 0;
-}
-
-
-.lr-row-state,
-.lr-row-next {
-  display: inline-flex;
-  align-items: center;
   min-width: 0;
 }
 
-.lr-list-head,
+.lr-chapter-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.lr-chapter-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.lr-fam-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-12);
+  height: var(--size-12);
+  border: var(--border-width-default) solid var(--color-border-emphasis);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-link);
+}
+
+.lr-fam-icon.is-sm {
+  width: var(--size-7);
+  height: var(--size-7);
+}
+
+.lr-chapter-text {
+  display: grid;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.lr-chapter-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.lr-chapter-name {
+  margin: 0;
+  font-family: var(--typography-display-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-h2-line-height);
+}
+
+.lr-chapter-count {
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.lr-chapter-note {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+/* "Reaches [P][C] Acme Prints, Acme CRM": the marks overlap like faces. */
+.lr-chapter-reach {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.lr-marks {
+  display: inline-flex;
+}
+
+.lr-marks .lr-product-mark {
+  box-shadow: 0 0 0 var(--border-width-2) var(--color-bg-default);
+}
+
+.lr-marks .lr-product-mark + .lr-product-mark {
+  margin-inline-start: calc(var(--space-1) * -1);
+}
+
+.lr-chapter-names {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-medium);
+}
+
+/* "+3": a compact tag, as tall as the marks and faces beside it. */
+.lr-more-tag {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* One card per chapter. */
+.lr-chapter-card {
+  min-width: 0;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  overflow: clip;
+}
+
+.lr-chapter-cols,
 .lr-row {
   display: grid;
   grid-template-columns: var(--lr-cols);
@@ -542,34 +582,75 @@ a.lr-ask {
   padding: var(--space-3) var(--space-5);
 }
 
-.lr-list-head {
+/* The column header: sentence case, quiet, on the same grid as the rows (the rail column first when there is one). */
+.lr-chapter-cols {
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
   line-height: var(--typography-caption-line-height);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--font-tracking-wide);
-  text-transform: uppercase;
+  border-block-end: var(--border-width-default) solid var(--color-border-default);
 }
 
-/* A group's heading above its block: a plain heading (Fraunces, with its count), its checkbox on the same line. */
+.lr-chapter.has-rail .lr-chapter-cols {
+  grid-template-columns: calc(var(--lr-rail) - var(--space-5)) var(--lr-cols);
+}
+
+.lr-list-group {
+  display: grid;
+  min-width: 0;
+}
+
+.lr-chapter-card .lr-list-group + .lr-list-group {
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-chapter.has-rail .lr-list-group {
+  grid-template-columns: var(--lr-rail) minmax(0, 1fr);
+}
+
+/* The rail: the group's name and count, staying in view while its rows scroll. */
 .lr-group-row {
+  position: sticky;
+  top: calc(var(--layout-header-height) + var(--space-2));
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding-inline: var(--space-5);
+  align-self: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4) var(--space-3) var(--space-4) var(--space-5);
+}
+
+/* The group's checkbox after its name, so the names line up on the rail's start. */
+.lr-group-row > .lr-col-box {
+  order: 1;
+  margin-inline-start: auto;
 }
 
 .lr-group-label {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .lr-group-name {
-  font-family: var(--typography-display-family);
-  font-size: var(--typography-h3-size);
-  line-height: var(--typography-h3-line-height);
+  min-width: 0;
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+  overflow-wrap: break-word;
+}
+
+/* A row's name links to the piece: plain until hovered, like a table's first cell. */
+.lr-row-title:is(a),
+a.lr-asked {
+  text-decoration-line: none;
+}
+
+.lr-row-title:is(a):hover,
+a.lr-asked:hover .lr-asked-name {
+  text-decoration-line: underline;
 }
 
 .lr-group-label .lr-muted {
@@ -577,8 +658,27 @@ a.lr-ask {
   line-height: var(--typography-caption-line-height);
 }
 
-.lr-row {
-  border-block-start: var(--border-width-default) solid var(--color-border-default);
+.lr-block {
+  min-width: 0;
+}
+
+.lr-chapter.has-rail .lr-block {
+  border-inline-start: var(--border-width-default) solid var(--color-border-subtle);
+}
+
+.lr-chapter.has-rail .lr-row {
+  padding-inline-start: var(--space-4);
+}
+
+.lr-row + .lr-row {
+  border-block-start: var(--border-width-default) solid var(--color-border-subtle);
+}
+
+.lr-row-state,
+.lr-row-next {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .lr-row.is-selected {
@@ -612,6 +712,7 @@ a.lr-ask {
   color: var(--color-text-muted);
 }
 
+/* The Piece column: what the piece is, only. Its name (a link to it in One by one), its library page, its kind. */
 .lr-row-piece {
   display: grid;
   align-content: center;
@@ -619,29 +720,46 @@ a.lr-ask {
   min-width: 0;
 }
 
-/* The piece's name, then its one tag on the same line ("Card  2 ways"): the tag reads with the name. */
 .lr-row-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .lr-row-title {
+  min-width: 0;
+  color: var(--color-text-default);
+  font-size: var(--typography-body-size);
   font-weight: var(--font-weight-medium);
+  line-height: var(--typography-ui-line-height);
 }
 
-.lr-row-kind,
-.lr-row-wait {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+.lr-row-kind {
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+/* The quiet link to the piece's page in the library: a 24px target, the icon muted until hovered or focused. */
+.lr-page-link {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: var(--size-6);
+  min-height: var(--size-6);
+  border-radius: var(--radius-inset);
+  color: var(--color-text-muted);
+}
+
+@media (hover: hover) {
+  .lr-page-link:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-link);
+  }
 }
 
 .lr-row-ask {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -656,6 +774,113 @@ a.lr-ask {
   justify-items: end;
   gap: var(--space-1);
   max-width: var(--size-60);
+}
+
+/* One piece alone (the Map's single-piece focus): its row, said once, in a plain card. */
+.lr-list.is-bare {
+  gap: 0;
+}
+
+.lr-bare {
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+/* --- Asked by: a face wearing the product's mark, then the exploration (one kind of content) ---------------------- */
+
+.lr-asked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  min-width: 0;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-caption-line-height);
+  text-align: start;
+  text-decoration-line: none;
+}
+
+a.lr-asked:hover .lr-asked-name {
+  text-decoration-line: underline;
+}
+
+.lr-asked-name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lr-asked.lr-asked-many {
+  height: auto;
+  padding-inline: 0;
+}
+
+.lr-face {
+  display: inline-grid;
+  flex: none;
+}
+
+/* The product's small mark right after the exploration's name: never on the face, so the initial stays whole. */
+.lr-asked-mark.lr-product-mark {
+  width: auto;
+  min-width: var(--size-4);
+  height: var(--size-4);
+  padding-inline: var(--space-0-5);
+  border-radius: var(--radius-xs);
+  font-size: var(--typography-caption-size);
+  line-height: var(--size-4);
+}
+
+.lr-faces {
+  flex: none;
+}
+
+/* --- Tally: what waits, at the end of the filters row ------------------------------------------------------------- */
+
+.lr-tally {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 0 auto;
+}
+
+.lr-tally-n {
+  color: var(--color-text-link);
+  font-family: var(--typography-display-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-none);
+  font-variant-numeric: tabular-nums;
+}
+
+.lr-tally-text {
+  display: grid;
+  gap: var(--space-0-5);
+}
+
+.lr-tally-words {
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-tally-fams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.lr-tally-fam {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 /* --- Empty: the page's one Harbor zone, the lighthouse, the week in one sentence ------------------------------------ */
@@ -756,8 +981,7 @@ body:has(.lr-bar) .lr-toasts {
     padding: var(--space-4);
   }
 
-  .lr-plates.has-match,
-  .lr-ways {
+  .lr-plates.has-match {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -774,8 +998,57 @@ body:has(.lr-bar) .lr-toasts {
     grid-column: 2;
   }
 
-  .lr-list-head {
+  /* A chapter on a phone: its head wraps (what it reaches on its own line), no column header, the rail on top. */
+  .lr-list {
+    gap: var(--space-10);
+  }
+
+  .lr-chapter-head {
+    align-items: center;
+  }
+
+  .lr-fam-icon {
+    width: var(--size-10);
+    height: var(--size-10);
+  }
+
+  .lr-chapter-name {
+    font-size: var(--typography-h3-size);
+    line-height: var(--typography-h3-line-height);
+  }
+
+  .lr-chapter-reach {
+    flex-basis: 100%;
+  }
+
+  .lr-chapter-cols {
     display: none;
+  }
+
+  .lr-chapter.has-rail .lr-list-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lr-group-row {
+    position: static;
+    padding-block: var(--space-3) 0;
+  }
+
+  /* A rail with no name (the one Docs group) leaves no empty line on a phone. */
+  .lr-group-row:not(:has(.lr-group-name)) {
+    display: none;
+  }
+
+  .lr-chapter.has-rail .lr-block {
+    border-inline-start: 0;
+  }
+
+  .lr-chapter.has-rail .lr-row {
+    padding-inline-start: var(--space-4);
+  }
+
+  .lr-tally {
+    margin-inline-start: 0;
   }
 
   .lr-list,
@@ -903,16 +1176,6 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 /* A way's preview: the exploration's screen, the same plate as its card. */
-.lr-way-art {
-  display: grid;
-  justify-self: stretch;
-}
-
-.lr-way .lr-way-art > .bt {
-  width: 100%;
-}
-
-
 /* Who acts next on the viewer's own piece: avatar and first name, the row's menu after it. */
 .lr-who {
   display: inline-flex;
@@ -932,31 +1195,6 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 /* A way next to today: two plates of the same shape, the way's own caption in the link colour. */
-.lr-way-pair {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border-radius: var(--radius-container);
-  background-color: var(--color-bg-subtle);
-}
-
-.lr-way-side {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-}
-
-.lr-way-cap {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.lr-way-cap.is-way {
-  color: var(--color-text-link);
-}
-
 /* While the selection bar shows, the list ends above it: the bar never covers the last rows. */
 .lr:has(.lr-bar) {
   padding-block-end: calc(var(--size-16) + var(--space-10));
@@ -1079,21 +1317,6 @@ body:has(.lr-bar) .lr-toasts {
 }
 
 /* A way of a conflict drawn as a card with its own room inside or corners. */
-.lr-mini-card {
-  display: grid;
-  gap: var(--space-1);
-  width: var(--size-20);
-  padding: var(--space-3);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-default);
-}
-
-.lr-mini-card.is-raised {
-  border-color: var(--color-border-emphasis);
-  box-shadow: var(--elevation-raised);
-}
-
 /* --- Who gets it: the reach link (One by one, List) ---------------------------------------------------------------- */
 
 .lr-reach-link {
@@ -1557,7 +1780,6 @@ a.lr-reach-card:focus-visible {
   }
 
   .lr-detail > .lr-detail-ask,
-  .lr-detail > .lr-lede,
   .lr-reach > .lr-reach-sentence,
   .lr-reach > .lr-reach-origin {
     order: 1;
@@ -1592,16 +1814,17 @@ a.lr-reach-card:focus-visible {
 @media (hover: hover) {
   .lr-list:not(.has-selection) .lr-hover-ctl > *,
   .lr-list .lr-row-end.lr-hover-ctl > *,
-  .lr-list:not(.has-selection) .lr-list-head .lr-hover-ctl > * {
+  .lr-list .lr-row .lr-page-link {
     opacity: 0;
   }
 
   .lr-list .lr-row:is(:hover, :focus-within) .lr-hover-ctl > *,
+  .lr-list .lr-row:is(:hover, :focus-within) .lr-page-link,
   .lr-list .lr-group-row:is(:hover, :focus-within) .lr-hover-ctl > *,
-  .lr-list .lr-list-head .lr-hover-ctl:focus-within > *,
+  .lr-list .lr-chapter-cols .lr-hover-ctl:focus-within > *,
   .lr-list.has-selection .lr-row .lr-col-box > *,
   .lr-list.has-selection .lr-group-row .lr-col-box > *,
-  .lr-list.has-selection .lr-list-head .lr-col-box > * {
+  .lr-list.has-selection .lr-chapter-cols .lr-col-box > * {
     opacity: 1;
   }
 }
@@ -1612,41 +1835,12 @@ a.lr-reach-card:focus-visible {
 }
 
 /* --- Asked by on one line: the most recent tag, then a quiet "+N more" --------------------------------------------- */
-
-.lr-ask-cell {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.lr-ask-cell > .lr-ask {
-  overflow: hidden;
-  min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .lr-row-ask .lr-ask {
   overflow: hidden;
   max-width: 100%;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.lr-ask-more {
-  flex: none;
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-  white-space: nowrap;
-}
-
-.lr-ask-more.is-static {
-  padding-inline: var(--space-1);
-}
-
 /* Every exploration that asked: by product, a face per row; scrolls inside past about 8 rows. */
 .lr-askers-pop {
   max-width: min(var(--size-96), calc(100vw - var(--space-8)));
@@ -1747,24 +1941,7 @@ a.lr-reach-card:focus-visible {
 }
 
 /* The products every row reaches, named once in the column header. */
-.lr-head-reach {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: var(--font-weight-regular);
-  letter-spacing: normal;
-  text-transform: none;
-}
-
 /* The piece's subline, a conflict's ways inline after it. */
-.lr-row-sub {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 /* A product: its initial in a small Deep Harbor mark, then its name. */
 .lr-product {
   display: inline-flex;
@@ -1797,4 +1974,364 @@ a.lr-reach-card:focus-visible {
 .lr-map-hint {
   margin: 0;
   font-size: var(--typography-ui-size);
+}
+
+/* --- One by one, a conflict: the compare stage and one radio list (direction D2) ---------------------------------- */
+
+/* The title, its one tag and the quiet link to its library page, on one line. */
+.lr-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.lr-title-line .lr-detail-title {
+  margin: 0;
+}
+
+.lr-compare {
+  gap: var(--space-5);
+}
+
+.lr-compare-what {
+  margin: calc(var(--space-3) * -1) 0 0;
+  color: var(--color-text-muted);
+}
+
+.lr-compare-what strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* The colour key of each option: the chart series of the system, today neutral. */
+.is-hue-0 {
+  --lr-hue: var(--color-chart-series-6);
+}
+
+.is-hue-1 {
+  --lr-hue: var(--color-chart-series-5);
+}
+
+.is-hue-2 {
+  --lr-hue: var(--color-chart-series-3);
+}
+
+.is-hue-3 {
+  --lr-hue: var(--color-chart-series-2);
+}
+
+.is-hue-4 {
+  --lr-hue: var(--color-chart-series-4);
+}
+
+.is-hue-5 {
+  --lr-hue: var(--color-chart-series-1);
+}
+
+.is-hue-both {
+  --lr-hue: var(--color-text-muted);
+}
+
+/* The stage: a dotted canvas, the component in its middle. */
+.lr-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: var(--size-80);
+  padding: var(--space-8) var(--space-6) var(--space-10);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+  background-image: radial-gradient(var(--color-border-strong) var(--border-width-default), transparent var(--border-width-default));
+  background-size: var(--space-4) var(--space-4);
+  overflow: hidden;
+}
+
+.lr-stage-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  max-width: 100%;
+}
+
+.lr-stage-art {
+  zoom: var(--lr-scale);
+}
+
+/* The library's Card, measured once for today's room inside: out of sight and out of the accessibility tree. */
+.lr-probe {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.lr-stage-card {
+  position: relative;
+  display: block;
+}
+
+.lr-specimen {
+  display: block;
+  width: var(--size-60);
+}
+
+.lr-specimen-in {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lr-specimen-title {
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-specimen-mid,
+.lr-specimen-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--typography-ui-size);
+}
+
+/* Each option's content box: dashed in its colour, the chosen one solid. */
+.lr-ol {
+  position: absolute;
+  border: var(--border-width-default) dashed var(--lr-hue);
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.lr-ol.is-base {
+  border-style: solid;
+  border-width: var(--border-width-2);
+}
+
+.lr-stage-keys {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lr-ol-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  border: var(--border-width-default) solid var(--lr-hue);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-default);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-caption-line-height);
+  white-space: nowrap;
+}
+
+.lr-stage-note {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-start: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+/* Side by side: each option drawn at its value, its key and value under it. */
+.lr-stage.is-side {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.lr-stage-way {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.lr-stage-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--typography-ui-size);
+}
+
+/* The options: one radio list, no card per way. */
+.lr-opts {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.lr-opts .lr-opts-group {
+  gap: var(--space-1);
+}
+
+.lr-opts .lr-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--size-14);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width-2) solid transparent;
+  border-radius: var(--radius-container);
+}
+
+.lr-opts .lr-opt > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (hover: hover) {
+  .lr-opts label.lr-opt:hover {
+    background-color: var(--color-surface-hover);
+  }
+}
+
+.lr-opts .lr-opt:has([data-checked]),
+.lr-opts .lr-opt.is-picked {
+  border-color: var(--color-action-primary-bg);
+  background-color: var(--color-surface-selected);
+}
+
+.lr-opt-slot {
+  flex: none;
+  width: var(--size-4);
+}
+
+.lr-opt-row {
+  display: grid;
+  grid-template-columns: var(--space-3) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--typography-ui-size);
+}
+
+.lr-key {
+  display: block;
+  width: var(--space-3);
+  border-block-start: var(--border-width-2) solid var(--lr-hue);
+}
+
+.lr-opt-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.lr-opt-who strong,
+.lr-opt-val strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lr-opt-val,
+.lr-opt-where {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+.lr-opt-val strong {
+  font-size: var(--typography-ui-size);
+}
+
+.lr-opt-where {
+  align-items: center;
+  color: var(--color-text-default);
+}
+
+/* The footer: who is told, then the comment and the one primary. */
+.lr-compare-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+}
+
+.lr-compare-told {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-end: auto;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+/* The Map's one piece: its row, then "Show all" on its end. */
+.lr-map-one {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.lr-map-one > .lr-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.lr-map-all {
+  flex: none;
+}
+
+@media (max-width: 760px) {
+  .lr-stage {
+    min-height: var(--size-60);
+    padding-inline: var(--space-3);
+  }
+
+  /* On a phone the component is drawn at its own size, the keys under it. */
+  .lr-stage-art {
+    zoom: 1;
+  }
+
+  .lr-stage-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lr-stage-keys {
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+
+  .lr-stage-note {
+    display: none;
+  }
+
+  .lr-opt-row {
+    grid-template-columns: var(--space-3) minmax(0, 1fr);
+    row-gap: var(--space-1);
+  }
+
+  .lr-opt-val,
+  .lr-opt-where {
+    grid-column: 2;
+  }
+
+  .lr-compare-foot > .lr-compare-told {
+    flex-basis: 100%;
+  }
+
+  .lr-compare-foot > :not(.lr-compare-told) {
+    flex: 1 1 auto;
+  }
 }

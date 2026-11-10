@@ -1,11 +1,13 @@
 // The Map view of Library review (board lr-map): where each piece comes from, what changes in the library, who gets
 // it, in three columns linked by curves (lib/library-map buildMap). Clicking a box narrows the list under the map
-// ("Showing what <exploration> asks for · 3 of 14 · Show all"); a conflict is two amber links into one piece. Read
-// only: the list under it has no checkboxes and no decision. The curves are measured from the boxes once laid out, so
+// ("Showing what <exploration> asks for · 3 of 14 · Show all 14"); one piece picked is that piece's own compact row,
+// said once (no chapter, no rail, no column header), with "Show all 14" on its end; "Show all" shows the whole list
+// under the map. The picked box is in the address (?focus=), so a link opens it. A conflict is two amber links into
+// one piece. Read only: the list under it has no checkboxes and no decision. The curves are measured from the boxes once laid out, so
 // they follow any width and any number of boxes. Styles: styles/library-review.css (lr-map-*).
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@bridge-ds/react';
-import { buildMap, focusOf, mapLinkId, type MapGraph } from '../../../lib/library-map';
+import { buildMap, focusOf, mapLinkId, mapListOf, readMapFocus, withMapFocus, type MapGraph } from '../../../lib/library-map';
 import type { ReachProductInput } from '../../../lib/library-reach';
 import type { ReviewPiece, Viewer } from '../../../lib/library-review';
 import { foldColumn, waysTag } from '../../../lib/library-askers';
@@ -29,10 +31,17 @@ function MapBox({ id, label, sub, kind, pressed, lit, quiet, conflict, dashed, o
   );
 }
 
-export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiece[]; products: ReachProductInput[]; viewer: Viewer; list: (shown: ReviewPiece[]) => ReactNode }) {
+export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiece[]; products: ReachProductInput[]; viewer: Viewer; list: (shown: ReviewPiece[], single: boolean) => ReactNode }) {
   const graph: MapGraph = useMemo(() => buildMap(pieces, products, viewer), [pieces, products, viewer]);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPickedState] = useState<string | null>(() => (typeof location === 'undefined' ? null : readMapFocus(location.search)));
+  // "Show all": the whole list under the map, no box picked.
+  const [all, setAll] = useState(false);
+  const setPicked = (id: string | null) => {
+    setPickedState(id);
+    if (typeof location !== 'undefined') history.replaceState(history.state, '', `${location.pathname}${withMapFocus(location.search, id)}`);
+  };
   const focus = picked ? focusOf(graph, picked) : null;
+  const listed = mapListOf(focus, all);
   const wrap = useRef<HTMLDivElement | null>(null);
   const boxes = useRef(new Map<string, HTMLElement>());
   const [curves, setCurves] = useState<Curve[]>([]);
@@ -44,7 +53,7 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
 
   // A box picked on a map that changed (a filter, a decision) and is no longer there: the list shows everything again.
   useLayoutEffect(() => {
-    if (picked && !focusOf(graph, picked)) setPicked(null);
+    if (picked && graph.pieces.length && !focusOf(graph, picked)) setPicked(null);
   }, [graph, picked]);
 
   useLayoutEffect(() => {
@@ -78,7 +87,14 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
     if (el) boxes.current.set(id, el);
     else boxes.current.delete(id);
   };
-  const pick = (id: string) => setPicked((p) => (p === id ? null : id));
+  const showAll = () => {
+    setPicked(null);
+    setAll(true);
+  };
+  const pick = (id: string) => {
+    setAll(false);
+    setPicked(picked === id ? null : id);
+  };
   const state = (id: string) => ({ pressed: picked === id, lit: Boolean(focus?.lit.has(id)), quiet: Boolean(focus && !focus.lit.has(id)) });
   const shown = focus ? pieces.filter((p) => focus.keys.has(p.key)) : pieces;
   // Lit links draw last, over the quiet ones.
@@ -99,7 +115,7 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
               {folded.shown.map((s) => (
                 <MapBox key={s.id} id={s.id} label={s.label} sub={s.sub} kind="source" dashed={s.lead} onPick={pick} refOf={refOf} {...state(s.id)} />
               ))}
-              {folded.more > 0 && <MapBox id="s:more" label={`+${folded.more} more`} sub="Show every exploration" kind="source" pressed={false} lit={false} quiet={Boolean(focus)} onPick={() => setUnfolded(true)} refOf={refOf} />}
+              {folded.more > 0 && <MapBox id="s:more" label={`+${folded.more}`} sub="Show every exploration" kind="source" pressed={false} lit={false} quiet={Boolean(focus)} onPick={() => setUnfolded(true)} refOf={refOf} />}
             </div>
           </div>
           <div className="lr-map-col">
@@ -122,25 +138,36 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
           </div>
         </div>
       </section>
-      {/* The list shows only what a picked box narrows to: the map itself is the overview. */}
-      <section className="lr-map-list" aria-label={focus ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : 'What a box asks for'}>
-        {!focus && <p className="lr-muted lr-map-hint">Click a box to see what it asks for.</p>}
-        {focus && (
-          <div className="lr-map-focus" role="status">
-            <p className="lr-map-focus-text">
-              {focus.line.before}
-              <strong>{focus.line.strong}</strong>
-              {focus.line.after}
-              <span className="lr-muted lr-map-focus-count">
-                {shown.length} of {pieces.length}
-              </span>
-            </p>
-            <Button variant="link" onClick={() => setPicked(null)}>
-              Show all
+      {/* Under the map: the hint, what a picked box narrows to, one piece's own row, or the whole list after Show all. */}
+      <section className="lr-map-list" aria-label={focus ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : listed.kind === 'all' ? 'Every piece' : 'What a box asks for'}>
+        {listed.kind === 'hint' && <p className="lr-muted lr-map-hint">Click a box to see what it asks for.</p>}
+        {listed.kind === 'one' && (
+          <div className="lr-map-one" role="status">
+            {list(shown, true)}
+            <Button variant="link" className="lr-map-all" onClick={showAll}>
+              Show all {pieces.length}
             </Button>
           </div>
         )}
-        {focus && list(shown)}
+        {listed.kind === 'some' && focus && (
+          <>
+            <div className="lr-map-focus" role="status">
+              <p className="lr-map-focus-text">
+                {focus.line.before}
+                <strong>{focus.line.strong}</strong>
+                {focus.line.after}
+                <span className="lr-muted lr-map-focus-count">
+                  {shown.length} of {pieces.length}
+                </span>
+              </p>
+              <Button variant="link" onClick={showAll}>
+                Show all {pieces.length}
+              </Button>
+            </div>
+            {list(shown, false)}
+          </>
+        )}
+        {listed.kind === 'all' && list(pieces, false)}
       </section>
     </>
   );

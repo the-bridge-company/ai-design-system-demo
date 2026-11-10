@@ -101,6 +101,50 @@ export function landing(l: LegacyLink, pieces: readonly ReviewPiece[], o: { revi
   return { ...NONE, filters, view };
 }
 
+/** The piece an address opens in One by one (?piece=<key>), or null. */
+export const readPiece = (search: string): string | null => new URLSearchParams(search).get('piece')?.trim() || null;
+
+/** A piece's own address: One by one on that piece (no ?view, the default view), the filters kept. */
+export function pieceSearch(search: string, key: string): string {
+  const q = new URLSearchParams(search);
+  q.delete('view');
+  q.delete('focus');
+  q.set('piece', key);
+  return `?${q.toString()}`;
+}
+
+/** The address once the view changes: a piece belongs to One by one (?piece=), a picked box to the Map (?focus=). */
+export function viewSearch(search: string, view: ReviewView): string {
+  const q = new URLSearchParams(search);
+  if (view !== 'one') q.delete('piece');
+  if (view !== 'map') q.delete('focus');
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
+const TOKEN_CATEGORY: Record<string, string> = { colors: 'color', spacing: 'dimension', corners: 'dimension', type: 'typography', elevation: 'shadow', motion: 'motion' };
+
+const kebab = (name: string) =>
+  name
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[\s_]+/g, '-')
+    .toLowerCase();
+
+/**
+ * Where a piece lives in the library, relative to the Studio root: its component on Components (?c=<slug>), its kind of
+ * token on Tokens, the component a docs draft is about. Null for a piece the library does not have yet (a new
+ * component) and for anything without a page.
+ */
+export function libraryPageOf(p: Pick<ReviewPiece, 'category' | 'kind' | 'title' | 'conflict'>): { path: string; label: string } | null {
+  const cat = TOKEN_CATEGORY[p.category.toLowerCase()];
+  if (cat) return { path: `tokens/?lens=types&cat=${cat}`, label: `${p.category} in Tokens` };
+  if (/^new component$/i.test(p.kind)) return null;
+  const component = p.conflict?.component ?? (p.category === 'Docs' ? (/^([A-Z][A-Za-z0-9]*)\s*:/.exec(p.title)?.[1] ?? null) : ['Brands', 'Library'].includes(p.category) ? null : p.category);
+  if (!component || !/^[A-Z][A-Za-z0-9]*$/.test(component)) return null;
+  return { path: `components/?c=${kebab(component)}`, label: `${component} in Components` };
+}
+
 /** The address without the old parameters, once they were read. */
 export function withoutLegacy(search: string): string {
   const q = new URLSearchParams(search);

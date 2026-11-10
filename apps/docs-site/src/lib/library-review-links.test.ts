@@ -1,9 +1,9 @@
 // Old addresses on Library review: the review queue's ?pr= and ?item=, the Library group's ?suggestion=, ?origin=,
 // ?group= select the right piece or filter instead of the default view.
 import { describe, expect, it } from 'vitest';
-import { hasLegacy, itemTarget, landing, readLegacy, withoutLegacy } from './library-review-links';
+import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy, readPiece, viewSearch, withoutLegacy } from './library-review-links';
 import { reviewParams, withReviewParams } from './library-review';
-import { change, leadChange, newComponent } from './library-fixtures.test-helpers';
+import { change, conflict, leadChange, newComponent } from './library-fixtures.test-helpers';
 
 const LEAD = { reviews: true };
 const all = () => [change(), newComponent(), leadChange(30, 'Deepen the blue')];
@@ -60,5 +60,24 @@ describe('where it lands once the pieces are read', () => {
     expect(reviewParams('?view=map', LEAD).view).toBe('map');
     expect(withReviewParams('', { status: ['waiting'], asked: [], product: [] }, 'map', LEAD)).toBe('?view=map');
     expect(withReviewParams('?view=map', { status: ['waiting'], asked: [], product: [] }, 'one', LEAD)).toBe('');
+  });
+});
+
+describe('a piece’s own links', () => {
+  it('opens a piece in One by one by its address, and leaves it once the view changes', () => {
+    expect(readPiece('?piece=x%3Acard%7Cpadding')).toBe('x:card|padding');
+    expect(pieceSearch('?view=list&status=decided', 'p:1')).toBe('?status=decided&piece=p%3A1');
+    expect(viewSearch('?piece=p%3A1&status=decided', 'list')).toBe('?status=decided');
+    expect(viewSearch('?view=map&focus=a', 'one')).toBe('?view=map');
+    expect(viewSearch('?piece=p%3A1', 'one')).toBe('?piece=p%3A1');
+  });
+
+  it('links a piece to its page in the library: a component, a kind of token, never a component not built yet', () => {
+    expect(libraryPageOf({ category: 'Avatar', kind: 'New size', title: 'Avatar: xl size', conflict: null })).toEqual({ path: 'components/?c=avatar', label: 'Avatar in Components' });
+    expect(libraryPageOf({ category: 'ProfileHeader', kind: 'Change to ProfileHeader', title: 'x', conflict: null })?.path).toBe('components/?c=profile-header');
+    expect(libraryPageOf({ category: 'Colors', kind: 'Color change', title: 'Deeper blue', conflict: null })).toEqual({ path: 'tokens/?lens=types&cat=color', label: 'Colors in Tokens' });
+    expect(libraryPageOf({ category: 'Docs', kind: 'Docs', title: 'Slider: usage guidance', conflict: null })?.path).toBe('components/?c=slider');
+    expect(libraryPageOf({ category: 'Timeline', kind: 'New component', title: 'Timeline', conflict: null })).toBeNull();
+    expect(libraryPageOf(conflict())?.path).toBe('components/?c=card');
   });
 });

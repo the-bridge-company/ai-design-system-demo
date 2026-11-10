@@ -225,7 +225,9 @@ export function BranchesList(p: BranchesListProps) {
     const pp = personOf(r);
     const yours = isYours(r, viewer, p.viewerName);
     const status: ExplorationState = fixed ?? r.status ?? statusOf({ lifecycle: r.lifecycle, stage: r.stage, statusKind: r.statusKind, merged_at: r.merged_at, shippedAt: r.shippedAt });
-    return { r, e, product, status, person: pp, people: [yours ? YOU : designerKey(pp)], shippedAt: shippedAtOf(r) };
+    // Keyed by the shown name: one row may name Ann by her GitHub account and another by her name only, and the
+    // People filter must show her once.
+    return { r, e, product, status, person: pp, people: [yours ? YOU : designerKey({ name: pp.name || null, login: pp.name ? null : (pp as { login?: string | null }).login })], shippedAt: shippedAtOf(r) };
   };
   type Item = ReturnType<typeof classify>;
   const keep = (x: Item) => isExplorationRow(x.r, x.product, libraryKey);

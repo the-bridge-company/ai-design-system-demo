@@ -257,14 +257,6 @@ a.lr-ask {
   white-space: nowrap;
 }
 
-/* Seen: a quiet check on the row's end, on seen rows only. */
-.lr-side-seen {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  color: var(--color-text-muted);
-}
-
 .lr-side-flag {
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
@@ -417,11 +409,17 @@ a.lr-ask {
 .lr-keys {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1-5);
+  gap: var(--space-4);
   margin-inline-start: auto;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+}
+
+.lr-kh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
 }
 
 @media (hover: none) {

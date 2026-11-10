@@ -78,6 +78,8 @@ import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet,
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
+import { pageRoleOf } from '../lib/exploration-layout';
+import { nameFace } from '../lib/people';
 import { viewerRole } from './needs-you';
 import { copyText } from './explorer/util';
 import { loadVisualImpact } from './reviews/visual-impact';
@@ -653,10 +655,15 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   let reported: Awaited<ReturnType<typeof previewSources>> = null;
   // The screen the exploration changed (its block): every preview link opens there, before the page a capture found.
   const screenNow = explorationScreenOf(parseExplorationBody(pull.body)?.screen);
+  // The viewer's part on the page (lib/exploration-layout): what the rail, the zone and the developers' Code show.
+  const owner = emailKeeper || designerKeeper || (!member && sameLogin(viewer, r.author));
+  const role = pageRoleOf({ owner, lead: leadOther, pm: false, github: Boolean(viewer && !currentViewer()?.email && connected()), viaBridge: designer, member: Boolean(member), signedIn: connected() || Boolean(member) });
   current = {
     key,
     props: {
       number: r.number,
+      role,
+      me: member?.name ? { login: nameFace(member.name), name: member.name, agent: false, avatar: null } : viewer ? faceOf(viewer, false, knownNamesOf([viewer])) : null,
       crumbs: productCrumbs(product.name, shownJiraKey(pull.title), r.name),
       title: r.name,
       stage: 'loading',
@@ -804,6 +811,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const previewNote = v.state === 'today' ? 'These changes do not show there yet: it opens the product as it is today.' : previewBuilding ? TRY_BUILDING_NOTE : v.state === 'failed' ? TRY_UNAVAILABLE_NOTE : v.state === 'unknown' ? 'Your preview appears a few minutes after each change.' : null;
   const lead = leadViewOf(r, pull, { gh, products, library: own ? () => dsClient() : null, previewUrl, keeper, reopen: (line) => reopen(line), onCopy: copyText });
   repaint(d, key, {
+    // A lead answering in their bar reads the page as the lead.
+    ...(lead?.bar ? { role: 'lead' as const } : {}),
     // Handed off, the page waits for the hand-off read below, never painted as running in between.
     ...(handedOff ? {} : { stage: stageOfRunning(stage, { talked: isWaitingForLead(pull.body) || decisionsOf(parseExplorationBody(pull.body)).length > 0 }) }),
     lead,
@@ -842,7 +851,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   }
   // The screen the capture found its change on comes first (the real one), else a changed screen, else the product.
   const plate = { product: isLibrary ? 'Library' : product.name, screen: shot?.screen ?? changedScreenOf(files, { library: isLibrary }), seed: key };
-  const shotProps = shot ? { thumb: shot.src, thumbCapturedAt: shot.capturedAt } : {};
+  const shotProps = shot ? { thumb: shot.src, thumbCapturedAt: shot.capturedAt, thumbRoute: shot.route ?? null } : {};
   if (!handedOff) {
     repaint(d, key, { plate, ...shotProps });
     // In the design team's copy: the product moved since it started? A quiet "Bring the latest in" (its main into the branch).
@@ -1124,6 +1133,8 @@ async function paintLibraryImpact(
     if (emailLead?.name.trim()) leadNames.push(emailLead.name.trim().split(/\s+/)[0]!);
   }
   const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
+  // The lead by name on the page ("Ready to hand it to Dana?", the journey's next step).
+  if (!viewerLeads && leadNames[0] && current?.key === key) repaint(d, key, { leadName: leadNames[0] });
   const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
   const { conflicts, others } = await conflictsWithOthers(mine).catch(() => ({ conflicts: [] as LibraryConflict[], others: [] as ImpactSource[] }));
   const released = o.handedOff ? await releasedSet(block?.library?.neededBy ?? []).catch(() => new Set<number>()) : new Set<number>();

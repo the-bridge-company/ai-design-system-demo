@@ -433,54 +433,6 @@
   object-position: top left;
 }
 
-/* One skeleton in every state: the preview (3), its action row and the activity on the left; the Harbor zone (2) then
-   Where it stands on the right, spanning both rows, so a tall zone never leaves an empty grey column and nothing moves
-   from one state to the next. The frame keeps the ratio of a capture. */
-.xp-board {
-  display: grid;
-  grid-template-areas:
-    'preview side'
-    'activity side';
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  grid-template-rows: auto 1fr;
-  gap: var(--space-6);
-  align-items: start;
-}
-
-.xp-board > .xp-preview > .xp-frame {
-  flex: none;
-  aspect-ratio: 16 / 10;
-  min-height: 0;
-  max-height: none;
-}
-
-.xp-board > .xp-preview {
-  grid-area: preview;
-}
-
-.xp-board > .xp-side {
-  grid-area: side;
-}
-
-.xp-board > .xp-activity {
-  grid-area: activity;
-}
-
-/* What this changes in the library: under the preview and the zone, the width of both, before the activity. */
-.xp-board.has-library {
-  grid-template-areas:
-    'preview side'
-    'library library'
-    'activity .';
-  grid-template-rows: auto auto 1fr;
-}
-
-.xp-board > .xp-library {
-  grid-area: library;
-  min-width: 0;
-  /* The answer bar's "Waits for the Card choice above" lands here, clear of the page header. */
-  scroll-margin-block-start: var(--space-16);
-}
 
 .xp-preview {
   display: flex;
@@ -878,27 +830,8 @@
 
 /* Narrow windows: one column, the frame under the panel. Phones: the way back instead of the breadcrumb. */
 @media (max-width: 960px) {
-  .xp-start,
-  .xp-board {
+  .xp-start {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .xp-board {
-    grid-template-areas:
-      'preview'
-      'side'
-      'activity';
-    grid-template-rows: auto;
-  }
-
-  /* Phones (board LI8): the preview, what it changes in the library, then the zone and the activity. */
-  .xp-board.has-library {
-    grid-template-areas:
-      'preview'
-      'library'
-      'side'
-      'activity';
-    grid-template-rows: auto;
   }
 
   /* One column: the frame keeps the ratio of a capture. */
@@ -1070,6 +1003,7 @@
 }
 
 .xp-self-start {
+  align-self: flex-start;
   justify-self: start;
 }
 
@@ -1145,6 +1079,12 @@
   margin: 0;
 }
 
+/* In the Your turn zone the answer ends the zone: no rule under it. */
+.xp-turn .xp-build {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
 .xp-build-rows {
   display: grid;
   margin: 0;
@@ -1177,4 +1117,660 @@
 .xp-build-note {
   flex: 1 1 100%;
   white-space: pre-wrap;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   The board (the approved redesign, Nov 2026): the screen, the library and Activity on the left; on the right "Your
+   turn" (only when the viewer acts now) then the rail (Before it ships, the journey, the handover notes), sticky.
+   Phones: header, Your turn, the screen, the rail, the library, Activity (the DOM order). */
+.xp-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--size-96);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.xp-b-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  min-width: 0;
+}
+
+.xp-b-right {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.xp-b-screen,
+.xp-b-turn {
+  min-width: 0;
+}
+
+.xp-b-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.xp-b-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  min-width: 0;
+}
+
+/* With the viewer's Your turn zone on the page, "Nothing. Every piece comes from the library." stays a quiet plate:
+   one Harbor zone per screen. */
+.xp-board.has-turn .li-nothing {
+  border-color: var(--color-border-default);
+  background-color: var(--color-surface-default);
+}
+
+.xp-library {
+  min-width: 0;
+  /* "Pick a way for Card first" lands here, clear of the page header. */
+  scroll-margin-block-start: var(--space-16);
+  container-type: inline-size;
+}
+
+/* The page's left column is narrower than Library review: the ways of a component go two by two, so no plate is cut. */
+@media (min-width: 961px) {
+  @container (max-width: 47.5rem) {
+    .xp-library .li-ways {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: var(--space-5);
+    }
+
+    /* Today and the chosen way stay on the first row, the others under them. */
+    .xp-library .li-ways > .li-way-today,
+    .xp-library .li-ways > .li-today-li {
+      order: -2;
+    }
+
+    .xp-library .li-ways > .li-way.is-on {
+      order: -1;
+    }
+
+    /* A row: what it is with its tag and menu on the first line, the before and after under it. */
+    .xp-library .li-row {
+      grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
+      grid-template-areas:
+        'what status menu'
+        'compare compare compare';
+      gap: var(--space-3) var(--space-4);
+    }
+
+    .xp-library .li-what {
+      grid-area: what;
+    }
+
+    .xp-library .li-compare {
+      grid-area: compare;
+    }
+
+    .xp-library .li-status,
+    .xp-library .li-menu {
+      align-self: start;
+    }
+
+    .xp-library .li-status {
+      grid-area: status;
+    }
+
+    .xp-library .li-menu {
+      grid-area: menu;
+    }
+
+    .xp-library .has-conflict > .li-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'what status';
+    }
+  }
+}
+
+.xp-devline {
+  font-size: var(--typography-body-size);
+}
+
+.xp-code-slot {
+  display: flex;
+}
+
+/* The screen: its name and one line, the compare modes on the same line, then the capture. */
+.xp-stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.xp-st-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  min-height: var(--control-height-sm);
+}
+
+.xp-st-name {
+  font-size: var(--typography-h3-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-h3-line-height);
+}
+
+.xp-st-sub {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Check the build: each version shows its first screenful, cropped, the rest fading out (a long page never stretches
+   the column); the review mode opens the whole of it. */
+.xp-stage.has-two .xp-frame.is-shot::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 30%;
+  background-image: linear-gradient(to bottom, transparent, var(--color-surface-default));
+  content: '';
+  pointer-events: none;
+}
+
+.xp-st-entry {
+  min-width: 0;
+}
+
+/* The switch between the two versions: only on a phone, where they no longer fit side by side. */
+.xp-st-head > .xp-st-modes {
+  display: none;
+  align-self: center;
+  margin-inline-start: auto;
+}
+
+.xp-st-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.xp-st-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.xp-st-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-6);
+}
+
+.xp-st-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.xp-st-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The capture is the link to its version: a scrim and a centred pill on hover and on keyboard focus, a lift; on touch
+   a small persistent "Open" chip in its corner. */
+.xp-shotlink {
+  position: relative;
+  display: block;
+  border-radius: var(--radius-container);
+  color: var(--color-text-default);
+  text-decoration: none;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+.xp-shotlink::after {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-container);
+  background-color: var(--color-overlay-scrim);
+  opacity: 0;
+  content: '';
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+.xp-shotlink-pill {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-default);
+  box-shadow: var(--elevation-raised);
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+  pointer-events: none;
+}
+
+.xp-shotlink-chip {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  z-index: 1;
+  display: none;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-0-5) var(--space-2);
+  border: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-default);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.xp-shotlink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.xp-shotlink:focus-visible::after,
+.xp-shotlink:focus-visible .xp-shotlink-pill {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .xp-shotlink:hover {
+    box-shadow: var(--elevation-raised);
+    transform: translateY(calc(-1 * var(--space-0-5)));
+  }
+
+  .xp-shotlink:hover::after,
+  .xp-shotlink:hover .xp-shotlink-pill {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .xp-shotlink-chip {
+    display: inline-flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-shotlink:hover {
+    transform: none;
+  }
+}
+
+/* Two captures of different screens: an honest note on the build's side, never a compare. */
+.xp-st-mismatch-wrap {
+  position: relative;
+}
+
+.xp-st-mismatch {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  opacity: 0.94;
+  text-align: center;
+}
+
+/* Your turn: the one Harbor zone. The drawing in its own column beside the eyebrow and the question; everything else
+   on one left edge; an open question as an avatar quote with a thin rule; the buttons last, on one row. */
+.xp-turn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+  row-gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.xp-turn > * {
+  grid-column: 1 / -1;
+}
+
+.xp-turn-eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+  color: var(--color-text-signal);
+  font-weight: var(--font-weight-semibold);
+}
+
+.xp-turn-q {
+  grid-column: 1;
+  grid-row: 2;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  letter-spacing: var(--typography-h2-tracking);
+  line-height: var(--typography-h2-line-height);
+}
+
+.xp-turn > .xp-turn-art {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: end;
+  height: auto;
+}
+
+.xp-turn-body {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.xp-turn-quote {
+  padding-inline-start: var(--space-3);
+  border-inline-start: var(--border-width-2) solid var(--color-action-primary-bg);
+}
+
+/* Alternatives first, primary last, aligned to the end (the DS Dialog's rule); on a phone they fill the width. */
+.xp-turn-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.xp-turn-acts .xp-lead-form,
+.xp-turn-acts .xp-build {
+  flex: 1 1 100%;
+}
+
+.xp-turn .xp-build .xp-pm-acts,
+.xp-turn .xp-lead-form .xp-turn-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.xp-ask {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  margin: 0;
+}
+
+.xp-ask-text {
+  display: grid;
+}
+
+.xp-ask figcaption {
+  font-size: var(--typography-caption-size);
+}
+
+.xp-ask blockquote {
+  margin: 0;
+}
+
+.xp-ask-act {
+  align-self: end;
+}
+
+/* The rail: plain sections with a hairline between them, never cards. */
+.xp-rail-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block-start: var(--space-5);
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+}
+
+.xp-b-rail > .xp-rail-sec:first-child {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+.xp-rail-h {
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.xp-ppl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xp-ppl-row {
+  display: grid;
+  grid-template-columns: var(--size-8) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* A row with nobody to show (a step, or the viewer before Bridge knows their face): the column stays, empty. */
+.xp-ppl-dot {
+  width: var(--size-8);
+  height: var(--size-8);
+}
+
+.xp-ppl-part {
+  font-size: var(--typography-caption-size);
+}
+
+.xp-ppl-ok {
+  color: var(--color-feedback-success-text);
+}
+
+.xp-ppl-note {
+  display: block;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+}
+
+.xp-jr-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.xp-jr-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1-5);
+}
+
+.xp-jr-seg {
+  height: var(--space-1-5);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-border-default);
+}
+
+.xp-jr-seg.is-done {
+  background-color: var(--color-action-primary-bg);
+}
+
+.xp-jr-seg.is-now {
+  background-image: linear-gradient(90deg, var(--color-action-primary-bg) 50%, var(--color-border-default) 50%);
+}
+
+/* Activity: one timeline, a line along the faces, key steps with a check dot, the words quoted under their line. */
+.xp-tl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xp-tl::before {
+  position: absolute;
+  inset-block: var(--space-4);
+  inset-inline-start: calc(var(--size-6) / 2);
+  width: var(--border-width-1);
+  background-color: var(--color-border-default);
+  content: '';
+}
+
+.xp-tl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--size-6) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding-block: var(--space-2);
+}
+
+.xp-tl-dot {
+  display: grid;
+  place-items: center;
+  width: var(--size-6);
+  height: var(--size-6);
+  border: var(--border-width-2) solid var(--color-action-primary-bg);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-default);
+  color: var(--color-action-primary-bg);
+}
+
+.xp-tl-quote {
+  grid-column: 2 / -1;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-inline-start: var(--border-width-2) solid var(--color-border-strong);
+  white-space: pre-wrap;
+}
+
+.xp-tl-earlier {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.xp-compose {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.xp-compose-field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The developers' Code popover: wider than a default popover, so the commands read on as few lines as they can. */
+[class].xp-code {
+  width: min(var(--size-120), var(--available-width, 100vw));
+  max-width: min(var(--size-120), var(--available-width, 100vw));
+}
+
+.xp-code-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-3);
+}
+
+.xp-code-branch,
+.xp-code-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.xp-code-foot {
+  justify-content: space-between;
+}
+
+@media (max-width: 960px) {
+  /* One column in the phone order: Your turn, the screen, the rail, the library and Activity. */
+  .xp-board {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .xp-b-left,
+  .xp-b-right {
+    display: contents;
+  }
+
+  .xp-b-turn {
+    order: 1;
+  }
+
+  .xp-b-screen {
+    order: 2;
+  }
+
+  .xp-b-rail {
+    order: 3;
+  }
+
+  .xp-b-main {
+    order: 4;
+  }
+}
+
+@media (max-width: 640px) {
+  .xp-stage {
+    padding: var(--space-3);
+  }
+
+  .xp-st-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .xp-st-head > .xp-st-modes {
+    display: inline-flex;
+  }
+
+  .xp-st-pair[data-shown='a'] > .is-b,
+  .xp-st-pair[data-shown='b'] > .is-a {
+    display: none;
+  }
+
+  .xp-turn {
+    padding: var(--space-5);
+  }
+
+  .xp-turn .xp-turn-acts > *,
+  .xp-turn .xp-build .xp-pm-acts > * {
+    flex: 1 1 100%;
+  }
+
+  .xp-turn > .xp-turn-art {
+    width: var(--size-16);
+  }
+
+  /* Code goes under the title with the tag: the title keeps its width, never cut mid-word. */
+  .xp-pagehead > .xp-code-slot {
+    grid-column: 1;
+  }
 }

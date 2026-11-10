@@ -687,8 +687,95 @@
   }
 }
 
+/* On the exploration page, a choice someone else makes: one line under the ways, the face, who chooses, the way there. */
+.li-waiting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+}
+
+.li-waiting-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A new component the screen built, on the lead's exploration page: today (nothing), the piece as built, the choice. */
+.li-row.li-new {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+.li-new-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-4);
+}
+
+.li-new-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.li-new-side figcaption {
+  display: grid;
+}
+
+.li-new-today,
+.li-new-shot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-container);
+}
+
+.li-new-today {
+  padding: var(--space-4);
+  border: var(--border-width-2) dashed var(--color-border-strong);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.li-new-shot {
+  aspect-ratio: 8 / 3;
+  border: var(--border-width-1) solid var(--color-border-default);
+  background-color: var(--color-surface-default);
+}
+
+.li-new-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.li-new-choice {
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+}
+
 /* Narrow windows: the before and after under the text, the tag and the menu on the name's line. */
 @media (max-width: 960px) {
+  .li-row.li-new {
+    display: flex;
+  }
+
+  .li-new-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .li-new-today {
+    aspect-ratio: 8 / 3;
+  }
+
   .li-row {
     grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
     grid-template-areas:

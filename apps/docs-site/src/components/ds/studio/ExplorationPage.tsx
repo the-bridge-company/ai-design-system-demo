@@ -5,25 +5,26 @@
 //   button ("Continue in Claude" opens a new Claude conversation with the line in it, after the connect steps while
 //   the viewer's own Claude has no Bridge yet: ConnectClaudeDialog; copies it for the Terminal; "Copy for Copilot"),
 //   "See the product today", and an empty "Your preview" frame.
-// - X2, exploring: "Exploring", who changed what and when, the preview (a captured image when Bridge has one, else a
-//   neutral frame) with one group of actions: "Open the preview" (with the Bridge toolbar, Before and After, when the
-//   product supports it) and the tool's button, the Harbor card "Happy with it?" (Done exploring), and the last 3
-//   events, with "Where it stands" (WhereItStands.tsx, the handover notes) above them.
-// - After Done exploring (Waiting for code, Being built, Shipped), the same family: the status tag, who said done and
-//   when, the preview with one action, and the one Harbor zone on what happens next: the hand-off in four steps (the
-//   DS Checklist), then what the library gets from it (the pieces Bridge found, each with its request status; Bridge
-//   runs that check itself, the page shows it while it runs). The activity under it. A write's line is a DS toast.
-// - "Send to Figma", one of the actions under the preview for who can edit when the team has a Figma file: it hands the
-//   request to the viewer's own Claude, which rebuilds the exploration in Figma. Once Claude recorded the page, the link.
-// The "..." menu holds Rename (a DS Dialog), Choose the screen it opens on, Back to exploring (a confirmation, waiting for code only) and Archive. "For developers" folds the branch and the commands. Data: scripts/exploration-page.ts
-// over lib/exploration-page.ts. Styles: styles/exploration-page.css.
-import { createContext, useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
+// - From the first change on (exploring, waiting for the lead, handed to developers, Check the build, shipped), one
+//   board (the approved redesign, Nov 2026; rules by stage and role in lib/exploration-layout.ts, parts in
+//   ExplorationParts.tsx). Header: the title, ONE status tag (the only place the stage is said), Code for a developer
+//   once the work is theirs, and "..."; under it one plain line, "Sofia's exploration in Acme CRM, started Nov 6". Left:
+//   the screen (the capture is the link to the preview; in Check the build the approved version and the build side by
+//   side, never two different screens), What this changes in the library (LibraryImpact.tsx), then Activity, one
+//   timeline with the decisions and the comment box naming who reads it. Right: the "Your turn" Harbor zone only when
+//   the viewer acts now (one primary action, alternatives first), Before it ships (the people and their last word), the
+//   four-step bar naming the next step (every step on demand), and the handover notes (WhereItStands.tsx). Phones:
+//   Your turn, the screen, the rail, the library, Activity. A write's line is a DS toast.
+// - "Send to Figma", under the screen for who can edit when the team has a Figma file: it hands the request to the
+//   viewer's own Claude, which rebuilds the exploration in Figma. Once Claude recorded the page, the link.
+// The "..." menu holds Rename (a DS Dialog), Choose the screen it opens on, Back to exploring (a confirmation, waiting
+// for code only), Take it back, Take it over, Hand over, the lead's other answers, and Archive. Designers never see
+// git. Data: scripts/exploration-page.ts over lib/exploration-page.ts. Styles: styles/exploration-page.css.
+import { createContext, useContext, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { Archive, ArrowRightLeft, ChevronLeft, Ellipsis, ExternalLink, MonitorSmartphone, Pencil, Undo2, UserCheck } from 'lucide-react';
+import { Archive, ArrowRightLeft, Ban, ChevronLeft, Ellipsis, ExternalLink, Link as LinkIcon, MonitorSmartphone, Pencil, Undo2, UserCheck, Users } from 'lucide-react';
 import {
-  Accordion,
-  AccordionItem,
   AlertDialog,
   AlertDialogContent,
   Avatar,
@@ -64,7 +65,7 @@ import { Who } from './faces';
 import type { DesignAnswer, LifecycleStage } from '../../../lib/review-state';
 import { atRoute } from '../../../lib/at-route';
 import { COPY_WORDS } from '../../../lib/design-copy';
-import { clipQuote, explorationTag, questionWords, type ActivityRow, type DoneAction, type HandoffStatus, type HandoffStep, type LibraryPieces, type PageFace, type SentPiece } from '../../../lib/exploration-page';
+import { clipQuote, DECLINED_LINE, explorationTag, questionWords, type ActivityRow, type DoneAction, type HandoffStatus, type HandoffStep, type LibraryPieces, type PageFace, type SentPiece } from '../../../lib/exploration-page';
 import { studioHref } from '../../../lib/team-path';
 import { ARCHIVED_LINE } from '../../../lib/explorations-view';
 import { EXPLORATION_STAGE_LABEL, startedWhen } from '@bridge-ds/core';
@@ -78,9 +79,12 @@ import { ClaudeGlyph, claudeNewUrl, ConnectClaudeButton, ConnectFirst, ToolActio
 import { WhereItStands, type WhereItStandsView } from './WhereItStands';
 import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
-import { Decisions, DesignerZone, HandOverDialog, LeadBar, NotDoingZone, PmStatus, PmZone, TellDevelopers, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
+import { DesignerZone, HandOverDialog, NotDoingZone, PmZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
+import { AskQuote, CodeButton, Composer, Journey, People, ScreenStage, Timeline, TurnZone, type PersonRow } from './ExplorationParts';
+import { codeShown, devLineOf, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
+import { nameFace } from '../../../lib/people';
 
 export { claudeNewUrl };
 
@@ -141,6 +145,19 @@ export interface HandoffView {
 
 export interface ExplorationPageProps {
   number: number;
+  /** The viewer's part on this page (lib/exploration-layout pageRoleOf). Unset: read from the lead bar, the PM view and Done exploring. */
+  role?: PageRole;
+  /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
+  leadName?: string | null;
+  /** The viewer's own face (their name and avatar), for the "You" row and the comment box. */
+  me?: PageFace | null;
+  /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
+  thumbRoute?: string | null;
+  /**
+   * Check the build: the review mode's entry (its facts, the changed regions, "Start the check"), from its own route's
+   * component. Unset: the two versions only.
+   */
+  checkEntry?: ReactNode;
   crumbs: { label: string; href?: string }[];
   title: string;
   stage: ExplorationStage;
@@ -231,7 +248,7 @@ export interface ExplorationPageProps {
   /** Copies a line (clipboard, else a selection fallback). */
   onCopy: (text: string) => Promise<void>;
   developer: { label: string; value: string }[];
-  take: { commands: [string, string]; note: string } | null;
+  take: { commands: [string, string]; note: string; branch?: string } | null;
   githubUrl: string;
   /** The line a write produced (Done exploring, Archive): shown once as a DS toast. */
   said?: string;
@@ -314,100 +331,172 @@ function ContinueButton({ p, tool, line, say, variant, children, size = 'lg' }: 
   );
 }
 
-/** While the design lead has not answered: where it stands, their answer in the bar at the bottom of the page. */
-function LeadCard({ lead, say }: { lead: LeadView; say: (s: string) => void }) {
-  const [busy, setBusy] = useState(false);
+/** "Acme CRM" from the "Acme CRM · Nov 6" tail. */
+const productOf = (tail: string): string => tail.split(' · ')[0]?.trim() ?? '';
+
+/** "Malik's", "James'". */
+const possessive = (name: string): string => `${name}${/s$/i.test(name) ? "'" : "'s"}`;
+
+/** Under "Live in Acme CRM": "Since Nov 10, for everyone who uses it.", from the Shipped step ("In Acme CRM, Nov 10"). */
+function shippedLine(detail: string): string {
+  const day = detail.split(', ').slice(1).join(', ').trim();
+  return day ? `Since ${day}, for everyone who uses it.` : 'For everyone who uses it.';
+}
+
+/** The lead's row: the wait line without the lead's name in front when the row already names them. */
+function leadLine(line: string, lead: string | null | undefined): string {
+  const t = line.trim().replace(/\.$/, '');
+  if (lead && t.toLowerCase().startsWith(lead.toLowerCase() + ' ')) return t.slice(lead.length + 1);
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+/** While it is explored: the four steps of All steps, in words. */
+function explorationSteps(lead: string | null, product: string): HandoffStep[] {
+  return [
+    { status: 'waiting', title: 'Exploring', detail: 'Until its designer says Done exploring', current: true },
+    { status: 'waiting', title: 'The lead decides', detail: lead ? `${lead} picks what the library keeps` : 'Your design lead picks what the library keeps' },
+    { status: 'waiting', title: 'Developers build it', detail: `The ${product || 'product'} developers build it, then it is checked` },
+    { status: 'waiting', title: 'Shipped', detail: `Then live in ${product || 'the product'}` },
+  ];
+}
+
+/** "Copy for your developers" on the step it acts on: their developers work elsewhere. */
+function SendDetail({ detail, message }: { detail: string; message: string }) {
+  const { copied, said, copy } = useCopy(3000);
+  const line = copied || (said && said !== DEV_MESSAGE_WORDS.said) ? said : detail;
   return (
-    <section className="xp-done zone" aria-labelledby="xp-lead-h">
-      <h2 className="xp-h2" id="xp-lead-h">
-        {lead.heading ?? (lead.bar ? 'Ready for the developers?' : 'With your lead')}
-      </h2>
-      <p>{lead.line}</p>
-      {lead.take?.line && <p className="xp-muted">{lead.take.line}</p>}
-      {/* With the review bar shown, its Looks right and Needs changes are the one way to answer: no second button here. */}
-      {lead.take?.onTake && !lead.bar && (
-        <Button
-          variant="inverse"
-          size="md"
-          className="xp-done-btn"
-          loading={busy}
-          onClick={() => {
-            setBusy(true);
-            lead.take!.onTake!()
-              .then((r) => r && say(r))
-              .catch((err: Error) => say(err.message))
-              .finally(() => setBusy(false));
-          }}
-        >
+    <span className="xp-send">
+      <span>{line}</span>
+      <Button variant="link" size="sm" onClick={() => void copy(message, DEV_MESSAGE_WORDS.said)}>
+        {DEV_MESSAGE_WORDS.copy}
+      </Button>
+      <VisuallyHidden role="status">{said}</VisuallyHidden>
+    </span>
+  );
+}
+
+/** One async action's busy state and its line. */
+function useAct(say: (s: string) => void) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const run = (key: string, act: () => Promise<string | void>) => {
+    setBusy(key);
+    act()
+      .then((r) => r && say(r))
+      .catch((err: Error) => say(err.message))
+      .finally(() => setBusy(null));
+  };
+  return { busy, run };
+}
+
+/** "I'll look": a reviewer while nobody took it. */
+function LeadTake({ lead, say }: { lead: LeadView; say: (s: string) => void }) {
+  const { busy, run } = useAct(say);
+  return (
+    <TurnZone
+      eyebrow="Your turn"
+      title={lead.heading ?? 'Will you review it?'}
+      drawing="review"
+      actions={
+        <Button variant="primary" size="md" loading={busy === 'take'} onClick={() => run('take', lead.take!.onTake!)}>
           I'll look
         </Button>
-      )}
-      {lead.onCancel && (
-        <Button
-          variant="inverse"
-          size="md"
-          className="xp-done-btn"
-          loading={busy}
-          onClick={() => {
-            setBusy(true);
-            lead.onCancel!()
-              .then((r) => r && say(r))
-              .catch((err: Error) => say(err.message))
-              .finally(() => setBusy(false));
-          }}
-        >
-          Keep exploring
-        </Button>
-      )}
-    </section>
+      }
+    >
+      <p>{lead.line}</p>
+    </TurnZone>
   );
 }
 
-function DoneCard({ p, tool, line, say }: { p: ExplorationPageProps; tool: AiTool; line: string; say: (s: string) => void }) {
-  if (p.notDoing) return <NotDoingZone v={p.notDoing} say={say} />;
-  if (p.designerZone) return <DesignerZone z={p.designerZone} say={say} extra={<ContinueButton p={p} tool={tool} line={line} say={say} variant="secondary" size="md" />} />;
-  if (p.lead) return p.archived ? null : <LeadCard lead={p.lead} say={say} />;
-  const d = p.done;
-  if (!d || p.archived) return null;
+/** "Keep exploring": who asked the lead takes it back before the lead answers. */
+function KeepExploring({ onCancel, say }: { onCancel: () => Promise<string | void>; say: (s: string) => void }) {
+  const { busy, run } = useAct(say);
   return (
-    <section className="xp-done zone" aria-labelledby="xp-done-h">
-      <h2 className="xp-h2" id="xp-done-h">
-        Happy with it?
-      </h2>
-      <p>Pick what the library should keep. The preview stays for everyone.</p>
-      {d.kind === 'note' ? (
-        <p className="xp-muted">{d.text}</p>
-      ) : (
-        <Button variant="inverse" size="md" className="xp-done-btn" onClick={(e) => p.onDone(e.currentTarget)}>
-          Done exploring
-        </Button>
-      )}
-    </section>
+    <Button variant="secondary" size="md" className="xp-self-start" loading={busy === 'cancel'} onClick={() => run('cancel', onCancel)}>
+      Keep exploring
+    </Button>
   );
 }
 
-function ActivityList({ rows }: { rows: ActivityRow[] | null }) {
+/** The designer's word that the PM agreed in a call, on the PM's row. */
+function PmCall({ call, say }: { call: NonNullable<PmView['call']>; say: (s: string) => void }) {
+  const { busy, run } = useAct(say);
   return (
-    <section className="xp-activity" aria-labelledby="xp-act-h">
-      <h2 className="xp-h2" id="xp-act-h">
-        Activity
-      </h2>
-      {rows === null ? (
-        <Skeleton variant="rect" className="xp-skel-rows" />
-      ) : (
-        <ul className="xp-rows">
-          {rows.map((r, i) => (
-            <li key={i} className="xp-row">
-              <Who p={{ login: r.who.login, name: r.who.name, agent: r.who.agent, avatar: r.who.avatar }} size="sm" />
-              <span className="xp-row-text">
-                <strong>{r.who.name}</strong> {r.text}
-              </span>
-              <span className="xp-muted xp-when">{r.when}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <Button variant="link" size="sm" loading={busy === 'call'} onClick={() => run('call', call.onCall)}>
+      {call.label}
+    </Button>
+  );
+}
+
+/**
+ * The lead's turn (boards L1 to L5 in the page's one zone): send the designer's screen to the developers (Looks right,
+ * after applying the choice on each new library piece), or Needs changes with the words that go back. Ask someone else,
+ * Not doing this and Copy link sit in its "...". A comment goes in Activity's box.
+ */
+function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar: LeadBarView; line: string; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; say: (s: string) => void }) {
+  const { busy, run } = useAct(say);
+  const [changes, setChanges] = useState(false);
+  const [text, setText] = useState('');
+  const who = possessive(designer.name);
+  const actions = changes ? (
+    <form
+      className="xp-lead-form"
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        if (text.trim()) run('changes', () => bar.onChanges(text.trim()));
+      }}
+    >
+      <Textarea label={`What ${designer.name} should change`} rows={3} value={text} onChange={(e) => setText(e.target.value)} autoFocus />
+      <div className="xp-turn-acts">
+        <Button type="button" variant="ghost" size="md" onClick={() => setChanges(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" size="md" loading={busy === 'changes'} disabled={!text.trim() || busy !== null}>
+          Send back to {designer.name}
+        </Button>
+      </div>
+    </form>
+  ) : (
+    <>
+      <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setChanges(true)}>
+        Needs changes
+      </Button>
+      <Button
+        variant="primary"
+        size="md"
+        disabled={busy !== null || Boolean(bar.blocked)}
+        aria-describedby={bar.blocked ? 'xp-lead-blocked' : undefined}
+        loading={busy === 'right'}
+        data-demo-write="send to the developers"
+        onClick={() =>
+          run('right', async () => {
+            if (apply) await apply();
+            return bar.onLooksRight('');
+          })
+        }
+      >
+        Send to the developers
+      </Button>
+    </>
+  );
+  return (
+    <>
+      <TurnZone
+        eyebrow="Your turn"
+        title={heading ?? `Send ${who} screen to the developers?`}
+        drawing="guide"
+        quote={question ? <AskQuote who={designer} verb="asks" text={question} action={<Link href="#xp-compose">Answer</Link>} /> : null}
+        actions={actions}
+      >
+        <p>{line}</p>
+        {bar.changedSince && <p className="xp-muted">Changed since you were asked. The screen shows the latest version.</p>}
+        {bar.blocked && (
+          // A pointer, never a second place to choose: the choice lives in the library section.
+          <Link variant="standalone" href="#xp-library" id="xp-lead-blocked">
+            {bar.blocked}
+          </Link>
+        )}
+      </TurnZone>
+    </>
   );
 }
 
@@ -435,7 +524,6 @@ function ShotFrame({ p }: { p: ExplorationPageProps }) {
   return (
     <div className="xp-frame is-shot">
       <img src={p.thumb} alt="The latest captured screen of this exploration" loading="lazy" onError={() => setFailed(p.thumb)} />
-      {p.thumbCapturedAt && <span className="xp-captured">{capturedLine(p.thumbCapturedAt, Date.now())}</span>}
     </div>
   );
 }
@@ -447,7 +535,6 @@ function BuildShot({ shot, label }: { shot: { src: string; capturedAt: string | 
   return (
     <div className="xp-frame is-shot">
       <img src={shot.src} alt="The developers' build, as captured" loading="lazy" onError={() => setFailed(true)} />
-      {shot.capturedAt && <span className="xp-captured">{capturedLine(shot.capturedAt, Date.now())}</span>}
     </div>
   );
 }
@@ -606,24 +693,24 @@ function DevAnswer({ onAnswer, say }: { onAnswer: NonNullable<HandoffView['onAns
         }}
       >
         <Textarea label="What should change" hint={words.hint} rows={3} value={text} onChange={(e) => setText(e.target.value)} autoFocus />
-        <ButtonGroup>
-          <Button type="submit" variant="primary" size="md" loading={busy === 'changes'} disabled={!text.trim()}>
-            {words.send}
-          </Button>
+        <ButtonGroup align="end">
           <Button type="button" variant="ghost" size="md" onClick={() => setAsking(false)} disabled={busy !== null}>
             Cancel
+          </Button>
+          <Button type="submit" variant="primary" size="md" loading={busy === 'changes'} disabled={!text.trim()}>
+            {words.send}
           </Button>
         </ButtonGroup>
       </form>
     );
   }
   return (
-    <ButtonGroup>
-      <Button variant="secondary" size="md" loading={busy === 'looks-right'} onClick={() => send({ kind: 'looks-right' })}>
-        Looks right
-      </Button>
-      <Button variant="ghost" size="md" disabled={busy !== null} onClick={() => setAsking(true)}>
+    <ButtonGroup align="end">
+      <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setAsking(true)}>
         Needs changes
+      </Button>
+      <Button variant="primary" size="md" loading={busy === 'looks-right'} onClick={() => send({ kind: 'looks-right' })}>
+        Looks right
       </Button>
     </ButtonGroup>
   );
@@ -764,91 +851,6 @@ const waitsOnAnswer = (h: HandoffView | null): boolean => Boolean(h && !h.declin
 const reviewsVersion = (h: HandoffView | null): boolean =>
   Boolean(h && !h.declined && h.onAnswer && h.steps.some((s) => s.title === 'Review' && s.current) && h.steps.some((s) => s.link));
 
-/** The one Harbor zone after Done exploring: the hand-off in four steps, then the library part. */
-function HandoffCard({ h, p, say, onBack, onTakeBack }: { h: HandoffView; p: ExplorationPageProps; say: (s: string) => void; onBack?: (() => void) | null; onTakeBack?: (() => void) | null }) {
-  const version = h.steps.find((s) => s.link)?.link ?? null;
-  const asks = waitsOnAnswer(h);
-  // The message for developers who work elsewhere: copied from the step it acts on, which then says so.
-  const { copied, said, copy } = useCopy(3000);
-  const send = h.forDevelopers && !h.declined && h.status !== 'shipped' ? h.forDevelopers : null;
-  return (
-    <section className="xp-next zone" aria-labelledby="xp-next-h">
-      <h2 className="xp-h2" id="xp-next-h">
-        {h.status === 'shipped' ? 'How it went' : 'What happens next'}
-      </h2>
-      {/* The question waiting on the viewer leads the zone (on a phone too): what needs them first, the steps after. */}
-      {asks && <DevQuestion q={h.question!} say={say} />}
-      {h.check && !h.declined && <BuildCheck v={h.check} say={say} />}
-      <Checklist label="From exploration to product" className="xp-steps">
-        {h.steps.map((s) => {
-          // The step it acts on says why (their developers work elsewhere) and holds the quiet copy on the same line; a
-          // row action would squeeze the details of this narrow zone to one word a line.
-          const sends = send && s.title === 'Developers build it' && s.current;
-          const line = sends && (copied || (said && said !== DEV_MESSAGE_WORDS.said)) ? said : s.detail;
-          return (
-            <ChecklistRow
-              key={s.title}
-              status={s.status}
-              title={s.title}
-              detail={
-                sends ? (
-                  <span className="xp-send">
-                    <span>{line}</span>
-                    <Button variant="link" size="sm" onClick={() => void copy(send.message, DEV_MESSAGE_WORDS.said)}>
-                      {DEV_MESSAGE_WORDS.copy}
-                    </Button>
-                  </span>
-                ) : (
-                  s.detail
-                )
-              }
-              statusLabel={s.status === 'done' ? 'Done' : s.current ? 'Now' : 'Next'}
-              aria-current={s.current ? 'step' : undefined}
-            />
-          );
-        })}
-      </Checklist>
-      {send && <VisuallyHidden role="status">{said}</VisuallyHidden>}
-      {/* The developers' version opens under the steps, not inside a row: a row action squeezed every detail to a word. */}
-      {version && reviewsVersion(h) ? (
-        // Their version is what the viewer has to look at before answering: the view's one primary action.
-        <ButtonLink variant="primary" size="lg" className="xp-fill" href={version.href} target="_blank" rel="noopener" iconEnd={ExternalLink}>
-          {version.label}
-        </ButtonLink>
-      ) : version && (
-        <p className="xp-version">
-          <Link href={version.href} target="_blank" rel="noopener">
-            {version.label}
-            <ExternalLink aria-hidden="true" size={14} />
-          </Link>
-        </p>
-      )}
-      {h.declined ? (
-        // Declined: their last word, if any, then the one way forward.
-        <div className="xp-declined">
-          {h.declined.note && <DevQuote text={h.declined.note.text} by={h.declined.note.by} when={h.declined.note.when} />}
-          {onBack && (
-            <Button variant="primary" size="lg" className="xp-fill" onClick={onBack}>
-              Back to exploring
-            </Button>
-          )}
-        </div>
-      ) : (
-        h.question && !asks && h.status !== 'shipped' && <DevQuestion q={h.question} say={say} />
-      )}
-      {!h.declined && !h.check && h.onAnswer && h.steps.some((s) => s.title === 'Review' && s.current) && <DevAnswer onAnswer={h.onAnswer} say={say} />}
-      {onTakeBack && (
-        <Button variant="secondary" size="lg" className="xp-self-start" onClick={onTakeBack}>
-          Take it back
-        </Button>
-      )}
-      {p.onTellDevelopers && <TellDevelopers onSend={p.onTellDevelopers} say={say} />}
-      {/* The section "What this changes in the library" says it under the page once Bridge checked it. */}
-      {!(p.impact && (p.impact.view.state === 'rows' || p.impact.view.state === 'nothing')) && <LibraryPart h={h} p={p} say={say} />}
-    </section>
-  );
-}
-
 export function ExplorationPage(p: ExplorationPageProps) {
   return (
     <ToastProvider limit={2}>
@@ -873,6 +875,10 @@ function ExplorationBody(p: ExplorationPageProps) {
   const withWhat = only === 'copilot' ? 'GitHub Copilot' : only ? 'Claude AI' : 'your AI tool';
   const [ask, setAsk] = useState<'rename' | 'screen' | 'reopen' | 'take-back' | 'take-over' | 'hand-over' | 'archive' | null>(null);
   const [reopening, setReopening] = useState(false);
+  const [notDoing, setNotDoing] = useState(false);
+  // The lead's choice on each new library piece (Add it to the library, or Keep it in the designer's screen): Send to
+  // the developers applies it. Add is the default.
+  const [choices, setChoices] = useState<Record<string, 'approve' | 'local'>>({});
   const archive = () => {
     setSaid('');
     p.onArchive?.()
@@ -901,36 +907,256 @@ function ExplorationBody(p: ExplorationPageProps) {
   };
   const notStarted = p.stage === 'not-started';
   const handoff = p.stage === 'handed-off' ? (p.handoff ?? null) : null;
-  // Declined by the developers: Back to exploring is the one primary action, the preview steps back.
   const declined = Boolean(handoff?.declined);
-  // The Harbor zone holds what waits on the viewer (Back to exploring, or the answer to a question): the preview's
-  // button steps back to secondary, one primary action per view.
-  // The lead's words wait on the viewer: the zone answers them and holds the way back to their AI tool.
-  const answers = Boolean(p.designerZone?.onSend) || Boolean(p.notDoing);
-  // The lead's bar at the bottom holds Looks right: the preview steps back the same way.
-  const answersBelow = Boolean(p.lead?.bar);
-  const zoneLeads = declined || waitsOnAnswer(handoff) || reviewsVersion(handoff) || answers || answersBelow;
-  // The places under the preview: the AI tool second while exploring; Send to Figma beside the preview when that
-  // place is free and it is one action (See it in Figma and Send again keep their own row, so no label is cut).
-  const secondContinue = !handoff && !p.archived && !answers && !answersBelow && !p.pm?.mine;
-  const figmaShown = !p.archived && !answers && Boolean(p.notes?.notes?.figmaPage || p.figma);
-  const figmaBeside = figmaShown && !handoff?.build?.url && !secondContinue && !(p.notes?.notes?.figmaPage && p.figma);
-  // The preview's own button: with the Bridge toolbar when the product has one (Live product and This change live in
-  // its toolbar), a status while it builds, else disabled with the reason under it.
-  const previewButton = p.previewUrl ? (
-    <ButtonLink variant={zoneLeads || handoff?.build ? 'secondary' : 'primary'} size="lg" href={p.tryUrl ?? p.previewUrl} target="_blank" rel="noopener" iconEnd={ExternalLink} data-bridge-pass={p.tryWithoutPass ? 'off' : undefined} aria-describedby={p.previewNote ? 'xp-preview-note' : undefined}>
-      {handoff?.status === 'shipped' ? 'See it in the product' : handoff?.build ? BUILD_WORDS.openApproved : 'Open the preview'}
-    </ButtonLink>
-  ) : p.previewBuilding ? (
-    // A status, not a dead control: Button's loading state keeps the primary colors (no disabled grey).
-    <Button variant="primary" size="lg" loading>
-      Preview is building
-    </Button>
-  ) : (
-    <Button variant="primary" size="lg" disabled aria-describedby={p.previewNote ? 'xp-preview-note' : undefined}>
-      Open the preview
-    </Button>
+  const product = productOf(p.startedTail);
+  const role: PageRole = p.role ?? (p.lead?.bar ? 'lead' : p.pm?.mine ? 'pm' : p.done?.kind === 'run' ? 'owner' : 'viewer');
+  const stage = pageStageOf({ stage: p.stage, archived: Boolean(p.archived), waitingForLead: Boolean(p.lead), handoff: handoff?.status ?? null, checking: Boolean(handoff?.build || handoff?.check), declined });
+  const zone = zoneOf(stage, {
+    archived: Boolean(p.archived),
+    notDoing: Boolean(p.notDoing),
+    answersLead: Boolean(p.designerZone?.onSend),
+    leadBar: Boolean(p.lead?.bar),
+    leadTake: Boolean(p.lead?.take?.onTake && !p.lead.bar),
+    pmMine: Boolean(p.pm?.mine),
+    canDone: p.done?.kind === 'run',
+    declinedBack: Boolean(p.onReopen),
+    question: waitsOnAnswer(handoff),
+    checkSay: Boolean(handoff?.check?.onSay),
+    theirVersion: reviewsVersion(handoff) && Boolean(handoff?.onAnswer),
+  });
+  const notes = p.notes?.notes ?? null;
+  const openQuestion = notes?.openQuestions?.find((q) => q.trim()) ?? null;
+  const impactRows = p.impact?.view.state === 'rows' ? p.impact.view.rows : [];
+  const staged = stagedPieces(impactRows, Boolean(p.impact?.actions.onPiece));
+  const applyStaged = async () => {
+    for (const r of staged) await p.impact!.actions.onPiece!(r.id, choices[r.id] ?? 'approve');
+  };
+  const previewHref = p.previewUrl ? (p.tryUrl ?? p.previewUrl) : null;
+  const screenName = p.plate?.screen ?? p.plate?.product ?? 'The screen';
+  const isOwner = role === 'owner';
+  const builder = handoff?.build?.builder ?? handoff?.check?.builder ?? null;
+  const checkQuote = handoff?.question?.text && handoff.question.by ? handoff.question : null;
+
+  // ---- The one Harbor zone: only what waits on the viewer now.
+  const turn = ((): ReactNode => {
+    switch (zone) {
+      case 'not-doing':
+        return <NotDoingZone v={p.notDoing!} say={setSaid} />;
+      case 'answer-lead':
+        return <DesignerZone z={p.designerZone!} say={setSaid} extra={<ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" size="md" />} />;
+      case 'pm':
+        return <PmZone v={p.pm!} say={setSaid} />;
+      case 'lead-take':
+        return <LeadTake lead={p.lead!} say={setSaid} />;
+      case 'lead-review':
+        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} say={setSaid} />;
+      case 'done':
+        return (
+          <TurnZone
+            eyebrow="Your exploration"
+            title={handOverTitle(p.leadName)}
+            drawing="paint"
+            actions={
+              <>
+                <ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" size="md" />
+                <Button variant="primary" size="md" onClick={(e) => p.onDone(e.currentTarget)}>
+                  Done exploring
+                </Button>
+              </>
+            }
+          >
+            {notesContext(notes?.nextStep) && <p>{notesContext(notes?.nextStep)}</p>}
+          </TurnZone>
+        );
+      case 'declined':
+        return (
+          <TurnZone
+            eyebrow="Your turn"
+            title="The developers did not build it"
+            drawing="fix"
+            actions={
+              <Button variant="primary" size="md" onClick={() => setAsk('reopen')}>
+                Back to exploring
+              </Button>
+            }
+          >
+            <p>{DECLINED_LINE}</p>
+            {handoff!.declined!.note && <DevQuote text={handoff!.declined!.note.text} by={handoff!.declined!.note.by} when={handoff!.declined!.note.when} />}
+          </TurnZone>
+        );
+      case 'question':
+        return (
+          <TurnZone eyebrow="Your turn" title={handoff!.question!.by ? `${handoff!.question!.by.name} asks you` : 'A question for you'} drawing="guide">
+            <DevQuestion q={handoff!.question!} say={setSaid} />
+          </TurnZone>
+        );
+      case 'check':
+        return (
+          <TurnZone
+            eyebrow="Your turn"
+            title={`Does ${possessive(builder ?? 'the developer')} build match ${isOwner ? 'your design' : 'the design'}?`}
+            drawing="review"
+            quote={checkQuote ? <AskQuote who={checkQuote.by!} verb="says" text={checkQuote.text!} action={checkQuote.onReply && !checkQuote.answered ? <Link href="#xp-compose">Reply</Link> : null} /> : null}
+            actions={<BuildCheck v={handoff!.check!} say={setSaid} inZone />}
+          >
+            <p>{handoff!.check!.line}</p>
+          </TurnZone>
+        );
+      case 'their-version': {
+        const version = handoff!.steps.find((s) => s.link)?.link ?? null;
+        return (
+          <TurnZone eyebrow="Your turn" title="Does their version look right?" drawing="review" actions={<DevAnswer onAnswer={handoff!.onAnswer!} say={setSaid} />}>
+            {version && (
+              <Link href={version.href} target="_blank" rel="noopener">
+                {version.label}
+                <Icon icon={ExternalLink} size="xs" />
+              </Link>
+            )}
+          </TurnZone>
+        );
+      }
+      case 'shipped': {
+        const live = handoff?.steps.find((s) => s.title === 'Shipped')?.detail ?? '';
+        return (
+          <TurnZone eyebrow="Shipped" title={`Live in ${product || 'the product'}`} drawing="components" id="xp-shipped-h">
+            <p>{shippedLine(live)}</p>
+          </TurnZone>
+        );
+      }
+      default:
+        return null;
+    }
+  })();
+
+  // ---- Before it ships: the people and their last word.
+  const people: PersonRow[] = [];
+  const faceOfName = (name: string): PageFace => ({ login: nameFace(name), name, agent: false, avatar: null });
+  if (stage === 'check' && handoff?.check) {
+    for (const r of handoff.check.rows) {
+      // Not needed (no library piece changed): nobody to wait on, nothing to say.
+      if (r.state === 'not-needed') continue;
+      const you = (r.role === 'designer' && isOwner) || (r.role === 'lead' && role === 'lead') || (r.role === 'pm' && role === 'pm');
+      const face = you && p.me ? p.me : faceOfName(r.name);
+      const said = r.state === 'looks-right' ? 'said it looks right' : r.state === 'changes' ? (r.stateLine === 'Needs changes' ? 'asked for changes' : r.stateLine.toLowerCase()) : you ? 'check the build' : r.role === 'designer' ? 'checks the build' : 'has not looked yet';
+      people.push({ key: r.role, face, name: you ? 'You' : r.name, line: said, part: you ? null : r.part, tone: r.state === 'looks-right' ? 'ok' : null, note: r.note });
+    }
+  } else if (zone === 'lead-review') {
+    people.push({ key: 'you', face: p.me ?? faceOfName('You'), name: 'You', line: staged.length ? `decide the ${staged.map((s) => s.title).join(' and ')} and send it` : 'decide and send it' });
+  } else if (p.lead && !p.lead.bar) {
+    // The library block already says what the lead is choosing, anchored to it: the row says it once, in general.
+    const waitsInLibrary = p.impact?.view.state === 'rows' && p.impact.view.conflicts.some((c) => !c.decided && !c.decides);
+    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? 'Your design lead', line: waitsInLibrary ? 'decides before the developers build it' : leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
+  } else if (handoff && !p.archived && !turn) {
+    // The step happening now, once: a zone already says what waits on the viewer.
+    const now = handoff.steps.find((s) => s.current);
+    if (now && now.title !== 'Shipped') people.push({ key: 'now', face: null, name: now.title, line: '', note: now.detail });
+  }
+  if (p.pm && !p.pm.mine && !p.archived && !handoff)
+    people.push({
+      key: 'pm',
+      face: p.pm.quote?.who ?? (p.pm.line.trim() ? faceOfName(p.pm.line.trim().split(' ')[0]!) : null),
+      name: '',
+      line: p.pm.line,
+      part: 'product manager',
+      note: p.pm.quote?.text ?? null,
+      action: p.pm.call ? <PmCall call={p.pm.call} say={setSaid} /> : null,
+    });
+  const keepExploring = p.lead?.onCancel ? <KeepExploring onCancel={p.lead.onCancel} say={setSaid} /> : null;
+
+  // ---- The journey.
+  const journey = journeyOf(stage, { lead: p.leadName ?? null, product: product || 'the product' });
+  const send = handoff?.forDevelopers && !handoff.declined && handoff.status !== 'shipped' ? handoff.forDevelopers : null;
+  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product);
+
+  // ---- Activity.
+  const quoted = [checkQuote?.text ?? '', p.designerZone?.text ?? '', p.notDoing?.text ?? ''];
+  const timeline = p.activity === null && !p.decisions?.length ? null : timelineOf(p.activity ?? [], p.decisions ?? [], startedWhen, quoted);
+  const composer =
+    zone === 'lead-review' && p.lead?.bar ? (
+      <Composer me={p.me ?? null} placeholder={writeToLine([p.author.name])} onSend={(t) => p.lead!.bar!.onComment(t)} say={setSaid} />
+    ) : p.onTellDevelopers ? (
+      <Composer me={p.me ?? null} placeholder={writeToLine(builder && builder !== 'the developer' ? [builder] : ['the developers'])} onSend={p.onTellDevelopers} say={setSaid} />
+    ) : null;
+
+  // ---- The screen.
+  const build = handoff?.build ?? null;
+  const mismatch = Boolean(build?.shot && !sameScreen(p.thumbRoute ?? p.screen?.value ?? null, build.shot.route ?? null));
+  const capturedSub = p.thumbCapturedAt ? capturedLine(p.thumbCapturedAt, Date.now()).replace(/^Captured /, '') : (p.headline?.when ?? '');
+  const stageSub = build
+    ? mismatch
+      ? SCREEN_WORDS.notSame
+      : SCREEN_WORDS.sameScreen
+    : handoff?.status === 'shipped'
+      ? `live in ${product || 'the product'}`
+      : isOwner
+        ? SCREEN_WORDS.latest(capturedSub)
+        : `${possessive(p.author.name)} latest version${capturedSub ? `, ${capturedSub}` : ''}`;
+  const figmaShown = !p.archived && Boolean(p.notes?.notes?.figmaPage || p.figma);
+  // The AI tool beside the screen for whoever keeps working on it, when the zone does not already hold it.
+  const continueHere = !handoff && !p.archived && isOwner && zone !== 'done' && zone !== 'answer-lead';
+  const stageFoot = (
+    <>
+      {p.previewBuilding && !p.previewUrl && (
+        <p className="xp-muted xp-st-note" role="status">
+          <Spinner size="sm" /> Preview is building
+        </p>
+      )}
+      {p.previewNote && !(p.previewBuilding && !p.previewUrl) && (
+        <p className="xp-muted xp-st-note" id="xp-preview-note">
+          {p.previewNote}
+        </p>
+      )}
+      {!handoff && !p.archived && p.latest && <LatestLine latest={p.latest} say={setSaid} />}
+      {(figmaShown || continueHere) && (
+        <div className="xp-st-acts">
+          {continueHere && <ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" size="md" />}
+          {figmaShown && <FigmaAction p={p} tool={tab} say={setSaid} />}
+        </div>
+      )}
+    </>
   );
+  const screen = build ? (
+    <ScreenStage
+      name={screenName}
+      sub={stageSub}
+      compare={{
+        a: { label: BUILD_WORDS.approved, when: handoff!.doneWhen, approved: true, frame: <ShotFrame p={p} />, src: p.thumb, href: previewHref },
+        b: {
+          label: `${possessive(build.builder)} build`,
+          when: build.shot?.capturedAt ? capturedLine(build.shot.capturedAt, Date.now()).replace(/^Captured /, '') : '',
+          frame: build.shot ? <BuildShot shot={build.shot} label={BUILD_WORDS.builtBy(build.builder)} /> : <EmptyFrame label={BUILD_WORDS.builtBy(build.builder)} />,
+          src: build.shot?.src ?? null,
+          href: build.url ? atRoute(build.url, p.screen?.value ?? build.shot?.route) : null,
+        },
+      }}
+      mismatch={
+        mismatch ? (
+          <>
+            <strong>{SCREEN_WORDS.mismatch(screenName)}</strong>
+            <span>{SCREEN_WORDS.mismatchHint}</span>
+            {p.screen?.onSave && (
+              <Button variant="secondary" size="md" onClick={() => setAsk('screen')}>
+                {SCREEN_TITLE}
+              </Button>
+            )}
+          </>
+        ) : null
+      }
+      entry={p.checkEntry ?? null}
+      foot={stageFoot}
+    />
+  ) : (
+    <ScreenStage name={screenName} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
+  );
+  const showCode = codeShown(role, stage);
+  const devLine = devLineOf(role, stage);
+  const check = p.developer.find((d) => d.label === 'Check it again')?.value ?? null;
+  const withClaude = p.developer.find((d) => d.label === 'With Claude')?.value ?? null;
+  const branch = p.take?.branch ?? p.developer.find((d) => /branch/i.test(d.label))?.value.split(' (')[0] ?? null;
+  // The lead's other answers (Ask someone else, Not doing this, Copy link) sit in the page's "...".
+  const leadBar = zone === 'lead-review' && !p.archived ? (p.lead?.bar ?? null) : null;
+  const menuShown = Boolean(p.onRename || p.screen?.onSave || p.onReopen || p.onArchive || p.onTakeOver || p.handOver || p.onTakeBack || leadBar);
+  const notesTitle = isOwner ? 'Your handover notes' : `${possessive(p.author.name)} handover notes`;
   return (
     <ToolContext.Provider value={tab}>
     <div className="xp-page">
@@ -952,11 +1178,20 @@ function ExplorationBody(p: ExplorationPageProps) {
               <Badge tone="neutral" size="md">
                 {EXPLORATION_STAGE_LABEL.archived}
               </Badge>
+            ) : stage === 'check' ? (
+              <Badge tone={BUILD_WORDS.tagTone} size="md" className={statusTagClass(BUILD_WORDS.tagTone)}>
+                {BUILD_WORDS.tag}
+              </Badge>
             ) : (
               <StatusTag status={handoff ? handoff.status : 'active'} notStarted={notStarted} stage={handoff?.stage ?? (p.lead ? 'waiting-for-lead' : null)} />
             ))}
           <span className="xp-spacer" />
-          {(p.onRename || p.screen?.onSave || p.onReopen || p.onArchive || p.onTakeOver || p.handOver) && (
+          {showCode && (
+            <span className="xp-code-slot">
+              <CodeButton who={p.author.name} commands={p.take?.commands ?? null} check={check} claude={withClaude} branch={branch} href={p.githubUrl} refLabel={`#${p.number}`} onCopy={p.onCopy} />
+            </span>
+          )}
+          {menuShown && (
             // Last on the title's line, on a phone too (the title wraps beside it).
             <span className="xp-more">
               <Menu>
@@ -966,11 +1201,15 @@ function ExplorationBody(p: ExplorationPageProps) {
                 <MenuContent align="end">
                   {p.onRename && <MenuItem icon={Pencil} onClick={() => setAsk('rename')}>Rename</MenuItem>}
                   {p.screen?.onSave && <MenuItem icon={MonitorSmartphone} onClick={() => setAsk('screen')}>{SCREEN_TITLE}</MenuItem>}
-                  {p.onReopen && <MenuItem icon={Undo2} onClick={() => setAsk('reopen')}>Back to exploring</MenuItem>}
+                  {p.onReopen && !(declined && zone === 'declined') && <MenuItem icon={Undo2} onClick={() => setAsk('reopen')}>Back to exploring</MenuItem>}
+                  {p.onTakeBack && <MenuItem icon={Undo2} onClick={() => setAsk('take-back')}>Take it back</MenuItem>}
                   {p.onTakeOver && <MenuItem icon={UserCheck} onClick={() => setAsk('take-over')}>Take it over</MenuItem>}
                   {p.handOver && <MenuItem icon={ArrowRightLeft} onClick={() => setAsk('hand-over')}>Hand over</MenuItem>}
+                  {leadBar?.onAskOther && <MenuItem icon={Users} onClick={() => leadBar.onAskOther!().then((r) => setSaid(r ?? ''), (err: Error) => setSaid(err.message))}>Ask someone else to review</MenuItem>}
+                  {leadBar && <MenuItem icon={Ban} onClick={() => setNotDoing(true)}>Not doing this</MenuItem>}
+                  {leadBar && <MenuItem icon={LinkIcon} onClick={() => void leadBar.onCopy(leadBar.link).then(() => setSaid('Link copied.'), () => setSaid('Could not copy the link.'))}>Copy link</MenuItem>}
                   {/* Archive last, apart and in the danger tone: it takes the exploration off everyone's list. */}
-                  {p.onArchive && (p.onRename || p.screen?.onSave || p.onReopen || p.onTakeOver || p.handOver) && <MenuSeparator />}
+                  {p.onArchive && (p.onRename || p.screen?.onSave || p.onReopen || p.onTakeOver || p.handOver || p.onTakeBack || leadBar) && <MenuSeparator />}
                   {p.onArchive && (
                     <MenuItem icon={Archive} tone="danger" onClick={() => (p.archiveAsksWhy ? setAsk('archive') : archive())}>
                       Archive
@@ -981,37 +1220,11 @@ function ExplorationBody(p: ExplorationPageProps) {
             </span>
           )}
         </header>
-        {handoff ? (
-          <p className="xp-meta">
-            {handoff.doneBy && <Who p={{ login: handoff.doneBy.login, name: handoff.doneBy.name, agent: handoff.doneBy.agent, avatar: handoff.doneBy.avatar }} size="xs" />}
-            <span>
-              {handoff.doneBy ? (
-                <>
-                  <strong>{handoff.doneBy.name}</strong> said done exploring
-                </>
-              ) : (
-                'Done exploring'
-              )}
-              {handoff.doneWhen && <span className="xp-muted">, {handoff.doneWhen}</span>}
-              {handoff.doneBy?.login !== p.author.login && <span className="xp-muted"> · started by {p.author.name}</span>}
-            </span>
-          </p>
-        ) : p.stage === 'exploring' && p.headline ? (
-          <p className="xp-meta">
-            <Who p={{ login: p.headline.who.login, name: p.headline.who.name, agent: p.headline.who.agent, avatar: p.headline.who.avatar }} size="xs" />
-            <span>
-              <strong>{p.headline.who.name}</strong> {p.headline.text}, <span className="xp-muted">{p.headline.when}</span>
-            </span>
-          </p>
-        ) : (
-          <p className="xp-meta">
-            <Who p={{ login: p.author.login, name: p.author.name, agent: p.author.agent, avatar: p.author.avatar }} size="xs" />
-            <span>
-              Started by <strong>{p.author.name}</strong>
-              {p.startedTail && <span className="xp-muted"> · {p.startedTail}</span>}
-            </span>
-          </p>
-        )}
+        <p className="xp-meta">
+          <Who p={{ login: p.author.login, name: p.author.name, agent: p.author.agent, avatar: p.author.avatar }} size="xs" />
+          <span>{ownerLine(p.author.name, p.startedTail)}</span>
+        </p>
+        {devLine && <p className="xp-muted xp-devline">{devLine}</p>}
       </div>
       {p.archived && !p.notDoing && p.stage !== 'loading' && (
         <div className="xp-archived">
@@ -1061,80 +1274,61 @@ function ExplorationBody(p: ExplorationPageProps) {
       )}
       {notStarted && p.notes && <WhereItStands view={p.notes} say={setSaid} />}
       {(p.stage === 'exploring' || handoff) && (
-        // One skeleton in every state: the preview, its one action row and the activity on the left; the Harbor zone (only
-        // its content changes) then Where it stands on the right. Phones: preview, the zone, then the activity
-        // (styles/exploration-page.css).
-        <div className={p.impact ? 'xp-board has-library' : 'xp-board'}>
-          <section className="xp-preview" aria-label="Preview">
-            {handoff?.build ? (
-              // Check the build: the approved version and the developers' build, side by side (board R4).
-              <div className="xp-compare">
-                <figure className="xp-compare-side">
-                  <ShotFrame p={p} />
-                  <figcaption className="xp-muted">{BUILD_WORDS.approved}</figcaption>
-                </figure>
-                <figure className="xp-compare-side">
-                  {handoff.build.shot ? <BuildShot shot={handoff.build.shot} label={BUILD_WORDS.builtBy(handoff.build.builder)} /> : <EmptyFrame label={BUILD_WORDS.builtBy(handoff.build.builder)} />}
-                  <figcaption className="xp-muted">{BUILD_WORDS.builtBy(handoff.build.builder)}</figcaption>
-                </figure>
+        // The board: the screen, the library and Activity on the left; the rail on the right (sticky): Your turn only
+        // when the viewer acts now, Before it ships, the journey, the handover notes. Phones: header, Your turn, the
+        // screen, the people, the library, Activity (styles/exploration-page.css).
+        <div className={turn ? 'xp-board has-turn' : 'xp-board'}>
+          <div className="xp-b-left">
+          <div className="xp-b-screen">{screen}</div>
+          <div className="xp-b-main">
+            {p.impact ? (
+              <div className="xp-library" id="xp-library">
+                <LibraryImpact
+                  view={p.impact.view}
+                  actions={p.impact.actions}
+                  say={setSaid}
+                  quiet={Boolean(turn)}
+                  onPage
+                  {...(staged.length && zone === 'lead-review' ? { newPieces: { capture: p.thumb, designer: p.author.name, choices, onChoice: (id: string, c: 'approve' | 'local') => setChoices((x) => ({ ...x, [id]: c })) } } : {})}
+                />
               </div>
             ) : (
-              <ShotFrame p={p} />
+              handoff && <LibraryPart h={handoff} p={p} say={setSaid} />
             )}
-            {/* One action row in every state, three fixed places so nothing moves between states: the main action, the
-                second one, then Send to Figma (tertiary). A place with nothing in it stays empty (styles/exploration-page.css). */}
-            <div className="xp-acts xp-preview-acts">
-              <div className="xp-act is-main">
-                {handoff?.build?.url ? (
-                  <ButtonLink variant="primary" size="lg" href={atRoute(handoff.build.url, p.screen?.value ?? handoff.build.shot?.route)} target="_blank" rel="noopener" iconEnd={ExternalLink}>
-                    {BUILD_WORDS.openBuild}
-                  </ButtonLink>
-                ) : previewButton}
-              </div>
-              {handoff?.build?.url ? (
-                <div className="xp-act is-second">{previewButton}</div>
-              ) : (
-                /* Archived: the preview still opens, nothing offers to keep working on it (Unarchive first). */
-                secondContinue && (
-                  <div className="xp-act is-second">
-                    <ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" />
-                  </div>
-                )
-              )}
-              {/* One Figma action with the second place free: beside the preview, not alone on a row under it. */}
-              {figmaShown && (
-                <div className={`xp-act ${figmaBeside ? 'is-second' : 'is-third'}`}>
-                  <FigmaAction p={p} tool={tab} say={setSaid} />
-                </div>
-              )}
-            </div>
-            {p.previewNote && !(p.previewBuilding && !p.previewUrl) && (
-              <p className="xp-muted xp-note" id="xp-preview-note">
-                {p.previewNote}
-              </p>
-            )}
-            {!handoff && !p.archived && p.latest && <LatestLine latest={p.latest} say={setSaid} />}
-          </section>
-          <div className="xp-side">
-            {handoff ? <HandoffCard h={handoff} p={p} say={setSaid} onBack={p.onReopen ? () => setAsk('reopen') : null} onTakeBack={p.onTakeBack ? () => setAsk('take-back') : null} /> : p.pm?.mine && !p.archived ? <PmZone v={p.pm} say={setSaid} /> : <DoneCard p={p} tool={tab} line={line} say={setSaid} />}
-            {!handoff && p.pm && !p.pm.mine && !p.archived && <PmStatus v={p.pm} say={setSaid} />}
-            {p.decisions && <Decisions rows={p.decisions} when={startedWhen} />}
-            {p.notes && (!handoff || p.notes.notes) && <WhereItStands view={p.notes} say={setSaid} />}
+            {/* The slot for "Start the check" (the Check the build review mode, its own route, coming next). */}
+            <Timeline items={timeline} composer={composer} />
           </div>
-          {/* What this changes in the library is half of the lead's review (boards LI2 to LI4, LI8): right under the
-              preview, full width, before the activity. */}
-          {p.impact && (
-            <div className="xp-library" id="xp-library">
-              <LibraryImpact view={p.impact.view} actions={p.impact.actions} say={setSaid} />
-            </div>
-          )}
-          <ActivityList rows={p.activity} />
+          </div>
+          <div className="xp-b-right">
+            {turn && <div className="xp-b-turn">{turn}</div>}
+            <div className="xp-b-rail">
+            {p.done?.kind === 'note' && !p.archived && stage === 'exploring' && <p className="xp-muted">{p.done.text}</p>}
+            <People title={stage === 'exploring' ? 'Following it' : 'Before it ships'} rows={people} after={keepExploring} />
+            {!p.archived && (
+              <Journey
+                segments={journey.segments}
+                next={journey.next}
+                steps={steps.map((s) => ({ ...s, detail: send && s.title === 'Developers build it' && s.current ? <SendDetail detail={s.detail} message={send.message} /> : s.detail }))}
+              />
+            )}
+            {p.notes && (!handoff || p.notes.notes) && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail />}
+          </div>
+          </div>
         </div>
       )}
-      {p.lead?.bar && !p.archived && <LeadBar bar={p.lead.bar} say={setSaid} />}
       <p className="xp-said" role="status" aria-live="polite">
         {said}
       </p>
+      {leadBar && (
+        <WhyDialog
+          open={notDoing}
+          onOpenChange={setNotDoing}
+          title="Not doing this?"
+          description="It ends here, with your reason. The work stays on this page. They read it here and by email."
+          confirm="Not doing this"
+          onConfirm={(why) => leadBar.onNotDoing(why).then((r) => setSaid(r ?? ''))}
+        />
+      )}
       {p.onTakeBack && (
         <WhyDialog
           open={ask === 'take-back'}
@@ -1206,29 +1400,6 @@ function ExplorationBody(p: ExplorationPageProps) {
           />
         </AlertDialog>
       )}
-      <Accordion className="xp-dev" headingLevel={2}>
-        <AccordionItem value="dev" title="For developers">
-          {p.take && (
-            <div className="xp-dev-take">
-              <p>{p.take.note}</p>
-              <pre className="xp-mono xp-dev-commands">
-                <code>{p.take.commands.join('\n')}</code>
-              </pre>
-            </div>
-          )}
-          <dl className="xp-dev-list">
-            {p.developer.map((d) => (
-              <div key={d.label} className="xp-dev-row">
-                <dt>{d.label}</dt>
-                <dd className="xp-mono">{d.value}</dd>
-              </div>
-            ))}
-          </dl>
-          <Link href={p.githubUrl} target="_blank" rel="noopener">
-            Open on GitHub
-          </Link>
-        </AccordionItem>
-      </Accordion>
     </div>
     </ToolContext.Provider>
   );

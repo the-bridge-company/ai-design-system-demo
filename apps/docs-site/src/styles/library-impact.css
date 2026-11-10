@@ -203,15 +203,17 @@
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
-.li-q {
+/* Scoped to the block: the exploration page resets the margins of its paragraphs (.xp-page p), and the context line
+   must keep its room above the plates. */
+.li-decide > .li-q {
   margin: 0 0 var(--space-1);
   font-size: var(--typography-body-size);
   font-weight: var(--font-weight-semibold);
   line-height: var(--typography-body-line-height);
 }
 
-.li-ctx {
-  margin: 0 0 var(--space-4);
+.li-decide > .li-ctx {
+  margin: 0 0 var(--space-5);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
 }

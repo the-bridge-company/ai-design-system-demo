@@ -15,6 +15,7 @@ import { productHref, productKeyFromPath } from '../../../lib/product-page';
 import { isHosted, STUDIO_ROOT, studioBase, studioHref } from '../../../lib/team-path';
 import { navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, type ProductSignals } from '../../../lib/nav-products';
 import { siteIcon } from '../../../brand/site-icons';
+import { productInitials } from '../../../lib/rail-collapse';
 import type { IconName } from '../../../brand/icons';
 
 export { navProducts, type NavProduct };
@@ -47,12 +48,14 @@ export interface ProductsNavViewProps {
 export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS }: ProductsNavViewProps) {
   const rows = navProductRows(products, signals, current);
   const allHere = path === ALL_PRODUCTS_PATH;
+  // The collapsed rail draws two letters per product instead of the folder (styles/site.css, data-initials).
+  const names = products.map((p) => p.name);
   return (
     <>
       {rows.shown.length > 0 && (
         <SidebarNavSection title="Products" className="rail-section rail-products" data-products-nav="">
           {rows.shown.map((p) => (
-            <SidebarNavItem key={p.key} href={productHref(p.key)} icon={Folder} active={current === p.key} data-keep-branch="">
+            <SidebarNavItem key={p.key} href={productHref(p.key)} icon={Folder} active={current === p.key} data-keep-branch="" data-initials={productInitials(p.name, names)}>
               {p.name}
             </SidebarNavItem>
           ))}

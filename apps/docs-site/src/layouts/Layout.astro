@@ -40,6 +40,7 @@ import { Avatar, Breadcrumb, Button, Icon, IconButton, Kbd, Link } from '@bridge
 import { siteIcon } from '../brand/site-icons';
 import { Menu as MenuIcon, Search, X } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
+import RailCollapse from '../components/ds/RailCollapse';
 import SiteIcons from '../components/site/SiteIcons.astro';
 
 export interface Crumb {
@@ -196,16 +197,25 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
             if (m.write) document.documentElement.setAttribute('data-maintainer', '');
           }
         } catch (e) {}
+        // The side nav open or collapsed: this browser's choice (lib/rail-collapse.ts, RAIL_KEY), before first paint so
+        // the page never jumps. styles/site.css draws the collapsed rail on wide screens only.
+        try {
+          if (localStorage.getItem('bridge.rail') === 'collapsed') document.documentElement.setAttribute('data-rail', 'collapsed');
+        } catch (e) {}
       })();
     </script>
   </head>
   <body>
     <Link variant="subtle" className="skip" href="#main">Skip to content</Link>
     <header class="topbar">
-      <Link variant="subtle" className="topbar-brand" href={isStudio ? STUDIO_HOME : library ? LIBRARY_SHELL_ROOT : LIBRARY_HOME} aria-label={isStudio ? 'Bridge Studio, overview' : 'Bridge Library, home'}>
-        <Logo />
-        {isStudio && <span class="topbar-space" aria-hidden="true">Studio</span>}
-      </Link>
+      <div class="topbar-start">
+        {/* Collapse or expand the side nav (wide screens; the phone keeps its menu button). Not on the start screen: no rail. */}
+        {!bare && <RailCollapse client:load />}
+        <Link variant="subtle" className="topbar-brand" href={isStudio ? STUDIO_HOME : library ? LIBRARY_SHELL_ROOT : LIBRARY_HOME} aria-label={isStudio ? 'Bridge Studio, overview' : 'Bridge Library, home'}>
+          <Logo />
+          {isStudio && <span class="topbar-space" aria-hidden="true">Studio</span>}
+        </Link>
+      </div>
       {/* The workspace reads no design system: nothing to search, and Bridge's own would be another context. */}
       {!noRepo && <Button variant="ghost" size="sm" iconStart={Search} className="shell-search" id="search-open" aria-haspopup="dialog" aria-controls="palette" aria-label={searchLabel}>
         <span class="shell-search-text">

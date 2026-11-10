@@ -49,7 +49,8 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
   const rows = navProductRows(products, signals, current);
   const allHere = path === ALL_PRODUCTS_PATH;
   // The collapsed rail draws two letters per product instead of the folder (styles/site.css, data-initials).
-  const names = products.map((p) => p.name);
+  // Only the products listed here: the library's own product carries another name and would keep "Acme" in.
+  const names = rows.shown.filter((p) => !p.library).map((p) => p.name);
   return (
     <>
       {rows.shown.length > 0 && (

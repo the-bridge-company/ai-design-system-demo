@@ -81,6 +81,7 @@ export function BuildReviewEntry({ product, number, builder: builderHint }: { pr
             <ul className="bre-crops">
               {ordered.map((it, i) => (
                 <li key={it.sig} className={`${i >= 2 ? 'bre-wide' : ''} ${i >= 4 ? 'bre-more-only' : ''}`}>
+                  {/* bridge-audit-ignore-next-line: a crop of the build is the link itself, at a fixed height with its number; a DS Link would underline a picture */}
                   <a href={href(it.sig)} className={`bre-crop ${d.meant.includes(it.sig) ? 'is-meant' : ''}`} aria-label={`${it.n}. ${it.name}: ${it.line}`}>
                     {it.crop.b ? <Crop url={img(it.crop.b)} alt="" /> : <span className="bre-wait" />}
                     <span className="bre-pin" aria-hidden="true">
@@ -91,6 +92,7 @@ export function BuildReviewEntry({ product, number, builder: builderHint }: { pr
               ))}
               {ordered.length > 2 && (
                 <li className={`bre-more ${ordered.length > 4 ? '' : 'bre-phone-only'}`}>
+                  {/* bridge-audit-ignore-next-line: the "+N" tile sits in the row of crops at their size and opens the rest; a DS Link would underline it out of the row */}
                   <a href={href()} className="bre-crop bre-plus">
                     <span className="bre-plus-wide">+{Math.max(0, ordered.length - 4)}</span>
                     <span className="bre-plus-phone">+{ordered.length - 2}</span>

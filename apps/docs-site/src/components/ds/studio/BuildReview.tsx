@@ -350,6 +350,7 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
                   <ul className="brv-items">
                     {st.kept.map((it) => (
                       <li key={it.sig}>
+                        {/* bridge-audit-ignore-next-line: the whole difference row (number, name, sentence) is one target that opens it, like the review queue rows; the DS has no row button and Button would cut it to one label */}
                         <button type="button" className="brv-item" onClick={() => pick(it)}>
                           <span className="brv-num is-fine">{it.n}</span>
                           <span className="brv-item-text">
@@ -427,6 +428,7 @@ function ItemList({ title, icon, list, st, sel, meant, builder, onPick, count }:
           const v = st.verdict[it.sig];
           return (
             <li key={it.sig}>
+              {/* bridge-audit-ignore-next-line: the whole difference row (number, name, sentence, its answer) is one target that opens it, like the review queue rows; the DS has no row button and Button would cut it to one label */}
               <button type="button" className={`brv-item ${sel === it.sig ? 'is-sel' : ''}`} aria-current={sel === it.sig ? 'true' : undefined} onClick={() => onPick(it)}>
                 <span className={`brv-num ${v === 'fix' ? 'is-fix' : v === 'fine' ? 'is-fine' : ''}`}>{it.n}</span>
                 <span className="brv-item-text">
@@ -498,6 +500,7 @@ function PageStage({ sz, canvas, items, st, meant, builder, shotUrl, onPick }: {
                   const v = st.verdict[it.sig];
                   const wide = raw[2] * raw[3] > shot.pageW * Math.min(shot.pageH, sz.height * 1.5) * 0.3;
                   return (
+                    // bridge-audit-ignore-next-line: an outlined region drawn over the picture at the measured place, with its number; no DS control is a positioned outline
                     <button key={it.sig} type="button" className={`brv-region ${wide ? 'is-wide' : ''} ${meant.includes(it.sig) ? 'is-meant' : ''} ${v ? `is-${v}` : ''}`} style={box} onClick={() => onPick(it)} aria-label={`${it.n}. ${it.name}: ${it.line}`}>
                       <span className="brv-pin">{it.n}</span>
                     </button>
@@ -525,6 +528,7 @@ function Minimap({ sz, items, sel, shotUrl, onPick }: { sz: ReviewSize; items: R
         {items
           .filter((it) => it.boxes[sz.key]?.[side])
           .map((it) => (
+            // bridge-audit-ignore-next-line: a mark on the small map at the measured place, a mouse shortcut only (the list is the keyboard path); no DS control is a positioned outline
             <button key={it.sig} type="button" tabIndex={-1} aria-hidden="true" className={`brv-mini-box ${sel === it.sig ? 'is-sel' : ''}`} style={boxPercent(it.boxes[sz.key]![side]!, shot)} onClick={() => onPick(it)} />
           ))}
       </div>

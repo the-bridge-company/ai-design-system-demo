@@ -411,6 +411,7 @@ async function paintEarlyBuild(
         }
       : null,
     note: read.role ? BUILD_WORDS.pushNote : null,
+    review: { product: o.product, number: o.r.number },
   };
   const h = current.props.handoff ?? EARLY_HANDOFF;
   repaint(d, key, { stage: 'handed-off', tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...h, check, build: { ...h.build, url: h.build?.url ?? buildUrl, builder: h.build?.builder ?? builder } } });
@@ -485,6 +486,7 @@ async function paintBuildCheck(d: HTMLElement, key: string, o: { r: ExplorationR
         }
       : null,
     note: read.role ? BUILD_WORDS.pushNote : null,
+    review: { product: o.product, number: o.r.number },
   };
   repaint(d, key, { tag: { label: BUILD_WORDS.tag, tone: BUILD_WORDS.tagTone }, handoff: { ...current.props.handoff, check, build: { ...current.props.handoff.build, url: o.devUrl ?? current.props.handoff.build?.url ?? null, builder } } });
   if (o.code && !current.props.handoff.build?.shot) void paintBuildShot(d, key, o.code, read.pull.number);

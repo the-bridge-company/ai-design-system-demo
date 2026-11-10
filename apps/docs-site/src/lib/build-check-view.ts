@@ -32,6 +32,8 @@ export interface BuildCheckView {
   onSay?: ((a: { kind: 'looks-right' | 'changes'; why?: BuildWhy; text?: string }) => Promise<string | void>) | null;
   /** Under the answers: what an answer does. */
   note?: string | null;
+  /** Check the build, region by region: the exploration the review mode opens (BuildReviewEntry). */
+  review?: { product: string; number: number } | null;
 }
 
 export const BUILD_WORDS = {

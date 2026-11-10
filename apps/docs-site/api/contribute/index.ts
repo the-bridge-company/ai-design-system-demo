@@ -143,7 +143,8 @@ import { demoDialog, isSampleTeam } from '../../src/lib/demo.js';
 import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, workflowClaims, type ShotsCtx, type ShotStore } from '../_lib/private-shots.js';
 import { productOfImage, putReachImage, putReachSummary, reachImageBytes, reachTodo, readReach, summaryFor } from '../_lib/private-reach.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
-import { explorationBlockOf, memberRef, withMemberInBlock } from '../_lib/exploration-member.js';
+import { explorationBlockOf, memberRef, screenOf, withMemberInBlock } from '../_lib/exploration-member.js';
+import { applyNote, buildImageBytes, buildTodo, fixesComment, handoverOf, imageSigOk, imagesOf, itemStates, itemWordsOf, noteComment, noteOpOf, notesOf, putBuildImage, putBuildSummary, queueBuild, readBuildReview, roundOf, saveItemWords, saveNotes, signedImageUrl, withItemWord, withoutItemWord, type BuildCtx, type ItemWord } from '../_lib/build-review.js';
 import { branchKey, issueKey, mineItems, mineKey } from '../_lib/former-member.js';
 import { canonicalEmail, sameEmail } from '../_lib/canonical-email.js';
 import { githubApp, type AppTokens } from '../_lib/github-app.js';
@@ -671,6 +672,15 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
     case 'build-checks':
       return await onBuildChecks(req, ctx, body);
 
+    case 'build-review':
+      return await onBuildReview(req, ctx, body);
+
+    case 'build-item':
+      return await onBuildItem(req, ctx, body);
+
+    case 'build-note':
+      return await onBuildNote(req, ctx, body);
+
     case 'seed-demo':
       return await onSeedDemo(req, ctx, body);
 
@@ -758,7 +768,7 @@ async function onReach(req: Request, ctx: Ctx, params: URLSearchParams, store: S
 // The demo's one write gate
 
 /** Actions anyone may send on a demo team: signing in and out, and reads sent as POST. */
-const DEMO_OPEN_ACTIONS: ReadonlySet<string> = new Set(['sign-in', 'verify', 'sign-out', 'build-state', 'build-checks']);
+const DEMO_OPEN_ACTIONS: ReadonlySet<string> = new Set(['sign-in', 'verify', 'sign-out', 'build-state', 'build-checks', 'build-review']);
 
 /** The refusal code of a write on a demo team by someone who is not on it; Studio opens its demo dialog on it. */
 export const DEMO_REFUSAL = 'demo';
@@ -1440,6 +1450,9 @@ interface BuildFacts {
   /** The developers' branch and who opened it: the page fills the build's preview and names the builder from them. */
   ref?: string;
   builder?: string;
+  /** The exploration's branch (the approved design's preview) and the developers' pull request text (what they meant). */
+  exRef?: string;
+  devBody?: string;
 }
 // Ten minutes: a push or a closed pull request reaches the webhook, which forgets them (designCheckFor); an answer
 // reads everything again. A cold visit after a deploy then still answers from them.
@@ -1463,7 +1476,41 @@ export const BUILD_WORDS = {
  * changes (the build is off, or the design must change), with their note; Bridge signs it on the developers' pull
  * request. Members by email and PMs who only view go through here: the words are Bridge's to write.
  */
-async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, write: boolean): Promise<Response> {
+/** What a build check read knows (readBuild): who asks, the exploration, the developers' work and who must check. */
+interface BuildRead {
+  t: { owner: string; repo: string; full: string };
+  who: { email?: string; login?: string; name: string; lead: boolean };
+  product: string;
+  n: number;
+  copy: string;
+  pair: ProductPair;
+  co: string;
+  cn: string;
+  ro: string;
+  rn: string;
+  block: Record<string, unknown>;
+  task: { repo: string; number: number };
+  dev: { number: number; url: string; draft?: boolean };
+  head: string;
+  ref: string | null;
+  builder: string | null;
+  exRef: string | null;
+  devBody: string;
+  /** Read fresh only (an answer): the tokens and the exploration's body. Empty from the kept facts. */
+  copyToken: string;
+  token: string;
+  exBody: string;
+  pm: Awaited<ReturnType<typeof pmOf>>;
+  need: BuildNeed;
+  role: BuildRole | null;
+}
+
+/**
+ * The facts of a build check (onBuild, onBuildReview, onBuildItem, onBuildNote): who asks and their role, the
+ * exploration and the developers' pull request and head. `fresh` reads GitHub again (an answer); a read reuses what
+ * GitHub said a few minutes ago. A Response when there is nothing to check (or no right to read it).
+ */
+async function readBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, write: boolean, fresh = write): Promise<BuildRead | Response> {
   const team = parseRepo(body.repo);
   const t = { ...team, full: team.full.toLowerCase() };
   // A visitor of a demo team reads where the check stands, as a member who views it does; only members answer.
@@ -1471,11 +1518,13 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   if (!who) return fail(401, 'signin', SIGNIN);
   const product = typeof body.product === 'string' ? body.product.trim().toLowerCase() : '';
   const n = Number(body.number);
-  const copy = typeof body.copy === 'string' ? body.copy.toLowerCase() : '';
+  const asked = typeof body.copy === 'string' ? body.copy.toLowerCase() : '';
   if (!PRODUCT_KEY.test(product) || !Number.isSafeInteger(n) || n < 1) return fail(400, 'bad_request', PM_WORDS.noExploration);
   const facts = await teamFacts(ctx, t);
-  const pair = facts.pairs.find((p) => p.key?.toLowerCase() === product && p.copy === copy);
+  // The review mode names the product only: its design copy is the team's (a product has one).
+  const pair = facts.pairs.find((p) => p.key?.toLowerCase() === product && (p.copy === asked || !asked));
   if (!pair) return fail(404, 'no_product', PM_WORDS.noProduct);
+  const copy = pair.copy;
   // Nothing to check yet: a read says so plainly (200, ready false), so a page that asks early logs no error; an answer
   // is refused (409).
   const notReady = () => (write ? fail(409, 'not_ready', BUILD_WORDS.notReady) : json(200, { ready: false, message: BUILD_WORDS.notReady }));
@@ -1485,7 +1534,7 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   // the page opens in a second. An answer reads everything again, and so does a push (the webhook forgets it).
   const factsKey = buildFactsKey(copy, n);
   let kept: BuildFacts | null = null;
-  if (!write) {
+  if (!fresh) {
     try {
       const raw = await ctx.svc.redis.cmd('GET', factsKey);
       kept = typeof raw === 'string' ? (JSON.parse(raw) as BuildFacts) : null;
@@ -1502,10 +1551,14 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   let head: string;
   let ref: string | null = null;
   let builder: string | null = null;
+  let exRef: string | null = null;
+  let devBody = '';
   if (kept) {
     ({ block, task, dev, head } = kept);
     ref = kept.ref ?? null;
     builder = kept.builder ?? null;
+    exRef = kept.exRef ?? null;
+    devBody = kept.devBody ?? '';
   } else {
     // Both tokens at once: the developers' one is needed two reads later.
     const [ct, dt] = await Promise.all([ctx.svc.app.installationToken(co, cn), ctx.svc.app.installationToken(ro, rn)]);
@@ -1516,6 +1569,7 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
     if (!b) return fail(404, 'not_found', PM_WORDS.noExploration);
     block = b as Record<string, unknown>;
     exBody = String(ex.data?.body ?? '');
+    exRef = typeof ex.data?.head?.ref === 'string' ? (ex.data.head.ref as string) : null;
     const tk = taskOfUrl(block.task);
     // Only the task of that product, in its developers' repository.
     if (!tk || tk.repo !== canonicalRepo(pair.code).toLowerCase()) return notReady();
@@ -1532,7 +1586,8 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
     head = h;
     ref = typeof pr.data?.head?.ref === 'string' ? pr.data.head.ref : null;
     builder = typeof pr.data?.user?.login === 'string' ? pr.data.user.login : null;
-    await ctx.svc.redis.cmd('SET', factsKey, JSON.stringify({ block, task, dev, head, ...(ref ? { ref } : {}), ...(builder ? { builder } : {}) } satisfies BuildFacts), 'EX', BUILD_FACTS_S).catch(() => undefined);
+    devBody = typeof pr.data?.body === 'string' ? (pr.data.body as string).slice(0, 4000) : '';
+    await ctx.svc.redis.cmd('SET', factsKey, JSON.stringify({ block, task, dev, head, ...(ref ? { ref } : {}), ...(builder ? { builder } : {}), ...(exRef ? { exRef } : {}), ...(devBody ? { devBody } : {}) } satisfies BuildFacts), 'EX', BUILD_FACTS_S).catch(() => undefined);
   }
   const pm = await pmOf(ctx.svc.redis, t.full, product);
   // The design lead checks again only when the exploration sent pieces to the library: those change since approval.
@@ -1540,6 +1595,19 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
   const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block.leadPieces) && block.leadPieces.length > 0, names: { ...(designerName ? { designer: designerName } : {}), ...(pm ? { pm: pm.name } : {}) } };
   const designer = Boolean((typeof block.member === 'string' && who.email && block.member === memberRef(who.email)) || (who.login && [block.author, block.doneBy].some((a) => typeof a === 'string' && a.toLowerCase() === who.login!.toLowerCase())));
   const role: BuildRole | null = designer ? 'designer' : isPm(pm, who) ? 'pm' : who.lead ? 'lead' : null;
+  // Check the build, region by region: a read asks Bridge's workflow to measure this head when it has no measure yet.
+  if (!write && exRef && ref) {
+    const route = screenOf(block.screen) ?? (await shotMeta(ctx.svc.redis, copy, n).catch(() => null))?.route ?? null;
+    const doneSha = typeof block.doneSha === 'string' && /^[0-9a-f]{40}$/.test(block.doneSha) ? block.doneSha : undefined;
+    await queueBuild(ctx.svc.redis, { team: t.full, product, copy, number: n, code: pair.code.toLowerCase(), pull: dev.number, head, route, approved: { branch: exRef, ...(doneSha ? { sha: doneSha } : {}) }, build: { branch: ref }, at: new Date(ctx.now()).toISOString() });
+  }
+  return { t, who, product, n, copy, pair, co, cn, ro, rn, block, task, dev, head, ref, builder, exRef, devBody, copyToken, token, exBody, pm, need, role };
+}
+
+async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, write: boolean): Promise<Response> {
+  const r = await readBuild(req, ctx, body, write);
+  if (r instanceof Response) return r;
+  const { t, who, product, n, copy, pair, co, cn, ro, rn, block, task, dev, head, ref, builder, copyToken, token, exBody, pm, need, role } = r;
   let words = (await buildRecordOf(ctx.svc.redis, pair.code, dev.number)).words;
   if (!write) words = await saveBuild(ctx.svc.redis, pair.code, dev.number, need);
   if (write) {
@@ -1551,6 +1619,8 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
     const word: BuildWord = { role, ...(who.login ? { by: who.login } : {}), byName: who.name, kind, ...(kind === 'changes' ? { why: body.why === 'design' ? 'design' : 'build', text } : {}), sha: head, at: new Date(ctx.now()).toISOString() };
     words = await saveBuild(ctx.svc.redis, pair.code, dev.number, need, word);
     await ghAppSend(ctx, token, 'POST', `/repos/${ro}/${rn}/issues/${dev.number}/comments`, { body: buildComment(word) });
+    // From the review mode: the things this person asked to fix, in one comment on the developers' task, with pictures.
+    if (kind === 'changes' && word.why === 'build' && body.fixes === true) await postFixes(req, ctx, r, word, words).catch(() => undefined);
     // The design must change: the exploration runs again for its designer (Back to exploring, a new round, then the
     // lead again), and the developers' task leaves their list with the word that says so.
     if (kind === 'changes' && word.why === 'design') {
@@ -1591,6 +1661,198 @@ async function onBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, wr
 }
 
 const EXPLORATION_LABEL_SERVER = 'exploration';
+
+// ---------------------------------------------------------------------------------------------------------------
+// Check the build, region by region (api/_lib/build-review.ts): the review mode's reads and answers
+
+const buildCtxOf = (c: { f: FetchLike; now: () => number; svc: Services; store: ShotStore | null }): BuildCtx => ({ f: c.f, now: c.now, redis: c.svc.redis, store: c.store, token: (o, r) => c.svc.app.installationToken(o, r) });
+
+/** The review mode's address of a build check: where a comment on the developers' task sends them to answer. */
+const reviewLinkOf = (req: Request, ctx: Ctx, r: Pick<BuildRead, 't' | 'n' | 'product'>) => `${teamBase(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), r.t.full)}explorations/review/?exploration=${r.n}&product=${encodeURIComponent(r.product)}`;
+
+export const BUILD_REVIEW_WORDS = {
+  notYours: 'Only its designer, the product manager or a design lead answers on the build.',
+  gone: 'This difference is not in the last check any more. Reload the page.',
+  limit: 'Many comments today already. Try again tomorrow.',
+};
+/** Comments and answers posted on developers' tasks per team per UTC day. */
+export const BUILD_NOTE_LIMIT = 300;
+
+/** The handover notes of an exploration (decisions, edge cases), read from its branch, kept ten minutes. */
+async function handoverFor(ctx: Ctx, r: BuildRead): Promise<ReturnType<typeof handoverOf>> {
+  const key = `bridge:build:handover:${r.copy}#${r.n}`;
+  const kept = await ctx.svc.redis.cmd('GET', key).catch(() => null);
+  if (typeof kept === 'string') {
+    try {
+      return JSON.parse(kept) as ReturnType<typeof handoverOf>;
+    } catch {
+      /* read again */
+    }
+  }
+  const slug = typeof r.block.slug === 'string' && /^[a-z0-9-]{1,80}$/.test(r.block.slug) ? r.block.slug : null;
+  const token = slug && r.exRef ? await ctx.svc.app.installationToken(r.co, r.cn) : null;
+  const res = token ? await ghApp(ctx, token, 'GET', `/repos/${r.co}/${r.cn}/contents/.bridge/explorations/${slug}.md?ref=${encodeURIComponent(r.exRef!)}`).catch(() => null) : null;
+  const md = res?.status === 200 && typeof res.data?.content === 'string' ? Buffer.from(res.data.content, 'base64').toString('utf8') : null;
+  const out = handoverOf(md);
+  await ctx.svc.redis.cmd('SET', key, JSON.stringify(out), 'EX', 600).catch(() => undefined);
+  return out;
+}
+
+/** The differences the developers name in their pull request text: they meant those. Pure. */
+export function mentionedItems(devBody: string, items: readonly { sig: string; name: string }[]): string[] {
+  const text = ` ${devBody.toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;
+  return items
+    .filter((i) => {
+      const name = i.name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      return name.length >= 4 && !['page', 'section', 'header', 'top bar', 'navigation'].includes(name) && text.includes(` ${name} `);
+    })
+    .map((i) => i.sig);
+}
+
+/**
+ * POST { action: 'build-review', repo, product, copy, number }: everything the review mode shows. The check (as
+ * build-state reads it), the round, the measure of the build's head (or of an earlier head while the new one is
+ * measured: `review.head` says which), where each difference stands for the reader, the comments, the handover notes.
+ */
+async function onBuildReview(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const r = await readBuild(req, ctx, body, false);
+  if (r instanceof Response) return r;
+  const code = r.pair.code.toLowerCase();
+  const [record, review, words, notes, handover] = await Promise.all([buildRecordOf(ctx.svc.redis, code, r.dev.number), readBuildReview(ctx.svc.redis, code, r.dev.number), itemWordsOf(ctx.svc.redis, code, r.dev.number), notesOf(ctx.svc.redis, code, r.dev.number), handoverFor(ctx, r)]);
+  const round = roundOf(record.words, r.head);
+  const st = buildStateOf(record.words, r.head, r.need);
+  const states = review ? itemStates(review.items, words, round, r.role) : { items: [], fixed: [] };
+  const nameOf = async (login: string | null | undefined) => (login && /^[A-Za-z0-9-]{1,39}$/.test(login) ? ((await profileNameOf(readCtxOf(ctx), r.ro, r.rn, login).catch(() => null)) ?? login) : (login ?? null));
+  const designerLogin = typeof r.block.author === 'string' ? r.block.author : typeof r.block.doneBy === 'string' ? r.block.doneBy : null;
+  const [builderName, designerName] = await Promise.all([nameOf(r.builder), typeof r.block.memberName === 'string' ? Promise.resolve(r.block.memberName) : nameOf(designerLogin)]);
+  const queued = (await ctx.svc.redis.cmd('GET', `bridge:build:review:job:${code}#${r.dev.number}`).catch(() => null)) !== null;
+  return json(
+    200,
+    {
+      ready: true,
+      ...st,
+      head: r.head,
+      code,
+      round,
+      role: r.role,
+      me: r.who.name,
+      pm: r.pm ? r.pm.name : null,
+      pull: { number: r.dev.number, url: r.dev.url, ...(r.ref ? { ref: r.ref } : {}), ...(r.builder ? { builder: r.builder } : {}), ...(builderName ? { builderName } : {}) },
+      ...(designerName ? { designerName } : {}),
+      exploration: { name: typeof r.block.name === 'string' ? r.block.name.slice(0, 120) : 'Exploration', screen: screenOf(r.block.screen), branch: r.exRef },
+      review,
+      queued,
+      items: states.items,
+      fixed: states.fixed,
+      meant: review ? mentionedItems(r.devBody, review.items) : [],
+      notes,
+      handover,
+    },
+    { 'Cache-Control': 'private, no-cache' },
+  );
+}
+
+/** POST { action: 'build-item', ..., sig, verdict: 'fine' | 'fix' | null }: one person's word on one difference this round. */
+async function onBuildItem(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const r = await readBuild(req, ctx, body, true, false);
+  if (r instanceof Response) return r;
+  if (!r.role) return fail(403, 'not-allowed', BUILD_REVIEW_WORDS.notYours);
+  const code = r.pair.code.toLowerCase();
+  const review = await readBuildReview(ctx.svc.redis, code, r.dev.number);
+  const it = review?.items.find((i) => i.sig === body.sig);
+  if (!review || !it) return fail(409, 'gone', BUILD_REVIEW_WORDS.gone);
+  const verdict = body.verdict === 'fine' || body.verdict === 'fix' ? body.verdict : null;
+  const round = roundOf((await buildRecordOf(ctx.svc.redis, code, r.dev.number)).words, r.head);
+  const before = await itemWordsOf(ctx.svc.redis, code, r.dev.number);
+  const w: ItemWord | null = verdict ? { sig: it.sig, n: it.n, name: it.name, round, role: r.role, ...(r.who.login ? { by: r.who.login } : {}), byName: r.who.name, verdict, at: new Date(ctx.now()).toISOString() } : null;
+  const words = w ? withItemWord(before, w) : withoutItemWord(before, { sig: it.sig, round, role: r.role });
+  await saveItemWords(ctx.svc.redis, code, r.dev.number, words);
+  return json(200, { ok: true, round, items: itemStates(review.items, words, round, r.role).items });
+}
+
+/**
+ * POST { action: 'build-note', ..., op: 'add' | 'reply' | 'resolve', ... }: a comment pinned on a difference, an answer,
+ * or resolving it. A comment and an answer reach the developers' task, the comment with the difference's picture.
+ */
+async function onBuildNote(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const r = await readBuild(req, ctx, body, true, false);
+  if (r instanceof Response) return r;
+  if (!r.role) return fail(403, 'not-allowed', BUILD_REVIEW_WORDS.notYours);
+  const code = r.pair.code.toLowerCase();
+  const [review, record, threads] = await Promise.all([readBuildReview(ctx.svc.redis, code, r.dev.number), buildRecordOf(ctx.svc.redis, code, r.dev.number), notesOf(ctx.svc.redis, code, r.dev.number)]);
+  const round = roundOf(record.words, r.head);
+  const id = `n${Buffer.from(ctx.random(8)).toString('hex')}`;
+  const op = noteOpOf(body, review, round, id);
+  if (typeof op === 'string') return fail(400, 'bad_request', op);
+  const at = new Date(ctx.now()).toISOString();
+  const who = { ...(r.who.login ? { by: r.who.login } : {}), byName: r.who.name, role: r.role };
+  const next = applyNote(threads, op, who, at);
+  if (!next) return fail(404, 'not_found', 'This comment is gone. Reload the page.');
+  if (op.op !== 'resolve') await bumpOrRefuse(ctx, [`bridge:contrib:count:build-note:${r.t.full}:${dayOf(ctx.now())}`], [BUILD_NOTE_LIMIT], BUILD_REVIEW_WORDS.limit, 'build-note');
+  await saveNotes(ctx.svc.redis, code, r.dev.number, next);
+  if (op.op !== 'resolve') {
+    const t = next.find((x) => x.id === op.id)!;
+    const token = await ctx.svc.app.installationToken(r.ro, r.rn);
+    const image = op.op === 'add' && t.image ? signedImageUrl(siteOrigin(req, ctx.env.PUBLIC_SITE_URL), ctx.svc.secret, code, r.dev.number, t.run, t.image) : null;
+    const said = op.op === 'add' ? t : { ...t, ...who, text: op.text };
+    if (token) await ghAppSend(ctx, token, 'POST', `/repos/${r.ro}/${r.rn}/issues/${r.task.number}/comments`, { body: noteComment(said, { image, link: reviewLinkOf(req, ctx, r), reply: op.op === 'reply' }) }).catch(() => undefined);
+  }
+  return json(200, { ok: true, notes: next });
+}
+
+/** The things one person asked to fix this round, in one comment on the developers' task (build-word with fixes). */
+async function postFixes(req: Request, ctx: Ctx, r: BuildRead, word: BuildWord, buildWords: BuildWord[]): Promise<void> {
+  const code = r.pair.code.toLowerCase();
+  const [review, words] = await Promise.all([readBuildReview(ctx.svc.redis, code, r.dev.number), itemWordsOf(ctx.svc.redis, code, r.dev.number)]);
+  if (!review || !r.role) return;
+  const round = roundOf(buildWords, r.head);
+  const states = itemStates(review.items, words, round, r.role).items;
+  const fixes = review.items.filter((it) => states.find((s) => s.sig === it.sig)?.mine === 'fix');
+  if (!fixes.length) return;
+  const origin = siteOrigin(req, ctx.env.PUBLIC_SITE_URL);
+  const kept = states.filter((s) => s.mine === 'fine' || s.carried).length;
+  const body = fixesComment({
+    byName: word.byName,
+    role: r.role,
+    round,
+    fixes: fixes.map((f) => ({ n: f.n, name: f.name, line: f.line, facts: f.facts, image: f.crop.b ? signedImageUrl(origin, ctx.svc.secret, code, r.dev.number, review.run, f.crop.b) : null })),
+    note: word.text ?? '',
+    kept,
+    link: reviewLinkOf(req, ctx, r),
+  });
+  await ghAppSend(ctx, r.token, 'POST', `/repos/${r.ro}/${r.rn}/issues/${r.task.number}/comments`, { body });
+}
+
+/**
+ * GET ?buildImage=1&code=&pull=&run=&name=: one picture of a measured build. With a valid `sig` (a crop posted on the
+ * developers' task) for anyone holding the address; else for a reader of the team (`repo`) who may read both product
+ * repositories, and only an image the last measure names.
+ */
+async function onBuildImage(req: Request, ctx: Ctx, params: URLSearchParams, store: ShotStore | null): Promise<Response> {
+  const code = String(params.get('code') ?? '').toLowerCase();
+  const pull = Number(params.get('pull'));
+  const run = String(params.get('run') ?? '');
+  const name = String(params.get('name') ?? '');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(code) || !Number.isSafeInteger(pull) || pull < 1) return fail(400, 'bad_request', 'Say which build.');
+  const signed = imageSigOk(ctx.svc.secret, code, pull, run, name, params.get('sig'));
+  if (!signed) {
+    const { owner, repo, full } = parseRepo(params.get('repo'));
+    const rctx = readCtxOf(ctx);
+    const reader = await readerOf(ctx, req, full, rctx);
+    if (!reader) return json(401, { error: 'signin', message: SIGNIN });
+    const pair = (await teamFacts(ctx, { owner, repo, full: full.toLowerCase() })).pairs.find((p) => p.code.toLowerCase() === code);
+    if (!pair) return fail(404, 'not_found', 'No such picture.');
+    for (const target of [pair.code, pair.copy]) {
+      const [po, pn] = target.split('/') as [string, string];
+      await productReadAllowed(rctx, { owner, repo }, { owner: po, repo: pn }, reader);
+    }
+    const review = await readBuildReview(ctx.svc.redis, code, pull);
+    if (!review || review.run !== run || !imagesOf(review).has(name)) return fail(404, 'not_found', 'No such picture.');
+  }
+  const bytes = await buildImageBytes(store, code, pull, run, name);
+  if (!bytes) return fail(404, 'not_found', 'No such picture.');
+  return new Response(Buffer.from(bytes), { status: 200, headers: { ...SECURITY_HEADERS, 'Content-Type': 'image/webp', 'Cache-Control': signed ? 'public, max-age=604800, immutable' : 'private, max-age=86400, immutable' } });
+}
 
 /**
  * POST { action: 'build-checks', repo, pulls: [{ code, number }] }: for the lists (Being built, Home, Changes), where the
@@ -3336,6 +3598,24 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       if (reachAction === 'image' && method === 'POST') return await putReachImage(sctx, await readBody(req, 600_000));
       if (reachAction === 'done' && method === 'POST') return await putReachSummary(sctx, await readBody(req, 400_000));
       return fail(405, 'method', 'GET the todo list, POST an image or the summary.');
+    }
+    // The same workflow measures the builds Studio checks (api/_lib/build-review.ts): same identity, same store.
+    const buildAction = params.get('buildRun');
+    if (buildAction === 'todo' || buildAction === 'image' || buildAction === 'done') {
+      const svc0 = services(env, deps);
+      if (!svc0) return fail(503, 'not_configured', NOT_CONFIGURED);
+      const bctx = buildCtxOf({ f: deps.fetch, now: deps.now ?? Date.now, svc: svc0, store: shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots) });
+      if (!(await workflowClaims(bctx, req.headers.get('authorization')))) return fail(401, 'signin', 'Only Bridge\'s capture workflow sends screenshots.');
+      if (buildAction === 'todo' && method === 'GET') return json(200, { jobs: await buildTodo(bctx, params.get('force') === '1') });
+      if (buildAction === 'image' && method === 'POST') return await putBuildImage(bctx, await readBody(req, 600_000));
+      if (buildAction === 'done' && method === 'POST') return await putBuildSummary(bctx, await readBody(req, 400_000));
+      return fail(405, 'method', 'GET the todo list, POST an image or the summary.');
+    }
+    // A picture of a measured build: signed (GitHub's image proxy, no cookie) or for a reader of the team.
+    if (method === 'GET' && params.get('buildImage') === '1' && !cross) {
+      const svc1 = services(env, deps);
+      if (!svc1) return fail(503, 'not_configured', NOT_CONFIGURED);
+      return await onBuildImage(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc: svc1, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
     }
     if (method !== 'GET') requireCsrf(req);
     const svc = services(env, deps);

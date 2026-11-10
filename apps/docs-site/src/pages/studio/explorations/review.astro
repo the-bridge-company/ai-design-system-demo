@@ -1,0 +1,13 @@
+---
+// Check the build, region by region (Studio review mode): a focused full screen over Studio, opened from an exploration
+// at Check the build (?exploration=N&product=K, &item=<difference> to open at one). One island
+// (components/ds/studio/BuildReview) reads and answers through Bridge's server (scripts/build-review-data.ts); the rules
+// are lib/build-review-view.ts. Team shell: pages/team-shell/explorations/review.astro.
+import '../../../styles/build-review.css';
+import Layout from '../../../layouts/Layout.astro';
+import BuildReview from '../../../components/ds/studio/BuildReview';
+---
+
+<Layout title="Check the build" description="The developers' build beside the approved design, one difference at a time." wide>
+  <BuildReview client:only="react" />
+</Layout>

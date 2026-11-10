@@ -221,6 +221,8 @@ export const SCREEN_WORDS = {
   mismatch: (screen: string) => `This capture shows another screen, not ${screen}.`,
   mismatchHint: 'The two sides would compare different screens.',
   latest: (when: string) => (when ? `your latest version, ${when}` : 'your latest version'),
+  /** The lead was asked, then the designer changed it: the screen says so, once, in its own line. */
+  changedSinceAsked: (designer: string, when: string) => `${possessiveOf(designer)} version, changed ${when ? `${when}, ` : ''}after you were asked`,
 } as const;
 
 /** "Sofia's", "James'". */

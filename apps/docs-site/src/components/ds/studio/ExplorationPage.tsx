@@ -476,6 +476,12 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
       >
         Send to the developers
       </Button>
+      {bar.blocked && (
+        // What the primary waits for, right beside it: a pointer to the library block, never a second place to choose.
+        <Link href="#xp-library" id="xp-lead-blocked" className="xp-turn-helper">
+          {bar.blocked}
+        </Link>
+      )}
     </>
   );
   return (
@@ -487,14 +493,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
         quote={question ? <AskQuote who={designer} verb="asks" text={question} action={<Link href="#xp-compose">Answer</Link>} /> : null}
         actions={actions}
       >
-        <p>{line}</p>
-        {bar.changedSince && <p className="xp-muted">Changed since you were asked. The screen shows the latest version.</p>}
-        {bar.blocked && (
-          // A pointer, never a second place to choose: the choice lives in the library section.
-          <Link variant="standalone" href="#xp-library" id="xp-lead-blocked">
-            {bar.blocked}
-          </Link>
-        )}
+        {line && <p>{line}</p>}
       </TurnZone>
     </>
   );
@@ -1090,7 +1089,9 @@ function ExplorationBody(p: ExplorationPageProps) {
       ? `live in ${product || 'the product'}`
       : isOwner
         ? SCREEN_WORDS.latest(capturedSub)
-        : `${possessive(p.author.name)} latest version${capturedSub ? `, ${capturedSub}` : ''}`;
+        : p.lead?.bar?.changedSince
+          ? SCREEN_WORDS.changedSinceAsked(p.author.name, capturedSub)
+          : `${possessive(p.author.name)} latest version${capturedSub ? `, ${capturedSub}` : ''}`;
   const figmaShown = !p.archived && Boolean(p.notes?.notes?.figmaPage || p.figma);
   // The AI tool beside the screen for whoever keeps working on it, when the zone does not already hold it.
   const continueHere = !handoff && !p.archived && isOwner && zone !== 'done' && zone !== 'answer-lead';

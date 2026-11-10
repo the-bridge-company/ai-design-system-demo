@@ -1179,61 +1179,6 @@
   container-type: inline-size;
 }
 
-/* The page's left column is narrower than Library review: the ways of a component go two by two, so no plate is cut. */
-@media (min-width: 961px) {
-  @container (max-width: 47.5rem) {
-    .xp-library .li-ways {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      row-gap: var(--space-5);
-    }
-
-    /* Today and the chosen way stay on the first row, the others under them. */
-    .xp-library .li-ways > .li-way-today,
-    .xp-library .li-ways > .li-today-li {
-      order: -2;
-    }
-
-    .xp-library .li-ways > .li-way.is-on {
-      order: -1;
-    }
-
-    /* A row: what it is with its tag and menu on the first line, the before and after under it. */
-    .xp-library .li-row {
-      grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
-      grid-template-areas:
-        'what status menu'
-        'compare compare compare';
-      gap: var(--space-3) var(--space-4);
-    }
-
-    .xp-library .li-what {
-      grid-area: what;
-    }
-
-    .xp-library .li-compare {
-      grid-area: compare;
-    }
-
-    .xp-library .li-status,
-    .xp-library .li-menu {
-      align-self: start;
-    }
-
-    .xp-library .li-status {
-      grid-area: status;
-    }
-
-    .xp-library .li-menu {
-      grid-area: menu;
-    }
-
-    .xp-library .has-conflict > .li-row {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-areas: 'what status';
-    }
-  }
-}
-
 .xp-devline {
   font-size: var(--typography-body-size);
 }

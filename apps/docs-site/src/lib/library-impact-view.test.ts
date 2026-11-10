@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
-import { keepLabel, keptKeys, leadBuildLine, leadLibraryLine, libraryImpactView, lookOf, looksRightBlock, namesLine, pickOf, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
+import { decidedParts, keepLabel, KEEP_TODAY, keptKeys, leadBuildLine, leadLibraryLine, ledgerLabel, ledgerPick, libraryImpactView, libraryOptions, lookOf, looksRightBlock, namesLine, pickNames, pickOf, proposeNames, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen. The library has nothing like it yet.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 const compact: MissingPiece = { id: 'statcard-size-compact', kind: 'variant', title: 'StatCard: compact size', summary: 'A compact size for StatCard.', name: 'compact', component: 'StatCard', aspect: 'size', values: [{ category: 'size', property: 'size', value: 'compact' }], where: [], change: { before: 'default', after: 'compact' } };
@@ -185,7 +185,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
       [16, 8],
     ]);
     expect(c.context.map((s) => s.text).join('')).toBe("Two more screens change Card: Sofia's Contact page summary makes it roomier, Ann's Activity feed filters makes it filled, no border. All in Acme CRM.");
-    expect(c.note).toBe('Answers 3 screens. Leo, Sofia and Ann are told.');
+    expect(c.note).toBe('Answers all 3 screens. Leo, Sofia and Ann are told.');
     expect(c.todayHint).toBe('Stays the default');
     const kept = [c.ways[0]!.key, c.ways[1]!.key];
     expect(keepLabel('sizes', kept, c.ways)).toBe('Keep 2 sizes: Tighter and Roomier');
@@ -206,7 +206,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: libraryConflicts(leo, many), others: many }));
     expect(c.ways).toHaveLength(11);
     expect(c.context.map((s) => s.text).join('')).toMatch(/^Ten more screens change Card: P0's Screen 0 makes it .*, P1's Screen 1 makes it .* and 8 more\. All in Acme CRM\.$/);
-    expect(c.note).toBe('Answers 11 screens. Everyone who asked is told.');
+    expect(c.note).toBe('Answers all 11 screens. Everyone who asked is told.');
     expect(namesLine(['Leo', 'Sofia', 'Ann', 'Max', 'Kim'])).toBe('Leo, Sofia and 3 others');
   });
 
@@ -229,6 +229,76 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(looksRightBlock(settled)).toBeNull();
     const one = keptKeys(sofia.key, v.conflicts[0]!.ways);
     expect(one).toEqual({ mode: 'one', keys: [sofia.key] });
+  });
+
+  it("reads Card padding like Card's own options (board v3): the new value to add, the default and Compact already there", () => {
+    const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.count).toBe('1 change');
+    expect(v.tail).toBe('1 waits for you');
+    expect(v.rows[0]!.tag).toEqual({ label: 'New option', tone: 'info' });
+    expect(v.rows[0]!.origin).toEqual({ people: ['Leo', 'Sofia'], products: ['Acme CRM'] });
+    const L = conflictOf(v).ledger;
+    expect(L.property).toBe('Padding');
+    expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '20 px', '+4 px', "Sofia's way · Contact page summary · Acme CRM"]]);
+    expect(L.have.map((r) => [r.name, r.value, r.delta, r.isDefault, r.line])).toEqual([
+      ['Default', '16 px', null, true, 'Every screen gets it today. It stays the default.'],
+      ['Compact', '12 px', '−4 px', false, "Leo's screen can use Compact as it is · Deal pipeline cards · Acme CRM"],
+    ]);
+  });
+
+  it('continues the option series for new values and says the outcome on the button', () => {
+    const card = libraryOptions('Card', 'padding', null);
+    expect([...proposeNames([20, 24], card)]).toEqual([
+      [20, 'Comfortable'],
+      [24, 'Spacious'],
+    ]);
+    expect([...proposeNames([8, 4, 28], card)]).toEqual([
+      [28, 'Comfortable'],
+      [8, 'Tight'],
+      [4, 'Dense'],
+    ]);
+    // A part Bridge does not know: today's value is the default, the rest continues from it.
+    expect(libraryOptions('Stat card', 'padding', 16)).toEqual([{ name: 'Default', px: 16, isDefault: true }]);
+    expect(ledgerLabel('Card', ['Comfortable'])).toBe('Add Comfortable to Card');
+    expect(ledgerLabel('Card', ['Comfortable', 'Spacious'])).toBe('Add 2 options to Card');
+    expect(ledgerLabel('Card', [])).toBe("Keep today's Card");
+  });
+
+  it('records the ticks and a rename in the pick, and folds a decided part into one sentence', () => {
+    expect(ledgerPick([])).toBe(KEEP_TODAY);
+    const pick = ledgerPick([{ keys: [sofia.key], name: 'Roomy', proposed: 'Comfortable' }]);
+    expect(pick).toBe(`sizes:${sofia.key}=Roomy`);
+    expect(pickNames(pick)).toEqual({ [sofia.key]: 'Roomy' });
+    expect(ledgerPick([{ keys: [sofia.key], name: 'Comfortable', proposed: 'Comfortable' }])).toBe(`sizes:${sofia.key}`);
+    const body = withExplorationLibrary(leoBody, (l) => withLibraryChoice(l, { component: 'Card', property: 'padding', pick: `sizes:${sofia.key}`, at: '2026-11-10T10:00:00Z', byName: 'Dana Wells' }));
+    const settled = libraryConflicts({ ...leo, library: parseExplorationBody(body)?.library ?? null }, [sofia]);
+    const v = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, conflicts: settled, others: [sofia] });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.tail).toBe('decided');
+    expect(v.rows[0]!.tag).toEqual({ label: 'Decided', tone: 'success' });
+    const said = v.rows[0]!.settled!;
+    expect(said.map((s) => s.text).join('')).toBe("Card gets a new padding option, Comfortable 20 px, for Sofia's screen. Default 16 px stays the default. Decided by Dana, just now.");
+    expect(said.filter((s) => s.strong).map((s) => s.text)).toEqual(['Comfortable 20 px', 'Default 16 px']);
+    const renamed = decidedParts(pick, v.conflicts[0]!.ways, 'Card', v.conflicts[0]!.ledger, '');
+    expect(renamed.map((s) => s.text).join('')).toBe("Card gets a new padding option, Roomy 20 px, for Sofia's screen. Default 16 px stays the default.");
+    const kept = decidedParts(KEEP_TODAY, v.conflicts[0]!.ways, 'Card', v.conflicts[0]!.ledger, '');
+    expect(kept.map((s) => s.text).join('')).toBe('Card keeps its padding options as they are. Default 16 px stays the default.');
+    expect(keptKeys(KEEP_TODAY, v.conflicts[0]!.ways)).toEqual({ mode: 'sizes', keys: [] });
+  });
+
+  it('folds a decided new component into one sentence, with who decided', () => {
+    const body = withExplorationLibrary(bodyWith([timeline]), (l) => withPieceDecision(l, { piece: 'component-timeline', verdict: 'approved', at: '2026-11-10T10:00:00Z', byName: 'Dana' }));
+    const v = libraryImpactView({ body, designer: 'Sofia', product: 'Acme Prints', lead: 'you', approved: false, canDecide: true, now: new Date('2026-11-10T10:00:20Z') });
+    if (v.state !== 'rows') throw new Error(v.state);
+    expect(v.rows[0]!.tag).toEqual({ label: 'Decided', tone: 'success' });
+    expect(v.rows[0]!.origin).toEqual({ people: ['Sofia'], products: ['Acme Prints'] });
+    expect(v.rows[0]!.settled!.map((s) => s.text).join('')).toBe('Timeline is added to the library, for every product. Decided by Dana, just now.');
+    expect(v.tail).toBe('decided');
+    const open = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'you', approved: false, canDecide: true });
+    if (open.state !== 'rows') throw new Error(open.state);
+    expect(open.rows[0]!.tag).toEqual({ label: 'New', tone: 'info' });
+    expect(open.rows[0]!.settled).toBeNull();
   });
 
   it('offers the choice in the library section only: the zone says nothing of it, the bar points to it', () => {

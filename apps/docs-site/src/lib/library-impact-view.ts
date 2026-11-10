@@ -52,6 +52,21 @@ export interface ImpactRowView {
    * back to Library review with the reason. The lead's name, or null when the viewer cannot reply.
    */
   reply: string | null;
+  /** The piece's one tag on its header line (ledger board v3): "New", "New option", "2 new options", "Decided". */
+  tag: PieceTag;
+  /** Where it comes from, on the right of its header: the designers' faces and their products. */
+  origin: { people: string[]; products: string[] };
+  /**
+   * Settled: the row folds into one sentence ("Timeline is added to the library, for every product. Decided by Dana,
+   * just now."). Null while it waits, or when the row says its state another way (its note).
+   */
+  settled: Said[] | null;
+}
+
+/** The one tag of a piece: what it is while it waits, its state once answered. */
+export interface PieceTag {
+  label: string;
+  tone: ImpactStatus['tone'];
 }
 
 /** What the ⋯ menu of a piece offers (LI3). */
@@ -122,6 +137,11 @@ export interface NotePart {
 export interface DecidedView {
   /** "Card gets two new sizes", "Card takes Sofia's way". */
   title: string;
+  /**
+   * The ledger's one sentence (board v3): "Card gets a new padding option, **Comfortable 20 px**, for Sofia's screen.
+   * **Default 16 px** stays the default. Decided by Dana, just now."
+   */
+  parts: Said[];
   /** "Dana, just now". */
   by: string;
   /** "Leo and Sofia are told". */
@@ -174,6 +194,43 @@ export interface ConflictView {
   /** The way kept ("owner/repo#12"), "both", or "sizes:<key> <key>". Null while open. */
   pick: string | null;
   decided: DecidedView | null;
+  /** The component part's options as rows (board v3): the new ones to add, the ones already in the library. */
+  ledger: LedgerView;
+}
+
+/**
+ * One option of a component part, as the ledger reads it (board v3): "Padding: Comfortable", whose way it is, its value
+ * and how far it sits from the default.
+ */
+export interface OptionRow {
+  /** The ways (exploration keys) that ask for this value. Empty for the default nobody asked for. */
+  keys: string[];
+  /** The option's name: the library's own ("Default", "Compact"), or the one Bridge proposes ("Comfortable"). */
+  name: string;
+  /** "20 px", or the way in words when it is not a size ("Filled, no border"). */
+  value: string;
+  /** The value in pixels, when it is a size. */
+  px: number | null;
+  /** "+4 px" or "−4 px" against the default, when both are sizes. */
+  delta: string | null;
+  /** The library's default. */
+  isDefault: boolean;
+  /** Under the name: "Sofia's way · Order fulfilment timeline · Acme Prints". */
+  line: string;
+  /** The face before that line. */
+  face: string | null;
+  /** Who asked for it, by first name. */
+  designers: string[];
+  look: WayLook;
+}
+
+export interface LedgerView {
+  /** The part in words, before each option's name: "Padding". */
+  property: string;
+  /** Values the library does not have: each one a tick for the lead. */
+  fresh: OptionRow[];
+  /** Already in the library: the default first, then the options a screen can use as they are. */
+  have: OptionRow[];
 }
 
 export type LibraryImpactView =
@@ -183,6 +240,9 @@ export type LibraryImpactView =
   | {
       state: 'rows';
       summary: string;
+      /** The header's count ("2 changes") and what it waits for ("2 wait for you", "decided"), said once. */
+      count: string;
+      tail: string | null;
       rows: ImpactRowView[];
       /** One per component part, open or settled; each sits in the row of its piece. */
       conflicts: ConflictView[];
@@ -283,6 +343,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     const cv = views.find((v) => v.piece === i.id) ?? null;
     const status = impactStatus({ item: i, decision, conflict, approved: x.approved, link, released: Boolean(link && x.released?.has(link.number)), lead: x.lead, asked: x.asked ?? true });
     const open = !x.approved && x.canDecide && status.key !== 'conflict';
+    const settled = settledLine(i, status, decision, x.designer, names, x.now ?? new Date());
     const base: ImpactRowView = {
       id: i.id,
       kind: kindLine(i),
@@ -290,17 +351,27 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
       summary: i.summary,
       ...sides(i, x.designer),
       status,
-      note: noteOf(decision, names),
+      // A settled piece says it in its one sentence: no second note repeating it.
+      note: settled ? null : noteOf(decision, names),
       details: i.token ? [{ label: 'Token', value: i.token }] : [],
       menu: open ? (['approve', 'changes', 'local', 'existing'] as PieceAction[]).filter((a) => !(a === 'approve' && (decision?.verdict === 'approved' || link))) : [],
       reply: decision?.verdict === 'existing' && x.replyTo && !x.approved ? (decision.byName?.split(/\s+/)[0] ?? (decision.by ? (names[decision.by] ?? decision.by) : x.replyTo)) : null,
+      tag: tagOf(i, status),
+      origin: { people: [x.designer], products: x.product ? [x.product] : [] },
+      settled,
     };
     return cv ? conflictRow(base, cv, i) : base;
   });
   const everywhere = items.some((i) => i.everywhere);
   const products = x.products ?? [];
+  const waiting = rows.filter((r) => r.status.key === 'needs-lead' || r.status.key === 'conflict').length;
+  const done = rows.every((r) => SETTLED.has(r.status.key));
+  const forWhom = /^you$/i.test(x.lead) ? 'you' : x.lead;
+  const tail = waiting && (x.canDecide || (x.asked ?? true)) && !x.approved ? `${waiting} ${waiting === 1 ? 'waits' : 'wait'} for ${x.canDecide ? 'you' : forWhom}` : done ? 'decided' : null;
   return {
     state: 'rows',
+    count: `${items.length} ${items.length === 1 ? 'change' : 'changes'}`,
+    tail,
     // With ways to choose from, the count only (EB1): the choice says itself once, in its row's tag, and the footer
     // already says what else comes from the library.
     summary: conflicts.length ? `${items.length} ${items.length === 1 ? 'change' : 'changes'}` : impactSummary(items, []),
@@ -326,7 +397,49 @@ function conflictRow(base: ImpactRowView, cv: ConflictView, i: ImpactItem): Impa
       ? base.status
       : { key: 'approved', label: 'Decided', tone: 'success' }
     : { key: 'conflict', label: cv.tag, tone: 'warning' };
-  return { ...base, kind: 'Change to', title: cv.component, summary, before: null, after: null, status, menu: [] };
+  const n = cv.ledger.fresh.length;
+  const tag: PieceTag = settled ? { label: status.key === 'approved' ? 'Decided' : status.label, tone: status.key === 'approved' ? 'success' : status.tone } : { label: n > 1 ? `${n} new options` : 'New option', tone: 'info' };
+  const people = [...new Set(cv.ways.map((w) => w.designer))];
+  const products = [...new Set(cv.ways.map((w) => w.product).filter(Boolean))];
+  return { ...base, kind: 'Change to', title: cv.component, summary, before: null, after: null, status, menu: [], tag, origin: { people, products }, settled: cv.decided?.parts ?? null };
+}
+
+/** The states a piece is answered in: its row folds, and the block reads "decided" once every row is. */
+const SETTLED = new Set<ImpactStatus['key']>(['approved', 'building', 'released', 'local', 'existing']);
+
+/** The one tag of a piece (board v3): what it is while it waits ("New", "New option"), its state once answered. */
+function tagOf(i: ImpactItem, status: ImpactStatus): PieceTag {
+  if (status.key === 'approved' || status.key === 'local') return { label: 'Decided', tone: 'success' };
+  if (status.key === 'building' || status.key === 'released' || status.key === 'existing' || status.key === 'changes') return { label: status.label, tone: status.tone };
+  if (i.kind === 'token') return { label: 'Token change', tone: 'info' };
+  return { label: i.kind === 'variant' ? 'New option' : 'New', tone: 'info' };
+}
+
+const possessive = (name: string) => `${name}${/s$/i.test(name) ? "'" : "'s"}`;
+
+/** "Decided by Dana, just now.", from the lead's recorded answer. Empty when Bridge does not know who. */
+function decidedBy(d: { at?: string | undefined; by?: string | undefined; byName?: string | undefined } | null | undefined, names: Record<string, string>, now: Date): string {
+  const who = d?.byName?.split(/\s+/)[0] ?? (d?.by ? (names[d.by] ?? d.by) : null);
+  if (!who) return '';
+  const when = d?.at ? agoInSentence(d.at, now) : '';
+  return ` Decided by ${who}${when ? `, ${when}` : ''}.`;
+}
+
+/**
+ * A piece answered, in one sentence (board v3): "Timeline is added to the library, for every product. Decided by Dana,
+ * just now." Null while it waits, or for an answer the row says another way (changes asked, an existing piece).
+ */
+function settledLine(i: ImpactItem, status: ImpactStatus, d: Parameters<typeof decidedBy>[0], designer: string, names: Record<string, string>, now: Date): Said[] | null {
+  const by = decidedBy(d, names, now);
+  if (status.key === 'local') return [{ text: `${i.title} stays in ${possessive(designer)} screen only.${by}` }];
+  if (!['approved', 'building', 'released'].includes(status.key)) return null;
+  const what =
+    i.kind === 'component' || i.kind === 'pattern'
+      ? `${i.title} is added to the library, for every product.`
+      : i.kind === 'token'
+        ? `${i.title} changes in the library, for every product.`
+        : `${i.of ?? 'The component'} gets ${i.title.charAt(0).toLowerCase()}${i.title.slice(1)}.`;
+  return [{ text: `${what}${by}` }];
 }
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -417,15 +530,183 @@ export function wayWords(looks: readonly WayLook[], today: number | null): { siz
 /** The keys a pick keeps: one way, every way ("both"), or the ways kept as sizes ("sizes:<key> <key>"). */
 export function keptKeys(pick: string, ways: readonly { key: string }[]): { mode: 'one' | 'sizes'; keys: string[] } {
   if (pick === 'both') return { mode: 'sizes', keys: ways.map((w) => w.key) };
+  if (pick === KEEP_TODAY) return { mode: 'sizes', keys: [] };
   if (pick.startsWith('sizes:'))
     return {
       mode: 'sizes',
-      keys: pick
-        .slice('sizes:'.length)
-        .split(/\s+/)
-        .filter((k) => ways.some((w) => w.key === k)),
+      keys: Object.keys(pickNames(pick)).filter((k) => ways.some((w) => w.key === k)),
     };
   return { mode: 'one', keys: ways.some((w) => w.key === pick) ? [pick] : [] };
+}
+
+/** The lead keeps the component as it is today: no new option (board v3, "Keep today's Card"). */
+export const KEEP_TODAY = 'today';
+
+/**
+ * The names the lead gave the options kept, by way: "sizes:<key>=<name> <key>". A key without a name keeps the name
+ * Bridge proposed. Names are URI-encoded so a space stays inside one key.
+ */
+export function pickNames(pick: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!pick.startsWith('sizes:')) return out;
+  for (const t of pick.slice('sizes:'.length).split(/\s+/).filter(Boolean)) {
+    const at = t.indexOf('=');
+    const key = at < 0 ? t : t.slice(0, at);
+    let name = '';
+    if (at >= 0) {
+      try {
+        name = decodeURIComponent(t.slice(at + 1)).trim();
+      } catch {
+        name = '';
+      }
+    }
+    out[key] = name;
+  }
+  return out;
+}
+
+/**
+ * What the lead's ticks record (board v3): every way of each ticked option, with the option's name when the lead
+ * renamed it; nothing ticked keeps today's component.
+ */
+export function ledgerPick(ticked: readonly { keys: readonly string[]; name: string; proposed: string }[]): string {
+  const keys = ticked.flatMap((r) => r.keys.map((k, i) => (i === 0 && r.name.trim() && r.name.trim() !== r.proposed ? `${k}=${encodeURIComponent(r.name.trim())}` : k)));
+  return keys.length ? `sizes:${keys.join(' ')}` : KEEP_TODAY;
+}
+
+/** The primary button says the outcome: "Add Comfortable to Card", "Add 2 options to Card", "Keep today's Card". */
+export function ledgerLabel(component: string, names: readonly string[]): string {
+  if (!names.length) return `Keep today's ${component}`;
+  if (names.length === 1) return `Add ${names[0]} to ${component}`;
+  return `Add ${names.length} options to ${component}`;
+}
+
+/** An option the library component already has, as its code says. */
+export interface LibraryOption {
+  name: string;
+  px: number;
+  isDefault?: boolean;
+}
+
+/**
+ * The options of a library component part, from its code (packages/react/src/components/Card: padding is 'none',
+ * 'compact' (space-3, 12 px) or 'default' (layout-inset, 16 px)). A part Bridge does not know reads today's value
+ * alone, as the default.
+ */
+const LIBRARY_OPTIONS: Record<string, readonly LibraryOption[]> = {
+  'card|padding': [
+    { name: 'None', px: 0 },
+    { name: 'Compact', px: 12 },
+    { name: 'Default', px: 16, isDefault: true },
+  ],
+};
+
+export function libraryOptions(component: string, property: string, today: number | null): readonly LibraryOption[] {
+  const known = LIBRARY_OPTIONS[`${component.toLowerCase()}|${property.toLowerCase()}`];
+  if (known) return known;
+  return today !== null ? [{ name: 'Default', px: today, isDefault: true }] : [];
+}
+
+/** The size words an option series continues with, roomier then tighter than the default. */
+const ROOMIER = ['Comfortable', 'Spacious', 'Generous', 'Airy'];
+const TIGHTER = ['Compact', 'Tight', 'Dense', 'Snug'];
+
+/**
+ * The names Bridge proposes for new values, continuing the series the component already has (Compact, Default, then
+ * Comfortable, Spacious): roomier values in growing order, tighter ones in shrinking order, never a name taken.
+ */
+export function proposeNames(values: readonly number[], options: readonly LibraryOption[]): Map<number, string> {
+  const out = new Map<number, string>();
+  const taken = new Set(options.map((o) => o.name.toLowerCase()));
+  const base = options.find((o) => o.isDefault)?.px ?? null;
+  const unique = [...new Set(values)].filter((v) => !options.some((o) => o.px === v));
+  const up = unique.filter((v) => base === null || v > base).sort((a, b) => a - b);
+  const down = unique.filter((v) => base !== null && v < base).sort((a, b) => b - a);
+  const name = (list: readonly string[], v: number) => {
+    const n = list.find((w) => !taken.has(w.toLowerCase()));
+    if (!n) return `${v} px`;
+    taken.add(n.toLowerCase());
+    return n;
+  };
+  for (const v of up) out.set(v, name(ROOMIER, v));
+  for (const v of down) out.set(v, name(TIGHTER, v));
+  return out;
+}
+
+const deltaWords = (px: number | null, base: number | null): string | null => {
+  if (px === null || base === null || px === base) return null;
+  return `${px > base ? '+' : '−'}${Math.abs(px - base)} px`;
+};
+
+interface LedgerWay {
+  key: string;
+  designer: string;
+  label: string;
+  screen: string;
+  product: string;
+  size: string;
+  px: number | null;
+  look: WayLook;
+}
+
+/**
+ * The ways of a component part as its options (board v3): values the library lacks to add (each a tick), the default
+ * and the options a screen can already use as they are.
+ */
+export function ledgerOf(component: string, property: string, ways: readonly LedgerWay[], today: number | null): LedgerView {
+  const options = libraryOptions(component, property, today);
+  const def = options.find((o) => o.isDefault) ?? null;
+  const base = def?.px ?? null;
+  const names = proposeNames(
+    ways.flatMap((w) => (w.px === null ? [] : [w.px])),
+    options,
+  );
+  const where = (w: LedgerWay) => [w.screen, w.product].filter(Boolean).join(' · ');
+  const fresh: OptionRow[] = [];
+  const have: OptionRow[] = [];
+  if (def)
+    have.push({
+      keys: ways.filter((w) => w.px === def.px).map((w) => w.key),
+      name: def.name,
+      value: `${def.px} px`,
+      px: def.px,
+      delta: null,
+      isDefault: true,
+      line: 'Every screen gets it today. It stays the default.',
+      face: null,
+      designers: [],
+      look: lookOf(null, `${def.px}px`),
+    });
+  for (const w of ways) {
+    const existing = w.px === null ? null : (options.find((o) => o.px === w.px) ?? null);
+    if (existing?.isDefault) continue;
+    if (existing) {
+      have.push({ keys: [w.key], name: existing.name, value: `${existing.px} px`, px: existing.px, delta: deltaWords(existing.px, base), isDefault: false, line: `${possessive(w.designer)} screen can use ${existing.name} as it is · ${where(w)}`, face: w.designer, designers: [w.designer], look: w.look });
+      continue;
+    }
+    // Two screens asking for the same value share one option.
+    const same = fresh.find((r) => (w.px !== null ? r.px === w.px : r.value === w.size));
+    if (same) {
+      same.keys.push(w.key);
+      same.designers.push(w.designer);
+      same.line = `${namesLine(same.designers)}'s way · ${same.designers.length} screens`;
+      continue;
+    }
+    fresh.push({
+      keys: [w.key],
+      name: w.px !== null ? (names.get(w.px) ?? `${w.px} px`) : w.size,
+      value: w.px !== null ? `${w.px} px` : w.size,
+      px: w.px,
+      delta: deltaWords(w.px, base),
+      isDefault: false,
+      line: `${w.label} · ${where(w)}`,
+      face: w.designer,
+      designers: [w.designer],
+      look: w.look,
+    });
+  }
+  fresh.sort((a, b) => (a.px ?? 0) - (b.px ?? 0));
+  return { property: cap(property.replace(/[-_]+/g, ' ')), fresh, have };
 }
 
 /** What the lead's choice records: one way's key, "both" when every way becomes a size, else "sizes:<key> <key>". */
@@ -537,7 +818,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const toldLine = ways.length > 3 ? 'Everyone who asked is told.' : `${told}.`;
   const where = x.reviewHref;
   const noteParts: NotePart[] = decides
-    ? [{ text: `Answers ${ways.length === 2 ? 'both screens' : `${ways.length} screens`}. ${toldLine}` }]
+    ? [{ text: `Answers ${screens}. ${toldLine}` }]
     : x.designerHere
       ? [{ text: `Tell ${leadName && leadName !== 'The DS lead' ? leadName : 'the DS lead'} why yours fits this screen. ${leadName ?? 'The DS lead'}'s choice answers ${screens}.` }]
       : leadElsewhere
@@ -545,6 +826,14 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
         : [{ text: `${leadName ?? 'The DS lead'} picks in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
   const note = noteParts.map((p) => p.text).join('');
   const pick = group.find((c) => c.pick)?.pick ?? null;
+  const rawValue = (key: string) => (key === first.mine.key ? first.mine.value : group.find((c) => c.other.key === key)?.other.value);
+  const sized = /^padding|gap|radius|width|height|size/i.test(property);
+  const ledger = ledgerOf(
+    component,
+    property,
+    ways.map((w) => ({ ...w, px: /^padding/i.test(property) ? w.look.padding : sized ? (pixels(rawValue(w.key)) ?? spacePixels(rawValue(w.key))) : null })),
+    today,
+  );
   return {
     piece: first.piece,
     component,
@@ -561,7 +850,8 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The DS lead'} picks`,
     todayHint: several ? 'Stays the default' : 'In the library now',
     pick,
-    decided: pick ? decidedView(pick, ways, component, property, x, told) : null,
+    decided: pick ? decidedView(pick, ways, component, property, x, told, ledger) : null,
+    ledger,
   };
 }
 
@@ -571,12 +861,42 @@ function choiceFor(component: string, property: string, x: ConflictContext): Lib
   return x.choices.find(same) ?? x.others.flatMap((o) => o.library?.choices ?? []).find(same) ?? null;
 }
 
-function decidedView(pick: string, ways: readonly WayView[], component: string, property: string, x: ConflictContext, told: string): DecidedView {
+/**
+ * The ledger's one sentence once decided (board v3): "Card gets a new padding option, **Comfortable 20 px**, for
+ * Sofia's screen. **Default 16 px** stays the default. Decided by Dana, just now."
+ */
+export function decidedParts(pick: string, ways: readonly { key: string; designer: string }[], component: string, ledger: LedgerView, by: string): Said[] {
+  const { keys } = keptKeys(pick, ways);
+  const named = pickNames(pick);
+  const added = ledger.fresh
+    .filter((r) => r.keys.some((k) => keys.includes(k)))
+    .map((r) => ({ name: r.keys.map((k) => named[k]).find(Boolean) ?? r.name, value: r.px !== null ? `${r.px} px` : null, designers: r.designers }));
+  const part = ledger.property.toLowerCase();
+  const out: Said[] = [];
+  const option = (a: (typeof added)[number]) => ({ text: a.value && a.value !== a.name ? `${a.name} ${a.value}` : a.name, strong: true });
+  if (!added.length) out.push({ text: `${component} keeps its ${part} options as they are.` });
+  else {
+    out.push({ text: `${component} gets ${added.length === 1 ? `a new ${part} option` : `${count(added.length)} new ${part} options`}, ` });
+    added.forEach((a, i) => {
+      if (i) out.push({ text: i === added.length - 1 ? ' and ' : ', ' });
+      out.push(option(a));
+    });
+    const owners = [...new Set(added.flatMap((a) => a.designers))].map(possessive);
+    out.push({ text: `, for ${owners.length === 1 ? `${owners[0]} screen` : `${namesLine(owners, 99)} screens`}.` });
+  }
+  const def = ledger.have.find((r) => r.isDefault);
+  if (def) out.push({ text: ' ' }, { text: `${def.name} ${def.value}`, strong: true }, { text: ' stays the default.' });
+  out.push({ text: by });
+  return out;
+}
+
+function decidedView(pick: string, ways: readonly WayView[], component: string, property: string, x: ConflictContext, told: string, ledger: LedgerView): DecidedView {
   const { mode, keys } = keptKeys(pick, ways);
   const kept = ways.filter((w) => keys.includes(w.key));
   const choice = choiceFor(component, property, x);
   const who = choice?.byName ?? (choice?.by ? choice.by : 'The DS lead');
   const when = choice?.at ? agoInSentence(choice.at, x.now) : '';
+  const by = ` Decided by ${choice?.byName?.split(/\s+/)[0] ?? choice?.by ?? 'the DS lead'}${when ? `, ${when}` : ''}.`;
   const title =
     mode === 'sizes'
       ? `${component} gets ${kept.length === 1 ? 'a new size' : `${count(kept.length)} new sizes`}`
@@ -585,6 +905,7 @@ function decidedView(pick: string, ways: readonly WayView[], component: string, 
         : `${component} is decided`;
   return {
     title,
+    parts: decidedParts(pick, ways, component, ledger, by),
     by: when ? `${who}, ${when}` : who,
     told,
     plates: [

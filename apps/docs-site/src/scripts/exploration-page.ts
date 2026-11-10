@@ -98,7 +98,7 @@ import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskS
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
 import { conflictsWithOthers, impactSourceOf, releasedSet } from './library-impact';
-import { keepLabel, keptKeys, leadBuildLine, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
+import { decidedParts, leadBuildLine, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
 import { developersMessage, offersDevelopersMessage, teamMember } from '../lib/developers-message';
 import { OLD_TOOLBAR_NOTE, toolbarTakesPass } from '../lib/read-pass-link';
@@ -1253,11 +1253,13 @@ async function paintLibraryImpact(
           const cv = conflictOf(piece);
           const others = cv.ways.filter((w) => !w.mine).map((w) => explorationAt(w.key));
           if (!others.length || others.some((x) => !x)) throw new Error('Bridge cannot find the other exploration.');
-          const { mode, keys } = keptKeys(pick, cv.ways);
-          const kept = cv.ways.filter((w) => keys.includes(w.key));
-          const what = mode === 'one' ? `${kept[0]?.designer ?? 'one'}'s way` : `${kept.length === 1 ? 'one new size' : `${kept.length} new sizes`} (${kept.map((w) => w.size).join(', ')}), today's stays the default`;
+          // What the library gets, in the ledger's own sentence (board v3): "Card gets a new padding option,
+          // Comfortable 20 px, for Sofia's screen. Default 16 px stays the default."
+          const what = decidedParts(pick, cv.ways, cv.component, cv.ledger, '')
+            .map((s) => s.text)
+            .join('');
           const told = namesLine(cv.ways.map((w) => w.designer));
-          const note = `${myName ?? 'The design lead'} chose ${what} for ${cv.component}, where ${told} changed it differently. This answers every screen that asked: comment here if you see it otherwise.`;
+          const note = `${myName ?? 'The design lead'} decided ${cv.component} ${cv.ledger.property.toLowerCase()}, where ${told} changed it differently. ${what} This answers every screen that asked: comment here if you see it otherwise.`;
           // The first other exploration through core (both records and both comments), the rest the same way after it.
           const [first, ...rest] = others as { gh: GitHubClient; number: number }[];
           await chooseLibraryWayOnGitHub(o.gh, o.r.number, { component: cv.component, property: cv.property, pick, ...me, other: first!, note });
@@ -1270,7 +1272,7 @@ async function paintLibraryImpact(
               await x.gh.createIssueComment(p.number, note).catch(() => undefined);
             }),
           );
-          const line = `${keepLabel(mode, keys, cv.ways).replace(/^Keep/, 'Kept')}. ${told} ${cv.ways.length === 1 ? 'is' : 'are'} told.`;
+          const line = `${what} ${told} ${cv.ways.length === 1 ? 'is' : 'are'} told.`;
           o.reopen(line);
           return line;
         },

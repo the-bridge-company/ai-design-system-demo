@@ -17,7 +17,7 @@
 
 /** sha256 hashes of every inline <script> body the build emits (excluding JSON data blocks). */
 export const INLINE_SCRIPT_HASHES: readonly string[] = [
-  'sha256-ZGIj23cnw+1hMeeBPVSXfCBedr8IRR8pqNhnwlxr6zo=', // layouts/Layout.astro: theme, brand, density, maintainer before paint
+  'sha256-IUsfKoUp4XypL6RE7flQOkLmYwl7dV1SOSrSFrlveEk=', // layouts/Layout.astro: theme, brand, density, maintainer before paint
   'sha256-R2rSXGlMIwO2rNqoV2ROuVtSVtNEFgPWQLeLqAyaFvk=', // layouts/Landing.astro: theme before paint
   'sha256-0i1jID8f3nUfRPNhacyaeS4wGZEAFS1umKuXE4TuR0g=', // components/ViewAsChange.astro: ?change= marker before paint
   'sha256-2i54S69TCx0SXRZcyVo7fWMIA3ogTDcNBQgLy0oxKws=', // pages/tokens/index.astro: old /tokens/?edit=1 links

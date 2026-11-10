@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Kbd, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -695,7 +695,7 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
     const n = all[at + step];
     if (n) onPick(n.key);
   };
-  // The state of a row, as a small mark on its end: a conflict's ways, a match, a result, or a quiet check once seen.
+  // The state of a row, as a small mark on its end: a conflict's ways, a match, or a result. Seen pieces get no mark: the seen count above says it once.
   const stateMark = (p: ReviewPiece) => {
     if (p.conflict && !p.conflict.pick)
       return (
@@ -706,13 +706,6 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
     if (p.match && p.state === 'waiting') return <span className="lr-side-flag">Match found</span>;
     const d = decidedTag(p);
     if (d) return <span className="lr-muted lr-side-flag">{d.label}</span>;
-    if (seen.has(p.key) && current !== p.key)
-      return (
-        <span className="lr-side-seen">
-          <Icon icon={Check} size="sm" />
-          <VisuallyHidden>Seen</VisuallyHidden>
-        </span>
-      );
     return null;
   };
   return (

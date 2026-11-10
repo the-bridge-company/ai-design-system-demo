@@ -35,7 +35,7 @@ describe('the section on the exploration page', () => {
     expect(v.uses).toEqual(['Card']);
     const other = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'Dana', approved: false, canDecide: false });
     if (other.state === 'rows') expect(other.rows[0]!.menu).toEqual([]);
-    expect(leadLibraryLine(v, 'Sofia')).toBe('Sofia is done exploring. Looks right also accepts the Timeline into the library. To answer one on its own, use its menu.');
+    expect(leadLibraryLine(v, 'Sofia')).toBe('Sending also adds the Timeline to the library.');
   });
 
   it('reads Exploring for the lead too while the designer is still exploring: Needs you only once asked', () => {
@@ -55,7 +55,7 @@ describe('the section on the exploration page', () => {
     ]);
     expect(v.rows[1]).toMatchObject({ before: { label: '16' }, after: { label: '12' }, details: [{ label: 'Token', value: 'layout.inset' }] });
     expect(v.reach?.line).toContain('Acme Prints and Acme CRM');
-    expect(leadLibraryLine(v, 'Sofia')).toContain('the 2 library changes below');
+    expect(leadLibraryLine(v, 'Sofia')).toBe('Sending also adds the 2 changes below to the library.');
   });
 
   it("shows the lead's own answers and what was approved and filed", () => {
@@ -234,7 +234,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   it('offers the choice in the library section only: the zone says nothing of it, the bar points to it', () => {
     const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
     expect(leadLibraryLine(v, 'Leo')).toBeNull();
-    expect(looksRightBlock(two)).toBe('Waits for the Card choice above');
+    expect(looksRightBlock(two)).toBe('Pick the Card way first');
   });
 });
 

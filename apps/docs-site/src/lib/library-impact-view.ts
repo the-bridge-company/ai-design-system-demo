@@ -603,8 +603,9 @@ export function leadLibraryLine(view: LibraryImpactView, designer: string): stri
   if (view.state !== 'rows') return null;
   const pending = view.rows.filter((r) => r.status.key === 'needs-lead');
   if (!pending.length) return null;
-  const what = pending.length === 1 ? `the ${pending[0]!.title.replace(/^New size: /, 'new size ')}` : `the ${pending.length} library changes below`;
-  return `${designer} is done exploring. Looks right also accepts ${what} into the library. To answer one on its own, use its menu.`;
+  void designer;
+  const what = pending.length === 1 ? `the ${pending[0]!.title.replace(/^New size: /, 'new size ')}` : `the ${pending.length} changes below`;
+  return `Sending also adds ${what} to the library.`;
 }
 
 /**
@@ -627,7 +628,7 @@ export function leadBuildLine(view: LibraryImpactView, lead: string): { waiting:
  */
 export function looksRightBlock(conflicts: readonly LibraryConflict[]): string | null {
   const open = openConflicts(conflicts);
-  return open.length ? `Waits for the ${open[0]!.component} choice above` : null;
+  return open.length ? `Pick the ${open[0]!.component} way first` : null;
 }
 
 /** "Waiting for the library: Timeline" for an approved exploration's task, from its block and the released requests. */

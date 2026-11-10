@@ -269,7 +269,7 @@ function leadViewOf(
     return {
       ...(open ? { heading: `With ${who}` } : {}),
       take,
-      line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : `${who} is done exploring. Look at the preview, then answer. Nothing reaches the developers before you do.`,
+      line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : "Nothing reaches the developers before you send it.",
       bar: {
         onLooksRight: (note) =>
           answered(() => leadApproveOnGitHub(o.gh, r.number, { products: o.products, previewUrl: o.previewUrl, ...me, ...(note ? { note } : {}), ...(o.library ? { library: o.library() } : {}), source: 'studio' }).then(() => undefined), LEAD_OK_LINE),

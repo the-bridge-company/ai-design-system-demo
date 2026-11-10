@@ -1499,6 +1499,12 @@
   gap: var(--space-2);
 }
 
+/* What the disabled primary waits for: its helper line, under it at the row's end. */
+.xp-turn-helper {
+  flex: 1 1 100%;
+  text-align: end;
+}
+
 .xp-turn-acts .xp-lead-form,
 .xp-turn-acts .xp-build {
   flex: 1 1 100%;

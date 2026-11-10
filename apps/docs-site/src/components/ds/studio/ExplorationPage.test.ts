@@ -832,6 +832,20 @@ describe('the talk with a lead on the page', () => {
     expect(screen.queryByText(/Open in Claude Code|Continue in Claude/)).toBeNull();
   });
 
+  it("the lead's turn says it once: one context line, what Send waits for beside it, the change since they were asked on the screen", () => {
+    paint({ stage: 'exploring', previewUrl: 'https://p.example.com', activity: [], headline: { who: face, text: 'made a change', when: '2 h ago' }, lead: { line: 'Sending also adds the Timeline to the library.', bar: { ...bar, changedSince: true, blocked: 'Pick the Card way first' } } });
+    const zone = screen.getByRole('region', { name: "Send Florian's screen to the developers?" });
+    expect(zone.querySelectorAll('.xp-turn-body p')).toHaveLength(1);
+    expect(zone.textContent).not.toMatch(/Changed since you were asked|use its menu/);
+    const send = within(zone).getByRole('button', { name: 'Send to the developers' }) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+    const helper = within(zone).getByRole('link', { name: 'Pick the Card way first' });
+    expect(helper.getAttribute('href')).toBe('#xp-library');
+    expect(send.getAttribute('aria-describedby')).toBe(helper.id);
+    expect(helper.closest('.xp-turn-acts')).toBe(send.closest('.xp-turn-acts'));
+    expect(document.querySelector('.xp-st-sub')!.textContent).toBe("Florian's version, changed 2 h ago, after you were asked");
+  });
+
   it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {
     const onLooksRight = vi.fn(async () => 'Sent to the developers.');
     const onComment = vi.fn(async () => 'Sent to Florian.');

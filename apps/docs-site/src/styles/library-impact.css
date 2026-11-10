@@ -1,8 +1,11 @@
-/* "What this changes in the library" (components/ds/studio/LibraryImpact.tsx, boards LI1 to LI5, LI8). One region
-   with a hairline edge; rows of one shape (what it is, before and after, one tag, its menu) so the same kind of thing
-   reads the same; a conflict sits inside the row it blocks. Tokens only. */
+/* "What this changes in the library" (components/ds/studio/LibraryImpact.tsx, boards LI1 to LI5, LI8 and the ledger
+   board v3). One region with a hairline edge; each piece one header line of one shape (kind tile, name, one tag,
+   origin on the right) so the same kind of thing reads the same; a change to a component part reads like the
+   component's options, one row per value. Tokens only. The block is its own container: the same rows fit the
+   exploration page's left column, Review all and a phone. */
 
 .li-section {
+  container: li / inline-size;
   display: grid;
   overflow: hidden;
   border: var(--border-width-1) solid var(--color-border-default);
@@ -11,18 +14,18 @@
   line-height: var(--typography-ui-line-height);
 }
 
-/* The title and its count on one line (EB1): the count is the summary, read after the title. */
+/* Scoped to the block: the exploration page resets the margins of its paragraphs. */
+.li-section p {
+  margin: 0;
+}
+
+/* The title and its count on one line: the count says how many and what they wait for, once. */
 .li-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-1) var(--space-4);
   padding: var(--space-5) var(--space-6) var(--space-4);
-}
-
-.li-head > p {
-  margin: 0;
 }
 
 .li-title {
@@ -31,6 +34,11 @@
   font-size: var(--typography-h3-size);
   font-weight: var(--typography-h3-weight);
   line-height: var(--typography-h3-line-height);
+}
+
+.li-count {
+  flex: none;
+  white-space: nowrap;
 }
 
 .li-muted {
@@ -56,23 +64,287 @@
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
+/* One piece: its header line, then what is decided on it. */
+.li-piece {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+}
+
+.li-phead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+/* The rail's Components mark, on a quiet tile: what kind of piece it is. */
+.li-tile {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--size-8);
+  block-size: var(--size-8);
+  border-radius: var(--radius-control);
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-default);
+}
+
+.li-pname {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}
+
+.li-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+}
+
+.li-face {
+  flex: none;
+  margin-inline-end: var(--space-1-5);
+  vertical-align: middle;
+}
+
+.li-said {
+  font-size: var(--typography-ui-size);
+}
+
+/* A value never breaks from its unit ("Comfortable 20 px"). */
+.li-said strong {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+/* A link inside a sentence ("Change", "Rename"): the sentence's own size, no extra height. */
+.li-inline-link {
+  vertical-align: baseline;
+}
+
+.li-note {
+  color: var(--color-feedback-warning-text);
+}
+
+/* A new component: the piece as built, large, from the designer's screen. */
+.li-crop {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.li-crop-shot {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+.li-crop-shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+/* The one tick of a new component, and a ticked option: the selected surface and a Harbor edge. */
+.li-pick,
+.li-opt.is-on {
+  border-inline-start: var(--border-width-3) solid var(--color-action-primary-bg);
+  background-color: var(--color-surface-selected);
+}
+
+.li-pick {
+  padding: var(--space-3) var(--space-4);
+  border-block: var(--border-width-1) solid var(--color-border-default);
+  border-inline-end: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+}
+
+.li-pick:not(.is-on) {
+  border-inline-start-color: var(--color-border-default);
+  background-color: var(--color-surface-default);
+}
+
+/* The section labels of a component part: what it adds, what it already has. */
+.li-group {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.li-opts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  list-style: none;
+}
+
+/* One option: its tick, a card drawn at its room inside, its name and where it comes from, its value. */
+.li-opt {
+  display: grid;
+  grid-template-columns: var(--size-6) auto minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+}
+
+.li-opt + .li-opt {
+  border-block-start: var(--border-width-1) solid var(--color-border-default);
+}
+
+.li-opt-tick {
+  display: flex;
+}
+
+.li-opt-text {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.li-opt-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-opt-line {
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+}
+
+.li-opt-val {
+  display: grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.li-opt-val .li-muted {
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+/* Already in the library: read only, a step quieter than what is added. */
+.li-opts.is-have .li-opt-name,
+.li-opts.is-have .li-opt-card {
+  color: var(--color-text-muted);
+}
+
+.li-opts.is-have .li-spec {
+  opacity: 0.8;
+}
+
+.li-rename {
+  max-inline-size: calc(var(--space-12) * 4);
+}
+
+/* On a wide block the cards are always there: the phone's "See the cards" is for narrow blocks only. */
+.li-ledger .li-see-cards {
+  display: none;
+  align-self: flex-start;
+}
+
+.li-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Who is told sits on the buttons' line, wrapping beside them before it drops under them. */
+.li-act-note {
+  flex: 1 1 calc(var(--space-12) * 4);
+  min-width: 0;
+}
+
+.li-btns {
+  display: flex;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
+
+/* The small library card each option draws: the same content everywhere, the hatch is its room inside, the content
+   sits on paper. Every card has the same outer width so only the room differs. */
+.li-spec {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: calc(var(--space-8) * 4);
+  padding: var(--_pad, var(--space-4));
+  border-radius: var(--_radius, var(--card-radius));
+  background-color: var(--color-bg-subtle);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-border-default) 0 var(--border-width-1),
+    transparent var(--border-width-1) var(--space-1-5)
+  );
+  pointer-events: none;
+}
+
+/* The default: what every screen gets today, a dashed edge. */
+.li-spec.is-today {
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+}
+
+.li-spec.is-borderless {
+  border-color: transparent;
+}
+
+.li-spec.is-filled .li-spec-in {
+  background-color: var(--color-surface-pressed);
+}
+
+.li-spec-in {
+  display: grid;
+  gap: var(--_gap, var(--space-2));
+  background-color: var(--color-surface-default);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.li-spec-title,
+.li-spec-value {
+  font-weight: var(--font-weight-semibold);
+}
+
+.li-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+/* Any other piece (a token, a size): what it does, before and after, and the lead's menu. */
 .li-row {
   display: grid;
-  /* The tag column fits its longest words ("Needs the DS lead"): never a tag cut at its edge. */
-  grid-template-columns: minmax(0, 1fr) auto minmax(calc(var(--space-12) * 2.5), max-content) var(--control-height-md);
+  grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
   gap: var(--space-6);
   align-items: center;
-  padding: var(--space-4) var(--space-6);
-}
-
-/* A row whose ways sit under it: what it is, and its one tag at the end of its first line. */
-.has-conflict > .li-row {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-}
-
-.has-conflict > .li-row .li-menu {
-  display: none;
 }
 
 .li-what {
@@ -92,16 +364,6 @@
   margin: 0;
   color: var(--color-text-signal);
   font-weight: var(--font-weight-semibold);
-}
-
-.li-name {
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-body-line-height);
-}
-
-.li-note {
-  color: var(--color-feedback-warning-text);
 }
 
 .li-details {
@@ -181,11 +443,6 @@
   color: var(--color-text-muted);
 }
 
-.li-status {
-  display: flex;
-  justify-content: flex-start;
-}
-
 .li-menu {
   display: flex;
   justify-content: flex-end;
@@ -193,382 +450,6 @@
 
 .li-menu-item {
   display: grid;
-}
-
-/* Several ways for one component part (EB1, EB2): in the same card, under the row, past a hairline. */
-.li-decide {
-  display: grid;
-  margin: 0 var(--space-6);
-  padding: var(--space-4) 0 var(--space-5);
-  border-block-start: var(--border-width-1) solid var(--color-border-default);
-}
-
-/* Scoped to the block: the exploration page resets the margins of its paragraphs (.xp-page p), and the context line
-   must keep its room above the plates. */
-.li-decide > .li-q {
-  margin: 0 0 var(--space-1);
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-body-line-height);
-}
-
-.li-decide > .li-ctx {
-  margin: 0 0 var(--space-5);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-}
-
-.li-ctx strong {
-  color: var(--color-text-default);
-  font-weight: var(--font-weight-semibold);
-}
-
-.li-face {
-  margin-inline-end: var(--space-1-5);
-  vertical-align: middle;
-}
-
-.li-mode {
-  margin-block-end: var(--space-4);
-}
-
-.li-ways-set > [role='radiogroup'] {
-  display: block;
-}
-
-/* Today, then each way: equal columns, today a little narrower; the plates share one height. */
-.li-ways {
-  --_ways: 3;
-
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) repeat(var(--_ways), minmax(0, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.li-way-li {
-  display: grid;
-  min-width: 0;
-}
-
-.li-way {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  align-content: start;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.li-stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  block-size: calc(var(--space-12) * 3.5);
-  padding: var(--space-2);
-  border-radius: var(--radius-xl);
-  /* One step off the panel in light and dark alike (bg-subtle is the panel itself in dark). */
-  background-color: var(--color-surface-hover);
-  cursor: pointer;
-}
-
-.li-ways > .li-way-li .li-stage,
-.li-stage.is-today {
-  cursor: default;
-}
-
-/* Today is what the library has now: an outline, nothing to pick. */
-.li-stage.is-today {
-  outline: var(--border-width-1) dashed var(--color-border-strong);
-  outline-offset: calc(var(--border-width-1) * -1);
-  background-color: transparent;
-}
-
-/* The way kept: a ring on its plate, with the checked control under it (colour is never the only signal). */
-.li-way.is-on > .li-stage {
-  outline: var(--border-width-2) solid var(--color-signal-default);
-  outline-offset: calc(var(--border-width-2) * -1);
-}
-
-@media (hover: hover) {
-  .li-way:not(.is-on) > .li-stage:not(.is-today):hover {
-    outline: var(--border-width-1) solid var(--color-border-hover);
-    outline-offset: calc(var(--border-width-1) * -1);
-  }
-
-  .li-way-li .li-way > .li-stage:hover {
-    outline: none;
-  }
-}
-
-/* Both, as two sizes: the two cards side by side, each at its own size. */
-.li-stage-both {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-1-5);
-}
-
-.li-pair {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.li-pair .li-spec {
-  --_w: calc(var(--space-12) * 1.75);
-}
-
-.li-way-text {
-  display: grid;
-  gap: var(--space-0-5);
-  padding-inline: var(--space-0-5);
-}
-
-.li-way-name {
-  display: inline-flex;
-  align-items: center;
-  font-weight: var(--font-weight-semibold);
-}
-
-.li-way-hint {
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-}
-
-.li-ghost {
-  display: none;
-}
-
-.li-more {
-  justify-self: start;
-  margin-block-start: var(--space-3);
-}
-
-.li-act {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-5);
-  margin-block-start: var(--space-4);
-}
-
-.li-note {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-}
-
-.li-btns {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-/* The small library card each plate draws: the same content everywhere, sized by the way's own room inside (the
-   padding adds to the content, as in the product), so a tighter way is a smaller card than today's and a roomier one
-   a larger card. Its space between lines and its corners follow the way too. */
-.li-spec {
-  flex: none;
-  box-sizing: content-box;
-  inline-size: var(--_w, calc(var(--space-12) * 2.5));
-  padding: var(--_pad, var(--space-4));
-  border-radius: var(--_radius, var(--card-radius));
-  pointer-events: none;
-}
-
-.li-spec.is-borderless {
-  border-color: transparent;
-}
-
-.li-spec.is-filled {
-  background-color: var(--color-surface-pressed);
-}
-
-.li-spec-in {
-  display: grid;
-  gap: var(--_gap, var(--space-2));
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-}
-
-.li-spec-title,
-.li-spec-value {
-  font-weight: var(--font-weight-semibold);
-}
-
-.li-spec-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-}
-
-.li-decided {
-  display: grid;
-  grid-template-columns: var(--space-12) minmax(0, 1fr);
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-6) var(--space-6);
-}
-
-.li-dart {
-  inline-size: var(--space-12);
-  block-size: var(--space-12);
-  color: var(--color-text-signal);
-}
-
-.li-dart .d4,
-.li-dart .d5 {
-  stroke: var(--color-feedback-success-icon);
-}
-
-.li-dart .d4 {
-  fill: var(--color-surface-default);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .li-dart .d1,
-  .li-dart .d2,
-  .li-dart .d3 {
-    stroke-dasharray: 140;
-    stroke-dashoffset: 140;
-    animation: li-draw var(--motion-duration-slow) var(--motion-easing-enter) forwards;
-  }
-
-  .li-dart .d2 {
-    animation-delay: var(--motion-duration-fast);
-  }
-
-  .li-dart .d3 {
-    animation-delay: var(--motion-duration-moderate);
-  }
-
-  .li-dart .d4 {
-    opacity: 0;
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: li-pop var(--motion-duration-moderate) var(--motion-easing-enter) var(--motion-duration-slow) forwards;
-  }
-
-  .li-dart .d5 {
-    stroke-dasharray: 20;
-    stroke-dashoffset: 20;
-    animation: li-draw var(--motion-duration-moderate) var(--motion-easing-enter) var(--motion-duration-slow) forwards;
-  }
-}
-
-@keyframes li-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes li-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.li-decided-body {
-  display: grid;
-  justify-items: start;
-  min-width: 0;
-}
-
-.li-decided-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
-
-.li-decided-title {
-  margin: 0;
-  font-size: var(--font-size-400);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-h3-line-height);
-}
-
-.li-decided-by {
-  margin: var(--space-1) 0 0;
-  font-size: var(--typography-ui-size);
-}
-
-.li-undo {
-  vertical-align: baseline;
-}
-
-.li-dgrid {
-  display: grid;
-  grid-template-columns: repeat(3, calc(var(--space-12) * 3.65));
-  gap: var(--space-3);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.li-dfig {
-  display: grid;
-  grid-template-rows: calc(var(--space-12) * 3.65) auto;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-/* Every plate on one line, whatever list spacing the page gives its items. */
-.li-dgrid > li,
-.li-ways > li {
-  margin: 0;
-}
-
-.li-dplate {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  overflow: hidden;
-  padding-block-start: var(--space-4);
-  border-radius: var(--radius-xl);
-  background-color: var(--color-surface-hover);
-}
-
-/* The way this screen takes: ringed, on the selected surface. */
-.li-dfig.is-mine .li-dplate {
-  outline: var(--border-width-2) solid var(--color-signal-default);
-  outline-offset: calc(var(--border-width-2) * -1);
-  background-color: var(--color-surface-selected);
-}
-
-.li-dfig:not(.is-mine) .li-spec {
-  opacity: 0.8;
-}
-
-.li-dlab {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-1);
-  padding-inline: var(--space-0-5);
-  font-size: var(--typography-ui-size);
-}
-
-.li-dname {
-  font-weight: var(--font-weight-semibold);
-}
-
-.li-dfig:not(.is-mine) .li-dname {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-medium);
 }
 
 .li-foot {
@@ -687,101 +568,83 @@
   }
 }
 
-/* On the exploration page, a choice someone else makes: one line under the ways, the face, who chooses, the way there. */
-.li-waiting {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin: 0;
-  padding-block-start: var(--space-4);
-  border-block-start: var(--border-width-1) solid var(--color-border-default);
-}
+/* Narrow block (a phone, 390 wide): the origin goes under the name, the count stands alone, the option rows drop their
+   cards (shown on demand), the value goes under the words, and the buttons fill the width, the primary on top. */
+@container li (max-width: 40rem) {
+  .li-head,
+  .li-piece,
+  .li-foot {
+    padding-inline: var(--space-4);
+  }
 
-.li-waiting-text {
-  flex: 1 1 auto;
-  min-width: 0;
-}
+  .li-head {
+    align-items: flex-start;
+  }
 
-/* A new component the screen built, on the lead's exploration page: today (nothing), the piece as built, the choice. */
-.li-row.li-new {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-4);
-}
+  .li-count-tail {
+    display: none;
+  }
 
-.li-new-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: var(--space-4);
-}
+  .li-origin {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
 
-.li-new-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-}
+  .li-opt {
+    grid-template-columns: var(--size-6) minmax(0, 1fr);
+    gap: var(--space-1) var(--space-3);
+    align-items: start;
+  }
 
-.li-new-side figcaption {
-  display: grid;
-}
+  .li-opt-card {
+    display: none;
+  }
 
-.li-new-today,
-.li-new-shot {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: var(--radius-container);
-}
+  .li-opt-card,
+  .li-opt-text {
+    grid-column: 2;
+  }
 
-.li-new-today {
-  padding: var(--space-4);
-  border: var(--border-width-2) dashed var(--color-border-strong);
-  color: var(--color-text-muted);
-  text-align: center;
-}
+  .li-opt-val {
+    grid-column: 2;
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-items: start;
+  }
 
-.li-new-shot {
-  aspect-ratio: 8 / 3;
-  border: var(--border-width-1) solid var(--color-border-default);
-  background-color: var(--color-surface-default);
-}
+  .li-ledger .li-see-cards {
+    display: inline-flex;
+  }
 
-.li-new-shot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top left;
-}
-
-.li-new-choice {
-  padding-block-start: var(--space-4);
-  border-block-start: var(--border-width-1) solid var(--color-border-default);
-}
-
-/* Narrow windows: the before and after under the text, the tag and the menu on the name's line. */
-@media (max-width: 960px) {
-  .li-row.li-new {
+  .li-ledger.show-cards .li-opt-card {
     display: flex;
   }
 
-  .li-new-pair {
-    grid-template-columns: minmax(0, 1fr);
+  .li-act {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .li-new-today {
-    aspect-ratio: 8 / 3;
+  .li-act-note {
+    flex: none;
+  }
+
+  .li-btns {
+    flex-direction: column-reverse;
+    margin-inline-start: 0;
+  }
+
+  .li-btns > * {
+    inline-size: 100%;
   }
 
   .li-row {
-    grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);
+    grid-template-columns: minmax(0, 1fr) var(--control-height-md);
     grid-template-areas:
-      'what status menu'
-      'compare compare compare';
-    gap: var(--space-3) var(--space-4);
+      'what menu'
+      'compare compare';
+    gap: var(--space-3);
   }
 
   .li-what {
@@ -792,124 +655,18 @@
     grid-area: compare;
   }
 
-  .li-status {
-    grid-area: status;
-    align-self: start;
-  }
-
   .li-menu {
     grid-area: menu;
     align-self: start;
   }
 
-  .has-conflict > .li-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'what status';
-  }
-}
-
-/* Phone (EB1 at 390): the ways stack, each plate compares with today's card before it; actions fill the width. */
-@media (max-width: 720px) {
-  .li-head,
-  .li-row,
-  .li-foot {
-    padding-inline: var(--space-4);
-  }
-
-  .has-conflict > .li-row {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'what'
-      'status';
-  }
-
-  .li-decide {
-    margin-inline: var(--space-4);
-  }
-
-  .li-ways {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
-  }
-
-  .li-way-today,
-  .li-today-li {
-    display: none;
-  }
-
-  .li-way {
-    grid-template-rows: auto auto;
-  }
-
-  .li-stage {
-    justify-content: flex-start;
-    block-size: auto;
-    padding: var(--space-3);
-  }
-
-  .li-stage-both {
-    padding: var(--space-3);
-  }
-
-  .li-ghost {
-    display: grid;
-    justify-items: center;
-    gap: var(--space-1);
-    opacity: 0.75;
-  }
-
-  .li-stage .li-spec {
-    --_w: calc(var(--space-12) * 1.9);
-  }
-
-  .li-stage-both {
-    justify-content: start;
-  }
-
-  .li-act,
-  .li-btns {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .li-decided {
-    grid-template-columns: var(--space-10) minmax(0, 1fr);
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-4) var(--space-5);
-  }
-
-  .li-dart {
-    inline-size: var(--space-10);
-    block-size: var(--space-10);
-  }
-
-  /* The plates take the card's full width, under the drawing too. */
-  .li-dgrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2);
-    justify-self: stretch;
-    margin-inline-start: calc((var(--space-10) + var(--space-3)) * -1);
-  }
-
-  .li-dfig {
-    grid-template-rows: calc(var(--space-12) * 2.65) auto;
-  }
-
-  .li-dplate {
-    padding-block-start: var(--space-3);
-  }
-
-  /* One card per plate, the same card as on a wide screen, drawn smaller so three plates fit side by side. */
-  .li-dplate .li-spec {
-    zoom: 0.6;
-  }
-}
-
-@media (max-width: 640px) {
   .li-plate {
     inline-size: calc(var(--space-12) * 2);
   }
+}
 
+/* The block itself is the container, so its own phone layout follows the window. */
+@media (max-width: 640px) {
   .li-nothing {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);

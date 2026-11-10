@@ -1283,7 +1283,7 @@ function ExplorationBody(p: ExplorationPageProps) {
         // screen, the people, the library, Activity (styles/exploration-page.css).
         <div className={turn ? 'xp-board has-turn' : 'xp-board'}>
           <div className="xp-b-left">
-          <div className="xp-b-screen">{screen}</div>
+          <div className="xp-b-screen" id="xp-screen">{screen}</div>
           <div className="xp-b-main">
             {p.impact ? (
               <div className="xp-library" id="xp-library">
@@ -1293,6 +1293,7 @@ function ExplorationBody(p: ExplorationPageProps) {
                   say={setSaid}
                   quiet={Boolean(turn)}
                   onPage
+                  screen={{ capture: p.thumb ?? null, designer: p.author.name, name: p.title, href: '#xp-screen' }}
                   {...(staged.length && zone === 'lead-review' ? { newPieces: { capture: p.thumb, designer: p.author.name, choices, onChoice: (id: string, c: 'approve' | 'local') => setChoices((x) => ({ ...x, [id]: c })) } } : {})}
                 />
               </div>

@@ -440,7 +440,8 @@ export function pieceOfConflict(
     tier: 2,
     state: c.pick ? 'decided' : 'waiting',
     decided: c.pick ? 'added' : null,
-    decidedLabel: c.pick ? (c.pick === 'both' ? 'Both ways, two sizes' : `${ways.find((w) => w.key === c.pick)?.designer ?? 'One'}'s way`) : null,
+    // The exploration page's ledger records new options ("sizes:<key>") or today's component kept ("today").
+    decidedLabel: c.pick ? (c.pick === 'both' ? 'Both ways, two sizes' : c.pick === 'today' ? "Today's stays" : c.pick.startsWith('sizes:') ? 'New options added' : `${ways.find((w) => w.key === c.pick)?.designer ?? 'One'}'s way`) : null,
     waitsOn: c.pick ? 'nobody' : yours ? 'lead' : 'you',
     designApproved: false,
     match: null,

@@ -7,7 +7,7 @@
 // decided, a piece folds into one sentence. Everyone but the lead reads the same rows without ticks or buttons.
 // Nothing to change is the best outcome: a Field Guide moment, never a bare line. View model:
 // lib/library-impact-view.ts; data and writes: scripts/library-impact.ts. Styles: styles/library-impact.css.
-import { useEffect, useId, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useId, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
 import { Accordion, AccordionItem, Avatar, AvatarGroup, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Textarea, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
@@ -192,16 +192,68 @@ function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }:
   } else {
     body = <Row row={row} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />;
   }
+  // A new piece keeps the lead's other answers (ask for changes, use an existing piece) in a ⋯ on its header line;
+  // its tick is the add / keep-in-the-screen answer.
+  const headMenu = isNew && !settled && actions.onPiece ? row.menu.filter((a) => a === 'changes' || a === 'existing') : [];
   return (
-    <div className="li-piece">
-      <PieceHead row={row} name={name} headingLevel={headingLevel} />
+    // data-waiting: the piece the lead still has to choose; "Choose Card padding" in the Your turn zone lands here.
+    <div className="li-piece" data-waiting={conflict && !settled && !conflict.decided ? '' : undefined}>
+      <PieceHead row={row} name={name} headingLevel={headingLevel} menu={headMenu.length ? <PieceMenu row={row} items={headMenu} onPiece={actions.onPiece!} say={say} /> : null} />
       {body}
     </div>
   );
 }
 
+/** The lead's other answers on a piece, behind ⋯, each asking for its text in a small dialog. */
+function PieceMenu({ row, items, onPiece, say }: { row: ImpactRowView; items: readonly PieceAction[]; onPiece: NonNullable<LibraryImpactActions['onPiece']>; say: (s: string) => void }) {
+  const [ask, setAsk] = useState<'changes' | 'existing' | null>(null);
+  const act = (a: PieceAction, input?: string) =>
+    onPiece(row.id, a, input).then(
+      (r) => {
+        if (r) say(r);
+      },
+      (err: Error) => {
+        say(err.message);
+        throw err;
+      },
+    );
+  return (
+    <span className="li-head-menu">
+      <Menu>
+        <Tooltip content={`More about ${row.title}`}>
+          <MenuTrigger render={<IconButton icon={Ellipsis} label={`More about ${row.title}`} variant="secondary" size="md" />} />
+        </Tooltip>
+        <MenuContent align="end">
+          {items.map((a) => (
+            <MenuItem key={a} data-demo-write="answer a library piece" onClick={() => setAsk(a as 'changes' | 'existing')}>
+              {PIECE_ACTION_HINT[a] ? (
+                <span className="li-menu-item">
+                  {PIECE_ACTION_LABEL[a]}
+                  <span className="li-cap">{PIECE_ACTION_HINT[a]}</span>
+                </span>
+              ) : (
+                PIECE_ACTION_LABEL[a]
+              )}
+            </MenuItem>
+          ))}
+        </MenuContent>
+      </Menu>
+      <AskDialog
+        open={ask !== null}
+        onOpenChange={(o) => !o && setAsk(null)}
+        title={ask === 'existing' ? `Use an existing piece instead of ${row.title}?` : `Ask for changes on ${row.title}?`}
+        description={ask === 'existing' ? 'Say which piece of the library to use. The designer reads it on the exploration.' : 'Only this piece goes back. The screen keeps waiting for your answer.'}
+        label={ask === 'existing' ? 'Piece of the library' : 'What to change'}
+        multiline={ask !== 'existing'}
+        confirm={ask === 'existing' ? 'Use it instead' : 'Ask for changes'}
+        onConfirm={(text) => act(ask!, text)}
+      />
+    </span>
+  );
+}
+
 /** The piece's one header line: the kind tile, its name, one tag, and where it comes from on the right. */
-function PieceHead({ row, name, headingLevel }: { row: ImpactRowView; name: string; headingLevel: 2 | 3 }) {
+function PieceHead({ row, name, headingLevel, menu = null }: { row: ImpactRowView; name: string; headingLevel: 2 | 3; menu?: ReactNode }) {
   const H = headingLevel === 2 ? 'h3' : 'h4';
   const { people, products } = row.origin;
   return (
@@ -225,6 +277,7 @@ function PieceHead({ row, name, headingLevel }: { row: ImpactRowView; name: stri
           <span>{products.join(', ')}</span>
         </span>
       )}
+      {menu}
     </div>
   );
 }

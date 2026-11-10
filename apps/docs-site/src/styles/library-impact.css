@@ -107,6 +107,13 @@
   color: var(--color-text-muted);
 }
 
+/* A new piece's ⋯ at the header line's end, after where it comes from. */
+.li-head-menu {
+  display: inline-flex;
+  flex: none;
+  order: 1;
+}
+
 .li-face {
   flex: none;
   margin-inline-end: var(--space-1-5);
@@ -587,7 +594,14 @@
 
   .li-origin {
     flex-basis: 100%;
+    order: 2;
     margin-inline-start: 0;
+  }
+
+  /* On a phone the origin wraps under the name: the ⋯ stays on the name's line. */
+  .li-head-menu {
+    order: 1;
+    margin-inline-start: auto;
   }
 
   .li-opt {
@@ -677,4 +691,9 @@
     font-size: var(--typography-h3-size);
     line-height: var(--typography-h3-line-height);
   }
+}
+
+/* "Choose Card padding" scrolls here: clear of the sticky top bar. */
+.li-piece[data-waiting] {
+  scroll-margin-top: var(--size-20);
 }

@@ -7,7 +7,11 @@ import { useState, type FormEvent } from 'react';
 import { Button, Radio, RadioGroup, Textarea } from '@bridge-ds/react';
 import { BUILD_WORDS as W, type BuildCheckView, type BuildWhy } from '../../../lib/build-check-view';
 
-export function BuildCheck({ v, say }: { v: BuildCheckView; say: (s: string) => void }) {
+/**
+ * `inZone`: inside the page's "Your turn" zone, which already asks the question and whose rail names who checks: only
+ * the answer (Looks right, the page's one primary action, or Needs changes and its form) and what an answer does.
+ */
+export function BuildCheck({ v, say, inZone = false }: { v: BuildCheckView; say: (s: string) => void; inZone?: boolean }) {
   const [asking, setAsking] = useState(false);
   const [why, setWhy] = useState<BuildWhy>('build');
   const [text, setText] = useState('');
@@ -25,11 +29,16 @@ export function BuildCheck({ v, say }: { v: BuildCheckView; say: (s: string) => 
       .finally(() => setBusy(null));
   };
   return (
-    <div className="xp-build" aria-labelledby="xp-build-h">
-      <h3 className="xp-h3" id="xp-build-h">
-        {W.title}
-      </h3>
-      <p>{v.line}</p>
+    <div className="xp-build" {...(inZone ? {} : { 'aria-labelledby': 'xp-build-h' })}>
+      {!inZone && (
+        <>
+          <h3 className="xp-h3" id="xp-build-h">
+            {W.title}
+          </h3>
+          <p>{v.line}</p>
+        </>
+      )}
+      {!inZone && (
       <ul className="xp-build-rows">
         {v.rows.map((r) => (
           <li key={r.role} className="xp-build-row">
@@ -42,6 +51,7 @@ export function BuildCheck({ v, say }: { v: BuildCheckView; say: (s: string) => 
           </li>
         ))}
       </ul>
+      )}
       {v.onSay &&
         (asking ? (
           <form
@@ -57,22 +67,36 @@ export function BuildCheck({ v, say }: { v: BuildCheckView; say: (s: string) => 
             </RadioGroup>
             <Textarea label={W.note} rows={3} value={text} onChange={(e) => setText(e.target.value)} />
             <div className="xp-pm-acts">
-              <Button type="submit" variant="inverse" size="md" loading={busy === 'changes'} disabled={!text.trim() || busy !== null}>
+              {inZone && (
+                <Button type="button" variant="ghost" size="md" onClick={() => setAsking(false)}>
+                  {W.cancel}
+                </Button>
+              )}
+              <Button type="submit" variant={inZone ? 'primary' : 'inverse'} size="md" loading={busy === 'changes'} disabled={!text.trim() || busy !== null}>
                 {W.send}
               </Button>
-              <Button type="button" variant="secondary" size="md" onClick={() => setAsking(false)}>
-                {W.cancel}
-              </Button>
+              {!inZone && (
+                <Button type="button" variant="secondary" size="md" onClick={() => setAsking(false)}>
+                  {W.cancel}
+                </Button>
+              )}
             </div>
           </form>
         ) : (
           <div className="xp-pm-acts">
-            <Button variant="inverse" size="md" loading={busy === 'looks-right'} disabled={busy !== null} onClick={() => send('looks-right')}>
+            {inZone && (
+              <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setAsking(true)}>
+                {W.needsChanges}
+              </Button>
+            )}
+            <Button variant={inZone ? 'primary' : 'inverse'} size="md" loading={busy === 'looks-right'} disabled={busy !== null} onClick={() => send('looks-right')}>
               {W.looksRight}
             </Button>
-            <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setAsking(true)}>
-              {W.needsChanges}
-            </Button>
+            {!inZone && (
+              <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setAsking(true)}>
+                {W.needsChanges}
+              </Button>
+            )}
           </div>
         ))}
       {v.note && <p className="xp-muted">{v.note}</p>}

@@ -54,13 +54,15 @@ describe('ExplorationPage, archived', () => {
     expect(onUnarchive).toHaveBeenCalledOnce();
   });
 
-  it('offers nothing to keep working on: no Open in Claude Code, no Continue, no Bring the latest in; the preview fills the bar', () => {
+  it('offers nothing to keep working on: no Open in Claude Code, no Continue, no Bring the latest in; the capture still opens the preview', () => {
     const latest = { line: 'Art print shop changed since this exploration started.', onBring: async () => 'In.' };
     const { container } = render(createElement(ExplorationPage, { ...base, archived: true, onUnarchive: async () => '', latest, claudeCodeUrl: 'https://claude.ai/code?x=1' }));
     expect(screen.queryByText('Open in Claude Code')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Bring the latest in' })).toBeNull();
     expect(screen.queryByText(/^Continue/)).toBeNull();
-    expect(container.querySelector('.xp-preview-acts')!.children).toHaveLength(1);
+    expect(container.querySelector('.xp-st-acts')).toBeNull();
+    expect(container.querySelectorAll('.zone')).toHaveLength(0);
+    expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unarchive' })).toBeTruthy();
   });
 

@@ -117,12 +117,14 @@ export interface ActivityRow {
   who: PageFace;
   text: string;
   when: string;
+  /** ISO, when known: the Activity timeline orders events and decisions by it. */
+  at?: string;
 }
 
 /** The last 3 events: Claude's and people's changes, then "started the exploration" when it fits. */
 export function activityRows(input: { commits: readonly BranchCommitLike[]; author: string; startedAt?: string | null | undefined; reopened?: { at: string; by?: string | null | undefined } | null; names?: Record<string, string>; now?: Date }): ActivityRow[] {
   const commits = linkAuthors(input.commits);
-  return explorationActivity({ commits, author: input.author, startedAt: input.startedAt, reopened: input.reopened, limit: 3 }).map((e) => ({ who: faceOf(e.who, e.claude, input.names, e.withClaude, nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now) }));
+  return explorationActivity({ commits, author: input.author, startedAt: input.startedAt, reopened: input.reopened, limit: 3 }).map((e) => ({ who: faceOf(e.who, e.claude, input.names, e.withClaude, nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now), at: e.at }));
 }
 
 /** "Claude changed Orders table and Bulk actions bar, 2 h ago": the line under the title once something changed. */
@@ -505,7 +507,7 @@ export function handoffActivity(input: { commits: readonly BranchCommitLike[]; a
   return all
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 3)
-    .map((e) => ({ who: faceOf(e.who, e.claude, input.names, 'withClaude' in e && Boolean(e.withClaude), nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now) }));
+    .map((e) => ({ who: faceOf(e.who, e.claude, input.names, 'withClaude' in e && Boolean(e.withClaude), nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now), at: e.at }));
 }
 
 /** One piece the library gets from this exploration, with its request status. */

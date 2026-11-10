@@ -7,12 +7,24 @@
 // scripts/library-impact.ts. Styles: styles/library-impact.css.
 import { useEffect, useId, useState, type CSSProperties, type FormEvent } from 'react';
 import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
-import { Accordion, AccordionItem, Avatar, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Radio, RadioGroup, Skeleton, Textarea, Tooltip } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Avatar, Badge, Button, ButtonGroup, Card, Checkbox, ChoiceCard, ChoiceCardGroup, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Radio, RadioGroup, Skeleton, Textarea, Tooltip } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import { keepLabel, pickOf, PIECE_ACTION_HINT, PIECE_ACTION_LABEL, type ConflictView, type DecidedView, type ImpactRowView, type ImpactSide, type LibraryImpactView, type PieceAction, type Said, type WayLook, type WayView } from '../../../lib/library-impact-view';
 import { nameFace } from '../../../lib/people';
 import { statusTagClass } from '../../../lib/status-tag';
+import { NEW_PIECE_WORDS, stagedPieces } from '../../../lib/exploration-layout';
+
+/**
+ * The lead's choice on each new library piece, on the exploration page (staged there: Send to the developers applies
+ * it). `capture`: the designer's screen as captured, the piece shown as it was built.
+ */
+export interface NewPieceChoices {
+  capture: string | null;
+  designer: string;
+  choices: Record<string, 'approve' | 'local'>;
+  onChoice: (piece: string, choice: 'approve' | 'local') => void;
+}
 
 export interface LibraryImpactActions {
   /** The lead answers one piece; `input` is what to change, or the piece to use instead. */
@@ -30,7 +42,7 @@ export interface LibraryImpactActions {
 /** How many ways show before "Show N more": ten screens asking still read as one card. */
 const WAYS_SHOWN = 3;
 
-export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { view: LibraryImpactView; actions?: LibraryImpactActions; say: (s: string) => void; headingLevel?: 2 | 3 }) {
+export function LibraryImpact({ view, actions = {}, say, headingLevel = 2, newPieces = null, quiet = false }: { view: LibraryImpactView; actions?: LibraryImpactActions; say: (s: string) => void; headingLevel?: 2 | 3; newPieces?: NewPieceChoices | null; /** The page's one primary action is elsewhere (its Your turn zone): a way is kept with a secondary button. */ quiet?: boolean }) {
   const id = useId();
   const H = headingLevel === 2 ? 'h2' : 'h3';
   if (view.state === 'loading')
@@ -91,8 +103,8 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { v
             );
           return (
             <li key={r.id} className={conflict ? 'li-item has-conflict' : 'li-item'}>
-              <Row row={r} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />
-              {conflict && <Conflict c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} />}
+              {newPieces && stagedPieces([r], Boolean(actions.onPiece)).length ? <NewPiece row={r} np={newPieces} /> : <Row row={r} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />}
+              {conflict && <Conflict c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} quiet={quiet} />}
             </li>
           );
         })}
@@ -112,6 +124,56 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2 }: { v
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * A new component the screen built (board LI, Nov 2026 revision): today nothing like it (a dashed plate), the piece as
+ * the designer built it (their capture), then the lead's choice in outcome words. Sending to the developers applies it.
+ */
+function NewPiece({ row, np }: { row: ImpactRowView; np: NewPieceChoices }) {
+  const W = NEW_PIECE_WORDS;
+  const value = np.choices[row.id] ?? 'approve';
+  return (
+    <div className="li-row li-new">
+      <div className="li-what">
+        <span className="li-kind">{row.kind}</span>
+        <strong className="li-name">{row.title}</strong>
+        <span className="li-muted">{row.summary}</span>
+      </div>
+      <div className="li-new-pair">
+        <figure className="li-new-side">
+          <span className="li-new-today">{W.nothing}</span>
+          <figcaption>
+            <strong>{W.today}</strong>
+            <span className="li-muted">{W.noneYet(row.title)}</span>
+          </figcaption>
+        </figure>
+        <figure className="li-new-side">
+          {np.capture ? (
+            <span className="li-new-shot">
+              <img src={np.capture} alt={`${row.title}, as built in the screen`} loading="lazy" />
+            </span>
+          ) : (
+            <span className="li-new-today">{row.title}</span>
+          )}
+          <figcaption>
+            <strong>
+              {W.asBuilt(np.designer, row.title)}{' '}
+              <Badge tone="info" size="sm">
+                New
+              </Badge>
+            </strong>
+            <span className="li-muted">{W.asBuiltLine}</span>
+          </figcaption>
+        </figure>
+      </div>
+      <ChoiceCardGroup label={W.choice} value={value} onValueChange={(v) => np.onChoice(row.id, v === 'local' ? 'local' : 'approve')} className="li-new-choice">
+        <ChoiceCard value="local" title={W.keep(np.designer)} description={W.keepHint} />
+        <ChoiceCard value="approve" title={W.add(row.title)} description={W.addHint} />
+      </ChoiceCardGroup>
+      <p className="li-muted">{W.applies}</p>
+    </div>
   );
 }
 
@@ -321,7 +383,7 @@ const WayName = ({ w }: { w: WayView }) => (
  * (today, then each designer's way), a ring on the way kept. The lead picks one way, or keeps several as sizes, and
  * the button says the outcome; everyone else reads the same block with a Comment.
  */
-function Conflict({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void }) {
+function Conflict({ c, onChoose, onComment, say, quiet = false }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void; quiet?: boolean }) {
   const qid = useId();
   const decides = c.decides && Boolean(onChoose);
   const mine = c.ways.find((w) => w.mine) ?? c.ways[0]!;
@@ -473,7 +535,7 @@ function Conflict({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: 
               </Button>
             )}
             {decides && (
-              <Button variant="primary" size="md" disabled={!pick} loading={busy} onClick={choose} data-demo-write="choose a way for a component">
+              <Button variant={quiet ? 'secondary' : 'primary'} size="md" disabled={!pick} loading={busy} onClick={choose} data-demo-write="choose a way for a component">
                 {keepLabel(kind, keys, c.ways)}
               </Button>
             )}

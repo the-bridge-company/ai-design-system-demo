@@ -18,21 +18,21 @@ export interface WhereItStandsView {
   onSave?: ((update: NotesUpdate) => Promise<string | void>) | null;
 }
 
-export function WhereItStands({ view, say }: { view: WhereItStandsView; say: (s: string) => void }) {
+export function WhereItStands({ view, say, title, rail = false }: { view: WhereItStandsView; say: (s: string) => void; /** "Your handover notes", "Sofia's handover notes": the page's rail names whose notes they are. */ title?: string; /** In the page's right column: a quiet heading and a link-sized Edit. */ rail?: boolean }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const detailsId = useId();
   const n = view.notes;
   const canEdit = Boolean(view.onSave);
   return (
-    <section className="xp-notes" aria-labelledby="xp-notes-h">
+    <section className={rail ? 'xp-notes xp-rail-sec' : 'xp-notes'} aria-labelledby="xp-notes-h">
       <div className="xp-notes-head">
-        <h2 className="xp-h2" id="xp-notes-h">
-          {W.title}
+        <h2 className={rail ? 'xp-rail-h' : 'xp-h2'} id="xp-notes-h">
+          {title ?? W.title}
         </h2>
         {/* The action on the line of what it acts on. */}
         {n && canEdit && !editing && !notesEmpty(n) && (
-          <Button variant="secondary" size="md" onClick={() => setEditing(true)}>
+          <Button variant={rail ? 'link' : 'secondary'} size={rail ? 'sm' : 'md'} onClick={() => setEditing(true)}>
             {W.edit}
           </Button>
         )}

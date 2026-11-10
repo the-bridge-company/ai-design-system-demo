@@ -105,8 +105,7 @@ describe('ExplorationPage, not started (X1)', () => {
     paint();
     expect(screen.getByRole('heading', { level: 1, name: 'Orders: bulk actions' })).toBeTruthy();
     expect(screen.getByText('Not started')).toBeTruthy();
-    expect(screen.getByText('Florian')).toBeTruthy();
-    expect(screen.getByText(/Admin demo · today/)).toBeTruthy();
+    expect(screen.getByText("Florian's exploration in Admin demo, started today")).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Nothing built yet' })).toBeTruthy();
     expect(screen.getByText(base.lines.app)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'See the product today' }).getAttribute('href')).toBe('https://bridge-demo.example.com');
@@ -228,12 +227,21 @@ describe('ExplorationPage, exploring (X2)', () => {
     ],
   };
 
-  it('says who changed what, opens the preview, and keeps Continue in Claude second', () => {
+  it('says whose exploration it is once, the capture opens the preview, and the zone asks the owner to hand it over', () => {
     paint(exploring);
     expect(screen.getByText('Exploring')).toBeTruthy();
-    expect(screen.getByText('changed Orders table and Bulk actions bar,', { exact: false })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://bridge-admin-git-explore.example.com/');
-    expect(screen.getByRole('link', { name: /Continue in Claude/ })).toBeTruthy();
+    expect(screen.getByText("Florian's exploration in Admin demo, started today")).toBeTruthy();
+    // The capture is the link (a new tab): no separate Open the preview button.
+    const open = screen.getByRole('link', { name: /Open the preview/ });
+    expect(open.getAttribute('href')).toBe('https://bridge-admin-git-explore.example.com/');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.className).toBe('xp-shotlink');
+    expect(screen.queryByRole('button', { name: /Open the preview/ })).toBeNull();
+    const zone = screen.getByRole('region', { name: 'Ready to hand it over?' });
+    // Alternatives first, primary last.
+    const acts = [...zone.querySelectorAll('.xp-turn-acts > a, .xp-turn-acts > button')].map((b) => b.textContent);
+    expect(acts[acts.length - 1]).toBe('Done exploring');
+    expect(within(zone).getByRole('link', { name: /Continue in Claude/ })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Nothing built yet' })).toBeNull();
   });
 
@@ -250,9 +258,7 @@ describe('ExplorationPage, exploring (X2)', () => {
     paint({ ...exploring, tryUrl: 'https://bridge-admin-git-explore.example.com/?bridge=611' });
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://bridge-admin-git-explore.example.com/?bridge=611');
     expect(screen.queryByRole('link', { name: /Try it in the product/ })).toBeNull();
-    const acts = screen.getByRole('link', { name: /Open the preview/ }).closest<HTMLElement>('.xp-preview-acts')!;
-    expect(within(acts).getByRole('link', { name: /Continue in Claude/ })).toBeTruthy();
-    expect(acts.children).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: /Open the preview/ })).toHaveLength(1);
   });
 
   it('without a toolbar link it opens the plain preview, and before the preview exists it waits', () => {
@@ -264,39 +270,41 @@ describe('ExplorationPage, exploring (X2)', () => {
     expect(screen.queryByRole('link', { name: /Try it in the product/ })).toBeNull();
   });
 
-  it('shows the Done exploring card and the last 3 events', () => {
+  it('asks the owner the question with the lead by name and the context from the notes, and the events oldest first', () => {
     const onDone = vi.fn();
-    paint({ ...exploring, onDone });
-    expect(screen.getByRole('heading', { name: 'Happy with it?' })).toBeTruthy();
+    paint({ ...exploring, onDone, leadName: 'Dana', notes: { notes: { context: '', decisions: [], edgeCases: [], openQuestions: [], nextStep: 'The narrow screen, then the A/B call' } } });
+    expect(screen.getByRole('heading', { name: 'Ready to hand it to Dana?' })).toBeTruthy();
+    expect(screen.getByText('Left in your notes: the narrow screen, then the A/B call.')).toBeTruthy();
+    expect(screen.queryByText('Happy with it?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Done exploring' }));
     expect(onDone).toHaveBeenCalledTimes(1);
     const rows = within(screen.getByRole('region', { name: 'Activity' })).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
-    expect(rows[2]!.textContent).toContain('Florian started the exploration');
+    expect(rows[0]!.textContent).toContain('Florian started the exploration');
+    expect(screen.getByText('Then Dana picks what the library keeps')).toBeTruthy();
   });
 
-  it('without a build yet: the button waits and says why in words', () => {
+  it('without a build yet: the capture is no link, and one line says why in words', () => {
     paint({ ...exploring, previewUrl: null, previewNote: 'Your preview appears a few minutes after each change.' });
-    expect((screen.getByRole('button', { name: 'Open the preview' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole('link', { name: /Open the preview/ })).toBeNull();
     expect(screen.getByText(/appears a few minutes after/)).toBeTruthy();
   });
 
   it('while the preview builds: a busy status at full contrast, not a greyed-out button', async () => {
     const { container } = paint({ ...exploring, previewUrl: null, previewNote: 'Preview is building', previewBuilding: true });
-    const b = screen.getByRole('button', { name: 'Preview is building' });
-    expect(b.getAttribute('aria-busy')).toBe('true');
-    expect(b.hasAttribute('data-loading')).toBe(true);
-    expect(screen.queryByRole('button', { name: 'Open the preview' })).toBeNull();
+    const status = screen.getByText('Preview is building').closest('[role="status"]')!;
+    expect(status.querySelector('[class*="spinner"], [role="progressbar"], svg')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Open the preview/ })).toBeNull();
     expect(screen.getAllByText('Preview is building')).toHaveLength(1);
     await expectNoAxeViolations(container);
   });
 
   it('a signed-out visitor or a viewer without write access sees no Done exploring card', () => {
     paint({ ...exploring, done: null });
-    expect(screen.queryByRole('heading', { name: 'Happy with it?' })).toBeNull();
+    // Not their turn: no Harbor zone at all, the screen still opens.
+    expect(document.querySelectorAll('.zone')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /done exploring/i })).toBeNull();
     expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Continue in Claude/ })).toBeTruthy();
   });
 
   it('a viewer who cannot keep it reads who can, never a GitHub error', () => {
@@ -332,20 +340,23 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 
   it('keeps the page family: status tag, who said done and when, the preview with one action, then what happens next', () => {
     handed();
-    expect(screen.getByText('Waiting to be picked up')).toBeTruthy();
-    expect(screen.getByText(/said done exploring/, { selector: '.xp-meta span' })).toBeTruthy();
+    // The stage is said once, by the tag.
+    expect(screen.getAllByText('Waiting to be picked up')).toHaveLength(1);
+    expect(screen.getByText("Florian's exploration in Admin demo, started today")).toBeTruthy();
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app/?bridge=611');
     expect(screen.queryByRole('link', { name: /Continue in Claude/ })).toBeNull();
-    const next = screen.getByRole('region', { name: 'What happens next' });
-    expect(within(next).getByRole('list', { name: 'From exploration to product' }).querySelectorAll('li')).toHaveLength(4);
-    expect(within(next).getByText('In their task list. You see here when one picks it up.')).toBeTruthy();
-    expect(within(next).getByText('Nothing missing: everything comes from the library.')).toBeTruthy();
+    // Where it is: the current step on the rail, the four steps on demand.
+    expect(screen.getByText('In their task list. You see here when one picks it up.')).toBeTruthy();
+    expect(screen.getByText('Then it goes live in Admin demo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+    expect(screen.getByRole('list', { name: 'From exploration to product' }).querySelectorAll('li')).toHaveLength(4);
+    expect(screen.getByText('Nothing missing: everything comes from the library.')).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy();
     // No capture: the plate names the screen and the product, never a fake wireframe.
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Orders table');
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Admin demo · no screenshot yet');
-    // One Harbor zone on the page, no grey footnote that repeats the state.
-    expect(document.querySelectorAll('.zone')).toHaveLength(1);
+    // Nothing waits on this viewer: no Harbor zone, no grey footnote that repeats the state.
+    expect(document.querySelectorAll('.zone')).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/Ask Claude/);
   });
 
@@ -410,7 +421,8 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     handed({}, { thumb: 'https://raw.githubusercontent.com/o/r/bridge-shots/o/p/2.webp?v=abc1234', thumbCapturedAt: capturedAt });
     const img = screen.getByRole('img', { name: 'The latest captured screen of this exploration' });
     expect(img.getAttribute('src')).toContain('/bridge-shots/');
-    expect(document.querySelector('.xp-captured')!.textContent).toBe('Captured 3 h ago');
+    // When it was captured, in the screen's one line.
+    expect(document.querySelector('.xp-st-sub')!.textContent).toContain('3 h ago');
     fireEvent.error(img);
     expect(document.querySelector('.xp-frame.is-shot')).toBeNull();
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Orders table');
@@ -421,11 +433,12 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     expect(screen.getByRole('link', { name: /Open the build/ }).getAttribute('href')).toBe('https://build-x.acme-account.pages.dev/billing');
   });
 
-  it('puts the activity under the preview, beside the hand-off zone: the same skeleton as while exploring', () => {
+  it('the same skeleton as while exploring: the screen, the library and the activity on the left, the rail on the right', () => {
     handed();
     const grid = document.querySelector('.xp-board')!;
-    expect(grid.className).toBe('xp-board');
-    expect([...grid.children].map((c) => c.className.split(' ')[0])).toEqual(['xp-preview', 'xp-side', 'xp-activity']);
+    expect([...grid.children].map((c) => c.className)).toEqual(['xp-b-left', 'xp-b-right']);
+    expect([...grid.querySelector('.xp-b-left')!.children].map((c) => c.className)).toEqual(['xp-b-screen', 'xp-b-main']);
+    expect(grid.querySelector('.xp-b-main .xp-activity')).toBeTruthy();
   });
 
   it('the viewer asked to review: the review row says so, with the link to compare under the steps', () => {
@@ -438,20 +451,21 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
         steps[3]!,
       ],
     });
-    const next = screen.getByRole('region', { name: 'What happens next' });
-    const row = within(next).getByText('Your review').closest('li')!;
+    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+    const row = within(screen.getByRole('list', { name: 'From exploration to product' })).getByText('Your review').closest('li')!;
     expect(row.getAttribute('aria-current')).toBe('step');
-    // Under the steps, never inside the row: a row action squeezed every detail to one word a line.
+    // Never a link inside the row: a row action squeezed every detail to one word a line.
     expect(within(row).queryByRole('link')).toBeNull();
-    expect(within(next).getByRole('link', { name: 'Compare with the exploration' }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app');
-    expect(within(next).getAllByRole('link', { name: 'Compare with the exploration' })).toHaveLength(1);
   });
 
   it('shipped: the tag, the product itself, and how it went', () => {
-    handed({ status: 'shipped', steps: steps.map((s) => ({ ...s, status: 'done' as const })) });
+    handed({ status: 'shipped', steps: [...steps.slice(0, 3).map((s) => ({ ...s, status: 'done' as const })), { status: 'done' as const, title: 'Shipped', detail: 'In Admin demo, Nov 10', current: true }] });
     expect(screen.getByText('Shipped', { selector: '[class*="badge"]' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /See it in the product/ })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'How it went' })).toBeTruthy();
+    // The celebration: where it lives now, and since when, with a Field Guide drawing.
+    const zone = screen.getByRole('region', { name: 'Live in Admin demo' });
+    expect(within(zone).getByText('Since Nov 10, for everyone who uses it.')).toBeTruthy();
+    expect(zone.querySelector('svg.ill')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
   });
 
   it('has no axe violations', async () => {
@@ -467,8 +481,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     it('quotes their words as plain text, who and when, with the reply box; long words fold behind Show more', async () => {
       const onReply = vi.fn(async () => 'Sent to Sam Lee.');
       handed({ steps: asking, question: { text: `<img src=x onerror=alert(1)> ${long}`, by: sam, when: 'today', answered: false, onReply } });
-      const next = screen.getByRole('region', { name: 'What happens next' });
-      expect(within(next).getByText('Sam Lee, design lead, asked a question').closest('li')!.getAttribute('aria-current')).toBe('step');
+      const next = screen.getByRole('region', { name: 'Sam Lee asks you' });
       const q = within(next).getByRole('region', { name: "Sam Lee's question" });
       // Escaped, never HTML: the tag reads as text, no image is made.
       expect(q.querySelector('img:not([class*="avatar"] img)')).toBeNull();
@@ -497,10 +510,10 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 
     it('waiting on the viewer: the question leads the zone, its answer is the one primary action', () => {
       handed({ steps: asking, question: { text: 'Red or orange?', by: sam, when: 'today', answered: false, onReply: async () => undefined } });
-      const next = screen.getByRole('region', { name: 'What happens next' });
+      const next = screen.getByRole('region', { name: 'Sam Lee asks you' });
       const q = within(next).getByRole('region', { name: "Sam Lee's question" });
-      // Before the steps, and who asked before their words.
-      expect(q.compareDocumentPosition(next.querySelector('ol, ul')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      // The zone comes first on the rail, and who asked before their words.
+      expect(next.compareDocumentPosition(screen.getByRole('region', { name: 'Where it is' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(q.querySelector('figcaption')!.compareDocumentPosition(q.querySelector('blockquote')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(within(q).getByRole('button', { name: 'Send to Sam' }).className).toMatch(/primary/);
       expect(screen.getByRole('link', { name: /Open the preview/ }).className).not.toMatch(/primary/);
@@ -508,7 +521,8 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 
     it('answered: one quiet line, no reply box', () => {
       handed({ question: { text: 'Red or orange?', by: sam, when: 'today', answered: true, onReply: null } });
-      expect(screen.getByText('Answered. The work goes on from here.')).toBeTruthy();
+      // Nothing waits on the viewer: no zone, no reply box.
+      expect(document.querySelectorAll('.zone')).toHaveLength(0);
       expect(screen.queryByLabelText('Your answer')).toBeNull();
     });
 
@@ -533,8 +547,8 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
       const onReopen = vi.fn(async () => 'Back to exploring. Say Done exploring again when it is ready for developers.');
       handed({ stage: 'not-planned', steps: declinedSteps, declined: { note: { text: 'Not this quarter, sorry.', by: sam, when: 'Oct 31' } } }, { onReopen });
       expect(screen.getByText('Not planned', { selector: '[class*="badge"]' })).toBeTruthy();
-      const next = screen.getByRole('region', { name: 'What happens next' });
-      expect(within(next).getByText('Developers closed it without building it.')).toBeTruthy();
+      const next = screen.getByRole('region', { name: 'The developers did not build it' });
+      expect(screen.getByText('Developers closed it without building it.')).toBeTruthy();
       expect(within(next).getByText('Not this quarter, sorry.')).toBeTruthy();
       expect(within(next).getByText('Sam, Oct 31')).toBeTruthy();
       // One primary action: Back to exploring; the preview steps back to secondary.
@@ -569,7 +583,8 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
       const writeText = vi.fn(async () => undefined);
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       const { container } = handed({ steps: elsewhere, forDevelopers: { message } });
-      const step = screen.getByText('Developers build it').closest('li')!;
+      fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+      const step = within(screen.getByRole('list', { name: 'From exploration to product' })).getByText('Developers build it').closest('li')!;
       expect(step.textContent).toContain('Their developers work elsewhere: send them the message.');
       // Proximity: the action sits on the row of the status it acts on, right under its words, and it is quiet (a link).
       const button = within(step).getByRole('button', { name: 'Copy for your developers' });
@@ -718,16 +733,16 @@ describe('Where it stands on the page', () => {
   const notes = { context: '', decisions: ['Pill on primary'], edgeCases: [], openQuestions: [], nextStep: 'Try the cart.' };
   it('sits above the activity while exploring, under the start panel while nothing is built, not shown without notes', () => {
     paint({ stage: 'exploring', activity: [], notes: { notes } });
-    const where = screen.getByRole('heading', { name: 'Where it stands' });
-    const activity = screen.getByRole('heading', { name: 'Activity' });
-    expect(where.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // On the rail, named for whose notes they are.
+    const where = screen.getByRole('heading', { name: 'Your handover notes' });
+    expect(where.closest('.xp-b-rail')).toBeTruthy();
     cleanup();
     paint({ notes: { notes } });
     const start = screen.getByRole('heading', { name: 'Nothing built yet' });
     expect(start.compareDocumentPosition(screen.getByRole('heading', { name: 'Where it stands' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     cleanup();
     paint({ stage: 'exploring', activity: [] });
-    expect(screen.queryByRole('heading', { name: 'Where it stands' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /handover notes|Where it stands/ })).toBeNull();
   });
 });
 
@@ -736,21 +751,17 @@ describe('Send to Figma', () => {
   const figma = { app: 'Put Bridge exploration admin-app#1 "Orders" in Figma.', terminal: 'claude "Put Bridge exploration admin-app#1 in Figma"' };
   const notes = (figmaPage?: string) => ({ notes: { context: '', decisions: [], edgeCases: [], openQuestions: [], nextStep: '', ...(figmaPage ? { figmaPage } : {}) } });
 
-  it('one action row in fixed places: the preview first, the AI tool second, Send to Figma third; activity under the preview', () => {
+  it('under the screen, a quiet action: the capture opens the preview, the zone holds the AI tool', () => {
     paint({ ...exploring, figma, claudeLink: 'yes' });
-    const places = [...document.querySelectorAll('.xp-preview-acts > .xp-act')].map((el) => el.className.split(' ')[1]);
-    expect(places).toEqual(['is-main', 'is-second', 'is-third']);
-    expect(document.querySelector('.xp-act.is-main')!.textContent).toContain('Open the preview');
-    expect(document.querySelector('.xp-act.is-third')!.textContent).toContain('Send to Figma');
-    const grid = document.querySelector('.xp-board')!;
-    expect([...grid.children].map((c) => c.className.split(' ')[0])).toEqual(['xp-preview', 'xp-side', 'xp-activity']);
+    const acts = document.querySelector('.xp-st-acts')!;
+    expect(acts.textContent).toContain('Send to Figma');
+    expect(acts.textContent).not.toContain('Continue in Claude');
+    expect(screen.getByRole('region', { name: 'Ready to hand it over?' }).textContent).toContain('Continue in Claude');
   });
 
-  it('the second place free (the lead answers below): Send to Figma sits beside the preview, not on a row of its own', () => {
+  it('the lead answers in the zone: Send to Figma stays under the screen', () => {
     paint({ ...exploring, figma, lead: { line: 'Sofia is done exploring.', bar: { onLooksRight: async () => 'ok', onChanges: async () => 'ok', onComment: async () => 'ok', onNotDoing: async () => undefined, onAskOther: null, link: 'https://x', onCopy: async () => undefined, changedSince: false } } });
-    const places = [...document.querySelectorAll('.xp-preview-acts > .xp-act')].map((el) => el.className.split(' ')[1]);
-    expect(places).toEqual(['is-main', 'is-second']);
-    expect(document.querySelector('.xp-act.is-second')!.textContent).toContain('Send to Figma');
+    expect(document.querySelector('.xp-st-acts')!.textContent).toContain('Send to Figma');
   });
 
   it('carries the demo mark, so on the sample team a click opens the demo dialog instead (scripts/demo-gate.ts)', async () => {
@@ -813,18 +824,40 @@ describe('Send to Figma', () => {
 describe('the talk with a lead on the page', () => {
   const bar = { onLooksRight: async () => 'ok', onChanges: async () => 'ok', onComment: async () => 'ok', onNotDoing: async () => undefined, onAskOther: null, link: 'https://x', onCopy: async () => undefined, changedSince: false };
   const face = { login: 'flo', name: 'Florian', agent: false, avatar: null };
-  it('a lead whose question waits keeps the bar, reads their own words, and gets no way into Claude', () => {
+  it('a lead whose question waits keeps the answer in the zone, reads their own words, and gets no way into Claude', () => {
     paint({ stage: 'exploring', tag: { label: 'Waiting for Ann', tone: 'warning' }, lead: { heading: 'With Ann', line: 'You asked Ann. Waiting for their answer.', bar } });
     expect(screen.getByRole('heading', { name: 'With Ann' })).toBeTruthy();
     expect(screen.getByText('You asked Ann. Waiting for their answer.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send to the developers' })).toBeTruthy();
     expect(screen.queryByText(/Open in Claude Code|Continue in Claude/)).toBeNull();
+  });
+
+  it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {
+    const onLooksRight = vi.fn(async () => 'Sent to the developers.');
+    const onComment = vi.fn(async () => 'Sent to Florian.');
+    paint({ stage: 'exploring', lead: { line: 'Florian is done exploring.', bar: { ...bar, onLooksRight, onComment } } });
+    const zone = screen.getByRole('region', { name: "Send Florian's screen to the developers?" });
+    const names = within(zone).getAllByRole('button').map((b) => b.textContent);
+    expect(names).toEqual(['Needs changes', 'Send to the developers']);
+    await act(async () => {
+      fireEvent.click(within(zone).getByRole('button', { name: 'Send to the developers' }));
+    });
+    expect(onLooksRight).toHaveBeenCalledWith('');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write to Florian' }), { target: { value: 'Lovely' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+    expect(onComment).toHaveBeenCalledWith('Lovely');
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    expect(await screen.findByRole('menuitem', { name: 'Not doing this' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Copy link' })).toBeTruthy();
   });
   it("the lead's bar is the one way to answer: no I'll look in the zone beside it; without the bar, I'll look stays", () => {
     const take = { onTake: async () => undefined };
     paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'warning' }, lead: { line: 'Sofia is done exploring. Look at the preview, then answer.', bar, take } });
-    expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Looks right' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: "Send Florian's screen to the developers?" })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send to the developers' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: "I'll look" })).toBeNull();
     cleanup();
     paint({ stage: 'exploring', tag: { label: 'Waiting for lead', tone: 'warning' }, lead: { line: 'Sofia is done exploring.', bar: null, take } });
@@ -834,7 +867,9 @@ describe('the talk with a lead on the page', () => {
     paint({ stage: 'exploring', archived: true, tag: { label: 'Not doing this', tone: 'neutral' }, notDoing: { title: 'Florian decided not to do this', who: face, when: 'today', text: 'Billing covers it', onReopen: async () => undefined }, decisions: [{ key: '0', name: 'Florian', login: 'flo', verb: 'decided not to do this', why: 'Billing covers it', round: 1, at: '2026-11-07T00:00:00Z' }] });
     expect(screen.getByRole('heading', { name: 'Florian decided not to do this' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Reopen as a new exploration' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Decisions' })).toBeTruthy();
+    // The decision sits in Activity, its reason said once (the zone quotes it).
+    expect(within(screen.getByRole('region', { name: 'Activity' })).getByText(/decided not to do this/)).toBeTruthy();
+    expect(screen.getAllByText('Billing covers it')).toHaveLength(1);
     expect(screen.queryByText('Nothing built yet')).toBeNull();
   });
 });
@@ -859,12 +894,51 @@ describe('the product manager (boards R1, R3)', () => {
   it('the designer reads where the PM stands, and can say they agreed in a call', async () => {
     const onCall = vi.fn(async () => 'Noted.');
     paint({ stage: 'exploring', pm: { mine: false, title: '', intro: '', line: 'Dino asked for changes, today.', quote: { who: dino, when: 'today', text: 'Show how many days late' }, call: { label: 'Dino agreed in a call', onCall } } });
-    expect(screen.getByRole('heading', { name: 'Product manager' })).toBeTruthy();
+    expect(screen.getByText('Dino asked for changes, today.')).toBeTruthy();
+    expect(screen.getByText('product manager')).toBeTruthy();
     expect(screen.getByText('Show how many days late')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Happy with it?' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Done exploring' })).toBeTruthy();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Dino agreed in a call' }));
     });
     expect(onCall).toHaveBeenCalled();
+  });
+});
+
+describe('developers: Code once it is handed to them, never git before', () => {
+  const take = { commands: ['git fetch https://github.com/acme/crm-design.git explore/x', 'git switch -c explore/x FETCH_HEAD'] as [string, string], note: 'A starting point.', branch: 'explore/x' };
+  const developer = [
+    { label: 'Product branch', value: 'explore/x (acme/crm-design#3)' },
+    { label: 'Check it again', value: 'bridge pieces crm#3 --record' },
+    { label: 'With Claude', value: 'bridge_missing_pieces { pr: "crm#3", record: true }' },
+  ];
+  const handed = { stage: 'handed-off' as const, done: null, activity: [], previewUrl: 'https://p.example.com', take, developer, handoff: { status: 'ready' as const, doneBy: florian, doneWhen: 'today', steps: [], pieces: { state: 'hidden' as const } } };
+
+  it('no "For developers" accordion for anyone', () => {
+    paint({ ...handed, role: 'owner' });
+    expect(screen.queryByText('For developers')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Code' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/git fetch|explore\/x/);
+  });
+
+  it('a developer while it is explored: one line, no Code', () => {
+    paint({ stage: 'exploring', activity: [], done: null, role: 'developer', take, developer });
+    expect(screen.getByText("Still being explored. You get a task in your repository when it's ready.")).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Code' })).toBeNull();
+  });
+
+  it('a developer once handed off: Code in the header, Terminal and Claude tabs with copy, the branch and the task', async () => {
+    const onCopy = vi.fn(async () => {});
+    paint({ ...handed, role: 'developer', onCopy });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Code' }));
+    const pop = await screen.findByRole('dialog', { name: 'Code for this exploration' });
+    expect(pop.textContent).toContain("git switch -c explore/x FETCH_HEAD");
+    expect(pop.textContent).toContain('bridge pieces crm#3 --record');
+    expect(pop.querySelector('.xp-code-branch')!.textContent).toBe('explore/x');
+    expect(within(pop).getByRole('link', { name: /Open the task on GitHub/ }).getAttribute('href')).toBe(base.githubUrl);
+    await user.click(within(pop).getByRole('tab', { name: 'Claude' }));
+    await waitFor(() => expect(pop.textContent).toContain('bridge_missing_pieces'));
+    await expectNoAxeViolations(pop);
   });
 });

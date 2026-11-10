@@ -8,6 +8,8 @@ import {
   countLine,
   emptyLine,
   filterChoices,
+  peopleOf,
+  personKey,
   filterValue,
   groupPieces,
   isTokenStructure,
@@ -207,6 +209,11 @@ describe('filters', () => {
     expect(choices.asked[0]).toEqual({ value: 'you', label: 'You' });
     expect(choices.product.at(-1)).toEqual({ value: 'library', label: 'Library' });
     expect(filterValue('asked', [], choices.asked)).toBe('Anyone');
+    // Asked by lists people only, never an exploration's name.
+    expect(choices.asked.slice(1).every((c) => c.value.startsWith('person:'))).toBe(true);
+    const leo = all.find((p) => peopleOf(p).length);
+    if (leo) expect(all.filter((p) => passes(p, { status: [], asked: [personKey(peopleOf(leo)[0]!)], product: [] }))).toContain(leo);
+    expect(filterValue('asked', ['person:a', 'person:b'], choices.asked)).toBe('2 people');
     expect(filterValue('status', ['waiting'], [{ value: 'waiting', label: 'Waiting' }])).toBe('Waiting');
   });
 });

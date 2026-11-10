@@ -983,7 +983,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   };
   const groups = useMemo(() => (data ? joinSmallGroups(groupPieces(shown, data.viewer)) : []), [shown, data]);
   const ordered = useMemo(() => groups.flatMap((g) => g.pieces), [groups]);
-  const choices = useMemo(() => filterChoices(pieces), [pieces]);
+  const choices = useMemo(() => filterChoices(pieces, data?.viewer.name ?? null), [pieces, data?.viewer.name]);
   const cur = ordered.find((p) => p.key === current) ?? ordered[0] ?? null;
 
   useEffect(() => {

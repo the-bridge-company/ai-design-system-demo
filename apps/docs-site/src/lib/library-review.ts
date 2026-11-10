@@ -572,7 +572,7 @@ export const productKeyOf = (p: ReviewPiece): string => p.asked?.productKey ?? (
 
 export function passes(p: ReviewPiece, f: ReviewFilters): boolean {
   if (f.status.length && !f.status.includes(p.state)) return false;
-  if (f.asked.length && !f.asked.some((a) => (a === YOU ? p.mine : p.asked?.key === a || p.also?.some((x) => x.key === a) || p.conflict?.ways.some((w) => w.key === a)))) return false;
+  if (f.asked.length && !f.asked.some((a) => (a === YOU ? p.mine : peopleOf(p).some((n) => personKey(n) === a)))) return false;
   if (f.product.length && !f.product.includes(productKeyOf(p))) return false;
   return true;
 }
@@ -582,18 +582,31 @@ export interface FilterChoice {
   label: string;
 }
 
-/** The checkbox lists: each exploration that asked for something, each product with a piece. */
-export function filterChoices(pieces: readonly ReviewPiece[]): { asked: FilterChoice[]; product: FilterChoice[] } {
-  const asked = new Map<string, string>();
+/** A person's filter value: "person:leo". */
+export const personKey = (name: string): string => `person:${name.trim().toLowerCase()}`;
+
+/** The people who asked for a piece: each asking exploration's designer, both designers of a conflict, the lead who made it. */
+export function peopleOf(p: ReviewPiece): string[] {
+  const names = p.conflict ? p.conflict.ways.map((w) => w.designer) : [p.asked?.designer, ...(p.also ?? []).map((x) => x.designer), p.by];
+  return [...new Set(names.filter((n): n is string => Boolean(n && n.trim())))];
+}
+
+/**
+ * The checkbox lists. Asked by lists people only (owner, 2026-11-10: explorations already show on each row, and
+ * mixing them with people made the menu hard to read): You first, then each other person by name. Product: each
+ * product with a piece.
+ */
+export function filterChoices(pieces: readonly ReviewPiece[], viewerName: string | null = null): { asked: FilterChoice[]; product: FilterChoice[] } {
+  const people = new Map<string, string>();
   const product = new Map<string, string>();
+  const self = viewerName ? personKey(viewerName) : null;
   for (const p of pieces) {
-    if (p.conflict) for (const w of p.conflict.ways) asked.set(w.key, w.exploration);
-    else for (const x of p.asked ? [p.asked, ...(p.also ?? [])] : []) asked.set(x.key, x.name);
+    for (const n of peopleOf(p)) if (personKey(n) !== self) people.set(personKey(n), n);
     product.set(productKeyOf(p), p.asked?.product ?? 'Library');
   }
   const byLabel = (a: FilterChoice, b: FilterChoice) => a.label.localeCompare(b.label);
   return {
-    asked: [{ value: YOU, label: 'You' }, ...[...asked].map(([value, label]) => ({ value, label })).sort(byLabel)],
+    asked: [{ value: YOU, label: 'You' }, ...[...people].map(([value, label]) => ({ value, label })).sort(byLabel)],
     product: [...product].map(([value, label]) => ({ value, label })).sort((a, b) => (a.value === LIBRARY_PRODUCT ? 1 : b.value === LIBRARY_PRODUCT ? -1 : byLabel(a, b))),
   };
 }
@@ -602,7 +615,7 @@ export function filterChoices(pieces: readonly ReviewPiece[]): { asked: FilterCh
 export function filterValue(kind: 'status' | 'asked' | 'product', picked: readonly string[], choices: readonly FilterChoice[]): string {
   if (!picked.length) return kind === 'status' ? 'Any' : kind === 'asked' ? 'Anyone' : 'All products';
   if (picked.length === 1) return choices.find((c) => c.value === picked[0])?.label ?? picked[0]!;
-  return `${picked.length} ${kind === 'status' ? 'statuses' : kind === 'asked' ? 'people and explorations' : 'products'}`;
+  return `${picked.length} ${kind === 'status' ? 'statuses' : kind === 'asked' ? 'people' : 'products'}`;
 }
 
 export const STATUS_CHOICES: FilterChoice[] = [

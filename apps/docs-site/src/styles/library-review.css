@@ -2335,3 +2335,8 @@ a.lr-reach-card:focus-visible {
     flex: 1 1 auto;
   }
 }
+
+/* The row's box when the piece is decided on its own (a conflict, a removal): shown off, its tooltip says why. */
+.lr-box-off {
+  display: inline-flex;
+}

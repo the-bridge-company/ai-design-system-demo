@@ -1187,6 +1187,16 @@
       row-gap: var(--space-5);
     }
 
+    /* Today and the chosen way stay on the first row, the others under them. */
+    .xp-library .li-ways > .li-way-today,
+    .xp-library .li-ways > .li-today-li {
+      order: -2;
+    }
+
+    .xp-library .li-ways > .li-way.is-on {
+      order: -1;
+    }
+
     /* A row: what it is with its tag and menu on the first line, the before and after under it. */
     .xp-library .li-row {
       grid-template-columns: minmax(0, 1fr) auto var(--control-height-md);

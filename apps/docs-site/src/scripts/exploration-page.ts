@@ -79,6 +79,7 @@ import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { pageRoleOf } from '../lib/exploration-layout';
+import { nameFace } from '../lib/people';
 import { viewerRole } from './needs-you';
 import { copyText } from './explorer/util';
 import { loadVisualImpact } from './reviews/visual-impact';
@@ -662,6 +663,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     props: {
       number: r.number,
       role,
+      me: member?.name ? { login: nameFace(member.name), name: member.name, agent: false, avatar: null } : viewer ? faceOf(viewer, false, knownNamesOf([viewer])) : null,
       crumbs: productCrumbs(product.name, shownJiraKey(pull.title), r.name),
       title: r.name,
       stage: 'loading',

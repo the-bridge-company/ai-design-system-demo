@@ -149,6 +149,8 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
+  /** The viewer's own face (their name and avatar), for the "You" row and the comment box. */
+  me?: PageFace | null;
   /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
   thumbRoute?: string | null;
   /**
@@ -1034,13 +1036,16 @@ function ExplorationBody(p: ExplorationPageProps) {
       // Not needed (no library piece changed): nobody to wait on, nothing to say.
       if (r.state === 'not-needed') continue;
       const you = (r.role === 'designer' && isOwner) || (r.role === 'lead' && role === 'lead') || (r.role === 'pm' && role === 'pm');
+      const face = you && p.me ? p.me : faceOfName(r.name);
       const said = r.state === 'looks-right' ? 'said it looks right' : r.state === 'changes' ? (r.stateLine === 'Needs changes' ? 'asked for changes' : r.stateLine.toLowerCase()) : you ? 'check the build' : r.role === 'designer' ? 'checks the build' : 'has not looked yet';
-      people.push({ key: r.role, face: faceOfName(r.name), name: you ? 'You' : r.name, line: said, part: you ? null : r.part, tone: r.state === 'looks-right' ? 'ok' : null, note: r.note });
+      people.push({ key: r.role, face, name: you ? 'You' : r.name, line: said, part: you ? null : r.part, tone: r.state === 'looks-right' ? 'ok' : null, note: r.note });
     }
   } else if (zone === 'lead-review') {
-    people.push({ key: 'you', face: null, name: 'You', line: staged.length ? `decide the ${staged.map((s) => s.title).join(' and ')} and send it` : 'decide and send it' });
+    people.push({ key: 'you', face: p.me ?? faceOfName('You'), name: 'You', line: staged.length ? `decide the ${staged.map((s) => s.title).join(' and ')} and send it` : 'decide and send it' });
   } else if (p.lead && !p.lead.bar) {
-    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? 'Your design lead', line: leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
+    // The library block already says what the lead is choosing, anchored to it: the row says it once, in general.
+    const waitsInLibrary = p.impact?.view.state === 'rows' && p.impact.view.conflicts.some((c) => !c.decided && !c.decides);
+    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? 'Your design lead', line: waitsInLibrary ? 'decides before the developers build it' : leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
   } else if (handoff && !p.archived && !turn) {
     // The step happening now, once: a zone already says what waits on the viewer.
     const now = handoff.steps.find((s) => s.current);
@@ -1068,9 +1073,9 @@ function ExplorationBody(p: ExplorationPageProps) {
   const timeline = p.activity === null && !p.decisions?.length ? null : timelineOf(p.activity ?? [], p.decisions ?? [], startedWhen, quoted);
   const composer =
     zone === 'lead-review' && p.lead?.bar ? (
-      <Composer me={null} placeholder={writeToLine([p.author.name])} onSend={(t) => p.lead!.bar!.onComment(t)} say={setSaid} />
+      <Composer me={p.me ?? null} placeholder={writeToLine([p.author.name])} onSend={(t) => p.lead!.bar!.onComment(t)} say={setSaid} />
     ) : p.onTellDevelopers ? (
-      <Composer me={null} placeholder={writeToLine(builder && builder !== 'the developer' ? [builder] : ['the developers'])} onSend={p.onTellDevelopers} say={setSaid} />
+      <Composer me={p.me ?? null} placeholder={writeToLine(builder && builder !== 'the developer' ? [builder] : ['the developers'])} onSend={p.onTellDevelopers} say={setSaid} />
     ) : null;
 
   // ---- The screen.
@@ -1283,6 +1288,7 @@ function ExplorationBody(p: ExplorationPageProps) {
                   actions={p.impact.actions}
                   say={setSaid}
                   quiet={Boolean(turn)}
+                  onPage
                   {...(staged.length && zone === 'lead-review' ? { newPieces: { capture: p.thumb, designer: p.author.name, choices, onChoice: (id: string, c: 'approve' | 'local') => setChoices((x) => ({ ...x, [id]: c })) } } : {})}
                 />
               </div>

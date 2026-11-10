@@ -42,7 +42,7 @@ export interface LibraryImpactActions {
 /** How many ways show before "Show N more": ten screens asking still read as one card. */
 const WAYS_SHOWN = 3;
 
-export function LibraryImpact({ view, actions = {}, say, headingLevel = 2, newPieces = null, quiet = false }: { view: LibraryImpactView; actions?: LibraryImpactActions; say: (s: string) => void; headingLevel?: 2 | 3; newPieces?: NewPieceChoices | null; /** The page's one primary action is elsewhere (its Your turn zone): a way is kept with a secondary button. */ quiet?: boolean }) {
+export function LibraryImpact({ view, actions = {}, say, headingLevel = 2, newPieces = null, quiet = false, onPage = false }: { view: LibraryImpactView; actions?: LibraryImpactActions; say: (s: string) => void; headingLevel?: 2 | 3; newPieces?: NewPieceChoices | null; /** The page's one primary action is elsewhere (its Your turn zone): a way is kept with a secondary button. */ quiet?: boolean; /** On the exploration page: no corner tags (the page's tag and Before it ships say where it stands); a choice someone else makes reads as one line anchored to it. */ onPage?: boolean }) {
   const id = useId();
   const H = headingLevel === 2 ? 'h2' : 'h3';
   if (view.state === 'loading')
@@ -98,13 +98,13 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2, newPi
           if (conflict?.decided)
             return (
               <li key={r.id} className="li-item">
-                <Decided d={conflict.decided} piece={r.id} tag={r.status} onUndo={actions.onUndo ?? null} say={say} headingLevel={headingLevel} />
+                <Decided d={conflict.decided} piece={r.id} tag={onPage ? null : r.status} onUndo={actions.onUndo ?? null} say={say} headingLevel={headingLevel} />
               </li>
             );
           return (
             <li key={r.id} className={conflict ? 'li-item has-conflict' : 'li-item'}>
-              {newPieces && stagedPieces([r], Boolean(actions.onPiece)).length ? <NewPiece row={r} np={newPieces} /> : <Row row={r} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />}
-              {conflict && <Conflict c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} quiet={quiet} />}
+              {newPieces && stagedPieces([r], Boolean(actions.onPiece)).length ? <NewPiece row={r} np={newPieces} /> : <Row row={r} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} tagless={onPage} />}
+              {conflict && <Conflict c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} quiet={quiet} onPage={onPage} />}
             </li>
           );
         })}
@@ -124,6 +124,34 @@ export function LibraryImpact({ view, actions = {}, say, headingLevel = 2, newPi
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * On the exploration page, a choice someone else makes: one line anchored to it, never a corner tag. "Dana is choosing
+ * the Card way", and the way to where it is decided.
+ */
+function WaitingLine({ c }: { c: ConflictView }) {
+  const who = /^(.+?) picks$/.exec(c.tag)?.[1] ?? null;
+  const href = c.noteParts.find((p) => p.href)?.href ?? null;
+  return (
+    <p className="li-waiting">
+      {who && <Who p={{ login: nameFace(who), name: who, agent: false, avatar: null }} size="sm" />}
+      <span className="li-waiting-text">
+        {who ? (
+          <>
+            <strong>{who}</strong> is choosing the {c.component} way
+          </>
+        ) : (
+          `The ${c.component} way is not chosen yet`
+        )}
+      </span>
+      {href && (
+        <Link href={href} data-keep-branch="">
+          Open in Library review
+        </Link>
+      )}
+    </p>
   );
 }
 
@@ -186,7 +214,7 @@ function Side({ side }: { side: ImpactSide }) {
   );
 }
 
-function Row({ row, onPiece, onReply, say }: { row: ImpactRowView; onPiece: LibraryImpactActions['onPiece'] | null; onReply?: LibraryImpactActions['onReply'] | null; say: (s: string) => void }) {
+function Row({ row, onPiece, onReply, say, tagless = false }: { row: ImpactRowView; onPiece: LibraryImpactActions['onPiece'] | null; onReply?: LibraryImpactActions['onReply'] | null; say: (s: string) => void; tagless?: boolean }) {
   const [ask, setAsk] = useState<'changes' | 'existing' | null>(null);
   const [replying, setReplying] = useState(false);
   const act = (a: PieceAction, input?: string) =>
@@ -235,9 +263,11 @@ function Row({ row, onPiece, onReply, say }: { row: ImpactRowView; onPiece: Libr
         </div>
       )}
       <div className="li-status">
-        <Badge tone={row.status.tone} size="md" className={statusTagClass(row.status.tone)}>
-          {row.status.label}
-        </Badge>
+        {!tagless && (
+          <Badge tone={row.status.tone} size="md" className={statusTagClass(row.status.tone)}>
+            {row.status.label}
+          </Badge>
+        )}
       </div>
       <div className="li-menu">
         {onPiece && row.menu.length > 0 && (
@@ -383,7 +413,7 @@ const WayName = ({ w }: { w: WayView }) => (
  * (today, then each designer's way), a ring on the way kept. The lead picks one way, or keeps several as sizes, and
  * the button says the outcome; everyone else reads the same block with a Comment.
  */
-function Conflict({ c, onChoose, onComment, say, quiet = false }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void; quiet?: boolean }) {
+function Conflict({ c, onChoose, onComment, say, quiet = false, onPage = false }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void; quiet?: boolean; onPage?: boolean }) {
   const qid = useId();
   const decides = c.decides && Boolean(onChoose);
   const mine = c.ways.find((w) => w.mine) ?? c.ways[0]!;
@@ -510,6 +540,7 @@ function Conflict({ c, onChoose, onComment, say, quiet = false }: { c: ConflictV
         </RadioGroup>
       )}
       {ways}
+      {onPage && !decides && <WaitingLine c={c} />}
       {hidden > 0 && (
         <Button variant="secondary" size="sm" className="li-more" onClick={() => setMore(true)}>
           Show {hidden} more
@@ -585,7 +616,7 @@ function DecidedArt() {
  * A settled choice (EB3, EB4): what the library gets in one line, who chose and who is told, then today and the ways
  * kept, the one this screen takes ringed. The lead may undo it until the screen is approved.
  */
-function Decided({ d, piece, tag, onUndo, say, headingLevel }: { d: DecidedView; piece: string; tag: ImpactRowView['status']; onUndo: LibraryImpactActions['onUndo'] | null; say: (s: string) => void; headingLevel: 2 | 3 }) {
+function Decided({ d, piece, tag, onUndo, say, headingLevel }: { d: DecidedView; piece: string; tag: ImpactRowView['status'] | null; onUndo: LibraryImpactActions['onUndo'] | null; say: (s: string) => void; headingLevel: 2 | 3 }) {
   const H = headingLevel === 2 ? 'h3' : 'h4';
   const [busy, setBusy] = useState(false);
   const undo = () => {
@@ -602,9 +633,11 @@ function Decided({ d, piece, tag, onUndo, say, headingLevel }: { d: DecidedView;
       <div className="li-decided-body">
         <div className="li-decided-head">
           <H className="li-decided-title">{d.title}</H>
-          <Badge tone={tag.tone} size="md" className={statusTagClass(tag.tone)}>
-            {tag.label}
-          </Badge>
+          {tag && (
+            <Badge tone={tag.tone} size="md" className={statusTagClass(tag.tone)}>
+              {tag.label}
+            </Badge>
+          )}
         </div>
         <p className="li-muted li-decided-by">
           {d.by} · {d.told}

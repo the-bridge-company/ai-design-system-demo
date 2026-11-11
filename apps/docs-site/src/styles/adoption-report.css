@@ -259,10 +259,104 @@
   left: 50%;
   display: block;
   width: max-content;
-  max-width: var(--size-120);
-  transform: translate(-50%, -50%) scale(var(--xe-scale, 0.5));
+  transform: translate(-50%, -50%) scale(0.65);
   transform-origin: center;
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-regular);
+  line-height: var(--typography-ui-line-height);
+  color: var(--color-text-default);
+  text-align: start;
+}
+
+/* One scale for every sample: smaller in the row, real size once the group is open. */
+.ar-plate-big .ar-fit {
+  transform: translate(-50%, -50%);
+}
+
+/* The library samples (AdoptionReport LibrarySample): real components, plain content, overlays drawn open. */
+.ar-pv-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ar-pv-end {
+  justify-content: flex-end;
+}
+
+.ar-pv-surface {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-overlay);
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--elevation-overlay);
+}
+
+.ar-pv-dialog {
+  inline-size: var(--size-60);
+}
+
+.ar-pv-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.ar-pv-menu {
+  gap: 0;
+  inline-size: var(--size-40);
+  padding: var(--space-1);
+}
+
+.ar-pv-item {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-inset);
+}
+
+.ar-pv-item:first-child {
+  background-color: var(--color-surface-hover);
+}
+
+.ar-pv-item.is-danger {
+  color: var(--color-feedback-danger-text);
+}
+
+.ar-pv-link {
+  color: var(--color-text-link);
+  text-decoration: underline;
+}
+
+.ar-pv-drawer {
+  align-content: start;
+  inline-size: var(--size-40);
+  block-size: var(--size-40);
+  border-radius: var(--radius-overlay) 0 0 var(--radius-overlay);
+}
+
+.ar-pv-line {
+  block-size: var(--size-3);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg-muted);
+}
+
+.ar-pv-line.is-short {
+  inline-size: 60%;
+}
+
+.ar-pv-card {
+  inline-size: var(--size-60);
+}
+
+.ar-pv-card-body {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ar-pv-muted {
+  color: var(--color-text-muted);
+}
+
+.ar-pv-name {
+  font-weight: var(--font-weight-semibold);
 }
 
 .ar-pair {

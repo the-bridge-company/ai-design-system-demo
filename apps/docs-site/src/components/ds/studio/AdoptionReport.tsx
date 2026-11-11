@@ -9,22 +9,18 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Send } from 'lucide-react';
 import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea } from '@bridge-ds/react';
-import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore, type ExampleNode } from '@bridge-ds/core';
+import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
-import ClientExample from './ClientExample';
 import { QuietScene } from './QuietScene';
 import { StudioHead } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
 import { FIRST_RUN_LINE, groupRequest, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ValueRow } from '../../../lib/adoption-report';
-import { thumbnailNode } from '../../../lib/components-studio';
-import { teamCatalogRows, teamComponentRows } from '../../../lib/team-components';
 import { bridgeDataUrl } from '../../../lib/library/published';
 import { runDate } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
 import { studioHref } from '../../../lib/team-path';
 import { setPageSummary } from '../../../lib/page-summary';
 import { isSampleTeam } from '../../../lib/demo';
-import { fitFrames } from '../../../scripts/explorer/preview-frames';
 import { loadTeamAuditIgnores, loadTeamAuditReport, saveTeamAuditIgnore, teamLead, type TeamAuditReport, type TeamData } from '../../../scripts/team-data';
 import { contributorFor } from '../../../scripts/contribute-session';
 import { currentViewer } from '../../../scripts/github-session';
@@ -64,19 +60,75 @@ function ProductPlate({ big = false }: { big?: boolean }) {
   );
 }
 
-/** The library side: the library's own preview of the component (its docs.json preview, drawn like Components). */
-function LibraryPlate({ node, name, big = false }: { node: ExampleNode | undefined; name: string; big?: boolean }) {
-  if (!node) {
-    return (
-      <span className={big ? 'ar-plate ar-plate-big ar-plate-name' : 'ar-plate ar-plate-name'}>
-        <span>{name}</span>
-      </span>
-    );
+/** A library button drawn as itself, never a second button inside the group's trigger (the real Button, as a span). */
+const SampleButton = ({ variant, children }: { variant: 'primary' | 'secondary' | 'danger'; children: string }) => (
+  <Button variant={variant} size="sm" render={<span />} tabIndex={-1}>
+    {children}
+  </Button>
+);
+
+/**
+ * The library side: the library component drawn with the real @bridge-ds/react components and plain content made for
+ * the report (decided 2026-11-11: never the docs samples, whose words are the library's own). Overlays (dialog, menu,
+ * side panel) are drawn open and static, on the overlay surface. Anything else: its name on a neutral plate.
+ */
+function LibrarySample({ name }: { name: string }) {
+  switch (name) {
+    case 'Button':
+      return (
+        <span className="ar-pv-row">
+          <SampleButton variant="secondary">Cancel</SampleButton>
+          <SampleButton variant="primary">Save</SampleButton>
+        </span>
+      );
+    case 'Dialog':
+    case 'AlertDialog':
+      return (
+        <span className="ar-pv-surface ar-pv-dialog">
+          <span className="ar-pv-title">Delete this contact?</span>
+          <span className="ar-pv-row ar-pv-end">
+            <SampleButton variant="secondary">Cancel</SampleButton>
+            <SampleButton variant="danger">Delete</SampleButton>
+          </span>
+        </span>
+      );
+    case 'Menu':
+      return (
+        <span className="ar-pv-surface ar-pv-menu">
+          <span className="ar-pv-item">Edit</span>
+          <span className="ar-pv-item">Duplicate</span>
+          <span className="ar-pv-item is-danger">Delete</span>
+        </span>
+      );
+    case 'Link':
+      return <span className="ar-pv-link">See all contacts</span>;
+    case 'Drawer':
+      return (
+        <span className="ar-pv-surface ar-pv-drawer">
+          <span className="ar-pv-title">Filters</span>
+          <span className="ar-pv-line" />
+          <span className="ar-pv-line is-short" />
+        </span>
+      );
+    case 'Card':
+      return (
+        <Card padding="compact" className="ar-pv-card">
+          <CardBody className="ar-pv-card-body">
+            <span className="ar-pv-title">Card title</span>
+            <span className="ar-pv-muted">One line of text</span>
+          </CardBody>
+        </Card>
+      );
+    default:
+      return <span className="ar-pv-name">{name}</span>;
   }
+}
+
+function LibraryPlate({ name, big = false }: { name: string; big?: boolean }) {
   return (
-    <span className={big ? 'ar-plate ar-plate-big' : 'ar-plate'} data-fit-frame="" aria-hidden="true" {...INERT}>
-      <span className="ar-fit" data-fit="">
-        <ClientExample node={node} />
+    <span className={big ? 'ar-plate ar-plate-big' : 'ar-plate'} aria-hidden="true" {...INERT}>
+      <span className="ar-fit">
+        <LibrarySample name={name} />
       </span>
     </span>
   );
@@ -304,8 +356,7 @@ function Gain({ product, gain, what }: { product: string; gain: PieceRow['gain']
   );
 }
 
-function PieceItem({ row, product, previews, actions }: { row: PieceRow; product: string; previews: Map<string, ExampleNode>; actions: ReportActions }) {
-  const node = previews.get(row.component);
+function PieceItem({ row, product, actions }: { row: PieceRow; product: string; actions: ReportActions }) {
   return (
     <AccordionItem
       value={row.key}
@@ -325,7 +376,7 @@ function PieceItem({ row, product, previews, actions }: { row: PieceRow; product
             </span>
             <span className="ar-mini">
               <span className="ar-cap">In the library</span>
-              <LibraryPlate node={node} name={row.component} />
+              <LibraryPlate name={row.component} />
             </span>
           </span>
         </span>
@@ -338,7 +389,7 @@ function PieceItem({ row, product, previews, actions }: { row: PieceRow; product
         </figure>
         <figure className="ar-fig">
           <figcaption className="ar-cap">In the library: {row.component}</figcaption>
-          <LibraryPlate node={node} name={row.component} big />
+          <LibraryPlate name={row.component} big />
         </figure>
       </div>
       {row.source && (
@@ -556,27 +607,10 @@ function Verdict({ model, actions }: { model: ReportModel; actions: ReportAction
 // ---------------------------------------------------------------------------------------------------------------
 // The page body
 
-export function AdoptionReportView({ model, previews, actions }: { model: ReportModel; previews: Map<string, ExampleNode>; actions: ReportActions }) {
-  const ref = useRef<HTMLDivElement>(null);
-  // Library previews scale to fit their frame once drawn, when a group opens, and when the window changes.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const fit = () => fitFrames(el, { max: 1 });
-    const raf = requestAnimationFrame(fit);
-    void document.fonts?.ready.then(fit);
-    const obs = new MutationObserver(() => requestAnimationFrame(fit));
-    obs.observe(el, { attributes: true, subtree: true, attributeFilter: ['data-open', 'hidden'] });
-    window.addEventListener('resize', fit);
-    return () => {
-      cancelAnimationFrame(raf);
-      obs.disconnect();
-      window.removeEventListener('resize', fit);
-    };
-  }, [model]);
+export function AdoptionReportView({ model, actions }: { model: ReportModel; actions: ReportActions }) {
   const p = model.product;
   return (
-    <div className="ar" ref={ref}>
+    <div className="ar">
       <Verdict model={model} actions={actions} />
       <Cards cards={model.cards} />
       <Tabs defaultValue="pieces" className="ar-tabs">
@@ -588,7 +622,7 @@ export function AdoptionReportView({ model, previews, actions }: { model: Report
         <TabsPanel value="pieces" className="ar-panel">
           <p className="ar-lead">What to switch to the library, the biggest change first.</p>
           {model.pieces.length ? (
-            <GroupList rows={model.pieces} name={(r) => pieceWord(r.component, 2)} render={(row) => <PieceItem key={row.key} row={row} product={p} previews={previews} actions={actions} />} />
+            <GroupList rows={model.pieces} name={(r) => pieceWord(r.component, 2)} render={(row) => <PieceItem key={row.key} row={row} product={p} actions={actions} />} />
           ) : (
             <p className="ar-muted">Every piece Bridge found comes from the library.</p>
           )}
@@ -696,10 +730,6 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
   }, [data, key, local, repo]);
 
   const model = useMemo(() => reportModel(loaded.report, { product: loaded.product.name, productKey: key, productRepo: loaded.product.repo, ignores: { version: 1, ignores }, earlier: loaded.earlier }), [loaded, key, ignores]);
-  const previews = useMemo(() => {
-    const rows = teamCatalogRows(data.model, teamComponentRows(data.model), null);
-    return new Map(rows.flatMap((r) => (r.preview ? [[r.name, thumbnailNode(r.preview)!] as [string, ExampleNode]] : [])));
-  }, [data.model]);
   const summary = `How much of ${loaded.product.name} comes from the library. Checked ${runDate(loaded.report.generatedAt)}.`;
   useEffect(() => setPageSummary(summary), [summary]);
 
@@ -749,7 +779,7 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
     },
   };
 
-  return <AdoptionReportView model={model} previews={previews} actions={actions} />;
+  return <AdoptionReportView model={model} actions={actions} />;
 }
 
 export default function TeamAdoptionReport() {

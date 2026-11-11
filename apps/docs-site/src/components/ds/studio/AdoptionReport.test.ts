@@ -30,7 +30,7 @@ const report: AuditReport = {
 const model = reportModel(report, { product: 'Acme CRM', productKey: 'crm', productRepo: 'acme-design-demo/acme-crm' });
 
 const actions = (over: Partial<ReportActions> = {}): ReportActions => ({ canAct: true, canIgnore: true, local: false, sent: {}, send: vi.fn(async () => {}), ignore: vi.fn(async () => {}), ...over });
-const paint = (a: ReportActions) => render(createElement(AdoptionReportView, { model, previews: new Map(), actions: a }));
+const paint = (a: ReportActions) => render(createElement(AdoptionReportView, { model, actions: a }));
 
 afterEach(cleanup);
 

@@ -444,6 +444,27 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
 }
 
 /** One option of a conflict, on one row: its colour key, the person, the value and its word, where it is used. */
+/**
+ * A row that is not a choice (today, or the ways once decided): clicking it shows that value on the stage above. A row
+ * Bridge cannot draw (no value) stays plain text.
+ */
+function LookRow({ o, shown, onShow, className, children }: { o: CompareOption; shown: string; onShow: (k: string) => void; className: string; children: ReactNode }) {
+  if (o.value === null)
+    return (
+      <div className={className}>
+        <span className="lr-opt-slot" aria-hidden="true" />
+        {children}
+      </div>
+    );
+  return (
+    // bridge-audit-ignore-next-line: a whole option row as one native button (shows it on the stage); the library Button is a compact action, not a list row
+    <button type="button" className={`${className} is-look${shown === o.key ? ' is-shown' : ''}`} aria-pressed={shown === o.key} onClick={() => onShow(o.key)}>
+      <span className="lr-opt-slot" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
 function OptionRow({ o, mark }: { o: CompareOption; mark: MarkOf }) {
   return (
     <span className="lr-opt-row">
@@ -538,7 +559,7 @@ function Stage({ view, mode, pick, component }: { view: CompareView; mode: 'over
         ))}
       </div>
     );
-  const base = view.ways.find((w) => w.key === pick) ?? view.ways[0]!;
+  const base = [view.today, ...view.ways].find((w) => w.key === pick && w.value !== null) ?? view.ways[0]!;
   return (
     <div className="lr-stage">
       <div className="lr-stage-row">
@@ -574,6 +595,12 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
   const view = compareView(p, 'Every screen', inset)!;
   const [mode, setMode] = useState<'overlay' | 'side'>(view.overlay ? 'overlay' : 'side');
   const [pick, setPick] = useState<string>(p.conflict!.pick ?? view.ways[0]!.key);
+  // What the stage draws: the way ticked, or any row clicked to look at it (today included), never a decision by itself.
+  const [shown, setShown] = useState<string>(pick);
+  const choose = (k: string) => {
+    setPick(k);
+    setShown(k);
+  };
   const open = decides && !p.conflict!.pick;
   const options = [...view.ways, ...(view.both ? [view.both] : [])];
   const component = p.conflict!.component;
@@ -608,25 +635,23 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
       <p className="lr-compare-what">
         <strong>{view.part}</strong> differs.
       </p>
-      <Stage view={view} mode={mode} pick={pick} component={component} />
+      <Stage view={view} mode={mode} pick={shown} component={component} />
       {probe}
       <div className="lr-opts">
-        <div className="lr-opt is-today">
-          <span className="lr-opt-slot" aria-hidden="true" />
+        <LookRow o={view.today} shown={shown} onShow={setShown} className="lr-opt is-today">
           <OptionRow o={view.today} mark={mark} />
-        </div>
+        </LookRow>
         {open ? (
-          <RadioGroup label="What the library keeps" hideLabel value={pick} onValueChange={setPick} className="lr-opts-group">
+          <RadioGroup label="What the library keeps" hideLabel value={pick} onValueChange={choose} className="lr-opts-group">
             {options.map((o) => (
               <Radio key={o.key} value={o.key} className="lr-opt" label={<OptionRow o={o} mark={mark} />} />
             ))}
           </RadioGroup>
         ) : (
           options.map((o) => (
-            <div key={o.key} className={`lr-opt${p.conflict!.pick === o.key ? ' is-picked' : ''}`}>
-              <span className="lr-opt-slot" aria-hidden="true" />
+            <LookRow key={o.key} o={o} shown={shown} onShow={setShown} className={`lr-opt${p.conflict!.pick === o.key ? ' is-picked' : ''}`}>
               <OptionRow o={o} mark={mark} />
-            </div>
+            </LookRow>
           ))
         )}
       </div>

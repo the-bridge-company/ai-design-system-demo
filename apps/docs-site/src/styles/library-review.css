@@ -2140,7 +2140,26 @@ a.lr-reach-card:focus-visible {
   min-width: 0;
 }
 
+/* Today, or a decided way: a row to look at on the stage, not a choice. */
+.lr-opts .lr-opt.is-look {
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  background: none;
+  cursor: pointer;
+}
+
+.lr-opts .lr-opt.is-look:focus-visible {
+  outline: var(--border-width-2) solid var(--color-focus-ring);
+  outline-offset: var(--border-width-2);
+}
+
+.lr-opts .lr-opt.is-look.is-shown:not(.is-picked) {
+  border-color: var(--color-border-default);
+}
+
 @media (hover: hover) {
+  .lr-opts .lr-opt.is-look:hover,
   .lr-opts label.lr-opt:hover {
     background-color: var(--color-surface-hover);
   }

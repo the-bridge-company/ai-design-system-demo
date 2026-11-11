@@ -1805,7 +1805,9 @@ a.lr-reach-card:focus-visible {
   .lr-list .lr-chapter-cols .lr-hover-ctl:focus-within > *,
   .lr-list.has-selection .lr-row .lr-col-box > *,
   .lr-list.has-selection .lr-group-row .lr-col-box > *,
-  .lr-list.has-selection .lr-chapter-cols .lr-col-box > * {
+  .lr-list.has-selection .lr-chapter-cols .lr-col-box > *,
+  /* A family's "select all" stays in view: it says the family can be decided at once (owner, 2026-11-11). */
+  .lr-list .lr-chapter-cols .lr-col-box > * {
     opacity: 1;
   }
 }

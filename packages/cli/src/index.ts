@@ -142,6 +142,11 @@ Usage:
                                       --activity also writes activity.json (open branches, suggestions,
                                       requests, recent merges, token history) read with GITHUB_TOKEN, so
                                       signed-out visitors of hosted Studio spend no GitHub API request.
+                                      With --activity, each --audit also reads the last published branch:
+                                      its previous report (the trend, one point per commit) and
+                                      audit-ignores.json ("Not a problem" in Studio, honoured like an
+                                      allowlist and published again). Reports record the repository,
+                                      commit and folder of the audited code.
                                       The bridge-data workflow publishes the folder to the bridge-data branch
   bridge docs draft <Component> [--json]
                                       docs.json pre-fill from the code (props, tokens, anatomy, contrast,

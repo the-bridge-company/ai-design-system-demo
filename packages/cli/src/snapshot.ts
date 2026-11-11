@@ -1,10 +1,10 @@
 // bridge snapshot: the repo model of this checkout, written for the bridge-data branch (hosted Studio and Library
 // read it from the raw host, no API quota). Adds what only Node can compute: adoption audits of product folders.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
-import type { AuditReport } from '@bridge-ds/core/audit';
-import { ACTIVITY_FILE, activityBytes, auditId, buildSnapshot, defaultProduct, productForPlace, productsOf, collectActivity, collectReleases, GitHubClient, loadRepoModel, parseActivity, recordingSource, snapshotAudit, snapshotLlmsTxt, SNAPSHOT_AUDITS_DIR, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, type FetchLike, type RepoActivity, type RepoSnapshot, type SnapshotAudit, type SnapshotPackage } from '@bridge-ds/core';
+import { carryHistory, type AuditReport } from '@bridge-ds/core/audit';
+import { ACTIVITY_FILE, activityBytes, AUDIT_IGNORES_FILE, ignoresAllowlist, parseAuditIgnores, type AuditIgnores, auditId, buildSnapshot, defaultProduct, productForPlace, productsOf, collectActivity, collectReleases, GitHubClient, loadRepoModel, parseActivity, recordingSource, snapshotAudit, snapshotLlmsTxt, SNAPSHOT_AUDITS_DIR, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, type FetchLike, type RepoActivity, type RepoSnapshot, type SnapshotAudit, type SnapshotPackage } from '@bridge-ds/core';
 import { fsSource, runAudit } from '@bridge-ds/core/node';
 
 export interface SnapshotOptions {
@@ -30,6 +30,13 @@ export interface SnapshotOptions {
     /** fetch for api.github.com (tests). */
     fetch?: FetchLike;
   };
+  /**
+   * Reads a file of the previously published bridge-data branch (null when it has none): the last report of each
+   * audit (its trend carries on) and audit-ignores.json (the "Not a problem" decisions taken in Studio, which the
+   * audits honour like an allowlist and which are published again). Default: with --activity, the same token reads
+   * the branch on GitHub; without it, nothing is read.
+   */
+  previous?: (path: string) => Promise<string | null>;
 }
 
 export interface SnapshotResult {
@@ -157,6 +164,27 @@ function reportFiles(root: string, entry: string): string[] {
     .map((n) => join(abs, n));
 }
 
+/** Where a folder sits in its checkout: the GitHub repository, the commit and the folder inside it. */
+function checkoutPlace(abs: string): { repo?: string; ref?: string; root?: string } {
+  const dir = existsSync(abs) && statSync(abs).isDirectory() ? abs : dirname(abs);
+  const top = git(dir, ['rev-parse', '--show-toplevel']);
+  if (!top) return {};
+  const ref = git(dir, ['rev-parse', 'HEAD']);
+  const repo = originOf(dir);
+  // Both sides real: on macOS the temp folder /var is /private/var to git.
+  const root = relative(realpathSync(top), realpathSync(abs)).split(sep).join('/');
+  return { ...(repo ? { repo } : {}), ...(/^[0-9a-f]{7,40}$/.test(ref) ? { ref } : {}), ...(root.startsWith('..') ? {} : { root }) };
+}
+
+const parseJson = (text: string | null | undefined): unknown => {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
 export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResult> {
   const rec = recordingSource(fsSource(opts.root));
   const model = await loadRepoModel(rec.source);
@@ -170,6 +198,18 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
     const { product, how } = productForPlace(products, { ...place, designSystemRepo: dsRepo });
     return how !== 'default' && product.key !== defaultProduct(products).key ? product.key : undefined;
   };
+  // The branch as published last time: earlier reports (the trend) and the decisions taken in Studio.
+  const previousRepo = opts.activity?.repo ?? dsRepo;
+  const readPrevious: (path: string) => Promise<string | null> =
+    opts.previous ??
+    (opts.activity && previousRepo
+      ? (path) =>
+          new GitHubClient(previousRepo, opts.activity!.token, opts.activity!.fetch ?? ((url, init) => fetch(url, init)), { attempts: 1, baseDelayMs: 0, sleep: async () => {} }, { etags: false })
+            .getRawText(path, SNAPSHOT_BRANCH)
+            .then((t) => t ?? null)
+            .catch(() => null)
+      : async () => null);
+  const ignores: AuditIgnores = parseAuditIgnores(parseJson(await readPrevious(AUDIT_IGNORES_FILE)));
   const audits = new Map<string, { summary: SnapshotAudit; report: AuditReport }>();
   for (const entry of opts.auditReports ?? []) {
     for (const file of reportFiles(opts.root, entry)) {
@@ -188,14 +228,21 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
     const [path, label] = spec.split(/=(.*)/s, 2) as [string, string | undefined];
     const abs = resolve(opts.root, path);
     if (!existsSync(abs)) throw new Error(`No such file or folder to audit: ${path}`);
-    const report = runAudit(abs, { ds: opts.root, version: opts.version, ...(label ? { label } : {}) });
     const id = auditId(label || relative(opts.root, abs) || basename(abs));
     // A product's own repository checked out next to this one, or inside it (actions/checkout `path:`), is named by its
     // git origin when that origin is not the design system's.
     const relPath = relative(opts.root, abs).split(sep).join('/');
     const origin = originOf(statSync(abs).isDirectory() ? abs : dirname(abs));
     const foreign = origin && origin.toLowerCase() !== (dsRepo ?? originOf(opts.root) ?? '').toLowerCase() ? origin : undefined;
-    audits.set(id, { summary: snapshotAudit(id, report, productOf({ relPath, repo: foreign })), report });
+    const product = productOf({ relPath, repo: foreign });
+    // "Not a problem" in Studio: the places decided on are left out of the counts, with the reason, like an allowlist.
+    const allowlist = ignoresAllowlist(ignores, product);
+    const fresh = runAudit(abs, { ds: opts.root, version: opts.version, ...(label ? { label } : {}), ...(allowlist.length ? { allowlist } : {}) });
+    // Where the code is, so Studio links each place to its file and line at the commit that was measured.
+    const measured: AuditReport = { ...fresh, target: { ...fresh.target, ...checkoutPlace(abs) } };
+    const before = parseJson(await readPrevious(`${SNAPSHOT_AUDITS_DIR}/${id}.json`));
+    const report = carryHistory(measured, isReport(before) ? before : null);
+    audits.set(id, { summary: snapshotAudit(id, report, product), report });
   }
 
   const packages = workspacePackages(opts.root);
@@ -227,6 +274,11 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
   for (const { summary, report } of audits.values()) {
     writeFileSync(join(opts.out, summary.path), `${JSON.stringify(report)}\n`);
     written.push(summary.path);
+  }
+  // The decisions are published again with the rest: the branch is replaced on every run.
+  if (ignores.ignores.length) {
+    writeFileSync(join(opts.out, AUDIT_IGNORES_FILE), `${JSON.stringify(ignores, null, 2)}\n`);
+    written.push(AUDIT_IGNORES_FILE);
   }
   let activity: SnapshotResult['activity'];
   if (opts.activity) {

@@ -189,6 +189,7 @@ export function historyPoint(r: AuditReport): HistoryPoint {
   return {
     ...(r.label ? { label: r.label } : {}),
     generatedAt: r.generatedAt,
+    ...(r.target.ref ? { ref: r.target.ref } : {}),
     tokenAdoption: r.metrics.tokenAdoption,
     componentAdoption: r.metrics.componentAdoption,
     hardcoded: r.metrics.hardcoded,
@@ -230,6 +231,26 @@ export function compareWithBaseline(report: AuditReport, baseline: AuditReport):
     removedFiles: [...before.keys()].filter((p) => !after.has(p)).sort(),
   };
   return { ...report, baseline: diff, history: [...(baseline.history ?? []), historyPoint(baseline)] };
+}
+
+/** The most points a report carries: about a year of weekly changes. */
+export const HISTORY_MAX = 60;
+
+/**
+ * The report with the trend of the code it measures, from the previous report of the same audit (the one published
+ * last time). A new commit (or, without commits, new figures) adds the previous run as a point and compares with it;
+ * the same commit measured again keeps the previous history and comparison, so a scheduled run every 30 minutes does
+ * not add a point each time. Without a previous report, the report as it is.
+ */
+export function carryHistory(report: AuditReport, previous: AuditReport | null | undefined): AuditReport {
+  if (!previous || previous.schemaVersion !== AUDIT_SCHEMA_VERSION || !previous.metrics) return report;
+  const a = report.metrics;
+  const b = previous.metrics;
+  const sameFigures = a.tokenAdoption === b.tokenAdoption && a.componentAdoption === b.componentAdoption && a.hardcoded === b.hardcoded && a.uiComponentInstances === b.uiComponentInstances;
+  const same = report.target.ref && previous.target.ref ? report.target.ref === previous.target.ref : sameFigures;
+  if (same) return { ...report, history: (previous.history ?? []).slice(-HISTORY_MAX), ...(previous.baseline ? { baseline: previous.baseline } : {}) };
+  const next = compareWithBaseline(report, previous);
+  return { ...next, history: next.history.slice(-HISTORY_MAX) };
 }
 
 const fmtPct = (n: number | null) => (n === null ? 'n/a' : `${n}%`);

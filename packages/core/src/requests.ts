@@ -74,7 +74,7 @@ export interface ComponentChangeRequest {
  * product's key in bridge.config.json ("prints"; its name comes from there), `name` the exploration's name ("Order
  * fulfilment timeline").
  */
-export interface RequestOrigin {
+export interface ExplorationRequestOrigin {
   kind: 'exploration';
   repo: string;
   number: number;
@@ -82,10 +82,30 @@ export interface RequestOrigin {
   name: string;
 }
 
+/**
+ * A group of a product's adoption report sent to developers from Studio ("Send to developers"): `product` the
+ * product's key, `run` the audit id (audits/<run>.json on the bridge-data branch), `group` the group's key (core
+ * adoptionPieces / adoptionValues, stable across runs), `name` its title in the report ("Buttons that look like ours
+ * but aren't"), `url` the report's page in Studio.
+ */
+export interface AuditRequestOrigin {
+  kind: 'audit';
+  product: string;
+  run: string;
+  group: string;
+  name: string;
+  url?: string;
+}
+
+export type RequestOrigin = ExplorationRequestOrigin | AuditRequestOrigin;
+
 /** The origin in a request's Bridge block, or null when it has none (or an unreadable one). */
 export function requestOriginOf(r: Pick<ComponentChangeRequest, 'origin'> | null | undefined): RequestOrigin | null {
-  const o = r?.origin;
-  return o && o.kind === 'exploration' && typeof o.repo === 'string' && typeof o.number === 'number' && typeof o.product === 'string' && typeof o.name === 'string' ? o : null;
+  const o = r?.origin as (Omit<Partial<ExplorationRequestOrigin>, 'kind'> & Omit<Partial<AuditRequestOrigin>, 'kind'> & { kind?: string }) | undefined;
+  if (!o) return null;
+  if (o.kind === 'exploration') return typeof o.repo === 'string' && typeof o.number === 'number' && typeof o.product === 'string' && typeof o.name === 'string' ? (o as ExplorationRequestOrigin) : null;
+  if (o.kind === 'audit') return typeof o.product === 'string' && typeof o.run === 'string' && typeof o.group === 'string' && typeof o.name === 'string' ? (o as unknown as AuditRequestOrigin) : null;
+  return null;
 }
 
 export interface RequestIssue {

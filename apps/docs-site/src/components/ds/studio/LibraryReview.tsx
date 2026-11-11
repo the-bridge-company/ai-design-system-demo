@@ -10,7 +10,7 @@
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Kbd, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
@@ -23,7 +23,7 @@ import { measuredReach, reachCell, reachOf, type Measured, type Reach, type Reac
 import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy, readPiece, viewSearch, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
 import { askedCountLine, askedFaces, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
-import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, tallyOf, type Tally } from '../../../lib/library-review-list';
+import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, compareKeepLabel, compareView, STAGE_SCALE, stageLabels, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
@@ -45,7 +45,6 @@ import {
   reviewParams,
   seenLine,
   selectionLine,
-  sharedLine,
   STATUS_CHOICES,
   summaryLine,
   tokenGroup,
@@ -58,7 +57,7 @@ import {
   type ReviewPiece,
   type ReviewView,
 } from '../../../lib/library-review';
-import { ACTIONS_SELECTOR, setPageSummary } from '../../../lib/page-summary';
+import { ACTIONS_SELECTOR, setPageSummary, setPageSummaryLead } from '../../../lib/page-summary';
 import { statusTagClass } from '../../../lib/status-tag';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
 import { askOther, commentOn, decide, loadLibraryReview, pickWay, readViewer, type ReviewData } from '../../../scripts/library-review-data';
@@ -189,30 +188,6 @@ function FamilyIcon({ name, size = 'md' }: { name: 'grid' | 'diamonds' | 'doc'; 
     <span className={`lr-fam-icon is-${size}`} aria-hidden="true">
       <Icon icon={siteIcon(name)} size={size === 'md' ? 'lg' : 'sm'} />
     </span>
-  );
-}
-
-/** The tally at the end of the filters row: the number in Fraunces, its words, its split by family as icon counts. */
-function TallyLine({ t }: { t: Tally }) {
-  return (
-    <p className="lr-tally" aria-live="polite">
-      {t.n !== null && <span className="lr-tally-n">{t.n}</span>}
-      <span className="lr-tally-text">
-        <strong className="lr-tally-words">{t.words}</strong>
-        {(t.families.length > 0 || t.note) && (
-          <span className="lr-tally-fams">
-            {t.families.map((f) => (
-              <span key={f.family} className="lr-tally-fam" title={f.label}>
-                <Icon icon={siteIcon(f.icon)} size="xs" />
-                <VisuallyHidden>{f.label} </VisuallyHidden>
-                {f.n}
-              </span>
-            ))}
-            {t.note && <span>{t.note}</span>}
-          </span>
-        )}
-      </span>
-    </p>
   );
 }
 
@@ -447,9 +422,6 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
                   </Button>
                 )}
                 {comment}
-                <span className="lr-keys" aria-hidden="true">
-                  <span className="lr-kh"><Kbd keys="A" /> add</span>{p.asked && (<span className="lr-kh"><Kbd keys="K" /> keep</span>)}<span className="lr-kh"><Kbd keys="↓" /> next</span>
-                </span>
               </div>
               {p.match && p.asked?.designer && (
                 <p className="lr-muted lr-shared">
@@ -457,7 +429,6 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
                 </p>
               )}
               {commentBox}
-              {sharedLine(p) && <p className="lr-muted lr-shared">{sharedLine(p)}</p>}
             </div>
           ) : (
             <div className="lr-decide">
@@ -686,10 +657,45 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
   );
 }
 
+/**
+ * The side list scrolls on its own and its end is always on screen: its height runs from where it starts (under the
+ * filters, then under the top bar once sticky) to the window's bottom. Wide screens only; on a phone it is a drawer.
+ */
+function useSideFitsScreen() {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof window === 'undefined') return;
+    const wide = window.matchMedia('(min-width: 761px)');
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!wide.matches) return el.style.removeProperty('--lr-side-max');
+        const stuck = parseFloat(getComputedStyle(el).top) || 0;
+        const top = Math.max(el.getBoundingClientRect().top, stuck);
+        el.style.setProperty('--lr-side-max', `${Math.max(240, window.innerHeight - top - 16)}px`);
+      });
+    };
+    fit();
+    window.addEventListener('scroll', fit, { passive: true });
+    window.addEventListener('resize', fit);
+    wide.addEventListener('change', fit);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', fit);
+      window.removeEventListener('resize', fit);
+      wide.removeEventListener('change', fit);
+    };
+  }, []);
+  return ref;
+}
+
 function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, mark }: { groups: ReturnType<typeof joinSmallGroups>; all: ReviewPiece[]; current: string | null; seen: Set<string>; decidedCount: number; onPick: (k: string) => void; detail: ReactNode; mark: MarkOf }) {
   const seenN = all.filter((p) => seen.has(p.key)).length;
   // On a phone: a compact "1 of 12" bar with previous and next above the piece, the list behind "All pieces".
   const [listOpen, setListOpen] = useState(false);
+  const sideRef = useSideFitsScreen();
   const at = all.findIndex((p) => p.key === current);
   const go = (step: number) => {
     const n = all[at + step];
@@ -720,7 +726,7 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
           {listOpen ? 'Hide pieces' : 'All pieces'}
         </Button>
       </div>
-      <nav className={`lr-side${listOpen ? ' is-open' : ''}`} id="lr-side" aria-label="Pieces">
+      <nav ref={sideRef} className={`lr-side${listOpen ? ' is-open' : ''}`} id="lr-side" aria-label="Pieces">
         <div className="lr-side-head">
           <p className="lr-seen">
             <strong>{seenLine(seenN, all.length)}</strong>
@@ -1307,9 +1313,19 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
     if (suggestion && suggestionEl.current && openSuggestion) openSuggestion(suggestion, suggestionEl.current);
   }, [suggestion]);
 
+  // The summary under the title: for whoever decides, the count in words once the statuses are read ("12 wait for
+  // you: 5 foundations, 5 components and 2 docs."); otherwise who decides here.
+  const tallyText = useMemo(() => {
+    if (!data || data.loading || data.failed || !data.viewer.reviews) return null;
+    const all = (data.pieces ?? []).map((p) => (local.has(p.key) ? { ...p, state: 'decided' as const, decided: local.get(p.key) ?? 'added', waitsOn: 'nobody' as const } : p));
+    const f = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
+    return tallySentence(tallyOf(all, all.filter((p) => passes(p, f)), data.viewer, f));
+  }, [data, local, params]);
   useEffect(() => {
-    if (data) setPageSummary(summaryLine(data.viewer, data.lead));
-  }, [data]);
+    if (!data) return;
+    if (tallyText) setPageSummaryLead(tallyText.strong, tallyText.rest);
+    else setPageSummary(summaryLine(data.viewer, data.lead));
+  }, [data, tallyText?.strong, tallyText?.rest]);
 
   // The nav badge is this page's "wait for you" number, once the statuses are read (the shell shows it to reviewers only).
   const waitingN = data && !data.loading && !data.failed ? waitingForYou(data.pieces, data.viewer) : null;
@@ -1585,7 +1601,6 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
                 {v.reviews ? 'Clear filters' : 'Show everyone'}
               </Button>
             )}
-            <TallyLine t={tallyOf(pieces, shown, v, filters)} />
           </div>
           {!v.reviews && (
             <aside className="lr-banner" aria-label="Who decides">

@@ -137,6 +137,20 @@ export function tallyOf(all: readonly ReviewPiece[], shown: readonly ReviewPiece
   return { n, words, families, note };
 }
 
+const listWords = (xs: readonly string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+
+/**
+ * The tally as the page's summary sentence, under the title: "12 wait for you:" in bold, then the split in words,
+ * "5 foundations, 5 components and 2 docs." (no icons alone: the words say what each number counts).
+ */
+export function tallySentence(t: Tally): { strong: string; rest: string } {
+  const note = t.note ? ` ${t.note.replace(/^./, (c) => c.toUpperCase())}.` : '';
+  if (t.n === null) return { strong: `${t.words}.`, rest: note.trim() };
+  const split = t.families.map((f) => `${f.n} ${f.label.toLowerCase()}`);
+  const fix = (x: string) => (/^1 /.test(x) ? x.replace(/s$/, '') : x);
+  return { strong: `${t.n} ${t.words}${split.length ? ':' : '.'}`, rest: `${split.length ? `${listWords(split.map(fix))}.` : ''}${note}`.trim() };
+}
+
 /**
  * A product's mark: the initial of its last word ("Acme CRM" C). When two products would share an initial, both get
  * two letters ("Acme Prints" Pr, "Acme Pay" Pa), so no two marks read the same.

@@ -106,7 +106,13 @@ a.lr-ask {
 .lr-one {
   display: grid;
   grid-template-columns: minmax(0, var(--size-80)) minmax(0, 1fr);
+  gap: var(--space-6);
   align-items: start;
+}
+
+/* Two blocks, not one: the list of pieces and the piece open, each its own card with air between them. */
+.lr-side,
+.lr-main {
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
   background-color: var(--color-surface-default);
@@ -117,17 +123,18 @@ a.lr-ask {
   top: calc(var(--layout-header-height) + var(--space-4));
   display: grid;
   align-content: start;
-  max-height: calc(100dvh - var(--layout-header-height) - var(--space-8));
+  /* The script sets --lr-side-max from where the list starts, so its end is always on screen; this is the fallback. */
+  max-height: var(--lr-side-max, calc(100dvh - var(--layout-header-height) - var(--space-8)));
+  padding-block-end: var(--space-3);
   overflow-y: auto;
-  border-inline-end: var(--border-width-default) solid var(--color-border-default);
   overscroll-behavior: contain;
+  background-color: var(--color-bg-subtle);
 }
 
 .lr-side-head {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
-  border-block-end: var(--border-width-default) solid var(--color-border-default);
 }
 
 .lr-seen {
@@ -190,9 +197,12 @@ a.lr-ask {
   font-weight: var(--font-weight-regular);
 }
 
+/* Each piece is its own card on the list's quiet ground, so the rows hold together instead of floating. */
 .lr-side-list {
+  display: grid;
+  gap: var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: 0 var(--space-3);
   list-style: none;
 }
 
@@ -202,10 +212,11 @@ a.lr-ask {
   gap: var(--space-3);
   width: 100%;
   min-height: var(--size-14);
-  padding: var(--space-3) var(--space-4);
-  border: 0;
-  border-inline-start: var(--border-width-strong) solid transparent;
-  background: none;
+  padding: var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  /* Concentric with the list's card: its radius less the inset around the piece cards. */
+  border-radius: calc(var(--radius-container) - var(--space-3));
+  background-color: var(--color-surface-default);
   color: var(--color-text-default);
   font: inherit;
   text-align: start;
@@ -214,17 +225,17 @@ a.lr-ask {
 
 @media (hover: hover) {
   .lr-side-row:hover {
-    background-color: var(--color-surface-hover);
+    border-color: var(--color-border-strong);
   }
 }
 
 .lr-side-row:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: calc(var(--focus-ring-width) * -1);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .lr-side-row[aria-current="true"] {
-  border-inline-start-color: var(--color-action-primary-bg);
+  border-color: var(--color-action-primary-bg);
   background-color: var(--color-surface-selected);
 }
 
@@ -406,27 +417,8 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-.lr-keys {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin-inline-start: auto;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
 
-.lr-kh {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-}
 
-@media (hover: none) {
-  .lr-keys {
-    display: none;
-  }
-}
 
 .lr-shared {
   font-size: var(--typography-ui-size);
@@ -839,47 +831,11 @@ a.lr-asked:hover .lr-asked-name {
 
 /* --- Tally: what waits, at the end of the filters row ------------------------------------------------------------- */
 
-.lr-tally {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: 0 0 0 auto;
-}
 
-.lr-tally-n {
-  color: var(--color-text-link);
-  font-family: var(--typography-display-family);
-  font-size: var(--typography-h2-size);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-none);
-  font-variant-numeric: tabular-nums;
-}
 
-.lr-tally-text {
-  display: grid;
-  gap: var(--space-0-5);
-}
 
-.lr-tally-words {
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-ui-line-height);
-}
 
-.lr-tally-fams {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-}
 
-.lr-tally-fam {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
 
 /* --- Empty: the page's one Harbor zone, the lighthouse, the week in one sentence ------------------------------------ */
 
@@ -971,8 +927,6 @@ body:has(.lr-bar) .lr-toasts {
   .lr-side {
     max-height: var(--size-80);
     overflow-y: auto;
-    border-inline-end: 0;
-    border-block-start: var(--border-width-default) solid var(--color-border-default);
   }
 
   .lr-main {
@@ -1043,10 +997,6 @@ body:has(.lr-bar) .lr-toasts {
 
   .lr-chapter.has-rail .lr-row {
     padding-inline-start: var(--space-4);
-  }
-
-  .lr-tally {
-    margin-inline-start: 0;
   }
 
   .lr-list,
@@ -1792,7 +1742,7 @@ a.lr-reach-card:focus-visible {
   }
 
   .lr-reach-decide .lr-actions > :not(.lr-actions-note),
-  .lr-main .lr-decide .lr-actions > :not(.lr-keys, .lr-actions-note) {
+  .lr-main .lr-decide .lr-actions > :not(.lr-actions-note) {
     flex: 1 1 auto;
   }
 

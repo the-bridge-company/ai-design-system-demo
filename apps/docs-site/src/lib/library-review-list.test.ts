@@ -1,7 +1,7 @@
 // The List as chapters: families in order, the most recent group first, columns only when filled, the tally, the
 // product marks and what a chapter reaches.
 import { describe, expect, it } from 'vitest';
-import { chapterReach, chaptersOf, familiesOf, familyOf, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
+import { tallySentence, chapterReach, chaptersOf, familiesOf, familyOf, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
 import type { PieceGroup, ReviewPiece } from './library-review';
 import { reachOf, type Measured } from './library-reach';
 import { change, conflict, LEAD, leadChange, newComponent, PRODUCTS } from './library-fixtures.test-helpers';
@@ -91,3 +91,13 @@ describe('the List in blocks', () => {
     expect(shownColumns({ state: false, next: false, action: true })).toEqual(['action']);
   });
 });
+
+describe('tallySentence', () => {
+  it('says the count in words, the split by family after it', () => {
+    const t = { n: 12, words: 'wait for you', families: [{ family: 'foundations' as const, icon: 'grid' as never, label: 'Foundations', n: 5 }, { family: 'components' as const, icon: 'diamonds' as never, label: 'Components', n: 5 }, { family: 'docs' as const, icon: 'doc' as never, label: 'Docs', n: 2 }], note: null };
+    expect(tallySentence(t)).toEqual({ strong: '12 wait for you:', rest: '5 foundations, 5 components and 2 docs.' });
+    expect(tallySentence({ ...t, n: 1, words: 'waits for you', families: [{ ...t.families[2]!, n: 1 }] })).toEqual({ strong: '1 waits for you:', rest: '1 doc.' });
+    expect(tallySentence({ n: null, words: 'Nothing waits for you', families: [], note: '3 of yours wait on others' })).toEqual({ strong: 'Nothing waits for you.', rest: '3 of yours wait on others.' });
+  });
+});
+

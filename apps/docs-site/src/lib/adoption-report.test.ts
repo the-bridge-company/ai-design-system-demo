@@ -137,3 +137,35 @@ describe('parts line', () => {
     expect(partsLine({ count: 0, examples: [] })).toBeNull();
   });
 });
+
+describe('pictures of the product', () => {
+  const screens = [
+    { route: '/#/contacts', name: 'Contacts', files: ['a.tsx'], image: 'audits/acme-crm/contacts.webp', url: 'https://crm.example.com/#/contacts', capturedAt: '2026-11-11T08:00:00Z' },
+    { route: '/#/deals', name: 'Deals', files: ['b.tsx'] },
+  ];
+
+  it('each group shows the screen holding most of it, with its picture when captured', () => {
+    const m = reportModel({ ...report, screens }, { product: 'Acme CRM', productKey: 'crm' });
+    expect(m.pieces.find((r) => r.component === 'Button')!.screen).toEqual({
+      name: 'Contacts',
+      route: '/#/contacts',
+      image: 'audits/acme-crm/contacts.webp',
+      url: 'https://crm.example.com/#/contacts',
+      capturedAt: '2026-11-11T08:00:00Z',
+      line: 'All 10 buttons are on the Contacts screen.',
+    });
+    expect(m.pieces.find((r) => r.component === 'Link')!.screen).toMatchObject({ name: 'Deals', image: null, url: null });
+    expect(m.gaps[0]!.screen?.name).toBe('Deals');
+  });
+
+  it('says how many sit there, and never takes a picture path or address Bridge did not write', () => {
+    const odd = [{ route: '/x', name: 'X', files: ['a.tsx'], image: '../../x.webp', url: 'javascript:alert(1)' }];
+    const m = reportModel({ ...report, files: [...report.files, file('c.tsx', [c('Button', SHADCN, 'Button', 5)])], screens: odd }, { product: 'Acme CRM', productKey: 'crm' });
+    expect(m.pieces.find((r) => r.component === 'Button')!.screen).toMatchObject({ image: null, url: null, line: '10 of the 11 are on the X screen.' });
+  });
+
+  it('a report without screens has no picture for any group', () => {
+    const m = reportModel(report, { product: 'Acme CRM', productKey: 'crm' });
+    expect(m.pieces.every((r) => r.screen === null)).toBe(true);
+  });
+});

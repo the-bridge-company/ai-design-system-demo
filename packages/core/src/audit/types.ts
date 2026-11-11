@@ -167,6 +167,27 @@ export interface BaselineDiff {
   removedFiles: string[];
 }
 
+/**
+ * A screen of the audited product (`bridge snapshot` from products[].screens or the file routes, see screens.ts): the
+ * route to open on the product's address and the files that make it. The picture fields are set once the screen was
+ * captured (scripts/preview-shots.mjs screens, into the bridge-shots branch of the design system repository).
+ */
+export interface AuditScreen {
+  /** As opened on the product's address: "/", "/settings", "/#/contacts". */
+  route: string;
+  /** What a person reads: "Contacts". */
+  name: string;
+  /** Files of the report (paths as in files[]) that make this screen. */
+  files: string[];
+  /** The picture in the bridge-shots branch: "audits/<audit id>/<slug>.webp". */
+  image?: string;
+  /** The address it was captured from. */
+  url?: string;
+  capturedAt?: string;
+  width?: number;
+  height?: number;
+}
+
 export interface AuditReport {
   $schema?: string;
   schemaVersion: typeof AUDIT_SCHEMA_VERSION;
@@ -207,4 +228,6 @@ export interface AuditReport {
   };
   /** Earlier runs, oldest first (carried over from the baseline). */
   history: HistoryPoint[];
+  /** The product's screens and the files that make each one, with their pictures once captured. */
+  screens?: AuditScreen[];
 }

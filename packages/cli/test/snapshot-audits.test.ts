@@ -31,6 +31,17 @@ describe('bridge snapshot audits name their product', () => {
     expect(byId).toEqual({ 'admin-after': null, 'art-print-shop-main': 'admin-app', 'library-fixture': null });
   });
 
+  it("a product's report lists its screens and the files that make each one (the file routes without a screens map)", async () => {
+    const shop = mkdtempSync(join(tmpdir(), 'bridge-test-shop-'));
+    cpSync(join(REPO, 'packages/core/test/fixtures/audit/tailwind-app'), shop, { recursive: true });
+    execFileSync('git', ['init', '-q'], { cwd: shop });
+    execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/the-bridge-company/art-print-shop.git'], { cwd: shop });
+    const out = mkdtempSync(join(tmpdir(), 'bridge-test-snapshot-'));
+    await writeSnapshot({ root: REPO, out, version: '9.9.9', audit: [`${shop}=Art print shop`], previous: async () => null });
+    const report = JSON.parse(readFileSync(join(out, 'audits/art-print-shop.json'), 'utf8')) as AuditReport;
+    expect(report.screens).toEqual([{ route: '/', name: 'Home', files: ['app/page.tsx'] }]);
+  });
+
   it('a product checkout inside the repo (actions/checkout path:) is named by its own git origin', async () => {
     // Under node_modules (ignored by git): a nested repository, as the bridge-data workflow checks the product out.
     const cache = join(REPO, 'node_modules/.cache');

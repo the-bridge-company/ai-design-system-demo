@@ -412,6 +412,50 @@
       "items": {
         "$ref": "#/$defs/point"
       }
+    },
+    "screens": {
+      "type": "array",
+      "description": "The product's screens (bridge.config.json products[].screens or the file routes) and the files that make each one; image, url and capturedAt once captured into the bridge-shots branch.",
+      "items": {
+        "type": "object",
+        "required": [
+          "route",
+          "name",
+          "files"
+        ],
+        "properties": {
+          "route": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "image": {
+            "type": "string",
+            "pattern": "^audits/[a-z0-9._-]+/[a-z0-9-]+\\.webp$"
+          },
+          "url": {
+            "type": "string"
+          },
+          "capturedAt": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
     }
   },
   "$defs": {

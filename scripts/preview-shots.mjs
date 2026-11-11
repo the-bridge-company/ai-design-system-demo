@@ -4,6 +4,7 @@
 //
 //   node scripts/preview-shots.mjs run --shots <dir> [--config bridge.config.json] [--force] [--dry-run]
 //   node scripts/preview-shots.mjs capture --url <preview url> --out <file.webp> [--marker-crawl]
+//   node scripts/preview-shots.mjs screens --data <bridge-data folder> --shots <dir> [--config bridge.config.json] [--force]
 //
 // `run` reads the open explorations of this repository and of each product repository in bridge.config.json
 // products[] that has a `repo` and a `preview` (its design copy instead, products[].design with a `preview`), captures the preview of every head commit not captured yet, and writes
@@ -1013,6 +1014,168 @@ export async function reachRun({ dir, config, api, host, force = false, dryRun =
   writeJson(summaryFile, out);
   for (const d of readdirSync(join(dir, REACH_DIR))) if (d !== run && /^\d+$/.test(d)) rmSync(join(dir, REACH_DIR, d), { recursive: true, force: true });
   return { changed: true };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Screens of the adoption report: a real picture of where a group of pieces lives in the product. `bridge snapshot`
+// writes each audit's screens (route + the files that make it, from bridge.config.json products[].screens or the file
+// routes) into audits/<id>.json; `screens` opens each one on the product's live address (products[].production, else
+// its preview of the default branch when the product's repository is public), keeps the picture in the bridge-shots
+// branch and writes where it is back into the report before bridge-data is published:
+//   audits/<id>/<slug>.webp    800 px wide, from a 1440 by 900 window, the whole screen (no highlight yet)
+//   audits/<id>/screens.json   { product, base, ref, at, screens: { <route>: { image, url, capturedAt, width, height } }, failed }
+// A screen is captured again when the audited commit or the address changes, or after a day; else the picture is kept.
+
+export const SCREENS_DIR = 'audits';
+export const SCREENS_MAX_AGE_MS = 24 * 3600 * 1000;
+export const SCREENS_MAX = 12;
+
+/** "home", "contacts": the file name of a route's picture (the same as core screenSlug). */
+export function screenSlug(route) {
+  const s = String(route)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return s || 'home';
+}
+
+/** The address of a route on the product: "https://crm.example.com" + "/#/contacts". */
+export function screenUrl(base, route) {
+  const b = String(base).replace(/\/+$/, '');
+  const r = String(route || '/');
+  return `${b}${r.startsWith('/') ? r : `/${r}`}`;
+}
+
+/**
+ * Whether an audit's screens need new pictures: none yet, another address or commit, a new route, or a day old. A
+ * route that could not be captured waits for the next commit or the next day like the others (meta.failed).
+ */
+export function screensDue(meta, { base, ref, routes }, now, force = false) {
+  if (force || !meta || meta.base !== base) return true;
+  if (ref && meta.ref !== ref) return true;
+  const kept = meta.screens ?? {};
+  const failed = new Set(meta.failed ?? []);
+  if (routes.some((r) => !kept[r] && !failed.has(r))) return true;
+  const oldest = Math.min(...[...Object.values(kept).map((k) => Date.parse(k?.capturedAt ?? '') || 0), Date.parse(meta.at ?? '') || 0].filter((t) => t > 0));
+  return !Number.isFinite(oldest) || now - oldest > SCREENS_MAX_AGE_MS;
+}
+
+/** The report with each screen's picture from the kept captures (screens.json); a route without one has none. */
+export function withScreenShots(report, meta) {
+  if (!Array.isArray(report?.screens)) return report;
+  const kept = meta?.screens ?? {};
+  return {
+    ...report,
+    screens: report.screens.map(({ image: _i, url: _u, capturedAt: _c, width: _w, height: _h, ...s }) => {
+      const k = kept[s.route];
+      return k?.image ? { ...s, image: k.image, url: k.url, capturedAt: k.capturedAt, ...(k.width ? { width: k.width, height: k.height } : {}) } : s;
+    }),
+  };
+}
+
+/** The routes to open: the screens holding most findings (components or values), at most SCREENS_MAX. */
+export function screensToCapture(report) {
+  const weight = new Map((report.files ?? []).map((f) => [f.path, (f.components?.length ?? 0) + (f.findings?.length ?? 0)]));
+  return (report.screens ?? [])
+    .map((s) => ({ route: s.route, w: (s.files ?? []).reduce((n, f) => n + (weight.get(f) ?? 0), 0) }))
+    .filter((s) => s.w > 0)
+    .sort((a, b) => b.w - a.w)
+    .slice(0, SCREENS_MAX)
+    .map((s) => s.route);
+}
+
+/** One screen as a person sees it on arrival: the window, no toolbar, no animation, scrolled to the top. */
+export async function captureScreen(browser, url) {
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, colorScheme: 'light', reducedMotion: 'reduce', serviceWorkers: 'block' });
+  try {
+    const page = await context.newPage();
+    await settle(page, url);
+    // A hash route of a single page app: the first load may land on the root before the router moves.
+    if (new URL(url).hash && new URL(page.url()).hash !== new URL(url).hash) await settle(page, url).catch(() => undefined);
+    const final = page.url();
+    if (looksLikeAWallUrl(final)) return null;
+    await page.addStyleTag({ content: HIDE_CSS }).catch(() => undefined);
+    const png = await page.screenshot({ type: 'png' });
+    return { webp: await toWebp(context, png, SHOT_WIDTH), url: final, width: SHOT_WIDTH, height: Math.round((VIEWPORT.height * SHOT_WIDTH) / VIEWPORT.width) };
+  } finally {
+    await context.close();
+  }
+}
+
+/**
+ * Captures the screens of every audit of a bridge-data folder (`data`, written by `bridge snapshot`) into the shots
+ * folder `dir`, then writes each picture's place into the audit reports. `capture(url)` is captureScreen with one
+ * browser unless given (tests). `isPublic(repo)` says whether a product's repository is public: its preview is opened
+ * only then; its production address always, being live for everyone.
+ */
+export async function screensRun({ data, dir, config, core = null, isPublic = async () => false, capture = null, force = false, now = Date.now() }) {
+  const snapshot = readJson(join(data, 'snapshot.json'));
+  const audits = (snapshot?.audits ?? []).filter((a) => a?.id && a.path && a.product);
+  const products = config.products ?? [];
+  const branch = config.repo?.defaultBranch ?? 'main';
+  let browser = null;
+  const shoot =
+    capture ??
+    (async (url) => {
+      browser ??= await launch();
+      return captureScreen(browser, url);
+    });
+  let changed = false;
+  let captured = 0;
+  const live = new Set();
+  try {
+    for (const a of audits) {
+      if (!/^[a-z0-9][a-z0-9._-]*$/.test(a.id)) continue;
+      const file = join(data, a.path);
+      const report = readJson(file);
+      const p = products.find((x) => x.key === a.product);
+      if (!report || !p || !Array.isArray(report.screens) || !report.screens.length) continue;
+      live.add(a.id);
+      const metaFile = join(dir, SCREENS_DIR, a.id, 'screens.json');
+      let meta = readJson(metaFile);
+      const prod = typeof p.production === 'string' && /^https:\/\//.test(p.production) ? p.production : null;
+      const base = prod ?? (p.repo && p.preview && (await isPublic(p.repo)) ? productAddress({ preview: p.preview }, core?.previewUrl, branch) : null);
+      const routes = screensToCapture(report);
+      if (!base || !routes.length) {
+        log(`screens: ${a.id}: ${base ? 'no screen holds a finding' : 'no live address Bridge may open (products[].production)'}, no picture.`);
+      } else if (screensDue(meta, { base, ref: report.target?.ref, routes }, now, force)) {
+        const next = { product: p.key, base, ...(report.target?.ref ? { ref: report.target.ref } : {}), at: new Date(now).toISOString(), screens: {}, failed: [] };
+        for (const route of routes) {
+          const image = `${SCREENS_DIR}/${a.id}/${screenSlug(route)}.webp`;
+          const shot = await shoot(screenUrl(base, route)).catch((e) => (log(`screens: ${a.id} ${route}: ${e.message}`), null));
+          if (!shot) {
+            next.failed.push(route);
+            continue;
+          }
+          mkdirSync(join(dir, SCREENS_DIR, a.id), { recursive: true });
+          writeFileSync(join(dir, image), shot.webp);
+          next.screens[route] = { image, url: shot.url, capturedAt: new Date(now).toISOString(), width: shot.width, height: shot.height };
+          captured++;
+        }
+        // Pictures of routes no longer captured go.
+        const kept = new Set(Object.values(next.screens).map((s) => s.image));
+        for (const old of Object.values(meta?.screens ?? {})) if (old?.image && !kept.has(old.image)) rmSync(join(dir, old.image), { force: true });
+        meta = next;
+        writeJson(metaFile, meta);
+        changed = true;
+        log(`screens: ${a.id}: ${kept.size} of ${routes.length} screen(s) captured from ${base}.`);
+      } else log(`screens: ${a.id}: up to date.`);
+      writeFileSync(file, `${JSON.stringify(withScreenShots(report, meta))}\n`);
+    }
+  } finally {
+    if (browser) await browser.close();
+  }
+  // Audits that are gone take their pictures with them.
+  const root = join(dir, SCREENS_DIR);
+  if (existsSync(root)) {
+    for (const id of readdirSync(root)) {
+      if (live.has(id) || !existsSync(join(root, id, 'screens.json'))) continue;
+      rmSync(join(root, id), { recursive: true, force: true });
+      changed = true;
+    }
+  }
+  return { changed, captured };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2148,6 +2311,18 @@ async function main() {
     } finally {
       await browser.close();
     }
+  } else if (cmd === 'screens') {
+    // The adoption report's pictures: after `bridge snapshot --out <data>`, before bridge-data is published.
+    if (!a.data || !a.shots) throw new Error('--data <bridge-data folder> and --shots <dir> are required');
+    const config = readJson(a.config || 'bridge.config.json') ?? {};
+    const core = await Promise.resolve().then(() => deps().core()).catch(() => null); // only for a preview address
+    const api = gh(process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
+    const isPublic = async (repo) => {
+      const info = await api.get(`/repos/${repo}`).catch(() => null);
+      return Boolean(info && !info.private && (!info.visibility || info.visibility === 'public'));
+    };
+    const res = await screensRun({ data: a.data, dir: a.shots, config, core, isPublic, force: a.force === true || a.force === 'true' });
+    if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `changed=${res.changed}\ncaptured=${res.captured}\n`, { flag: 'a' });
   } else if (cmd === 'reach') {
     // Local run of Who gets it against a team's live products, into a folder: nothing is published or sent.
     if (!a.repo || !a.out) throw new Error('--repo <owner/name> and --out <dir> are required');
@@ -2181,7 +2356,7 @@ async function main() {
       await browser.close();
     }
   } else {
-    console.error('Usage: node scripts/preview-shots.mjs run --shots <dir> | capture --url <url> --out <file.webp> | reach --repo <owner/name> --out <dir> | build --approved <url> --build <url> --out <dir>');
+    console.error('Usage: node scripts/preview-shots.mjs run --shots <dir> | capture --url <url> --out <file.webp> | screens --data <dir> --shots <dir> | reach --repo <owner/name> --out <dir> | build --approved <url> --build <url> --out <dir>');
     process.exit(1);
   }
 }

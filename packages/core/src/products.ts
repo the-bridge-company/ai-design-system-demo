@@ -2,6 +2,7 @@
 // groups branches by product, and the CLI and MCP server tell which product a folder or a repository is. A product
 // lives in a folder of the design system repo (`path`) or in another GitHub repository (`repo`); the default one is
 // the library itself, where a branch lands when nothing else matches. Pure: no Node API, it runs in the browser too.
+import { screensProblems } from './audit/screens';
 
 export interface ProductConfig {
   /** Stable id: lowercase letters, digits and dashes ("admin"). The `product: <key>` label names it. */
@@ -33,6 +34,12 @@ export interface ProductConfig {
   address?: string;
   /** react, vue, angular, svelte, astro, other. */
   framework?: string;
+  /**
+   * Which files make which screen, for the adoption report's pictures: a route as opened on the product's address
+   * ("/", "/#/contacts") to file globs relative to the audited folder or the repository ("components/contacts/**").
+   * Without it Bridge reads the usual file routes (Next.js app/ and pages/, React Router, Remix, TanStack routes/).
+   */
+  screens?: Record<string, string | string[]>;
   /** The product a branch belongs to when nothing else matches: the library. */
   default?: boolean;
 }
@@ -210,7 +217,7 @@ export function productOfDesignCopy(products: readonly ProductConfig[], repo: st
 
 const KEY = /^[a-z0-9][a-z0-9-]*$/;
 const REPO = /^[\w.-]+\/[\w.-]+$/;
-const FIELDS = ['key', 'name', 'repo', 'design', 'path', 'preview', 'production', 'address', 'framework', 'default'];
+const FIELDS = ['key', 'name', 'repo', 'design', 'path', 'preview', 'production', 'address', 'framework', 'screens', 'default'];
 
 /** What is wrong with a `products` value, each problem saying how to fix it. Empty: valid (or absent). */
 export function productProblems(raw: unknown): string[] {
@@ -256,6 +263,7 @@ export function productProblems(raw: unknown): string[] {
       else if (o.design !== undefined) problems.push(`${at}.address" goes without "design": a product added from its address has no developers' code, its "repo" is already the design team's own`);
     }
     if (o.framework !== undefined && (typeof o.framework !== 'string' || !o.framework.trim())) problems.push(`${at}.framework" must be a name such as "react", "vue" or "other"`);
+    problems.push(...screensProblems(o.screens, `products[${i}].screens`));
     if (o.default !== undefined && typeof o.default !== 'boolean') problems.push(`${at}.default" must be true or false`);
     if (o.default === true) defaults++;
   });

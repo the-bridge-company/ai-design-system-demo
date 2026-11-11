@@ -67,6 +67,26 @@ bridge-data
   README.md
 ```
 
+**Pictures of the product in the adoption report.** Each report of a product lists its `screens`: a route and the
+files that make it, from `products[].screens` in bridge.config.json (a route as opened on the product's address to
+file globs relative to the audited folder or the repository, at most 12):
+
+```json
+"screens": { "/#/contacts": ["components/contacts/**"], "/#/deals": "components/deals/**" }
+```
+
+Without it Bridge reads the usual file routes (Next.js `app/` and `pages/`, React Router, Remix and TanStack
+`routes/`); a route that needs a value in its address (`/contacts/[id]`) is never guessed. After the snapshot,
+`node scripts/preview-shots.mjs screens --data <out> --shots <bridge-shots checkout>` opens each screen that holds
+findings on the product's live address (`products[].production`; the preview of the default branch only for a public
+product repository), with the same capture code as the exploration shots, and keeps the pictures in the
+`bridge-shots` branch (`audits/<id>/<screen>.webp` and `screens.json`). It captures again only for a new audited
+commit, a new address or after a day, and writes `image`, `url` and `capturedAt` into each report before it is
+published. Studio shows, for each group, the screen holding most of its places, the whole screen (the pieces are not
+marked on it yet). This repository's workflow does it; a team on the template adds the same three steps (see
+`.github/workflows/bridge-data.yml`). Pictures are read from the raw host, so only a public design system repository
+shows them for now.
+
 `snapshot.json` (`kind: "bridge-snapshot"`, `schemaVersion: 1`):
 
 | Key | What it holds |

@@ -2,19 +2,20 @@
 // words and grouping in lib/adoption-report.ts). One plain verdict in the page's Harbor zone with ONE primary action
 // (Send to developers, for who can act), two score cards in words, then tabs: Pieces (groups of whole pieces, the
 // biggest change first, then the pieces the library is missing), Colors (swatch pairs) and Sizes and spacing. Each
-// group opens on the two pictures (the product's when the data has one, else an honest "No picture yet"; the
-// library's own preview), the one change that covers most of it, the group's actions, and the developers' detail
+// group opens on the two pictures (the product's: the screen that holds most of the group, captured from its live
+// address, click to enlarge; else an honest "No picture yet"; the library's own preview), the one change that covers most of it, the group's actions, and the developers' detail
 // behind one fold. Actions for a design lead or an admin only: designers read. On the sample team the actions stay in
 // this browser, like every other edit there. Repo content is React text only; links go through safeUrl.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Send } from 'lucide-react';
-import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea } from '@bridge-ds/react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Maximize2, Send } from 'lucide-react';
+import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea } from '@bridge-ds/react';
 import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
 import { StudioHead } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
-import { FIRST_RUN_LINE, groupRequest, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ValueRow } from '../../../lib/adoption-report';
+import { FIRST_RUN_LINE, groupRequest, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type ValueRow } from '../../../lib/adoption-report';
+import { shotsFileUrl } from '../../../lib/preview-shots';
 import { bridgeDataUrl } from '../../../lib/library/published';
 import { runDate } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
@@ -50,13 +51,71 @@ export interface ReportActions {
 // ---------------------------------------------------------------------------------------------------------------
 // Pictures
 
-/** The product side: a real picture only when the data has one; the report has none yet, so it says so. */
-function ProductPlate({ big = false }: { big?: boolean }) {
+/** The address the page may load for a picture path of the report, or null (none for a private team yet). */
+export type PictureSrc = (path: string) => string | null;
+const PictureContext = createContext<PictureSrc>(() => null);
+
+/** The picture's address, null once it failed to load (the plate then says there is none). */
+function usePicture(screen: ScreenPicture | null): [string | null, () => void] {
+  const resolve = useContext(PictureContext);
+  const src = screen?.image ? resolve(screen.image) : null;
+  const [failed, setFailed] = useState<string | null>(null);
+  return [src && src !== failed ? src : null, () => setFailed(src)];
+}
+
+function NoPicture({ big = false, line }: { big?: boolean; line?: string }) {
   return (
     <span className={big ? 'ar-plate ar-plate-big ar-plate-none' : 'ar-plate ar-plate-none'}>
       <Icon icon={ImageOff} size="sm" />
       <span>No picture yet</span>
+      {big && line && <span className="ar-plate-why">{line}</span>}
     </span>
+  );
+}
+
+/** The product side, small: the screen where the group lives, scaled to fit, else "No picture yet". */
+function ProductPlate({ screen }: { screen: ScreenPicture | null }) {
+  const [src, fail] = usePicture(screen);
+  if (!src) return <NoPicture />;
+  return (
+    <span className="ar-plate ar-plate-shot">
+      <img src={src} alt="" loading="lazy" decoding="async" onError={fail} />
+    </span>
+  );
+}
+
+/** The product side, open: the picture, click to enlarge in a dialog, and where the group sits, in words. */
+function ProductFigure({ screen, product }: { screen: ScreenPicture | null; product: string }) {
+  const [src, fail] = usePicture(screen);
+  const whole = 'The whole screen shows: the pieces are not marked on it yet.';
+  return (
+    <figure className="ar-fig">
+      <figcaption className="ar-cap">
+        In {product}
+        {screen ? `: the ${screen.name} screen` : ''}
+      </figcaption>
+      {src && screen ? (
+        <Dialog>
+          <DialogTrigger className="ar-plate ar-plate-big ar-plate-shot ar-shot-open" aria-label={`Enlarge the picture of the ${screen.name} screen`}>
+            <img src={src} alt="" loading="lazy" decoding="async" onError={fail} />
+            <span className="ar-shot-hint" aria-hidden="true">
+              <Icon icon={Maximize2} size="sm" />
+            </span>
+          </DialogTrigger>
+          <DialogContent size="lg" title={`The ${screen.name} screen of ${product}`} description={`${screen.line} ${whole}${screen.capturedAt ? ` Captured ${runDate(screen.capturedAt)}.` : ''}`}>
+            <img className="ar-shot-full" src={src} alt={`The ${screen.name} screen of ${product}`} />
+            {screen.url && (
+              <Link href={safeUrl(screen.url, '#')} {...external} className="ar-shot-go">
+                Open this screen in {product} <Icon icon={ExternalLink} size="sm" />
+              </Link>
+            )}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <NoPicture big line={screen ? `Bridge has not captured the ${screen.name} screen yet.` : 'Bridge does not know which screen shows these yet.'} />
+      )}
+      {screen && <span className="ar-shot-line">{screen.line}</span>}
+    </figure>
   );
 }
 
@@ -372,7 +431,7 @@ function PieceItem({ row, product, actions }: { row: PieceRow; product: string; 
           <span className="ar-minis" aria-hidden="true">
             <span className="ar-mini">
               <span className="ar-cap">In {product}</span>
-              <ProductPlate />
+              <ProductPlate screen={row.screen} />
             </span>
             <span className="ar-mini">
               <span className="ar-cap">In the library</span>
@@ -383,10 +442,7 @@ function PieceItem({ row, product, actions }: { row: PieceRow; product: string; 
       }
     >
       <div className="ar-pair">
-        <figure className="ar-fig">
-          <figcaption className="ar-cap">In {product}</figcaption>
-          <ProductPlate big />
-        </figure>
+        <ProductFigure screen={row.screen} product={product} />
         <figure className="ar-fig">
           <figcaption className="ar-cap">In the library: {row.component}</figcaption>
           <LibraryPlate name={row.component} big />
@@ -492,7 +548,7 @@ function Gaps({ gaps, partsLine }: { gaps: GapCard[]; partsLine: string | null }
           <ul className="ar-gap-list">
             {gaps.map((g) => (
               <li key={g.key}>
-                <ProductPlate />
+                <ProductPlate screen={g.screen} />
                 <span className="ar-gap-name">{g.name}</span>
                 <span className="ar-muted">{g.detail}</span>
               </li>
@@ -607,9 +663,10 @@ function Verdict({ model, actions }: { model: ReportModel; actions: ReportAction
 // ---------------------------------------------------------------------------------------------------------------
 // The page body
 
-export function AdoptionReportView({ model, actions }: { model: ReportModel; actions: ReportActions }) {
+export function AdoptionReportView({ model, actions, pictureSrc }: { model: ReportModel; actions: ReportActions; pictureSrc?: PictureSrc }) {
   const p = model.product;
   return (
+    <PictureContext.Provider value={pictureSrc ?? noPicture}>
     <div className="ar">
       <Verdict model={model} actions={actions} />
       <Cards cards={model.cards} />
@@ -663,8 +720,11 @@ export function AdoptionReportView({ model, actions }: { model: ReportModel; act
         </AccordionItem>
       </Accordion>
     </div>
+    </PictureContext.Provider>
   );
 }
+
+const noPicture: PictureSrc = () => null;
 
 // ---------------------------------------------------------------------------------------------------------------
 // The team page: reads the report, the decisions and the requests already sent, then wires the actions.
@@ -779,7 +839,9 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
     },
   };
 
-  return <AdoptionReportView model={model} actions={actions} />;
+  // Pictures of the product live in the bridge-shots branch, read from the raw host: a public team only for now.
+  const pictureSrc: PictureSrc = (path) => (data.private ? null : shotsFileUrl(data.owner, data.repo, path));
+  return <AdoptionReportView model={model} actions={actions} pictureSrc={pictureSrc} />;
 }
 
 export default function TeamAdoptionReport() {

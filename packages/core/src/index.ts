@@ -80,6 +80,8 @@ export * from './tooling';
 export * from './prod-branch';
 // The adoption report's grouping (pure, browser-safe): Studio reads published reports with it.
 export * from './audit/pieces';
+// Which files make which screen of a product, for the report's pictures (pure).
+export * from './audit/screens';
 export * from './prod-branch-github';
 export * from './token-proposal';
 export * from './figma-push';

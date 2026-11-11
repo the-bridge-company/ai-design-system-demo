@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exampleCode, storyInIndex } from './component-page';
+import { exampleCode, firstListedStory, storyInIndex } from './component-page';
 import { libraryNotes } from './home';
 import { pairUsage } from '../explorer/flow';
 import { sendBlocked } from '../explorer/contrast-summary';
@@ -9,6 +9,17 @@ describe('component preview without a published story', () => {
     const entries = [{ id: 'actions-button--primary' }];
     expect(storyInIndex(entries, 'actions-button--primary')).toBe(true);
     expect(storyInIndex(entries, 'actions-chip--default')).toBe(false);
+  });
+  it('previews with the first story the Storybook lists', () => {
+    const entries = [{ id: 'feedback-toast--tones' }, { id: 'actions-button--primary' }, { id: 'layout-profile-header--default' }];
+    const stories = (name: string, ...ids: string[]) => ({ name, stories: ids.map((id) => ({ id, name: id })) }) as unknown as Parameters<typeof firstListedStory>[0];
+    expect(firstListedStory(stories('Toast', 'feedback-toast--undo', 'feedback-toast--tones'), entries)?.id).toBe('feedback-toast--tones');
+    // Read under another title: found by the component's name and the story's part.
+    expect(firstListedStory(stories('Toast', 'link-copied--tones'), entries)?.id).toBe('feedback-toast--tones');
+    expect(firstListedStory(stories('ProfileHeader', 'profileheader--default'), entries)?.id).toBe('layout-profile-header--default');
+    // Never another component's story with the same part.
+    expect(firstListedStory(stories('Toast', 'link-copied--primary'), entries)).toBeUndefined();
+    expect(firstListedStory(stories('Chip', 'actions-chip--default'), entries)).toBeUndefined();
   });
   it('shows the component as code in its place', () => {
     expect(exampleCode('Button', 'Save')).toBe('<Button>Save</Button>');

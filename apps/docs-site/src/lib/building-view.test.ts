@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
 import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
-import { ageLabel, buildDetail, explorationBuildRows, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
+import { ageLabel, buildDetail, componentThumb, explorationBuildRows, previewedComponent, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
 import { buildStateOf, type BuildState } from './building-page';
 import type { DesignTaskRead } from './review-state';
@@ -157,6 +157,32 @@ describe('Being built', () => {
       const v = views.find((x) => x.number === 489)!;
       expect(rowThumb(v, null)).toEqual({ kind: 'icon', icon: 'component', label: 'Tag' });
       expect(rowThumb({ ...v, kind: 'pull' }, tag(2).body)).toEqual({ kind: 'icon', icon: 'component', label: 'Tag' });
+    });
+
+    it("shows the component's Library preview when the library has it with one, its own pictures first", () => {
+      const views = viewsWith(2);
+      const button = views.find((x) => x.component === 'Button')!;
+      const { issues } = fixtureBuildData(NOW);
+      const body = issues.find((i) => i.number === 41)!.body;
+      // The library's own spelling wins, whatever case the request used.
+      expect(rowThumb({ ...button, component: 'button ' }, body, ['Avatar', 'Button'])).toEqual({ kind: 'component', name: 'Button', label: 'button ' });
+      expect(rowThumb(button, body, new Set(['Button']))).toEqual({ kind: 'component', name: 'Button', label: 'Button' });
+      // A request with its own before and after keeps them.
+      const v = views.find((x) => x.number === 489)!;
+      expect(rowThumb(v, tag(2).body, ['Tag'])).toEqual({ kind: 'image', before, after, label: 'Tag' });
+      // A component the library does not have (or has without a preview), or no previews read: the icon.
+      expect(rowThumb({ ...v, component: 'ProfileHeader' }, null, ['Button', 'Tag'])).toEqual({ kind: 'icon', icon: 'component', label: 'ProfileHeader' });
+      expect(rowThumb(v, null, [])).toEqual({ kind: 'icon', icon: 'component', label: 'Tag' });
+      expect(rowThumb(v, null, null)).toEqual({ kind: 'icon', icon: 'component', label: 'Tag' });
+      expect(rowThumb({ ...v, component: '' }, null, ['Button'])).toEqual({ kind: 'icon', icon: 'component', label: 'Component' });
+    });
+
+    it('names the preview of a component by the library spelling, or nothing', () => {
+      expect(previewedComponent('avatar', ['Avatar', 'Button'])).toBe('Avatar');
+      expect(previewedComponent('Spinner', ['Avatar'])).toBeNull();
+      expect(previewedComponent(null, ['Avatar'])).toBeNull();
+      expect(componentThumb('Spinner', ['Spinner'])).toEqual({ kind: 'component', name: 'Spinner', label: 'Spinner' });
+      expect(componentThumb('Spinner')).toEqual({ kind: 'icon', icon: 'component', label: 'Spinner' });
     });
   });
 });

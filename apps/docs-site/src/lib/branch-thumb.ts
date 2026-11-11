@@ -23,6 +23,12 @@ export type ThumbSpec =
    * exploration page shows the drawing of its card.
    */
   | { kind: 'screen'; src: string | null; product?: string | null; screen?: string | null; capturedAt?: string | null; seed?: string | null }
+  /**
+   * A change to one library component with no pictures of its own: that component's Library preview, as Library >
+   * Components shows it (components/ds/library/ComponentStage). `name` is the library's own spelling of the component.
+   * Drawn only where the page gives the previews (ComponentPreviews); anywhere else it is the component icon.
+   */
+  | { kind: 'component'; name: string; label: string }
   /** Usage guidance: lines of text. */
   | { kind: 'text' }
   /** Nothing to draw before/after: an icon, with what it stands for when known (a build request's component). */

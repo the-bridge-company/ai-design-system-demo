@@ -1,14 +1,7 @@
 /* Component pages and the components gallery. Chrome uses the design system tokens (bridge brand); preview surfaces (data-theme) use the
    documented system's own tokens so they render exactly as the product would. */
 
-/* Preview surface: soft checkerboard drawn from the system's own background tokens, so it follows the pane theme. */
-.stage-checker {
-  background-color: var(--color-bg-default);
-  background-image: conic-gradient(var(--color-bg-subtle) 25%, transparent 0 50%, var(--color-bg-subtle) 0 75%, transparent 0);
-  background-size: var(--size-6) var(--size-6);
-  color: var(--color-text-default);
-  font-family: var(--font-family-sans);
-}
+/* The preview surface (.stage-checker) lives in component-stage.css, with the stage Library cards and Studio thumbnails share. */
 
 .pane-label {
   position: absolute;

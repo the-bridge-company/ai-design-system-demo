@@ -9,6 +9,8 @@ import { fitScale, plateDrawing, type ThumbIcon, type ThumbSpec } from '../../..
 import { capturedLine } from '../../../lib/preview-shots';
 import { ago } from '../../../lib/home-model';
 import { Drawing } from './Drawing';
+import { ComponentStage, stageSource } from '../library/ComponentStage';
+import { useComponentPreviews } from './ComponentPreviews';
 
 type ThumbSize = 'row' | 'card';
 
@@ -112,6 +114,17 @@ function ScreenShot({ spec, size, chip }: { spec: Extract<ThumbSpec, { kind: 'sc
   );
 }
 
+/**
+ * A component change with no pictures: the component's Library preview (ComponentStage, the Library > Components
+ * card's), loaded a few frames at a time. Without the page's previews, or with none for this component, the icon.
+ */
+function ComponentThumb({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'component' }>; size: ThumbSize }) {
+  const previews = useComponentPreviews();
+  const c = previews?.components.get(spec.name);
+  if (!previews || !c || !stageSource(c, previews.storybook, previews.Example)) return <Icon icon={ICONS.component} size={size === 'row' ? 'sm' : 'lg'} />;
+  return <ComponentStage c={c} storybook={previews.storybook} Example={previews.Example} as="span" className="bt-stage" frameClassName="bt-frame" queued />;
+}
+
 function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode {
   const room = ROOM[size];
   switch (spec.kind) {
@@ -145,13 +158,15 @@ function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode
       );
     case 'text':
       return <Halves before={<Lines />} after={<Lines />} />;
+    case 'component':
+      return <ComponentThumb spec={spec} size={size} />;
     case 'icon':
       return <Icon icon={ICONS[spec.icon]} size={size === 'row' ? 'sm' : 'lg'} />;
   }
 }
 
 /** What the thumbnail shows, when it is one named thing (a build request's component): kept on the element for tests and tools. */
-const label = (spec: ThumbSpec) => (spec.kind === 'image' || spec.kind === 'icon' ? spec.label : undefined);
+const label = (spec: ThumbSpec) => (spec.kind === 'image' || spec.kind === 'icon' || spec.kind === 'component' ? spec.label : undefined);
 
 /**
  * `chip`, on a card: the caller decides the corner. A name ("Art print shop", "Library") shows there, so a card's

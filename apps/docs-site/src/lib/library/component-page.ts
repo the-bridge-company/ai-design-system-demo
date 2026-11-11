@@ -120,6 +120,25 @@ export function exampleCode(name: string, children: string | null | undefined): 
 /** Whether a Storybook index lists the story (the published Storybook may lag behind the code). */
 export const storyInIndex = (entries: readonly { id: string }[], storyId: string) => entries.some((e) => e.id === storyId);
 
+/**
+ * The first of a component's stories that the published Storybook lists, so a preview never plays Storybook's own
+ * "Couldn't find story" error. A story read under another title ("link-copied--tones" for Toast's "Tones", when the
+ * stories file names its meta differently) is found by the component's name and the story's part
+ * ("feedback-toast--tones"). Undefined when the Storybook lists none of them.
+ */
+export function firstListedStory(c: Pick<ComponentInfo, 'name' | 'stories'>, entries: readonly { id: string }[]): { id: string } | undefined {
+  const exact = c.stories.find((s) => storyInIndex(entries, s.id));
+  if (exact) return { id: exact.id };
+  const slug = c.name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  for (const s of c.stories) {
+    const part = s.id.split('--')[1];
+    if (!part) continue;
+    const found = entries.find((e) => e.id === `${slug}--${part}` || e.id.endsWith(`-${slug}--${part}`));
+    if (found) return { id: found.id };
+  }
+  return undefined;
+}
+
 /** Values a Storybook `args=` address accepts as they are; anything else is left out (Storybook would drop it). */
 const ARG_VALUE = /^[A-Za-z0-9 _-]*$/;
 

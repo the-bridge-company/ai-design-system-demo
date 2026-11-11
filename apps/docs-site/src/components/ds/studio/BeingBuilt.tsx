@@ -53,6 +53,7 @@ import {
 } from "@bridge-ds/core";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
+import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
 import { MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
 import { useCopy } from "./TeamLink";
@@ -90,6 +91,7 @@ import { JIRA_IN_BRIDGE } from "../../../lib/studio-flags";
 import {
   EMPTY_WORDS,
   buildDetail,
+  componentThumb,
   detailFromQuery,
   detailQuery,
   jiraLink,
@@ -211,6 +213,8 @@ interface CardContext {
   showProduct: boolean;
   /** The status tag (not on the Board: its column says it). */
   pill: boolean;
+  /** The library components with a preview: a request for one shows it (lib/building-view rowThumb). */
+  previewed: readonly string[];
 }
 
 /**
@@ -222,14 +226,14 @@ function buildCard(x: Item, c: CardContext) {
   const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
   const byline = personLine({ state: x.state, builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), requester: requesterName(v, c.data) });
   const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline };
-  if (isFix(v)) return <ListCard key={v.id} {...common} thumb={{ kind: "icon", icon: "component", label: v.component }} title={v.component} href={studioHref(v.fix.href)} />;
+  if (isFix(v)) return <ListCard key={v.id} {...common} thumb={componentThumb(v.component, c.previewed)} title={v.component} href={studioHref(v.fix.href)} />;
   if (isExploration(v))
     return <ListCard key={v.id} {...common} thumb={c.shots.get(v.id) ?? { kind: "screen", src: null, product: v.exploration.product, seed: v.id }} title={v.title} href={studioHref(v.exploration.href)} />;
   return (
     <ListCard
       key={v.id}
       {...common}
-      thumb={rowThumb(v, c.data.bodies.get(v.number))}
+      thumb={rowThumb(v, c.data.bodies.get(v.number), c.previewed)}
       title={viewTitle(v)}
       note={auditNoteOf(v, c.data)}
       href={detailQuery(v)}
@@ -243,11 +247,11 @@ function buildCard(x: Item, c: CardContext) {
 }
 
 /** The same changes as cards, in the Home's grid, each with the same one status tag as its row. */
-function Cards({ items, data, products, onOpen, oneProduct = false }: { items: Item[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; oneProduct?: boolean }) {
+function Cards({ items, data, products, onOpen, previewed, oneProduct = false }: { items: Item[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[]; oneProduct?: boolean }) {
   const shots = useShots(items.map((x) => x.v));
   return (
     <ul className="sh-cards bb-cards" aria-label="Build requests">
-      {items.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: !oneProduct, pill: true }))}
+      {items.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: !oneProduct, pill: true, previewed }))}
     </ul>
   );
 }
@@ -257,7 +261,7 @@ function Cards({ items, data, products, onOpen, oneProduct = false }: { items: I
  * most BUILD_BOARD_CAP cards then "Show all N"; the column says the status, so its cards carry no tag. An empty status
  * folds to a small column. It scrolls sideways inside its own region on a phone.
  */
-function Board({ items, status, data, products, onOpen }: { items: Item[]; status: readonly BuildState[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void }) {
+function Board({ items, status, data, products, onOpen, previewed }: { items: Item[]; status: readonly BuildState[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[] }) {
   const shots = useShots(items.map((x) => x.v));
   const [opened, setOpened] = useState<Set<string>>(new Set());
   const columns = buildBoardColumns(items, status);
@@ -271,7 +275,7 @@ function Board({ items, status, data, products, onOpen }: { items: Item[]; statu
             <h2 className="ex-col-h" id={`bb-col-${col.key}`}>
               {col.label} <span className="bl-count">{col.rows.length}</span>
             </h2>
-            {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: true, pill: false }))}</ul>}
+            {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: true, pill: false, previewed }))}</ul>}
             {col.rows.length > BUILD_BOARD_CAP && !open && (
               <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(col.key))}>
                 Show all {col.rows.length}
@@ -289,11 +293,13 @@ function Rows({
   data,
   now,
   onOpen,
+  previewed,
 }: {
   views: Row[];
   data: BuildData;
   now: number;
   onOpen: (v: BuildRequestView) => void;
+  previewed: readonly string[];
 }) {
   return (
     <ul className="sh-rows bb-rows" aria-label="Build requests">
@@ -303,7 +309,7 @@ function Rows({
           return (
             <BranchRow
               key={v.id}
-              thumb={{ kind: "icon", icon: "component", label: v.component }}
+              thumb={componentThumb(v.component, previewed)}
               who={<Builders v={v} data={data} />}
               title={v.component}
               hint={`${v.component}: ${FIX_ROW_TITLE}`}
@@ -340,7 +346,7 @@ function Rows({
         return (
           <BranchRow
             key={v.id}
-            thumb={rowThumb(v, data.bodies.get(v.number))}
+            thumb={rowThumb(v, data.bodies.get(v.number), previewed)}
             who={<Builders v={v} data={data} />}
             title={viewTitle(v)}
             href={href}
@@ -632,7 +638,13 @@ function Detail({
   );
 }
 
-export default function BeingBuilt() {
+/**
+ * `library`: Bridge's own components with their docs.json previews (pages/studio/building.astro). A team's page reads
+ * its own library instead (ComponentPreviews), after the list.
+ */
+export default function BeingBuilt({ library }: { library?: SitePreviewList } = {}) {
+  const previews = useComponentPreviewsOf(library);
+  const previewed = useMemo(() => previewedNames(previews), [previews]);
   const [data, setData] = useState<BuildData | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState<GitHubBusy | null>(null);
@@ -776,71 +788,73 @@ export default function BeingBuilt() {
   const boardItems = view === "board" ? items.filter((x) => passesBuild(x, { ...filters, status: isDefaultStatus(filters.status) ? [...NOT_SHIPPED, "shipped"] : filters.status })) : kept;
   const shownCount = boardItems.length;
   return (
-    <div className="bb ex">
-      {data.stale && (
-        <div className="bb-notes">
-          <p className="t-ui t-muted">
-            Shown as last read: GitHub is busy, it refreshes on its own.
+    <ComponentPreviewsProvider value={previews}>
+      <div className="bb ex">
+        {data.stale && (
+          <div className="bb-notes">
+            <p className="t-ui t-muted">
+              Shown as last read: GitHub is busy, it refreshes on its own.
+            </p>
+          </div>
+        )}
+        <div className="bl-bar">
+          <span className="bl-narrow">
+            <MultiFilter
+              label="Status"
+              shown={buildStatusTriggerLabel(filters.status, offered)}
+              options={statusOptions}
+              picked={filters.status}
+              onPick={(v) => pick({ ...filters, status: v.length ? BUILD_STATES.filter((s) => v.includes(s)) : [...NOT_SHIPPED] })}
+              reset={{ label: NOT_SHIPPED_LABEL, active: isDefaultStatus(filters.status), onReset: () => pick({ ...filters, status: [...NOT_SHIPPED] }) }}
+            />
+            <MultiFilter
+              label="Product"
+              shown={multiTriggerLabel(filters.product, productName, "All products")}
+              options={productOptions}
+              picked={filters.product}
+              onPick={(v) => pick({ ...filters, product: v })}
+              reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
+            />
+            <MultiFilter
+              label="People"
+              shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
+              options={personOptions}
+              picked={filters.people}
+              onPick={(v) => pick({ ...filters, people: v })}
+              reset={{ label: "Everyone", active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
+            />
+          </span>
+          <p className="t-ui t-muted bl-summary" aria-live="polite">
+            {buildCountLine(shownCount, filtered ? items.length : shownCount)}
+            {filtered && shownCount > 0 && (
+              <>
+                {" "}
+                <Button variant="link" onClick={clear}>
+                  Clear filters
+                </Button>
+              </>
+            )}
           </p>
+          <ViewSwitch view={view} onPick={pickView} board />
         </div>
-      )}
-      <div className="bl-bar">
-        <span className="bl-narrow">
-          <MultiFilter
-            label="Status"
-            shown={buildStatusTriggerLabel(filters.status, offered)}
-            options={statusOptions}
-            picked={filters.status}
-            onPick={(v) => pick({ ...filters, status: v.length ? BUILD_STATES.filter((s) => v.includes(s)) : [...NOT_SHIPPED] })}
-            reset={{ label: NOT_SHIPPED_LABEL, active: isDefaultStatus(filters.status), onReset: () => pick({ ...filters, status: [...NOT_SHIPPED] }) }}
-          />
-          <MultiFilter
-            label="Product"
-            shown={multiTriggerLabel(filters.product, productName, "All products")}
-            options={productOptions}
-            picked={filters.product}
-            onPick={(v) => pick({ ...filters, product: v })}
-            reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
-          />
-          <MultiFilter
-            label="People"
-            shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
-            options={personOptions}
-            picked={filters.people}
-            onPick={(v) => pick({ ...filters, people: v })}
-            reset={{ label: "Everyone", active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
-          />
-        </span>
-        <p className="t-ui t-muted bl-summary" aria-live="polite">
-          {buildCountLine(shownCount, filtered ? items.length : shownCount)}
-          {filtered && shownCount > 0 && (
-            <>
-              {" "}
+        {shownCount === 0 ? (
+          <p className="t-body t-muted bb-none">
+            {emptyBuildLine(filters, { person: personLabel, product: productName })}{" "}
+            {filtered && (
               <Button variant="link" onClick={clear}>
                 Clear filters
               </Button>
-            </>
-          )}
-        </p>
-        <ViewSwitch view={view} onPick={pickView} board />
+            )}
+          </p>
+        ) : view === "board" ? (
+          <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} previewed={previewed} />
+        ) : view === "grid" ? (
+          <Cards items={kept} data={data} products={products} onOpen={go} previewed={previewed} oneProduct={filters.product.length === 1} />
+        ) : (
+          <Rows views={kept.map((x) => x.v)} data={data} now={now} onOpen={go} previewed={previewed} />
+        )}
       </div>
-      {shownCount === 0 ? (
-        <p className="t-body t-muted bb-none">
-          {emptyBuildLine(filters, { person: personLabel, product: productName })}{" "}
-          {filtered && (
-            <Button variant="link" onClick={clear}>
-              Clear filters
-            </Button>
-          )}
-        </p>
-      ) : view === "board" ? (
-        <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} />
-      ) : view === "grid" ? (
-        <Cards items={kept} data={data} products={products} onOpen={go} oneProduct={filters.product.length === 1} />
-      ) : (
-        <Rows views={kept.map((x) => x.v)} data={data} now={now} onOpen={go} />
-      )}
-    </div>
+    </ComponentPreviewsProvider>
   );
 }
 

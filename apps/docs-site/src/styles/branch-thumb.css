@@ -268,3 +268,34 @@
 .bt-line:nth-child(4) {
   width: 56%;
 }
+
+/* Component: the component's Library preview (components/ds/library/ComponentStage), its story at its own size on a
+   card, as Library > Components cards show it. Without a preview, the icon on the subtle surface, as .bt--icon. */
+.bt--component {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-subtle);
+}
+
+.bt-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.bt-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
+/* A row's 64 by 40: the story laid out at three times the size, then scaled into it, so the component reads whole. */
+.bt--row .bt-frame {
+  width: 300%;
+  height: 300%;
+  transform: scale(0.3333);
+  transform-origin: top left;
+}

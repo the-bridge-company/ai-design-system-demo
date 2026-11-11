@@ -1,5 +1,14 @@
 # @bridge-ds/toolbar
 
+## 0.8.5
+
+### Patch Changes
+
+- 8b7c567: The toolbar opens at the bottom centre of the page, like Figma's action bar. Its grip still moves it left or right, and it stays where the person put it.
+- Updated dependencies [1fa649e]
+- Updated dependencies [7666280]
+  - @bridge-ds/core@0.32.0
+
 ## 0.8.4
 
 ### Patch Changes

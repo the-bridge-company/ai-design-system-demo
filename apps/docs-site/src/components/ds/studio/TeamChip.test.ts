@@ -34,6 +34,7 @@ vi.mock('../../../scripts/github-session', () => ({
   prefersSignIn: () => true,
   initGitHubConnect: (fn: (v: { login: string; name?: string } | null) => void) => (page.pending ? undefined : fn(page.viewer)),
   currentAccess: () => null,
+  currentContributor: () => null,
   onAccess: (fn: (a: { state: RepoAccessState } | null) => void) => void page.listeners.push(fn),
   resolveAccess: async () => null,
   linkedGitHubRole: () => page.linked,

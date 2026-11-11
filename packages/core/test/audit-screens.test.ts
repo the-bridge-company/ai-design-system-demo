@@ -1,7 +1,7 @@
 // Which files make which screen of a product (audit/screens.ts): the configured map, the file-route conventions and
 // the screen a group of places shows on.
 import { describe, expect, test } from 'vitest';
-import { conventionRoute, productScreens, screenForPlaces, screenName, screenSlug, screensProblems, withScreens, type AuditReport, type AuditScreen } from '../src/audit';
+import { conventionRoute, cropSlug, MAX_CROPS, pieceCrops, productScreens, screenForPlaces, screenName, screenSlug, screensProblems, withScreens, type AuditReport, type AuditScreen } from '../src/audit';
 import { productProblems } from '../src';
 
 describe('conventionRoute', () => {
@@ -96,6 +96,41 @@ describe('productScreens', () => {
       }).screens?.map((s) => s.route)
     ).toEqual(['/#/contacts']);
     expect('screens' in withScreens({ ...report, screens: [] }, {})).toBe(false);
+  });
+});
+
+describe('pieceCrops', () => {
+  const c = (name: string, library: string, suggestion?: string, line = 1) => ({ line, column: 1, name, kind: 'foreign', library, ...(suggestion ? { suggestion } : {}) });
+  const report = {
+    target: { path: 'src', files: 3, skipped: 0 },
+    metrics: { dsComponentInstances: 0, uiComponentInstances: 6 },
+    components: { ds: {} },
+    files: [
+      { path: 'components/contacts/ContactList.tsx', components: [c('Button', 'shadcn/ui (local)', 'Button'), c('Button', 'shadcn/ui (local)', 'Button', 2), c('DropdownMenu', 'shadcn/ui (local)', 'Menu'), c('DropdownMenuItem', 'shadcn/ui (local)')] },
+      { path: 'components/deals/DealList.tsx', components: [c('button', 'native', 'Button')] },
+      { path: 'components/layout/Sheet.tsx', components: [c('Sheet', 'shadcn/ui (local)', 'Drawer')] },
+    ],
+  } as unknown as AuditReport;
+
+  test('one per group, biggest first, with the screen that holds most of it to look on first', () => {
+    const out = withScreens(report, { screens: { '/#/contacts': 'components/contacts/**', '/#/deals': 'components/deals/**' } });
+    expect(out.crops).toEqual([
+      { key: 'piece:Button', component: 'Button', route: '/#/contacts' },
+      { key: 'piece:Menu', component: 'Menu', route: '/#/contacts' },
+      // No screen holds the side panel: the capture looks on every screen.
+      { key: 'piece:Drawer', component: 'Drawer' },
+    ]);
+  });
+
+  test('no screens, no crops; an earlier list is replaced', () => {
+    expect('crops' in withScreens({ ...report, crops: [{ key: 'piece:Old', component: 'Old' }] }, {})).toBe(false);
+  });
+
+  test('a picture name never meets a screen picture, and the list is capped', () => {
+    expect(cropSlug('piece:Button')).toBe('piece-button');
+    expect(cropSlug('piece:AlertDialog')).toBe('piece-alertdialog');
+    const many = { ...report, files: [{ path: 'a.tsx', components: Array.from({ length: MAX_CROPS + 4 }, (_, i) => c(`X${i}`, 'lib', `Comp${i}`, i + 1)) }] } as unknown as AuditReport;
+    expect(pieceCrops(many, [])).toHaveLength(MAX_CROPS);
   });
 });
 

@@ -188,6 +188,30 @@ export interface AuditScreen {
   height?: number;
 }
 
+/**
+ * A close picture of one group of pieces (adoptionPieces) as the product draws it: a few real instances of the piece
+ * (three buttons side by side, one open dialog), cropped from a screen of the live product. `bridge snapshot` writes
+ * the group and the screen to look on first; scripts/preview-shots.mjs screens sets the picture fields.
+ */
+export interface AuditCrop {
+  /** The group: "piece:Button". */
+  key: string;
+  /** The library component of the group: "Button". */
+  component: string;
+  /** The screen to look on first (a route of screens[]): the one that holds most of the group. */
+  route?: string;
+  /** The picture in the bridge-shots branch: "audits/<audit id>/piece-button.webp". */
+  image?: string;
+  /** The route of the screen it was cropped from (may differ from `route` when the piece was not found there). */
+  from?: string;
+  /** The address it was cropped from. */
+  url?: string;
+  capturedAt?: string;
+  /** Size of the crop in CSS pixels: the picture holds twice as many, for sharp text. */
+  width?: number;
+  height?: number;
+}
+
 export interface AuditReport {
   $schema?: string;
   schemaVersion: typeof AUDIT_SCHEMA_VERSION;
@@ -230,4 +254,6 @@ export interface AuditReport {
   history: HistoryPoint[];
   /** The product's screens and the files that make each one, with their pictures once captured. */
   screens?: AuditScreen[];
+  /** A close picture of each group of pieces, cropped from those screens once captured. */
+  crops?: AuditCrop[];
 }

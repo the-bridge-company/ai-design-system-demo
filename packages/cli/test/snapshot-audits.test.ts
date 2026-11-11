@@ -44,6 +44,8 @@ describe('bridge snapshot audits name their product', () => {
     const report = JSON.parse(readFileSync(join(out, 'audits/art-print-shop.json'), 'utf8')) as AuditReport;
     // The map wins over the file routes (app/page.tsx is no screen here); screens without files are left out.
     expect(report.screens).toEqual([{ route: '/#/orders', name: 'Orders', files: ['resources/orders/OrderList.tsx'] }]);
+    // And the close picture each group asks for, on the screen that holds it (scripts/preview-shots.mjs crops it).
+    expect(report.crops).toContainEqual({ key: 'piece:Button', component: 'Button', route: '/#/orders' });
   });
 
   it('a product checkout inside the repo (actions/checkout path:) is named by its own git origin', async () => {

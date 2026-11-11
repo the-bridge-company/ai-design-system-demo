@@ -456,6 +456,49 @@
           }
         }
       }
+    },
+    "crops": {
+      "type": "array",
+      "description": "A close picture of each group of pieces (bridge snapshot writes the group and the screen to look on first); image, from, url and capturedAt once cropped from the live product into the bridge-shots branch.",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "component"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "pattern": "^audits/[a-z0-9._-]+/[a-z0-9-]+\\.webp$"
+          },
+          "from": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "capturedAt": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
     }
   },
   "$defs": {

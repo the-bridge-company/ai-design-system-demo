@@ -187,5 +187,26 @@ describe('pictures of the product', () => {
   it('a report without screens has no picture for any group', () => {
     const m = reportModel(report, { product: 'Acme CRM', productKey: 'crm' });
     expect(m.pieces.every((r) => r.screen === null)).toBe(true);
+    expect(m.pieces.every((r) => r.crop === null)).toBe(true);
+  });
+
+  it("a group's close picture says the screen it was cropped from, even when it is not the group's own", () => {
+    const crops = [
+      { key: 'piece:Button', component: 'Button', route: '/#/contacts', image: 'audits/acme-crm/piece-button.webp', from: '/#/contacts', width: 256.4, height: 68, capturedAt: '2026-11-11T08:00:00Z' },
+      { key: 'piece:Link', component: 'Link', route: '/#/deals', image: 'audits/acme-crm/piece-link.webp', from: '/#/contacts', width: 193, height: 54 },
+    ];
+    const m = reportModel({ ...report, screens, crops }, { product: 'Acme CRM', productKey: 'crm' });
+    const button = m.pieces.find((r) => r.component === 'Button')!;
+    expect(button.crop).toMatchObject({ image: 'audits/acme-crm/piece-button.webp', width: 256, height: 68, capturedAt: '2026-11-11T08:00:00Z' });
+    expect(button.crop!.screen).toBe(button.screen);
+    expect(m.pieces.find((r) => r.component === 'Link')!.crop!.screen).toMatchObject({ name: 'Contacts', image: 'audits/acme-crm/contacts.webp', line: 'This one is on the Contacts screen.' });
+    // No size, no picture: it could not be framed like the library's sample.
+    const sizeless = reportModel({ ...report, screens, crops: [{ key: 'piece:Button', component: 'Button', image: 'audits/acme-crm/piece-button.webp' }] }, { product: 'Acme CRM', productKey: 'crm' });
+    expect(sizeless.pieces.find((r) => r.component === 'Button')!.crop).toBeNull();
+    // Looked on the captured screens and found none: said so, not "not captured yet".
+    expect(sizeless.pieces.find((r) => r.component === 'Button')!.cropWhy).toBe('Bridge looked on the screens of Acme CRM it captured and found no buttons it could show.');
+    expect(reportModel({ ...report, screens: [{ route: '/#/contacts', name: 'Contacts', files: ['a.tsx'] }] }, { product: 'Acme CRM', productKey: 'crm' }).pieces.find((r) => r.component === 'Button')!.cropWhy).toBe(
+      'Bridge has not found buttons to show on the Contacts screen yet.'
+    );
   });
 });

@@ -5,9 +5,12 @@
 // value in its address (/contacts/[id], /deals/$id) is never guessed: no one can open it without one.
 // Pure: no fs, no DOM. The CLI writes the result into the report (`screens`); scripts/preview-shots.mjs captures each
 // screen of the product's live address into the bridge-shots branch; Studio picks, for a group, the screen that holds
-// most of its places (screenForPlaces).
+// most of its places (screenForPlaces). Each group of pieces also gets a close picture (pieceCrops): a few of its real
+// instances cropped from the screen that holds most of it, so the report sets the product's own button next to the
+// library's.
 import { globToRegExp } from '../layered';
-import type { AuditReport, AuditScreen } from './types';
+import { adoptionPieces } from './pieces';
+import type { AuditCrop, AuditReport, AuditScreen } from './types';
 
 /** `products[].screens`: a route ("/", "/settings", "/#/contacts") to one glob or several. */
 export type ScreensConfig = Record<string, string | string[]>;
@@ -164,15 +167,44 @@ export function productScreens(files: readonly string[], product: { screens?: Sc
     .slice(0, MAX_SCREENS);
 }
 
-/** The report with its screens (replaces any earlier list). No screen found: the report as it was, without `screens`. */
+/** Groups a report asks a close picture of at most: the biggest groups first. */
+export const MAX_CROPS = 16;
+
+/** A group's picture file name: "piece:Button" -> "piece-button" (never the name of a screen's picture). */
+export function cropSlug(key: string): string {
+  return `piece-${screenSlug(key.replace(/^piece:/, ''))}`;
+}
+
+/**
+ * The close pictures a report asks for: one per group of pieces (adoptionPieces, biggest change first, at most
+ * MAX_CROPS), with the screen that holds most of the group to look on first. A group no screen holds is still asked
+ * for: the capture looks on every captured screen.
+ */
+export function pieceCrops(report: AuditReport, screens: readonly AuditScreen[] = report.screens ?? []): AuditCrop[] {
+  // A report without its component counts (an older or partial one) asks for no picture rather than failing the snapshot.
+  if (!report.components || !report.metrics || !report.files.every((f) => Array.isArray(f.components))) return [];
+  return adoptionPieces(report)
+    .groups.slice(0, MAX_CROPS)
+    .map((g) => {
+      const route = screenForPlaces(screens, g.places)?.screen.route;
+      return { key: g.key, component: g.component, ...(route ? { route } : {}) };
+    });
+}
+
+/**
+ * The report with its screens and the close pictures it asks for (replaces any earlier lists). No screen found: the
+ * report as it was, without `screens` nor `crops`.
+ */
 export function withScreens(report: AuditReport, product: { screens?: ScreensConfig | undefined } | null | undefined): AuditReport {
-  const { screens: _old, ...rest } = report;
+  const { screens: _old, crops: _crops, ...rest } = report;
   const screens = productScreens(
     report.files.map((f) => f.path),
     product,
     report.target.root
   ).filter((s) => s.files.length);
-  return screens.length ? { ...rest, screens } : rest;
+  if (!screens.length) return rest;
+  const crops = pieceCrops(report, screens);
+  return { ...rest, screens, ...(crops.length ? { crops } : {}) };
 }
 
 /** The screen a group of places shows on, for the report's picture. */

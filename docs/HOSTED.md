@@ -82,8 +82,13 @@ findings on the product's live address (`products[].production`; the preview of 
 product repository), with the same capture code as the exploration shots, and keeps the pictures in the
 `bridge-shots` branch (`audits/<id>/<screen>.webp` and `screens.json`). It captures again only for a new audited
 commit, a new address or after a day, and writes `image`, `url` and `capturedAt` into each report before it is
-published. Studio shows, for each group, the screen holding most of its places, the whole screen (the pieces are not
-marked on it yet). This repository's workflow does it; a team on the template adds the same three steps (see
+published. Each report also lists the `crops` it wants: one per group of pieces, with the screen that holds most of
+it. On the opened screens the same step finds a few real instances of each group (shadcn/ui `data-slot` first, then
+ARIA roles, then plain HTML), opens overlays (dialogs, menus, side panels, popovers, tooltips) with their own trigger
+or a plain button that sends nothing, crops them and closes them with Escape, then keeps the crop next to the screens
+(`audits/<id>/piece-<name>.webp`, at twice its size) and writes `image`, `from`, `width` and `height` into the report.
+Studio sets that crop next to the library's own sample, in the same box, with "See it on the Contacts screen" for the
+whole screen. This repository's workflow does it; a team on the template adds the same three steps (see
 `.github/workflows/bridge-data.yml`). Pictures are read from the raw host, so only a public design system repository
 shows them for now.
 

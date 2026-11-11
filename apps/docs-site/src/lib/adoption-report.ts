@@ -8,7 +8,7 @@
 // one sentence; Tailwind scale classes count neither for nor against (said in "How this is measured").
 // Pure: no DOM, no fetch. adoption-report.test.ts covers it.
 import { adoptionPieces, adoptionValues, screenForPlaces, sourceLabel, type AuditIgnore, type AuditIgnores, type LibraryGap, type PieceGroup, type PiecePlace, type ValueGroup, type ValueMatch, type ValuePlace } from '@bridge-ds/core';
-import type { AuditReport, AuditScreen, FindingCategory, HistoryPoint } from '@bridge-ds/core/audit';
+import type { AuditCrop, AuditReport, AuditScreen, FindingCategory, HistoryPoint } from '@bridge-ds/core/audit';
 import type { Mood } from './quality-view';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -146,6 +146,10 @@ export interface PieceRow {
   };
   /** Where they live in the product: the screen holding most of them, with its picture when captured. */
   screen: ScreenPicture | null;
+  /** A close picture of a few of them as the product draws them, null until one is cropped. */
+  crop: CropPicture | null;
+  /** Without a close picture, why, in plain words. */
+  cropWhy: string;
   group: PieceGroup;
 }
 
@@ -161,12 +165,13 @@ function pieceTitle(g: PieceGroup): string {
 }
 
 /** The groups of pieces, biggest change first, in words. */
-export function pieceRows(groups: PieceGroup[], ctx: { product: string; current: number | null; packageName: string | null; code: CodePlace | null; screens?: AuditScreen[] | undefined }): PieceRow[] {
+export function pieceRows(groups: PieceGroup[], ctx: { product: string; current: number | null; packageName: string | null; code: CodePlace | null; screens?: AuditScreen[] | undefined; crops?: AuditCrop[] | undefined }): PieceRow[] {
   return groups.map((g) => {
     const one = pieceWord(g.component, 1);
     const many = pieceWord(g.component, 2);
     const src = g.sourceFile;
     const rest = src ? g.pieces - src.instances : 0;
+    const screen = screenPicture(ctx.screens, g.places, many);
     return {
       key: g.key,
       component: g.component,
@@ -193,7 +198,9 @@ export function pieceRows(groups: PieceGroup[], ctx: { product: string; current:
           : null,
         places: g.places.map((p) => placeRow(p, ctx.code, src)),
       },
-      screen: screenPicture(ctx.screens, g.places, many),
+      screen,
+      crop: cropPicture(ctx.crops, ctx.screens, g.key, screen),
+      cropWhy: cropWhy(ctx.crops, ctx.screens, g.key, screen, many, ctx.product),
       group: g,
     };
   });
@@ -260,6 +267,58 @@ export function screenPicture(screens: AuditScreen[] | undefined, places: { file
     capturedAt: image ? (s.capturedAt ?? null) : null,
     line: screenLine(name, pick.count, pick.total, many),
   };
+}
+
+/** A close picture of a group: a few real instances, cropped from a screen of the live product. */
+export interface CropPicture {
+  /** The picture in the bridge-shots branch ("audits/acme-crm/piece-button.webp"). */
+  image: string;
+  /** Its size in CSS pixels: shown at that size, like the library's own sample next to it. */
+  width: number;
+  height: number;
+  capturedAt: string | null;
+  /** The screen it was cropped from, for "See it on the Contacts screen". */
+  screen: ScreenPicture | null;
+}
+
+/**
+ * Why a group has no close picture: Bridge looked on the captured screens and found none it could show (a side panel
+ * that only opens on a phone), it has not captured the group's screen yet, or no screen holds the group.
+ */
+export function cropWhy(crops: AuditCrop[] | undefined, screens: AuditScreen[] | undefined, key: string, groupScreen: ScreenPicture | null, many: string, product: string): string {
+  const looked = Boolean(crops?.some((c) => c?.key === key)) && Boolean(screens?.some((s) => typeof s.image === 'string'));
+  if (looked) return `Bridge looked on the screens of ${product} it captured and found no ${many} it could show.`;
+  if (groupScreen) return `Bridge has not found ${many} to show on the ${groupScreen.name} screen yet.`;
+  return 'Bridge does not know which screen shows these yet.';
+}
+
+/** The close picture of a group when the report has a safe one, with the screen it comes from. Null otherwise. */
+export function cropPicture(crops: AuditCrop[] | undefined, screens: AuditScreen[] | undefined, key: string, groupScreen: ScreenPicture | null): CropPicture | null {
+  const c = crops?.find((x) => x?.key === key);
+  if (!c || typeof c.image !== 'string' || !PICTURE.test(c.image)) return null;
+  const size = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= 2000 ? Math.round(n) : null);
+  const width = size(c.width);
+  const height = size(c.height);
+  if (!width || !height) return null;
+  const from = c.from ?? c.route;
+  let screen: ScreenPicture | null = null;
+  if (groupScreen && groupScreen.route === from) screen = groupScreen;
+  else {
+    const s = screens?.find((x) => x.route === from);
+    if (s) {
+      const name = s.name || s.route;
+      const image = typeof s.image === 'string' && PICTURE.test(s.image) ? s.image : null;
+      screen = {
+        name,
+        route: s.route,
+        image,
+        url: image && typeof s.url === 'string' && /^https:\/\//.test(s.url) ? s.url : null,
+        capturedAt: image ? (s.capturedAt ?? null) : null,
+        line: `This one is on the ${name} screen.`,
+      };
+    }
+  }
+  return { image: c.image, width, height, capturedAt: c.capturedAt ?? null, screen };
 }
 
 /** "375 more parts belong to pieces the library already has, like dropdown menu items and card contents." */
@@ -502,7 +561,7 @@ export function measuredLines(product: string): string[] {
     'A piece counts as from the library when the code uses the library\'s own component. A copy of it, even a perfect one, counts as not from the library: library updates never reach it. That includes a copy of shadcn/ui kept in the product.',
     'A piece and its parts count once: a menu with its items is one menu. Its parts switch with it.',
     'A color, size or spacing value counts as from the library when it uses a library token. Tailwind scale classes (like p-4 or text-sm) count neither for nor against: they follow the product\'s own scale.',
-    `Pictures show the screen of ${product} that holds most of a group, opened on its live address after a check. The whole screen shows, the pieces are not marked on it yet. Developers say which files make which screen in bridge.config.json (screens); without that, Bridge reads the routes in the code.`,
+    `Pictures of ${product} come from its live address, opened after a check. A group shows a few of its pieces as ${product} draws them, cropped from the screen that holds most of them; dialogs, menus and side panels are opened with their own button, nothing is saved or sent. Developers say which files make which screen in bridge.config.json (screens); without that, Bridge reads the routes in the code.`,
   ];
 }
 
@@ -530,7 +589,7 @@ export function reportModel(report: AuditReport, opts: { product: string; produc
   const p = adoptionPieces(report);
   const pieces = pieceRows(
     p.groups.filter((g) => !off.has(g.key)),
-    { product: opts.product, current: report.metrics.componentAdoption, packageName: report.designSystem.packages[0] ?? null, code, screens: report.screens },
+    { product: opts.product, current: report.metrics.componentAdoption, packageName: report.designSystem.packages[0] ?? null, code, screens: report.screens, crops: report.crops },
   );
   return {
     product: opts.product,

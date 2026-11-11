@@ -1017,14 +1017,17 @@ export async function reachRun({ dir, config, api, host, force = false, dryRun =
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Screens of the adoption report: a real picture of where a group of pieces lives in the product. `bridge snapshot`
-// writes each audit's screens (route + the files that make it, from bridge.config.json products[].screens or the file
-// routes) into audits/<id>.json; `screens` opens each one on the product's live address (products[].production, else
-// its preview of the default branch when the product's repository is public), keeps the picture in the bridge-shots
-// branch and writes where it is back into the report before bridge-data is published:
-//   audits/<id>/<slug>.webp    800 px wide, from a 1440 by 900 window, the whole screen (no highlight yet)
-//   audits/<id>/screens.json   { product, base, ref, at, screens: { <route>: { image, url, capturedAt, width, height } }, failed }
-// A screen is captured again when the audited commit or the address changes, or after a day; else the picture is kept.
+// Screens of the adoption report: a real picture of where a group of pieces lives in the product, and a close picture
+// of the piece itself. `bridge snapshot` writes each audit's screens (route + the files that make it, from
+// bridge.config.json products[].screens or the file routes) and the groups it wants a close picture of (crops: group,
+// library component, the screen to look on first) into audits/<id>.json; `screens` opens each screen on the product's
+// live address (products[].production, else its preview of the default branch when the product's repository is
+// public), keeps the pictures in the bridge-shots branch and writes where they are back into the report before
+// bridge-data is published:
+//   audits/<id>/<slug>.webp          800 px wide, from a 1440 by 900 window, the whole screen
+//   audits/<id>/piece-<name>.webp    a few real instances of a group (three buttons, one open dialog), at twice their size
+//   audits/<id>/screens.json         { product, base, ref, at, screens: { <route>: {...} }, failed, crops: { <key>: {...} }, cropsFailed }
+// Pictures are taken again when the audited commit or the address changes, or after a day; else they are kept.
 
 export const SCREENS_DIR = 'audits';
 export const SCREENS_MAX_AGE_MS = 24 * 3600 * 1000;
@@ -1040,6 +1043,11 @@ export function screenSlug(route) {
   return s || 'home';
 }
 
+/** "piece:Button" -> "piece-button": the file name of a group's close picture (the same as core cropSlug). */
+export function cropSlug(key) {
+  return `piece-${screenSlug(String(key).replace(/^piece:/, ''))}`;
+}
+
 /** The address of a route on the product: "https://crm.example.com" + "/#/contacts". */
 export function screenUrl(base, route) {
   const b = String(base).replace(/\/+$/, '');
@@ -1048,29 +1056,42 @@ export function screenUrl(base, route) {
 }
 
 /**
- * Whether an audit's screens need new pictures: none yet, another address or commit, a new route, or a day old. A
- * route that could not be captured waits for the next commit or the next day like the others (meta.failed).
+ * Whether an audit's pictures need taking again: none yet, another address or commit, a new route or group, or a day
+ * old. A route or group that could not be captured waits for the next commit or the next day like the others
+ * (meta.failed, meta.cropsFailed).
  */
-export function screensDue(meta, { base, ref, routes }, now, force = false) {
+export function screensDue(meta, { base, ref, routes, crops = [] }, now, force = false) {
   if (force || !meta || meta.base !== base) return true;
   if (ref && meta.ref !== ref) return true;
   const kept = meta.screens ?? {};
   const failed = new Set(meta.failed ?? []);
   if (routes.some((r) => !kept[r] && !failed.has(r))) return true;
+  const keptCrops = meta.crops ?? {};
+  const cropsFailed = new Set(meta.cropsFailed ?? []);
+  if (crops.some((k) => !keptCrops[k] && !cropsFailed.has(k))) return true;
   const oldest = Math.min(...[...Object.values(kept).map((k) => Date.parse(k?.capturedAt ?? '') || 0), Date.parse(meta.at ?? '') || 0].filter((t) => t > 0));
   return !Number.isFinite(oldest) || now - oldest > SCREENS_MAX_AGE_MS;
 }
 
-/** The report with each screen's picture from the kept captures (screens.json); a route without one has none. */
+/** The report with each screen's and each group's picture from the kept captures (screens.json); without one, none. */
 export function withScreenShots(report, meta) {
   if (!Array.isArray(report?.screens)) return report;
   const kept = meta?.screens ?? {};
+  const keptCrops = meta?.crops ?? {};
   return {
     ...report,
     screens: report.screens.map(({ image: _i, url: _u, capturedAt: _c, width: _w, height: _h, ...s }) => {
       const k = kept[s.route];
       return k?.image ? { ...s, image: k.image, url: k.url, capturedAt: k.capturedAt, ...(k.width ? { width: k.width, height: k.height } : {}) } : s;
     }),
+    ...(Array.isArray(report.crops)
+      ? {
+          crops: report.crops.map(({ image: _i, from: _f, url: _u, capturedAt: _c, width: _w, height: _h, ...c }) => {
+            const k = keptCrops[c.key];
+            return k?.image ? { ...c, image: k.image, from: k.from, url: k.url, capturedAt: k.capturedAt, width: k.width, height: k.height } : c;
+          }),
+        }
+      : {}),
   };
 }
 
@@ -1103,13 +1124,387 @@ export async function captureScreen(browser, url) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Close pictures of a group: how each library component looks in a product, found in the live page. shadcn/ui marks
+// its parts with data-slot ("button", "dialog-content", "dropdown-menu-content", "sheet-content"), so those come first;
+// ARIA roles next, plain HTML last. An overlay (dialog, menu, side panel, popover, tooltip) is opened with its own
+// trigger (a *-trigger slot, aria-haspopup), never by submitting anything, cropped, then closed with Escape.
+
+/**
+ * By library component: `slots` (data-slot values), `roles`, `tags` (CSS selectors), and how to frame them: `one` (a
+ * single big instance), `solid` (prefer instances with a fill or a border: a real button over a filter row), `inline`
+ * (a link in text, not a whole row), `overlay` (open it first: `triggers` slots, `popup` aria-haspopup values,
+ * `probe` may try plain buttons that open something, `hover` opens on hover), `not` (left out of the role fallback),
+ * `avoid` (an overlay holding this is a last resort: a search palette is a dialog, but not the one a person pictures).
+ */
+// role="dialog" alone also names side panels and popovers: the dialog's role fallback leaves out what a slot says is one.
+const NOT_PANEL = ':not([data-slot^="sheet"]):not([data-slot^="drawer"]):not([data-slot^="popover"])';
+const DIALOG_LOOK = { overlay: true, one: true, slots: ['dialog-content', 'alert-dialog-content'], roles: ['dialog', 'alertdialog'], not: NOT_PANEL, triggers: ['dialog-trigger', 'alert-dialog-trigger'], popup: ['dialog'], probe: true, avoid: '[data-slot="command"], [cmdk-root]' };
+export const CROP_LOOKS = {
+  Button: { slots: ['button'], tags: ['button'], roles: ['button'], solid: true },
+  Link: { tags: ['a[href]:not([data-slot])'], roles: ['link'], inline: true },
+  Dialog: DIALOG_LOOK,
+  AlertDialog: { ...DIALOG_LOOK, slots: ['alert-dialog-content', 'dialog-content'], roles: ['alertdialog', 'dialog'] },
+  Menu: { overlay: true, one: true, slots: ['dropdown-menu-content', 'context-menu-content', 'menubar-content'], roles: ['menu'], triggers: ['dropdown-menu-trigger'], popup: ['menu', 'true'] },
+  // A side panel and a popover have no role of their own (both say "dialog"): only their slots tell them apart.
+  Drawer: { overlay: true, one: true, slots: ['sheet-content', 'drawer-content'], triggers: ['sheet-trigger', 'drawer-trigger'], popup: ['dialog'], probe: true },
+  Popover: { overlay: true, one: true, slots: ['popover-content'], triggers: ['popover-trigger'], popup: ['dialog'] },
+  Tooltip: { overlay: true, one: true, hover: true, slots: ['tooltip-content'], roles: ['tooltip'], triggers: ['tooltip-trigger'] },
+  Select: { slots: ['select-trigger'], roles: ['combobox'], tags: ['select'] },
+  // role="combobox" also names a select's button: only the slot says it is a combobox.
+  Combobox: { slots: ['command'] },
+  Card: { one: true, slots: ['card'] },
+  Table: { one: true, slots: ['table'], roles: ['table', 'grid'], tags: ['table'] },
+  Pagination: { one: true, slots: ['pagination'], tags: ['nav[aria-label*="pagination" i]'] },
+  Divider: { slots: ['separator'], roles: ['separator'], tags: ['hr'] },
+  Input: { slots: ['input'], tags: ['input:not([type=hidden]):not([type=checkbox]):not([type=radio])'], roles: ['textbox'] },
+  Textarea: { slots: ['textarea'], tags: ['textarea'] },
+  Avatar: { slots: ['avatar'] },
+  Tabs: { one: true, slots: ['tabs-list'], roles: ['tablist'] },
+  SidebarNav: { one: true, slots: ['sidebar'], tags: ['aside nav', 'nav'] },
+  Field: { slots: ['form-item'] },
+  Breadcrumb: { one: true, slots: ['breadcrumb'], tags: ['nav[aria-label*="breadcrumb" i]'] },
+  Alert: { one: true, slots: ['alert'], roles: ['alert'] },
+  Accordion: { one: true, slots: ['accordion'] },
+  Progress: { slots: ['progress'], roles: ['progressbar'] },
+  Badge: { slots: ['badge'] },
+  Skeleton: { slots: ['skeleton'] },
+  Switch: { slots: ['switch'], roles: ['switch'] },
+  Checkbox: { slots: ['checkbox'], roles: ['checkbox'], tags: ['input[type=checkbox]'] },
+  RadioGroup: { slots: ['radio-group'], roles: ['radiogroup'] },
+  Spinner: { slots: ['spinner'] },
+};
+
+/** Instances shown together at most, the room they may take (CSS px) and the space around them. */
+export const CROP_INSTANCES = 3;
+export const CROP_MAX = { width: 640, height: 360 };
+export const CROP_PAD = 16;
+/** Instances further apart than this are not shown together. */
+export const CROP_GAP = 48;
+/** Words of a button Bridge never presses while looking for an overlay: it would change or send something. */
+const NEVER_PRESS = /\b(delete|remove|archive|send|submit|save|confirm|log ?out|sign ?out|export|download|refresh|print|pay|buy|merge|reset|clear|approve|publish|invite|duplicate)\b/i;
+
+/** What to look for, in order: data-slot first, then ARIA roles, then plain HTML. Each tier is one CSS selector. */
+export function cropSelectors(look) {
+  const tiers = [];
+  if (look?.slots?.length) tiers.push(look.slots.map((s) => `[data-slot="${s}"]`).join(', '));
+  if (look?.roles?.length) tiers.push(look.roles.map((r) => `[role="${r}"]${look.not ?? ''}`).join(', '));
+  if (look?.tags?.length) tiers.push(look.tags.join(', '));
+  return tiers;
+}
+
+/** How to open an overlay: its own trigger slots first, then anything that says it opens one (aria-haspopup). */
+export function triggerSelectors(look) {
+  const tiers = [];
+  if (look?.triggers?.length) tiers.push(look.triggers.map((s) => `[data-slot="${s}"]`).join(', '));
+  if (look?.popup?.length) tiers.push(look.popup.map((p) => `[aria-haspopup="${p}"]`).join(', '));
+  return tiers;
+}
+
+/** Whether a plain button may be pressed to look for an overlay: a label, nothing it would send, change or toggle. */
+export function mayProbe({ label, type, pressed, inForm } = {}) {
+  const words = String(label ?? '').trim();
+  if (!words || words.length > 40) return false;
+  if (type === 'submit' || inForm || pressed != null) return false;
+  return !NEVER_PRESS.test(words);
+}
+
+/**
+ * The instances to show together: in page order, the largest run of up to `count` instances that sit close to each
+ * other (each within `gap` of the frame so far) and whose frame stays within `max`; on a tie, the run that sits in one
+ * row, then the first. Boxes { x, y, width, height } in page pixels. Returns their indexes, or [] for no box.
+ */
+export function pickCluster(boxes, { count = CROP_INSTANCES, max = CROP_MAX, gap = CROP_GAP } = {}) {
+  let best = null;
+  const flat = (run) => {
+    const ys = run.map((i) => boxes[i].y + boxes[i].height / 2);
+    return Math.max(...ys) - Math.min(...ys) < 8;
+  };
+  for (let i = 0; i < boxes.length; i++) {
+    const a = boxes[i];
+    const run = [i];
+    let f = { l: a.x, t: a.y, r: a.x + a.width, b: a.y + a.height };
+    for (let j = i + 1; j < boxes.length && run.length < count; j++) {
+      const b = boxes[j];
+      const near = b.x <= f.r + gap && b.x + b.width >= f.l - gap && b.y <= f.b + gap && b.y + b.height >= f.t - gap;
+      const n = { l: Math.min(f.l, b.x), t: Math.min(f.t, b.y), r: Math.max(f.r, b.x + b.width), b: Math.max(f.b, b.y + b.height) };
+      if (!near || n.r - n.l > max.width || n.b - n.t > max.height) continue;
+      run.push(j);
+      f = n;
+    }
+    const fits = f.r - f.l <= max.width && f.b - f.t <= max.height;
+    const score = (fits ? 100 : 0) + run.length * 10 + (run.length > 1 && flat(run) ? 1 : 0);
+    if (!best || score > best.score) best = { run, score };
+  }
+  return best ? best.run : [];
+}
+
+/** The groups to crop and the screens to look on: the group's own screen first, then every captured one. */
+export function cropsToCapture(report, routes) {
+  return (report?.crops ?? [])
+    .filter((c) => c && typeof c.key === 'string' && CROP_LOOKS[c.component])
+    .map((c) => ({ key: c.key, component: c.component, look: CROP_LOOKS[c.component], routes: [...new Set([...(c.route ? [c.route] : []), ...routes])] }));
+}
+
+// In the page (serialized by Playwright: no closure, only its argument).
+
+/** Marks the visible instances of the first tier that has some and returns their boxes in page pixels. */
+function pageFind({ tiers, solid, inline, attr }) {
+  // What an earlier frame hid shows again (the same as unhide, which the page does not have).
+  for (const el of document.querySelectorAll(`[${attr}-hidden]`)) {
+    el.style.visibility = el.getAttribute(`${attr}-hidden`) || '';
+    el.removeAttribute(`${attr}-hidden`);
+  }
+  for (const el of document.querySelectorAll(`[${attr}]`)) el.removeAttribute(attr);
+  const visible = (el) => {
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return r.width > 2 && r.height > 2 && s.visibility !== 'hidden' && Number(s.opacity) > 0 && !el.closest('[aria-hidden="true"], [inert]');
+  };
+  // A color that shows: not transparent, not a zero alpha in any notation (rgba(0, 0, 0, 0), oklch(... / 0)).
+  const shows = (c) => Boolean(c) && c !== 'transparent' && !/(,\s*0|\/\s*0)\)$/.test(c);
+  const filled = (el) => {
+    const s = getComputedStyle(el);
+    return shows(s.backgroundColor) || (parseFloat(s.borderTopWidth) > 0 && shows(s.borderTopColor));
+  };
+  // A link in the content: a line of text, not the app's navigation, not drawn as a button.
+  const inText = (el) => el.getBoundingClientRect().height <= 32 && (el.textContent || '').trim().length > 1 && !el.closest('nav, aside, header, [data-slot^="sidebar"]') && !filled(el);
+  for (const sel of tiers) {
+    let found = [];
+    try {
+      found = [...document.querySelectorAll(sel)].filter(visible);
+    } catch {
+      continue;
+    }
+    // Not the parts of another found instance (a button inside a card that is itself a match).
+    found = found.filter((el) => !found.some((o) => o !== el && o.contains(el)));
+    if (solid && found.some(filled)) found = found.filter(filled);
+    if (inline && found.some(inText)) found = found.filter(inText);
+    if (!found.length) continue;
+    return found.slice(0, 60).map((el, i) => {
+      el.setAttribute(attr, String(i));
+      const r = el.getBoundingClientRect();
+      return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height };
+    });
+  }
+  return [];
+}
+
+/**
+ * Scrolls the chosen instances into view and returns their frame in the window, with room around, inside the window.
+ * Whatever else shows in that frame (a neighbour button, the page behind a dialog) is hidden until the next look, so
+ * the picture holds the product's own pieces on its own background, like the library's sample next to it.
+ */
+function pageFrame({ ids, attr, pad }) {
+  const els = ids.map((i) => document.querySelector(`[${attr}="${i}"]`)).filter(Boolean);
+  if (!els.length) return null;
+  els[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+  const rs = els.map((el) => el.getBoundingClientRect());
+  const l = Math.max(0, Math.min(...rs.map((r) => r.left)) - pad);
+  const t = Math.max(0, Math.min(...rs.map((r) => r.top)) - pad);
+  const r = Math.min(innerWidth, Math.max(...rs.map((x) => x.right)) + pad);
+  const b = Math.min(innerHeight, Math.max(...rs.map((x) => x.bottom)) + pad);
+  if (r - l <= 4 || b - t <= 4) return null;
+  for (const el of document.body.querySelectorAll('*')) {
+    if (els.some((c) => el.contains(c) || c.contains(el))) continue;
+    const x = el.getBoundingClientRect();
+    if (x.width && x.height && x.left < r && x.right > l && x.top < b && x.bottom > t) {
+      el.setAttribute(`${attr}-hidden`, el.style.visibility);
+      el.style.visibility = 'hidden';
+    }
+  }
+  return { x: Math.round(l), y: Math.round(t), width: Math.round(r - l), height: Math.round(b - t) };
+}
+
+/** Shows again what an earlier frame hid, and forgets the marks. */
+function unhide(attr) {
+  for (const el of document.querySelectorAll(`[${attr}-hidden]`)) {
+    el.style.visibility = el.getAttribute(`${attr}-hidden`) || '';
+    el.removeAttribute(`${attr}-hidden`);
+  }
+  for (const el of document.querySelectorAll(`[${attr}]`)) el.removeAttribute(attr);
+}
+
+/** Whether the first marked instance holds `sel` (asked while the overlay is open). */
+function pageHolds({ attr, sel }) {
+  const el = document.querySelector(`[${attr}="0"]`);
+  try {
+    return Boolean(el && (el.matches(sel) || el.querySelector(sel)));
+  } catch {
+    return false;
+  }
+}
+
+/** Marks what may open an overlay: its triggers, then (when asked) plain buttons, the page's content before its header and navigation; says what each is. */
+function pageTriggers({ tiers, probe, attr }) {
+  for (const el of document.querySelectorAll(`[${attr}]`)) el.removeAttribute(attr);
+  const visible = (el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 2 && r.height > 2 && getComputedStyle(el).visibility !== 'hidden' && !el.closest('[aria-hidden="true"], [inert]') && !el.disabled;
+  };
+  const inMain = (el) => (el.closest('header, nav, aside, [data-slot^="sidebar"]') ? 1 : 0);
+  const out = [];
+  const add = (el, how) => {
+    if (!out.some((o) => o.el === el)) out.push({ el, how });
+  };
+  const triggers = [];
+  for (const sel of tiers) {
+    try {
+      for (const el of document.querySelectorAll(sel)) if (visible(el) && !triggers.includes(el)) triggers.push(el);
+    } catch {
+      /* a selector this browser does not know */
+    }
+  }
+  // The page's own content first (its sort menu before the header's theme menu), each tier's order kept.
+  triggers.sort((a, b) => inMain(a) - inMain(b)).forEach((el) => add(el, 'trigger'));
+  if (probe) {
+    [...document.querySelectorAll('button, [role="button"]')]
+      .filter(visible)
+      .filter((el) => !el.hasAttribute('aria-haspopup'))
+      .sort((a, b) => inMain(a) - inMain(b))
+      .forEach((el) => add(el, 'probe'));
+  }
+  return out.slice(0, 40).map((o, i) => {
+    o.el.setAttribute(attr, String(i));
+    return { how: o.how, label: (o.el.getAttribute('aria-label') || o.el.textContent || '').trim().slice(0, 60), type: o.el.getAttribute('type'), pressed: o.el.getAttribute('aria-pressed'), inForm: Boolean(o.el.closest('form')) };
+  });
+}
+
+/** Which of the marked candidates to press, in order: every trigger, then the plain buttons mayProbe allows; 8 at most. */
+export function triggersToTry(candidates) {
+  return (candidates ?? [])
+    .map((c, i) => ({ ...c, i }))
+    .filter((c) => c.how === 'trigger' || (c.how === 'probe' && mayProbe(c)))
+    .slice(0, 8)
+    .map((c) => c.i);
+}
+
+const CROP_ATTR = 'data-bridge-crop';
+const TRIGGER_ATTR = 'data-bridge-crop-trigger';
+/** Backdrops of open overlays go, so the crop of a dialog or a side panel sits on the page as it is, not darkened. */
+const NO_BACKDROP_CSS = '[data-slot$="-overlay"] { opacity: 0 !important; }';
+
+/** The frame of the instances of a look on the open page, or null. */
+async function frameOf(page, look, pad = CROP_PAD) {
+  const boxes = await page.evaluate(pageFind, { tiers: cropSelectors(look), solid: Boolean(look.solid), inline: Boolean(look.inline), attr: CROP_ATTR });
+  if (!boxes?.length) return null;
+  const ids = look.one ? [0] : pickCluster(boxes);
+  if (!ids.length) return null;
+  return page.evaluate(pageFrame, { ids, attr: CROP_ATTR, pad });
+}
+
+/**
+ * A close picture of a group on the open page: { png, width, height } in CSS pixels, or null when the page has none.
+ * An overlay is opened with its trigger (clicked, or hovered for a tooltip), cropped, then closed with Escape.
+ * `page` is a Playwright page (tests pass a fake with the same few calls).
+ */
+export async function cropOn(page, look) {
+  if (!look.overlay) {
+    const clip = await frameOf(page, look);
+    if (!clip) return null;
+    const png = await page.screenshot({ type: 'png', clip });
+    await page.evaluate(unhide, CROP_ATTR).catch(() => undefined);
+    return { png, width: clip.width, height: clip.height };
+  }
+  // Already open (a page that shows its dialog by itself).
+  const open = await frameOf(page, look, CROP_PAD + 8);
+  if (open) {
+    const png = await page.screenshot({ type: 'png', clip: open });
+    await page.evaluate(unhide, CROP_ATTR).catch(() => undefined);
+    return { png, width: open.width, height: open.height };
+  }
+  const at = page.url();
+  const candidates = await page.evaluate(pageTriggers, { tiers: triggerSelectors(look), probe: Boolean(look.probe), attr: TRIGGER_ATTR });
+  const content = cropSelectors(look).join(', ');
+  let fallback = null;
+  for (const i of triggersToTry(candidates)) {
+    const sel = `[${TRIGGER_ATTR}="${i}"]`;
+    try {
+      if (look.hover) await page.hover(sel, { timeout: 3000 });
+      else await page.click(sel, { timeout: 3000 });
+      const shown = await page
+        .waitForSelector(content, { state: 'visible', timeout: 2500 })
+        .then(() => true)
+        .catch(() => false);
+      if (shown) {
+        await page.addStyleTag({ content: NO_BACKDROP_CSS }).catch(() => undefined);
+        await page.waitForTimeout(250);
+        const clip = await frameOf(page, look, CROP_PAD + 8);
+        if (clip) {
+          const png = await page.screenshot({ type: 'png', clip });
+          const shot = { png, width: clip.width, height: clip.height };
+          const avoided = Boolean(look.avoid) && (await page.evaluate(pageHolds, { attr: CROP_ATTR, sel: look.avoid }).catch(() => false));
+          await page.evaluate(unhide, CROP_ATTR).catch(() => undefined);
+          await page.keyboard.press('Escape');
+          if (!avoided) return shot;
+          fallback ??= shot;
+          await page.waitForTimeout(200);
+          continue;
+        }
+      }
+    } catch {
+      /* this trigger did not open it: the next one */
+    }
+    await page.keyboard.press('Escape').catch(() => undefined);
+    if (look.hover) await page.mouse.move(0, 0).catch(() => undefined);
+    await page.waitForTimeout(200);
+    // A press that left the screen ends the search here: the caller opens the screen again for the next group.
+    if (page.url() !== at) return fallback;
+  }
+  return fallback;
+}
+
+/**
+ * Close pictures of the groups of `plan` (cropsToCapture) on the product at `base`: each screen is opened once per
+ * pass, the groups that prefer it first, then every screen for the groups still missing. One browser context, a
+ * 1440 by 900 window at twice the pixels. Returns { <key>: { webp, from, url, width, height } }.
+ */
+export async function captureCrops(browser, base, plan) {
+  const out = {};
+  if (!plan.length) return out;
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2, colorScheme: 'light', reducedMotion: 'reduce', serviceWorkers: 'block', acceptDownloads: false });
+  try {
+    const page = await context.newPage();
+    const tried = new Map(plan.map((c) => [c.key, new Set()]));
+    const routes = [...new Set(plan.flatMap((c) => c.routes))];
+    const open = async (url) => {
+      await settle(page, url);
+      if (new URL(url).hash && new URL(page.url()).hash !== new URL(url).hash) await settle(page, url).catch(() => undefined);
+      if (looksLikeAWallUrl(page.url())) return false;
+      await page.addStyleTag({ content: HIDE_CSS }).catch(() => undefined);
+      return true;
+    };
+    for (const first of [true, false]) {
+      for (const route of routes) {
+        const todo = plan.filter((c) => !out[c.key] && !tried.get(c.key).has(route) && c.routes.includes(route) && (!first || c.routes[0] === route));
+        if (!todo.length) continue;
+        const url = screenUrl(base, route);
+        if (!(await open(url).catch(() => false))) continue;
+        for (const c of todo) {
+          tried.get(c.key).add(route);
+          const shot = await cropOn(page, c.look).catch((e) => (log(`screens: crop ${c.key} on ${route}: ${e.message}`), null));
+          if (shot) {
+            const width = Math.min(Math.round(shot.width * 2), 1600);
+            out[c.key] = { webp: await toWebp(context, shot.png, width), from: route, url, width: shot.width, height: shot.height };
+          }
+          if (page.url() !== url) await open(url).catch(() => undefined);
+        }
+      }
+    }
+  } finally {
+    await context.close();
+  }
+  return out;
+}
+
 /**
  * Captures the screens of every audit of a bridge-data folder (`data`, written by `bridge snapshot`) into the shots
- * folder `dir`, then writes each picture's place into the audit reports. `capture(url)` is captureScreen with one
- * browser unless given (tests). `isPublic(repo)` says whether a product's repository is public: its preview is opened
- * only then; its production address always, being live for everyone.
+ * folder `dir`, then the close picture of each group, then writes each picture's place into the audit reports.
+ * `capture(url)` is captureScreen and `crop(base, plan)` captureCrops with one browser unless given (tests).
+ * `isPublic(repo)` says whether a product's repository is public: its preview is opened only then; its production
+ * address always, being live for everyone.
  */
-export async function screensRun({ data, dir, config, core = null, isPublic = async () => false, capture = null, force = false, now = Date.now() }) {
+export async function screensRun({ data, dir, config, core = null, isPublic = async () => false, capture = null, crop = null, force = false, now = Date.now() }) {
   const snapshot = readJson(join(data, 'snapshot.json'));
   const audits = (snapshot?.audits ?? []).filter((a) => a?.id && a.path && a.product);
   const products = config.products ?? [];
@@ -1120,6 +1515,12 @@ export async function screensRun({ data, dir, config, core = null, isPublic = as
     (async (url) => {
       browser ??= await launch();
       return captureScreen(browser, url);
+    });
+  const cropAll =
+    crop ??
+    (async (base, plan) => {
+      browser ??= await launch();
+      return captureCrops(browser, base, plan);
     });
   let changed = false;
   let captured = 0;
@@ -1137,10 +1538,12 @@ export async function screensRun({ data, dir, config, core = null, isPublic = as
       const prod = typeof p.production === 'string' && /^https:\/\//.test(p.production) ? p.production : null;
       const base = prod ?? (p.repo && p.preview && (await isPublic(p.repo)) ? productAddress({ preview: p.preview }, core?.previewUrl, branch) : null);
       const routes = screensToCapture(report);
+      const plan = cropsToCapture(report, routes);
       if (!base || !routes.length) {
         log(`screens: ${a.id}: ${base ? 'no screen holds a finding' : 'no live address Bridge may open (products[].production)'}, no picture.`);
-      } else if (screensDue(meta, { base, ref: report.target?.ref, routes }, now, force)) {
-        const next = { product: p.key, base, ...(report.target?.ref ? { ref: report.target.ref } : {}), at: new Date(now).toISOString(), screens: {}, failed: [] };
+      } else if (screensDue(meta, { base, ref: report.target?.ref, routes, crops: plan.map((c) => c.key) }, now, force)) {
+        const at = new Date(now).toISOString();
+        const next = { product: p.key, base, ...(report.target?.ref ? { ref: report.target.ref } : {}), at, screens: {}, failed: [], crops: {}, cropsFailed: [] };
         for (const route of routes) {
           const image = `${SCREENS_DIR}/${a.id}/${screenSlug(route)}.webp`;
           const shot = await shoot(screenUrl(base, route)).catch((e) => (log(`screens: ${a.id} ${route}: ${e.message}`), null));
@@ -1150,16 +1553,31 @@ export async function screensRun({ data, dir, config, core = null, isPublic = as
           }
           mkdirSync(join(dir, SCREENS_DIR, a.id), { recursive: true });
           writeFileSync(join(dir, image), shot.webp);
-          next.screens[route] = { image, url: shot.url, capturedAt: new Date(now).toISOString(), width: shot.width, height: shot.height };
+          next.screens[route] = { image, url: shot.url, capturedAt: at, width: shot.width, height: shot.height };
           captured++;
         }
-        // Pictures of routes no longer captured go.
-        const kept = new Set(Object.values(next.screens).map((s) => s.image));
-        for (const old of Object.values(meta?.screens ?? {})) if (old?.image && !kept.has(old.image)) rmSync(join(dir, old.image), { force: true });
+        // The close pictures, on the screens that opened.
+        const opened = plan.map((c) => ({ ...c, routes: c.routes.filter((r) => !next.failed.includes(r)) })).filter((c) => c.routes.length);
+        const shots = opened.length ? await Promise.resolve(cropAll(base, opened)).catch((e) => (log(`screens: ${a.id} crops: ${e.message}`), {})) : {};
+        for (const c of plan) {
+          const s = shots?.[c.key];
+          if (!s?.webp) {
+            next.cropsFailed.push(c.key);
+            continue;
+          }
+          const image = `${SCREENS_DIR}/${a.id}/${cropSlug(c.key)}.webp`;
+          mkdirSync(join(dir, SCREENS_DIR, a.id), { recursive: true });
+          writeFileSync(join(dir, image), s.webp);
+          next.crops[c.key] = { image, from: s.from, url: s.url, capturedAt: at, width: s.width, height: s.height };
+          captured++;
+        }
+        // Pictures no longer taken go.
+        const kept = new Set([...Object.values(next.screens), ...Object.values(next.crops)].map((s) => s.image));
+        for (const old of [...Object.values(meta?.screens ?? {}), ...Object.values(meta?.crops ?? {})]) if (old?.image && !kept.has(old.image)) rmSync(join(dir, old.image), { force: true });
         meta = next;
         writeJson(metaFile, meta);
         changed = true;
-        log(`screens: ${a.id}: ${kept.size} of ${routes.length} screen(s) captured from ${base}.`);
+        log(`screens: ${a.id}: ${Object.keys(next.screens).length} of ${routes.length} screen(s), ${Object.keys(next.crops).length} of ${plan.length} close picture(s) captured from ${base}.`);
       } else log(`screens: ${a.id}: up to date.`);
       writeFileSync(file, `${JSON.stringify(withScreenShots(report, meta))}\n`);
     }

@@ -403,30 +403,32 @@
   color: var(--color-text-muted);
 }
 
-/* Click to enlarge: the whole picture is the target. */
-.ar-shot-open {
-  padding: 0;
-  border: 0;
-  font: inherit;
-  cursor: zoom-in;
+/* The product's own pieces, cropped from its live screen: the library sample's box, background and framing, at their
+   own size (--ar-crop-w, set from the report) and never bigger than the box. Smaller in the row, like the samples. */
+.ar-plate-crop {
+  background-color: var(--color-bg-default);
 }
 
-.ar-shot-open:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
+.ar-plate:not(.ar-plate-big).ar-plate-crop {
+  background-color: var(--color-bg-subtle);
 }
 
-.ar-shot-hint {
-  position: absolute;
-  inset-block-end: var(--space-2);
-  inset-inline-end: var(--space-2);
-  display: inline-grid;
-  place-items: center;
-  padding: var(--space-1);
+.ar-crop {
+  display: block;
+  inline-size: min(calc(var(--ar-crop-w) * 0.65), 100%);
+  max-block-size: 100%;
+  block-size: auto;
+  object-fit: contain;
   border-radius: var(--radius-inset);
-  background-color: var(--color-surface-raised);
-  color: var(--color-text-default);
-  box-shadow: var(--elevation-overlay);
+}
+
+.ar-plate-big .ar-crop {
+  inline-size: min(var(--ar-crop-w), 100% - 2 * var(--space-4));
+  max-block-size: calc(100% - 2 * var(--space-4));
+}
+
+.ar-shot-link {
+  justify-self: start;
 }
 
 .ar-shot-line {

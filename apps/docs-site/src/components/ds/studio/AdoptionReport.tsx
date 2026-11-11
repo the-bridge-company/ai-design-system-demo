@@ -2,11 +2,12 @@
 // words and grouping in lib/adoption-report.ts). One plain verdict in the page's Harbor zone with ONE primary action
 // (Send to developers, for who can act), two score cards in words, then tabs: Pieces (groups of whole pieces, the
 // biggest change first, then the pieces the library is missing), Colors (swatch pairs) and Sizes and spacing. Each
-// group opens on the two pictures (the product's: the screen that holds most of the group, captured from its live
-// address, click to enlarge; else an honest "No picture yet"; the library's own preview), the one change that covers most of it, the group's actions, and the developers' detail
+// group opens on the two pictures side by side in the same box (the product's: a few of its pieces as it draws them,
+// cropped from its live address, with "See it on the Contacts screen" for the whole screen; else an honest "No
+// picture yet"; the library's own preview), the one change that covers most of it, the group's actions, and the developers' detail
 // behind one fold. Actions for a design lead or an admin only: designers read. On the sample team the actions stay in
 // this browser, like every other edit there. Repo content is React text only; links go through safeUrl.
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Maximize2, Send } from 'lucide-react';
 import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
 import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore } from '@bridge-ds/core';
@@ -14,7 +15,7 @@ import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
 import { StudioHead } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
-import { firstRunLine, groupRequest, sentWords, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type ValueRow } from '../../../lib/adoption-report';
+import { firstRunLine, groupRequest, sentWords, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type CropPicture, type ValueRow } from '../../../lib/adoption-report';
 import { shotsFileUrl } from '../../../lib/preview-shots';
 import { bridgeDataUrl } from '../../../lib/library/published';
 import { runDate } from '../../../lib/quality-view';
@@ -55,10 +56,10 @@ export interface ReportActions {
 export type PictureSrc = (path: string) => string | null;
 const PictureContext = createContext<PictureSrc>(() => null);
 
-/** The picture's address, null once it failed to load (the plate then says there is none). */
-function usePicture(screen: ScreenPicture | null): [string | null, () => void] {
+/** The address of a report picture, null once it failed to load (the plate then says there is none). */
+function usePicture(path: string | null | undefined): [string | null, () => void] {
   const resolve = useContext(PictureContext);
-  const src = screen?.image ? resolve(screen.image) : null;
+  const src = path ? resolve(path) : null;
   const [failed, setFailed] = useState<string | null>(null);
   return [src && src !== failed ? src : null, () => setFailed(src)];
 }
@@ -73,9 +74,37 @@ function NoPicture({ big = false, line }: { big?: boolean; line?: string }) {
   );
 }
 
-/** The product side, small: the screen where the group lives, scaled to fit, else "No picture yet". */
-function ProductPlate({ screen }: { screen: ScreenPicture | null }) {
-  const [src, fail] = usePicture(screen);
+/** A close picture at its own size (CSS pixels), never bigger than its plate: the same framing as the library sample. */
+function CropImage({ crop, src, alt, onError }: { crop: CropPicture; src: string; alt: string; onError: () => void }) {
+  return (
+    <img
+      className="ar-crop"
+      src={src}
+      alt={alt}
+      width={crop.width}
+      height={crop.height}
+      loading="lazy"
+      decoding="async"
+      onError={onError}
+      style={{ '--ar-crop-w': `${crop.width}px` } as CSSProperties}
+    />
+  );
+}
+
+/** The product side of a group, small: a few of its pieces as the product draws them, else "No picture yet". */
+function ProductPlate({ crop }: { crop: CropPicture | null }) {
+  const [src, fail] = usePicture(crop?.image);
+  if (!src || !crop) return <NoPicture />;
+  return (
+    <span className="ar-plate ar-plate-crop">
+      <CropImage crop={crop} src={src} alt="" onError={fail} />
+    </span>
+  );
+}
+
+/** A missing piece, small: the screen where it lives, scaled to fit, else "No picture yet". */
+function ScreenPlate({ screen }: { screen: ScreenPicture | null }) {
+  const [src, fail] = usePicture(screen?.image);
   if (!src) return <NoPicture />;
   return (
     <span className="ar-plate ar-plate-shot">
@@ -84,37 +113,42 @@ function ProductPlate({ screen }: { screen: ScreenPicture | null }) {
   );
 }
 
-/** The product side, open: the picture, click to enlarge in a dialog, and where the group sits, in words. */
-function ProductFigure({ screen, product }: { screen: ScreenPicture | null; product: string }) {
-  const [src, fail] = usePicture(screen);
-  const whole = 'The whole screen shows: the pieces are not marked on it yet.';
+/** "See it on the Contacts screen": the whole screen in a dialog, with a way to open it in the product. */
+function ScreenLink({ screen, product }: { screen: ScreenPicture; product: string }) {
+  const [src, fail] = usePicture(screen.image);
+  if (!src) return <span className="ar-shot-line">{screen.line}</span>;
+  return (
+    <Dialog>
+      <DialogTrigger render={<Button variant="link" size="sm" iconStart={Maximize2} className="ar-shot-link" />}>See it on the {screen.name} screen</DialogTrigger>
+      <DialogContent size="lg" title={`The ${screen.name} screen of ${product}`} description={`${screen.line}${screen.capturedAt ? ` Captured ${runDate(screen.capturedAt)}.` : ''}`}>
+        <img className="ar-shot-full" src={src} alt={`The ${screen.name} screen of ${product}`} onError={fail} />
+        {screen.url && (
+          <Link href={safeUrl(screen.url, '#')} {...external} className="ar-shot-go">
+            Open this screen in {product} <Icon icon={ExternalLink} size="sm" />
+          </Link>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The product side, open: the product's own pieces in the same box as the library's, and the screen they come from. */
+function ProductFigure({ row, product }: { row: PieceRow; product: string }) {
+  const crop = row.crop;
+  const [src, fail] = usePicture(crop?.image);
+  const screen = crop?.screen ?? row.screen;
+  const many = pieceWord(row.component, 2);
   return (
     <figure className="ar-fig">
-      <figcaption className="ar-cap">
-        In {product}
-        {screen ? `: the ${screen.name} screen` : ''}
-      </figcaption>
-      {src && screen ? (
-        <Dialog>
-          <DialogTrigger className="ar-plate ar-plate-big ar-plate-shot ar-shot-open" aria-label={`Enlarge the picture of the ${screen.name} screen`}>
-            <img src={src} alt="" loading="lazy" decoding="async" onError={fail} />
-            <span className="ar-shot-hint" aria-hidden="true">
-              <Icon icon={Maximize2} size="sm" />
-            </span>
-          </DialogTrigger>
-          <DialogContent size="lg" title={`The ${screen.name} screen of ${product}`} description={`${screen.line} ${whole}${screen.capturedAt ? ` Captured ${runDate(screen.capturedAt)}.` : ''}`}>
-            <img className="ar-shot-full" src={src} alt={`The ${screen.name} screen of ${product}`} />
-            {screen.url && (
-              <Link href={safeUrl(screen.url, '#')} {...external} className="ar-shot-go">
-                Open this screen in {product} <Icon icon={ExternalLink} size="sm" />
-              </Link>
-            )}
-          </DialogContent>
-        </Dialog>
+      <figcaption className="ar-cap">In {product}</figcaption>
+      {src && crop ? (
+        <span className="ar-plate ar-plate-big ar-plate-crop">
+          <CropImage crop={crop} src={src} alt={`${many.charAt(0).toUpperCase()}${many.slice(1)} as ${product} draws them${crop.screen ? `, on the ${crop.screen.name} screen` : ''}`} onError={fail} />
+        </span>
       ) : (
-        <NoPicture big line={screen ? `Bridge has not captured the ${screen.name} screen yet.` : 'Bridge does not know which screen shows these yet.'} />
+        <NoPicture big line={row.cropWhy} />
       )}
-      {screen && <span className="ar-shot-line">{screen.line}</span>}
+      {screen && <ScreenLink screen={screen} product={product} />}
     </figure>
   );
 }
@@ -451,7 +485,7 @@ function PieceItem({ row, product, actions }: { row: PieceRow; product: string; 
           <span className="ar-minis" aria-hidden="true">
             <span className="ar-mini">
               <span className="ar-cap">In {product}</span>
-              <ProductPlate screen={row.screen} />
+              <ProductPlate crop={row.crop} />
             </span>
             <span className="ar-mini">
               <span className="ar-cap">In the library</span>
@@ -462,7 +496,7 @@ function PieceItem({ row, product, actions }: { row: PieceRow; product: string; 
       }
     >
       <div className="ar-pair">
-        <ProductFigure screen={row.screen} product={product} />
+        <ProductFigure row={row} product={product} />
         <figure className="ar-fig">
           <figcaption className="ar-cap">In the library: {row.component}</figcaption>
           <LibraryPlate name={row.component} big />
@@ -568,7 +602,7 @@ function Gaps({ gaps, partsLine }: { gaps: GapCard[]; partsLine: string | null }
           <ul className="ar-gap-list">
             {gaps.map((g) => (
               <li key={g.key}>
-                <ProductPlate screen={g.screen} />
+                <ScreenPlate screen={g.screen} />
                 <span className="ar-gap-name">{g.name}</span>
                 <span className="ar-muted">{g.detail}</span>
               </li>

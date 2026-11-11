@@ -352,10 +352,11 @@ function leadLine(line: string, lead: string | null | undefined): string {
 }
 
 /** While it is explored: the four steps of All steps, in words. */
-function explorationSteps(lead: string | null, product: string): HandoffStep[] {
+function explorationSteps(lead: string | null, product: string, waitingForLead = false): HandoffStep[] {
+  // Once the designer said Done exploring, Exploring is done and the lead's step is the one happening now.
   return [
-    { status: 'waiting', title: 'Exploring', detail: 'Until its designer says Done exploring', current: true },
-    { status: 'waiting', title: 'The lead decides', detail: lead ? `${lead} picks what the library keeps` : 'Your design lead picks what the library keeps' },
+    { status: waitingForLead ? 'done' : 'waiting', title: 'Exploring', detail: waitingForLead ? 'Its designer said Done exploring' : 'Until its designer says Done exploring', current: !waitingForLead },
+    { status: 'waiting', title: 'The lead decides', detail: lead ? `${lead} picks what the library keeps` : 'Your design lead picks what the library keeps', current: waitingForLead },
     { status: 'waiting', title: 'Developers build it', detail: `The ${product || 'product'} developers build it, then it is checked` },
     { status: 'waiting', title: 'Shipped', detail: `Then live in ${product || 'the product'}` },
   ];
@@ -1108,7 +1109,7 @@ function ExplorationBody(p: ExplorationPageProps) {
   // ---- The journey.
   const journey = journeyOf(stage, { lead: p.leadName ?? null, product: product || 'the product' });
   const send = handoff?.forDevelopers && !handoff.declined && handoff.status !== 'shipped' ? handoff.forDevelopers : null;
-  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product);
+  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product, stage === 'waiting-for-lead');
 
   // ---- Activity.
   const quoted = [checkQuote?.text ?? '', p.designerZone?.text ?? '', p.notDoing?.text ?? ''];

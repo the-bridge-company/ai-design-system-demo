@@ -1774,3 +1774,9 @@
     grid-column: 1;
   }
 }
+
+/* All steps: the step happening now stands out from the ones still to come (done ones carry their check). */
+.xp-steps [aria-current='step'] {
+  background-color: var(--color-surface-selected);
+  font-weight: var(--font-weight-semibold);
+}

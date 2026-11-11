@@ -41,8 +41,29 @@ export const DEMO_VISITOR_EMAIL = 'dana@acme.example';
 /** The product manager of the sample team's Account app (Settings > Products). */
 export const DEMO_PM = { product: 'prints', email: 'ann@acme.example' } as const;
 
-/** The member a signed-out visitor of `team` reads as, or null: only the sample team has one. */
+/** The member a signed-out visitor of `team` reads as by default, or null: only the sample team has one. */
 export const demoVisitorEmail = (team: string): string | null => (isSampleTeam(team) ? DEMO_VISITOR_EMAIL : null);
+
+/**
+ * Who a signed-out visitor of the sample team plays ("See it as", src/lib/demo-cast.ts), from the short name they
+ * picked (`as`, any case: "sofia"): the email member whose read-only session they get (`email`), and `as`, the name
+ * kept on that session. The developer has no email membership: he reads through the lead's session, and `github` names
+ * his account (the build check reads him by it). Anything else, or nothing, is the lead (Dana). Null off the sample team.
+ * Never a write: the session stays a visitor's, and every write is refused (demoWriteRefusal).
+ */
+export function demoVisitorPick(team: string, as?: string | null): { email: string; as: string; github?: { login: string; name: string } } | null {
+  if (!isSampleTeam(team)) return null;
+  const k = typeof as === 'string' ? as.trim().toLowerCase() : '';
+  const m = k ? DEMO_MEMBERS.find((d) => d.name.toLowerCase() === k) : null;
+  if (m) return { email: m.email, as: k };
+  const dev = k ? RETIRED_DEMO_MEMBERS.find((r) => r.name.toLowerCase() === k) : null;
+  if (dev) return { email: DEMO_VISITOR_EMAIL, as: k, github: { login: dev.github, name: dev.name } };
+  return { email: DEMO_VISITOR_EMAIL, as: 'dana' };
+}
+
+/** True when `email` is one of the sample team's people a visitor's session may read as (only on the sample team). */
+export const isDemoVisitorEmail = (team: string, email: string | null | undefined): boolean =>
+  isSampleTeam(team) && Boolean(email) && DEMO_MEMBERS.some((d) => d.email === email!.trim().toLowerCase());
 
 export interface SeedResult {
   added: string[];

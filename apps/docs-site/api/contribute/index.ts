@@ -180,7 +180,7 @@ import { sharedAppTokens } from '../_lib/shared-token.js';
 import { configName, putTeamName } from '../_lib/teams.js';
 import { cookieAttrs, readCookie, signClaims, verifyClaims } from '../_lib/session.js';
 import { teamInSet } from '../_lib/members.js';
-import { demoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
+import { demoVisitorEmail, demoVisitorPick, isDemoVisitorEmail, seedDemoTeam } from '../_lib/demo-members.js';
 import { demoExplorationsOf, planDemoRefile, refiledComment, relinkBody, type RefileIssue, type RefilePull } from '../_lib/demo-refile.js';
 import { parseSeedPlan, SEED_LIMITS, seedProductsFrom, type SeedFile, type SeedState } from '../_lib/demo-explorations.js';
 import type { ExplorationUseCase } from '@bridge-ds/mcp';
@@ -260,6 +260,8 @@ export interface ContribClaims {
    * read as that member, through every path a member reads by; demoWriteRefusal refuses each of their writes.
    */
   visit?: 1;
+  /** On a visitor's session: who of the sample team they play ("See it as", demoVisitorPick), by short name. */
+  as?: string;
 }
 
 export const COOKIE_PATH = '/api/contribute';
@@ -408,8 +410,8 @@ const isClaims = (c: any) => typeof c.repo === 'string' && typeof c.email === 's
 export const signSession = (c: ContribClaims, secret: string) => signClaims(c, secret, PURPOSE);
 export const verifySession = (value: string, secret: string) => verifyClaims<ContribClaims>(value, secret, PURPOSE, isClaims);
 
-export function issueSession(m: EmailMember, repoFull: string, secret: string, now: number, visit = false): string {
-  const value = signSession({ repo: repoFull.toLowerCase(), email: m.email, name: m.name, v: m.version, exp: now + SESSION_TTL_MS, ...(visit ? { visit: 1 as const } : {}) }, secret);
+export function issueSession(m: EmailMember, repoFull: string, secret: string, now: number, visit = false, as?: string): string {
+  const value = signSession({ repo: repoFull.toLowerCase(), email: m.email, name: m.name, v: m.version, exp: now + SESSION_TTL_MS, ...(visit ? { visit: 1 as const, ...(as ? { as } : {}) } : {}) }, secret);
   return `${cookieName(repoFull)}=${value}; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}; ${cookieAttrs(COOKIE_PATH)}`;
 }
 
@@ -435,7 +437,7 @@ const githubAuth = (req: Request): boolean => {
  * A real membership comes first (the team's cookie of a member, then a Bridge account on the team); a visitor's session
  * counts only after both, and never on a request signed in with GitHub (the demo's owner keeps their own identity).
  */
-async function sessionOf(ctx: Ctx, req: Request, repoFull: string): Promise<{ member: EmailMember; visitor: boolean } | null> {
+async function sessionOf(ctx: Ctx, req: Request, repoFull: string): Promise<{ member: EmailMember; visitor: boolean; as?: string } | null> {
   const raw = readCookie(req, cookieName(repoFull));
   const c = raw ? verifySession(raw, ctx.svc.secret) : null;
   const live = c && c.repo === repoFull.toLowerCase() && c.exp > ctx.now() ? c : null;
@@ -456,21 +458,24 @@ async function sessionOf(ctx: Ctx, req: Request, repoFull: string): Promise<{ me
     const m = await ctx.svc.members.get(repoFull, a.email);
     if (m && sameEmail(m.email, a.email)) return { member: m, visitor: false };
   }
-  if (live?.visit && !githubAuth(req) && demoVisitorEmail(repoFull) && sameEmail(live.email, demoVisitorEmail(repoFull)!)) {
+  // A visitor's session reads as one of the sample team's people ("See it as", demoVisitorPick): any of them, never
+  // anyone else, and only on the sample team.
+  if (live?.visit && !githubAuth(req) && isDemoVisitorEmail(repoFull, live.email)) {
     const m = await of(live);
-    if (m) return { member: m, visitor: true };
+    if (m) return { member: m, visitor: true, ...(typeof live.as === 'string' ? { as: live.as } : {}) };
   }
   return null;
 }
 
 /**
  * A signed-out visitor of a demo team that has a visitor member (api/_lib/demo-members.ts): that member, to read as, or
- * null (not a demo team, nobody seeded, or a request signed in with GitHub).
+ * null (not a demo team, nobody seeded, or a request signed in with GitHub). `as`: who of the sample team they picked
+ * in "See it as" (demoVisitorPick); its lead by default.
  */
-async function visitorMemberOf(ctx: Ctx, req: Request, repoFull: string): Promise<EmailMember | null> {
-  const email = demoVisitorEmail(repoFull);
-  if (!email || githubAuth(req) || !isPublicTeam(repoFull)) return null;
-  return await ctx.svc.members.get(repoFull, email);
+async function visitorMemberOf(ctx: Ctx, req: Request, repoFull: string, as?: string | null): Promise<EmailMember | null> {
+  const pick = demoVisitorPick(repoFull, as);
+  if (!pick || githubAuth(req) || !isPublicTeam(repoFull)) return null;
+  return await ctx.svc.members.get(repoFull, pick.email);
 }
 
 /**
@@ -1346,7 +1351,11 @@ export const PM_WORDS = {
 
 /** Who is asking: an email member of the team (any role), or a GitHub account that reads the team's repository. */
 async function callerOn(ctx: Ctx, req: Request, team: { owner: string; repo: string; full: string }): Promise<{ email?: string; login?: string; name: string; lead: boolean } | null> {
-  const m = await sessionMember(ctx, req, team.full);
+  const s = await sessionOf(ctx, req, team.full);
+  // The sample team's developer, played by a visitor ("See it as"): read by his GitHub account, never a lead.
+  const dev = s?.visitor ? demoVisitorPick(team.full, s.as)?.github : null;
+  if (dev) return { login: dev.login, name: dev.name, lead: false };
+  const m = s?.member ?? null;
   if (m) {
     const admin = m.role === 'admin' || Boolean(ctx.svc.localAdmins && (await ctx.svc.localAdmins.isAdmin(team.full, m.email)));
     return { email: m.email, name: m.name, lead: admin || approves(m) };
@@ -3693,8 +3702,12 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       const s = await sessionOf(ctx, req, full);
       // A signed-out visitor of a demo team gets a read-only session as its visitor member (api/_lib/demo-members.ts):
       // from here on they read as that member, by the same paths; demoWriteRefusal refuses each write.
-      const visit = !s && params.get('members') === null && params.get('mine') === null ? await visitorMemberOf(ctx, req, full) : null;
-      const m = s?.member ?? visit;
+      // On the sample team the visitor picks who they play ("See it as", ?as=): a session for someone else is issued
+      // again for the one picked. Still a visitor's read-only session.
+      const pick = (!s || s.visitor) && params.has('as') ? demoVisitorPick(full, params.get('as')) : null;
+      const again = Boolean(s?.visitor && pick && (!sameEmail(s.member.email, pick.email) || (s.as ?? 'dana') !== pick.as));
+      const visit = (!s || again) && params.get('members') === null && params.get('mine') === null ? await visitorMemberOf(ctx, req, full, pick?.as ?? null) : null;
+      const m = visit ?? s?.member ?? null;
       const visitor = Boolean(s?.visitor || visit);
       if (params.get('members') === '1') return await membersOf(ctx, req, full, m);
       if (params.get('mine') === '1') {
@@ -3715,7 +3728,7 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       const admin = Boolean(m && svc.localAdmins && (await svc.localAdmins.isAdmin(full, m.email)));
       const mode = m ? await reviewModeOf(svc.redis, full) : 'one';
       const member = m ? { ...publicMember(m, mode), ...(admin ? { role: 'admin', decides: true } : {}), ...(visitor ? { visitor: true } : {}) } : null;
-      return json(200, { available: true, member, ...(m ? { reviewMode: mode } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true) } : {});
+      return json(200, { available: true, member, ...(m ? { reviewMode: mode } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true, pick?.as) } : {});
     }
 
     if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);

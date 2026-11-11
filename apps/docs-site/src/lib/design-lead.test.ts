@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDesignLead, leadsLibrary, type LeadViewer } from './design-lead';
+import { deciderNames, isDesignLead, leadsLibrary, type LeadViewer } from './design-lead';
 import { contributorAccess } from './access';
 import { emptyProductLine } from './product-page';
 import { startTargets } from './create-branch';
@@ -78,5 +78,29 @@ describe('one rule for a design lead, by email or by GitHub', () => {
     expect(isDesignLead({ access: { write: true }, login: 'dev', designOwners: [] })).toBe(true);
     expect(isDesignLead({ access: { write: false }, login: 'dev', designOwners: [] })).toBe(false);
     expect(leadsLibrary({ access: contributorAccess(false), member: { role: 'edit' }, login: 'dev', techOwners: ['dev'] })).toBe(false);
+  });
+});
+
+describe('who decides, by name', () => {
+  const sample = [
+    { name: 'Ann', role: 'edit', lead: true },
+    { name: 'Dana', role: 'admin', lead: true },
+    { name: 'Leo', role: 'edit' },
+    { name: 'Sofia', role: 'edit' },
+  ];
+  it('names the email lead who runs the team, never a GitHub design owner', () => {
+    expect(deciderNames(sample, ['Florian'])).toEqual(['Dana']);
+    expect(deciderNames([{ name: 'Ann Lee', role: 'edit', lead: true }], ['Florian'])).toEqual(['Ann']);
+  });
+  it('names the GitHub leads on a team without an email lead, else its email admin', () => {
+    expect(deciderNames([{ name: 'Leo', role: 'edit' }], ['Florian'])).toEqual(['Florian']);
+    expect(deciderNames(null, ['Florian', 'Mo'])).toEqual(['Florian', 'Mo']);
+    expect(deciderNames([{ name: 'Dana', role: 'admin' }], [])).toEqual(['Dana']);
+    expect(deciderNames([], [])).toEqual([]);
+  });
+  it('names the other lead to a lead exploring themselves, never them nor the admin in their place', () => {
+    expect(deciderNames(sample, ['Florian'], 'Dana')).toEqual(['Ann']);
+    expect(deciderNames([{ name: 'Dana', role: 'admin', lead: true }], ['Florian'], 'Dana')).toEqual(['Florian']);
+    expect(deciderNames([{ name: 'Dana', role: 'admin', lead: true }], [], 'Dana Kim')).toEqual([]);
   });
 });

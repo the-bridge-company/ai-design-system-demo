@@ -47,3 +47,23 @@ export function leadsLibrary(x: LeadViewer & { techOwners?: readonly string[] | 
   if (x.member || x.access?.contributor || !x.access?.write) return false;
   return listed(x.login, x.techOwners) || listed(x.login, x.overrideAllowed);
 }
+
+/**
+ * The lead who decides on a team's explorations, by first name, as Studio names them to everyone else ("Dana decides
+ * before the developers build it"): on a team whose leads are members by email, its lead who runs the team (an admin
+ * marked lead) first, else its first lead; never a GitHub design owner then, who is not the one asked on such a team.
+ * A team without an email lead names its GitHub leads (`github`, the names this browser knows), else its email admin.
+ * Empty when unknown. `except`: a lead exploring themselves (their first name): the other lead, never them, and never
+ * the admin as a stand-in.
+ */
+export function deciderNames(members: readonly { name: string; role: string; lead?: boolean }[] | null | undefined, github: readonly string[], except?: string | null): string[] {
+  const firstWord = (n: string) => n.trim().split(/\s+/)[0]!;
+  const other = (n: string) => !except?.trim() || firstWord(n).toLowerCase() !== firstWord(except).toLowerCase();
+  const named = (members ?? []).filter((m) => m.name.trim() && other(m.name));
+  const leads = named.filter((m) => m.lead);
+  const first = (m: { name: string } | undefined) => (m ? [firstWord(m.name)] : []);
+  if (leads.length) return first(leads.find((m) => m.role === 'admin') ?? leads[0]);
+  const ghLeads = github.filter(other);
+  if (ghLeads.length) return ghLeads;
+  return except?.trim() ? [] : first(named.find((m) => m.role === 'admin'));
+}

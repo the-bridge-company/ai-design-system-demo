@@ -79,14 +79,16 @@ export function person(login: string, profileName?: string | null, avatar?: stri
 /**
  * Distinct people, first seen first (the oldest wait leads, since rows come sorted). A GitHub account is one person; the
  * designers who joined by email share the app's account and no picture, so their name tells them apart ("Sofia and Leo
- * are waiting on you", never "Sofia" alone for two people).
+ * are waiting on you", never "Sofia" alone for two people). Without a photo, a person is their name, whichever account
+ * a row came through: a designer asking as the lead's reviewee and as the product manager's is one person ("Sofia and
+ * Leo", never "Sofia, Sofia, Leo").
  */
 export function uniquePeople(people: (Person | null | undefined)[]): Person[] {
   const seen = new Set<string>();
   const out: Person[] = [];
   for (const p of people) {
     if (!p) continue;
-    const k = p.agent ? '#agent' : p.avatar ? p.login.toLowerCase() : `${p.login.toLowerCase()}|${p.name.trim().toLowerCase()}`;
+    const k = p.agent ? '#agent' : p.avatar ? p.login.toLowerCase() : `#name|${p.name.trim().toLowerCase()}`;
     if (seen.has(k)) continue;
     seen.add(k);
     out.push(p);

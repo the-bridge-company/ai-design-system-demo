@@ -192,6 +192,50 @@ describe('the demo visitor reads as Dana', () => {
     expect((await (await get(`?repo=${encodeURIComponent(TEAM)}`, { cookie: moved })).json()).member).toBeNull();
   });
 
+  it('gives the visitor a session as the person picked in See it as, still read only', async () => {
+    await fresh();
+    const sofia = await get(`${q}&as=Sofia`);
+    expect((await sofia.json()).member).toMatchObject({ email: 'sofia@acme.example', name: 'Sofia', role: 'edit', visitor: true });
+    const cookie = cookieOf(sofia);
+    // With that session "mine", the team's people and the other functions read as Sofia.
+    const people = await (await get(`${q}&members=1`, { cookie })).json();
+    expect(people.members.find((m: { you?: boolean }) => m.you)?.name).toBe('Sofia');
+    expect((await contributorOf(new Request(`${ORIGIN}/api/ship?repo=${DEMO}`, { headers: { host: HOST, cookie } }), DEMO, ENV, t.deps))?.name).toBe('Sofia');
+    // Same pick: no new cookie. Another pick: a new session for them.
+    expect((await get(`${q}&as=sofia`, { cookie })).headers.get('set-cookie')).toBeNull();
+    const ann = await get(`${q}&as=ann`, { cookie });
+    expect((await ann.json()).member).toMatchObject({ name: 'Ann', lead: true, visitor: true });
+    expect(cookieOf(ann).startsWith(`${cookieName(DEMO)}=`)).toBe(true);
+    // Every write is refused, whoever is played.
+    const w = await post(`${q}&gh=${encodeURIComponent(`/repos/${DEMO}/issues`)}`, { title: 'x' }, { cookie });
+    expect(w.status).toBe(403);
+    expect((await w.json()).error).toBe(DEMO_REFUSAL);
+    expect(t.writes).toEqual([]);
+  });
+
+  it("plays the developer through the lead's session, and names nobody else", async () => {
+    await fresh();
+    const malik = await get(`${q}&as=malik`);
+    expect((await malik.json()).member).toMatchObject({ name: 'Dana', visitor: true });
+    // Anyone the sample team does not have reads as its lead.
+    expect((await (await get(`${q}&as=mallory`)).json()).member).toMatchObject({ name: 'Dana' });
+  });
+
+  it('never plays anyone for a real member, on a real team, or from a forged visitor cookie', async () => {
+    await fresh();
+    await memberStore(t.redis).put(DEMO, { email: 'mia@acme.example', name: 'Mia', role: 'edit', version: 1, addedBy: 'dana', at: new Date(T0).toISOString() });
+    const mia = `${cookieName(DEMO)}=${signSession({ repo: DEMO, email: 'mia@acme.example', name: 'Mia', v: 1, exp: T0 + 1e9 }, SECRET)}`;
+    const own = await get(`${q}&as=sofia`, { cookie: mia });
+    expect((await own.json()).member).toMatchObject({ name: 'Mia' });
+    expect(own.headers.get('set-cookie')).toBeNull();
+    // A visitor session for someone the sample team does not list is no session.
+    const forged = `${cookieName(DEMO)}=${signSession({ repo: DEMO, email: 'mia@acme.example', name: 'Mia', v: 1, exp: T0 + 1e9, visit: 1 }, SECRET)}`;
+    expect((await (await get(`${q}&members=1`, { cookie: forged })).json()).members?.find((m: { you?: boolean }) => m.you)).toBeUndefined();
+    const real = await get(`?repo=${encodeURIComponent(TEAM)}&as=sofia`);
+    expect((await real.json()).member).toBeNull();
+    expect(real.headers.get('set-cookie')).toBeNull();
+  });
+
   it('reads as a guest, as before, while the sample team has no seeded members', async () => {
     await fresh(false);
     const r = await get(q);

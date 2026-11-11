@@ -213,7 +213,9 @@ export function contributeInfo(repo: string): Promise<ContributeInfo> {
   const k = key(repo);
   const held = infos.get(k);
   if (held) return held;
-  const p = call<{ available?: boolean; member?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}`).then(
+  // On the sample team, who the visitor plays ("See it as"): the server gives their read-only session as that person.
+  const as = castOn(repo)?.key;
+  const p = call<{ available?: boolean; member?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}${as ? `&as=${as}` : ''}`).then(
     (r) => {
       const info = { available: r.available === true, member: parseMember(r.member) };
       infoAvailable.set(k, info.available);

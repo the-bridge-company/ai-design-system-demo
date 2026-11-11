@@ -76,6 +76,7 @@ import { bringLatestIntoExploration, copyRepos, explorationBehind } from './desi
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
 import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, studioClient } from './github-session';
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
+import { deciderNames } from '../lib/design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { pageRoleOf } from '../lib/exploration-layout';
@@ -1146,22 +1147,22 @@ function knownLeadNames(leads: readonly string[]): string[] {
   });
 }
 
+/** The team's people (GET /api/contribute?members=1), read once per page: who leads it by email. */
+let teamPeople: Promise<{ members: { name: string; role: string; lead?: boolean }[] } | null> | null = null;
+
 /**
- * The design leads of an exploration by name ("Dana picks what the library keeps"): the GitHub leads this browser knows,
- * else, for a team whose lead signs in by email, the member list's lead (as Library review reads it). Empty when unknown.
+ * The design leads of an exploration by name ("Dana picks what the library keeps", lib/design-lead deciderNames): on a
+ * team whose leads are members by email, its email lead, never a GitHub design owner; else the GitHub leads this
+ * browser knows; else its email admin. Empty when unknown.
  */
 async function leadNamesOf(leads: readonly string[], except?: string | null): Promise<string[]> {
   // `except`: a lead exploring themselves (their first name): the other lead, never them.
-  const first = (n: string) => n.trim().split(/\s+/)[0]!.toLowerCase();
-  const other = (n: string) => !except?.trim() || first(n) !== first(except);
-  const known = knownLeadNames(leads).filter(other);
-  if (known.length) return known;
-  const { contributeTeam } = await import('./contribute-session');
-  const { getToken } = await import('./github-session');
-  const people = await contributeTeam(`${CFG.owner}/${CFG.repo}`, currentContributor() ? null : getToken()).catch(() => null);
-  const members = (people?.members ?? []).filter((m) => other(m.name));
-  const emailLead = members.find((m) => m.lead) ?? (except?.trim() ? undefined : members.find((m) => m.role === 'admin'));
-  return emailLead?.name.trim() ? [emailLead.name.trim().split(/\s+/)[0]!] : [];
+  teamPeople ??= (async () => {
+    const { contributeTeam } = await import('./contribute-session');
+    const { getToken } = await import('./github-session');
+    return contributeTeam(`${CFG.owner}/${CFG.repo}`, currentContributor() ? null : getToken()).catch(() => null);
+  })();
+  return deciderNames((await teamPeople)?.members, knownLeadNames(leads), except);
 }
 
 /**
@@ -1194,7 +1195,7 @@ async function paintLibraryImpact(
   const ownerHere = !decides && viewerDecidesExplorations() && (Boolean(viewer && sameLogin(viewer, block?.leadAskedBy ?? o.r.author)) || Boolean(member?.name && block?.memberName && member.name.trim().toLowerCase() === block.memberName.trim().toLowerCase()) || startedByEmailMember(body, member));
   const otherLeads = ownerHere ? await leadNamesOf(leads, myName) : [];
   const viewerLeads = decides || (viewerDecidesExplorations() && otherLeads.length === 0);
-  const leadNames = otherLeads.length ? otherLeads : viewerLeads ? knownLeadNames(leads) : parsePiecesRecord(body)?.pieces.length ? await leadNamesOf(leads) : knownLeadNames(leads);
+  const leadNames = otherLeads.length ? otherLeads : viewerLeads ? knownLeadNames(leads) : await leadNamesOf(leads);
   const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
   // The lead by name on the page ("Ready to hand it to Dana?", the journey's next step).
   if (!viewerLeads && leadNames[0] && current?.key === key) repaint(d, key, { leadName: leadNames[0] });

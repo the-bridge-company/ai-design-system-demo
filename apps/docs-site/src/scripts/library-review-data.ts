@@ -38,6 +38,7 @@ import { productClient, productPulls } from './product-repos';
 import { impactSourceOf } from './library-impact';
 import { viewerRole } from './needs-you';
 import { viewerDecidesExplorations } from './design-lead';
+import { deciderNames } from '../lib/design-lead';
 import { siteApprovers, loadTeams } from './teams';
 import { knownNames } from './people';
 import { isHomeExploration } from '../lib/home-explorations';
@@ -146,8 +147,9 @@ async function leadNames(me: string | null): Promise<{ lead: string | null; tech
   try {
     const { contributeTeam } = await import('./contribute-session');
     const team = await contributeTeam(`${owner}/${repo}`, currentContributor() ? null : getToken());
-    const emailLead = team.members.find((m) => m.lead) ?? team.members.find((m) => m.role === 'admin');
-    if (emailLead) lead = firstName(emailLead.name);
+    // The same lead the exploration page names (lib/design-lead deciderNames): the email lead who runs the team first.
+    const emailLead = deciderNames(team.members, [])[0];
+    if (emailLead) lead = emailLead;
     const other = team.members.find((m) => (m.lead || m.role === 'admin') && !same(firstName(m.name), me));
     if (other) secondLead = firstName(other.name);
   } catch {

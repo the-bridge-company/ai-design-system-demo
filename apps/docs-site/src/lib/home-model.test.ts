@@ -87,6 +87,17 @@ describe('people', () => {
     const app = (name: string) => ({ login: 'bridge-studio-app', name, avatar: null });
     expect(uniquePeople([app('Sofia'), app('Leo'), app('Sofia')]).map((p) => p.name)).toEqual(['Sofia', 'Leo']);
   });
+  it('says each person once when their rows came through different accounts (a lead review and a PM ask)', () => {
+    const rows = [
+      { login: 'bridge-studio-app', name: 'Sofia', avatar: null },
+      { login: '~sofia', name: 'Sofia', avatar: null },
+      { login: 'bridge-studio-app', name: 'Leo', avatar: null },
+      { login: '~leo', name: 'Leo', avatar: null },
+      CLAUDE,
+    ];
+    expect(uniquePeople(rows).map((p) => p.name)).toEqual(['Sofia', 'Leo', 'Claude AI']);
+    expect(waitingSentence(uniquePeople(rows))?.names).toBe('Sofia, Leo and Claude AI');
+  });
   it('says who waits in one sentence', () => {
     expect(waitingSentence([])).toBeNull();
     expect(waitingSentence([ann])).toEqual({ names: 'Ann', rest: ' is waiting on you.' });

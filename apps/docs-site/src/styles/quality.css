@@ -69,6 +69,11 @@
   list-style: none;
 }
 
+/* Rows touch: the site's list spacing (li + li) would leave a strip a row's hover cannot fill. */
+.ql-list > li {
+  margin: 0;
+}
+
 .ql-list > li + li {
   border-top: var(--border-width-default) solid var(--color-border-default);
 }

@@ -182,7 +182,7 @@ export function BuildCheck({
       ) : (
         answers
       )}
-      {v.note && <p className="xp-muted">{v.note}</p>}
+      {v.note && !(v.review && inZone) && <p className="xp-muted">{v.note}</p>}
     </div>
   );
 }

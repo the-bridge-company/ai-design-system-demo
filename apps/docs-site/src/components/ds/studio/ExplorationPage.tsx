@@ -1010,12 +1010,13 @@ function ExplorationBody(p: ExplorationPageProps) {
         return (
           <TurnZone
             eyebrow="Your turn"
-            title={`Does ${possessive(builder ?? 'the developer')} build match ${isOwner ? 'your design' : 'the design'}?`}
+            title={`Does ${possessive(builder ?? 'the developer')} build match ${isOwner ? 'your design' : handoff!.check!.review ? `${possessive(p.author.name)} design` : 'the design'}?`}
             drawing="review"
             quote={checkQuote ? <AskQuote who={checkQuote.by!} verb="says" text={checkQuote.text!} action={checkQuote.onReply && !checkQuote.answered ? <Link href="#xp-compose">Reply</Link> : null} /> : null}
             actions={<BuildCheck v={handoff!.check!} say={setSaid} inZone />}
           >
-            <p>{handoff!.check!.line}</p>
+            {/* With the check region by region, the zone is only the question and the progress (the ledger holds the rest). */}
+            {!handoff!.check!.review && <p>{handoff!.check!.line}</p>}
           </TurnZone>
         );
       case 'their-version': {
@@ -1133,7 +1134,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       )}
     </>
   );
-  const screen = build ? (
+  const stageBlock = build ? (
     <ScreenStage
       name={screenName}
       nameHidden={nameHidden}
@@ -1161,12 +1162,15 @@ function ExplorationBody(p: ExplorationPageProps) {
           </>
         ) : null
       }
-      entry={p.checkEntry ?? (handoff?.check?.review ? <BuildReviewEntry product={handoff.check.review.product} number={handoff.check.review.number} builder={handoff.check.builder} /> : null)}
+      entry={p.checkEntry ?? null}
       foot={stageFoot}
     />
   ) : (
     <ScreenStage name={screenName} nameHidden={nameHidden} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
   );
+  // Check the build, once Bridge measured it: the ledger of differences takes the screen block (the compare until then).
+  const ledger = stage === 'check' && !p.checkEntry && handoff?.check?.review ? handoff.check.review : null;
+  const screen = ledger ? <BuildReviewEntry product={ledger.product} number={ledger.number} builder={handoff!.check!.builder} fallback={stageBlock} turnShown={zone === 'check'} /> : stageBlock;
   const showCode = codeShown(role, stage);
   const devLine = devLineOf(role, stage);
   const check = p.developer.find((d) => d.label === 'Check it again')?.value ?? null;
@@ -1331,7 +1335,8 @@ function ExplorationBody(p: ExplorationPageProps) {
                 steps={steps.map((s) => ({ ...s, detail: send && s.title === 'Developers build it' && s.current ? <SendDetail detail={s.detail} message={send.message} /> : s.detail }))}
               />
             )}
-            {p.notes && (!handoff || p.notes.notes) && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail />}
+            {/* At Check the build, the ledger holds the handover notes as a checklist: never twice. */}
+            {p.notes && (!handoff || p.notes.notes) && !ledger && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail />}
           </div>
           </div>
         </div>

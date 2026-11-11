@@ -110,6 +110,16 @@ export interface ReviewRead {
   meant: string[];
   notes: NoteThread[];
   handover: { decisions: string[]; edgeCases: { component: string; state: string; covered: boolean }[] };
+  /** The handover notes someone found working in the build this round (shared: one tick for the check). */
+  ticks?: Tick[];
+}
+
+/** A handover note ticked as found in the build: its key (noteKey), who ticked it and when. */
+export interface Tick {
+  key: string;
+  byName: string;
+  role: Role;
+  at: string;
 }
 
 export const SIZE_WORDS: Record<SizeKey, string> = { laptop: 'Laptop', small: 'Small laptop', phone: 'Phone' };
@@ -195,6 +205,7 @@ export const REVIEW_WORDS = {
   noPage: (side: Side, size: SizeKey) => `${side === 'b' ? 'The build' : 'The approved design'} has no page at this address at ${SIZE_WORDS[size].toLowerCase()} size.`,
   noDifference: 'Bridge found no difference here. Look at the real build if something feels off.',
   readOnly: 'You can look. Only the designer, the product manager or a design lead answers.',
+  commentStill: 'You can still comment on a difference.',
   failed: 'Bridge could not read this check. Reload the page in a minute.',
   phoneOf: (i: number, total: number) => `${i} of ${total} · phone size`,
   done: 'Your answer',
@@ -332,4 +343,180 @@ export function whenWords(at: string, now = Date.now()): string {
   const h = Math.round(m / 60);
   if (h < 24) return `${h} h ago`;
   return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// --- The summary on the exploration page (components/ds/studio/BuildReviewEntry.tsx): the ledger of differences -----
+
+export const LEDGER_WORDS = {
+  label: 'Where the build differs from the approved design',
+  measured: (at: string, sizes: number, now = Date.now()) => {
+    const when = whenWords(at, now);
+    return `Measured ${when === 'now' ? 'just now' : when}${sizes ? ` at ${sizes === 1 ? '1 size' : `${sizes} sizes`}` : ''}`;
+  },
+  title: (builder: string, designer: string | null) => `Where ${possessive(builder)} build differs from ${designer ? `${possessive(designer)} design` : 'your design'}`,
+  start: 'Start the check',
+  continue: 'Continue',
+  send: (builder: string) => `Send your answer to ${builder}`,
+  look: 'Look at the differences',
+  lookAt: (n: number) => `Look at ${n}`,
+  lookAtLabel: (n: number, name: string) => `Look at ${n}, ${name}`,
+  approved: 'Approved design',
+  builtBy: (builder: string) => `${possessive(builder)} build`,
+  either: (designer: string, builder: string) => `${designer} or you can answer. The first answer goes to ${builder}.`,
+  answeredFirst: (name: string, builder: string) => `${name} answered, sent to ${builder}`,
+  addComment: 'Add a comment',
+  notesTitle: (designer: string | null) => (designer ? `${possessive(designer)} handover notes` : 'Your handover notes'),
+  notesLeft: (left: number, total: number) => (left === 0 ? `All ${total} found in the build` : `${left} to find in the build`),
+  notesHint: (builder: string) => `Bridge cannot measure these. Tick each one you see working in ${possessive(builder)} build.`,
+  show: 'Show',
+  hide: 'Hide',
+  turnTitle: (builder: string, designer: string | null) => `Does ${possessive(builder)} build match ${designer ? `${possessive(designer)} design` : 'your design'}?`,
+  progress: (done: number, total: number) => `${done} of ${total} answered`,
+  waitingOn: (name: string) => `Waiting on ${name}`,
+  tickFailed: 'Bridge could not save that tick. Try again.',
+} as const;
+
+/** The check page's stepper (BuildReview): one step per difference, then Send to the developer. */
+export const STEP_WORDS = {
+  label: 'Differences to look at',
+  around: 'Previous and next difference',
+  of: (i: number, total: number) => `${i} of ${total}`,
+  send: 'Send',
+  sendTo: (builder: string) => `Send to ${builder}`,
+  previous: 'Previous step',
+  next: 'Next step',
+  toLook: 'To look at',
+  fine: 'Fine as built',
+  fix: 'Fix this',
+  phone: 'Only on a phone',
+  stateOf: (v: Verdict | null) => (v === 'fine' ? 'Fine as built' : v === 'fix' ? 'Fix this' : 'To look at'),
+  recapTitle: (builder: string) => `Send your answer to ${builder}`,
+  recapLine: (looked: number, total: number, fixes: number, fine: number, builder: string) =>
+    `${looked === total ? `You looked at all ${total}.` : `You looked at ${looked} of ${total}.`} ${
+      fixes ? `${fixes} to fix, ${fine} fine as built. ${builder} gets each one with its pictures and comments.` : 'Every one you looked at is fine as built.'
+    }`,
+  change: 'Change',
+  changeLabel: (n: number, name: string) => `Change ${n}, ${name}`,
+  fineFolded: 'Fine as built',
+  notesFound: (found: number, total: number) => `${found} of ${total} found in the build`,
+  found: 'Found in the build',
+  notFound: 'Not ticked yet',
+  designInstead: 'The design must change instead',
+} as const;
+
+/** A handover note as a line of the checklist: its stable key, its kind, its words. */
+export interface HandoverRow {
+  key: string;
+  kind: 'Decision' | 'Edge case';
+  text: string;
+}
+
+/** A short stable key for a handover note's words (FNV-1a, 32 bits): "h" and 8 hex. The server checks it the same way. Pure. */
+export function noteKey(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `h${h.toString(16).padStart(8, '0')}`;
+}
+
+/** The handover notes as checklist rows: decisions, then edge cases. Pure. */
+export function handoverRows(h: ReviewRead['handover']): HandoverRow[] {
+  return [
+    ...h.decisions.map((text) => ({ key: noteKey(`decision:${text}`), kind: 'Decision' as const, text })),
+    ...h.edgeCases.map((e) => ({ key: noteKey(`edge:${e.component}:${e.state}`), kind: 'Edge case' as const, text: e.state })),
+  ];
+}
+
+/** Where the checklist of handover notes stands: the ones found, how many are left, whether it starts folded. Pure. */
+export function notesState(rows: readonly HandoverRow[], ticks: readonly Pick<Tick, 'key'>[], started: boolean): { found: Set<string>; left: number; folded: boolean } {
+  const found = new Set(ticks.map((t) => t.key).filter((k) => rows.some((r) => r.key === k)));
+  return { found, left: rows.length - found.size, folded: !started && found.size === 0 };
+}
+
+/** The other person who may answer and already did (the designer for a lead, the lead for the designer). */
+export interface FirstAnswer {
+  byName: string;
+  role: Role;
+  answer: string;
+  text: string | null;
+}
+
+/** Whoever answered the check first on this build, when it is not the reader: their answer went to the developer. Pure. */
+export function firstAnswerOf(d: Pick<ReviewRead, 'rows' | 'role' | 'designerName'>): FirstAnswer | null {
+  if (d.role !== 'designer' && d.role !== 'lead') return null;
+  const r = d.rows.find((x) => (x.role === 'designer' || x.role === 'lead') && x.role !== d.role && x.state !== 'waiting');
+  if (!r) return null;
+  const byName = r.byName ?? (r.role === 'designer' ? (d.designerName ?? 'The designer') : 'The design lead');
+  const answer = r.state === 'looks-right' ? 'Looks right' : r.why === 'design' ? 'The design must change' : 'Needs changes';
+  return { byName, role: r.role, answer, text: r.text?.trim() || null };
+}
+
+/** "Sofia or you can answer": the reader is a lead and the designer has not answered yet. Pure. */
+export function eitherLine(d: Pick<ReviewRead, 'rows' | 'role' | 'designerName'>, builder: string): string | null {
+  if (d.role !== 'lead' || firstAnswerOf(d)) return null;
+  const mine = d.rows.find((r) => r.role === 'lead' && r.state !== 'waiting');
+  return mine ? null : LEDGER_WORDS.either(d.designerName ?? 'The designer', builder);
+}
+
+export type LedgerCta = 'start' | 'continue' | 'send' | 'look' | null;
+
+export interface Ledger {
+  total: number;
+  phone: number;
+  done: number;
+  fixes: number;
+  /** Every difference to look at, in the list's order (laptop sizes, then phone only), one line each with its answer. */
+  rows: { it: ReviewItem; verdict: Verdict | null }[];
+  /** Still to answer, in the list's order: Start the check and Continue open the first. */
+  todo: ReviewItem[];
+  /** The header's one primary: it follows progress, never the row picked. */
+  cta: LedgerCta;
+  sub: string;
+}
+
+export const isPhoneOnly = (i: Pick<ReviewItem, 'sizes'>) => i.sizes.length > 0 && i.sizes.every((s) => s === 'phone');
+
+/**
+ * The answer on each difference as the page shows it: the reader's own; once the designer or a lead answered first,
+ * theirs (the reader has no verdict left to give). Pure.
+ */
+export function verdictsOf(d: Pick<ReviewRead, 'review' | 'items' | 'role' | 'rows' | 'designerName'>): Record<string, Verdict | null> {
+  const first = firstAnswerOf(d);
+  const out: Record<string, Verdict | null> = {};
+  for (const it of d.review?.items ?? []) {
+    const s = d.items.find((x) => x.sig === it.sig);
+    out[it.sig] = first ? (s?.others.find((o) => o.role === first.role)?.verdict ?? null) : (s?.mine ?? null);
+  }
+  return out;
+}
+
+/** The header's primary by progress: Start the check, Continue, Send your answer; Look for who cannot answer. Pure. */
+export function ctaOf(done: number, total: number, canAnswer: boolean, answeredByOther: boolean): LedgerCta {
+  if (!canAnswer) return 'look';
+  if (answeredByOther || total === 0) return null;
+  if (done === 0) return 'start';
+  return done < total ? 'continue' : 'send';
+}
+
+/**
+ * The summary of the check for the reader: every open difference one line each (laptop sizes, then phone only) with
+ * its answer, what is left, the header's primary and its line ("8 differences, 3 only on a phone" until the first
+ * answer, then "2 of 8 answered · 1 to fix so far"). Pure.
+ */
+export function ledgerOf(d: Pick<ReviewRead, 'review' | 'items' | 'role' | 'rows' | 'designerName'>): Ledger {
+  const st = standing(d.review?.items ?? [], d.items, {});
+  const g = groupsOf(st.open);
+  const open = [...g.wide, ...g.phone];
+  const v = verdictsOf(d);
+  const rows = open.map((it) => ({ it, verdict: v[it.sig] ?? null }));
+  const todo = rows.filter((r) => !r.verdict).map((r) => r.it);
+  const total = open.length;
+  const done = total - todo.length;
+  const fixes = rows.filter((r) => r.verdict === 'fix').length;
+  const phone = g.phone.length;
+  const head = `${total === 1 ? '1 difference' : `${total} differences`}${phone ? `, ${phone} only on a phone` : ''}`;
+  const progress = `${LEDGER_WORDS.progress(done, total)}${fixes ? ` · ${fixes} to fix${done < total ? ' so far' : ''}` : ''}`;
+  return { total, phone, done, fixes, rows, todo, cta: ctaOf(done, total, Boolean(d.role), Boolean(firstAnswerOf(d))), sub: done > 0 ? progress : head };
 }

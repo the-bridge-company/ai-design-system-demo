@@ -890,6 +890,11 @@ export async function sayBuildItem(repo: string, x: BuildTarget & { sig: string;
   return call('POST', '', { action: 'build-item', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
 }
 
+/** A handover note found (or not any more) in the build: one tick for the check, through the same route as the words. */
+export async function sayBuildTick(repo: string, x: BuildTarget & { handover: string; found: boolean }, githubToken: string | null = null): Promise<{ ticks: import('../lib/build-review-view').Tick[] }> {
+  return call('POST', '', { action: 'build-item', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
+}
+
 /** A comment pinned on a difference, an answer to one, or resolving it. */
 export async function buildNote(
   repo: string,

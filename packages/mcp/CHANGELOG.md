@@ -1,5 +1,28 @@
 # @bridge-ds/mcp
 
+## 0.17.0
+
+### Minor Changes
+
+- 57fb168: Started from a mockup: named once, with what the library is missing.
+
+  - Core: an exploration keeps the mockup's own name (`Exploration.mockupName`, only with a mockup; `withExplorationMockupName`, `mockupNameOf`). `mockupShownName` names the mockup for designers: that name, else the Figma file's name, else "the mockup", never a node or page id. `mockupPiecesLine` says "2 pieces the library doesn't have" from the recorded library check; nothing without a mockup, before the check, or with none missing.
+  - MCP: bridge_start_exploration takes an optional `mockup` link (the same check as Studio's field) and `mockupName`; bridge_save_exploration takes `mockupName` (alone it saves too, no commit). bridge_continue_exploration asks for the name and the recorded missing pieces while either is missing.
+  - Studio: the exploration page says one line, "Started from Contacts v3 · 2 pieces the library doesn't have" (only "Started from Contacts v3" while the count is unknown or 0). The count goes to the library section; where the page lists no pieces, it opens their names under the line.
+
+- ab77858: Start an exploration from a mockup.
+
+  - Core: `parseMockupLink` recognises a Figma frame link (figma.com/design or /file with a frame's node-id) or a Claude Design page (claude.ai/artifact/<id>, claude.ai/code/artifact/<id>) from its shape alone, nothing fetched; a whole Figma page or any other link gets a sentence that says how to fix it (`MOCKUP_PROBLEM`). An exploration keeps the link (`Exploration.mockup`, read back with `explorationMockupOf`) and its pull request says "Mockup. Starts from ...". `mockupBrief` tells Claude to rebuild it in the product with the library's pieces only, measure against the mockup and correct, never invent a token name (bridge_get_token, bridge_search_tokens), then list what the mockup uses that the library does not have. `startBrief` picks the mockup or the live page brief.
+  - MCP: bridge_continue_exploration returns the `mockup` and puts its brief in `next` while nothing is built yet.
+  - Studio: "Start from a mockup", a quiet link under the sentence in Start an exploration (products only), reveals the optional field. A recognised link becomes a card with what the link says and Remove; the line the designer pastes says in plain words to rebuild the mockup with the library's pieces only and tell what the library lacks (the measure and token rules stay in the MCP brief), Ready for Claude AI says what it starts from, and the exploration page says "Started from" with the link.
+
+### Patch Changes
+
+- Updated dependencies [57fb168]
+- Updated dependencies [ab77858]
+  - @bridge-ds/core@0.35.0
+  - @bridge-ds/visual@0.3.29
+
 ## 0.16.4
 
 ### Patch Changes

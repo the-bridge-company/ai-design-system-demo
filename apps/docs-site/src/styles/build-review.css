@@ -1030,9 +1030,10 @@
   height: var(--size-20);
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-lg);
-  background: var(--color-bg-muted);
-  object-fit: cover;
-  object-position: left center;
+  background: var(--color-bg-subtle);
+  /* The whole crop, scaled to fit: a cropped corner would hide the part that differs. */
+  object-fit: contain;
+  object-position: center;
 }
 
 .brv-recap-fold {

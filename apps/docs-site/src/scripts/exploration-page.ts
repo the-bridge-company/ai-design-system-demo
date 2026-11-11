@@ -643,6 +643,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const leadOther = emailLeadOther || Boolean(viewer && !currentViewer()?.email && connected() && !sameLogin(viewer, r.author) && !designerKeeper && viewerIsDesignLead());
   // The person it belongs to: the lead's words wait on them.
   const answersLead = connected() || emailKeeper ? (emailKeeper || designerKeeper || sameLogin(viewer, r.author)) && !emailOnProduct : false;
+  // A design lead exploring themselves: the page talks to them ("Then you pick what the library keeps"), never "your
+  // design lead". Another lead, when the team has one, decides on it and is named (below).
+  const ownerLeads = viewerDecidesExplorations() && (emailKeeper || designerKeeper || sameLogin(viewer, r.author));
   const isLibrary = !own && product.default === true;
   const handedOff = handedOffHere(r);
   const lines = pageLines({ number: r.number, name: r.name, productName: product.name, product: own?.product.key, repo: own?.repo });
@@ -847,6 +850,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   repaint(d, key, {
     // A lead answering in their bar reads the page as the lead.
     ...(lead?.bar ? { role: 'lead' as const } : {}),
+    ...(ownerLeads && !lead?.bar ? { ownerLeads: true } : {}),
     // Handed off, the page waits for the hand-off read below, never painted as running in between.
     ...(handedOff ? {} : { stage: stageOfRunning(stage, { talked: isWaitingForLead(pull.body) || decisionsOf(parseExplorationBody(pull.body)).length > 0 }) }),
     lead,
@@ -869,8 +873,9 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // explorations, and for the lead the answer per piece. Painted when read, below the board.
   // The lead by name on the journey while it runs ("Then Dana picks what the library keeps"), for whoever is not the lead
   // (the lead reads "Then you pick"). Waiting for the lead or with pieces checked, the library block below names them.
-  if (!r.archived && !handedOff && !leadOther && !lead?.bar && !viewerDecidesExplorations())
-    void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.leadAskedBy ?? r.author] }))
+  // A lead exploring themselves reads the other lead's name when there is one, never their own.
+  if (!r.archived && !handedOff && !leadOther && !lead?.bar && (!viewerDecidesExplorations() || ownerLeads))
+    void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.leadAskedBy ?? r.author] }), ownerLeads ? (member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null)) : null)
       .then((n) => n[0] && current?.key === key && !current.props.leadName && repaint(d, key, { leadName: n[0] }))
       .catch(() => undefined);
   if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line) });
@@ -1145,13 +1150,17 @@ function knownLeadNames(leads: readonly string[]): string[] {
  * The design leads of an exploration by name ("Dana picks what the library keeps"): the GitHub leads this browser knows,
  * else, for a team whose lead signs in by email, the member list's lead (as Library review reads it). Empty when unknown.
  */
-async function leadNamesOf(leads: readonly string[]): Promise<string[]> {
-  const known = knownLeadNames(leads);
+async function leadNamesOf(leads: readonly string[], except?: string | null): Promise<string[]> {
+  // `except`: a lead exploring themselves (their first name): the other lead, never them.
+  const first = (n: string) => n.trim().split(/\s+/)[0]!.toLowerCase();
+  const other = (n: string) => !except?.trim() || first(n) !== first(except);
+  const known = knownLeadNames(leads).filter(other);
   if (known.length) return known;
   const { contributeTeam } = await import('./contribute-session');
   const { getToken } = await import('./github-session');
   const people = await contributeTeam(`${CFG.owner}/${CFG.repo}`, currentContributor() ? null : getToken()).catch(() => null);
-  const emailLead = people?.members.find((m) => m.lead) ?? people?.members.find((m) => m.role === 'admin');
+  const members = (people?.members ?? []).filter((m) => other(m.name));
+  const emailLead = members.find((m) => m.lead) ?? (except?.trim() ? undefined : members.find((m) => m.role === 'admin'));
   return emailLead?.name.trim() ? [emailLead.name.trim().split(/\s+/)[0]!] : [];
 }
 
@@ -1181,8 +1190,11 @@ async function paintLibraryImpact(
   // by email, the sample team's visitor reading as Dana): once Done exploring asked, the pieces wait on them, "Needs
   // you", the words of Review all and the Changes Library row. Anyone else reads the lead's name, never a GitHub login:
   // unknown, "the DS lead". Before Done exploring, every piece reads Exploring for everyone (nobody is asked yet).
-  const viewerLeads = decides || viewerDecidesExplorations();
-  const leadNames = viewerLeads ? knownLeadNames(leads) : parsePiecesRecord(body)?.pieces.length ? await leadNamesOf(leads) : knownLeadNames(leads);
+  // A lead exploring themselves while the team has another lead: that lead decides, by name, never "you".
+  const ownerHere = !decides && viewerDecidesExplorations() && (Boolean(viewer && sameLogin(viewer, block?.leadAskedBy ?? o.r.author)) || Boolean(member?.name && block?.memberName && member.name.trim().toLowerCase() === block.memberName.trim().toLowerCase()) || startedByEmailMember(body, member));
+  const otherLeads = ownerHere ? await leadNamesOf(leads, myName) : [];
+  const viewerLeads = decides || (viewerDecidesExplorations() && otherLeads.length === 0);
+  const leadNames = otherLeads.length ? otherLeads : viewerLeads ? knownLeadNames(leads) : parsePiecesRecord(body)?.pieces.length ? await leadNamesOf(leads) : knownLeadNames(leads);
   const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
   // The lead by name on the page ("Ready to hand it to Dana?", the journey's next step).
   if (!viewerLeads && leadNames[0] && current?.key === key) repaint(d, key, { leadName: leadNames[0] });

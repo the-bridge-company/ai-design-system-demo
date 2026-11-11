@@ -70,6 +70,18 @@ describe('the library block, ledger', () => {
     expect(waiting[0]!.querySelector('h3, h4')!.textContent).toBe('Card padding');
   });
 
+  it('a new component shows a small picture of the screen; a click opens the whole capture in a dialog', async () => {
+    const view = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, conflicts: libraryConflicts(sofia, [leo]) });
+    const capture = 'https://example.com/shot.png';
+    const { container } = render(createElement(LibraryImpact, { view, actions: { onChoose: vi.fn(), onComment: vi.fn(), onPiece: vi.fn() }, say: vi.fn(), screen: { ...shot, capture }, newPieces: { capture, designer: 'Sofia', choices: {}, onChoice: vi.fn() } }));
+    const open = screen.getByRole('button', { name: "Timeline, as built in Sofia's screen, see it full size" });
+    expect(open.querySelector('img')!.getAttribute('src')).toBe(capture);
+    await expectNoAxeViolations(container);
+    await userEvent.click(open);
+    const dialog = await screen.findByRole('dialog', { name: "Timeline, as built in Sofia's screen" });
+    expect(dialog.querySelector('img')!.getAttribute('alt')).toBe("Timeline, as built in Sofia's screen");
+  });
+
   it('the designer reads the same rows, without ticks or the primary button', () => {
     const view = libraryImpactView({ ...base, body, lead: 'Dana', canDecide: false, designerHere: true, conflicts: libraryConflicts(sofia, [leo]) });
     render(createElement(LibraryImpact, { view, actions: { onComment: vi.fn() }, say: vi.fn(), screen: shot }));

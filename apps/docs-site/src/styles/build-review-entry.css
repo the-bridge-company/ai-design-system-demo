@@ -210,7 +210,8 @@
   }
 }
 
-/* The approved design and the build, side by side under the line, the same height. */
+/* The approved design and the build, side by side under the line, the same height. Each crop shows whole, scaled to
+   fit on a quiet surface: a cropped corner would hide the very part that differs. */
 .brl-pair {
   grid-column: 2 / -1;
   grid-template-columns: 1fr 1fr;
@@ -237,9 +238,9 @@
   height: calc(var(--size-20) * 1.25);
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-lg);
-  background: var(--color-surface-default);
-  object-fit: cover;
-  object-position: left center;
+  background: var(--color-bg-subtle);
+  object-fit: contain;
+  object-position: center;
 }
 
 .brl-wait {

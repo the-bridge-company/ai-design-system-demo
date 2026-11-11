@@ -290,6 +290,9 @@ function PieceHead({ row, name, headingLevel, menu = null }: { row: ImpactRowVie
 function NewPiece({ row, np, screen, onPiece, say }: { row: ImpactRowView; np: NewPieceChoices | null; screen: ImpactScreen | null; onPiece: LibraryImpactActions['onPiece'] | null; say: (s: string) => void }) {
   const designer = np?.designer ?? screen?.designer ?? row.origin.people[0] ?? 'The designer';
   const capture = np?.capture ?? screen?.capture ?? null;
+  // The capture is the whole screen: a small picture beside the line, the whole capture in a dialog on click.
+  const [big, setBig] = useState(false);
+  const shotAlt = `${row.title}, as built in ${possessiveOf(designer)} screen`;
   const [now, setNow] = useState<'approve' | 'local'>(row.status.key === 'local' ? 'local' : 'approve');
   const value = np ? (np.choices[row.id] ?? 'approve') : now;
   const tick = (on: boolean) => {
@@ -304,9 +307,17 @@ function NewPiece({ row, np, screen, onPiece, say }: { row: ImpactRowView; np: N
     <>
       <figure className="li-crop">
         {capture ? (
-          <span className="li-crop-shot">
-            <img src={capture} alt={`${row.title}, as built in ${possessiveOf(designer)} screen`} loading="lazy" />
-          </span>
+          <>
+            {/* bridge-audit-ignore-next-line: the small picture is the target that opens the whole capture; the DS has no image button and Button would draw a label around it */}
+            <button type="button" className="li-crop-shot" aria-label={`${shotAlt}, see it full size`} aria-haspopup="dialog" onClick={() => setBig(true)}>
+              <img src={capture} alt="" loading="lazy" />
+            </button>
+            <Dialog open={big} onOpenChange={setBig}>
+              <DialogContent title={shotAlt} size="lg">
+                <img className="li-crop-full" src={capture} alt={shotAlt} />
+              </DialogContent>
+            </Dialog>
+          </>
         ) : null}
         <figcaption className="li-said li-muted">
           <Who p={person(designer)} size="xs" className="li-face" />

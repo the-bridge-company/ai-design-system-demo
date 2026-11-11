@@ -150,6 +150,11 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
+  /**
+   * The owner is a design lead themselves: with no other lead named, the page talks to them ("Then you pick what the
+   * library keeps"), never "your design lead"; a lead it waits on is "Another design lead" until named.
+   */
+  ownerLeads?: boolean;
   /** The viewer's own face (their name and avatar), for the "You" row and the comment box. */
   me?: PageFace | null;
   /** What the exploration sets out to do (its purpose): one plain sentence under the screen's name. */
@@ -1000,7 +1005,7 @@ function ExplorationBody(p: ExplorationPageProps) {
         return (
           <TurnZone
             eyebrow="Your exploration"
-            title={handOverTitle(p.leadName)}
+            title={p.ownerLeads && !p.leadName?.trim() ? 'Ready for the developers?' : handOverTitle(p.leadName)}
             drawing="paint"
             actions={
               <>
@@ -1092,7 +1097,7 @@ function ExplorationBody(p: ExplorationPageProps) {
   } else if (p.lead && !p.lead.bar) {
     // The library block already says what the lead is choosing, anchored to it: the row says it once, in general.
     const waitsInLibrary = p.impact?.view.state === 'rows' && p.impact.view.conflicts.some((c) => !c.decided && !c.decides);
-    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? 'Your design lead', line: waitsInLibrary ? 'decides before the developers build it' : leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
+    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? (p.ownerLeads ? 'Another design lead' : 'Your design lead'), line: waitsInLibrary ? 'decides before the developers build it' : leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
   } else if (handoff && !p.archived && !turn) {
     // The step happening now, once: a zone already says what waits on the viewer.
     const now = handoff.steps.find((s) => s.current);
@@ -1111,8 +1116,9 @@ function ExplorationBody(p: ExplorationPageProps) {
   const keepExploring = p.lead?.onCancel ? <KeepExploring onCancel={p.lead.onCancel} say={setSaid} /> : null;
 
   // ---- The journey.
-  // The lead reading someone else's exploration picks themselves: "Then you pick what the library keeps".
-  const viewerLeads = role === 'lead';
+  // The lead reading someone else's exploration picks themselves: "Then you pick what the library keeps". So does a
+  // lead exploring themselves when no other lead is named.
+  const viewerLeads = role === 'lead' || (Boolean(p.ownerLeads) && !p.leadName?.trim());
   const journey = journeyOf(stage, { lead: p.leadName ?? null, viewerLeads, product: product || 'the product' });
   const send = handoff?.forDevelopers && !handoff.declined && handoff.status !== 'shipped' ? handoff.forDevelopers : null;
   const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product, stage === 'waiting-for-lead', viewerLeads);

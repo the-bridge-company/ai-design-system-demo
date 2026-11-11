@@ -449,11 +449,18 @@ export function donePieces(body: string | null | undefined): { checked: boolean;
 }
 
 /** What the Done exploring dialog says, before any write. */
-export function doneExploringCopy(x: { checked: boolean; pieces: number; sent: number; canCheck?: boolean; viaLead?: boolean }): { description: string; piecesLine: string | null } {
-  const description = x.viaLead ? 'Your lead looks at it first. Once they say it looks right, your developers take it from here.' : 'Nothing closes: the preview stays for you, your DS lead and stakeholders. Your developers take it from here.';
-  if (!x.checked) return { description, piecesLine: x.canCheck ? 'Bridge could not check it against the library this time. You can go on without proposing pieces.' : 'Not checked against the library yet. Ask Claude what is missing first, or go on without proposing pieces.' };
-  if (!x.pieces) return { description, piecesLine: x.sent ? 'Every piece it needs is already with your DS lead.' : null };
-  return { description, piecesLine: 'New pieces for the library. Each one you tick goes to your DS lead as a request, with a link to this preview.' };
+export function doneExploringCopy(x: { checked: boolean; pieces: number; sent: number; canCheck?: boolean; viaLead?: boolean; youLead?: boolean }): { description: string; piecesLine: string | null; piecesLabel: string } {
+  // A design lead exploring themselves, with no other lead to ask: they pick, so the words never send them to "your DS lead".
+  const you = Boolean(x.youLead && !x.viaLead);
+  const piecesLabel = you ? 'Add to the library' : 'Propose to your DS lead';
+  const description = x.viaLead
+    ? 'Your lead looks at it first. Once they say it looks right, your developers take it from here.'
+    : you
+      ? 'Nothing closes: the preview stays for you and stakeholders. Your developers take it from here.'
+      : 'Nothing closes: the preview stays for you, your DS lead and stakeholders. Your developers take it from here.';
+  if (!x.checked) return { description, piecesLabel, piecesLine: x.canCheck ? 'Bridge could not check it against the library this time. You can go on without proposing pieces.' : 'Not checked against the library yet. Ask Claude what is missing first, or go on without proposing pieces.' };
+  if (!x.pieces) return { description, piecesLabel, piecesLine: x.sent ? (you ? 'Every piece it needs is already asked for in the library.' : 'Every piece it needs is already with your DS lead.') : null };
+  return { description, piecesLabel, piecesLine: you ? 'New pieces for the library. Each one you tick goes to the library as a request, with a link to this preview.' : 'New pieces for the library. Each one you tick goes to your DS lead as a request, with a link to this preview.' };
 }
 
 export const LEAD_OK_LINE = 'Sent to the developers.';
@@ -470,8 +477,9 @@ export function leadAskedLine(pieces: number): string {
 }
 
 /** The line after Done exploring: what went where, in one sentence. */
-export function doneLine(requests: number): string {
-  return requests ? `Done exploring. ${requests} ${requests === 1 ? 'piece went' : 'pieces went'} to your DS lead, and your developers take it from here.` : 'Done exploring. Your developers take it from here.';
+export function doneLine(requests: number, youLead = false): string {
+  const where = youLead ? 'the library as requests' : 'your DS lead';
+  return requests ? `Done exploring. ${requests} ${requests === 1 ? 'piece went' : 'pieces went'} to ${youLead && requests === 1 ? 'the library as a request' : where}, and your developers take it from here.` : 'Done exploring. Your developers take it from here.';
 }
 
 /** The developer fold: the branch, the two commands to take it, and the note that it is a starting point. */

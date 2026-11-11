@@ -284,6 +284,21 @@ describe('ExplorationPage, exploring (X2)', () => {
     expect(screen.getByText('Then Dana picks what the library keeps')).toBeTruthy();
   });
 
+  it('a lead exploring themselves, no other lead named: "Then you pick", never "your design lead"', () => {
+    paint({ ...exploring, ownerLeads: true });
+    expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
+    expect(screen.getByText('Then you pick what the library keeps')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+    expect(screen.getByText('You pick what the library keeps')).toBeTruthy();
+    expect(screen.queryByText(/your design lead/i)).toBeNull();
+  });
+
+  it('a lead exploring themselves, another lead named: that lead picks', () => {
+    paint({ ...exploring, ownerLeads: true, leadName: 'Sam' });
+    expect(screen.getByRole('heading', { name: 'Ready to hand it to Sam?' })).toBeTruthy();
+    expect(screen.getByText('Then Sam picks what the library keeps')).toBeTruthy();
+  });
+
   it('the lead reading someone else\'s exploration picks: "Then you pick", in All steps too', () => {
     paint({ ...exploring, role: 'lead', leadName: 'Dana' });
     expect(screen.getByText('Then you pick what the library keeps')).toBeTruthy();

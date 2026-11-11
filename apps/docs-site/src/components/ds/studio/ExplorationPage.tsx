@@ -34,8 +34,6 @@ import {
   ButtonGroup,
   Card,
   CardBody,
-  Checklist,
-  ChecklistRow,
   Dialog,
   DialogClose,
   DialogContent,
@@ -80,12 +78,12 @@ import { ClaudeGlyph, claudeNewUrl, ConnectClaudeButton, ConnectFirst, ToolActio
 import { WhereItStands, type WhereItStandsView } from './WhereItStands';
 import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
-import { DesignerZone, HandOverDialog, NotDoingZone, PmZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
-import { AskQuote, CodeButton, Composer, Journey, People, ScreenStage, Timeline, TurnZone, type PersonRow } from './ExplorationParts';
-import { aboutLine, canSayDone, codeShown, devLineOf, screenNameOfRoute, handOverTitle, journeyOf, leadPicksLine, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
+import { DesignerZone, HandOverDialog, NotDoingZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
+import { AskQuote, CodeButton, Composer, ScreenStage, Timeline, TurnSteps, TurnZone } from './ExplorationParts';
+import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
+import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
-import { nameFace } from '../../../lib/people';
 
 export { claudeNewUrl };
 
@@ -150,6 +148,8 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
+  /** When the design lead was asked (ISO, the exploration's leadAskedAt): "Dana decides · now, for 3 days". */
+  leadAskedAt?: string | null;
   /**
    * The owner is a design lead themselves: with no other lead named, the page talks to them ("Then you pick what the
    * library keeps"), never "your design lead"; a lead it waits on is "Another design lead" until named.
@@ -351,22 +351,97 @@ function shippedLine(detail: string): string {
   return day ? `Since ${day}, for everyone who uses it.` : 'For everyone who uses it.';
 }
 
-/** The lead's row: the wait line without the lead's name in front when the row already names them. */
-function leadLine(line: string, lead: string | null | undefined): string {
-  const t = line.trim().replace(/\.$/, '');
-  if (lead && t.toLowerCase().startsWith(lead.toLowerCase() + ' ')) return t.slice(lead.length + 1);
-  return t.charAt(0).toLowerCase() + t.slice(1);
+/**
+ * The block while nothing waits on the viewer (direction B): what happens now as the title, the steps still to come
+ * with the current one marked, the sentences of what comes next, and at most one quiet button.
+ */
+function WaitTurn({ b, extra, action }: { b: TurnBlock; extra?: ReactNode; action?: ReactNode }) {
+  return (
+    <TurnZone eyebrow={b.eyebrow} title={b.title} drawing="review" actions={action ?? undefined}>
+      <TurnSteps steps={b.steps} />
+      {b.lines.map((l) => (
+        <p key={l}>{l}</p>
+      ))}
+      {extra}
+    </TurnZone>
+  );
 }
 
-/** While it is explored: the four steps of All steps, in words. */
-function explorationSteps(lead: string | null, product: string, waitingForLead = false, viewerLeads = false): HandoffStep[] {
-  // Once the designer said Done exploring, Exploring is done and the lead's step is the one happening now.
-  return [
-    { status: waitingForLead ? 'done' : 'waiting', title: 'Exploring', detail: waitingForLead ? 'Its designer said Done exploring' : 'Until its designer says Done exploring', current: !waitingForLead },
-    { status: 'waiting', title: 'The lead decides', detail: leadPicksLine({ lead, viewerLeads }), current: waitingForLead },
-    { status: 'waiting', title: 'Developers build it', detail: `The ${product || 'product'} developers build it, then it is checked` },
-    { status: 'waiting', title: 'Shipped', detail: `Then live in ${product || 'the product'}` },
-  ];
+/**
+ * The product manager's turn (boards R1, R3) in the block: optional once the lead is asked. "Give your view" opens
+ * their note and the two answers (Looks good, Needs changes, which needs the note) in the block itself.
+ */
+function PmTurn({ v, b, say }: { v: PmView; b: TurnBlock; say: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState<'pm-ok' | 'pm-changes' | null>(null);
+  // Needs changes stays clickable: with no note yet, the field says what it needs and takes the focus.
+  const [needNote, setNeedNote] = useState(false);
+  const note = useRef<HTMLTextAreaElement>(null);
+  const send = (kind: 'pm-ok' | 'pm-changes') => {
+    if (!v.onSay) return;
+    if (kind === 'pm-changes' && !text.trim()) {
+      setNeedNote(true);
+      note.current?.focus();
+      return;
+    }
+    setBusy(kind);
+    v.onSay(kind, text.trim())
+      .then((r) => {
+        setText('');
+        setOpen(false);
+        if (r) say(r);
+      })
+      .catch((err: Error) => say(err.message))
+      .finally(() => setBusy(null));
+  };
+  const form = (
+    <form
+      className="xp-lead-form"
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        send('pm-ok');
+      }}
+    >
+      <Textarea
+        ref={note}
+        label={PM_WORDS.note}
+        hint={PM_WORDS.noteHint}
+        error={needNote && !text.trim() ? PM_WORDS.noteNeeded : undefined}
+        rows={3}
+        value={text}
+        autoFocus
+        onChange={(e) => {
+          setText(e.target.value);
+          if (e.target.value.trim()) setNeedNote(false);
+        }}
+      />
+      <div className="xp-turn-acts">
+        <Button type="button" variant="secondary" size="md" loading={busy === 'pm-changes'} disabled={busy !== null} onClick={() => send('pm-changes')}>
+          {PM_WORDS.changes}
+        </Button>
+        <Button type="submit" variant="primary" size="md" loading={busy === 'pm-ok'} disabled={busy !== null}>
+          {PM_WORDS.looksGood}
+        </Button>
+      </div>
+    </form>
+  );
+  const label = b.action?.kind === 'change-view' ? b.action.label : TURN_WORDS.giveView;
+  const actions = !v.onSay ? undefined : open ? (
+    form
+  ) : (
+    <Button variant={b.action?.kind === 'change-view' ? 'secondary' : 'primary'} size="md" onClick={() => setOpen(true)}>
+      {label}
+    </Button>
+  );
+  return (
+    <TurnZone eyebrow={b.eyebrow} title={b.title} drawing="guide" actions={actions}>
+      <TurnSteps steps={b.steps} />
+      {b.lines.map((l) => (
+        <p key={l}>{l}</p>
+      ))}
+    </TurnZone>
+  );
 }
 
 /** "Copy for your developers" on the step it acts on: their developers work elsewhere. */
@@ -441,7 +516,7 @@ function PmCall({ call, say }: { call: NonNullable<PmView['call']>; say: (s: str
  * after applying the choice on each new library piece), or Needs changes with the words that go back. Ask someone else,
  * Not doing this and Copy link sit in its "...". A comment goes in Activity's box.
  */
-function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar: LeadBarView; line: string; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; say: (s: string) => void }) {
+function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
   const { busy, run } = useAct(say);
   const [changes, setChanges] = useState(false);
   const [text, setText] = useState('');
@@ -503,6 +578,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
       <TurnZone eyebrow="Your turn · 1 of 2" title={one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice')} drawing="guide" actions={actions}>
         <LeadSteps first={one ?? 'Library pieces'} />
         <p>{one ? `${who} screen changes ${one}. Choose what the library keeps, then the screen goes to the developers.` : 'Choose what the library keeps, then the screen goes to the developers.'}</p>
+        {extra}
       </TurnZone>
     );
   }
@@ -516,6 +592,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
         actions={actions}
       >
         {line && <p>{line}</p>}
+        {extra}
       </TurnZone>
     </>
   );
@@ -988,7 +1065,27 @@ function ExplorationBody(p: ExplorationPageProps) {
   const builder = handoff?.build?.builder ?? handoff?.check?.builder ?? null;
   const checkQuote = handoff?.question?.text && handoff.question.by ? handoff.question : null;
 
-  // ---- The one Harbor zone: only what waits on the viewer now.
+  // The lead reading someone else's exploration decides themselves: "You decide what the library keeps". So does a lead
+  // exploring themselves when no other lead is named.
+  const viewerLeads = role === 'lead' || (Boolean(p.ownerLeads) && !p.leadName?.trim());
+  // Where the product manager stands, for the designer and the lead while it is explored: quiet, with "agreed in a call".
+  const pmAside =
+    p.pm && !p.pm.mine && !p.archived && !handoff ? (
+      <>
+        <p className="xp-muted">
+          {stage === 'waiting-for-lead' && !p.pm.said && p.pm.name ? `${p.pm.name} can give a product view first. It is optional.` : p.pm.line}
+          {p.pm.call && (
+            <>
+              {' '}
+              <PmCall call={p.pm.call} say={setSaid} />
+            </>
+          )}
+        </p>
+        {p.pm.quote && <AskQuote who={p.pm.quote.who} verb="says" text={p.pm.quote.text} />}
+      </>
+    ) : null;
+
+  // ---- The one Harbor zone: what waits on the viewer now (the wait block below when nothing does).
   const turn = ((): ReactNode => {
     switch (zone) {
       case 'not-doing':
@@ -996,11 +1093,11 @@ function ExplorationBody(p: ExplorationPageProps) {
       case 'answer-lead':
         return <DesignerZone z={p.designerZone!} say={setSaid} extra={<ContinueButton p={p} tool={tab} line={line} say={setSaid} variant="secondary" size="md" />} />;
       case 'pm':
-        return <PmZone v={p.pm!} say={setSaid} />;
+        return <PmTurn v={p.pm!} b={pmBlockOf({ stage, said: Boolean(p.pm!.said), lead: p.leadName ?? null, author: p.author.name, product, line: p.pm!.line })} say={setSaid} />;
       case 'lead-take':
         return <LeadTake lead={p.lead!} say={setSaid} />;
       case 'lead-review':
-        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} say={setSaid} />;
+        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
       case 'done':
         return (
           <TurnZone
@@ -1017,6 +1114,7 @@ function ExplorationBody(p: ExplorationPageProps) {
             }
           >
             {notesContext(notes?.nextStep) && <p>{notesContext(notes?.nextStep)}</p>}
+            {pmAside}
           </TurnZone>
         );
       case 'declined':
@@ -1080,48 +1178,67 @@ function ExplorationBody(p: ExplorationPageProps) {
     }
   })();
 
-  // ---- Before it ships: the people and their last word.
-  const people: PersonRow[] = [];
-  const faceOfName = (name: string): PageFace => ({ login: nameFace(name), name, agent: false, avatar: null });
-  if (stage === 'check' && handoff?.check) {
-    for (const r of handoff.check.rows) {
-      // Not needed (no library piece changed): nobody to wait on, nothing to say.
-      if (r.state === 'not-needed') continue;
-      const you = (r.role === 'designer' && isOwner) || (r.role === 'lead' && role === 'lead') || (r.role === 'pm' && role === 'pm');
-      const face = you && p.me ? p.me : faceOfName(r.name);
-      const said = r.state === 'looks-right' ? 'said it looks right' : r.state === 'changes' ? (r.stateLine === 'Needs changes' ? 'asked for changes' : r.stateLine.toLowerCase()) : you ? 'check the build' : r.role === 'designer' ? 'checks the build' : 'has not looked yet';
-      people.push({ key: r.role, face, name: you ? 'You' : r.name, line: said, part: you ? null : r.part, tone: r.state === 'looks-right' ? 'ok' : null, note: r.note });
-    }
-  } else if (zone === 'lead-review') {
-    people.push({ key: 'you', face: p.me ?? faceOfName('You'), name: 'You', line: staged.length ? `decide the ${staged.map((s) => s.title).join(' and ')} and send it` : 'decide and send it' });
-  } else if (p.lead && !p.lead.bar) {
-    // The library block already says what the lead is choosing, anchored to it: the row says it once, in general.
-    const waitsInLibrary = p.impact?.view.state === 'rows' && p.impact.view.conflicts.some((c) => !c.decided && !c.decides);
-    people.push({ key: 'lead', face: p.leadName ? faceOfName(p.leadName) : null, name: p.leadName ?? (p.ownerLeads ? 'Another design lead' : 'Your design lead'), line: waitsInLibrary ? 'decides before the developers build it' : leadLine(p.lead.line, p.leadName), part: 'design lead', note: p.lead.take?.line ?? null });
-  } else if (handoff && !p.archived && !turn) {
-    // The step happening now, once: a zone already says what waits on the viewer.
-    const now = handoff.steps.find((s) => s.current);
-    if (now && now.title !== 'Shipped') people.push({ key: 'now', face: null, name: now.title, line: '', note: now.detail });
-  }
-  if (p.pm && !p.pm.mine && !p.archived && !handoff)
-    people.push({
-      key: 'pm',
-      face: p.pm.quote?.who ?? (p.pm.line.trim() ? faceOfName(p.pm.line.trim().split(' ')[0]!) : null),
-      name: '',
-      line: p.pm.line,
-      part: 'product manager',
-      note: p.pm.quote?.text ?? null,
-      action: p.pm.call ? <PmCall call={p.pm.call} say={setSaid} /> : null,
-    });
-  const keepExploring = p.lead?.onCancel ? <KeepExploring onCancel={p.lead.onCancel} say={setSaid} /> : null;
-
-  // ---- The journey.
-  // The lead reading someone else's exploration picks themselves: "Then you pick what the library keeps". So does a
-  // lead exploring themselves when no other lead is named.
-  const viewerLeads = role === 'lead' || (Boolean(p.ownerLeads) && !p.leadName?.trim());
-  const journey = journeyOf(stage, { lead: p.leadName ?? null, viewerLeads, product: product || 'the product' });
+  // ---- The block while nothing waits on the viewer (direction B): what happens now, the steps still to come, at most one
+  // quiet button. The steps are said there once.
   const send = handoff?.forDevelopers && !handoff.declined && handoff.status !== 'shipped' ? handoff.forDevelopers : null;
-  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product, stage === 'waiting-for-lead', viewerLeads);
+  const checkers: CheckPerson[] = (handoff?.check?.rows ?? []).map((r) => ({
+    name: r.name,
+    you: (r.role === 'designer' && isOwner) || (r.role === 'lead' && role === 'lead') || (r.role === 'pm' && role === 'pm'),
+    said: r.state === 'looks-right' ? 'looks-right' : r.state === 'changes' ? 'changes' : r.state === 'not-needed' ? 'not-needed' : 'waiting',
+  }));
+  const wait = turn
+    ? null
+    : waitBlockOf({
+        stage,
+        role,
+        author: p.author.name,
+        lead: p.leadName ?? null,
+        viewerLeads,
+        product,
+        waitedDays: daysSince(p.leadAskedAt, Date.now()),
+        taken: p.lead?.take?.line ?? null,
+        canKeepExploring: Boolean(p.lead?.onCancel),
+        shared: sharedChoiceOf(p.me?.name, p.impact?.view.state === 'rows' ? p.impact.view.conflicts : []),
+        doneNote: p.done?.kind === 'note' ? p.done.text : null,
+        steps: handoff?.steps ?? [],
+        checkers,
+        builder: builder && builder !== 'the developer' ? builder : null,
+        send: Boolean(send),
+        canUnarchive: Boolean(p.onUnarchive),
+        archivedLine: ARCHIVED_LINE,
+        declinedLine: DECLINED_LINE,
+      });
+  const waitAction = ((): ReactNode => {
+    switch (wait?.action?.kind) {
+      case 'keep-exploring':
+        return p.lead?.onCancel ? <KeepExploring onCancel={p.lead.onCancel} say={setSaid} /> : null;
+      case 'see-choice':
+        return (
+          <Button variant="secondary" size="md" onClick={goToLibraryChoice}>
+            {wait.action.label}
+          </Button>
+        );
+      case 'unarchive':
+        return (
+          <Button variant="secondary" size="md" disabled={unarchiving} onClick={unarchive}>
+            {unarchiving ? 'Unarchiving' : wait.action.label}
+          </Button>
+        );
+      case 'link':
+        return (
+          <ButtonLink variant="secondary" size="md" href={wait.action.href} target="_blank" rel="noopener">
+            {wait.action.label}
+          </ButtonLink>
+        );
+      case 'send': {
+        const now = handoff?.steps.find((x) => x.current);
+        return send ? <SendDetail detail={now?.detail ?? ''} message={send.message} /> : null;
+      }
+      default:
+        return null;
+    }
+  })();
+  const block = turn ?? (wait ? <WaitTurn b={wait} extra={<>{pmAside}{stage === 'declined' && handoff?.declined?.note && <DevQuote text={handoff.declined.note.text} by={handoff.declined.note.by} when={handoff.declined.note.when} />}</>} action={waitAction} /> : null);
 
   // ---- Activity.
   const quoted = [checkQuote?.text ?? '', p.designerZone?.text ?? '', p.notDoing?.text ?? ''];
@@ -1211,7 +1328,6 @@ function ExplorationBody(p: ExplorationPageProps) {
   const ledger = stage === 'check' && !p.checkEntry && handoff?.check?.review ? handoff.check.review : null;
   const screen = ledger ? <BuildReviewEntry product={ledger.product} number={ledger.number} builder={handoff!.check!.builder} fallback={stageBlock} turnShown={zone === 'check'} /> : stageBlock;
   const showCode = codeShown(role, stage);
-  const devLine = devLineOf(role, stage);
   const check = p.developer.find((d) => d.label === 'Check it again')?.value ?? null;
   const withClaude = p.developer.find((d) => d.label === 'With Claude')?.value ?? null;
   const branch = p.take?.branch ?? p.developer.find((d) => /branch/i.test(d.label))?.value.split(' (')[0] ?? null;
@@ -1286,9 +1402,9 @@ function ExplorationBody(p: ExplorationPageProps) {
           <Who p={{ login: p.author.login, name: p.author.name, agent: p.author.agent, avatar: p.author.avatar }} size="xs" />
           <span>{ownerLine(p.author.name, p.startedTail)}</span>
         </p>
-        {devLine && <p className="xp-muted xp-devline">{devLine}</p>}
+        
       </div>
-      {p.archived && !p.notDoing && p.stage !== 'loading' && (
+      {p.archived && !p.notDoing && p.stage === 'not-started' && (
         <div className="xp-archived">
           <p className="xp-muted">{ARCHIVED_LINE}</p>
           {p.onUnarchive && (
@@ -1336,10 +1452,10 @@ function ExplorationBody(p: ExplorationPageProps) {
       )}
       {notStarted && p.notes && <WhereItStands view={p.notes} say={setSaid} />}
       {(p.stage === 'exploring' || handoff) && (
-        // The board: the screen, the library and Activity on the left; the rail on the right (sticky): Your turn only
-        // when the viewer acts now, Before it ships, the journey, the handover notes. Phones: header, Your turn, the
-        // screen, the people, the library, Activity (styles/exploration-page.css).
-        <div className={turn ? 'xp-board has-turn' : 'xp-board'}>
+        // The board: the screen, the library and Activity on the left; the rail on the right (sticky): the turn block
+        // (always: Your turn, or what happens now and the steps still to come), then the handover notes. Phones: header,
+        // the block, the screen, the notes, the library, Activity (styles/exploration-page.css).
+        <div className={block ? 'xp-board has-turn' : 'xp-board'}>
           <div className="xp-b-left">
           <div className="xp-b-screen" id="xp-screen">{screen}</div>
           <div className="xp-b-main">
@@ -1349,7 +1465,7 @@ function ExplorationBody(p: ExplorationPageProps) {
                   view={p.impact.view}
                   actions={p.impact.actions}
                   say={setSaid}
-                  quiet={Boolean(turn)}
+                  quiet={Boolean(block)}
                   onPage
                   screen={{ capture: p.thumb ?? null, designer: p.author.name, name: p.title, href: '#xp-screen' }}
                   {...(staged.length && zone === 'lead-review' ? { newPieces: { capture: p.thumb, designer: p.author.name, choices, onChoice: (id: string, c: 'approve' | 'local') => setChoices((x) => ({ ...x, [id]: c })) } } : {})}
@@ -1363,17 +1479,8 @@ function ExplorationBody(p: ExplorationPageProps) {
           </div>
           </div>
           <div className="xp-b-right">
-            {turn && <div className="xp-b-turn">{turn}</div>}
+            {block && <div className="xp-b-turn">{block}</div>}
             <div className="xp-b-rail">
-            {p.done?.kind === 'note' && !p.archived && stage === 'exploring' && <p className="xp-muted">{p.done.text}</p>}
-            <People title={stage === 'exploring' ? 'Following it' : 'Before it ships'} rows={people} after={keepExploring} />
-            {!p.archived && (
-              <Journey
-                segments={journey.segments}
-                next={journey.next}
-                steps={steps.map((s) => ({ ...s, detail: send && s.title === 'Developers build it' && s.current ? <SendDetail detail={s.detail} message={send.message} /> : s.detail }))}
-              />
-            )}
             {/* At Check the build, the ledger holds the handover notes as a checklist: never twice. */}
             {p.notes && (!handoff || p.notes.notes) && !ledger && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail />}
           </div>

@@ -63,7 +63,10 @@ describe('See it as, in the browser', () => {
     localStorage.setItem(CAST_STORAGE_KEY, 'ann');
     answer = () => json(200, { available: true, member: DANA });
     const info = await contributeInfo(SAMPLE);
-    expect(info.member).toMatchObject({ name: 'Ann', lead: true, decides: true, visitor: true });
+    // Ann is the product manager: no review right, no say on explorations.
+    expect(info.member).toMatchObject({ name: 'Ann', visitor: true });
+    expect(info.member?.lead).toBeUndefined();
+    expect(info.member?.decides).toBeUndefined();
     expect(JSON.parse(localStorage.getItem(`bridge.contribute.member:${SAMPLE}`)!).name).toBe('Dana');
   });
 

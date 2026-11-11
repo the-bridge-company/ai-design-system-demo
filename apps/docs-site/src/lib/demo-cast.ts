@@ -32,15 +32,16 @@ export interface CastPerson {
 
 /**
  * The sample team as api/_lib/demo-members.ts seeds it (demo-cast.test.ts checks every name, role, lead and reference
- * against it): Dana leads and runs the team, Sofia and Leo design, Malik builds, Ann is the product manager of Acme
- * Prints and also reviews designs. Fictional people, at addresses that never route (acme.example).
+ * against it): Dana leads and runs the team (the only design lead), Sofia and Leo design, Malik builds, Ann is the
+ * product manager of Acme Prints (her view is optional, she never decides). Fictional people, at addresses that never
+ * route (acme.example).
  */
 export const SAMPLE_CAST: readonly CastPerson[] = [
   { key: 'dana', name: 'Dana', job: 'Design lead, runs the team', via: { kind: 'email', email: 'dana@acme.example', role: 'admin', lead: true, ref: 'a399f73add3dbb2d' } },
   { key: 'sofia', name: 'Sofia', job: 'Designer', via: { kind: 'email', email: 'sofia@acme.example', role: 'edit', lead: false, ref: '0406ec723c59bb8d' } },
   { key: 'leo', name: 'Leo', job: 'Designer', via: { kind: 'email', email: 'leo@acme.example', role: 'edit', lead: false, ref: 'af419771c6f4d96f' } },
   { key: 'malik', name: 'Malik', job: 'Developer', via: { kind: 'github', login: 'acme-malik' } },
-  { key: 'ann', name: 'Ann', job: 'Product manager, also reviews designs', via: { kind: 'email', email: 'ann@acme.example', role: 'edit', lead: true, ref: 'b9cc21753b627efd' } },
+  { key: 'ann', name: 'Ann', job: 'Product manager', via: { kind: 'email', email: 'ann@acme.example', role: 'edit', lead: false, ref: 'b9cc21753b627efd' } },
 ];
 
 /** Who the page plays when nobody picked: the one the server's visitor session reads as. */
@@ -81,23 +82,22 @@ export function chooseCast(x: { query?: string | null; stored?: string | null })
  * the person played. Only a visitor's session is ever replaced (`server.visitor`): a real member of the sample team, or
  * anyone else, stays who they are. An email member reads with their own role, lead flag, review right and reference,
  * by the same rule as the server's (api/_lib/review-mode.ts); the developer, who has no email membership, reads as
- * nobody here (null) and the GitHub side plays him (castGitHub). Still a visitor: the banner stays, writes are refused.
+ * nobody here (null) and the GitHub side plays him (castGitHub). The person's own session keeps its address and
+ * reference, its role and review rights read from the cast too: a store seeded before the cast changed (Ann was a
+ * reviewer) never makes the page play someone else. Still a visitor: the banner stays, writes are refused.
  */
 export function playedMember(server: ContributeMember | null, person: CastPerson, mode: ReviewMode = 'one'): ContributeMember | null {
   if (!server?.visitor) return server;
   const v = person.via;
   if (v.kind === 'github') return null;
-  if (v.email === server.email.toLowerCase()) return server;
   const who = { role: v.role, lead: v.lead };
-  return {
-    email: v.email,
-    name: person.name,
-    role: v.role,
-    ref: v.ref,
-    ...(askedToReview(who, mode) ? { lead: true } : {}),
-    ...(decidesOnExplorations(who, mode) ? { decides: true } : {}),
-    visitor: true,
-  };
+  const rights = { ...(askedToReview(who, mode) ? { lead: true } : {}), ...(decidesOnExplorations(who, mode) ? { decides: true } : {}) };
+  if (v.email === server.email.toLowerCase()) {
+    if (server.role === v.role && Boolean(server.lead) === Boolean(rights.lead) && Boolean(server.decides) === Boolean(rights.decides)) return server;
+    const { lead: _lead, decides: _decides, ...rest } = server;
+    return { ...rest, role: v.role, ...rights };
+  }
+  return { email: v.email, name: person.name, role: v.role, ref: v.ref, ...rights, visitor: true };
 }
 
 /**

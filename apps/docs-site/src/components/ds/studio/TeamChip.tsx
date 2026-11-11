@@ -163,7 +163,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
       // team's settings, then its GitHub teams).
       const readReviewer = async () => {
         const a = session.currentAccess();
-        // A member by email who reviews explorations (Ann): "Reviewer", the word Settings > Members and the account menu say.
+        // A member by email who reviews explorations (a design lead): "Reviewer", the word Settings > Members and the account menu say.
         const member = session.currentContributor();
         if (member) return live && setReviewer(member.role === 'edit' && member.lead === true);
         if (!a || a.contributor || a.state !== 'writer') return live && setReviewer(false);

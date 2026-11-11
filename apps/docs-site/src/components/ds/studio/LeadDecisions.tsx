@@ -363,12 +363,16 @@ export function TellDevelopers({ onSend, say }: { onSend: (text: string) => Prom
 
 /**
  * The product manager of the exploration's product (boards R1 and R3). Their own view: "What do you think?", a note and
- * Looks good or Needs changes (the note needed), in place of the designer's Harbor zone. Everyone else who talks about
+ * Looks good or Needs changes (the note needed), in the turn block (ExplorationPage PmTurn). Everyone else who talks about
  * it (its designer, the leads): where the PM stands in one line, their note, and for the designer, the PM agreed in a call.
  */
 export interface PmView {
   /** The viewer is the PM. */
   mine: boolean;
+  /** The PM's first name ("Ann"). */
+  name?: string;
+  /** The PM already said something (looks good, needs changes, or agreed in a call). */
+  said?: boolean;
   title: string;
   intro: string;
   /** Where the PM stands, one line. */
@@ -377,69 +381,6 @@ export interface PmView {
   onSay?: ((kind: 'pm-ok' | 'pm-changes', text: string) => Promise<string | void>) | null;
   /** The designer's word that the PM agreed in a call (label: "Dino agreed in a call"). */
   call?: { label: string; onCall: () => Promise<string | void> } | null;
-}
-
-export function PmZone({ v, say }: { v: PmView; say: (s: string) => void }) {
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState<'pm-ok' | 'pm-changes' | null>(null);
-  // Needs changes stays clickable: with no note yet, the field says what it needs and takes the focus.
-  const [needNote, setNeedNote] = useState(false);
-  const note = useRef<HTMLTextAreaElement>(null);
-  const send = (kind: 'pm-ok' | 'pm-changes') => {
-    if (!v.onSay) return;
-    if (kind === 'pm-changes' && !text.trim()) {
-      setNeedNote(true);
-      note.current?.focus();
-      return;
-    }
-    setBusy(kind);
-    v.onSay(kind, text.trim())
-      .then((r) => {
-        setText('');
-        if (r) say(r);
-      })
-      .catch((err: Error) => say(err.message))
-      .finally(() => setBusy(null));
-  };
-  return (
-    <section className="xp-done zone" aria-labelledby="xp-pm-h">
-      <h2 className="xp-h2" id="xp-pm-h">
-        {v.title}
-      </h2>
-      <p>{v.intro}</p>
-      <p className="xp-muted">{v.line}</p>
-      {v.onSay && (
-        <form
-          className="xp-lead-form"
-          onSubmit={(e: FormEvent) => {
-            e.preventDefault();
-            send('pm-ok');
-          }}
-        >
-          <Textarea
-            ref={note}
-            label={PM_WORDS.note}
-            hint={PM_WORDS.noteHint}
-            error={needNote && !text.trim() ? PM_WORDS.noteNeeded : undefined}
-            rows={3}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              if (e.target.value.trim()) setNeedNote(false);
-            }}
-          />
-          <div className="xp-pm-acts">
-            <Button type="submit" variant="inverse" size="md" loading={busy === 'pm-ok'} disabled={busy !== null}>
-              {PM_WORDS.looksGood}
-            </Button>
-            <Button type="button" variant="secondary" size="md" loading={busy === 'pm-changes'} disabled={busy !== null} onClick={() => send('pm-changes')}>
-              {PM_WORDS.changes}
-            </Button>
-          </div>
-        </form>
-      )}
-    </section>
-  );
 }
 
 export function PmStatus({ v, say }: { v: PmView; say: (s: string) => void }) {

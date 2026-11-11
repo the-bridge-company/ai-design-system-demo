@@ -2,16 +2,15 @@
 // (the capture is the link to the preview; in Check the build the approved version and the developers' build side by
 // side, each opening its own, never two different screens; finding differences is the review mode's job), the "Your
 // turn" Harbor zone's shell,
-// Before it ships (people and their last word), the journey bar, the Activity timeline with its comment box, and the
-// developers' Code popover. Rules and words: lib/exploration-layout.ts. Styles: styles/exploration-page.css (xp-st-*,
-// xp-turn*, xp-ppl*, xp-jr*, xp-tl*, xp-code*).
-import { useId, useState, type ReactNode } from 'react';
+// the steps still to come inside it, the Activity timeline with its comment box, and the developers' Code popover.
+// Rules and words: lib/exploration-layout.ts. Styles: styles/exploration-page.css (xp-st-*, xp-turn*, xp-tl*, xp-code*).
+import { useState, type ReactNode } from 'react';
 import { Check, Code2, ExternalLink, GitBranch } from 'lucide-react';
-import { Button, Checklist, ChecklistRow, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Tab, Tabs, TabsList, TabsPanel } from '@bridge-ds/react';
+import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Tab, Tabs, TabsList, TabsPanel } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { IllustrationName } from '../../../brand/illustrations';
-import { CODE_WORDS, earlierLine, foldTimeline, SCREEN_WORDS, type JourneySeg, type TimelineItem } from '../../../lib/exploration-layout';
+import { CODE_WORDS, earlierLine, foldTimeline, SCREEN_WORDS, type TimelineItem, type TurnStep } from '../../../lib/exploration-layout';
 import type { PageFace } from '../../../lib/exploration-page';
 
 const faceProps = (p: PageFace) => ({ login: p.login, name: p.name, agent: p.agent, avatar: p.avatar });
@@ -152,80 +151,26 @@ export function AskQuote({ who, verb, text, action }: { who: PageFace; verb: str
   );
 }
 
-// ---------------------------------------------------------------------------------------------------------------
-// Before it ships, the journey
-
-export interface PersonRow {
-  key: string;
-  face: PageFace | null;
-  /** "Dana", or "You". */
-  name: string;
-  /** After the name: "picks the Card way", "has not looked yet". */
-  line: string;
-  /** Their part, quiet: "design lead", "product manager, optional". */
-  part?: string | null;
-  tone?: 'ok' | 'now' | null;
-  note?: string | null;
-  action?: ReactNode;
-}
-
-export function People({ title, rows, after }: { title: string; rows: readonly PersonRow[]; after?: ReactNode }) {
-  if (!rows.length && !after) return null;
+/**
+ * The steps still to come, inside the turn block (direction B): a compact vertical list, the step happening now marked
+ * (aria-current) in Deep Harbor with its quiet "now, for 3 days".
+ */
+export function TurnSteps({ steps }: { steps: readonly TurnStep[] }) {
+  if (!steps.length) return null;
   return (
-    <section className="xp-rail-sec" aria-labelledby="xp-ppl-h">
-      <h2 className="xp-rail-h" id="xp-ppl-h">
-        {title}
-      </h2>
-      {rows.length > 0 && (
-        <ul className="xp-ppl">
-          {rows.map((r) => (
-            <li key={r.key} className="xp-ppl-row">
-              {r.face ? <Who p={faceProps(r.face)} size="sm" /> : <span className="xp-ppl-dot" aria-hidden="true" />}
-              <span className="xp-ppl-text">
-                <span className={r.tone === 'ok' ? 'xp-ppl-ok' : undefined}>
-                  <strong>{r.name}</strong> {r.line}
-                </span>
-                {r.part && <span className="xp-muted xp-ppl-part"> {r.part}</span>}
-                {r.note && <span className="xp-ppl-note">{r.note}</span>}
-              </span>
-              {r.action && <span className="xp-ppl-act">{r.action}</span>}
-            </li>
-          ))}
-        </ul>
-      )}
-      {after}
-    </section>
-  );
-}
-
-/** Four segments, the next step in words, and every step on demand. */
-export function Journey({ segments, next, steps, extra }: { segments: readonly JourneySeg[]; next: string; steps: readonly { title: string; detail: ReactNode; status: 'done' | 'waiting' | 'warning'; current?: boolean }[]; extra?: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  return (
-    <section className="xp-rail-sec xp-jr" aria-label="Where it is">
-      <div className="xp-jr-head">
-        <span>{next}</span>
-        <Button variant="link" size="sm" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
-          {open ? 'Hide steps' : 'All steps'}
-        </Button>
-      </div>
-      <div className="xp-jr-bar" role="img" aria-label={`Step ${Math.min(4, segments.filter((s) => s === 'done').length + 1)} of 4`}>
-        {segments.map((s, i) => (
-          <span key={i} className={`xp-jr-seg is-${s}`} />
-        ))}
-      </div>
-      <div id={id} hidden={!open}>
-        {open && (
-          <Checklist label="From exploration to product" className="xp-steps">
-            {steps.map((s) => (
-              <ChecklistRow key={s.title} status={s.status} title={s.title} detail={s.detail} statusLabel={s.status === 'done' ? 'Done' : s.current ? 'Now' : 'Next'} aria-current={s.current ? 'step' : undefined} />
-            ))}
-          </Checklist>
-        )}
-      </div>
-      {extra}
-    </section>
+    <ol className="xp-turn-steps is-list" aria-label="What happens next">
+      {steps.map((s, i) => (
+        <li key={s.text} className={s.current ? 'is-current' : undefined} aria-current={s.current ? 'step' : undefined}>
+          <span className="xp-turn-step-n" aria-hidden="true">
+            {i + 1}
+          </span>
+          <span>
+            {s.text}
+            {s.when && <span className="xp-turn-step-when"> · {s.when}</span>}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

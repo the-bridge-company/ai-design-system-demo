@@ -4,8 +4,8 @@
 // Header: the title, ONE status tag (the only place the stage is said), "..." and, for a developer once the work is
 // handed to developers, Code. Under it one plain line: "Sofia's exploration in Acme CRM, started Nov 6".
 // Left column: the screen, What this changes in the library, Activity (one timeline with the decisions, the comment box
-// at its end naming who reads it). Right column: "Your turn" (the one Harbor zone, only when the viewer acts now),
-// Before it ships (the people and their last word), the journey bar naming the next step, the handover notes.
+// at its end naming who reads it). Right column: the turn block (the one Harbor zone, always there: "Your turn" when
+// the viewer acts now, else what happens now and the steps still to come, waitBlockOf), then the handover notes.
 
 /** Who reads the page, as its rules see them. */
 export type PageRole = 'owner' | 'designer' | 'lead' | 'developer' | 'pm' | 'viewer';
@@ -123,34 +123,6 @@ export function ownerLine(name: string, tail: string, viewerIsAuthor = false): s
   const [product, when] = tail.split(' · ').map((s) => s.trim());
   const who = viewerIsAuthor ? 'Your exploration' : `${name}${/s$/i.test(name) ? "'" : "'s"} exploration`;
   return [product ? `${who} in ${product}` : who, when ? `started ${when}` : ''].filter(Boolean).join(', ');
-}
-
-/** The four steps of the journey bar: explore, the lead decides, the developers build and it is checked, it goes live. */
-export type JourneySeg = 'done' | 'now' | 'next';
-
-/**
- * Who picks what the library keeps, as a sentence starts: "You pick" for the lead reading it, "Dana picks" when the lead
- * is known, else "Your design lead picks". `then`: mid-sentence ("Then you pick", "Then your design lead picks").
- */
-export function leadPicksLine(x: { lead?: string | null; viewerLeads?: boolean }, then = false): string {
-  const name = x.lead?.trim();
-  const said = x.viewerLeads ? 'You pick what the library keeps' : name ? `${name} picks what the library keeps` : 'Your design lead picks what the library keeps';
-  return then ? `Then ${x.viewerLeads || !name ? said.charAt(0).toLowerCase() + said.slice(1) : said}` : said;
-}
-
-export function journeyOf(stage: PageStage, x: { lead?: string | null; viewerLeads?: boolean; product: string }): { segments: JourneySeg[]; next: string } {
-  const at: Record<PageStage, number> = { 'not-started': 0, exploring: 0, 'waiting-for-lead': 1, ready: 2, building: 2, check: 2, declined: 2, shipped: 4, archived: 0 };
-  const i = at[stage];
-  const segments = [0, 1, 2, 3].map((s): JourneySeg => (s < i ? 'done' : s === i ? 'now' : 'next'));
-  const next =
-    stage === 'shipped'
-      ? "Every step is done"
-      : i === 0
-        ? leadPicksLine(x, true)
-        : i === 1
-          ? `Then the ${x.product} developers build it`
-          : `Then it goes live in ${x.product}`;
-  return { segments, next };
 }
 
 /** "Write to Malik and Dana": who reads the comment box, named. */
@@ -365,3 +337,306 @@ export const CODE_WORDS = {
   pasteClaude: 'Paste it in Claude with the Bridge connector. It records the result on the task.',
   openTask: 'Open the task on GitHub',
 } as const;
+
+// ---------------------------------------------------------------------------------------------------------------
+// The turn block (direction B, Nov 2026): the rail's blue block is always there. With an action it is "Your turn"
+// (zoneOf). With nothing to do, it says so, names the step happening now as its title, lists the steps still to come
+// with the current one marked, says in one sentence what happens next and holds at most one quiet button. The steps
+// are said there once: no separate journey bar, no "Before it ships" list.
+
+/** One step of the block's stepper. `when` follows the text, quiet: "now, for 3 days". */
+export interface TurnStep {
+  text: string;
+  when?: string;
+  current?: boolean;
+}
+
+/** The block's one button, when the viewer has something real to press. */
+export type TurnBlockAction =
+  | { kind: 'keep-exploring'; label: string }
+  | { kind: 'see-choice'; label: string }
+  | { kind: 'unarchive'; label: string }
+  | { kind: 'change-view'; label: string }
+  | { kind: 'link'; label: string; href: string }
+  | { kind: 'send' }
+  | null;
+
+export interface TurnBlock {
+  eyebrow: string;
+  title: string;
+  steps: TurnStep[];
+  /** The sentences under the stepper, in order: what happens next first. */
+  lines: string[];
+  action: TurnBlockAction;
+}
+
+/** A step of the hand-off as the page reads it (lib/exploration-page HandoffStep). */
+export interface HandoffStepLike {
+  status: 'done' | 'waiting' | 'warning';
+  title: string;
+  detail: string;
+  current?: boolean;
+  link?: { label: string; href: string } | null;
+}
+
+/** The review step's detail when the review is the viewer's own (lib/exploration-page.ts). */
+export const YOUR_REVIEW = 'Your review';
+
+/** Someone checking the developers' build (BuildCheckView rows), as the block names them. */
+export interface CheckPerson {
+  name: string;
+  /** This viewer. */
+  you: boolean;
+  said: 'looks-right' | 'changes' | 'waiting' | 'not-needed';
+}
+
+/** A library choice the lead makes here that also sets the viewer's own screen in another exploration. */
+export interface SharedChoice {
+  component: string;
+  property: string;
+  /** The viewer's own exploration (its name) and its product: "Deal pipeline cards", "Acme CRM". */
+  screen: string;
+  product: string;
+}
+
+export interface WaitInput {
+  stage: PageStage;
+  role: PageRole;
+  /** The exploration's designer, by name ("Sofia"). */
+  author: string;
+  /** The design lead who decides, by name; null when not known. */
+  lead: string | null;
+  /** The viewer is that lead (or a lead exploring with nobody else to ask). */
+  viewerLeads: boolean;
+  product: string;
+  /** Whole days since the lead was asked (from the exploration's leadAskedAt); null when unknown. */
+  waitedDays?: number | null;
+  /** "Dana is looking at it.": a reviewer took it. */
+  taken?: string | null;
+  /** Who asked the lead can take it back before the lead answers. */
+  canKeepExploring?: boolean;
+  /** The lead's choice here also sets the viewer's own screen (another exploration of theirs). */
+  shared?: SharedChoice | null;
+  /** The owner who cannot say Done exploring here (an email member on the product itself): the line that says why. */
+  doneNote?: string | null;
+  /** After Done exploring: the hand-off's steps. */
+  steps?: readonly HandoffStepLike[];
+  /** Check the build: who checks it, and what they said. */
+  checkers?: readonly CheckPerson[];
+  /** The developer building it, by name, when known. */
+  builder?: string | null;
+  /** The product's developers work elsewhere: "Copy for your developers" is the block's action. */
+  send?: boolean;
+  /** Archived: Unarchive for who may. */
+  canUnarchive?: boolean;
+  archivedLine?: string;
+  declinedLine?: string;
+}
+
+export const TURN_WORDS = {
+  nothing: 'Nothing to do for now',
+  forDevelopers: 'For the developers',
+  optional: 'Optional for you',
+  yourTurn: 'Your turn',
+  keepExploring: 'Keep exploring',
+  unarchive: 'Unarchive',
+  giveView: 'Give your view',
+  changeView: 'Change your view',
+  devCode: 'Code, next to the title, has the branch and the commands.',
+} as const;
+
+const named = (lead: string | null): string => lead?.trim() || 'The design lead';
+/** "the design lead" mid-sentence; a name stays as it is. */
+const midSentence = (s: string): string => (/^The /.test(s) ? `the ${s.slice(4)}` : s);
+const andList = (names: readonly string[]): string => (names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+
+/** "Dana decides what the library keeps", "You decide what the library keeps"; short: "Dana decides". */
+export function leadStepText(x: { lead: string | null; viewerLeads: boolean }, short = false): string {
+  const who = x.viewerLeads ? 'You' : named(x.lead);
+  const verb = x.viewerLeads ? 'decide' : 'decides';
+  return short ? `${who} ${verb}` : `${who} ${verb} what the library keeps`;
+}
+
+/** "now, for 3 days" from the whole days since the lead was asked; "now" when unknown. */
+export function waitedWhen(days: number | null | undefined): string {
+  if (days === null || days === undefined || !Number.isFinite(days) || days < 0) return 'now';
+  if (days < 1) return 'now, since today';
+  if (days < 2) return 'now, since yesterday';
+  return `now, for ${Math.floor(days)} days`;
+}
+
+/** Whole days between the lead's ask (ISO) and now; null when unknown. */
+export function daysSince(iso: string | null | undefined, now: number): number | null {
+  const t = iso ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) && now >= t ? Math.floor((now - t) / 86_400_000) : null;
+}
+
+const checkStep = (owner: boolean, author: string): string => (owner ? 'You check their version' : `${author} checks their version`);
+const buildStep = (product: string, builder?: string | null): string => (builder ? `${builder} builds it` : `${product} developers build it`);
+const liveStep = (product: string): string => `Live in ${product}`;
+
+/** The library block's open choices, as sharedChoiceOf reads them (lib/library-impact-view ConflictView). */
+export interface ChoiceLike {
+  component: string;
+  property: string;
+  pick: string | null;
+  decided: unknown;
+  ways: readonly { designer: string; mine: boolean; screen: string; product: string }[];
+}
+
+/**
+ * A library choice still open on this page that also sets the viewer's own screen: a component part this exploration
+ * and one of the viewer's own change differently (the library block's conflict, its other way theirs). Read from the
+ * library block's data, never assumed.
+ */
+export function sharedChoiceOf(me: string | null | undefined, conflicts: readonly ChoiceLike[]): SharedChoice | null {
+  const who = me?.trim().toLowerCase();
+  if (!who) return null;
+  for (const c of conflicts) {
+    if (c.decided || c.pick) continue;
+    const theirs = c.ways.find((w) => !w.mine && w.designer.trim().toLowerCase() === who);
+    if (theirs) return { component: c.component, property: c.property, screen: theirs.screen, product: theirs.product };
+  }
+  return null;
+}
+
+/** "Dana's Card padding choice also sets your Deal pipeline cards in Acme CRM." */
+export function sharedChoiceLine(s: SharedChoice, lead: string | null): string {
+  const who = lead?.trim() ? possessiveOf(lead.trim()) : "The design lead's";
+  return `${who} ${s.component} ${s.property.toLowerCase()} choice also sets your ${s.screen} in ${s.product}.`;
+}
+
+/** The hand-off's steps from the current one on, in the block's words. */
+function handoffStepsOf(steps: readonly HandoffStepLike[], x: { owner: boolean; author: string; product: string; builder?: string | null }): TurnStep[] {
+  const from = Math.max(0, steps.findIndex((s) => s.current));
+  return steps
+    .slice(from)
+    .filter((s) => s.status !== 'done' || s.current)
+    .map((s) => {
+      const text =
+        s.title === 'Developers build it'
+          ? buildStep(x.product, s.current ? x.builder : null)
+          : s.title === 'Review'
+            ? s.current && s.detail === YOUR_REVIEW
+              ? 'You review it'
+              : checkStep(x.owner, x.author)
+            : s.title === 'Shipped'
+              ? liveStep(x.product)
+              : s.title;
+      return { text, ...(s.current ? { current: true, when: 'now' } : {}) };
+    });
+}
+
+/**
+ * The block while the viewer has nothing to do (zoneOf gave no zone), by stage and role. Null before anything was
+ * built (not started: the page has no rail) and once shipped (the Shipped zone is always there).
+ */
+export function waitBlockOf(x: WaitInput): TurnBlock | null {
+  const owner = x.role === 'owner';
+  const dev = x.role === 'developer';
+  const lead = named(x.lead);
+  const leadName = x.lead?.trim() || null;
+  const product = x.product || 'the product';
+  const shared = x.shared && !x.viewerLeads && !owner ? x.shared : null;
+  const see: TurnBlockAction = shared ? { kind: 'see-choice', label: `See the ${shared.component} ${shared.property.toLowerCase()} choice` } : null;
+  switch (x.stage) {
+    case 'not-started':
+    case 'shipped':
+      return null;
+    case 'archived':
+      return {
+        // The tag already says Archived: the eyebrow never repeats it.
+        eyebrow: TURN_WORDS.nothing,
+        title: 'Nobody works on it now',
+        steps: [],
+        lines: [x.archivedLine ?? 'Hidden from the lists, its preview still works.'],
+        action: x.canUnarchive ? { kind: 'unarchive', label: TURN_WORDS.unarchive } : null,
+      };
+    case 'declined':
+      return { eyebrow: TURN_WORDS.nothing, title: 'The developers did not build it', steps: [], lines: [x.declinedLine ?? 'Developers closed it without building it.'], action: null };
+    case 'exploring': {
+      const steps: TurnStep[] = [
+        { text: owner ? 'You explore' : `${x.author} explores`, when: 'now', current: true },
+        { text: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }) },
+        { text: buildStep(product) },
+        { text: liveStep(product) },
+      ];
+      const says = owner ? 'you say' : `${x.author} says`;
+      const next = dev ? DEV_EXPLORING_LINE : x.viewerLeads ? `It reaches you when ${says} Done exploring.` : `It goes to ${midSentence(lead)} when ${says} Done exploring.`;
+      const lines = [owner && x.doneNote ? x.doneNote : next];
+      if (shared) lines.push(`This screen's ${shared.component} ${shared.property.toLowerCase()} also sets your ${shared.screen} in ${shared.product}.`);
+      return { eyebrow: TURN_WORDS.nothing, title: owner ? 'You are exploring' : `${x.author} is exploring`, steps, lines, action: see };
+    }
+    case 'waiting-for-lead': {
+      const steps: TurnStep[] = [
+        { text: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true), when: waitedWhen(x.waitedDays), current: true },
+        { text: buildStep(product) },
+        { text: checkStep(owner, x.author) },
+        { text: liveStep(product) },
+      ];
+      const lines: string[] = [];
+      if (x.taken) lines.push(x.taken);
+      if (dev) lines.push(`You get a task in your repository once ${midSentence(lead)} sends it.`);
+      else if (shared) lines.push(`${sharedChoiceLine(shared, x.lead)} Bridge tells you what ${leadName ? `${leadName} picks` : 'the design lead picks'}.`);
+      // The reminder is Bridge's rule (api/_lib/notify.ts REMIND_MS): said as the rule, never as something that happened.
+      else if (owner) lines.push(`Bridge reminds ${leadName ?? 'the design leads'} once after 2 days without an answer, and tells you as soon as there is one.`);
+      else lines.push(`Nothing reaches the developers before ${midSentence(lead)} sends it.`);
+      const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
+      return { eyebrow: TURN_WORDS.nothing, title: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }), steps, lines, action };
+    }
+    case 'check': {
+      const people = (x.checkers ?? []).filter((c) => c.said !== 'not-needed');
+      const waiting = people.filter((c) => c.said === 'waiting').map((c) => (c.you ? 'You' : c.name));
+      const one = waiting.length === 1 && waiting[0] !== 'You';
+      const title = waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'} the build` : 'The build is being checked';
+      const lines = people.filter((c) => c.said !== 'waiting').map((c) => `${c.you ? 'You' : c.name} ${c.said === 'looks-right' ? 'said it looks right' : 'asked for changes'}.`);
+      lines.push(`It goes live in ${product} once it looks right.`);
+      return { eyebrow: TURN_WORDS.nothing, title, steps: [{ text: waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'}` : 'The build is checked', when: 'now', current: true }, { text: liveStep(product) }], lines, action: null };
+    }
+    case 'ready':
+    case 'building': {
+      const steps = handoffStepsOf(x.steps ?? [], { owner, author: x.author, product, builder: x.builder ?? null });
+      const now = (x.steps ?? []).find((s) => s.current);
+      const title = steps[0]?.text ?? buildStep(product, x.builder);
+      // The viewer was asked to review it (a library exploration): theirs, with the way to compare.
+      if (now?.title === 'Review' && now.detail === YOUR_REVIEW)
+        return { eyebrow: TURN_WORDS.yourTurn, title, steps, lines: [], action: now.link ? { kind: 'link', label: now.link.label, href: now.link.href } : null };
+      const lines = now?.detail && !x.send ? [now.detail.replace(/([^.?!])$/, '$1.')] : [];
+      if (dev) lines.push(TURN_WORDS.devCode);
+      return { eyebrow: dev ? TURN_WORDS.forDevelopers : TURN_WORDS.nothing, title, steps, lines, action: x.send ? { kind: 'send' } : null };
+    }
+  }
+}
+
+/**
+ * The product manager's view (boards R1, R3) as the turn block. Once the lead is asked their view is optional ("Give
+ * your view"); while it is explored the designer shares it with them first. Said: their step is done, the block waits
+ * like everyone else's and their word stays changeable.
+ */
+export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | null; author: string; product: string; line: string }): TurnBlock {
+  const lead = named(x.lead);
+  const leadName = x.lead?.trim() || null;
+  const product = x.product || 'the product';
+  const asked = x.stage === 'waiting-for-lead';
+  const decides = leadStepText({ lead: x.lead, viewerLeads: false });
+  const last = { text: `${x.author} checks, then it goes live` };
+  if (x.said)
+    return {
+      eyebrow: TURN_WORDS.nothing,
+      title: asked ? decides : `${x.author} is exploring`,
+      steps: asked
+        ? [{ text: leadStepText({ lead: x.lead, viewerLeads: false }, true), when: 'now', current: true }, { text: buildStep(product) }, last]
+        : [{ text: `${x.author} explores`, when: 'now', current: true }, { text: decides }, { text: buildStep(product) }, last],
+      lines: [x.line],
+      action: { kind: 'change-view', label: TURN_WORDS.changeView },
+    };
+  return {
+    eyebrow: asked ? TURN_WORDS.optional : TURN_WORDS.yourTurn,
+    title: `Your view, before ${midSentence(lead)} decides`,
+    steps: asked
+      ? [{ text: 'You give your view', when: 'optional, now', current: true }, { text: decides }, { text: buildStep(product) }, last]
+      : [{ text: 'You give your view', when: 'now', current: true }, { text: `${x.author} says Done exploring` }, { text: decides }, { text: buildStep(product) }],
+    lines: [asked ? `${lead} can decide without it. If you give it, ${leadName ? `${leadName} reads` : 'they read'} it first.` : `${x.author} shares it with you before it goes to ${midSentence(lead)}.`],
+    action: null,
+  };
+}

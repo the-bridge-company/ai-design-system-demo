@@ -31,7 +31,9 @@ describe('See it as: the people of the sample team', () => {
     expect(castPerson('malik')!.via).toEqual({ kind: 'github', login: RETIRED_DEMO_MEMBERS[0]!.github });
     const ann = castPerson('ann')!;
     expect(ann.via.kind === 'email' && ann.via.email).toBe(DEMO_PM.email);
-    expect(ann.job).toMatch(/Product manager/);
+    expect(ann.job).toBe('Product manager');
+    // Dana is the only design lead of the sample team.
+    expect(SAMPLE_CAST.filter((p) => p.via.kind === 'email' && p.via.lead).map((p) => p.name)).toEqual(['Dana']);
   });
 
   it('picks from the address first, then this browser, else Dana; anything else names nobody', () => {
@@ -45,7 +47,11 @@ describe('See it as: the people of the sample team', () => {
 
   it("reads a visitor's session as the person played, with the server's review rules", () => {
     expect(playedMember(dana, castPerson('sofia')!)).toEqual({ email: 'sofia@acme.example', name: 'Sofia', role: 'edit', ref: '0406ec723c59bb8d', visitor: true });
-    expect(playedMember(dana, castPerson('ann')!)).toMatchObject({ name: 'Ann', role: 'edit', lead: true, decides: true, visitor: true });
+    // Ann is the product manager: she never reviews or decides, her view is optional.
+    expect(playedMember(dana, castPerson('ann')!)).toEqual({ email: 'ann@acme.example', name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd', visitor: true });
+    // A store seeded while Ann still reviewed: the page plays her as the cast says, never as a reviewer.
+    const staleAnn: ContributeMember = { email: 'ann@acme.example', name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd', lead: true, decides: true, visitor: true };
+    expect(playedMember(staleAnn, castPerson('ann')!)).toEqual({ email: 'ann@acme.example', name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd', visitor: true });
     // A team that shares review: every designer reviews.
     expect(playedMember(dana, castPerson('leo')!, 'shared')).toMatchObject({ name: 'Leo', lead: true, decides: true });
     expect(playedMember(dana, castPerson('dana')!)).toBe(dana);

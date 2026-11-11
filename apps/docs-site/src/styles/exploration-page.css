@@ -1496,6 +1496,18 @@
   border-width: var(--border-width-strong);
 }
 
+/* The steps still to come in the turn block (direction B): one per line, the current one's "now" quiet beside it. */
+.xp-turn-steps.is-list {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  margin-block-end: var(--space-2);
+}
+
+.xp-turn-step-when {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
 /* Under a primary that leads to the next step: what comes after it, quiet, at the row's end. */
 .xp-turn-helper {
   flex: 1 1 100%;
@@ -1552,78 +1564,10 @@
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
-.xp-b-rail > .xp-rail-sec:first-child {
-  padding-block-start: 0;
-  border-block-start: 0;
-}
-
 .xp-rail-h {
   font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
   line-height: var(--typography-ui-line-height);
-}
-
-.xp-ppl {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.xp-ppl-row {
-  display: grid;
-  grid-template-columns: var(--size-8) minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-/* A row with nobody to show (a step, or the viewer before Bridge knows their face): the column stays, empty. */
-.xp-ppl-dot {
-  width: var(--size-8);
-  height: var(--size-8);
-}
-
-.xp-ppl-part {
-  font-size: var(--typography-caption-size);
-}
-
-.xp-ppl-ok {
-  color: var(--color-feedback-success-text);
-}
-
-.xp-ppl-note {
-  display: block;
-  color: var(--color-text-muted);
-  white-space: pre-wrap;
-}
-
-.xp-jr-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.xp-jr-bar {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-1-5);
-}
-
-.xp-jr-seg {
-  height: var(--space-1-5);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-border-default);
-}
-
-.xp-jr-seg.is-done {
-  background-color: var(--color-action-primary-bg);
-}
-
-.xp-jr-seg.is-now {
-  background-image: linear-gradient(90deg, var(--color-action-primary-bg) 50%, var(--color-border-default) 50%);
 }
 
 /* Activity: one timeline, a line along the faces, key steps with a check dot, the words quoted under their line. */
@@ -1782,8 +1726,3 @@
   }
 }
 
-/* All steps: the step happening now stands out from the ones still to come (done ones carry their check). */
-.xp-steps [aria-current='step'] {
-  background-color: var(--color-surface-selected);
-  font-weight: var(--font-weight-semibold);
-}

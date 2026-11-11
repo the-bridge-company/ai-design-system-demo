@@ -347,6 +347,8 @@ async function paintPm(
   const when = said?.at ? startedWhen(said.at) : '';
   const view: PmView = {
     mine,
+    name: pm.name,
+    said: Boolean(said),
     title: PM_WORDS.title(pm.name),
     intro: PM_WORDS.intro(designerName),
     line: pmStatusLine(said, { pm: pm.name, when, mine }),
@@ -718,6 +720,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       crumbs: productCrumbs(product.name, shownJiraKey(pull.title), r.name),
       title: r.name,
       purpose: parseExplorationBody(pull.body)?.purpose ?? r.purpose ?? null,
+      leadAskedAt: parseExplorationBody(pull.body)?.leadAskedAt ?? null,
       stage: 'loading',
       author: faceOf(r.author, false, { ...knownNamesOf([r.author]), ...emailAuthorName(r.author, pull.body) }),
       startedTail: startedTail(product.name, startedAtOf(pull.body, pull.created_at)),

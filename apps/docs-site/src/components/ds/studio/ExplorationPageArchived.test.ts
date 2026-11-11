@@ -61,7 +61,9 @@ describe('ExplorationPage, archived', () => {
     expect(screen.queryByRole('button', { name: 'Bring the latest in' })).toBeNull();
     expect(screen.queryByText(/^Continue/)).toBeNull();
     expect(container.querySelector('.xp-st-acts')).toBeNull();
-    expect(container.querySelectorAll('.zone')).toHaveLength(0);
+    // One block: nobody works on it now, its one button Unarchive.
+    expect(container.querySelectorAll('.zone')).toHaveLength(1);
+    expect(screen.getByRole('region', { name: 'Nobody works on it now' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unarchive' })).toBeTruthy();
   });

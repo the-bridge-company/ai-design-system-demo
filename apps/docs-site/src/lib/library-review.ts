@@ -808,10 +808,6 @@ export function conflictLede(p: Pick<ReviewPiece, 'title' | 'screens'>): string 
   return `Both screens wait on this.${today}${today ? ' pick' : ' Pick'} one way for the library, the other screen adapts or keeps its own.`;
 }
 
-/** The line under the decision buttons: one decision, two places. */
-export const sharedLine = (p: ReviewPiece): string | null =>
-  p.asked ? `Your decision also shows on ${p.asked.name}. Deciding there or here is the same decision.` : null;
-
 /** One keyboard key of One by one: A adds, K keeps, the down arrow moves on. */
 export function keyAction(key: string): 'add' | 'keep' | 'next' | 'prev' | null {
   if (key === 'a' || key === 'A') return 'add';

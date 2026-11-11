@@ -12,6 +12,16 @@ export function setPageSummary(text: string | null | undefined, root: ParentNode
   el.textContent = text ?? '';
 }
 
+/** The summary with its lead words in bold: "**12 wait for you:** 5 foundations, 5 components and 2 docs." */
+export function setPageSummaryLead(strong: string, rest: string, root: ParentNode = document): void {
+  const el = root.querySelector<HTMLElement>(SUMMARY_SELECTOR);
+  if (!el) return;
+  const b = (el.ownerDocument ?? document).createElement('strong');
+  b.className = 'st-summary-lead';
+  b.textContent = strong;
+  el.replaceChildren(b, rest ? ` ${rest}` : '');
+}
+
 /** The header's actions slot, for an island whose primary action belongs on the title's line. */
 export const ACTIONS_SELECTOR = '[data-st-actions]';
 

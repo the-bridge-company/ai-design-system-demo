@@ -834,17 +834,13 @@ describe('the talk with a lead on the page', () => {
 
   it("the lead's turn says it once: one context line, what Send waits for beside it, the change since they were asked on the screen", () => {
     paint({ stage: 'exploring', previewUrl: 'https://p.example.com', activity: [], headline: { who: face, text: 'made a change', when: '2 h ago' }, lead: { line: 'Sending also adds the Timeline to the library.', bar: { ...bar, changedSince: true, blocked: 'Choose Card padding' } } });
-    const zone = screen.getByRole('region', { name: "Send Florian's screen to the developers?" });
-    expect(zone.querySelectorAll('.xp-turn-body p')).toHaveLength(1);
-    expect(zone.textContent).not.toMatch(/Changed since you were asked|use its menu/);
-    // The primary is the next step itself, never a disabled Send with an explanation beside it.
+    // Step 1 of 2: the zone asks the library question itself, with its own primary; Send comes back after.
+    const zone = screen.getByRole('region', { name: "Which Card padding for Florian's screen?" });
+    expect(zone.querySelector('.xp-turn-eyebrow')!.textContent).toBe('Your turn · 1 of 2');
+    expect(within(zone).getByRole('list', { name: 'Steps' }).textContent).toMatch(/1Card padding.*2Send to the developers/);
     expect(within(zone).queryByRole('button', { name: 'Send to the developers' })).toBeNull();
-    const next = within(zone).getByRole('button', { name: 'Choose Card padding' }) as HTMLButtonElement;
-    expect(next.disabled).toBe(false);
-    const after = zone.querySelector('#xp-lead-blocked')!;
-    expect(after.textContent).toBe('Then send it to the developers.');
-    expect(next.getAttribute('aria-describedby')).toBe(after.id);
-    expect(after.closest('.xp-turn-acts')).toBe(next.closest('.xp-turn-acts'));
+    expect(within(zone).queryByRole('button', { name: 'Needs changes' })).toBeNull();
+    expect((within(zone).getByRole('button', { name: 'Choose Card padding' }) as HTMLButtonElement).disabled).toBe(false);
     expect(document.querySelector('.xp-st-sub')!.textContent).toBe("Florian's version, changed 2 h ago, after you were asked");
   });
 

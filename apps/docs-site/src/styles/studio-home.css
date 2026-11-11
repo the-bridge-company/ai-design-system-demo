@@ -349,14 +349,12 @@
   outline: var(--border-width-strong) solid var(--color-surface-default);
 }
 
-/* "Captured 1 h ago" on a folder's small tiles: compact, bottom-left, so the screen stays the content. */
+/* "Captured 1 h ago" on a folder's small tiles: bottom-left, the same raised chip as a card's product ("Acme Prints"),
+   border and text colour included, so it keeps its edge and its contrast on a white page. */
 .pf-pane .bt-captured {
   inset-block-end: var(--space-1-5);
   inset-inline: var(--space-1-5) auto;
-  padding: 0 var(--space-1);
-  border: 0;
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  color: var(--color-text-default);
 }
 
 /* No screen yet (the library, a product nothing explored): the Field Guide drawing on the subtle surface, the same
@@ -805,4 +803,12 @@
 .sh-skel-card {
   width: 100%;
   min-height: var(--size-64);
+}
+
+/* The oldest wait is a tag the width of its words, wherever the line wraps (building.css also lays .sh-waiting as a
+   grid, which stretched it across the whole zone). */
+.sh-oldest {
+  justify-self: start;
+  align-self: center;
+  width: fit-content;
 }

@@ -458,39 +458,46 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
     </form>
   ) : (
     <>
-      <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setChanges(true)}>
-        Needs changes
-      </Button>
       {bar.blocked ? (
-        // What sending waits for is the primary itself: it takes the lead to the choice in the library section, and
-        // turns back into Send to the developers once the piece is decided. Never a disabled button.
-        <Button variant="primary" size="md" disabled={busy !== null} aria-describedby="xp-lead-blocked" onClick={goToLibraryChoice}>
+        // Step 1 of 2: the zone asks what is next and its primary takes the lead to that choice in the library section.
+        // Once the piece is decided the zone turns to step 2, Send to the developers. Never a disabled button.
+        <Button variant="primary" size="md" disabled={busy !== null} onClick={goToLibraryChoice}>
           {bar.blocked}
         </Button>
       ) : (
-        <Button
-          variant="primary"
-          size="md"
-          disabled={busy !== null}
-          loading={busy === 'right'}
-          data-demo-write="send to the developers"
-          onClick={() =>
-            run('right', async () => {
-              if (apply) await apply();
-              return bar.onLooksRight('');
-            })
-          }
-        >
-          Send to the developers
-        </Button>
-      )}
-      {bar.blocked && (
-        <p id="xp-lead-blocked" className="xp-turn-helper">
-          Then send it to the developers.
-        </p>
+        <>
+          <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setChanges(true)}>
+            Needs changes
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            disabled={busy !== null}
+            loading={busy === 'right'}
+            data-demo-write="send to the developers"
+            onClick={() =>
+              run('right', async () => {
+                if (apply) await apply();
+                return bar.onLooksRight('');
+              })
+            }
+          >
+            Send to the developers
+          </Button>
+        </>
       )}
     </>
   );
+  if (bar.blocked) {
+    // "Choose Card padding" -> "Which Card padding for Sofia's screen?"; several pieces -> "2 library pieces wait for you".
+    const one = /^Choose (?!\d)(.+)$/.exec(bar.blocked)?.[1];
+    return (
+      <TurnZone eyebrow="Your turn · 1 of 2" title={one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice')} drawing="guide" actions={actions}>
+        <LeadSteps first={one ?? 'Library pieces'} />
+        <p>{one ? `${who} screen changes ${one}. Choose what the library keeps, then the screen goes to the developers.` : 'Choose what the library keeps, then the screen goes to the developers.'}</p>
+      </TurnZone>
+    );
+  }
   return (
     <>
       <TurnZone
@@ -503,6 +510,22 @@ function LeadTurn({ bar, line, heading, designer, question, apply, say }: { bar:
         {line && <p>{line}</p>}
       </TurnZone>
     </>
+  );
+}
+
+/** The lead's two steps while a library piece waits: 1 choose it (now), 2 send the screen to the developers. */
+function LeadSteps({ first }: { first: string }) {
+  return (
+    <ol className="xp-turn-steps" aria-label="Steps">
+      <li className="is-current" aria-current="step">
+        <span className="xp-turn-step-n" aria-hidden="true">1</span>
+        {first}
+      </li>
+      <li>
+        <span className="xp-turn-step-n" aria-hidden="true">2</span>
+        Send to the developers
+      </li>
+    </ol>
   );
 }
 

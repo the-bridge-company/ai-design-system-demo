@@ -467,6 +467,37 @@ a.ql-next {
   line-height: var(--typography-ui-line-height);
 }
 
+/* The whole row opens the product's report: one link, a chevron at its end. */
+.ql-product-link {
+  grid-template-columns: minmax(0, 1fr) var(--size-40) var(--size-40) auto;
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+
+.ql-product-link .ql-title {
+  color: var(--color-text-default);
+}
+
+.ql-product-go {
+  color: var(--color-text-muted);
+}
+
+@media (hover: hover) {
+  .ql-product-link:hover {
+    background-color: var(--color-surface-hover);
+  }
+
+  .ql-product-link:hover .ql-product-go {
+    color: var(--color-text-default);
+  }
+}
+
+.ql-product-link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 .ql-metric {
   display: grid;
   gap: var(--space-1);

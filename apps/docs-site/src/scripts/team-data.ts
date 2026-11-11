@@ -10,14 +10,15 @@
 // A team's Library (/library/<owner>/<repo>/..., multi-team PR 4a) reads the same way when signed in. Signed out, it
 // reads the published snapshot first, straight from the raw host: no GitHub API call at all, so an anonymous reader
 // never spends the 60 requests an hour GitHub gives an address. Only a team without a snapshot is read live.
-import { hasWriteAccess, loadRepoModel, parseSnapshot, productsOf, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
+import { AUDIT_IGNORES_FILE, hasWriteAccess, loadRepoModel, parseAuditIgnores, parseSnapshot, productsOf, withAuditIgnore, type AuditIgnore, type AuditIgnores, type ProductConfig, type SnapshotAudit, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
 import { getToken, hasWorkingToken, studioClient } from './github-session';
 import { contributeBlobs, contributorFor } from './contribute-session';
 import { CONTRIB_TOKEN, contributeEligible, isContribAuth } from '../lib/contribute';
 import { loadTeamModel, type SnapshotReader, type TeamModelSource } from './repo-context';
 import { isHosted, pageTeamFromPath } from '../lib/team-path';
 import { libraryFromPath } from '../lib/library-shells';
-import { latestProductRuns, productAudits, type AuditRun, type ProductAudit } from '../lib/components-studio';
+import { latestProductRuns, productAudits, productOfRun, type AuditRun, type ProductAudit } from '../lib/components-studio';
+import type { AuditReport, HistoryPoint } from '@bridge-ds/core/audit';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { TEAM_PROGRESS_START, teamProgress, type TeamLoadEvent, type TeamProgress } from '../lib/load-progress';
 import { isDesignLead } from '../lib/design-lead';
@@ -388,10 +389,101 @@ export async function readTeamFile(d: TeamData, path: string): Promise<string | 
   }
 }
 
+/** A file of the team's bridge-data branch: the raw host for a public team, the contents API otherwise. Never rejects. */
+async function readDataFile(d: TeamData, path: string): Promise<string | undefined> {
+  if (d.servedBy) return undefined;
+  try {
+    return d.private ? (d.client.canWrite ? await d.client.getRawText(path, SNAPSHOT_BRANCH) : undefined) : await d.client.readRawFile(path, SNAPSHOT_BRANCH);
+  } catch {
+    return undefined;
+  }
+}
+
+export interface TeamAuditReport {
+  product: ProductConfig;
+  /** The run's summary in the snapshot (its id names audits/<id>.json). */
+  run: SnapshotAudit;
+  report: AuditReport;
+  /** Earlier runs of the same product the snapshot still carries, as points (when the report has no history). */
+  earlier: HistoryPoint[];
+}
+
+/** An adoption report this page can read (lib/audits.ts isAuditReport, which is build-time only). */
+const isAuditReport = (x: unknown): x is AuditReport => {
+  const r = x as AuditReport | null;
+  return !!r && typeof r === 'object' && r.schemaVersion === 1 && !!r.metrics && typeof r.generatedAt === 'string' && Array.isArray(r.files);
+};
+
+const reports = new Map<string, Promise<TeamAuditReport | 'none' | 'unreadable'>>();
+
+/**
+ * The latest adoption report of one of the team's products (the Quality report page): 'none' when the snapshot has
+ * no run of it, 'unreadable' when its file cannot be read (too large, broken, or this reader cannot see a private
+ * repository's data). Memoized per product. Never rejects.
+ */
+export function loadTeamAuditReport(productKey: string): Promise<TeamAuditReport | 'none' | 'unreadable'> {
+  let p = reports.get(productKey);
+  if (!p) {
+    p = Promise.all([loadTeamData(), loadTeamSnapshot()])
+      .then(async ([d, snap]): Promise<TeamAuditReport | 'none' | 'unreadable'> => {
+        const products = productsOf(d.model.config);
+        const hit = latestProductRuns(products, snap?.audits ?? []).find((x) => x.product.key === productKey);
+        if (!hit) return 'none';
+        const text = await readDataFile(d, hit.run.path);
+        if (!text || text.length > AUDIT_MAX_CHARS) return 'unreadable';
+        let report: unknown;
+        try {
+          report = JSON.parse(text);
+        } catch {
+          return 'unreadable';
+        }
+        if (!isAuditReport(report)) return 'unreadable';
+        const earlier = (snap?.audits ?? [])
+          .filter((a) => a.id !== hit.run.id && a.generatedAt < hit.run.generatedAt && productOfRun(products, a)?.key === productKey)
+          .map((a): HistoryPoint => ({ generatedAt: a.generatedAt, tokenAdoption: a.metrics.tokenAdoption, componentAdoption: a.metrics.componentAdoption, hardcoded: a.metrics.hardcoded, uiComponentInstances: a.metrics.uiComponentInstances, dsComponentInstances: a.metrics.dsComponentInstances }));
+        return { product: hit.product, run: hit.run, report, earlier };
+      })
+      .catch(() => 'unreadable' as const);
+    reports.set(productKey, p);
+  }
+  return p;
+}
+
+/** The "Not a problem" decisions the team took in Studio (audit-ignores.json on its bridge-data branch). Never rejects. */
+export async function loadTeamAuditIgnores(): Promise<AuditIgnores> {
+  const d = await loadTeamData().catch(() => null);
+  if (!d) return parseAuditIgnores(null);
+  const text = await readDataFile(d, AUDIT_IGNORES_FILE);
+  try {
+    return parseAuditIgnores(text ? JSON.parse(text) : null);
+  } catch {
+    return parseAuditIgnores(null);
+  }
+}
+
+/**
+ * Keeps one "Not a problem" decision on the team's bridge-data branch (audit-ignores.json), with the writer's own
+ * GitHub sign-in: the next audit reads it like an allowlist and publishes it again. Throws GitHub's refusal.
+ */
+export async function saveTeamAuditIgnore(ignore: AuditIgnore): Promise<AuditIgnores> {
+  const d = await loadTeamData();
+  const current = await d.client.getFile(AUDIT_IGNORES_FILE, SNAPSHOT_BRANCH);
+  let file = parseAuditIgnores(null);
+  try {
+    file = parseAuditIgnores(current ? JSON.parse(current.text) : null);
+  } catch {
+    /* a broken file is replaced */
+  }
+  const next = withAuditIgnore(file, ignore);
+  await d.client.putFile({ path: AUDIT_IGNORES_FILE, content: `${JSON.stringify(next, null, 2)}\n`, branch: SNAPSHOT_BRANCH, message: `Bridge: ${ignore.title ?? ignore.group} is not a problem in ${ignore.product}`, sha: current?.sha });
+  return next;
+}
+
 /** Forgets this page's load: the next loadTeamData reads the head again (Refresh, Try again). */
 export function resetTeamData() {
   pending = null;
   snapshot = null;
+  reports.clear();
   usage = null;
   llmsText = null;
   llms = null;

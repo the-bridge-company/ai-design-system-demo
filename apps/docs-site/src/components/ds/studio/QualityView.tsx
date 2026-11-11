@@ -5,7 +5,8 @@
 // and the tokens last as a calm note. Details wait in DS Accordions: the contrast per brand and theme, adoption's
 // earlier runs. Numbers and words: lib/quality-view.ts.
 import type { ReactNode } from 'react';
-import { Accordion, AccordionItem, Badge, Card, CardBody, Link, Progress } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Badge, Card, CardBody, Icon, Link, Progress } from '@bridge-ds/react';
+import { ChevronRight } from 'lucide-react';
 import ButtonLink from '../ButtonLink';
 import ContrastFailTable, { type ContrastFailRow } from './ContrastFailTable';
 import { QuietScene } from './QuietScene';
@@ -263,7 +264,8 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
               const trend = productTrend(p);
               return (
                 <li key={p.product} className="ql-row-wrap">
-                  <div className="ql-product">
+                  {/* The whole row opens the product's report (Fitts): one link, its name read first. */}
+                  <a className="ql-product ql-product-link" href={safeUrl(p.latest.href, '#')} aria-label={`${p.name}, open the adoption report`} {...external(p.latest.href)}>
                     <span className="ql-main">
                       <span className="ql-title">{p.name}</span>
                       <span className="ql-detail">
@@ -277,8 +279,8 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
                         {p.latest[k] !== null && <Progress value={p.latest[k]} size="sm" aria-label={`${p.name}, ${k === 'token' ? 'tokens' : 'components'} from the design system: ${formatPct(p.latest[k])}`} />}
                       </div>
                     ))}
-                    <Go href={p.latest.href} label="Open the report" title={p.name} />
-                  </div>
+                    <Icon icon={ChevronRight} size="sm" className="ql-product-go" />
+                  </a>
                 </li>
               );
             })}

@@ -1,0 +1,13 @@
+---
+// Team shell of a product's adoption report (lib/team-shells.ts): /studio/<owner>/<repo>/quality/report/?product=<key>,
+// served by the general vercel.json rewrite. The island (components/ds/studio/AdoptionReport.tsx) reads the team and
+// the product from the address, then the product's latest report from the team's bridge-data branch.
+import '../../../styles/quality.css';
+import '../../../styles/adoption-report.css';
+import Layout from '../../../layouts/Layout.astro';
+import TeamAdoptionReport from '../../../components/ds/studio/AdoptionReport';
+---
+
+<Layout title="Adoption report" description="How much of one of this team's products comes from the design system, and what to switch first." hosted wide>
+  <TeamAdoptionReport client:only="react" />
+</Layout>

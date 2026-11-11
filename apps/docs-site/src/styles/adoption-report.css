@@ -1,0 +1,591 @@
+/* Studio > Quality > a product's adoption report (components/ds/studio/AdoptionReport.tsx). The verdict reuses the
+   Quality page's Harbor zone (quality.css .ql-verdict); the groups are DS Accordions, one row family for every group
+   (pieces, colors, sizes), pictures side by side (In the product, In the library), the developers' detail in a fold. */
+
+.ar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-end: var(--space-2);
+  font-size: var(--typography-ui-size);
+}
+
+.ar {
+  display: grid;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+.ar-muted {
+  color: var(--color-text-muted);
+}
+
+.ar-error {
+  color: var(--color-feedback-danger-text);
+  font-size: var(--typography-ui-size);
+}
+
+.ar-verdict .ql-cta {
+  justify-self: start;
+}
+
+/* Score cards: two of the same shape (similarity), the figure in words beside its trend line. */
+.ar-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ar-card {
+  block-size: 100%;
+}
+
+.ar-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--size-60));
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.ar-card-text {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ar-card-name {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--typography-ui-family);
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--typography-ui-line-height);
+}
+
+.ar-card-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.ar-big {
+  font-family: var(--typography-h1-family);
+  font-size: var(--typography-h1-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-h1-line-height);
+  font-variant-numeric: tabular-nums;
+}
+
+.ar-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--typography-ui-size);
+}
+
+.ar-trend.is-up {
+  color: var(--color-feedback-success-text);
+}
+
+.ar-trend.is-down {
+  color: var(--color-feedback-danger-text);
+}
+
+.ar-card-label {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.ar-first {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+.ar-spark {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ar-spark svg {
+  inline-size: 100%;
+  block-size: var(--size-10);
+  overflow: visible;
+}
+
+.ar-spark polyline {
+  fill: transparent;
+  stroke: var(--color-text-signal);
+  stroke-width: var(--border-width-strong);
+  vector-effect: non-scaling-stroke;
+}
+
+.ar-spark circle {
+  fill: var(--color-bg-default);
+  stroke: var(--color-text-signal);
+  stroke-width: var(--border-width-strong);
+  vector-effect: non-scaling-stroke;
+}
+
+.ar-spark circle.is-now {
+  fill: var(--color-text-signal);
+}
+
+.ar-spark-dates {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+/* Tabs and the panels' lead line. */
+.ar-panel {
+  display: grid;
+  gap: var(--space-4);
+  padding-block-start: var(--space-4);
+}
+
+.ar-lead {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+}
+
+/* Groups: one Accordion item each; the trigger holds the words, then the two small pictures. */
+.ar-groups {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ar-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  inline-size: 100%;
+  text-align: start;
+}
+
+.ar-text {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.ar-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.ar-detail {
+  font-weight: var(--font-weight-regular);
+}
+
+.ar-gain,
+.ar-cap {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--typography-caption-line-height);
+}
+
+.ar-gain strong {
+  color: var(--color-feedback-success-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ar-tag-sent {
+  justify-self: start;
+  color: var(--color-feedback-success-text);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.ar-minis {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.ar-mini {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* The small pictures leave once the group is open: the big pair says it. */
+.ar-item[data-open] .ar-minis {
+  display: none;
+}
+
+/* A picture: the library's own preview scaled to fit, or an honest "No picture yet". */
+.ar-plate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: var(--space-1);
+  inline-size: var(--size-40);
+  block-size: var(--size-20);
+  overflow: hidden;
+  border-radius: var(--radius-inset);
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-regular);
+  text-align: center;
+}
+
+.ar-plate-big {
+  inline-size: 100%;
+  block-size: var(--size-40);
+  background-color: var(--color-bg-default);
+  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
+}
+
+.ar-plate-none {
+  align-content: center;
+  background-color: transparent;
+  box-shadow: none;
+  border: var(--border-width-default) dashed var(--color-border-strong);
+}
+
+.ar-plate-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.ar-fit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: max-content;
+  max-width: var(--size-120);
+  transform: translate(-50%, -50%) scale(var(--xe-scale, 0.5));
+  transform-origin: center;
+  font-weight: var(--font-weight-regular);
+}
+
+.ar-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.ar-fig {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.ar-callout {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background-color: var(--color-bg-subtle);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* The group's actions on one line, at its end (proximity). */
+.ar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+  margin-block: var(--space-4);
+}
+
+.ar-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-feedback-success-text);
+  font-size: var(--typography-ui-size);
+}
+
+/* Colors and values: the product's swatches, an arrow, the library's, then how close. */
+.ar-pairline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.ar-side {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ar-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-inline-size: var(--size-60);
+}
+
+.ar-swatch {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--size-10);
+  block-size: var(--size-10);
+  border-radius: var(--radius-inset);
+  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+.ar-swatch-none {
+  border: var(--border-width-default) dashed var(--color-border-strong);
+  box-shadow: none;
+}
+
+.ar-arrow {
+  margin-block-start: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.ar-val {
+  font-family: var(--font-family-mono);
+  font-size: var(--typography-caption-size);
+}
+
+.ar-value .ar-head {
+  grid-template-columns: minmax(0, 1fr) var(--size-80) var(--size-60);
+}
+
+.ar-match {
+  justify-self: end;
+}
+
+.ar-values {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--typography-ui-size);
+}
+
+.ar-values > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* The developers' fold: the fix at the source, the change to copy, the places with their link. */
+.ar-dev {
+  margin-block-start: var(--space-2);
+}
+
+.ar-dev-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ar-dev-line {
+  margin: 0 0 var(--space-3);
+  font-size: var(--typography-ui-size);
+}
+
+.ar-change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-block-end: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  font-size: var(--typography-ui-size);
+}
+
+.ar-change > :last-child {
+  margin-inline-start: auto;
+}
+
+.ar-code,
+.ar-tag,
+.ar .mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--typography-caption-size);
+  overflow-wrap: anywhere;
+}
+
+.ar-code {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-inset);
+}
+
+.ar-code.is-before {
+  background-color: var(--color-feedback-danger-bg);
+  color: var(--color-feedback-danger-text);
+}
+
+.ar-code.is-after {
+  background-color: var(--color-feedback-success-bg);
+  color: var(--color-feedback-success-text);
+}
+
+.ar-becomes {
+  color: var(--color-text-muted);
+}
+
+.ar-tag {
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-bg-muted);
+}
+
+.ar-places {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  list-style: none;
+  font-size: var(--typography-ui-size);
+}
+
+.ar-places > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+}
+
+.ar-places > li + li {
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+.ar-place-file {
+  min-inline-size: 0;
+}
+
+.ar-place-go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.ar-places > li.ar-more {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ar-rest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding-inline: var(--space-5);
+  font-size: var(--typography-ui-size);
+}
+
+/* Pieces the library is missing: a strip of the same small cards. */
+.ar-gaps {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.ar-h3 {
+  margin: 0;
+  font-family: var(--typography-h3-family);
+  font-size: var(--typography-h3-size);
+  font-weight: var(--typography-h3-weight);
+  line-height: var(--typography-h3-line-height);
+}
+
+.ar-gaps > p {
+  margin: 0;
+  font-size: var(--typography-ui-size);
+}
+
+.ar-gap-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-40), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--typography-ui-size);
+}
+
+.ar-gap-list > li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.ar-gap-list .ar-plate {
+  inline-size: 100%;
+}
+
+.ar-gap-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.ar-ignored {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--typography-ui-size);
+}
+
+.ar-ignored > li {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ar-foot p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--typography-ui-size);
+}
+
+/* Phone: cards and pictures stack, swatches wrap, a place reads on two lines. */
+@media (max-width: 760px) {
+  .ar-cards,
+  .ar-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ar-card-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ar-head,
+  .ar-value .ar-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ar-match {
+    justify-self: start;
+  }
+
+  .ar-places > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ar-actions {
+    justify-content: flex-start;
+  }
+
+  .ar-gap-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ar-gap-list .ar-plate {
+    block-size: var(--size-16);
+  }
+
+  .ar-rest {
+    padding-inline: 0;
+  }
+}

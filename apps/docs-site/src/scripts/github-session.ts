@@ -720,6 +720,9 @@ export function studioClient(repo: string, token: string | null = getToken(), op
 
 /** This viewer writes in the team's products through Bridge (a designer, lib/write-route productRouteFor). */
 export function designerRoute(): boolean {
+  // The developer played on the sample team reads through the visitor's email session, but he is no designer: he joins
+  // with GitHub only and works in the code, so every screen's role rules read him as the developer (lib/demo-cast.ts).
+  if (castDeveloper()) return false;
   const token = getToken();
   const session = token && isContribAuth(token) ? 'email' : viewer && token && !tokenRejected() ? 'github' : null;
   return productRouteFor({ session, access: currentAccess(), login: viewer?.login ?? null, site: siteConfig() }) === 'bridge';

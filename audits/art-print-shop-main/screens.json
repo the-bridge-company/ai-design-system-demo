@@ -1,0 +1,65 @@
+{
+  "product": "admin-app",
+  "base": "https://art-print-shop.pages.dev",
+  "ref": "5939e689e2104149ad0d5bdd6d76abac7fcfcc09",
+  "at": "2026-11-11T11:23:56.531Z",
+  "screens": {
+    "/#/": {
+      "image": "audits/art-print-shop-main/home.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/customers": {
+      "image": "audits/art-print-shop-main/customers.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/customers",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/products": {
+      "image": "audits/art-print-shop-main/products.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/products",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/orders": {
+      "image": "audits/art-print-shop-main/orders.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/orders",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/invoices": {
+      "image": "audits/art-print-shop-main/invoices.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/invoices",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/categories": {
+      "image": "audits/art-print-shop-main/categories.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/categories",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/reviews": {
+      "image": "audits/art-print-shop-main/reviews.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/reviews",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    },
+    "/#/segments": {
+      "image": "audits/art-print-shop-main/segments.webp",
+      "url": "https://art-print-shop.pages.dev/?tenant=northwind#/segments",
+      "capturedAt": "2026-11-11T11:23:56.531Z",
+      "width": 800,
+      "height": 500
+    }
+  },
+  "failed": []
+}

@@ -1,5 +1,26 @@
 # @bridge-ds/docs-site
 
+## 0.32.0
+
+### Minor Changes
+
+- f7c544f: Adoption report follow-ups. A lead or an admin signed in by email can now keep a group as "Not a problem": the decision goes through Bridge like "Send to developers" (the server lets a lead or an admin write `audit-ignores.json` on the bridge-data branch, nothing else there). Saving a decision is safe while the bridge-data workflow runs: `saveAuditIgnore` reads the file again and adds the decision when it changed meanwhile, and the workflow (and `templates/bridge-data.yml`) carries the branch's latest `audit-ignores.json` forward and only replaces the tip it read. Requests sent from a report say so on their rows: "From the Acme CRM adoption report", linked to the report, on Being built and on Changes (the request brief asks developers to keep the origin line in their pull request). The snapshot records each audit's biggest gain (`SnapshotAudit.topGain`), and the Quality adoption row says it in one line: "Buttons would take it from 13% to 24%."
+- f86c634: The adoption report shows a real picture of where each group of pieces lives in the product. A product says which files make which screen in bridge.config.json (`products[].screens`: a route such as `/#/contacts` to file globs); without it Bridge reads the usual file routes (Next.js `app/` and `pages/`, React Router, Remix and TanStack `routes/`), never guessing a screen that needs a value in its address. `bridge snapshot` writes each audit's `screens` (route, name, files) into the report (core `productScreens`, `withScreens`, `screenForPlaces`). `scripts/preview-shots.mjs screens` opens each screen on the product's live address with the capture code of the exploration shots, keeps the pictures in the bridge-shots branch (`audits/<id>/<screen>.webp`, captured again for a new audited commit, a new address or after a day) and writes where they are into the reports before bridge-data is published. In Studio each group opens on the screen that holds most of it ("15 of the 102 are on the Contacts screen"), scaled to fit, with a click to see it bigger in a dialog; without one it says so in plain words.
+- 149a6d2: Sample team: "See it as" on the banner lets a visitor see Studio as any of Acme Design's five people (Dana, Sofia, Leo, Malik, Ann), with their own home, gates and words. Picked in the menu or with `?as=sofia` in the address, kept in this browser; Dana by default. Only on the sample team, never a sign-in: the visitor's read-only session stays, and every write is still refused.
+
+### Patch Changes
+
+- 83fd426: Being built: a library request for a component the library has now shows that component's real Library preview in List, Grid and Board (the same stage as Library > Components cards, now one shared component), instead of the generic component icon. A request's own before and after pictures still come first; an unknown component, or one without a preview, keeps the icon. Story frames load a few at a time once near the screen, and a component previews with the first story the published Storybook lists, so a card never shows Storybook's "Couldn't find story" error.
+- a744790: Exploration page leftovers. A design lead exploring themselves reads "Then you pick what the library keeps" and "Ready for the developers?" when no other lead decides, the other lead by name when one does (never themselves, never "your design lead"), and Done exploring offers "Add to the library" instead of "Propose to your DS lead". Check the build pictures (the two versions under a line, the check page's recap) show the whole crop scaled to fit on a quiet surface instead of cutting it. A new component's screen capture in the library block is a small picture beside its line that opens the whole capture in a dialog. The option cards' hatch is Harbor (the zone color on the pale selected surface) instead of grey, and the card content's corner is concentric with the card.
+- 2f2e900: Library review: each family (Foundations, Components, Docs) is its own block in the side list, and a group title its only piece already says is dropped.
+- 530962b: See it as, follow-up: the exploration page and Library review name the team's lead as Studio knows it (on the sample team, Dana, the email lead), never a GitHub design owner. The home says each person once ("Sofia, Leo and Claude AI are waiting on you"). On the sample team, the visitor's read-only session is now given as the person picked (`?as=`), so their own work and the build check's rights are theirs; every write is still refused, and real teams and real members are never affected.
+- 648916e: Library review: click Today (or a way once decided) to see it on the compare picture. Looking is not choosing.
+- Updated dependencies [f7c544f]
+- Updated dependencies [f86c634]
+- Updated dependencies [add7201]
+  - @bridge-ds/core@0.33.0
+  - @bridge-ds/react@1.8.6
+
 ## 0.31.0
 
 ### Minor Changes

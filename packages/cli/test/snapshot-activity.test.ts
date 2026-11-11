@@ -40,8 +40,9 @@ describe('bridge snapshot --activity', () => {
     expect(a.branches.map((b) => [b.number, b.title, b.author])).toEqual([[3, 'Tighter corners', 'ana']]);
     expect(a.responses['/repos/acme/ds/pulls?per_page=100&state=open']).toBeDefined();
     expect(r.activity?.bytes).toBeGreaterThan(0);
-    // The last published activity is asked for first (to keep its history), then the repository.
-    expect(gh.calls[0]).toBe('/repos/acme/ds/contents/activity.json?ref=bridge-data');
+    // The last published branch is read first: the "Not a problem" decisions of the audits (published again), then the
+    // activity (to keep its history), then the repository.
+    expect(gh.calls.slice(0, 2)).toEqual(['/repos/acme/ds/contents/audit-ignores.json?ref=bridge-data', '/repos/acme/ds/contents/activity.json?ref=bridge-data']);
     const lines = snapshotLines(r, out).join('\n');
     expect(lines).toMatch(/Wrote .*activity\.json \(\d+ KB\): \d+ GitHub reads recorded for signed-out visitors\./);
     expect(lines).toMatch(/branches\s+1 open/);

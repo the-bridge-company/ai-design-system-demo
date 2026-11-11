@@ -78,6 +78,8 @@ export * from './products';
 export * from './design-copy-github';
 export * from './tooling';
 export * from './prod-branch';
+// The adoption report's grouping (pure, browser-safe): Studio reads published reports with it.
+export * from './audit/pieces';
 export * from './prod-branch-github';
 export * from './token-proposal';
 export * from './figma-push';

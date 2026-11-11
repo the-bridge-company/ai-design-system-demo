@@ -144,6 +144,8 @@ export interface AuditMetrics {
 export interface HistoryPoint {
   label?: string;
   generatedAt: string;
+  /** The audited commit (target.ref), when known: one point per commit. */
+  ref?: string;
   tokenAdoption: number | null;
   componentAdoption: number | null;
   hardcoded: number;
@@ -171,7 +173,17 @@ export interface AuditReport {
   tool: { name: 'bridge'; version: string };
   label?: string;
   generatedAt: string;
-  target: { path: string; files: number; skipped: number };
+  target: {
+    path: string;
+    files: number;
+    skipped: number;
+    /** The audited code's GitHub repository ("owner/name"), when it is a git checkout of one (bridge snapshot). */
+    repo?: string;
+    /** The commit the audited code was at, so links to a file and line stay right. */
+    ref?: string;
+    /** The audited folder inside that repository ("src", "" for its root). Files are relative to it. */
+    root?: string;
+  };
   designSystem: { packages: string[]; components: number; tokens: number; modes: string[] };
   metrics: AuditMetrics;
   byCategory: Partial<Record<FindingCategory, CategoryCount>>;

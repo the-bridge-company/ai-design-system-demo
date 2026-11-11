@@ -115,6 +115,16 @@ describe('ExplorationPage, not started (X1)', () => {
     expect(screen.queryByText(/Same as the product today/)).toBeNull();
   });
 
+  it('started from a mockup: one quiet line names it, with its link; none without one', () => {
+    const url = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180';
+    const { unmount } = paint({ startedFrom: { label: 'the Figma frame 212:4180 in CRM screens', url } });
+    expect(document.querySelector('[data-started-from]')?.textContent).toMatch(/^Started from the Figma frame 212:4180 in CRM screens/);
+    expect(screen.getByRole('link', { name: /the Figma frame 212:4180 in CRM screens/ }).getAttribute('href')).toBe(url);
+    unmount();
+    paint();
+    expect(document.querySelector('[data-started-from]')).toBeNull();
+  });
+
   it('Continue in Claude opens a new Claude conversation with the line (Claude app), copies it for the Terminal', async () => {
     const onCopy = vi.fn(async () => {});
     paint({ onCopy });

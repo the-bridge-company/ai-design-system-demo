@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PRODUCTS, productMarks, productOfBranch, type ProductConfig } from '@bridge-ds/core';
+import { DEFAULT_PRODUCTS, parseMockupLink, productMarks, productOfBranch, type ProductConfig } from '@bridge-ds/core';
 import { adminBlockedFix, askAdmin, blockIsAdmins, claudePrompt,
   connectorPrompt, featureHref, featureName, featurePurpose, featureProblems, featureProducts, featureRepo, initialTarget, LIBRARY_TARGET,
   productParam, productRepoBlockedLine, startPageProblem, startTargets } from './create-branch';
@@ -122,6 +122,22 @@ describe('start an exploration, in a product or the library', () => {
     expect(connectorPrompt(ref)).toBe(claudePrompt(ref));
     // No start page: the usual line.
     expect(connectorPrompt({ ...ref, startPage: null })).toMatch(/I'll tell you what to explore\.$/);
+  });
+
+  it('a mockup: the line tells Claude to rebuild it with the library only, measure, never invent a token, list what is missing', () => {
+    const crm: ProductConfig = { key: 'crm', name: 'Acme CRM', repo: 'acme/crm' };
+    const mockup = parseMockupLink('https://claude.ai/artifact/8f2c41e0-1b2c').mockup;
+    const ref = { sentence: 'Contacts page with a quick filter', product: crm, number: 9102, mockup };
+    for (const line of [connectorPrompt(ref), claudePrompt(ref)]) {
+      expect(line).toMatch(
+        /and use the Bridge library\. Start from the Claude Design page 8f2c41e0 \(https:\/\/claude\.ai\/artifact\/8f2c41e0-1b2c\): rebuild it in Acme CRM with the library's pieces only, then tell me what it uses that the library does not have\.$/,
+      );
+      expect(line).not.toMatch(/bridge_|token|measure/);
+      expect(line).not.toContain("I'll tell you what to explore.");
+      expect(line).not.toMatch(/—/);
+    }
+    // In the library, no mockup brief: the lead drives there.
+    expect(claudePrompt({ ...ref, library: true })).toMatch(/I'll tell you what to explore\.$/);
   });
 
   it('startPageProblem: empty is fine, a page of the product site is cleaned, another site says how to fix it', () => {

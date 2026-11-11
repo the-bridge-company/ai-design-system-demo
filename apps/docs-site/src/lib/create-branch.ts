@@ -3,7 +3,7 @@
 // target is the library). It starts the way the CLI and MCP server start one: an exploration with the product's label
 // (productMarks from @bridge-ds/core, none for the library), handed to Claude with one line that sets it up and hands
 // control back. Pure: the dialog and its tests share it.
-import { addressDomain, defaultProduct, findProduct, pageOfAddress, parseJiraKey, productRepoOf, startPageBrief, type ProductConfig } from '@bridge-ds/core';
+import { addressDomain, defaultProduct, findProduct, pageOfAddress, parseJiraKey, mockupLine, productRepoOf, startPageBrief, type Mockup, type ProductConfig } from '@bridge-ds/core';
 import { studioHref } from './team-path';
 
 /** The products a feature can be built in: every product but the default one (the library itself). */
@@ -121,10 +121,16 @@ export interface StartRef {
   copy?: { repo: string; branch: string } | null;
   /** A page of the product's address (pageOfAddress): Claude rebuilds it with the library first (startPageBrief). */
   startPage?: string | null;
+  /** A Figma frame or a Claude Design page (parseMockupLink): Claude rebuilds it with the library's pieces only (mockupBrief). */
+  mockup?: Mockup | null;
 }
 
-/** The end of the start line: the start page brief when there is one, else the designer drives. */
-const nextStep = (x: StartRef) => (x.startPage ? startPageBrief(x.startPage, x.product.name, x.sentence) : "I'll tell you what to explore.");
+/**
+ * The end of the start line: from a mockup, its one sentence (mockupLine: the exploration's brief has the detail); from a
+ * live page, the start page brief; else the designer drives.
+ */
+const nextStep = (x: StartRef) =>
+  x.mockup ? mockupLine(x.mockup, x.product.name) : x.startPage ? startPageBrief(x.startPage, x.product.name, x.sentence) : "I'll tell you what to explore.";
 
 /**
  * The line for the Claude app, through the Bridge connector: the connector finds the exploration from its ref alone

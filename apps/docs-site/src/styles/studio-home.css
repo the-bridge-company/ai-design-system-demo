@@ -802,6 +802,112 @@
   margin: 0;
 }
 
+/* Start from a mockup, recognised: the field's label, then one card in the input's place (its border, radius and
+   height) with a neutral drawing, what the link says, and Remove on the same line. Never a fetched picture. */
+.sc-mockup {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.sc-mockup-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height-lg);
+  padding: var(--space-2);
+  border: var(--border-width-default) solid var(--input-border);
+  border-radius: var(--input-radius);
+  background: var(--input-bg);
+}
+
+.sc-mockup-thumb {
+  position: relative;
+  flex: none;
+  width: var(--size-16);
+  height: var(--size-12);
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+}
+
+.sc-mockup-thumb[data-kind='claude-design'] {
+  background: var(--color-bg-default);
+}
+
+.sc-mockup-thumb > i {
+  position: absolute;
+  inset-inline: var(--space-5) var(--space-1-5);
+  display: block;
+  height: var(--space-0-5);
+  border-radius: var(--radius-xs);
+  background: var(--color-border-default);
+}
+
+.sc-mockup-thumb[data-kind='claude-design'] > i {
+  inset-inline-start: var(--space-2);
+}
+
+.sc-mockup-thumb > .sc-mockup-side {
+  inset-block: 0;
+  inset-inline: 0 auto;
+  width: var(--space-3);
+  height: auto;
+  border-radius: 0;
+  background: var(--color-bg-muted);
+}
+
+.sc-mockup-thumb > .sc-mockup-head {
+  top: var(--space-1-5);
+  width: var(--space-6);
+  height: var(--space-1);
+  background: var(--color-text-muted);
+}
+
+.sc-mockup-thumb > .sc-mockup-pill {
+  top: var(--space-3);
+  width: var(--space-4);
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-action-primary-bg);
+}
+
+.sc-mockup-thumb > .sc-mockup-row {
+  top: calc(var(--space-6) + var(--space-0-5));
+}
+
+.sc-mockup-thumb > .sc-mockup-pill + .sc-mockup-row + .sc-mockup-row {
+  top: calc(var(--space-8) + var(--space-0-5));
+}
+
+.sc-mockup-thumb > .sc-mockup-pill + .sc-mockup-row + .sc-mockup-row + .sc-mockup-row {
+  top: calc(var(--space-10) + var(--space-0-5));
+}
+
+.sc-mockup-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.sc-mockup-name {
+  overflow: hidden;
+  color: var(--color-text-default);
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-mockup-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-100);
+  line-height: var(--font-line-height-normal);
+  overflow-wrap: anywhere;
+}
+
 .sc-foot {
   display: flex;
   flex-wrap: wrap;

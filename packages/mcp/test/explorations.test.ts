@@ -300,6 +300,23 @@ describe('continue an exploration', () => {
     expect(r.next).toMatch(/Never copy the site's CSS/);
   });
 
+  it('continue an exploration started from a mockup: the brief rebuilds it with the library, measures, never invents a token', async () => {
+    const gh = fakeGitHub('acme', 'ds', files());
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Contacts quick filter' });
+    const client = (await ctx.github())!;
+    const pr = await client.getPullRequest(1);
+    const link = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180';
+    await client.withBranchPrefix('explore/').updatePullRequest(1, { body: pr.body.replace('"slug":', `"mockup":"${link}","slug":`) });
+    const r = (await explorations.continueExploration(ctx, { ref: '#1' })) as any;
+    expect(r.mockup).toEqual({ kind: 'figma', url: link, label: 'the Figma frame 212:4180 in CRM screens' });
+    expect(r.next).toMatch(/^Start from the Figma frame 212:4180 in CRM screens/);
+    expect(r.next).toMatch(/ONLY the library's components and tokens/);
+    expect(r.next).toMatch(/measure your build against the mockup/);
+    expect(r.next).toMatch(/Never invent a token name: check each one with bridge_get_token or bridge_search_tokens/);
+    expect(r.next).toMatch(/list what the mockup uses that the library does not have/);
+  });
+
   it('lists only the ones the person started with mine', async () => {
     const gh = fakeGitHub('acme', 'ds', files());
     const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });

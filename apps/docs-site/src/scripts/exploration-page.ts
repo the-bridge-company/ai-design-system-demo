@@ -10,7 +10,7 @@
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
 import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
-import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
+import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupLabel, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
   canPutInFigma,
@@ -120,6 +120,12 @@ let libraryWait: { key: string; wait: ReturnType<typeof leadBuildLine> } | null 
 const waitOf = (key: string) => (libraryWait?.key === key ? libraryWait.wait : null);
 
 const connected = () => Boolean(hasWorkingToken() && currentViewer());
+
+/** "Started from" on the page: the mockup the exploration's block keeps, named and linked. */
+const startedFromOf = (block: Parameters<typeof explorationMockupOf>[0]) => {
+  const m = explorationMockupOf(block);
+  return m ? { label: mockupLabel(m), url: m.url } : null;
+};
 const dsClient = () => studioClient(`${CFG.owner}/${CFG.repo}`, undefined, { protectedBranches: [CFG.defaultBranch] });
 
 /** The branch's commits, read once per head (an empty list when GitHub cannot be read: the activity then says less). */
@@ -721,6 +727,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       title: r.name,
       purpose: parseExplorationBody(pull.body)?.purpose ?? r.purpose ?? null,
       leadAskedAt: parseExplorationBody(pull.body)?.leadAskedAt ?? null,
+      startedFrom: startedFromOf(parseExplorationBody(pull.body)),
       stage: 'loading',
       author: faceOf(r.author, false, { ...knownNamesOf([r.author]), ...emailAuthorName(r.author, pull.body) }),
       startedTail: startedTail(product.name, startedAtOf(pull.body, pull.created_at)),

@@ -146,6 +146,51 @@ describe('Start an exploration', () => {
     }
   });
 
+  it('start from a mockup: a quiet link, then the field; a link Bridge reads becomes a card, anything else says how to fix it', async () => {
+    const remove = embedProducts();
+    try {
+      const user = userEvent.setup();
+      render(createElement(StartExploration, { components, product: 'admin-app' }));
+      await user.click(await screen.findByRole('button', { name: 'Start an exploration' }));
+      await screen.findByRole('dialog');
+      // One question visible: the field waits behind the link.
+      expect(screen.queryByRole('textbox', { name: 'Start from a mockup' })).toBeNull();
+      await user.click(screen.getByRole('button', { name: 'Start from a mockup' }));
+      const field = await screen.findByRole('textbox', { name: 'Start from a mockup' });
+      expect(field).toHaveAccessibleDescription('A Figma frame or a Claude Design page. Claude rebuilds it with your library.');
+      await vi.waitFor(() => expect(document.activeElement).toBe(field));
+      // Not Figma, not Claude Design: said on paste.
+      await user.click(field);
+      await user.paste('https://miro.com/app/board/uXjVN1q2=/');
+      expect(field).toHaveAttribute('aria-invalid', 'true');
+      expect(field).toHaveAccessibleDescription('Bridge reads Figma frames and Claude Design pages. This link is neither: paste one of those.');
+      // A whole Figma page: how to copy one frame's link.
+      await user.clear(field);
+      await user.paste('https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=0-1');
+      expect(field).toHaveAccessibleDescription(expect.stringContaining('Copy link to selection'));
+      await expectNoAxeViolations(document.body);
+      // A frame: the card says what the link says, and Remove brings the field back.
+      await user.clear(field);
+      await user.paste('https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180');
+      const card = await screen.findByRole('group', { name: 'Start from a mockup' });
+      expect(card.textContent).toContain('CRM screens');
+      expect(card.textContent).toContain('Figma frame 212:4180');
+      await expectNoAxeViolations(document.body);
+      await user.click(screen.getByRole('button', { name: 'Remove the mockup' }));
+      expect(await screen.findByRole('textbox', { name: 'Start from a mockup' })).toHaveValue('');
+    } finally {
+      remove();
+    }
+  });
+
+  it('never offers a mockup for the library: its explorations change tokens and components', async () => {
+    const user = userEvent.setup();
+    render(createElement(StartExploration, { components, product: 'library' }));
+    await user.click(await screen.findByRole('button', { name: 'Start an exploration' }));
+    await screen.findByRole('dialog');
+    expect(screen.queryByRole('button', { name: 'Start from a mockup' })).toBeNull();
+  });
+
   it('a product with its code on GitHub: no start page field', async () => {
     const remove = embedProducts();
     try {

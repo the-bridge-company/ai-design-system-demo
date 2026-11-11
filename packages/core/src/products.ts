@@ -3,6 +3,7 @@
 // lives in a folder of the design system repo (`path`) or in another GitHub repository (`repo`); the default one is
 // the library itself, where a branch lands when nothing else matches. Pure: no Node API, it runs in the browser too.
 import { screensProblems } from './audit/screens';
+import { mockupBrief, type Mockup } from './mockup';
 
 export interface ProductConfig {
   /** Stable id: lowercase letters, digits and dashes ("admin"). The `product: <key>` label names it. */
@@ -339,6 +340,15 @@ export function startPageBrief(page: string, productName: string, change?: strin
     "Never copy the site's CSS, fonts, images or other files.",
     what ? `Then explore this change from that rebuilt page: ${what}.` : 'Then explore the change the designer describes, from that rebuilt page.',
   ].join(' ');
+}
+
+/**
+ * The start brief for an exploration: from a mockup (mockupBrief) when there is one, the live page then only shows how
+ * the product looks today; else from a live page (startPageBrief); else null, the designer drives.
+ */
+export function startBrief(from: { startPage?: string | null; mockup?: Mockup | null }, productName: string, change?: string | null): string | null {
+  if (from.mockup) return `${mockupBrief(from.mockup, productName, change)}${from.startPage ? ` ${from.startPage} shows how ${productName} looks today; the mockup decides.` : ''}`;
+  return from.startPage ? startPageBrief(from.startPage, productName, change) : null;
 }
 
 /** Whether two product lists say the same thing (toConfigJson leaves the default list out). */

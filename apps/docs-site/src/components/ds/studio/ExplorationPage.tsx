@@ -159,6 +159,8 @@ export interface ExplorationPageProps {
   me?: PageFace | null;
   /** What the exploration sets out to do (its purpose): one plain sentence under the screen's name. */
   purpose?: string | null;
+  /** The mockup it started from (a Figma frame or a Claude Design page): "Started from" it, with its link, under the owner line. */
+  startedFrom?: { label: string; url: string } | null;
   /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
   thumbRoute?: string | null;
   /**
@@ -1402,7 +1404,14 @@ function ExplorationBody(p: ExplorationPageProps) {
           <Who p={{ login: p.author.login, name: p.author.name, agent: p.author.agent, avatar: p.author.avatar }} size="xs" />
           <span>{ownerLine(p.author.name, p.startedTail)}</span>
         </p>
-        
+        {p.startedFrom && (
+          <p className="xp-muted xp-devline" data-started-from="">
+            Started from{' '}
+            <Link href={p.startedFrom.url} external>
+              {p.startedFrom.label}
+            </Link>
+          </p>
+        )}
       </div>
       {p.archived && !p.notDoing && p.stage === 'not-started' && (
         <div className="xp-archived">

@@ -197,6 +197,39 @@ a.lr-ask {
   font-weight: var(--font-weight-regular);
 }
 
+/*
+ * One block per family (canvas "En exploration" B, picked 2026-11-11): the list's ground is white and each family
+ * (Foundations, Components, Docs) is its own quiet block holding its pieces, so where one family ends is seen at once.
+ * Radii are concentric: the block is the list's radius less its inset, the piece cards the block's less theirs.
+ */
+.lr-side {
+  padding-inline: var(--space-3);
+  background-color: var(--color-surface-default);
+}
+
+.lr-side-head {
+  padding-inline: var(--space-1);
+}
+
+.lr-side-chapter {
+  padding-block-end: var(--space-3);
+  border-radius: calc(var(--radius-container) - var(--space-3));
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-side-chapter + .lr-side-chapter {
+  margin-block-start: var(--space-4);
+}
+
+.lr-side .lr-side-fam,
+.lr-side-head + .lr-side-chapter .lr-side-fam {
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.lr-side-chapter .lr-side-row {
+  border-radius: max(calc(var(--radius-container) - var(--space-6)), var(--radius-inset));
+}
+
 /* Each piece is its own card on the list's quiet ground, so the rows hold together instead of floating. */
 .lr-side-list {
   display: grid;

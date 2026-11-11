@@ -144,7 +144,8 @@ import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, wor
 import { productOfImage, putReachImage, putReachSummary, reachImageBytes, reachTodo, readReach, summaryFor } from '../_lib/private-reach.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { explorationBlockOf, memberRef, screenOf, withMemberInBlock } from '../_lib/exploration-member.js';
-import { applyNote, buildImageBytes, buildTodo, fixesComment, handoverOf, imageSigOk, imagesOf, itemStates, itemWordsOf, noteComment, noteOpOf, notesOf, putBuildImage, putBuildSummary, queueBuild, readBuildReview, roundOf, saveItemWords, saveNotes, signedImageUrl, withItemWord, withoutItemWord, type BuildCtx, type ItemWord } from '../_lib/build-review.js';
+import { applyNote, buildImageBytes, buildTodo, fixesComment, handoverOf, imageSigOk, imagesOf, isTickKey, itemStates, itemWordsOf, noteComment, noteOpOf, notesOf, putBuildImage, putBuildSummary, queueBuild, readBuildReview, roundOf, saveItemWords, saveNotes, saveTicks, signedImageUrl, ticksIn, ticksOf, withItemWord, withoutItemWord, withTick, type BuildCtx, type ItemWord } from '../_lib/build-review.js';
+import { handoverRows } from '../../src/lib/build-review-view.js';
 import { branchKey, issueKey, mineItems, mineKey } from '../_lib/former-member.js';
 import { canonicalEmail, sameEmail } from '../_lib/canonical-email.js';
 import { githubApp, type AppTokens } from '../_lib/github-app.js';
@@ -1462,6 +1463,12 @@ export const buildFactsKey = (copy: string, n: number) => `bridge:build:facts:${
 /** A signed-out visitor of a demo team reading a build check: no email, no login, never a role that answers. */
 const DEMO_VISITOR: { email?: string; login?: string; name: string; lead: boolean } = { name: 'Visitor', lead: false };
 
+/** A signed-out visitor of the sample team, as the member they read as (api/_lib/demo-members.ts), for reads only. */
+async function visitorCaller(ctx: Ctx, req: Request, repoFull: string): Promise<{ email?: string; login?: string; name: string; lead: boolean } | null> {
+  const m = await visitorMemberOf(ctx, req, repoFull).catch(() => null);
+  return m ? { email: m.email, name: m.name, lead: m.role === 'admin' || approves(m) } : null;
+}
+
 export const BUILD_WORDS = {
   notReady: 'The developers have not shown a build yet.',
   notYours: 'Only its designer, the product manager or a design lead checks the build.',
@@ -1514,7 +1521,9 @@ async function readBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, 
   const team = parseRepo(body.repo);
   const t = { ...team, full: team.full.toLowerCase() };
   // A visitor of a demo team reads where the check stands, as a member who views it does; only members answer.
-  const who = (await callerOn(ctx, req, t)) ?? (!write && isPublicTeam(t.full) ? DEMO_VISITOR : null);
+  // The sample team's visitor reads as its visitor member (Dana, its lead) even before their read-only session cookie
+  // is set: the check then reads with the lead's part, as every other page of the demo does. Writes stay refused.
+  const who = (await callerOn(ctx, req, t)) ?? (!write && isPublicTeam(t.full) ? ((await visitorCaller(ctx, req, t.full)) ?? DEMO_VISITOR) : null);
   if (!who) return fail(401, 'signin', SIGNIN);
   const product = typeof body.product === 'string' ? body.product.trim().toLowerCase() : '';
   const n = Number(body.number);
@@ -1673,6 +1682,7 @@ const reviewLinkOf = (req: Request, ctx: Ctx, r: Pick<BuildRead, 't' | 'n' | 'pr
 export const BUILD_REVIEW_WORDS = {
   notYours: 'Only its designer, the product manager or a design lead answers on the build.',
   gone: 'This difference is not in the last check any more. Reload the page.',
+  noteGone: 'This handover note changed since the page opened. Reload the page.',
   limit: 'Many comments today already. Try again tomorrow.',
 };
 /** Comments and answers posted on developers' tasks per team per UTC day. */
@@ -1718,7 +1728,7 @@ async function onBuildReview(req: Request, ctx: Ctx, body: Record<string, unknow
   const r = await readBuild(req, ctx, body, false);
   if (r instanceof Response) return r;
   const code = r.pair.code.toLowerCase();
-  const [record, review, words, notes, handover] = await Promise.all([buildRecordOf(ctx.svc.redis, code, r.dev.number), readBuildReview(ctx.svc.redis, code, r.dev.number), itemWordsOf(ctx.svc.redis, code, r.dev.number), notesOf(ctx.svc.redis, code, r.dev.number), handoverFor(ctx, r)]);
+  const [record, review, words, notes, handover, ticks] = await Promise.all([buildRecordOf(ctx.svc.redis, code, r.dev.number), readBuildReview(ctx.svc.redis, code, r.dev.number), itemWordsOf(ctx.svc.redis, code, r.dev.number), notesOf(ctx.svc.redis, code, r.dev.number), handoverFor(ctx, r), ticksOf(ctx.svc.redis, code, r.dev.number)]);
   const round = roundOf(record.words, r.head);
   const st = buildStateOf(record.words, r.head, r.need);
   const states = review ? itemStates(review.items, words, round, r.role) : { items: [], fixed: [] };
@@ -1747,6 +1757,7 @@ async function onBuildReview(req: Request, ctx: Ctx, body: Record<string, unknow
       meant: review ? mentionedItems(r.devBody, review.items) : [],
       notes,
       handover,
+      ticks: ticksIn(ticks, round),
     },
     { 'Cache-Control': 'private, no-cache' },
   );
@@ -1758,6 +1769,16 @@ async function onBuildItem(req: Request, ctx: Ctx, body: Record<string, unknown>
   if (r instanceof Response) return r;
   if (!r.role) return fail(403, 'not-allowed', BUILD_REVIEW_WORDS.notYours);
   const code = r.pair.code.toLowerCase();
+  // A handover note found (or not any more) in the build: { handover: <noteKey>, found }. One tick for the check.
+  if (body.handover !== undefined) {
+    const key = body.handover;
+    if (!isTickKey(key) || !handoverRows(await handoverFor(ctx, r)).some((x) => x.key === key)) return fail(409, 'gone', BUILD_REVIEW_WORDS.noteGone);
+    const round = roundOf((await buildRecordOf(ctx.svc.redis, code, r.dev.number)).words, r.head);
+    const at = new Date(ctx.now()).toISOString();
+    const ticks = withTick(await ticksOf(ctx.svc.redis, code, r.dev.number), { key, round, role: r.role, ...(r.who.login ? { by: r.who.login } : {}), byName: r.who.name, at }, body.found === true);
+    await saveTicks(ctx.svc.redis, code, r.dev.number, ticks);
+    return json(200, { ok: true, round, ticks: ticksIn(ticks, round) });
+  }
   const review = await readBuildReview(ctx.svc.redis, code, r.dev.number);
   const it = review?.items.find((i) => i.sig === body.sig);
   if (!review || !it) return fail(409, 'gone', BUILD_REVIEW_WORDS.gone);

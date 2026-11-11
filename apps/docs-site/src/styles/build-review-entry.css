@@ -1,150 +1,327 @@
-/* The way into Check the build, region by region, on the exploration page (components/ds/studio/BuildReviewEntry.tsx):
-   the three facts, a row of crops the same height (the first four, then "+N"; two on a phone), then the actions at the
-   end, the secondary first. */
+/* Check the build on the exploration page (components/ds/studio/BuildReviewEntry.tsx): a short flat list in the screen
+   block (a header with its one primary, one line per difference, the two versions under a line on hover or focus, the
+   handover notes checklist folded below), and the progress in the Your turn zone. Phones: the header's actions under
+   its words, the two versions one above the other. */
 
-.bre {
-  display: grid;
-  gap: var(--space-4);
-}
+/* ---- The Your turn zone */
 
 .bre-line {
   margin: 0;
   color: var(--color-text-muted);
 }
 
-.bre-facts {
+.bre-turn {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--size-40), 1fr));
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-3);
 }
 
-.bre-facts li {
+.bre-progress {
   display: grid;
-  align-content: start;
-  gap: var(--space-1);
-}
-
-.bre-facts strong {
-  font-family: var(--font-family-display);
-  font-size: var(--font-size-600);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-tight);
-}
-
-.bre-facts span {
+  gap: var(--space-1-5);
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
 }
 
-.bre-crops {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(calc(var(--size-40) * 3 / 4), 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+/* ---- The list */
 
-.bre-crop {
-  position: relative;
-  display: block;
-  height: calc(var(--size-12) * 2);
+.brl {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-container);
   background: var(--color-surface-default);
-  color: inherit;
-  text-decoration: none;
 }
 
-.bre-crop.is-meant {
-  border-style: dashed;
-  border-color: var(--color-border-strong);
-}
-
-.bre-crop img,
-.bre-wait {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.bre-wait {
-  background: var(--color-bg-muted);
-}
-
-.bre-pin {
-  position: absolute;
-  top: var(--space-1);
-  left: var(--space-1);
-  display: grid;
-  place-items: center;
-  width: var(--size-6);
-  height: var(--size-6);
-  border-radius: var(--radius-full);
-  background: var(--color-action-primary-bg);
-  color: var(--color-action-primary-text);
-  font-size: var(--font-size-100);
-  font-weight: var(--font-weight-bold);
-}
-
-.bre-crop.is-meant .bre-pin {
-  outline: var(--border-width-1) solid var(--color-border-strong);
-  background: var(--color-surface-default);
-  color: var(--color-text-default);
-}
-
-.bre-plus {
-  display: grid;
-  place-items: center;
-  background: var(--color-bg-subtle);
+.brl-muted {
   color: var(--color-text-muted);
-  font-size: var(--font-size-400);
 }
 
-@media (hover: hover) {
-  .bre-crop:hover {
-    border-color: var(--color-border-hover);
-  }
+.brl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6) var(--space-4);
 }
 
-.bre-more-only,
-.bre-phone-only,
-.bre-plus-phone {
-  display: none;
+.brl-headtext {
+  display: grid;
+  flex: 1 1 var(--size-60);
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.bre-actions {
+.brl-headtext p {
+  margin: 0;
+}
+
+.brl-meta {
+  font-size: var(--font-size-200);
+}
+
+.brl-title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-tight);
+}
+
+.brl-either {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.brl-acts {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
 }
 
-@media (max-width: 700px) {
-  .bre-crops {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+.brl-first {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 var(--space-6) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+.brl-first p {
+  margin: 0;
+}
+
+.brl-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One difference, one line: the whole line is the link; on hover or focus the two versions open under it and
+   "Look at N" takes the chevron's place. */
+.brl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--size-6) minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  align-items: center;
+  min-height: var(--size-12);
+  padding: var(--space-2) var(--space-6);
+  border-top: var(--border-width-default) solid var(--color-border-default);
+  transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+.brl-num {
+  display: grid;
+  place-items: center;
+  width: var(--size-6);
+  height: var(--size-6);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-muted);
+  font-size: var(--font-size-100);
+  font-weight: var(--font-weight-semibold);
+}
+
+.brl-row.is-fine .brl-num {
+  background: var(--color-feedback-success-bg);
+  color: var(--color-feedback-success-text);
+}
+
+.brl-row.is-fix .brl-num {
+  background: var(--color-feedback-danger-bg);
+  color: var(--color-feedback-danger-text);
+}
+
+.brl-line {
+  margin: 0;
+  min-width: 0;
+}
+
+.brl-line strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.brl-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.brl-chev {
+  color: var(--color-text-muted);
+}
+
+.brl-cover {
+  position: absolute;
+  inset: 0;
+}
+
+.brl-cover:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+.brl-row .brl-go,
+.brl-pair {
+  display: none;
+}
+
+.brl-row:focus-within {
+  background: var(--color-surface-hover);
+}
+
+.brl-row:focus-within .brl-go {
+  position: relative;
+  display: inline-flex;
+}
+
+.brl-row:focus-within .brl-pair {
+  display: grid;
+}
+
+.brl-row:focus-within .brl-chev {
+  display: none;
+}
+
+@media (hover: hover) {
+  .brl-row:hover {
+    background: var(--color-surface-hover);
   }
 
-  .bre-crop {
-    height: var(--size-20);
+  .brl-row:hover .brl-go {
+    position: relative;
+    display: inline-flex;
   }
 
-  .bre-wide,
-  .bre-plus-wide {
+  .brl-row:hover .brl-pair {
+    display: grid;
+  }
+
+  .brl-row:hover .brl-chev {
     display: none;
   }
+}
 
-  .bre-phone-only {
-    display: block;
+/* The approved design and the build, side by side under the line, the same height. */
+.brl-pair {
+  grid-column: 2 / -1;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  padding-block: var(--space-2) var(--space-2);
+}
+
+.brl-pair figure {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  min-width: 0;
+}
+
+.brl-pair figcaption {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-100);
+}
+
+.brl-pair img,
+.brl-wait {
+  display: block;
+  width: 100%;
+  height: calc(var(--size-20) * 1.25);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-default);
+  object-fit: cover;
+  object-position: left center;
+}
+
+.brl-wait {
+  background: var(--color-bg-muted);
+}
+
+/* ---- The handover notes checklist */
+
+.brl-notes {
+  padding: var(--space-3) var(--space-6);
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+.brl-notes-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.brl-notes-title {
+  margin: 0;
+  font-size: var(--font-size-300);
+  font-weight: var(--font-weight-semibold);
+}
+
+.brl-notes-head .brl-toggle {
+  margin-inline-start: auto;
+}
+
+.brl-hint {
+  margin: var(--space-1) 0 var(--space-3);
+  font-size: var(--font-size-200);
+}
+
+.brl-checks {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  list-style: none;
+}
+
+.brl-error {
+  margin: var(--space-2) 0 0;
+  color: var(--color-feedback-danger-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brl-row {
+    transition: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .brl-head,
+  .brl-row,
+  .brl-notes {
+    padding-inline: var(--space-4);
   }
 
-  .bre-plus-phone {
-    display: inline;
+  .brl-first {
+    margin-inline: var(--space-4);
+  }
+
+  .brl-acts {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .brl-row {
+    padding-block: var(--space-3);
+  }
+
+  .brl-end {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+  }
+
+  .brl-pair {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

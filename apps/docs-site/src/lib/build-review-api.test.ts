@@ -11,6 +11,7 @@ import { NOTIFY_TEAMS_KEY, repoMetaKey } from '../../api/_lib/notify';
 import { buildTodo, imageSigOk, jobKeyOf, putBuildImage, putBuildSummary, QUEUE_KEY } from '../../api/_lib/build-review';
 import { clearDesignPathCache, clearProductPairCache, handleContribute, issueSession, type ContribDeps } from '../../api/contribute/index';
 import { clearReadMemory } from '../../api/_lib/team-read';
+import { handoverRows } from './build-review-view';
 
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
@@ -103,6 +104,31 @@ describe('check the build, region by region', () => {
     expect(read.queued).toBe(false);
     // The developer names Tags in their note: they meant it.
     expect(read.meant).toEqual(['r00000001']);
+  });
+
+  it('a design lead answers too; the handover notes ticked are saved for the check, one tick per note this round', async () => {
+    const s = setup();
+    const mia = await as(s, 'mia@acme.example', 'Mia', 'edit');
+    const dana = await as(s, 'dana@acme.example', 'Dana', 'admin');
+    await handleContribute(post({ action: 'build-review', ...at }, mia), ENV, s.deps);
+    await measure(s);
+    const lead = await (await handleContribute(post({ action: 'build-item', ...at, sig: 'r00000002', verdict: 'fine' }, dana), ENV, s.deps)).json();
+    expect(lead.items[1]).toMatchObject({ sig: 'r00000002', mine: 'fine' });
+    const read = await (await handleContribute(post({ action: 'build-review', ...at }, dana), ENV, s.deps)).json();
+    expect(read.role).toBe('lead');
+    expect(read.ticks).toEqual([]);
+    const [decision, , overdue] = handoverRows(read.handover);
+    const ticked = await (await handleContribute(post({ action: 'build-item', ...at, handover: decision!.key, found: true }, dana), ENV, s.deps)).json();
+    expect(ticked.ticks).toEqual([{ key: decision!.key, byName: 'Dana', role: 'lead', at: new Date(T0).toISOString() }]);
+    await handleContribute(post({ action: 'build-item', ...at, handover: overdue!.key, found: true }, mia), ENV, s.deps);
+    const untick = await (await handleContribute(post({ action: 'build-item', ...at, handover: decision!.key, found: false }, mia), ENV, s.deps)).json();
+    expect(untick.ticks.map((t: { key: string }) => t.key)).toEqual([overdue!.key]);
+    const again = await (await handleContribute(post({ action: 'build-review', ...at }, mia), ENV, s.deps)).json();
+    expect(again.ticks).toMatchObject([{ key: overdue!.key, byName: 'Mia', role: 'designer' }]);
+    // A note that is not in the handover notes is refused, and so is someone with no part in the check.
+    expect((await handleContribute(post({ action: 'build-item', ...at, handover: 'h00000000', found: true }, mia), ENV, s.deps)).status).toBe(409);
+    const zoe = await as(s, 'zoe@acme.example', 'Zoe', 'edit');
+    expect((await handleContribute(post({ action: 'build-item', ...at, handover: overdue!.key, found: true }, zoe), ENV, s.deps)).status).toBe(403);
   });
 
   it('the designer and the PM answer per difference; someone with no part in the check does not', async () => {

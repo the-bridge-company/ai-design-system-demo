@@ -430,6 +430,46 @@ export async function saveItemWords(redis: Redis, code: string, pull: number, wo
   await redis.cmd('SET', itemsKeyOf(code, pull), JSON.stringify({ words }), 'EX', KEEP_S);
 }
 
+// --- The handover notes ticked as found in the build ------------------------------------------------------------------
+// bridge:build:ticks:<code>#<pull> (HandoverTick[]): one list for the check (whoever answers it ticks for everyone), per
+// round like the words per difference: a new round starts with nothing ticked. Written through build-item ({ handover,
+// found }), next to the words per difference.
+
+export const MAX_TICKS = 400;
+const TICK_KEY = /^h[0-9a-f]{8}$/;
+export const ticksKeyOf = (code: string, pull: number) => `bridge:build:ticks:${pk(code, pull)}`;
+
+export interface HandoverTick {
+  key: string;
+  round: number;
+  role: BuildRole;
+  by?: string;
+  byName: string;
+  at: string;
+}
+
+export const isTickKey = (k: unknown): k is string => typeof k === 'string' && TICK_KEY.test(k);
+
+export async function ticksOf(redis: Redis, code: string, pull: number): Promise<HandoverTick[]> {
+  const v = parseJson<{ ticks?: unknown }>(await redis.cmd('GET', ticksKeyOf(code, pull)));
+  return Array.isArray(v?.ticks) ? (v.ticks as HandoverTick[]).filter((t) => t && isTickKey(t.key) && Number.isSafeInteger(t.round)) : [];
+}
+
+/** The ticks with one note found (or not any more) this round: one tick per note per round, whoever ticked it. Pure. */
+export function withTick(ticks: readonly HandoverTick[], t: HandoverTick, found: boolean): HandoverTick[] {
+  const rest = ticks.filter((x) => !(x.key === t.key && x.round === t.round));
+  return (found ? [...rest, t] : rest).slice(-MAX_TICKS);
+}
+
+/** The ticks of this round, as the page reads them. Pure. */
+export function ticksIn(ticks: readonly HandoverTick[], round: number): { key: string; byName: string; role: BuildRole; at: string }[] {
+  return ticks.filter((t) => t.round === round).map((t) => ({ key: t.key, byName: t.byName, role: t.role, at: t.at }));
+}
+
+export async function saveTicks(redis: Redis, code: string, pull: number, ticks: HandoverTick[]): Promise<void> {
+  await redis.cmd('SET', ticksKeyOf(code, pull), JSON.stringify({ ticks }), 'EX', KEEP_S);
+}
+
 /** Where one difference stands for one person this round. */
 export interface ItemState {
   sig: string;

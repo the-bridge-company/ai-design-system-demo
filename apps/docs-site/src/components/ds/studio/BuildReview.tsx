@@ -1,27 +1,33 @@
 // Check the build, region by region (Studio review mode, /studio/<team>/explorations/review/?exploration=N&product=K):
 // a focused full screen over Studio, opened from the exploration page at Check the build. Top bar: Back, whose build
-// and which round, the three sizes with their counts, Use the real build, how many differences the reader looked at.
-// Left: the list of where the build differs (laptop sizes, then phone only), what stays approved from an earlier round,
-// then the handover notes (read only, with Open the build yourself). Middle: the build, the approved design or both,
-// with each difference outlined and numbered (dashed when the developer mentions it). Right: one difference (its
-// sentence, its measured facts, Fine as built or Fix this, the others' answers, comments pinned on the picture), or
-// the final answer. On a phone: one difference per screen. Words and rules: lib/build-review-view.ts; data:
+// and which round, the three sizes with their counts, Use the real build. Under it the stepper: "‹ 3 of 8 ›", one
+// step per difference (laptop sizes, then phone only) with its state, then Send to the developer. Below: one difference
+// big (the build, the approved design or both, side by side, comments pinned on the picture; its sentence, its
+// measured facts, Fine as built or Fix this, Change the design, the previous and next by name), or the whole page, or
+// the recap (the ones to fix with their picture, the fine ones folded, an optional note, Send). On a phone: one
+// difference per screen under "‹ 3 of 8 ›" and a thin bar of states. Words and rules: lib/build-review-view.ts; data:
 // scripts/build-review-data.ts.
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, ExternalLink, Laptop, MessageSquare, Monitor, Smartphone } from 'lucide-react';
-import { Button, IconButton, Link, Progress, SegmentedControl, Textarea } from '@bridge-ds/react';
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Laptop, MessageSquare, Monitor, Send, Smartphone, X } from 'lucide-react';
+import { Badge, Button, Icon, IconButton, Link, SegmentedControl, Textarea } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { Who } from './faces';
 import { Drawing } from './Drawing';
 import { studioHref } from '../../../lib/team-path';
 import {
+  LEDGER_WORDS,
   REVIEW_WORDS as W,
   SIZE_WORDS,
+  STEP_WORDS as S,
   boxPercent,
   changesText,
   factWords,
+  firstAnswerOf,
   groupsOf,
+  handoverRows,
+  isPhoneOnly,
+  verdictsOf,
   otherCheckers,
   sizeCounts,
   standing,
@@ -159,13 +165,20 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
     const open = standing(items, d.items, {}).open;
     const g = groupsOf(open);
     const first = [...g.wide, ...g.phone][0];
-    return want === 'first' ? (first?.sig ?? null) : want && items.some((i) => i.sig === want) ? want : null;
+    // ?item=answer: from "Send your answer" on the exploration page, once every difference has its answer.
+    if (want === 'answer') return d.role && !firstAnswerOf(d) ? 'answer' : (first?.sig ?? null);
+    // Opened without a difference: the first one still to look at, the stepper walks from there.
+    const todo = [...g.wide, ...g.phone].find((i) => !d.items.find((s) => s.sig === i.sig)?.mine);
+    return want === 'first' ? (first?.sig ?? null) : want && items.some((i) => i.sig === want) ? want : (todo ?? first)?.sig ?? null;
   });
   const [notes, setNotes] = useState<NoteThread[]>(d.notes);
   const [said, setSaid] = useState<string | null>(null);
   const [sent, setSent] = useState<Sent>(null);
-  const [showKept, setShowKept] = useState(false);
-  const canAnswer = Boolean(d.role);
+  // The designer, the PM or a design lead answers. Between the designer and a lead the first answer stands: once one of
+  // them sent it, the other comments on the spot (a comment, not a second verdict).
+  const first = firstAnswerOf(d);
+  const canAnswer = Boolean(d.role) && !first;
+  const canComment = Boolean(d.role);
   const groups = groupsOf(st.open);
   const ordered = [...groups.wide, ...groups.phone];
   const item = typeof sel === 'string' && sel !== 'answer' ? (items.find((i) => i.sig === sel) ?? null) : null;
@@ -179,6 +192,9 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
     if (!it.sizes.includes(size)) setSize(it.sizes[0]!);
     setCanvas('both');
   };
+  // The step after an answer, a beat later; never after the page is gone.
+  const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(advance.current), []);
   const say = (it: ReviewItem, v: Verdict) => {
     const next = st.verdict[it.sig] === v ? null : v;
     setLocal((x) => ({ ...x, [it.sig]: next }));
@@ -192,17 +208,22 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
         });
         setSaid(e.message);
       });
-    // The next difference not looked at yet, once this one has its answer.
+    // The next difference not looked at yet, once this one has its answer; the last step (Send) once none is left.
     if (next) {
-      const after = ordered.slice(ordered.indexOf(it) + 1).find((x) => !st.verdict[x.sig] && x.sig !== it.sig);
-      if (after) setTimeout(() => pick(after), 250);
+      const after = [...ordered.slice(ordered.indexOf(it) + 1), ...ordered.slice(0, ordered.indexOf(it))].find((x) => !st.verdict[x.sig] && x.sig !== it.sig);
+      clearTimeout(advance.current);
+      advance.current = setTimeout(() => (after ? pick(after) : setSel('answer')), 250);
     }
   };
+  // The stepper's order: every difference, then Send. From the whole page, the first difference.
   const step = (dir: 1 | -1) => {
-    const i = item ? ordered.indexOf(item) : -1;
-    const next = ordered[Math.max(0, Math.min(ordered.length - 1, i + dir))];
-    if (next) pick(next);
+    const i = sel === 'answer' ? ordered.length : item ? ordered.indexOf(item) : -1;
+    const to = Math.max(0, Math.min(ordered.length, i + dir));
+    if (to === ordered.length) setSel(canAnswer ? 'answer' : sel);
+    else if (ordered[to]) pick(ordered[to]!);
   };
+  // What each step shows: the reader's answers; the first answer's once someone else sent it.
+  const shown = first ? verdictsOf(d) : st.verdict;
 
   const top = (
     <header className="brv-top">
@@ -228,12 +249,6 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
         </ButtonLink>
       )}
       <span className="brv-grow" />
-      {m && st.open.length > 0 && (
-        <div className="brv-progress">
-          {!narrow && <span className="brv-muted">{W.progress(st.looked, st.open.length)}</span>}
-          <Progress value={st.looked} max={st.open.length} size="sm" aria-label={W.progress(st.looked, st.open.length)} />
-        </div>
-      )}
       {!narrow && (
         <span className="brv-faces">
           {d.rows
@@ -270,10 +285,21 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
       shotUrl={shotUrl}
       sent={sent}
       back={back}
+      ordered={ordered}
+      canAnswer={canAnswer}
+      onPick={pick}
       onSent={(s) => setSent(s)}
       onError={setSaid}
     />
   );
+
+  // Where the reader stands when they cannot give a verdict: someone answered first, or they only look.
+  const status = first ? `${LEDGER_WORDS.answeredFirst(first.byName, builder)}: ${first.answer}. ${W.commentStill}` : !canAnswer ? W.readOnly : null;
+  const stepper = <Stepper ordered={ordered} verdicts={shown} cur={sel === 'answer' ? 'answer' : (item?.sig ?? null)} builder={builder} narrow={narrow} canSend={canAnswer} status={status} onPick={pick} onSend={() => setSel('answer')} onStep={step} />;
+  const neighbours = (it: ReviewItem) => {
+    const i = ordered.indexOf(it);
+    return { prev: ordered[i - 1] ?? null, next: ordered[i + 1] ?? null };
+  };
 
   const side = item ? (
     <ItemPanel
@@ -281,7 +307,7 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
       it={item}
       index={ordered.indexOf(item) + 1}
       total={ordered.length}
-      verdict={st.verdict[item.sig] ?? null}
+      verdict={shown[item.sig] ?? null}
       builder={builder}
       canAnswer={canAnswer}
       notes={notes.filter((n) => n.sig === item.sig)}
@@ -290,6 +316,9 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
       onNotes={setNotes}
       target={target}
       onError={setSaid}
+      around={neighbours(item)}
+      onPick={pick}
+      onSend={canAnswer ? () => setSel('answer') : null}
     />
   ) : null;
 
@@ -299,6 +328,7 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
       return (
         <div className="brv brv-phone">
           {top}
+          {stepper}
           <div className="brv-phone-body">{answer}</div>
         </div>
       );
@@ -307,22 +337,20 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
     return (
       <div className="brv brv-phone">
         {top}
+        {stepper}
         <div className="brv-phone-body">
           <div className="brv-phone-nav">
             <SegmentedControl label={W.canvas} value={canvas === 'a' ? 'a' : 'b'} onValueChange={(v) => setCanvas(v as Canvas)} items={[{ value: 'a', label: 'Approved' }, { value: 'b', label: W.build }]} />
-            <span className="brv-grow" />
-            <IconButton icon={ChevronLeft} label={W.previous} variant="secondary" disabled={i <= 0} onClick={() => step(-1)} />
-            {i < ordered.length - 1 ? <IconButton icon={ChevronRight} label={W.next} variant="secondary" onClick={() => step(1)} /> : <IconButton icon={ChevronRight} label={W.sendAnswer} variant="secondary" onClick={() => setSel('answer')} />}
           </div>
           <Crop it={cur} side={canvas === 'a' ? 'a' : 'b'} shotUrl={shotUrl} notes={notes.filter((n) => n.sig === cur.sig)} />
-          <ItemPanel d={d} it={cur} index={i + 1} total={ordered.length} verdict={st.verdict[cur.sig] ?? null} builder={builder} canAnswer={canAnswer} notes={notes.filter((n) => n.sig === cur.sig)} onSay={(v) => say(cur, v)} onDesign={() => setSel('answer')} onNotes={setNotes} target={target} onError={setSaid} phone />
+          <ItemPanel d={d} it={cur} index={i + 1} total={ordered.length} verdict={shown[cur.sig] ?? null} builder={builder} canAnswer={canAnswer} notes={notes.filter((n) => n.sig === cur.sig)} onSay={(v) => say(cur, v)} onDesign={() => setSel('answer')} onNotes={setNotes} target={target} onError={setSaid} phone />
         </div>
         <div className="brv-phone-bar">
           <div className="brv-actions">
-            <Button variant="secondary" size="lg" pressed={st.verdict[cur.sig] === 'fine'} disabled={!canAnswer} onClick={() => say(cur, 'fine')}>
+            <Button variant="secondary" size="lg" pressed={shown[cur.sig] === 'fine'} disabled={!canAnswer} onClick={() => say(cur, 'fine')}>
               {W.fine}
             </Button>
-            <Button variant="secondary" size="lg" pressed={st.verdict[cur.sig] === 'fix'} disabled={!canAnswer} onClick={() => say(cur, 'fix')}>
+            <Button variant="secondary" size="lg" pressed={shown[cur.sig] === 'fix'} disabled={!canAnswer} onClick={() => say(cur, 'fix')}>
               {W.fix}
             </Button>
           </div>
@@ -332,61 +360,34 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
     );
   }
 
-  const ready = st.open.length > 0 && st.looked === st.open.length;
+  if (sel === 'answer') {
+    return (
+      <div className="brv brv-stepped">
+        {top}
+        {stepper}
+        <div className="brv-recap-wrap">{answer}</div>
+        {said && (
+          <p className="brv-said" role="status">
+            {said}
+          </p>
+        )}
+      </div>
+    );
+  }
   return (
-    <div className={`brv ${item || sel === 'answer' ? 'is-three' : ''}`}>
+    <div className={`brv brv-stepped ${item ? 'is-two' : ''}`}>
       {top}
+      {stepper}
       <div className="brv-body">
-        <aside className="brv-list" aria-label={W.differs}>
-          <div className="brv-scroll">
-            <ItemList title={W.differs} list={groups.wide} st={st} sel={item?.sig ?? null} meant={d.meant} builder={builder} onPick={pick} count={st.open.length} />
-            {groups.phone.length > 0 && <ItemList title={W.phoneOnly} icon list={groups.phone} st={st} sel={item?.sig ?? null} meant={d.meant} builder={builder} onPick={pick} />}
-            {st.kept.length > 0 && (
-              <div className="brv-kept">
-                <Button variant="ghost" size="sm" onClick={() => setShowKept((x) => !x)} aria-expanded={showKept}>
-                  {W.staysApproved(st.kept.length, d.round)}
-                </Button>
-                {showKept && (
-                  <ul className="brv-items">
-                    {st.kept.map((it) => (
-                      <li key={it.sig}>
-                        {/* bridge-audit-ignore-next-line: the whole difference row (number, name, sentence) is one target that opens it, like the review queue rows; the DS has no row button and Button would cut it to one label */}
-                        <button type="button" className="brv-item" onClick={() => pick(it)}>
-                          <span className="brv-num is-fine">{it.n}</span>
-                          <span className="brv-item-text">
-                            <span className="brv-item-name">{it.name}</span>
-                            <span className="brv-muted">{it.line}</span>
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-            {d.fixed.length > 0 && <p className="brv-muted brv-note">{W.fixedSince(d.fixed.length)}</p>}
-            <Handover d={d} url={m.urls.build} />
-          </div>
-          <div className="brv-end">
-            <span className="brv-muted">{!canAnswer ? W.readOnly : ready ? W.allLooked : W.lookFirst(st.open.length - st.looked)}</span>
-            <Button variant={ready && sel !== 'answer' ? 'primary' : 'secondary'} size="lg" fullWidth disabled={!canAnswer} onClick={() => setSel('answer')}>
-              {W.sendAnswer}
-            </Button>
-          </div>
-        </aside>
         <section className="brv-canvas" aria-label={W.canvas}>
           <div className="brv-bar">
             <SegmentedControl label={W.canvas} value={canvas} onValueChange={(v) => setCanvas(v as Canvas)} items={[{ value: 'b', label: W.build }, { value: 'a', label: W.approved }, { value: 'both', label: W.both }]} />
-            <span className="brv-muted">{item ? `${W.of(ordered.indexOf(item) + 1, ordered.length)} · ${item.name}` : sz ? `${SIZE_WORDS[size]}, ${sz.width} wide` : ''}</span>
+            <span className="brv-muted">{item ? '' : sz ? `${SIZE_WORDS[size]}, ${sz.width} wide` : ''}</span>
             <span className="brv-grow" />
             {item ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => setSel(null)}>
-                  {W.wholePage}
-                </Button>
-                <IconButton icon={ChevronLeft} label={W.previous} size="sm" onClick={() => step(-1)} />
-                <IconButton icon={ChevronRight} label={W.next} size="sm" onClick={() => step(1)} />
-              </>
+              <Button variant="ghost" size="sm" onClick={() => setSel(null)}>
+                {W.wholePage}
+              </Button>
             ) : (
               m.ignored > 0 && <span className="brv-muted">{W.ignored(m.ignored)}</span>
             )}
@@ -394,14 +395,14 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
           <div className="brv-stage">
             {m.head !== d.head && <p className="brv-older brv-muted">{W.olderMeasure}</p>}
             {item ? (
-              <ItemStage it={item} canvas={canvas} builder={builder} shotUrl={shotUrl} notes={notes.filter((n) => n.sig === item.sig)} canAnswer={canAnswer} target={target} onNotes={setNotes} onError={setSaid} />
+              <ItemStage it={item} canvas={canvas} builder={builder} shotUrl={shotUrl} notes={notes.filter((n) => n.sig === item.sig)} canAnswer={canComment} target={target} onNotes={setNotes} onError={setSaid} />
             ) : sz ? (
               <PageStage sz={sz} canvas={canvas} items={st.open} st={st} meant={d.meant} builder={builder} shotUrl={shotUrl} onPick={pick} />
             ) : null}
           </div>
           {sz && <Minimap sz={sz} items={st.open} sel={item?.sig ?? null} shotUrl={shotUrl} onPick={pick} />}
         </section>
-        {(item || sel === 'answer') && <aside className="brv-side">{item ? side : answer}</aside>}
+        {item && <aside className="brv-side">{side}</aside>}
       </div>
       {said && (
         <p className="brv-said" role="status">
@@ -412,35 +413,93 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
   );
 }
 
-function ItemList({ title, icon, list, st, sel, meant, builder, onPick, count }: { title: string; icon?: boolean; list: ReviewItem[]; st: ReturnType<typeof standing>; sel: string | null; meant: string[]; builder: string; onPick: (it: ReviewItem) => void; count?: number }) {
-  if (!list.length) return null;
+/**
+ * The stepper under the top bar: "‹ 3 of 8 ›", one numbered step per difference (to look at, Fine as built, Fix this),
+ * the current one ringed, a phone for those only on a phone, every step clickable, then Send to the developer, and a
+ * small legend. Narrow screens: "‹ 3 of 8 ›" and a thin bar coloured by each step's state.
+ */
+function Stepper({ ordered, verdicts, cur, builder, narrow, canSend, status, onPick, onSend, onStep }: { ordered: ReviewItem[]; verdicts: Record<string, Verdict | null>; cur: string | 'answer' | null; builder: string; narrow: boolean; canSend: boolean; status: string | null; onPick: (it: ReviewItem) => void; onSend: () => void; onStep: (dir: 1 | -1) => void }) {
+  const total = ordered.length;
+  const i = cur === 'answer' ? total : ordered.findIndex((x) => x.sig === cur);
+  const where = cur === 'answer' ? S.send : i >= 0 ? S.of(i + 1, total) : S.of(0, total);
+  const done = ordered.filter((x) => verdicts[x.sig]).length;
+  const nav = (
+    <div className="brv-stepnav">
+      <IconButton icon={ChevronLeft} label={S.previous} variant="secondary" size="sm" disabled={i <= 0} onClick={() => onStep(-1)} />
+      <span className="brv-stepnav-at" aria-live="polite">
+        {where}
+      </span>
+      <IconButton icon={ChevronRight} label={S.next} variant="secondary" size="sm" disabled={i >= total || (i === total - 1 && !canSend)} onClick={() => onStep(1)} />
+    </div>
+  );
+  if (narrow) {
+    return (
+      <div className="brv-stepper is-narrow">
+        {nav}
+        <ol className="brv-stepbar" aria-label={`${S.label}: ${LEDGER_WORDS.progress(done, total)}`}>
+          {ordered.map((it) => {
+            const v = verdicts[it.sig] ?? null;
+            return <li key={it.sig} className={`${v ? `is-${v}` : ''} ${it.sig === cur ? 'is-cur' : ''}`} aria-label={`${it.n}. ${it.name}, ${S.stateOf(v)}`} />;
+          })}
+        </ol>
+        {status && <p className="brv-muted brv-step-status">{status}</p>}
+      </div>
+    );
+  }
   return (
-    <div className="brv-group">
-      <h2 className="brv-group-h">
-        <span>
-          {icon && <Smartphone aria-hidden="true" />}
-          {title}
-        </span>
-        {count !== undefined && <span>{count}</span>}
-      </h2>
-      <ul className="brv-items">
-        {list.map((it) => {
-          const v = st.verdict[it.sig];
+    <div className="brv-stepper">
+      {nav}
+      <ol className="brv-steps" aria-label={S.label}>
+        {ordered.map((it) => {
+          const v = verdicts[it.sig] ?? null;
+          const here = it.sig === cur;
+          const phone = isPhoneOnly(it);
           return (
-            <li key={it.sig}>
-              {/* bridge-audit-ignore-next-line: the whole difference row (number, name, sentence, its answer) is one target that opens it, like the review queue rows; the DS has no row button and Button would cut it to one label */}
-              <button type="button" className={`brv-item ${sel === it.sig ? 'is-sel' : ''}`} aria-current={sel === it.sig ? 'true' : undefined} onClick={() => onPick(it)}>
-                <span className={`brv-num ${v === 'fix' ? 'is-fix' : v === 'fine' ? 'is-fine' : ''}`}>{it.n}</span>
-                <span className="brv-item-text">
-                  <span className="brv-item-name">{it.name}</span>
-                  <span className="brv-muted">{it.line}</span>
+            <li key={it.sig} className={`brv-step ${v ? `is-${v}` : ''} ${here ? 'is-cur' : ''}`}>
+              {/* bridge-audit-ignore-next-line: a step of the stepper (its state mark and its name) is one target; the DS has no stepper and Button would cut it to one label */}
+              <button type="button" title={it.name} aria-current={here ? 'step' : undefined} aria-label={`${it.n}. ${it.name}, ${S.stateOf(v)}${phone ? `, ${S.phone.toLowerCase()}` : ''}`} onClick={() => onPick(it)}>
+                <span className="brv-step-dot" aria-hidden="true">
+                  {v === 'fine' ? <Check /> : v === 'fix' ? <X /> : it.n}
                 </span>
-                <span className={`brv-item-state ${v === 'fix' ? 'is-fix' : v === 'fine' ? 'is-fine' : ''}`}>{v === 'fix' ? 'Fix' : v === 'fine' ? 'Fine' : meant.includes(it.sig) ? `${builder} mentions it` : ''}</span>
+                <span className="brv-step-name" aria-hidden="true">
+                  {phone && <Smartphone />}
+                  <span>{it.name}</span>
+                </span>
               </button>
             </li>
           );
         })}
-      </ul>
+        <li className={`brv-step is-send ${cur === 'answer' ? 'is-cur' : ''}`}>
+          {/* bridge-audit-ignore-next-line: the last step of the stepper, the same target as the others */}
+          <button type="button" aria-current={cur === 'answer' ? 'step' : undefined} disabled={!canSend} onClick={onSend}>
+            <span className="brv-step-dot" aria-hidden="true">
+              <Send />
+            </span>
+            <span className="brv-step-name">{S.sendTo(builder)}</span>
+          </button>
+        </li>
+      </ol>
+      <div className="brv-legend">
+        <ul aria-hidden="true">
+          <li>
+            <span className="brv-key" />
+            {S.toLook}
+          </li>
+          <li>
+            <span className="brv-key is-fine" />
+            {S.fine}
+          </li>
+          <li>
+            <span className="brv-key is-fix" />
+            {S.fix}
+          </li>
+          <li>
+            <Smartphone />
+            {S.phone}
+          </li>
+        </ul>
+        {status && <p className="brv-muted brv-step-status">{status}</p>}
+      </div>
     </div>
   );
 }
@@ -618,7 +677,7 @@ function ItemStage({ it, canvas, builder, shotUrl, notes, canAnswer, target, onN
   );
 }
 
-function ItemPanel({ d, it, index, total, verdict, builder, canAnswer, notes, onSay, onDesign, onNotes, target, onError, phone }: { d: ReviewRead; it: ReviewItem; index: number; total: number; verdict: Verdict | null; builder: string; canAnswer: boolean; notes: NoteThread[]; onSay: (v: Verdict) => void; onDesign: () => void; onNotes: (n: NoteThread[]) => void; target: ReviewTarget; onError: (s: string) => void; phone?: boolean }) {
+function ItemPanel({ d, it, index, total, verdict, builder, canAnswer, notes, onSay, onDesign, onNotes, target, onError, phone, around, onPick, onSend }: { d: ReviewRead; it: ReviewItem; index: number; total: number; verdict: Verdict | null; builder: string; canAnswer: boolean; notes: NoteThread[]; onSay: (v: Verdict) => void; onDesign: () => void; onNotes: (n: NoteThread[]) => void; target: ReviewTarget; onError: (s: string) => void; phone?: boolean; around?: { prev: ReviewItem | null; next: ReviewItem | null }; onPick?: (it: ReviewItem) => void; onSend?: (() => void) | null }) {
   const state = d.items.find((s) => s.sig === it.sig);
   return (
     <div className="brv-panel">
@@ -702,7 +761,29 @@ function ItemPanel({ d, it, index, total, verdict, builder, canAnswer, notes, on
           </ul>
         </div>
       )}
-      <Threads notes={notes} canAnswer={canAnswer} target={target} onNotes={onNotes} onError={onError} />
+      <Threads notes={notes} canAnswer={canAnswer || Boolean(d.role)} target={target} onNotes={onNotes} onError={onError} />
+      {around && onPick && (
+        <nav className="brv-around" aria-label={S.around}>
+          {around.prev ? (
+            <Button variant="ghost" size="md" iconStart={ChevronLeft} onClick={() => onPick(around.prev!)}>
+              {`${around.prev.n} ${around.prev.name}`}
+            </Button>
+          ) : (
+            <span />
+          )}
+          {around.next ? (
+            <Button variant="ghost" size="md" iconEnd={ChevronRight} onClick={() => onPick(around.next!)}>
+              {`${around.next.n} ${around.next.name}`}
+            </Button>
+          ) : (
+            onSend && (
+              <Button variant="ghost" size="md" iconEnd={ChevronRight} onClick={onSend}>
+                {S.sendTo(builder)}
+              </Button>
+            )
+          )}
+        </nav>
+      )}
     </div>
   );
 }
@@ -769,12 +850,13 @@ function Threads({ notes, canAnswer, target, onNotes, onError }: { notes: NoteTh
   );
 }
 
-function Answer({ d, st, builder, designer, others, target, shotUrl, sent, back, onSent, onError }: { d: ReviewRead; st: ReturnType<typeof standing>; builder: string; designer: string; others: string[]; target: ReviewTarget; shotUrl: (n: string) => string; sent: Sent; back: string; onSent: (s: Sent) => void; onError: (s: string) => void }) {
+function Answer({ d, st, builder, designer, others, target, shotUrl, sent, back, ordered, canAnswer, onPick, onSent, onError }: { d: ReviewRead; st: ReturnType<typeof standing>; builder: string; designer: string; others: string[]; target: ReviewTarget; shotUrl: (n: string) => string; sent: Sent; back: string; ordered: ReviewItem[]; canAnswer: boolean; onPick: (it: ReviewItem) => void; onSent: (s: Sent) => void; onError: (s: string) => void }) {
   const [note, setNote] = useState('');
   const [design, setDesign] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showFine, setShowFine] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const fixes = st.fixes;
-  const kept = st.fine.length + st.kept.length;
   const unlooked = st.open.length - st.looked;
   if (sent) {
     return (
@@ -824,46 +906,108 @@ function Answer({ d, st, builder, designer, others, target, shotUrl, sent, back,
       </form>
     );
   }
+  // The recap in the stepper's order: the ones to fix with their picture, the fine ones folded on one line.
+  const fixList = ordered.filter((i) => fixes.some((f) => f.sig === i.sig));
+  const fineList = ordered.filter((i) => st.fine.some((f) => f.sig === i.sig));
+  const notesRows = handoverRows(d.handover);
+  const found = new Set((d.ticks ?? []).map((t) => t.key));
   return (
     <form
-      className="brv-panel"
+      className="brv-recap"
+      aria-labelledby="brv-recap-h"
       onSubmit={(e) => {
         e.preventDefault();
+        if (!canAnswer) return;
         if (fixes.length) go({ kind: 'changes', why: 'build', text: changesText(fixes, note) }, { kind: 'fixes', n: fixes.length });
         else go({ kind: 'looks-right' }, { kind: 'ok' });
       }}
     >
-      <div>
-        <span className="brv-muted brv-kicker">{W.answerKicker}</span>
-        <h2 className="brv-h">{fixes.length ? W.needsChanges : W.looksRight}</h2>
-      </div>
-      <p>{W.answerLine(fixes.length, kept, d.round)}</p>
-      {fixes.length > 0 && (
-        <ul className="brv-fixes">
-          {fixes.map((f) => (
+      <header className="brv-recap-head">
+        <h2 id="brv-recap-h" className="brv-recap-title">
+          {S.recapTitle(builder)}
+        </h2>
+        <p className="brv-muted">{S.recapLine(st.looked, st.open.length, fixes.length, st.fine.length, builder)}</p>
+        {unlooked > 0 && <p className="brv-muted">{W.stillOpen(unlooked)}</p>}
+      </header>
+      {fixList.length > 0 && (
+        <ul className="brv-recap-fixes">
+          {fixList.map((f) => (
             <li key={f.sig}>
-              {f.crop.b ? <Shot url={shotUrl(f.crop.b)} alt={f.name} className="brv-fix-img" /> : <span className="brv-fix-img" />}
-              <span>
-                <strong>
-                  {f.n}. {f.name}
-                </strong>
+              <span className="brv-num is-fix">{f.n}</span>
+              <span className="brv-recap-text">
+                <span className="brv-recap-name">
+                  <strong>{f.name}</strong>
+                  {isPhoneOnly(f) && (
+                    <Badge size="sm" icon={Smartphone}>
+                      {W.phoneOnly}
+                    </Badge>
+                  )}
+                </span>
                 <span className="brv-muted">{f.line}</span>
               </span>
+              {f.crop.b ? <Shot url={shotUrl(f.crop.b)} alt={`${W.builtBy(builder)}: ${f.name}`} className="brv-recap-img" /> : <span className="brv-recap-img" />}
+              <Button type="button" variant="link" size="sm" aria-label={S.changeLabel(f.n, f.name)} onClick={() => onPick(f)}>
+                {S.change}
+              </Button>
             </li>
           ))}
         </ul>
       )}
-      {unlooked > 0 && <p className="brv-muted">{W.stillOpen(unlooked)}</p>}
-      {fixes.length > 0 && <Textarea label={W.noteLabel(builder)} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />}
-      <div className="brv-actions">
-        <Button type="button" variant="secondary" size="lg" onClick={() => setDesign(true)}>
-          {W.designInstead}
-        </Button>
-        <Button type="submit" variant="primary" size="lg" loading={busy}>
-          {fixes.length ? W.sendTo(builder) : W.sayLooksRight}
-        </Button>
+      {fineList.length > 0 && (
+        <div className="brv-recap-fold">
+          <p>
+            <strong>{S.fineFolded}</strong> <span className="brv-muted">{fineList.map((f) => `${f.n} ${f.name}`).join(', ')}</span>
+          </p>
+          <Button type="button" variant="link" size="sm" aria-expanded={showFine} onClick={() => setShowFine((x) => !x)}>
+            {showFine ? LEDGER_WORDS.hide : LEDGER_WORDS.show}
+          </Button>
+          {showFine && (
+            <ul className="brv-recap-list">
+              {fineList.map((f) => (
+                <li key={f.sig}>
+                  <Button type="button" variant="link" size="sm" onClick={() => onPick(f)}>
+                    {`${f.n} ${f.name}`}
+                  </Button>{' '}
+                  <span className="brv-muted">{f.line}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {st.kept.length > 0 && <p className="brv-muted brv-recap-pad">{W.staysApproved(st.kept.length, d.round)}</p>}
+      {d.fixed.length > 0 && <p className="brv-muted brv-recap-pad">{W.fixedSince(d.fixed.length)}</p>}
+      {notesRows.length > 0 && (
+        <div className="brv-recap-fold">
+          <p>
+            <strong>{LEDGER_WORDS.notesTitle(d.role === 'designer' ? null : designer)}</strong> <span className="brv-muted">{S.notesFound(notesRows.filter((r) => found.has(r.key)).length, notesRows.length)}</span>
+          </p>
+          <Button type="button" variant="link" size="sm" aria-expanded={showNotes} onClick={() => setShowNotes((x) => !x)}>
+            {showNotes ? LEDGER_WORDS.hide : LEDGER_WORDS.show}
+          </Button>
+          {showNotes && (
+            <ul className="brv-recap-list">
+              {notesRows.map((r) => (
+                <li key={r.key}>
+                  {found.has(r.key) ? <Icon icon={Check} size="xs" label={S.found} /> : <span className="brv-key" aria-label={S.notFound} role="img" />} <span className="brv-muted">{r.kind}</span> {r.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <div className="brv-recap-foot">
+        {fixes.length > 0 && <Textarea label={W.noteLabel(builder)} rows={3} value={note} onChange={(e) => setNote(e.target.value)} disabled={!canAnswer} />}
+        <div className="brv-recap-acts">
+          <Button type="button" variant="link" size="md" disabled={!canAnswer} onClick={() => setDesign(true)}>
+            {S.designInstead}
+          </Button>
+          <Button type="submit" variant="primary" size="lg" iconEnd={Send} loading={busy} disabled={!canAnswer}>
+            {W.sendTo(builder)}
+          </Button>
+        </div>
+        <span className="brv-muted">{W.othersAnswer(others)}</span>
       </div>
-      <span className="brv-muted">{W.othersAnswer(others)}</span>
     </form>
   );
 }

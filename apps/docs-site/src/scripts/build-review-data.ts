@@ -2,7 +2,7 @@
 // reads (an email member through their session, else their GitHub token), the server's answers (scripts/
 // contribute-session buildReview, sayBuildItem, buildNote, sayBuild) and the measured pictures. A picture Bridge keeps
 // is read with the person's GitHub token when they signed in with GitHub (an <img> cannot carry it), else as is.
-import type { ItemState, NoteThread, ReviewRead, SizeKey, Side, Verdict } from '../lib/build-review-view';
+import type { ItemState, NoteThread, ReviewRead, SizeKey, Side, Tick, Verdict } from '../lib/build-review-view';
 
 export interface ReviewTarget {
   product: string;
@@ -30,7 +30,69 @@ export async function loadReview(t: ReviewTarget): Promise<ReviewRead | null> {
   const { team, token } = await who();
   const { buildReview } = await import('./contribute-session');
   const r = await buildReview(team, { product: t.product, copy: '', number: t.number }, token);
-  return r.ready ? (r as ReviewRead) : null;
+  if (!r.ready) return null;
+  const d = r as ReviewRead;
+  return (await demoVisit()) ? withDemo(d, readDemo(team, t, d.head)) : d;
+}
+
+// --- The sample team's visitor: their answers stay in this browser ----------------------------------------------------
+// A signed-out visitor of the demo reads as its lead and may answer the check like them, but nothing is sent: what they
+// say per difference and the handover notes they tick are kept here, per build (its head), and laid over each read.
+
+export interface DemoCheck {
+  items: Record<string, Verdict>;
+  ticks: Tick[];
+}
+const demoKey = (team: string, t: ReviewTarget, head: string) => `bridge.demo.check.${team}#${t.product}#${t.number}#${head}`;
+
+async function demoVisit(): Promise<boolean> {
+  try {
+    const { currentContributor } = await import('./github-session');
+    return currentContributor()?.visitor === true;
+  } catch {
+    return false;
+  }
+}
+
+function readDemo(team: string, t: ReviewTarget, head: string): DemoCheck {
+  try {
+    const v = JSON.parse(localStorage.getItem(demoKey(team, t, head)) ?? 'null') as Partial<DemoCheck> | null;
+    return { items: v?.items && typeof v.items === 'object' ? v.items : {}, ticks: Array.isArray(v?.ticks) ? v.ticks : [] };
+  } catch {
+    return { items: {}, ticks: [] };
+  }
+}
+
+function writeDemo(team: string, t: ReviewTarget, head: string, c: DemoCheck): void {
+  try {
+    localStorage.setItem(demoKey(team, t, head), JSON.stringify(c));
+  } catch {
+    /* private window: the answer lives as long as the page */
+  }
+}
+
+/** A read with the visitor's own answers and ticks laid over it. Pure. */
+export function withDemo(d: ReviewRead, c: DemoCheck): ReviewRead {
+  return { ...d, items: d.items.map((s) => (s.sig in c.items ? { ...s, mine: c.items[s.sig] ?? null } : s)), ticks: [...(d.ticks ?? []).filter((x) => !c.ticks.some((y) => y.key === x.key)), ...c.ticks] };
+}
+
+/** A handover note found (or not any more) in the build: one tick for the check, saved like the words per difference. */
+export async function sayHandover(t: ReviewTarget, key: string, found: boolean): Promise<Tick[]> {
+  const { team, token } = await who();
+  if (await demoVisit()) {
+    const d = await loadReviewKept(t);
+    if (!d) return [];
+    const c = readDemo(team, t, d.head);
+    const ticks = c.ticks.filter((x) => x.key !== key);
+    const next = { ...c, ticks: found ? [...ticks, { key, byName: d.me, role: d.role ?? 'lead', at: new Date().toISOString() }] : ticks };
+    writeDemo(team, t, d.head, next);
+    kept.delete(`${t.product}#${t.number}`);
+    return next.ticks;
+  }
+  const { sayBuildTick } = await import('./contribute-session');
+  const r = await sayBuildTick(team, { product: t.product, copy: '', number: t.number, handover: key, found }, token);
+  kept.delete(`${t.product}#${t.number}`);
+  return r.ticks;
 }
 
 const kept = new Map<string, { at: number; read: Promise<ReviewRead | null> }>();
@@ -47,6 +109,16 @@ export function loadReviewKept(t: ReviewTarget): Promise<ReviewRead | null> {
 
 export async function sayItem(t: ReviewTarget, sig: string, verdict: Verdict | null): Promise<ItemState[]> {
   const { team, token } = await who();
+  kept.delete(`${t.product}#${t.number}`);
+  if (await demoVisit()) {
+    const d = await loadReview(t);
+    if (!d) return [];
+    const c = readDemo(team, t, d.head);
+    const { [sig]: _was, ...rest } = c.items;
+    const next = { ...c, items: verdict ? { ...rest, [sig]: verdict } : rest };
+    writeDemo(team, t, d.head, next);
+    return withDemo(d, next).items;
+  }
   const { sayBuildItem } = await import('./contribute-session');
   return (await sayBuildItem(team, { product: t.product, copy: '', number: t.number, sig, verdict }, token)).items;
 }

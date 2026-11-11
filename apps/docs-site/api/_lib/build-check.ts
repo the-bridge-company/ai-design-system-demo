@@ -149,7 +149,10 @@ export function buildStateOf(words: readonly BuildWord[], head: string, need: { 
     .filter((r) => r.required || r.state !== 'waiting');
   const changes = rows.find((r) => r.state === 'changes');
   if (changes) return { state: 'failure', rows, description: `${changes.byName ?? 'Someone'} asked for changes` };
-  const waiting = rows.filter((r) => r.required && r.state !== 'looks-right');
+  // The designer or a design lead may answer for the design: the first answer stands (a lead's Looks right while the
+  // designer said nothing on this build counts for the designer). A lead needed for the library still answers for it.
+  const leadOk = rows.some((r) => r.role === 'lead' && r.state === 'looks-right');
+  const waiting = rows.filter((r) => r.required && r.state !== 'looks-right' && !(r.role === 'designer' && r.state === 'waiting' && leadOk));
   if (!waiting.length) return { state: 'success', rows, description: 'The design team says it looks right' };
   return { state: 'pending', rows, description: `Waiting for ${waiting.map((r) => (r.role === 'pm' ? 'the product manager' : `the ${r.role}`)).join(' and ')}` };
 }

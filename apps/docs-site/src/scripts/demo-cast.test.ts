@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONTRIB_TOKEN } from '../lib/contribute';
 import { CAST_STORAGE_KEY } from '../lib/demo-cast';
 import { contributeInfo, contributeMine, contributorFor, holdsContributeSession, playedGitHub, playsSomeoneElse, setContributeFetch } from './contribute-session';
-import { currentContributor, getToken } from './github-session';
+import { currentContributor, designerRoute, getToken } from './github-session';
+import { pageRoleOf } from '../lib/exploration-layout';
 import { castOn } from './demo-cast';
 
 const SAMPLE = 'acme-design-demo/bridge-demo-ds';
@@ -77,6 +78,26 @@ describe('See it as, in the browser', () => {
     expect(currentContributor()).toBeNull();
     expect(playedGitHub(SAMPLE)).toMatchObject({ login: 'acme-malik', name: 'Malik' });
     expect(getToken()).toBe(CONTRIB_TOKEN);
+  });
+
+  it('reads the developer as the developer on an exploration, never as a designer through Bridge', () => {
+    visit();
+    // The exploration page's inputs (scripts/exploration-page.ts): a GitHub viewer, no email member, routed by designerRoute.
+    const roleAs = (as: string) => {
+      localStorage.setItem(CAST_STORAGE_KEY, as);
+      const member = currentContributor();
+      const github = Boolean(playedGitHub(SAMPLE) && !member);
+      return pageRoleOf({ owner: false, lead: false, pm: false, github, viaBridge: !member && designerRoute(), member: Boolean(member), signedIn: true });
+    };
+    localStorage.setItem(CAST_STORAGE_KEY, 'malik');
+    expect(designerRoute()).toBe(false);
+    expect(roleAs('malik')).toBe('developer');
+    // The email members stay who they are: through Bridge as designers, never the developer.
+    for (const as of ['dana', 'sofia', 'leo', 'ann']) {
+      localStorage.setItem(CAST_STORAGE_KEY, as);
+      expect(designerRoute()).toBe(true);
+      expect(roleAs(as)).toBe('designer');
+    }
   });
 
   it('never plays anyone on another team, nor for a real member of the sample team', () => {

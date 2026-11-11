@@ -1,5 +1,12 @@
 # @bridge-ds/core
 
+## 0.33.0
+
+### Minor Changes
+
+- f7c544f: Adoption report follow-ups. A lead or an admin signed in by email can now keep a group as "Not a problem": the decision goes through Bridge like "Send to developers" (the server lets a lead or an admin write `audit-ignores.json` on the bridge-data branch, nothing else there). Saving a decision is safe while the bridge-data workflow runs: `saveAuditIgnore` reads the file again and adds the decision when it changed meanwhile, and the workflow (and `templates/bridge-data.yml`) carries the branch's latest `audit-ignores.json` forward and only replaces the tip it read. Requests sent from a report say so on their rows: "From the Acme CRM adoption report", linked to the report, on Being built and on Changes (the request brief asks developers to keep the origin line in their pull request). The snapshot records each audit's biggest gain (`SnapshotAudit.topGain`), and the Quality adoption row says it in one line: "Buttons would take it from 13% to 24%."
+- f86c634: The adoption report shows a real picture of where each group of pieces lives in the product. A product says which files make which screen in bridge.config.json (`products[].screens`: a route such as `/#/contacts` to file globs); without it Bridge reads the usual file routes (Next.js `app/` and `pages/`, React Router, Remix and TanStack `routes/`), never guessing a screen that needs a value in its address. `bridge snapshot` writes each audit's `screens` (route, name, files) into the report (core `productScreens`, `withScreens`, `screenForPlaces`). `scripts/preview-shots.mjs screens` opens each screen on the product's live address with the capture code of the exploration shots, keeps the pictures in the bridge-shots branch (`audits/<id>/<screen>.webp`, captured again for a new audited commit, a new address or after a day) and writes where they are into the reports before bridge-data is published. In Studio each group opens on the screen that holds most of it ("15 of the 102 are on the Contacts screen"), scaled to fit, with a click to see it bigger in a dialog; without one it says so in plain words.
+
 ## 0.32.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @bridge-ds/toolbar
 
+## 0.8.6
+
+### Patch Changes
+
+- Updated dependencies [f7c544f]
+- Updated dependencies [f86c634]
+  - @bridge-ds/core@0.33.0
+
 ## 0.8.5
 
 ### Patch Changes

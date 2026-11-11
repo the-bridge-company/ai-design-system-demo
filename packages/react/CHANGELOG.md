@@ -1,5 +1,11 @@
 # @bridge-ds/react
 
+## 1.8.6
+
+### Patch Changes
+
+- add7201: Checklist: rows ignore a page's list spacing, so a highlighted row fills its whole band up to the dividers.
+
 ## 1.8.5
 
 ### Patch Changes

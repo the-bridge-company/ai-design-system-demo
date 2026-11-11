@@ -10,7 +10,7 @@
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
 import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
-import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupLabel, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
+import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupShownName, mockupPiecesLine, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import {
   activityRows,
   canPutInFigma,
@@ -121,10 +121,20 @@ const waitOf = (key: string) => (libraryWait?.key === key ? libraryWait.wait : n
 
 const connected = () => Boolean(hasWorkingToken() && currentViewer());
 
-/** "Started from" on the page: the mockup the exploration's block keeps, named and linked. */
-const startedFromOf = (block: Parameters<typeof explorationMockupOf>[0]) => {
+/** "Started from Contacts v3" on the page: the mockup the exploration's block keeps, by the name designers know, linked. */
+const startedFromOf = (block: { mockup?: string | undefined; mockupName?: string | undefined } | null | undefined) => {
   const m = explorationMockupOf(block);
-  return m ? { label: mockupLabel(m), url: m.url } : null;
+  return m ? { label: mockupShownName(m, block?.mockupName), url: m.url } : null;
+};
+
+/**
+ * "· 2 pieces the library doesn't have", on the same line: the pieces the library check recorded on the exploration.
+ * Nothing until both the mockup and the check are there, or none missing.
+ */
+const fromMockupOf = (body: string | null | undefined): ExplorationPageProps['fromMockup'] => {
+  const record = parsePiecesRecord(body);
+  const count = mockupPiecesLine(explorationMockupOf(parseExplorationBody(body)), record ? record.pieces.length : null);
+  return count && record ? { count, pieces: record.pieces.map((x) => x.title) } : null;
 };
 const dsClient = () => studioClient(`${CFG.owner}/${CFG.repo}`, undefined, { protectedBranches: [CFG.defaultBranch] });
 
@@ -728,6 +738,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       purpose: parseExplorationBody(pull.body)?.purpose ?? r.purpose ?? null,
       leadAskedAt: parseExplorationBody(pull.body)?.leadAskedAt ?? null,
       startedFrom: startedFromOf(parseExplorationBody(pull.body)),
+      fromMockup: fromMockupOf(pull.body),
       stage: 'loading',
       author: faceOf(r.author, false, { ...knownNamesOf([r.author]), ...emailAuthorName(r.author, pull.body) }),
       startedTail: startedTail(product.name, startedAtOf(pull.body, pull.created_at)),

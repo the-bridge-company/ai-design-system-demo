@@ -1,8 +1,8 @@
 // Start from a mockup: a Figma frame or a Claude Design page recognised from its link alone, the brief Claude gets,
 // and the link the exploration keeps.
 import { describe, expect, it } from 'vitest';
-import { explorationMockupOf, explorationPrBody, parseExplorationBody } from '../src/explorations';
-import { MOCKUP_PROBLEM, mockupBrief, mockupCard, mockupLabel, mockupLine, mockupOf, parseMockupLink } from '../src/mockup';
+import { explorationMockupOf, explorationPrBody, parseExplorationBody, withExplorationMockupName } from '../src/explorations';
+import { MOCKUP_PROBLEM, mockupBrief, mockupCard, mockupLabel, mockupLine, mockupNameOf, mockupOf, mockupPiecesLine, mockupShownName, parseMockupLink } from '../src/mockup';
 import { startBrief } from '../src/products';
 
 const FRAME = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180&t=abc123-1';
@@ -116,5 +116,50 @@ describe('mockupLine', () => {
     );
     // The tool names and the measure rule stay in the brief Claude gets from bridge_continue_exploration.
     expect(line).not.toMatch(/bridge_|token|measure/);
+  });
+});
+
+describe('"Started from <name> · N pieces the library doesn\'t have"', () => {
+  const m = parseMockupLink(FRAME).mockup!;
+  const design = parseMockupLink('https://claude.ai/artifact/8f2c41e0-aaaa').mockup!;
+
+  it('the name: what Claude read, else the Figma file, else "the mockup"; never a node or page id', () => {
+    expect(mockupShownName(m, 'Contacts v3')).toBe('Contacts v3');
+    expect(mockupShownName(m)).toBe('CRM screens');
+    expect(mockupShownName(design, '  ')).toBe('the mockup');
+    expect(mockupShownName(parseMockupLink('https://www.figma.com/design/k3P9xQab?node-id=212-4180').mockup!)).toBe('the mockup');
+    expect([mockupShownName(m), mockupShownName(design)].join(' ')).not.toMatch(/212|8f2c/);
+  });
+
+  it('the count', () => {
+    expect(mockupPiecesLine(m, 2)).toBe("2 pieces the library doesn't have");
+    expect(mockupPiecesLine(m, 1)).toBe("1 piece the library doesn't have");
+  });
+
+  it('no count without a mockup, before the pieces are known, or with none missing', () => {
+    expect(mockupPiecesLine(null, 2)).toBeNull();
+    expect(mockupPiecesLine(m, null)).toBeNull();
+    expect(mockupPiecesLine(m, 0)).toBeNull();
+  });
+
+  it('the name is one short line, never an em dash', () => {
+    expect(mockupNameOf('Contacts \u2014 v3\n')).toBe('Contacts, v3');
+    expect(mockupNameOf('x'.repeat(200))).toHaveLength(80);
+    expect(mockupNameOf('')).toBeNull();
+  });
+});
+
+describe('the exploration keeps the mockup\'s name', () => {
+  const ctx = { owner: 'acme', repo: 'ds', packages: [], apps: {} };
+
+  it('set, replaced and taken away in the block; never kept without a mockup', () => {
+    const body = explorationPrBody({ name: 'Contacts quick filter', purpose: '', mockup: FRAME }, ctx);
+    expect(parseExplorationBody(body)!.mockupName).toBeUndefined();
+    const named = withExplorationMockupName(body, 'Contacts v3');
+    expect(parseExplorationBody(named)!.mockupName).toBe('Contacts v3');
+    expect(parseExplorationBody(named)!.mockup).toBe(parseExplorationBody(body)!.mockup);
+    expect(parseExplorationBody(withExplorationMockupName(named, null))!.mockupName).toBeUndefined();
+    const none = explorationPrBody({ name: 'X', purpose: '' }, ctx);
+    expect(parseExplorationBody(withExplorationMockupName(none, 'Contacts v3'))!.mockupName).toBeUndefined();
   });
 });

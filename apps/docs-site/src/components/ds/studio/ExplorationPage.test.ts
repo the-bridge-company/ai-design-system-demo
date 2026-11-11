@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { forgetAiToolsRead } from '../../../scripts/ai-tools';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { ExplorationPage, type ExplorationPageProps } from './ExplorationPage';
+import { ExplorationPage, StartedFrom, type ExplorationPageProps } from './ExplorationPage';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { userEvent } from '@testing-library/user-event';
 import { explorationMenu } from '../../../lib/exploration-page';
@@ -117,12 +117,47 @@ describe('ExplorationPage, not started (X1)', () => {
 
   it('started from a mockup: one quiet line names it, with its link; none without one', () => {
     const url = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180';
-    const { unmount } = paint({ startedFrom: { label: 'the Figma frame 212:4180 in CRM screens', url } });
-    expect(document.querySelector('[data-started-from]')?.textContent).toMatch(/^Started from the Figma frame 212:4180 in CRM screens/);
-    expect(screen.getByRole('link', { name: /the Figma frame 212:4180 in CRM screens/ }).getAttribute('href')).toBe(url);
+    const { unmount } = paint({ startedFrom: { label: 'Contacts v3', url } });
+    expect(document.querySelector('[data-started-from]')?.textContent).toMatch(/^Started from Contacts v3/);
+    expect(screen.getByRole('link', { name: /Contacts v3/ }).getAttribute('href')).toBe(url);
+    // The count not known yet: only "Started from <name>".
+    expect(document.querySelector('[data-from-mockup]')).toBeNull();
     unmount();
     paint();
     expect(document.querySelector('[data-started-from]')).toBeNull();
+  });
+
+  it('started from a mockup with pieces known: the same line adds the count; nothing without a mockup', async () => {
+    const startedFrom = { label: 'Contacts v3', url: 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180' };
+    const fromMockup = { count: "2 pieces the library doesn't have", pieces: ['Overdue badge tone', 'Contact card header'] };
+    const { unmount } = paint({ startedFrom, fromMockup });
+    // One line, the mockup named once, never its node id.
+    const lines = document.querySelectorAll('[data-started-from]');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.textContent).toMatch(/^Started from Contacts v3.* \u00b7 2 pieces the library doesn't have$/);
+    expect(lines[0]!.textContent).not.toMatch(/212|\u2014|From Contacts/);
+    // Nothing lists the pieces on a page not started yet: the count opens their names under the line.
+    const count = screen.getByRole('button', { name: "2 pieces the library doesn't have" });
+    expect(count.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('Overdue badge tone')).toBeNull();
+    fireEvent.click(count);
+    expect(count.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Overdue badge tone')).toBeTruthy();
+    expect(screen.getByText('Contact card header')).toBeTruthy();
+    await expectNoAxeViolations(document.body);
+    unmount();
+    // No mockup: nothing said, even with a count.
+    paint({ fromMockup });
+    expect(document.querySelector('[data-started-from]')).toBeNull();
+    expect(document.querySelector('[data-from-mockup]')).toBeNull();
+  });
+
+  it('started from a mockup, where the page lists the pieces: the count goes to the library section', () => {
+    render(createElement(StartedFrom, { from: { label: 'Contacts v3', url: 'https://claude.ai/artifact/8f2c41e0-aaaa' }, x: { count: "1 piece the library doesn't have", pieces: ['Overdue badge tone'] }, listed: true }));
+    const link = screen.getByRole('link', { name: "1 piece the library doesn't have" });
+    expect(link.getAttribute('href')).toBe('#xp-library');
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByText('Overdue badge tone')).toBeNull();
   });
 
   it('Continue in Claude opens a new Claude conversation with the line (Claude app), copies it for the Terminal', async () => {

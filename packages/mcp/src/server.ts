@@ -737,6 +737,8 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
         experimental: z.array(z.string()).optional().describe('What is experimental, one line each: "color.action.primary.bg", "Button: pill radius".'),
         product: z.string().optional().describe('Product key or name (bridge_list_products) it is tried in. Default: the product of the current folder or repo.'),
         where: z.enum(['product', 'library']).optional().describe('product (default): in the product\'s own repository when it has one, else the design system repository. library: always the design system repository; only when the designer chose it after Bridge could not reach the product repository.'),
+        mockup: z.string().max(500).optional().describe('Optional. The mockup the designer starts from: a Figma frame link (Copy link to selection) or a Claude Design page (claude.ai/artifact/<id>). Then bridge_continue_exploration gives the brief to rebuild it with the library.'),
+        mockupName: z.string().max(120).optional().describe('Optional, with mockup: its own name when you know it ("Contacts v3"). Studio says "From Contacts v3: 2 pieces the library doesn\'t have" once its missing pieces are recorded.'),
         dryRun: z.boolean().optional().describe('Return the branch, note and pull request body without writing.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
@@ -836,10 +838,15 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
           .max(300)
           .optional()
           .describe('The screen this step changed, as its place inside the product preview: path, query and hash, starting with / ("/#/orders/XGZFHY3Z", "/?workspace=new#/"). Never the domain. Pick the route that shows the change at once (an order still to ship, the list view, the drawer open). An empty string takes it away.'),
+        mockupName: z
+          .string()
+          .max(120)
+          .optional()
+          .describe('Only for an exploration started from a mockup: the mockup\'s own name once you opened it (the Figma frame\'s or the Claude Design page\'s title, "Contacts v3"). Studio says "From Contacts v3: 2 pieces the library doesn\'t have" once bridge_missing_pieces recorded them. An empty string takes it away.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    run((a) => explorations.saveExploration(ctx, { ref: a.exploration, message: a.message, files: a.files, notes: a.notes, ...(a.screen !== undefined ? { screen: a.screen } : {}) })),
+    run((a) => explorations.saveExploration(ctx, { ref: a.exploration, message: a.message, files: a.files, notes: a.notes, ...(a.screen !== undefined ? { screen: a.screen } : {}), ...(a.mockupName !== undefined ? { mockupName: a.mockupName } : {}) })),
   );
 
   server.registerTool(

@@ -1183,6 +1183,14 @@
   font-size: var(--typography-body-size);
 }
 
+/* "From Contacts v3: 2 pieces the library doesn't have": the count opens the pieces' names when the page lists none. */
+.xp-from-mockup-list {
+  margin: var(--space-1) 0 0;
+  padding-inline-start: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+}
+
 .xp-code-slot {
   display: flex;
 }

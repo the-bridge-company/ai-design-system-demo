@@ -134,9 +134,10 @@ export function mockupBrief(m: Mockup, productName: string, change?: string | nu
 }
 
 /**
- * The start line's short form, for the line the designer pastes (Studio's Ready for Claude AI): the mockup, its link and
- * the four rules in one sentence. The exploration's brief (mockupBrief, from bridge_continue_exploration) has the detail.
+ * The start line's short form, for the line the designer pastes (Studio's Ready for Claude AI): plain words only, the
+ * mockup, its link, the library's pieces only, and what the library lacks. Measuring, correcting and checking tokens are
+ * in the exploration's brief (mockupBrief, from bridge_continue_exploration), which Claude gets anyway.
  */
 export function mockupLine(m: Mockup, productName: string): string {
-  return `Start from ${mockupLabel(m)} (${m.url}): rebuild it in ${productName} with the library's pieces only, measure it against the mockup and correct, never invent a token name (check with bridge_get_token), then tell me what it uses that the library does not have.`;
+  return `Start from ${mockupLabel(m)} (${m.url}): rebuild it in ${productName} with the library's pieces only, then tell me what it uses that the library does not have.`;
 }

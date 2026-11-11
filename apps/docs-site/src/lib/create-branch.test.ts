@@ -130,8 +130,9 @@ describe('start an exploration, in a product or the library', () => {
     const ref = { sentence: 'Contacts page with a quick filter', product: crm, number: 9102, mockup };
     for (const line of [connectorPrompt(ref), claudePrompt(ref)]) {
       expect(line).toMatch(
-        /and use the Bridge library\. Start from the Claude Design page 8f2c41e0 \(https:\/\/claude\.ai\/artifact\/8f2c41e0-1b2c\): rebuild it in Acme CRM with the library's pieces only, measure it against the mockup and correct, never invent a token name \(check with bridge_get_token\), then tell me what it uses that the library does not have\.$/,
+        /and use the Bridge library\. Start from the Claude Design page 8f2c41e0 \(https:\/\/claude\.ai\/artifact\/8f2c41e0-1b2c\): rebuild it in Acme CRM with the library's pieces only, then tell me what it uses that the library does not have\.$/,
       );
+      expect(line).not.toMatch(/bridge_|token|measure/);
       expect(line).not.toContain("I'll tell you what to explore.");
       expect(line).not.toMatch(/—/);
     }

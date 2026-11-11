@@ -108,10 +108,13 @@ describe('the exploration keeps the mockup', () => {
 });
 
 describe('mockupLine', () => {
-  it('one sentence for the line the designer pastes: the mockup, its link and the four rules', () => {
+  it('one plain sentence for the line the designer pastes: the mockup, its link, the library only, what it lacks', () => {
     const m = parseMockupLink(FRAME).mockup!;
-    expect(mockupLine(m, 'Acme CRM')).toBe(
-      "Start from the Figma frame 212:4180 in CRM screens (https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180): rebuild it in Acme CRM with the library's pieces only, measure it against the mockup and correct, never invent a token name (check with bridge_get_token), then tell me what it uses that the library does not have.",
+    const line = mockupLine(m, 'Acme CRM');
+    expect(line).toBe(
+      "Start from the Figma frame 212:4180 in CRM screens (https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180): rebuild it in Acme CRM with the library's pieces only, then tell me what it uses that the library does not have.",
     );
+    // The tool names and the measure rule stay in the brief Claude gets from bridge_continue_exploration.
+    expect(line).not.toMatch(/bridge_|token|measure/);
   });
 });

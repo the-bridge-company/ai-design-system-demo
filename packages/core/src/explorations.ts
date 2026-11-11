@@ -18,7 +18,7 @@
 // CLI, so an exploration reads the same everywhere. GitHub calls live in explorations-github.ts.
 
 import type { BridgeConfig } from './config';
-import { mockupLabel, mockupOf, type Mockup } from './mockup';
+import { mockupLabel, mockupNameOf, mockupOf, type Mockup } from './mockup';
 import { githubLoginOf } from './github-login';
 import { cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
 import { slugify } from './pr-composer';
@@ -100,6 +100,11 @@ export interface Exploration {
    * product with the library's pieces only (mockupBrief), and the exploration page says "Started from" it.
    */
   mockup?: string | undefined;
+  /**
+   * The mockup's own name once Claude read it ("Contacts v3": the Figma frame's or the Claude Design page's title). The
+   * exploration page says "From Contacts v3: 2 pieces the library doesn't have". Kept only with a mockup.
+   */
+  mockupName?: string | undefined;
   /**
    * The screen the exploration changed, inside the product's preview: its path, query and hash ("/#/orders/XGZFHY3Z",
    * "/?workspace=new#/"), never a host. Open the preview and the preview capture land there (explorationScreenOf).
@@ -511,6 +516,12 @@ export function withExplorationScreen(body: string | null | undefined, screen: s
   return withBlock(body, ({ screen: _was, ...e }) => (s ? { ...e, screen: s } : e));
 }
 
+/** The body with the mockup's name set (Claude read the mockup), or taken away with null. Only kept with a mockup. */
+export function withExplorationMockupName(body: string | null | undefined, name: string | null): string {
+  const n = mockupNameOf(name);
+  return withBlock(body, ({ mockupName: _was, ...e }) => (n ? { ...e, mockupName: n } : e));
+}
+
 /** A member reference as Bridge's server writes it (16 hex characters), else null. */
 const memberRefOf = (v: string | undefined): string | null => (typeof v === 'string' && /^[0-9a-f]{16}$/.test(v) ? v : null);
 
@@ -543,6 +554,7 @@ function explorationBlock(e: Exploration): string {
     ...(e.agent ? { agent: e.agent } : {}),
     ...(startPageOf(e) ? { startPage: startPageOf(e) } : {}),
     ...(explorationMockupOf(e) ? { mockup: explorationMockupOf(e)!.url } : {}),
+    ...(explorationMockupOf(e) && mockupNameOf(e.mockupName) ? { mockupName: mockupNameOf(e.mockupName) } : {}),
     ...(explorationScreenOf(e.screen) ? { screen: explorationScreenOf(e.screen) } : {}),
     ...(e.doneAt ? { doneAt: e.doneAt } : {}),
     ...(doneBy ? { doneBy } : {}),

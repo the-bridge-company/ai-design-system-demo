@@ -317,6 +317,20 @@ describe('continue an exploration', () => {
     expect(r.next).toMatch(/list what the mockup uses that the library does not have/);
   });
 
+  it('starts from a mockup link with its name, and asks for the missing pieces once it is read; a page link is refused', async () => {
+    const gh = fakeGitHub('acme', 'ds', files());
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await expect(explorations.startExploration(ctx, { name: 'Contacts', mockup: 'https://www.figma.com/design/k3P9xQab/CRM-screens' })).rejects.toThrow(/mockup: This link opens a whole Figma page/);
+    await explorations.startExploration(ctx, { name: 'Contacts quick filter', mockup: 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180&t=x', mockupName: 'Contacts v3' });
+    const client = (await ctx.github())!;
+    const body = (await client.getPullRequest(1)).body;
+    expect(body).toContain('"mockup":"https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180"');
+    expect(body).toContain('"mockupName":"Contacts v3"');
+    const r = (await explorations.continueExploration(ctx, { ref: '#1' })) as any;
+    expect(r.next).toMatch(/record what the library lacks with bridge_missing_pieces \{ pr: "#1", record: true \}/);
+    expect(r.next).not.toMatch(/pass its own name in mockupName/);
+  });
+
   it('lists only the ones the person started with mine', async () => {
     const gh = fakeGitHub('acme', 'ds', files());
     const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });

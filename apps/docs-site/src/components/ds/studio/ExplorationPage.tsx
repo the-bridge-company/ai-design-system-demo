@@ -161,6 +161,11 @@ export interface ExplorationPageProps {
   purpose?: string | null;
   /** The mockup it started from (a Figma frame or a Claude Design page): "Started from" it, with its link, under the owner line. */
   startedFrom?: { label: string; url: string } | null;
+  /**
+   * Once the mockup was read and the library check recorded its pieces: "From Contacts v3:" and "2 pieces the library
+   * doesn't have", with the pieces' names for when the page does not list them. Unset: nothing said.
+   */
+  fromMockup?: { from: string; count: string; pieces: string[] } | null;
   /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
   thumbRoute?: string | null;
   /**
@@ -632,6 +637,43 @@ function goToLibraryChoice() {
   first?.focus({ preventScroll: true });
 }
 
+/**
+ * "From Contacts v3: 2 pieces the library doesn't have", one line under "Started from". The count goes to the pieces
+ * where the page lists them (the library section); where it does not, it opens their names under the line.
+ */
+export function FromMockup({ x, listed }: { x: NonNullable<ExplorationPageProps['fromMockup']>; listed: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="xp-from-mockup" data-from-mockup="">
+      <p className="xp-muted xp-devline">
+        {x.from}{' '}
+        {listed ? (
+          <Link
+            href="#xp-library"
+            onClick={(ev) => {
+              ev.preventDefault();
+              document.getElementById('xp-library')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            }}
+          >
+            {x.count}
+          </Link>
+        ) : (
+          <Button variant="link" aria-expanded={open} aria-controls="xp-from-mockup-list" onClick={() => setOpen((o) => !o)}>
+            {x.count}
+          </Button>
+        )}
+      </p>
+      {!listed && open && (
+        <ul className="xp-from-mockup-list" id="xp-from-mockup-list">
+          {x.pieces.map((t, i) => (
+            <li key={`${i}-${t}`}>{t}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function ScreenPlate({ product, screen, seed }: { product: string; screen: string | null; seed?: string | null }) {
   return (
     <div className="xp-frame xp-plate" aria-hidden="true">
@@ -765,7 +807,8 @@ function LibraryPart({ h, p, say }: { h: HandoffView; p: ExplorationPageProps; s
   const x = h.pieces;
   if (x.state === 'hidden') return null;
   return (
-    <div className="xp-lib">
+    // The same anchor as the library section (only one of the two is on the page): "N pieces the library doesn't have" lands here.
+    <div className="xp-lib" id="xp-library">
       <h3 className="xp-h3">For the library</h3>
       {x.state === 'loading' ? (
         <Skeleton variant="rect" className="xp-skel-piece" />
@@ -1411,6 +1454,9 @@ function ExplorationBody(p: ExplorationPageProps) {
               {p.startedFrom.label}
             </Link>
           </p>
+        )}
+        {p.startedFrom && p.fromMockup && (
+          <FromMockup x={p.fromMockup} listed={(p.stage === 'exploring' || Boolean(handoff)) && (Boolean(p.impact) || Boolean(handoff && handoff.pieces.state !== 'hidden'))} />
         )}
       </div>
       {p.archived && !p.notDoing && p.stage === 'not-started' && (

@@ -50,6 +50,10 @@ import {
   startPageOf,
   explorationMockupOf,
   mockupLabel,
+  mockupNameOf,
+  parseMockupLink,
+  MOCKUP_PROBLEM,
+  withExplorationMockupName,
   explorationScreenFrom,
   explorationScreenOf,
   previewAtScreen,
@@ -131,6 +135,10 @@ export interface StartExplorationInput {
    * repository, the fallback when the person chooses it because Bridge cannot reach the product repository.
    */
   where?: 'product' | 'library' | undefined;
+  /** A Figma frame or a Claude Design page it starts from (parseMockupLink), as Studio's "Start from a mockup". */
+  mockup?: string | undefined;
+  /** The mockup's own name when known ("Contacts v3"). Only kept with a mockup. */
+  mockupName?: string | undefined;
   dryRun?: boolean | undefined;
 }
 
@@ -169,6 +177,10 @@ export async function startExploration(ctx: BridgeContext, a: StartExplorationIn
   const problems = explorationProblems({ name: a.name, purpose: a.purpose ?? '' });
   if (problems.length) throw new Error(problems.join(' '));
   if (a.useCase && !USE_CASES.has(a.useCase)) throw new Error(`Unknown use case "${a.useCase}". Use one of: ${[...USE_CASES].join(', ')}.`);
+  // Started from a mockup: the same link check as Studio's field, with its sentence on how to fix it.
+  const mock = parseMockupLink(a.mockup);
+  if (mock.problem) throw new Error(`mockup: ${MOCKUP_PROBLEM[mock.problem]}`);
+  const mockupName = mock.mockup ? mockupNameOf(a.mockupName) : null;
   const { config } = await ctx.config();
   const s = settingsOf(config);
   const slug = explorationSlug(a.name);
@@ -182,6 +194,8 @@ export async function startExploration(ctx: BridgeContext, a: StartExplorationIn
     ...(a.author ? { author: a.author } : {}),
     ...(a.source ? { source: a.source } : {}),
     ...(a.agent ? { agent: a.agent } : {}),
+    ...(mock.mockup ? { mockup: mock.mockup.url } : {}),
+    ...(mockupName ? { mockupName } : {}),
     startedAt: new Date().toISOString(),
   };
   const gh = await ctx.github().catch(() => null);
@@ -553,6 +567,17 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
     next: [
       ...(leadWords ? [`Tell the designer first what their lead said, in their words (leadWords), then work on it.`] : []),
       ...((startPage || mockup) && stage === 'not-started' ? [startBrief({ startPage, mockup }, product.name, e?.purpose || name)!] : []),
+      // Studio says "From <mockup>: N pieces the library doesn't have" once both are known: its name and the recorded check.
+      ...(mockup && stage !== 'handed' && (!mockupNameOf(e?.mockupName) || !record)
+        ? [
+            `Once you opened the mockup, ${[
+              !mockupNameOf(e?.mockupName) ? say(ctx, 'pass its own name in mockupName on your next save', 'note its own name') : '',
+              !record ? say(ctx, `record what the library lacks with bridge_missing_pieces { pr: "${ref}", record: true }`, `record what the library lacks with \`bridge pieces ${ref.replace(/^#/, '')} --record\``) : '',
+            ]
+              .filter(Boolean)
+              .join(' and ')}, so Studio shows what the library is missing.`,
+          ]
+        : []),
       notesEmpty(notes)
         ? 'Start by telling the designer where it stands, in one or two sentences from whereItStands and activity, without technical words, then ask what they want to do next.'
         : `Read notes first: they are what the last person left for whoever carries on. Start by telling the designer where it stands in one or two plain sentences (whereItStands, then the notes: ${notesLine(notes)}), then propose to start from notes.nextStep${notes.nextStep ? '' : ' (none written yet: ask what to do next)'}. Keep the decisions already taken; ask before reopening one.`,
@@ -719,13 +744,15 @@ export function saveScreenOf(v: string | null): string | null {
  * designer who joined with their email the team's Bridge proxy (its copy policy decides). Returns the commit and where
  * to see it.
  */
-export async function saveExploration(ctx: BridgeContext, a: { ref: string; message: string; files?: SaveFileInput[] | undefined; notes?: NotesUpdate | undefined; screen?: string | null | undefined }) {
+export async function saveExploration(ctx: BridgeContext, a: { ref: string; message: string; files?: SaveFileInput[] | undefined; notes?: NotesUpdate | undefined; screen?: string | null | undefined; mockupName?: string | null | undefined }) {
   const withNotes = !updateEmpty(a.notes);
   // The screen it changed: a place in the product's preview, never another site. Empty takes it away.
   const screen = a.screen === undefined ? undefined : saveScreenOf(a.screen);
+  // The mockup's own name, once Claude opened it: empty takes it away.
+  const mockupName = a.mockupName === undefined ? undefined : mockupNameOf(a.mockupName);
   if (a.notes?.figmaPage !== undefined && !figmaPageLink(a.notes.figmaPage)) throw new Error('notes.figmaPage takes the figma.com link of the page.');
   // Notes alone are a save too (a decision taken, an edge case covered): the files then may be none.
-  const files = (withNotes || screen !== undefined) && !a.files?.length ? [] : saveFilesOf(a.files ?? []);
+  const files = (withNotes || screen !== undefined || mockupName !== undefined) && !a.files?.length ? [] : saveFilesOf(a.files ?? []);
   const message = a.message.trim();
   if (!message) throw new Error('Say what this step changes in the message, in a few words ("Orders: success toast when an order ships").');
   const at = await located(ctx, a.ref.replace(/^\s*continue\s+bridge\s+exploration\s+/i, '').replace(/\s+".*$/, '').trim());
@@ -759,10 +786,17 @@ export async function saveExploration(ctx: BridgeContext, a: { ref: string; mess
   } else if (sentNoteFiles.length) notes = parseExplorationNotes(sentNoteFiles[0]!.content);
   const was = explorationScreenOf(e?.screen);
   const screenChanges = screen !== undefined && screen !== was;
-  if (!files.length && !screenChanges) throw new Error(screen !== undefined ? 'Nothing changed: the exploration already shows this screen, the notes already say this, and no file was sent.' : 'Nothing changed: the notes already say this, and no file was sent.');
+  if (mockupName !== undefined && !explorationMockupOf(e)) throw new Error('mockupName is only for an exploration started from a mockup: this one has none.');
+  const nameChanges = mockupName !== undefined && mockupName !== (mockupNameOf(e?.mockupName) ?? null);
+  if (!files.length && !screenChanges && !nameChanges) throw new Error(screen !== undefined ? 'Nothing changed: the exploration already shows this screen, the notes already say this, and no file was sent.' : 'Nothing changed: the notes already say this, and no file was sent.');
   const res = files.length ? await at.gh.withBranchPrefix(EXPLORATION_PREFIX).commitToBranch({ branch: p.headRef, message, files }) : null;
   // The screen goes in the exploration's description: Studio's Open the preview and its capture land there.
   if (screenChanges) await setExplorationScreenOnGitHub(at.gh, p.number, screen);
+  // The mockup's name goes in the same description (read again: the screen may have just changed it).
+  if (nameChanges) {
+    const now = screenChanges ? (await findExplorationOnGitHub(at.gh, p.number)).body : p.body;
+    await at.gh.updatePullRequest(p.number, { body: withExplorationMockupName(now, mockupName) });
+  }
   const shown = screen === undefined ? was : screen;
   const ref = explorationRefLabel({ number: p.number, product: at.product?.key, repo: at.repo });
   const base = at.product ? branchPreviewUrl(at.product.preview, p.headRef) : null;
@@ -778,6 +812,7 @@ export async function saveExploration(ctx: BridgeContext, a: { ref: string; mess
     url: p.url,
     preview,
     screen: shown,
+    ...(nameChanges ? { mockupName } : {}),
     ...(notes ? { notes: notesOut(notes) } : {}),
     next: `Saved on ${ref}. ${preview ? `The preview updates in a few minutes: ${preview}` : 'Its previews rebuild in a few minutes.'} Tell the designer in one plain sentence what changed and where to look; nothing reached the developers or the library.${sentNoteFiles.length ? ` You wrote the note file yourself: Bridge rewrote it in its format. Next save, pass the notes in notes (decisions, edgeCases, nextStep...), never as ${sentNoteFiles[0]!.path} in files.` : notes ? '' : ' Next save, update the notes too (notes: decisions taken, edge cases covered or open, the next step), so whoever carries on knows where it stands.'}${shown ? '' : ' Also pass screen next save: the address of the screen you changed in the preview (/#/orders/12), so Studio opens it there.'}`,
   };

@@ -54,6 +54,22 @@ describe('bridge_save_exploration', () => {
     expect(shop.log.find((l) => l.method === 'POST' && l.path === '/git/commits')!.body.message).toBe('Orders: success toast when an order ships');
   });
 
+  it('keeps the mockup\'s name once Claude read it (only with a mockup), alone or with the screen, no commit', async () => {
+    const { shop, rw } = setup();
+    const ctx = await rw();
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Name it', mockupName: 'Contacts v3' })).rejects.toThrow(/only for an exploration started from a mockup/);
+    const link = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180';
+    shop.pulls[0]!.body = shop.pulls[0]!.body.replace('"slug":', `"mockup":"${link}","slug":`);
+    const head = shop.refs.get('explore/order-toast');
+    const r = await explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Read the mockup', mockupName: 'Contacts v3', screen: '/#/contacts' });
+    expect(r).toMatchObject({ saved: 0, mockupName: 'Contacts v3', screen: '/#/contacts' });
+    expect(shop.refs.get('explore/order-toast')).toBe(head);
+    expect(shop.pulls[0]!.body).toContain('"mockupName":"Contacts v3"');
+    expect(shop.pulls[0]!.body).toContain('"screen":"/#/contacts"');
+    expect(shop.pulls[0]!.body).toContain(`"mockup":"${link}"`);
+    await expect(explorations.saveExploration(ctx, { ref: 'shop#1', message: 'Same', mockupName: 'Contacts v3' })).rejects.toThrow(/Nothing changed/);
+  });
+
   it('keeps the screen the step changed, so the preview link and Studio open there; alone it saves too', async () => {
     const { shop, rw } = setup();
     const ctx = await rw();

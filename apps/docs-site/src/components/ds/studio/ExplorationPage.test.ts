@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { forgetAiToolsRead } from '../../../scripts/ai-tools';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { ExplorationPage, type ExplorationPageProps } from './ExplorationPage';
+import { ExplorationPage, FromMockup, type ExplorationPageProps } from './ExplorationPage';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { userEvent } from '@testing-library/user-event';
 import { explorationMenu } from '../../../lib/exploration-page';
@@ -123,6 +123,39 @@ describe('ExplorationPage, not started (X1)', () => {
     unmount();
     paint();
     expect(document.querySelector('[data-started-from]')).toBeNull();
+  });
+
+  it('From the mockup: one line with the count once its pieces are known; nothing before, without a mockup, or with none missing', async () => {
+    const startedFrom = { label: 'the Figma frame 212:4180 in CRM screens', url: 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180' };
+    const fromMockup = { from: 'From Contacts v3:', count: "2 pieces the library doesn't have", pieces: ['Overdue badge tone', 'Contact card header'] };
+    const { unmount } = paint({ startedFrom, fromMockup });
+    const line = document.querySelector('[data-from-mockup] p');
+    expect(line?.textContent).toBe("From Contacts v3: 2 pieces the library doesn't have");
+    expect(line?.textContent).not.toMatch(/\u2014/);
+    // Nothing lists the pieces on a page not started yet: the count opens their names under the line.
+    const count = screen.getByRole('button', { name: "2 pieces the library doesn't have" });
+    expect(count.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('Overdue badge tone')).toBeNull();
+    fireEvent.click(count);
+    expect(count.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Overdue badge tone')).toBeTruthy();
+    expect(screen.getByText('Contact card header')).toBeTruthy();
+    await expectNoAxeViolations(document.body);
+    unmount();
+    // The count not known yet (null), or no mockup: nothing said.
+    const a = paint({ startedFrom, fromMockup: null });
+    expect(document.querySelector('[data-from-mockup]')).toBeNull();
+    a.unmount();
+    paint({ fromMockup });
+    expect(document.querySelector('[data-from-mockup]')).toBeNull();
+  });
+
+  it('From the mockup, where the page lists the pieces: the count goes to the library section', () => {
+    render(createElement(FromMockup, { x: { from: 'From Contacts v3:', count: '1 piece the library doesn\'t have', pieces: ['Overdue badge tone'] }, listed: true }));
+    const link = screen.getByRole('link', { name: "1 piece the library doesn't have" });
+    expect(link.getAttribute('href')).toBe('#xp-library');
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByText('Overdue badge tone')).toBeNull();
   });
 
   it('Continue in Claude opens a new Claude conversation with the line (Claude app), copies it for the Terminal', async () => {

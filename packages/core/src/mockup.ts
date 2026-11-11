@@ -141,3 +141,21 @@ export function mockupBrief(m: Mockup, productName: string, change?: string | nu
 export function mockupLine(m: Mockup, productName: string): string {
   return `Start from ${mockupLabel(m)} (${m.url}): rebuild it in ${productName} with the library's pieces only, then tell me what it uses that the library does not have.`;
 }
+
+/** A mockup's own name as an exploration keeps it: one line, 80 characters at most, no em dash; else null. */
+export function mockupNameOf(name: string | null | undefined): string | null {
+  if (typeof name !== 'string') return null;
+  const n = name.replace(/\s+/g, ' ').replace(/\s*\u2014\s*/g, ', ').trim().slice(0, 80).trim();
+  return n || null;
+}
+
+/**
+ * The one line the exploration page says once the mockup was read and its pieces are known: "From Contacts v3:" then
+ * "2 pieces the library doesn't have". Null when there is nothing to say: no mockup, the pieces not known yet, or none
+ * missing (said once, no noise). The name: what Claude read, else the Figma file's name, else "the mockup".
+ */
+export function mockupPiecesLine(m: Mockup | null, o: { name?: string | null | undefined; missing: number | null | undefined }): { from: string; count: string } | null {
+  if (!m || typeof o.missing !== 'number' || !(o.missing > 0)) return null;
+  const name = mockupNameOf(o.name) ?? (m.kind === 'figma' ? m.fileName : undefined) ?? 'the mockup';
+  return { from: `From ${name}:`, count: `${o.missing} ${o.missing === 1 ? 'piece' : 'pieces'} the library doesn't have` };
+}

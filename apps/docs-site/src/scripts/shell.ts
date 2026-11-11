@@ -685,6 +685,16 @@ function initStudio() {
   // What waits on the viewer among the explorations: the set Home and Explorations remembered (one source).
   const paintWaiting = () => setCount('explorations', rememberedWaitingExplorations()?.length ?? null);
   initGitHubConnect(paintWaiting);
+  // Nothing remembered yet for this team and viewer (a page opened directly): read it once, as Library review's count
+  // is (below), so the badge shows on every page, not only after Home or Explorations. Home and Explorations write it.
+  const q = new URLSearchParams(location.search);
+  const explorationsList = /\/explorations\/?$/.test(location.pathname) && !q.has('exploration') && !q.has('pr');
+  const homeCounts = Boolean(document.querySelector('[data-studio-home]')) || explorationsList;
+  if (!homeCounts)
+    initGitHubConnect((v) => {
+      if (rememberedWaitingExplorations() !== null || !(v || currentContributor())) return;
+      void import('./waiting-counts').then((m) => m.countWaitingExplorations()).catch(() => undefined);
+    });
   document.addEventListener(WAITING_EVENT, paintWaiting);
   // Paint the last known count at once, so the nav does not jump while GitHub answers (or when it cannot).
   setCount('reviews', getToken() ? rememberedMine() : null);

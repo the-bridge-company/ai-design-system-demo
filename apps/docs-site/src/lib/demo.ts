@@ -269,3 +269,39 @@ export const demoActionNames = (): string[] => Object.keys(ACTION_LINES);
 
 /** Bridge's own design system: a demo repository that is not the sample team. */
 export const isOwnTeam = (repo: string | null | undefined): boolean => isDemoRepo(repo) && !isSampleTeam(repo);
+
+// ---------------------------------------------------------------------------------------------------------------
+// A signed-out visitor never reads a real team, Bridge's own included: the hosted site's own Studio (/studio/, built
+// from this repository with its real products) sends them to the same page of the sample team before anything paints.
+
+/** What the browser knows before any script runs. */
+export interface ShowcaseVisit {
+  pathname: string;
+  search?: string;
+  hash?: string;
+  /**
+   * Anything that says this browser may be signed in: a GitHub token, an email membership or recent teams kept here,
+   * a sign-in under way. The page then stays and the session scripts decide (scripts/email-studio.ts).
+   */
+  maybeSignedIn: boolean;
+}
+
+/**
+ * Where a signed-out visitor of the hosted site's own Studio goes instead: the same page of the sample team (a product
+ * or component page goes to its list: the sample team has others), with the query and the anchor. Null keeps the
+ * page: not an own Studio page (a team address, the start screen, sign-in pages), or someone who may be signed in.
+ * Self-contained on purpose: the layout runs its source inline before first paint, so it reads nothing outside itself.
+ */
+export function showcaseRedirect(v: ShowcaseVisit): string | null {
+  if (v.maybeSignedIn) return null;
+  const root = '/studio/';
+  const sample = '/studio/acme-design-demo/bridge-demo-ds/';
+  const routes = ['', 'brands', 'building', 'changes', 'components', 'explorations', 'library-review', 'products', 'quality', 'review', 'settings', 'tokens'];
+  if (v.pathname !== '/studio' && v.pathname.indexOf(root) !== 0) return null;
+  const rest = v.pathname.slice(root.length).replace(/^\/+/, '');
+  const first = rest.split('/')[0] || '';
+  if (routes.indexOf(first) < 0) return null;
+  // A product or a component of Bridge's own design system: the sample team's list of them (it has its own).
+  const route = first === 'products' || first === 'components' ? `${first}/` : rest;
+  return sample + route + (v.search || '') + (v.hash || '');
+}

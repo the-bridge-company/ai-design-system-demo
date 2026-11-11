@@ -58,9 +58,10 @@ describe('Settings > Members, an email contributor', () => {
 
     const user = userEvent.setup();
     await user.click(within(row).getByRole('button', { name: 'Role for Leo: Can edit' }));
-    await screen.findByRole('radio', { name: /Design lead/ });
+    await screen.findByRole('radio', { name: /Reviewer/ });
     const off = (name: RegExp) => screen.getByRole('radio', { name }).getAttribute('aria-disabled') === 'true';
-    expect(screen.queryByRole('radio', { name: /Reviewer/ })).toBeNull();
+    // One Reviewer: the email member's review right (a design lead), never GitHub's Reviewer next to it.
+    expect(screen.getAllByRole('radio', { name: /Reviewer/ })).toHaveLength(1);
     expect(off(/Admin/)).toBe(false);
     expect(off(/Can edit/)).toBe(false);
     await user.keyboard('{Escape}');
@@ -109,15 +110,16 @@ describe('a real team, signed out', () => {
   });
 });
 
-describe('design lead, among the roles', () => {
-  it('sits between Can edit and Admin for an email member, with no Reviewer', async () => {
+describe('Reviewer (a design lead by email), among the roles', () => {
+  it('sits between Can edit and Admin for an email member, the only Reviewer', async () => {
     const lead = { on: false, onChange: vi.fn() };
     const user = userEvent.setup();
     render(createElement(RolePicker, { label: 'Role for Leo', value: { role: 'edit' }, onChange: () => undefined, emailOnly: true, lead }));
     await user.click(screen.getByRole('button', { name: /^Role for Leo/ }));
     const names = (await screen.findAllByRole('radio')).map((r) => r.getAttribute('aria-label') ?? r.closest('label')?.textContent ?? '');
-    expect(screen.queryByRole('radio', { name: /Reviewer/ })).toBeNull();
-    await user.click(screen.getByRole('radio', { name: /Design lead/ }));
+    // One Reviewer: the email member's review right (a design lead), never GitHub's Reviewer next to it.
+    expect(screen.getAllByRole('radio', { name: /Reviewer/ })).toHaveLength(1);
+    await user.click(screen.getByRole('radio', { name: /Reviewer/ }));
     expect(lead.onChange).toHaveBeenCalledWith(true);
     expect(names).toHaveLength(4);
   });

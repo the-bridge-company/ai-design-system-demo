@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONTRIB_TOKEN } from '../lib/contribute';
 import { errorText } from '../lib/token-session';
-import { clearRecentMemory, contributeBlobs, parseMine, prefetchChangeStatuses, contributeFetch, contributeInfo, forgetRecent, recentFor, RECENT_SHA_MS, contributorFor, forgetContributors, onContributeChange, publicTeamRead, requestEmailSignIn, seedContributors, setContributeFetch, signOutEmail, verifyEmailSignIn } from './contribute-session';
+import { clearRecentMemory, contributeBlobs, holdsVisitorSession, parseMine, prefetchChangeStatuses, contributeFetch, contributeInfo, forgetRecent, recentFor, RECENT_SHA_MS, contributorFor, forgetContributors, onContributeChange, publicTeamRead, requestEmailSignIn, seedContributors, setContributeFetch, signOutEmail, verifyEmailSignIn } from './contribute-session';
 import { resetGuestActivity } from './guest-activity';
 import { currentContributor, getToken, ghWrite, studioClient, studioFetch } from './github-session';
 import { teamClient, teamToken } from './team-data';
@@ -441,5 +441,20 @@ describe('parseMine: the member\'s lists, per product repository', () => {
       products: { 'acme/shop-design': { branches: ['explore/t'], issues: [4] } },
     });
     expect(parseMine({ branches: [], issues: [] })).toEqual({ branches: [], issues: [] });
+  });
+});
+
+describe("the sample team's Library opened directly", () => {
+  it('asks for the visitor session as the person picked, reads as them and edits through it', async () => {
+    history.replaceState(null, '', '/library/acme-design-demo/bridge-demo-ds/components/card/?as=sofia&edit=1');
+    answer = () => json(200, { available: true, member: { email: 'sofia@acme.example', name: 'Sofia', role: 'edit', ref: '0406ec723c59bb8d', visitor: true } });
+    const repo = 'acme-design-demo/bridge-demo-ds';
+    expect(holdsVisitorSession(repo)).toBe(false);
+    const info = await contributeInfo(repo);
+    expect(calls[0]!.url).toContain('as=sofia');
+    expect(info.member).toMatchObject({ name: 'Sofia', visitor: true });
+    expect(holdsVisitorSession(repo)).toBe(true);
+    expect(contributorFor(repo)?.name).toBe('Sofia');
+    expect(teamToken({ owner: 'acme-design-demo', repo: 'bridge-demo-ds' })).toBe(CONTRIB_TOKEN);
   });
 });

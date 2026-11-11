@@ -13,6 +13,8 @@ import {
   memberActions,
   MEMBERS_WORDS,
   memberLine,
+  ROLE_WORDS,
+  withManages,
   membersContext,
   normalizeChoice,
   ownerGroupOf,
@@ -116,11 +118,37 @@ describe('reading roles back from GitHub', () => {
     expect(memberLine({ role: 'reviewer', reviews: ['design'] })).toBe('Changes the library and approves changes');
     expect(memberLine({ role: 'reviewer', reviews: ['design', 'tech'] })).toBe('Changes the library and approves changes');
     expect(memberLine({ role: 'admin', reviews: ['tech'] })).toBe('Reviews code');
-    expect(memberLine({ role: 'edit', reviews: [] })).toBe('Explores and changes the library');
+    // Can edit with GitHub builds in the code; by email, a designer explores in Bridge.
+    expect(memberLine({ role: 'edit', reviews: [] })).toBe('Builds and changes the code');
+    expect(memberLine({ role: 'edit', reviews: [], via: 'email' })).toBe('Explores designs and suggests library changes');
     expect(memberLine({ role: 'reviewer', reviews: [] })).toBe('Changes the library and approves changes');
     expect(memberLine({ role: 'view', reviews: [] })).toBe('Sees everything in Studio and the library');
     expect(choiceOf({ role: 'reviewer', reviews: ['tech'] })).toEqual({ role: 'reviewer', reviewAs: 'tech' });
     expect(roleText({ role: 'reviewer', reviews: ['design', 'tech'] })).toBe('Reviewer: design and code');
+  });
+
+  it('says each sample person what they do, and one word for a reviewer by email', () => {
+    // Dana runs the team and reviews; Ann manages Acme Prints and reviews; Sofia designs; Malik builds.
+    expect(memberLine({ role: 'admin', reviews: [], lead: true, via: 'email' })).toBe('Reviews designs and runs the team');
+    expect(memberLine({ role: 'edit', reviews: [], lead: true, via: 'email', manages: ['Acme Prints'] })).toBe('Product manager of Acme Prints, reviews designs');
+    expect(memberLine({ role: 'edit', reviews: [], via: 'email' })).toBe('Explores designs and suggests library changes');
+    expect(memberLine({ role: 'edit', reviews: [] })).toBe('Builds and changes the code');
+    expect(memberLine({ role: 'view', reviews: [], via: 'email', manages: ['Acme CRM'] })).toBe('Product manager of Acme CRM');
+    // The invite dialog's word: never "Design lead" in one place and "Reviewer" in another.
+    expect(roleText({ role: 'edit', reviews: [], lead: true })).toBe(ROLE_WORDS.reviewer.label);
+    expect(roleText({ role: 'admin', reviews: [], lead: true })).toBe('Admin');
+  });
+
+  it('finds the products each person manages, by login or member reference', () => {
+    const members: { login: string; via?: 'email'; manages?: string[] }[] = [
+      { login: 'email-member-0', via: 'email' },
+      { login: 'acme-malik' },
+      { login: 'email-member-1', via: 'email' },
+    ];
+    const out = withManages(members, { prints: { name: 'Ann', ref: 'b9cc21753b627efd' }, crm: { name: 'Malik', login: 'Acme-Malik' } }, { refs: { 'email-member-0': 'b9cc21753b627efd', 'email-member-1': '0406ec723c59bb8d' }, names: { prints: 'Acme Prints' } });
+    expect(out[0]!.manages).toEqual(['Acme Prints']);
+    expect(out[1]!.manages).toEqual(['crm']);
+    expect(out[2]!.manages).toBeUndefined();
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { explorationKey, explorationOfNeed, mergeWaiting, waitingCounts } from './waiting-counts';
+import { explorationKey, explorationOfNeed, mergeWaiting, onePerExploration, waitingCounts } from './waiting-counts';
 import type { NeedRow } from './home-model';
 
 const need = (key: string, kind: NeedRow['kind'] = 'review', line = 'l'): NeedRow => ({ key, kind, title: 't', href: '#', person: null, line, since: null, waitsOnYou: true, pill: null, thumb: { kind: 'icon', icon: 'branch' } });
@@ -19,5 +19,16 @@ describe('the two waiting counts, one source each', () => {
   it("adds what Home found that the list cannot read, only for listed explorations", () => {
     const merged = mergeWaiting([{ key: 'crm#1', line: 'a' }], [{ key: 'crm#1', line: 'b' }, { key: 'shop#2', line: 'Leo asked you a question' }, { key: 'x#9', line: 'gone' }], new Set(['crm#1', 'shop#2']));
     expect(merged).toEqual([{ key: 'crm#1', line: 'a' }, { key: 'shop#2', line: 'Leo asked you a question' }]);
+  });
+});
+
+describe('one Home row per exploration', () => {
+  it('keeps the first row of an exploration asked twice, and every library row', () => {
+    const rows = [need('exploration-review-prints#1', 'review', 'Sofia is done exploring'), need('exploration-review-crm#1'), need('exploration-review-prints#1', 'review', 'Sofia would like your opinion'), need('change-31'), need('guidance-x', 'guidance')];
+    const kept = onePerExploration(rows);
+    expect(kept.map((r) => r.line)).not.toContain('Sofia would like your opinion');
+    expect(kept).toHaveLength(4);
+    // What Home lists is what the Explorations badge counts.
+    expect(waitingCounts(kept).explorations).toHaveLength(kept.filter((r) => explorationOfNeed(r)).length);
   });
 });

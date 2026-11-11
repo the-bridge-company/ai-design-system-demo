@@ -94,6 +94,9 @@ export function playedGitHub(repo: string): { login: string; name: string; avata
  */
 export const holdsContributeSession = (repo: string): boolean => Boolean(storedContributor(repo));
 
+/** This browser holds the visitor's read-only session on `repo` (the sample team), whoever the page plays. */
+export const holdsVisitorSession = (repo: string): boolean => Boolean(storedContributor(repo)?.visitor);
+
 /**
  * The visitor's read-only session on the sample team while the page plays someone other than its member (the server
  * reads "mine" and the session as that member): true then. Studio still reads through that session.
@@ -261,7 +264,7 @@ export const asReviewMode = (v: unknown): ReviewMode => (REVIEW_MODES.includes(v
 /** The team's review facts for Done exploring: its mode, and the member references asked to review (email members). */
 export interface TeamReview {
   mode: ReviewMode;
-  asked: { ref: string; name: string }[];
+  asked: { ref: string; name: string; role?: string }[];
   /** Each product's product manager (Settings > Products), by product key. */
   pms?: Record<string, TeamPm>;
 }
@@ -276,7 +279,7 @@ export function teamReview(repo: string, githubToken: string | null = null): Pro
   let p = reviews.get(k);
   if (!p) {
     p = contributeTeam(repo, githubToken).then(
-      (t) => ({ mode: asReviewMode(t.reviewMode), asked: t.members.filter((m) => m.lead && m.ref).map((m) => ({ ref: m.ref!, name: m.name })), pms: t.pms }),
+      (t) => ({ mode: asReviewMode(t.reviewMode), asked: t.members.filter((m) => m.lead && m.ref).map((m) => ({ ref: m.ref!, name: m.name, role: m.role })), pms: t.pms }),
       () => ({ mode: 'one' as const, asked: [] }),
     );
     reviews.set(k, p);

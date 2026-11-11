@@ -622,7 +622,7 @@ export function Onboarding({ steps, name, initial, ctx, actions }: OnboardingPro
         <Panel
           step={step}
           total={total}
-          title={ctx.signIn?.href && step.state !== 'done' ? 'Sign in' : 'Sign in with GitHub'}
+          title={step.state === 'done' ? step.title : ctx.signIn?.href ? 'Sign in' : 'Sign in with GitHub'}
           lead={step.state === 'done' ? `${step.detail}. Your sign-in stays in this browser.` : ctx.signIn?.href ? 'Use your work email. Bridge keeps your setup with your account.' : 'Bridge works as you on GitHub.'}
           footer={
             step.state !== 'done' && ctx.signIn

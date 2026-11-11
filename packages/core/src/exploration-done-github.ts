@@ -343,13 +343,19 @@ export async function answerLeadOnGitHub(gh: GitHubClient, ref: string | number,
   if (leads.length) await gh.createIssueComment(p.number, `${leads.map((l) => `@${l}`).join(' ')} ready for your validation in Bridge again.`).catch(() => undefined);
 }
 
-/** "Ask someone else to review": the other leads get it, the one who asks is off it. */
-export async function askOtherLeadOnGitHub(gh: GitHubClient, ref: string | number, input: { to: readonly string[]; lead?: string | undefined; leadName?: string | undefined; date?: Date | undefined }): Promise<void> {
-  if (!input.to.length) throw new GitHubError(422, 'There is nobody else to ask.');
+/**
+ * "Ask someone else to review": the other leads get it, the one who asks is off it. `to`: GitHub logins, named on the
+ * body and told on GitHub. `toNames`: reviewers who joined by email, by display name: they read it in Studio, nobody is
+ * mentioned on GitHub for them.
+ */
+export async function askOtherLeadOnGitHub(gh: GitHubClient, ref: string | number, input: { to: readonly string[]; toNames?: readonly string[] | undefined; lead?: string | undefined; leadName?: string | undefined; date?: Date | undefined }): Promise<void> {
+  const names = (input.toNames ?? []).map((n) => n.trim()).filter(Boolean);
+  if (!input.to.length && !names.length) throw new GitHubError(422, 'There is nobody else to ask.');
   const p = await findExplorationOnGitHub(gh, ref);
   if (!isWaitingForLead(p.body)) throw new GitHubError(422, ALREADY_ANSWERED);
-  await gh.updatePullRequest(p.number, { body: withDecision(withLeadAskedTo(p.body, input.to), { kind: 'asked-someone', ...sayer({ by: input.lead, byName: input.leadName, date: input.date }), to: [...input.to] }) });
-  await gh.createIssueComment(p.number, `${input.to.map((l) => `@${l}`).join(' ')} ready for your validation in Bridge.`).catch(() => undefined);
+  const asked = input.to.length ? withLeadAskedTo(p.body, input.to) : p.body;
+  await gh.updatePullRequest(p.number, { body: withDecision(asked, { kind: 'asked-someone', ...sayer({ by: input.lead, byName: input.leadName, date: input.date }), ...(input.to.length ? { to: [...input.to] } : {}), ...(names.length ? { toNames: names } : {}) }) });
+  if (input.to.length) await gh.createIssueComment(p.number, `${input.to.map((l) => `@${l}`).join(' ')} ready for your validation in Bridge.`).catch(() => undefined);
 }
 
 /** "I'll look": the reviewer takes it. Someone took it first: GitHub's body says who, and nothing changes. */

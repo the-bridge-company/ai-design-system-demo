@@ -69,6 +69,15 @@ describe('a lead answers', () => {
     expect(parseExplorationBody(pull.body)?.leadAskedTo).toEqual(['dana']);
     await expect(askOtherLeadOnGitHub(gh, 4, { to: [], lead: 'flo' })).rejects.toThrow('nobody else');
   });
+  it('a reviewer who joined by email is asked by name, nobody mentioned on GitHub', async () => {
+    const { gh, pull, writes } = await asked();
+    const comments = writes.filter((w) => w.path.endsWith('/comments')).length;
+    await askOtherLeadOnGitHub(gh, 4, { to: [], toNames: ['Ann'], leadName: 'Dana' });
+    const e = parseExplorationBody(pull.body);
+    expect(e?.decisions?.at(-1)).toMatchObject({ kind: 'asked-someone', byName: 'Dana', toNames: ['Ann'] });
+    expect(e?.decisions?.at(-1)?.to).toBeUndefined();
+    expect(writes.filter((w) => w.path.endsWith('/comments')).length).toBe(comments);
+  });
   it('not doing this ends it with the reason, its work kept', async () => {
     const { gh, pull } = await asked();
     await notDoingOnGitHub(gh, 4, { reason: 'Billing covers it', lead: 'flo' });

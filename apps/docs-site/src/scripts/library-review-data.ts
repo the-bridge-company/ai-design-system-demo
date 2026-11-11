@@ -46,6 +46,7 @@ import { needsReviewRead } from '../lib/review-state';
 import { explorationHref } from '../lib/explorations-view';
 import { studioHref } from '../lib/team-path';
 import {
+  explorationAskKey,
   mergePieces,
   pieceOfChange,
   pieceOfConflict,
@@ -216,6 +217,9 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
     return false;
   };
   const byOf = (p: Pull) => firstName(requesterOf(p.body)?.name) ?? firstName(knownNames()[p.user.login.toLowerCase()]?.name) ?? null;
+  // Who explored each open exploration (lib/author explorerName, read from the exploration itself): a change it needs
+  // names that person, never whoever asked for the change. Filled once the explorations are read.
+  const designers = new Map<string, string>();
   const changePiece = (p: Pull, merged = false) =>
     pieceOfChange(
       {
@@ -230,7 +234,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
         tier: effectiveTier(p.labels, p.body, null),
         mine: mineOf(p),
         by: byOf(p),
-        designer: byOf(p),
+        designers,
         nearest: parseNeededBy(p.body)?.nearest ?? null,
         at: p.updated_at ?? null,
       },
@@ -250,6 +254,10 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
     const own = open.filter((p) => isHomeExploration(p as never, products)).map((p) => ({ ...p, repo: ds, product: products.find((x) => x.default)?.key ?? 'library' }));
     const all = [...pulls, ...own];
     const sources = all.map((p) => ({ p, s: impactSourceOf(p as never, p.repo, productName(p.product) ?? p.product) }));
+    for (const { p, s } of sources) {
+      const who = designerOf(s);
+      if (who) designers.set(explorationAskKey({ number: p.number, productKey: p.repo.toLowerCase() === ds.toLowerCase() ? null : p.product, name: s.name }, ds), who);
+    }
     const xpPieces: ReviewPiece[] = [];
     const seenConflicts = new Map<string, ReviewPiece>();
     for (const { p, s } of sources) {

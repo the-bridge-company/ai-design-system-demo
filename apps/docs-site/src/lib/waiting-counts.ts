@@ -20,6 +20,22 @@ export function explorationOfNeed(row: Pick<NeedRow, 'key'>): string | null {
   return null;
 }
 
+/**
+ * One Needs you row per exploration: a viewer asked twice about one exploration (a lead who is also its product
+ * manager: "Sofia is done exploring" and "Sofia would like your opinion") gets the first row, which the exploration
+ * page answers both from. Library rows stay as they are. So Home lists what the Explorations badge counts.
+ */
+export function onePerExploration<R extends Pick<NeedRow, 'key'>>(rows: readonly R[]): R[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    const key = explorationOfNeed(r);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /** What one exploration waits on the viewer for, as Home words it ("Leo asked you a question"). */
 export interface WaitingExploration {
   key: string;

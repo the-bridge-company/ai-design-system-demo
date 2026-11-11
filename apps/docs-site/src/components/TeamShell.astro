@@ -28,15 +28,24 @@ interface Props {
   /** The section's Field Guide scene in the header. */
   scene?: SectionSceneName;
   wide?: boolean;
+  /**
+   * False when the page's island draws its own title over the whole screen (Check the build): the Studio header is
+   * left out, so the page has one h1.
+   */
+  header?: boolean;
 }
-const { route, title, what, description, summary, scene, wide = true } = Astro.props;
+const { route, title, what, description, summary, scene, wide = true, header = true } = Astro.props;
 ---
 
 <Layout title={title} description={description} hosted wide={wide}>
   <div class="ts" data-team-shell={route || 'home'}>
-    <StudioHeader title={title} summary={summary} scene={scene}>
-      {Astro.slots.has('actions') && <Fragment slot="actions"><slot name="actions" /></Fragment>}
-    </StudioHeader>
+    {
+      header && (
+        <StudioHeader title={title} summary={summary} scene={scene}>
+          {Astro.slots.has('actions') && <Fragment slot="actions"><slot name="actions" /></Fragment>}
+        </StudioHeader>
+      )
+    }
     {Astro.slots.has('default') ? <slot /> : <TeamShellEmpty what={what} demoHref={studioHref(route)} />}
   </div>
   <script>

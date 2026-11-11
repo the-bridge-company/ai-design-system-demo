@@ -76,7 +76,7 @@ import { bringLatestIntoExploration, copyRepos, explorationBehind } from './desi
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
 import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, studioClient } from './github-session';
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
-import { deciderNames } from '../lib/design-lead';
+import { deciderNames, reviewAsk } from '../lib/design-lead';
 import { changesModeOnPage } from './changes-mode';
 import { sendModeFor } from '../lib/write-route';
 import { pageRoleOf } from '../lib/exploration-layout';
@@ -277,7 +277,20 @@ function leadViewOf(
         onChanges: (note) => answered(() => leadChangesOnGitHub(o.gh, r.number, { note, ...me }), LEAD_CHANGES_LINE),
         onComment: (text) => answered(() => leadQuestionOnGitHub(o.gh, r.number, { text, ...me }), LEAD_QUESTION_LINE),
         onNotDoing: (reason) => answered(() => notDoingOnGitHub(o.gh, r.number, { reason, ...me }), NOT_DOING_LINE).then(() => undefined),
-        onAskOther: others.length ? () => answered(() => askOtherLeadOnGitHub(o.gh, r.number, { to: others, ...me }), askedOtherLine(others, knownNamesOf(others))) : null,
+        // Who else is asked (lib/design-lead reviewAsk): the team's other email reviewers by name, nobody mentioned on
+        // GitHub; else the other GitHub design owners.
+        onAskOther:
+          emailLead || others.length
+            ? async () => {
+                const ask = await reviewAskHere({ ref: emailLead?.ref ?? null, login: viewer, name: emailLead?.name ?? null });
+                // Never the designer who asked, when they review too.
+                const designerFirst = (block?.leadAskedByName ?? block?.memberName ?? '').trim().split(/\s+/)[0]!.toLowerCase();
+                const names = ask.names.filter((n) => n.toLowerCase() !== designerFirst);
+                if (names.length) return answered(() => askOtherLeadOnGitHub(o.gh, r.number, { to: [], toNames: names, ...me }), askedOtherLine(names, {}));
+                if (ask.names.length || !others.length) throw new Error('There is nobody else to ask.');
+                return answered(() => askOtherLeadOnGitHub(o.gh, r.number, { to: others, ...me }), askedOtherLine(others, knownNamesOf(others)));
+              }
+            : null,
         link: location.href,
         onCopy: o.onCopy,
         changedSince: Boolean(block?.leadAskedSha && pull.head?.sha && block.leadAskedSha !== pull.head.sha),
@@ -528,7 +541,8 @@ function leadTalkOf(
     onSend: o.designer
       ? async (text: string) => {
           const me = currentViewer();
-          await answerLeadOnGitHub(o.gh, r.number, { ...(text.trim() ? { text } : {}), ...(me?.email ? { byName: me.name ?? designer } : me?.login ? { by: me.login } : {}), leads: siteApprovers().design });
+          const ask = await reviewAskHere({ ref: currentContributor()?.ref ?? null, login: me?.email ? null : (me?.login ?? null), name: me?.email ? (me.name ?? null) : null });
+          await answerLeadOnGitHub(o.gh, r.number, { ...(text.trim() ? { text } : {}), ...(me?.email ? { byName: me.name ?? designer } : me?.login ? { by: me.login } : {}), leads: ask.mention });
           const line = question ? `Sent to ${who}.` : `Sent back to ${who}.`;
           o.reopen(line);
           return line;
@@ -1145,6 +1159,13 @@ function knownLeadNames(leads: readonly string[]): string[] {
     const n = knownNamesOf([l])[l];
     return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
   });
+}
+
+/** Who a review ask goes to on this team (lib/design-lead reviewAsk): its email reviewers by name, else its GitHub design owners. */
+async function reviewAskHere(except: { ref: string | null; login: string | null; name: string | null }): Promise<{ mention: string[]; names: string[] }> {
+  const [{ teamReview }, { getToken }] = await Promise.all([import('./contribute-session'), import('./github-session')]);
+  const review = await teamReview(`${CFG.owner}/${CFG.repo}`, currentContributor() ? null : getToken()).catch(() => null);
+  return reviewAsk({ emailLeads: review?.asked ?? [], githubLeads: siteApprovers().design, except });
 }
 
 /** The team's people (GET /api/contribute?members=1), read once per page: who leads it by email. */

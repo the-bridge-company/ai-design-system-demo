@@ -67,3 +67,27 @@ export function deciderNames(members: readonly { name: string; role: string; lea
   if (ghLeads.length) return ghLeads;
   return except?.trim() ? [] : first(named.find((m) => m.role === 'admin'));
 }
+
+/**
+ * Who a review ask goes to (Done exploring, a designer's answer, Ask someone else to review), by the same rule as
+ * deciderNames: on a team whose reviewers are members by email, those members (`names`, the lead who runs the team
+ * first) and nobody is mentioned on GitHub, since no design owner is the one asked there; else the team's GitHub design
+ * owners (`mention`, logins; a team handle and the viewer never). `except`: who asks (their reference, login or name),
+ * never asked themselves.
+ */
+export function reviewAsk(x: {
+  emailLeads: readonly { name: string; role?: string | null; ref?: string | null }[];
+  githubLeads: readonly string[];
+  except?: { ref?: string | null; login?: string | null; name?: string | null } | null;
+}): { mention: string[]; names: string[] } {
+  const firstWord = (n: string) => n.trim().split(/\s+/)[0]!;
+  const ex = x.except ?? {};
+  const named = x.emailLeads.filter((m) => m.name.trim());
+  if (named.length) {
+    const others = named.filter((m) => !(ex.ref && m.ref === ex.ref) && !(ex.name?.trim() && firstWord(m.name).toLowerCase() === firstWord(ex.name).toLowerCase()));
+    const ordered = [...others.filter((m) => m.role === 'admin'), ...others.filter((m) => m.role !== 'admin')];
+    return { mention: [], names: ordered.map((m) => firstWord(m.name)) };
+  }
+  const mention = x.githubLeads.map((l) => l.trim().replace(/^@/, '')).filter((l) => l && !l.includes('/') && key(l) !== key(ex.login ?? ''));
+  return { mention, names: [] };
+}

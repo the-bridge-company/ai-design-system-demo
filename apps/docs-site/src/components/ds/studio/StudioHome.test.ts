@@ -431,6 +431,20 @@ describe('StudioHome, quiet team Home (recent)', () => {
   const quiet = (over: Partial<StudioHomeProps> = {}) =>
     props({ state: 'empty', contributor: false, lead: true, recent: true, branches: [], greeting: 'Good evening, Florian.', products, ...over });
 
+  it('leads a developer with what they build: Being built on them, never an exploration to start', async () => {
+    const branches: BranchCard[] = [{ ...branch, stage: 'draft' }, { ...branch, number: 43, stage: 'ready' }];
+    const { container } = render(createElement(StudioHome, quiet({ contributor: true, lead: false, builder: true, branches, explorations: [exploration(7, { own: false })], greeting: 'Good afternoon, Malik.' })));
+    expect(screen.getByRole('heading', { level: 1, name: 'What are you building today?' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Start an exploration' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'See what you build' }).getAttribute('href')).toMatch(/building\/\?people=you$/);
+    // Each clause of the sentence opens Being built on the viewer, at its status.
+    expect(screen.getByRole('link', { name: '1 of your library changes is being built' }).getAttribute('href')).toMatch(/building\/\?status=in-progress&people=you$/);
+    expect(screen.getByRole('link', { name: '1 is in review' }).getAttribute('href')).toMatch(/building\/\?status=in-review&people=you$/);
+    // No explorations tour for a developer.
+    expect(screen.queryByText(/1 of 2/)).toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
   it('keeps Start an exploration on top, then Recent explorations and the product folders, and tells the truth in the greeting', async () => {
     localStorage.setItem('bridge.home.lead-tour', 'done');
     const waiting = exploration(7, { title: 'Dashboard: orders waiting to ship', productKey: 'admin-app', product: 'Art print shop', stage: 'with-devs', state: 'Waiting to be picked up', lifecycle: 'waiting-for-code', preview: { kind: 'screen', src: null } });

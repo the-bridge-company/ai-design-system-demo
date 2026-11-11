@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { authorFor, isAppLogin, isNameAuthor, nameAuthor, nameOfAuthor } from './author';
+import { authorFor, explorerName, isAppLogin, isNameAuthor, nameAuthor, nameOfAuthor } from './author';
 
 const block = (o: Record<string, unknown>) => `Requested by Dino through Bridge.\n\n<!-- bridge-exploration ${JSON.stringify(o)} -->`;
+
+describe('explorerName: who explored it, on every screen', () => {
+  it('names the exploration record before the account that opened it', () => {
+    expect(explorerName(block({ name: 'Order fulfilment timeline', memberName: 'Sofia', leadAskedByName: 'Leo' }), 'bridge-design-studio[bot]')).toBe('Sofia');
+    expect(explorerName('Requested by Leo through Bridge.', 'bridge-design-studio[bot]')).toBe('Leo');
+    expect(explorerName(`<!-- bridge-exploration ${JSON.stringify({ name: 'x', leadAskedByName: 'Ann' })} -->`, null)).toBe('Ann');
+  });
+  it('keeps a person login, never the app', () => {
+    expect(explorerName('', 'acme-malik')).toBe('acme-malik');
+    expect(explorerName('', 'bridge-design-studio[bot]')).toBeNull();
+    expect(explorerName(null)).toBeNull();
+  });
+});
 
 describe('authorFor', () => {
   it('keeps a person', () => {

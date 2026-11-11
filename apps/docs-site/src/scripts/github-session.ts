@@ -83,8 +83,10 @@ export interface RepoRef {
 // 'bridge.github.token.direct' for a sign-in with Bridge Direct, no suffix without a GitHub App.
 /** An email member's role, in the words Members uses: "Admin" for an email admin, "Can view" for a read-only member, else "Can edit". */
 const contributorRole = () => {
-  const role = contributorFor(pageRepo())?.role;
-  return role === 'admin' ? ROLE_WORDS.admin.label : role === 'view' ? ROLE_WORDS.view.label : ROLE_WORDS.edit.label;
+  const m = contributorFor(pageRepo());
+  const role = m?.role;
+  // A member who reviews explorations (a design lead) reads "Reviewer", as in Settings > Members (lib/invites roleText).
+  return role === 'admin' ? ROLE_WORDS.admin.label : role === 'view' ? ROLE_WORDS.view.label : m?.lead ? ROLE_WORDS.reviewer.label : ROLE_WORDS.edit.label;
 };
 const TOKEN_BASE = 'bridge.github.token';
 const CHECK_BASE = 'bridge.github.check';
@@ -1154,10 +1156,13 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       // The side nav's account row: the second line is the team's name, or an email contributor's role in words. Their
       // menu says who they are (name, then the full email on its own line), never GitHub or the repository.
       // (The team's name is [data-team-display], kept by scripts/team-links.ts; a contributor sees their role instead.)
-      acct.querySelectorAll<HTMLElement>('[data-gh-acct-team]').forEach((el) => (el.hidden = Boolean(email)));
+      // The sample team's developer played by a visitor ("See it as") reads his role too, like the rest of the team.
+      const castRole = !email && castDeveloper() ? accessLabel(true, currentAccess()) : '';
+      const role = email ? contributorRole() : castRole && castRole !== 'Unknown' ? castRole : '';
+      acct.querySelectorAll<HTMLElement>('[data-gh-acct-team]').forEach((el) => (el.hidden = Boolean(role)));
       acct.querySelectorAll<HTMLElement>('[data-gh-acct-role]').forEach((el) => {
-        el.textContent = email ? contributorRole() : '';
-        el.hidden = !email;
+        el.textContent = role;
+        el.hidden = !role;
       });
       acct.querySelectorAll<HTMLElement>('[data-gh-menu-email]').forEach((el) => {
         el.textContent = email ? email.login : '';
@@ -1168,6 +1173,8 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       if (avatar) {
         avatar.hidden = !viewer;
         if (email) paintDrawnAvatar(avatar, emailMemberFace(email.name, email.login));
+        // No photo (the sample team's developer, lib/demo-cast castGitHub): a drawn face, never bare initials.
+        else if (viewer && !viewer.avatar_url) paintDrawnAvatar(avatar, viewer.login);
         else if (viewer) paintAvatar(avatar, viewer.login, viewer.avatar_url, 64);
       }
       // Named by its visible text (WCAG 2.5.3, as the account menu): the name, the team and the role, then a hidden
@@ -1180,6 +1187,10 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       setButtonLabel(forget, app ? 'Sign out' : 'Disconnect');
     }
   };
+  // The played developer's role line (above) follows his access once it is read.
+  onAccess(() => {
+    if (castDeveloper()) paint();
+  });
 
   /** GET /user with the saved token, whatever the session state. 401 = the token was refused (after one refresh). */
   const check = async (): Promise<Viewer | null> => {

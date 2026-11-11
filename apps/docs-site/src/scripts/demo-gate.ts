@@ -108,7 +108,7 @@ export async function openMakeItYours(action?: string | null): Promise<void> {
   paintLayer!(true, line);
 }
 
-let banner: Promise<(on: boolean) => void> | null = null;
+let banner: Promise<(on: boolean, visiting?: boolean) => void> | null = null;
 
 /** Where the banner's one action leads (DemoBanner.tsx): null is "Get started", for a visitor who has not started. */
 async function bannerBack(repo: string): Promise<{ href: string; connect: boolean } | null> {
@@ -129,8 +129,11 @@ async function bannerBack(repo: string): Promise<{ href: string; connect: boolea
   return away(account.teams.length ? { href: defaultNext(account, facts.recent), connect: false } : demoBack(facts, await loadReserved()));
 }
 
-/** Paints the demo banner into the layout's [data-demo-strip] when `show`, hides it otherwise. */
-async function paintStrip(show: boolean, repo: string) {
+/**
+ * Paints the demo banner into the layout's [data-demo-strip] when `show`, hides it otherwise. `visitor`: whether the
+ * reader is the sample team's visitor (its "See it as"); the page's session says it when not given.
+ */
+async function paintStrip(show: boolean, repo: string, visitor?: boolean) {
   const slot = document.querySelector<HTMLElement>('[data-demo-strip]');
   if (!slot) return;
   if (!show && !banner) return;
@@ -144,7 +147,7 @@ async function paintStrip(show: boolean, repo: string) {
     const root = createRoot(slot);
     // Read once per page from this browser and the account (no GitHub call).
     const back = await bannerBack(repo);
-    return (on: boolean) => {
+    return (on: boolean, visiting?: boolean) => {
       slot.hidden = !on;
       // A built "Connect GitHub to..." button says what it does instead on the sample team ([data-demo-label]).
       if (on && isSampleTeam(repo))
@@ -153,12 +156,12 @@ async function paintStrip(show: boolean, repo: string) {
           el.removeAttribute('data-gh-open');
         });
       // "See it as" (lib/demo-cast.ts): a visitor of the sample team plays any of its people; a member stays themselves.
-      const person = on && deps?.visitor?.() ? castOn(repo) : null;
+      const person = on && (visiting ?? deps?.visitor?.()) ? castOn(repo) : null;
       const cast = person ? { current: person.key, onPick: playCast } : null;
       root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem, cast }) : null);
     };
   })();
-  (await banner)(show);
+  (await banner)(show, visitor);
 }
 
 /** Shows the demo banner while the visitor explores the demo, hides it otherwise. */
@@ -166,10 +169,18 @@ const paintBanner = () => paintStrip(exploringDemo(), deps!.repo());
 
 /**
  * The sample team's Library: the same banner, for everyone (the Library is read only for all, so its owner sees it
- * too). Called by scripts/library-team.ts on a team Library page.
+ * too). Called by scripts/library-team.ts on a team Library page. A visitor gets "See it as" too, once the server
+ * gave the visitor's read-only session (as the person picked, ?as=): the Library reads as them, as the Studio does.
  */
 export function paintLibraryBanner(repo: string) {
-  if (isSampleTeam(repo)) void paintStrip(true, repo);
+  if (!isSampleTeam(repo)) return;
+  void paintStrip(true, repo, false);
+  void (async () => {
+    const [{ contributeInfo, holdsVisitorSession }, { hasWorkingToken }] = await Promise.all([import('./contribute-session'), import('./github-session')]);
+    if (hasWorkingToken()) return;
+    await contributeInfo(repo).catch(() => null);
+    if (holdsVisitorSession(repo)) await paintStrip(true, repo, true);
+  })();
 }
 
 /** Wires the gate once per page. */

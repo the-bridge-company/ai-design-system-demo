@@ -41,7 +41,7 @@ describe('AdoptionReportView', () => {
     expect(screen.getByRole('heading', { level: 2, name: /copies of the library's/ })).toBeTruthy();
     const primary = within(container.querySelector('.ar-verdict')!).getByRole('button', { name: 'Send to developers' });
     expect(screen.getByText(/of the buttons, menus and other pieces in Acme CRM come from the library/)).toBeTruthy();
-    expect(screen.getAllByText('The trend starts with the next check.')).toHaveLength(2);
+    expect(screen.getAllByText("The trend starts when Acme CRM's code changes.")).toHaveLength(2);
     await act(async () => fireEvent.click(primary));
     expect(a.send).toHaveBeenCalledWith(['piece:Button']);
     await expectNoAxeViolations(container);
@@ -90,11 +90,14 @@ describe('AdoptionReportView', () => {
     expect(screen.getByText('Bridge has not captured the Contacts screen yet.')).toBeTruthy();
   });
 
-  it('a sent group says so with its issue', () => {
-    paint(actions({ sent: { 'piece:Button': { number: 42, url: 'https://github.com/a/b/issues/42' } } }));
+  it('a sent group says so with its request in Being built, and the verdict says what went', () => {
+    const { container } = paint(actions({ sent: { 'piece:Button': { number: 42, url: 'https://github.com/a/b/issues/42' } } }));
     expect(screen.queryByRole('button', { name: 'Send to developers' })).toBeNull();
+    const verdict = within(container.querySelector<HTMLElement>('.ar-verdict')!);
+    expect(verdict.getByText(/Sent to developers\. One request for Acme CRM's developers: buttons that look like ours but aren't\./)).toBeTruthy();
+    expect(verdict.getByRole('link', { name: 'Open request #42' }).getAttribute('href')).toMatch(/building\/\?request=42$/);
     fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
-    expect(screen.getByRole('link', { name: 'issue #42' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'request #42' }).getAttribute('href')).toMatch(/building\/\?request=42$/);
   });
 
   it('"Not a problem" needs a reason before it keeps the group as it is', async () => {

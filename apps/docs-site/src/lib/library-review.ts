@@ -245,8 +245,11 @@ export interface ChangeInput {
   mine: boolean;
   /** Who made it or asked for it, by name. */
   by: string | null;
-  /** The exploration's designer, by name, when known. */
-  designer?: string | null;
+  /**
+   * Who explored each exploration, by name, keyed as explorationAskKey says: the change's "Needed by" exploration is
+   * named by who explored it, never by who asked for the change.
+   */
+  designers?: ReadonlyMap<string, string> | null;
   /** The closest thing the library has today, as the exploration's check named it ("info surface"). */
   nearest?: string | null;
   /** When it last moved (ISO). */
@@ -260,8 +263,15 @@ const APPROVED_KINDS = new Set(['needs-tech', 'ready']);
 /** A developer works on it. */
 const BUILDING_KINDS = new Set(['draft', 'ci-failing', 'ci-running', 'conflict', 'changes-requested']);
 
+/**
+ * The key of the exploration a library change is needed by: its product and number ("crm#2"), or the design system
+ * repository's own ("acme/ds#5"); by name when the change gives no number.
+ */
+export const explorationAskKey = (o: Pick<ExplorationOrigin, 'number' | 'productKey' | 'name'>, repo: string): string =>
+  o.number ? `${(o.productKey ?? repo).toLowerCase()}#${o.number}` : `name:${o.name.toLowerCase()}`;
+
 const askedOf = (o: ExplorationOrigin, repo: string, designer: string | null): AskedBy => ({
-  key: o.number ? `${(o.productKey ?? repo).toLowerCase()}#${o.number}` : `name:${o.name.toLowerCase()}`,
+  key: explorationAskKey(o, repo),
   name: o.name,
   product: o.product,
   productKey: o.productKey,
@@ -305,7 +315,7 @@ export function pieceOfChange(c: ChangeInput, products: Parameters<typeof librar
     kind,
     category,
     source: { kind: 'change', repo: c.repo, number: c.number },
-    asked: origin.kind === 'exploration' ? askedOf(origin, c.repo, c.designer ?? null) : null,
+    asked: origin.kind === 'exploration' ? askedOf(origin, c.repo, c.designers?.get(explorationAskKey(origin, c.repo)) ?? null) : null,
     by: c.by,
     leadReason: origin.kind === 'exploration' ? null : reason,
     mine: c.mine,

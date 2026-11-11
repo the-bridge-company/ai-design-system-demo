@@ -929,9 +929,15 @@ describe('the product manager (boards R1, R3)', () => {
     paint({ stage: 'exploring', pm: { mine: true, title: 'What do you think, Dino?', intro: 'Mia shares this with you before it goes to the design lead.', line: 'You have not said what you think yet.', onSay } });
     expect(screen.getByRole('heading', { name: 'What do you think, Dino?' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Happy with it?' })).toBeNull();
+    // Needs changes stays clickable: with no note, the field asks for one and takes the focus, nothing is sent.
     const changes = screen.getByRole('button', { name: 'Needs changes' }) as HTMLButtonElement;
-    expect(changes.disabled).toBe(true);
+    expect(changes.disabled).toBe(false);
+    fireEvent.click(changes);
+    expect(onSay).not.toHaveBeenCalled();
+    expect(screen.getByText('Say what to change.')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByLabelText(/Your note/));
     fireEvent.change(screen.getByLabelText(/Your note/), { target: { value: 'Show how many days late' } });
+    expect(screen.queryByText('Say what to change.')).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Needs changes' }));
     });

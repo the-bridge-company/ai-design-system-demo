@@ -135,6 +135,18 @@ export interface Step {
 
 const MARKABLE: readonly StepId[] = ['team', 'figma', 'claude'];
 
+/** Step 1's title for someone signed in by email (a Bridge account), not with GitHub. */
+export const EMAIL_SIGNIN_TITLE = 'Sign in';
+
+/**
+ * Step 1 once signed in: "Signed in as @ann" with GitHub; an email member (signed in with a code, their address as
+ * the login) reads "Sign in" and their address as it is, never "@" before it (a GitHub login never holds an "@").
+ */
+export function signedInStep(login: string): Pick<Step, 'title' | 'detail'> {
+  const who = login.trim();
+  return who.includes('@') ? { title: EMAIL_SIGNIN_TITLE, detail: `Signed in as ${who}` } : { title: STEP_TITLE.signin, detail: `Signed in as @${who.replace(/^@/, '')}` };
+}
+
 /** Step 2 on a team's Bridge: what GitHub says about the viewer and the repository. */
 function hostedLibraryStep(f: OnboardingFacts, access: RepoAccessState | null, admin: boolean): Pick<Step, 'detail' | 'code' | 'state' | 'status'> {
   const lead = f.storybook || f.quickStart ? 'Storybook and' : 'Repository';
@@ -192,7 +204,7 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
       }
       case 'signin':
         return f.login
-          ? { ...base, detail: `Signed in as @${f.login}`, state: 'done', status: 'Done' }
+          ? { ...base, ...signedInStep(f.login), state: 'done', status: 'Done' }
           : { ...base, detail: STEP_LINE.signin, state: 'later', status: 'To do' };
       case 'library':
         if (f.workspace) return { ...base, ...workspaceLibraryStep(f) };

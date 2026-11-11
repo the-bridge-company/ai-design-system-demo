@@ -56,8 +56,8 @@ const change = (x: Partial<ChangeInput> = {}): ChangeInput => ({
   labels: [],
   statusKind: 'needs-design',
   mine: false,
-  by: 'Leo',
-  designer: 'Leo',
+  by: 'Ann',
+  designers: new Map([['prints#2', 'Leo']]),
   ...x,
 });
 
@@ -68,6 +68,14 @@ describe('a library change as a piece', () => {
     expect(p.asked?.name).toBe('Bulk actions on products');
     expect(p.asked?.product).toBe('Acme Prints');
     expect(canDecide(p, LEAD)).toBe(true);
+  });
+
+  it('names its exploration by who explored it, never by who asked for the change', () => {
+    // Ann asked for the token change; Leo explored Bulk actions on products.
+    expect(pieceOfChange(change(), PRODUCTS).asked?.designer).toBe('Leo');
+    expect(pieceOfChange(change(), PRODUCTS).by).toBe('Ann');
+    // The exploration not read yet: nobody named rather than the wrong person.
+    expect(pieceOfChange(change({ designers: null }), PRODUCTS).asked?.designer).toBeNull();
   });
 
   it('is decided once design said yes, with developers while they build, shipped once merged', () => {

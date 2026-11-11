@@ -130,6 +130,9 @@ export default function BuildReview() {
           <ButtonLink href={back} variant="ghost" size="md" iconStart={ChevronLeft}>
             {W.back}
           </ButtonLink>
+          <div className="brv-title">
+            <h1>{W.plainTitle}</h1>
+          </div>
         </header>
         <div className="brv-calm" role="status">
           {load.s !== 'loading' && <Drawing name="review" width={160} />}

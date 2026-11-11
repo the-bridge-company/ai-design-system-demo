@@ -13,7 +13,8 @@ export interface SeeItAsProps {
   onPick: (key: CastKey) => void;
 }
 
-const face = (p: CastPerson) => ({ login: castFaceLogin(p), name: p.name, avatar: p.via.kind === 'github' ? `https://github.com/${encodeURIComponent(p.via.login)}.png?size=48` : null });
+// Everyone drawn, the developer too (lib/demo-cast castGitHub): one look for the five people.
+const face = (p: CastPerson) => ({ login: castFaceLogin(p), name: p.name, avatar: null });
 
 export function SeeItAs({ current, onPick }: SeeItAsProps) {
   const now = castPerson(current) ?? SAMPLE_CAST[0]!;

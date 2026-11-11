@@ -22,7 +22,7 @@ vi.mock('./github-session', () => ({
 vi.mock('./contribute-session', () => ({ contributeTeam: s.team }));
 vi.mock('./invites-api', () => ({ invitesAvailable: async () => true, listInvites: vi.fn(async () => ({ invites: [], members: [], personal: false })) }));
 vi.mock('./people', () => ({ knownNames: () => ({}), lookUpNames: async () => ({}) }));
-vi.mock('./repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds', defaultBranch: 'main', hosted: true }), siteConfig: () => ({}) }));
+vi.mock('./repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds', defaultBranch: 'main', hosted: true }), siteConfig: () => ({ products: [{ key: 'prints', name: 'Acme Prints' }] }) }));
 vi.mock('./team-data', () => ({ loadTeamData: () => (s.teamData ? s.teamData() : Promise.resolve({ model: { site: { owners: { design: ['peterbono'], tech: ['peterbono'] } } } })) }));
 
 import { loadMembers } from './members';
@@ -63,6 +63,29 @@ describe('loadMembers for a member who cannot list the team on GitHub', () => {
     const d = await loadMembers();
     expect(s.team).toHaveBeenCalledWith('acme/ds', 'gho_ana');
     expect(d.members.find((m) => m.via === 'email')).toEqual({ login: 'email-member-0', name: 'Goulou Photographie', role: 'edit', reviews: [], via: 'email' });
+  });
+
+  it('gives the sample developer played by a visitor (write, no GitHub sign-in) the same list as everyone', async () => {
+    s.viewer = { login: 'acme-malik', name: 'Malik' };
+    s.access = { state: 'writer', write: true, admin: false, reach: true };
+    // The proxy's stand-in, never a GitHub sign-in of his own (scripts/github-session getToken for the played developer).
+    s.token = 'bridge-email-contributor';
+    s.team.mockResolvedValue({
+      collaborators: [...PEOPLE.collaborators, { login: 'acme-malik', role_name: 'write', permissions: { push: true, pull: true } }],
+      members: [{ name: 'Dana', role: 'admin', you: true, lead: true, ref: 'a399f73add3dbb2d' }, { name: 'Ann', role: 'edit', lead: true, ref: 'b9cc21753b627efd' }],
+      pms: { prints: { name: 'Ann', ref: 'b9cc21753b627efd' }, account: { name: 'Ann', ref: 'b9cc21753b627efd' } },
+    });
+    const d = await loadMembers();
+    expect(s.team).toHaveBeenCalledWith('acme/ds', null);
+    expect(d.members.map((m) => [m.name, Boolean(m.you), Boolean(m.lead)])).toEqual([
+      ['peterbono', false, false],
+      ['Malik', true, false],
+      ['Dana', false, true],
+      ['Ann', false, true],
+    ]);
+    // The session's member (Dana) is never marked as the developer's "you"; Ann manages her product.
+    // A product the team no longer lists (account) is never said.
+    expect(d.members.find((m) => m.name === 'Ann')?.manages).toEqual(['Acme Prints']);
   });
 
   it('falls back to the reviewers from the settings when the server cannot answer', async () => {

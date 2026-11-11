@@ -247,7 +247,11 @@ function approversNow(): string[] {
 
 /** The open build requests' views of a team read with its own client (a team's Library page). */
 export async function buildViewsFor(_repo: string, client: GitHubClient): Promise<{ views: BuildRequestView[]; nameOf: (login: string) => string }> {
-  const names = knownNames();
-  const nameOf = (l: string) => (isNameAuthor(l) ? nameOfAuthor(l) : personName(l, names));
-  return { views: await listBuildRequestsOnGitHub(client, { nameOf }), nameOf };
+  const known = (names: ReturnType<typeof knownNames>) => (l: string) => (isNameAuthor(l) ? nameOfAuthor(l) : personName(l, names));
+  const views = await listBuildRequestsOnGitHub(client, { nameOf: known(knownNames()) });
+  // The people building them by their names ("Malik", never "acme-malik"), as Studio says them (scripts/people
+  // lookUpNames: once a week per person); the login stays only when GitHub gives no name.
+  const logins = [...new Set(views.flatMap((v) => v.builders).filter((l) => !isNameAuthor(l)))];
+  const names = logins.length ? await lookUpNames(logins).catch(() => knownNames()) : knownNames();
+  return { views, nameOf: known(names) };
 }

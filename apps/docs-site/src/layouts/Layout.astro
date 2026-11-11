@@ -25,6 +25,7 @@ import { COMPARE, DOCS_SECURITY, LANDING, LIBRARY_HOME, SPACE_LABEL, STUDIO_HOME
 import type { IconName } from '../brand/icons';
 import { PRIVACY_PAGE } from '../lib/account';
 import { siteRepo, siteRepoJson } from '../lib/config';
+import { SAMPLE_REPO, showcaseRedirect } from '../lib/demo';
 import TeamChip from '../components/ds/studio/TeamChip';
 import ResumeAction from '../components/ds/studio/ResumeAction';
 import ProductsNav, { navProducts } from '../components/ds/studio/ProductsNav';
@@ -148,6 +149,9 @@ const switchTo = switchTarget({
   libraryRoute: library ? libraryRoute ?? '' : undefined,
   nameOf: (slug) => componentNames.get(slug),
 });
+// Bridge's own Studio on the hosted site (a page built from this repository, not a team shell, the start screen or the
+// workspace): a signed-out visitor goes to the sample team (lib/demo.ts showcaseRedirect, inline in the head).
+const showcaseGuard = hostedSite && isStudio && !hosted && !library && !noRepo;
 const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Bridge') : `${title} | ${SPACE_LABEL[space] === 'Library' ? 'Bridge' : `Bridge ${SPACE_LABEL[space]}`}`;
 ---
 
@@ -168,6 +172,26 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     <script>
       import '../scripts/demo-drafts';
     </script>
+    {/* The hosted site's own Studio is a real team (Bridge's own, its real products): a signed-out visitor goes to the
+        same page of the sample team before first paint (lib/demo.ts showcaseRedirect). Anything that says this browser
+        may be signed in (a GitHub token, an email membership of a real team, an account's team names, a sign-in under way) keeps the
+        page: the session scripts decide then. */}
+    {showcaseGuard && (
+      <script
+        is:inline
+        set:html={`(function () {
+  try {
+    var ga = document.documentElement.getAttribute('data-gh-app');
+    var ls = window.localStorage, ss = window.sessionStorage;
+    var keys = Object.keys(ls);
+    var maybe = Boolean(ls.getItem('bridge.github.token' + (ga ? '.' + ga : '')) || ls.getItem('bridge.github.token') || ss.getItem('bridge.github.signin') || ss.getItem('bridge.account.github')) ||
+      keys.some(function (k) { return (k.indexOf('bridge.contribute.member:') === 0 && k.slice(25) !== ${JSON.stringify(SAMPLE_REPO)}) || k === 'bridge.accountTeamNames'; });
+    var to = (${showcaseRedirect.toString()})({ pathname: location.pathname, search: location.search, hash: location.hash, maybeSignedIn: maybe });
+    if (to) location.replace(to);
+  } catch (e) {}
+})();`}
+      />
+    )}
     {/* Theme before first paint: this browser's choice in Settings, Appearance (lib/theme-pref.ts); no value takes the OS setting. */}
     <script is:inline>
       (function () {

@@ -12,6 +12,8 @@ import {
   libraryChangesOf,
   ownOpenWork,
   ownWorkHref,
+  ownChangeHref,
+  isBuilderHome,
   quietParts,
   quietSentence,
   recentExplorations,
@@ -321,6 +323,24 @@ describe('the quiet team Home', () => {
     ]);
     expect(ownWorkHref('code')).toMatch(/explorations\/\?status=with-developers&people=you$/);
     expect(quietParts(null).some((p) => p.href)).toBe(false);
+  });
+
+  it('gives a developer the builder home: GitHub, no review right, nothing explored', () => {
+    const base = { contributor: true, github: true, viewOnly: false, explorations: [{ own: false }] };
+    expect(isBuilderHome(base)).toBe(true);
+    // A designer by email, a reviewer, someone who reads only, or who explores: never.
+    expect(isBuilderHome({ ...base, github: false })).toBe(false);
+    expect(isBuilderHome({ ...base, contributor: false })).toBe(false);
+    expect(isBuilderHome({ ...base, viewOnly: true })).toBe(false);
+    expect(isBuilderHome({ ...base, explorations: [{ own: true }] })).toBe(false);
+  });
+
+  it('opens Being built on the viewer for their library changes, at their status', () => {
+    const parts = quietParts(ownOpenWork([], [{ stage: 'draft' }, { stage: 'ready' }, { stage: 'ready' }, { stage: 'waiting' }]));
+    expect(parts.filter((p) => p.href).map((p) => p.href)).toEqual([ownChangeHref('code'), ownChangeHref('building'), ownChangeHref('review')]);
+    expect(ownChangeHref('building')).toMatch(/building\/\?status=in-progress&people=you$/);
+    expect(ownChangeHref('review')).toMatch(/building\/\?status=in-review&people=you$/);
+    expect(ownChangeHref('code')).toMatch(/building\/\?status=waiting&people=you$/);
   });
 
   it('tells the truth after the greeting', () => {

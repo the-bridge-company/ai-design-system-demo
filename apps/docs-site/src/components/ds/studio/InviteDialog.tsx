@@ -1,5 +1,5 @@
 // Invite collaborators (board I1), a DS Dialog opened from the team chip menu and from Settings > Members. One
-// sentence says what happens (MEMBERS_WORDS.intro: an email, then the team; only Reviewers also sign in with GitHub).
+// sentence says what happens (MEMBERS_WORDS.intro: an email, then the team; everyone signs in by email, GitHub only to approve on GitHub).
 // Then the work email field, a DS Combobox that takes several emails as chips and suggests people Bridge
 // already knows (the people who committed to the team's repository), with the role
 // picker on the same line (RolePicker, board I2). "Who has access" lists the team and the pending invites, with Resend

@@ -11,6 +11,7 @@
 
 import type { ContributeMember } from './contribute';
 import type { RepoAccess } from './access';
+import { isSampleTeam } from './demo';
 import { decidesOnExplorations, askedToReview, type ReviewMode } from '../../api/_lib/review-mode';
 
 /** The five people, by the short name the address and the menu use (?as=sofia). */
@@ -99,10 +100,27 @@ export function playedMember(server: ContributeMember | null, person: CastPerson
   };
 }
 
-/** The GitHub person played on the sample team (the developer), as Studio's viewer knows a GitHub account; else null. */
+/**
+ * The GitHub person played on the sample team (the developer), as Studio's viewer knows a GitHub account; else null.
+ * No photo: his account's GitHub picture is a generated pattern, so he is drawn like the rest of the sample team (the
+ * face of castFaceLogin, painted wherever a viewer has no photo).
+ */
 export function castGitHub(person: CastPerson): { login: string; name: string; avatar_url: string } | null {
   const v = person.via;
-  return v.kind === 'github' ? { login: v.login, name: person.name, avatar_url: `https://avatars.githubusercontent.com/${encodeURIComponent(v.login)}` } : null;
+  return v.kind === 'github' ? { login: v.login, name: person.name, avatar_url: '' } : null;
+}
+
+/** True for the GitHub account of a sample person (the developer, acme-malik): drawn, never his GitHub picture. */
+export const isCastLogin = (login: string | null | undefined): boolean =>
+  Boolean(login) && SAMPLE_CAST.some((p) => p.via.kind === 'github' && p.via.login.toLowerCase() === login!.trim().replace(/^@/, '').toLowerCase());
+
+/**
+ * The people a list of the sample team shows: its email members and its GitHub people of the cast (the developer);
+ * any other GitHub account (the real account that hosts the sample repository) is left out, so the sample team only
+ * ever names its fictional people. Any other team: the list as it is.
+ */
+export function onlySamplePeople<M extends { login: string; via?: 'email' }>(repo: string | null | undefined, members: readonly M[]): M[] {
+  return isSampleTeam(repo) ? members.filter((m) => m.via === 'email' || isCastLogin(m.login)) : [...members];
 }
 
 /** The face seed a person is drawn with everywhere in Studio (lib/people.ts emailMemberFace for an email member). */

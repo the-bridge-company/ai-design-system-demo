@@ -47,7 +47,7 @@ export function decisionRows(all: readonly Decision[], names: Record<string, str
       const to = d.to?.length ? ` to ${d.to.map((t) => names[t] ?? t).join(', ')}` : '';
       // The designer's word for the PM's call: "Dana said Dino agreed in a call".
       if (d.kind === 'pm-call') return { key: `${i}`, name: sayerName(d, names), login: d.by ?? `name:${d.byName ?? 'Someone'}`, verb: `said ${d.to?.[0] ?? 'the PM'} agreed in a call`, why: null, round: d.round, at: d.at };
-      const verb = d.kind === 'asked-someone' ? `asked ${d.to?.map((t) => names[t] ?? t).join(', ') || 'someone else'} to review` : `${VERB[d.kind]}${d.kind === 'handed' ? to : ''}`;
+      const verb = d.kind === 'asked-someone' ? `asked ${[...(d.to ?? []).map((t) => names[t] ?? t), ...(d.toNames ?? [])].join(', ') || 'someone else'} to review` : `${VERB[d.kind]}${d.kind === 'handed' ? to : ''}`;
       return { key: `${i}`, name: sayerName(d, names), login: d.by ?? `name:${d.byName ?? 'Someone'}`, verb, why: d.text ?? null, round: d.round, at: d.at };
     })
     .reverse();

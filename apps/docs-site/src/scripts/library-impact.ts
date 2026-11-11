@@ -6,6 +6,7 @@
 import { explorationKeyOf, explorationStatus, isArchivedExploration, libraryConflicts, parseExplorationBody, parsePiecesRecord, type ImpactSource, type LibraryConflict, type LibraryNeed } from '@bridge-ds/core';
 import { ghGet } from './github-session';
 import { productPulls, siteProductRepos } from './product-repos';
+import { explorerName } from '../lib/author';
 
 /** One exploration as the conflict check reads it, from its pull request. */
 export function impactSourceOf(pull: { number: number; body?: string | null; title?: string; user?: { login?: string } | null }, repo: string, product: string): ImpactSource {
@@ -14,7 +15,7 @@ export function impactSourceOf(pull: { number: number; body?: string | null; tit
     key: explorationKeyOf(repo, pull.number),
     name: block?.name ?? (pull.title ?? '').replace(/^Exploration:\s*/i, ''),
     product,
-    designer: block?.memberName ?? block?.leadAskedByName ?? pull.user?.login ?? 'Someone',
+    designer: explorerName(pull.body, pull.user?.login) ?? 'Someone',
     record: parsePiecesRecord(pull.body),
     library: block?.library ?? null,
   };

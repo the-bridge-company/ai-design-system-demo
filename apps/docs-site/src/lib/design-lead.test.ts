@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deciderNames, isDesignLead, leadsLibrary, type LeadViewer } from './design-lead';
+import { deciderNames, isDesignLead, leadsLibrary, reviewAsk, type LeadViewer } from './design-lead';
 import { contributorAccess } from './access';
 import { emptyProductLine } from './product-page';
 import { startTargets } from './create-branch';
@@ -102,5 +102,22 @@ describe('who decides, by name', () => {
     expect(deciderNames(sample, ['Florian'], 'Dana')).toEqual(['Ann']);
     expect(deciderNames([{ name: 'Dana', role: 'admin', lead: true }], ['Florian'], 'Dana')).toEqual(['Florian']);
     expect(deciderNames([{ name: 'Dana', role: 'admin', lead: true }], [], 'Dana Kim')).toEqual([]);
+  });
+});
+
+describe('reviewAsk', () => {
+  const sample = [
+    { name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd' },
+    { name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d' },
+  ];
+  it('asks the email reviewers by name, the lead who runs the team first, and mentions nobody on GitHub', () => {
+    expect(reviewAsk({ emailLeads: sample, githubLeads: ['peterbono'] })).toEqual({ mention: [], names: ['Dana', 'Ann'] });
+  });
+  it('never asks who asks', () => {
+    expect(reviewAsk({ emailLeads: sample, githubLeads: ['peterbono'], except: { ref: 'a399f73add3dbb2d' } })).toEqual({ mention: [], names: ['Ann'] });
+    expect(reviewAsk({ emailLeads: sample, githubLeads: [], except: { name: 'Ann Lee' } })).toEqual({ mention: [], names: ['Dana'] });
+  });
+  it('mentions the GitHub design owners on a team without email reviewers, never a team handle nor the viewer', () => {
+    expect(reviewAsk({ emailLeads: [], githubLeads: ['@mo', 'peterbono', 'org/design'], except: { login: 'PeterBono' } })).toEqual({ mention: ['mo'], names: [] });
   });
 });

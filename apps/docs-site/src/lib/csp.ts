@@ -27,6 +27,7 @@ export const INLINE_SCRIPT_HASHES: readonly string[] = [
   'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc=', // Astro: client:only
   'sha256-BF0290pkb3jxQsE7z00xR8Imp8X34FLC88L0lkMnrGw=', // Astro: client:idle
   'sha256-Q2BPg90ZMplYY+FSdApNErhpWafg2hcRRbndmvxuL/Q=', // Astro: client:visible
+  'sha256-hTZAIhuI88JmKGb1qS3XOIE2kVkRSZ3o64EJsH1fYjU=', // layouts/Layout.astro: a signed-out visitor of the hosted site's own Studio goes to the sample team (lib/demo.ts showcaseRedirect)
 ];
 
 export const CSP_REPORT_PATH = '/api/csp-report';

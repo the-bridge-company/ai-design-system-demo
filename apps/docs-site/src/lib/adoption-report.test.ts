@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditReport, ComponentFinding, FileReport, StyleFinding } from '@bridge-ds/core/audit';
-import { codeHref, codePlace, colorName, groupRequest, humanName, ignoreReasonProblems, partsLine, pctWord, pieceWord, reportModel, scoreCards, tokenName, FIRST_RUN_LINE } from './adoption-report';
+import { codeHref, codePlace, colorName, groupRequest, humanName, ignoreReasonProblems, partsLine, pctWord, pieceWord, reportModel, scoreCards, tokenName, firstRunLine, sentWords } from './adoption-report';
 
 const SHADCN = 'shadcn/ui (local)';
 const c = (name: string, library: string, suggestion?: string, line = 1): ComponentFinding => ({ line, column: 1, name, kind: library === 'native' ? 'native' : library === 'local' ? 'recreated' : 'foreign', library, ...(suggestion ? { suggestion } : {}) });
@@ -108,7 +108,27 @@ describe('score cards', () => {
     const [pieces, values] = scoreCards(report, 'Acme CRM');
     expect(pieces).toMatchObject({ value: '13%', trend: null, points: [], label: 'of the buttons, menus and other pieces in Acme CRM come from the library' });
     expect(values!.value).toBe('72%');
-    expect(FIRST_RUN_LINE).toBe('The trend starts with the next check.');
+    // A point is added when the product's code changes, never on a schedule.
+    expect(firstRunLine('Acme CRM')).toBe("The trend starts when Acme CRM's code changes.");
+  });
+});
+
+describe('sent to developers', () => {
+  it('one request: names the group and opens it in Being built', () => {
+    expect(sentWords([{ number: 42 }], { product: 'Acme CRM', title: 'Buttons that look like ours', local: false })).toEqual({
+      title: 'Sent to developers',
+      description: "One request for Acme CRM's developers: buttons that look like ours.",
+      open: 42,
+      link: 'Open request #42',
+    });
+  });
+
+  it('several requests: says how many and opens Being built', () => {
+    expect(sentWords([{ number: 1 }, { number: 2 }, { number: 3 }], { product: 'Acme CRM', local: false })).toEqual({ title: 'Sent 3 requests to developers', description: "One per group, for Acme CRM's developers.", open: null, link: 'See them in Being built' });
+  });
+
+  it('the sample team says nothing left the browser, no link', () => {
+    expect(sentWords([{ number: null }], { product: 'Acme CRM', local: true })).toMatchObject({ title: 'Sent to developers', link: null });
   });
 
   it('read the history: up from the previous run, in words', () => {

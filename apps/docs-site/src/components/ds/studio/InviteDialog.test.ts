@@ -100,7 +100,7 @@ async function openDialog() {
 describe('Invite collaborators', () => {
   it('says what happens, lists who has access and counts the invites on its one primary action', async () => {
     const { user, dialog } = await openDialog();
-    expect(within(dialog).getByText('They get an email and land in your team with the role you pick. Reviewers also sign in with GitHub.')).toBeInTheDocument();
+    expect(within(dialog).getByText('They get an email and land in your team with the role you pick. Everyone signs in with that email. GitHub is needed only to approve library changes on GitHub.')).toBeInTheDocument();
     // An admin is not told that only admins can invite.
     expect(dialog.textContent).not.toMatch(/Only admins/);
     expect(within(dialog).getByRole('heading', { name: /Who has access 6/ })).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('the role picker', () => {
     const roles = await screen.findByRole('radiogroup', { name: 'Role' });
     expect(within(roles).getAllByRole('radio').map((r) => r.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
     expect(screen.queryByRole('radiogroup', { name: 'They review as' })).toBeNull();
-    expect(screen.getByText('Also approves changes before they ship.')).toBeInTheDocument();
+    expect(screen.getByText('Also approves explorations and library changes before they ship.')).toBeInTheDocument();
 
     await user.click(within(roles).getByRole('radio', { name: /Reviewer/ }));
     const reviewAs = await screen.findByRole('radiogroup', { name: 'They review as' });

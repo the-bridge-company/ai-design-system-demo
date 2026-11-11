@@ -7,7 +7,7 @@
 // disclosure. A role GitHub cannot hold on this repository (a personal account's) is shown disabled with the reason. An
 // email member has no Reviewer: they approve as a design lead or an admin, and members, requests, settings and invites
 // need no GitHub.
-// An email member can be a design lead: a role of the list, in order of power, between Can edit and Admin.
+// An email member can review explorations (a design lead): Reviewer, a role of the list between Can edit and Admin.
 // What each role means on GitHub stays out of sight (lib/invites.ts).
 import { Fragment, useId, useState, type KeyboardEvent } from 'react';
 import { ChevronDown, Code2, PenTool } from 'lucide-react';
@@ -28,13 +28,14 @@ export interface RolePickerProps {
   size?: 'sm' | 'md' | 'lg';
   /** ghost: a quiet trigger inside a list (the dialog's "Who has access"). */
   variant?: 'secondary' | 'ghost';
-  /** An email member: Design lead joins the roles, between Can edit and Admin. `then`: the role picked instead of it. Unset: not offered. */
+  /** An email member: Reviewer (a design lead) joins the roles, between Can edit and Admin. `then`: the role picked instead of it. Unset: not offered. */
   lead?: { on: boolean; onChange: (on: boolean, then?: RoleChoice) => void };
   /** The role the trigger names, when it says more than one choice can ("Reviewer: design and code", lib/invites roleText). */
   shown?: string;
 }
 
-const LEAD_WORDS = { label: 'Design lead', help: 'Also approves explorations before the developers.' };
+// An email member's review right reads as a Reviewer, the word every list and the invite dialog use (lib/invites roleText).
+const LEAD_WORDS = ROLE_WORDS.reviewer;
 const LEAD = 'lead';
 
 const REVIEW_ICON = { design: PenTool, tech: Code2 } as const;

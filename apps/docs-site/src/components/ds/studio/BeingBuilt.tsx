@@ -1,22 +1,24 @@
 // Studio "Being built" (pages/studio/building.astro and its team shell): the build requests sent from Figma and where
 // each one stands, read from GitHub only (scripts/building-data.ts, rules in lib/building-view.ts and @bridge-ds/core).
-//   - One sentence first (the Harbor zone), then the tabs in the lifecycle's words (All, Waiting to be picked up, In
-//     progress, In review, Shipped this week; lib/review-state) and one row per build request: the shared BranchRow,
-//     who builds it, when it was sent, one status tag. An In review row names who must review ("Waiting for Florian's
-//     review", "Changes requested by Lee"); a merged library change reads In the next release until it is published.
-//     The whole row opens the detail in place (?request=N, ?pull=N); no row buttons.
+//   - One sentence first (the Harbor zone), then Explorations' filters row (lib/building-page, decisions 2026-11-11):
+//     Status (Waiting to be picked up, In progress, In review, Shipped in the last 30 days; default Not shipped yet),
+//     Product and People, the same checkbox menus (ListFilters MultiFilter), the count, then List, Grid or Board
+//     (ListCard ViewSwitch). The address keeps them (?status=, ?product=, ?people=). One row per build request: the
+//     shared BranchRow, when it was sent and who it waits on ("Asked by Leo", "Malik builds it"), one status tag in
+//     the filter's word. An In review row names who must review ("Waiting for Sofia's check", "Changes requested by
+//     Lee"); a merged library change reads In the next release until it is published. The whole row opens the detail
+//     in place (?request=N, ?pull=N); no row buttons. The Board: one column per status, read only, no tags on cards.
 //   - The detail: what was sent (summary, before and after, props needed, the Figma link), the status line, and a
 //     "For developers" fold with the GitHub links (and Jira, with JIRA_IN_BRIDGE) and "Copy brief for Claude".
 //   - Claude's fixes (the fix sessions of the team's Claude) are rows of the same list, with the same tags and filters:
 //     "Button" then "Claude's fix from Figma, asked by Dana" and where it stands, from its pull request when the list
 //     read it (lib/claude-connector fixRows). Such a row opens Claude's fix in Studio; while Claude works, the page reads
 //     the sessions again every 10 seconds (paused while the tab is hidden).
-//   - On the line under the tabs, Changes' two filters (components/ds/studio/ListFilters, ?product= and ?people=) and its
-//     count: the tab counts follow them. A row is filtered by its product and by the people it shows (lib/building-view
+//   - The Product and People filters read a row by its product and by the people it shows (lib/building-view
 //     rowProduct, rowPeople); a row with nobody on it stays under Everyone.
 //   - Explorations handed to developers (Done exploring) are rows of the same list too, with an "Exploration" tag: the
 //     product, who said Done exploring and when. Such a row opens the exploration in Studio.
-//   - At the end of that row, how the list is shown: the rows, or the Home's cards (lib/list-view, ListCard).
+//   - How the list is shown is remembered per person (lib/list-view).
 //   - Nothing sent yet: what a build request is, where it comes from, who picks it up.
 //   - GitHub busy for the viewer with nothing kept: one calm notice with when Bridge is back (BusyNotice), never
 //     "Nothing sent yet"; it reads again once on its own after the reset.
@@ -40,9 +42,6 @@ import {
   Icon,
   Link,
   Skeleton,
-  Tab,
-  Tabs,
-  TabsList,
   VisuallyHidden,
 } from "@bridge-ds/react";
 import { Check, Copy, Hammer } from "lucide-react";
@@ -52,8 +51,9 @@ import {
   type BuildRequestView,
   type ProductConfig,
 } from "@bridge-ds/core";
+import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
-import { ClearFilters, ListFiltersBar, NO_FILTER_MATCH } from "./ListFilters";
+import { MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
 import { useCopy } from "./TeamLink";
 import { DEV_MESSAGE_WORDS } from "../../../lib/developers-message";
@@ -61,28 +61,38 @@ import { BusyNotice } from "./BusyNotice";
 import { githubBusy, type GitHubBusy } from "../../../lib/github-busy";
 import { Drawing } from "./Drawing";
 import { Who } from "./faces";
+import { YOU } from "../../../lib/branches-page";
+import { multiTriggerLabel } from "../../../lib/explorations-page";
 import {
-  activeFilters,
-  filterChoices,
-  inFilters,
-  listFiltersParam,
-  listSummary,
-  withListFilters,
-  type ListFilters,
-} from "../../../lib/branches-page";
+  addressWithBuildFilters,
+  BUILD_BOARD_CAP,
+  BUILD_STATE_LABEL,
+  BUILD_STATES,
+  buildBoardColumns,
+  buildCountLine,
+  buildFiltersFromAddress,
+  buildStateOf,
+  buildStatusTriggerLabel,
+  DEFAULT_BUILD_FILTERS,
+  emptyBuildLine,
+  isBuildFiltered,
+  isDefaultStatus,
+  NOT_SHIPPED,
+  NOT_SHIPPED_LABEL,
+  passesBuild,
+  personLine,
+  type BuildFilters,
+  type BuildState,
+} from "../../../lib/building-page";
 import { person } from "../../../lib/home-model";
 import { safeUrl } from "../../../lib/html";
 import { JIRA_IN_BRIDGE } from "../../../lib/studio-flags";
 import {
-  BUILD_TABS,
-  EMPTY_FILTER,
   EMPTY_WORDS,
   buildDetail,
   detailFromQuery,
   detailQuery,
-  filterCounts,
   jiraLink,
-  matchesBuildTab,
   pageSentence,
   pageRows,
   propLine,
@@ -94,7 +104,6 @@ import {
   statusTag,
   timelineSteps,
   viewTitle,
-  type BuildTab,
   type ExplorationBuildRow,
   type LifecycleExtra,
 } from "../../../lib/building-view";
@@ -109,6 +118,7 @@ import {
   type BuildData,
 } from "../../../scripts/building-data";
 import { statusTagClass } from '../../../lib/status-tag';
+import '../../../styles/explorations-board.css';
 
 const TONE = {
   warning: "warning",
@@ -127,6 +137,15 @@ const POLL_MS = 10_000;
 type Row = (BuildRequestView | FixRow | ExplorationBuildRow) & LifecycleExtra;
 const isFix = (v: Row): v is FixRow => "fix" in v;
 const isExploration = (v: Row): v is ExplorationBuildRow => "exploration" in v;
+/** A listed row, classified once: its status in the page's words, its product and the people it shows. */
+interface Item {
+  v: Row;
+  state: BuildState;
+  product: string;
+  /** People keys, as the People filter reads them (YOU for the viewer). */
+  people: string[];
+  names: { key: string; name: string }[];
+}
 
 function Builders({
   v,
@@ -161,49 +180,94 @@ function cardPerson(v: Row, data: BuildData) {
   return personFor(login, data);
 }
 
-/**
- * The same changes as cards: the Home's card (ListCard), one per change, in the Home's grid. The card names the
- * product in its screen's corner (no heading says it here, except a list filtered to one product), and carries the
- * same one status tag as its row.
- */
-function Cards({ views, data, products, onOpen, oneProduct = false }: { views: Row[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; oneProduct?: boolean }) {
-  const shots = useExplorationShots(
+/** The screens of the explorations among the rows (their preview captures), by row id. */
+function useShots(views: readonly Row[]) {
+  return useExplorationShots(
     views.filter(isExploration).map((v) => ({ key: v.id, number: Number(/exploration=(\d+)/.exec(v.exploration.href)?.[1] ?? 0), product: (v as { productKey?: string | null }).productKey ?? null })),
   );
+}
+
+/** The name a row's requester goes by ("name:Leo" reads Leo), or null. */
+const requesterName = (v: Row, data: BuildData) => (v.requestedBy ? (isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : data.nameOf(v.requestedBy)) : null);
+
+interface CardContext {
+  data: BuildData;
+  products: readonly ProductConfig[];
+  shots: Map<string, ThumbSpec>;
+  onOpen: (v: BuildRequestView) => void;
+  /** The product in the screen's corner (not when the list is filtered to one product: it goes without saying). */
+  showProduct: boolean;
+  /** The status tag (not on the Board: its column says it). */
+  pill: boolean;
+}
+
+/**
+ * One change as the Home's card (ListCard): the product in its screen's corner, its one status tag, and the person who
+ * it waits on, saying why ("Asked by Leo", "Malik builds it", lib/building-page personLine).
+ */
+function buildCard(x: Item, c: CardContext) {
+  const v = x.v;
+  const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
+  const byline = personLine({ state: x.state, builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), requester: requesterName(v, c.data) });
+  const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline };
+  if (isFix(v)) return <ListCard key={v.id} {...common} thumb={{ kind: "icon", icon: "component", label: v.component }} title={v.component} href={studioHref(v.fix.href)} />;
+  if (isExploration(v))
+    return <ListCard key={v.id} {...common} thumb={c.shots.get(v.id) ?? { kind: "screen", src: null, product: v.exploration.product, seed: v.id }} title={v.title} href={studioHref(v.exploration.href)} />;
+  return (
+    <ListCard
+      key={v.id}
+      {...common}
+      thumb={rowThumb(v, c.data.bodies.get(v.number))}
+      title={viewTitle(v)}
+      href={detailQuery(v)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        c.onOpen(v);
+      }}
+    />
+  );
+}
+
+/** The same changes as cards, in the Home's grid, each with the same one status tag as its row. */
+function Cards({ items, data, products, onOpen, oneProduct = false }: { items: Item[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; oneProduct?: boolean }) {
+  const shots = useShots(items.map((x) => x.v));
   return (
     <ul className="sh-cards bb-cards" aria-label="Build requests">
-      {views.map((v) => {
-        // The product in the screen's corner, unless the list is filtered to one product (it goes without saying).
-        const product = oneProduct ? null : (products.find((p) => p.key.toLowerCase() === rowProduct(v, products))?.name ?? null);
-        const common = { person: cardPerson(v, data), product, pill: statusTag(v) };
-        if (isFix(v))
-          return <ListCard key={v.id} {...common} thumb={{ kind: "icon", icon: "component", label: v.component }} title={v.component} href={studioHref(v.fix.href)} />;
-        if (isExploration(v))
-          return (
-            <ListCard
-              key={v.id}
-              {...common}
-              thumb={shots.get(v.id) ?? { kind: "screen", src: null, product: v.exploration.product, seed: v.id }}
-              title={v.title}
-              href={studioHref(v.exploration.href)}
-            />
-          );
+      {items.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: !oneProduct, pill: true }))}
+    </ul>
+  );
+}
+
+/**
+ * The Board, as on Explorations (styles/explorations-board.css): one column per status with its count, read only, at
+ * most BUILD_BOARD_CAP cards then "Show all N"; the column says the status, so its cards carry no tag. An empty status
+ * folds to a small column. It scrolls sideways inside its own region on a phone.
+ */
+function Board({ items, status, data, products, onOpen }: { items: Item[]; status: readonly BuildState[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void }) {
+  const shots = useShots(items.map((x) => x.v));
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const columns = buildBoardColumns(items, status);
+  return (
+    <div className="ex-board bb-board" role="region" aria-label="Board, one column per status" tabIndex={0}>
+      {columns.map((col) => {
+        const open = opened.has(col.key);
+        const shown = open ? col.rows : col.rows.slice(0, BUILD_BOARD_CAP);
         return (
-          <ListCard
-            key={v.id}
-            {...common}
-            thumb={rowThumb(v, data.bodies.get(v.number))}
-            title={viewTitle(v)}
-            href={detailQuery(v)}
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-              e.preventDefault();
-              onOpen(v);
-            }}
-          />
+          <section className={col.rows.length ? "ex-col" : "ex-col is-empty"} key={col.key} aria-labelledby={`bb-col-${col.key}`}>
+            <h2 className="ex-col-h" id={`bb-col-${col.key}`}>
+              {col.label} <span className="bl-count">{col.rows.length}</span>
+            </h2>
+            {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: true, pill: false }))}</ul>}
+            {col.rows.length > BUILD_BOARD_CAP && !open && (
+              <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(col.key))}>
+                Show all {col.rows.length}
+              </Button>
+            )}
+          </section>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -559,12 +623,11 @@ export default function BeingBuilt() {
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState<GitHubBusy | null>(null);
   const [run, setRun] = useState(0);
-  const [filter, setFilter] = useState<BuildTab>("all");
   const [view, pickView] = useListView("building");
-  const [picked, setPicked] = useState<ListFilters>(() =>
+  const [filters, setFilters] = useState<BuildFilters>(() =>
     typeof location === "undefined"
-      ? { product: null, by: null }
-      : listFiltersParam(location.search)
+      ? { ...DEFAULT_BUILD_FILTERS, status: [...NOT_SHIPPED] }
+      : buildFiltersFromAddress(location.search)
   );
   const [open, setOpen] = useState<{
     kind: "issue" | "pull";
@@ -624,20 +687,22 @@ export default function BeingBuilt() {
   // The filters stay in the address while a detail is open, and when it closes.
   const go = useCallback(
     (v: BuildRequestView | null) => {
-      const query = withListFilters(v ? detailQuery(v) : "", picked);
+      const query = addressWithBuildFilters(v ? detailQuery(v) : "", filters);
       history.pushState(null, "", v ? query : `${location.pathname}${query}`);
       setOpen(v ? { kind: v.kind, number: v.number } : null);
       window.scrollTo({ top: 0 });
     },
-    [picked]
+    [filters]
   );
 
-  const pickFilters = useCallback((f: ListFilters) => {
-    setPicked(f);
+  // The filters live in the address (?status=, ?product=, ?people=), as on Explorations.
+  const pick = useCallback((f: BuildFilters) => {
+    setFilters(f);
     const url = new URL(location.href);
-    url.search = withListFilters(url.search, f);
+    url.search = addressWithBuildFilters(url.search, f);
     history.replaceState(history.state, "", url);
   }, []);
+  const clear = () => pick({ ...DEFAULT_BUILD_FILTERS, status: [...NOT_SHIPPED] });
 
   if (busy && !data)
     return <BusyNotice busy={busy} onRetry={() => setRun((n) => n + 1)} />;
@@ -665,21 +730,39 @@ export default function BeingBuilt() {
   const rows = pageRows<FixRow | ExplorationBuildRow>(data, now);
   if (!rows.length) return <Empty />;
 
-  // The two filters of Changes (lib/branches-page), over what the tab lists; the tab counts follow them.
+  // Every row, classified once (lib/building-page): its status, product and people. What shipped more than 30 days
+  // ago has left the page.
   const products = data.products ?? DEFAULT_PRODUCTS;
-  const signedIn = Boolean(data.viewer);
   const me = { nameOf: data.nameOf, viewer: data.viewer ?? null, viewerName: data.viewerName ?? null };
-  const items = (rows as Row[]).map((v) => ({ v, product: rowProduct(v, products), people: rowPeople(v, me) }));
-  const queue = items.filter((x) => matchesBuildTab(x.v, filter, now));
-  const active = activeFilters(picked, queue, products, signedIn);
-  const filtered = Boolean(active.product) || Boolean(active.by);
-  const counts = filterCounts(
-    items.filter((x) => inFilters(x, active)).map((x) => x.v),
-    now
-  );
-  const shown = queue.filter((x) => inFilters(x, active)).map((x) => x.v);
+  const items: Item[] = (rows as Row[]).flatMap((v) => {
+    const state = buildStateOf(v, now);
+    if (!state) return [];
+    const names = rowPeople(v, me);
+    return [{ v, state, product: rowProduct(v, products), people: names.map((p) => p.key), names }];
+  });
+  const filtered = isBuildFiltered(filters);
+  const kept = items.filter((x) => passesBuild(x, filters));
+
+  // The filter options, Explorations' checkbox menus, each with its count over what the other filters keep.
+  const countBy = (f: BuildFilters) => items.filter((x) => passesBuild(x, f)).length;
+  const offered = BUILD_STATES.filter((s) => s !== "not-planned" || items.some((x) => x.state === s) || filters.status.includes(s));
+  const statusOptions = offered.map((s) => ({ value: s, label: BUILD_STATE_LABEL[s], count: countBy({ ...filters, status: [s] }) }));
+  const productName = (k: string) => products.find((p) => p.key.toLowerCase() === k)?.name ?? k;
+  const productKeys = [...new Set([...products.map((p) => p.key.toLowerCase()), ...items.map((x) => x.product)])].filter((k) => items.some((x) => x.product === k) || filters.product.includes(k));
+  const productOptions = productKeys.map((k) => ({ value: k, label: productName(k), count: countBy({ ...filters, product: [k] }) }));
+  const personNames = new Map<string, string>();
+  for (const x of items) for (const p of x.names) if (p.key !== YOU) personNames.set(p.key, p.name);
+  const personLabel = (k: string) => (k === YOU ? "You" : (personNames.get(k) ?? k));
+  const personOptions = [
+    ...(data.viewer ? [{ value: YOU, label: "You", count: countBy({ ...filters, people: [YOU] }) }] : []),
+    ...[...personNames.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => ({ value: k, label: n, count: countBy({ ...filters, people: [k] }) })),
+  ];
+
+  // The Board shows Shipped too while the Status filter is on its default, as Explorations' Board does.
+  const boardItems = view === "board" ? items.filter((x) => passesBuild(x, { ...filters, status: isDefaultStatus(filters.status) ? [...NOT_SHIPPED, "shipped"] : filters.status })) : kept;
+  const shownCount = boardItems.length;
   return (
-    <div className="bb">
+    <div className="bb ex">
       {data.stale && (
         <div className="bb-notes">
           <p className="t-ui t-muted">
@@ -687,40 +770,63 @@ export default function BeingBuilt() {
           </p>
         </div>
       )}
-      <div className="bb-bar">
-        <Tabs value={filter} onValueChange={(f) => f !== null && setFilter(f as BuildTab)}>
-          <TabsList aria-label="Show">
-            {BUILD_TABS.map((f) => (
-              <Tab key={f.value} value={f.value} count={counts[f.value] ?? 0}>
-                {f.label}
-              </Tab>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
-      {(queue.length > 0 || filtered) && (
-        <ListFiltersBar
-          active={active}
-          choices={filterChoices(queue, products, active, signedIn)}
-          onPick={pickFilters}
-          summary={listSummary(shown.length, queue.length, filtered)}
-          clear={filtered && shown.length > 0}
-          end={<ViewSwitch view={view} onPick={pickView} />}
-        />
-      )}
-      {shown.length ? (
-        view === "grid" ? (
-          <Cards views={shown} data={data} products={products} onOpen={go} oneProduct={Boolean(active.product)} />
-        ) : (
-          <Rows views={shown} data={data} now={now} onOpen={go} />
-        )
-      ) : filtered && queue.length > 0 ? (
-        <p className="t-body t-muted bb-none">
-          {NO_FILTER_MATCH} <ClearFilters onPick={pickFilters} />
+      <div className="bl-bar">
+        <span className="bl-narrow">
+          <MultiFilter
+            label="Status"
+            shown={buildStatusTriggerLabel(filters.status, offered)}
+            options={statusOptions}
+            picked={filters.status}
+            onPick={(v) => pick({ ...filters, status: v.length ? BUILD_STATES.filter((s) => v.includes(s)) : [...NOT_SHIPPED] })}
+            reset={{ label: NOT_SHIPPED_LABEL, active: isDefaultStatus(filters.status), onReset: () => pick({ ...filters, status: [...NOT_SHIPPED] }) }}
+          />
+          <MultiFilter
+            label="Product"
+            shown={multiTriggerLabel(filters.product, productName, "All products")}
+            options={productOptions}
+            picked={filters.product}
+            onPick={(v) => pick({ ...filters, product: v })}
+            reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
+          />
+          <MultiFilter
+            label="People"
+            shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
+            options={personOptions}
+            picked={filters.people}
+            onPick={(v) => pick({ ...filters, people: v })}
+            reset={{ label: "Everyone", active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
+          />
+        </span>
+        <p className="t-ui t-muted bl-summary" aria-live="polite">
+          {buildCountLine(shownCount, filtered ? items.length : shownCount)}
+          {filtered && shownCount > 0 && (
+            <>
+              {" "}
+              <Button variant="link" onClick={clear}>
+                Clear filters
+              </Button>
+            </>
+          )}
         </p>
+        <ViewSwitch view={view} onPick={pickView} board />
+      </div>
+      {shownCount === 0 ? (
+        <p className="t-body t-muted bb-none">
+          {emptyBuildLine(filters, { person: personLabel, product: productName })}{" "}
+          {filtered && (
+            <Button variant="link" onClick={clear}>
+              Clear filters
+            </Button>
+          )}
+        </p>
+      ) : view === "board" ? (
+        <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} />
+      ) : view === "grid" ? (
+        <Cards items={kept} data={data} products={products} onOpen={go} oneProduct={filters.product.length === 1} />
       ) : (
-        <p className="t-body t-muted bb-none">{EMPTY_FILTER[filter]}</p>
+        <Rows views={kept.map((x) => x.v)} data={data} now={now} onOpen={go} />
       )}
     </div>
   );
 }
+

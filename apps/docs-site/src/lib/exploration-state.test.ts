@@ -5,7 +5,8 @@ import { taskStage, type DesignTaskRead, type LifecyclePull, type LifecycleStage
 import { homeExplorations, ownOpenWork, quietSentence, type ExplorationPull } from './home-explorations';
 import { folderLine, productFolders, productGroups, productSummary } from './product-page';
 import { shippedByTask, stateOf } from './branches-page';
-import { explorationBuildRows, filterCounts, listedRows, pageSentence } from './building-view';
+import { explorationBuildRows, listedRows, pageSentence } from './building-view';
+import { buildStateOf } from './building-page';
 import { withTaskRow } from './explorations-view';
 import { person } from './home-model';
 import { startedAtOf } from './exploration-page';
@@ -155,7 +156,7 @@ describe('every screen says the same for M1 and M7', () => {
       [4, 'shipped', 'Shipped'],
       [1, 'requested', 'Waiting to be picked up'],
     ]);
-    expect(filterCounts(rows, NOW)).toMatchObject({ waiting: 1, 'shipped-this-week': 1 });
+    expect(rows.map((r) => buildStateOf(r, NOW))).toEqual(['shipped', 'waiting']);
     expect(pageSentence(rows)).toBe('1 waiting to be picked up.');
   });
 

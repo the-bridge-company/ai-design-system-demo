@@ -7,7 +7,6 @@
 import type { LibraryNeed } from '@bridge-ds/core';
 import { waitingForLibraryLine } from './library-impact-view';
 import {
-  BUILD_FILTER_LABEL,
   BUILD_STALE_DAYS,
   branchPreviewUrl,
   previewAtScreen,
@@ -27,7 +26,6 @@ import {
   parseBuildSpec,
   productOfBranch,
   requestIssueTitle,
-  type BuildFilter,
   type BuildIssueLike,
   type BuildProp,
   type BuildPullLike,
@@ -45,7 +43,18 @@ import { authorFor, explorationAuthorFor, isNameAuthor, nameOfAuthor } from './a
 import { isProductBranch } from './product-branch';
 import { explorationHref } from './explorations-view';
 import { explorationState } from './exploration-state';
-import { devReviewLine, LIFECYCLE_LABEL, LIFECYCLE_TONE, pullLifecycle, reviewLine, reviewStateOf, taskStage, type DesignTaskRead, type LifecycleStage, type PullReviewLike } from './review-state';
+import { devReviewLine, LIFECYCLE_LABEL, pullLifecycle, reviewLine, reviewStateOf, taskStage, type DesignTaskRead, type DevPull, type LifecycleStage, type PullReviewLike } from './review-state';
+import { buildStateTag, personLine, possessive, SHIPPED_DAYS, stateOfStatus } from './building-page';
+
+/**
+ * Where the developers' version stands, on Being built: while Check the build waits, whose check it waits for
+ * ("Waiting for Sofia's check", decision 2026-11-11), else the exploration page's words (devReviewLine).
+ */
+export function checkLine(pull: Pick<DevPull, 'answer' | 'check'>, nameOf: (login: string) => string): string {
+  const c = pull.check;
+  if (c?.state === 'pending' && c.waiting.length) return `Waiting for ${possessive(listNames(c.waiting))} check`;
+  return devReviewLine(pull, nameOf);
+}
 
 /** The fields of a GitHub issue the page reads (GET /repos/{o}/{r}/issues). */
 export interface RestIssue {
@@ -196,39 +205,13 @@ export interface LifecycleExtra {
   productKey?: string | null;
 }
 
-/** The tabs of Being built: the lifecycle's words (All, Waiting to be picked up, In progress, In review, Shipped this week). */
-export type BuildTab = BuildFilter | 'in-review';
-
-export const BUILD_TABS: { value: BuildTab; label: string }[] = [
-  { value: 'all', label: BUILD_FILTER_LABEL.all },
-  { value: 'waiting', label: BUILD_FILTER_LABEL.waiting },
-  { value: 'in-progress', label: BUILD_FILTER_LABEL['in-progress'] },
-  { value: 'in-review', label: LIFECYCLE_LABEL['in-review'] },
-  { value: 'shipped-this-week', label: BUILD_FILTER_LABEL['shipped-this-week'] },
-];
-
 /**
- * Whether a row shows under a tab: In progress is picked up or being built, In review its own tab, Shipped this week
- * what shipped in the last 7 days and what waits for the library release (whatever its age).
+ * The one tag of a row: its status in the page's one word (lib/building-page, the same word as the Status filter and
+ * the Board column, decision 2026-11-11), in the colour its stage wears on every page (LIFECYCLE_TONE). Picked up reads
+ * In progress, approved In review, the next release Shipped: the row's line says the rest ("In the next release").
  */
-export function matchesBuildTab(v: Pick<BuildRequestView, 'status' | 'shippedAt' | 'timeline'> & LifecycleExtra, tab: BuildTab, now: number): boolean {
-  if (tab === 'in-review') return v.status === 'in-review';
-  if (tab === 'in-progress') return v.status === 'picked-up' || v.status === 'in-progress';
-  if (tab === 'shipped-this-week') return v.status === 'shipped' && (Boolean(v.nextRelease) || matchesBuildFilter(v, 'shipped-this-week', now));
-  return matchesBuildFilter(v, tab, now);
-}
-
-/** The stage each build status stands for, for its tag's colour (lib/review-state LIFECYCLE_TONE). */
-const BUILD_STAGE: Record<BuildStatus, LifecycleStage> = { requested: 'waiting-for-code', 'picked-up': 'being-built', 'in-progress': 'being-built', 'in-review': 'in-review', shipped: 'shipped', 'not-planned': 'not-planned' };
-
-/**
- * The one tag of a row, in the colour its stage wears on every page (LIFECYCLE_TONE): Waiting to be picked up is amber
- * here as on Changes and the exploration page. A stale request says how long it waits in the tag itself.
- */
-export function statusTag(v: Pick<BuildRequestView, 'status' | 'label' | 'stale'> & LifecycleExtra): { label: string; tone: PillTone | 'info' } {
-  if (v.nextRelease) return { label: LIFECYCLE_LABEL['next-release'], tone: LIFECYCLE_TONE['next-release'] };
-  if (v.approved) return { label: LIFECYCLE_LABEL.approved, tone: LIFECYCLE_TONE.approved };
-  return { label: v.status === 'in-review' ? LIFECYCLE_LABEL['in-review'] : v.label, tone: LIFECYCLE_TONE[BUILD_STAGE[v.status]] };
+export function statusTag(v: Pick<BuildRequestView, 'status'> & LifecycleExtra): { label: string; tone: PillTone | 'info' } {
+  return buildStateTag(stateOfStatus(v.status));
 }
 
 /**
@@ -315,13 +298,6 @@ export function pageRows<V extends BuildRequestView>(data: { views: readonly Bui
   return listedRows(mergeRows<V>(data.views, [...(data.fixes ?? []), ...(data.explorations ?? [])]), now);
 }
 
-/** The counts on the tabs: "In progress 3", "In review 1". */
-export function filterCounts(views: readonly (BuildRequestView & LifecycleExtra)[], now: number): Record<BuildTab, number> {
-  const out = { all: 0, waiting: 0, 'in-progress': 0, 'in-review': 0, 'shipped-this-week': 0 } as Record<BuildTab, number>;
-  for (const f of Object.keys(out) as BuildTab[]) out[f] = views.filter((v) => matchesBuildTab(v, f, now)).length;
-  return out;
-}
-
 /**
  * The sentence under the page title, from the rows the page lists (listedRows): core buildSummaryLine, the same
  * sentence as the Studio home line (components/ds/studio/BuildLine), so both always count the same rows.
@@ -335,15 +311,6 @@ export function pageSentence(views: readonly BuildRequestView[]): string {
   if (!declined) return 'Everything handed to developers is in the library.';
   return `Nothing is being built right now. ${declined === 1 ? 'One change was' : `${declined} changes were`} closed without being built this week.`;
 }
-
-/** What a filter with nothing in it says. */
-export const EMPTY_FILTER: Record<BuildTab, string> = {
-  all: 'Nothing is being built.',
-  waiting: 'Every build request has been picked up.',
-  'in-progress': 'Nothing is in progress right now.',
-  'in-review': 'Nothing waits for a review right now.',
-  'shipped-this-week': 'Nothing shipped this week yet.',
-};
 
 /** Where developers pick build requests up: GitHub, and Jira too when it is on in Bridge (lib/studio-flags). */
 export const PICKED_UP_IN = JIRA_IN_BRIDGE ? 'GitHub or Jira' : 'GitHub';
@@ -433,20 +400,27 @@ export const buildCacheKey = (repo: string, what: 'requests' | 'builds' | 'pulls
 /** A cached list is fresh for 5 minutes. */
 export const BUILD_CACHE_MS = 5 * 60 * 1000;
 
-/** Line 2 of a row: when it was sent, then who builds it ("Sent 4 days ago · Ana is on it"). */
-export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stale' | 'sentence' | 'shippedAt' | 'builders'> & LifecycleExtra, now: number, nameOf: (login: string) => string = (l) => l): string {
+/**
+ * Line 2 of a row: when it was sent, then who it waits on, in the words of its card (lib/building-page personLine):
+ * "Sent 4 days ago · Asked by Leo", "Sent 4 days ago · Malik builds it", then who must review when GitHub says.
+ */
+export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stale' | 'sentence' | 'shippedAt' | 'builders' | 'requestedBy'> & LifecycleExtra, now: number, nameOf: (login: string) => string = (l) => l): string {
   const d = daysSince(v.createdAt, now);
   const sent = d === 0 ? 'Sent today' : d === 1 ? 'Sent yesterday' : `Sent ${d} days ago`;
-  if (v.status === 'requested') return v.stale ? 'Nobody has picked it up yet' : sent;
+  const requester = v.requestedBy ? nameOf(isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : v.requestedBy) : null;
+  const who = personLine({ state: stateOfStatus(v.status), builders: v.builders.map(nameOf), requester });
+  if (v.status === 'requested') return [v.stale ? 'Nobody has picked it up yet' : sent, who].filter(Boolean).join(' · ');
   if (v.status === 'shipped' && v.nextRelease) return 'In the next release';
-  if (v.status === 'in-review' && v.reviewLine) return `${sent} · ${v.reviewLine}`;
   if (v.status === 'shipped') {
     const s = v.shippedAt ? daysSince(v.shippedAt, now) : null;
-    return s === null ? 'In the library' : s === 0 ? 'Shipped today' : s === 1 ? 'Shipped yesterday' : `Shipped ${s} days ago`;
+    const when = s === null ? 'In the library' : s === 0 ? 'Shipped today' : s === 1 ? 'Shipped yesterday' : `Shipped ${s} days ago`;
+    return v.builders.length && s !== null ? `${when} by ${listNames(v.builders.map(nameOf))}` : when;
   }
-  if (v.status === 'in-review') return `${sent} · ${v.builders.length ? `Built by ${v.builders.map(nameOf).join(' and ')}` : 'Built'}, in code review`;
-  return `${sent} · ${v.sentence.replace(/\.$/, '')}`;
+  if (v.status === 'in-review') return [sent, v.builders.length ? who : null, v.reviewLine ?? (v.builders.length ? null : 'In code review')].filter(Boolean).join(' · ');
+  return `${sent} · ${v.builders.length ? who : v.sentence.replace(/\.$/, '')}`;
 }
+
+const listNames = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
 /** The title of a row and of the detail: "Button: add a lg size", the same words as the issue on GitHub. */
 export const viewTitle = (v: Pick<BuildRequestView, 'component' | 'title'>) => (v.component ? requestIssueTitle({ component: v.component, title: v.title }) : v.title);
@@ -550,7 +524,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
     if (!status) return [];
     const shippedAt = status === 'shipped' ? (task?.closedAt ?? p.merged_at ?? null) : null;
     const declinedAt = status === 'not-planned' ? (task?.closedAt ?? null) : null;
-    if (status === 'shipped' && !nextRelease && !(shippedAt && ctx.now - Date.parse(shippedAt) <= 7 * DAY)) return [];
+    if (status === 'shipped' && !nextRelease && !(shippedAt && ctx.now - Date.parse(shippedAt) <= SHIPPED_DAYS * DAY)) return [];
     const block = parseExplorationBody(p.body);
     const raw = block?.name?.trim() || (p.title ?? '').replace(/^Exploration:\s*/i, '').trim() || `Exploration #${p.number}`;
     const name = raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -581,7 +555,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
     const done = `Done exploring${doneBy ? ` by ${nameOf(doneBy)}` : ''}${doneAt ? ` on ${shortDate(doneAt)}` : ''}`;
     const s = shippedAt ? daysSince(shippedAt, ctx.now) : 0;
     // The developers' version of a design copy exploration waits for the designer's eyes, not for a code review.
-    const reviewWords = stage === 'in-review' || stage === 'approved' ? (task?.devPull ? devReviewLine(task.devPull, nameOf) : reviewLine(review, { viewer: ctx.viewer ?? null, nameOf })) : null;
+    const reviewWords = stage === 'in-review' || stage === 'approved' ? (task?.devPull ? checkLine(task.devPull, nameOf) : reviewLine(review, { viewer: ctx.viewer ?? null, nameOf })) : null;
     const where: Record<BuildStatus, string | null> = {
       requested: null,
       'picked-up': null,

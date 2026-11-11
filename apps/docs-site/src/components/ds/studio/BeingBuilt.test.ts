@@ -27,25 +27,92 @@ function fixture() {
 
 beforeEach(() => history.replaceState(null, '', '/studio/building/'));
 
+/** Ticks or unticks one box of a filter menu ("Status", "Product", "People"), then closes it. */
+async function tick(filter: RegExp, item: RegExp) {
+  await userEvent.click(screen.getByRole('button', { name: filter }));
+  const menu = await screen.findByRole('menu');
+  await userEvent.click(within(menu).getByRole('menuitemcheckbox', { name: item }));
+  await userEvent.keyboard('{Escape}');
+}
+
 describe('Being built', () => {
-  it('lists every build request with one status tag and no row button', async () => {
+  it('opens on Not shipped yet: one status tag per row in the filter word, no tabs, no row button', async () => {
     data = fixture();
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Tabs: put a count after the label')).toBeTruthy();
-    expect(screen.getByText('Requested 10 days ago')).toBeTruthy();
-    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(6);
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Status: Not shipped yet' })).toBeTruthy();
+    // One word per status: the tag says the filter's word, never "Requested".
+    expect(container.textContent).not.toContain('Requested');
+    expect(screen.getAllByText('Waiting to be picked up').length).toBeGreaterThan(0);
+    // Shipped is not in the default: five of the six changes.
+    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(5);
+    expect(screen.queryByText('Avatar: add an xs size')).toBeNull();
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
     expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
     await expectNoAxeViolations(container);
+  });
+
+  it('lists the four statuses with their counts in the Status menu, Shipped from the last 30 days', async () => {
+    data = fixture();
+    const { container } = render(createElement(BeingBuilt));
+    await screen.findByText('Tabs: put a count after the label');
+    await userEvent.click(screen.getByRole('button', { name: 'Status: Not shipped yet' }));
+    const menu = await screen.findByRole('menu');
+    const items = within(menu).getAllByRole('menuitemcheckbox');
+    expect(items.map((i) => i.textContent)).toEqual(['Not shipped yet', 'Waiting to be picked up2', 'In progress2', 'In review1', 'Shipped1']);
+    expect(items.map((i) => i.getAttribute('aria-checked'))).toEqual(['true', 'true', 'true', 'true', 'false']);
+    await userEvent.click(within(menu).getByRole('menuitemcheckbox', { name: /^Shipped/ }));
+    expect(new URLSearchParams(location.search).get('status')).toBe('waiting,in-progress,in-review,shipped');
+    expect(screen.getByRole('button', { name: 'Status: All statuses' })).toBeTruthy();
+    expect(screen.getByText('Avatar: add an xs size')).toBeTruthy();
+    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(6);
+    await userEvent.keyboard('{Escape}');
+    await expectNoAxeViolations(container);
+  });
+
+  it('says who each row waits on: Asked by while waiting, builds it once picked up', async () => {
+    data = fixture();
+    const { container } = render(createElement(BeingBuilt));
+    await screen.findByText('Tabs: put a count after the label');
+    const text = container.textContent ?? '';
+    expect(text).toContain('Asked by Dana');
+    expect(text).toContain('Malik builds it');
+    expect(text).not.toContain('is building it');
+    expect(text).not.toContain('in code review');
+  });
+
+  it('shows a Board, one column per status with its count, cards without a status tag', async () => {
+    localStorage.clear();
+    data = fixture();
+    const { container } = render(createElement(BeingBuilt));
+    await screen.findByText('Tabs: put a count after the label');
+    await userEvent.click(screen.getByRole('radio', { name: 'Board' }));
+    const board = screen.getByRole('region', { name: 'Board, one column per status' });
+    const heads = [...board.querySelectorAll('.ex-col-h')].map((h) => h.textContent);
+    expect(heads).toEqual(['Waiting to be picked up 2', 'In progress 2', 'In review 1', 'Shipped, last 30 days 1']);
+    expect(board.querySelectorAll('.sh-card-item')).toHaveLength(6);
+    expect(board.querySelectorAll('.sh-card-tag')).toHaveLength(0);
+    expect(board.textContent).toContain('Asked by Dana');
+    expect(board.textContent).toContain('Shipped by');
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('6 changes.');
+    await expectNoAxeViolations(container);
+    // Filtered to In review: one column.
+    await tick(/^Status:/, /^Waiting to be picked up/);
+    await tick(/^Status:/, /^In progress/);
+    expect([...container.querySelectorAll('.ex-col-h')].map((h) => h.textContent)).toEqual(['In review 1']);
+    localStorage.clear();
   });
 
   it('filters, then opens the detail in place with the developer fold', async () => {
     data = fixture();
     render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
-    await userEvent.click(screen.getByRole('tab', { name: /In review/ }));
+    await tick(/^Status:/, /^Waiting to be picked up/);
+    await tick(/^Status:/, /^In progress/);
     expect(screen.queryByText('Tabs: put a count after the label')).toBeNull();
     await userEvent.click(screen.getByText('Badge: add an info tone'));
-    expect(location.search).toBe('?request=33');
+    expect(location.search).toBe('?request=33&status=in-review');
     expect(screen.getByRole('heading', { name: 'Badge: add an info tone' })).toBeTruthy();
     expect(screen.getByText('Where it stands')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'For developers' })).toBeTruthy();
@@ -54,20 +121,17 @@ describe('Being built', () => {
     expect(document.body.textContent).not.toMatch(/jira|DS-128/i);
   });
 
-  it("has Changes' two filters under the tabs, with its count, the tab counts following them", async () => {
+  it("has Explorations' Product and People checkbox menus after Status, with the count", async () => {
     data = { ...fixture(), viewer: 'dana' };
     const { container } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
-    expect(container.querySelectorAll('.bl-bar [role="combobox"]').length).toBe(2);
-    expect(container.querySelector('.bl-bar')!.textContent).toContain('All products');
-    expect(container.querySelector('.bl-bar')!.textContent).toContain('Everyone');
-    expect(container.querySelector('.bl-bar')!.textContent).toContain('6 changes.');
-    await userEvent.click(container.querySelectorAll('.bl-bar [role="combobox"]')[1]!);
-    await userEvent.click(await screen.findByRole('option', { name: /Malik/ }));
+    expect(container.querySelectorAll('.bl-bar [role="combobox"]').length).toBe(0);
+    expect([...container.querySelectorAll('.bl-bar .bl-multi')].map((b) => b.getAttribute('aria-label'))).toEqual(['Status: Not shipped yet', 'Product: All products', 'People: Everyone']);
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
+    await tick(/^People:/, /^Malik/);
     expect(location.search).toBe('?people=malik-haddad');
+    expect(screen.getByRole('button', { name: 'People: Malik' })).toBeTruthy();
     expect(container.querySelector('.bl-bar')!.textContent).toContain('2 of 6 changes.');
-    expect(screen.getByRole('tab', { name: /^All/ }).textContent).toContain('2');
-    expect(screen.getByRole('tab', { name: /Waiting to be picked up/ }).textContent).toContain('0');
     // A row with nobody on it left with the filter, and comes back under Everyone.
     expect(screen.queryByText('Tabs: put a count after the label')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
@@ -91,7 +155,7 @@ describe('Being built', () => {
     history.replaceState(null, '', '/studio/building/?product=admin');
     data = fixture();
     render(createElement(BeingBuilt));
-    expect(await screen.findByText(/Nothing here matches these filters/)).toBeTruthy();
+    expect(await screen.findByText(/Nothing waiting or being built in .* right now/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByText('Button: add a lg size')).toBeTruthy();
   });
@@ -102,14 +166,14 @@ describe('Being built', () => {
     const { container, unmount } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     await userEvent.click(screen.getByRole('radio', { name: 'Grid' }));
-    expect(container.querySelectorAll('.sh-card-item')).toHaveLength(6);
+    expect(container.querySelectorAll('.sh-card-item')).toHaveLength(5);
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(0);
     await expectNoAxeViolations(container);
     // The next visit opens on the cards: the choice is this person's, and this page's.
     unmount();
     const again = render(createElement(BeingBuilt));
     await again.findByText('Tabs: put a count after the label');
-    expect(again.container.querySelectorAll('.sh-card-item')).toHaveLength(6);
+    expect(again.container.querySelectorAll('.sh-card-item')).toHaveLength(5);
     localStorage.clear();
   });
 
@@ -130,8 +194,10 @@ describe('Being built', () => {
     const base = fixture();
     const fixes = fixRows([session], [{ number: 598, state: 'closed', merged_at: at, updated_at: at }], NOW, (l) => (l === 'peterbono' ? 'Florian' : l));
     data = { ...base, fixes };
+    history.replaceState(null, '', '/studio/building/?status=all');
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Button')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Status: All statuses' })).toBeTruthy();
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(7);
     expect(container.textContent).toContain("Claude's fix from Figma, asked by Florian");
     expect(container.textContent).not.toContain('peterbono');
@@ -140,9 +206,13 @@ describe('Being built', () => {
     expect(container.querySelector('a[href="/studio/explorations/?pr=598"]')).toBeTruthy();
     expect(container.innerHTML).not.toContain('github.com/peterbono');
     expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
-    await userEvent.click(screen.getByRole('tab', { name: /Shipped this week/ }));
+    // Shipped: the fix stays; Not shipped yet: it leaves.
+    await tick(/^Status:/, /^Waiting to be picked up/);
+    await tick(/^Status:/, /^In progress/);
+    await tick(/^Status:/, /^In review/);
+    expect(screen.getByRole('button', { name: 'Status: Shipped' })).toBeTruthy();
     expect(screen.getByText('Button')).toBeTruthy();
-    await userEvent.click(screen.getByRole('tab', { name: /Waiting to be picked up/ }));
+    await tick(/^Status:/, /^Not shipped yet/);
     expect(screen.queryByText('Button')).toBeNull();
     await expectNoAxeViolations(container);
   });
@@ -163,6 +233,10 @@ describe('Being built', () => {
   it('keeps a request closed as not planned for a week, with its own pictures and component, then leaves it out', async () => {
     data = withTag(6);
     const { container, unmount } = render(createElement(BeingBuilt));
+    await screen.findByText('Tabs: put a count after the label');
+    // Not planned is a status of its own, offered while one is listed, never in the default.
+    expect(screen.queryByText('Tag: test: rounder tag corners')).toBeNull();
+    await tick(/^Status:/, /^Not planned/);
     const title = await screen.findByText('Tag: test: rounder tag corners');
     const row = title.closest('li')!;
     expect(row.textContent).toContain('Developers closed it without building it');
@@ -171,14 +245,17 @@ describe('Being built', () => {
     expect(thumb.getAttribute('data-label')).toBe('Tag');
     expect([...thumb.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual(['https://example.com/tag-before.png', 'https://example.com/tag-after.png']);
     expect(row.querySelector('a')!.getAttribute('title')).toBe('Tag: test: rounder tag corners');
-    expect(screen.getByRole('tab', { name: /All/ }).textContent).toContain('7');
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('6 of 7 changes.');
     unmount();
+    history.replaceState(null, '', '/studio/building/');
     data = withTag(8);
     const again = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     expect(screen.queryByText('Tag: test: rounder tag corners')).toBeNull();
-    expect(again.container.querySelectorAll('.sh-row-item')).toHaveLength(6);
-    expect(screen.getByRole('tab', { name: /All/ }).textContent).toContain('6');
+    await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
+    expect(within(await screen.findByRole('menu')).queryByRole('menuitemcheckbox', { name: /^Not planned/ })).toBeNull();
+    await userEvent.keyboard('{Escape}');
+    expect(again.container.querySelectorAll('.sh-row-item')).toHaveLength(5);
     expect(container.textContent).not.toContain('Tag: test');
   });
 
@@ -196,6 +273,7 @@ describe('Being built', () => {
     expect(new Set(fixes.map((f) => f.id)).size).toBe(2);
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     data = withTag(1, fixes);
+    history.replaceState(null, '', '/studio/building/?status=all,not-planned');
     const { container } = render(createElement(BeingBuilt));
     await screen.findByText('Tag: test: rounder tag corners');
     expect(error.mock.calls.flat().join(' ')).not.toContain('same key');
@@ -245,7 +323,7 @@ describe('Being built', () => {
     const title = await screen.findByText('Explore new design pr being built');
     expect(summary.textContent).toMatch(/^\d+ in progress, \d+ in review, \d+ waiting to be picked up/);
     summary.remove();
-    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(9);
+    expect(container.querySelectorAll(".sh-row-item")).toHaveLength(7);
     expect(screen.queryByText('Still running')).toBeNull();
     const row = title.closest('li')!;
     // No kind tag: every change starts as an exploration.
@@ -260,20 +338,19 @@ describe('Being built', () => {
       expect(src).not.toContain('Explorations handed to developers, and changes from Figma or from Components that need code, land here.');
     }
     expect(container.textContent).not.toMatch(/—/);
-    expect(screen.getByRole('tab', { name: /Waiting to be picked up/ }).textContent).toContain('3');
-    expect(screen.getByRole('tab', { name: /In progress/ }).textContent).toContain('2');
     // Marked ready for review by the developers: In review, with who must review on its line.
-    expect(screen.getByRole('tab', { name: /In review/ }).textContent).toContain('2');
     expect(screen.getByText('Billing screen').closest('li')!.textContent).toContain('Waiting for a reviewer');
-    expect(screen.getByRole('tab', { name: /Shipped this week/ }).textContent).toContain('2');
-    await userEvent.click(screen.getByRole('tab', { name: /Waiting to be picked up/ }));
-    expect(screen.getByText('Explore new design pr being built')).toBeTruthy();
-    expect(screen.queryByText('Billing screen')).toBeNull();
-    await userEvent.click(screen.getByRole('tab', { name: /In progress/ }));
-    expect(screen.queryByText('Billing screen')).toBeNull();
-    await userEvent.click(screen.getByRole('tab', { name: /In review/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getAllByRole('menuitemcheckbox').map((i) => i.textContent)).toEqual(['Not shipped yet', 'Waiting to be picked up3', 'In progress2', 'In review2', 'Shipped2']);
+    await userEvent.keyboard('{Escape}');
+    // Only In review.
+    await tick(/^Status:/, /^Waiting to be picked up/);
+    await tick(/^Status:/, /^In progress/);
+    expect(screen.queryByText('Explore new design pr being built')).toBeNull();
     expect(screen.getByText('Billing screen')).toBeTruthy();
-    await userEvent.click(screen.getByRole('tab', { name: /Shipped this week/ }));
+    // Shipped, the last 30 days.
+    await tick(/^Status:/, /^Shipped/);
     expect(screen.getByText('Wishlist')).toBeTruthy();
     expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
     await expectNoAxeViolations(container);
@@ -302,17 +379,18 @@ describe('Being built', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('keeps "Every build request has been picked up." only while no exploration waits either', async () => {
+  it('says what a status filter leaves out, with Clear filters, when nothing is in it', async () => {
     const at = new Date(NOW - 86_400_000).toISOString();
     const nameOf = (l: string) => l;
     const ready: RestPull = { number: 611, title: 'Exploration: x', html_url: 'https://github.com/acme/ds/pull/611', state: 'open', draft: true, created_at: at, updated_at: at, labels: ['ready-for-devs'], head: { ref: 'explore/x', sha: 'h1' }, body: `<!-- bridge-exploration ${JSON.stringify({ name: 'Admin filters', purpose: '', doneAt: at, doneSha: 'h1' })} -->` };
     data = { views: [], bodies: new Map(), stale: false, nameOf, jiraBase: null, explorations: explorationBuildRows([ready], { products: DEFAULT_PRODUCTS, now: NOW, nameOf }) };
     render(createElement(BeingBuilt));
     await screen.findByText('Admin filters');
-    await userEvent.click(screen.getByRole('tab', { name: /Waiting to be picked up/ }));
+    await tick(/^Status:/, /^Waiting to be picked up/);
+    await tick(/^Status:/, /^In review/);
+    expect(screen.getByRole('button', { name: 'Status: In progress' })).toBeTruthy();
+    expect(screen.getByText(/Nothing in progress right now\./)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByText('Admin filters')).toBeTruthy();
-    expect(screen.queryByText('Every build request has been picked up.')).toBeNull();
-    await userEvent.click(screen.getByRole('tab', { name: /In progress/ }));
-    expect(screen.getByText('Nothing is in progress right now.')).toBeTruthy();
   });
 });

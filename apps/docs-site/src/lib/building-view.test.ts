@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
 import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
-import { ageLabel, buildDetail, explorationBuildRows, mergeRows, type RestPull, detailFromQuery, detailQuery, filterCounts, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, matchesBuildTab, withLifecycle, withProducts } from './building-view';
+import { ageLabel, buildDetail, explorationBuildRows, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
+import { buildStateOf, type BuildState } from './building-page';
 import type { DesignTaskRead } from './review-state';
 
 const NOW = Date.parse('2026-10-24T12:00:00Z');
+/** How many rows each status of the page holds (lib/building-page buildStateOf; what left the page is not counted). */
+const stateCounts = (rows: readonly Parameters<typeof buildStateOf>[0][]) => {
+  const out: Partial<Record<BuildState, number>> = {};
+  for (const r of rows) {
+    const s = buildStateOf(r, NOW);
+    if (s) out[s] = (out[s] ?? 0) + 1;
+  }
+  return out;
+};
 const fixture = () => {
   const { issues, pulls } = fixtureBuildData(NOW);
   return assembleBuildRequests({ issues: issues.map(slimIssue).map(toBuildIssue), pulls: pulls.map(slimPull).map(toBuildPull), now: NOW, nameOf: (l) => FIXTURE_BUILDERS[l] ?? l });
@@ -34,7 +44,7 @@ describe('Being built', () => {
 
   it('counts the filters and says the page in one sentence', () => {
     const views = fixture();
-    expect(filterCounts(views, NOW)).toEqual({ all: 6, waiting: 2, 'in-progress': 2, 'in-review': 1, 'shipped-this-week': 1 });
+    expect(stateCounts(views)).toEqual({ waiting: 2, 'in-progress': 2, 'in-review': 1, shipped: 1 });
     expect(pageSentence(views)).toBe('2 in progress, 1 in review, 2 waiting to be picked up, 1 for more than a week.');
     expect(pageSentence([])).toBe('Nothing is being built yet.');
     // The Studio home line and the page header are one sentence over the same rows.
@@ -44,11 +54,11 @@ describe('Being built', () => {
   it('gives each row one tag and one line, the stale one highlighted', () => {
     const views = fixture();
     const stale = views[0]!;
-    expect(statusTag(stale)).toEqual({ label: 'Requested 10 days ago', tone: 'warning' });
-    expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet');
-    expect(rowLine(views[1]!, NOW)).toBe('Sent yesterday');
-    expect(rowLine(views[2]!, NOW)).toBe('Sent 4 days ago · Malik is on it');
-    expect(rowLine(views[5]!, NOW)).toBe('Shipped 2 days ago');
+    expect(statusTag(stale)).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
+    expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet · Asked by dana');
+    expect(rowLine(views[1]!, NOW)).toBe('Sent yesterday · Asked by dana');
+    expect(rowLine(views[2]!, NOW, (l) => FIXTURE_BUILDERS[l] ?? l)).toBe('Sent 4 days ago · Malik builds it');
+    expect(rowLine(views[5]!, NOW)).toBe('Shipped 2 days ago by theo');
     expect(statusTag(views[5]!)).toEqual({ label: 'Shipped', tone: 'success' });
     expect(ageLabel(new Date(NOW).toISOString(), NOW)).toBe('Today');
   });
@@ -115,11 +125,12 @@ describe('Being built', () => {
     it('shows in All for a week after it was closed, then leaves the list, its count and its sentence', () => {
       const fresh = listedRows(viewsWith(6), NOW);
       expect(fresh.find((v) => v.number === 489)).toMatchObject({ status: 'not-planned', sentence: 'Developers closed it without building it.' });
-      expect(filterCounts(fresh, NOW).all).toBe(7);
+      expect(fresh).toHaveLength(7);
+      expect(stateCounts(fresh)['not-planned']).toBe(1);
       const old = listedRows(viewsWith(8), NOW);
       expect(old.find((v) => v.number === 489)).toBeUndefined();
-      expect(filterCounts(old, NOW)).toEqual(filterCounts(listedRows(viewsWith(400), NOW), NOW));
-      expect(filterCounts(old, NOW).all).toBe(6);
+      expect(stateCounts(old)).toEqual(stateCounts(listedRows(viewsWith(400), NOW)));
+      expect(old).toHaveLength(6);
     });
 
     it('never says everything is in the library while only declined requests are listed', () => {
@@ -182,9 +193,9 @@ describe('Being built: explorations handed to developers', () => {
       pull(2, { name: 'Billing screen', head: { ref: 'explore/billing', sha: 'h2' }, assignees: [{ login: 'theo' }] }),
       // Marked ready for review.
       pull(3, { name: 'Profile page', draft: false }),
-      // Merged this week, and three weeks ago.
+      // Merged this week, and five weeks ago (past the 30 days Shipped keeps).
       pull(4, { name: 'Wishlist', state: 'closed', merged_at: iso(1) }),
-      pull(5, { name: 'Old one', state: 'closed', merged_at: iso(21) }),
+      pull(5, { name: 'Old one', state: 'closed', merged_at: iso(35) }),
       // Running, archived, closed without merging, a plain pull request.
       pull(6, { labels: ['exploration'], done: null }),
       pull(7, { labels: ['ready-for-devs', 'archived'] }),
@@ -198,7 +209,7 @@ describe('Being built: explorations handed to developers', () => {
     expect(building!.builders).toEqual(['theo']);
     expect(building!.exploration.line).toMatch(/Developers are building it$/);
     expect(shipped!.exploration.line).toBe('Shipped 1 day ago');
-    expect(filterCounts(list, NOW)).toEqual({ all: 4, waiting: 1, 'in-progress': 1, 'in-review': 1, 'shipped-this-week': 1 });
+    expect(stateCounts(list)).toEqual({ waiting: 1, 'in-progress': 1, 'in-review': 1, shipped: 1 });
     // In review names who must review: nobody asked by name, no approver known.
     expect(list[2]!.exploration.line).toMatch(/Waiting for a reviewer$/);
     expect(list.map((r) => r.exploration.line).join(' ')).not.toMatch(/—/);
@@ -286,7 +297,7 @@ describe('Being built: explorations handed to developers', () => {
     const read: DesignTaskRead = { assignees: [{ login: 'theo' }], state: 'open', stateReason: null, closedAt: null, devPull: { number: 96, url: 'https://github.com/acme/shop/pull/96', draft: false, answer: { kind: 'looks-right', login: 'ann' } } };
     const [row] = explorationBuildRows([copy], { products, now: NOW, nameOf, task: () => read });
     expect(row).toMatchObject({ status: 'in-review', label: 'Approved, waiting to ship', approved: true });
-    expect(statusTag(row!)).toEqual({ label: 'Approved, waiting to ship', tone: 'success' });
+    expect(statusTag(row!)).toEqual({ label: 'In review', tone: 'warning' });
     expect(row!.exploration.line).toMatch(/said it looks right$/);
   });
 
@@ -342,8 +353,8 @@ describe('Being built: explorations handed to developers', () => {
     ]);
     expect(rowLine(list[0]!, NOW)).toMatch(/Waiting for Florian's review$/);
     expect(statusTag(list[0]!)).toEqual({ label: 'In review', tone: 'warning' });
-    expect(list.filter((r) => matchesBuildTab(r, 'in-review', NOW))).toHaveLength(4);
-    expect(list.filter((r) => matchesBuildTab(r, 'in-progress', NOW))).toHaveLength(0);
+    expect(list.filter((r) => buildStateOf(r, NOW) === 'in-review')).toHaveLength(4);
+    expect(list.filter((r) => buildStateOf(r, NOW) === 'in-progress')).toHaveLength(0);
     // The viewer asked: their own words.
     const mine = explorationBuildRows([asked], { products, now: NOW, nameOf: names, viewer: 'florian' });
     expect(mine[0]!.reviewLine).toBe('Waiting for your review');
@@ -358,8 +369,8 @@ describe('Being built: explorations handed to developers', () => {
       [30, 'In the next release', true, 'In the next release'],
       [31, 'Shipped', false, 'Shipped 1 day ago'],
     ]);
-    expect(statusTag(list[0]!)).toEqual({ label: 'In the next release', tone: 'info' });
-    expect(list.filter((r) => matchesBuildTab(r, 'shipped-this-week', NOW))).toHaveLength(2);
+    expect(statusTag(list[0]!)).toEqual({ label: 'Shipped', tone: 'success' });
+    expect(list.filter((r) => buildStateOf(r, NOW) === 'shipped')).toHaveLength(2);
   });
 
   it('carries the lifecycle onto build requests: In the next release, and who reviews', () => {

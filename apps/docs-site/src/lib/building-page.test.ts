@@ -123,6 +123,9 @@ describe('Being built: the Board', () => {
 describe('Being built: who a card names, and why', () => {
   it('says Asked by while it waits, builds it once picked up, Shipped by once shipped', () => {
     expect(personLine({ state: 'waiting', builders: [], requester: 'Leo' })).toBe('Asked by Leo');
+    // A "Requested by Ann Leroy." line reads like every other card.
+    expect(personLine({ state: 'waiting', builders: [], requester: 'Ann Leroy' })).toBe('Asked by Ann');
+    expect(personLine({ state: 'in-review', builders: ['Malik Benali', 'Ana'], requester: 'Leo' })).toBe('Malik and Ana build it');
     expect(personLine({ state: 'in-progress', builders: ['Malik'], requester: 'Leo' })).toBe('Malik builds it');
     expect(personLine({ state: 'in-review', builders: ['Malik', 'Ana'], requester: 'Leo' })).toBe('Malik and Ana build it');
     expect(personLine({ state: 'in-review', builders: [], requester: 'Sofia' })).toBe('Asked by Sofia');

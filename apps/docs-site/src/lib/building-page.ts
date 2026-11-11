@@ -9,7 +9,7 @@
 //   - The person a card names says why it is there: "Asked by Leo" while it waits, "Malik builds it" once picked up,
 //     "Shipped by Malik" once shipped (personLine).
 import type { BuildRequestView } from '@bridge-ds/core';
-import type { PillTone } from './home-model';
+import { shortName, type PillTone } from './home-model';
 import { LIFECYCLE_TONE } from './review-state';
 import { YOU } from './branches-page';
 
@@ -221,10 +221,12 @@ const names = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs
  * when the row names nobody: the card keeps its plain name.
  */
 export function personLine(x: { state: BuildState; builders: readonly string[]; requester: string | null }): string | null {
-  const b = x.builders.filter(Boolean);
-  if (x.state === 'shipped') return b.length ? `Shipped by ${names(b)}` : x.requester ? `Asked by ${x.requester}` : null;
+  // Every card names people the same short way ("Ann", never "Ann Leroy" from a "Requested by Ann Leroy." line).
+  const b = x.builders.filter(Boolean).map((n) => shortName(n) ?? n);
+  const requester = x.requester ? (shortName(x.requester) ?? x.requester) : null;
+  if (x.state === 'shipped') return b.length ? `Shipped by ${names(b)}` : requester ? `Asked by ${requester}` : null;
   if ((x.state === 'in-progress' || x.state === 'in-review') && b.length) return `${names(b)} ${b.length > 1 ? 'build' : 'builds'} it`;
-  return x.requester ? `Asked by ${x.requester}` : null;
+  return requester ? `Asked by ${requester}` : null;
 }
 
 /** "Sofia's", "James'": the possessive of a name. */

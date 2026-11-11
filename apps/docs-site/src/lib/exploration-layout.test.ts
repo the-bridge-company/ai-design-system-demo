@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, leadPicksLine, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -90,6 +90,14 @@ describe('words', () => {
     expect(journeyOf('check', { product: 'Acme CRM' })).toEqual({ segments: ['done', 'done', 'now', 'next'], next: 'Then it goes live in Acme CRM' });
     expect(journeyOf('shipped', { product: 'Acme CRM' })).toEqual({ segments: ['done', 'done', 'done', 'done'], next: 'Every step is done' });
   });
+  it('names who picks what the library keeps: the lead by name, "you" for the lead, never a capital Your mid-sentence', () => {
+    expect(journeyOf('exploring', { lead: 'Dana', viewerLeads: true, product: 'Acme Prints' }).next).toBe('Then you pick what the library keeps');
+    expect(journeyOf('exploring', { product: 'Acme Prints' }).next).toBe('Then your design lead picks what the library keeps');
+    expect(leadPicksLine({ lead: 'Dana' })).toBe('Dana picks what the library keeps');
+    expect(leadPicksLine({ lead: 'Dana', viewerLeads: true })).toBe('You pick what the library keeps');
+    expect(leadPicksLine({ lead: null })).toBe('Your design lead picks what the library keeps');
+    expect(leadPicksLine({ lead: ' ' }, true)).toBe('Then your design lead picks what the library keeps');
+  });
   it('the comment box names who reads it', () => {
     expect(writeToLine(['Malik', 'Dana'])).toBe('Write to Malik and Dana');
     expect(writeToLine(['Sofia'])).toBe('Write to Sofia');
@@ -168,6 +176,10 @@ describe('the Activity says each thing once', () => {
   const when = (iso: string) => iso;
   it('a commit that only repeats the exploration name reads "saved a change"', () => {
     expect(quietChange('made a change: Save Bulk actions on products', 'Bulk actions on products')).toBe('saved a change');
+    // The handover notes' own commits say what they are.
+    expect(quietChange('made a change: Note where it stands', 'Bulk actions on products')).toBe(NOTES_LINE);
+    expect(quietChange('made a change: Update where it stands', null)).toBe('updated the handover notes');
+    expect(quietChange('made a change: Note the narrow screen', 'Bulk actions on products')).toBe('made a change: Note the narrow screen');
     expect(quietChange('made a change: Update bulk actions on products.', 'Bulk actions on products')).toBe('saved a change');
     expect(quietChange('made a change: Save', 'Bulk actions on products')).toBe('saved a change');
     expect(quietChange('made a change: Price window preview', 'Bulk actions on products')).toBe('made a change: Price window preview');

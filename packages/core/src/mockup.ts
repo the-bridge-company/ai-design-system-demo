@@ -150,12 +150,18 @@ export function mockupNameOf(name: string | null | undefined): string | null {
 }
 
 /**
- * The one line the exploration page says once the mockup was read and its pieces are known: "From Contacts v3:" then
- * "2 pieces the library doesn't have". Null when there is nothing to say: no mockup, the pieces not known yet, or none
- * missing (said once, no noise). The name: what Claude read, else the Figma file's name, else "the mockup".
+ * The mockup as designers read it on the exploration page ("Started from Contacts v3"): the name Claude read, else the
+ * Figma file's name, else "the mockup". Never a node id or a page id.
  */
-export function mockupPiecesLine(m: Mockup | null, o: { name?: string | null | undefined; missing: number | null | undefined }): { from: string; count: string } | null {
-  if (!m || typeof o.missing !== 'number' || !(o.missing > 0)) return null;
-  const name = mockupNameOf(o.name) ?? (m.kind === 'figma' ? m.fileName : undefined) ?? 'the mockup';
-  return { from: `From ${name}:`, count: `${o.missing} ${o.missing === 1 ? 'piece' : 'pieces'} the library doesn't have` };
+export function mockupShownName(m: Mockup, name?: string | null): string {
+  return mockupNameOf(name) ?? (m.kind === 'figma' ? m.fileName : undefined) ?? 'the mockup';
+}
+
+/**
+ * The count the exploration page adds after the mockup's name once its pieces are known: "2 pieces the library doesn't
+ * have". Null when there is nothing to say: no mockup, the pieces not known yet, or none missing (said once, no noise).
+ */
+export function mockupPiecesLine(m: Mockup | null, missing: number | null | undefined): string | null {
+  if (!m || typeof missing !== 'number' || !(missing > 0)) return null;
+  return `${missing} ${missing === 1 ? 'piece' : 'pieces'} the library doesn't have`;
 }

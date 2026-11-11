@@ -2,7 +2,7 @@
 // and the link the exploration keeps.
 import { describe, expect, it } from 'vitest';
 import { explorationMockupOf, explorationPrBody, parseExplorationBody, withExplorationMockupName } from '../src/explorations';
-import { MOCKUP_PROBLEM, mockupBrief, mockupCard, mockupLabel, mockupLine, mockupNameOf, mockupOf, mockupPiecesLine, parseMockupLink } from '../src/mockup';
+import { MOCKUP_PROBLEM, mockupBrief, mockupCard, mockupLabel, mockupLine, mockupNameOf, mockupOf, mockupPiecesLine, mockupShownName, parseMockupLink } from '../src/mockup';
 import { startBrief } from '../src/products';
 
 const FRAME = 'https://www.figma.com/design/k3P9xQab/CRM-screens?node-id=212-4180&t=abc123-1';
@@ -119,24 +119,27 @@ describe('mockupLine', () => {
   });
 });
 
-describe('mockupPiecesLine: "From <mockup>: N pieces the library doesn\'t have"', () => {
+describe('"Started from <name> · N pieces the library doesn\'t have"', () => {
   const m = parseMockupLink(FRAME).mockup!;
   const design = parseMockupLink('https://claude.ai/artifact/8f2c41e0-aaaa').mockup!;
 
-  it('the name Claude read, then the count', () => {
-    expect(mockupPiecesLine(m, { name: 'Contacts v3', missing: 2 })).toEqual({ from: 'From Contacts v3:', count: "2 pieces the library doesn't have" });
-    expect(mockupPiecesLine(m, { name: 'Contacts v3', missing: 1 })?.count).toBe("1 piece the library doesn't have");
+  it('the name: what Claude read, else the Figma file, else "the mockup"; never a node or page id', () => {
+    expect(mockupShownName(m, 'Contacts v3')).toBe('Contacts v3');
+    expect(mockupShownName(m)).toBe('CRM screens');
+    expect(mockupShownName(design, '  ')).toBe('the mockup');
+    expect(mockupShownName(parseMockupLink('https://www.figma.com/design/k3P9xQab?node-id=212-4180').mockup!)).toBe('the mockup');
+    expect([mockupShownName(m), mockupShownName(design)].join(' ')).not.toMatch(/212|8f2c/);
   });
 
-  it('without a name: the Figma file, else "the mockup"', () => {
-    expect(mockupPiecesLine(m, { missing: 3 })?.from).toBe('From CRM screens:');
-    expect(mockupPiecesLine(design, { name: '  ', missing: 3 })?.from).toBe('From the mockup:');
+  it('the count', () => {
+    expect(mockupPiecesLine(m, 2)).toBe("2 pieces the library doesn't have");
+    expect(mockupPiecesLine(m, 1)).toBe("1 piece the library doesn't have");
   });
 
-  it('nothing without a mockup, before the pieces are known, or with none missing', () => {
-    expect(mockupPiecesLine(null, { name: 'Contacts v3', missing: 2 })).toBeNull();
-    expect(mockupPiecesLine(m, { name: 'Contacts v3', missing: null })).toBeNull();
-    expect(mockupPiecesLine(m, { name: 'Contacts v3', missing: 0 })).toBeNull();
+  it('no count without a mockup, before the pieces are known, or with none missing', () => {
+    expect(mockupPiecesLine(null, 2)).toBeNull();
+    expect(mockupPiecesLine(m, null)).toBeNull();
+    expect(mockupPiecesLine(m, 0)).toBeNull();
   });
 
   it('the name is one short line, never an em dash', () => {

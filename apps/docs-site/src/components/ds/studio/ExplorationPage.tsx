@@ -159,13 +159,16 @@ export interface ExplorationPageProps {
   me?: PageFace | null;
   /** What the exploration sets out to do (its purpose): one plain sentence under the screen's name. */
   purpose?: string | null;
-  /** The mockup it started from (a Figma frame or a Claude Design page): "Started from" it, with its link, under the owner line. */
+  /**
+   * The mockup it started from (a Figma frame or a Claude Design page): "Started from Contacts v3", linked, under the
+   * owner line. Its label is the name designers know (mockupShownName), never a node id.
+   */
   startedFrom?: { label: string; url: string } | null;
   /**
-   * Once the mockup was read and the library check recorded its pieces: "From Contacts v3:" and "2 pieces the library
-   * doesn't have", with the pieces' names for when the page does not list them. Unset: nothing said.
+   * Once the library check recorded the pieces the mockup's build lacks: "2 pieces the library doesn't have" on the
+   * same line, with the pieces' names for when the page does not list them. Unset: only "Started from".
    */
-  fromMockup?: { from: string; count: string; pieces: string[] } | null;
+  fromMockup?: { count: string; pieces: string[] } | null;
   /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
   thumbRoute?: string | null;
   /**
@@ -638,16 +641,23 @@ function goToLibraryChoice() {
 }
 
 /**
- * "From Contacts v3: 2 pieces the library doesn't have", one line under "Started from". The count goes to the pieces
- * where the page lists them (the library section); where it does not, it opens their names under the line.
+ * "Started from Contacts v3 · 2 pieces the library doesn't have": the mockup named once, linked, then the count once its
+ * pieces are known. The count goes to the pieces where the page lists them (the library section); where it does not,
+ * it opens their names under the line.
  */
-export function FromMockup({ x, listed }: { x: NonNullable<ExplorationPageProps['fromMockup']>; listed: boolean }) {
+export function StartedFrom({ from, x, listed }: { from: NonNullable<ExplorationPageProps['startedFrom']>; x?: ExplorationPageProps['fromMockup']; listed: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="xp-from-mockup" data-from-mockup="">
-      <p className="xp-muted xp-devline">
-        {x.from}{' '}
-        {listed ? (
+    <div className="xp-from-mockup">
+      <p className="xp-muted xp-devline" data-started-from="">
+        Started from{' '}
+        <Link href={from.url} external>
+          {from.label}
+        </Link>
+        {x && (
+          <span data-from-mockup="">
+            {' · '}
+            {listed ? (
           <Link
             href="#xp-library"
             onClick={(ev) => {
@@ -661,9 +671,11 @@ export function FromMockup({ x, listed }: { x: NonNullable<ExplorationPageProps[
           <Button variant="link" aria-expanded={open} aria-controls="xp-from-mockup-list" onClick={() => setOpen((o) => !o)}>
             {x.count}
           </Button>
+            )}
+          </span>
         )}
       </p>
-      {!listed && open && (
+      {x && !listed && open && (
         <ul className="xp-from-mockup-list" id="xp-from-mockup-list">
           {x.pieces.map((t, i) => (
             <li key={`${i}-${t}`}>{t}</li>
@@ -1448,15 +1460,11 @@ function ExplorationBody(p: ExplorationPageProps) {
           <span>{ownerLine(p.author.name, p.startedTail)}</span>
         </p>
         {p.startedFrom && (
-          <p className="xp-muted xp-devline" data-started-from="">
-            Started from{' '}
-            <Link href={p.startedFrom.url} external>
-              {p.startedFrom.label}
-            </Link>
-          </p>
-        )}
-        {p.startedFrom && p.fromMockup && (
-          <FromMockup x={p.fromMockup} listed={(p.stage === 'exploring' || Boolean(handoff)) && (Boolean(p.impact) || Boolean(handoff && handoff.pieces.state !== 'hidden'))} />
+          <StartedFrom
+            from={p.startedFrom}
+            x={p.fromMockup ?? null}
+            listed={(p.stage === 'exploring' || Boolean(handoff)) && (Boolean(p.impact) || Boolean(handoff && handoff.pieces.state !== 'hidden'))}
+          />
         )}
       </div>
       {p.archived && !p.notDoing && p.stage === 'not-started' && (

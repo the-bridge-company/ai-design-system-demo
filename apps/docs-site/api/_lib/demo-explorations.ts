@@ -155,7 +155,7 @@ export function seedMemberOf(who: unknown): DemoMember | null {
   return DEMO_MEMBERS.find((m) => m.email === w || m.name.toLowerCase() === w) ?? null;
 }
 
-/** The lead who answers `member`'s ask: Ann reviews design, Dana answers Ann's own. */
+/** The lead who answers `member`'s ask: a lead other than the admin when the team has one, else Dana. */
 export function seedLeadFor(member: Pick<DemoMember, 'email'>): DemoMember | null {
   const leads = DEMO_MEMBERS.filter((m) => m.lead && m.email !== member.email);
   return leads.find((m) => m.role !== 'admin') ?? leads[0] ?? null;

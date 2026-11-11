@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, leadPicksLine, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, daysSince, handOverTitle, leadStepText, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, pmBlockOf, sharedChoiceOf, waitBlockOf, waitedWhen, writeToLine, zoneOf, type WaitInput, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -84,19 +84,10 @@ describe('words', () => {
     expect(ownerLine('Sofia', 'Acme CRM · Nov 6')).toBe("Sofia's exploration in Acme CRM, started Nov 6");
     expect(ownerLine('James', 'Acme CRM')).toBe("James' exploration in Acme CRM");
   });
-  it('the journey names only the next step', () => {
-    expect(journeyOf('exploring', { lead: 'Dana', product: 'Acme Prints' })).toEqual({ segments: ['now', 'next', 'next', 'next'], next: 'Then Dana picks what the library keeps' });
-    expect(journeyOf('waiting-for-lead', { lead: 'Dana', product: 'Acme Prints' }).next).toBe('Then the Acme Prints developers build it');
-    expect(journeyOf('check', { product: 'Acme CRM' })).toEqual({ segments: ['done', 'done', 'now', 'next'], next: 'Then it goes live in Acme CRM' });
-    expect(journeyOf('shipped', { product: 'Acme CRM' })).toEqual({ segments: ['done', 'done', 'done', 'done'], next: 'Every step is done' });
-  });
-  it('names who picks what the library keeps: the lead by name, "you" for the lead, never a capital Your mid-sentence', () => {
-    expect(journeyOf('exploring', { lead: 'Dana', viewerLeads: true, product: 'Acme Prints' }).next).toBe('Then you pick what the library keeps');
-    expect(journeyOf('exploring', { product: 'Acme Prints' }).next).toBe('Then your design lead picks what the library keeps');
-    expect(leadPicksLine({ lead: 'Dana' })).toBe('Dana picks what the library keeps');
-    expect(leadPicksLine({ lead: 'Dana', viewerLeads: true })).toBe('You pick what the library keeps');
-    expect(leadPicksLine({ lead: null })).toBe('Your design lead picks what the library keeps');
-    expect(leadPicksLine({ lead: ' ' }, true)).toBe('Then your design lead picks what the library keeps');
+  it('names who decides what the library keeps: the lead by name, "You" for the lead, the design lead when unknown', () => {
+    expect(leadStepText({ lead: 'Dana', viewerLeads: false })).toBe('Dana decides what the library keeps');
+    expect(leadStepText({ lead: 'Dana', viewerLeads: true })).toBe('You decide what the library keeps');
+    expect(leadStepText({ lead: ' ', viewerLeads: false }, true)).toBe('The design lead decides');
   });
   it('the comment box names who reads it', () => {
     expect(writeToLine(['Malik', 'Dana'])).toBe('Write to Malik and Dana');
@@ -232,5 +223,145 @@ describe('the screen stage names the screen, then what the exploration does', ()
     expect(aboutLine('  a summary on top ')).toBe('A summary on top.');
     expect(aboutLine('')).toBeNull();
     expect(aboutLine('x '.repeat(150))!.length).toBeLessThanOrEqual(203);
+  });
+});
+
+describe('the turn block while nothing waits on the viewer (direction B)', () => {
+  const base: WaitInput = { stage: 'waiting-for-lead', role: 'owner', author: 'Sofia', lead: 'Dana', viewerLeads: false, product: 'Acme Prints' };
+  it('says how long the lead has waited from the real ask, never an invented number', () => {
+    expect(waitedWhen(null)).toBe('now');
+    expect(waitedWhen(0)).toBe('now, since today');
+    expect(waitedWhen(1)).toBe('now, since yesterday');
+    expect(waitedWhen(3)).toBe('now, for 3 days');
+    const now = Date.parse('2026-11-11T12:00:00Z');
+    expect(daysSince('2026-11-08T10:00:00Z', now)).toBe(3);
+    expect(daysSince(null, now)).toBeNull();
+    expect(daysSince('not a date', now)).toBeNull();
+  });
+  it('waiting for the lead, the designer: the lead step now, the steps to come, the reminder rule, Keep exploring', () => {
+    const b = waitBlockOf({ ...base, waitedDays: 3, canKeepExploring: true })!;
+    expect(b.eyebrow).toBe('Nothing to do for now');
+    expect(b.title).toBe('Dana decides what the library keeps');
+    expect(b.steps).toEqual([
+      { text: 'Dana decides', when: 'now, for 3 days', current: true },
+      { text: 'Acme Prints developers build it' },
+      { text: 'You check their version' },
+      { text: 'Live in Acme Prints' },
+    ]);
+    // Bridge's rule, said as a rule: never "Bridge reminded her" without the reminder having happened.
+    expect(b.lines).toEqual(['Bridge reminds Dana once after 2 days without an answer, and tells you as soon as there is one.']);
+    expect(b.action).toEqual({ kind: 'keep-exploring', label: 'Keep exploring' });
+  });
+  it('waiting for the lead, another designer whose screen the same choice sets: says so, See the choice', () => {
+    const b = waitBlockOf({ ...base, role: 'designer', shared: { component: 'Card', property: 'padding', screen: 'Deal pipeline cards', product: 'Acme CRM' } })!;
+    expect(b.steps[2]!.text).toBe('Sofia checks their version');
+    expect(b.lines).toEqual(["Dana's Card padding choice also sets your Deal pipeline cards in Acme CRM. Bridge tells you what Dana picks."]);
+    expect(b.action).toEqual({ kind: 'see-choice', label: 'See the Card padding choice' });
+  });
+  it('the shared choice comes from the library block: an open choice with a way of the viewer\'s own', () => {
+    const c = { component: 'Card', property: 'padding', pick: null, decided: null, ways: [{ designer: 'Sofia', mine: true, screen: 'Order fulfilment timeline', product: 'Acme Prints' }, { designer: 'Leo', mine: false, screen: 'Deal pipeline cards', product: 'Acme CRM' }] };
+    expect(sharedChoiceOf('Leo', [c])).toEqual({ component: 'Card', property: 'padding', screen: 'Deal pipeline cards', product: 'Acme CRM' });
+    expect(sharedChoiceOf('leo ', [c])).not.toBeNull();
+    // Sofia's own way is this page's: nothing shared. Ann has no way. Decided: nothing left to see.
+    expect(sharedChoiceOf('Sofia', [c])).toBeNull();
+    expect(sharedChoiceOf('Ann', [c])).toBeNull();
+    expect(sharedChoiceOf('Leo', [{ ...c, pick: 'b#2' }])).toBeNull();
+    expect(sharedChoiceOf(null, [c])).toBeNull();
+  });
+  it('waiting for the lead, a designer it does not touch: nothing to press', () => {
+    const b = waitBlockOf({ ...base, role: 'designer' })!;
+    expect(b.lines).toEqual(['Nothing reaches the developers before Dana sends it.']);
+    expect(b.action).toBeNull();
+  });
+  it('waiting for the lead, the developer: the task comes once it is sent', () => {
+    const b = waitBlockOf({ ...base, role: 'developer' })!;
+    expect(b.lines).toEqual(['You get a task in your repository once Dana sends it.']);
+    expect(b.action).toBeNull();
+  });
+  it('a lead that took it is said first; an unknown lead reads "the design lead"', () => {
+    expect(waitBlockOf({ ...base, taken: 'Dana is looking at it.' })!.lines[0]).toBe('Dana is looking at it.');
+    const b = waitBlockOf({ ...base, lead: null, role: 'designer' })!;
+    expect(b.title).toBe('The design lead decides what the library keeps');
+    expect(b.lines).toEqual(['Nothing reaches the developers before the design lead sends it.']);
+  });
+  it('exploring, someone else: who explores now, who decides next', () => {
+    const b = waitBlockOf({ ...base, stage: 'exploring', role: 'designer' })!;
+    expect(b.title).toBe('Sofia is exploring');
+    expect(b.steps[0]).toEqual({ text: 'Sofia explores', when: 'now', current: true });
+    expect(b.steps[1]!.text).toBe('Dana decides what the library keeps');
+    expect(b.lines).toEqual(['It goes to Dana when Sofia says Done exploring.']);
+    expect(waitBlockOf({ ...base, stage: 'exploring', role: 'lead', viewerLeads: true })!.lines).toEqual(['It reaches you when Sofia says Done exploring.']);
+    expect(waitBlockOf({ ...base, stage: 'exploring', role: 'developer' })!.lines).toEqual([DEV_EXPLORING_LINE]);
+  });
+  it('exploring, the owner who cannot say Done exploring here: the line that says why', () => {
+    const b = waitBlockOf({ ...base, stage: 'exploring', doneNote: 'Sofia keeps it.' })!;
+    expect(b.title).toBe('You are exploring');
+    expect(b.lines).toEqual(['Sofia keeps it.']);
+  });
+  it('handed to the developers: the current hand-off step and what comes after, in words', () => {
+    const steps = [
+      { status: 'done' as const, title: 'Done exploring', detail: 'Sofia.' },
+      { status: 'waiting' as const, title: 'Developers build it', detail: 'In their task list. You see here when one picks it up.', current: true },
+      { status: 'waiting' as const, title: 'Review', detail: 'After the developers' },
+      { status: 'waiting' as const, title: 'Shipped', detail: 'Then live in Acme Prints' },
+    ];
+    const b = waitBlockOf({ ...base, stage: 'ready', steps })!;
+    expect(b.title).toBe('Acme Prints developers build it');
+    expect(b.steps).toEqual([{ text: 'Acme Prints developers build it', current: true, when: 'now' }, { text: 'You check their version' }, { text: 'Live in Acme Prints' }]);
+    expect(b.lines).toEqual(['In their task list. You see here when one picks it up.']);
+    const building = waitBlockOf({ ...base, stage: 'building', role: 'designer', builder: 'Malik', steps })!;
+    expect(building.title).toBe('Malik builds it');
+    expect(building.steps[1]!.text).toBe('Sofia checks their version');
+    const dev = waitBlockOf({ ...base, stage: 'ready', role: 'developer', steps })!;
+    expect(dev.eyebrow).toBe('For the developers');
+    expect(dev.lines).toContain('Code, next to the title, has the branch and the commands.');
+    expect(waitBlockOf({ ...base, stage: 'ready', steps, send: true })!.action).toEqual({ kind: 'send' });
+  });
+  it('check the build, someone not checking: who checks now and what the others said', () => {
+    const b = waitBlockOf({ ...base, stage: 'check', role: 'designer', checkers: [{ name: 'Sofia', you: false, said: 'waiting' }, { name: 'Dana', you: false, said: 'looks-right' }, { name: 'Ann', you: false, said: 'not-needed' }] })!;
+    expect(b.title).toBe('Sofia checks the build');
+    expect(b.steps).toEqual([{ text: 'Sofia checks', when: 'now', current: true }, { text: 'Live in Acme Prints' }]);
+    expect(b.lines).toEqual(['Dana said it looks right.', 'It goes live in Acme Prints once it looks right.']);
+  });
+  it('declined, archived, not started and shipped', () => {
+    expect(waitBlockOf({ ...base, stage: 'declined', declinedLine: 'Closed.' })).toMatchObject({ title: 'The developers did not build it', steps: [], lines: ['Closed.'], action: null });
+    expect(waitBlockOf({ ...base, stage: 'archived', canUnarchive: true, archivedLine: 'Archived.' })).toMatchObject({ eyebrow: 'Nothing to do for now', title: 'Nobody works on it now', lines: ['Archived.'], action: { kind: 'unarchive', label: 'Unarchive' } });
+    expect(waitBlockOf({ ...base, stage: 'archived' })!.action).toBeNull();
+    expect(waitBlockOf({ ...base, stage: 'not-started' })).toBeNull();
+    expect(waitBlockOf({ ...base, stage: 'shipped' })).toBeNull();
+  });
+  it('every stage and role: no em dash, one current step at most, one button at most', () => {
+    const stages: WaitInput['stage'][] = ['exploring', 'waiting-for-lead', 'ready', 'building', 'check', 'declined', 'archived'];
+    const roles: WaitInput['role'][] = ['owner', 'designer', 'lead', 'developer', 'pm', 'viewer'];
+    for (const stage of stages)
+      for (const role of roles) {
+        const b = waitBlockOf({ ...base, stage, role, viewerLeads: role === 'lead' })!;
+        expect(`${b.eyebrow} ${b.title} ${b.lines.join(' ')} ${b.steps.map((s) => `${s.text} ${s.when ?? ''}`).join(' ')}`).not.toContain('\u2014');
+        expect(b.steps.filter((s) => s.current).length).toBeLessThanOrEqual(1);
+      }
+  });
+});
+
+describe('the product manager in the turn block', () => {
+  const pm = { stage: 'waiting-for-lead' as const, said: false, lead: 'Dana', author: 'Sofia', product: 'Acme Prints', line: 'You have not said what you think yet.' };
+  it('optional once the lead is asked: their view first, then Dana decides', () => {
+    const b = pmBlockOf(pm);
+    expect(b.eyebrow).toBe('Optional for you');
+    expect(b.title).toBe('Your view, before Dana decides');
+    expect(b.steps.map((s) => s.text)).toEqual(['You give your view', 'Dana decides what the library keeps', 'Acme Prints developers build it', 'Sofia checks, then it goes live']);
+    expect(b.steps[0]).toMatchObject({ when: 'optional, now', current: true });
+    expect(b.lines).toEqual(['Dana can decide without it. If you give it, Dana reads it first.']);
+  });
+  it('while it is explored: the designer shares it first', () => {
+    const b = pmBlockOf({ ...pm, stage: 'exploring' });
+    expect(b.eyebrow).toBe('Your turn');
+    expect(b.lines).toEqual(['Sofia shares it with you before it goes to Dana.']);
+  });
+  it('once said: waits like everyone, their word changeable', () => {
+    const b = pmBlockOf({ ...pm, said: true, line: 'You said it looks good, today.' });
+    expect(b.eyebrow).toBe('Nothing to do for now');
+    expect(b.title).toBe('Dana decides what the library keeps');
+    expect(b.lines).toEqual(['You said it looks good, today.']);
+    expect(b.action).toEqual({ kind: 'change-view', label: 'Change your view' });
   });
 });

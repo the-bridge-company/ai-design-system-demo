@@ -23,14 +23,14 @@ export interface DemoMember {
 }
 
 /**
- * Dana leads the design system (admin and design lead), Ann reviews design (design lead), Leo and Sofia design (can
- * edit). The team's developer, Malik, is not an email member: like a real team's developer he joins with GitHub only
+ * Dana leads the design system (admin and the only design lead), Leo and Sofia design (can edit), Ann is the product
+ * manager of Acme Prints (can edit, DEMO_PM: her view is optional, she never decides on explorations). The team's developer, Malik, is not an email member: like a real team's developer he joins with GitHub only
  * (the account acme-malik, a write collaborator of the sample team), so Settings > Members lists him from GitHub and
  * his pull requests and reviews come from that account (RETIRED_DEMO_MEMBERS).
  */
 export const DEMO_MEMBERS: readonly DemoMember[] = [
   { email: 'dana@acme.example', name: 'Dana', role: 'admin', lead: true },
-  { email: 'ann@acme.example', name: 'Ann', role: 'edit', lead: true },
+  { email: 'ann@acme.example', name: 'Ann', role: 'edit' },
   { email: 'leo@acme.example', name: 'Leo', role: 'edit' },
   { email: 'sofia@acme.example', name: 'Sofia', role: 'edit' },
 ];

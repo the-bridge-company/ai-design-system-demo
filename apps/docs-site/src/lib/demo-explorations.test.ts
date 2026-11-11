@@ -46,8 +46,8 @@ describe('the seeding plan', () => {
     const { items, problems } = parseSeedPlan({ items: [item(), item({ product: 'Acme CRM', member: 'leo@acme.example', branch: 'explore/deal-board', state: 'done', files: [] })] }, PRODUCTS, USE_CASES);
     expect(problems).toEqual([]);
     expect(items.map((i) => [i.product.copy, i.member.name, i.slug, i.state, i.lead?.name])).toEqual([
-      [COPY, 'Sofia', 'gift-wrap', 'exploring', 'Ann'],
-      ['acme-design-demo/acme-crm-design', 'Leo', 'deal-board', 'done', 'Ann'],
+      [COPY, 'Sofia', 'gift-wrap', 'exploring', 'Dana'],
+      ['acme-design-demo/acme-crm-design', 'Leo', 'deal-board', 'done', 'Dana'],
     ]);
     expect(seedLeadFor({ email: 'ann@acme.example' })?.name).toBe('Dana');
   });

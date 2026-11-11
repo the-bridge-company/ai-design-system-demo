@@ -204,7 +204,11 @@ describe('the demo visitor reads as Dana', () => {
     // Same pick: no new cookie. Another pick: a new session for them.
     expect((await get(`${q}&as=sofia`, { cookie })).headers.get('set-cookie')).toBeNull();
     const ann = await get(`${q}&as=ann`, { cookie });
-    expect((await ann.json()).member).toMatchObject({ name: 'Ann', lead: true, visitor: true });
+    const annMember = (await ann.json()).member;
+    // Ann is the product manager: never a reviewer, never deciding.
+    expect(annMember).toMatchObject({ name: 'Ann', visitor: true });
+    expect(annMember.lead).toBeUndefined();
+    expect(annMember.decides).toBeUndefined();
     expect(cookieOf(ann).startsWith(`${cookieName(DEMO)}=`)).toBe(true);
     // Every write is refused, whoever is played.
     const w = await post(`${q}&gh=${encodeURIComponent(`/repos/${DEMO}/issues`)}`, { title: 'x' }, { cookie });

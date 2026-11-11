@@ -281,32 +281,32 @@ describe('ExplorationPage, exploring (X2)', () => {
     const rows = within(screen.getByRole('region', { name: 'Activity' })).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
     expect(rows[0]!.textContent).toContain('Florian started the exploration');
-    expect(screen.getByText('Then Dana picks what the library keeps')).toBeTruthy();
+    // The steps are said once, in the block: no separate journey bar, no "Before it ships".
+    expect(screen.queryByRole('region', { name: 'Where it is' })).toBeNull();
+    expect(screen.queryByText('Before it ships')).toBeNull();
   });
 
-  it('a lead exploring themselves, no other lead named: "Then you pick", never "your design lead"', () => {
+  it('a lead exploring themselves, no other lead named: never "your design lead"', () => {
     paint({ ...exploring, ownerLeads: true });
     expect(screen.getByRole('heading', { name: 'Ready for the developers?' })).toBeTruthy();
-    expect(screen.getByText('Then you pick what the library keeps')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-    expect(screen.getByText('You pick what the library keeps')).toBeTruthy();
     expect(screen.queryByText(/your design lead/i)).toBeNull();
   });
 
   it('a lead exploring themselves, another lead named: that lead picks', () => {
     paint({ ...exploring, ownerLeads: true, leadName: 'Sam' });
     expect(screen.getByRole('heading', { name: 'Ready to hand it to Sam?' })).toBeTruthy();
-    expect(screen.getByText('Then Sam picks what the library keeps')).toBeTruthy();
   });
 
-  it('the lead reading someone else\'s exploration picks: "Then you pick", in All steps too', () => {
+  it('the lead reading someone else\'s exploration: nothing to do yet, "You decide" in the steps', () => {
     paint({ ...exploring, role: 'lead', leadName: 'Dana' });
-    expect(screen.getByText('Then you pick what the library keeps')).toBeTruthy();
+    const zone = screen.getByRole('region', { name: 'Florian is exploring' });
+    expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
+    const steps = within(zone).getByRole('list', { name: 'What happens next' });
+    expect(within(steps).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1Florian explores · now', '2You decide what the library keeps', '3Admin demo developers build it', '4Live in Admin demo']);
+    expect(within(steps).getAllByRole('listitem')[0]!.getAttribute('aria-current')).toBe('step');
+    expect(within(zone).getByText('It reaches you when Florian says Done exploring.')).toBeTruthy();
     expect(screen.queryByText(/Your design lead/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-    expect(screen.getByText('You pick what the library keeps')).toBeTruthy();
-    expect(screen.queryByText(/Your design lead/)).toBeNull();
-    expect(screen.queryByText(/Dana picks/)).toBeNull();
+    expect(screen.queryByText(/Dana decides/)).toBeNull();
   });
 
   it('without a build yet: the capture is no link, and one line says why in words', () => {
@@ -326,16 +326,24 @@ describe('ExplorationPage, exploring (X2)', () => {
 
   it('a signed-out visitor or a viewer without write access sees no Done exploring card', () => {
     paint({ ...exploring, done: null });
-    // Not their turn: no Harbor zone at all, the screen still opens.
-    expect(document.querySelectorAll('.zone')).toHaveLength(0);
+    // Not their turn: the one block says nothing waits on them and what happens now, the screen still opens.
+    expect(document.querySelectorAll('.zone')).toHaveLength(1);
+    const zone = screen.getByRole('region', { name: 'Florian is exploring' });
+    expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
+    expect(within(zone).queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /done exploring/i })).toBeNull();
     expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
   });
 
-  it('a viewer who cannot keep it reads who can, never a GitHub error', () => {
-    paint({ ...exploring, done: { kind: 'note', text: 'Florian or a reviewer says when it is done exploring.' } });
+  it('a viewer who cannot keep it reads what happens next, never who may act nor a GitHub error', () => {
+    paint({ ...exploring, leadName: 'Dana', done: { kind: 'note', text: 'Florian or a reviewer says when it is done exploring.' } });
     expect(screen.queryByRole('button', { name: 'Done exploring' })).toBeNull();
-    expect(screen.getByText(/says when it is done exploring/)).toBeTruthy();
+    expect(screen.getByText('It goes to Dana when Florian says Done exploring.')).toBeTruthy();
+    expect(screen.queryByText(/a reviewer says/)).toBeNull();
+  });
+  it('the owner who cannot say Done exploring here reads why, in the block', () => {
+    paint({ ...exploring, role: 'owner', done: { kind: 'note', text: 'In Acme Prints itself, its developers say when it is done.' } });
+    expect(within(screen.getByRole('region', { name: 'You are exploring' })).getByText('In Acme Prints itself, its developers say when it is done.')).toBeTruthy();
   });
 
   it('has no axe violations', async () => {
@@ -370,18 +378,21 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     expect(screen.getByText("Florian's exploration in Admin demo, started today")).toBeTruthy();
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app/?bridge=611');
     expect(screen.queryByRole('link', { name: /Continue in Claude/ })).toBeNull();
-    // Where it is: the current step on the rail, the four steps on demand.
-    expect(screen.getByText('In their task list. You see here when one picks it up.')).toBeTruthy();
-    expect(screen.getByText('Then it goes live in Admin demo')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-    expect(screen.getByRole('list', { name: 'From exploration to product' }).querySelectorAll('li')).toHaveLength(4);
+    // Where it is, once, in the block: the step happening now as its title, the steps still to come, what that step means.
+    const block = screen.getByRole('region', { name: 'Admin demo developers build it' });
+    expect(within(block).getByText('Nothing to do for now')).toBeTruthy();
+    expect(within(block).getByText('In their task list. You see here when one picks it up.')).toBeTruthy();
+    const next = within(block).getAllByRole('listitem').map((li) => li.textContent);
+    expect(next).toEqual(['1Admin demo developers build it · now', '2Florian checks their version', '3Live in Admin demo']);
+    expect(screen.queryByRole('button', { name: 'All steps' })).toBeNull();
     expect(screen.getByText('Nothing missing: everything comes from the library.')).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy();
     // No capture: the plate names the screen and the product, never a fake wireframe.
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Orders table');
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Admin demo · no screenshot yet');
-    // Nothing waits on this viewer: no Harbor zone, no grey footnote that repeats the state.
-    expect(document.querySelectorAll('.zone')).toHaveLength(0);
+    // Nothing waits on this viewer: the one block says so, no button, no grey footnote that repeats the state.
+    expect(document.querySelectorAll('.zone')).toHaveLength(1);
+    expect(within(block).queryAllByRole('button')).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/Ask Claude/);
   });
 
@@ -466,7 +477,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     expect(grid.querySelector('.xp-b-main .xp-activity')).toBeTruthy();
   });
 
-  it('the viewer asked to review: the review row says so, with the link to compare under the steps', () => {
+  it('the viewer asked to review: the block says it is theirs, with the link to compare', () => {
     handed({
       status: 'building',
       steps: [
@@ -476,11 +487,13 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
         steps[3]!,
       ],
     });
-    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-    const row = within(screen.getByRole('list', { name: 'From exploration to product' })).getByText('Your review').closest('li')!;
+    const block = screen.getByRole('region', { name: 'You review it' });
+    expect(within(block).getByText('Your turn')).toBeTruthy();
+    const row = within(block).getAllByRole('listitem')[0]!;
     expect(row.getAttribute('aria-current')).toBe('step');
-    // Never a link inside the row: a row action squeezed every detail to one word a line.
+    // Never a link inside the row: the way to compare is the block's one button.
     expect(within(row).queryByRole('link')).toBeNull();
+    expect(within(block).getByRole('link', { name: 'Compare with the exploration' }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app');
   });
 
   it('shipped: the tag, the product itself, and how it went', () => {
@@ -538,7 +551,8 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
       const next = screen.getByRole('region', { name: 'Sam Lee asks you' });
       const q = within(next).getByRole('region', { name: "Sam Lee's question" });
       // The zone comes first on the rail, and who asked before their words.
-      expect(next.compareDocumentPosition(screen.getByRole('region', { name: 'Where it is' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(next.closest('.xp-b-right')!.firstElementChild!.contains(next)).toBe(true);
+      expect(document.querySelectorAll('.zone')).toHaveLength(1);
       expect(q.querySelector('figcaption')!.compareDocumentPosition(q.querySelector('blockquote')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(within(q).getByRole('button', { name: 'Send to Sam' }).className).toMatch(/primary/);
       expect(screen.getByRole('link', { name: /Open the preview/ }).className).not.toMatch(/primary/);
@@ -546,8 +560,9 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 
     it('answered: one quiet line, no reply box', () => {
       handed({ question: { text: 'Red or orange?', by: sam, when: 'today', answered: true, onReply: null } });
-      // Nothing waits on the viewer: no zone, no reply box.
-      expect(document.querySelectorAll('.zone')).toHaveLength(0);
+      // Nothing waits on the viewer: the block says what happens now, no reply box.
+      expect(document.querySelectorAll('.zone')).toHaveLength(1);
+      expect(screen.getByText('Nothing to do for now')).toBeTruthy();
       expect(screen.queryByLabelText('Your answer')).toBeNull();
     });
 
@@ -608,10 +623,9 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
       const writeText = vi.fn(async () => undefined);
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       const { container } = handed({ steps: elsewhere, forDevelopers: { message } });
-      fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-      const step = within(screen.getByRole('list', { name: 'From exploration to product' })).getByText('Developers build it').closest('li')!;
+      const step = screen.getByRole('region', { name: 'Admin demo developers build it' });
       expect(step.textContent).toContain('Their developers work elsewhere: send them the message.');
-      // Proximity: the action sits on the row of the status it acts on, right under its words, and it is quiet (a link).
+      // Proximity: the action sits in the block of the step it acts on, right under its words, and it is quiet (a link).
       const button = within(step).getByRole('button', { name: 'Copy for your developers' });
       expect(button.className).toMatch(/link/);
       expect(button.closest('.xp-send')).toBeTruthy();
@@ -869,15 +883,24 @@ describe('the talk with a lead on the page', () => {
     expect(document.querySelector('.xp-st-sub')!.textContent).toBe("Florian's version, changed 2 h ago, after you were asked");
   });
 
-  it('waiting for the lead: All steps shows Exploring done and the lead deciding now', () => {
-    paint({ stage: 'exploring', lead: { line: 'Florian is done exploring.', bar } });
-    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
-    const list = screen.getByRole('list', { name: 'From exploration to product' });
-    const exploring = within(list).getByText('Exploring').closest('li')!;
-    const lead = within(list).getByText('The lead decides').closest('li')!;
-    expect(exploring.textContent).toMatch(/Done/);
-    expect(exploring.getAttribute('aria-current')).toBeNull();
-    expect(lead.getAttribute('aria-current')).toBe('step');
+  it('waiting for the lead, its designer: nothing to do, the lead deciding now for the real time, Keep exploring', async () => {
+    const onCancel = vi.fn(async () => 'Back to exploring.');
+    const asked = new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString();
+    paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', leadAskedAt: asked, lead: { line: 'Waiting for Dana.', onCancel } });
+    const zone = screen.getByRole('region', { name: 'Dana decides what the library keeps' });
+    expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
+    const rows = within(zone).getAllByRole('listitem');
+    expect(rows.map((li) => li.textContent)).toEqual(['1Dana decides · now, for 3 days', '2Admin demo developers build it', '3You check their version', '4Live in Admin demo']);
+    expect(rows[0]!.getAttribute('aria-current')).toBe('step');
+    expect(within(zone).getByText('Bridge reminds Dana once after 2 days without an answer, and tells you as soon as there is one.')).toBeTruthy();
+    expect(screen.queryByText('Before it ships')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Remind/ })).toBeNull();
+    // One quiet button, no primary.
+    expect(within(zone).getAllByRole('button').map((b) => b.textContent)).toEqual(['Keep exploring']);
+    await act(async () => {
+      fireEvent.click(within(zone).getByRole('button', { name: 'Keep exploring' }));
+    });
+    expect(onCancel).toHaveBeenCalled();
   });
 
   it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {
@@ -924,11 +947,14 @@ describe('the talk with a lead on the page', () => {
 
 describe('the product manager (boards R1, R3)', () => {
   const dino = { login: 'name:Dino', name: 'Dino', agent: false, avatar: null };
-  it('the PM gives their opinion in place of the Harbor card: a note is needed for Needs changes', async () => {
+  it('the PM gives their view in the turn block: Give your view opens it, a note is needed for Needs changes', async () => {
     const onSay = vi.fn(async () => 'Sent to the designer, with your note.');
-    paint({ stage: 'exploring', pm: { mine: true, title: 'What do you think, Dino?', intro: 'Mia shares this with you before it goes to the design lead.', line: 'You have not said what you think yet.', onSay } });
-    expect(screen.getByRole('heading', { name: 'What do you think, Dino?' })).toBeTruthy();
+    paint({ stage: 'exploring', leadName: 'Dana', pm: { mine: true, name: 'Dino', said: false, title: 'What do you think, Dino?', intro: 'Florian shares this with you before it goes to the design lead.', line: 'You have not said what you think yet.', onSay } });
+    const zone = screen.getByRole('region', { name: 'Your view, before Dana decides' });
+    expect(within(zone).getByText('Your turn')).toBeTruthy();
+    expect(within(zone).getAllByRole('listitem')[0]!.textContent).toBe('1You give your view · now');
     expect(screen.queryByRole('heading', { name: 'Happy with it?' })).toBeNull();
+    fireEvent.click(within(zone).getByRole('button', { name: 'Give your view' }));
     // Needs changes stays clickable: with no note, the field asks for one and takes the focus, nothing is sent.
     const changes = screen.getByRole('button', { name: 'Needs changes' }) as HTMLButtonElement;
     expect(changes.disabled).toBe(false);
@@ -949,13 +975,33 @@ describe('the product manager (boards R1, R3)', () => {
     const onCall = vi.fn(async () => 'Noted.');
     paint({ stage: 'exploring', pm: { mine: false, title: '', intro: '', line: 'Dino asked for changes, today.', quote: { who: dino, when: 'today', text: 'Show how many days late' }, call: { label: 'Dino agreed in a call', onCall } } });
     expect(screen.getByText('Dino asked for changes, today.')).toBeTruthy();
-    expect(screen.getByText('product manager')).toBeTruthy();
     expect(screen.getByText('Show how many days late')).toBeTruthy();
+    expect(screen.queryByText('Before it ships')).toBeNull();
     expect(screen.getByRole('button', { name: 'Done exploring' })).toBeTruthy();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Dino agreed in a call' }));
     });
     expect(onCall).toHaveBeenCalled();
+  });
+});
+
+describe('the product manager once the lead is asked: optional', () => {
+  it('Optional for you, Your view before Dana decides, Give your view the one primary; never the lead\'s choice', () => {
+    paint({ stage: 'exploring', role: 'designer', leadName: 'Dana', done: null, lead: { line: 'Waiting for Dana.' }, pm: { mine: true, name: 'Ann', said: false, title: '', intro: '', line: 'You have not said what you think yet.', onSay: async () => undefined } });
+    const zone = screen.getByRole('region', { name: 'Your view, before Dana decides' });
+    expect(within(zone).getByText('Optional for you')).toBeTruthy();
+    expect(within(zone).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1You give your view · optional, now', '2Dana decides what the library keeps', '3Admin demo developers build it', '4Florian checks, then it goes live']);
+    expect(within(zone).getByText('Dana can decide without it. If you give it, Dana reads it first.')).toBeTruthy();
+    const buttons = within(zone).getAllByRole('button');
+    expect(buttons.map((b) => b.textContent)).toEqual(['Give your view']);
+    expect(buttons[0]!.className).toMatch(/primary/);
+    expect(screen.queryByText(/Choose Card padding/)).toBeNull();
+  });
+  it('once said: nothing to do, their word stays changeable', () => {
+    paint({ stage: 'exploring', role: 'designer', leadName: 'Dana', done: null, lead: { line: 'Waiting for Dana.' }, pm: { mine: true, name: 'Ann', said: true, title: '', intro: '', line: 'You said it looks good, today.', onSay: async () => undefined } });
+    const zone = screen.getByRole('region', { name: 'Dana decides what the library keeps' });
+    expect(within(zone).getByText('You said it looks good, today.')).toBeTruthy();
+    expect(within(zone).getByRole('button', { name: 'Change your view' }).className).not.toMatch(/primary/);
   });
 });
 

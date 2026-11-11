@@ -367,8 +367,86 @@
 
 .ar-fig {
   display: grid;
+  align-content: start;
   gap: var(--space-1);
   margin: 0;
+}
+
+/* Open, both sides share the shape of a screen, so a picture of the product reads at a useful size. */
+.ar-pair .ar-plate-big {
+  block-size: auto;
+  aspect-ratio: 16 / 10;
+}
+
+/* The product's picture: a real screen, scaled to fit (open) or filling the small plate from its top. */
+.ar-plate-shot {
+  border: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+  box-shadow: none;
+}
+
+.ar-plate-shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.ar-plate-big.ar-plate-shot img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.ar-plate-why {
+  padding-inline: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+/* Click to enlarge: the whole picture is the target. */
+.ar-shot-open {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: zoom-in;
+}
+
+.ar-shot-open:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.ar-shot-hint {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: inline-grid;
+  place-items: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-surface-raised);
+  color: var(--color-text-default);
+  box-shadow: var(--elevation-overlay);
+}
+
+.ar-shot-line {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+}
+
+.ar-shot-full {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-inset);
+  box-shadow: 0 0 0 var(--border-width-default) var(--color-border-default);
+}
+
+.ar-shot-go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-start: var(--space-3);
 }
 
 .ar-callout {

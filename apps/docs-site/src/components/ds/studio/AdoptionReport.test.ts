@@ -53,11 +53,41 @@ describe('AdoptionReportView', () => {
     fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
     expect(screen.getByText(/One change covers 8 of them\./)).toBeTruthy();
     expect(screen.getByText('No picture yet', { selector: '.ar-plate-big span' })).toBeTruthy();
+    expect(screen.getByText('Bridge does not know which screen shows these yet.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /For developers: 9 places in the code/ }));
     expect(screen.getByText("export { Button } from '@acme/design-system'")).toBeTruthy();
     expect(screen.getAllByRole('link', { name: /Open in GitHub/ })[0]!.getAttribute('href')).toBe('https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/a.tsx#L1');
     expect(screen.getByRole('heading', { name: 'Pieces the library is missing' })).toBeTruthy();
     await expectNoAxeViolations(container);
+  });
+
+  it('a group shows the screen it lives on, and the picture opens bigger in a dialog', async () => {
+    const screens = [{ route: '/#/contacts', name: 'Contacts', files: ['a.tsx'], image: 'audits/acme-crm/contacts.webp', url: 'https://crm.example.com/#/contacts', capturedAt: '2026-11-11T08:00:00Z' }];
+    const withShots = reportModel({ ...report, screens }, { product: 'Acme CRM', productKey: 'crm' });
+    const src = (path: string) => `https://raw.example/${path}`;
+    const { container } = render(createElement(AdoptionReportView, { model: withShots, actions: actions({ canAct: false, canIgnore: false }), pictureSrc: src }));
+    expect(container.querySelector('.ar-minis img')?.getAttribute('src')).toBe('https://raw.example/audits/acme-crm/contacts.webp');
+    fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
+    expect(screen.getByText('In Acme CRM: the Contacts screen')).toBeTruthy();
+    expect(screen.getByText('All 9 buttons are on the Contacts screen.')).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Enlarge the picture of the Contacts screen' })));
+    const dialog = await screen.findByRole('dialog', { name: 'The Contacts screen of Acme CRM' });
+    expect(within(dialog).getByRole('img', { name: 'The Contacts screen of Acme CRM' })).toBeTruthy();
+    expect(within(dialog).getByRole('link', { name: /Open this screen in Acme CRM/ }).getAttribute('href')).toBe('https://crm.example.com/#/contacts');
+    await expectNoAxeViolations(container);
+  });
+
+  it('a screen not captured yet, or a picture that does not load, says so in plain words', () => {
+    const screens = [{ route: '/#/contacts', name: 'Contacts', files: ['a.tsx'], image: 'audits/acme-crm/contacts.webp' }];
+    const m = reportModel({ ...report, screens }, { product: 'Acme CRM', productKey: 'crm' });
+    render(createElement(AdoptionReportView, { model: m, actions: actions({ canAct: false, canIgnore: false }), pictureSrc: () => null }));
+    fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
+    expect(screen.getByText('Bridge has not captured the Contacts screen yet.')).toBeTruthy();
+    cleanup();
+    render(createElement(AdoptionReportView, { model: m, actions: actions({ canAct: false, canIgnore: false }), pictureSrc: (p: string) => `https://raw.example/${p}` }));
+    fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
+    fireEvent.error(document.querySelector('.ar-pair img')!);
+    expect(screen.getByText('Bridge has not captured the Contacts screen yet.')).toBeTruthy();
   });
 
   it('a sent group says so with its issue', () => {

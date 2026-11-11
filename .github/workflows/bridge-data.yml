@@ -93,6 +93,52 @@ jobs:
             ${SHOP_AUDIT:+--audit "$SHOP_AUDIT"} \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Pictures for the adoption report: each audited product with a live address (products[].production) is opened on
+      # the screens that hold its findings (products[].screens, else its file routes), with the Chrome of the runner and
+      # the capture code of the exploration shots (scripts/preview-shots.mjs screens). The pictures go to the
+      # bridge-shots branch (audits/<id>/), each report says where its pictures are before it is published. A screen is
+      # captured again only for a new audited commit, a new address or after a day. Never blocks the data publish.
+      - name: Check out the shots branch
+        id: shots
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/shots"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          git ls-remote --exit-code --heads "$remote" bridge-shots > /dev/null
+          git clone -q --depth 1 --single-branch --branch bridge-shots "$remote" "$dir"
+          git -C "$dir" config user.name "github-actions[bot]"
+          git -C "$dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "SHOTS_DIR=$dir" >> "$GITHUB_ENV"
+
+      - name: Pictures of the product screens
+        id: screens
+        if: steps.shots.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRIDGE_CHROME_CHANNEL: chrome
+        run: node scripts/preview-shots.mjs screens --data "$RUNNER_TEMP/bridge-data" --shots "$SHOTS_DIR" --config bridge.config.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the pictures
+        if: steps.screens.outcome == 'success' && steps.screens.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          cd "$SHOTS_DIR"
+          git add -A audits
+          git commit -qm "adoption report pictures: ${{ steps.screens.outputs.captured }} captured" || { echo "Nothing new to publish"; exit 0; }
+          # The preview-shots workflow writes the same branch (other folders): rebase on it and try again.
+          for i in 1 2 3 4; do
+            if git push -q origin "HEAD:refs/heads/bridge-shots"; then exit 0; fi
+            sleep $((i * 3))
+            git fetch -q --depth 20 origin bridge-shots && git rebase -q FETCH_HEAD || true
+          done
+          exit 1
+
       - name: Publish to the bridge-data branch
         env:
           OUT: ${{ runner.temp }}/bridge-data

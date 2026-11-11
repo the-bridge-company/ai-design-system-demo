@@ -7,8 +7,8 @@
 // Counting (decided 2026-11-11): the product's own shadcn/ui copy counts as not the library, and the verdict says so in
 // one sentence; Tailwind scale classes count neither for nor against (said in "How this is measured").
 // Pure: no DOM, no fetch. adoption-report.test.ts covers it.
-import { adoptionPieces, adoptionValues, sourceLabel, type AuditIgnore, type AuditIgnores, type LibraryGap, type PieceGroup, type PiecePlace, type ValueGroup, type ValueMatch, type ValuePlace } from '@bridge-ds/core';
-import type { AuditReport, FindingCategory, HistoryPoint } from '@bridge-ds/core/audit';
+import { adoptionPieces, adoptionValues, screenForPlaces, sourceLabel, type AuditIgnore, type AuditIgnores, type LibraryGap, type PieceGroup, type PiecePlace, type ValueGroup, type ValueMatch, type ValuePlace } from '@bridge-ds/core';
+import type { AuditReport, AuditScreen, FindingCategory, HistoryPoint } from '@bridge-ds/core/audit';
 import type { Mood } from './quality-view';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -144,6 +144,8 @@ export interface PieceRow {
     fix: { file: string; line: number; name: string; instances: number; before: string; after: string } | null;
     places: { file: string; line: number; what: string; from: string; href: string | null }[];
   };
+  /** Where they live in the product: the screen holding most of them, with its picture when captured. */
+  screen: ScreenPicture | null;
   group: PieceGroup;
 }
 
@@ -159,7 +161,7 @@ function pieceTitle(g: PieceGroup): string {
 }
 
 /** The groups of pieces, biggest change first, in words. */
-export function pieceRows(groups: PieceGroup[], ctx: { product: string; current: number | null; packageName: string | null; code: CodePlace | null }): PieceRow[] {
+export function pieceRows(groups: PieceGroup[], ctx: { product: string; current: number | null; packageName: string | null; code: CodePlace | null; screens?: AuditScreen[] | undefined }): PieceRow[] {
   return groups.map((g) => {
     const one = pieceWord(g.component, 1);
     const many = pieceWord(g.component, 2);
@@ -191,6 +193,7 @@ export function pieceRows(groups: PieceGroup[], ctx: { product: string; current:
           : null,
         places: g.places.map((p) => placeRow(p, ctx.code, src)),
       },
+      screen: screenPicture(ctx.screens, g.places, many),
       group: g,
     };
   });
@@ -206,12 +209,57 @@ export interface GapCard {
   key: string;
   name: string;
   detail: string;
+  screen: ScreenPicture | null;
   gap: LibraryGap;
 }
 
 /** The pieces the library is missing, as cards. */
-export function gapCards(gaps: LibraryGap[]): GapCard[] {
-  return gaps.map((g) => ({ key: g.key, name: cap(humanName(g.name)), detail: `${count(g.pieces, 'place')}${g.files > 1 ? `, ${g.files} parts of the app` : ''}`, gap: g }));
+export function gapCards(gaps: LibraryGap[], screens?: AuditScreen[]): GapCard[] {
+  return gaps.map((g) => ({ key: g.key, name: cap(humanName(g.name)), detail: `${count(g.pieces, 'place')}${g.files > 1 ? `, ${g.files} parts of the app` : ''}`, screen: screenPicture(screens, g.places, 'places'), gap: g }));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pictures of the product
+
+/** Where a group lives in the product: the screen holding most of it (core screenForPlaces), in words. */
+export interface ScreenPicture {
+  /** "Contacts". */
+  name: string;
+  /** "/#/contacts", as opened on the product's address. */
+  route: string;
+  /** The picture in the bridge-shots branch ("audits/acme-crm/contacts.webp"), null until it is captured. */
+  image: string | null;
+  /** The address it was captured from, for "Open this screen". */
+  url: string | null;
+  capturedAt: string | null;
+  /** "All 12 buttons are on the Contacts screen." / "15 of the 102 are on the Contacts screen." */
+  line: string;
+}
+
+/** A picture path Bridge itself writes (scripts/preview-shots.mjs screens), never anything else from the report. */
+const PICTURE = /^audits\/[a-z0-9][a-z0-9._-]*\/[a-z0-9-]+\.webp$/;
+
+/** Where a group sits, in plain words; `many` names the pieces ("buttons"). */
+export function screenLine(name: string, n: number, total: number, many: string): string {
+  if (n >= total) return total === 1 ? `It is on the ${name} screen.` : `All ${total} ${many} are on the ${name} screen.`;
+  return `${n} of the ${total} ${n === 1 ? 'is' : 'are'} on the ${name} screen.`;
+}
+
+/** The screen of a group's places, with its picture when the report has a safe one. Null: no screen holds any. */
+export function screenPicture(screens: AuditScreen[] | undefined, places: { file: string }[], many: string): ScreenPicture | null {
+  const pick = screenForPlaces(screens, places);
+  if (!pick) return null;
+  const s = pick.screen;
+  const name = s.name || s.route;
+  const image = typeof s.image === 'string' && PICTURE.test(s.image) ? s.image : null;
+  return {
+    name,
+    route: s.route,
+    image,
+    url: image && typeof s.url === 'string' && /^https:\/\//.test(s.url) ? s.url : null,
+    capturedAt: image ? (s.capturedAt ?? null) : null,
+    line: screenLine(name, pick.count, pick.total, many),
+  };
 }
 
 /** "375 more parts belong to pieces the library already has, like dropdown menu items and card contents." */
@@ -450,6 +498,7 @@ export function measuredLines(product: string): string[] {
     'A piece counts as from the library when the code uses the library\'s own component. A copy of it, even a perfect one, counts as not from the library: library updates never reach it. That includes a copy of shadcn/ui kept in the product.',
     'A piece and its parts count once: a menu with its items is one menu. Its parts switch with it.',
     'A color, size or spacing value counts as from the library when it uses a library token. Tailwind scale classes (like p-4 or text-sm) count neither for nor against: they follow the product\'s own scale.',
+    `Pictures show the screen of ${product} that holds most of a group, opened on its live address after a check. The whole screen shows, the pieces are not marked on it yet. Developers say which files make which screen in bridge.config.json (screens); without that, Bridge reads the routes in the code.`,
   ];
 }
 
@@ -477,14 +526,17 @@ export function reportModel(report: AuditReport, opts: { product: string; produc
   const p = adoptionPieces(report);
   const pieces = pieceRows(
     p.groups.filter((g) => !off.has(g.key)),
-    { product: opts.product, current: report.metrics.componentAdoption, packageName: report.designSystem.packages[0] ?? null, code },
+    { product: opts.product, current: report.metrics.componentAdoption, packageName: report.designSystem.packages[0] ?? null, code, screens: report.screens },
   );
   return {
     product: opts.product,
     verdict: reportVerdict(pieces, report, opts.product, p.local),
     cards: scoreCards(report, opts.product, opts.earlier),
     pieces,
-    gaps: gapCards(p.missing.filter((g) => !off.has(g.key))),
+    gaps: gapCards(
+      p.missing.filter((g) => !off.has(g.key)),
+      report.screens,
+    ),
     partsLine: partsLine(p.parts),
     colors: valueRows(adoptionValues(report, { categories: ['color'] }).filter((g) => !off.has(g.key)), { product: opts.product, code }),
     sizes: valueRows(adoptionValues(report, { categories: SIZE_CATEGORIES }).filter((g) => !off.has(g.key)), { product: opts.product, code }),

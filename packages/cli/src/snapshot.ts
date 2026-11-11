@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
-import { carryHistory, type AuditReport } from '@bridge-ds/core/audit';
+import { carryHistory, withScreens, type AuditReport } from '@bridge-ds/core/audit';
 import { ACTIVITY_FILE, activityBytes, AUDIT_IGNORES_FILE, ignoresAllowlist, parseAuditIgnores, type AuditIgnores, auditId, buildSnapshot, defaultProduct, productForPlace, productsOf, collectActivity, collectReleases, GitHubClient, loadRepoModel, parseActivity, recordingSource, snapshotAudit, snapshotLlmsTxt, SNAPSHOT_AUDITS_DIR, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, type FetchLike, type RepoActivity, type RepoSnapshot, type SnapshotAudit, type SnapshotPackage } from '@bridge-ds/core';
 import { fsSource, runAudit } from '@bridge-ds/core/node';
 
@@ -198,6 +198,7 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
     const { product, how } = productForPlace(products, { ...place, designSystemRepo: dsRepo });
     return how !== 'default' && product.key !== defaultProduct(products).key ? product.key : undefined;
   };
+  const productByKey = (key: string | undefined) => (key ? products.find((p) => p.key === key) : undefined);
   // The branch as published last time: earlier reports (the trend) and the decisions taken in Studio.
   const previousRepo = opts.activity?.repo ?? dsRepo;
   const readPrevious: (path: string) => Promise<string | null> =
@@ -221,7 +222,9 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
       }
       if (!isReport(data)) continue; // not an audit report (schema version 1): skipped
       const id = auditId(basename(file));
-      audits.set(id, { summary: snapshotAudit(id, data, productOf({ relPath: data.target.path })), report: data });
+      const product = productOf({ relPath: data.target.path });
+      const report = withScreens(data, productByKey(product));
+      audits.set(id, { summary: snapshotAudit(id, report, product), report });
     }
   }
   for (const spec of opts.audit ?? []) {
@@ -241,7 +244,9 @@ export async function writeSnapshot(opts: SnapshotOptions): Promise<SnapshotResu
     // Where the code is, so Studio links each place to its file and line at the commit that was measured.
     const measured: AuditReport = { ...fresh, target: { ...fresh.target, ...checkoutPlace(abs) } };
     const before = parseJson(await readPrevious(`${SNAPSHOT_AUDITS_DIR}/${id}.json`));
-    const report = carryHistory(measured, isReport(before) ? before : null);
+    // The product's screens and the files that make each one (products[].screens, else its file routes): the report's
+    // pictures are captured from them (scripts/preview-shots.mjs screens).
+    const report = withScreens(carryHistory(measured, isReport(before) ? before : null), productByKey(product));
     audits.set(id, { summary: snapshotAudit(id, report, product), report });
   }
 

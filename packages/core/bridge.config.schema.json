@@ -850,6 +850,19 @@
               "other"
             ]
           },
+          "screens": {
+            "type": "object",
+            "description": "Which files make which screen, for the pictures of the adoption report: a route as opened on the product's address (\"/\", \"/settings\", \"/#/contacts\") to one file glob or several, relative to the audited folder or the repository. Without it Bridge reads the usual file routes (Next.js app/ and pages/, React Router, Remix and TanStack routes/). At most 12.",
+            "maxProperties": 12,
+            "propertyNames": { "pattern": "^/[^\\s{}]*$" },
+            "additionalProperties": {
+              "oneOf": [
+                { "type": "string", "minLength": 1 },
+                { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+              ]
+            },
+            "examples": [{ "/#/contacts": ["components/contacts/**"], "/#/deals": "components/deals/**" }]
+          },
           "default": {
             "type": "boolean",
             "description": "The product a branch belongs to when nothing else matches: the library. At most one. Without one, the last product is the default."

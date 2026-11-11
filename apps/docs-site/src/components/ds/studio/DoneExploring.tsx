@@ -17,6 +17,8 @@ export interface DoneExploringDetail {
   sent: number;
   /** It goes to the design lead first, not to the developers. */
   viaLead?: boolean;
+  /** The viewer is a design lead and nobody else is asked: the words say "you", never "your DS lead". */
+  youLead?: boolean;
   /** Runs it with the ticked piece ids. Throws with a sentence that says how to fix it. */
   confirm: (pieces: string[]) => Promise<void>;
   /** Called when the dialog closes, done or not: focus goes back to the page. */
@@ -82,7 +84,7 @@ export default function DoneExploring() {
     }
   };
 
-  const copy = detail ? doneExploringCopy({ checked: detail.checked, pieces: detail.pieces.length, sent: detail.sent, canCheck: Boolean(detail.check), viaLead: Boolean(detail.viaLead) }) : null;
+  const copy = detail ? doneExploringCopy({ checked: detail.checked, pieces: detail.pieces.length, sent: detail.sent, canCheck: Boolean(detail.check), viaLead: Boolean(detail.viaLead), youLead: Boolean(detail.youLead) }) : null;
   return (
     <Dialog open={detail !== null} onOpenChange={(o) => !o && !busy && close(false)}>
       <DialogContent
@@ -104,7 +106,7 @@ export default function DoneExploring() {
             Bridge is checking what the library is missing.
           </p>
         ) : detail && detail.pieces.length > 0 ? (
-          <CheckboxGroup label="Propose to your DS lead" description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
+          <CheckboxGroup label={copy?.piecesLabel ?? 'Propose to your DS lead'} description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
             {detail.pieces.map((p) => (
               <Checkbox key={p.id} value={p.id} label={p.title} description={p.summary} />
             ))}

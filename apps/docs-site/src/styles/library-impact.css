@@ -139,28 +139,58 @@
   color: var(--color-feedback-warning-text);
 }
 
-/* A new component: the piece as built, large, from the designer's screen. */
+/* A new component: a small picture of the designer's screen beside the line, sized like the row; a click opens the
+   whole capture in a dialog. The capture shows whole, scaled to fit on a quiet surface. */
 .li-crop {
-  display: grid;
-  gap: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   margin: 0;
 }
 
 .li-crop-shot {
+  flex: none;
   display: block;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  inline-size: var(--size-20);
+  block-size: var(--size-12);
+  padding: 0;
   border: var(--border-width-1) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-surface-default);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-subtle);
+  cursor: zoom-in;
+  transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+.li-crop-shot:hover {
+  border-color: var(--color-border-strong);
+}
+
+.li-crop-shot:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .li-crop-shot img {
   display: block;
   inline-size: 100%;
   block-size: 100%;
-  object-fit: cover;
-  object-position: top left;
+  object-fit: contain;
+  object-position: center;
+}
+
+.li-crop-full {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  border: var(--border-width-1) solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .li-crop-shot {
+    transition: none;
+  }
 }
 
 /* The one tick of a new component, and a ticked option: the selected surface and a Harbor edge. */
@@ -296,18 +326,19 @@
 }
 
 /* The small library card each option draws: the same content everywhere, the hatch is its room inside, the content
-   sits on paper. Every card has the same outer width so only the room differs. */
+   sits on paper. Every card has the same outer width so only the room differs. The hatch is Harbor, like Studio's other
+   hatch (adoption.css .ad-recreated): Harbor zone lines on the pale Harbor surface, never a grey. */
 .li-spec {
   flex: none;
   box-sizing: border-box;
   inline-size: calc(var(--space-8) * 4);
   padding: var(--_pad, var(--space-4));
   border-radius: var(--_radius, var(--card-radius));
-  background-color: var(--color-bg-subtle);
+  background-color: var(--color-surface-selected);
   background-image: repeating-linear-gradient(
     135deg,
-    var(--color-border-default) 0 var(--border-width-1),
-    transparent var(--border-width-1) var(--space-1-5)
+    var(--color-bg-zone) 0 var(--border-width-2),
+    transparent var(--border-width-2) var(--space-1-5)
   );
   pointer-events: none;
 }
@@ -329,6 +360,8 @@
 .li-spec-in {
   display: grid;
   gap: var(--_gap, var(--space-2));
+  /* Concentric with the card: its radius minus the room around the content. */
+  border-radius: max(var(--radius-none), calc(var(--_radius, var(--card-radius)) - var(--_pad, var(--space-4))));
   background-color: var(--color-surface-default);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);

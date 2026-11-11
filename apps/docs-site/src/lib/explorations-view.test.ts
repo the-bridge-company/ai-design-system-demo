@@ -215,6 +215,12 @@ describe('done exploring and archive', () => {
     expect(doneExploringCopy({ checked: true, pieces: 0, sent: 0 }).piecesLine).toBeNull();
     for (const t of [copy.description, copy.piecesLine!, doneLine(0), doneLine(2)]) expect(jargonIn(t)).toEqual([]);
     expect(doneLine(1)).toBe('Done exploring. 1 piece went to your DS lead, and your developers take it from here.');
+    // A design lead exploring themselves, nobody else asked: the words never send them to "your DS lead".
+    const self = doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true });
+    expect(self.piecesLabel).toBe('Add to the library');
+    for (const t of [self.description, self.piecesLine!, doneLine(1, true), doneLine(2, true)]) expect(t).not.toMatch(/DS lead/);
+    expect(doneLine(1, true)).toBe('Done exploring. 1 piece went to the library as a request, and your developers take it from here.');
+    expect(doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true, viaLead: true }).piecesLabel).toBe('Propose to your DS lead');
   });
 
   it('developers take it with fetch and checkout, as a starting point', () => {

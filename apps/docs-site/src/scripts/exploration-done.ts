@@ -10,6 +10,7 @@ import { currentContributor, currentViewer, getToken, readRepo } from './github-
 import { siteApprovers } from './teams';
 import { teamReview, type TeamReview } from './contribute-session';
 import { checkPieces } from './connector-api';
+import { viewerDecidesExplorations } from './design-lead';
 
 export const DONE_EXPLORING_EVENT = 'bridge:done-exploring-ask';
 
@@ -85,6 +86,7 @@ export function askDoneExploring(
     checked: found.checked,
     sent: found.sent,
     viaLead,
+    youLead: !viaLead && viewerDecidesExplorations(),
     confirm: async (pieces) => {
       // The PM gate: with no review, the product's PM says it looks good before the developers.
       if (pmStop) throw new Error(pmStop);
@@ -100,7 +102,7 @@ export function askDoneExploring(
       // The designer reads what happened to their pieces; GitHub housekeeping (a label, the note) is for developers.
       const other = res.warnings.filter((w) => !res.pieces.warnings.includes(w));
       if (other.length) console.warn(`Done exploring #${r.number}: ${other.join(' ')}`);
-      opts.after(`${doneLine(res.pieces.proposed.length)}${res.pieces.warnings.length ? ` ${res.pieces.warnings.join(' ')}` : ''}`);
+      opts.after(`${doneLine(res.pieces.proposed.length, !viaLead && viewerDecidesExplorations())}${res.pieces.warnings.length ? ` ${res.pieces.warnings.join(' ')}` : ''}`);
     },
     closed: (done) => {
       if (!done && opts.focus?.isConnected) opts.focus.focus();

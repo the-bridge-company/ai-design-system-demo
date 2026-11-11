@@ -11,7 +11,7 @@
 import { CONTRIBUTE_API, localDevHost } from '../lib/contribute';
 import { isToolbarLink, parseGrant, withReadPass, type ReadPassGrant } from '../lib/read-pass-link';
 import { onAccountChange } from './account-session';
-import { contributorFor } from './contribute-session';
+import { holdsContributeSession } from './contribute-session';
 import { bridgeReadAuth, readRepo, signedInWithGitHub } from './github-session';
 
 const KEY = 'bridge.read-pass:';
@@ -39,7 +39,7 @@ function kept(team: string): ReadPassGrant | null {
 
 /** Someone who may be a member of `team`: signed in with GitHub, by email on the team, or with a Bridge account. */
 function maybeMember(team: string): boolean {
-  return signedInWithGitHub() || Boolean(contributorFor(team)) || (typeof document !== 'undefined' && document.documentElement.hasAttribute('data-account'));
+  return signedInWithGitHub() || holdsContributeSession(team) || (typeof document !== 'undefined' && document.documentElement.hasAttribute('data-account'));
 }
 
 async function ask(team: string): Promise<ReadPassGrant | null> {

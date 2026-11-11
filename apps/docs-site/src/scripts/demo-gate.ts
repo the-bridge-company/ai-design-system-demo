@@ -11,6 +11,7 @@
 // the page's own handlers and before the session opens its sign-in dialog. The React parts load on first use.
 import { demoActionLine, exploresDemo, isOwnTeam, isSampleTeam } from '../lib/demo';
 import { repoContext } from './repo-context';
+import { castOn, playCast } from './demo-cast';
 
 export interface DemoGateDeps {
   /** "owner/repo" of the page. */
@@ -151,7 +152,10 @@ async function paintStrip(show: boolean, repo: string) {
           (el.querySelector<HTMLElement>(':scope > span') ?? el).textContent = el.dataset.demoLabel ?? '';
           el.removeAttribute('data-gh-open');
         });
-      root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem }) : null);
+      // "See it as" (lib/demo-cast.ts): a visitor of the sample team plays any of its people; a member stays themselves.
+      const person = on && deps?.visitor?.() ? castOn(repo) : null;
+      const cast = person ? { current: person.key, onPick: playCast } : null;
+      root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem, cast }) : null);
     };
   })();
   (await banner)(show);

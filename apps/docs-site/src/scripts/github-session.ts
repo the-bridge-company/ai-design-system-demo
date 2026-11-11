@@ -65,10 +65,11 @@ import { linkedRole, linkedRoleRead, onLinkedRole, readLinkedRole } from './link
 import { clearGuestReads, guestFetch } from './guest-activity';
 import { CONTRIB_TOKEN, CONTRIBUTE_WORDS, contributeEligible, isContribAuth, productReposOfConfig, type ContributeMember } from '../lib/contribute';
 import { ROLE_WORDS } from '../lib/invites';
-import { contributeFetch, contributeInfo, contributorFor, contributorKey, onContributeChange, publicTeamRead, signOutEmail, takeContributeHash, verifyEmailSignIn } from './contribute-session';
+import { contributeFetch, contributeInfo, contributeTeam, contributorFor, contributorKey, onContributeChange, playedGitHub, publicTeamRead, signOutEmail, takeContributeHash, verifyEmailSignIn } from './contribute-session';
 import { busyText } from '../lib/team-load';
 import { emailMemberFace } from '../lib/people';
 import { isSampleTeam } from '../lib/demo';
+import { castAccess } from '../lib/demo-cast';
 
 export { GitHubError };
 
@@ -224,6 +225,22 @@ export function currentContributor(): ContributeMember | null {
   return contributeEligible(repo, repoContext().hosted) ? contributorFor(repo) : null;
 }
 
+/**
+ * The developer a visitor plays on the sample team ("See it as", lib/demo-cast.ts): Studio's viewer is his GitHub
+ * account and his access is what the team's collaborators list says, while every read still goes through the visitor's
+ * read-only session (the server refuses every write). Null anywhere else.
+ */
+function castDeveloper(): Viewer | null {
+  if (typeof document === 'undefined' || githubToken() || document.documentElement.hasAttribute('data-no-repo') || !onSampleTeam()) return null;
+  return playedGitHub(pageRepo());
+}
+
+/** The played developer's access to the sample team: his permissions in the team's collaborators list, never admin. */
+async function castDeveloperAccess(login: string): Promise<RepoAccess> {
+  const team = await contributeTeam(pageRepo()).catch(() => null);
+  return castAccess(team?.collaborators ?? [], login);
+}
+
 /** A page where a Bridge account's linked GitHub role is worth reading: a hosted repository team. */
 function linkedEligible(): boolean {
   if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo') || onSampleTeam()) return false;
@@ -263,7 +280,7 @@ export function linkedRoleKnown(): boolean {
  * the session's fetch sends to this site's proxy (scripts/contribute-session.ts). Features never tell them apart.
  */
 export function getToken(): string | null {
-  return githubToken() ?? (currentContributor() ? CONTRIB_TOKEN : null);
+  return githubToken() ?? (currentContributor() || castDeveloper() ? CONTRIB_TOKEN : null);
 }
 
 /**
@@ -1036,8 +1053,9 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
     login: () => viewer?.login ?? currentContributor()?.email ?? (linkedMember(linkedGitHubRole()) ? 'linked' : null),
     // A demo visitor reading as a member (lib/contribute.ts ContributeMember.visitor) still explores the demo: the banner
     // stays, and the server refuses each write in the demo dialog's words.
-    write: () => (currentContributor() ? !currentContributor()!.visitor && currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
-    visitor: () => Boolean(currentContributor()?.visitor),
+    // The developer played on the sample team is still the visitor's read-only session: he writes nothing there.
+    write: () => (castDeveloper() ? false : currentContributor() ? !currentContributor()!.visitor && currentContributor()!.role !== 'view' : linkedMember(linkedGitHubRole()) ? true : (currentAccess()?.write ?? null)),
+    visitor: () => Boolean(currentContributor()?.visitor || castDeveloper()),
     signIn: prefersSignIn,
     // Not known while the saved sign-in or the account's linked GitHub role is still being read: an admin who just
     // signed in never sees the read-only banner meanwhile.
@@ -1385,11 +1403,12 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
   if (!githubToken() && contributeEligible(repo, repoContext().hosted) && !document.documentElement.hasAttribute('data-no-repo')) {
     const link = takeContributeHash();
     const settle = (m: ContributeMember | null) => {
-      const next = m ? contributorViewer(m) : null;
+      // Played on the sample team, the developer has no email membership: his GitHub account is the viewer.
+      const next = m ? contributorViewer(m) : castDeveloper();
       if (githubToken() || (viewer?.login === next?.login && viewer?.name === next?.name && checked)) return;
       viewer = next;
       forgetAccess();
-      if (!m) void clearPrivateRepoCaches();
+      if (!next) void clearPrivateRepoCaches();
       done();
       if (!m) paintAccess();
     };
@@ -1408,6 +1427,7 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       location.reload();
     });
     const known = contributorFor(repo);
+    const developer = known ? null : castDeveloper();
     if (link) {
       contributeLink = 'checking';
       paint();
@@ -1423,8 +1443,8 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       );
       return;
     }
-    if (known) {
-      viewer = contributorViewer(known);
+    if (known || developer) {
+      viewer = known ? contributorViewer(known) : developer;
       done();
       void contributeInfo(repo);
       return;
@@ -1434,7 +1454,7 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
     // member. A member: settle() above takes over. Nobody: the page goes on signed out, as a guest.
     paint();
     void contributeInfo(repo).then((info) => {
-      if (!info.member && !checked && !githubToken()) start();
+      if (!info.member && !castDeveloper() && !checked && !githubToken()) start();
     });
     return;
   }
@@ -1498,6 +1518,14 @@ export async function resolveAccess(repo: { owner: string; repo: string } = read
     // action again.
     const role = contributorFor(pageRepo())?.role;
     const a = contributorAccess(role === 'admin', role === 'view');
+    accessByRepo.set(name, a);
+    return a;
+  }
+  // The developer played on the sample team: his access as the team's collaborators list gives it, on its own repository.
+  const developer = signedIn && isContribAuth(token) ? castDeveloper() : null;
+  if (developer) {
+    if (name !== repoName(readRepo())) return null;
+    const a = await castDeveloperAccess(developer.login);
     accessByRepo.set(name, a);
     return a;
   }

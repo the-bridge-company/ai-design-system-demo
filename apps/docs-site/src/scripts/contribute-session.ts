@@ -10,6 +10,8 @@ import { GitHubError } from '@bridge-ds/core';
 import { mineIn } from '../lib/branches-page';
 import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
 import { isDemoRepo } from '../lib/demo';
+import { castGitHub, playedMember } from '../lib/demo-cast';
+import { castOn } from './demo-cast';
 
 /** The site cannot sign in with an email (no server piece, or not set up). */
 export class ContributeUnavailable extends Error {
@@ -52,14 +54,53 @@ const key = (repo: string) => repo.toLowerCase();
 /** The storage key of `repo`'s member: another tab removing it means the session ended there. */
 export const contributorKey = (repo: string) => HINT_PREFIX + key(repo);
 
-/** The member this browser last saw signed in on `repo`, or null. Synchronous: the server confirms it on each page. */
-export function contributorFor(repo: string): ContributeMember | null {
+/** The member the server last gave this browser on `repo` (its session), as kept: never the person played. */
+function storedContributor(repo: string): ContributeMember | null {
   try {
     const raw = localStorage.getItem(HINT_PREFIX + key(repo));
     return raw ? parseMember(JSON.parse(raw)) : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Who the page reads as on `repo` for the member `m` the server gave: on the sample team, a visitor's session plays the
+ * person picked in "See it as" (lib/demo-cast.ts playedMember; null for the developer, who has no email membership).
+ * Anyone else, and every other team, stays `m`.
+ */
+const played = (repo: string, m: ContributeMember | null): ContributeMember | null => {
+  const person = m?.visitor ? castOn(repo) : null;
+  return person ? playedMember(m, person) : m;
+};
+
+/** The member this browser last saw signed in on `repo`, or null. Synchronous: the server confirms it on each page. */
+export function contributorFor(repo: string): ContributeMember | null {
+  return played(repo, storedContributor(repo));
+}
+
+/**
+ * The GitHub person a visitor's session on the sample team plays ("See it as" the developer, who joins with GitHub
+ * only): his login, name and photo, for the GitHub side of the session (scripts/github-session.ts). Null otherwise.
+ */
+export function playedGitHub(repo: string): { login: string; name: string; avatar_url: string } | null {
+  const person = storedContributor(repo)?.visitor ? castOn(repo) : null;
+  return person ? castGitHub(person) : null;
+}
+
+/**
+ * This browser holds an email session on `repo` (the server's member, whoever the page plays): Studio reads the team
+ * through Bridge with it. For the transport only; who the page reads as is contributorFor.
+ */
+export const holdsContributeSession = (repo: string): boolean => Boolean(storedContributor(repo));
+
+/**
+ * The visitor's read-only session on the sample team while the page plays someone other than its member (the server
+ * reads "mine" and the session as that member): true then. Studio still reads through that session.
+ */
+export function playsSomeoneElse(repo: string): boolean {
+  const m = storedContributor(repo);
+  return Boolean(m?.visitor) && played(repo, m)?.email !== m?.email;
 }
 
 const listeners: ((repo: string, m: ContributeMember | null) => void)[] = [];
@@ -82,7 +123,7 @@ export function onContributeChange(fn: (repo: string, m: ContributeMember | null
 }
 
 function remember(repo: string, m: ContributeMember | null) {
-  const before = contributorFor(repo);
+  const before = storedContributor(repo);
   if (!m || before?.email !== m.email) forgetRecent(repo);
   try {
     if (m) localStorage.setItem(HINT_PREFIX + key(repo), JSON.stringify(m));
@@ -90,8 +131,8 @@ function remember(repo: string, m: ContributeMember | null) {
   } catch {
     /* storage blocked: the page asks the server each time */
   }
-  infos.set(key(repo), Promise.resolve({ available: infoAvailable.get(key(repo)) ?? true, member: m }));
-  if (Boolean(before) !== Boolean(m) || before?.email !== m?.email || before?.name !== m?.name) listeners.forEach((fn) => fn(repo, m));
+  infos.set(key(repo), Promise.resolve({ available: infoAvailable.get(key(repo)) ?? true, member: played(repo, m) }));
+  if (Boolean(before) !== Boolean(m) || before?.email !== m?.email || before?.name !== m?.name) listeners.forEach((fn) => fn(repo, played(repo, m)));
 }
 
 /**
@@ -102,7 +143,7 @@ function remember(repo: string, m: ContributeMember | null) {
 export function seedContributors(account: { email: string; name: string | null }, teams: readonly { repo: string; role: string; via: string }[]) {
   for (const t of teams) {
     if (t.via !== 'email' || !/^[^/\s]+\/[^/\s]+$/.test(t.repo)) continue;
-    if (contributorFor(t.repo)) continue;
+    if (storedContributor(t.repo)) continue;
     const m = parseMember({ email: account.email, name: account.name ?? '', role: t.role === 'admin' ? 'admin' : t.role === 'view' ? 'view' : 'edit' });
     if (!m) continue;
     try {
@@ -177,7 +218,7 @@ export function contributeInfo(repo: string): Promise<ContributeInfo> {
       const info = { available: r.available === true, member: parseMember(r.member) };
       infoAvailable.set(k, info.available);
       remember(repo, info.member);
-      return info;
+      return { ...info, member: played(repo, info.member) };
     },
     // Unreachable or not set up: nobody is signed in with an email here, and the page keeps what it showed.
     (err) => {
@@ -339,6 +380,9 @@ export function contributeMine(repo: string, authorization?: string): Promise<Mi
   const k = authorization ? `${key(repo)}#gh` : key(repo);
   const held = mines.get(k);
   if (held) return held;
+  // Playing someone on the sample team: the server answers "mine" for its visitor session's member, not theirs. What
+  // they made reads as theirs from the exploration blocks (their member reference), as for any member.
+  if (!authorization && playsSomeoneElse(repo)) return Promise.resolve({ branches: [], issues: [] });
   const p = call<{ branches?: unknown; issues?: unknown; products?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}&mine=1`, undefined, authorization ? { Authorization: authorization } : {}).then(
     (r) => parseMine(r),
     () => ({ branches: [], issues: [] }),
@@ -560,7 +604,7 @@ function changeRead(repo: string, path: string, headers: Record<string, string>)
  * bridgeReadAuth). Nothing for anyone else. Never throws: a change the server left out is read on its own, as before.
  */
 export async function prefetchChangeStatuses(repo: string, changes: readonly { number: number; head: { sha: string } }[], auth0: string | null = null): Promise<void> {
-  const email = Boolean(contributorFor(repo));
+  const email = holdsContributeSession(repo);
   const auth = email ? null : auth0;
   if (!email && !auth) return;
   const list = changes.filter((c) => /^[0-9a-f]{40}$/.test(c.head.sha) && !changeKept(repo, c));

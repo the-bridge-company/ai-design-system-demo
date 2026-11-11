@@ -5,6 +5,7 @@
 //     a Bridge account gets "Back to your workspace" instead: they have already started.
 //   - Bridge's own team, for a guest: "Bridge DS, read only." with "Back to your workspace" (or "Connect your design
 //     system" with no workspace yet, lib/start.ts demoBack).
+// On the sample team a visitor also gets "See it as" (SeeItAs.tsx): the same Studio as any of its five people.
 // The action is secondary weight: the page keeps its own primary (Review all on the demo home). A DS Banner, neutral,
 // with the board's warm tint (styles/demo-home.css). Mounted by scripts/demo-gate.ts into the layout's [data-demo-strip].
 import { Info } from 'lucide-react';
@@ -12,6 +13,8 @@ import { Banner } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { DEMO_WORDS, demoBanner } from '../../../lib/demo';
 import { SIGNIN_PAGE } from '../../../lib/account';
+import type { CastKey } from '../../../lib/demo-cast';
+import { SeeItAs } from './SeeItAs';
 import '../../../styles/demo-home.css';
 
 export interface DemoBannerProps {
@@ -24,9 +27,11 @@ export interface DemoBannerProps {
   back?: { href: string; connect: boolean } | null;
   /** "Connect your design system" clicked (scripts/start-connect.ts). */
   onConnect?: (e: Event, href: string) => void;
+  /** The sample team's "See it as" (a visitor only): who the page plays, and what picking someone does. */
+  cast?: { current: CastKey; onPick: (key: CastKey) => void } | null;
 }
 
-export function DemoBanner({ repo, back, onConnect }: DemoBannerProps) {
+export function DemoBanner({ repo, back, onConnect, cast }: DemoBannerProps) {
   const words = demoBanner(repo);
   const action = !back ? (
     <ButtonLink variant="secondary" href={SIGNIN_PAGE} data-demo-start="">
@@ -51,7 +56,16 @@ export function DemoBanner({ repo, back, onConnect }: DemoBannerProps) {
           <b>{words.title}</b> <span className="demo-banner-text">{words.text}</span>
         </>
       }
-      actions={action}
+      actions={
+        cast ? (
+          <span className="demo-banner-actions">
+            <SeeItAs current={cast.current} onPick={cast.onPick} />
+            {action}
+          </span>
+        ) : (
+          action
+        )
+      }
     />
   );
 }

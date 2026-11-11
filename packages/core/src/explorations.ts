@@ -18,6 +18,7 @@
 // CLI, so an exploration reads the same everywhere. GitHub calls live in explorations-github.ts.
 
 import type { BridgeConfig } from './config';
+import { mockupLabel, mockupOf, type Mockup } from './mockup';
 import { githubLoginOf } from './github-login';
 import { cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
 import { slugify } from './pr-composer';
@@ -94,6 +95,11 @@ export interface Exploration {
    * rebuilds it with the library first (startPageBrief), and the developers' task names it.
    */
   startPage?: string | undefined;
+  /**
+   * The mockup it starts from: a Figma frame or a Claude Design page link (parseMockupLink). Claude rebuilds it in the
+   * product with the library's pieces only (mockupBrief), and the exploration page says "Started from" it.
+   */
+  mockup?: string | undefined;
   /**
    * The screen the exploration changed, inside the product's preview: its path, query and hash ("/#/orders/XGZFHY3Z",
    * "/?workspace=new#/"), never a host. Open the preview and the preview capture land there (explorationScreenOf).
@@ -351,6 +357,7 @@ export function explorationPrBody(e: Exploration, ctx: ExplorationPrContext): st
     '',
     ...(e.purpose?.trim() ? [`**Purpose.** ${e.purpose.trim()}`, ''] : []),
     ...(startPageOf(e) ? [`**Starts from.** ${startPageOf(e)}, rebuilt with the library.`, ''] : []),
+    ...(explorationMockupOf(e) ? [`**Mockup.** Starts from ${mockupLabel(explorationMockupOf(e)!)} (${explorationMockupOf(e)!.url}), rebuilt with the library.`, ''] : []),
     ...(uc ? [`**Use case.** ${uc}`, ''] : []),
     '### What is experimental',
     '',
@@ -410,6 +417,11 @@ export function startPageOf(e: Pick<Exploration, 'startPage'> | null | undefined
   const v = e?.startPage;
   if (typeof v !== 'string' || v.length > 500 || !/^https:\/\/[^\s<>()[\]`"]+$/.test(v)) return null;
   return v;
+}
+
+/** The mockup the exploration starts from, as the body may hold it (a Figma frame or a Claude Design page), else null. */
+export function explorationMockupOf(e: Pick<Exploration, 'mockup'> | null | undefined): Mockup | null {
+  return mockupOf(e?.mockup);
 }
 
 /** Longest exploration screen (path, query and hash). */
@@ -530,6 +542,7 @@ function explorationBlock(e: Exploration): string {
     ...(e.source ? { source: e.source } : {}),
     ...(e.agent ? { agent: e.agent } : {}),
     ...(startPageOf(e) ? { startPage: startPageOf(e) } : {}),
+    ...(explorationMockupOf(e) ? { mockup: explorationMockupOf(e)!.url } : {}),
     ...(explorationScreenOf(e.screen) ? { screen: explorationScreenOf(e.screen) } : {}),
     ...(e.doneAt ? { doneAt: e.doneAt } : {}),
     ...(doneBy ? { doneBy } : {}),

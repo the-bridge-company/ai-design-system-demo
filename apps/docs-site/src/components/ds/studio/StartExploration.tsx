@@ -26,10 +26,10 @@
 // The page decides the trigger's weight (`bridge:start-change`): the primary when nothing needs the viewer, secondary
 // when the first need is the primary, hidden signed out (Connect GitHub takes its place).
 import { VOCAB } from '../../../lib/vocabulary';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Copy, ExternalLink, Plus } from 'lucide-react';
-import { addressDomain, defaultProduct, liveAddressOf, parseJiraKey, productMarks, productsOf, type ProductConfig } from '@bridge-ds/core';
-import { Alert, Button, Combobox, Dialog, DialogContent, DialogTrigger, Icon, Input, Select, Spinner } from '@bridge-ds/react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Check, Copy, ExternalLink, Plus, X } from 'lucide-react';
+import { addressDomain, defaultProduct, liveAddressOf, mockupCard, mockupLabel, MOCKUP_PROBLEM, parseJiraKey, parseMockupLink, productMarks, productsOf, type Mockup, type ProductConfig } from '@bridge-ds/core';
+import { Alert, Button, Combobox, Dialog, DialogContent, DialogTrigger, Icon, IconButton, Input, Select, Spinner } from '@bridge-ds/react';
 import AddProduct, { useCanAddProduct } from './AddProduct';
 import { ADD_PRODUCT_WORDS } from '../../../lib/add-product';
 import { startChangeHref } from '../../../lib/overview-board';
@@ -124,6 +124,87 @@ function pageProducts(): ProductConfig[] {
   }
 }
 
+/** What the mockup field says (direction B: a quiet link under the sentence reveals it). */
+export const MOCKUP_WORDS = {
+  reveal: 'Start from a mockup',
+  label: 'Start from a mockup',
+  hint: 'A Figma frame or a Claude Design page. Claude rebuilds it with your library.',
+  placeholder: 'Paste the link',
+  remove: 'Remove the mockup',
+} as const;
+
+interface MockupFieldProps {
+  open: boolean;
+  link: string;
+  mockup: Mockup | null;
+  error: string | null;
+  inputRef: RefObject<HTMLInputElement>;
+  onOpen: () => void;
+  onChange: (v: string) => void;
+  onBlur: () => void;
+  onRemove: () => void;
+}
+
+/**
+ * Start from a mockup, optional: a quiet link first (one question stays visible), then the field. A link Bridge
+ * recognises becomes a card with what the link says (never fetched: no name or date Bridge does not know); anything
+ * else says how to fix it.
+ */
+function MockupField({ open, link, mockup, error, inputRef, onOpen, onChange, onBlur, onRemove }: MockupFieldProps) {
+  if (!open)
+    return (
+      <span>
+        <Button variant="link" iconStart={Plus} onClick={onOpen} data-mockup-reveal="">
+          {MOCKUP_WORDS.reveal}
+        </Button>
+      </span>
+    );
+  if (mockup) {
+    const card = mockupCard(mockup);
+    return (
+      <div className="sc-mockup" role="group" aria-labelledby="sc-mockup-label" data-mockup={mockup.kind}>
+        <span className="t-ui sc-where-label" id="sc-mockup-label">
+          {MOCKUP_WORDS.label}
+        </span>
+        <div className="sc-mockup-card">
+          <span className="sc-mockup-thumb" data-kind={mockup.kind} aria-hidden="true">
+            {mockup.kind === 'figma' && <i className="sc-mockup-side" />}
+            <i className="sc-mockup-head" />
+            <i className="sc-mockup-pill" />
+            <i className="sc-mockup-row" />
+            <i className="sc-mockup-row" />
+            <i className="sc-mockup-row" />
+          </span>
+          <span className="sc-mockup-text">
+            <span className="sc-mockup-name">{card.name}</span>
+            <span className="sc-mockup-meta">{card.meta}</span>
+          </span>
+          <IconButton icon={X} label={MOCKUP_WORDS.remove} variant="ghost" size="sm" onClick={onRemove} />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Input
+      ref={inputRef}
+      label={MOCKUP_WORDS.label}
+      // The error says what to do instead: the hint steps aside.
+      hint={error ? undefined : MOCKUP_WORDS.hint}
+      placeholder={MOCKUP_WORDS.placeholder}
+      size="lg"
+      type="url"
+      inputMode="url"
+      autoComplete="off"
+      spellCheck={false}
+      value={link}
+      onValueChange={onChange}
+      onBlur={onBlur}
+      error={error ?? undefined}
+      data-mockup-link=""
+    />
+  );
+}
+
 export default function StartExploration({ components, appearance = 'menu', product = null }: StartExplorationProps) {
   // The server render and the first client render agree; the page's choice comes in right after.
   const [look, setLook] = useState<StartChangeLook>({ variant: 'primary', hidden: false });
@@ -139,6 +220,14 @@ export default function StartExploration({ components, appearance = 'menu', prod
   const [page, setPage] = useState('');
   const [pageError, setPageError] = useState<string | null>(null);
   const pageRef = useRef<HTMLInputElement>(null);
+  // A mockup to start from (a Figma frame or a Claude Design page): behind a quiet link, recognised by its link alone.
+  const [mockupOpen, setMockupOpen] = useState(false);
+  const [mockupLink, setMockupLink] = useState('');
+  const [mockupError, setMockupError] = useState<string | null>(null);
+  const mockupRef = useRef<HTMLInputElement>(null);
+  // The card replaces the field once the link is in: pasted at once, or the field left. Never mid-typing.
+  const [mockupSettled, setMockupSettled] = useState(false);
+  const mockup = parseMockupLink(mockupLink).mockup;
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,7 +249,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
     setPageError(null);
   }, [target]);
   const { copied, said, copy } = useCopy(3000);
-  const [done, setDone] = useState<{ prompt: string; app: string; href: string; name: string; where: string; setup: ToolSetup } | null>(null);
+  const [done, setDone] = useState<{ prompt: string; app: string; href: string; name: string; where: string; from: string | null; setup: ToolSetup } | null>(null);
   const [claudeLink, setClaudeLink] = useState<ClaudeLink>('unknown');
   const [toolSaid, setToolSaid] = useState('');
   // A designer (joined with their email, or with GitHub as a designer of the team): they explore a product in its design
@@ -191,6 +280,8 @@ export default function StartExploration({ components, appearance = 'menu', prod
   const picked = targets.find((t) => t.value === target) ?? null;
   // A product added from its address (products[].address): the exploration may start from one of its live pages.
   const liveAddress = picked && !picked.library ? liveAddressOf(picked.product) : null;
+  // Start from a mockup: for a product only, never the library (its explorations change tokens and components).
+  const mockupShown = Boolean(picked && !picked.library);
 
   // Where the page asked to start, and whether the person picked since: the lead's library comes a moment after open.
   const asked = useRef<string | null>(null);
@@ -206,6 +297,10 @@ export default function StartExploration({ components, appearance = 'menu', prod
     setJiraOpen(false);
     setPage('');
     setPageError(null);
+    setMockupOpen(false);
+    setMockupLink('');
+    setMockupError(null);
+    setMockupSettled(false);
     setTried(false);
     setBusy(false);
     setError(null);
@@ -238,6 +333,11 @@ export default function StartExploration({ components, appearance = 'menu', prod
           }
           if (typeof v.sentence === 'string') setSentence(v.sentence);
           if (typeof v.page === 'string') setPage(v.page);
+          if (typeof v.mockup === 'string' && v.mockup) {
+            setMockupLink(v.mockup);
+            setMockupOpen(true);
+            setMockupSettled(true);
+          }
           if (typeof v.jira === 'string' && v.jira) {
             setJira(v.jira);
             setJiraOpen(true);
@@ -327,8 +427,12 @@ export default function StartExploration({ components, appearance = 'menu', prod
     // Only a page of the product's own address (pageOfAddress); empty is fine, the field is optional.
     const from = liveAddress ? startPageProblem(page, liveAddress) : { page: null, problem: null };
     setPageError(from.problem);
-    if (Object.keys(problems).length || from.problem) {
+    // A mockup only for a product (the library has no screens to rebuild); empty is fine, the field is optional.
+    const mock = mockupShown ? parseMockupLink(mockupLink) : { mockup: null, problem: null };
+    setMockupError(mock.problem ? MOCKUP_PROBLEM[mock.problem] : null);
+    if (Object.keys(problems).length || from.problem || mock.problem) {
       if (from.problem) pageRef.current?.focus();
+      else if (mock.problem) mockupRef.current?.focus();
       else if (problems.sentence) sentenceRef.current?.focus();
       else if (problems.jira) jiraRef.current?.focus();
       return;
@@ -344,14 +448,14 @@ export default function StartExploration({ components, appearance = 'menu', prod
     setBusy(true);
     // Kept if the person has to sign in again first: the start reopens with the same words (scripts/pending-action).
     const kept = await import('../../../scripts/pending-action');
-    kept.armPendingAction('start-exploration', { sentence, target, jira, ...(startPage ? { page: startPage } : {}) });
+    kept.armPendingAction('start-exploration', { sentence, target, jira, ...(startPage ? { page: startPage } : {}), ...(mock.mockup ? { mockup: mock.mockup.url } : {}) });
     try {
       const { explorationsConfig, startInProductRepo, startLinkedExploration } = await import('../../../scripts/exploration-start');
       const key = parseJiraKey(jira);
       const author = session.currentViewer()?.login;
       const name = featureName(sentence);
       const cfg = explorationsConfig();
-      const e = { name, purpose: featurePurpose(sentence), useCase: 'terminal' as const, ...(author ? { author } : {}), ...(key ? { jira: key } : {}), ...(startPage && !inLibrary ? { startPage } : {}) };
+      const e = { name, purpose: featurePurpose(sentence), useCase: 'terminal' as const, ...(author ? { author } : {}), ...(key ? { jira: key } : {}), ...(startPage && !inLibrary ? { startPage } : {}), ...(mock.mockup && !inLibrary ? { mockup: mock.mockup.url } : {}) };
       const labels = productMarks(products, t.product).labels;
       const repo = inLibrary || t.library ? null : featureRepo(t.product, `${cfg.owner}/${cfg.repo}`);
       // In the design team's copy (products[].design): the copy's previews, and the developers' repository never written.
@@ -397,7 +501,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
       kept.disarmPendingAction();
       const { started } = r;
       const ds = `${cfg.owner}/${cfg.repo}`;
-      const ref = { sentence, product: t.product, number: started.pr, library: t.library, copy: at ? { repo: at.copy, branch: started.branch } : null, startPage: inLibrary ? null : startPage };
+      const ref = { sentence, product: t.product, number: started.pr, library: t.library, copy: at ? { repo: at.copy, branch: started.branch } : null, startPage: inLibrary ? null : startPage, mockup: inLibrary ? null : mock.mockup };
       const prompt = claudePrompt(ref);
       setDone({
         prompt,
@@ -406,6 +510,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
         href: featureHref(started.pr, repo ? t.product.key : null),
         name,
         where: t.library ? VOCAB.main : t.product.name,
+        from: !inLibrary && !t.library && mock.mockup ? mockupLabel(mock.mockup) : null,
         // A product with its own repository needs bridge connect once there; the library and a product folder in the
         // design system repository need the server in the tool once.
         setup: {
@@ -537,6 +642,38 @@ export default function StartExploration({ components, appearance = 'menu', prod
           onValueChange={setSentence}
           error={shown.sentence}
         />
+        {mockupShown && (
+          <MockupField
+            open={mockupOpen}
+            link={mockupLink}
+            mockup={mockupSettled ? mockup : null}
+            error={mockupError}
+            inputRef={mockupRef}
+            onOpen={() => {
+              setMockupOpen(true);
+              requestAnimationFrame(() => mockupRef.current?.focus());
+            }}
+            onChange={(v) => {
+              // More than one character at once: a paste (or autofill), the link is in.
+              const pasted = v.length - mockupLink.length > 1;
+              const r = parseMockupLink(v);
+              setMockupSettled(pasted);
+              setMockupLink(v);
+              setMockupError(pasted && r.problem ? MOCKUP_PROBLEM[r.problem] : null);
+            }}
+            onBlur={() => {
+              const r = parseMockupLink(mockupLink);
+              setMockupError(r.problem ? MOCKUP_PROBLEM[r.problem] : null);
+              setMockupSettled(true);
+            }}
+            onRemove={() => {
+              setMockupLink('');
+              setMockupError(null);
+              setMockupSettled(false);
+              requestAnimationFrame(() => mockupRef.current?.focus());
+            }}
+          />
+        )}
         {!JIRA_IN_BRIDGE ? null : jiraOpen ? (
           <Input ref={jiraRef} label="Jira ticket" hint="Optional. Its key, like DS-42." size="lg" value={jira} onValueChange={setJira} error={shown.jira} />
         ) : (
@@ -674,7 +811,8 @@ export default function StartExploration({ components, appearance = 'menu', prod
     body = (
       <div className="sc-form">
         <p className="t-body sc-line">
-          <b>{done?.name}</b> is a new exploration in {done?.where}. {first ? CONNECT_FIRST.readyIntro : toolSaid || (tools.tab === 'copilot' ? 'Paste this in Copilot Chat in VS Code, in Agent mode.' : tools.tab === 'claude-code' ? 'Run this in your terminal.' : 'Continue it in Claude.')}
+          <b>{done?.name}</b> is a new exploration in {done?.where}
+          {done?.from ? `, starting from ${done.from}` : ''}. {first ? CONNECT_FIRST.readyIntro : toolSaid || (tools.tab === 'copilot' ? 'Paste this in Copilot Chat in VS Code, in Agent mode.' : tools.tab === 'claude-code' ? 'Run this in your terminal.' : 'Continue it in Claude.')}
         </p>
         {first ? (
           <ConnectFirst address={connectorUrl(location.origin)} onCopy={clip}>

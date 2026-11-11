@@ -74,6 +74,7 @@ export * from './docs-proposal';
 export * from './share-branch';
 export * from './try-in-product';
 export * from './combine-branches';
+export * from './mockup';
 export * from './products';
 export * from './design-copy-github';
 export * from './tooling';

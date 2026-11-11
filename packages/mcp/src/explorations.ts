@@ -46,8 +46,10 @@ import {
   parseRequestIssue,
   protectedBranchesOf,
   startExplorationOnGitHub,
-  startPageBrief,
+  startBrief,
   startPageOf,
+  explorationMockupOf,
+  mockupLabel,
   explorationScreenFrom,
   explorationScreenOf,
   previewAtScreen,
@@ -506,6 +508,7 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
   const e = parseExplorationBody(p.body);
   const name = e?.name ?? p.title.replace(/^Exploration:\s*/i, '');
   const startPage = startPageOf(e);
+  const mockup = explorationMockupOf(e);
   const products = productsOf(config);
   const product = at.product ?? productOfBranch(products, { labels: p.labels, files: null });
   const repo = at.repo ?? gh.fullName;
@@ -545,9 +548,11 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
     continueLines: continueLines({ number: p.number, name, productName: product.name, product: at.product?.key, repo: at.repo }),
     // Started from a page of a product added from its address: Claude rebuilds that page with the library first.
     ...(startPage && stage !== 'handed' ? { startFrom: startPage } : {}),
+    // Started from a mockup (a Figma frame or a Claude Design page): Claude rebuilds it with the library's pieces only.
+    ...(mockup && stage !== 'handed' ? { mockup: { kind: mockup.kind, url: mockup.url, label: mockupLabel(mockup) } } : {}),
     next: [
       ...(leadWords ? [`Tell the designer first what their lead said, in their words (leadWords), then work on it.`] : []),
-      ...(startPage && stage === 'not-started' ? [startPageBrief(startPage, product.name, e?.purpose || name)] : []),
+      ...((startPage || mockup) && stage === 'not-started' ? [startBrief({ startPage, mockup }, product.name, e?.purpose || name)!] : []),
       notesEmpty(notes)
         ? 'Start by telling the designer where it stands, in one or two sentences from whereItStands and activity, without technical words, then ask what they want to do next.'
         : `Read notes first: they are what the last person left for whoever carries on. Start by telling the designer where it stands in one or two plain sentences (whereItStands, then the notes: ${notesLine(notes)}), then propose to start from notes.nextStep${notes.nextStep ? '' : ' (none written yet: ask what to do next)'}. Keep the decisions already taken; ask before reopening one.`,

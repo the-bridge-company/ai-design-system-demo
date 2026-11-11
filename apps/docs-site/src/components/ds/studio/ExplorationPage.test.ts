@@ -844,6 +844,17 @@ describe('the talk with a lead on the page', () => {
     expect(document.querySelector('.xp-st-sub')!.textContent).toBe("Florian's version, changed 2 h ago, after you were asked");
   });
 
+  it('waiting for the lead: All steps shows Exploring done and the lead deciding now', () => {
+    paint({ stage: 'exploring', lead: { line: 'Florian is done exploring.', bar } });
+    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+    const list = screen.getByRole('list', { name: 'From exploration to product' });
+    const exploring = within(list).getByText('Exploring').closest('li')!;
+    const lead = within(list).getByText('The lead decides').closest('li')!;
+    expect(exploring.textContent).toMatch(/Done/);
+    expect(exploring.getAttribute('aria-current')).toBeNull();
+    expect(lead.getAttribute('aria-current')).toBe('step');
+  });
+
   it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {
     const onLooksRight = vi.fn(async () => 'Sent to the developers.');
     const onComment = vi.fn(async () => 'Sent to Florian.');

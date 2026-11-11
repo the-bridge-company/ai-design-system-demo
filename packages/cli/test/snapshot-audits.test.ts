@@ -31,15 +31,19 @@ describe('bridge snapshot audits name their product', () => {
     expect(byId).toEqual({ 'admin-after': null, 'art-print-shop-main': 'admin-app', 'library-fixture': null });
   });
 
-  it("a product's report lists its screens and the files that make each one (the file routes without a screens map)", async () => {
+  it("a product's report lists its screens and the files that make each one (its screens map in bridge.config.json)", async () => {
+    // This repository's config maps Art print shop's screens: "/#/orders" is resources/orders/**.
     const shop = mkdtempSync(join(tmpdir(), 'bridge-test-shop-'));
     cpSync(join(REPO, 'packages/core/test/fixtures/audit/tailwind-app'), shop, { recursive: true });
+    mkdirSync(join(shop, 'resources/orders'), { recursive: true });
+    writeFileSync(join(shop, 'resources/orders/OrderList.tsx'), 'export const OrderList = () => <button className="p-[13px]">Ship</button>;\n');
     execFileSync('git', ['init', '-q'], { cwd: shop });
     execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/the-bridge-company/art-print-shop.git'], { cwd: shop });
     const out = mkdtempSync(join(tmpdir(), 'bridge-test-snapshot-'));
     await writeSnapshot({ root: REPO, out, version: '9.9.9', audit: [`${shop}=Art print shop`], previous: async () => null });
     const report = JSON.parse(readFileSync(join(out, 'audits/art-print-shop.json'), 'utf8')) as AuditReport;
-    expect(report.screens).toEqual([{ route: '/', name: 'Home', files: ['app/page.tsx'] }]);
+    // The map wins over the file routes (app/page.tsx is no screen here); screens without files are left out.
+    expect(report.screens).toEqual([{ route: '/#/orders', name: 'Orders', files: ['resources/orders/OrderList.tsx'] }]);
   });
 
   it('a product checkout inside the repo (actions/checkout path:) is named by its own git origin', async () => {

@@ -29,6 +29,8 @@
   grid-template-columns: subgrid;
   align-items: center;
   min-height: var(--control-height-md);
+  /* Rows touch: a page's own list spacing (li + li margins) would open a gap a row's background cannot fill. */
+  margin: 0;
   padding: var(--space-2) 0;
 }
 

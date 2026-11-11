@@ -95,11 +95,6 @@
   .ex .bl-narrow > * {
     flex: 1 1 calc(var(--size-40) - var(--space-4));
   }
-
-  /* On a phone a filled column keeps a card's width; the Board scrolls sideways inside its region. */
-  .ex-col {
-    min-inline-size: var(--size-60);
-  }
 }
 
 .ex-board {
@@ -138,6 +133,12 @@
   line-height: var(--font-line-height-tight);
 }
 
+/* The column's count, quiet after its status (the same as changes.css .bl-count, for pages that do not load it). */
+.ex-col-h .bl-count {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
 .ex-col-cards {
   display: flex;
   flex-direction: column;
@@ -152,6 +153,14 @@
   flex: 0 0 auto;
   min-inline-size: 0;
   max-inline-size: var(--size-40);
+}
+
+/* On a phone a filled column keeps a card's width; the Board scrolls sideways inside its region. After .ex-col, so
+   it wins over the column's own minimum. */
+@media (max-width: 640px) {
+  .ex-col:not(.is-empty) {
+    min-inline-size: var(--size-60);
+  }
 }
 
 

@@ -71,6 +71,8 @@ export interface ListCardProps {
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
   /** Whose it is: the face and the name in the footer. */
   person: Person;
+  /** What the footer says after the face instead of the bare name, when the name needs its why ("Asked by Leo"). */
+  byline?: string | null;
   /** In the screen's corner, when the group heading does not already say it: "Account app". */
   product?: string | null;
   pill?: { label: string; tone: PillTone | 'info' } | null;
@@ -86,7 +88,7 @@ export interface ListCardProps {
   action?: ReactNode;
 }
 
-export function ListCard({ thumb, title, href, linkAttributes, onClick, person, product, pill, tags, note, eyebrow, className, action }: ListCardProps) {
+export function ListCard({ thumb, title, href, linkAttributes, onClick, person, byline, product, pill, tags, note, eyebrow, className, action }: ListCardProps) {
   const age = captureAgeOf(thumb);
   return (
     <li className={className ? `sh-card-item ${className}` : 'sh-card-item'}>
@@ -112,7 +114,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
             <span className="t-ui sh-card-who">
               <Who p={person} size="xs" />
               <span className="sh-card-name">
-                {person.name}
+                {byline || person.name}
                 {age ? (
                   <span className="sh-card-product">
                     {SEP}

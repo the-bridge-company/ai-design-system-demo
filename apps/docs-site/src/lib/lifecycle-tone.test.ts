@@ -36,7 +36,7 @@ describe('LIFECYCLE_TONE', () => {
     expect(statusTag(build('in-review', '')).tone).toBe(LIFECYCLE_TONE['in-review']);
   });
 
-  it('a request waiting for more than a week keeps its stage colour and says how long in the tag', () => {
-    expect(statusTag(build('requested', 'Requested 10 days ago', true))).toEqual({ label: 'Requested 10 days ago', tone: 'warning' });
+  it('a request waiting for more than a week keeps its stage colour and its status word (its line says how long)', () => {
+    expect(statusTag(build('requested', 'Requested 10 days ago', true))).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
   });
 });

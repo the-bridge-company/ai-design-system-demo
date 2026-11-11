@@ -1,5 +1,81 @@
 # @bridge-ds/docs-site
 
+## 0.31.0
+
+### Minor Changes
+
+- ebee01f: The adoption report inside Bridge: Studio > Quality > a product opens `/studio/<team>/quality/report/?product=<key>` (the whole Adoption row is the link; "Download JSON" moves to the report's header). A plain-words verdict with one "Send to developers", two score cards in words (trend from the second run on), and tabs: Pieces (whole pieces grouped by the library component to use, the one change that covers most of them, the library's own preview, the pieces the library is missing), Colors (swatch pairs with Same color, Very close, Close, check the meaning, or No library color yet) and Sizes and spacing. The developers' detail (fix at the source, the change to copy, file and line with Open in GitHub) waits behind one fold per group. Leads and admins send a group to developers (one request per group, linked back to the report) or keep it as "Not a problem" with a reason (audit-ignores.json on the bridge-data branch, honoured by the next audit); designers read. On the sample team the actions stay in this browser.
+- 5540721: Check the build, region by region: a focused review mode (Explorations, `explorations/review/`) shows the developers'
+  build beside the approved design at three sizes (laptop, small laptop, phone), each place where they differ outlined
+  and numbered with one plain sentence and its measured facts. The designer, the product manager and a design lead say
+  Fine as built or Fix this per difference, pin comments on the spot (posted on the developers' task with the picture)
+  and send one answer: Needs changes posts the things to fix in one comment, the others stay approved in the next round.
+  Bridge's capture workflow measures each build Studio opens (approved design and build on the same screen, through
+  Bridge's private store). The exploration page shows the facts, a row of crops and Start the check.
+- 09a4577: Studio and Library: the side nav collapses to a 64px column of icons. A toggle sits before the logo in the top bar
+  ("Collapse sidebar", shortcut `[`), wide screens only; the phone keeps its menu. Collapsed, every item names itself in a
+  tooltip on its right with its count, products show two letters, the team chip and the account show their face. The
+  choice is kept in this browser and applied before first paint.
+- e0a8a1f: Studio: on an exploration page, "What this changes in the library" shows a component several screens change
+  differently as one card: today and each designer's way side by side as small cards, a ring on the way kept. The lead
+  picks one way (or, with three ways or more, keeps several as sizes) and the button says the outcome; the designer reads
+  the same block with their way marked "(yours)" and a Comment; once decided, two lines say what the library gets, who
+  chose and who is told, with Undo for the lead. The choice is offered there only: the answer bar points to it and the
+  Ready panel no longer asks it. Ten screens or more stay one line ("and 8 more").
+- 1d58f2e: Studio: the exploration page, redesigned. One status tag in the header and one plain line under the title. The screen is the link to its preview (hover, focus and a touch chip), and in Check the build the approved version and the developers' build sit side by side, each opening its own, never two different screens. What this changes in the library sits under the screen; a new component shows as built, with the lead's choice in outcome words that Send to the developers applies. Activity is one timeline with the decisions, and a comment box naming who reads it. On the right, the "Your turn" zone only when the viewer acts now (one primary action, alternatives first), Before it ships with the people and their last word, a four-step bar naming the next step, and the handover notes. Developers get a Code popover (Terminal and Claude) once the work is theirs; the "For developers" section is gone and designers never see git.
+- 353ed8b: Studio: Changes becomes Explorations (/studio/explorations/). Waiting on you is pinned first with "Your turn" and its
+  reason; Status, Product and People checkbox filters replace the state tabs; a read-only Board joins List and Grid;
+  statuses speak designer words only. Library changes, suggestions and docs drafts leave the page for Library review;
+  the token draft line moves to Tokens. Old /studio/changes/ links keep working.
+- b42e19a: Library review: a clearer hierarchy. The List reads as chapters (Foundations, Components, Docs) with their icon, a
+  plain line and the products they reach named once, one card per family with each group's name in a sticky rail, a
+  sentence-case column header and a State column for a conflict's ways or a result. Asked by is a face wearing the
+  product's mark, then the exploration; "+N" tags replace every "+N more". A row's name opens the piece in One by one
+  (?piece=) and a quiet link opens its page in the library. The tally at the end of the filters row says what waits,
+  split by family. One by one: a conflict is a compare stage (Overlay at 150% or Side by side) and one radio list with a
+  single primary that names the outcome; the side list uses the same families, a quiet check for seen pieces. The Map:
+  "Show all" now shows every piece, one picked piece is its own row, and the picked box is kept in the address (?focus=).
+- 7666280: Studio: Library review, the DS lead's one queue for library pieces (phase 1). A new page next to Changes lists every piece that would enter the library, whoever asked for it: library changes and the pieces explorations recorded, conflicts included. Two views, One by one (keys A add, K keep, the down arrow next) and List (a checkbox per row and per group, a bar that says what the selection touches before acting). Filters are checkbox lists: Status, Asked by, Product. The lead decides Add to the library, Keep in the designer's screen, or Use the existing piece when the check found a match; the decision is the exploration's own, shown on both pages. A designer reads it without buttons, on her own pieces first. The nav count moves from Changes to Library review and shows for whoever holds the review right only; Changes' Library group links to the new page.
+
+  Core: `withoutPieceDecision` and `replyOnPieceOnGitHub`, so a designer can reply to the lead's "Use an existing piece instead" from the exploration page ("Reply to Dana"): the piece goes back to Library review with the reason.
+
+- d119672: Studio: Library review phase 3. A read-only Map view (where each piece comes from, what changes in the library, who gets it; a click narrows the list, a conflict is two amber links; List on a phone). A "Who gets it" page per piece, opened from its reach link: the origin in one sentence, the screens Bridge knows per product (the asking explorations' preview captures) with Today, With this change and Side by side, and plain words when Bridge cannot list a product's screens. The old review queue (Home's Review all, /studio/review/) is now Library review: its ?pr= and ?item= links open the library change there, an exploration on Explorations, the other rows on Home, where they unfold in place. Library review reads ?suggestion=, ?origin= and ?group=. The List is grouped in blocks (Foundations, Components, Docs) under one sticky header, with checkboxes and Decide on row hover or focus; many explorations asking for one piece read on one line ("+11 more"). Decisions sit right under the piece on a phone.
+- 804690e: Library review: Who gets it shows the real product screens a library change alters, measured by the capture robot on
+  each product's live version (Today, With this change, Side by side of the same screen), with what changes on each
+  ("2 buttons, links"). A product appears only when one of its screens changes; until a change is measured, Bridge says
+  so. The List and One by one say the measured count ("11 screens", "Measuring", "No screen changes yet").
+
+### Patch Changes
+
+- fe03ca1: Library review: the Asked by filter lists people only (You, then each person), no longer explorations.
+- 2a98ca8: Being built: the presentation of Explorations. The tabs give way to the Status, Product and People checkbox menus (default Not shipped yet, Shipped keeps the last 30 days), the count, then List, Grid or Board (one column per status, read only). One word per status everywhere (no more "Requested"), cards say who a change waits on ("Asked by Leo", "Malik builds it", "Shipped by Malik"), and a developers' version at Check the build reads "Waiting for Sofia's check".
+- 413cdf3: Check the build: the exploration page shows a short list of where the build differs (one line each, the two versions under a line on hover or focus, the header primary following progress), the handover notes become a checklist whose ticks are saved, the check page walks the differences with a stepper and ends on a recap with one Send. A design lead can answer the check; the first answer between the designer and a lead stands, the other can still comment.
+- 2304cf5: Check the build: once Bridge measured the build, the exploration page compares the two versions it measured on the
+  same screen (the approved design and the build, laptop size) instead of an older capture of another screen, so it no
+  longer says the sides show different screens above the count of differences. The crops under it are framed tighter
+  around each difference, so each tile reads at its size.
+- 2a32587: Studio exploration page: "What this changes in the library" no longer says "Your choice" or "Choose on the exploration's page" where the viewer cannot choose. Past the lead's answer, the lead reads "Needs you" and "Pick in Library review" (a link to this exploration's pieces there); anyone else reads "Dana picks in Library review". The read-only heading is now "Card, two ways" with one context line ("Leo's Deal pipeline cards (Acme CRM) makes it tighter; this screen makes it roomier.") and room above the plates. Check the build's design lead line says the piece waits on the lead in Library review instead of "Not needed: no library piece changed".
+- fc4ee24: Exploration page: the journey and All steps name the design lead ("Dana picks what the library keeps", "Then you pick" for the lead herself), the handover notes are edited by their owner only (not by every lead), and their commits read "updated the handover notes" in Activity. Being built names a requester by their short name ("Asked by Ann").
+- 4e6cfc8: Exploration page: the screen stage names the screen from its route ("Products") with one sentence of what the exploration does, never the last region it changed. Activity groups the same line in a row ("Leo saved 2 changes") and reads a commit that only repeats the exploration's name as "saved a change". A design lead on someone else's exploration while it is explored follows it: Done exploring and "Your exploration" are only the owner's.
+- 3282fa1: Studio: Send to Figma is switched off on the exploration page for now (SEND_TO_FIGMA_IN_STUDIO); its code stays.
+- 0c832ef: Exploration page, "What this changes in the library": each piece is one header line (kind tile, name, one tag, origin), a new component shows the piece as built with one "Add Timeline to the library" tick, and a change to a component part reads like the component's own options ("Padding: Comfortable", 20 px, +4 px) with the new values to tick, the ones already in the library under them, Rename, and a button that names the outcome. Decided pieces fold into one sentence with Change.
+- 3023e3c: Library block: a new piece keeps Ask for changes and Use an existing piece behind its ⋯; Choose Card padding lands on the piece still waiting.
+- 38f01ce: Library review List: a piece decided on its own (two ways, a removal) shows its checkbox off, with a tooltip saying why.
+- c873a2d: Library review List: a piece's tag sits next to its name, and the name and its kind sit closer.
+- 7bf9ce7: Studio: the account menu and other dropdown menus no longer make their button jump when they open.
+- 72f815f: Collapsed side nav: products show CR and PR, not AC and AP. The word every listed product shares is dropped again.
+- 214cfbb: Library review: the Who gets it cell in the List is always visible (Every screen, N screens or No screen yet).
+- 8bc1708: Library review: keyboard hints use full-size keys; the side list no longer marks seen pieces with a check. Explorations: the People filter lists a person once even when rows name them by account and by name.
+- 5ae3dde: Exploration page: the screen block no longer repeats the page title. When the screen's name only restates it, the block opens on its version line ("Sofia's version, changed 5 h ago, after you were asked").
+- a0bf76c: Exploration page: All steps shows where it stands. Waiting for the lead, Exploring is done and the lead's step is current; the current step stands out.
+- 955076e: Exploration page: when a library piece is still open, the lead's primary reads "Choose Card padding" and takes them to the choice, instead of a disabled Send to the developers.
+- 8c04da5: Studio polish: the lead's zone asks the library question first (1 of 2); Library review says its count in words, drops the shortcut hints and the shared-decision line, and shows the list and the piece as two cards with each piece in its own card and a list that scrolls on its own; the home's Oldest tag and the folder tiles' Captured tag keep their size and edge.
+- b6b5459: Exploration page: the More actions menu has icons, and Archive sits last, apart, in the danger tone.
+- ae9119d: Studio: the lead's Your turn zone on an exploration says it once. One context line ("Sending also adds the Timeline to the library."), the change since the lead was asked on the screen's line, and what Send to the developers waits for right beside it ("Pick the Card way first", linked to the Card block).
+- Updated dependencies [1fa649e]
+- Updated dependencies [7666280]
+  - @bridge-ds/core@0.32.0
+
 ## 0.30.0
 
 ### Minor Changes

@@ -366,6 +366,11 @@ export interface StudioHomeProps {
    * exploration (they change nothing; the server refuses every write anyway).
    */
   viewOnly?: boolean;
+  /**
+   * A developer (lib/home-model isBuilderHome): the quiet home leads with what is being built by or for them, Being
+   * built on them, never "What do you want to explore?" nor the explorations tour.
+   */
+  builder?: boolean;
   /** Admins: Approve and Decline on join requests (board E7b). */
   join?: JoinHandlers;
   /**
@@ -385,6 +390,9 @@ const LEAD_TOUR_KEY = 'bridge.home.lead-tour';
 
 /** The review drawing without its empty sky: the scene only, so it never makes the greeting taller than its text. */
 const REVIEW_CROP = '0 98 232 86';
+
+/** A developer's quiet home (StudioHomeProps.builder): what they build, on Being built. */
+export const BUILDER_WORDS = { title: 'What are you building today?', button: 'See what you build', path: 'building/?people=you' } as const;
 
 /** The Harbor zone's line when nothing waits on the viewer: honest first, then the calm. */
 export const QUIET_LINE = 'Nothing needs you. The harbor is calm.';
@@ -434,7 +442,7 @@ export function StudioHome(p: StudioHomeProps) {
 
 function HomeBody(p: StudioHomeProps) {
   const snoozed = hintSnoozed(readSnooze(), p.now);
-  const own = useTour<ContributorTourAt>(CONTRIBUTOR_TOUR_KEY, contributorTourSteps(p.state === 'empty'), (at) => contributorTour(at, p.state === 'empty'), Boolean(p.contributor) && (p.state === 'busy' || p.state === 'empty'));
+  const own = useTour<ContributorTourAt>(CONTRIBUTOR_TOUR_KEY, contributorTourSteps(p.state === 'empty'), (at) => contributorTour(at, p.state === 'empty'), Boolean(p.contributor) && !p.builder && (p.state === 'busy' || p.state === 'empty'));
   // The lead's tour speaks of changes: rows that are only join requests (or a health note) are not what it shows. Its
   // first step points at the rows on screen, so it runs only when they hold a change; changes folded under "N more"
   // get the Review all step alone.
@@ -496,12 +504,20 @@ function HomeBody(p: StudioHomeProps) {
                 {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed))} />
               </p>
               <h1 id="sh-hello" className="sh-hello">
-                {p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}
+                {p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}
               </h1>
-              {!p.viewOnly && (
+              {p.builder ? (
                 <span className="sh-start">
-                  <StartExploration components={p.components} appearance="primary" />
+                  <ButtonLink variant="primary" href={studioHref(BUILDER_WORDS.path)}>
+                    {BUILDER_WORDS.button}
+                  </ButtonLink>
                 </span>
+              ) : (
+                !p.viewOnly && (
+                  <span className="sh-start">
+                    <StartExploration components={p.components} appearance="primary" />
+                  </span>
+                )
               )}
             </div>
           </div>

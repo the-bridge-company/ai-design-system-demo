@@ -6,6 +6,6 @@ import TeamShell from '../../../components/TeamShell.astro';
 import BuildReview from '../../../components/ds/studio/BuildReview';
 ---
 
-<TeamShell route="explorations/review/" title="Check the build" scene="changes" what="build check" description="The developers' build beside the approved design, one difference at a time.">
+<TeamShell route="explorations/review/" title="Check the build" scene="changes" what="build check" description="The developers' build beside the approved design, one difference at a time." header={false}>
   <BuildReview client:only="react" />
 </TeamShell>

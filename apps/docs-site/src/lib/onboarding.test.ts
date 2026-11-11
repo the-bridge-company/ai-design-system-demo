@@ -202,3 +202,14 @@ describe('withSetupStep', () => {
     expect(withSetupStep('', 'create')).toBe('?setup=create');
   });
 });
+
+describe('step 1 once signed in', () => {
+  it('names a GitHub login with an @ under Sign in with GitHub', () => {
+    const s = onboardingSteps(base)[0]!;
+    expect([s.title, s.detail]).toEqual(['Sign in with GitHub', 'Signed in as @ann']);
+  });
+  it('shows an email member their address as it is, under Sign in', () => {
+    const s = onboardingSteps({ ...base, login: 'dana@acme.example' })[0]!;
+    expect([s.title, s.detail]).toEqual(['Sign in', 'Signed in as dana@acme.example']);
+  });
+});

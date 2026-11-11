@@ -230,7 +230,7 @@ describe('the role picker', () => {
     const roles = await screen.findByRole('radiogroup', { name: 'Role' });
     expect(within(roles).getAllByRole('radio').map((r) => r.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
     expect(screen.queryByRole('radiogroup', { name: 'They review as' })).toBeNull();
-    expect(screen.getByText('Also approves changes before they ship.')).toBeInTheDocument();
+    expect(screen.getByText('Also approves explorations and library changes before they ship.')).toBeInTheDocument();
 
     await user.click(within(roles).getByRole('radio', { name: /Reviewer/ }));
     const reviewAs = await screen.findByRole('radiogroup', { name: 'They review as' });

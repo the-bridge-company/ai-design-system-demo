@@ -56,7 +56,8 @@ describe('ProductsNavView', () => {
   it('lists five products, the viewer\'s own first, then All products with the total', () => {
     nav({ products: navProducts(many), current: null, path: '/studio/', pages: PAGES, signals: { mine: { checkout: 2 }, opened: { 'mobile-app': 1 } } });
     const rows = linksIn(group('Products')).map(([name]) => name);
-    expect(rows).toEqual(['Checkout', 'Mobile app', 'Admin console', 'Art print shop', 'Billing', 'All products15']);
+    // A product opened lately (Mobile app) stays in its place: the nav reads the same on every page.
+    expect(rows).toEqual(['Checkout', 'Admin console', 'Art print shop', 'Billing', 'Email kit', 'All products15']);
     const all = screen.getByRole('link', { name: 'All products, 15' });
     expect(all.getAttribute('href')).toBe('/studio/products/');
   });

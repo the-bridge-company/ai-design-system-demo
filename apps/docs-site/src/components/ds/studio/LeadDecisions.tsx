@@ -7,12 +7,13 @@
 // - Decisions, everything said, newest first.
 // - WhyDialog, a reason before a lead's act on someone else's work, and HandOverDialog.
 // Words and rules: lib/lead-decisions.ts. Styles: styles/exploration-page.css (xp-lead-*).
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Button, ButtonGroup, Dialog, DialogClose, DialogContent, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Select, Textarea, Tooltip } from '@bridge-ds/react';
 import { Ellipsis } from 'lucide-react';
 import { Who } from './faces';
 import type { PageFace } from '../../../lib/exploration-page';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
+import { PM_WORDS } from '../../../lib/pm-view';
 
 export interface LeadBarView {
   onLooksRight: (note: string) => Promise<string | void>;
@@ -381,8 +382,16 @@ export interface PmView {
 export function PmZone({ v, say }: { v: PmView; say: (s: string) => void }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState<'pm-ok' | 'pm-changes' | null>(null);
+  // Needs changes stays clickable: with no note yet, the field says what it needs and takes the focus.
+  const [needNote, setNeedNote] = useState(false);
+  const note = useRef<HTMLTextAreaElement>(null);
   const send = (kind: 'pm-ok' | 'pm-changes') => {
-    if (!v.onSay || (kind === 'pm-changes' && !text.trim())) return;
+    if (!v.onSay) return;
+    if (kind === 'pm-changes' && !text.trim()) {
+      setNeedNote(true);
+      note.current?.focus();
+      return;
+    }
     setBusy(kind);
     v.onSay(kind, text.trim())
       .then((r) => {
@@ -407,13 +416,24 @@ export function PmZone({ v, say }: { v: PmView; say: (s: string) => void }) {
             send('pm-ok');
           }}
         >
-          <Textarea label="Your note" hint="Needed for Needs changes." rows={3} value={text} onChange={(e) => setText(e.target.value)} />
+          <Textarea
+            ref={note}
+            label={PM_WORDS.note}
+            hint={PM_WORDS.noteHint}
+            error={needNote && !text.trim() ? PM_WORDS.noteNeeded : undefined}
+            rows={3}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (e.target.value.trim()) setNeedNote(false);
+            }}
+          />
           <div className="xp-pm-acts">
             <Button type="submit" variant="inverse" size="md" loading={busy === 'pm-ok'} disabled={busy !== null}>
-              Looks good
+              {PM_WORDS.looksGood}
             </Button>
-            <Button type="button" variant="secondary" size="md" loading={busy === 'pm-changes'} disabled={!text.trim() || busy !== null} onClick={() => send('pm-changes')}>
-              Needs changes
+            <Button type="button" variant="secondary" size="md" loading={busy === 'pm-changes'} disabled={busy !== null} onClick={() => send('pm-changes')}>
+              {PM_WORDS.changes}
             </Button>
           </div>
         </form>

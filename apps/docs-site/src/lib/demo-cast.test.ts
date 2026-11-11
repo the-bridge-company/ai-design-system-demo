@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_MEMBERS, DEMO_PM, RETIRED_DEMO_MEMBERS } from '../../api/_lib/demo-members';
 import { memberRef } from '../../api/_lib/exploration-member';
-import { CAST_PARAM, CAST_WORDS, DEFAULT_CAST, SAMPLE_CAST, castAccess, castFaceLogin, castGitHub, castPerson, chooseCast, playedMember } from './demo-cast';
+import { CAST_PARAM, CAST_WORDS, DEFAULT_CAST, SAMPLE_CAST, castAccess, castFaceLogin, castGitHub, castPerson, chooseCast, isCastLogin, onlySamplePeople, playedMember } from './demo-cast';
 import { emailMemberFace } from './people';
 import type { ContributeMember } from './contribute';
 
@@ -74,5 +74,29 @@ describe('See it as: the people of the sample team', () => {
   it('draws each email member with the face Studio gives them everywhere', () => {
     for (const p of SAMPLE_CAST) if (p.via.kind === 'email') expect(castFaceLogin(p)).toBe(emailMemberFace(p.name, p.via.email));
     expect(castFaceLogin(castPerson('malik')!)).toBe('acme-malik');
+  });
+});
+
+describe('onlySamplePeople', () => {
+  const people = [
+    { login: 'peterbono' },
+    { login: 'acme-malik' },
+    { login: 'email-member-0', via: 'email' as const },
+  ];
+  it('keeps the fictional people of the sample team, never a real GitHub account', () => {
+    expect(onlySamplePeople('acme-design-demo/bridge-demo-ds', people).map((m) => m.login)).toEqual(['acme-malik', 'email-member-0']);
+  });
+  it('leaves any other team as it is', () => {
+    expect(onlySamplePeople('the-bridge-company/ai-design-system-demo', people)).toHaveLength(3);
+  });
+  it('knows the developer by his login, any case', () => {
+    expect(isCastLogin('@Acme-Malik')).toBe(true);
+    expect(isCastLogin('peterbono')).toBe(false);
+  });
+});
+
+describe('castGitHub', () => {
+  it('draws the developer: no GitHub photo', () => {
+    expect(castGitHub(castPerson('malik')!)?.avatar_url).toBe('');
   });
 });

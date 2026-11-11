@@ -11,6 +11,7 @@ import { siteApprovers } from './teams';
 import { teamReview, type TeamReview } from './contribute-session';
 import { checkPieces } from './connector-api';
 import { viewerDecidesExplorations } from './design-lead';
+import { reviewAsk } from '../lib/design-lead';
 
 export const DONE_EXPLORING_EVENT = 'bridge:done-exploring-ask';
 
@@ -76,9 +77,9 @@ export function askDoneExploring(
   // A reviewer validates first, by the team's setting: nothing reaches the developers before they answer.
   void teamReview(`${repo.owner}/${repo.repo}`, currentContributor() ? null : getToken()).then((review) => {
     const through = goesThroughReview({ review, viewer, author: r.author, leads, me, authorRef: typeof authorRef === 'string' ? authorRef : null });
-    open(through, pmGateStop({ review, throughReview: through, product: r.product, body }));
+    open(through, pmGateStop({ review, throughReview: through, product: r.product, body }), review);
   });
-  function open(viaLead: boolean, pmStop: string | null) {
+  function open(viaLead: boolean, pmStop: string | null, review: TeamReview) {
   const detail: DoneExploringDetail = {
     number: r.number,
     name: r.name,
@@ -94,8 +95,11 @@ export function askDoneExploring(
       const v = currentViewer();
       const who = v ? (v.email ? { openedByName: v.name?.trim() || 'a designer' } : { openedBy: v.login }) : {};
       if (viaLead) {
-        await askLeadOnGitHub(opts.client(), r.number, { pieces, ...who, leads: leads.filter((l) => !l.includes('/') && l.toLowerCase() !== viewer?.toLowerCase()) });
-        opts.after(leadAskedLine(pieces.length));
+        // Who is asked, one rule with the page's "Ready to hand it to Dana?" (lib/design-lead reviewAsk): the team's
+        // email reviewers by name, nobody mentioned on GitHub; else its GitHub design owners.
+        const ask = reviewAsk({ emailLeads: review.asked, githubLeads: leads, except: { ref: me, login: viewer, name: v?.email ? v.name : null } });
+        await askLeadOnGitHub(opts.client(), r.number, { pieces, ...who, leads: ask.mention });
+        opts.after(leadAskedLine(pieces.length, ask.names[0] ?? null));
         return;
       }
       const res = await doneExploringOnGitHub(opts.client(), r.number, { pieces, products: opts.products ?? [], previewUrl: opts.previewUrl, ...who, ...(opts.library ? { library: opts.library() } : {}), source: 'studio' });

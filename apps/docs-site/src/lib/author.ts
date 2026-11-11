@@ -47,3 +47,15 @@ export function explorationAuthorFor(login: string | null | undefined, body: str
   if (name) return nameAuthor(name);
   return authorFor(login, body);
 }
+
+/**
+ * Who explored it, by name, as every screen names them (Home, Explorations, the exploration page, Library review and its
+ * Map): the person the exploration's record names (its member, the "Requested by" line, who sent it to the lead), never
+ * whoever later asked for a library change it needs, nor the account that opened it. Null when nobody is named.
+ */
+export function explorerName(body: string | null | undefined, login?: string | null): string | null {
+  const block = parseExplorationBody(body);
+  const name = block?.memberName?.trim() || requesterOf(body)?.name?.trim() || block?.leadAskedByName?.trim();
+  if (name) return name;
+  return login?.trim() && !isAppLogin(login) ? login.trim() : null;
+}

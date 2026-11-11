@@ -58,6 +58,21 @@ const ALLOWED: { file: string; line: string; why: string }[] = [
     line: "location.replace('/studio/tokens/'",
     why: 'is:inline script on a Library page (cannot import modules, never on a team shell): old ?edit=1 links',
   },
+  {
+    file: 'src/lib/demo.ts',
+    line: "const root = '/studio/';",
+    why: 'showcaseRedirect runs inline before first paint (self-contained, imports nothing): the own Studio it leaves',
+  },
+  {
+    file: 'src/lib/demo.ts',
+    line: "const sample = '/studio/acme-design-demo/bridge-demo-ds/';",
+    why: 'showcaseRedirect runs inline before first paint (self-contained, imports nothing): the sample team it goes to',
+  },
+  {
+    file: 'src/lib/demo.ts',
+    line: "if (v.pathname !== '/studio' && v.pathname.indexOf(root) !== 0) return null;",
+    why: 'showcaseRedirect runs inline before first paint (self-contained, imports nothing): the bare /studio address',
+  },
 ];
 
 function walk(dir: string, out: string[] = []): string[] {

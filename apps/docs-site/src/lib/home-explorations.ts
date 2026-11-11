@@ -423,18 +423,37 @@ const STAGE_WORDS: Record<OpenStage, [string, string]> = {
 export const ownWorkHref = (stage: OpenStage) => studioHref(`explorations/?status=${stage === 'exploring' ? 'exploring' : 'with-developers'}&people=you`);
 
 /**
+ * A developer's home (house rule: developers see what is being built for or by them): someone with no review right
+ * who works with GitHub (never an email member: designers join by email and explore through Bridge), may change things
+ * (not Can view) and has no exploration of their own. Their quiet home leads with Being built, never "What do you want
+ * to explore?".
+ */
+export function isBuilderHome(x: { contributor: boolean; github: boolean; viewOnly: boolean; explorations: readonly Pick<ExplorationCard, 'own'>[] }): boolean {
+  return x.contributor && x.github && !x.viewOnly && !x.explorations.some((c) => c.own);
+}
+
+/** Being built's status (lib/building-page BuildState) for a library change at one stage. */
+const BUILD_STATUS: Record<OpenStage, string> = { exploring: 'in-progress', code: 'waiting', building: 'in-progress', review: 'in-review' };
+
+/**
+ * The viewer's own library changes at one stage: where they are, Being built, on that status and on the viewer (a
+ * developer's work is built there, never on Explorations).
+ */
+export const ownChangeHref = (stage: OpenStage) => studioHref(`building/?status=${BUILD_STATUS[stage]}&people=you`);
+
+/**
  * One sentence for one kind of work: "2 of your explorations wait for a developer to pick them up, 1 is being built
  * and 1 is in review." The first count says what the things are and whose, the next ones follow it; each clause opens
  * Changes on the viewer's own work at that stage. Nothing open: no sentence.
  */
-function workSentence(counts: Record<OpenStage, number>, things: string): QuietPart[] {
+function workSentence(counts: Record<OpenStage, number>, things: string, href: (s: OpenStage) => string = ownWorkHref): QuietPart[] {
   const at = OPEN_STAGES.filter((s) => counts[s] > 0);
   const parts: QuietPart[] = [];
   at.forEach((s, i) => {
     const n = counts[s];
     if (i > 0) parts.push({ text: i === at.length - 1 ? ' and ' : ', ' });
     // The whole clause is the link: a lone "1" would be a target too small to hit.
-    parts.push({ text: `${i === 0 ? `${n} of your ${things}` : n} ${STAGE_WORDS[s][n === 1 ? 0 : 1]}`, href: ownWorkHref(s) });
+    parts.push({ text: `${i === 0 ? `${n} of your ${things}` : n} ${STAGE_WORDS[s][n === 1 ? 0 : 1]}`, href: href(s) });
   });
   if (parts.length) parts.push({ text: '.' });
   return parts;
@@ -448,7 +467,7 @@ function workSentence(counts: Record<OpenStage, number>, things: string): QuietP
  */
 export function quietParts(work: OwnOpenWork | null, failed = false): QuietPart[] {
   if (!work) return [{ text: failed ? 'Nothing needs you.' : 'Nothing needs you, and you have nothing in progress.' }];
-  const sentences = [workSentence(work.explorations, 'explorations'), workSentence(work.changes, 'library changes')].filter((s) => s.length);
+  const sentences = [workSentence(work.explorations, 'explorations'), workSentence(work.changes, 'library changes', ownChangeHref)].filter((s) => s.length);
   return [{ text: 'Nothing needs you.' }, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])];
 }
 

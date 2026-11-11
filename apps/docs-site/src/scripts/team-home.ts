@@ -21,6 +21,7 @@ import { JOINED_KEY, joinedNote } from '../lib/entry';
 import { joinHandlers } from './join-handlers';
 import { TeamLoadError, TeamLoadProgress, TeamSourceNote } from '../components/ds/studio/TeamState';
 import { greeting, homeState } from '../lib/home-model';
+import { isBuilderHome } from '../lib/home-explorations';
 import { startChangeHref } from '../lib/overview-board';
 import { signedOutLine } from '../lib/overview-todo';
 import { ghButton } from '../lib/gh-wording';
@@ -154,6 +155,8 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         // A design lead (lib/design-lead: an admin or lead by email or GitHub) or a reviewer: the lead tour.
         contributor: Boolean(d && !d.loading && !d.reviewer && !viewerIsDesignLead() && !viewOnly()),
         viewOnly: viewOnly(),
+        // A developer (GitHub, no review right, nothing explored): the quiet home leads with what they build.
+        builder: Boolean(d && !d.loading && isBuilderHome({ contributor: !d.reviewer && !viewerIsDesignLead(), github: Boolean(v && !currentContributor()), viewOnly: viewOnly(), explorations: d.explorations })),
         lead: Boolean(d && !d.loading && (d.reviewer || viewerIsDesignLead())),
         join,
         note,

@@ -11,9 +11,11 @@ import { teamDisplayName } from '../lib/demo';
 import { knownTeamName } from '../lib/recent-teams';
 import { accountName } from '../lib/account';
 import { teamKeyOfPage } from '../lib/team-path';
-import { emailMembers, membersContext, membersPending, roleOf, type KnownPerson, type Member, type MembersContext, type PendingInvite } from '../lib/invites';
+import { emailMembers, withManages, membersContext, membersPending, roleOf, type KnownPerson, type Member, type MembersContext, type PendingInvite } from '../lib/invites';
 import { loginKey, personName } from '../lib/people';
+import { isCastLogin, onlySamplePeople } from '../lib/demo-cast';
 import { currentViewer, getToken, ghGet, resolveAccess } from './github-session';
+import { CONTRIB_TOKEN } from '../lib/contribute';
 import { invitesAvailable, listInvites, type ReviewMode } from './invites-api';
 import { knownNames, lookUpNames } from './people';
 import { repoContext, siteConfig } from './repo-context';
@@ -186,12 +188,14 @@ export async function loadMembers(settled = true): Promise<MembersData> {
   // GitHub lists a repository's people to those who can write to it; a reader sees the reviewers from the settings.
   let members: Member[] = [];
   let complete = false;
-  if (viewer && getToken() && access?.write && !access.contributor) {
+  // A GitHub sign-in of their own (never the proxy's stand-in that an email member or the played developer holds).
+  const ghToken = getToken() && getToken() !== CONTRIB_TOKEN ? getToken() : null;
+  if (viewer && ghToken && access?.write && !access.contributor) {
     try {
       const { data } = await ghGet<Collaborator[]>(`/repos/${repo}/collaborators?affiliation=all&per_page=100`);
       members = data.map((c) => {
         const r = roleOf(c, owners);
-        return { login: c.login, name: you(c.login) && viewer.name ? viewer.name : personName(c.login, names), role: r.role, reviews: r.reviews, ...(you(c.login) ? { you: true } : {}), ...(c.avatar_url ? { avatar: c.avatar_url } : {}) };
+        return { login: c.login, name: you(c.login) && viewer.name ? viewer.name : personName(c.login, names), role: r.role, reviews: r.reviews, ...(you(c.login) ? { you: true } : {}), ...(c.avatar_url && !isCastLogin(c.login) ? { avatar: c.avatar_url } : {}) };
       });
       complete = true;
     } catch {
@@ -201,20 +205,29 @@ export async function loadMembers(settled = true): Promise<MembersData> {
   // Anyone else on the team (an email contributor, a GitHub reader) reads the same list through this site's server,
   // which lists them with the Bridge app: read only, and never another member's email.
   let fromServer: Member[] | null = null;
-  if (!complete && viewer && access && (access.contributor || access.state === 'reader')) {
+  // The sample team's developer played by a visitor ("See it as", lib/demo-cast.ts) may write but holds no GitHub
+  // sign-in: he reads it here too, through the visitor's session, so every person sees the same team.
+  if (!complete && viewer && access && (access.contributor || access.state === 'reader' || !ghToken)) {
     try {
       const { contributeTeam } = await import('./contribute-session');
-      const r = await contributeTeam(repo, access.contributor ? null : getToken());
+      const r = await contributeTeam(repo, access.contributor ? null : ghToken);
       members = r.collaborators.map((c) => {
         const role = roleOf(c, owners);
-        return { login: c.login, name: you(c.login) && viewer.name ? viewer.name : personName(c.login, names), role: role.role, reviews: role.reviews, ...(you(c.login) ? { you: true } : {}), ...(c.avatar_url ? { avatar: c.avatar_url } : {}) };
+        return { login: c.login, name: you(c.login) && viewer.name ? viewer.name : personName(c.login, names), role: role.role, reviews: role.reviews, ...(you(c.login) ? { you: true } : {}), ...(c.avatar_url && !isCastLogin(c.login) ? { avatar: c.avatar_url } : {}) };
       });
-      fromServer = r.members.map((m, i) =>
+      // Each email member keeps their review right (lead), so the list says Reviewer for them as for anyone else.
+      const listed: Member[] = r.members.map((m, i) =>
         m.you && viewer.email
-          ? { login: viewer.email.toLowerCase(), name: m.name, role: m.role, reviews: [], email: viewer.email.toLowerCase(), via: 'email' as const, you: true }
-          : { login: `email-member-${i}`, name: m.name, role: m.role, reviews: [], via: 'email' as const },
+          ? { login: viewer.email.toLowerCase(), name: m.name, role: m.role, reviews: [], email: viewer.email.toLowerCase(), via: 'email' as const, you: true, ...(m.lead ? { lead: true } : {}) }
+          : { login: `email-member-${i}`, name: m.name, role: m.role, reviews: [], via: 'email' as const, ...(m.lead ? { lead: true } : {}) },
       );
-      members = [...members, ...fromServer];
+      fromServer = listed;
+      // Who is the product manager of what (Settings > Products), said under their name.
+      const refs = Object.fromEntries(r.members.flatMap((m, i) => (m.ref ? [[listed[i]!.login, m.ref]] : [])));
+      const productNames = Object.fromEntries(((siteConfig() as { products?: { key?: string; name?: string }[] }).products ?? []).flatMap((p) => (p.key && p.name ? [[p.key, p.name]] : [])));
+      // Only the team's products: a product manager kept for a product the team no longer lists is never said.
+      const pms = Object.fromEntries(Object.entries(r.pms ?? {}).filter(([k]) => k in productNames));
+      members = withManages([...members, ...listed], pms, { refs, names: productNames });
       complete = true;
     } catch {
       complete = false;
@@ -277,6 +290,8 @@ export async function loadMembers(settled = true): Promise<MembersData> {
       people = [];
     }
   }
+  // The sample team names its fictional people only (lib/demo-cast onlySamplePeople), whoever reads it.
+  members = onlySamplePeople(repo, members);
   // The team's name once more: its settings have often landed by now ("Acme Product", not "Acme product").
   return { context, repo, team: teamName(repo), members, pending, people, canManage, personal, complete, invites, ownersKnown: team0.known, ...(reviewMode ? { reviewMode } : {}), ...(emailAdmin && canManage ? { emailAdmin: true } : {}) };
 }

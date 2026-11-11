@@ -8,13 +8,13 @@
 // this browser, like every other edit there. Repo content is React text only; links go through safeUrl.
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Maximize2, Send } from 'lucide-react';
-import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
 import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
 import { StudioHead } from './StudioHead';
 import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
-import { FIRST_RUN_LINE, groupRequest, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type ValueRow } from '../../../lib/adoption-report';
+import { firstRunLine, groupRequest, sentWords, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type ValueRow } from '../../../lib/adoption-report';
 import { shotsFileUrl } from '../../../lib/preview-shots';
 import { bridgeDataUrl } from '../../../lib/library/published';
 import { runDate } from '../../../lib/quality-view';
@@ -347,18 +347,38 @@ function NotAProblem({ title, onSave, local }: { title: string; onSave: (reason:
   );
 }
 
+/** Where a request sent from the report is followed: Being built, on that request, or the whole list. */
+const requestHref = (n: number | null) => studioHref(n ? `building/?request=${n}` : 'building/');
+
+/** The verdict once every group it sends went: how many requests, and where to follow them. */
+function VerdictSent({ sent, product, title, local }: { sent: Sent[string][]; product: string; title: string | null; local: boolean }) {
+  const w = sentWords(sent, { product, title, local });
+  return (
+    <p className="ar-sent" role="status">
+      <Icon icon={Check} size="sm" />
+      <span>
+        {w.title}. {w.description}
+        {w.link && (
+          <>
+            {' '}
+            <Link href={requestHref(w.open)}>{w.link}</Link>
+          </>
+        )}
+      </span>
+    </p>
+  );
+}
+
 function SentLine({ sent, local }: { sent: Sent[string]; local: boolean }) {
   return (
     <span className="ar-sent" role="status">
       <Icon icon={Check} size="sm" />
       {local ? (
         'Sent to developers (sample team: nothing left this browser)'
-      ) : sent.number && sent.url ? (
+      ) : sent.number ? (
         <>
-          Sent,{' '}
-          <Link href={safeUrl(sent.url, '#')} {...external}>
-            issue #{sent.number}
-          </Link>
+          Sent to developers,{' '}
+          <Link href={requestHref(sent.number)}>request #{sent.number}</Link>
         </>
       ) : (
         'Sent to developers'
@@ -590,7 +610,7 @@ function Spark({ points }: { points: ScoreCard['points'] }) {
   );
 }
 
-function Cards({ cards }: { cards: ScoreCard[] }) {
+function Cards({ cards, product }: { cards: ScoreCard[]; product: string }) {
   return (
     <ul className="ar-cards" aria-label="Scores">
       {cards.map((c) => (
@@ -609,7 +629,7 @@ function Cards({ cards }: { cards: ScoreCard[] }) {
                 </span>
                 <span className="ar-card-label">{c.label}</span>
               </span>
-              {c.points.length ? <Spark points={c.points} /> : <span className="ar-first">{FIRST_RUN_LINE}</span>}
+              {c.points.length ? <Spark points={c.points} /> : <span className="ar-first">{firstRunLine(product)}</span>}
             </CardBody>
           </Card>
         </li>
@@ -649,7 +669,14 @@ function Verdict({ model, actions }: { model: ReportModel; actions: ReportAction
             Send to developers
           </Button>
         )}
-        {allSent && <SentLine sent={{ number: null, url: null }} local={actions.local} />}
+        {allSent && (
+          <VerdictSent
+            sent={model.verdict.send.map((k) => actions.sent[k]!)}
+            product={model.product}
+            title={model.verdict.send.length === 1 ? (model.pieces.find((r) => r.key === model.verdict.send[0])?.title ?? null) : null}
+            local={actions.local}
+          />
+        )}
         {error && (
           <p className="ar-error" role="alert">
             {error}
@@ -669,7 +696,7 @@ export function AdoptionReportView({ model, actions, pictureSrc }: { model: Repo
     <PictureContext.Provider value={pictureSrc ?? noPicture}>
     <div className="ar">
       <Verdict model={model} actions={actions} />
-      <Cards cards={model.cards} />
+      <Cards cards={model.cards} product={model.product} />
       <Tabs defaultValue="pieces" className="ar-tabs">
         <TabsList aria-label="What the report shows">
           <Tab value="pieces">Pieces</Tab>
@@ -780,7 +807,8 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
           const o = requestOriginOf(parseRequestIssue(i.body));
           if (o?.kind === 'audit' && o.product === key && !found[o.group]) found[o.group] = { number: i.number, url: i.url };
         }
-        setSent(found);
+        // What GitHub lists wins for its groups; a request sent from this page that the list does not show yet stays.
+        setSent((prev) => ({ ...prev, ...found }));
       })
       .catch(() => undefined);
     return () => {
@@ -794,6 +822,27 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
 
   const pageUrl = typeof location === 'undefined' ? '' : `${location.origin}${location.pathname}?product=${encodeURIComponent(key)}`;
   const findRow = (k: string) => [...model.pieces, ...model.colors, ...model.sizes].find((r) => r.key === k);
+  const toast = useToast();
+  // The toast after Send to developers: what went, for which product, and where to follow it (Being built).
+  const tell = (filed: { number: number | null }[], keys: string[]) => {
+    const w = sentWords(filed, { product: loaded.product.name, title: keys.length === 1 ? (findRow(keys[0]!)?.title ?? null) : null, local });
+    toast.add({
+      title: w.title,
+      description: (
+        <>
+          {w.description}
+          {w.link && (
+            <>
+              {' '}
+              <Link href={requestHref(w.open)}>{w.link}</Link>
+            </>
+          )}
+        </>
+      ),
+      tone: 'success',
+      timeout: 10_000,
+    });
+  };
   const actions: ReportActions = {
     canAct,
     // A lead signed in by email keeps the decision through Bridge, like Send to developers (api/contribute).
@@ -806,21 +855,31 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
         for (const k of keys) s.sent[`${key}|${k}`] = true;
         writeLocal(repo, s);
         setSent((prev) => ({ ...prev, ...Object.fromEntries(keys.map((k) => [k, { number: null, url: null }])) }));
+        tell(keys.map(() => ({ number: null })), keys);
         return;
       }
       const labels = data.model.config.integrations?.requests?.labels ?? [];
-      for (const k of keys) {
-        const row = findRow(k);
-        if (!row) continue;
-        const piece = 'component' in row;
-        const req = groupRequest(
-          piece
-            ? { key: row.key, title: row.title, detail: row.detail, component: (row as PieceRow).component, places: row.dev.places, fix: (row as PieceRow).dev.fix }
-            : { key: row.key, title: row.title, detail: row.detail, places: row.dev.places, use: (row as ValueRow).dev.use, token: (row as ValueRow).library?.token ?? null },
-          { product: loaded.product.name, productKey: key, run: loaded.run.id, url: pageUrl, requestedBy: currentViewer()?.login },
-        );
-        const issue = await data.client.createIssue(composeRequestIssue(req, { labels }));
-        setSent((prev) => ({ ...prev, [k]: { number: issue.number, url: issue.url } }));
+      const filed: { number: number | null }[] = [];
+      const filedKeys: string[] = [];
+      try {
+        for (const k of keys) {
+          const row = findRow(k);
+          if (!row) continue;
+          const piece = 'component' in row;
+          const req = groupRequest(
+            piece
+              ? { key: row.key, title: row.title, detail: row.detail, component: (row as PieceRow).component, places: row.dev.places, fix: (row as PieceRow).dev.fix }
+              : { key: row.key, title: row.title, detail: row.detail, places: row.dev.places, use: (row as ValueRow).dev.use, token: (row as ValueRow).library?.token ?? null },
+            { product: loaded.product.name, productKey: key, run: loaded.run.id, url: pageUrl, requestedBy: currentViewer()?.login },
+          );
+          const issue = await data.client.createIssue(composeRequestIssue(req, { labels }));
+          setSent((prev) => ({ ...prev, [k]: { number: issue.number, url: issue.url } }));
+          filed.push({ number: issue.number ?? null });
+          filedKeys.push(k);
+        }
+      } finally {
+        // What went says so, even when a later group failed (its error shows on the page).
+        if (filed.length) tell(filed, filedKeys);
       }
     },
     ignore: async (k, reason) => {
@@ -897,7 +956,9 @@ export default function TeamAdoptionReport() {
           </p>
         </div>
       ) : loaded ? (
-        <Ready data={data} loaded={loaded} />
+        <ToastProvider limit={2}>
+          <Ready data={data} loaded={loaded} />
+        </ToastProvider>
       ) : (
         <TeamLoadProgress label="Reading the adoption report" />
       )}

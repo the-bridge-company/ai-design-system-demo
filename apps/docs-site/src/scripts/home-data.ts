@@ -13,6 +13,7 @@ import { parseExplorationBody } from '@bridge-ds/core';
 import { homeExplorations, isHomeExploration, isOwnExploration, type ExplorationCard } from '../lib/home-explorations';
 import { currentAccess, currentContributor, currentViewer, getToken, ghGet, hasWorkingToken, limitLine, onSampleTeam, readRepo, RateLimitError, resolveAccess } from './github-session';
 import { isViewerPm, pmHomeRow, type PmPerson } from '../lib/pm-view';
+import { onePerExploration } from '../lib/waiting-counts';
 import { loadStatuses, owners, rowWho, shippers, type PullStatus } from './pr-status';
 import { loadTeams, siteApprovers } from './teams';
 import { loadOwnSuggestions, loadSuggestionNeeds } from './suggestions';
@@ -560,6 +561,9 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     if (taskReads.size) rememberQuestions(viewer, questions);
     // A guidance draft whose change already has its own row (a review waits on you) shows once, as that change.
     for (let i = needs.length - 1; i >= 0; i--) if (needs[i]!.kind === 'guidance' && needs[i]!.number && asked.has(needs[i]!.number!)) needs.splice(i, 1);
+    // One row per exploration (the lead's turn before the product manager's word): the rows Home lists are the ones the
+    // Explorations badge counts (lib/waiting-counts).
+    needs.splice(0, needs.length, ...onePerExploration(needs));
     // Explorations are the home's cards; the viewer's library changes are counted under them (Changes lists them).
     // The team's: a contributor's home keeps only their own (home by role, lib/home-explorations explorationsFor).
     readXpFiles([...pulls, ...productOpen, ...closed]);

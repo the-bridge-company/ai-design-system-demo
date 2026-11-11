@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DEMO_ACTION_DEFAULT, demoActionLine, demoActionNames, DEMO_REPOS, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, teamDisplayName } from './demo';
+import { DEMO_ACTION_DEFAULT, demoActionLine, demoActionNames, DEMO_REPOS, demoBanner, demoDialog, DEMO_STASH_KEY, DEMO_VISIT_KEY, DEMO_WORDS, SHARED_DRAFT_KEY, swapDemoDrafts, exploresDemo, humanizeRepo, onBridge, isDemoRepo, OWN_TEAM, showcaseRedirect, teamDisplayName } from './demo';
 
 describe('the demo', () => {
   it('is the self-hosted repository and the hosted demo team, any case', () => {
@@ -148,5 +148,32 @@ describe('drafts on the sample team', () => {
     swapDemoDrafts(s, false);
     expect(s.dump()).toEqual({});
     expect(s.getItem(DEMO_VISIT_KEY)).toBeNull();
+  });
+});
+
+describe('a signed-out visitor of the own Studio', () => {
+  const go = (pathname: string, more: { search?: string; hash?: string; maybeSignedIn?: boolean } = {}) => showcaseRedirect({ pathname, maybeSignedIn: false, ...more });
+  it('goes to the same page of the sample team, never a real team', () => {
+    expect(go('/studio/')).toBe('/studio/acme-design-demo/bridge-demo-ds/');
+    expect(go('/studio')).toBe('/studio/acme-design-demo/bridge-demo-ds/');
+    expect(go('/studio/explorations/', { search: '?view=board', hash: '#x' })).toBe('/studio/acme-design-demo/bridge-demo-ds/explorations/?view=board#x');
+    expect(go('/studio/settings/')).toBe('/studio/acme-design-demo/bridge-demo-ds/settings/');
+  });
+  it('sends a product or component page to the sample team list', () => {
+    expect(go('/studio/products/dasboard-data-test-d/')).toBe('/studio/acme-design-demo/bridge-demo-ds/products/');
+    expect(go('/studio/components/docs/button/')).toBe('/studio/acme-design-demo/bridge-demo-ds/components/');
+  });
+  it('keeps a page for someone who may be signed in, a team address and the pages around sign-in', () => {
+    expect(go('/studio/', { maybeSignedIn: true })).toBeNull();
+    expect(go('/studio/acme-design-demo/bridge-demo-ds/')).toBeNull();
+    expect(go('/studio/the-bridge-company/ai-design-system-demo/')).toBeNull();
+    expect(go('/studio/auth/')).toBeNull();
+    expect(go('/studio/workspace/')).toBeNull();
+    expect(go('/studio/invite/')).toBeNull();
+    expect(go('/library/')).toBeNull();
+  });
+  it('reads nothing outside itself, so the layout can run its source inline', () => {
+    const run = new Function(`return (${showcaseRedirect.toString()})`)() as typeof showcaseRedirect;
+    expect(run({ pathname: '/studio/tokens/', maybeSignedIn: false })).toBe('/studio/acme-design-demo/bridge-demo-ds/tokens/');
   });
 });

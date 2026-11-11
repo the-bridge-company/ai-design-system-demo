@@ -12,7 +12,8 @@
 // never spends the 60 requests an hour GitHub gives an address. Only a team without a snapshot is read live.
 import { AUDIT_IGNORES_FILE, hasWriteAccess, loadRepoModel, parseAuditIgnores, parseSnapshot, productsOf, saveAuditIgnore, type AuditIgnore, type AuditIgnores, type ProductConfig, type SnapshotAudit, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
 import { getToken, hasWorkingToken, studioClient } from './github-session';
-import { contributeBlobs, contributorFor, holdsContributeSession } from './contribute-session';
+import { contributeBlobs, contributeInfo, contributorFor, holdsContributeSession } from './contribute-session';
+import { isSampleTeam } from '../lib/demo';
 import { CONTRIB_TOKEN, contributeEligible, isContribAuth } from '../lib/contribute';
 import { loadTeamModel, type SnapshotReader, type TeamModelSource } from './repo-context';
 import { isHosted, pageTeamFromPath } from '../lib/team-path';
@@ -91,7 +92,9 @@ export function teamToken(team: { owner: string; repo: string }): string | null 
  */
 async function editRight(team: { owner: string; repo: string }, client: GitHubClient): Promise<boolean> {
   if (!client.canWrite) return false;
-  if (isContribAuth(teamToken(team))) return true;
+  // An email member edits unless they can only view; the developer played on the sample team (no email membership,
+  // contributorFor null) has write access there, as GitHub's collaborators list says.
+  if (isContribAuth(teamToken(team))) return contributorFor(`${team.owner}/${team.repo}`)?.role !== 'view';
   try {
     return hasWriteAccess((await client.getRepo()).permissions);
   } catch {
@@ -118,11 +121,19 @@ export function teamClient(team: { owner: string; repo: string }): GitHubClient 
 /**
  * On a team's Library page, a Bridge account signed in with its code is a member of its email teams already: the
  * membership hint is written from the account (as the Studio does) before the first read, so a member who opens the
- * Library first still reads through Bridge. Never throws; nothing to do with a GitHub token or off a Library page.
+ * Library first still reads through Bridge. On the sample team, the visitor's read-only session (contributeInfo).
+ * Never throws; nothing to do with a GitHub token or off a Library page.
  */
 async function seedLibraryMember(team: { owner: string; repo: string }): Promise<void> {
   const repo = `${team.owner}/${team.repo}`;
   if (!onLibraryPage() || hasWorkingToken() || !contributeEligible(repo, true) || holdsContributeSession(repo)) return;
+  // The sample team: its Library reads as the person picked (?as=, "See it as"), through the visitor's read-only
+  // session the server gives, as its Studio does, so edit mode opens from a direct address for who may edit and the
+  // banner names who the page plays. Every write is still refused.
+  if (isSampleTeam(repo)) {
+    await contributeInfo(repo).catch(() => null);
+    return;
+  }
   try {
     // Reading the account writes the hint of each of its email teams (scripts/account-session.ts).
     const { getAccount } = await import('./account-session');

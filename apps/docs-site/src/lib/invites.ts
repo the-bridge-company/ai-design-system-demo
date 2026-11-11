@@ -44,7 +44,7 @@ export const CHOOSABLE_ROLES: readonly MemberRole[] = ['view', 'edit', 'reviewer
 export const ROLE_WORDS: Record<MemberRole, { label: string; help: string }> = {
   view: { label: 'Can view', help: 'Sees everything in Studio and the library.' },
   edit: { label: 'Can edit', help: 'Also explores and changes the library.' },
-  reviewer: { label: 'Reviewer', help: 'Also approves changes before they ship.' },
+  reviewer: { label: 'Reviewer', help: 'Also approves explorations and library changes before they ship.' },
   admin: { label: 'Admin', help: 'Also approves explorations, invites people and changes settings.' },
 };
 
@@ -135,25 +135,34 @@ export const choiceOf = (m: { role: MemberRole; reviews: ReviewAs[] }): RoleChoi
  * other words. A Reviewer's role already names what they review ("Reviewer: design and code", roleText), so their line
  * says what the role does; an admin who also reviews gets the reviews, which "Admin" does not say.
  */
-export function memberLine(m: { role: MemberRole; reviews: ReviewAs[] }): string {
+export function memberLine(m: { role: MemberRole; reviews: ReviewAs[]; lead?: boolean; via?: 'email'; manages?: readonly string[] }): string {
+  // A product manager (Settings > Products) says so first: "Product manager of Acme Prints, reviews designs".
+  const pm = m.manages?.length ? `Product manager of ${m.manages.join(' and ')}` : null;
+  const and = (line: string) => (pm ? `${pm}, ${line.charAt(0).toLowerCase()}${line.slice(1)}` : line);
   // Same words as the role picker (ROLE_TEXT.edit); their library changes still go through review.
-  if (m.role === 'reviewer') return 'Changes the library and approves changes';
+  if (m.role === 'reviewer') return and('Changes the library and approves changes');
   const d = m.reviews.includes('design');
   const t = m.reviews.includes('tech');
-  if (d && t) return 'Reviews design and code';
-  if (d) return 'Reviews design';
-  if (t) return 'Reviews code';
+  if (d && t) return and('Reviews design and code');
+  if (d) return and('Reviews design');
+  if (t) return and('Reviews code');
+  // An email member who reviews (a design lead, roleText "Reviewer"): they review the team's explorations.
+  if (m.lead && m.via === 'email') return and(m.role === 'admin' ? 'Reviews designs and runs the team' : 'Reviews designs');
+  if (pm) return pm;
   if (m.role === 'admin') return 'Invites people and changes settings';
-  if (m.role === 'edit') return 'Explores and changes the library';
+  // Can edit: by email, a designer who explores in Bridge; with GitHub, someone who builds in the code.
+  if (m.role === 'edit') return m.via === 'email' ? 'Explores designs and suggests library changes' : 'Builds and changes the code';
   return 'Sees everything in Studio and the library';
 }
 
 /**
  * The role as plain text, for a reader who cannot change it (board I4), in the one set of role names: "Admin",
- * "Reviewer: design", "Reviewer: code", "Reviewer: design and code", "Can edit", "Can view".
+ * "Reviewer: design", "Reviewer: code", "Reviewer: design and code", "Can edit", "Can view". An email member who reviews
+ * explorations (a design lead) is a "Reviewer" too: one word for the role in every list and picker.
  */
 export function roleText(m: { role: MemberRole; reviews: ReviewAs[]; lead?: boolean }): string {
-  if (m.lead && m.role === 'edit') return 'Design lead';
+  // An email member who reviews explorations: the same word as the invite dialog's (ROLE_WORDS.reviewer).
+  if (m.lead && m.role === 'edit') return ROLE_WORDS.reviewer.label;
   if (m.role === 'reviewer' && m.reviews.includes('design') && m.reviews.includes('tech')) return `${ROLE_WORDS.reviewer.label}: design and code`;
   return roleLabel(choiceOf(m));
 }
@@ -174,6 +183,8 @@ export interface Member {
   email?: string;
   /** An email member who is a design lead (they answer on explorations, never on GitHub reviews). */
   lead?: boolean;
+  /** The products this person is the product manager of (Settings > Products), by name. */
+  manages?: string[];
   /**
    * 'email': an email member (lib/contribute.ts), no GitHub account. Can edit or Admin: Reviewers approve on GitHub.
    * Their `login` is their email.
@@ -187,6 +198,25 @@ export interface Member {
  * different face on each surface.
  */
 export const memberSeed = (m: Pick<Member, 'login' | 'name' | 'via'>): string => (m.via === 'email' ? nameFace(m.name) : m.login);
+
+/**
+ * Each member's products as their product manager (Settings > Products, GET /api/contribute?members=1 `pms`): a GitHub
+ * person by login, an email member by reference (`refs`, by the member's login in this list). `names`: a product's name
+ * by its key ("prints" is "Acme Prints"), else the key. Members the list does not name stay as they are.
+ */
+export function withManages<M extends Pick<Member, 'login' | 'via'> & { manages?: string[] }>(
+  members: readonly M[],
+  pms: Readonly<Record<string, { name: string; login?: string; ref?: string }>>,
+  f: { refs?: Readonly<Record<string, string>>; names?: Readonly<Record<string, string>> } = {},
+): M[] {
+  return members.map((m) => {
+    const ref = f.refs?.[m.login];
+    const manages = Object.entries(pms)
+      .filter(([, pm]) => (pm.login ? m.via !== 'email' && loginKey(pm.login) === loginKey(m.login) : Boolean(pm.ref && ref && pm.ref === ref)))
+      .map(([key]) => f.names?.[key] ?? key);
+    return manages.length ? { ...m, manages } : m;
+  });
+}
 
 /** An email contributor as the invites server lists them (GET /api/invites?repo=, `members`, `via: 'email'`). */
 export interface EmailMemberRow {

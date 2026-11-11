@@ -187,6 +187,8 @@ export interface Decision {
   sha?: string | undefined;
   /** "asked-someone": the leads asked. "handed": the new keeper's name. */
   to?: string[] | undefined;
+  /** "asked-someone": the reviewers asked who joined by email, by display name (no GitHub login, never mentioned). */
+  toNames?: string[] | undefined;
 }
 
 const DECISIONS_MAX = 30;
@@ -506,7 +508,8 @@ function cleanDecision(d: Decision): Decision {
   const text = d.text?.trim().slice(0, DECISION_TEXT_MAX);
   const byName = d.byName?.trim().slice(0, 80);
   const to = d.to?.map((t) => t.trim().slice(0, 80)).filter((t) => t && !t.includes('@'));
-  return { kind: d.kind, at: d.at, round: d.round, ...(by ? { by } : {}), ...(byName && !byName.includes('@') ? { byName } : {}), ...(text ? { text } : {}), ...(d.sha ? { sha: d.sha } : {}), ...(to?.length ? { to } : {}) };
+  const toNames = d.toNames?.map((t) => t.trim().slice(0, 80)).filter((t) => t && !t.includes('@'));
+  return { kind: d.kind, at: d.at, round: d.round, ...(by ? { by } : {}), ...(byName && !byName.includes('@') ? { byName } : {}), ...(text ? { text } : {}), ...(d.sha ? { sha: d.sha } : {}), ...(to?.length ? { to } : {}), ...(toNames?.length ? { toNames } : {}) };
 }
 
 /** The hidden block tools read: the exploration as JSON. */

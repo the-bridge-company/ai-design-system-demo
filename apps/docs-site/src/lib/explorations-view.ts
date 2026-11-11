@@ -471,9 +471,12 @@ export const TOOK_BACK_LINE = 'Back with the designer, with your reason.';
 export const TOLD_DEVELOPERS_LINE = 'Sent to the developers.';
 export const askedOtherLine = (others: readonly string[], names: Record<string, string>) => `Asked ${others.map((l) => names[l] ?? l).join(', ')}.`;
 
-/** The line after Done exploring when the design lead validates first. */
-export function leadAskedLine(pieces: number): string {
-  return pieces ? `Sent to your lead, with ${pieces} ${pieces === 1 ? 'piece' : 'pieces'} for the library. Your developers get it once they say it looks right.` : 'Sent to your lead. Your developers get it once they say it looks right.';
+/** The line after Done exploring when the design lead validates first: the lead by name when known. */
+export function leadAskedLine(pieces: number, lead: string | null = null): string {
+  const to = lead?.trim() || 'your lead';
+  const who = lead?.trim() || 'they';
+  const with_ = pieces ? `, with ${pieces} ${pieces === 1 ? 'piece' : 'pieces'} for the library` : '';
+  return `Sent to ${to}${with_}. Your developers get it once ${who} ${lead?.trim() ? 'says' : 'say'} it looks right.`;
 }
 
 /** The line after Done exploring: what went where, in one sentence. */

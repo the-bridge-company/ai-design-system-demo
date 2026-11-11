@@ -445,7 +445,11 @@ export function scoreCards(report: Pick<AuditReport, 'metrics' | 'history' | 'ge
   ];
 }
 
-export const FIRST_RUN_LINE = 'The trend starts with the next check.';
+/**
+ * The score card's line before a second point exists. A point is added each time Bridge reads the product's code, which
+ * happens when that code changes (measuredLines), never on a schedule: so the trend starts then.
+ */
+export const firstRunLine = (product: string): string => `The trend starts when ${product}'s code changes.`;
 
 export interface ReportVerdict {
   mood: Mood;
@@ -547,6 +551,26 @@ export function reportModel(report: AuditReport, opts: { product: string; produc
 
 // ---------------------------------------------------------------------------------------------------------------
 // Actions
+
+/** A request "Send to developers" filed: its issue number, when GitHub gave one (none on the sample team). */
+export interface SentRequest {
+  number: number | null;
+}
+
+/**
+ * What the page says once groups went to the developers (a toast, then the verdict's line): how many requests, for
+ * which product, and where to follow them. `open`: the one request to open in Being built (?request=N), or null to
+ * open Being built itself; `link`: the link's words, null for no link. `local`: the sample team, nothing leaves the browser.
+ */
+export function sentWords(sent: readonly SentRequest[], ctx: { product: string; title?: string | null; local: boolean }): { title: string; description: string; open: number | null; link: string | null } {
+  if (ctx.local) return { title: 'Sent to developers', description: 'Sample team: nothing left this browser.', open: null, link: null };
+  const numbered = sent.map((s) => s.number).filter((x): x is number => typeof x === 'number' && x > 0);
+  if (sent.length <= 1) {
+    const what = ctx.title ? `: ${ctx.title.charAt(0).toLowerCase()}${ctx.title.slice(1)}` : '';
+    return { title: 'Sent to developers', description: `One request for ${ctx.product}'s developers${what}.`, open: numbered[0] ?? null, link: numbered[0] ? `Open request #${numbered[0]}` : 'See it in Being built' };
+  }
+  return { title: `Sent ${count(sent.length, 'request')} to developers`, description: `One per group, for ${ctx.product}'s developers.`, open: null, link: 'See them in Being built' };
+}
 
 /** The request "Send to developers" files for a group (one GitHub issue per group, the component-change flow). */
 export function groupRequest(

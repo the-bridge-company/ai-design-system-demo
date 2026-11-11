@@ -18,6 +18,7 @@ import {
   explorationStateLine,
   doneExploringCopy,
   doneLine,
+  leadAskedLine,
   donePieces,
   isArchivedOpen,
   isListedExploration,
@@ -215,6 +216,9 @@ describe('done exploring and archive', () => {
     expect(doneExploringCopy({ checked: true, pieces: 0, sent: 0 }).piecesLine).toBeNull();
     for (const t of [copy.description, copy.piecesLine!, doneLine(0), doneLine(2)]) expect(jargonIn(t)).toEqual([]);
     expect(doneLine(1)).toBe('Done exploring. 1 piece went to your DS lead, and your developers take it from here.');
+    // Through a review first: the lead by name when the team says who.
+    expect(leadAskedLine(2, 'Dana')).toBe('Sent to Dana, with 2 pieces for the library. Your developers get it once Dana says it looks right.');
+    expect(leadAskedLine(0)).toBe('Sent to your lead. Your developers get it once they say it looks right.');
     // A design lead exploring themselves, nobody else asked: the words never send them to "your DS lead".
     const self = doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true });
     expect(self.piecesLabel).toBe('Add to the library');

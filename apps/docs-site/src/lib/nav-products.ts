@@ -5,8 +5,9 @@
 // And the All products page (pages/studio/products/index.astro): every product, the viewer's own first, a filter.
 //
 // "Own" is what this browser knows, never a guess about roles: products where the viewer has explorations in progress
-// or recently (noted when Home reads the explorations, scripts/home-data.ts), then the products opened lately in this
-// browser (noted by the product page), then the rest by name. Kept per team in localStorage.
+// or recently (noted when Home reads the explorations, scripts/home-data.ts), then the rest by name. Kept per team in
+// localStorage. Opening a product page does not move it (2026-11-11): the nav reads the same on every page of a visit,
+// and the product open on screen always shows anyway (navProductRows).
 // Pure: no DOM, the storage is passed in. Unit tested in nav-products.test.ts.
 import type { ProductConfig } from '@bridge-ds/core';
 import { cardProductKey, PRODUCT_STATES, stateOfCard } from './product-page';
@@ -48,14 +49,14 @@ const byName = (a: NavProduct, b: NavProduct) => a.name.localeCompare(b.name, un
 
 /**
  * The team's products (the library left out), the viewer's own first: the ones they explore in, latest first; then
- * the ones opened in this browser, latest first; then the rest by name.
+ * the rest by name. The products opened lately (signals.opened) never reorder it: opening one would move it up and
+ * the nav would change from page to page.
  */
 export function orderProducts(products: readonly NavProduct[], signals: ProductSignals = NO_SIGNALS): NavProduct[] {
   const list = products.filter((p) => !p.library);
   const mine = list.filter((p) => signals.mine[p.key] !== undefined).sort((a, b) => signals.mine[b.key]! - signals.mine[a.key]! || byName(a, b));
-  const opened = list.filter((p) => signals.mine[p.key] === undefined && signals.opened[p.key] !== undefined).sort((a, b) => signals.opened[b.key]! - signals.opened[a.key]! || byName(a, b));
-  const rest = list.filter((p) => signals.mine[p.key] === undefined && signals.opened[p.key] === undefined).sort(byName);
-  return [...mine, ...opened, ...rest];
+  const rest = list.filter((p) => signals.mine[p.key] === undefined).sort(byName);
+  return [...mine, ...rest];
 }
 
 export interface NavProductRows {

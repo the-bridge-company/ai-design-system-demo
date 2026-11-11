@@ -48,9 +48,13 @@ describe('orderProducts', () => {
     expect(keys(orderProducts(products)).slice(0, 4)).toEqual(['admin-console', 'art-print-shop', 'billing', 'checkout']);
   });
 
-  it('puts the products the viewer explores in first, latest first, then the ones opened lately, then the rest', () => {
+  it('puts the products the viewer explores in first, latest first, then the rest by name', () => {
     const signals: ProductSignals = { mine: { kiosk: 100, checkout: 300 }, opened: { 'help-center': 50, billing: 80, checkout: 999 } };
-    expect(keys(orderProducts(products, signals)).slice(0, 5)).toEqual(['checkout', 'kiosk', 'billing', 'help-center', 'admin-console']);
+    expect(keys(orderProducts(products, signals)).slice(0, 5)).toEqual(['checkout', 'kiosk', 'admin-console', 'art-print-shop', 'billing']);
+  });
+
+  it('never moves a product because its page was opened: the same order on every page', () => {
+    expect(keys(orderProducts(products, { mine: {}, opened: { kiosk: 5, reports: 9 } }))).toEqual(keys(orderProducts(products)));
   });
 });
 
@@ -66,7 +70,7 @@ describe('navProductRows', () => {
   it('caps the list at five, the viewer\'s own first, and counts every product on "All products"', () => {
     const rows = navProductRows(products, { mine: { 'partner-portal': 10 }, opened: { kiosk: 5 } });
     expect(rows.shown).toHaveLength(5);
-    expect(keys(rows.shown).slice(0, 2)).toEqual(['partner-portal', 'kiosk']);
+    expect(keys(rows.shown).slice(0, 2)).toEqual(['partner-portal', 'admin-console']);
     expect(rows.total).toBe(15);
     expect(rows.all).toBe(true);
   });

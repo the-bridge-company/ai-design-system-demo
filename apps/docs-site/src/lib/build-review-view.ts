@@ -128,6 +128,8 @@ const PART: Record<Role, string> = { designer: 'designer', pm: 'product manager'
 export const REVIEW_WORDS = {
   back: 'Back',
   title: (builder: string) => `Check ${possessive(builder)} build`,
+  /** The page's one h1 before the build is read (who built it is not known yet). */
+  plainTitle: 'Check the build',
   sub: (name: string, round: number) => `${name} · round ${round}`,
   sizes: 'Size',
   realBuild: 'Open the real build',

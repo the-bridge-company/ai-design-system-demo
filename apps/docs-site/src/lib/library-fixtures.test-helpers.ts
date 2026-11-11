@@ -24,13 +24,13 @@ export const change = (x: Partial<ChangeInput> = {}) =>
       statusKind: 'needs-design',
       mine: false,
       by: 'Leo',
-      designer: 'Leo',
+      designers: new Map([['prints#2', 'Leo']]),
       ...x,
     },
     PRODUCTS,
   );
 
-export const leadChange = (n: number, title: string) => change({ number: n, title, body: null, mine: true, by: 'Dana', designer: null });
+export const leadChange = (n: number, title: string) => change({ number: n, title, body: null, mine: true, by: 'Dana', designers: null });
 
 export const newComponent = () =>
   pieceOfExploration({ repo: 'acme/crm-design', number: 7, name: 'Contact page summary', product: 'Acme CRM', productKey: 'crm', href: '?exploration=7&product=crm', designer: 'Sofia', item: { id: 'profile-header', kind: 'component', title: 'ProfileHeader' }, decision: null, nearest: null, asked: true, mine: false })!;

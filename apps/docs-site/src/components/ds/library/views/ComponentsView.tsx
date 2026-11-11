@@ -7,8 +7,9 @@ import type { ComponentType, ReactNode } from 'react';
 import { Badge, Link } from '@bridge-ds/react';
 import type { ExampleNode } from '@bridge-ds/core';
 import type { ComponentInfo } from '../../../../lib/library/components';
-import { componentGroups, familySlug, mainStory, previewUrl, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf } from '../../../../lib/library/component-page';
-import { LibraryHeader, INERT } from '../FoundationParts';
+import { componentGroups, familySlug, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf } from '../../../../lib/library/component-page';
+import { LibraryHeader } from '../FoundationParts';
+import { ComponentStage, stageComponent, type StageExample } from '../ComponentStage';
 import { componentHref, studioLink, type LibraryData } from '../library-data';
 
 export const COMPONENTS_PAGE = { title: 'Components', art: 'components', studio: 'components/' } as const;
@@ -22,20 +23,16 @@ export const componentsLead = (total: number, families: number) =>
 /** The families of a model with their counts, for the family filter. */
 export const componentFamilies = (data: Pick<LibraryData, 'model'>) => componentGroups(data.model).groups.map((g) => ({ name: g.family, n: g.list.length }));
 
-function CardStage({ data, c, Example }: { data: LibraryData; c: ComponentInfo; Example?: ComponentType<{ node: ExampleNode }> | undefined }) {
-  const preview = readableDocs(c.docs)?.preview;
-  const story = mainStory(c);
-  const storybook = data.extras.storybook;
+function CardStage({ data, c, Example }: { data: LibraryData; c: ComponentInfo; Example?: StageExample | undefined }) {
   return (
-    <div className="gcard-stage stage-checker" data-theme="light" aria-hidden="true" {...INERT}>
-      {Example && preview ? (
-        <Example node={preview} />
-      ) : !Example && story && storybook ? (
-        <iframe className="gcard-frame" src={previewUrl(storybook, story.id, { theme: 'light' })} title={`${c.name} preview`} tabIndex={-1} loading="lazy" sandbox="allow-scripts allow-same-origin" referrerPolicy="no-referrer" />
-      ) : (
-        <span className="gcard-empty">No preview yet</span>
-      )}
-    </div>
+    <ComponentStage
+      c={stageComponent(c)}
+      storybook={data.extras.storybook}
+      Example={Example}
+      className="gcard-stage"
+      frameClassName="gcard-frame"
+      empty={<span className="gcard-empty">No preview yet</span>}
+    />
   );
 }
 

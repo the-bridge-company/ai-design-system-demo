@@ -15,8 +15,14 @@ import StudioHeader from '../../components/StudioHeader.astro';
 import BeingBuilt from '../../components/ds/studio/BeingBuilt';
 import NextRelease from '../../components/NextRelease.astro';
 import { lastUpdated } from '../../lib/repo';
+import { loadComponents } from '../../lib/library/components';
+import { siteLibraryData } from '../../lib/library-site';
+import { stageComponent } from '../../components/ds/library/ComponentStage';
 
 const sources = ['docs/BUILD-REQUESTS.md', 'docs/REQUESTS.md'];
+// A request for a component the Library has, without pictures of its own, shows that component's Library preview:
+// Bridge's own components with their docs.json previews, drawn in the browser (components/ds/studio/ComponentPreviews).
+const library = loadComponents(siteLibraryData().model).map(stageComponent).filter((c) => c.preview);
 ---
 
 <Layout
@@ -28,5 +34,5 @@ const sources = ['docs/BUILD-REQUESTS.md', 'docs/REQUESTS.md'];
 >
   <StudioHeader title="Being built" scene="building" />
   <NextRelease />
-  <BeingBuilt client:only="react" />
+  <BeingBuilt client:only="react" library={library} />
 </Layout>

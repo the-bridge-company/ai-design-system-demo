@@ -1,0 +1,11 @@
+/* A component's Library preview (components/ds/library/ComponentStage.tsx): Library > Components cards, the component
+   page's panes and Studio's Being built thumbnails. */
+
+/* Preview surface: soft checkerboard drawn from the system's own background tokens, so it follows the pane theme. */
+.stage-checker {
+  background-color: var(--color-bg-default);
+  background-image: conic-gradient(var(--color-bg-subtle) 25%, transparent 0 50%, var(--color-bg-subtle) 0 75%, transparent 0);
+  background-size: var(--size-6) var(--size-6);
+  color: var(--color-text-default);
+  font-family: var(--font-family-sans);
+}

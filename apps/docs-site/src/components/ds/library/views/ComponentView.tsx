@@ -22,6 +22,7 @@ import { humanDate } from '../../../../lib/library/stats';
 import { mdTitleParts } from '../../../../lib/markdown';
 import { componentHref, libraryLink, pageHref, sourceHref, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
+import '../../../../styles/component-stage.css';
 
 export interface ComponentViewProps {
   data: LibraryData;

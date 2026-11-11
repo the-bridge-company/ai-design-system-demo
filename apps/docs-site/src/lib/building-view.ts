@@ -426,15 +426,38 @@ const listNames = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `
 export const viewTitle = (v: Pick<BuildRequestView, 'component' | 'title'>) => (v.component ? requestIssueTitle({ component: v.component, title: v.title }) : v.title);
 
 /**
- * The thumbnail of a row: the request's own pictures (In code now | In Figma, from its issue) when it carries both,
- * else the component placeholder. Either way it is labelled with the request's component, never a default one.
+ * The library's own spelling of a component a request names ("button" or "Button " finds "Button"), when the library
+ * has it with a preview to show; null otherwise. `previewed`: the names of the library components that have one.
  */
-export function rowThumb(v: Pick<BuildRequestView, 'kind' | 'number' | 'url' | 'component'>, body: string | null | undefined): ThumbSpec {
+export function previewedComponent(name: string | null | undefined, previewed: Iterable<string> | null | undefined): string | null {
+  const key = name?.trim().toLowerCase();
+  if (!key || !previewed) return null;
+  for (const n of previewed) if (n.toLowerCase() === key) return n;
+  return null;
+}
+
+/**
+ * The thumbnail of a component change with no pictures: the component's Library preview when the library has it with
+ * one (`previewed`, the names of those components), else the component placeholder.
+ */
+export function componentThumb(component: string | null | undefined, previewed?: Iterable<string> | null): ThumbSpec {
+  const label = component || 'Component';
+  const name = previewedComponent(component, previewed);
+  return name ? { kind: 'component', name, label } : { kind: 'icon', icon: 'component', label };
+}
+
+/**
+ * The thumbnail of a row: the request's own pictures (In code now | In Figma, from its issue) when it carries both,
+ * else the component's Library preview when the library has the component with one (`previewed`, the names of those
+ * components), else the component placeholder. Either way it is labelled with the request's component, never a
+ * default one.
+ */
+export function rowThumb(v: Pick<BuildRequestView, 'kind' | 'number' | 'url' | 'component'>, body: string | null | undefined, previewed?: Iterable<string> | null): ThumbSpec {
   const label = v.component || 'Component';
   const d = v.kind === 'issue' && body ? buildDetail(body, v) : null;
   const before = safeUrl(d?.before[0]);
   const after = safeUrl(d?.after[0]);
-  return before && after ? { kind: 'image', before, after, label } : { kind: 'icon', icon: 'component', label };
+  return before && after ? { kind: 'image', before, after, label } : componentThumb(v.component, previewed);
 }
 
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeShown, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, handOverTitle, journeyOf, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -146,5 +146,79 @@ describe('repeatsTitle', () => {
     expect(repeatsTitle('Contact summary', 'Contact page summary')).toBe(true);
     expect(repeatsTitle('Order details', 'Order fulfilment timeline')).toBe(false);
     expect(repeatsTitle(null, 'Order fulfilment timeline')).toBe(false);
+    expect(repeatsTitle('Products', 'Bulk actions on products')).toBe(false);
+    expect(repeatsTitle('Order', 'Order fulfilment timeline')).toBe(false);
+  });
+});
+
+describe('Done exploring is only the owner\'s turn', () => {
+  it('a lead who may also say it (a keeper on someone else\'s work) follows it: no "Your exploration" zone', () => {
+    expect(canSayDone('owner', { kind: 'run' })).toBe(true);
+    expect(canSayDone('lead', { kind: 'run' })).toBe(false);
+    expect(canSayDone('designer', { kind: 'run' })).toBe(false);
+    expect(canSayDone('owner', { kind: 'note' })).toBe(false);
+    expect(canSayDone('owner', null)).toBe(false);
+    expect(zoneOf('exploring', { ...none, canDone: canSayDone('lead', { kind: 'run' }) })).toBeNull();
+    expect(zoneOf('waiting-for-lead', { ...none, leadBar: true, canDone: canSayDone('lead', { kind: 'run' }) })).toBe('lead-review');
+  });
+});
+
+describe('the Activity says each thing once', () => {
+  const leo = { login: 'leo', name: 'Leo', agent: false, avatar: null };
+  const when = (iso: string) => iso;
+  it('a commit that only repeats the exploration name reads "saved a change"', () => {
+    expect(quietChange('made a change: Save Bulk actions on products', 'Bulk actions on products')).toBe('saved a change');
+    expect(quietChange('made a change: Update bulk actions on products.', 'Bulk actions on products')).toBe('saved a change');
+    expect(quietChange('made a change: Save', 'Bulk actions on products')).toBe('saved a change');
+    expect(quietChange('made a change: Price window preview', 'Bulk actions on products')).toBe('made a change: Price window preview');
+    expect(quietChange('added the price window', 'Bulk actions on products')).toBe('added the price window');
+    expect(quietChange('made a change: Save Bulk actions on products', null)).toBe('made a change: Save Bulk actions on products');
+  });
+  it('the same line in a row groups into one, at the latest time', () => {
+    const events = [
+      { who: leo, text: 'brought in the latest product', when: '2 days ago', at: '2026-11-09T11:14:22Z' },
+      { who: leo, text: 'made a change: Save Bulk actions on products', when: '2 days ago (b)', at: '2026-11-09T02:32:12Z' },
+      { who: leo, text: 'made a change: Save Bulk actions on products', when: '2 days ago (a)', at: '2026-11-09T02:03:30Z' },
+    ];
+    const rows = timelineOf(events, [], when, [], 'Bulk actions on products');
+    expect(rows.map((r) => r.text)).toEqual(['saved 2 changes', 'brought in the latest product']);
+    expect(rows[0]!.when).toBe('2 days ago (b)');
+    expect(rows[0]!.at).toBe('2026-11-09T02:32:12Z');
+  });
+  it('different people, a milestone or a line between never group', () => {
+    const ann = { ...leo, login: 'ann', name: 'Ann' };
+    const rows = timelineOf(
+      [
+        { who: leo, text: 'made a change: Tighter padding', when: 'c', at: '2026-11-03T00:00:00Z' },
+        { who: ann, text: 'made a change: Tighter padding', when: 'b', at: '2026-11-02T00:00:00Z' },
+        { who: leo, text: 'made a change: Tighter padding', when: 'a', at: '2026-11-01T00:00:00Z' },
+      ],
+      [],
+      when,
+    );
+    expect(rows).toHaveLength(3);
+    expect(groupedText('made a change: Tighter padding', 2)).toBe('made a change: Tighter padding, 2 times');
+    expect(groupedText('saved a change', 1)).toBe('saved a change');
+  });
+});
+
+describe('the screen stage names the screen, then what the exploration does', () => {
+  it('the screen from its route, never a changed region', () => {
+    expect(screenNameOfRoute('/#/products?view=list')).toBe('Products');
+    expect(screenNameOfRoute('/?tenant=acme#/products?view=list&select=2')).toBe('Products');
+    expect(screenNameOfRoute('/?tenant=acme#/orders/65')).toBe('Order');
+    expect(screenNameOfRoute('/#/contacts/31/show')).toBe('Contact');
+    expect(screenNameOfRoute('/#/addresses/4')).toBe('Address');
+    expect(screenNameOfRoute('/plans')).toBe('Plans');
+    expect(screenNameOfRoute('/#/order-history')).toBe('Order history');
+    expect(screenNameOfRoute('/')).toBeNull();
+    expect(screenNameOfRoute(null)).toBeNull();
+  });
+  it('one plain sentence from the purpose', () => {
+    expect(aboutLine('Pick several prints, then publish, hide or reprice them together with a before and after preview.')).toBe('Pick several prints, then publish, hide or reprice them together with a before and after preview.');
+    expect(aboutLine('show the days in stage. Then more.')).toBe('Show the days in stage.');
+    expect(aboutLine('  a summary on top ')).toBe('A summary on top.');
+    expect(aboutLine('')).toBeNull();
+    expect(aboutLine('x '.repeat(150))!.length).toBeLessThanOrEqual(203);
   });
 });

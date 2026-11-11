@@ -699,6 +699,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       me: member?.name ? { login: nameFace(member.name), name: member.name, agent: false, avatar: null } : viewer ? faceOf(viewer, false, knownNamesOf([viewer])) : null,
       crumbs: productCrumbs(product.name, shownJiraKey(pull.title), r.name),
       title: r.name,
+      purpose: parseExplorationBody(pull.body)?.purpose ?? r.purpose ?? null,
       stage: 'loading',
       author: faceOf(r.author, false, { ...knownNamesOf([r.author]), ...emailAuthorName(r.author, pull.body) }),
       startedTail: startedTail(product.name, startedAtOf(pull.body, pull.created_at)),

@@ -83,6 +83,12 @@ export interface ZoneFlags {
   theirVersion: boolean;
 }
 
+/**
+ * Done exploring waits on the viewer only when the exploration is theirs: a lead (or anyone else) who may also say it
+ * for the team (a keeper on someone else's work) follows it while it is explored, never "Your exploration".
+ */
+export const canSayDone = (role: PageRole, done: { kind: string } | null | undefined): boolean => role === 'owner' && done?.kind === 'run';
+
 export function zoneOf(stage: PageStage, f: ZoneFlags): ZoneKind {
   if (f.notDoing) return 'not-doing';
   if (f.archived || stage === 'archived' || stage === 'not-started') return null;
@@ -162,6 +168,27 @@ export interface TimelineItem {
   quote: string | null;
 }
 
+/**
+ * A commit subject that only repeats the exploration's name ("Save Bulk actions on products", "Update Bulk actions on
+ * products"): it says nothing the page title does not, so the line reads "saved a change".
+ */
+export function quietChange(text: string, title: string | null | undefined): string {
+  const m = /^made a change: (.*)$/i.exec(text.trim());
+  const t = title?.trim().toLowerCase();
+  if (!m || !t) return text;
+  const said = m[1]!.trim().replace(/[.!]+$/, '').toLowerCase();
+  const rest = said.replace(/^(save|saved|update|updated|wip|work on|edit|edited)\b\s*:?\s*/, '');
+  return rest === t || said === t || rest === '' ? 'saved a change' : text;
+}
+
+/** "saved 2 changes", "made a change: Tighter padding, 2 times": a run of the same line, said once. */
+export function groupedText(text: string, n: number): string {
+  if (n < 2) return text;
+  if (text === 'saved a change') return `saved ${n} changes`;
+  if (text === 'made a change') return `made ${n} changes`;
+  return `${text}, ${n} times`;
+}
+
 const MILESTONE = /^(said done exploring|done exploring|said it looks right|said it looks good|started the exploration|went back to exploring)/i;
 
 /**
@@ -174,9 +201,10 @@ export function timelineOf(
   decisions: readonly { key: string; login: string; name: string; verb: string; why: string | null; at: string }[],
   when: (iso: string) => string,
   quoted: readonly string[] = [],
+  title?: string | null,
 ): TimelineItem[] {
   const said = new Set(quoted.map((q) => q.trim()).filter(Boolean));
-  const ev: TimelineItem[] = events.map((e, i) => ({ key: `e${i}`, who: e.who, text: e.text, when: e.when, at: e.at ?? null, milestone: MILESTONE.test(e.text), quote: null }));
+  const ev: TimelineItem[] = events.map((e, i) => ({ key: `e${i}`, who: e.who, text: quietChange(e.text, title), when: e.when, at: e.at ?? null, milestone: MILESTONE.test(e.text), quote: null }));
   const dc: TimelineItem[] = decisions.map((d) => ({
     key: `d${d.key}`,
     who: { login: d.login, name: d.name, agent: false, avatar: null },
@@ -188,10 +216,54 @@ export function timelineOf(
   }));
   // Events arrive newest first: reversed, they read oldest first, then the decisions fall in by their time.
   const all = [...ev.reverse(), ...dc];
-  return all
+  const sorted = all
     .map((x, i) => ({ x, i }))
     .sort((a, b) => (a.x.at && b.x.at ? a.x.at.localeCompare(b.x.at) : a.i - b.i))
     .map(({ x }) => x);
+  // The same person saying the same thing in a row reads once ("Leo saved 2 changes"), at the latest time.
+  const out: { item: TimelineItem; text: string; n: number }[] = [];
+  for (const x of sorted) {
+    const prev = out[out.length - 1];
+    if (prev && !x.milestone && !prev.item.milestone && !x.quote && !prev.item.quote && prev.item.who.login === x.who.login && prev.text === x.text) {
+      prev.n += 1;
+      prev.item = { ...x, key: prev.item.key };
+      continue;
+    }
+    out.push({ item: x, text: x.text, n: 1 });
+  }
+  return out.map(({ item, text, n }) => (n > 1 ? { ...item, text: groupedText(text, n) } : item));
+}
+
+/**
+ * The name of the screen an exploration shows, from its route ("/#/products?view=list" reads "Products",
+ * "/?tenant=acme#/orders/65" reads "Order", "/#/contacts/31/show" reads "Contact"): never the last region it changed.
+ * Null for the home or a route that names nothing.
+ */
+export function screenNameOfRoute(route: string | null | undefined): string | null {
+  const r = route?.trim();
+  if (!r) return null;
+  const hash = r.indexOf('#');
+  const path = (hash >= 0 ? r.slice(hash + 1) : r).replace(/[?].*$/, '');
+  const segs = path.split('/').filter(Boolean);
+  const isId = (s: string) => /^\d+$/.test(s) || /^[0-9a-f-]{8,}$/i.test(s);
+  const words = segs.filter((s) => !isId(s) && !/^(show|edit|view|details?)$/i.test(s));
+  const last = words[words.length - 1];
+  if (!last) return null;
+  // A page of one item ("/orders/65"): the item, in the singular.
+  const one = segs.some(isId) && segs.indexOf(last) < segs.findIndex(isId);
+  let name = decodeURIComponent(last).replace(/[-_.+]+/g, ' ').trim();
+  if (one) name = name.replace(/ies$/i, 'y').replace(/(ss|sh|ch|x)es$/i, '$1').replace(/(?<!s)s$/i, '');
+  return name ? name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() : null;
+}
+
+/** One plain sentence of what the exploration does, from its purpose: the first sentence, at most 200 characters. */
+export function aboutLine(purpose: string | null | undefined): string | null {
+  const t = purpose?.trim().replace(/\s+/g, ' ');
+  if (!t) return null;
+  const first = /^.*?[.!?](?=\s|$)/.exec(t)?.[0] ?? t;
+  const s = first.length > 200 ? `${first.slice(0, 199).replace(/\s+\S*$/, '')}...` : first;
+  const cap = s.charAt(0).toUpperCase() + s.slice(1);
+  return /[.!?]$/.test(cap) || cap.endsWith('...') ? cap : `${cap}.`;
 }
 
 /** The latest `keep` lines shown, the earlier ones folded: "2 earlier changes, Show". */
@@ -221,7 +293,8 @@ export function repeatsTitle(screen: string | null | undefined, title: string | 
   const words = (t: string) => t.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   const a = words(screen ?? '');
   const b = words(title ?? '');
-  if (!a.length || !b.length) return false;
+  // A one-word screen ("Products" under "Bulk actions on products") names the screen, it never only repeats the title.
+  if (a.length < 2 || !b.length) return false;
   const [short, long] = a.length <= b.length ? [a, new Set(b)] : [b, new Set(a)];
   return short.every((w) => long.has(w));
 }

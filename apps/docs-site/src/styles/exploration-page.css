@@ -1216,6 +1216,13 @@
   min-width: 0;
 }
 
+/* What the exploration does, in one sentence: its own line under the name. */
+.xp-st-about {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-default);
+}
+
 /* The screen's name repeated the page title: its line leads the stage, at the body size, in the ink colour. */
 .xp-st-sub.is-alone {
   color: var(--color-text-default);

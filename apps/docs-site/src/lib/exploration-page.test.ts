@@ -78,9 +78,10 @@ describe('exploration page model', () => {
     expect(startedTail('Admin demo', null)).toBe('Admin demo');
   });
 
-  it('lists the last 3 events, newest first', () => {
+  it('lists the last 8 events, newest first (the page groups and folds them)', () => {
     const rows = activityRows({ commits, author: 'florian', startedAt: '2026-10-29T10:00:00Z', names: { florian: 'Florian', dana: 'Dana' }, now: NOW });
-    expect(rows.map((r) => `${r.who.name} ${r.text}, ${r.when}`)).toEqual(['Florian with Claude added a Bulk actions bar: Mark shipped, Export, Cancel, 2 h ago', 'Dana tweaked the empty state copy, 2 h ago', 'Florian with Claude added row selection to the Orders table, 2 h ago']);
+    expect(rows.slice(0, 3).map((r) => `${r.who.name} ${r.text}, ${r.when}`)).toEqual(['Florian with Claude added a Bulk actions bar: Mark shipped, Export, Cancel, 2 h ago', 'Dana tweaked the empty state copy, 2 h ago', 'Florian with Claude added row selection to the Orders table, 2 h ago']);
+    expect(rows[rows.length - 1]!.text).toBe('started the exploration');
     expect(rows[0]!.who).toMatchObject({ login: 'florian', agent: false, avatar: 'https://github.com/florian.png?size=64' });
   });
 

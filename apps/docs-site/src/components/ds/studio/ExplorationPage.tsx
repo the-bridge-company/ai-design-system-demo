@@ -82,7 +82,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, PmZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, Journey, People, ScreenStage, Timeline, TurnZone, type PersonRow } from './ExplorationParts';
-import { codeShown, devLineOf, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
+import { aboutLine, canSayDone, codeShown, devLineOf, screenNameOfRoute, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
 import { nameFace } from '../../../lib/people';
@@ -152,6 +152,8 @@ export interface ExplorationPageProps {
   leadName?: string | null;
   /** The viewer's own face (their name and avatar), for the "You" row and the comment box. */
   me?: PageFace | null;
+  /** What the exploration sets out to do (its purpose): one plain sentence under the screen's name. */
+  purpose?: string | null;
   /** The route the exploration's capture shows ("/#/contacts/31/show"): Check the build never compares two different screens. */
   thumbRoute?: string | null;
   /**
@@ -959,7 +961,7 @@ function ExplorationBody(p: ExplorationPageProps) {
     leadBar: Boolean(p.lead?.bar),
     leadTake: Boolean(p.lead?.take?.onTake && !p.lead.bar),
     pmMine: Boolean(p.pm?.mine),
-    canDone: p.done?.kind === 'run',
+    canDone: canSayDone(role, p.done),
     declinedBack: Boolean(p.onReopen),
     question: waitsOnAnswer(handoff),
     checkSay: Boolean(handoff?.check?.onSay),
@@ -973,7 +975,9 @@ function ExplorationBody(p: ExplorationPageProps) {
     for (const r of staged) await p.impact!.actions.onPiece!(r.id, choices[r.id] ?? 'approve');
   };
   const previewHref = p.previewUrl ? (p.tryUrl ?? p.previewUrl) : null;
-  const screenName = p.plate?.screen ?? p.plate?.product ?? 'The screen';
+  // The screen's own name (its route: "Products"), never the last region the change marked; then what the plate names.
+  const screenName = screenNameOfRoute(p.screen?.value ?? p.thumbRoute) ?? p.plate?.screen ?? p.plate?.product ?? 'The screen';
+  const about = aboutLine(p.purpose);
   const nameHidden = repeatsTitle(screenName, p.title);
   const isOwner = role === 'owner';
   const builder = handoff?.build?.builder ?? handoff?.check?.builder ?? null;
@@ -1113,7 +1117,7 @@ function ExplorationBody(p: ExplorationPageProps) {
 
   // ---- Activity.
   const quoted = [checkQuote?.text ?? '', p.designerZone?.text ?? '', p.notDoing?.text ?? ''];
-  const timeline = p.activity === null && !p.decisions?.length ? null : timelineOf(p.activity ?? [], p.decisions ?? [], startedWhen, quoted);
+  const timeline = p.activity === null && !p.decisions?.length ? null : timelineOf(p.activity ?? [], p.decisions ?? [], startedWhen, quoted, p.title);
   const composer =
     zone === 'lead-review' && p.lead?.bar ? (
       <Composer me={p.me ?? null} placeholder={writeToLine([p.author.name])} onSend={(t) => p.lead!.bar!.onComment(t)} say={setSaid} />
@@ -1164,6 +1168,7 @@ function ExplorationBody(p: ExplorationPageProps) {
     <ScreenStage
       name={screenName}
       nameHidden={nameHidden}
+      about={about}
       sub={stageSub}
       compare={{
         a: { label: BUILD_WORDS.approved, when: handoff!.doneWhen, approved: true, frame: <ShotFrame p={p} />, src: p.thumb, href: previewHref },
@@ -1192,7 +1197,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       foot={stageFoot}
     />
   ) : (
-    <ScreenStage name={screenName} nameHidden={nameHidden} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
+    <ScreenStage name={screenName} nameHidden={nameHidden} about={about} sub={stageSub} single={{ frame: <ShotFrame p={p} />, href: previewHref }} foot={stageFoot} />
   );
   // Check the build, once Bridge measured it: the ledger of differences takes the screen block (the compare until then).
   const ledger = stage === 'check' && !p.checkEntry && handoff?.check?.review ? handoff.check.review : null;

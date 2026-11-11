@@ -1023,33 +1023,8 @@ body:has(.cg-bar) {
 }
 
 /* The Library group (components/ds/studio/LibraryChanges, boards LI6 and LI7): every change says where it comes from
-   under its title; a toolbar narrows it by origin and, for the design lead, groups it by component or exploration. */
-.bl-origin {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.bl-origin > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* On a card (the grid), the origin sits under the title and may wrap: a card is narrow. */
-.sh-card-note {
-  display: flex;
-  min-width: 0;
-}
-
-.sh-card-note .bl-origin {
-  align-items: flex-start;
-}
-
-.sh-card-note .bl-origin > span {
-  white-space: normal;
-}
+   under its title (.bl-origin, in studio-home.css: Being built rows say it too); a toolbar narrows it by origin and,
+   for the design lead, groups it by component or exploration. */
 
 /* The origin filter on the left, the lead's grouping on the right: one toolbar for the section. */
 .bl-lib-bar {
@@ -1118,14 +1093,5 @@ body:has(.cg-bar) {
   .bl-lib-act > a,
   .bl-lib-bar > * {
     flex: 1 1 100%;
-  }
-
-  /* On a phone the origin wraps rather than hiding the exploration's name. */
-  .bl-origin {
-    align-items: flex-start;
-  }
-
-  .bl-origin > span {
-    white-space: normal;
   }
 }

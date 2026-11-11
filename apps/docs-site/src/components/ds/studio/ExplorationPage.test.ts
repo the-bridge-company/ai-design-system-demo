@@ -965,3 +965,48 @@ describe('developers: Code once it is handed to them, never git before', () => {
     await expectNoAxeViolations(pop);
   });
 });
+
+describe('a design lead on someone else\'s exploration while it is explored', () => {
+  it('follows it: no "Your exploration", no Done exploring, even when they may say it for the team', () => {
+    paint({ stage: 'exploring', activity: [], role: 'lead', done: { kind: 'run' }, previewUrl: 'https://x.pages.dev/' });
+    expect(screen.queryByText('Your exploration')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Done exploring' })).toBeNull();
+  });
+  it('the owner still gets their turn', () => {
+    paint({ stage: 'exploring', activity: [], role: 'owner', done: { kind: 'run' }, previewUrl: 'https://x.pages.dev/' });
+    expect(screen.getByText('Your exploration')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Done exploring' })).toBeTruthy();
+  });
+});
+
+describe('the screen stage', () => {
+  it('names the screen from its route and says what the exploration does, never the last changed region', () => {
+    paint({
+      stage: 'exploring',
+      activity: [],
+      title: 'Bulk actions on products',
+      purpose: 'Pick several prints, then publish, hide or reprice them together with a before and after preview.',
+      plate: { product: 'Acme Prints', screen: 'In shop column' },
+      thumbRoute: '/?tenant=acme#/products?view=list',
+      previewUrl: 'https://x.pages.dev/',
+    });
+    const stage = screen.getByRole('region', { name: 'The screen' });
+    expect(within(stage).getByRole('heading', { name: 'Products' })).toBeTruthy();
+    expect(within(stage).getByText('Pick several prints, then publish, hide or reprice them together with a before and after preview.')).toBeTruthy();
+    expect(within(stage).queryByRole('heading', { name: 'In shop column' })).toBeNull();
+  });
+  it('Activity groups the saves that only repeat the name', () => {
+    const leo = { login: 'leo', name: 'Leo', agent: false, avatar: null };
+    paint({
+      stage: 'exploring',
+      title: 'Bulk actions on products',
+      previewUrl: 'https://x.pages.dev/',
+      activity: [
+        { who: leo, text: 'made a change: Save Bulk actions on products', when: '2 days ago', at: '2026-11-09T02:32:12Z' },
+        { who: leo, text: 'made a change: Save Bulk actions on products', when: '2 days ago', at: '2026-11-09T02:03:30Z' },
+      ],
+    });
+    expect(screen.getByText(/saved 2 changes/)).toBeTruthy();
+    expect(screen.queryByText(/Save Bulk actions on products/)).toBeNull();
+  });
+});

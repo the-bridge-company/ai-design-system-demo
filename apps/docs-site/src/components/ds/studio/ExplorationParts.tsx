@@ -59,13 +59,14 @@ export interface CompareSide {
  * screens, and on a phone one quiet switch between them. Each capture opens its own version. Two captures of
  * different screens say so honestly on the build's side.
  */
-export function ScreenStage({ name, nameHidden = false, sub, single, compare, mismatch, entry, foot }: { name: string; /** The name repeats the page title: only screen readers get it, the line stands alone. */ nameHidden?: boolean; sub: string; single?: { frame: ReactNode; href: string | null } | null; compare?: { a: CompareSide; b: CompareSide } | null; mismatch?: ReactNode; /** Check the build: the review mode's entry (facts, region crops, Start the check), under the two versions. */ entry?: ReactNode; foot?: ReactNode }) {
+export function ScreenStage({ name, nameHidden = false, about = null, sub, single, compare, mismatch, entry, foot }: { name: string; /** The name repeats the page title: only screen readers get it, the line stands alone. */ nameHidden?: boolean; /** One plain sentence of what the exploration does, under the name. */ about?: string | null; sub: string; single?: { frame: ReactNode; href: string | null } | null; compare?: { a: CompareSide; b: CompareSide } | null; mismatch?: ReactNode; /** Check the build: the review mode's entry (facts, region crops, Start the check), under the two versions. */ entry?: ReactNode; foot?: ReactNode }) {
   const [shown, setShown] = useState<'a' | 'b'>('b');
   return (
     <section className={compare ? 'xp-stage has-two' : 'xp-stage'} aria-label="The screen">
       <div className="xp-st-head">
         <h2 className={nameHidden ? 'sr-only' : 'xp-st-name'}>{name}</h2>
         <span className={nameHidden ? 'xp-st-sub is-alone' : 'xp-muted xp-st-sub'}>{nameHidden ? sub.charAt(0).toUpperCase() + sub.slice(1) : sub}</span>
+        {about && <p className="xp-st-about">{about}</p>}
         {compare && (
           <SegmentedControl
             size="sm"

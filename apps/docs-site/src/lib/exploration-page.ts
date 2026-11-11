@@ -121,10 +121,10 @@ export interface ActivityRow {
   at?: string;
 }
 
-/** The last 3 events: Claude's and people's changes, then "started the exploration" when it fits. */
+/** The last 8 events: Claude's and people's changes, then "started the exploration" when it fits. The page groups a run of the same line and folds the earlier ones (lib/exploration-layout timelineOf, foldTimeline). */
 export function activityRows(input: { commits: readonly BranchCommitLike[]; author: string; startedAt?: string | null | undefined; reopened?: { at: string; by?: string | null | undefined } | null; names?: Record<string, string>; now?: Date }): ActivityRow[] {
   const commits = linkAuthors(input.commits);
-  return explorationActivity({ commits, author: input.author, startedAt: input.startedAt, reopened: input.reopened, limit: 3 }).map((e) => ({ who: faceOf(e.who, e.claude, input.names, e.withClaude, nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now), at: e.at }));
+  return explorationActivity({ commits, author: input.author, startedAt: input.startedAt, reopened: input.reopened, limit: 8 }).map((e) => ({ who: faceOf(e.who, e.claude, input.names, e.withClaude, nameOnlyAuthors(commits)), text: e.text, when: shortAgo(e.at, input.now), at: e.at }));
 }
 
 /** "Claude changed Orders table and Bulk actions bar, 2 h ago": the line under the title once something changed. */

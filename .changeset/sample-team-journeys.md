@@ -14,3 +14,4 @@ Sample team journeys, one source of truth per fact.
 - The onboarding's sign-in step shows an email session as "Signed in as dana@acme.example" under "Sign in".
 - Adoption report: Send to developers confirms what was sent (a toast with a link to the request, or to Being built for several) and each group says "Sent to developers"; the trend line says it starts when the product's code changes.
 - Check the build has one h1; a product manager's Needs changes stays enabled and asks for the note when it is empty.
+- The Library's "Figma is ahead" names who builds by their name ("Malik"), never their login. The played developer's account line says his role. The invite dialog says what is true for everyone: they sign in with the email, GitHub only to approve library changes there.

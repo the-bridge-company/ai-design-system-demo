@@ -1156,10 +1156,13 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       // The side nav's account row: the second line is the team's name, or an email contributor's role in words. Their
       // menu says who they are (name, then the full email on its own line), never GitHub or the repository.
       // (The team's name is [data-team-display], kept by scripts/team-links.ts; a contributor sees their role instead.)
-      acct.querySelectorAll<HTMLElement>('[data-gh-acct-team]').forEach((el) => (el.hidden = Boolean(email)));
+      // The sample team's developer played by a visitor ("See it as") reads his role too, like the rest of the team.
+      const castRole = !email && castDeveloper() ? accessLabel(true, currentAccess()) : '';
+      const role = email ? contributorRole() : castRole && castRole !== 'Unknown' ? castRole : '';
+      acct.querySelectorAll<HTMLElement>('[data-gh-acct-team]').forEach((el) => (el.hidden = Boolean(role)));
       acct.querySelectorAll<HTMLElement>('[data-gh-acct-role]').forEach((el) => {
-        el.textContent = email ? contributorRole() : '';
-        el.hidden = !email;
+        el.textContent = role;
+        el.hidden = !role;
       });
       acct.querySelectorAll<HTMLElement>('[data-gh-menu-email]').forEach((el) => {
         el.textContent = email ? email.login : '';
@@ -1184,6 +1187,10 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       setButtonLabel(forget, app ? 'Sign out' : 'Disconnect');
     }
   };
+  // The played developer's role line (above) follows his access once it is read.
+  onAccess(() => {
+    if (castDeveloper()) paint();
+  });
 
   /** GET /user with the saved token, whatever the session state. 401 = the token was refused (after one refresh). */
   const check = async (): Promise<Viewer | null> => {

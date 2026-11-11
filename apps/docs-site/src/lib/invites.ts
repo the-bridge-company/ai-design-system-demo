@@ -392,7 +392,7 @@ export function membersContext(repo: string | null, noRepo: boolean): MembersCon
 /** The words of each state of the Members band and the dialog. */
 export const MEMBERS_WORDS = {
   title: 'Invite collaborators',
-  intro: 'They get an email and land in your team with the role you pick. Reviewers also sign in with GitHub.',
+  intro: 'They get an email and land in your team with the role you pick. Everyone signs in with that email. GitHub is needed only to approve library changes on GitHub.',
   email: 'Work email',
   emailHint: 'Add several people at once. They all get the role on the right.',
   emailPlaceholder: 'name@company.com',

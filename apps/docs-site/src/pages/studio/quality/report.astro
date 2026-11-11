@@ -1,0 +1,36 @@
+---
+// Studio > Quality > a product's adoption report, self-hosted (/studio/quality/report/?product=<app>). A team opens the
+// report in its shell (pages/team-shell/quality/report.astro, components/ds/studio/AdoptionReport.tsx); the
+// self-hosted Studio keeps its build-time report pages (quality/audits/<id>/), so this address sends the product to
+// its latest one, and lists them without script.
+import { Link } from '@bridge-ds/react';
+import Layout from '../../../layouts/Layout.astro';
+import StudioHeader from '../../../components/StudioHeader.astro';
+import { groupByApp, loadAudits } from '../../../lib/audits';
+import { APP_SHORT, auditHref } from '../../../lib/quality';
+
+const apps = groupByApp(loadAudits()).apps.map((g) => {
+  const latest = g.after ?? g.reports[g.reports.length - 1]!;
+  return { id: g.app.id, name: APP_SHORT[g.app.id] ?? g.app.title, href: auditHref(latest.id) };
+});
+const targets = Object.fromEntries(apps.map((a) => [a.id, a.href]));
+---
+
+<Layout title="Adoption report" description="How much of a product comes from the design system." wide>
+  <StudioHeader title="Adoption report" summary="How much of each product comes from the library." />
+  <ul class="ar-self" data-report-targets={JSON.stringify(targets)}>
+    {
+      apps.map((a) => (
+        <li>
+          <Link href={a.href}>{a.name}</Link>
+        </li>
+      ))
+    }
+  </ul>
+  <script>
+    const list = document.querySelector<HTMLElement>('[data-report-targets]');
+    const targets = JSON.parse(list?.dataset.reportTargets ?? '{}') as Record<string, string>;
+    const key = new URLSearchParams(location.search).get('product');
+    if (key && Object.prototype.hasOwnProperty.call(targets, key)) location.replace(targets[key]!);
+  </script>
+</Layout>

@@ -258,7 +258,10 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
     const p = productOfRun(products, { product: a.product, target: a.target, label: a.label });
     return p ? [{ a, p }] : [];
   });
-  const reportHref = (a: SnapshotAudit) => `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/blob/bridge-data/${a.path.split('/').map(encodeURIComponent).join('/')}`;
+  // A product's report opens inside Bridge (the adoption report page, its "Download JSON" for developers); a run of no
+  // listed product keeps the published file on GitHub.
+  const reportHref = (a: SnapshotAudit, p: ProductConfig | null) =>
+    p ? studioHref(`quality/report/?product=${encodeURIComponent(p.key)}`) : `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/blob/bridge-data/${a.path.split('/').map(encodeURIComponent).join('/')}`;
   const adoption: AdoptionView | null = mapped.length
     ? adoptionView(
         mapped.map(({ a, p }) => ({
@@ -271,7 +274,7 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
           component: a.metrics.componentAdoption,
           ds: a.metrics.dsComponentInstances,
           ui: a.metrics.uiComponentInstances,
-          href: reportHref(a),
+          href: reportHref(a, p),
           ...(isBaselineRun(a) ? { baseline: true } : {}),
         })),
         input.snapshotAt ? { liveSince: input.snapshotAt } : {},

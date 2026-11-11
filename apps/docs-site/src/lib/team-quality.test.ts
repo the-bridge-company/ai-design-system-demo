@@ -1,3 +1,4 @@
+import { studioHref } from './team-path';
 import { describe, expect, it } from 'vitest';
 import { loadRepoModel, memorySource, type ProductConfig, type SnapshotAudit } from '@bridge-ds/core';
 import { repoModel } from './model';
@@ -121,11 +122,11 @@ describe('adoption from the snapshot audits', () => {
     { key: 'library', name: 'Library', path: 'packages', default: true },
   ]);
 
-  it('one row per listed product, named as the config names it, the report on the bridge-data branch, the combined figure', () => {
+  it('one row per listed product, named as the config names it, the report inside Bridge, the combined figure', () => {
     const q = teamQuality({ model: withProducts(folders.config.products.filter((p) => p.key !== 'site')), ...team, audits: [audit('web', 30, 40, 'Web app, main'), audit('admin', 10, 10)] });
     expect(q.adoption!.products.map((p) => [p.name, p.latest.component, p.latest.href])).toEqual([
-      ['Admin', 100, 'https://github.com/acme/ds/blob/bridge-data/audits/admin.json'],
-      ['Web app', 75, 'https://github.com/acme/ds/blob/bridge-data/audits/web.json'],
+      ['Admin', 100, studioHref('quality/report/?product=admin')],
+      ['Web app', 75, studioHref('quality/report/?product=web')],
     ]);
     expect(q.adoption!.earlier).toEqual([]);
     expect(q.unmeasured).toEqual([]);

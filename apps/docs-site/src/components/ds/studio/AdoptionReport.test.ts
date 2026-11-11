@@ -1,0 +1,82 @@
+// @vitest-environment jsdom
+// The adoption report body: the verdict and its one primary action for who can act, read only for designers, groups
+// that open on the developers' fold, "Not a problem" with a required reason. No axe violations.
+import '../../../../../../packages/react/src/test/setup';
+import { createElement } from 'react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AuditReport, ComponentFinding, FileReport } from '@bridge-ds/core/audit';
+import { AdoptionReportView, type ReportActions } from './AdoptionReport';
+import { reportModel } from '../../../lib/adoption-report';
+import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
+
+const SHADCN = 'shadcn/ui (local)';
+const c = (name: string, library: string, suggestion?: string, line = 1): ComponentFinding => ({ line, column: 1, name, kind: library === 'native' ? 'native' : 'foreign', library, ...(suggestion ? { suggestion } : {}) });
+const file = (path: string, components: ComponentFinding[]): FileReport => ({ path, lang: 'tsx', tokenUsages: 0, themeRefs: 0, hardcoded: 0, dsComponents: 0, otherComponents: components.length, findings: [], components });
+const report: AuditReport = {
+  schemaVersion: 1,
+  tool: { name: 'bridge', version: '0' },
+  generatedAt: '2026-11-10T21:23:31.011Z',
+  target: { path: '../acme-crm/src', files: 1, skipped: 0 },
+  designSystem: { packages: ['@acme/design-system'], components: 50, tokens: 600, modes: [] },
+  metrics: { tokenAdoption: 72.2, componentAdoption: 13.2, tokenUsages: 10, hardcoded: 0, themeRefs: 0, dsComponentInstances: 2, uiComponentInstances: 15 },
+  byCategory: {},
+  components: { ds: {}, foreign: {}, native: {}, recreated: [{ name: 'Button', file: 'components/ui/button.tsx', line: 60, instances: 8 }] },
+  topFiles: [],
+  topFixes: [],
+  files: [file('a.tsx', [...Array.from({ length: 8 }, (_, i) => c('Button', SHADCN, 'Button', i + 1)), c('button', 'native', 'Button', 20), c('Link', 'react-router', 'Link', 21), c('Item', SHADCN, undefined, 22)])],
+  history: [],
+};
+const model = reportModel(report, { product: 'Acme CRM', productKey: 'crm', productRepo: 'acme-design-demo/acme-crm' });
+
+const actions = (over: Partial<ReportActions> = {}): ReportActions => ({ canAct: true, canIgnore: true, local: false, sent: {}, send: vi.fn(async () => {}), ignore: vi.fn(async () => {}), ...over });
+const paint = (a: ReportActions) => render(createElement(AdoptionReportView, { model, actions: a }));
+
+afterEach(cleanup);
+
+describe('AdoptionReportView', () => {
+  it('leads with the verdict, one primary action, the score cards in words and the first-run line', async () => {
+    const a = actions();
+    const { container } = paint(a);
+    expect(screen.getByRole('heading', { level: 2, name: /copies of the library's/ })).toBeTruthy();
+    const primary = within(container.querySelector('.ar-verdict')!).getByRole('button', { name: 'Send to developers' });
+    expect(screen.getByText(/of the buttons, menus and other pieces in Acme CRM come from the library/)).toBeTruthy();
+    expect(screen.getAllByText('The trend starts with the next check.')).toHaveLength(2);
+    await act(async () => fireEvent.click(primary));
+    expect(a.send).toHaveBeenCalledWith(['piece:Button']);
+    await expectNoAxeViolations(container);
+  });
+
+  it('designers read: no action, a group opens on its pictures and the developers fold', async () => {
+    const { container } = paint(actions({ canAct: false, canIgnore: false }));
+    expect(screen.queryByRole('button', { name: 'Send to developers' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
+    expect(screen.getByText(/One change covers 8 of them\./)).toBeTruthy();
+    expect(screen.getByText('No picture yet', { selector: '.ar-plate-big span' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /For developers: 9 places in the code/ }));
+    expect(screen.getByText("export { Button } from '@acme/design-system'")).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: /Open in GitHub/ })[0]!.getAttribute('href')).toBe('https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/a.tsx#L1');
+    expect(screen.getByRole('heading', { name: 'Pieces the library is missing' })).toBeTruthy();
+    await expectNoAxeViolations(container);
+  });
+
+  it('a sent group says so with its issue', () => {
+    paint(actions({ sent: { 'piece:Button': { number: 42, url: 'https://github.com/a/b/issues/42' } } }));
+    expect(screen.queryByRole('button', { name: 'Send to developers' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Buttons that look like ours but aren't/ }));
+    expect(screen.getByRole('link', { name: 'issue #42' })).toBeTruthy();
+  });
+
+  it('"Not a problem" needs a reason before it keeps the group as it is', async () => {
+    const a = actions();
+    paint(a);
+    fireEvent.click(screen.getByRole('button', { name: /Links from react-router/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Not a problem' }));
+    await act(async () => fireEvent.click(await screen.findByRole('button', { name: 'Keep them as they are' })));
+    expect(a.ignore).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Say why in a few words/)).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: /Why they stay/ }), { target: { value: 'Router links stay as they are' } });
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Keep them as they are' })));
+    expect(a.ignore).toHaveBeenCalledWith('piece:Link', 'Router links stay as they are');
+  });
+});

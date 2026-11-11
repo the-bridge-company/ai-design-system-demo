@@ -1,0 +1,5 @@
+---
+'@bridge-ds/docs-site': minor
+---
+
+The adoption report inside Bridge: Studio > Quality > a product opens `/studio/<team>/quality/report/?product=<key>` (the whole Adoption row is the link; "Download JSON" moves to the report's header). A plain-words verdict with one "Send to developers", two score cards in words (trend from the second run on), and tabs: Pieces (whole pieces grouped by the library component to use, the one change that covers most of them, the library's own preview, the pieces the library is missing), Colors (swatch pairs with Same color, Very close, Close, check the meaning, or No library color yet) and Sizes and spacing. The developers' detail (fix at the source, the change to copy, file and line with Open in GitHub) waits behind one fold per group. Leads and admins send a group to developers (one request per group, linked back to the report) or keep it as "Not a problem" with a reason (audit-ignores.json on the bridge-data branch, honoured by the next audit); designers read. On the sample team the actions stay in this browser.

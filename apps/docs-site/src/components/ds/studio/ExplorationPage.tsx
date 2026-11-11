@@ -82,7 +82,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, PmZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, Journey, People, ScreenStage, Timeline, TurnZone, type PersonRow } from './ExplorationParts';
-import { aboutLine, canSayDone, codeShown, devLineOf, screenNameOfRoute, handOverTitle, journeyOf, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
+import { aboutLine, canSayDone, codeShown, devLineOf, screenNameOfRoute, handOverTitle, journeyOf, leadPicksLine, notesContext, ownerLine, pageStageOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, timelineOf, writeToLine, zoneOf, type PageRole } from '../../../lib/exploration-layout';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
 import { nameFace } from '../../../lib/people';
@@ -354,11 +354,11 @@ function leadLine(line: string, lead: string | null | undefined): string {
 }
 
 /** While it is explored: the four steps of All steps, in words. */
-function explorationSteps(lead: string | null, product: string, waitingForLead = false): HandoffStep[] {
+function explorationSteps(lead: string | null, product: string, waitingForLead = false, viewerLeads = false): HandoffStep[] {
   // Once the designer said Done exploring, Exploring is done and the lead's step is the one happening now.
   return [
     { status: waitingForLead ? 'done' : 'waiting', title: 'Exploring', detail: waitingForLead ? 'Its designer said Done exploring' : 'Until its designer says Done exploring', current: !waitingForLead },
-    { status: 'waiting', title: 'The lead decides', detail: lead ? `${lead} picks what the library keeps` : 'Your design lead picks what the library keeps', current: waitingForLead },
+    { status: 'waiting', title: 'The lead decides', detail: leadPicksLine({ lead, viewerLeads }), current: waitingForLead },
     { status: 'waiting', title: 'Developers build it', detail: `The ${product || 'product'} developers build it, then it is checked` },
     { status: 'waiting', title: 'Shipped', detail: `Then live in ${product || 'the product'}` },
   ];
@@ -1111,9 +1111,11 @@ function ExplorationBody(p: ExplorationPageProps) {
   const keepExploring = p.lead?.onCancel ? <KeepExploring onCancel={p.lead.onCancel} say={setSaid} /> : null;
 
   // ---- The journey.
-  const journey = journeyOf(stage, { lead: p.leadName ?? null, product: product || 'the product' });
+  // The lead reading someone else's exploration picks themselves: "Then you pick what the library keeps".
+  const viewerLeads = role === 'lead';
+  const journey = journeyOf(stage, { lead: p.leadName ?? null, viewerLeads, product: product || 'the product' });
   const send = handoff?.forDevelopers && !handoff.declined && handoff.status !== 'shipped' ? handoff.forDevelopers : null;
-  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product, stage === 'waiting-for-lead');
+  const steps = handoff ? handoff.steps : explorationSteps(p.leadName ?? null, product, stage === 'waiting-for-lead', viewerLeads);
 
   // ---- Activity.
   const quoted = [checkQuote?.text ?? '', p.designerZone?.text ?? '', p.notDoing?.text ?? ''];

@@ -128,8 +128,17 @@ export function ownerLine(name: string, tail: string, viewerIsAuthor = false): s
 /** The four steps of the journey bar: explore, the lead decides, the developers build and it is checked, it goes live. */
 export type JourneySeg = 'done' | 'now' | 'next';
 
-export function journeyOf(stage: PageStage, x: { lead?: string | null; product: string }): { segments: JourneySeg[]; next: string } {
-  const lead = x.lead?.trim() || 'Your design lead';
+/**
+ * Who picks what the library keeps, as a sentence starts: "You pick" for the lead reading it, "Dana picks" when the lead
+ * is known, else "Your design lead picks". `then`: mid-sentence ("Then you pick", "Then your design lead picks").
+ */
+export function leadPicksLine(x: { lead?: string | null; viewerLeads?: boolean }, then = false): string {
+  const name = x.lead?.trim();
+  const said = x.viewerLeads ? 'You pick what the library keeps' : name ? `${name} picks what the library keeps` : 'Your design lead picks what the library keeps';
+  return then ? `Then ${x.viewerLeads || !name ? said.charAt(0).toLowerCase() + said.slice(1) : said}` : said;
+}
+
+export function journeyOf(stage: PageStage, x: { lead?: string | null; viewerLeads?: boolean; product: string }): { segments: JourneySeg[]; next: string } {
   const at: Record<PageStage, number> = { 'not-started': 0, exploring: 0, 'waiting-for-lead': 1, ready: 2, building: 2, check: 2, declined: 2, shipped: 4, archived: 0 };
   const i = at[stage];
   const segments = [0, 1, 2, 3].map((s): JourneySeg => (s < i ? 'done' : s === i ? 'now' : 'next'));
@@ -137,7 +146,7 @@ export function journeyOf(stage: PageStage, x: { lead?: string | null; product: 
     stage === 'shipped'
       ? "Every step is done"
       : i === 0
-        ? `Then ${lead} picks what the library keeps`
+        ? leadPicksLine(x, true)
         : i === 1
           ? `Then the ${x.product} developers build it`
           : `Then it goes live in ${x.product}`;
@@ -168,12 +177,18 @@ export interface TimelineItem {
   quote: string | null;
 }
 
+/** The handover notes' commits: seeded by Bridge, saved from the page or by Claude (core explorations-github). */
+const NOTES_COMMIT = /^(note|update|updated) where it stands[.!]?$/i;
+export const NOTES_LINE = 'updated the handover notes';
+
 /**
  * A commit subject that only repeats the exploration's name ("Save Bulk actions on products", "Update Bulk actions on
  * products"): it says nothing the page title does not, so the line reads "saved a change".
  */
 export function quietChange(text: string, title: string | null | undefined): string {
   const m = /^made a change: (.*)$/i.exec(text.trim());
+  // The handover notes' own commits (Bridge seeds them "Note where it stands", the page saves "Update where it stands").
+  if (m && NOTES_COMMIT.test(m[1]!.trim())) return NOTES_LINE;
   const t = title?.trim().toLowerCase();
   if (!m || !t) return text;
   const said = m[1]!.trim().replace(/[.!]+$/, '').toLowerCase();

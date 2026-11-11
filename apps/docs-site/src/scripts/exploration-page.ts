@@ -818,7 +818,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   if (current?.key !== key) return;
   // "Where it stands": the handover notes, while it runs (after Done exploring they went to the developers as the spec).
   // Handed off, the notes stay readable: the lead and the designer keep the decisions, whoever carries on.
-  void paintNotes(d, key, r, gh, files, !handedOff && notesEditable({ writable, member: Boolean(member), designer, emailOnProduct, direct, own: Boolean(own) }) && !r.archived);
+  void paintNotes(d, key, r, gh, files, !handedOff && notesEditable({ writable, leadOnly: emailLeadOther, member: Boolean(member), designer, emailOnProduct, direct, own: Boolean(own) }) && !r.archived);
   // Archived: the page of the state it was archived in (not started or exploring), with the Archived tag.
   const stage = explorationStage({ status: r.archived ? 'active' : r.status, files });
   const app = own ? undefined : isLibrary ? (libraryPreviewApp(files, CFG.apps) ?? 'docs') : (product.key as 'admin');
@@ -867,6 +867,12 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   });
   // What it changes in the library (boards LI1 to LI4): its recorded check, conflicts with the team's other open
   // explorations, and for the lead the answer per piece. Painted when read, below the board.
+  // The lead by name on the journey while it runs ("Then Dana picks what the library keeps"), for whoever is not the lead
+  // (the lead reads "Then you pick"). Waiting for the lead or with pieces checked, the library block below names them.
+  if (!r.archived && !handedOff && !leadOther && !lead?.bar && !viewerDecidesExplorations())
+    void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.leadAskedBy ?? r.author] }))
+      .then((n) => n[0] && current?.key === key && !current.props.leadName && repaint(d, key, { leadName: n[0] }))
+      .catch(() => undefined);
   if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line) });
   // The product manager of its product (boards R1, R3): read once, painted when known.
   if (!handedOff && own && !r.archived)
@@ -1127,6 +1133,28 @@ const PIECE_SAID: Record<PieceAction, (designer: string, input?: string) => stri
   existing: (designer, use) => `${designer} is asked to use ${use ?? 'the existing piece'} instead.`,
 };
 
+/** The leads' names this browser already knows (a login without a known name is never shown). */
+function knownLeadNames(leads: readonly string[]): string[] {
+  return leads.flatMap((l) => {
+    const n = knownNamesOf([l])[l];
+    return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
+  });
+}
+
+/**
+ * The design leads of an exploration by name ("Dana picks what the library keeps"): the GitHub leads this browser knows,
+ * else, for a team whose lead signs in by email, the member list's lead (as Library review reads it). Empty when unknown.
+ */
+async function leadNamesOf(leads: readonly string[]): Promise<string[]> {
+  const known = knownLeadNames(leads);
+  if (known.length) return known;
+  const { contributeTeam } = await import('./contribute-session');
+  const { getToken } = await import('./github-session');
+  const people = await contributeTeam(`${CFG.owner}/${CFG.repo}`, currentContributor() ? null : getToken()).catch(() => null);
+  const emailLead = people?.members.find((m) => m.lead) ?? people?.members.find((m) => m.role === 'admin');
+  return emailLead?.name.trim() ? [emailLead.name.trim().split(/\s+/)[0]!] : [];
+}
+
 /**
  * "What this changes in the library" (boards LI1 to LI4, LI8): the recorded check, the conflicts with the team's other
  * open explorations, and once approved what the library released. A lead answering (their bar is on the page) gets
@@ -1154,18 +1182,7 @@ async function paintLibraryImpact(
   // you", the words of Review all and the Changes Library row. Anyone else reads the lead's name, never a GitHub login:
   // unknown, "the DS lead". Before Done exploring, every piece reads Exploring for everyone (nobody is asked yet).
   const viewerLeads = decides || viewerDecidesExplorations();
-  const leadNames = leads.flatMap((l) => {
-    const n = knownNamesOf([l])[l];
-    return n && n.toLowerCase() !== l.toLowerCase() ? [n] : [];
-  });
-  // A team whose lead signs in by email ("Dana picks"): the member list names them, as Library review reads it.
-  if (!viewerLeads && !leadNames.length && parsePiecesRecord(body)?.pieces.length) {
-    const { contributeTeam } = await import('./contribute-session');
-    const { getToken } = await import('./github-session');
-    const people = await contributeTeam(`${CFG.owner}/${CFG.repo}`, member ? null : getToken()).catch(() => null);
-    const emailLead = people?.members.find((m) => m.lead) ?? people?.members.find((m) => m.role === 'admin');
-    if (emailLead?.name.trim()) leadNames.push(emailLead.name.trim().split(/\s+/)[0]!);
-  }
+  const leadNames = viewerLeads ? knownLeadNames(leads) : parsePiecesRecord(body)?.pieces.length ? await leadNamesOf(leads) : knownLeadNames(leads);
   const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
   // The lead by name on the page ("Ready to hand it to Dana?", the journey's next step).
   if (!viewerLeads && leadNames[0] && current?.key === key) repaint(d, key, { leadName: leadNames[0] });
@@ -1315,10 +1332,12 @@ async function paintLibraryImpact(
 /**
  * Who edits "Where it stands" in place: whoever keeps the exploration (writable: the person who started it, a
  * reviewer, the email member or designer Bridge writes for in the copy), and in the library anyone signed in who can
- * write to it. The save goes through the same route as every other write of this page (GitHub, or Bridge's proxy for
- * a member, on the exploration's own branch only).
+ * write to it. A lead signed in by email on someone else's work (`leadOnly`: they keep it only as a lead, to archive or
+ * hand it over) reads the owner's notes, never edits them. The save goes through the same route as every other write
+ * of this page (GitHub, or Bridge's proxy for a member, on the exploration's own branch only).
  */
-export function notesEditable(x: { writable: boolean; member: boolean; designer: boolean; emailOnProduct: boolean; direct: boolean; own: boolean }): boolean {
+export function notesEditable(x: { writable: boolean; leadOnly?: boolean; member: boolean; designer: boolean; emailOnProduct: boolean; direct: boolean; own: boolean }): boolean {
+  if (x.leadOnly) return false;
   if (x.writable) return true;
   return !x.own && x.direct && !x.member && !x.designer && !x.emailOnProduct && connected() && currentAccess()?.write === true;
 }

@@ -284,6 +284,16 @@ describe('ExplorationPage, exploring (X2)', () => {
     expect(screen.getByText('Then Dana picks what the library keeps')).toBeTruthy();
   });
 
+  it('the lead reading someone else\'s exploration picks: "Then you pick", in All steps too', () => {
+    paint({ ...exploring, role: 'lead', leadName: 'Dana' });
+    expect(screen.getByText('Then you pick what the library keeps')).toBeTruthy();
+    expect(screen.queryByText(/Your design lead/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'All steps' }));
+    expect(screen.getByText('You pick what the library keeps')).toBeTruthy();
+    expect(screen.queryByText(/Your design lead/)).toBeNull();
+    expect(screen.queryByText(/Dana picks/)).toBeNull();
+  });
+
   it('without a build yet: the capture is no link, and one line says why in words', () => {
     paint({ ...exploring, previewUrl: null, previewNote: 'Your preview appears a few minutes after each change.' });
     expect(screen.queryByRole('link', { name: /Open the preview/ })).toBeNull();

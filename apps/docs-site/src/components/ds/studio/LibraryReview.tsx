@@ -23,7 +23,7 @@ import { measuredReach, reachCell, reachOf, type Measured, type Reach, type Reac
 import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy, readPiece, viewSearch, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
 import { askedCountLine, askedFaces, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
-import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, tallyOf, tallySentence } from '../../../lib/library-review-list';
+import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, compareKeepLabel, compareView, STAGE_SCALE, stageLabels, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
@@ -767,7 +767,7 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
               <span className="lr-side-fam-count">{ch.groups.reduce((n, g) => n + g.pieces.length, 0)}</span>
             </h3>
             {ch.groups.map((g) => {
-              const label = ch.rail ? railLabel(g, ch) : null;
+              const label = ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null;
               return (
                 <div key={g.key} className="lr-side-group">
                   {label && (
@@ -1162,7 +1162,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 const inGroup = boxes ? pickableOf(g.pieces) : [];
                 const on = inGroup.length > 0 && inGroup.every((p) => selected.has(p.key));
                 const some = inGroup.some((p) => selected.has(p.key));
-                const label = ch.rail ? railLabel(g, ch) : null;
+                const label = ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null;
                 return (
                   <div key={g.key} role="rowgroup" className="lr-list-group" aria-label={g.label}>
                     {ch.rail && (

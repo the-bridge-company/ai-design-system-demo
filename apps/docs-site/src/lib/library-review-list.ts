@@ -198,3 +198,14 @@ export function chapterReach(rows: readonly { reach: Reach; measured: Pick<Measu
   if (!products.length) return { products, shown: [], more: 0, names: null };
   return { products, shown: products.slice(0, max), more: Math.max(products.length - max, 0), names: products.length <= 3 ? products.map((p) => p.name).join(', ') : `${products.length} products` };
 }
+
+/**
+ * The small group title above pieces in the side list, said once: a group of one piece whose title already starts with
+ * the group's name ("Timeline" over "Timeline", "Avatar" over "Avatar: xl size") has no title of its own.
+ */
+export function sideLabel(label: string | null, pieces: readonly { title: string }[]): string | null {
+  if (!label) return null;
+  const only = pieces.length === 1 ? pieces[0]!.title.trim().toLowerCase() : null;
+  const name = label.trim().toLowerCase();
+  return only !== null && (only === name || only.startsWith(`${name}:`) || only.startsWith(`${name} `)) ? null : label;
+}

@@ -1,7 +1,7 @@
 // The List as chapters: families in order, the most recent group first, columns only when filled, the tally, the
 // product marks and what a chapter reaches.
 import { describe, expect, it } from 'vitest';
-import { tallySentence, chapterReach, chaptersOf, familiesOf, familyOf, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
+import { sideLabel, tallySentence, chapterReach, chaptersOf, familiesOf, familyOf, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
 import type { PieceGroup, ReviewPiece } from './library-review';
 import { reachOf, type Measured } from './library-reach';
 import { change, conflict, LEAD, leadChange, newComponent, PRODUCTS } from './library-fixtures.test-helpers';
@@ -101,3 +101,17 @@ describe('tallySentence', () => {
   });
 });
 
+
+describe('sideLabel', () => {
+  it('drops a group title its only piece already says', () => {
+    expect(sideLabel('Timeline', [{ title: 'Timeline' }])).toBeNull();
+    expect(sideLabel('Avatar', [{ title: 'Avatar: xl size' }])).toBeNull();
+    expect(sideLabel('Button', [{ title: 'Button loading text says what is happening' }])).toBeNull();
+  });
+  it('keeps it for several pieces or a different title', () => {
+    expect(sideLabel('Colors', [{ title: 'Muted text readable' }])).toBe('Colors');
+    expect(sideLabel('Card', [{ title: 'Card' }, { title: 'Card: tone' }])).toBe('Card');
+    expect(sideLabel('Tab', [{ title: 'Tabs: when tabs are the wrong choice' }])).toBe('Tab');
+    expect(sideLabel(null, [{ title: 'x' }])).toBeNull();
+  });
+});

@@ -1978,6 +1978,27 @@ async function onLibraryUpdate(req: Request, ctx: Ctx, body: Record<string, unkn
 const CROSS_ORIGIN = 'Bridge reads this design system only for the pages and products its bridge.config.json names.';
 const notAllowed = () => new HttpError(403, 'not-allowed', NOT_ALLOWED);
 
+/** The team's data branch (core SNAPSHOT_BRANCH) and its "Not a problem" decisions file (core AUDIT_IGNORES_FILE). */
+const DATA_BRANCH = 'bridge-data';
+const AUDIT_IGNORES_PATH = 'audit-ignores.json';
+export const AUDIT_LEADS_ONLY = 'Only a design lead or an admin can keep this as not a problem.';
+
+/** Whether a member may take an adoption report's "Not a problem" decision: a lead or an admin of the team. */
+async function decidesOnAdoption(ctx: Ctx, c: Call): Promise<boolean> {
+  return approves(c.member) || Boolean(ctx.svc.localAdmins && (await ctx.svc.localAdmins.isAdmin(c.team, c.member.email)));
+}
+
+/** A decisions file as Studio writes it (core parseAuditIgnores): base64 JSON, version 1, a list of decisions. */
+function isDecisionsFile(content: unknown): boolean {
+  if (typeof content !== 'string' || !content || content.length > 1_000_000) return false;
+  try {
+    const x = JSON.parse(Buffer.from(content, 'base64').toString('utf8')) as { version?: unknown; ignores?: unknown } | null;
+    return !!x && typeof x === 'object' && x.version === 1 && Array.isArray(x.ignores) && x.ignores.every((i) => !!i && typeof i === 'object' && typeof i.product === 'string' && typeof i.group === 'string' && typeof i.reason === 'string');
+  } catch {
+    return false;
+  }
+}
+
 const RAW_PATH = /^\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]*$/;
 const RAW_QUERY = /^[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$/;
 const NUMBER = /^[1-9]\d{0,9}$/;
@@ -2373,6 +2394,13 @@ async function planCall(ctx: Ctx, c: Call): Promise<Plan> {
 
     case 'PUT':
     case 'DELETE': {
+      // "Not a problem" on an adoption report: the team's decisions file on its data branch, a lead's or an admin's to
+      // write (lib/design-lead.ts isDesignLead says the same in Studio). Only that file, only a whole decisions file.
+      if (c.method === 'PUT' && at('contents', AUDIT_IGNORES_PATH) && body.branch === DATA_BRANCH) {
+        if (!(await decidesOnAdoption(ctx, c))) throw new HttpError(403, 'not-allowed', AUDIT_LEADS_ONLY);
+        if (!isDecisionsFile(body.content)) throw notAllowed();
+        return { body: { ...pick(body, ['message', 'content', 'sha', 'branch']), author: await author() } };
+      }
       if (r.length >= 2 && r[0] === 'contents') {
         if (!(await ownsBranch(body.branch))) throw notAllowed();
         await checkPaths([r.slice(1).join('/')]);

@@ -5,6 +5,7 @@
 // earlier runs kept aside. Pure: quality-view.test.ts covers the grouping and the verdict.
 import { deltaPhrase, type Finding } from './quality';
 import { HEALTH_SECTION, type HealthFigure } from './library-health';
+import { pctWord, pieceWord } from './adoption-report';
 
 /** The weather around the lighthouse: clear when nothing needs you, haze when something needs a look, fog when it blocks. */
 export type Mood = 'clear' | 'haze' | 'fog';
@@ -191,6 +192,8 @@ export interface AdoptionRun {
   href: string;
   /** The run before the product moved to Bridge (the self-hosted page knows it): the trend says so instead of a date. */
   baseline?: boolean;
+  /** The group of pieces that moves the components figure most once it uses the library (core SnapshotAudit.topGain). */
+  topGain?: { component: string; gain: number };
 }
 
 export interface ProductAdoption {
@@ -279,3 +282,14 @@ export const pctLabel = (v: number | null) => (v === null ? 'n/a' : `${Math.roun
 
 /** The calm token note: "99 tokens are not in use yet", or that every token is in use. */
 export const unusedLine = (n: number) => (n === 0 ? 'Every token is in use' : `${n} ${n === 1 ? 'token is' : 'tokens are'} not in use yet`);
+
+/**
+ * The biggest gain of a run in one plain line ("Buttons would take it from 13% to 24%."), or null when the run does not
+ * carry one or it would not raise the figure.
+ */
+export function gainLine(run: Pick<AdoptionRun, 'component' | 'topGain'>): string | null {
+  const g = run.topGain;
+  if (!g || run.component === null || g.gain <= run.component) return null;
+  const what = pieceWord(g.component, 2);
+  return `${what.charAt(0).toUpperCase()}${what.slice(1)} would take it from ${pctWord(run.component, g.gain)} to ${pctWord(g.gain, run.component)}.`;
+}

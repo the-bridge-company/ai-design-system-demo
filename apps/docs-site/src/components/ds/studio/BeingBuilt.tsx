@@ -118,6 +118,8 @@ import {
   type BuildData,
 } from "../../../scripts/building-data";
 import { statusTagClass } from '../../../lib/status-tag';
+import { statedOrigin } from '../../../lib/library-origin';
+import { AuditNote } from './LibraryChanges';
 import '../../../styles/explorations-board.css';
 
 const TONE = {
@@ -187,6 +189,16 @@ function useShots(views: readonly Row[]) {
   );
 }
 
+/**
+ * A request sent from a product's adoption report ("Send to developers"): "From the Acme CRM adoption report" under its
+ * title, the report as a link, read from the issue body the list already has (no read per row).
+ */
+function auditNoteOf(v: Row, data: BuildData) {
+  if (isFix(v) || isExploration(v) || v.kind !== 'issue') return undefined;
+  const o = statedOrigin(data.bodies.get(v.number), data.products ?? DEFAULT_PRODUCTS);
+  return o?.kind === 'audit' ? <AuditNote origin={o} /> : undefined;
+}
+
 /** The name a row's requester goes by ("name:Leo" reads Leo), or null. */
 const requesterName = (v: Row, data: BuildData) => (v.requestedBy ? (isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : data.nameOf(v.requestedBy)) : null);
 
@@ -219,6 +231,7 @@ function buildCard(x: Item, c: CardContext) {
       {...common}
       thumb={rowThumb(v, c.data.bodies.get(v.number))}
       title={viewTitle(v)}
+      note={auditNoteOf(v, c.data)}
       href={detailQuery(v)}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
@@ -333,6 +346,7 @@ function Rows({
             href={href}
             onClick={click}
             line={rowLine(v, now, data.nameOf)}
+            note={auditNoteOf(v, data)}
             pill={statusTag(v)}
             className={v.stale ? "bb-stale" : undefined}
           />

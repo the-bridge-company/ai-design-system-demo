@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adoptionFigureInput, adoptionView, productName, productTrend, qualityPillars, qualityVerdict, unusedLine, type AdoptionRun } from './quality-view';
+import { adoptionFigureInput, adoptionView, gainLine, productName, productTrend, qualityPillars, qualityVerdict, unusedLine, type AdoptionRun } from './quality-view';
 import { contrastFinding, type Finding } from './quality';
 import { healthFigures } from './library-health';
 
@@ -157,5 +157,18 @@ describe('product words', () => {
     expect(unusedLine(99)).toBe('99 tokens are not in use yet');
     expect(unusedLine(1)).toBe('1 token is not in use yet');
     expect(unusedLine(0)).toBe('Every token is in use');
+  });
+});
+
+describe('gainLine', () => {
+  it('names the biggest gain in one plain line', () => {
+    expect(gainLine({ component: 13.2, topGain: { component: 'Button', gain: 24.4 } })).toBe('Buttons would take it from 13% to 24%.');
+    expect(gainLine({ component: 13.2, topGain: { component: 'Drawer', gain: 13.4 } })).toBe('Side panels would take it from 13.2% to 13.4%.');
+  });
+
+  it('says nothing without a gain, or when it would not raise the figure', () => {
+    expect(gainLine({ component: 13.2 })).toBeNull();
+    expect(gainLine({ component: null, topGain: { component: 'Button', gain: 24 } })).toBeNull();
+    expect(gainLine({ component: 30, topGain: { component: 'Button', gain: 24 } })).toBeNull();
   });
 });

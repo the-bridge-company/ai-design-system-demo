@@ -112,6 +112,15 @@ jobs:
             git -C "$dir" checkout -q --orphan "$DATA_BRANCH-next"
             git -C "$dir" rm -rfq --ignore-unmatch .
             cp -R "$OUT/." "$dir/"
+            # "Not a problem" decisions are saved from Studio straight to this branch (audit-ignores.json) while the
+            # snapshot runs: carry the branch's latest file forward, and replace only the tip it was read from. A
+            # decision saved after that read makes the push fail and the next attempt carry it.
+            tip=""
+            if git ls-remote --exit-code -q origin "refs/heads/$DATA_BRANCH" > /dev/null; then
+              git fetch -q --depth=1 origin "refs/heads/$DATA_BRANCH" || return 1
+              tip=$(git rev-parse FETCH_HEAD) || return 1
+              if git cat-file -e "$tip:audit-ignores.json" 2> /dev/null; then git show "$tip:audit-ignores.json" > "$dir/audit-ignores.json" || return 1; fi
+            fi
             printf '# bridge-data\n\nBridge snapshot of %s at %s, written by .github/workflows/bridge-data.yml.\nsnapshot.json and activity.json are read by hosted Bridge Studio and Library; audits/ holds the adoption reports.\n' "$GITHUB_REPOSITORY" "${head:0:7}" > "$dir/README.md"
             # Vercel builds three projects from this repository, each from its own root directory. This branch has none
             # of them, so every push made three failed deployments that still bill build time. A vercel.json in each
@@ -122,7 +131,7 @@ jobs:
             done
             git -C "$dir" add -A
             git -C "$dir" commit -qm "bridge data: ${head:0:7}"
-            git -C "$dir" push -q --force origin "HEAD:refs/heads/$DATA_BRANCH"
+            git -C "$dir" push -q --force-with-lease="refs/heads/$DATA_BRANCH:$tip" origin "HEAD:refs/heads/$DATA_BRANCH"
           }
           for i in 1 2 3; do
             if publish; then exit 0; fi

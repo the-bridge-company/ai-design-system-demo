@@ -13,9 +13,10 @@
 // heading opens the lead's own queue (pages/studio/library-review.astro), which takes this group's place later.
 import { useState, type ReactNode } from 'react';
 import { Accordion, AccordionItem, Badge, Icon, Link, SegmentedControl } from '@bridge-ds/react';
-import { Library, Monitor } from 'lucide-react';
+import { Library, Monitor, ShieldCheck } from 'lucide-react';
 import ButtonLink from '../ButtonLink';
 import {
+  auditOriginLine,
   groupByComponent,
   groupByExploration,
   leadGroupingParam,
@@ -31,6 +32,7 @@ import {
   type LeadGrouping,
   type LibraryGroup,
   type LibraryItem,
+  type AuditOrigin,
   type ExplorationOrigin,
   type LibraryOrigin,
   type LibraryTag,
@@ -77,8 +79,30 @@ const setParam = (search: string) => {
   history.replaceState(history.state, '', url);
 };
 
-/** The origin under a row's title: the exploration as a link (opened in place), or the DS lead and why. */
+/**
+ * A change sent from a product's adoption report: "From the Acme CRM adoption report", the report as a link (it opens
+ * inside Bridge). Being built and Changes rows say it under their title, like an exploration's "Needed by".
+ */
+export function AuditNote({ origin }: { origin: AuditOrigin }) {
+  return (
+    <span className="t-ui t-muted bl-origin">
+      <Icon icon={ShieldCheck} size="xs" aria-hidden="true" />
+      <span>
+        {origin.href ? (
+          <>
+            From the <Link href={origin.href}>{origin.product ?? 'product'} adoption report</Link>
+          </>
+        ) : (
+          auditOriginLine(origin)
+        )}
+      </span>
+    </span>
+  );
+}
+
+/** The origin under a row's title: the exploration as a link (opened in place), the adoption report, or the DS lead and why. */
 export function OriginNote({ origin }: { origin: LibraryOrigin }) {
+  if (origin.kind === 'audit') return <AuditNote origin={origin} />;
   if (origin.kind === 'exploration') {
     return (
       <span className="t-ui t-muted bl-origin">

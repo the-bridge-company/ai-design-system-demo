@@ -545,6 +545,56 @@ describe('proxy: what is allowed', () => {
   });
 });
 
+describe('proxy: "Not a problem" on an adoption report', () => {
+  const FILE = `${P}/contents/audit-ignores.json`;
+  const b64 = (x: unknown) => Buffer.from(JSON.stringify(x)).toString('base64');
+  const decisions = b64({ version: 1, ignores: [{ product: 'crm', group: 'piece:Button', reason: 'On purpose', at: '2026-11-11T00:00:00Z', places: [] }] });
+
+  async function as(over: { role?: 'edit' | 'admin'; lead?: boolean } = {}) {
+    const s = setup();
+    const email = 'lee@acme.example';
+    const member = { email, name: 'Lee Park', role: over.role ?? ('edit' as const), ...(over.lead ? { lead: true } : {}), version: 1, addedBy: 'dana', at: new Date(s.deps.now!()).toISOString() };
+    await s.members.put(REPO, member);
+    const cookie = issueSession(member, REPO, SECRET, s.deps.now!()).split(';')[0]!;
+    const call = async (method: string, path: string, body?: unknown) => {
+      const before = s.w.calls.length;
+      const r = await handleContribute(gh(method, path, cookie, body), ENV, s.deps);
+      const sent = s.w.calls.slice(before).filter((c) => c.method === method && c.path === path);
+      return { r, sent: sent[sent.length - 1] };
+    };
+    return { s, call };
+  }
+
+  it('a lead or an admin signed in by email writes the decisions file on bridge-data, as themselves', async () => {
+    for (const who of [{ lead: true }, { role: 'admin' as const }]) {
+      const { call } = await as(who);
+      const put = await call('PUT', FILE, { message: 'Bridge: Buttons is not a problem in crm', content: decisions, sha: 'old', branch: 'bridge-data', committer: { name: 'Boss', email: 'boss@acme.example' } });
+      expect(put.r.status, JSON.stringify(who)).toBe(200);
+      expect(put.sent!.body).toEqual({ message: 'Bridge: Buttons is not a problem in crm', content: decisions, sha: 'old', branch: 'bridge-data', author: { name: 'Lee Park', email: publicEmail(SECRET, REPO, 'lee@acme.example') } });
+    }
+  });
+
+  it('a designer who is not a lead cannot, and nothing reaches GitHub', async () => {
+    const { s, call } = await as();
+    const r = await call('PUT', FILE, { message: 'm', content: decisions, branch: 'bridge-data' });
+    expect(r.r.status).toBe(403);
+    expect((await r.r.json()).message).toMatch(/design lead or an admin/);
+    expect(s.w.calls.filter((c) => c.method !== 'GET')).toEqual([]);
+  });
+
+  it('only that file, only on bridge-data, only a decisions file, never deleted', async () => {
+    const { s, call } = await as({ lead: true });
+    expect((await call('PUT', `${P}/contents/snapshot.json`, { message: 'm', content: decisions, branch: 'bridge-data' })).r.status).toBe(403);
+    expect((await call('PUT', FILE, { message: 'm', content: decisions, branch: 'main' })).r.status).toBe(403);
+    expect((await call('PUT', FILE, { message: 'm', content: decisions })).r.status).toBe(403);
+    for (const content of [b64({ ignores: [] }), b64({ version: 1, ignores: [{ product: 'crm' }] }), Buffer.from('not json').toString('base64'), 42]) {
+      expect((await call('PUT', FILE, { message: 'm', content, branch: 'bridge-data' })).r.status, String(content)).toBe(403);
+    }
+    expect((await call('DELETE', FILE, { message: 'm', sha: 'old', branch: 'bridge-data' })).r.status).toBe(403);
+    expect(s.w.calls.filter((c) => c.method !== 'GET')).toEqual([]);
+  });
+});
+
 describe('proxy: what is denied', () => {
   it('refuses merges, reviews, settings, other repositories, traversal and GraphQL, and never calls GitHub for them', async () => {
     const s = setup();

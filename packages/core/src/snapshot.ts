@@ -4,6 +4,7 @@
 // quota: snapshotSource() serves it as a RepoSource, so loadRepoModel() gives the same model as a live read.
 // Pure: no Node, no DOM.
 
+import { adoptionPieces } from './audit/pieces';
 import type { AuditMetrics, AuditReport } from './audit/types';
 import type { ChangelogReleaseRow } from './changelog-model';
 import type { ContrastPairResult } from './contrast-model';
@@ -46,6 +47,12 @@ export interface SnapshotAudit {
   generatedAt: string;
   target: { path: string; files: number };
   metrics: AuditMetrics;
+  /**
+   * The group of pieces that moves component adoption most once it uses the library (core adoptionPieces): its library
+   * component and the figure after the switch, in percent. Missing when no switch raises the figure, and in snapshots
+   * written before Bridge recorded it.
+   */
+  topGain?: { component: string; gain: number };
 }
 
 /** A contrast pair as computed when the snapshot was written, without the token rows (the model has them). */
@@ -199,7 +206,21 @@ export function snapshotAudit(id: string, report: AuditReport, product?: string)
     generatedAt: report.generatedAt,
     target: { path: report.target.path, files: report.target.files },
     metrics: report.metrics,
+    ...topGainOf(report),
   };
+}
+
+/** The biggest gain of a report (SnapshotAudit.topGain), or nothing. Never throws: an older report may lack parts. */
+function topGainOf(report: AuditReport): { topGain?: { component: string; gain: number } } {
+  try {
+    const now = report.metrics.componentAdoption;
+    if (typeof now !== 'number') return {};
+    let best: { component: string; gain: number } | null = null;
+    for (const g of adoptionPieces(report).groups) if (g.gain !== null && g.gain > now && (!best || g.gain > best.gain)) best = { component: g.component, gain: g.gain };
+    return best ? { topGain: best } : {};
+  } catch {
+    return {};
+  }
 }
 
 /** A safe audit id from a label or path ("apps/admin/src" -> "apps-admin-src"). */

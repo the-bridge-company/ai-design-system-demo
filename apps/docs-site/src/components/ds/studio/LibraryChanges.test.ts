@@ -7,7 +7,7 @@ import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { LibraryChanges, type LibraryChangesProps } from './LibraryChanges';
+import { AuditNote, LibraryChanges, type LibraryChangesProps } from './LibraryChanges';
 import type { LibraryOrigin } from '../../../lib/library-origin';
 
 interface Row {
@@ -81,5 +81,20 @@ describe('LibraryChanges', () => {
     const own = screen.getByRole('button', { name: /Your own changes/ });
     expect(own.getAttribute('aria-expanded')).toBe('false');
     await expectNoAxeViolations(container);
+  });
+});
+
+describe('AuditNote', () => {
+  it('a change sent from an adoption report names the report, as a link to it', async () => {
+    const { container } = render(createElement(AuditNote, { origin: { kind: 'audit', name: 'Buttons', product: 'Acme CRM', productKey: 'crm', href: '/studio/quality/report/?product=crm' } }));
+    expect(container.textContent).toBe('From the Acme CRM adoption report');
+    expect(screen.getByRole('link', { name: 'Acme CRM adoption report' }).getAttribute('href')).toBe('/studio/quality/report/?product=crm');
+    await expectNoAxeViolations(container);
+  });
+
+  it('a product no longer listed: the words, no link', () => {
+    const { container } = render(createElement(AuditNote, { origin: { kind: 'audit', name: 'Buttons', product: null, productKey: 'gone', href: null } }));
+    expect(container.textContent).toBe('From an adoption report');
+    expect(container.querySelector('a')).toBeNull();
   });
 });

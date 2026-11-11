@@ -25,6 +25,7 @@ import { ShieldCheck } from 'lucide-react';
 import { dashboard } from '../../../lib/stats';
 import { BRAND_LABEL, TOKEN_SOURCE_FILES, type Brand } from '../../../lib/tokens';
 import { studioHref } from '../../../lib/team-path';
+import { snapshotAudit } from '@bridge-ds/core';
 
 const s = dashboard();
 const combos: ComboResult[] = s.contrast.byCombo.map((c) => ({ label: `${BRAND_LABEL[c.brand as Brand]} ${c.mode}`, pass: c.pass, total: c.total }));
@@ -36,6 +37,11 @@ const guidance = {
   reviewed: components.filter((c) => c.state === 'ok').length,
   drafted: components.filter((c) => c.state === 'review').length,
   missing: components.filter((c) => c.state === 'missing').length,
+};
+// The biggest gain of a report, as the team page reads it from its snapshot (core snapshotAudit).
+const gainOf = (id: string, report: Parameters<typeof snapshotAudit>[1]) => {
+  const topGain = snapshotAudit(id, report).topGain;
+  return topGain ? { topGain } : {};
 };
 // Adoption: every committed report as a run of its product (the app it belongs to); the latest run of each product
 // leads, the run before the move to Bridge waits under Earlier runs and gives the trend.
@@ -52,6 +58,7 @@ const runs: AdoptionRun[] = groupByApp(loadAudits()).apps.flatMap((g) =>
     ui: e.report.metrics.uiComponentInstances,
     href: auditHref(e.id),
     baseline: e === g.before && g.after !== undefined,
+    ...gainOf(e.id, e.report),
   })),
 );
 const adoption = runs.length ? adoptionView(runs) : null;

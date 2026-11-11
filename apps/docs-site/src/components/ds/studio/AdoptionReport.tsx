@@ -38,7 +38,7 @@ export type Sent = Record<string, { number: number | null; url: string | null }>
 export interface ReportActions {
   /** A design lead or an admin: may send groups to developers and mark them as not a problem. */
   canAct: boolean;
-  /** May keep a "Not a problem" decision (a GitHub sign-in with write access, or the sample team's browser). */
+  /** May keep a "Not a problem" decision: a lead or an admin (signed in with GitHub, or by email through Bridge), or the sample team's browser. */
   canIgnore: boolean;
   /** The sample team: actions stay in this browser. */
   local: boolean;
@@ -699,7 +699,6 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
   const local = isSampleTeam(repo) && !data.canEdit;
   const lead = teamLead(data);
   const canAct = lead || local;
-  const email = Boolean(contributorFor(repo));
   const [ignores, setIgnores] = useState<AuditIgnore[]>(() => []);
   const [sent, setSent] = useState<Sent>({});
   useEffect(() => {
@@ -737,7 +736,8 @@ function Ready({ data, loaded }: { data: TeamData; loaded: TeamAuditReport }) {
   const findRow = (k: string) => [...model.pieces, ...model.colors, ...model.sizes].find((r) => r.key === k);
   const actions: ReportActions = {
     canAct,
-    canIgnore: canAct && (local || !email),
+    // A lead signed in by email keeps the decision through Bridge, like Send to developers (api/contribute).
+    canIgnore: canAct,
     local,
     sent,
     send: async (keys) => {

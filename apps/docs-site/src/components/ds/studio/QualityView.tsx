@@ -265,6 +265,7 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
               return (
                 <li key={p.product} className="ql-row-wrap">
                   {/* The whole row opens the product's report (Fitts): one link, its name read first. */}
+                  {/* bridge-audit-ignore-next-line: the whole product row (name, run, two meters, chevron) is one link target, like the Explorations rows; a DS Link would underline every part of the row */}
                   <a className="ql-product ql-product-link" href={safeUrl(p.latest.href, '#')} aria-label={`${p.name}, open the adoption report`} {...external(p.latest.href)}>
                     <span className="ql-main">
                       <span className="ql-title">{p.name}</span>

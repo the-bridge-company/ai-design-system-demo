@@ -13,7 +13,7 @@ const report: AuditReport = {
   tool: { name: 'bridge', version: '0' },
   generatedAt: '2026-11-10T21:23:31.011Z',
   target: { path: '../acme-crm/src', files: 3, skipped: 0 },
-  designSystem: { packages: ['@demo-ds/react'], components: 50, tokens: 600, modes: [] },
+  designSystem: { packages: ['@acme/design-system'], components: 50, tokens: 600, modes: [] },
   metrics: { tokenAdoption: 72.2, componentAdoption: 13.2, tokenUsages: 10, hardcoded: 3, themeRefs: 0, dsComponentInstances: 10, uiComponentInstances: 26 },
   byCategory: {},
   components: { ds: {}, foreign: {}, native: {}, recreated: [{ name: 'Button', file: 'components/ui/button.tsx', line: 60, instances: 9 }] },
@@ -77,7 +77,7 @@ describe('the report', () => {
     expect(b.detail).toBe('10 buttons, in one part of the app.');
     expect(b.gain).toEqual({ from: '13%', to: '77%' });
     expect(b.source).toEqual({ lead: 'One change covers 9 of them.', text: "Acme CRM keeps its own copy of Button. When the developers point that copy to the library's Button, 9 buttons switch at once, the other 1 one by one." });
-    expect(b.dev.fix).toMatchObject({ file: 'components/ui/button.tsx', before: 'export function Button(…)', after: "export { Button } from '@demo-ds/react'" });
+    expect(b.dev.fix).toMatchObject({ file: 'components/ui/button.tsx', before: 'export function Button(…)', after: "export { Button } from '@acme/design-system'" });
     expect(b.dev.places[9]).toEqual({ file: 'a.tsx', line: 20, what: '<button>', from: 'HTML', href: 'https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/a.tsx#L20' });
     expect(m.pieces.find((r) => r.component === 'Link')!.title).toBe('Links made two different ways');
     expect(m.pieces.find((r) => r.component === 'Menu')!.title).toBe("Menus that copy the library's Menu");

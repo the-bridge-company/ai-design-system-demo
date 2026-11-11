@@ -3,6 +3,7 @@
 // report in its shell (pages/team-shell/quality/report.astro, components/ds/studio/AdoptionReport.tsx); the
 // self-hosted Studio keeps its build-time report pages (quality/audits/<id>/), so this address sends the product to
 // its latest one, and lists them without script.
+import { Link } from '@bridge-ds/react';
 import Layout from '../../../layouts/Layout.astro';
 import StudioHeader from '../../../components/StudioHeader.astro';
 import { groupByApp, loadAudits } from '../../../lib/audits';
@@ -21,7 +22,7 @@ const targets = Object.fromEntries(apps.map((a) => [a.id, a.href]));
     {
       apps.map((a) => (
         <li>
-          <a href={a.href}>{a.name}</a>
+          <Link href={a.href}>{a.name}</Link>
         </li>
       ))
     }

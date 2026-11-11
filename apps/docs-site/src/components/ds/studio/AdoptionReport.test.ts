@@ -18,7 +18,7 @@ const report: AuditReport = {
   tool: { name: 'bridge', version: '0' },
   generatedAt: '2026-11-10T21:23:31.011Z',
   target: { path: '../acme-crm/src', files: 1, skipped: 0 },
-  designSystem: { packages: ['@demo-ds/react'], components: 50, tokens: 600, modes: [] },
+  designSystem: { packages: ['@acme/design-system'], components: 50, tokens: 600, modes: [] },
   metrics: { tokenAdoption: 72.2, componentAdoption: 13.2, tokenUsages: 10, hardcoded: 0, themeRefs: 0, dsComponentInstances: 2, uiComponentInstances: 15 },
   byCategory: {},
   components: { ds: {}, foreign: {}, native: {}, recreated: [{ name: 'Button', file: 'components/ui/button.tsx', line: 60, instances: 8 }] },
@@ -54,7 +54,7 @@ describe('AdoptionReportView', () => {
     expect(screen.getByText(/One change covers 8 of them\./)).toBeTruthy();
     expect(screen.getByText('No picture yet', { selector: '.ar-plate-big span' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /For developers: 9 places in the code/ }));
-    expect(screen.getByText("export { Button } from '@demo-ds/react'")).toBeTruthy();
+    expect(screen.getByText("export { Button } from '@acme/design-system'")).toBeTruthy();
     expect(screen.getAllByRole('link', { name: /Open in GitHub/ })[0]!.getAttribute('href')).toBe('https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/a.tsx#L1');
     expect(screen.getByRole('heading', { name: 'Pieces the library is missing' })).toBeTruthy();
     await expectNoAxeViolations(container);

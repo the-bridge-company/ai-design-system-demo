@@ -11,7 +11,7 @@ vi.mock('./github-session', () => ({
   bridgeReadAuth: async () => null,
   readRepo: () => ({ owner: 'the-bridge-company', repo: 'ai-design-system-demo' }),
 }));
-vi.mock('./contribute-session', () => ({ contributorFor: () => null }));
+vi.mock('./contribute-session', () => ({ holdsContributeSession: () => false }));
 vi.mock('./account-session', () => ({ onAccountChange: () => () => undefined }));
 
 import { installReadPass, readPassOf, resetReadPass, RETRY_MS, WAIT_MS } from './read-pass';

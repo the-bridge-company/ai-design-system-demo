@@ -12,7 +12,7 @@
 // never spends the 60 requests an hour GitHub gives an address. Only a team without a snapshot is read live.
 import { AUDIT_IGNORES_FILE, hasWriteAccess, loadRepoModel, parseAuditIgnores, parseSnapshot, productsOf, withAuditIgnore, type AuditIgnore, type AuditIgnores, type ProductConfig, type SnapshotAudit, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
 import { getToken, hasWorkingToken, studioClient } from './github-session';
-import { contributeBlobs, contributorFor } from './contribute-session';
+import { contributeBlobs, contributorFor, holdsContributeSession } from './contribute-session';
 import { CONTRIB_TOKEN, contributeEligible, isContribAuth } from '../lib/contribute';
 import { loadTeamModel, type SnapshotReader, type TeamModelSource } from './repo-context';
 import { isHosted, pageTeamFromPath } from '../lib/team-path';
@@ -81,7 +81,7 @@ export function teamToken(team: { owner: string; repo: string }): string | null 
   const token = hasWorkingToken() ? getToken() : null;
   if (token || !onLibraryPage()) return token;
   const repo = `${team.owner}/${team.repo}`;
-  return contributeEligible(repo, true) && contributorFor(repo) ? CONTRIB_TOKEN : null;
+  return contributeEligible(repo, true) && holdsContributeSession(repo) ? CONTRIB_TOKEN : null;
 }
 
 /**
@@ -122,7 +122,7 @@ export function teamClient(team: { owner: string; repo: string }): GitHubClient 
  */
 async function seedLibraryMember(team: { owner: string; repo: string }): Promise<void> {
   const repo = `${team.owner}/${team.repo}`;
-  if (!onLibraryPage() || hasWorkingToken() || !contributeEligible(repo, true) || contributorFor(repo)) return;
+  if (!onLibraryPage() || hasWorkingToken() || !contributeEligible(repo, true) || holdsContributeSession(repo)) return;
   try {
     // Reading the account writes the hint of each of its email teams (scripts/account-session.ts).
     const { getAccount } = await import('./account-session');

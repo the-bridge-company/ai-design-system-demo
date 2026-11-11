@@ -406,3 +406,36 @@ export function ignoresAllowlist(file: AuditIgnores, product: string | undefined
 export function withAuditIgnore(file: AuditIgnores, ignore: AuditIgnore): AuditIgnores {
   return { version: 1, ignores: [...file.ignores.filter((x) => !(x.product === ignore.product && x.group === ignore.group)), ignore] };
 }
+
+/** What saveAuditIgnore needs of a GitHub client (core GitHubClient getFile and putFile). */
+export interface AuditIgnoresStore {
+  getFile(path: string, ref?: string): Promise<{ text: string; sha: string } | undefined>;
+  putFile(input: { path: string; content: string; branch: string; message: string; sha?: string | undefined }): Promise<string>;
+}
+
+/**
+ * Keeps one decision in the decisions file of a branch (the bridge-data branch). Read, add, write with the sha read:
+ * when the file changed in between (another decision, or the bridge-data workflow publishing the branch again), GitHub
+ * refuses the write (409, or 422 for a file created meanwhile) and the decision is added again to the file as it is
+ * now, up to `attempts` times. Returns the file written; throws the last refusal.
+ */
+export async function saveAuditIgnore(store: AuditIgnoresStore, ignore: AuditIgnore, opts: { branch: string; message: string; attempts?: number }): Promise<AuditIgnores> {
+  const attempts = Math.max(1, opts.attempts ?? 3);
+  for (let i = 1; ; i++) {
+    const current = await store.getFile(AUDIT_IGNORES_FILE, opts.branch);
+    let file = parseAuditIgnores(null);
+    try {
+      file = parseAuditIgnores(current ? JSON.parse(current.text) : null);
+    } catch {
+      /* a broken file is replaced */
+    }
+    const next = withAuditIgnore(file, ignore);
+    try {
+      await store.putFile({ path: AUDIT_IGNORES_FILE, content: `${JSON.stringify(next, null, 2)}\n`, branch: opts.branch, message: opts.message, sha: current?.sha });
+      return next;
+    } catch (err) {
+      const status = (err as { status?: unknown } | null)?.status;
+      if (i >= attempts || (status !== 409 && status !== 422)) throw err;
+    }
+  }
+}

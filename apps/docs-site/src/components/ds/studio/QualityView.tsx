@@ -12,7 +12,7 @@ import ContrastFailTable, { type ContrastFailRow } from './ContrastFailTable';
 import { QuietScene } from './QuietScene';
 import { ADOPTION_MEANING, type ComboResult, type Finding } from '../../../lib/quality';
 import { HEALTH_SECTION } from '../../../lib/library-health';
-import { pctLabel as formatPct, productTrend, runDate, unusedLine, type AdoptionRun, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
+import { gainLine, pctLabel as formatPct, productTrend, runDate, unusedLine, type AdoptionRun, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
 import type { StatusGroup } from '../../../lib/changes';
 import { statusTagClass } from '../../../lib/status-tag';
@@ -272,6 +272,7 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
                       <span className="ql-detail">
                         {trend ?? 'First audit.'} Run {runDate(p.latest.generatedAt)}.
                       </span>
+                      {gainLine(p.latest) && <span className="ql-detail">{gainLine(p.latest)}</span>}
                     </span>
                     {(['token', 'component'] as const).map((k) => (
                       <div key={k} className="ql-metric">

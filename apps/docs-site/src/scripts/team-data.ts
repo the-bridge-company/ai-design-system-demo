@@ -10,7 +10,7 @@
 // A team's Library (/library/<owner>/<repo>/..., multi-team PR 4a) reads the same way when signed in. Signed out, it
 // reads the published snapshot first, straight from the raw host: no GitHub API call at all, so an anonymous reader
 // never spends the 60 requests an hour GitHub gives an address. Only a team without a snapshot is read live.
-import { AUDIT_IGNORES_FILE, hasWriteAccess, loadRepoModel, parseAuditIgnores, parseSnapshot, productsOf, withAuditIgnore, type AuditIgnore, type AuditIgnores, type ProductConfig, type SnapshotAudit, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
+import { AUDIT_IGNORES_FILE, hasWriteAccess, loadRepoModel, parseAuditIgnores, parseSnapshot, productsOf, saveAuditIgnore, type AuditIgnore, type AuditIgnores, type ProductConfig, type SnapshotAudit, SNAPSHOT_BRANCH, SNAPSHOT_FILE, SNAPSHOT_LLMS_FILE, SNAPSHOT_MAX_BYTES, snapshotSource, storybookUrl, type GitHubClient, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
 import { getToken, hasWorkingToken, studioClient } from './github-session';
 import { contributeBlobs, contributorFor } from './contribute-session';
 import { CONTRIB_TOKEN, contributeEligible, isContribAuth } from '../lib/contribute';
@@ -462,21 +462,15 @@ export async function loadTeamAuditIgnores(): Promise<AuditIgnores> {
 }
 
 /**
- * Keeps one "Not a problem" decision on the team's bridge-data branch (audit-ignores.json), with the writer's own
- * GitHub sign-in: the next audit reads it like an allowlist and publishes it again. Throws GitHub's refusal.
+ * Keeps one "Not a problem" decision on the team's bridge-data branch (audit-ignores.json): with the writer's own
+ * GitHub sign-in, or through Bridge for a lead signed in by email (api/contribute lets a lead or an admin write that one
+ * file). The next audit reads it like an allowlist and publishes it again. A file that changed meanwhile (another
+ * decision, the bridge-data workflow) is read again and the decision added to it (core saveAuditIgnore). Throws
+ * GitHub's refusal.
  */
 export async function saveTeamAuditIgnore(ignore: AuditIgnore): Promise<AuditIgnores> {
   const d = await loadTeamData();
-  const current = await d.client.getFile(AUDIT_IGNORES_FILE, SNAPSHOT_BRANCH);
-  let file = parseAuditIgnores(null);
-  try {
-    file = parseAuditIgnores(current ? JSON.parse(current.text) : null);
-  } catch {
-    /* a broken file is replaced */
-  }
-  const next = withAuditIgnore(file, ignore);
-  await d.client.putFile({ path: AUDIT_IGNORES_FILE, content: `${JSON.stringify(next, null, 2)}\n`, branch: SNAPSHOT_BRANCH, message: `Bridge: ${ignore.title ?? ignore.group} is not a problem in ${ignore.product}`, sha: current?.sha });
-  return next;
+  return saveAuditIgnore(d.client, ignore, { branch: SNAPSHOT_BRANCH, message: `Bridge: ${ignore.title ?? ignore.group} is not a problem in ${ignore.product}` });
 }
 
 /** Forgets this page's load: the next loadTeamData reads the head again (Refresh, Try again). */

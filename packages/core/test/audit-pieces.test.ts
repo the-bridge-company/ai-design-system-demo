@@ -1,8 +1,8 @@
 // The adoption report as whole pieces and value groups (audit/pieces.ts), its trend across runs (carryHistory), the
 // "Not a problem" decisions file and the audit origin of a request.
 import { describe, expect, test } from 'vitest';
-import { adoptionPieces, adoptionValues, carryHistory, findingColor, ignoresAllowlist, parseAuditIgnores, valueMatch, withAuditIgnore, type AuditReport, type ComponentFinding, type FileReport, type StyleFinding } from '../src/audit';
-import { composeRequestIssue, parseRequestIssue, requestOriginOf } from '../src';
+import { adoptionPieces, adoptionValues, carryHistory, findingColor, ignoresAllowlist, parseAuditIgnores, saveAuditIgnore, valueMatch, withAuditIgnore, type AuditIgnore, type AuditIgnoresStore, type AuditReport, type ComponentFinding, type FileReport, type StyleFinding } from '../src/audit';
+import { composeRequestIssue, parseRequestIssue, requestOriginOf, snapshotAudit } from '../src';
 
 const c = (name: string, library: string, suggestion?: string, line = 1, kind: ComponentFinding['kind'] = library === 'native' ? 'native' : library === 'local' ? 'recreated' : 'foreign'): ComponentFinding => ({ line, column: 1, name, kind, library, ...(suggestion ? { suggestion } : {}) });
 const v = (value: string, token?: string, level: 'exact' | 'high' | 'medium' | 'low' = 'exact', line = 1): StyleFinding => ({
@@ -92,6 +92,18 @@ describe('adoptionPieces', () => {
   });
 });
 
+describe('snapshotAudit topGain', () => {
+  test('the group that moves component adoption most, for the Quality row', () => {
+    const best = adoptionPieces(crm).groups.reduce((a, b) => ((b.gain ?? 0) > (a.gain ?? 0) ? b : a));
+    expect(snapshotAudit('crm', crm, 'crm').topGain).toEqual({ component: best.component, gain: best.gain });
+  });
+
+  test('nothing when no switch raises the figure, or the report has no pieces', () => {
+    expect('topGain' in snapshotAudit('x', report([]))).toBe(false);
+    expect('topGain' in snapshotAudit('x', { ...crm, metrics: { ...crm.metrics, componentAdoption: null } })).toBe(false);
+  });
+});
+
 describe('adoptionValues', () => {
   test('values group by the token to use, with how close it is and the color they paint', () => {
     const g = adoptionValues(crm, { categories: ['color'] });
@@ -159,5 +171,63 @@ describe('audit origin of a request', () => {
     const issue = composeRequestIssue({ component: 'Button', kind: 'other', title: 'Switch Acme CRM buttons to the library', summary: 's', changes: [], source: 'studio', origin });
     expect(requestOriginOf(parseRequestIssue(issue.body))).toEqual(origin);
     expect(requestOriginOf({ origin: { kind: 'audit', product: 'crm' } as never })).toBeNull();
+  });
+});
+
+describe('saveAuditIgnore', () => {
+  const decision = (group: string): AuditIgnore => ({ product: 'crm', group, reason: 'On purpose', at: '2026-11-11T00:00:00.000Z', places: [{ file: 'a.tsx', line: 1 }] });
+  const conflict = (status: number) => Object.assign(new Error('changed'), { status });
+  /** A branch with one file whose sha changes on each write; `meanwhile` runs before each write (a write landing in between). */
+  function store(text: string | null, meanwhile: (s: { text: string | null; sha: number }) => void = () => {}) {
+    const state = { text, sha: 1, writes: 0 };
+    const s: AuditIgnoresStore & { state: typeof state } = {
+      state,
+      getFile: async () => (state.text === null ? undefined : { text: state.text, sha: String(state.sha) }),
+      putFile: async (input) => {
+        meanwhile(state);
+        if (input.sha !== (state.text === null ? undefined : String(state.sha))) throw conflict(state.text !== null && !input.sha ? 422 : 409);
+        state.text = input.content;
+        state.sha++;
+        state.writes++;
+        return 'c';
+      },
+    };
+    return s;
+  }
+  const opts = { branch: 'bridge-data', message: 'm' };
+
+  test('adds the decision to the file as it is', async () => {
+    const s = store(JSON.stringify(withAuditIgnore({ version: 1, ignores: [] }, decision('piece:Menu'))));
+    const out = await saveAuditIgnore(s, decision('piece:Button'), opts);
+    expect(out.ignores.map((x) => x.group)).toEqual(['piece:Menu', 'piece:Button']);
+    expect(parseAuditIgnores(JSON.parse(s.state.text!)).ignores).toHaveLength(2);
+  });
+
+  test('a write that lands meanwhile is kept: the decision is added again to the new file', async () => {
+    let once = true;
+    const s = store(null, (st) => {
+      if (!once) return;
+      once = false;
+      st.text = JSON.stringify(withAuditIgnore({ version: 1, ignores: [] }, decision('piece:Menu')));
+      st.sha++;
+    });
+    const out = await saveAuditIgnore(s, decision('piece:Button'), opts);
+    expect(out.ignores.map((x) => x.group)).toEqual(['piece:Menu', 'piece:Button']);
+    expect(s.state.writes).toBe(1);
+  });
+
+  test('gives up after the attempts, and never retries another refusal', async () => {
+    const busy = store('{"version":1,"ignores":[]}', (st) => void st.sha++);
+    await expect(saveAuditIgnore(busy, decision('piece:Button'), { ...opts, attempts: 2 })).rejects.toMatchObject({ status: 409 });
+    let calls = 0;
+    const denied: AuditIgnoresStore = {
+      getFile: async () => undefined,
+      putFile: async () => {
+        calls++;
+        throw conflict(403);
+      },
+    };
+    await expect(saveAuditIgnore(denied, decision('piece:Button'), opts)).rejects.toMatchObject({ status: 403 });
+    expect(calls).toBe(1);
   });
 });

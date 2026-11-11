@@ -34,6 +34,7 @@ import type { FileSignals } from '../../../lib/work-nature';
 import type { Lifecycle } from '../../../lib/change-status';
 import type { LifecycleStage } from '../../../lib/review-state';
 import type { LibraryOrigin } from '../../../lib/library-origin';
+import { AuditNote } from './LibraryChanges';
 import { setPageSummary } from '../../../lib/page-summary';
 import { DEMO_HOME } from '../../../lib/start';
 
@@ -316,6 +317,8 @@ export function BranchesList(p: BranchesListProps) {
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
     return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
   };
+  // A change sent from a product's adoption report says so under its title, the report as a link.
+  const auditNote = (x: Item) => (x.r.origin?.kind === 'audit' ? <AuditNote origin={x.r.origin} /> : undefined);
   // Say each state once: a shipped row says when on its line, so it carries no Shipped tag.
   const shippedSaid = (x: Item) => x.status === 'shipped' && Boolean(x.shippedAt);
   // What waits on you (direction A, 2026-11-09): one pale tray holds it in List and Grid, a pale card body on the Board;
@@ -343,6 +346,7 @@ export function BranchesList(p: BranchesListProps) {
       jira={x.r.jira}
       lineLead={face(x)}
       line={lineOf(x, turn)}
+      note={auditNote(x)}
       href={hrefOf(x.r)}
       linkAttributes={linkOf(x.r)}
       pill={turn || shippedSaid(x) ? null : pillOf(x.status)}
@@ -360,7 +364,7 @@ export function BranchesList(p: BranchesListProps) {
       person={x.person}
       product={opts.product ? productName(x.product) : null}
       pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
-      note={shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : undefined}
+      note={shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : auditNote(x)}
     />
   );
   const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn, pill: !turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);

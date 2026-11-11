@@ -4,7 +4,9 @@
 // DS lead · accessibility fix"). Sources, most precise first:
 //   1. an `origin` field in any Bridge block of the change's body (`<!-- bridge-... {"origin": {...}} -->`, or a
 //      `bridge-origin` block holding the origin itself). Contract: {kind: "exploration", repo, number, product, name},
-//      or {kind: "lead", reason}. Read tolerantly: unknown fields are ignored, a malformed block counts as none.
+//      {kind: "audit", product, run, group, name} (a group of an adoption report sent to developers, core
+//      AuditRequestOrigin: "From the Acme CRM adoption report", linked to the report), or {kind: "lead", reason}. Read
+//      tolerantly: unknown fields are ignored, a malformed block counts as none.
 //   2. the "Needed by" block (core parseNeededBy) a library branch opened for an exploration carries.
 //   3. otherwise the DS lead, with the reason Bridge can tell from what it already knows (a Figma push, a brand, a
 //      contrast or accessibility fix, docs, a token rule), else no reason at all.
@@ -53,7 +55,19 @@ export interface LeadOrigin {
   reason: LeadReason | null;
 }
 
-export type LibraryOrigin = ExplorationOrigin | LeadOrigin;
+/** A group of a product's adoption report sent to developers from Studio (core AuditRequestOrigin). */
+export interface AuditOrigin {
+  kind: 'audit';
+  /** The group's title in the report ("Buttons that look like ours but aren't"). */
+  name: string;
+  /** The product's display name ("Acme CRM"), or null when Bridge does not know it. */
+  product: string | null;
+  productKey: string;
+  /** The product's adoption report in Studio, or null when the product is not one of the team's any more. */
+  href: string | null;
+}
+
+export type LibraryOrigin = ExplorationOrigin | LeadOrigin | AuditOrigin;
 
 const REASON_WORDS: [RegExp, LeadReason][] = [
   [/^(a11y|accessibility|contrast)/i, 'a11y'],
@@ -125,9 +139,24 @@ export function originOfBlock(o: unknown, products: readonly ProductConfig[] = [
       conflict: x.conflict === true,
     };
   }
+  if (kind === 'audit') {
+    const key = str(x.product);
+    if (!key) return null;
+    const known = products.some((p) => p.key === key);
+    return {
+      kind: 'audit',
+      name: str(x.name) ?? '',
+      product: productName(key, products, null),
+      productKey: key,
+      href: known ? studioHref(`quality/report/?product=${encodeURIComponent(key)}`) : null,
+    };
+  }
   if (kind === 'lead' || kind === 'ds-lead' || kind === 'library') return { kind: 'lead', reason: reasonOf(x.reason) };
   return null;
 }
+
+/** "From the Acme CRM adoption report", "From an adoption report". */
+export const auditOriginLine = (o: Pick<AuditOrigin, 'product'>): string => (o.product ? `From the ${o.product} adoption report` : 'From an adoption report');
 
 /** The origin a change's body states: an `origin` in a Bridge block, else its "Needed by" block. Null: not stated. */
 export function statedOrigin(body: string | null | undefined, products: readonly ProductConfig[] = []): LibraryOrigin | null {
@@ -198,6 +227,7 @@ export function libraryOrigin(c: ChangeFacts, products: readonly ProductConfig[]
 /** "Needed by Order fulfilment timeline · Acme Prints", "From the DS lead · new brand", "From the DS lead". */
 export function originLine(o: LibraryOrigin): string {
   if (o.kind === 'exploration') return `Needed by ${o.name}${o.product ? ` · ${o.product}` : ''}`;
+  if (o.kind === 'audit') return auditOriginLine(o);
   return o.reason ? `From the DS lead · ${LEAD_REASON_LABEL[o.reason]}` : 'From the DS lead';
 }
 
@@ -229,11 +259,10 @@ export function withOriginFilter(search: string, f: OriginFilter): string {
 export const passesOrigin = (o: LibraryOrigin, f: OriginFilter) => f === 'all' || (f === 'explorations' ? o.kind === 'exploration' : o.kind === 'lead');
 
 export function originCounts(origins: readonly LibraryOrigin[]): Record<OriginFilter, number> {
-  const explorations = origins.filter((o) => o.kind === 'exploration').length;
   return {
     all: origins.length,
-    explorations,
-    lead: origins.length - explorations,
+    explorations: origins.filter((o) => o.kind === 'exploration').length,
+    lead: origins.filter((o) => o.kind === 'lead').length,
   };
 }
 

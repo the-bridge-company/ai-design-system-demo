@@ -260,6 +260,8 @@ export function requestBrief(r: ComponentChangeRequest, ctx: { issue: number; is
     ...(exploration
       ? [`- This request is part of the exploration ${exploration}.`, ...explorationRules(exploration), `- Reference the request in the commit message ("Refs #${ctx.issue}"). Shipping the exploration closes it.`]
       : [`- Work on a branch named agent/request-${ctx.issue}. The pull request body must contain "Closes #${ctx.issue}".`]),
+    // Sent from a product's adoption report: the pull request says so too, so Bridge's Changes row names the report.
+    ...(r.origin?.kind === 'audit' ? [`- Also put this line in the pull request body, unchanged (Bridge shows where the change comes from): <!-- bridge-origin ${JSON.stringify(r.origin).replace(/>/g, '\\u003e')} -->`] : []),
     '- If the request is unclear or conflicts with the guidance, comment on the issue instead of guessing.',
   ].join('\n');
 }

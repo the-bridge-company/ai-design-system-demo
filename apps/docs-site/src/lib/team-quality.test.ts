@@ -136,6 +136,12 @@ describe('adoption from the snapshot audits', () => {
     expect(pctLabel(null)).toBe('n/a');
   });
 
+  it("carries the run's biggest gain to the row when the snapshot has it", () => {
+    const web = { ...audit('web', 30, 40, 'Web app, main'), topGain: { component: 'Button', gain: 90 } };
+    const q = teamQuality({ model: withProducts(folders.config.products.filter((p) => p.key !== 'site')), ...team, audits: [web, audit('admin', 10, 10)] });
+    expect(q.adoption!.products.map((p) => p.latest.topGain ?? null)).toEqual([null, { component: 'Button', gain: 90 }]);
+  });
+
   it('the runs of this snapshot lead; earlier runs of a listed product wait under earlier runs, other apps are dropped', () => {
     const run = (id: string, path: string, at: string, ds: number, ui: number, label: string): SnapshotAudit => ({
       ...audit(id, ds, ui, label),

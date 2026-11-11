@@ -181,6 +181,35 @@
   min-width: 0;
 }
 
+/* Where a change comes from, under a row's title (components/ds/studio/LibraryChanges OriginNote and AuditNote): an
+   exploration's "Needed by", the DS lead, or "From the Acme CRM adoption report". Changes and Being built rows. */
+.bl-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.bl-origin > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On a card (the grid), the origin sits under the title and may wrap: a card is narrow. */
+.sh-card-note {
+  display: flex;
+  min-width: 0;
+}
+
+.sh-card-note .bl-origin {
+  align-items: flex-start;
+}
+
+.sh-card-note .bl-origin > span {
+  white-space: normal;
+}
+
 /* One line (the home's Needs you, BranchRow compact): "Title · who asks" ellipsed, its one status right after it (read
    as a label, not a button), the row button alone at the end. */
 .sh-row-compact .sh-row-text {
@@ -696,6 +725,15 @@
   .sh-row-sub {
     flex-wrap: wrap;
     row-gap: var(--space-1);
+  }
+
+  /* On a phone the origin wraps rather than hiding the exploration's or the product's name. */
+  .bl-origin {
+    align-items: flex-start;
+  }
+
+  .bl-origin > span {
+    white-space: normal;
   }
 
   .sh-more .sh-more-btn,

@@ -276,6 +276,7 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
           ui: a.metrics.uiComponentInstances,
           href: reportHref(a, p),
           ...(isBaselineRun(a) ? { baseline: true } : {}),
+          ...(typeof a.topGain?.component === 'string' && typeof a.topGain.gain === 'number' ? { topGain: { component: a.topGain.component, gain: a.topGain.gain } } : {}),
         })),
         input.snapshotAt ? { liveSince: input.snapshotAt } : {},
       )

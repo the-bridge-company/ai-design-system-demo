@@ -2,8 +2,9 @@
 // "Needed by" block, else the DS lead with the reason Bridge can tell. The lead groups them by component or by
 // exploration.
 import { describe, expect, it } from 'vitest';
-import { withNeededBy, type NeededBy, type ProductConfig } from '@bridge-ds/core';
+import { composeRequestIssue, requestBrief, withNeededBy, type NeededBy, type ProductConfig } from '@bridge-ds/core';
 import {
+  auditOriginLine,
   changeOf,
   componentOf,
   groupByComponent,
@@ -21,6 +22,7 @@ import {
   type LibraryOrigin,
   type LibraryTag,
 } from './library-origin';
+import { studioHref } from './team-path';
 
 const PRODUCTS: ProductConfig[] = [
   { key: 'library', name: 'Library', default: true },
@@ -140,6 +142,32 @@ describe('statedOrigin', () => {
     )!;
     expect(originLine(o)).toBe('Needed by Order fulfilment timeline · Acme Prints');
     expect(originLine(o)).not.toMatch(/#|\d|acme\//);
+  });
+});
+
+describe('a request sent from an adoption report', () => {
+  const origin = { kind: 'audit' as const, product: 'crm', run: 'acme-crm', group: 'piece:Button', name: "Buttons that look like ours but aren't", url: 'https://bridge.example/studio/acme/design/quality/report/?product=crm' };
+  const request = { component: 'Button', kind: 'other' as const, title: 'Switch Acme CRM buttons to the library', summary: 's', changes: [], source: 'studio' as const, origin };
+
+  it('reads from the request issue: from the product adoption report, linked to the report in Studio', () => {
+    const o = statedOrigin(composeRequestIssue(request).body, PRODUCTS);
+    expect(o).toEqual({ kind: 'audit', name: "Buttons that look like ours but aren't", product: 'Acme CRM', productKey: 'crm', href: studioHref('quality/report/?product=crm') });
+    expect(originLine(o!)).toBe('From the Acme CRM adoption report');
+  });
+
+  it('reads from the pull request that builds it (the brief asks for the origin line)', () => {
+    const brief = requestBrief(request, { issue: 12 });
+    const line = /<!-- bridge-origin .* -->/.exec(brief)![0];
+    expect(statedOrigin(`Closes #12\n\n${line}`, PRODUCTS)?.kind).toBe('audit');
+    expect(requestBrief({ ...request, origin: undefined }, { issue: 12 })).not.toContain('bridge-origin');
+  });
+
+  it('a product no longer listed keeps the words without a link; neither an exploration nor the DS lead', () => {
+    const o = statedOrigin(composeRequestIssue({ ...request, origin: { ...origin, product: 'gone' } }).body, PRODUCTS)!;
+    expect(o).toMatchObject({ kind: 'audit', product: null, href: null });
+    expect(auditOriginLine(o as { product: string | null })).toBe('From an adoption report');
+    expect(originCounts([o])).toEqual({ all: 1, explorations: 0, lead: 0 });
+    expect(passesOrigin(o, 'lead')).toBe(false);
   });
 });
 

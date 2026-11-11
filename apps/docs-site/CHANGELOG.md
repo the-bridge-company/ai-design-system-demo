@@ -1,5 +1,36 @@
 # @bridge-ds/docs-site
 
+## 0.32.1
+
+### Patch Changes
+
+- 0493779: Adoption report: each group shows the product's own pieces next to the library's, not a whole screen.
+
+  - Core: a report lists the close pictures it wants (`crops`: one per group of pieces, with the screen that holds most of it, `pieceCrops`, `cropSlug`, `MAX_CROPS`); `withScreens` writes them with the screens. New `AuditCrop` type and `crops` in the report schema.
+  - CLI: `bridge snapshot` writes each product report's `crops`.
+  - scripts/preview-shots.mjs `screens` crops a few real instances of each group from the live product (shadcn/ui `data-slot` first, ARIA roles, then plain HTML), opens dialogs, menus, side panels, popovers and tooltips with their own trigger or a button that sends nothing, closes them with Escape, and keeps the crops in bridge-shots (`audits/<id>/piece-<name>.webp`) with the same recapture rules as the screens.
+  - Studio: the "In <product>" side shows that crop in the same box and at the same size as the library's sample, with "See it on the Contacts screen" for the whole screen in a dialog, and says plainly when there is no crop.
+
+- dea11b8: Library review, List: each family's select-all checkbox is always shown.
+- 5052502: Studio: a developer's quiet home leads with what they build ("What are you building today?", See what you build), and the counts of their library changes open Being built on them at that status. Settings > Members lists the same team for everyone (the sample team's developer saw 2 people), only the sample team's fictional people on the sample team, and one role word: an email member who reviews explorations is a "Reviewer", as in the invite dialog. Each person's line says what they do (product manager of a product, reviews designs, explores designs, builds the code). The sample developer is drawn like the rest of the team. The Explorations badge shows on every Studio page, read once when nothing is remembered yet, and the side nav keeps one product order on every page (opening a product no longer moves it).
+- 6282c91: Quality: an adoption row's hover fills the whole row up to the divider.
+- 5052502: Sample team journeys, one source of truth per fact.
+
+  - Core: "Ask someone else to review" can ask reviewers who joined by email, by name (`toNames`): they read it in Studio and nobody is mentioned on GitHub for them. A decision keeps those names (`Decision.toNames`).
+  - Studio asks one set of reviewers everywhere (lib/design-lead `reviewAsk`, the same rule as the name the page shows): on a team whose reviewers joined by email, Done exploring, a designer's answer and Ask someone else name them and mention nobody on GitHub; the toast after Done exploring names the lead ("Sent to Dana, with 2 pieces for the library").
+  - Who explored an exploration is one rule (lib/author `explorerName`): Library review and its Map name the person who explored it, not who filed a library change it needs.
+  - Home lists each exploration once (a lead's row and a product manager's row for the same exploration were both shown), so its rows and the Explorations badge agree.
+  - The Library on the sample team honors See it as (?as=) and the stored pick, shows it in the banner, and opens edit mode (?edit=1) from a direct link for who may edit. A Can view member never gets edit mode.
+  - A signed-out visitor of the hosted site's own Studio goes to the sample team: Bridge's real products are never shown to the public.
+  - The onboarding's sign-in step shows an email session as "Signed in as dana@acme.example" under "Sign in".
+  - Adoption report: Send to developers confirms what was sent (a toast with a link to the request, or to Being built for several) and each group says "Sent to developers"; the trend line says it starts when the product's code changes.
+  - Check the build has one h1; a product manager's Needs changes stays enabled and asks for the note when it is empty.
+  - The Library's "Figma is ahead" names who builds by their name ("Malik"), never their login. The played developer's account line says his role. The invite dialog says what is true for everyone: they sign in with the email, GitHub only to approve library changes there.
+
+- Updated dependencies [0493779]
+- Updated dependencies [5052502]
+  - @bridge-ds/core@0.34.0
+
 ## 0.32.0
 
 ### Minor Changes

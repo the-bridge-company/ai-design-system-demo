@@ -54,11 +54,13 @@ Create **Bridge Direct**.
 2. Fill in:
    - **GitHub App name**: `Bridge Direct` (must be unique on GitHub; add your name if it is taken).
      People see it on the GitHub consent screen.
-   - **Homepage URL**: `https://bridge.floriangouloubi.com`
-   - **Callback URLs**: `https://bridge.floriangouloubi.com/studio/auth/callback/` (with the final slash; previews
-     and local servers are forwarded through it, see below) and `https://bridge.floriangouloubi.com/oauth/github`
-     (the MCP server's sign-in, docs/MCP-SERVER.md).
-   - **Setup URL**: `https://bridge.floriangouloubi.com/studio/auth/access/`, with **Redirect on update** checked.
+   - **Homepage URL**: `https://bridgedesignsystem.com`
+   - **Callback URLs**: `https://bridgedesignsystem.com/studio/auth/callback/` (with the final slash; previews
+     and local servers are forwarded through it, see below) and `https://bridgedesignsystem.com/oauth/github`
+     (the MCP server's sign-in, docs/MCP-SERVER.md). The hosted Bridge also keeps
+     `https://bridge.floriangouloubi.com/oauth/github` and `https://bridge.floriangouloubi.com/studio/auth/callback/`
+     registered: its former address still answers for installs made with it (apps/docs-site/api/_lib/site-origin.ts).
+   - **Setup URL**: `https://bridgedesignsystem.com/studio/auth/access/`, with **Redirect on update** checked.
      After **Install Bridge** or **Give Bridge access**, GitHub sends the guided window there and it tells Studio.
    - **Expire user authorization tokens**: keep it checked. Tokens last 8 hours and Studio renews them silently.
    - **Request user authorization (OAuth) during installation**: leave unchecked. Checked, GitHub drops the Setup URL
@@ -138,7 +140,7 @@ suggestions; write access lets them start changes in direct mode.
 
 ## A team's Bridge (hosted)
 
-The hosted site opens any repository at `https://bridge.floriangouloubi.com/studio/<owner>/<repo>/`. No Bridge account
+The hosted site opens any repository at `https://bridgedesignsystem.com/studio/<owner>/<repo>/`. No Bridge account
 and no Bridge database: GitHub decides who gets in.
 
 1. An admin of the repository installs **Bridge** on it once:

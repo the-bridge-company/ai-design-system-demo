@@ -30,7 +30,7 @@ const sections = [
 const RUNS = [
   { piece: 'Bridge Studio pages', where: 'Static pages on Vercel’s global network, run in the person’s browser', talks: 'GitHub’s API directly, with the person’s own GitHub sign-in; Bridge’s functions' },
   { piece: 'Bridge functions (/api, /mcp, /oauth)', where: 'Vercel Functions in Frankfurt, Germany', talks: 'Upstash Redis (records), GitHub, Resend (sign-in and invite emails), Brevo (work notification emails), Vercel Blob (daily backup, screenshots of private explorations)' },
-  { piece: 'Figma plugin', where: 'Figma desktop, on the designer’s computer', talks: 'api.github.com and bridge.floriangouloubi.com only' },
+  { piece: 'Figma plugin', where: 'Figma desktop, on the designer’s computer', talks: 'api.github.com and bridgedesignsystem.com only (plus bridge.floriangouloubi.com, its former address, for copies installed before the move)' },
   { piece: 'Connector for your AI assistant', where: 'A Vercel Function at /mcp', talks: 'GitHub, as the person who connected it; answers your assistant' },
   { piece: 'CLI and local MCP server', where: 'Your own machine, from npm', talks: 'GitHub with a token you pass, or files on disk. No Bridge server' },
   { piece: 'The AI model', where: 'Your company’s own AI account (Claude or another MCP client)', talks: 'Bridge’s connector, when someone connects it' },
@@ -192,7 +192,7 @@ const STORED = [
   <section aria-labelledby="network">
     <h2 id="network">Network and APIs</h2>
     <ul>
-      <li>The Figma plugin may only reach <code>https://api.github.com</code> and <code>https://bridge.floriangouloubi.com</code>. Figma enforces that list.</li>
+      <li>The Figma plugin may only reach <code>https://api.github.com</code>, <code>https://bridgedesignsystem.com</code> and <code>https://bridge.floriangouloubi.com</code> (Bridge’s former address, kept so copies installed before the move keep working). Figma enforces that list.</li>
       <li>Studio pages send a strict Content-Security-Policy: scripts from the site itself (and Vercel’s preview toolbar) only, no embedding of Bridge in other sites, no plugins. Pages may call GitHub’s API and, only when a person adds their own key for drafting docs, Anthropic’s API.</li>
       <li>Every Bridge function answers with <code>Cache-Control: no-store</code>. Calls that change something must come from a page of the site itself (Origin checked), except the ones the Figma plugin and AI assistants make, which carry a token instead of a cookie.</li>
       <li>The connector at <code>/mcp</code> only answers with a Bridge token, issued through OAuth 2.1 with PKCE (S256), for one person, one team and one app. Tokens travel in headers and bodies, never in a URL.</li>

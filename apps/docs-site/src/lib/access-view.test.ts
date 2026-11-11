@@ -33,7 +33,7 @@ import {
   whoCanDoWhat,
 } from './access-view';
 
-const LINK = 'https://bridge.floriangouloubi.com/studio/acme/design-system/';
+const LINK = 'https://bridgedesignsystem.com/studio/acme/design-system/';
 const base = { owner: 'acme', repo: 'design-system', login: 'ann', link: LINK };
 const ALL: RepoAccessState[] = ['anonymous-public', 'anonymous-unknown', 'no-access', 'not-installed', 'outside-contributor', 'reader', 'writer', 'admin'];
 
@@ -99,7 +99,7 @@ describe('the messages people copy', () => {
   });
 
   it('builds the team link from the site and the Studio root', () => {
-    expect(teamLink('https://bridge.floriangouloubi.com/', '/studio/acme/ds/')).toBe('https://bridge.floriangouloubi.com/studio/acme/ds/');
+    expect(teamLink('https://bridgedesignsystem.com/', '/studio/acme/ds/')).toBe('https://bridgedesignsystem.com/studio/acme/ds/');
     expect(teamLink('http://localhost:4321', 'studio/')).toBe('http://localhost:4321/studio/');
     expect(manageAccessUrl('acme', 'ds')).toBe('https://github.com/acme/ds/settings/access');
   });

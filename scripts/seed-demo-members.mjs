@@ -6,13 +6,13 @@
 // api/contribute action `seed-demo`); this script only asks, with a GitHub token that administers the sample team's
 // repository (the GitHub CLI's, or GH_TOKEN). No storage secret leaves the site.
 //
-//   node scripts/seed-demo-members.mjs [--base https://bridge.floriangouloubi.com]
+//   node scripts/seed-demo-members.mjs [--base https://bridgedesignsystem.com]
 import { execFileSync } from 'node:child_process';
 
 export const TEAM = 'acme-design-demo/bridge-demo-ds';
 
 function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com' };
+  const o = { base: 'https://bridgedesignsystem.com' };
   for (let i = 0; i < argv.length; i++) if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
   return o;
 }

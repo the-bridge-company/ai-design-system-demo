@@ -294,10 +294,10 @@ Enterprise) as a custom connector, and that Claude does the fix through Bridge's
 plan. Bridge runs no model and holds no Anthropic key. Anthropic does not let third-party apps use a Claude
 subscription for their own calls, so it goes this way round: Claude calls Bridge.
 
-- **URL:** `https://bridge.floriangouloubi.com/mcp` (any Bridge site: `<site>/mcp`). In Claude: Settings, Connectors,
+- **URL:** `https://bridgedesignsystem.com/mcp` (any Bridge site: `<site>/mcp`). In Claude: Settings, Connectors,
   Add custom connector, name it Bridge, paste the URL, then Connect and sign in with Bridge. On Team and Enterprise an
   Owner adds it for the organization first; each person then connects with their own Bridge sign-in. Claude Code:
-  `claude mcp add --transport http bridge https://bridge.floriangouloubi.com/mcp`, then `/mcp` to sign in.
+  `claude mcp add --transport http bridge https://bridgedesignsystem.com/mcp`, then `/mcp` to sign in.
 - **What it is:** every tool of the Bridge MCP server (`packages/mcp`, the same as `npx @bridge-ds/mcp`) over Streamable
   HTTP, stateless, JSON answers (`apps/docs-site/api/mcp`, `handleHttp` in `packages/mcp/src/lib.ts`). It works on the
   repository of the team picked at sign-in, with that person's GitHub App user token, so every write is theirs and
@@ -368,10 +368,10 @@ the account must be able to read the repository. CORS is open. Studio sends its 
 `{ "error", "message" }`, the message to show as is.
 
 ```http
-GET https://bridge.floriangouloubi.com/api/fix-sessions?repo=acme/design&component=TextInput   // the plugin's path
-GET https://bridge.floriangouloubi.com/api/mcp?view=session&repo=acme/design&component=TextInput  // the same answer
+GET https://bridgedesignsystem.com/api/fix-sessions?repo=acme/design&component=TextInput   // the plugin's path
+GET https://bridgedesignsystem.com/api/mcp?view=session&repo=acme/design&component=TextInput  // the same answer
 200 { "session": SessionView }
-GET https://bridge.floriangouloubi.com/api/mcp?view=sessions&repo=acme/design
+GET https://bridgedesignsystem.com/api/mcp?view=sessions&repo=acme/design
 200 { "sessions": SessionView[] }      // the last 7 days, newest first, at most 20
 401 signin, 403 forbidden (not on this team), 400 bad_request
 ```

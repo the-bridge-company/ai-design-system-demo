@@ -55,7 +55,7 @@ const TEMPLATE = 'https://bridge-admin-git-{branch}-peterbonos-projects.vercel.a
 const build = {
   owner: 'the-bridge-company',
   repo: 'ai-design-system-demo',
-  studio: 'https://bridge.floriangouloubi.com',
+  studio: 'https://bridgedesignsystem.com',
   production: 'https://bridge-demo.floriangouloubi.com',
   preview: TEMPLATE,
   deployEnv: null,
@@ -142,10 +142,10 @@ describe('changeMode', () => {
 
 describe('links', () => {
   it('serves the shipped tokens from production Studio and links back to the change', () => {
-    expect(liveTokensUrl(build)).toBe('https://bridge.floriangouloubi.com/tokens.css');
+    expect(liveTokensUrl(build)).toBe('https://bridgedesignsystem.com/tokens.css');
     expect(liveTokensUrl({ studio: 'https://x.example/docs/' })).toBe('https://x.example/docs/tokens.css');
     expect(liveTokensUrl({ studio: null })).toBeNull();
-    expect(studioChangeUrl(build, 101)).toBe('https://bridge.floriangouloubi.com/studio/changes/?pr=101');
+    expect(studioChangeUrl(build, 101)).toBe('https://bridgedesignsystem.com/studio/changes/?pr=101');
     expect(studioChangeUrl({ ...build, studio: null }, 101)).toBe('https://github.com/the-bridge-company/ai-design-system-demo/pull/101');
   });
 

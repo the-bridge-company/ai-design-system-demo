@@ -79,7 +79,7 @@ describe('githubReads', () => {
   });
 
   it('defaults to production Bridge, the design system as team (the build repository without one)', () => {
-    expect(DEFAULT_PROXY).toBe('https://bridge.floriangouloubi.com');
+    expect(DEFAULT_PROXY).toBe('https://bridgedesignsystem.com');
     expect(readsOf({ owner: 'acme', repo: 'shop', ds: TEAM })).toBeTruthy();
   });
 });

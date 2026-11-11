@@ -20,6 +20,7 @@
 // Studio out. When it expires the plugin asks to sign in with Bridge again. Nothing is logged.
 
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { requestSiteOrigin } from '../_lib/site-origin.js';
 import { b64url, fail, GITHUB_DOWN, HttpError, json, parseRepo, readBody, sameOrigin, sha256, type FetchLike } from '../_lib/http.js';
 import { redisRest, type Redis } from '../_lib/redis.js';
 import { seal, sealingKey, unseal, type Sealed } from '../_lib/sealed.js';
@@ -180,17 +181,9 @@ export async function pollLink(redis: Redis, body: Record<string, unknown>, now:
   return { status: 'approved' as const, repo: l.repo, name: l.name, token, expiresAt: l.tokenExpiresAt, login: l.login, defaultBranch: l.defaultBranch };
 }
 
-function siteFrom(req: Request, publicUrl: string | undefined): string {
-  const pub = publicUrl?.trim();
-  if (pub) {
-    try {
-      return new URL(pub).origin;
-    } catch {
-      /* the request's own origin */
-    }
-  }
-  return new URL(req.url).origin;
-}
+/** The origin of the Studio link: the host the plugin called when it is one of Bridge's own (an installed plugin only
+ * opens links on the address it was built with; that page then redirects to the current one), else PUBLIC_SITE_URL. */
+const siteFrom = (req: Request, publicUrl: string | undefined): string => requestSiteOrigin(req, publicUrl);
 
 export async function handleLink(req: Request, env: LinkEnv, deps: LinkDeps): Promise<Response> {
   const cors = (r: Response, open: boolean) => {

@@ -3,7 +3,7 @@
 // state is not shown, or the page logs an error of its own. Run by .github/workflows/demo-smoke.yml against the
 // production site after each deploy, on a schedule, or by hand:
 //
-//   node scripts/demo-smoke.mjs [--base https://bridge.floriangouloubi.com] [--shots <dir>]
+//   node scripts/demo-smoke.mjs [--base https://bridgedesignsystem.com] [--shots <dir>]
 //
 // Expected: each product of acme-design-demo/bridge-demo-ds (Acme Prints and Acme CRM) lists every exploration of its
 // design copy, in its state (exploring, waiting for lead, check the build, shipped). Browser: playwright-core with the
@@ -73,7 +73,7 @@ export function cardProblems(cards, product) {
 }
 
 function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com', shots: null };
+  const o = { base: 'https://bridgedesignsystem.com', shots: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
     else if (argv[i] === '--shots') o.shots = resolve(argv[++i]);

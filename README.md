@@ -38,12 +38,12 @@ Maintained by Florian Gouloubi. Licensed MIT.
 
 | App | URL | What it is |
 | --- | --- | --- |
-| Bridge | <https://bridge.floriangouloubi.com> | Docs and Studio: token explorer, component docs, Reviews, History, Branches |
+| Bridge | <https://bridgedesignsystem.com> | Docs and Studio: token explorer, component docs, Reviews, History, Branches |
 | Admin demo | <https://bridge-demo.floriangouloubi.com> | The react-admin e-commerce back office, migrated from MUI to Bridge |
 | Storybook | <https://bridge-storybook.floriangouloubi.com> | Component workbench and visual test fixtures |
 
 All three deploy from `main` on Vercel. Every pull request also gets a per-branch deploy of each, linked in the PR
-comment and on the [Branches](https://bridge.floriangouloubi.com/studio/branches/) page.
+comment and on the [Branches](https://bridgedesignsystem.com/studio/branches/) page.
 
 ## Install
 

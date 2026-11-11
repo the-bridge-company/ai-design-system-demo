@@ -23,7 +23,7 @@ const toggleDefault = (f: MeasuredSpecsFile) => f.stories.find((s) => s.id === '
 describe('validateFigmaFixes', () => {
   it('accepts every kind', () => {
     const file = {
-      $schema: 'https://bridge.floriangouloubi.com/figma-fixes.schema.json',
+      $schema: 'https://bridgedesignsystem.com/figma-fixes.schema.json',
       version: 1,
       fixes: [
         { id: 'knob-radius', kind: 'part', component: 'Toggle', part: '.cds--toggle__switch', set: { cornerRadius: 'full', fill: 'cds.support.success' }, width: 48, height: 'fixed', ...base },

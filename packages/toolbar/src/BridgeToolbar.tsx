@@ -18,7 +18,7 @@ export interface BridgeToolbarProps {
   preview?: string | null;
   /**
    * Bridge's origin, whose read proxy serves the toolbar's GitHub reads (no limit of 60 an hour per visitor). Default
-   * production Bridge (https://bridge.floriangouloubi.com); null reads GitHub directly. GitHub directly anyway when
+   * production Bridge (https://bridgedesignsystem.com); null reads GitHub directly. GitHub directly anyway when
    * Bridge refuses or cannot be reached.
    */
   proxy?: string | null;

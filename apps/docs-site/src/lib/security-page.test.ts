@@ -61,7 +61,7 @@ describe('Security and data page: the numbers come from the code', () => {
 
   it('lists exactly the domains the Figma plugin may reach', () => {
     for (const d of manifest.networkAccess.allowedDomains) expect(page).toContain(`<code>${d}</code>`);
-    expect(manifest.networkAccess.allowedDomains).toHaveLength(2);
+    expect(manifest.networkAccess.allowedDomains).toHaveLength(3);
   });
 
   it('says what the hosted connector and the hand-off do', () => {

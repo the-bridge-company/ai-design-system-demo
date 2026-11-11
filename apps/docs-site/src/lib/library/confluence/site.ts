@@ -8,7 +8,7 @@ import { confluenceKey, toConfluenceHtml, toMarkdown, type DocPage, type RenderO
 import { zipFiles } from './zip';
 
 /** The public address links point to: the build's site (a preview's own URL), else the production domain. */
-export const PUBLIC_ORIGIN = 'https://bridge.floriangouloubi.com';
+export const PUBLIC_ORIGIN = 'https://bridgedesignsystem.com';
 
 let cached: { pages: DocPage[]; options: RenderOptions } | undefined;
 

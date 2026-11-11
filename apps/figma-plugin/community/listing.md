@@ -43,7 +43,7 @@ Privacy
 - DS Bridge only contacts api.github.com. No analytics, no server of ours, nothing else.
 
 Free and source available (FSL-1.1-MIT). Docs, source and issues: https://github.com/the-bridge-company/ai-design-system-demo
-See it live: https://bridge.floriangouloubi.com
+See it live: https://bridgedesignsystem.com
 ```
 
 ## Tags (12 of 12)
@@ -60,7 +60,7 @@ https://github.com/the-bridge-company/ai-design-system-demo/issues
 
 ## Links (description footer, profile or "Learn more" field when offered)
 
-- Live site: https://bridge.floriangouloubi.com
+- Live site: https://bridgedesignsystem.com
 - Repository: https://github.com/the-bridge-company/ai-design-system-demo
 - Plugin docs: https://github.com/the-bridge-company/ai-design-system-demo/tree/main/apps/figma-plugin
 

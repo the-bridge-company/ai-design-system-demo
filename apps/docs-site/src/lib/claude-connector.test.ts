@@ -11,10 +11,10 @@ describe('Settings, Claude', () => {
   });
 
   it('gives the address and the developer snippets, with no secret in them', () => {
-    const url = connectorUrl('https://bridge.floriangouloubi.com/');
-    expect(url).toBe('https://bridge.floriangouloubi.com/mcp');
+    const url = connectorUrl('https://bridgedesignsystem.com/');
+    expect(url).toBe('https://bridgedesignsystem.com/mcp');
     const s = developerSnippets(url, 'acme/design');
-    expect(s.claudeCode).toBe('claude mcp add --transport http bridge https://bridge.floriangouloubi.com/mcp');
+    expect(s.claudeCode).toBe('claude mcp add --transport http bridge https://bridgedesignsystem.com/mcp');
     expect(JSON.parse(s.local).mcpServers.bridge.args).toEqual(['-y', '@bridge-ds/mcp', '--repo', 'acme/design']);
     expect(W.step1).toContain('Add custom connector');
     expect(W.step1).toContain('name it Bridge');

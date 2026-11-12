@@ -1,4 +1,4 @@
-// A Field Guide scene that breathes: the ink drawing draws itself in once, then rests in a slow idle loop. For the
+// A Field Guide scene that breathes for a moment, then rests (under 5 seconds, WCAG 2.2.2: lib/scene-rest.ts). For the
 // calm moments of the product: the quiet Studio Home (harbor: water swell, a moored boat rocking, a cloud drifting, a
 // flag lifting), Studio Quality's verdict (lighthouse, its weather following the verdict), and the Studio page headers, one scene per section (StudioHeader.astro, StudioHead.tsx):
 //   changes     paths that branch off the main one, drawing themselves, a flag at the end
@@ -10,6 +10,7 @@
 // Decorative unless `label` is given.
 import type { ReactNode, SVGProps } from 'react';
 import '../../../styles/quiet-scene.css';
+import { useSceneRest } from '../../../lib/scene-rest';
 
 /** One ink stroke. pathLength 1 lets the draw-in run the same on every line, whatever its length. */
 function Ink({ fill, ...rest }: SVGProps<SVGPathElement> & { fill?: 'paper' | 'zone' | 'deep' }) {
@@ -363,11 +364,13 @@ export function QuietScene({
   mood?: QuietSceneMood;
 }) {
   const s: Scene = SCENES[scene];
+  // Moves for a moment, then rests (WCAG 2.2.2): styles/quiet-scene.css pauses every part under data-still.
+  const still = useSceneRest() ? '' : undefined;
   const a11y = { role: label ? 'img' : undefined, 'aria-label': label, 'aria-hidden': label ? undefined : ('true' as const) };
   if (layout === 'window' && s.window) {
     const View = s.window.draw;
     return (
-      <div className={`ill qs qs-window${className ? ` ${className}` : ''}`} data-scene={scene} data-mood={mood} data-layout="window" {...a11y}>
+      <div className={`ill qs qs-window${className ? ` ${className}` : ''}`} data-scene={scene} data-mood={mood} data-layout="window" data-still={still} {...a11y}>
         <svg className="qs-water" fill="none" focusable="false" aria-hidden="true">
           <Water />
         </svg>
@@ -384,6 +387,7 @@ export function QuietScene({
       className={`ill qs${className ? ` ${className}` : ''}`}
       data-scene={scene}
       data-mood={mood}
+      data-still={still}
       width={width}
       height={Math.round((width * bh!) / bw!)}
       viewBox={s.viewBox}

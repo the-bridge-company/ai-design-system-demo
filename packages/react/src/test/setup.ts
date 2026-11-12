@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
+
+// findBy* and waitFor give up after 1s by default. Studio islands load their React parts on first use (a dynamic
+// import of a dialog and its component graph): cold, under a full parallel run or on a small machine, that first
+// import alone can take 1 to 3s, and the test failed although the UI was right (demo-gate, AskToJoin,
+// settings-faces). 5s keeps a real hang failing well inside the 15s test timeout.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();

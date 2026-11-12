@@ -1,4 +1,4 @@
-/* Quiet scenes (components/ds/studio/QuietScene.tsx): a Field Guide drawing that shows at once, then breathes.
+/* Quiet scenes (components/ds/studio/QuietScene.tsx): a Field Guide drawing that shows at once, breathes for under 5 seconds, then rests.
    Relaxing on purpose: every loop is built on the slowest motion token (shimmer) and runs several seconds each way,
    eased, alternate, with staggered lengths so nothing moves in step. Moving parts are low contrast; the only strong
    color is the Deep Harbor flag. Reduced motion: the still drawing, fully drawn. */
@@ -439,4 +439,12 @@
   .qs-lh-band {
     animation: none;
   }
+}
+
+/* --- Rest after five seconds (WCAG 2.2.2, pause, stop, hide). ------------------------------------------------------
+   The loops breathe for a moment, then the drawing rests where it is: motion that starts by itself stops within
+   5 seconds, so nobody needs a pause button. Each scene counts from the moment it appears (lib/scene-rest.ts sets
+   data-still), so a header painted late still gets its few seconds. The selector outranks each part's own rule. */
+.qs[data-still] * {
+  animation-play-state: paused;
 }

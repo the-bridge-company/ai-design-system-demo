@@ -37,7 +37,7 @@ import { appSlugAtBuild, signInConfig } from '../lib/signin-config';
 import { GITHUB_URL, STORYBOOK_URL, sourceUrl } from '../lib/repo';
 import { humanDate } from '../lib/stats';
 import { BRANDS, DEFAULT_BRAND } from '../lib/tokens';
-import { Avatar, Breadcrumb, Button, Icon, IconButton, Kbd, Link } from '@bridge-ds/react';
+import { Avatar, Badge, Breadcrumb, Button, Icon, IconButton, Kbd, Link } from '@bridge-ds/react';
 import { siteIcon } from '../brand/site-icons';
 import { Menu as MenuIcon, Search, X } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
@@ -258,7 +258,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
             <AccountMenu client:only="react" compact />
           </>
         ) : (
-          <span class="rail-toggle-slot"><IconButton icon={MenuIcon} size="sm" label="Open navigation" id="rail-toggle" aria-controls="rail" aria-expanded="false" /></span>
+          <span class="rail-toggle-slot"><IconButton icon={MenuIcon} size="md" label="Open navigation" id="rail-toggle" aria-controls="rail" aria-expanded="false" /></span>
         )}
       </div>
     </header>
@@ -296,10 +296,10 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                       <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                       <span>{entry.label}</span>
                       {entry.badge && (
-                        <span class="rail-num" data-nav-count={entry.badge} hidden>
+                        <Badge tone="neutral" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
                           <span data-nav-count-value aria-hidden="true"></span>
                           <span class="sr-only" data-nav-count-label></span>
-                        </span>
+                        </Badge>
                       )}
                     </Link>
                   </li>
@@ -316,10 +316,10 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                     <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                     <span>{entry.label}</span>
                     {entry.badge && (
-                      <span class="rail-num" data-nav-count={entry.badge} hidden>
+                      <Badge tone="neutral" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
                         <span data-nav-count-value aria-hidden="true"></span>
                         <span class="sr-only" data-nav-count-label></span>
-                      </span>
+                      </Badge>
                     )}
                     <span class="nav-chev" aria-hidden="true"><Icon icon={siteIcon('chevron')} size="sm" className="icon" /></span>
                   </button>

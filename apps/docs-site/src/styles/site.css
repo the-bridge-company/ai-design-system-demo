@@ -1326,17 +1326,20 @@ tr:target {
     padding-inline: 0;
   }
 
-  /* The count: a small pill on the icon's top right corner, ringed in the rail's ground. */
+  /* The count: a small pill on the icon's top right corner, ringed in the rail's ground. It starts just right of the
+     icon's middle and grows outward, so a two-digit count covers the icon's corner, not the icon. */
   :root[data-rail="collapsed"] .rail .rail-num:not([hidden]) {
     position: absolute;
     top: 0;
-    right: 0;
+    right: auto;
+    left: calc(50% + var(--space-1));
     min-width: var(--size-4);
+    min-height: var(--size-4);
     margin: 0;
     padding: 0 var(--space-1);
     box-shadow: 0 0 0 var(--border-width-strong) var(--color-bg-subtle);
     font-size: var(--font-size-100);
-    line-height: var(--size-4);
+    line-height: var(--font-line-height-none);
   }
 
   /* Products: two letters in a small rounded square, in place of the folder. */
@@ -1417,8 +1420,10 @@ tr:target {
     display: inline-flex;
   }
 
-  /* The phone keeps its menu button: the rail is a sheet there, never a collapsed column. */
-  .rail-collapse {
+  /* The phone keeps its menu button: the rail is a sheet there, never a collapsed column. Scoped to the top bar so it
+     wins over the DS IconButton's own display whatever order the production build puts the two sheets in (it lost:
+     the toggle showed on phones beside the menu button and pushed the logo under the search). */
+  .topbar .rail-collapse {
     display: none;
   }
 

@@ -2,9 +2,11 @@
 
 /* == Shell (Layout.astro) == */
 
-/* Search trigger: a DS ghost Button drawn as a quiet field (subtle fill), up to 384px wide. Every top bar control is
-   the DS sm size (32px): one height across search, Viewing, theme, Library and the menu button. */
+/* Search trigger: a DS ghost Button drawn as a quiet field (subtle fill), up to 384px wide. The two drawn controls of
+   the top bar share one height: the search field takes the Library <-> Studio switch's (styles/space-switch.css --_h),
+   so the bar no longer mixes a 32px field with a 40px pill. On a phone, an icon button of the switch's height. */
 .topbar .shell-search {
+  --_height: var(--size-10);
   --_bg: var(--color-bg-subtle);
   --_bg-hover: var(--color-bg-muted);
   --_bg-active: var(--color-bg-muted);
@@ -115,6 +117,13 @@
 
   .shell-search-text {
     display: none;
+  }
+}
+
+/* The switch is a size smaller on a phone (styles/space-switch.css): the search square follows it. */
+@media (max-width: 640px) {
+  .topbar .shell-search {
+    --_height: var(--size-9);
   }
 }
 

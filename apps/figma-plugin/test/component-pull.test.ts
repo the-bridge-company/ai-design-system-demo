@@ -738,7 +738,7 @@ test('coverage sets: every generated set binds variables in every variant; state
   assert.equal(boundName(sim, mark.type === 'VECTOR' ? mark : mark.children[0]!, 'strokes'), 'Semantic:color/action/primary/bg');
   // Link: underlined text. RadioGroup: the preview's option is the checked one.
   assert.equal(partOf(variantOf(set('Link'), 'Variant=inline, State=Default'), 'text').textDecoration, 'UNDERLINE');
-  const group = variantOf(set('RadioGroup'), 'Orientation=vertical, State=Default');
+  const group = variantOf(set('RadioGroup'), 'Orientation=vertical, Appearance=list, State=Default');
   assert.deepEqual(
     ['radio', 'radio-2', 'radio-3'].map((id) => boundName(sim, partOf(group, id), 'fills')),
     ['Component:checkbox/bg', 'Component:checkbox/bg-checked', 'Component:checkbox/bg'],

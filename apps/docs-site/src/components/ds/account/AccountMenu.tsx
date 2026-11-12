@@ -16,12 +16,14 @@ import { emailMemberFace } from '../../../lib/people';
 import { AccountDialog } from './AccountSettings';
 import { DEMO_HOME } from '../../../lib/start';
 import { DEMO_WORDS } from '../../../lib/demo';
+import { castJob } from '../../../lib/demo-cast';
 import '../../../styles/account.css';
-import { drawingSeed } from '../../../lib/cast-faces';
+import { FACES_EVENT, faceUri } from '../../../scripts/team-faces';
 
 /**
- * The drawn face of someone signed in by email (lazy: the drawings are a separate chunk), seeded by their name like
- * every other place that shows them (lib/people emailMemberFace), or the GitHub photo once linked.
+ * The drawn face of someone signed in by email (lazy: the drawings are a separate chunk): the face they saved in
+ * Settings > You, else the one seeded by their name like every other place that shows them (lib/people
+ * emailMemberFace, scripts/team-faces faceUri), or the GitHub photo once linked.
  */
 export function useFace(account: Account | null): string | undefined {
   const [face, setFace] = useState<string | undefined>(undefined);
@@ -29,11 +31,17 @@ export function useFace(account: Account | null): string | undefined {
   const seed = account ? emailMemberFace(account.name, account.email) : null;
   useEffect(() => {
     let live = true;
-    if (login) setFace(ownerAvatarUrl(login, 64));
-    else if (seed) void import('@bridge-ds/react/avatar-illustrated').then(({ illustratedAvatarUri }) => live && setFace(illustratedAvatarUri(drawingSeed(seed))));
-    else setFace(undefined);
+    const draw = () => {
+      if (login) setFace(ownerAvatarUrl(login, 64));
+      else if (seed) void import('@bridge-ds/react/avatar-illustrated').then((m) => live && setFace(faceUri(m, seed)));
+      else setFace(undefined);
+    };
+    draw();
+    // A face saved in Settings > You shows here at once.
+    document.addEventListener(FACES_EVENT, draw);
     return () => {
       live = false;
+      document.removeEventListener(FACES_EVENT, draw);
     };
   }, [login, seed]);
   return face;
@@ -87,6 +95,10 @@ export default function AccountMenu({ compact = false }: AccountMenuProps) {
   const name = accountName(account);
   const here = team ? account.teams.find((t) => t.repo.toLowerCase() === team.toLowerCase()) : undefined;
   const line = here ? roleWord(here.role) : account.email;
+  // Who they are on this team, one quiet line under the email: their job on the sample team (lib/demo-cast castJob,
+  // "Design lead"), and their access level as the account row says it ("Admin").
+  const job = team ? castJob(team, { email: account.email, login: account.github?.login })?.split(',')[0]?.trim() : null;
+  const role = [job, here ? roleWord(here.role) : null].filter(Boolean).join(', ');
   const signOut = async () => {
     setBusy(true);
     const { signOut: end } = await import('../../../scripts/account-session');
@@ -129,6 +141,7 @@ export default function AccountMenu({ compact = false }: AccountMenuProps) {
         <div className="acc-menu-head">
           <span className="acc-menu-name">{name}</span>
           <span className="acc-menu-line">{account.email}</span>
+          {role && <span className="acc-menu-line">{role}</span>}
           <span className="acc-menu-line">{account.github ? W.githubLinked(account.github.login) : W.githubNone}</span>
         </div>
         <MenuSeparator />

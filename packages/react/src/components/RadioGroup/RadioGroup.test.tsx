@@ -37,4 +37,26 @@ describe('RadioGroup', () => {
     render(<Example error="Pick a merge strategy before you publish." />);
     expect(screen.getByRole('radiogroup')).toHaveAccessibleDescription('Pick a merge strategy before you publish.');
   });
+
+  it('tile appearance: each tile is a radio, arrow keys move the choice and skip a disabled tile; axe clean', async () => {
+    const onChange = vi.fn();
+    render(
+      <RadioGroup label="Pick a face" appearance="tile" defaultValue="a" onValueChange={onChange}>
+        <Radio value="a" label="Ana" />
+        <Radio value="b" label="Ben" disabled />
+        <Radio value="c" label="Chloe" />
+      </RadioGroup>,
+    );
+    const group = screen.getByRole('radiogroup', { name: 'Pick a face' });
+    expect(group).not.toHaveAttribute('aria-orientation');
+    expect(group.className).toContain('tile');
+    await userEvent.tab();
+    expect(screen.getByRole('radio', { name: 'Ana' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('radio', { name: 'Chloe' })).toHaveAttribute('aria-checked', 'true');
+    expect(onChange).toHaveBeenLastCalledWith('c');
+    await userEvent.click(screen.getByText('Ana'));
+    expect(screen.getByRole('radio', { name: 'Ana' })).toHaveAttribute('aria-checked', 'true');
+    await expectNoAxeViolations();
+  });
 });

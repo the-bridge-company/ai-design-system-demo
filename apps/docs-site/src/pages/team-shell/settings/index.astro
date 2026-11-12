@@ -9,12 +9,13 @@
 // Figma: the team's Figma file (FigmaFileSetting.tsx), set by a lead or an admin, read by everyone else.
 // Products (TeamProducts.tsx), for leads and admins only: the team's products and Add a product.
 // On the demo, that is the demo's sample team. Appearance (light or dark) is this browser's own choice, there for
-// everyone whatever the team read gives (AppearanceSetting.tsx).
+// everyone whatever the team read gives (AppearanceSetting.tsx). Your face (FaceSetting.tsx): the person's drawn face,
+// kept apart from their teammates', for a signed-in account or the person played on the sample team.
 // Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
 // The bands sit in four groups, one shown at a time under the DS Tabs (SettingsTabs.tsx, lib/settings-sections.ts,
 // scripts/settings-sections.ts), each group its tab's DS TabsPanel, linked from outside the Tabs root (tabId) since
 // each holds islands of its own: Team (name, members, products, library access, danger
-// zone), Reviews (review rules, how changes reach your code, safety), Tools (Claude, Figma), You (appearance, AI tools). Every old anchor opens its group.
+// zone), Reviews (review rules, how changes reach your code, safety), Tools (Claude, Figma), You (your face, appearance, AI tools). Every old anchor opens its group.
 import '../../../styles/settings.css';
 import TeamShell from '../../../components/TeamShell.astro';
 import MembersSection from '../../../components/ds/studio/MembersSection';
@@ -24,6 +25,7 @@ import TeamSettings from '../../../components/ds/studio/TeamSettings';
 import TeamProducts from '../../../components/ds/studio/TeamProducts';
 import AppearanceSetting from '../../../components/ds/studio/AppearanceSetting';
 import AiToolsSetting from '../../../components/ds/studio/AiToolsSetting';
+import FaceSetting from '../../../components/ds/studio/FaceSetting';
 import TeamNameSetting from '../../../components/ds/studio/TeamNameSetting';
 import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
@@ -69,6 +71,7 @@ import { groupId, tabId } from '../../../lib/settings-sections';
   </TabsPanel>
 
   <TabsPanel className="set-group" value="you" id={groupId('you')} tabId={tabId('you')} data-set-group="you">
+    <FaceSetting client:only="react" />
     <section class="ts-band" id="appearance" aria-labelledby="ts-appearance">
       <h2 id="ts-appearance" class="ts-h">Appearance</h2>
       <p class="ts-intro">How Bridge looks for you, only in this browser. It changes nothing for your team.</p>

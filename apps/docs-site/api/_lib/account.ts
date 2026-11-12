@@ -24,6 +24,7 @@
 import type { Redis } from './redis.js';
 import { canonicalEmail, emailSpellings, legacyEmail, sameEmail } from './canonical-email.js';
 import type { AiTool } from '../../src/lib/ai-tools.js';
+import type { FaceRecipe } from '../../src/lib/team-faces.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { cookieAttrs, readCookie, signClaims, verifyClaims } from './session.js';
 
@@ -42,6 +43,8 @@ export interface Account {
   version: number;
   /** The AI tools the person uses with Bridge (src/lib/ai-tools.ts); absent while they never answered. */
   aiTools?: AiTool[];
+  /** Their drawn face (Settings > You, src/lib/team-faces.ts), absent while they keep the one drawn from their name. */
+  face?: FaceRecipe;
   /**
    * What Bridge emails the person about their work (Account > Email, api/_lib/notify.ts); absent: the defaults, things
    * that need them right away and what moved in a daily summary.

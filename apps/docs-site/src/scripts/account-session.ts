@@ -6,6 +6,7 @@
 import { ACCOUNT_API, ACCOUNT_HEADER, ACCOUNT_WORDS, accountErrorText, GITHUB_PENDING_KEY, isPersonalKey, parseAccount, parseBlocked, signInHref, type Account, type AccountInfo, type BlockedTeam, type NotifyChoices, type SignedIn } from '../lib/account';
 import { forgetContributors, seedContributors } from './contribute-session';
 import type { AiTool } from '../lib/ai-tools';
+import type { FaceRecipe } from '../lib/team-faces';
 import { isContribAuth } from '../lib/contribute';
 import { noteAccountTeamNames } from '../lib/recent-teams';
 
@@ -52,6 +53,8 @@ function publish(a: Account | null) {
   if (typeof document !== 'undefined') document.documentElement.toggleAttribute('data-account', Boolean(a));
   // Each of the account's email teams knows its member at once, even one this browser never opened.
   if (a) seedContributors(a, a.teams);
+  // Their saved face draws on every surface from the first paint of the next page (scripts/team-faces.ts).
+  if (a) void import('./team-faces').then((f) => f.noteAccountFace(a)).catch(() => {});
   listeners.forEach((fn) => fn(a));
 }
 
@@ -150,6 +153,9 @@ export const renameAccount = (name: string) => update({ action: 'rename', name: 
 
 /** The AI tools the person uses (lib/ai-tools.ts), kept on their account. */
 export const saveAiTools = (tools: AiTool[]) => update({ action: 'ai-tools', tools });
+
+/** The person's drawn face (lib/team-faces.ts), kept on their account and in each of their teams. 409 face_taken names who wears it. */
+export const saveFace = (face: FaceRecipe) => update({ action: 'face', face });
 
 /** Account > Email: what Bridge emails the person about their work. */
 export const saveNotify = (choices: Partial<NotifyChoices>) => update({ action: 'notify', ...choices });

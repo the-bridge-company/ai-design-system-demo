@@ -35,7 +35,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
   {
     key: 'you',
     label: 'You',
-    anchors: ['appearance', 'ai-tools', 'account'],
+    anchors: ['face', 'appearance', 'ai-tools', 'account'],
   },
 ];
 

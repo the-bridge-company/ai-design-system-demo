@@ -11,6 +11,7 @@ import { START_PAGE } from './start';
 import { CALLBACK_PATH } from './github-signin';
 import { teamHref } from './team-path';
 import { parseAiTools, type AiTool } from './ai-tools';
+import { parseFace, type FaceRecipe } from './team-faces';
 
 export const ACCOUNT_API = '/api/account';
 /** Every action carries it, the server refuses one without it (CSRF), like /api/contribute. */
@@ -45,6 +46,8 @@ export interface Account {
   github: { login: string; id: number } | null;
   /** The AI tools the person picked (lib/ai-tools.ts), null while they never answered. */
   aiTools?: AiTool[] | null;
+  /** Their drawn face (Settings > You, lib/team-faces.ts), null while they keep the one drawn from their name. */
+  face?: FaceRecipe | null;
   /** What Bridge emails them about their work (Account > Email); absent from an older server. */
   notify?: NotifyChoices;
   teams: AccountTeam[];
@@ -98,7 +101,7 @@ export function parseAccount(v: unknown): Account | null {
       })
     : [];
   const notify = parseNotify(o.notify);
-  return { email, name: str(o.name), nameSet: o.nameSet !== false && Boolean(str(o.name)), github: login ? { login, id: typeof gh?.id === 'number' ? gh.id : 0 } : null, aiTools: parseAiTools(o.aiTools), ...(notify ? { notify } : {}), teams };
+  return { email, name: str(o.name), nameSet: o.nameSet !== false && Boolean(str(o.name)), github: login ? { login, id: typeof gh?.id === 'number' ? gh.id : 0 } : null, aiTools: parseAiTools(o.aiTools), face: parseFace(o.face), ...(notify ? { notify } : {}), teams };
 }
 
 /** Only a same-site path is a place to go after signing in; never the sign-in screen itself or the GitHub callback. */
@@ -150,7 +153,7 @@ export const needsGitHub = (a: Account): boolean => !a.github && a.teams.some((t
  * their email memberships, their teams, roles and team names, their counts, and every read kept from GitHub (private
  * bodies must not outlive the session). Preferences that say nothing about the person (theme, a tour seen) stay.
  */
-const PERSONAL_KEYS = new Set(['bridge.reviews.mine', 'bridge.reviews.open', 'bridge.teamRoles', 'bridge.recentTeams', 'bridge.teamNames', 'bridge.accountTeamNames', 'bridge.gh.maintainer', 'bridge.xp.rows']);
+const PERSONAL_KEYS = new Set(['bridge.face', 'bridge.reviews.mine', 'bridge.reviews.open', 'bridge.teamRoles', 'bridge.recentTeams', 'bridge.teamNames', 'bridge.accountTeamNames', 'bridge.gh.maintainer', 'bridge.xp.rows']);
 const PERSONAL_PREFIXES = [
   'bridge.contribute.member:',
   'bridge.gh.cache:',
@@ -164,6 +167,8 @@ const PERSONAL_PREFIXES = [
   'bridge.review.looked.',
   // The team default of the AI tools, kept per team (scripts/ai-tools.ts); the person's own choice stays, like the theme.
   'bridge.ai-tools.team.',
+  // Each team's face map (scripts/team-faces.ts): names of its people.
+  'bridge.faces.',
 ];
 
 /** A browser storage key that holds something personal (see above). */

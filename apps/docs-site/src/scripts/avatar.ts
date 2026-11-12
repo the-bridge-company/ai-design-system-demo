@@ -3,7 +3,7 @@
 // on top of it (.avatar-photo in site.css covers the circle) and writes the viewer's initial into the fallback.
 
 import { safeUrl } from '../lib/html';
-import { drawingSeed } from '../lib/cast-faces';
+import { faceUri } from './team-faces';
 
 // Initials like the DS Avatar's initials() (GitHub logins also split on - and _), local so the page script does not
 // pull in the React bundle.
@@ -42,7 +42,7 @@ export function paintAvatar(root: HTMLElement, name: string, rawUrl: string | un
 export function paintDrawnAvatar(root: HTMLElement, seed: string) {
   const fallback = root.querySelector(':scope > span[aria-hidden="true"]');
   if (fallback) fallback.textContent = '';
-  void import('@bridge-ds/react/avatar-illustrated').then(({ illustratedAvatarUri }) => {
+  void import('@bridge-ds/react/avatar-illustrated').then((m) => {
     let img = root.querySelector<HTMLImageElement>('img.avatar-photo');
     if (!img) {
       img = document.createElement('img');
@@ -50,7 +50,7 @@ export function paintDrawnAvatar(root: HTMLElement, seed: string) {
       img.alt = '';
       root.prepend(img);
     }
-    const src = illustratedAvatarUri(drawingSeed(seed));
+    const src = faceUri(m, seed);
     if (img.getAttribute('src') !== src) img.src = src;
   });
 }

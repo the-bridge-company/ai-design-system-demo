@@ -176,3 +176,68 @@
 .dot[data-disabled] {
   background-color: var(--color-action-disabled-text);
 }
+
+/*
+ * Tile appearance: options that are pictures, in rows of equal tiles that wrap. The tile is the target and shows the choice
+ * (the checked edge and selected surface, as ChoiceCard, never the color alone: the edge doubles); the radio stays the
+ * focusable element, visually hidden, its focus ring drawn on the tile.
+ */
+.tile {
+  flex-flow: row wrap;
+  gap: var(--space-2);
+}
+
+.tile .item {
+  position: relative;
+  box-sizing: border-box;
+  inline-size: var(--size-20);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: var(--space-2);
+  border: var(--border-width-default) solid transparent;
+  border-radius: var(--radius-control);
+  text-align: center;
+  transition-property: background-color, border-color;
+  transition-duration: var(--motion-duration-instant);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+.tile .text {
+  align-items: center;
+  min-width: 0;
+}
+
+.tile .radio {
+  position: absolute;
+  width: var(--border-width-1);
+  height: var(--border-width-1);
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+@media (hover: hover) {
+  .tile .item:hover:not(:has([data-disabled])) {
+    border-color: var(--color-border-hover);
+    background-color: var(--color-surface-hover);
+  }
+}
+
+.tile .item:has([data-checked]) {
+  border-color: var(--color-control-checked-bg);
+  background-color: var(--color-surface-selected);
+  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-control-checked-bg);
+}
+
+.tile .item:has(.radio:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Not available: the tile's picture loses its color (with its own background) and the text dims; the reason belongs
+   in the tile's text. */
+.tile .item:has([data-disabled]) .text {
+  filter: grayscale(1);
+}

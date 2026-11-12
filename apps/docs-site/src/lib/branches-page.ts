@@ -10,6 +10,7 @@ import { MAX_TOGETHER } from './combine-changes';
 import { VOCAB } from './vocabulary';
 import { isNameAuthor, nameOfAuthor } from './author';
 import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
+import { STEP_LABEL } from './status-ladder';
 import { designerOptions, peopleOf, type PeopleItem } from './review-categories';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -52,11 +53,13 @@ const DEV_TABS: readonly StateTab[] = ['code', 'building', 'review'];
 const STAGE_TAB: Partial<Record<LifecycleStage, StageTab>> = { exploring: 'exploring', 'waiting-for-lead': 'exploring', 'waiting-for-code': 'code', 'being-built': 'building', 'in-review': 'review', approved: 'review' };
 const LABEL_TAB: Record<string, StageTab> = {
   'Not started': 'exploring',
-  [LIFECYCLE_LABEL.exploring]: 'exploring',
-  [LIFECYCLE_LABEL['waiting-for-lead']]: 'exploring',
-  [LIFECYCLE_LABEL['waiting-for-code']]: 'code',
-  [LIFECYCLE_LABEL['being-built']]: 'building',
-  [LIFECYCLE_LABEL['in-review']]: 'review',
+  // The status ladder's words (lib/status-ladder). A tag without its stage: In review is a promoted exploration (a
+  // waiting-for-lead one has its stage read and follows STAGE_TAB), Checking the developers' version.
+  [STEP_LABEL.exploring]: 'exploring',
+  [STEP_LABEL['in-review']]: 'review',
+  [STEP_LABEL['ready-to-build']]: 'code',
+  [STEP_LABEL['being-built']]: 'building',
+  [STEP_LABEL.checking]: 'review',
 };
 
 /**

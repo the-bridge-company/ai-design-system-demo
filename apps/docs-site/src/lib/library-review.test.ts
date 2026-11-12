@@ -12,6 +12,8 @@ import {
   contrastWords,
   cssRgba,
   reviewProgress,
+  askedByViewer,
+  yourWaitingPieces,
   personKey,
   filterValue,
   groupPieces,
@@ -226,6 +228,28 @@ describe('filters', () => {
     if (leo) expect(all.filter((p) => passes(p, { status: [], asked: [personKey(peopleOf(leo)[0]!)], product: [] }))).toContain(leo);
     expect(filterValue('asked', ['person:a', 'person:b'], choices.asked)).toBe('2 people');
     expect(filterValue('status', ['waiting'], [{ value: 'waiting', label: 'Waiting' }])).toBe('Waiting');
+  });
+  it('"Asked by: You" lists only what the viewer asked for: a change Malik builds for Sofia is Sofia\'s', () => {
+    // Malik made the change (mine), Leo's exploration asked for it: under Malik's "You" it does not show.
+    const built = pieceOfChange(change({ by: 'Malik', mine: true }));
+    expect(peopleOf(built)).toEqual(['Leo']);
+    expect(askedByViewer(built, 'Malik')).toBe(false);
+    expect(passes(built, { status: [], asked: ['you'], product: [] }, 'Malik')).toBe(false);
+    expect(askedByViewer(built, 'Leo')).toBe(true);
+    // A lead's own change, no exploration: whoever made it asked for it.
+    const own = pieceOfChange(change({ number: 14, title: 'feat(tokens): Add a 56px spacing step', body: null, by: 'Dana', mine: true }));
+    expect(peopleOf(own)).toEqual(['Dana']);
+    expect(askedByViewer(own, 'Dana')).toBe(true);
+    expect(askedByViewer(own, 'Leo')).toBe(false);
+    // Without the viewer's name: their own pieces, as before.
+    expect(askedByViewer(own, null)).toBe(true);
+  });
+
+  it("counts the viewer's waiting pieces as Asked by: You and Waiting list them (Home's sentence)", () => {
+    const all = [pieceOfChange(change()), pieceOfChange(change({ number: 15, by: 'Malik', mine: true })), pieceOfChange(change({ number: 16, statusKind: 'ready' }))];
+    expect(yourWaitingPieces(all, { name: 'Leo' })).toBe(all.filter((p) => passes(p, { status: ['waiting'], asked: ['you'], product: [] }, 'Leo')).length);
+    expect(yourWaitingPieces(all, { name: 'Leo' })).toBe(2);
+    expect(yourWaitingPieces(all, { name: 'Malik' })).toBe(0);
   });
 });
 

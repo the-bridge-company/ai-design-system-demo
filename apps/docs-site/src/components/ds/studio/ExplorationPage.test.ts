@@ -413,7 +413,7 @@ describe('ExplorationPage, exploring (X2)', () => {
   });
 });
 
-describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being built, Shipped)', () => {
+describe('ExplorationPage, after Done exploring (Ready to build, Being built, Shipped)', () => {
   const steps = [
     { status: 'done' as const, title: 'Done exploring', detail: 'Florian, today. Sent to the Admin demo developers.' },
     { status: 'waiting' as const, title: 'Developers build it', detail: 'In their task list. You see here when one picks it up.', current: true },
@@ -435,7 +435,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
   it('keeps the page family: status tag, who said done and when, the preview with one action, then what happens next', () => {
     handed();
     // The stage is said once, by the tag.
-    expect(screen.getAllByText('Waiting to be picked up')).toHaveLength(1);
+    expect(screen.getAllByText('Ready to build')).toHaveLength(1);
     expect(screen.getByText("Florian's exploration in Admin demo, started today")).toBeTruthy();
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app/?bridge=611');
     expect(screen.queryByRole('link', { name: /Continue in Claude/ })).toBeNull();
@@ -647,7 +647,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     it('Not planned, their last word, and Back to exploring as the one primary action', async () => {
       const onReopen = vi.fn(async () => 'Back to exploring. Say Done exploring again when it is ready for developers.');
       handed({ stage: 'not-planned', steps: declinedSteps, declined: { note: { text: 'Not this quarter, sorry.', by: sam, when: 'Oct 31' } } }, { onReopen });
-      expect(screen.getByText('Not planned', { selector: '[class*="badge"]' })).toBeTruthy();
+      expect(screen.getByText('Not doing this', { selector: '[class*="badge"]' })).toBeTruthy();
       const next = screen.getByRole('region', { name: 'The developers did not build it' });
       expect(screen.getByText('Developers closed it without building it.')).toBeTruthy();
       expect(within(next).getByText('Not this quarter, sorry.')).toBeTruthy();
@@ -672,7 +672,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 
   it('approved by the designer: the tag reads the next state', () => {
     handed({ status: 'building', stage: 'approved' });
-    expect(screen.getByText('Approved, waiting to ship', { selector: '[class*="badge"]' })).toBeTruthy();
+    expect(screen.getByText('Checking', { selector: '[class*="badge"]' })).toBeTruthy();
   });
 
   describe('a product added from its address: its developers work elsewhere', () => {
@@ -712,7 +712,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
 });
 
 describe('the "..." menu: Rename, Back to exploring, Archive', () => {
-  it('who sees what: only the keeper; Back to exploring only while waiting to be picked up, never once developers build', () => {
+  it('who sees what: only the keeper; Back to exploring only while ready to build, never once developers build', () => {
     expect(explorationMenu({ writable: false, status: 'ready' })).toEqual({ rename: false, reopen: false, archive: false });
     expect(explorationMenu({ writable: true, status: 'active' })).toEqual({ rename: true, reopen: false, archive: true });
     expect(explorationMenu({ writable: true, status: 'ready' })).toEqual({ rename: true, reopen: true, archive: true });

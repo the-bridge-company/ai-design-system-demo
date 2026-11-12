@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LIFECYCLE_TONE } from './review-state';
-import { MEANING_TONE, statusTagClass, toneOf } from './status-tag';
+import { MEANING_TONE, statusTagClass, toneOf, waitTone } from './status-tag';
 import { PR_DOC_PILL } from './pr-docs';
 import { GROUP_TONE } from './changes';
 import { BUILD_WORDS } from './build-check-view';
@@ -24,22 +24,25 @@ describe('statusTagClass', () => {
 });
 
 describe('one meaning per tone', () => {
-  it('maps the five meanings to five different tones', () => {
-    expect(MEANING_TONE).toEqual({ 'in-progress': 'info', waiting: 'warning', done: 'success', blocked: 'danger', over: 'neutral' });
-    expect(new Set(Object.values(MEANING_TONE)).size).toBe(5);
-    expect(toneOf('waiting')).toBe('warning');
+  it('maps the meanings to tones: a wait is grey, only a late one is amber', () => {
+    expect(MEANING_TONE).toEqual({ 'in-progress': 'info', waiting: 'neutral', late: 'warning', done: 'success', blocked: 'danger', over: 'neutral' });
+    expect(toneOf('waiting')).toBe('neutral');
+    expect(toneOf('late')).toBe('warning');
+    expect(waitTone(7)).toBe('neutral');
+    expect(waitTone(8)).toBe('warning');
   });
-  it('blue is work moving, amber waits on someone, green is done, grey is over', () => {
+  it('blue is work moving, grey a calm wait or over, green is done', () => {
     expect(LIFECYCLE_TONE.exploring).toBe(toneOf('in-progress'));
     expect(LIFECYCLE_TONE['being-built']).toBe(toneOf('in-progress'));
     expect(LIFECYCLE_TONE['waiting-for-lead']).toBe(toneOf('waiting'));
     expect(LIFECYCLE_TONE['waiting-for-code']).toBe(toneOf('waiting'));
     expect(LIFECYCLE_TONE['in-review']).toBe(toneOf('waiting'));
-    expect(LIFECYCLE_TONE.approved).toBe(toneOf('done'));
+    // Approved, waiting to ship is still Checking on the ladder: the same calm tone as its word.
+    expect(LIFECYCLE_TONE.approved).toBe(toneOf('waiting'));
     expect(LIFECYCLE_TONE.shipped).toBe(toneOf('done'));
     expect(LIFECYCLE_TONE.closed).toBe(toneOf('over'));
   });
-  it('a draft that needs review, a review waiting and Check the build wait on someone: amber, never plum', () => {
+  it('a draft that needs review, a review waiting and Checking wait on someone: grey, never plum', () => {
     expect(PR_DOC_PILL.review.tone).toBe(toneOf('waiting'));
     expect(GROUP_TONE.waiting).toBe(toneOf('waiting'));
     expect(GROUP_TONE.blocked).toBe(toneOf('blocked'));

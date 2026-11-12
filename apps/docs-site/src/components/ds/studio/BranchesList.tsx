@@ -87,6 +87,8 @@ export interface ListRow {
   turnReason?: string | null;
   /** Where it stands, in the page's words (lib/explorations-page statusOf), when the row's record was read. */
   status?: ExplorationState | null;
+  /** What the status tag does not say ("Changes asked", "Waiting for the library"): a second line, never a status. */
+  statusNote?: string | null;
   /** The viewer made it, when the author does not say so (an email contributor's own: lib/branches-page ownedBy). */
   mine?: boolean;
   behindBy: number | null;
@@ -316,7 +318,8 @@ export function BranchesList(p: BranchesListProps) {
       return x.r.ago ? `${why}${SEP}${x.r.ago}` : why;
     }
     if (x.status === 'shipped' && x.shippedAt) return `${x.person.name}${SEP}${shippedOn(x.shippedAt)}`;
-    return x.r.ago ? `${x.person.name}${SEP}${x.r.ago}` : x.person.name;
+    const who = x.r.statusNote ? `${x.person.name}${SEP}${x.r.statusNote}` : x.person.name;
+    return x.r.ago ? `${who}${SEP}${x.r.ago}` : who;
   };
   // A change sent from a product's adoption report says so under its title, the report as a link.
   const auditNote = (x: Item) => (x.r.origin?.kind === 'audit' ? <AuditNote origin={x.r.origin} /> : undefined);
@@ -453,7 +456,7 @@ export function BranchesList(p: BranchesListProps) {
                 <CountTag n={c.rows.length} />
               )}
             </h2>
-            {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>}
+            {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: false, product: true, turn: pinned.has(x.r) }))}</ul>}
             {c.rows.length > BOARD_CAP && !open && (
               <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(c.key))}>
                 Show all {c.rows.length}

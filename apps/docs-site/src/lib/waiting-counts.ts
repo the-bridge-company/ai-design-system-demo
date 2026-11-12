@@ -63,3 +63,33 @@ export function mergeWaiting(own: readonly WaitingExploration[], home: readonly 
   for (const h of home ?? []) if (listed.has(h.key) && !out.some((o) => o.key === h.key)) out.push(h);
   return out;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The other counts of Studio, one definition each (what it counts, for whom). Every surface that says one of these
+// numbers (the nav, the Home sentence, Home's "See all N", the lists, the product cards) reads it here.
+//
+//   Explorations badge (nav)        explorations whose next step is the viewer's (waitingCounts above).
+//   Library review badge (nav)      library pieces the viewer can decide now (lib/library-review waitingForYou):
+//                                   pieces, not changes, and only for whoever holds the review right.
+//   "See all N" (Home)              explorations in progress (inProgressCount): exactly what the Explorations list
+//                                   shows by default (Status: In progress), for the same people (everyone, or the
+//                                   viewer's own on a designer's Home, the list's People: You).
+//   "N of your library pieces"      the viewer's pieces still waiting in Library review (lib/library-review
+//   (Home sentence)                 yourWaitingPieces): what Library review lists under Asked by: You, Waiting.
+//   "N build requests wait"         open build requests nobody picked up yet (waitingToBePickedUp): a developer's
+//   (a developer's Home)            to act on, the rows Being built lists as waiting to be picked up.
+//   Product card "N in review"      the product's explorations and, on the Library card, its library changes, in
+//                                   review whoever reviews them (lib/product-page): not the Library review badge,
+//                                   so the Library card says "changes in review" and the badge "pieces".
+
+/** The statuses of an exploration that are not in progress: done (shipped, closed, not planned) or archived. */
+const NOT_IN_PROGRESS: ReadonlySet<string> = new Set(['shipped', 'next-release', 'closed', 'not-planned', 'archived']);
+
+/** An exploration still in progress, as the Explorations list's default filter (In progress) counts it. */
+export const isInProgress = (c: { lifecycle: string }): boolean => !NOT_IN_PROGRESS.has(c.lifecycle);
+
+/** How many explorations Explorations lists by default: Home's "See all N" says this number, never every card. */
+export const inProgressCount = (cards: readonly { lifecycle: string }[]): number => cards.filter(isInProgress).length;
+
+/** Open build requests nobody picked up yet (core status "requested"): what needs a developer on their Home. */
+export const waitingToBePickedUp = (views: readonly { status: string }[]): number => views.filter((v) => v.status === 'requested').length;

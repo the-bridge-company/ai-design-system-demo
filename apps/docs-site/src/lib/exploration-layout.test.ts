@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, daysSince, handOverTitle, leadStepText, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, timelineOf, pmBlockOf, sharedChoiceOf, waitBlockOf, waitedWhen, writeToLine, zoneOf, type WaitInput, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, daysSince, handOverTitle, leadStepText, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, timelineOf, pmBlockOf, sharedChoiceOf, waitBlockOf, waitedWhen, writeToLine, zoneOf, type WaitInput, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -363,5 +363,39 @@ describe('the product manager in the turn block', () => {
     expect(b.title).toBe('Dana decides what the library keeps');
     expect(b.lines).toEqual(['You said it looks good, today.']);
     expect(b.action).toEqual({ kind: 'change-view', label: 'Change your view' });
+  });
+});
+
+describe("the lead's decisions on the exploration page (every one counted, nothing ticked silently)", () => {
+  const conflicts = [{ piece: 'card-timeline', component: 'Card', property: 'padding', pick: null }];
+  const staged = [{ id: 'component-timeline', title: 'Timeline' }];
+
+  it('counts the part to choose and the new piece, the demo order fulfilment page', () => {
+    const d = leadDecisions({ conflicts, staged, choices: {} });
+    expect(d).toEqual([
+      { id: 'card-timeline', title: 'Card padding', kind: 'choose', open: true, adds: null },
+      { id: 'component-timeline', title: 'Timeline', kind: 'add', open: false, adds: true },
+    ]);
+    const w = leadTurnWords(d, 'Sofia')!;
+    expect(w.step).toBe('Card padding and Timeline');
+    expect(w.title).toBe('2 library pieces wait for your choice');
+    expect(w.line).toBe("Sofia's screen changes Card padding and adds Timeline. Choose Card padding. Timeline is ticked to join the library. Untick it to keep it in Sofia's screen only. Then the screen goes to the developers.");
+    expect(w.blocked).toBe(true);
+  });
+
+  it('follows the tick, and says what Send does once nothing is left to choose', () => {
+    const off = leadDecisions({ conflicts: [{ ...conflicts[0]!, pick: 'both' }], staged, choices: { 'component-timeline': 'local' } });
+    expect(off).toHaveLength(1);
+    expect(leadTurnWords(off, 'Sofia')!.line).toBe("Sofia's screen adds Timeline. Timeline stays in Sofia's screen only. Then the screen goes to the developers.");
+    expect(sendTickLine(off, 'Sofia')).toBe("Timeline stays in Sofia's screen only.");
+    expect(sendTickLine(leadDecisions({ conflicts: [], staged, choices: {} }), 'Sofia')).toBe('Sending also adds Timeline to the library.');
+  });
+
+  it('keeps one part to choose as one question, and one line per part when explorations repeat it', () => {
+    const one = leadDecisions({ conflicts: [...conflicts, { ...conflicts[0]!, piece: 'card-other' }], staged: [], choices: {} });
+    expect(one).toHaveLength(1);
+    expect(leadTurnWords(one, 'Sofia')).toMatchObject({ step: 'Card padding', title: "Which Card padding for Sofia's screen?" });
+    expect(leadTurnWords([], 'Sofia')).toBeNull();
+    expect(sendTickLine(one, 'Sofia')).toBeNull();
   });
 });

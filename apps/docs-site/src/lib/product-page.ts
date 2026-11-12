@@ -9,7 +9,8 @@
 // Pure: no DOM, no fetch. Unit tested in product-page.test.ts.
 import { defaultProduct, type ProductConfig } from '@bridge-ds/core';
 import { STUDIO_ROOT, studioHref } from './team-path';
-import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
+import type { LifecycleStage } from './review-state';
+import { STEP_LABEL, stepCount } from './status-ladder';
 import type { ExplorationCard } from './home-explorations';
 import type { ThumbSpec } from './branch-thumb';
 import type { StageTab } from './branches-page';
@@ -48,17 +49,17 @@ export const cardProductKey = (c: Pick<ExplorationCard, 'productKey'>, products:
 export type ProductStateKey = 'running' | 'lead' | 'review' | 'waiting' | 'building' | 'shipped' | 'not-planned';
 
 /**
- * The groups of a product page, in the lifecycle's order and words (lib/review-state LIFECYCLE_LABEL): Exploring,
- * Waiting to be picked up, Being built, In review, Shipped, Not planned. Archived ones are folded apart.
+ * The groups of a product page, on the one status ladder (lib/status-ladder): Exploring, In review (waiting for the
+ * lead), Ready to build, Being built, Checking, Shipped, Not doing this. Archived ones are folded apart.
  */
 export const PRODUCT_STATES: { key: ProductStateKey; label: string; count: (n: number) => string; open: boolean }[] = [
-  { key: 'running', label: LIFECYCLE_LABEL.exploring, count: (n) => `${n} exploring`, open: true },
-  { key: 'lead', label: LIFECYCLE_LABEL['waiting-for-lead'], count: (n) => `${n} waiting for lead`, open: true },
-  { key: 'waiting', label: LIFECYCLE_LABEL['waiting-for-code'], count: (n) => `${n} waiting to be picked up`, open: true },
-  { key: 'building', label: LIFECYCLE_LABEL['being-built'], count: (n) => `${n} being built`, open: true },
-  { key: 'review', label: LIFECYCLE_LABEL['in-review'], count: (n) => `${n} in review`, open: true },
-  { key: 'shipped', label: LIFECYCLE_LABEL.shipped, count: (n) => `${n} shipped`, open: false },
-  { key: 'not-planned', label: LIFECYCLE_LABEL['not-planned'], count: (n) => `${n} not planned`, open: false },
+  { key: 'running', label: STEP_LABEL.exploring, count: (n) => stepCount(n, 'exploring'), open: true },
+  { key: 'lead', label: STEP_LABEL['in-review'], count: (n) => stepCount(n, 'in-review'), open: true },
+  { key: 'waiting', label: STEP_LABEL['ready-to-build'], count: (n) => stepCount(n, 'ready-to-build'), open: true },
+  { key: 'building', label: STEP_LABEL['being-built'], count: (n) => stepCount(n, 'being-built'), open: true },
+  { key: 'review', label: STEP_LABEL.checking, count: (n) => stepCount(n, 'checking'), open: true },
+  { key: 'shipped', label: STEP_LABEL.shipped, count: (n) => stepCount(n, 'shipped'), open: false },
+  { key: 'not-planned', label: STEP_LABEL['not-doing'], count: (n) => stepCount(n, 'not-doing'), open: false },
 ];
 
 /** The group of each status (lib/exploration-state): the one status decides, never the words on the card. */
@@ -96,19 +97,21 @@ export function productCounts(cards: readonly Pick<ExplorationCard, 'lifecycle'>
   return out;
 }
 
-/** The work in progress of a product, in words: ["2 exploring", "1 waiting to be picked up"]. Done work is not in progress. */
-function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: readonly ProductStateKey[] = []): string[] {
+/** The work in progress of a product, in words: ["2 exploring", "1 ready to build"]. Done work is not in progress. */
+function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: readonly ProductStateKey[] = [], noun: readonly [string, string] | null = null): string[] {
   const n = productCounts(cards, more);
-  return PRODUCT_STATES.filter((s) => s.open && n[s.key] > 0).map((s) => s.count(n[s.key]));
+  // With a noun, each count says what it counts: "11 changes in review" (lib/waiting-counts).
+  const named = (text: string, k: number) => (noun ? text.replace(/^(\d+) /, `$1 ${noun[k === 1 ? 0 : 1]} `) : text);
+  return PRODUCT_STATES.filter((s) => s.open && n[s.key] > 0).map((s) => named(s.count(n[s.key]), n[s.key]));
 }
 
 /**
- * A folder card's line: "2 exploring · 1 waiting to be picked up", "3 shipped", or "Nothing in progress". `more`: the
+ * A folder card's line: "2 exploring · 1 ready to build", "3 shipped", or "Nothing in progress". `more`: the
  * states of the product's work that is not an exploration card, the library's own changes (libraryChangeState), so
  * the Library folder counts what Changes lists under Library.
  */
-export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = []): string {
-  const parts = inProgress(cards, more);
+export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = [], noun: readonly [string, string] | null = null): string {
+  const parts = inProgress(cards, more, noun);
   if (parts.length) return parts.join(sep);
   const shipped = productCounts(cards, more).shipped;
   return shipped ? `${shipped} shipped` : 'Nothing in progress';
@@ -124,7 +127,7 @@ export function libraryChangeState(tab: StageTab | null): ProductStateKey | null
 
 const TAB_STATE: Record<StageTab, ProductStateKey | null> = { exploring: 'running', code: 'waiting', building: 'building', review: 'review' };
 
-/** The product page header's summary: "2 exploring, 1 waiting to be picked up.", or why the page is quiet. */
+/** The product page header's summary: "2 exploring, 1 ready to build.", or why the page is quiet. */
 export function productSummary(cards: readonly Pick<ExplorationCard, 'lifecycle'>[]): string {
   const parts = inProgress(cards);
   if (parts.length) return `${parts.join(', ').replace(/^./, (c) => c.toUpperCase())}.`;
@@ -132,6 +135,9 @@ export function productSummary(cards: readonly Pick<ExplorationCard, 'lifecycle'
   if (shipped) return `${shipped} shipped, nothing in progress.`;
   return 'Nothing explored here yet.';
 }
+
+/** What the Library card counts: changes to the library (its explorations and its own changes). */
+export const LIBRARY_NOUN = ['change', 'changes'] as const;
 
 /** How many captures a folder card shows. */
 export const FOLDER_SHOTS = 3;
@@ -163,7 +169,9 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       name: p.name,
       href: productHref(p.key),
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
-      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? []),
+      // The Library card counts changes to the library, whoever reviews them: it names them, so "11 changes in review"
+      // never reads as the Library review badge (pieces waiting for the viewer's decision, lib/waiting-counts).
+      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? [], p.key.toLowerCase() === library ? LIBRARY_NOUN : null),
       total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
       library: p.key.toLowerCase() === library,
     };

@@ -48,6 +48,7 @@ import {
   nextActor,
   waitingForYou,
   passes,
+  pieceWaitTone,
   reviewParams,
   reviewProgress,
   selectionLine,
@@ -174,13 +175,13 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
     );
   if (p.conflict)
     return (
-      <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+      <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
         {waysTag(p.conflict.ways.length)}
       </Badge>
     );
   if (!viewerReviews) return null;
   return (
-    <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+    <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
       Waiting
     </Badge>
   );
@@ -719,7 +720,7 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
             {p.title}
           </h2>
           {!c.pick && (
-            <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+            <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
               {waysTag(c.ways.length)}
             </Badge>
           )}
@@ -831,7 +832,7 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
   const stateMark = (p: ReviewPiece) => {
     if (p.conflict && !p.conflict.pick)
       return (
-        <Badge tone="warning" size="sm" className={statusTagClass('warning')}>
+        <Badge tone={pieceWaitTone(p)} size="sm" className={statusTagClass(pieceWaitTone(p))}>
           {waysTag(p.conflict.ways.length)}
         </Badge>
       );
@@ -1044,7 +1045,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       );
     if (p.conflict && !p.conflict.pick)
       return (
-        <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+        <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
           {waysTag(p.conflict.ways.length)}
         </Badge>
       );
@@ -1058,7 +1059,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       return mode === 'designer' ? (
         <span className="lr-muted">{p.exception}</span>
       ) : (
-        <Badge tone="warning" size="md" className={statusTagClass('warning')}>
+        <Badge tone="neutral" size="md">
           {p.exception}
         </Badge>
       );
@@ -1438,7 +1439,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
     if (!data || data.loading || data.failed || !data.viewer.reviews) return null;
     const all = (data.pieces ?? []).map((p) => (local.has(p.key) ? { ...p, state: 'decided' as const, decided: local.get(p.key) ?? 'added', waitsOn: 'nobody' as const } : p));
     const f = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
-    return tallySentence(tallyOf(all, all.filter((p) => passes(p, f)), data.viewer, f));
+    return tallySentence(tallyOf(all, all.filter((p) => passes(p, f, data.viewer.name)), data.viewer, f));
   }, [data, local, params]);
   useEffect(() => {
     if (!data) return;
@@ -1456,7 +1457,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
 
   const pieces = useMemo(() => (data?.pieces ?? []).map((p) => (local.has(p.key) ? { ...p, state: 'decided' as const, decided: local.get(p.key) ?? 'added', waitsOn: 'nobody' as const } : p)), [data, local]);
   const filters = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
-  const shown = useMemo(() => pieces.filter((p) => passes(p, filters)), [pieces, filters]);
+  const shown = useMemo(() => pieces.filter((p) => passes(p, filters, data?.viewer.name ?? null)), [pieces, filters, data]);
   // A designer reads the list or the map (lr-designer): nothing to decide one by one. The Map falls back to List on a
   // phone and when nothing is there to draw.
   const asked = params?.view ?? (reviews ? 'one' : 'list');

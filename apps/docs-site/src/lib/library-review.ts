@@ -15,6 +15,8 @@
 //   - designer words only: never branch, pull request or merge.
 // Pure: no DOM, no fetch. Read by components/ds/studio/LibraryReview.tsx, fed by scripts/library-review-data.ts.
 // Tested in library-review.test.ts.
+import { calendarDays } from '@bridge-ds/core';
+import { waitTone } from './status-tag';
 import {
   componentOf,
   inferLeadReason,
@@ -37,7 +39,8 @@ export type DecidedKey = 'added' | 'building' | 'kept' | 'existing' | 'shipped' 
 
 export const DECIDED_LABEL: Record<DecidedKey, string> = {
   added: 'Added',
-  building: 'With developers',
+  // The one status ladder's word (lib/status-ladder): decided, a developer builds it.
+  building: 'Being built',
   kept: 'Kept in its screen',
   existing: 'Uses an existing piece',
   shipped: 'Shipped',
@@ -143,6 +146,12 @@ export interface ReviewPiece {
   /** When it last moved (ISO), when known: the List orders its blocks by the most recent. */
   at?: string | null;
 }
+
+/**
+ * The tone of a piece that waits (its ways to pick, Waiting): grey, amber only once it has waited past LATE_DAYS
+ * since it last moved (lib/status-tag waitTone). The one rule; no tag is amber because it waits.
+ */
+export const pieceWaitTone = (p: Pick<ReviewPiece, 'at'>, now: number = Date.now()): 'neutral' | 'warning' => waitTone(p.at ? calendarDays(p.at, new Date(now)) : null);
 
 // ---------------------------------------------------------------------------------------------------------------
 // Words
@@ -581,9 +590,9 @@ export function withReviewParams(search: string, f: ReviewFilters, view: ReviewV
 
 export const productKeyOf = (p: ReviewPiece): string => p.asked?.productKey ?? (p.asked?.product ? p.asked.product.toLowerCase() : LIBRARY_PRODUCT);
 
-export function passes(p: ReviewPiece, f: ReviewFilters): boolean {
+export function passes(p: ReviewPiece, f: ReviewFilters, viewerName: string | null = null): boolean {
   if (f.status.length && !f.status.includes(p.state)) return false;
-  if (f.asked.length && !f.asked.some((a) => (a === YOU ? p.mine : peopleOf(p).some((n) => personKey(n) === a)))) return false;
+  if (f.asked.length && !f.asked.some((a) => (a === YOU ? askedByViewer(p, viewerName) : peopleOf(p).some((n) => personKey(n) === a)))) return false;
   if (f.product.length && !f.product.includes(productKeyOf(p))) return false;
   return true;
 }
@@ -596,11 +605,29 @@ export interface FilterChoice {
 /** A person's filter value: "person:leo". */
 export const personKey = (name: string): string => `person:${name.trim().toLowerCase()}`;
 
-/** The people who asked for a piece: each asking exploration's designer, both designers of a conflict, the lead who made it. */
+/**
+ * The people who asked for a piece: each asking exploration's designer, both designers of a conflict; the person who
+ * made it only when no exploration asked (a lead's own change). Who builds a change an exploration asked for did not
+ * ask for it: Malik building Sofia's Card is Sofia's piece.
+ */
 export function peopleOf(p: ReviewPiece): string[] {
-  const names = p.conflict ? p.conflict.ways.map((w) => w.designer) : [p.asked?.designer, ...(p.also ?? []).map((x) => x.designer), p.by];
+  const asked = p.conflict ? p.conflict.ways.map((w) => w.designer) : [p.asked?.designer, ...(p.also ?? []).map((x) => x.designer)];
+  const names = asked.some((n) => n && n.trim()) ? asked : [p.by];
   return [...new Set(names.filter((n): n is string => Boolean(n && n.trim())))];
 }
+
+/**
+ * "Asked by: You": the viewer is among the people who asked for it (peopleOf). Without the viewer's name, or for a
+ * piece nobody is named on, the viewer's own piece (made or asked by them, `mine`).
+ */
+export function askedByViewer(p: ReviewPiece, viewerName: string | null): boolean {
+  const people = peopleOf(p);
+  if (!viewerName?.trim() || !people.length) return p.mine;
+  return people.some((n) => personKey(n) === personKey(viewerName));
+}
+
+/** The viewer's own pieces still waiting: what Library review lists under Asked by: You, Waiting, and Home counts. */
+export const yourWaitingPieces = (pieces: readonly ReviewPiece[], v: Pick<Viewer, 'name'>): number => pieces.filter((p) => p.state === 'waiting' && askedByViewer(p, v.name)).length;
 
 /**
  * The checkbox lists. Asked by lists people only (owner, 2026-11-10: explorations already show on each row, and

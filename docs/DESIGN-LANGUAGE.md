@@ -97,7 +97,7 @@ Older ramps (`steel`, `cable`) remain in the primitives for compatibility, but n
 ### Contrast commitments (checked by the token build)
 
 `packages/tokens/src/contrast.checks.json` lists every pair the system depends on. The build resolves each
-pair for every brand and theme (296 checks today) and **fails** if one drops below its minimum. Values below
+pair for every brand and theme (76 pairs in 2 brands, light and dark: 304 checks today) and **fails** if one drops below its minimum. Values below
 are bridge light unless noted, from `packages/tokens/dist/resolved.json`:
 
 - Body text on canvas and surfaces: 4.5:1 minimum. Ink on white is 16.49:1.

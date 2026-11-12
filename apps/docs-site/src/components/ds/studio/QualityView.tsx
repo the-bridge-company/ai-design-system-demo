@@ -12,7 +12,7 @@ import ContrastFailTable, { type ContrastFailRow } from './ContrastFailTable';
 import { QuietScene } from './QuietScene';
 import { ADOPTION_MEANING, type ComboResult, type Finding } from '../../../lib/quality';
 import { HEALTH_SECTION } from '../../../lib/library-health';
-import { gainLine, pctLabel as formatPct, productTrend, runDate, unusedLine, type AdoptionRun, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
+import { gainLine, pctLabel as formatPct, productTrend, runDate, unusedCount, unusedLine, type AdoptionRun, type TokenUsageCount, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
 import type { StatusGroup } from '../../../lib/changes';
 import { statusTagClass } from '../../../lib/status-tag';
@@ -42,7 +42,7 @@ export interface QualityViewProps {
   adoptionUnmeasured?: { key: string; name: string }[];
   adoptionMeasure?: ReactNode;
   guidance: { lead: string; findings: Finding[] };
-  tokens: { findings: Finding[]; unusedTotal: number; unusedHref: string; problems?: string[] };
+  tokens: { findings: Finding[]; unused: TokenUsageCount; unusedHref: string; problems?: string[] };
 }
 
 function Go({ href, label, title }: { href: string; label: string; title: string }) {
@@ -359,12 +359,12 @@ function TokensSection({ tokens }: { tokens: QualityViewProps['tokens'] }) {
       )}
       <div className="fg-card ql-note">
         <span className="ql-main">
-          <span className="ql-title">{unusedLine(tokens.unusedTotal)}</span>
+          <span className="ql-title">{unusedLine(tokens.unused)}</span>
           <span className="ql-detail">
-            {tokens.unusedTotal ? 'Nothing breaks. They are candidates for cleanup, or values waiting for a job.' : 'Each token is read by a component or a stylesheet.'}
+            {unusedCount(tokens.unused) ? 'Nothing breaks. They are candidates for cleanup, or values waiting for a job.' : 'Each token is read by a component or a stylesheet.'}
           </span>
         </span>
-        {tokens.unusedTotal > 0 && <Go href={tokens.unusedHref} label="See unused tokens" title={unusedLine(tokens.unusedTotal)} />}
+        {unusedCount(tokens.unused) > 0 && <Go href={tokens.unusedHref} label="See unused tokens" title={unusedLine(tokens.unused)} />}
       </div>
       {problems.length > 0 && (
         <Accordion headingLevel={3} className="ql-acc ql-earlier">

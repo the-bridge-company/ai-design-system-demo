@@ -43,6 +43,9 @@ import {
 } from '../../../lib/home-model';
 import { explorationsFor, libraryChangesLine, ownOpenWork, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
 import { studioHref } from '../../../lib/team-path';
+import { inProgressCount, waitingToBePickedUp } from '../../../lib/waiting-counts';
+import { openBuildRequests, type BuildRequestView } from '@bridge-ds/core';
+import { pageRows } from '../../../lib/building-view';
 import { productFolders, type ProductStateKey } from '../../../lib/product-page';
 import { siteConfig } from '../../../scripts/repo-context';
 import { defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
@@ -80,7 +83,7 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
         {s.note && <span className="t-muted">{` ${s.note}`}</span>}
       </span>
       {oldest && (
-        <Badge tone="warning" size="md" className="sh-oldest">
+        <Badge tone={s.badge?.tone ?? 'neutral'} size="md" className="sh-oldest">
           {oldest}
         </Badge>
       )}
@@ -207,7 +210,8 @@ function Explorations({
         <h2 id="sh-explorations" className="sh-h2">
           {title}
         </h2>
-        {explorations.length > EXPLORATION_CARDS && <Link href={seeAll}>See all {explorations.length}</Link>}
+        {/* "See all N": the explorations in progress, the number the list it opens shows by default (lib/waiting-counts). */}
+        {explorations.length > EXPLORATION_CARDS && <Link href={seeAll}>{seeAllWords(inProgressCount(explorations))}</Link>}
       </header>
       {/* On a phone the step is a card in the flow, before the cards; on a wide screen it floats under them, so it never
           covers the first card ("Start an exploration"). */}
@@ -250,7 +254,7 @@ function RecentExplorations({ cards, title, seeAll }: { cards: ExplorationCard[]
         <h2 id="sh-explorations" className="sh-h2">
           {title}
         </h2>
-        {recent.total > recent.cards.length && <Link href={seeAll}>See all {recent.total}</Link>}
+        {cards.length > recent.cards.length && <Link href={seeAll}>{seeAllWords(recent.total)}</Link>}
       </header>
       <ul className="sh-cards" data-recent-explorations="">
         {recent.cards.map((c) => (
@@ -292,7 +296,7 @@ function Health({ h }: { h: HealthLine }) {
 }
 
 /**
- * The status line under the Harbor zone: the library's health ("Library healthy. Open Quality") and, while setup steps
+ * The status line under the Harbor zone: the library's health ("Nothing blocks the library. Open Quality") and, while setup steps
  * are left, "7 of 8 connected" with its checklist, in the same quiet voice. Neither competes with the greeting.
  */
 function Status({ health, setup }: { health: HealthLine | null; setup?: ReactNode }) {
@@ -380,6 +384,11 @@ export interface StudioHomeProps {
    * says what is open of their own work, then "Recent explorations" (RecentExplorations) and the product folders.
    */
   recent?: boolean;
+  /**
+   * The viewer's own pieces still waiting in Library review (lib/library-review yourWaitingPieces), once it was read:
+   * the quiet sentence says this number, the one Library review lists under Asked by: You.
+   */
+  libraryPieces?: number | null;
 }
 
 /** Where a tour step can point: the lead's (lib/lead-tour LeadTourAt) and the contributor's ("start", the ways to start). */
@@ -398,6 +407,28 @@ export const BUILDER_WORDS = { title: 'What are you building today?', button: 'S
 
 /** The Harbor zone's line when nothing waits on the viewer: honest first, then the calm. */
 export const QUIET_LINE = 'Nothing needs you. The harbor is calm.';
+
+/** "See all 7", or "See all" when nothing is in progress (the list then opens on its default, empty filter). */
+const seeAllWords = (n: number) => (n > 0 ? `See all ${n}` : 'See all');
+
+/**
+ * On a developer's Home, the build requests nobody picked up yet (lib/waiting-counts waitingToBePickedUp), the same rows as
+ * the Being built line (BuildLine, lib/building-view pageRows): null while read or unreadable.
+ */
+function usePickUp(on: boolean): number | null {
+  const [n, setN] = useState<number | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    let live = true;
+    loadBuildData()
+      .then((d) => live && setN(waitingToBePickedUp(openBuildRequests(pageRows<BuildRequestView>(d, Date.now())))))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [on]);
+  return on ? n : null;
+}
 
 /** The quiet sentence (lib/home-explorations quietParts): its counts open Changes on the viewer's own work at that stage. */
 function QuietLine({ parts }: { parts: QuietPart[] }) {
@@ -452,6 +483,7 @@ function HomeBody(p: StudioHomeProps) {
   const changeRows = p.needs.some(isChange);
   const split = splitNeeds(p.needs);
   const byRole = explorationsFor(p.explorations, Boolean(p.contributor));
+  const pickUp = usePickUp(Boolean(p.builder) && p.state === 'empty');
   const leadSteps = leadTourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
   const lead = useTour<LeadTourAt>(LEAD_TOUR_KEY, leadSteps, (at) => leadTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
   const tour: HomeTour | undefined = p.contributor
@@ -503,7 +535,7 @@ function HomeBody(p: StudioHomeProps) {
             <QuietScene scene="harbor" layout="window" />
             <div className="sh-head-text">
               <p className="t-body">
-                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed))} />
+                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed), { pieces: p.libraryPieces ?? null, pickUp })} />
               </p>
               <h1 id="sh-hello" className="sh-hello">
                 {p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}

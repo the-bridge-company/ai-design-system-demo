@@ -77,7 +77,7 @@ describe('bridge explore', () => {
     const l = io(gh);
     expect(await runExplore(args('explore', 'list'), dir, l.io)).toBe(0);
     expect(l.out()).toMatch(/^1 exploration running\./);
-    expect(l.out()).toMatch(/#1 Pill buttons {2}Running {2}explore\/pill-buttons/);
+    expect(l.out()).toMatch(/#1 Pill buttons {2}Exploring {2}explore\/pill-buttons/);
     expect(l.out()).toContain('Requests: #100');
     expect(l.out()).toContain('Install: The test build is being prepared');
     expect(l.out()).not.toContain('pkg.pr.new');

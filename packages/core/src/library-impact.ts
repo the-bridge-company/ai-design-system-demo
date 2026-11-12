@@ -338,15 +338,15 @@ export function impactStatus(x: {
   /** Done exploring was said: the lead is asked. Left out, the lead is asked (Review all lists only those). */
   asked?: boolean | undefined;
 }): ImpactStatus {
-  if (x.conflict && !x.conflict.pick) return { key: 'conflict', label: 'Two ways', tone: 'danger' };
+  if (x.conflict && !x.conflict.pick) return { key: 'conflict', label: 'Two ways', tone: 'neutral' };
   const d = x.decision;
   if (d?.verdict === 'local') return { key: 'local', label: 'Kept in this screen', tone: 'neutral' };
   if (d?.verdict === 'existing') return { key: 'existing', label: d.use ? `Uses ${d.use}` : 'Uses an existing piece', tone: 'neutral' };
-  if (d?.verdict === 'changes') return { key: 'changes', label: 'Changes asked', tone: 'warning' };
+  if (d?.verdict === 'changes') return { key: 'changes', label: 'Changes asked', tone: 'neutral' };
   if (x.released) return { key: 'released', label: 'In the library', tone: 'success' };
   if (d?.verdict === 'approved' || x.approved) return x.link ? { key: 'building', label: 'Being built', tone: 'info' } : { key: 'approved', label: 'Approved', tone: 'success' };
   if (x.asked === false) return { key: 'exploring', label: 'Exploring', tone: 'info' };
-  return { key: 'needs-lead', label: `Needs ${x.lead}`, tone: 'warning' };
+  return { key: 'needs-lead', label: `Needs ${x.lead}`, tone: 'neutral' };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

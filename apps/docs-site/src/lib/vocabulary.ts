@@ -50,8 +50,9 @@ export const VOCAB = {
 export const STATUS_WORDS = {
   draft: 'Draft',
   inReview: 'In review',
-  waiting: 'Approved, waiting for code',
-  waitingShort: 'Waiting for code',
+  // The status ladder's Ready to build (lib/status-ladder): approved, nobody builds it yet.
+  waiting: 'Ready to build',
+  waitingShort: 'Ready to build',
   merged: 'Added to the library',
   closed: 'Closed',
 } as const;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adoptionFigureInput, adoptionView, gainLine, productName, productTrend, qualityPillars, qualityVerdict, unusedLine, type AdoptionRun } from './quality-view';
+import { adoptionFigureInput, adoptionView, gainLine, productName, HEALTHY_TITLE, healthGaps, LOW_ADOPTION_PCT, productTrend, qualityPillars, qualityVerdict, unusedCount, unusedLine, type AdoptionRun } from './quality-view';
 import { contrastFinding, type Finding } from './quality';
 import { healthFigures } from './library-health';
 
@@ -22,13 +22,14 @@ describe('qualityVerdict', () => {
   it('turns to haze with one thing to look at, and the action says what it does', () => {
     const v = qualityVerdict({ contrastFail: 0, findings: [finding('warn', 'Button guidance is a draft', 'Review'), pass] });
     expect(v.mood).toBe('haze');
-    expect(v.sentence).toBe('Nothing blocks it. Button guidance is a draft.');
+    expect(v.title).toBe('Nothing blocks the library');
+    expect(v.sentence).toBe('Button guidance is a draft.');
     expect(v.action).toEqual({ label: 'Review guidance', href: '/fix/Button%20guidance%20is%20a%20draft' });
   });
 
   it('starts with the first of several things to look at', () => {
     const v = qualityVerdict({ contrastFail: 0, findings: [finding('warn', 'A', 'Add guidance'), finding('warn', 'B', 'Review')] });
-    expect(v.sentence).toBe('Nothing blocks it. 2 things need a look, starting with A.');
+    expect(v.sentence).toBe('2 things need a look, starting with A.');
     expect(v.action?.label).toBe('Start with the first');
   });
 
@@ -43,6 +44,36 @@ describe('qualityVerdict', () => {
     expect(v.mood).toBe('fog');
     expect(v.sentence).toBe('Card reads --color-x.');
     expect(v.action?.label).toBe('Fix it');
+  });
+
+  // The review found "The library is healthy" next to 13% adoption in Acme CRM: the verdict reads the shown numbers.
+  it('never says healthy next to a product far from using the library', () => {
+    const products = [
+      { name: 'Acme CRM', pct: 13.2 },
+      { name: 'Acme Prints', pct: 91.4 },
+    ];
+    const v = qualityVerdict({ contrastFail: 0, findings: [pass], products });
+    expect(v.mood).toBe('haze');
+    expect(v.title).toBe('Nothing blocks the library, but not every product uses it yet');
+    expect(v.sentence).toBe('Acme CRM takes 13% of its components from the library.');
+    expect(v.action).toEqual({ label: 'See each product', href: '#ql-adoption' });
+    const both = qualityVerdict({ contrastFail: 0, findings: [finding('warn', 'VisuallyHidden guidance is a draft', 'Review'), pass], products });
+    expect(both.sentence).toBe('Acme CRM takes 13% of its components from the library. VisuallyHidden guidance is a draft.');
+    expect(both.action?.label).toBe('Review guidance');
+  });
+
+  it('counts a product at the threshold as using the library', () => {
+    expect(healthGaps({ products: [{ name: 'A', pct: LOW_ADOPTION_PCT }, { name: 'B', pct: null }] })).toEqual([]);
+    expect(qualityVerdict({ contrastFail: 0, findings: [pass], products: [{ name: 'A', pct: LOW_ADOPTION_PCT }] }).title).toBe(HEALTHY_TITLE);
+  });
+
+  it('reads unused tokens against the tokens designers pick from, never the primitives', () => {
+    const many = { tokens: { total: 119, unused: 40 }, primitives: { total: 267, unused: 200 } };
+    expect(healthGaps({ tokens: many })).toEqual([{ kind: 'tokens', text: '40 of 119 tokens are not in use' }]);
+    const v = qualityVerdict({ contrastFail: 0, findings: [pass], tokens: many });
+    expect(v).toMatchObject({ mood: 'haze', title: 'Nothing blocks the library', action: { label: 'See unused tokens', href: '#ql-tokens' } });
+    const few = { tokens: { total: 119, unused: 14 }, primitives: { total: 267, unused: 86 } };
+    expect(qualityVerdict({ contrastFail: 0, findings: [pass], tokens: few }).title).toBe(HEALTHY_TITLE);
   });
 });
 
@@ -154,9 +185,14 @@ describe('product words', () => {
   });
 
   it('says unused tokens calmly', () => {
-    expect(unusedLine(99)).toBe('99 tokens are not in use yet');
-    expect(unusedLine(1)).toBe('1 token is not in use yet');
-    expect(unusedLine(0)).toBe('Every token is in use');
+    // Each kind against its own total, so "See unused tokens" opens a list with the same first number.
+    const u = (t: number, tu: number, p: number, pu: number) => ({ tokens: { total: t, unused: tu }, primitives: { total: p, unused: pu } });
+    expect(unusedLine(u(119, 14, 267, 86))).toBe('14 of 119 tokens and 86 of 267 primitives are not in use yet');
+    expect(unusedCount(u(119, 14, 267, 86))).toBe(100);
+    expect(unusedLine(u(119, 1, 267, 0))).toBe('1 of 119 tokens is not in use yet');
+    expect(unusedLine(u(119, 0, 267, 3))).toBe('3 of 267 primitives are not in use yet');
+    expect(unusedLine(u(0, 2, 0, 0))).toBe('2 tokens are not in use yet');
+    expect(unusedLine(u(119, 0, 267, 0))).toBe('Every token is in use');
   });
 });
 

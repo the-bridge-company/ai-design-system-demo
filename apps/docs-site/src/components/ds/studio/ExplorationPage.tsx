@@ -80,7 +80,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, ScreenStage, Timeline, TurnSteps, TurnZone } from './ExplorationParts';
-import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
+import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type LeadDecision, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
 import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
@@ -239,7 +239,7 @@ export interface ExplorationPageProps {
   /** Ended by a lead, with the reason (board L5). */
   notDoing?: NotDoingView | null;
   /** The tag while the talk decides what it is ("Needs changes"), over the lifecycle's own. */
-  tag?: { label: string; tone: 'danger' | 'neutral' | 'warning' } | null;
+  tag?: { label: string; tone: 'danger' | 'neutral' | 'warning' | 'info' | 'success' } | null;
   /** Everything the designer and their lead said, newest first. */
   decisions?: readonly DecisionRowView[];
   /** "Take it back", for a lead on someone else's exploration no developer started (board L2). */
@@ -528,7 +528,7 @@ function PmCall({ call, say }: { call: NonNullable<PmView['call']>; say: (s: str
  * after applying the choice on each new library piece), or Needs changes with the words that go back. Ask someone else,
  * Not doing this and Copy link sit in its "...". A comment goes in Activity's box.
  */
-function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
+function LeadTurn({ bar, line, decisions = [], heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; /** Every decision of the library section (lib/exploration-layout leadDecisions). */ decisions?: readonly LeadDecision[]; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
   const { busy, run } = useAct(say);
   const [changes, setChanges] = useState(false);
   const [text, setText] = useState('');
@@ -586,16 +586,20 @@ function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }:
     </>
   );
   if (bar.blocked) {
-    // "Choose Card padding" -> "Which Card padding for Sofia's screen?"; several pieces -> "2 library pieces wait for you".
+    // Every decision on the page counts: "Card padding and Timeline", "2 library pieces wait for your choice", and the
+    // line says what each tick does. Without the section's decisions: "Choose Card padding" -> "Which Card padding...".
+    const words = leadTurnWords(decisions, designer.name);
     const one = /^Choose (?!\d)(.+)$/.exec(bar.blocked)?.[1];
     return (
-      <TurnZone eyebrow={`Your turn${SEP}1 of 2`} title={one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice')} drawing="guide" actions={actions}>
-        <LeadSteps first={one ?? 'Library pieces'} />
-        <p>{one ? `${who} screen changes ${one}. Choose what the library keeps, then the screen goes to the developers.` : 'Choose what the library keeps, then the screen goes to the developers.'}</p>
+      <TurnZone eyebrow={`Your turn${SEP}1 of 2`} title={words?.title ?? (one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice'))} drawing="guide" actions={actions}>
+        <LeadSteps first={words?.step ?? one ?? 'Library pieces'} />
+        <p>{words?.line ?? (one ? `${who} screen changes ${one}. Choose what the library keeps, then the screen goes to the developers.` : 'Choose what the library keeps, then the screen goes to the developers.')}</p>
         {extra}
       </TurnZone>
     );
   }
+  // Nothing left to choose: the line says what Send does with each tick, as ticked now.
+  const said = sendTickLine(decisions, designer.name) ?? line;
   return (
     <>
       <TurnZone
@@ -605,7 +609,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }:
         quote={question ? <AskQuote who={designer} verb="asks" text={question} action={<Link href="#xp-compose">Answer</Link>} /> : null}
         actions={actions}
       >
-        {line && <p>{line}</p>}
+        {said && <p>{said}</p>}
         {extra}
       </TurnZone>
     </>
@@ -1116,6 +1120,8 @@ function ExplorationBody(p: ExplorationPageProps) {
   const openQuestion = notes?.openQuestions?.find((q) => q.trim()) ?? null;
   const impactRows = p.impact?.view.state === 'rows' ? p.impact.view.rows : [];
   const staged = stagedPieces(impactRows, Boolean(p.impact?.actions.onPiece));
+  // Every decision of the library section, counted once for the lead's steps and line (nothing ticked silently).
+  const decisions = leadDecisions({ conflicts: p.impact?.view.state === 'rows' ? p.impact.view.conflicts : [], staged, choices });
   const applyStaged = async () => {
     for (const r of staged) await p.impact!.actions.onPiece!(r.id, choices[r.id] ?? 'approve');
   };
@@ -1160,7 +1166,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       case 'lead-take':
         return <LeadTake lead={p.lead!} say={setSaid} />;
       case 'lead-review':
-        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
+        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} decisions={decisions} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
       case 'done':
         return (
           <TurnZone

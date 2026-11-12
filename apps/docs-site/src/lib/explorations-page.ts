@@ -2,10 +2,10 @@
 // Unit tested in explorations-page.test.ts; the page is components/ds/studio/BranchesList.tsx, fed by scripts/reviews.ts.
 //
 // Decisions (owner, 2026-11-09):
-//   - One status per exploration, in designer words only: Exploring, Waiting for lead, Needs changes, Waiting for the
-//     library, Looks right, With developers (every developer stage in one: waiting to be picked up, being built, in
-//     review, approved waiting to ship, next release), Shipped, Not doing this, Archived (statusOf).
-//   - Filters are checkbox dropdowns: Status (default In progress = the first six), Product, People (?status=,
+//   - One status per exploration, the one status ladder's (lib/status-ladder, 2026-11-12): Exploring, In review, Ready
+//     to build, Being built, Checking, Shipped, Not doing this, Archived (statusOf). What the tag does not say (Changes
+//     asked, Waiting for the library, Looks right) is a second line (statusNote), never a status.
+//   - Filters are checkbox dropdowns: Status (default In progress = the five open steps), Product, People (?status=,
 //     ?product=, ?people=, comma separated). No state tabs.
 //   - "Waiting on you" is not a filter: a section pinned first, whatever the filters, each row with "Your turn ·
 //     <reason>" (splitWaiting, turnReason). Its rows come from the one rule of every surface (lib/waiting-on, the
@@ -15,57 +15,27 @@
 //     (/studio/library-review/); old addresses that opened them here go there (legacyTarget).
 import { decisionsOf, isPmKind, isWaitingForLead, openDecisionOf, parseExplorationBody } from '@bridge-ds/core';
 import type { LifecycleStage } from './review-state';
+import { isOpenStep, STATUS_STEPS, STEP_LABEL, stepOfStage, stepTone, type StatusStep } from './status-ladder';
 
-export type ExplorationState =
-  | 'exploring'
-  | 'waiting-for-lead'
-  | 'needs-changes'
-  | 'waiting-for-library'
-  | 'looks-right'
-  | 'with-developers'
-  | 'shipped'
-  | 'not-doing'
-  | 'archived';
+/** Where a row stands: a step of the one status ladder (lib/status-ladder), or stopped work. */
+export type ExplorationState = StatusStep;
 
-/** Every status, in the lifecycle's order: the Status filter lists them so. */
-export const STATES: readonly ExplorationState[] = ['exploring', 'waiting-for-lead', 'needs-changes', 'waiting-for-library', 'looks-right', 'with-developers', 'shipped', 'not-doing', 'archived'];
+/** Every status, in the ladder's order: the Status filter lists them so. */
+export const STATES: readonly ExplorationState[] = STATUS_STEPS;
 
-export const STATE_LABEL: Record<ExplorationState, string> = {
-  exploring: 'Exploring',
-  'waiting-for-lead': 'Waiting for lead',
-  'needs-changes': 'Needs changes',
-  'waiting-for-library': 'Waiting for the library',
-  'looks-right': 'Looks right',
-  'with-developers': 'With developers',
-  shipped: 'Shipped',
-  'not-doing': 'Not doing this',
-  archived: 'Archived',
-};
+/** The ladder's words: the tag, the filter and the Board column say the same as every other surface. */
+export const STATE_LABEL: Record<ExplorationState, string> = STEP_LABEL;
 
-/** The tone of each status tag (lib/status-tag colours: blue in progress, amber waiting, red blocked, green done). */
-export const STATE_TONE: Record<ExplorationState, 'info' | 'warning' | 'danger' | 'success' | 'neutral'> = {
-  exploring: 'info',
-  'waiting-for-lead': 'warning',
-  'needs-changes': 'danger',
-  'waiting-for-library': 'warning',
-  'looks-right': 'success',
-  'with-developers': 'info',
-  shipped: 'success',
-  'not-doing': 'neutral',
-  archived: 'neutral',
-};
+/** The calm tone of each status tag (lib/status-ladder stepTone): a wait is grey, never amber by itself. */
+export const STATE_TONE: Record<ExplorationState, 'info' | 'warning' | 'danger' | 'success' | 'neutral'> = Object.fromEntries(STATUS_STEPS.map((s) => [s, stepTone(s)])) as Record<ExplorationState, 'info' | 'warning' | 'success' | 'neutral'>;
 
-/** The default of the Status filter, "In progress": the first six statuses. */
-export const IN_PROGRESS: readonly ExplorationState[] = STATES.slice(0, 6);
+/** The default of the Status filter, "In progress": the open steps (Exploring to Checking). */
+export const IN_PROGRESS: readonly ExplorationState[] = STATUS_STEPS.filter(isOpenStep);
 export const IN_PROGRESS_LABEL = 'In progress';
 
-/** The Board: one column per status; Looks right holds Waiting for the library too. Archived and Not doing: filter only. */
+/** The Board: one column per open step, then what shipped lately. Archived and Not doing this: filter only. */
 export const BOARD_COLUMNS: readonly { key: ExplorationState; label: string; holds: readonly ExplorationState[] }[] = [
-  { key: 'exploring', label: STATE_LABEL.exploring, holds: ['exploring'] },
-  { key: 'waiting-for-lead', label: STATE_LABEL['waiting-for-lead'], holds: ['waiting-for-lead'] },
-  { key: 'needs-changes', label: STATE_LABEL['needs-changes'], holds: ['needs-changes'] },
-  { key: 'looks-right', label: STATE_LABEL['looks-right'], holds: ['looks-right', 'waiting-for-library'] },
-  { key: 'with-developers', label: STATE_LABEL['with-developers'], holds: ['with-developers'] },
+  ...IN_PROGRESS.map((s) => ({ key: s, label: STATE_LABEL[s], holds: [s] })),
   { key: 'shipped', label: 'Shipped, last 30 days', holds: ['shipped'] },
 ];
 
@@ -103,7 +73,7 @@ function leadSaidLooksRight(body: string | null | undefined): boolean {
   return all[all.length - 1]?.kind === 'looks-right';
 }
 
-/** Where a row stands, in the page's one set of words. */
+/** Where a row stands, on the one status ladder. What the tag does not say is statusNote, never a status. */
 export function statusOf(r: StatusInput): ExplorationState {
   if (r.archived && r.stage !== 'shipped' && r.stage !== 'next-release') return 'archived';
   if (r.merged_at || r.shippedAt || r.lifecycle === 'shipped') return 'shipped';
@@ -112,34 +82,52 @@ export function statusOf(r: StatusInput): ExplorationState {
     if (open?.kind === 'not-doing') return 'not-doing';
     switch (r.stage) {
       case 'archived':
-        return 'archived';
       case 'shipped':
       case 'next-release':
-        return 'shipped';
       case 'closed':
       case 'not-planned':
-        return 'not-doing';
-      case 'waiting-for-code':
-        if (r.waitsForLibrary) return 'waiting-for-library';
-        return leadSaidLooksRight(r.body) ? 'looks-right' : 'with-developers';
       case 'being-built':
       case 'in-review':
       case 'approved':
-        return 'with-developers';
+        return stepOfStage(r.stage);
+      case 'waiting-for-code':
+        // Library pieces it needs are still decided in Library review: it is in review until they are.
+        return r.waitsForLibrary ? 'in-review' : 'ready-to-build';
       default:
-        if (open?.kind === 'changes' || open?.kind === 'take-back') return 'needs-changes';
-        if (r.stage === 'waiting-for-lead' || isWaitingForLead(r.body ?? null)) return 'waiting-for-lead';
+        // The lead asked for changes: back with the designer, exploring (statusNote says why).
+        if (open?.kind === 'changes' || open?.kind === 'take-back') return 'exploring';
+        if (r.stage === 'waiting-for-lead' || isWaitingForLead(r.body ?? null)) return 'in-review';
         return 'exploring';
     }
   }
   if (r.lifecycle === 'closed') return 'not-doing';
-  // A product branch (not an exploration): its review in designer words.
+  // A product branch (not an exploration): its review on the ladder.
   if (r.lifecycle === 'ready') {
-    if (r.statusKind === 'changes-requested') return 'needs-changes';
-    if (r.statusKind === 'needs-design' || r.statusKind === 'needs-approval') return 'waiting-for-lead';
-    if (r.statusKind === 'ready') return 'looks-right';
+    if (r.statusKind === 'changes-requested') return 'exploring';
+    if (r.statusKind === 'needs-design' || r.statusKind === 'needs-approval') return 'in-review';
+    if (r.statusKind === 'ready') return 'ready-to-build';
   }
-  return 'with-developers';
+  return 'being-built';
+}
+
+/**
+ * The second line of a row's status, what the tag alone does not say: "Changes asked", "Waiting for the library",
+ * "Looks right". Null when the tag says it all. Never a status of its own (lib/status-ladder).
+ */
+export function statusNote(r: StatusInput): string | null {
+  if (r.lifecycle === 'exploration') {
+    const open = openDecisionOf(r.body ?? null);
+    if (!r.stage || r.stage === 'exploring' || r.stage === 'waiting-for-lead') {
+      if (open?.kind === 'changes' || open?.kind === 'take-back') return 'Changes asked';
+      return null;
+    }
+    if (r.stage === 'waiting-for-code') return r.waitsForLibrary ? 'Waiting for the library' : leadSaidLooksRight(r.body) ? 'Looks right' : null;
+    if (r.stage === 'approved') return 'Looks right, ships next';
+    if (r.stage === 'next-release') return 'In the next release';
+    return null;
+  }
+  if (r.lifecycle === 'ready' && r.statusKind === 'changes-requested') return 'Changes asked';
+  return null;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -166,24 +154,23 @@ const isState = (s: string): s is ExplorationState => (STATES as readonly string
  * merged...) and the lifecycle stages.
  */
 const OLD_STATUS: Record<string, ExplorationState[]> = {
-  exploring: ['exploring'],
   'not-started': ['exploring'],
-  'waiting-for-lead': ['waiting-for-lead'],
-  code: ['with-developers'],
-  'waiting-for-code': ['with-developers'],
-  building: ['with-developers'],
-  'being-built': ['with-developers'],
-  draft: ['with-developers'],
-  review: ['with-developers'],
-  'in-review': ['with-developers'],
-  ready: ['with-developers'],
-  waiting: ['with-developers'],
-  approved: ['with-developers'],
-  'next-release': ['with-developers'],
-  shipped: ['shipped'],
+  'needs-changes': ['exploring'],
+  'waiting-for-lead': ['in-review'],
+  'waiting-for-library': ['in-review'],
+  'looks-right': ['ready-to-build'],
+  'with-developers': ['ready-to-build', 'being-built', 'checking'],
+  code: ['ready-to-build'],
+  'waiting-for-code': ['ready-to-build'],
+  building: ['being-built'],
+  draft: ['being-built'],
+  review: ['checking'],
+  ready: ['ready-to-build'],
+  waiting: ['ready-to-build'],
+  approved: ['checking'],
+  'next-release': ['shipped'],
   merged: ['shipped'],
   closed: ['shipped'],
-  archived: ['archived'],
   'not-planned': ['not-doing'],
 };
 

@@ -67,15 +67,15 @@ const figures = healthFigures({
   adoption: adoption ? adoptionFigureInput(adoption) : [],
   guidance,
 });
-const verdict = qualityVerdict({ contrastFail: contrast.fail, findings });
+// The unused tokens by kind, each against its total (quality-view TokenUsageCount): the Tokens note and the verdict read the same numbers.
+const unused = { tokens: { total: s.semantic, unused: s.unusedSemantic.length }, primitives: { total: s.primitives, unused: s.orphanPrimitives.length } };
+const verdict = qualityVerdict({ contrastFail: contrast.fail, findings, products: adoption?.products.map((p) => ({ name: p.name, pct: p.latest.component })) ?? [], tokens: unused });
 const combined = adoption ? combinedAdoption(adoptionFigureInput(adoption)) : null;
 const pillars = qualityPillars({ figures, contrast, combos, adoption: combined?.now ?? null, adoptionBefore: combined?.before, products: adoption?.products.map((p) => ({ name: p.name, pct: p.latest.component, uses: p.latest.ui })), guidance });
 // The shared summary (Share): the verdict line without the figures, then one sentence per figure.
 const openFindings = findings.filter((f) => f.severity === 'fail' || f.severity === 'warn');
 const sentence = healthSentence(contrast.fail, openFindings.length, openFindings.length === 1 ? openFindings[0]!.title : undefined);
 const gate = findings.find((f) => f.kind === 'contrast')!;
-// The real number of unused tokens, not the number of groups.
-const unusedTotal = s.unusedSemantic.length + s.orphanPrimitives.length;
 const sources = [CONTRAST_FILE, ...TOKEN_SOURCE_FILES(), ...PAGE_SOURCES.components, ...PAGE_SOURCES.adoption];
 const updated = freshness(sources);
 // Failing pairs, one row per pair and brand/theme, shown open in the accessibility section when the gate blocks.
@@ -120,7 +120,7 @@ const failRows = s.contrast.failing.map(({ pair: p, brand, mode, result: r }) =>
         contrast={{ hasChecks: true, gate, combos, failRows }}
         adoption={adoption}
         guidance={{ lead: guidanceLead(guidance), findings: findings.filter((f) => f.kind === 'guidance') }}
-        tokens={{ findings: findings.filter((f) => f.kind === 'validation'), unusedTotal, unusedHref: studioHref('tokens/?usage=unused') }}
+        tokens={{ findings: findings.filter((f) => f.kind === 'validation'), unused, unusedHref: studioHref('tokens/?usage=unused') }}
       />
     </div>
   </div>

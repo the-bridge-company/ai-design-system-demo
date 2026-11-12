@@ -45,9 +45,9 @@ export function prDocRows(entries: { path: string; text: string | null }[]): PrD
     .sort((a, b) => rank[a.state] - rank[b.state] || a.name.localeCompare(b.name));
 }
 
-/** Badge of a row: amber while a draft waits for review (lib/status-tag), green once reviewed. */
+/** Badge of a row: grey while a draft waits for review (a calm wait, lib/status-tag), green once reviewed. */
 export const PR_DOC_PILL: Record<PrDocState, { label: string; tone: StatusTone }> = {
-  review: { label: 'Draft by Claude, needs review', tone: 'warning' },
+  review: { label: 'Draft by Claude, needs review', tone: 'neutral' },
   reviewed: { label: 'Reviewed', tone: 'success' },
   written: { label: 'Written by a person', tone: 'neutral' },
   unreadable: { label: 'Could not read', tone: 'neutral' },

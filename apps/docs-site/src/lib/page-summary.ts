@@ -1,6 +1,7 @@
 // The live summary sentence of a Studio page header (components/StudioHeader.astro, ds/studio/StudioHead.tsx): one
 // sentence about the state of the page, written by the island that knows it (the changes list, Being built, the
 // team's components and quality, the token explorer). The header renders the slot; the islands fill it.
+import { stepCount } from './status-ladder';
 
 /** The header's summary slot. */
 export const SUMMARY_SELECTOR = '[data-st-summary]';
@@ -28,14 +29,15 @@ export const ACTIONS_SELECTOR = '[data-st-actions]';
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const cap = (s: string) => s.replace(/^./, (c) => c.toUpperCase());
 
-/** Changes: what is open, by where it stands, in the lifecycle's words. "2 exploring, 1 in review." */
+/** Changes: what is open, by where it stands, in the lifecycle's words. "2 exploring, 1 being checked." */
 export function changesSummary(c: Partial<Record<'exploring' | 'code' | 'building' | 'review' | 'notPlanned', number>>): string {
   const parts = [
-    c.exploring ? `${c.exploring} exploring` : '',
-    c.code ? `${c.code} waiting to be picked up` : '',
-    c.building ? `${c.building} being built` : '',
-    c.review ? `${c.review} in review` : '',
-    c.notPlanned ? `${c.notPlanned} not planned` : '',
+    // The one status ladder's words (lib/status-ladder): review here is the developers' version, Checking.
+    c.exploring ? stepCount(c.exploring, 'exploring') : '',
+    c.code ? stepCount(c.code, 'ready-to-build') : '',
+    c.building ? stepCount(c.building, 'being-built') : '',
+    c.review ? stepCount(c.review, 'checking') : '',
+    c.notPlanned ? stepCount(c.notPlanned, 'not-doing') : '',
   ].filter(Boolean);
   return parts.length ? `${cap(parts.join(', '))}.` : 'Nothing in progress right now.';
 }

@@ -311,6 +311,80 @@ export function stagedPieces<T extends { id: string; kind: string; title: string
   return canAct ? rows.filter((r) => /^new component/i.test(r.kind) && r.menu.includes('approve') && r.menu.includes('local')) : [];
 }
 
+/**
+ * One decision the lead makes on the exploration page: a part where ways differ ("Card padding", open until a way is
+ * picked) or a new piece to add ("Timeline", staged: ticked it joins the library, unticked it stays in the screen).
+ */
+export interface LeadDecision {
+  id: string;
+  title: string;
+  kind: 'choose' | 'add';
+  /** Waits on the lead: nothing is picked for them (a way to choose). An add is never open: its tick is the answer. */
+  open: boolean;
+  /** For an add: ticked, it joins the library. Null for a choice. */
+  adds: boolean | null;
+}
+
+/**
+ * Every decision on the page, in the order the library section shows them: the parts still to choose, then the new
+ * pieces with their tick. The one count the lead's steps, title and line read, so nothing is decided silently.
+ */
+export function leadDecisions(x: {
+  conflicts: readonly { piece: string; component: string; property: string; pick: string | null }[];
+  staged: readonly { id: string; title: string }[];
+  choices: Readonly<Record<string, 'approve' | 'local'>>;
+}): LeadDecision[] {
+  const choose: LeadDecision[] = x.conflicts
+    .filter((c) => !c.pick)
+    .filter((c, i, all) => all.findIndex((y) => y.component.toLowerCase() === c.component.toLowerCase() && y.property.toLowerCase() === c.property.toLowerCase()) === i)
+    .map((c) => ({ id: c.piece, title: `${c.component}${c.property ? ` ${c.property.toLowerCase()}` : ''}`, kind: 'choose', open: true, adds: null }));
+  const add: LeadDecision[] = x.staged.map((r) => ({ id: r.id, title: r.title, kind: 'add', open: false, adds: (x.choices[r.id] ?? 'approve') === 'approve' }));
+  return [...choose, ...add];
+}
+
+/** What a tick says, in the zone: "Timeline is ticked to join the library. Untick it to keep it in Sofia's screen only." */
+function tickLine(adds: readonly LeadDecision[], designer: string): string {
+  const on = adds.filter((d) => d.adds).map((d) => d.title);
+  const off = adds.filter((d) => !d.adds).map((d) => d.title);
+  const out: string[] = [];
+  if (on.length) out.push(`${andList(on)} ${on.length === 1 ? 'is' : 'are'} ticked to join the library. Untick ${on.length === 1 ? 'it' : 'one'} to keep it in ${possessiveOf(designer)} screen only.`);
+  if (off.length) out.push(`${andList(off)} ${off.length === 1 ? 'stays' : 'stay'} in ${possessiveOf(designer)} screen only.`);
+  return out.join(' ');
+}
+
+/**
+ * The lead's turn while the library section waits on them, from every decision on the page: the first step names
+ * them all ("Card padding and Timeline"), the title counts them, the line says what is still to choose and what each
+ * tick does. Null when nothing is to decide.
+ */
+export function leadTurnWords(decisions: readonly LeadDecision[], designer: string): { step: string; title: string; line: string; blocked: boolean } | null {
+  if (!decisions.length) return null;
+  const open = decisions.filter((d) => d.open);
+  const adds = decisions.filter((d) => d.kind === 'add');
+  const names = decisions.map((d) => d.title);
+  const step = decisions.length > 3 ? `${decisions.length} library pieces` : andList(names);
+  const who = possessiveOf(designer);
+  const title = decisions.length === 1 && open.length === 1 ? `Which ${open[0]!.title} for ${who} screen?` : `${decisions.length} library pieces wait for your choice`;
+  const changes = open.length ? `${who} screen changes ${andList(open.map((d) => d.title))}${adds.length ? ` and adds ${andList(adds.map((d) => d.title))}` : ''}.` : `${who} screen adds ${andList(adds.map((d) => d.title))}.`;
+  const parts = [changes];
+  if (open.length) parts.push(`Choose ${andList(open.map((d) => d.title))}.`);
+  if (adds.length) parts.push(tickLine(adds, designer));
+  parts.push('Then the screen goes to the developers.');
+  return { step, title, line: parts.join(' '), blocked: open.length > 0 };
+}
+
+/** The line once nothing is left to choose: what Send to the developers does with each tick. Null without new pieces. */
+export function sendTickLine(decisions: readonly LeadDecision[], designer: string): string | null {
+  const adds = decisions.filter((d) => d.kind === 'add');
+  if (!adds.length) return null;
+  const on = adds.filter((d) => d.adds).map((d) => d.title);
+  const off = adds.filter((d) => !d.adds).map((d) => d.title);
+  const out: string[] = [];
+  if (on.length) out.push(`Sending also adds ${andList(on)} to the library.`);
+  if (off.length) out.push(`${andList(off)} ${off.length === 1 ? 'stays' : 'stay'} in ${possessiveOf(designer)} screen only.`);
+  return out.join(' ');
+}
+
 /** The words of a new piece's choice. */
 export const NEW_PIECE_WORDS = {
   today: 'Today',

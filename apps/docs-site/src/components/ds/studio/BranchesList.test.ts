@@ -44,9 +44,9 @@ const libraryChange = (n: number): ListRow => xp(n, 'malik', { opens: 'pr', life
 
 const props = (over: Partial<BranchesListProps> = {}): BranchesListProps => ({
   rows: [
-    xp(1, 'sofia', { status: 'waiting-for-lead', yourTurn: true, turnReason: 'Sofia sent it for review' }),
+    xp(1, 'sofia', { status: 'in-review', yourTurn: true, turnReason: 'Sofia sent it for review' }),
     xp(2, 'leo', { product: 'prints' }),
-    xp(3, 'ann', { status: 'needs-changes' }),
+    xp(3, 'ann', { status: 'checking' }),
     libraryChange(9),
   ],
   closed: [],
@@ -89,7 +89,7 @@ describe('Explorations', () => {
     expect(turnRow.querySelector('.ex-turn-mark')).toBeNull();
     expect(turnRow.querySelector('.sh-row-line')!.textContent).toMatch(/^Sofia sent it for review( · .+)?$/);
     expect(within(turnRow as HTMLElement).getByRole('link', { name: 'Review Exploration 1' }).getAttribute('href')).toBeTruthy();
-    expect(turnRow.textContent).not.toContain('Waiting for lead');
+    expect(turnRow.textContent).not.toContain('In review');
     expect(screen.getAllByText('Exploration 1')).toHaveLength(1);
     // Groups by product, in the products' order.
     expect([...container.querySelectorAll('.bl-group:not(.ex-waiting) h2')].map((h) => h.textContent)).toEqual(['Acme CRM 1', 'Acme Prints 1']);
@@ -114,20 +114,20 @@ describe('Explorations', () => {
     await user.click(screen.getByRole('button', { name: 'Status: In progress' }));
     const menu = await screen.findByRole('menu');
     const items = within(menu).getAllByRole('menuitemcheckbox');
-    // Counts include what waits on you (Exploration 1 is pinned, and still counts as Waiting for lead).
-    expect(within(menu).getByRole('menuitemcheckbox', { name: /^Waiting for lead/ }).textContent).toMatch(/1$/);
-    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['In progress', 'Exploring', 'Waiting for lead', 'Needs changes', 'Waiting for the library', 'Looks right', 'With developers', 'Shipped', 'Not doing this', 'Archived']);
+    // Counts include what waits on you (Exploration 1 is pinned, and still counts as In review).
+    expect(within(menu).getByRole('menuitemcheckbox', { name: /^In review/ }).textContent).toMatch(/1$/);
+    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['In progress', 'Exploring', 'In review', 'Ready to build', 'Being built', 'Checking', 'Shipped', 'Not doing this', 'Archived']);
     await user.click(within(menu).getByRole('menuitemcheckbox', { name: /^Exploring/ }));
-    expect(new URLSearchParams(location.search).get('status')).toBe('waiting-for-lead,needs-changes,waiting-for-library,looks-right,with-developers');
+    expect(new URLSearchParams(location.search).get('status')).toBe('in-review,ready-to-build,being-built,checking');
     expect(screen.queryByText('Exploration 2')).toBeNull();
     expect(screen.getByText('Exploration 3')).toBeTruthy();
   });
 
   it('says what matched nothing, with Clear filters', async () => {
-    history.replaceState(null, '', '/studio/explorations/?status=looks-right&people=leo&product=prints');
+    history.replaceState(null, '', '/studio/explorations/?status=ready-to-build&people=leo&product=prints');
     const user = userEvent.setup();
     render(createElement(BranchesList, props()));
-    expect(screen.getByText(/Nothing looks right by leo in Acme Prints yet\./)).toBeTruthy();
+    expect(screen.getByText(/Nothing ready to build by leo in Acme Prints yet\./)).toBeTruthy();
     await user.click(screen.getAllByRole('button', { name: 'Clear filters' })[0]!);
     expect(location.search).toBe('');
     expect(screen.getByText('Exploration 2')).toBeTruthy();
@@ -149,10 +149,10 @@ describe('Explorations', () => {
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
     // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
     // The column's count sits in the nav's pill when some of it waits on you; no "your turn" words.
-    expect(cols).toEqual(['Exploring 13', 'Waiting for lead 1', 'Needs changes 1', 'Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    expect(cols).toEqual(['Exploring 13', 'In review 1', 'Ready to build 0', 'Being built 0', 'Checking 1', 'Shipped, last 30 days 0']);
     expect(container.querySelector('.ex-col-num')!.getAttribute('aria-label')).toBe('1, 1 for you');
     // An empty column folds to its heading and count.
-    expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Looks right 0', 'With developers 0', 'Shipped, last 30 days 0']);
+    expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Ready to build 0', 'Being built 0', 'Shipped, last 30 days 0']);
     expect(container.querySelector('.ex-waiting')).toBeNull();
     const lead = container.querySelectorAll('.ex-col')[1]!;
     // The card is tinted (ex-turn) and does not repeat "sent it for review" above its name.

@@ -15,6 +15,24 @@ export const COMPONENT_TABS = [
   { id: 'changelog', label: 'Changelog' },
 ] as const;
 
+export type ComponentTabId = (typeof COMPONENT_TABS)[number]['id'];
+
+/** True for one of the tabs above, so a value from the tabs or the address is checked before it is used. */
+export const isComponentTab = (v: unknown): v is ComponentTabId => COMPONENT_TABS.some((t) => t.id === v);
+
+/** The id of a tab's button ("tab-usage-btn"), named by its panel's aria-labelledby. */
+export const componentTabButtonId = (id: ComponentTabId) => `tab-${id}-btn`;
+/** The id of a tab's panel ("tab-usage"), named by its tab's aria-controls. */
+export const componentTabPanelId = (id: ComponentTabId) => `tab-${id}`;
+
+/**
+ * The DS Tabs of the page (ComponentTabs.tsx) and the page script (scripts/component-page.ts) talk through two
+ * document events, so the tabs can be an island apart from the static panels: PICK when a reader picks a tab, SHOWN
+ * when the script shows a panel (a pick, an address, an old anchor). Both carry `{ id }`.
+ */
+export const CP_TAB_PICK = 'bridge:cp-tab-pick';
+export const CP_TAB_SHOWN = 'bridge:cp-tab-shown';
+
 /** Section anchors from before the tabs, and the tab that now holds each. */
 export const LEGACY_ANCHORS: Readonly<Record<string, string>> = {
   anatomy: 'tokens',

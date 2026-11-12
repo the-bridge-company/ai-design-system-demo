@@ -73,7 +73,21 @@
   margin-bottom: var(--space-4);
 }
 
-/* Component page tabs */
+/* Component page tabs: the DS Tabs (ComponentTabs.tsx) over the panels, one shown at a time. The panels are focusable
+   like a DS TabsPanel, with the same ring. */
+.cp-tabs {
+  margin: var(--space-6) 0 var(--space-8);
+}
+
+.cp-panel {
+  border-radius: var(--radius-container);
+}
+
+.cp-panel:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .cp-panel[hidden] {
   display: none;
 }

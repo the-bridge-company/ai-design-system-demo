@@ -2,11 +2,12 @@
 // [slug].astro, rendered at build time) and on a team's Library (LibraryTeamComponents.tsx, in the browser). Usage
 // (docs.json), Tokens (anatomy and motion), Code (props, playground, workbench) and Changelog (release notes that name
 // it). Previews come from the design system's own Storybook (decision D2), in light and dark. The page script
-// (scripts/component-page.ts) drives the tabs, the preview switch and the "On this page" rail through data attributes.
+// (scripts/component-page.ts) shows the panels, the preview switch and the "On this page" rail through data attributes.
 //
-// What only a hydrated island can do comes in as slots: `heroTools` (the preview brand and density menu) and
-// `playground` (PropsPlayground). `Example` draws docs.json examples with the real components: only Bridge, which runs
-// its own components, has one; a team's guidance reads as text. Repo content reaches the page as React text only.
+// What only a hydrated island can do comes in as slots: `heroTools` (the preview brand and density menu),
+// `playground` (PropsPlayground) and `tabs` (ComponentTabs, the DS Tabs over the panels below). `Example` draws
+// docs.json examples with the real components: only Bridge, which runs its own components, has one; a team's guidance
+// reads as text. Repo content reaches the page as React text only.
 import type { ComponentType, ReactNode } from 'react';
 import { Alert, Badge, CodeBlock, Link, PageHeader, SegmentedControl } from '@bridge-ds/react';
 import { BookOpen, Columns2, FileCode, Lock, Moon, Pencil, Sun } from 'lucide-react';
@@ -16,12 +17,13 @@ import PropsTable from '../../PropsTable';
 import MotionTable from '../../MotionTable';
 import UsagePanel from '../../../UsagePanel';
 import { playgroundSpec, type ComponentInfo } from '../../../../lib/library/components';
-import { COMPONENT_TABS, componentMotion, componentNotes, exampleCode, mainStory, previewUrl, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf, tokenKindCounts } from '../../../../lib/library/component-page';
+import { componentMotion, componentNotes, exampleCode, mainStory, previewUrl, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf, tokenKindCounts } from '../../../../lib/library/component-page';
 import { tokenAxes } from '../../../../lib/library/tokens';
 import { humanDate } from '../../../../lib/library/stats';
 import { mdTitleParts } from '../../../../lib/markdown';
 import { componentHref, libraryLink, pageHref, sourceHref, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
+import ComponentTabs from './ComponentTabs';
 import '../../../../styles/component-stage.css';
 
 export interface ComponentViewProps {
@@ -37,6 +39,8 @@ export interface ComponentViewProps {
   ahead?: ReactNode;
   /** "In Figma: <name>" from the component map, or "Not linked to Figma yet" for leads (FigmaLink), by the hero. */
   figma?: ReactNode;
+  /** The tabs (ComponentTabs) as a hydrated island, on a static page. Rendered here when absent. */
+  tabs?: ReactNode;
 }
 
 const tokenLink = (data: LibraryData, path: string) => pageHref(data, `tokens/?t=${encodeURIComponent(path)}`);
@@ -92,7 +96,7 @@ function StoryPane({ storybook, storyId, theme, name, className }: { storybook: 
   );
 }
 
-export default function ComponentView({ data, component: c, Example, heroTools, playground, ahead, figma }: ComponentViewProps) {
+export default function ComponentView({ data, component: c, Example, heroTools, playground, ahead, figma, tabs }: ComponentViewProps) {
   const { model, extras } = data;
   const d = readableDocs(c.docs);
   const status = statusOf(c);
@@ -221,35 +225,11 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
           </Alert>
         )}
 
-        <nav className="page-tabs" role="tablist" aria-label={`${c.name} documentation`} data-cp-tabs="">
-          {COMPONENT_TABS.map((t, i) => (
-            <Link
-              key={t.id}
-              variant="subtle"
-              role="tab"
-              id={`tab-${t.id}-btn`}
-              href={`#${t.id}`}
-              aria-controls={`tab-${t.id}`}
-              aria-selected={i === 0 ? 'true' : 'false'}
-              tabIndex={i === 0 ? 0 : -1}
-              data-tab={t.id}
-            >
-              {t.label}
-              {t.id === 'changelog' && notes.length > 0 && (
-                <>
-                  {' '}
-                  <Badge size="sm" className="page-tab-count">
-                    {notes.length}
-                  </Badge>
-                </>
-              )}
-            </Link>
-          ))}
-        </nav>
+        {tabs ?? <ComponentTabs name={c.name} changelogCount={notes.length} />}
 
         <div className="cp-layout">
           <div className="cp-body">
-            <div className="cp-panel" role="tabpanel" id="tab-usage" aria-labelledby="tab-usage-btn" data-panel="usage">
+            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-usage" aria-labelledby="tab-usage-btn" data-panel="usage">
               <div data-le-read="">
                 {d && <UsagePanel docs={d} Example={Example} />}
                 {!d && (
@@ -261,7 +241,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               <div data-le-usage=""></div>
             </div>
 
-            <div className="cp-panel" role="tabpanel" id="tab-tokens" aria-labelledby="tab-tokens-btn" data-panel="tokens">
+            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-tokens" aria-labelledby="tab-tokens-btn" data-panel="tokens">
               {locked}
               <section aria-labelledby="anatomy">
                 <h2 id="anatomy">Anatomy and tokens</h2>
@@ -358,7 +338,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               </section>
             </div>
 
-            <div className="cp-panel" role="tabpanel" id="tab-code" aria-labelledby="tab-code-btn" data-panel="code">
+            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-code" aria-labelledby="tab-code-btn" data-panel="code">
               {locked}
               {fileLinks.length > 0 && (
                 <ul className="cp-files" aria-label="Source files">
@@ -487,7 +467,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               </section>
             </div>
 
-            <div className="cp-panel" role="tabpanel" id="tab-changelog" aria-labelledby="tab-changelog-btn" data-panel="changelog">
+            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-changelog" aria-labelledby="tab-changelog-btn" data-panel="changelog">
               {locked}
               <section aria-labelledby="changes">
                 <h2 id="changes">Changelog</h2>

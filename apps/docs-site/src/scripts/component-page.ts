@@ -1,11 +1,12 @@
 // The page script of a Library component page (components/ds/library/views/ComponentView.tsx): Bridge's own static
 // page starts it at load, a team's Library once the view is in the page. It drives the markup through data attributes:
 //   - the hero's Light / Dark / Side by side switch (a DS SegmentedControl: static on Bridge's page, data-vanilla),
-//   - the tabs (#usage, #tokens, #code, #changelog; old section anchors open the tab that holds them),
+//   - the tab panels under the DS Tabs (ComponentTabs.tsx, through CP_TAB_PICK and CP_TAB_SHOWN): #usage, #tokens,
+//     #code, #changelog in the address; old section anchors open the tab that holds them,
 //   - the "On this page" rail of the open tab,
 //   - the Storybook previews (data-sb-preview), which follow the preview brand and density (bridge:scope).
 // And the Components page: a link to #fam-<family> opens that family even if it was collapsed.
-import { COMPONENT_TABS, LEGACY_ANCHORS, previewUrl, storyInIndex } from '../lib/library/component-page';
+import { COMPONENT_TABS, CP_TAB_PICK, CP_TAB_SHOWN, isComponentTab, LEGACY_ANCHORS, previewUrl, storyInIndex, type ComponentTabId } from '../lib/library/component-page';
 
 /**
  * Checks that the published Storybook lists the story the previews play. When it does not (the code is ahead of the
@@ -61,8 +62,7 @@ export function initComponentPage(doc: Document = document) {
     new MutationObserver(follow).observe(control, { subtree: true, attributes: true, attributeFilter: ['aria-checked'] });
   });
 
-  const tablist = doc.querySelector<HTMLElement>('[data-cp-tabs]');
-  const tabs = [...doc.querySelectorAll<HTMLAnchorElement>('[data-cp-tabs] [role="tab"]')];
+  const page = doc.querySelector<HTMLElement>('.cp-page');
   const panels = [...doc.querySelectorAll<HTMLElement>('[data-panel]')];
   const tocList = doc.querySelector<HTMLUListElement>('[data-cp-toc]');
   let io: IntersectionObserver | null = null;
@@ -92,44 +92,32 @@ export function initComponentPage(doc: Document = document) {
     );
     heads.forEach((h) => io!.observe(h));
   };
-  const select = (id: string, focus = false) => {
-    const tab = tabs.find((t) => t.dataset.tab === id) ?? tabs[0];
-    if (!tab) return;
-    tabs.forEach((t) => {
-      const on = t === tab;
-      t.setAttribute('aria-selected', String(on));
-      t.tabIndex = on ? 0 : -1;
-    });
-    panels.forEach((p) => (p.hidden = p.dataset.panel !== tab.dataset.tab));
-    const panel = panels.find((p) => p.dataset.panel === tab.dataset.tab);
+  // The panel the page shows. The DS Tabs (ComponentTabs.tsx) hear it (CP_TAB_SHOWN) and mark the same tab; the page
+  // keeps it too (data-cp-tab) for tabs that wake up after it.
+  const select = (wanted: string) => {
+    const id: ComponentTabId = isComponentTab(wanted) ? wanted : COMPONENT_TABS[0].id;
+    panels.forEach((p) => (p.hidden = p.dataset.panel !== id));
+    const panel = panels.find((p) => p.dataset.panel === id);
     if (panel) paintToc(panel);
-    if (focus) tab.focus();
+    if (page) page.dataset.cpTab = id;
+    doc.dispatchEvent(new CustomEvent(CP_TAB_SHOWN, { detail: { id } }));
   };
   const fromHash = () => {
     const h = decodeURIComponent(location.hash.slice(1));
     if (!h) return select(COMPONENT_TABS[0].id);
-    if (tabs.some((t) => t.dataset.tab === h)) return select(h);
+    if (isComponentTab(h)) return select(h);
     const owner = LEGACY_ANCHORS[h] ?? doc.getElementById(h)?.closest<HTMLElement>('[data-panel]')?.dataset.panel;
     select(owner ?? COMPONENT_TABS[0].id);
     doc.getElementById(h)?.scrollIntoView();
   };
-  tabs.forEach((t) =>
-    t.addEventListener('click', (e) => {
-      e.preventDefault();
-      history.replaceState(history.state, '', `#${t.dataset.tab}`);
-      select(t.dataset.tab!);
-    }),
-  );
-  tablist?.addEventListener('keydown', (e) => {
-    const i = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
-    const next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
-    if (next === null) return;
-    e.preventDefault();
-    const t = tabs[(next + tabs.length) % tabs.length]!;
-    history.replaceState(history.state, '', `#${t.dataset.tab}`);
-    select(t.dataset.tab!, true);
+  // A tab picked by the reader: the address follows it, so Back and a shared link land on the same tab.
+  doc.addEventListener(CP_TAB_PICK, (e) => {
+    const id = (e as CustomEvent<{ id?: unknown }>).detail?.id;
+    if (!isComponentTab(id)) return;
+    history.replaceState(history.state, '', `#${id}`);
+    select(id);
   });
-  if (tabs.length) {
+  if (panels.length) {
     window.addEventListener('hashchange', fromHash);
     fromHash();
   }

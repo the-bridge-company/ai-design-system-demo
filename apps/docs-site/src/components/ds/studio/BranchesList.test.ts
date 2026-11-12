@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Explorations (the old Changes): no state tabs; Status, Product and People checkbox filters; Waiting on you pinned
+// Explorations (the old Changes): no state tabs; Status, Product and Person filters (DS Select, inline label); Waiting on you pinned
 // first with "Your turn · <reason>", never repeated below; List, Grid and Board; library changes left to Library
 // review; "Start with one screen" for a team with nothing yet; one line when the filters match nothing.
 import '../../../../../../packages/react/src/test/setup';
@@ -71,9 +71,9 @@ describe('Explorations', () => {
   it('has no state tabs, three filters, the count and List, Grid, Board', async () => {
     const { container } = render(createElement(BranchesList, props()));
     expect(screen.queryAllByRole('tab')).toEqual([]);
-    expect(screen.getByRole('button', { name: 'Status: In progress' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Product: All products' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'People: Everyone' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Status: In progress' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Product: All products' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Person: Everyone' })).toBeTruthy();
     expect(container.querySelector('.bl-bar')!.textContent).toContain('3 explorations.');
     expect(screen.getAllByRole('radio').map((r) => r.closest('label')?.textContent ?? r.getAttribute('aria-label') ?? r.textContent)).toHaveLength(3);
     await expectNoAxeViolations(container);
@@ -111,13 +111,13 @@ describe('Explorations', () => {
   it('filters by several statuses from the Status checkboxes and keeps them in the address', async () => {
     const user = userEvent.setup();
     render(createElement(BranchesList, props()));
-    await user.click(screen.getByRole('button', { name: 'Status: In progress' }));
-    const menu = await screen.findByRole('menu');
-    const items = within(menu).getAllByRole('menuitemcheckbox');
+    await user.click(screen.getByRole('combobox', { name: 'Status: In progress' }));
+    const menu = await screen.findByRole('listbox');
+    const items = within(menu).getAllByRole('option');
     // Counts include what waits on you (Exploration 1 is pinned, and still counts as In review).
-    expect(within(menu).getByRole('menuitemcheckbox', { name: /^In review/ }).textContent).toMatch(/1$/);
+    expect(within(menu).getByRole('option', { name: /^In review/ }).textContent).toMatch(/1$/);
     expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['In progress', 'Exploring', 'In review', 'Ready to build', 'Being built', 'Checking', 'Shipped', 'Not doing this', 'Archived']);
-    await user.click(within(menu).getByRole('menuitemcheckbox', { name: /^Exploring/ }));
+    await user.click(within(menu).getByRole('option', { name: /^Exploring/ }));
     expect(new URLSearchParams(location.search).get('status')).toBe('in-review,ready-to-build,being-built,checking');
     expect(screen.queryByText('Exploration 2')).toBeNull();
     expect(screen.getByText('Exploration 3')).toBeTruthy();
@@ -136,7 +136,7 @@ describe('Explorations', () => {
   it('opens old Changes links on the new Status filter', () => {
     history.replaceState(null, '', '/studio/explorations/?state=shipped');
     render(createElement(BranchesList, props({ closed: [xp(20, 'ann', { merged_at: '2026-11-01T00:00:00Z', lifecycle: 'shipped', status: null })] })));
-    expect(screen.getByRole('button', { name: 'Status: Shipped' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Status: Shipped' })).toBeTruthy();
     expect(screen.getByText('Exploration 20')).toBeTruthy();
     expect(screen.queryByText('Exploration 2')).toBeNull();
   });

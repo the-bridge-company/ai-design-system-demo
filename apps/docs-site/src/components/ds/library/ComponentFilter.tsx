@@ -38,11 +38,10 @@ export default function ComponentFilter({ families }: { families: { name: string
       <div className="tcm-tools" role="search">
         <Input label="Search components" hideLabel placeholder="Search by name, family or summary" value={query} onValueChange={setQuery} />
         <Select
-          label="Family"
-          hideLabel
+          inlineLabel="Family"
           value={family || ALL}
           onValueChange={(v) => setFamily(!v || v === ALL ? '' : v)}
-          options={[{ value: ALL, label: `All families (${total})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
+          options={[{ value: ALL, label: `All (${total})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
         />
       </div>
       <p className="cp-filter-status" role="status" aria-live="polite">

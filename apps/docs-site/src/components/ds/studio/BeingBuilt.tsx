@@ -2,7 +2,7 @@
 // each one stands, read from GitHub only (scripts/building-data.ts, rules in lib/building-view.ts and @bridge-ds/core).
 //   - One sentence first (the Harbor zone), then Explorations' filters row (lib/building-page, decisions 2026-11-11):
 //     Status (Waiting to be picked up, In progress, In review, Shipped in the last 30 days; default Not shipped yet),
-//     Product and People, the same checkbox menus (ListFilters MultiFilter), the count, then List, Grid or Board
+//     Product and Person, the same filters (ListFilters MultiFilter), the count, then List, Grid or Board
 //     (ListCard ViewSwitch). The address keeps them (?status=, ?product=, ?people=). List and Grid group by product as
 //     Explorations does (ListGroup: the product's title and count tag, the library's work under Library), the ladder's
 //     order inside a group (Ready to build, Being built, Checking). One row per build request: the shared BranchRow,
@@ -849,7 +849,7 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
               reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
             />
             <MultiFilter
-              label="People"
+              label="Person"
               shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
               options={personOptions}
               picked={filters.people}

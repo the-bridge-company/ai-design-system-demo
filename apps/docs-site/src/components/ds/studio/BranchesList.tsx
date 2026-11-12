@@ -1,7 +1,7 @@
 // Explorations (/studio/explorations/, the old Changes): every exploration of the team, the rules and words in
 // lib/explorations-page (owner decisions 2026-11-09, phase 2 of the redesign).
-//   - One filters row, left-aligned: three checkbox dropdowns in the small Select's look (ListFilters MultiFilter):
-//     Status (default In progress, the first six statuses), Product, People (Everyone resets), then the count and
+//   - One filters row, left-aligned: three DS Selects with an inline label, several values each (ListFilters MultiFilter):
+//     Status (default In progress, the first six statuses), Product, Person (Everyone resets), then the count and
 //     Clear filters; at its end how the list is shown: List, Grid or Board (ListCard ViewSwitch). The address keeps
 //     them (?status=, ?product=, ?people=); old ?state=, ?status=, ?tier= and History links map to Status.
 //   - Waiting on you, pinned first whatever the filters, with its count: each row says "Your turn · <reason>". Its rows
@@ -490,7 +490,7 @@ export function BranchesList(p: BranchesListProps) {
             reset={{ label: 'All products', active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
           />
           <MultiFilter
-            label="People"
+            label="Person"
             shown={multiTriggerLabel(filters.people, personLabel, 'Everyone')}
             options={personOptions}
             picked={filters.people}

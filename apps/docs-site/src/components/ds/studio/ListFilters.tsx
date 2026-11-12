@@ -1,11 +1,11 @@
-// The quieter row under the tabs of a list (Changes, Being built): two small DS Selects, the product (All products,
-// then each product) and the person (Everyone, You, then each person by name), then the count of what is listed and
-// Clear filters, and at the end how the list is shown (`end`, the ViewSwitch of ListCard). The rules are
-// lib/branches-page (activeFilters, filterChoices, inFilters), the address ?product= and ?people=; each page says
-// what its rows are and keeps the filters with its own tabs.
+// Studio's one filter pattern (owner, 2026-11-12): every filter of a bar is a DS Select with an inline label, the name
+// in secondary text then the value ("Status Waiting", "Product All products", "Person Everyone"), hugging its content,
+// at the md control height of the search field and the view switch beside it. ListFiltersBar is the row of two single
+// filters (product, person) with the count and Clear filters; MultiFilter is one filter that takes several values
+// (Explorations, Being built, Library review). The rules are lib/branches-page (activeFilters, filterChoices,
+// inFilters), the address ?product= and ?people=; each page says what its rows are.
 import type { ReactNode } from 'react';
-import { Badge, Button, Icon, Menu, MenuCheckboxItem, MenuContent, MenuSeparator, MenuTrigger, Select } from '@bridge-ds/react';
-import { ChevronDown } from 'lucide-react';
+import { Badge, Button, Select } from '@bridge-ds/react';
 import { ALL_PRODUCTS, type filterChoices, type ListFilters } from '../../../lib/branches-page';
 import { EVERYONE } from '../../../lib/review-categories';
 import '../../../styles/list-filters.css';
@@ -44,17 +44,15 @@ export function ListFiltersBar({ active, choices, onPick, summary, clear, end }:
     <div className="bl-bar">
       <span className="bl-narrow">
         <Select
-          label="Product"
-          hideLabel
-          size="sm"
+          inlineLabel="Product"
+          className="bl-filter"
           value={active.product ?? ALL_PRODUCTS}
           onValueChange={(v) => onPick({ ...active, product: !v || v === ALL_PRODUCTS ? null : v })}
           options={choices.products.map((o) => ({ value: o.value, label: o.label, badge: count(o.count) }))}
         />
         <Select
-          label="People"
-          hideLabel
-          size="sm"
+          inlineLabel="Person"
+          className="bl-filter"
           value={active.by ?? EVERYONE}
           onValueChange={(v) => onPick({ ...active, by: !v || v === EVERYONE ? null : v })}
           options={choices.people.map((d) => ({ value: d.value, label: d.label, badge: count(d.count), disabled: d.count === 0 && d.value !== (active.by ?? EVERYONE) }))}
@@ -75,8 +73,9 @@ export function ListFiltersBar({ active, choices, onPick, summary, clear, end }:
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Checkbox filters (Explorations): the small Select's look, a list of checkboxes behind it (DS Menu checkbox items),
-// several picked at once. The menu stays open while boxes are ticked; "reset" (Everyone, In progress) goes first.
+// Several values at once (Explorations, Being built, Library review): the DS Select with multiple, the list staying
+// open while options are ticked. "reset" (Everyone, In progress, All products) goes first and is ticked while it
+// holds; ticking it resets the filter, ticking anything else narrows it.
 
 export interface MultiOption {
   value: string;
@@ -85,43 +84,37 @@ export interface MultiOption {
 }
 
 export interface MultiFilterProps {
-  /** The accessible name: "Status", "Product", "People". */
+  /** The inline label, the filter's name: "Status", "Product", "Person". */
   label: string;
   /** What the trigger reads ("In progress", "Leo +1"). */
   shown: string;
   options: readonly MultiOption[];
   picked: readonly string[];
   onPick: (values: string[]) => void;
-  /** The first item that resets the filter ("Everyone", "In progress", "All products"), checked while it holds. */
+  /** The first item that resets the filter ("Everyone", "In progress", "All products"), ticked while it holds. */
   reset?: { label: string; active: boolean; onReset: () => void };
 }
 
+/** The reset item's value: never a real product, person or status. */
+const RESET = '\u0000reset';
+
 export function MultiFilter({ label, shown, options, picked, onPick, reset }: MultiFilterProps) {
-  const toggle = (v: string, on: boolean) => onPick(on ? [...picked.filter((x) => x !== v), v] : picked.filter((x) => x !== v));
+  const values = reset?.active ? [RESET, ...picked] : [...picked];
   return (
-    <Menu>
-      <MenuTrigger className="bl-multi" aria-label={`${label}: ${shown}`}>
-        <span className="bl-multi-value">{shown}</span>
-        <Icon icon={ChevronDown} size="sm" className="bl-multi-chevron" />
-      </MenuTrigger>
-      <MenuContent aria-label={label} className="bl-multi-menu">
-        {reset && (
-          <>
-            <MenuCheckboxItem checked={reset.active} onCheckedChange={() => reset.onReset()}>
-              {reset.label}
-            </MenuCheckboxItem>
-            <MenuSeparator />
-          </>
-        )}
-        {options.map((o) => (
-          <MenuCheckboxItem key={o.value} checked={picked.includes(o.value)} onCheckedChange={(on) => toggle(o.value, on)}>
-            <span className="bl-multi-item">
-              <span>{o.label}</span>
-              {o.count !== undefined && count(o.count)}
-            </span>
-          </MenuCheckboxItem>
-        ))}
-      </MenuContent>
-    </Menu>
+    <Select
+      multiple
+      inlineLabel={label}
+      displayValue={shown}
+      className="bl-filter"
+      options={[
+        ...(reset ? [{ value: RESET, label: reset.label }] : []),
+        ...options.map((o) => ({ value: o.value, label: o.label, badge: o.count === undefined ? undefined : count(o.count) })),
+      ]}
+      values={values}
+      onValuesChange={(next) => {
+        if (reset && next.includes(RESET) && !values.includes(RESET)) reset.onReset();
+        else onPick(next.filter((v) => v !== RESET));
+      }}
+    />
   );
 }

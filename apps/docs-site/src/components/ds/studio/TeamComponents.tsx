@@ -333,11 +333,10 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
           <div className="tcm-tools" role="search">
             <Input label="Search components" hideLabel placeholder="Search by name or family" value={query} onValueChange={setQuery} className="tcm-search" />
             <Select
-              label="Family"
-              hideLabel
+              inlineLabel="Family"
               value={family || ALL}
               onValueChange={(v) => setFamily(!v || v === ALL ? '' : v)}
-              options={[{ value: ALL, label: 'All families' }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
+              options={[{ value: ALL, label: 'All' }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
             />
           </div>
           <p className="tcm-muted" role="status" aria-live="polite">

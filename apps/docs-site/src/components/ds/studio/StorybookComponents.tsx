@@ -348,12 +348,11 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
         <Input className="cm-search" size="md" type="search" placeholder="Filter components" aria-label="Filter components" prefix={<Icon icon={Search} size="sm" />} autoComplete="off" value={query} onValueChange={setQuery} />
         {families.length > 1 && (
           <Select
-            label="Family"
-            hideLabel
+            inlineLabel="Family"
             size="md"
             value={family}
             onValueChange={(v) => setFamily(v ?? 'all')}
-            options={[{ value: 'all', label: `All families (${rows.length})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
+            options={[{ value: 'all', label: `All (${rows.length})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
           />
         )}
       </div>

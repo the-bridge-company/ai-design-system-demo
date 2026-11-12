@@ -30522,12 +30522,13 @@
           "defaultValue": "dark"
         }
       },
-      "hash": "4b1b2b4f",
+      "hash": "d4f5452d",
       "source": [
         "packages/react/src/components/Select/Select.tsx",
         "packages/react/src/components/Field/Field.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
-        "packages/react/src/components/Select/Select.module.css"
+        "packages/react/src/components/Select/Select.module.css",
+        "packages/react/src/components/VisuallyHidden/VisuallyHidden.module.css"
       ],
       "axes": [
         {
@@ -31049,6 +31050,12 @@
         },
         {
           "part": "root",
+          "property": "prop multiple",
+          "value": "boolean",
+          "reason": "not drawn in this version"
+        },
+        {
+          "part": "root",
           "property": "prop open",
           "value": "boolean",
           "reason": "not drawn in this version"
@@ -31164,12 +31171,13 @@
           "defaultValue": "dark"
         }
       },
-      "hash": "cad30341",
+      "hash": "31a5e391",
       "source": [
         "packages/react/src/components/Select/Select.tsx",
         "packages/react/src/components/Field/Field.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
-        "packages/react/src/components/Select/Select.module.css"
+        "packages/react/src/components/Select/Select.module.css",
+        "packages/react/src/components/VisuallyHidden/VisuallyHidden.module.css"
       ],
       "axes": [],
       "properties": [],
@@ -31470,6 +31478,12 @@
           "property": "prop prefix",
           "value": "node",
           "reason": "slot content is not drawn"
+        },
+        {
+          "part": "root",
+          "property": "prop multiple",
+          "value": "boolean",
+          "reason": "not drawn in this version"
         },
         {
           "part": "root",

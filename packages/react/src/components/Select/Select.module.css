@@ -142,6 +142,44 @@
   align-items: center;
 }
 
+/* Inline label (filter bars): the name in secondary text, the value in default text, the trigger hugging both. Never
+   narrower than a comfortable target; in a row too narrow it shrinks and the value truncates. */
+.hug {
+  display: inline-flex;
+  width: auto;
+  min-width: var(--size-20);
+  max-width: 100%;
+}
+
+.labelled {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.inlineLabel {
+  flex: none;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.hug .value {
+  flex: 0 1 auto;
+}
+
+/* A size container ignores its content's width: a hugging trigger would shrink its value to nothing. The trigger
+   hugs, so the badge always has room and stays. */
+.hug .valueWithBadge {
+  container-type: normal;
+}
+
+/* A summary given by displayValue ("Everyone") is a value, not a placeholder: default text. */
+.valueShown[data-placeholder] {
+  color: var(--input-text);
+}
+
 .affix {
   display: inline-flex;
   flex: none;

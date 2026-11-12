@@ -30,7 +30,7 @@ html:has(.lr) {
   flex: none;
 }
 
-/* --- Filters: a button per filter, its name quiet and its value strong, opening checkboxes ---------------------- */
+/* --- Filters: Studio's one filter pattern (DS Select, inline label, several values; ListFilters MultiFilter) ------ */
 
 .lr-bar-row {
   display: flex;
@@ -39,18 +39,6 @@ html:has(.lr) {
   gap: var(--space-2) var(--space-3);
 }
 
-/* A DS secondary Button: its name quiet, its value strong (the Select look of the validated board). */
-.lr-filter {
-  font-weight: var(--font-weight-regular);
-}
-
-.lr-filter .lr-filter-name {
-  color: var(--color-text-muted);
-}
-
-.lr-filter .lr-filter-value {
-  font-weight: var(--font-weight-medium);
-}
 .lr-none {
   margin: 0;
   color: var(--color-text-muted);

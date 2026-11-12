@@ -4,14 +4,15 @@
 // radio list) and List (chapters per family, a group rail, one row per piece, a checkbox per row and per group, and
 // the bottom bar that says what the selection touches before acting), then the Map. Directions C, D2 and E
 // (owner, 2026-11-10): lib/library-review-list.ts (chapters, tally, marks), lib/library-review-compare.ts.
-// Filters are checkbox lists (Status, Asked by, Product); no tabs. A designer opens on her own pieces, reads who decides
+// Filters are Studio's one filter pattern (Status, Asked by, Product: ListFilters MultiFilter); no tabs. A designer opens on her own pieces, reads who decides
 // in one banner and sees no buttons; her rows show only what changed (an exception). Decisions are the exploration's
 // own (scripts/library-review-data.ts): deciding here or on the exploration page is the same decision. Undo stays
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis } from 'lucide-react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
+import { ArrowRight, BookOpen, ChevronRight, Ellipsis } from 'lucide-react';
+import { MultiFilter } from './ListFilters';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -91,31 +92,17 @@ interface Pending {
   line: string;
 }
 
-/** A filter: a button that reads "Status  Waiting", opening a list of checkboxes. */
+/** A filter: Studio's one filter pattern (ListFilters MultiFilter), "Status Waiting", several values at once. */
 function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; onChange: (v: string[]) => void }) {
-  const value = filterValue(kind, picked, choices);
   return (
-    <Menu>
-      <MenuTrigger
-        render={
-          <Button variant="secondary" size="md" className="lr-filter" iconEnd={ChevronDown} aria-label={`${name}: ${value}`}>
-            <span className="lr-filter-name">{name}</span> <span className="lr-filter-value">{value}</span>
-          </Button>
-        }
-      />
-      <MenuContent align="start">
-        {kind !== 'status' && (
-          <MenuCheckboxItem checked={!picked.length} onCheckedChange={() => onChange([])}>
-            {kind === 'asked' ? 'Anyone' : 'All products'}
-          </MenuCheckboxItem>
-        )}
-        {choices.map((c) => (
-          <MenuCheckboxItem key={c.value} checked={picked.includes(c.value)} onCheckedChange={(on) => onChange(on ? [...picked, c.value] : picked.filter((x) => x !== c.value))}>
-            {c.label}
-          </MenuCheckboxItem>
-        ))}
-      </MenuContent>
-    </Menu>
+    <MultiFilter
+      label={name}
+      shown={filterValue(kind, picked, choices)}
+      options={choices}
+      picked={picked}
+      onPick={onChange}
+      reset={kind === 'status' ? undefined : { label: kind === 'asked' ? 'Anyone' : 'All products', active: !picked.length, onReset: () => onChange([]) }}
+    />
   );
 }
 

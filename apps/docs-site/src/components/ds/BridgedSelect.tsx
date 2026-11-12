@@ -12,6 +12,8 @@ export interface BridgedSelectProps {
   id: string;
   label: string;
   hideLabel?: boolean;
+  /** A filter bar's form (DS Select inlineLabel): the label inside the trigger, before the value, instead of above. */
+  inline?: boolean;
   hint?: string;
   options: BridgedOption[];
   value: string;
@@ -38,7 +40,7 @@ const withBadges = (options: BridgedOption[]) =>
       )),
   }));
 
-export default function BridgedSelect({ id, label, hideLabel, hint, options: initialOptions, value: initialValue, size = 'sm', name, className, ...aria }: BridgedSelectProps) {
+export default function BridgedSelect({ id, label, hideLabel, inline, hint, options: initialOptions, value: initialValue, size = 'sm', name, className, ...aria }: BridgedSelectProps) {
   const [state, setState] = useState<Required<SelectState>>({ value: initialValue, options: initialOptions });
   const hidden = useRef<HTMLInputElement>(null);
   const picked = useRef(false);
@@ -65,7 +67,8 @@ export default function BridgedSelect({ id, label, hideLabel, hint, options: ini
   return (
     <span className="bridged-select" data-bridged-select={id}>
       <Select
-        label={label}
+        label={inline ? undefined : label}
+        inlineLabel={inline ? label : undefined}
         hideLabel={hideLabel}
         hint={hint}
         size={size}

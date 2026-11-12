@@ -4,6 +4,7 @@
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { LibraryReviewView, type LibraryReviewProps } from './LibraryReview';
@@ -74,6 +75,25 @@ describe('Library review, for assistive tech', () => {
       expect(l - prev).toBeLessThanOrEqual(1);
       prev = l;
     }
+    await expectNoAxeViolations();
+  });
+
+  it("filters with Studio's one filter pattern: DS Selects named by their inline label and value, ticked by keyboard", async () => {
+    history.replaceState(null, '', '/?view=list');
+    page();
+    await screen.findByRole('table', { name: 'Library pieces' });
+    const status = screen.getByRole('combobox', { name: 'Status: Waiting' });
+    expect(screen.getByRole('combobox', { name: 'Asked by: Anyone' })).toHaveClass('bl-filter');
+    expect(screen.getByRole('combobox', { name: 'Product: All products' })).toHaveClass('bl-filter');
+    status.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    const list = await screen.findByRole('listbox');
+    expect(list).toHaveAttribute('aria-multiselectable', 'true');
+    expect(within(list).getByRole('option', { name: 'Waiting' })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(within(list).getByRole('option', { name: 'Decided' }));
+    await waitFor(() => expect(new URLSearchParams(location.search).get('status')).toBe('waiting,decided'));
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('combobox', { name: 'Status: 2 statuses' })).toBeInTheDocument();
     await expectNoAxeViolations();
   });
 });

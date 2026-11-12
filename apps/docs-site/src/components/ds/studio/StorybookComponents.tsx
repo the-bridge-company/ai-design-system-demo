@@ -50,6 +50,7 @@ import {
   type StorybookRow,
 } from '../../../lib/storybook-view';
 import { storybookHost, type Workspace } from '../../../lib/workspace';
+import { SEP } from '../../../lib/sep';
 
 // 'arrived': read, with "Ready" on screen a moment before the list replaces it (only after a read the visitor watched).
 type Load = { state: 'idle' } | { state: 'loading' } | { state: 'arrived'; sb: LoadedStorybook } | { state: 'ready'; sb: LoadedStorybook } | { state: 'error'; code: string };
@@ -258,10 +259,10 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
       {host && (
         <p className="sbq-source">
           From <span className="mono">{host}</span>
-          {ws.storybook && <span> · {checkedAgo(ws.storybook.checkedAt, Date.now())}</span>}
+          {ws.storybook && <span>{SEP}{checkedAgo(ws.storybook.checkedAt, Date.now())}</span>}
           {!changing && (
             <>
-              {' · '}
+              {SEP}
               <Button variant="link" onClick={() => setChanging(true)}>
                 Change
               </Button>

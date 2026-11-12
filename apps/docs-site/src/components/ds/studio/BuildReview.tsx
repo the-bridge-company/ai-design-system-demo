@@ -41,6 +41,7 @@ import {
   type Verdict,
 } from '../../../lib/build-review-view';
 import type { ReviewTarget } from '../../../scripts/build-review-data';
+import { SEP } from '../../../lib/sep';
 
 type Load = { s: 'loading' } | { s: 'error'; message: string } | { s: 'not-ready' } | { s: 'ready'; d: ReviewRead };
 type Canvas = 'b' | 'a' | 'both';
@@ -484,7 +485,7 @@ function Stepper({ ordered, verdicts, cur, builder, narrow, canSend, status, onP
         </li>
       </ol>
       <div className="brv-legend">
-        <ul aria-hidden="true">
+        <ul className="brv-legend-keys" aria-hidden="true">
           <li>
             <span className="brv-key" />
             {S.toLook}
@@ -687,7 +688,7 @@ function ItemPanel({ d, it, index, total, verdict, builder, canAnswer, notes, on
     <div className="brv-panel">
       <div>
         <span className="brv-muted brv-kicker">
-          {phone ? `${it.name} · ${W.where(it.sizes)}` : `${W.of(index, total)} · ${W.where(it.sizes)}`}
+          {phone ? `${it.name}${SEP}${W.where(it.sizes)}` : `${W.of(index, total)}${SEP}${W.where(it.sizes)}`}
         </span>
         <h2 className="brv-h">{phone ? it.line : it.name}</h2>
       </div>

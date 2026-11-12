@@ -13,6 +13,7 @@ import { NeedList, type JoinHandlers } from './NeedRows';
 import { joinNeed } from '../../../lib/home-model';
 import { joinHandlers } from '../../../scripts/join-handlers';
 import { discoveryLine, ENTRY_WORDS as W, type Discovery, type JoinRequest } from '../../../lib/entry';
+import { CountTag } from './CountTag';
 
 async function api() {
   return import('../../../scripts/entry-session');
@@ -131,7 +132,7 @@ export function JoinRequests({
       {rows.length > 0 && (
         <section className="mem-asks" aria-labelledby="set-asks">
           <h2 id="set-asks" className="mem-title">
-            {W.requestsTitle} <span className="mem-count">{rows.length}</span>
+            {W.requestsTitle} <CountTag n={rows.length} />
           </h2>
           <NeedList rows={rows} label={W.requestsTitle} action="secondary" compact join={join} />
         </section>

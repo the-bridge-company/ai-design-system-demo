@@ -40,6 +40,7 @@ import {
 } from '../../../lib/library-origin';
 import { statusTagClass } from '../../../lib/status-tag';
 import { studioHref } from '../../../lib/team-path';
+import { SEP } from '../../../lib/sep';
 
 /** What a library row needs from the list's row. */
 export interface LibraryRowFacts {
@@ -116,7 +117,7 @@ export function OriginNote({ origin }: { origin: LibraryOrigin }) {
           ) : (
             origin.name
           )}
-          {origin.product ? ` · ${origin.product}` : ''}
+          {origin.product ? `${SEP}${origin.product}` : ''}
           {/* No link: its product is not one of the team's products any more. Said, so the plain name is not a dead end. */}
           {!origin.href && origin.product ? ', no longer in Studio' : ''}
         </span>

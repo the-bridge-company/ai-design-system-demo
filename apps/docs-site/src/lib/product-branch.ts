@@ -25,6 +25,7 @@ import {
   type ProductConfig,
 } from '@bridge-ds/core';
 import { studioHref } from './team-path';
+import { SEP } from './sep';
 
 /** A branch started for a product (Start an exploration in a product): its label names a product other than the library. */
 export function isProductBranch(labels: readonly (string | { name?: string })[] | null | undefined, products: readonly ProductConfig[]): ProductConfig | null {
@@ -59,7 +60,7 @@ export function statusLine(s: Pick<LinkStatus, 'key' | 'label' | 'people'>, name
   if (!s.people.length) return s.label;
   const who = s.people.map((l) => names[l] ?? `@${l}`);
   const verb = s.key === 'changes' ? 'asks' : s.key === 'requested' || s.key === 'in-progress' ? 'builds' : 'reviews';
-  return `${s.label} · ${listNames(who)} ${who.length === 1 ? verb : verb.replace(/s$/, '')}`;
+  return `${s.label}${SEP}${listNames(who)} ${who.length === 1 ? verb : verb.replace(/s$/, '')}`;
 }
 
 export type PieceActionKind = 'open' | 'use-preview' | 'refresh-preview' | 'switch';
@@ -313,4 +314,4 @@ export function nestLinked<R extends { r: { number: number; product?: string | n
 }
 
 /** The muted line of a nested library branch: "Library change it needs · Claude AI". */
-export const childLine = (who: string) => `Library change it needs · ${who}`;
+export const childLine = (who: string) => `Library change it needs${SEP}${who}`;

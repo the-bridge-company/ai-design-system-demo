@@ -20,7 +20,7 @@ describe('the compare view of a conflict', () => {
     expect([v.today.valueText, v.today.words, v.today.where]).toEqual(['20 px', 'in the library', { text: 'Every screen' }]);
     expect(v.ways.map((w) => [w.name, w.valueText, w.words, w.hue, w.sameAsToday])).toEqual([
       ["Sofia's way", '20 px', 'same as today', 1, true],
-      ["Leo's way", '12 px', "the library's Compact spacing", 2, false],
+      ["Leo's way", '12 px', 'Compact in the library', 2, false],
     ]);
     expect(v.ways[1]!.where).toEqual({ exploration: 'Deal pipeline cards', product: 'Acme CRM', href: null });
     expect([v.both?.name, v.both?.valueText, v.both?.words]).toEqual(['Both, as two sizes', '12 and 20 px', "today's 20 stays the default"]);

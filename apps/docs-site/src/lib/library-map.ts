@@ -10,6 +10,7 @@
 import { reachOf, type ReachProductInput } from './library-reach';
 import type { ReviewPiece, Viewer } from './library-review';
 import { askersOf } from './library-askers';
+import { SEP } from './sep';
 
 export interface MapSource {
   id: string;
@@ -86,7 +87,7 @@ export function buildMap(pieces: readonly ReviewPiece[], products: readonly Reac
       nodes.push({ id, label: p.title, keys: [p.key], conflict: true, folded: false });
       for (const w of p.conflict.ways) {
         const sid = sourceId(w.exploration, w.product);
-        if (!sources.has(sid)) sources.set(sid, { id: sid, label: w.exploration, sub: `${w.designer} · ${w.product}`, lead: false });
+        if (!sources.has(sid)) sources.set(sid, { id: sid, label: w.exploration, sub: `${w.designer}${SEP}${w.product}`, lead: false });
         addLink({ from: sid, to: id, conflict: true });
       }
       continue;
@@ -100,7 +101,7 @@ export function buildMap(pieces: readonly ReviewPiece[], products: readonly Reac
     nodes.push({ id, label: p.title, keys: [p.key], conflict: false, folded: false });
     for (const x of askersOf(p)) {
       const sid = sourceId(x.name, x.product);
-      if (!sources.has(sid)) sources.set(sid, { id: sid, label: x.name, sub: [x.designer, x.product].filter(Boolean).join(' · '), lead: false });
+      if (!sources.has(sid)) sources.set(sid, { id: sid, label: x.name, sub: [x.designer, x.product].filter(Boolean).join(SEP), lead: false });
       addLink({ from: sid, to: id, conflict: false });
     }
   }

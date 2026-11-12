@@ -995,3 +995,16 @@
   align-self: center;
   width: fit-content;
 }
+
+/* On a phone a one-line title cut at 22 characters loses its meaning ("Toast: an undo action after deleti..."): the
+   row title (Being built, Explorations) takes up to two lines there, then ellipses. The compact rows of the home
+   lay out their own phone line (title, then its line under it). */
+@media (max-width: 640px) {
+  .sh-row:not(.sh-row-compact) .sh-row-text > .sh-row-title {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}

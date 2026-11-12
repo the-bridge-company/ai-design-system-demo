@@ -12,6 +12,7 @@ import { Button, Link } from '@bridge-ds/react';
 import type { ComponentSpecsFile } from '@bridge-ds/core';
 import { alsoChanges, headlineSentence, loopFrames, motionHeadline, motionPreview, type MotionChange, type MotionPreview, type PreviewSide } from '../../../lib/motion-changes';
 import '../../../styles/motion-changes.css';
+import { SEP } from '../../../lib/sep';
 
 type Specs = Pick<ComponentSpecsFile, 'components'>;
 
@@ -195,7 +196,7 @@ function Also({ change, specs, href }: { change: MotionChange; specs: Specs | nu
       ))}
       {!open && all.length - 1 > first.length && (
         <>
-          {' · '}
+          {SEP}
           <Button variant="link" size="sm" onClick={() => setOpen(true)}>
             See all {all.length}
           </Button>

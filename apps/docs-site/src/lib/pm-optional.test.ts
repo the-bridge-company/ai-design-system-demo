@@ -31,6 +31,8 @@ describe("a product manager's optional opinion", () => {
     expect(said).not.toMatch(/oldest/i);
     expect(said).not.toContain(String.fromCharCode(0x2014));
     expect(s.badge).toBeNull();
+    // Said once: the rows carry the Optional tag, the greeting adds no second sentence.
+    expect(s.note).toBeNull();
     expect(s.people.map((p) => p.login)).toEqual(['~sofia', '~leo']);
   });
 

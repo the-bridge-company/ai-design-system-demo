@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONNECT_FIRST, CONNECTOR_WORDS as W, connectFirst, connectionSentence, connectorUrl, developerSnippets, elapsedLabel, fixPullNumber, fixStaysListed, fixRows, missingFixPulls, parseSession, reviewOf, type Session } from './claude-connector';
 import { matchesBuildFilter } from '@bridge-ds/core';
+import { SEP } from './sep';
 
 const c = (by: string, lastUsedAt: string) => ({ id: by, client: 'Claude', by, createdAt: lastUsedAt, lastUsedAt, mine: false });
 
@@ -46,7 +47,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
     expect(r!.label).toBe('Shipped');
     expect(r!.shippedAt).toBe('2026-10-28T13:27:44Z');
     // Merged Oct 28, read Oct 30: two calendar days, as every screen counts them.
-    expect(r!.fix.line).toBe("Claude's fix from Figma, asked by Florian · Shipped 2 days ago");
+    expect(r!.fix.line).toBe(`Claude's fix from Figma, asked by Florian${SEP}Shipped 2 days ago`);
     expect(r!.fix.line).not.toContain('peterbono');
     expect(r!.fix.href).toBe('explorations/?pr=598');
     expect(r!.builders).toEqual(['claude']);
@@ -63,7 +64,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
   it('an open fix is In review, a closed one Not planned; without the pull request read, the session decides', () => {
     const open = fixRows([ready], [pull({})], NOW, names)[0]!;
     expect(open.status).toBe('in-review');
-    expect(open.fix.line).toBe("Claude's fix from Figma, asked by Florian · Ready for your team to review, took 3 min");
+    expect(open.fix.line).toBe(`Claude's fix from Figma, asked by Florian${SEP}Ready for your team to review, took 3 min`);
     expect(matchesBuildFilter(open, 'in-progress', NOW)).toBe(true);
     const closed = fixRows([ready], [pull({ state: 'closed', updated_at: '2026-10-29T09:00:00Z' })], NOW, names)[0]!;
     expect(closed.status).toBe('not-planned');
@@ -87,7 +88,7 @@ describe("Being built, Claude's fixes as rows of the one list", () => {
     expect(w.status).toBe('in-progress');
     expect(w.fix.working).toBe(true);
     expect(w.fix.href).toBe('components/?c=button');
-    expect(w.fix.line).toBe("Claude's fix from Figma, asked by Florian · Claude tried a fix (round 2): closer, for 4 min");
+    expect(w.fix.line).toBe(`Claude's fix from Figma, asked by Florian${SEP}Claude tried a fix (round 2): closer, for 4 min`);
     expect(w.fix.line).not.toMatch(/%/);
     const quiet = fixRows([{ ...working, steps: [...working.steps, { kind: 'quiet', text: 'Claude went quiet', at: 'x', by: 'peterbono' }] }], [], NOW, names)[0]!;
     expect(quiet.stale).toBe(true);

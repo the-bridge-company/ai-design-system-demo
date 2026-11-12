@@ -6,6 +6,7 @@ import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { SuggestionReview, type SuggestionReviewProps } from './SuggestionReview';
+import { SEP } from '../../../lib/sep';
 
 const props = (over: Partial<SuggestionReviewProps> = {}): SuggestionReviewProps => ({
   n: 12,
@@ -67,7 +68,7 @@ describe('SuggestionReview, the same on every team (the sample team included)', 
     });
     const { container } = render(createElement(SuggestionReview, p));
     expect(screen.getByRole('heading', { level: 2, name: /Always offer the next step/ })).toBeTruthy();
-    expect(screen.getByText('suggests a change · Docs change', { exact: false })).toBeTruthy();
+    expect(document.body.textContent).toContain(`suggests a change${SEP}Docs change`);
     // The queue's bar decides: no Approve, no stacked next cards, no keyboard line of its own.
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(container.textContent).not.toContain('Button label while loading');
@@ -90,7 +91,7 @@ describe('SuggestionReview, the same on every team (the sample team included)', 
       },
     ] as unknown as SuggestionReviewProps['tokens'];
     const { container } = render(createElement(SuggestionReview, props({ inQueue: true, tokens })));
-    expect(container.textContent).toContain('Emphasis border · Dark');
+    expect(container.textContent).toContain(`Emphasis border${SEP}Dark`);
     expect(container.textContent).toContain('Neutral 700');
     for (const pane of container.querySelectorAll('.sg-pane-list')) expect(pane.textContent).not.toContain('color.border.emphasis');
   });

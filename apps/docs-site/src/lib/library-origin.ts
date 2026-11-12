@@ -15,6 +15,7 @@
 // Pure: no DOM, no fetch. Unit tested in library-origin.test.ts.
 import { parseFigmaOrigin, parseNeededBy, type NeededBy, type ProductConfig } from '@bridge-ds/core';
 import { studioHref } from './team-path';
+import { SEP } from './sep';
 
 /** Why the DS lead made a change for every product. */
 export type LeadReason = 'a11y' | 'brand' | 'figma' | 'docs' | 'rule';
@@ -226,9 +227,9 @@ export function libraryOrigin(c: ChangeFacts, products: readonly ProductConfig[]
 
 /** "Needed by Order fulfilment timeline · Acme Prints", "From the DS lead · new brand", "From the DS lead". */
 export function originLine(o: LibraryOrigin): string {
-  if (o.kind === 'exploration') return `Needed by ${o.name}${o.product ? ` · ${o.product}` : ''}`;
+  if (o.kind === 'exploration') return `Needed by ${o.name}${o.product ? `${SEP}${o.product}` : ''}`;
   if (o.kind === 'audit') return auditOriginLine(o);
-  return o.reason ? `From the DS lead · ${LEAD_REASON_LABEL[o.reason]}` : 'From the DS lead';
+  return o.reason ? `From the DS lead${SEP}${LEAD_REASON_LABEL[o.reason]}` : 'From the DS lead';
 }
 
 // ---------------------------------------------------------------------------------------------------------------

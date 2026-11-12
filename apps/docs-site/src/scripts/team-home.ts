@@ -136,6 +136,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
     // Nothing needs the viewer: the ways to start stay on top, their work follows under them (`recent`), so their
     // explorations and library changes never turn the quiet home into the busy one.
     // Who reads is not known yet (the sign-in is being checked): the home waits, never a signed-out or someone else's.
+    const lead = Boolean(d && !d.loading && (d.reviewer || viewerIsDesignLead()));
     const state = !known ? 'loading' : homeState({ signedIn, loading: !d || d.loading, needs: d?.needs.length ?? 0, branches: 0 });
     root = paintStudioHome(
       el,
@@ -148,8 +149,10 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         libraryWork: d?.libraryWork ?? [],
         libraryPieces,
         waitingOnOthers: d?.waitingOnOthers ?? [],
-        health: health(),
-        building: true,
+        // Actionable only: the library's health and the Being built line speak to the lead, who acts on them. A
+        // designer or a PM cannot, and a developer's hero sentence and button already say what waits for them.
+        health: lead ? health() : null,
+        building: lead,
         now,
         components: f.components,
         signedOut: { line: signedOutLine(signIn), button: ghButton(signIn), signIn },
@@ -162,7 +165,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         viewOnly: viewOnly(),
         // A developer (GitHub, no review right, nothing explored): the quiet home leads with what they build.
         builder: Boolean(d && !d.loading && isBuilderHome({ contributor: !d.reviewer && !viewerIsDesignLead(), github: Boolean(v && !currentContributor()), viewOnly: viewOnly(), explorations: d.explorations })),
-        lead: Boolean(d && !d.loading && (d.reviewer || viewerIsDesignLead())),
+        lead,
         join,
         note,
         recent: true,

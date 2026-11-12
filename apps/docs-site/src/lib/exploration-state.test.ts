@@ -127,7 +127,7 @@ describe('every screen says the same for M1 and M7', () => {
   });
 
   it('the Home greeting counts only M7 as waiting', () => {
-    expect(quietSentence(ownOpenWork(cards.map((c) => ({ ...c, own: true }))))).toBe('Nothing needs you. 1 of your explorations waits for a developer to pick it up.');
+    expect(quietSentence(ownOpenWork(cards.map((c) => ({ ...c, own: true }))))).toBe('Nothing needs you. 1 of your explorations is ready to build.');
   });
 
   it('the Home product folder and the product page groups and header', () => {

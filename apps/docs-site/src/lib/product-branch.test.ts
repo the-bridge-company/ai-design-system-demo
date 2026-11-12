@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PRODUCTS, libraryPreviewState, linkStatus, withNeededBy, type LinkedLibraryBranch, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
 import { ASK_CLAUDE, childLine, developerLines, failedPreviewLine, isProductBranch, libraryHref, nestLinked, notesOnly, pieceRows, productContextOf, productCrumbs, productProduction, productTodayUrl, statusLine, TRY_BUILDING_NOTE, TRY_TODAY_NOTE, TRY_UNAVAILABLE_NOTE, tryInProductView, whyItShows } from './product-branch';
+import { SEP } from './sep';
 
 const piece = (over: Partial<MissingPiece> = {}): MissingPiece => ({
   id: 'badge-overdue-tone',
@@ -45,7 +46,7 @@ describe('rows', () => {
         id: 'badge-overdue-tone',
         title: 'Badge: overdue tone',
         value: '#fdecec',
-        library: { href: '?pr=40', number: 40, line: 'In review · Dana reviews', tone: 'info', opens: 'pr' },
+        library: { href: '?pr=40', number: 40, line: `In review${SEP}Dana reviews`, tone: 'info', opens: 'pr' },
         action: null,
         preview: 'preview',
         previewSentence: expect.stringMatching(/^Your feature uses a preview/),
@@ -60,7 +61,7 @@ describe('rows', () => {
       ['badge-overdue-tone', null],
       ['color-c2410c', 'Send for review'],
     ]);
-    expect(rows[0]!.library!.line).toBe('In review · @dana reviews');
+    expect(rows[0]!.library!.line).toBe(`In review${SEP}@dana reviews`);
     expect(pieceRows({ record: undefined, linked: [] })).toEqual([]);
   });
 
@@ -83,8 +84,8 @@ describe('rows', () => {
   });
 
   it('status lines name people and the right verb', () => {
-    expect(statusLine({ key: 'changes', label: 'Changes requested', people: ['dana'] }, { dana: 'Dana' })).toBe('Changes requested · Dana asks');
-    expect(statusLine({ key: 'in-review', label: 'In review', people: ['a', 'b', 'c'] }, { a: 'Ann' })).toBe('In review · Ann and 2 more review');
+    expect(statusLine({ key: 'changes', label: 'Changes requested', people: ['dana'] }, { dana: 'Dana' })).toBe(`Changes requested${SEP}Dana asks`);
+    expect(statusLine({ key: 'in-review', label: 'In review', people: ['a', 'b', 'c'] }, { a: 'Ann' })).toBe(`In review${SEP}Ann and 2 more review`);
     expect(statusLine({ key: 'shipped', label: 'Shipped', people: [] })).toBe('Shipped');
   });
 });
@@ -160,7 +161,7 @@ describe('nestLinked', () => {
       { key: 'library', label: 'Library', rows: [row(40, 12)] },
     ]);
     expect(out.map((g) => g.key)).toEqual(['admin']);
-    expect(childLine('Claude AI')).toBe('Library change it needs · Claude AI');
+    expect(childLine('Claude AI')).toBe(`Library change it needs${SEP}Claude AI`);
   });
 });
 

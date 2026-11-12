@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { AuditNote, LibraryChanges, type LibraryChangesProps } from './LibraryChanges';
 import type { LibraryOrigin } from '../../../lib/library-origin';
+import { SEP } from '../../../lib/sep';
 
 interface Row {
   n: number;
@@ -52,8 +53,8 @@ describe('LibraryChanges', () => {
   it('every row says where it comes from, the exploration a link, with the exploration section tags', async () => {
     const { container } = render(createElement(LibraryChanges<Row>, props()));
     expect(screen.getByRole('link', { name: 'Deal pipeline cards' }).getAttribute('href')).toContain('exploration=4&product=crm');
-    expect(container.textContent).toContain('Needed by Deal pipeline cards · Acme CRM');
-    expect(container.textContent).toContain('From the DS lead · accessibility fix');
+    expect(container.textContent).toContain(`Needed by Deal pipeline cards${SEP}Acme CRM`);
+    expect(container.textContent).toContain(`From the DS lead${SEP}accessibility fix`);
     expect([...container.querySelectorAll('.pill')].map((p) => p.textContent)).toEqual(['Needs Dana', 'Needs Dana', 'Being built']);
     expect(container.textContent).not.toMatch(/#\d|acme\//);
     await expectNoAxeViolations(container);

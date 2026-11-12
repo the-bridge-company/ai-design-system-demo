@@ -38,7 +38,7 @@ export interface CompareOption {
   sameAsToday: boolean;
   /**
    * The library option a way's value already is, other than today's default ("Compact"): the way needs nothing new,
-   * its screen uses that option ("Leo's way is the library's Compact spacing"). Null otherwise.
+   * its screen uses that option ("Leo's way: 12 px, Compact in the library"). Null otherwise.
    */
   libraryOption: string | null;
 }
@@ -97,7 +97,6 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
   const part = p.kind.replace(/\s+change$/i, '') || 'This part';
   // An option the library already has at a way's value (Card padding Compact 12 px): said plainly, never "tighter".
   const existing = (value: number | null) => (value === null ? null : (knownLibraryOptions(c.component, c.property)?.find((o) => o.px === value && !o.isDefault)?.name ?? null));
-  const partWord = PAD.test(c.property.toLowerCase()) ? 'spacing' : c.property.replace(/[-_]+/g, ' ').toLowerCase();
   const ways: CompareOption[] = c.ways.map((w, i) => {
     const value = values[i] ?? null;
     const same = value !== null && today !== null && value === today;
@@ -108,7 +107,8 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
       name: `${w.designer}'s way`,
       value,
       valueText: value === null ? w.value : `${value} px`,
-      words: same ? 'same as today' : option ? `the library's ${option} ${partWord}` : wordOf(c.property, value, today, known),
+      // "12 px Compact in the library": the same pattern as today's "20 px in the library", on one line in its column.
+      words: same ? 'same as today' : option ? `${option} in the library` : wordOf(c.property, value, today, known),
       where: { exploration: w.exploration, product: w.product, href: w.key === p.asked?.key ? (p.asked?.href ?? null) : null },
       hue: i + 1,
       sameAsToday: same,
@@ -164,7 +164,18 @@ export function compareKeepLabel(pick: string, ways: readonly (Pick<CompareOptio
  * today first ("Today and Sofia: 20 px"), so no two outlines or labels sit on top of each other; a value the library
  * already has as another option names it ("Leo: 12 px (Compact)"). Largest first.
  */
-export function stageLabels(view: Pick<CompareView, 'today' | 'ways'>): { value: number; hue: number; keys: string[]; label: string }[] {
+export interface StageLabel {
+  value: number;
+  hue: number;
+  keys: string[];
+  /** The whole label, as one line of text ("Today and Sofia: 20 px"). */
+  label: string;
+  /** Whose look it is ("Today and Sofia"), and the library option the value already is ("Compact"), apart for the caption. */
+  who: string;
+  option: string | null;
+}
+
+export function stageLabels(view: Pick<CompareView, 'today' | 'ways'>): StageLabel[] {
   const out: { value: number; hue: number; keys: string[]; names: string[]; option: string | null }[] = [];
   for (const o of [view.today, ...view.ways]) {
     if (o.value === null || o.hue === null) continue;
@@ -177,7 +188,7 @@ export function stageLabels(view: Pick<CompareView, 'today' | 'ways'>): { value:
   }
   return out
     .sort((a, b) => b.value - a.value)
-    .map((x) => ({ value: x.value, hue: x.hue, keys: x.keys, label: `${peopleWords(x.names)}: ${x.value} px${x.option ? ` (${x.option})` : ''}` }));
+    .map((x) => ({ value: x.value, hue: x.hue, keys: x.keys, label: `${peopleWords(x.names)}: ${x.value} px${x.option ? ` (${x.option})` : ''}`, who: peopleWords(x.names), option: x.option }));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -221,7 +232,7 @@ export function checkedOfPick(pick: string, view: Rows): string[] {
  * The stage's looks for the checked rows: one per value, in row order. Options with the same value share one look and
  * its label names all of them ("Today and Sofia: 20 px"), checked or not, since they look the same.
  */
-export function checkedLooks(view: Rows, checked: readonly string[]): { value: number; hue: number; keys: string[]; label: string }[] {
+export function checkedLooks(view: Rows, checked: readonly string[]): StageLabel[] {
   const order = rowsOf(view).map((o) => o.key);
   const first = (keys: string[]) => Math.min(...keys.filter((k) => checked.includes(k)).map((k) => order.indexOf(k)));
   return stageLabels(view)

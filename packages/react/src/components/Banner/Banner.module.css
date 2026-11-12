@@ -77,6 +77,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Bold words inside the title stay at the title's weight: `bolder` from semibold would jump to black (900). */
+.title :where(b, strong) {
+  font-weight: inherit;
+}
+
 .description {
   color: var(--_muted);
   overflow-wrap: anywhere;

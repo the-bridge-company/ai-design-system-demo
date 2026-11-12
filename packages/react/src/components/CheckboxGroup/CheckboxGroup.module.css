@@ -13,9 +13,9 @@
   margin-block-end: var(--space-1);
   padding: 0;
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
 }
 
 .fieldset:disabled .legend {
@@ -39,9 +39,8 @@
 .description,
 .error {
   margin: 0;
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-normal);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .description {

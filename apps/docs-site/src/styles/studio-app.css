@@ -408,7 +408,6 @@
   outline-offset: calc(var(--border-width-default) * -1);
   background-color: var(--color-surface-default);
   color: var(--color-text-signal);
-  font-weight: var(--font-weight-semibold);
 }
 
 /* The hairline above is an outline: keyboard focus on the current page keeps the DS focus ring (WCAG 2.4.7). */

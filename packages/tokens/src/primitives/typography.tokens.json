@@ -65,6 +65,13 @@
           "unit": "px"
         }
       },
+      "150": {
+        "$value": {
+          "value": 13,
+          "unit": "px"
+        },
+        "$description": "Meta: the secondary line under a name or title (typography.meta)."
+      },
       "200": {
         "$value": {
           "value": 14,
@@ -108,7 +115,7 @@
         }
       },
       "$type": "dimension",
-      "$description": "Type scale. 12 caption, 14 UI, 16 body, 21 card titles, 30 section titles, 44 page titles, 64 display; 24, 36 and 50 stay for dense views and numbers. Brands pick from it through their typography roles.",
+      "$description": "Type scale. 12 caption and section labels, 13 meta lines, 14 UI, 16 body and card titles, 24 section titles, 30 page titles, 64 display; 21, 36, 44 and 50 stay for numbers, empty states and docs heroes. Brands pick from it through their typography roles.",
       "900": {
         "$value": {
           "value": 50,
@@ -131,9 +138,21 @@
           "unit": "px"
         }
       },
+      "18": {
+        "$value": {
+          "value": 18,
+          "unit": "px"
+        }
+      },
       "20": {
         "$value": {
           "value": 20,
+          "unit": "px"
+        }
+      },
+      "24": {
+        "$value": {
+          "value": 24,
           "unit": "px"
         }
       },

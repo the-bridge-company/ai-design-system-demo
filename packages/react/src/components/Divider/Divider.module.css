@@ -56,7 +56,8 @@
   flex: none;
   color: var(--divider-text);
   font-family: var(--font-family-sans);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-caption-size);
   font-weight: var(--font-weight-medium);
+  line-height: var(--typography-caption-line-height);
   letter-spacing: var(--font-tracking-wide);
 }

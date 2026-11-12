@@ -320,12 +320,12 @@ test('Card: fixed width from the size scale, parts fill the card, body text wrap
     assert.equal(body.layoutSizingHorizontal, 'FILL', `${padding}: the body slot is as wide as the body, never 0`);
     if (padding !== 'none') assert.equal(body.findOne((n) => n.type === 'TEXT')!.textAutoResize, 'HEIGHT', 'body text wraps');
   }
-  // The header uses the h3 role of Card.module.css (21 / 28, semibold), not a bigger one.
+  // The header uses the h3 role of Card.module.css (16 / 24, semibold), not a bigger one.
   const header = partOf(variantOf(set, 'Padding=default'), 'header-text');
   assert.equal(boundName(sim, header, 'fontSize'), 'Brand:typography/h3/size');
   assert.equal(boundName(sim, header, 'lineHeight'), 'Brand:typography/h3/line-height');
   const resolved = (field: string) => sim.resolveVariable(sim.variables.find((x) => x.id === (header.boundVariables[field] as { id: string }).id)!);
-  assert.deepEqual([resolved('fontSize'), resolved('lineHeight'), resolved('fontWeight')], [21, 28, 600]);
+  assert.deepEqual([resolved('fontSize'), resolved('lineHeight'), resolved('fontWeight')], [16, 24, 600]);
   // Inline components still hug.
   const button = variantOf(sim.sets().find((s) => s.name === 'Button')!, 'Variant=primary, Size=md, State=Default');
   assert.equal(button.layoutSizingHorizontal, 'HUG');
@@ -623,7 +623,7 @@ test('Card body slot: Media for padding none, body text otherwise, a Body swap w
   assert.deepEqual([media.primaryAxisAlignItems, media.counterAxisAlignItems], ['CENTER', 'CENTER']);
   const t = text.children[0]!;
   assert.equal(t.characters, 'Body');
-  assert.equal(boundName(sim, t, 'fontSize'), 'Primitives:font/size/200');
+  assert.equal(boundName(sim, t, 'fontSize'), 'Brand:typography/ui/size');
   assert.equal(boundName(sim, t, 'fills'), 'Semantic:color/text/default');
   assert.ok(Object.keys(text.componentPropertyDefinitions).some((k) => k.startsWith('Text#')));
 

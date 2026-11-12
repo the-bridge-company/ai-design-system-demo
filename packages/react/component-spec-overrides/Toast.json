@@ -5,7 +5,7 @@
     "packages/react/src/components/Toast/Toast.tsx",
     "packages/react/src/components/Toast/Toast.module.css"
   ],
-  "codeHash": "0e9107b7",
+  "codeHash": "0f64b64c",
   "reason": "is shown from a hook or a provider, not placed as a component",
   "name": "Toast",
   "axes": [
@@ -245,15 +245,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",
@@ -359,15 +359,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",
@@ -471,15 +471,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",
@@ -583,15 +583,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",
@@ -695,15 +695,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",
@@ -807,15 +807,15 @@
         "title-text": {
           "textFill": "color.text.default",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
+          "fontSize": "typography.ui.size",
           "fontWeight": "font.weight.semibold",
-          "lineHeight": "font.line-height.normal"
+          "lineHeight": "typography.ui.line-height"
         },
         "description-text": {
           "textFill": "color.text.muted",
           "fontFamily": "font.family.sans",
-          "fontSize": "font.size.200",
-          "lineHeight": "font.line-height.normal"
+          "fontSize": "typography.ui.size",
+          "lineHeight": "typography.ui.line-height"
         },
         "actions": {
           "paddingTop": "space.2",

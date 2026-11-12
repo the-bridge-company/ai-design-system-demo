@@ -72,9 +72,8 @@
 
 .meta {
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-normal);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .actions {

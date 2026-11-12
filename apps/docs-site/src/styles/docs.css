@@ -102,9 +102,9 @@ a.dc-section {
 .dc-body h2 {
   margin: 0 0 var(--space-3);
   font-family: var(--typography-h2-family);
-  font-size: var(--typography-h3-size);
+  font-size: var(--font-size-400);
   font-weight: var(--typography-h2-weight);
-  line-height: var(--typography-h3-line-height);
+  line-height: var(--font-leading-28);
 }
 
 .dc-body h3 {

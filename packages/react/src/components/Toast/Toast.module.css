@@ -125,7 +125,7 @@
 }
 
 .icon {
-  height: calc(var(--font-size-200) * var(--font-line-height-normal));
+  height: var(--typography-ui-line-height);
   margin-block-start: var(--space-1-5);
   color: var(--_icon);
 }
@@ -142,16 +142,16 @@
 .title {
   margin: 0;
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
-  line-height: var(--font-line-height-normal);
+  line-height: var(--typography-ui-line-height);
 }
 
 .description {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .actions {

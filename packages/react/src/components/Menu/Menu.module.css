@@ -16,8 +16,8 @@
   box-shadow: var(--popup-shadow);
   color: var(--menu-item-text);
   font-family: var(--font-family-sans);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-snug);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   overflow-y: auto;
   outline: none;
   transform-origin: var(--transform-origin);
@@ -139,8 +139,9 @@
 .groupLabel {
   padding: var(--space-1-5) var(--space-2) var(--space-1);
   color: var(--menu-item-text-muted);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-caption-size);
   font-weight: var(--font-weight-medium);
+  line-height: var(--typography-caption-line-height);
   letter-spacing: var(--font-tracking-wide);
 }
 

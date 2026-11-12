@@ -387,14 +387,14 @@
       }
     },
     "h1": {
-      "$description": "Page titles.",
+      "$description": "Page titles. 30px: an app page title, not a poster. Docs heroes use display.",
       "size": {
         "$type": "dimension",
-        "$value": "{font.size.800}"
+        "$value": "{font.size.600}"
       },
       "line-height": {
         "$type": "dimension",
-        "$value": "{font.leading.50}"
+        "$value": "{font.leading.38}"
       },
       "weight": {
         "$type": "fontWeight",
@@ -410,18 +410,18 @@
       }
     },
     "h2": {
-      "$description": "Section titles.",
+      "$description": "Section titles inside a page.",
       "size": {
         "$type": "dimension",
-        "$value": "{font.size.600}"
+        "$value": "{font.size.500}"
       },
       "line-height": {
         "$type": "dimension",
-        "$value": "{font.leading.38}"
+        "$value": "{font.leading.32}"
       },
       "weight": {
         "$type": "fontWeight",
-        "$value": "{font.weight.semibold}"
+        "$value": "{font.weight.medium}"
       },
       "family": {
         "$type": "fontFamily",
@@ -433,14 +433,14 @@
       }
     },
     "h3": {
-      "$description": "Card, dialog and group titles.",
+      "$description": "Card, dialog, panel and group titles. Same size as body, set apart by weight.",
       "size": {
         "$type": "dimension",
-        "$value": "{font.size.400}"
+        "$value": "{font.size.300}"
       },
       "line-height": {
         "$type": "dimension",
-        "$value": "{font.leading.28}"
+        "$value": "{font.leading.24}"
       },
       "weight": {
         "$type": "fontWeight",
@@ -452,18 +452,18 @@
       },
       "tracking": {
         "$type": "number",
-        "$value": "{font.tracking.snug}"
+        "$value": "{font.tracking.normal}"
       }
     },
     "body": {
-      "$description": "Reading text and leads. Measure 65ch or less.",
+      "$description": "Reading text, leads and empty state sentences. Measure 65ch or less.",
       "size": {
         "$type": "dimension",
         "$value": "{font.size.300}"
       },
       "line-height": {
         "$type": "dimension",
-        "$value": "{font.leading.26}"
+        "$value": "{font.leading.24}"
       },
       "weight": {
         "$type": "fontWeight",
@@ -501,8 +501,31 @@
         "$value": "{font.tracking.normal}"
       }
     },
+    "meta": {
+      "$description": "The secondary line under a name or title: job, date, path, count. Muted color (color.text.muted).",
+      "size": {
+        "$type": "dimension",
+        "$value": "{font.size.150}"
+      },
+      "line-height": {
+        "$type": "dimension",
+        "$value": "{font.leading.18}"
+      },
+      "weight": {
+        "$type": "fontWeight",
+        "$value": "{font.weight.regular}"
+      },
+      "family": {
+        "$type": "fontFamily",
+        "$value": "{font.family.instrument-sans}"
+      },
+      "tracking": {
+        "$type": "number",
+        "$value": "{font.tracking.normal}"
+      }
+    },
     "caption": {
-      "$description": "Meta, badges, footnotes.",
+      "$description": "Badges, section labels (with medium weight) and footnotes. The smallest text: never below 12px.",
       "size": {
         "$type": "dimension",
         "$value": "{font.size.100}"

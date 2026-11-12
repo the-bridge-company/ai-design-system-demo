@@ -109,7 +109,7 @@
 }
 
 .see-as-name {
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
 }
 
 .see-as-role {
@@ -134,17 +134,20 @@
 
 .see-as-who {
   display: grid;
-  line-height: var(--font-line-height-snug);
 }
 
+/* A name over its secondary line: 14 medium in ink over 13 regular in muted, one step apart in size, weight and
+   color each (typography.ui + typography.meta), so the pair reads as one item. */
 .see-as-item-name {
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--typography-ui-line-height);
 }
 
 .see-as-job,
 .see-as-note {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .see-as-note {

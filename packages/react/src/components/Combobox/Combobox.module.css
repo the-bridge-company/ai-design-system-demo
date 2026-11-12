@@ -272,7 +272,7 @@
   padding: var(--space-1) var(--space-2);
   border-radius: calc(var(--popup-radius) - var(--space-1)); /* concentric with the popup, as Menu items */
   color: var(--color-text-default);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
   cursor: default;
   user-select: none;
   outline: none;
@@ -306,8 +306,8 @@
 
 .itemDescription {
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-snug);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .item[data-disabled] .itemDescription {
@@ -323,10 +323,10 @@
 .groupLabel {
   padding: var(--space-2) var(--space-2) var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-caption-size);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--font-tracking-wide);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-caption-line-height);
   cursor: default;
 }
 
@@ -343,8 +343,8 @@
   gap: var(--space-2);
   padding: var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-snug);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .status:empty,

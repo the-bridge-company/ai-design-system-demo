@@ -33,9 +33,9 @@
   background-color: transparent;
   color: inherit;
   font-family: inherit;
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
   text-align: start;
   cursor: pointer;
   transition-property: background-color;
@@ -77,8 +77,9 @@
 .meta {
   flex: none;
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-regular);
+  line-height: var(--typography-meta-line-height);
   font-variant-numeric: tabular-nums;
 }
 
@@ -109,8 +110,8 @@
 .content {
   padding: 0 var(--layout-inset) var(--layout-inset);
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .flush .content {

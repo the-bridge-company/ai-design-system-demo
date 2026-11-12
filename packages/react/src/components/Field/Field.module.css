@@ -9,9 +9,9 @@
 .label {
   align-self: flex-start;
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
 }
 
 .field[data-disabled] .label {
@@ -35,9 +35,8 @@
 .description {
   margin: calc(var(--space-1) * -1) 0 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-normal);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .error {
@@ -45,10 +44,9 @@
   align-items: flex-start;
   gap: var(--space-1-5);
   color: var(--color-feedback-danger-text);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-normal);
-  letter-spacing: var(--font-tracking-wide);
+  line-height: var(--typography-meta-line-height);
 }
 
 .errorIcon {

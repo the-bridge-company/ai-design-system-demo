@@ -36,7 +36,7 @@
           }
         ]
       },
-      "hash": "5e65c109",
+      "hash": "1ad6148f",
       "source": [
         "packages/react/src/components/Accordion/Accordion.tsx",
         "packages/react/src/components/Accordion/Accordion.module.css",
@@ -264,16 +264,16 @@
             "title": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -291,8 +291,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -314,16 +314,16 @@
             "title-2": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -362,16 +362,16 @@
             "title": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -389,8 +389,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -412,16 +412,16 @@
             "title-2": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -460,16 +460,16 @@
             "title": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -487,8 +487,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -510,16 +510,16 @@
             "title-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -554,16 +554,16 @@
             "title": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -581,8 +581,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -604,16 +604,16 @@
             "title-2": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -648,17 +648,17 @@
             "title": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -676,8 +676,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -699,17 +699,17 @@
             "title-2": {
               "textFill": "accordion.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -744,16 +744,16 @@
             "title": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -771,8 +771,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "stroke": "accordion.border",
@@ -794,16 +794,16 @@
             "title-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon-2": {
               "width": "icon.size.sm",
@@ -926,7 +926,7 @@
           "value": "color"
         }
       },
-      "hash": "03444621",
+      "hash": "9fd8fe81",
       "source": [
         "packages/react/src/components/Accordion/Accordion.tsx",
         "packages/react/src/components/Accordion/Accordion.module.css",
@@ -1087,16 +1087,16 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -1114,8 +1114,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -1141,16 +1141,16 @@
             "title-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "meta": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.meta.line-height"
             },
             "icon": {
               "width": "icon.size.sm",
@@ -1168,8 +1168,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -1711,7 +1711,7 @@
           }
         ]
       },
-      "hash": "91904bda",
+      "hash": "121fb68e",
       "source": [
         "packages/react/src/components/AlertDialog/AlertDialog.tsx",
         "packages/react/src/components/AlertDialog/AlertDialog.module.css",
@@ -1935,8 +1935,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "body": {
               "paddingTop": "space.1",
@@ -1958,8 +1958,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": "button.danger.bg",
@@ -2018,8 +2018,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "body": {
               "paddingTop": "space.1",
@@ -2041,8 +2041,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": "button.primary.bg",
@@ -3971,7 +3971,7 @@
           ]
         }
       },
-      "hash": "304b25e2",
+      "hash": "60b1045e",
       "source": [
         "packages/react/src/components/Breadcrumb/Breadcrumb.tsx",
         "packages/react/src/components/Breadcrumb/Breadcrumb.module.css",
@@ -4127,8 +4127,8 @@
             "text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "icon": {
               "width": "icon.size.xs",
@@ -4145,8 +4145,8 @@
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "icon-2": {
               "width": "icon.size.xs",
@@ -4160,9 +4160,9 @@
             "current": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -4191,8 +4191,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "icon": {
@@ -4210,8 +4210,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "icon-2": {
@@ -4226,9 +4226,9 @@
             "current": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -7715,7 +7715,7 @@
     },
     {
       "name": "Card",
-      "hash": "bbaaef62",
+      "hash": "aa032d69",
       "source": [
         "packages/react/src/components/Card/Card.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -7863,8 +7863,8 @@
             "body-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "footer": {
               "fill": "color.bg.subtle",
@@ -7926,8 +7926,8 @@
             "body-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "footer": {
               "fill": "color.bg.subtle",
@@ -7989,8 +7989,8 @@
             "body-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "footer": {
               "fill": "color.bg.subtle",
@@ -8029,7 +8029,7 @@
     },
     {
       "name": "Checkbox",
-      "hash": "9646e8d7",
+      "hash": "a529c126",
       "source": [
         "packages/react/src/components/Checkbox/Checkbox.tsx",
         "packages/react/src/components/Checkbox/Checkbox.module.css",
@@ -8201,16 +8201,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8266,16 +8265,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8331,16 +8329,15 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8396,16 +8393,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8459,16 +8455,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8522,16 +8517,15 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8585,16 +8579,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8648,16 +8641,15 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8711,16 +8703,15 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -8981,7 +8972,7 @@
           }
         ]
       },
-      "hash": "44389b96",
+      "hash": "0ece3e54",
       "source": [
         "packages/react/src/components/CheckboxGroup/CheckboxGroup.tsx",
         "packages/react/src/components/Checkbox/Checkbox.module.css",
@@ -9308,17 +9299,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -9354,9 +9344,9 @@
             "label": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -9382,9 +9372,9 @@
             "label-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -9410,9 +9400,9 @@
             "label-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -9426,10 +9416,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -9459,17 +9448,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -9505,9 +9493,9 @@
             "label": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -9533,9 +9521,9 @@
             "label-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -9561,9 +9549,9 @@
             "label-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -9577,10 +9565,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -9610,17 +9597,16 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -9656,9 +9642,9 @@
             "label": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -9684,9 +9670,9 @@
             "label-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -9712,9 +9698,9 @@
             "label-3": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -9728,10 +9714,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -9761,17 +9746,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -9808,9 +9792,9 @@
             "label": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -9836,9 +9820,9 @@
             "label-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -9864,9 +9848,9 @@
             "label-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -9880,10 +9864,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -9921,17 +9904,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -9968,9 +9950,9 @@
             "label": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -9996,9 +9978,9 @@
             "label-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -10024,9 +10006,9 @@
             "label-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -10040,10 +10022,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -10081,17 +10062,16 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -10128,9 +10108,9 @@
             "label": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -10156,9 +10136,9 @@
             "label-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -10184,9 +10164,9 @@
             "label-3": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.regular",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -10200,10 +10180,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -12558,7 +12537,7 @@
           ]
         }
       },
-      "hash": "3977cd1a",
+      "hash": "a7b2b3a1",
       "source": [
         "packages/react/src/components/Combobox/Combobox.tsx",
         "packages/react/src/components/Combobox/Combobox.module.css",
@@ -12716,7 +12695,7 @@
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -12731,7 +12710,7 @@
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -12747,7 +12726,7 @@
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -12886,7 +12865,7 @@
           }
         ]
       },
-      "hash": "df468a0d",
+      "hash": "8cc03ba4",
       "source": [
         "packages/react/src/components/Dialog/Dialog.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -13197,8 +13176,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "body": {
               "paddingTop": "space.1",
@@ -13213,17 +13192,16 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-2": {},
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -13266,8 +13244,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -13329,8 +13307,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "body": {
               "paddingTop": "space.1",
@@ -13345,17 +13323,16 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-2": {},
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -13398,8 +13375,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -13461,8 +13438,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "body": {
               "paddingTop": "space.1",
@@ -13477,17 +13454,16 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-2": {},
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -13530,8 +13506,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -13740,7 +13716,7 @@
           }
         ]
       },
-      "hash": "6c415fb5",
+      "hash": "ae44c189",
       "source": [
         "packages/react/src/components/Drawer/Drawer.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -13964,8 +13940,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -14008,8 +13984,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -14053,8 +14029,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -14097,8 +14073,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -14142,8 +14118,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "button": {
               "fill": null,
@@ -14186,8 +14162,8 @@
             "footer-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -14268,7 +14244,7 @@
     },
     {
       "name": "EmptyState",
-      "hash": "867af469",
+      "hash": "aa4863c3",
       "source": [
         "packages/react/src/components/EmptyState/EmptyState.tsx",
         "packages/react/src/components/EmptyState/EmptyState.module.css",
@@ -14483,8 +14459,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14541,8 +14517,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14612,8 +14588,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14670,8 +14646,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14742,7 +14718,7 @@
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.300",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14800,7 +14776,7 @@
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.300",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -14843,7 +14819,7 @@
           }
         ]
       },
-      "hash": "d48d054a",
+      "hash": "23318747",
       "source": [
         "packages/react/src/components/Field/Field.tsx",
         "packages/react/src/components/Field/Field.module.css",
@@ -14987,17 +14963,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15039,17 +15014,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15091,17 +15065,16 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "control": {
               "fill": "input.bg-disabled",
@@ -15237,7 +15210,7 @@
           }
         ]
       },
-      "hash": "ebb2ae14",
+      "hash": "97672af3",
       "source": [
         "packages/react/src/components/Form/Form.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -15526,9 +15499,9 @@
             "text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "summary-list": {
               "paddingLeft": "space.4",
@@ -15541,8 +15514,8 @@
             "text-2": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "field": {
@@ -15552,9 +15525,9 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15594,10 +15567,9 @@
             "text-5": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -15662,9 +15634,9 @@
             "text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "summary-list": {
               "paddingLeft": "space.4",
@@ -15677,8 +15649,8 @@
             "text-2": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "field": {
@@ -15688,9 +15660,9 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15730,10 +15702,9 @@
             "text-5": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -15798,9 +15769,9 @@
             "text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "summary-list": {
               "paddingLeft": "space.4",
@@ -15813,8 +15784,8 @@
             "text-2": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height",
               "textDecoration": "UNDERLINE"
             },
             "field": {
@@ -15824,9 +15795,9 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15866,10 +15837,9 @@
             "text-5": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -19086,7 +19056,7 @@
       "name": "Menu/Popup",
       "component": "Menu",
       "view": "popup",
-      "hash": "47df6448",
+      "hash": "15075559",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19139,8 +19109,8 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -19206,7 +19176,7 @@
       "name": "MenuItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "5619df15",
+      "hash": "760b172f",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19291,8 +19261,8 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -19315,8 +19285,8 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -19339,8 +19309,8 @@
             "text": {
               "textFill": "menu.item.text-danger",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -19363,8 +19333,8 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -19388,7 +19358,7 @@
       "name": "MenuCheckboxItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "75f3892d",
+      "hash": "92138637",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19530,15 +19500,15 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "shortcut": {},
             "text-2": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.mono",
               "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "letterSpacing": "font.tracking.wide"
             }
           },
@@ -19578,15 +19548,15 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "shortcut": {},
             "text-2": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.mono",
               "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "letterSpacing": "font.tracking.wide"
             }
           },
@@ -19626,15 +19596,15 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "shortcut": {},
             "text-2": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.mono",
               "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "letterSpacing": "font.tracking.wide"
             }
           },
@@ -19670,15 +19640,15 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "shortcut": {},
             "text-2": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.mono",
               "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.ui.line-height",
               "letterSpacing": "font.tracking.wide"
             }
           },
@@ -19769,7 +19739,7 @@
           }
         ]
       },
-      "hash": "3d9926e7",
+      "hash": "12803dc7",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19960,9 +19930,9 @@
             "label-text": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
@@ -19986,8 +19956,8 @@
             "label-2": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20004,8 +19974,8 @@
             "label-3": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20022,8 +19992,8 @@
             "label-4": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -20042,9 +20012,9 @@
             "label-text": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
@@ -20068,8 +20038,8 @@
             "label-2": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20086,8 +20056,8 @@
             "label-3": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20104,8 +20074,8 @@
             "label-4": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -20122,7 +20092,7 @@
       "name": "MenuRadioItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "f42d6781",
+      "hash": "0d2cd901",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20229,8 +20199,8 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -20264,8 +20234,8 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -20299,8 +20269,8 @@
             "text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -20331,8 +20301,8 @@
             "text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -20397,7 +20367,7 @@
           }
         ]
       },
-      "hash": "9e4b3e41",
+      "hash": "ef7fac42",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20605,9 +20575,9 @@
             "label-text": {
               "textFill": "menu.item.text-muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
@@ -20632,8 +20602,8 @@
             "label-2": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20657,8 +20627,8 @@
             "label-3": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -20675,8 +20645,8 @@
             "label-4": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -20766,7 +20736,7 @@
           }
         ]
       },
-      "hash": "bf1dfb3e",
+      "hash": "0f9b6b8e",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20841,8 +20811,8 @@
             "label-text": {
               "textFill": "menu.item.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -20864,8 +20834,8 @@
             "label-text": {
               "textFill": "menu.item.text-disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -22068,7 +22038,7 @@
     },
     {
       "name": "PageHeader",
-      "hash": "85705e3c",
+      "hash": "00421344",
       "source": [
         "packages/react/src/components/PageHeader/PageHeader.tsx",
         "packages/react/src/components/PageHeader/PageHeader.module.css"
@@ -22250,9 +22220,8 @@
             "meta-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "actions": {
               "itemSpacing": "space.2",
@@ -24446,7 +24415,7 @@
           }
         ]
       },
-      "hash": "caff0a81",
+      "hash": "728287c9",
       "source": [
         "packages/react/src/components/Popover/Popover.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -24570,16 +24539,16 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -25941,7 +25910,7 @@
           }
         ]
       },
-      "hash": "ce58019b",
+      "hash": "29e55255",
       "source": [
         "packages/react/src/components/RadioGroup/RadioGroup.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -26223,17 +26192,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -26259,8 +26227,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26289,8 +26257,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -26313,8 +26281,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -26328,10 +26296,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -26360,17 +26327,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -26396,8 +26362,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26426,8 +26392,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -26450,8 +26416,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -26465,10 +26431,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -26497,17 +26462,16 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -26533,8 +26497,8 @@
             "text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26563,8 +26527,8 @@
             "text-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -26587,8 +26551,8 @@
             "text-3": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -26602,10 +26566,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -26634,17 +26597,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -26671,8 +26633,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26701,8 +26663,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -26725,8 +26687,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -26740,10 +26702,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -26780,17 +26741,16 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -26817,8 +26777,8 @@
             "text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26847,8 +26807,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -26871,8 +26831,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -26886,10 +26846,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -26926,17 +26885,16 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {},
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -26963,8 +26921,8 @@
             "text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "paddingTop": "space.0-5",
@@ -26993,8 +26951,8 @@
             "text-2": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "paddingTop": "space.0-5",
@@ -27017,8 +26975,8 @@
             "text-3": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "error": {
               "itemSpacing": "space.1-5"
@@ -27032,10 +26990,9 @@
             "error-text": {
               "textFill": "color.feedback.danger.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.meta.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "slots": {
@@ -27113,7 +27070,7 @@
           "value": "merge"
         }
       },
-      "hash": "8c4fc4dc",
+      "hash": "2bf5ab18",
       "source": [
         "packages/react/src/components/RadioGroup/RadioGroup.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -27260,15 +27217,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "hidden": [
@@ -27311,15 +27267,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "hidden": [
@@ -27362,15 +27317,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "hidden": [
@@ -27413,15 +27367,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -27461,15 +27414,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -27509,15 +27461,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         }
@@ -29485,7 +29436,7 @@
           "defaultValue": "dark"
         }
       },
-      "hash": "26f40784",
+      "hash": "cad30341",
       "source": [
         "packages/react/src/components/Select/Select.tsx",
         "packages/react/src/components/Field/Field.module.css",
@@ -29705,7 +29656,7 @@
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -29722,7 +29673,7 @@
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
               "cornerRadius": "calc(popup.radius - space.1)",
@@ -29740,7 +29691,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "indicator-3": {},
             "icon-3": {
@@ -29904,7 +29855,7 @@
           }
         ]
       },
-      "hash": "25ac9c2a",
+      "hash": "347b6a04",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -30139,9 +30090,9 @@
             "text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -30250,9 +30201,9 @@
             "text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -30363,9 +30314,9 @@
             "text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -30557,7 +30508,7 @@
           }
         ]
       },
-      "hash": "d2dccbb8",
+      "hash": "1f61a8ba",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -30791,9 +30742,9 @@
             "title-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -30899,9 +30850,9 @@
             "title-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -31009,9 +30960,9 @@
             "title-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "list": {
@@ -32508,7 +32459,7 @@
     },
     {
       "name": "Switch",
-      "hash": "2d8ab09e",
+      "hash": "a20616da",
       "source": [
         "packages/react/src/components/Switch/Switch.tsx",
         "packages/react/src/components/Switch/Switch.module.css"
@@ -32673,15 +32624,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -32721,15 +32671,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -32769,15 +32718,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -32817,15 +32765,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -32872,15 +32819,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -32927,15 +32873,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -32982,15 +32927,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -33030,15 +32974,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -33078,15 +33021,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           }
         },
@@ -33126,15 +33068,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33181,15 +33122,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33236,15 +33176,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33291,15 +33230,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33347,15 +33285,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33403,15 +33340,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33459,15 +33395,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33520,15 +33455,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33581,15 +33515,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33642,15 +33575,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33698,15 +33630,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33754,15 +33685,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33810,15 +33740,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33871,15 +33800,14 @@
             "label-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -33932,15 +33860,14 @@
             "label-text": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
-              "lineHeight": "font.line-height.normal",
-              "letterSpacing": "font.tracking.wide"
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
             }
           },
           "layout": {
@@ -34184,7 +34111,7 @@
           }
         ]
       },
-      "hash": "80b9c6b2",
+      "hash": "8be19724",
       "source": [
         "packages/react/src/components/Table/Table.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -34456,7 +34383,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.300",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "thead": {},
             "row": {},
@@ -34476,9 +34403,9 @@
             "text": {
               "textFill": "table.header.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "head-2": {
@@ -34497,9 +34424,9 @@
             "text-2": {
               "textFill": "table.header.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "tbody": {},
@@ -34519,8 +34446,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "cell-2": {
               "paddingTop": 0,
@@ -34537,8 +34464,8 @@
             "text-4": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "row-3": {},
             "cell-3": {
@@ -34551,8 +34478,8 @@
             "text-5": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "cell-4": {
               "paddingTop": 0,
@@ -34564,8 +34491,8 @@
             "text-6": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34596,7 +34523,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.300",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "thead": {},
             "row": {},
@@ -34616,9 +34543,9 @@
             "text": {
               "textFill": "table.header.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "head-2": {
@@ -34637,9 +34564,9 @@
             "text-2": {
               "textFill": "table.header.text",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug",
+              "lineHeight": "typography.caption.line-height",
               "letterSpacing": "font.tracking.wide"
             },
             "tbody": {},
@@ -34661,8 +34588,8 @@
             "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "cell-2": {
               "paddingTop": 0,
@@ -34679,8 +34606,8 @@
             "text-4": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "row-3": {
               "fill": "table.row.bg-hover"
@@ -34695,8 +34622,8 @@
             "text-5": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "cell-4": {
               "paddingTop": 0,
@@ -34708,8 +34635,8 @@
             "text-6": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.snug"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         }
@@ -34904,7 +34831,7 @@
           }
         ]
       },
-      "hash": "3e11a4a7",
+      "hash": "35e7eeef",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -35203,8 +35130,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -35304,8 +35231,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -35405,8 +35332,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35545,8 +35472,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35685,8 +35612,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -35786,8 +35713,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -35887,8 +35814,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -36027,8 +35954,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -36171,8 +36098,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36287,8 +36214,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36403,8 +36330,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36546,8 +36473,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36689,8 +36616,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36805,8 +36732,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -36921,8 +36848,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -37064,8 +36991,8 @@
             "text-2": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "hidden": [
@@ -37931,7 +37858,7 @@
       "drafted": {
         "reason": "is shown from a hook or a provider, not placed as a component"
       },
-      "hash": "224542db",
+      "hash": "ebe2330b",
       "source": [
         "packages/react/src/components/Toast/Toast.tsx",
         "packages/react/src/components/Toast/Toast.module.css"
@@ -38173,15 +38100,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -38287,15 +38214,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -38399,15 +38326,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -38511,15 +38438,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -38623,15 +38550,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -38735,15 +38662,15 @@
             "title-text": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
+              "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.semibold",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "typography.ui.line-height"
             },
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.200",
-              "lineHeight": "font.line-height.normal"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "actions": {
               "paddingTop": "space.2",
@@ -39445,8 +39372,8 @@
       "values": {
         "textFill": "color.text.default",
         "fontFamily": "font.family.sans",
-        "fontSize": "font.size.200",
-        "lineHeight": "font.line-height.normal"
+        "fontSize": "typography.ui.size",
+        "lineHeight": "typography.ui.line-height"
       },
       "text": {
         "property": "Text",

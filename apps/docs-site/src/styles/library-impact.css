@@ -463,8 +463,8 @@
   border-radius: var(--radius-control);
   background-color: var(--color-surface-default);
   font-family: var(--typography-h2-family);
-  font-size: var(--typography-h3-size);
-  line-height: var(--typography-h3-line-height);
+  font-size: var(--font-size-400);
+  line-height: var(--font-leading-28);
   text-align: center;
 }
 

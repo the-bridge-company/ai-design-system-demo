@@ -318,7 +318,7 @@
 }
 
 .gh-perm.is-write {
-  color: var(--color-feedback-success-text);
+  color: inherit;
 }
 
 .gh-perm.is-read {
@@ -360,6 +360,24 @@
 
 .gh-acct[data-contributor] [data-gh-github-only] {
   display: none;
+}
+
+/* An email contributor's menu reads name, email, then their access as one quiet line on the same left edge: no
+   "Access" label column (it was the only fact left, so the label added nothing and pushed the value right). */
+.gh-acct[data-contributor] .gh-facts {
+  display: block;
+  margin: 0 var(--space-2) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+}
+
+.gh-acct[data-contributor] .gh-facts dt {
+  display: none;
+}
+
+.gh-acct[data-contributor] .gh-acct-menu-email {
+  margin-block-end: 0;
 }
 
 /* The side nav's two groups, Products and Design system (components/ds/studio/ProductsNav.tsx, DS SidebarNav parts):

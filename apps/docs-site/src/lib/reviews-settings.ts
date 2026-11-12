@@ -41,6 +41,8 @@ export const REVIEWS_WORDS = {
   saved: 'Saved.',
   migrated: HAT_WORDS.migrated,
   loading: 'Reading who reviews',
+  /** The one quiet line a member who is not an admin reads: the section is read only for them. */
+  adminsOnly: 'Only admins change who reviews.',
 } as const;
 
 const andList = (parts: readonly string[], word = 'and') => (parts.length <= 1 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} ${word} ${parts[parts.length - 1]}`);

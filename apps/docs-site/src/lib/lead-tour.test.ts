@@ -9,7 +9,7 @@ describe("the lead's home tour", () => {
   });
 
   it('words each step for the lead, without em dashes', () => {
-    expect(leadTour('rows').title).toBe('Changes wait for the lead');
+    expect(leadTour('rows').title).toBe('Changes wait for your review');
     for (const at of ['rows', 'more', 'branches'] as const) expect(Object.values(leadTour(at)).join(' ')).not.toMatch(/—/);
   });
 });

@@ -57,11 +57,14 @@ describe("the author's card: both reviews as current steps", () => {
 
   it('both reviews read as one current step of the Stepper (it marks one current), one review as it is', () => {
     const steps = reviewStepsOf(sofiaAsked, { team: sample, product: 'prints', viewer: viewerIds(null, SOFIA) });
-    expect(asOneStep(steps)).toEqual([{ text: 'Dana reviews the design and decides on Timeline for the library', when: 'now', current: true }]);
+    expect(asOneStep(steps)).toEqual([{ text: 'Dana reviews the design and decides on Timeline for the library', when: 'now', current: true, lines: ['Dana reviews the design', 'Dana decides on Timeline for the library'] }]);
     const mine = reviewStepsOf(sofiaAsked, { team: sample, product: 'prints', viewer: viewerIds(null, DANA) });
     expect(asOneStep(mine)[0]!.text).toBe('You review the design and decide on Timeline for the library');
+    expect(asOneStep(mine)[0]!.lines).toEqual(['You review the design', 'You decide on Timeline for the library']);
     expect(asOneStep([{ text: 'Dana reviews the design', when: 'now', current: true }, { text: 'The library owners decide on Timeline', when: 'now', current: true }])[0]!.text).toBe('Dana reviews the design, the library owners decide on Timeline');
     expect(asOneStep(steps.slice(0, 1))).toEqual(steps.slice(0, 1));
+    // One review waiting: one line, no lines list.
+    expect(asOneStep(steps.slice(0, 1))[0]!.lines).toBeUndefined();
   });
 
   it('after Looks right, the line says the library decision still waits', () => {

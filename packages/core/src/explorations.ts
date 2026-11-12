@@ -426,7 +426,7 @@ export function explorationPrBody(e: Exploration, ctx: ExplorationPrContext): st
     '',
     '### When it is done',
     '',
-    `- **Done exploring:** on the exploration's page in Bridge Studio, or \`bridge explore done ${slug}\`. Bridge removes the \`${EXPLORATION_LABEL}\` label and the exploration note, adds \`${EXPLORATION_READY_LABEL}\`, and sends the pieces the designer picks to the DS lead as requests. Nothing is closed or merged: developers continue on \`${branch}\`.`,
+    `- **Done exploring:** on the exploration's page in Bridge Studio, or \`bridge explore done ${slug}\`. Bridge removes the \`${EXPLORATION_LABEL}\` label and the exploration note, adds \`${EXPLORATION_READY_LABEL}\`, asks the reviews that apply (the library decision when something is new for the library, the product's design review when it is on) and, once they answered, sends the new pieces to the library as requests. Nothing is closed or merged: developers continue on \`${branch}\`.`,
     `- **Archive:** \`bridge explore archive ${slug}\` adds the \`${EXPLORATION_ARCHIVED_LABEL}\` label. Keep this pull request open: ${ctx.inProduct ? 'Bridge follows open explorations, and its preview link is how people come back to the prototype.' : 'closing it removes the preview prerelease.'}`,
     '',
     explorationBlock({ ...e, slug }),
@@ -870,7 +870,7 @@ export function withDoneExploring(
           checkout,
           '```',
           '',
-          "Keep this pull request open: its preview link is how designers, the DS lead and stakeholders come back to the prototype. Nothing from it reaches the developers' repository on its own.",
+          "Keep this pull request open: its preview link is how designers, reviewers and stakeholders come back to the prototype. Nothing from it reaches the developers' repository on its own.",
         ]
       : [
           DEV_SECTION,
@@ -882,7 +882,7 @@ export function withDoneExploring(
           checkout,
           '```',
           '',
-          'Mark this pull request ready for review when the code is yours. Keep it open: its preview link is how designers, the DS lead and stakeholders come back to the prototype.',
+          'Mark this pull request ready for review when the code is yours. Keep it open: its preview link is how designers, reviewers and stakeholders come back to the prototype.',
           // The designers' notes as the spec: bold labels, never a heading, so the section stays one piece.
           ...(done.spec?.trim() ? ['', '**Design spec**, from the exploration\'s notes:', '', done.spec.trim()] : []),
         ]
@@ -1051,7 +1051,7 @@ export function isNotDoing(body: string | null | undefined): boolean {
 export function leadWordsForClaude(body: string | null | undefined): string | null {
   const d = openDecisionOf(body);
   if (!d?.text) return null;
-  const who = d.byName ?? d.by ?? 'Your lead';
+  const who = d.byName ?? d.by ?? (hatOf(d) === 'library' ? 'The library owners' : 'Your design reviewer');
   if (d.kind === 'question') return `${who} asks: ${d.text}`;
   if (d.kind === 'not-doing') return `${who} decided not to do this: ${d.text}`;
   return `${who} asked for changes: ${d.text}`;

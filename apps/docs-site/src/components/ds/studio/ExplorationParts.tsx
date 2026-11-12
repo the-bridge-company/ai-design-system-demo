@@ -167,8 +167,19 @@ export function TurnSteps({ steps }: { steps: readonly TurnStep[] }) {
       className="xp-turn-steps"
       label="What happens next"
       current={current < 0 ? undefined : current}
-      steps={steps.map((s) => ({ label: s.text, ...(s.when ? { meta: s.when } : {}) }))}
+      steps={steps.map((s) => ({ label: s.lines?.length ? <StepLines lines={s.lines} /> : s.text, ...(s.when ? { meta: s.when } : {}) }))}
     />
+  );
+}
+
+/** Both reviews inside the one current step: one line each, who and the hat. */
+function StepLines({ lines }: { lines: readonly string[] }) {
+  return (
+    <span className="xp-turn-lines">
+      {lines.map((l) => (
+        <span key={l}>{l}</span>
+      ))}
+    </span>
   );
 }
 

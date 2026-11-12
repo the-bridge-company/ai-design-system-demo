@@ -87,7 +87,7 @@ describe('Done exploring: the two reviews', () => {
     const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
     await explorations.startExploration(ctx, { name: 'Pill buttons' });
     const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
-    expect(r).toMatchObject({ status: 'in-review', reviews: { design: { reviewers: [{ id: 'sam' }] }, library: null }, waitingFor: "Waiting for sam's design review" });
+    expect(r).toMatchObject({ status: 'in-review', legacyStatus: 'waiting-for-lead', reviews: { design: { reviewers: [{ id: 'sam' }] }, library: null }, waitingFor: "Waiting for sam's design review" });
     expect(parseExplorationBody(gh.pulls[0]!.body)!.library?.askedAt).toBeUndefined();
   });
 
@@ -106,7 +106,7 @@ describe('Done exploring: the two reviews', () => {
     const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
     await explorations.startExploration(ctx, { name: 'Pill buttons' });
     const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
-    expect(r).toMatchObject({ status: 'ready-to-build', exploration: 'ready', reviews: { design: null, library: null }, waitingFor: 'No review needed: nothing new for the library, and Library has no design review' });
+    expect(r).toMatchObject({ status: 'ready-to-build', legacyStatus: 'done-exploring', exploration: 'ready', reviews: { design: null, library: null }, waitingFor: 'No review needed: nothing new for the library, and Library has no design review' });
     expect(gh.pulls[0]!.labels.map((l: { name: string }) => l.name)).toEqual(['ready-for-devs']);
     expect((await explorations.listExplorations(ctx, {})).explorations[0]).toMatchObject({ status: 'ready', waitingFor: null });
   });

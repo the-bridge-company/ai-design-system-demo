@@ -359,16 +359,17 @@ describe('ExplorationPage, exploring (X2)', () => {
     expect(screen.getByRole('heading', { name: 'Ready to hand it to Sam?' })).toBeTruthy();
   });
 
-  it('the lead reading someone else\'s exploration: nothing to do yet, "You decide" in the steps', () => {
+  it('the reviewer reading someone else\'s exploration: nothing to do yet, their review in the steps, no library decision with nothing new', () => {
     paint({ ...exploring, role: 'lead', leadName: 'Dana' });
     const zone = screen.getByRole('region', { name: 'Florian is exploring' });
     expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
     const steps = within(zone).getByRole('list', { name: 'What happens next' });
-    expect(within(steps).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1Florian exploresnow', '2You decide what the library keeps, to come', '3Admin demo developers build it, to come', '4Live in Admin demo, to come']);
+    expect(within(steps).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1Florian exploresnow', '2You review the design, to come', '3Admin demo developers build it, to come', '4Live in Admin demo, to come']);
     expect(within(steps).getAllByRole('listitem')[0]!.getAttribute('aria-current')).toBe('step');
     expect(within(zone).getByText('It reaches you when Florian says Done exploring.')).toBeTruthy();
     expect(screen.queryByText(/Your design lead/)).toBeNull();
     expect(screen.queryByText(/Dana decides/)).toBeNull();
+    expect(zone.textContent).not.toMatch(/what the library keeps/);
   });
 
   it('without a build yet: the capture is no link, and one line says why in words', () => {
@@ -949,10 +950,11 @@ describe('the talk with a lead on the page', () => {
     const onCancel = vi.fn(async () => 'Back to exploring.');
     const asked = new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString();
     paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', designAskedAt: asked, lead: { line: 'Waiting for Dana.', onCancel } });
-    const zone = screen.getByRole('region', { name: 'Dana decides what the library keeps' });
+    // Nothing new for the library: the design review waits, never the library decision.
+    const zone = screen.getByRole('region', { name: 'Dana reviews the design' });
     expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
     const rows = within(zone).getAllByRole('listitem');
-    expect(rows.map((li) => li.textContent)).toEqual(['1Dana decidesnow, for 3 days', '2Admin demo developers build it, to come', '3You check their version, to come', '4Live in Admin demo, to come']);
+    expect(rows.map((li) => li.textContent)).toEqual(['1Dana reviews the designnow, for 3 days', '2Admin demo developers build it, to come', '3You check their version, to come', '4Live in Admin demo, to come']);
     expect(rows[0]!.getAttribute('aria-current')).toBe('step');
     expect(within(zone).getByText('Bridge reminds Dana once after 2 days without an answer, and tells you as soon as there is one.')).toBeTruthy();
     expect(screen.queryByText('Before it ships')).toBeNull();
@@ -988,12 +990,24 @@ describe('the talk with a lead on the page', () => {
     paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', lead: { line: `${line}. Nothing goes to the developers before the reviews are in.` }, reviews: { line, steps } });
     const zone = screen.getByRole('region', { name: line });
     const items = within(zone).getAllByRole('listitem');
-    // Both reviews run now: one current step (the DS Stepper marks one), never one of them "to come".
-    expect(items[0]!.textContent).toBe('1Dana reviews the design and decides on Timeline for the librarynow');
+    // Both reviews run now: one current step (the DS Stepper marks one), never one of them "to come", with one line
+    // per review naming who and the hat.
     expect(items[0]!.getAttribute('aria-current')).toBe('step');
+    expect(within(items[0]!).getByText('Dana reviews the design')).toBeInTheDocument();
+    expect(within(items[0]!).getByText('Dana decides on Timeline for the library')).toBeInTheDocument();
+    expect(items[0]!.textContent).toBe('1Dana reviews the designDana decides on Timeline for the librarynow');
     expect(items[1]!.textContent).toMatch(/developers build it, to come$/);
     expect(screen.getAllByText(line).length).toBeGreaterThan(0);
     expect(zone.textContent).not.toMatch(/what the library keeps|design lead/);
+  });
+
+  it('two reviews, the author: one review still waiting is one line in the current step', () => {
+    const line = 'Waiting for the library decision on Timeline';
+    const steps = asOneStep([{ text: 'The library owners decide on Timeline', when: 'now', current: true }]);
+    paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', lead: { line: `${line}. Nothing goes to the developers before the reviews are in.` }, reviews: { line, steps } });
+    const items = within(screen.getByRole('region', { name: line })).getAllByRole('listitem');
+    expect(items[0]!.getAttribute('aria-current')).toBe('step');
+    expect(items[0]!.textContent).toBe('1The library owners decide on Timelinenow');
   });
 
   it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {
@@ -1042,8 +1056,8 @@ describe('the product manager (boards R1, R3)', () => {
   const dino = { login: 'name:Dino', name: 'Dino', agent: false, avatar: null };
   it('the PM gives their view in the turn block: Give your view opens it, a note is needed for Needs changes', async () => {
     const onSay = vi.fn(async () => 'Sent to the designer, with your note.');
-    paint({ stage: 'exploring', leadName: 'Dana', pm: { mine: true, name: 'Dino', said: false, title: 'What do you think, Dino?', intro: 'Florian shares this with you before it goes to the design lead.', line: 'You have not said what you think yet.', onSay } });
-    const zone = screen.getByRole('region', { name: 'Your view, before Dana decides' });
+    paint({ stage: 'exploring', leadName: 'Dana', pm: { mine: true, name: 'Dino', said: false, title: 'What do you think, Dino?', intro: 'Florian shares this with you before it goes to review.', line: 'You have not said what you think yet.', onSay } });
+    const zone = screen.getByRole('region', { name: 'Your view, before the design review' });
     expect(within(zone).getByText('Your turn')).toBeTruthy();
     expect(within(zone).getAllByRole('listitem')[0]!.textContent).toBe('1You give your viewnow');
     expect(screen.queryByRole('heading', { name: 'Happy with it?' })).toBeNull();
@@ -1079,12 +1093,12 @@ describe('the product manager (boards R1, R3)', () => {
 });
 
 describe('the product manager once the lead is asked: optional', () => {
-  it('Optional for you, Your view before Dana decides, Give your view the one primary; never the lead\'s choice', () => {
+  it('Optional for you, Your view before the design review, Give your view the one primary; never the library choice', () => {
     paint({ stage: 'exploring', role: 'designer', leadName: 'Dana', done: null, lead: { line: 'Waiting for Dana.' }, pm: { mine: true, name: 'Ann', said: false, title: '', intro: '', line: 'You have not said what you think yet.', onSay: async () => undefined } });
-    const zone = screen.getByRole('region', { name: 'Your view, before Dana decides' });
+    const zone = screen.getByRole('region', { name: 'Your view, before the design review' });
     expect(within(zone).getByText('Optional for you')).toBeTruthy();
-    expect(within(zone).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1You give your viewoptional, now', '2Dana decides what the library keeps, to come', '3Admin demo developers build it, to come', '4Florian checks, then it goes live, to come']);
-    expect(within(zone).getByText('Dana can decide without it. If you give it, Dana reads it first.')).toBeTruthy();
+    expect(within(zone).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1You give your viewoptional, now', '2Dana reviews the design, to come', '3Admin demo developers build it, to come', '4Florian checks, then it goes live, to come']);
+    expect(within(zone).getByText('Dana can review without it. If you give it, Dana reads it first.')).toBeTruthy();
     const buttons = within(zone).getAllByRole('button');
     expect(buttons.map((b) => b.textContent)).toEqual(['Give your view']);
     expect(buttons[0]!.className).toMatch(/primary/);
@@ -1092,7 +1106,7 @@ describe('the product manager once the lead is asked: optional', () => {
   });
   it('once said: nothing to do, their word stays changeable', () => {
     paint({ stage: 'exploring', role: 'designer', leadName: 'Dana', done: null, lead: { line: 'Waiting for Dana.' }, pm: { mine: true, name: 'Ann', said: true, title: '', intro: '', line: 'You said it looks good, today.', onSay: async () => undefined } });
-    const zone = screen.getByRole('region', { name: 'Dana decides what the library keeps' });
+    const zone = screen.getByRole('region', { name: 'Dana reviews the design' });
     expect(within(zone).getByText('You said it looks good, today.')).toBeTruthy();
     expect(within(zone).getByRole('button', { name: 'Change your view' }).className).not.toMatch(/primary/);
   });

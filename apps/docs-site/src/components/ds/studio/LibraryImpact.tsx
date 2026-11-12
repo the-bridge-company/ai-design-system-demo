@@ -600,7 +600,7 @@ function Ledger({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: Li
           open={commenting}
           onOpenChange={setCommenting}
           title={c.decides ? `${c.comment}?` : `Comment on ${c.component}?`}
-          description={c.decides ? `Everyone who changed ${c.component} reads it on their exploration.` : 'The DS lead reads it on this exploration, before choosing.'}
+          description={c.decides ? `Everyone who changed ${c.component} reads it on their exploration.` : 'The library owners read it on this exploration, before choosing.'}
           label="Your comment"
           multiline
           confirm="Send"
@@ -650,7 +650,7 @@ function Row({ row, onPiece, onReply, say }: { row: ImpactRowView; onPiece: Libr
         {row.note && <span className="li-note">{row.note}</span>}
         {row.reply && onReply && (
           <span className="li-reply">
-            <Button variant="secondary" size="sm" data-demo-write="reply to the lead" onClick={() => setReplying(true)}>
+            <Button variant="secondary" size="sm" data-demo-write="reply to a library decision" onClick={() => setReplying(true)}>
               Reply to {row.reply}
             </Button>
           </span>

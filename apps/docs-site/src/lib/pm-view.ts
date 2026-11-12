@@ -24,7 +24,7 @@ export function isViewerPm(pm: PmPerson | null | undefined, viewer: { ref?: stri
 
 export const PM_WORDS = {
   title: (pm: string) => `What do you think, ${pm}?`,
-  intro: (designer: string) => `${designer} shares this with you before it goes to the design lead.`,
+  intro: (designer: string) => `${designer} shares this with you before it goes to review.`,
   note: 'Your note',
   noteHint: 'Needed for Needs changes.',
   noteNeeded: 'Say what to change.',

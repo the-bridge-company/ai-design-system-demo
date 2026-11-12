@@ -50,6 +50,8 @@ describe('Settings > Reviews', () => {
     expect(screen.getByText('Dana decides what the library keeps')).toBeInTheDocument();
     expect(screen.getByText("Reviews now have two parts. Check who reviews each product's design.")).toBeInTheDocument();
     expect(screen.getByText('Dana reviews')).toBeInTheDocument();
+    // An admin edits: no read only line.
+    expect(screen.queryByText('Only admins change who reviews.')).toBeNull();
     expect(screen.getByRole('switch', { name: 'Library' })).not.toBeChecked();
     expect(screen.getByText('No design review')).toBeInTheDocument();
     // Progressive disclosure: who reviews and who decides stay folded.
@@ -103,12 +105,15 @@ describe('Settings > Reviews', () => {
     expect(api.setLibraryOwner).not.toHaveBeenCalledWith('acme/ds', 'dana@acme.example', false);
   });
 
-  it('anyone else reads the same words, with no control', async () => {
+  it('anyone else reads the same words, with no control, and one line says only admins change them', async () => {
     const { container } = render(createElement(ReviewsSection, { repo: 'acme/ds', canEdit: false, members, reviews: null }));
     expect(await screen.findByText('Dana reviews')).toBeInTheDocument();
     expect(screen.getByText('Dana decides what the library keeps')).toBeInTheDocument();
+    expect(screen.getByText('Only admins change who reviews.')).toBeInTheDocument();
     expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByText(/Reviews now have two parts/)).toBeNull();
     await expectNoAxeViolations(container);
   });
 });

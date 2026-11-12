@@ -53,6 +53,8 @@ export interface ReviewStep {
   text: string;
   when: string;
   current: true;
+  /** Both reviews in the one current step: one line per review still waiting, each naming who and the hat. */
+  lines?: string[];
 }
 
 const isYou = (viewer: ReviewViewer, id: string | undefined) => Boolean(id && (viewer ?? []).some((v) => v && v.toLowerCase() === id.toLowerCase()));
@@ -84,8 +86,10 @@ export const reviewStepsOf = (body: string | null | undefined, x: LineContext, w
 
 /**
  * Both reviews as the one current step of the DS Stepper, which marks a single step current (a second current step
- * would read "to come"): "Dana reviews the design and decides on Timeline for the library", "Dana reviews the design,
- * the library owners decide on Timeline". One review stays as it is.
+ * would read "to come"). The step shows one line per review ("Dana reviews the design", "Dana decides on Timeline for
+ * the library"), and its text joins them for anything that reads one sentence ("Dana reviews the design and decides on
+ * Timeline for the library", "Dana reviews the design, the library owners decide on Timeline"). One review stays as it
+ * is: one line.
  */
 export function asOneStep(steps: readonly ReviewStep[]): ReviewStep[] {
   if (steps.length < 2) return [...steps];
@@ -93,7 +97,7 @@ export function asOneStep(steps: readonly ReviewStep[]): ReviewStep[] {
   const subject = (t: string) => (/^(The library owners|The [\w ]+design reviewers|You|\S+)\s/.exec(t)?.[1] ?? '');
   const sa = subject(a.text);
   const text = sa && sa === subject(b.text) ? `${a.text} and ${b.text.slice(sa.length + 1)}` : `${a.text}, ${b.text.replace(/^The /, 'the ')}`;
-  return [{ text, when: a.when, current: true }];
+  return [{ text, when: a.when, current: true, lines: [a.text, b.text] }];
 }
 
 /** The title of the author's card while In review: the second line itself ("Waiting for Dana's design review"). */

@@ -254,8 +254,11 @@ export const NEEDS_DESIGN_LABEL = 'needs-design';
 /** A reply Bridge posted for someone without GitHub (api/contribute prefixes it with their name). */
 const VIA_BRIDGE = /^\*\*[^*\n]{1,120}\*\* \(via Bridge\):/;
 
-/** A design lead's words to the developers, sent from Bridge (core tellDevelopersOnGitHub): never a question for the lead. */
-const LEAD_NOTE = /^\*\*[^*\n]{1,120}\*\* \(design lead\):/;
+/**
+ * A design reviewer's words to the developers, sent from Bridge (core tellDevelopersOnGitHub): never a question for
+ * them. Signed "(design review)" since the two reviews, "(design lead)" before.
+ */
+const LEAD_NOTE = /^\*\*[^*\n]{1,120}\*\* \(design (?:lead|review)\):/;
 
 /** Bridge's own words on the task (an app or bot account, a design review, a member's reply, a lead's note, taking it back, with its reason). */
 const fromBridge = (c: TaskCommentLike) => {

@@ -57,7 +57,7 @@ describe('StudioHome, contributor', () => {
     expect(screen.getByText(QUIET_LINE)).toBeTruthy();
     expect(screen.queryByText(/need your review/)).toBeNull();
     expect(screen.queryByRole('link', { name: 'Review all' })).toBeNull();
-    expect(screen.queryByText(/Changes wait for the lead/)).toBeNull();
+    expect(screen.queryByText(/Changes wait for your review/)).toBeNull();
     expect(await screen.findByText(/until a reviewer approves it/)).toBeTruthy();
     expect(screen.getByText('1 of 2')).toBeTruthy();
     await expectNoAxeViolations(container);
@@ -238,16 +238,16 @@ describe('StudioHome, lead', () => {
   it('tours the queue only when it holds changes, never join requests alone', () => {
     const { unmount } = render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [jamie] })));
     expect(screen.getByText('asks to join Acme Product', { exact: false })).toBeTruthy();
-    expect(screen.queryByText(/Changes wait for the lead/)).toBeNull();
+    expect(screen.queryByText(/Changes wait for your review/)).toBeNull();
     unmount();
     render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [review] })));
-    expect(screen.getByText(/Changes wait for the lead/)).toBeTruthy();
+    expect(screen.getByText(/Changes wait for your review/)).toBeTruthy();
   });
 
   it('skips the rows step when the rows on screen are join requests and the changes are folded under N more', () => {
     const joins = ['a', 'b', 'c'].map((x, i) => joinNeed({ id: `${x}1b2c3d4e5f6071${i}`, name: `Person ${x}`, email: `${x}@acme.com`, createdAt: '2026-10-22T08:00:00Z' }, 'Acme Product', NOW));
     render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [...joins, review] })));
-    expect(screen.queryByText(/Changes wait for the lead/)).toBeNull();
+    expect(screen.queryByText(/Changes wait for your review/)).toBeNull();
     expect(screen.getByText(/The whole queue, one by one/)).toBeTruthy();
   });
 });
@@ -319,7 +319,7 @@ describe('StudioHome, the tour on a phone', () => {
     phone(true);
     const review = changeNeed({ number: 7, title: 'Deeper primary blue', author: leo, asker: leo, since: null, task: 'design', thumb: { kind: 'icon', icon: 'branch' } }, NOW);
     const { container } = render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [review] })));
-    expect(await screen.findByText(/Changes wait for the lead/)).toBeTruthy();
+    expect(await screen.findByText(/Changes wait for your review/)).toBeTruthy();
     expect(screen.getByText('1 of 2')).toBeTruthy();
     expect(container.querySelector('.sh-zone > .dh-tour-anchor-below')).toBeTruthy();
   });

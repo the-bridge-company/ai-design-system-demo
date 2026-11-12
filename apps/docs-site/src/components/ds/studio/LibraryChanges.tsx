@@ -207,7 +207,7 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
       return (
         <div className="bl-lib-act">
           <p className="t-ui">
-            {once.name} asks for what {p.lead.you ? 'you already made' : 'the DS lead already made'}. <strong>Approve it and they share one build.</strong>
+            {once.name} asks for what {p.lead.you ? 'you already made' : 'the library owners already made'}. <strong>Approve it and they share one build.</strong>
           </p>
           <ButtonLink size="sm" variant="primary" href={once.href} {...opens(once)}>
             Approve, build once

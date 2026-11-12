@@ -626,8 +626,17 @@ says Done exploring: Bridge asks the library decision and the product's design r
 Claude reads the reviews by hat: `bridge_promote_exploration` says which were asked and to whom (`reviews`, `status`,
 `waitingFor`), `bridge_continue_exploration` returns `designReviewWords` (the design review's words that wait on the
 designer) and `libraryAnswers` (the library owners' answer on each piece), and every list item carries `waitingFor`.
-`leadWords` is a deprecated alias of `designReviewWords`, removed after 2 releases; the `waiting-for-lead` status is
-gone (now `in-review`).
+Deprecated, kept for 2 releases then removed:
+
+| Old | New | What clients get meanwhile |
+| --- | --- | --- |
+| `status: "waiting-for-lead"` | `status: "in-review"` | `legacyStatus: "waiting-for-lead"` and `leads` (the design owners) next to the new fields |
+| `status: "done-exploring"` | `status: "ready-to-build"` | `legacyStatus: "done-exploring"` |
+| `leadWords` | `designReviewWords` | both, same value |
+
+`dry-run` and `already-done` keep their names, in `status` and `legacyStatus`. No tool takes an exploration status as
+input, so nothing needs to accept the old values. A client that compares `status` to the old values reads
+`legacyStatus` instead: this is why `@bridge-ds/mcp` takes a major bump for this change.
 
 ```sh
 bridge explore start "Pill buttons" --purpose "Do rounder buttons feel friendlier in checkout?"

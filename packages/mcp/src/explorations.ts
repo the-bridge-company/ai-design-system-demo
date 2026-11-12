@@ -494,7 +494,7 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
   const ref = explorationRefLabel({ number: p.number, product: at.product?.key, repo: at.repo });
   if (asked && reviews && !goesStraightToReady(asked)) {
     const waitingFor = waitingForAsked(reviews, product.name, viewer);
-    if (a.dryRun) return { status: 'dry-run' as const, number: p.number, ref, url: p.url, branch: p.headRef, reviews, waitingFor, ...(noDesignReview ? { noDesignReview } : {}), next: `Done exploring would ask ${waitingFor.replace(/^Waiting for /, '')}. Nothing reaches the developers before ${reviews.design && reviews.library ? 'both answer' : 'it is answered'}.` };
+    if (a.dryRun) return { status: 'dry-run' as const, legacyStatus: 'dry-run' as const, number: p.number, ref, url: p.url, branch: p.headRef, reviews, waitingFor, ...(noDesignReview ? { noDesignReview } : {}), next: `Done exploring would ask ${waitingFor.replace(/^Waiting for /, '')}. Nothing reaches the developers before ${reviews.design && reviews.library ? 'both answer' : 'it is answered'}.` };
     const r = await askReviewsOnGitHub(gh, p.number, {
       pieces: a.pieces ?? [],
       ...(viewer ? { openedBy: viewer } : {}),
@@ -505,6 +505,9 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
     const line = (after && waitingLineOf(config, after.body, { product, prAuthor: after.author, viewer: viewer ? [viewer] : null })) || waitingFor;
     return {
       status: 'in-review' as const,
+      // Deprecated, kept for 2 releases (docs/AI.md): the status and the field older clients read.
+      legacyStatus: 'waiting-for-lead' as const,
+      leads: config.governance.owners.design,
       number: r.number,
       ref: explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo }),
       ...(at.repo ? { repo: at.repo, product: at.product!.key } : {}),
@@ -539,6 +542,8 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
       : (noReviewOf(asked, { product, authorName }) ?? 'No review needed: nothing new for the library, and the design review already said Looks right');
   return {
     status,
+    // Deprecated, kept for 2 releases (docs/AI.md): the status older clients read.
+    legacyStatus: status === 'ready-to-build' ? ('done-exploring' as const) : status,
     number: r.number,
     ref: explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo }),
     ...(at.repo ? { repo: at.repo, product: at.product!.key, requestsIn: ds.fullName } : {}),

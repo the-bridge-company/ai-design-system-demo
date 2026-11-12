@@ -301,7 +301,7 @@ function sides(i: ImpactItem, designer: string): { before: ImpactSide | null; af
 /** The lead's word on a piece, as a short line under its summary. */
 function noteOf(d: { verdict: PieceVerdict; text?: string | undefined; use?: string | undefined; byName?: string | undefined; by?: string | undefined } | undefined, names: Record<string, string>): string | null {
   if (!d) return null;
-  const who = d.byName ?? (d.by ? (names[d.by] ?? d.by) : 'The lead');
+  const who = d.byName ?? (d.by ? (names[d.by] ?? d.by) : 'The library owners');
   if (d.verdict === 'changes' && d.text) return `${who}: ${d.text}`;
   if (d.verdict === 'local') return `${who} kept it in this screen. The developers build it inside the product, and the library may take it later.`;
   if (d.verdict === 'existing' && d.use) return `${who} asked to use ${d.use} instead.`;
@@ -441,7 +441,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     rows: fresh,
     conflicts: views,
     uses: [...asIsWords, ...libraryUses],
-    reach: everywhere ? { line: products.length > 1 ? `Every product on the library gets it, not only this screen: ${products.join(' and ')}. The lead's approval is enough.` : "Every screen on the library gets it, not only this one. The lead's approval is enough." } : null,
+    reach: everywhere ? { line: products.length > 1 ? `Every product on the library gets it, not only this screen: ${products.join(' and ')}. One library owner's approval is enough.` : "Every screen on the library gets it, not only this one. One library owner's approval is enough." } : null,
   };
 }
 
@@ -871,7 +871,10 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const others = ways.filter((w) => !w.mine);
   const several = ways.length > 2;
   const lead = x.lead;
-  const leadName = /^you$/i.test(lead) ? null : lead === 'the DS lead' ? 'The DS lead' : lead;
+  // Nobody named: the library owners, the hat that picks (two reviews), never one "lead".
+  const owners = !lead.trim() || /^the library owners$/i.test(lead);
+  const leadName = /^you$/i.test(lead) ? null : owners ? 'The library owners' : lead;
+  const picks = owners || /,| and /.test(lead) ? 'pick' : 'picks';
   const screens = ways.length === 2 ? 'both screens' : `all ${ways.length} screens`;
   const effect = (w: WayView) => w.size.toLowerCase();
   const sameProduct = others.every((w) => w.product === others[0]?.product);
@@ -912,10 +915,10 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const noteParts: NotePart[] = decides
     ? [{ text: `Answers ${screens}. ${toldLine}` }]
     : x.designerHere
-      ? [{ text: `Tell ${leadName && leadName !== 'The DS lead' ? leadName : 'the DS lead'} why yours fits this screen. ${leadName ?? 'The DS lead'}'s choice answers ${screens}.` }]
+      ? [{ text: `Tell ${owners || !leadName ? 'the library owners' : leadName} why yours fits this screen. ${owners || !leadName ? "The library owners'" : `${leadName}'s`} choice answers ${screens}.` }]
       : leadElsewhere
         ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}. ${toldLine}` }]
-        : [{ text: `${leadName ?? 'The DS lead'} picks in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
+        : [{ text: `${leadName ?? 'The library owners'} ${picks} in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
   const note = noteParts.map((p) => p.text).join('');
   const pick = group.find((c) => c.pick)?.pick ?? null;
   const rawValue = (key: string) => (key === first.mine.key ? first.mine.value : group.find((c) => c.other.key === key)?.other.value);
@@ -939,7 +942,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     noteParts,
     comment: decides ? (ways.length === 2 ? 'Comment to both' : 'Comment to all') : 'Comment',
     // Who picks, said once: the lead deciding here reads "Your choice", the lead who picks in Library review "Needs you".
-    tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The DS lead'} picks`,
+    tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The library owners'} ${picks}`,
     todayHint: several ? 'Stays the default' : 'In the library now',
     pick,
     decided: pick ? decidedView(pick, ways, component, property, x, told, ledger) : null,
@@ -986,9 +989,9 @@ function decidedView(pick: string, ways: readonly WayView[], component: string, 
   const { mode, keys } = keptKeys(pick, ways);
   const kept = ways.filter((w) => keys.includes(w.key));
   const choice = choiceFor(component, property, x);
-  const who = choice?.byName ?? (choice?.by ? choice.by : 'The DS lead');
+  const who = choice?.byName ?? (choice?.by ? choice.by : 'The library owners');
   const when = choice?.at ? agoInSentence(choice.at, x.now) : '';
-  const by = ` Decided by ${choice?.byName?.split(/\s+/)[0] ?? choice?.by ?? 'the DS lead'}${when ? `, ${when}` : ''}.`;
+  const by = ` Decided by ${choice?.byName?.split(/\s+/)[0] ?? choice?.by ?? 'the library owners'}${when ? `, ${when}` : ''}.`;
   const title =
     mode === 'sizes'
       ? `${component} gets ${kept.length === 1 ? 'a new size' : `${count(kept.length)} new sizes`}`

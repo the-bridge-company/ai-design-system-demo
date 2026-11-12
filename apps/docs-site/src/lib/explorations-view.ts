@@ -448,19 +448,20 @@ export function donePieces(body: string | null | undefined): { checked: boolean;
   return { checked: true, pieces: r.pieces.filter((p) => !linked.has(p.id)).map((p) => ({ id: p.id, title: p.title, summary: p.summary })), sent: r.pieces.filter((p) => linked.has(p.id)).length };
 }
 
-/** What the Done exploring dialog says, before any write. */
+/**
+ * What the Done exploring dialog says, before any write (two reviews: the library owners decide on new pieces, the
+ * product's design reviewers check the screen; scripts/exploration-done names them when the team says who).
+ */
 export function doneExploringCopy(x: { checked: boolean; pieces: number; sent: number; canCheck?: boolean; viaLead?: boolean; youLead?: boolean }): { description: string; piecesLine: string | null; piecesLabel: string } {
-  // A design lead exploring themselves, with no other lead to ask: they pick, so the words never send them to "your DS lead".
+  // A library owner exploring themselves, with nobody else to ask: they pick, so the words never send them to someone.
   const you = Boolean(x.youLead && !x.viaLead);
-  const piecesLabel = you ? 'Add to the library' : 'Propose to your DS lead';
+  const piecesLabel = you ? 'Add to the library' : 'Propose to the library';
   const description = x.viaLead
-    ? 'Your lead looks at it first. Once they say it looks right, your developers take it from here.'
-    : you
-      ? 'Nothing closes: the preview stays for you and stakeholders. Your developers take it from here.'
-      : 'Nothing closes: the preview stays for you, your DS lead and stakeholders. Your developers take it from here.';
+    ? 'It goes to the reviews that apply first: the design reviewer checks the screen, the library owners decide on each piece you tick. Your developers take it from here once they answer.'
+    : 'Nothing closes: the preview stays for you and stakeholders. Your developers take it from here.';
   if (!x.checked) return { description, piecesLabel, piecesLine: x.canCheck ? 'Bridge could not check it against the library this time. You can go on without proposing pieces.' : 'Not checked against the library yet. Ask Claude what is missing first, or go on without proposing pieces.' };
-  if (!x.pieces) return { description, piecesLabel, piecesLine: x.sent ? (you ? 'Every piece it needs is already asked for in the library.' : 'Every piece it needs is already with your DS lead.') : null };
-  return { description, piecesLabel, piecesLine: you ? 'New pieces for the library. Each one you tick goes to the library as a request, with a link to this preview.' : 'New pieces for the library. Each one you tick goes to your DS lead as a request, with a link to this preview.' };
+  if (!x.pieces) return { description, piecesLabel, piecesLine: x.sent ? (you ? 'Every piece it needs is already asked for in the library.' : 'Every piece it needs is already with the library owners.') : null };
+  return { description, piecesLabel, piecesLine: you ? 'New pieces for the library. Each one you tick goes to the library as a request, with a link to this preview.' : 'New pieces for the library. Each one you tick goes to the library owners as a request, with a link to this preview.' };
 }
 
 export const LEAD_OK_LINE = 'Sent to the developers.';
@@ -471,9 +472,9 @@ export const TOOK_BACK_LINE = 'Back with the designer, with your reason.';
 export const TOLD_DEVELOPERS_LINE = 'Sent to the developers.';
 export const askedOtherLine = (others: readonly string[], names: Record<string, string>) => `Asked ${others.map((l) => names[l] ?? l).join(', ')}.`;
 
-/** The line after Done exploring when the design lead validates first: the lead by name when known. */
+/** The line after Done exploring when the design review comes first: the design reviewer by name when known. */
 export function leadAskedLine(pieces: number, lead: string | null = null): string {
-  const to = lead?.trim() || 'your lead';
+  const to = lead?.trim() || 'the design reviewer';
   const who = lead?.trim() || 'they';
   const with_ = pieces ? `, with ${pieces} ${pieces === 1 ? 'piece' : 'pieces'} for the library` : '';
   return `Sent to ${to}${with_}. Your developers get it once ${who} ${lead?.trim() ? 'says' : 'say'} it looks right.`;
@@ -481,7 +482,7 @@ export function leadAskedLine(pieces: number, lead: string | null = null): strin
 
 /** The line after Done exploring: what went where, in one sentence. */
 export function doneLine(requests: number, youLead = false): string {
-  const where = youLead ? 'the library as requests' : 'your DS lead';
+  const where = youLead ? 'the library as requests' : 'the library owners';
   return requests ? `Done exploring. ${requests} ${requests === 1 ? 'piece went' : 'pieces went'} to ${youLead && requests === 1 ? 'the library as a request' : where}, and your developers take it from here.` : 'Done exploring. Your developers take it from here.';
 }
 

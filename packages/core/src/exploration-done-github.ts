@@ -487,7 +487,7 @@ export async function takeBackOnGitHub(gh: GitHubClient, ref: string | number, i
 export async function tellDevelopersOnGitHub(gh: GitHubClient, ref: string | number, input: { text: string; byName?: string | undefined }): Promise<void> {
   const p = await findExplorationOnGitHub(gh, ref);
   const task = designTaskRef(parseExplorationBody(p.body)?.task, null);
-  const words = input.byName ? `**${input.byName}** (design lead):\n\n${input.text.trim()}` : input.text.trim();
+  const words = input.byName ? `**${input.byName}** (design review):\n\n${input.text.trim()}` : input.text.trim();
   if (task) await gh.withBranchPrefix(undefined).forRepo(task.repo).createIssueComment(task.number, words);
   else await gh.createIssueComment(p.number, words);
 }

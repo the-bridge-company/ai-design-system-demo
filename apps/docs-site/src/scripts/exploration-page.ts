@@ -354,11 +354,11 @@ function leadViewOf(
   }
   if (open) return null;
   const known = knownNamesOf(leads);
-  const names = leads.length ? leads.map((l) => known[l] ?? l).join(', ') : 'your lead';
+  const names = leads.length ? leads.map((l) => known[l] ?? l).join(', ') : null;
   // Two reviews: who and why, the status second line (core waitingFor), never "the design lead" for a library decision.
   const waiting = ctx ? reviewSecondLine(body, { ...ctx, viewer: viewerReviewIds() }) : null;
   return {
-    line: waiting ? `${waiting}. Nothing goes to the developers before the reviews are in.` : `Waiting for ${names}. Nothing goes to the developers until they say it looks right.`,
+    line: waiting ? `${waiting}. Nothing goes to the developers before the reviews are in.` : names ? `Waiting for ${names}. Nothing goes to the developers until they say it looks right.` : 'Waiting for the design review. Nothing goes to the developers before it is in.',
     onCancel: o.keeper
       ? async () => {
           await cancelLeadAskOnGitHub(o.gh, r.number);
@@ -1290,7 +1290,7 @@ async function paintLibraryImpact(
   const otherLeads = ownerHere ? await leadNamesOf(leads, myName) : [];
   const viewerLeads = decides || (viewerDecidesExplorations() && otherLeads.length === 0);
   const leadNames = otherLeads.length ? otherLeads : viewerLeads ? knownLeadNames(leads) : await leadNamesOf(leads);
-  const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the DS lead';
+  const leadName = viewerLeads ? 'you' : leadNames.length ? leadNames.join(', ') : 'the library owners';
   // The lead by name on the page ("Ready to hand it to Dana?", the journey's next step).
   if (!viewerLeads && leadNames[0] && current?.key === key) repaint(d, key, { leadName: leadNames[0] });
   const mine = { ...impactSourceOf(o.pull as never, repo, o.product.name), designer };
@@ -1305,7 +1305,7 @@ async function paintLibraryImpact(
     body,
     designer,
     lead: leadName,
-    replyTo: designerHere ? (leadNames[0] ?? 'the lead') : null,
+    replyTo: designerHere ? (leadNames[0] ?? 'the library owners') : null,
     approved: o.handedOff,
     asked: o.handedOff || isWaitingForLead(body),
     canDecide: decides,
@@ -1341,7 +1341,7 @@ async function paintLibraryImpact(
     const words = `On ${cv.component}: ${text}`;
     await to[0]!.gh.createIssueComment(to[0]!.number, words);
     await Promise.all(to.slice(1).map((x) => x.gh.createIssueComment(x.number, words).catch(() => undefined)));
-    const line = cv.decides ? `Sent to ${namesLine(cv.ways.map((w) => w.designer))}.` : `Sent. ${leadNames[0] ?? 'The DS lead'} reads it here.`;
+    const line = cv.decides ? `Sent to ${namesLine(cv.ways.map((w) => w.designer))}.` : leadNames[0] ? `Sent. ${leadNames[0]} reads it here.` : 'Sent. The library owners read it here.';
     o.reopen(line);
     return line;
   };
@@ -1350,7 +1350,7 @@ async function paintLibraryImpact(
     ? async (piece, text) => {
         const to = view.state === 'rows' ? (view.rows.find((r) => r.id === piece)?.reply ?? null) : null;
         await replyOnPieceOnGitHub(o.gh, o.r.number, { piece, text, byName: myName ?? designer, to });
-        const line = `Sent to ${to ?? 'the lead'}. The piece is back in Library review with your reason.`;
+        const line = `Sent to ${to ?? 'the library owners'}. The piece is back in Library review with your reason.`;
         o.reopen(line);
         return line;
       }
@@ -1385,7 +1385,7 @@ async function paintLibraryImpact(
             .map((s) => s.text)
             .join('');
           const told = namesLine(cv.ways.map((w) => w.designer));
-          const note = `${myName ?? 'The design lead'} decided ${cv.component} ${cv.ledger.property.toLowerCase()}, where ${told} changed it differently. ${what} This answers every screen that asked: comment here if you see it otherwise.`;
+          const note = `${myName ?? 'A library owner'} decided ${cv.component} ${cv.ledger.property.toLowerCase()}, where ${told} changed it differently. ${what} This answers every screen that asked: comment here if you see it otherwise.`;
           // The first other exploration through core (both records and both comments), the rest the same way after it.
           const [first, ...rest] = others as { gh: GitHubClient; number: number }[];
           await chooseLibraryWayOnGitHub(o.gh, o.r.number, { component: cv.component, property: cv.property, pick, ...me, other: first!, note });

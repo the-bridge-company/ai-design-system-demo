@@ -285,6 +285,7 @@ describe('groups and words', () => {
   it('says who decides', () => {
     expect(summaryLine(LEAD, 'Dana')).toBe('What enters the library. You decide here; the whole team can look.');
     expect(summaryLine(DESIGNER, 'Dana')).toBe('What enters the library. Dana decides here.');
+    expect(summaryLine(DESIGNER, null)).toBe('What enters the library. The library owners decide here.');
   });
 
   it('says what a selection touches before acting', () => {
@@ -297,7 +298,8 @@ describe('groups and words', () => {
   it('celebrates an empty queue with the week in one sentence', () => {
     const done = [pieceOfChange(change({ merged: true })), xp({ decision: { verdict: 'local' } })!, xp({ decision: { verdict: 'existing', use: 'Badge' } })!];
     expect(emptyLine(done, LEAD, 'Dana')).toEqual({ title: 'Nothing waits on the library', sentence: 'You decided all 3 pieces. 1 added, 1 kept in its screen, 1 used an existing piece.' });
-    expect(emptyLine(done, DESIGNER, 'Dana').sentence).toBe('Dana decided all your pieces.');
+    // Several people may decide what the library keeps: the pieces are decided, never "Dana decided all of them".
+    expect(emptyLine(done, DESIGNER, 'Dana').sentence).toBe('Every piece of yours has its library decision.');
   });
 
   it('maps the One by one keys', () => {

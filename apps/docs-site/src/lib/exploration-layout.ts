@@ -424,6 +424,8 @@ export interface TurnStep {
   text: string;
   when?: string;
   current?: boolean;
+  /** Several lines in place of `text` inside the one step (both reviews while In review: one line each). */
+  lines?: readonly string[];
 }
 
 /** The block's one button, when the viewer has something real to press. */
@@ -497,6 +499,8 @@ export interface WaitInput {
   canKeepExploring?: boolean;
   /** The lead's choice here also sets the viewer's own screen (another exploration of theirs). */
   shared?: SharedChoice | null;
+  /** The screen has something new for the library: only then does the block name the library decision. */
+  newPieces?: boolean;
   /** The owner who cannot say Done exploring here (an email member on the product itself): the line that says why. */
   doneNote?: string | null;
   /** After Done exploring: the hand-off's steps. */
@@ -525,16 +529,23 @@ export const TURN_WORDS = {
   devCode: 'Code, next to the title, has the branch and the commands.',
 } as const;
 
-const named = (lead: string | null): string => lead?.trim() || 'The design lead';
-/** "the design lead" mid-sentence; a name stays as it is. */
-const midSentence = (s: string): string => (/^The /.test(s) ? `the ${s.slice(4)}` : s);
 const andList = (names: readonly string[]): string => (names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
 
-/** "Dana decides what the library keeps", "You decide what the library keeps"; short: "Dana decides". */
+/**
+ * The library hat (two reviews): "Dana decides what the library keeps", "You decide what the library keeps"; short:
+ * "Dana decides". Nobody named: the library owners. Said only where the library is asked something.
+ */
 export function leadStepText(x: { lead: string | null; viewerLeads: boolean }, short = false): string {
-  const who = x.viewerLeads ? 'You' : named(x.lead);
-  const verb = x.viewerLeads ? 'decide' : 'decides';
+  const who = x.viewerLeads ? 'You' : x.lead?.trim() || 'The library owners';
+  const verb = x.viewerLeads || !x.lead?.trim() ? 'decide' : 'decides';
   return short ? `${who} ${verb}` : `${who} ${verb} what the library keeps`;
+}
+
+/** The design review hat: "Dana reviews the design", "You review the design"; nobody named, the design reviewer. */
+export function designStepText(x: { lead: string | null; viewerLeads: boolean }): string {
+  if (x.viewerLeads) return 'You review the design';
+  const who = x.lead?.trim();
+  return who ? `${who} reviews the design` : 'The design reviewer checks it';
 }
 
 /** "now, for 3 days" from the whole days since the lead was asked; "now" when unknown. */
@@ -582,7 +593,7 @@ export function sharedChoiceOf(me: string | null | undefined, conflicts: readonl
 
 /** "Dana's Card padding choice also sets your Deal pipeline cards in Acme CRM." */
 export function sharedChoiceLine(s: SharedChoice, lead: string | null): string {
-  const who = lead?.trim() ? possessiveOf(lead.trim()) : "The design lead's";
+  const who = lead?.trim() ? possessiveOf(lead.trim()) : "The library owners'";
   return `${who} ${s.component} ${s.property.toLowerCase()} choice also sets your ${s.screen} in ${s.product}.`;
 }
 
@@ -614,9 +625,11 @@ function handoffStepsOf(steps: readonly HandoffStepLike[], x: { owner: boolean; 
 export function waitBlockOf(x: WaitInput): TurnBlock | null {
   const owner = x.role === 'owner';
   const dev = x.role === 'developer';
-  const lead = named(x.lead);
   const leadName = x.lead?.trim() || null;
   const product = x.product || 'the product';
+  // The hat that acts next (two reviews): the library decision only when the screen has something new for the library,
+  // else the design review. Never one person holding both by default.
+  const hatStep = x.newPieces ? leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }) : designStepText({ lead: x.lead, viewerLeads: x.viewerLeads });
   const shared = x.shared && !x.viewerLeads && !owner ? x.shared : null;
   const see: TurnBlockAction = shared ? { kind: 'see-choice', label: `See the ${shared.component} ${shared.property.toLowerCase()} choice` } : null;
   switch (x.stage) {
@@ -637,12 +650,12 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
     case 'exploring': {
       const steps: TurnStep[] = [
         { text: owner ? 'You explore' : `${x.author} explores`, when: 'now', current: true },
-        { text: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }) },
+        { text: hatStep },
         { text: buildStep(product) },
         { text: liveStep(product) },
       ];
       const says = owner ? 'you say' : `${x.author} says`;
-      const next = dev ? DEV_EXPLORING_LINE : x.viewerLeads ? `It reaches you when ${says} Done exploring.` : `It goes to ${midSentence(lead)} when ${says} Done exploring.`;
+      const next = dev ? DEV_EXPLORING_LINE : x.viewerLeads ? `It reaches you when ${says} Done exploring.` : `It goes to ${leadName ?? 'review'} when ${says} Done exploring.`;
       const lines = [owner && x.doneNote ? x.doneNote : next];
       if (shared) lines.push(`This screen's ${shared.component} ${shared.property.toLowerCase()} also sets your ${shared.screen} in ${shared.product}.`);
       return { eyebrow: TURN_WORDS.nothing, title: owner ? 'You are exploring' : `${x.author} is exploring`, steps, lines, action: see };
@@ -660,20 +673,20 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
         return { eyebrow: TURN_WORDS.nothing, title: x.reviews.title, steps, lines, action };
       }
       const steps: TurnStep[] = [
-        { text: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true), when: waitedWhen(x.waitedDays), current: true },
+        { text: x.newPieces ? leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true) : designStepText({ lead: x.lead, viewerLeads: x.viewerLeads }), when: waitedWhen(x.waitedDays), current: true },
         { text: buildStep(product) },
         { text: checkStep(owner, x.author) },
         { text: liveStep(product) },
       ];
       const lines: string[] = [];
       if (x.taken) lines.push(x.taken);
-      if (dev) lines.push(`You get a task in your repository once ${midSentence(lead)} sends it.`);
-      else if (shared) lines.push(`${sharedChoiceLine(shared, x.lead)} Bridge tells you what ${leadName ? `${leadName} picks` : 'the design lead picks'}.`);
+      if (dev) lines.push(leadName ? `You get a task in your repository once ${leadName} sends it.` : 'You get a task in your repository once the reviews are in.');
+      else if (shared) lines.push(`${sharedChoiceLine(shared, x.lead)} Bridge tells you what ${leadName ? `${leadName} picks` : 'the library owners pick'}.`);
       // The reminder is Bridge's rule (api/_lib/notify.ts REMIND_MS): said as the rule, never as something that happened.
-      else if (owner) lines.push(`Bridge reminds ${leadName ?? 'the design leads'} once after 2 days without an answer, and tells you as soon as there is one.`);
-      else lines.push(`Nothing reaches the developers before ${midSentence(lead)} sends it.`);
+      else if (owner) lines.push(`Bridge reminds ${leadName ?? 'the reviewers'} once after 2 days without an answer, and tells you as soon as there is one.`);
+      else lines.push(leadName ? `Nothing reaches the developers before ${leadName} sends it.` : 'Nothing reaches the developers before the reviews are in.');
       const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
-      return { eyebrow: TURN_WORDS.nothing, title: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }), steps, lines, action };
+      return { eyebrow: TURN_WORDS.nothing, title: hatStep, steps, lines, action };
     }
     case 'check': {
       const people = (x.checkers ?? []).filter((c) => c.said !== 'not-needed');
@@ -705,29 +718,29 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
  * like everyone else's and their word stays changeable.
  */
 export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | null; author: string; product: string; line: string }): TurnBlock {
-  const lead = named(x.lead);
   const leadName = x.lead?.trim() || null;
   const product = x.product || 'the product';
   const asked = x.stage === 'waiting-for-lead';
-  const decides = leadStepText({ lead: x.lead, viewerLeads: false });
+  // The product manager's view comes before the design review: never the library decision, which is not theirs to see.
+  const decides = designStepText({ lead: x.lead, viewerLeads: false });
   const last = { text: `${x.author} checks, then it goes live` };
   if (x.said)
     return {
       eyebrow: TURN_WORDS.nothing,
       title: asked ? decides : `${x.author} is exploring`,
       steps: asked
-        ? [{ text: leadStepText({ lead: x.lead, viewerLeads: false }, true), when: 'now', current: true }, { text: buildStep(product) }, last]
+        ? [{ text: decides, when: 'now', current: true }, { text: buildStep(product) }, last]
         : [{ text: `${x.author} explores`, when: 'now', current: true }, { text: decides }, { text: buildStep(product) }, last],
       lines: [x.line],
       action: { kind: 'change-view', label: TURN_WORDS.changeView },
     };
   return {
     eyebrow: asked ? TURN_WORDS.optional : TURN_WORDS.yourTurn,
-    title: `Your view, before ${midSentence(lead)} decides`,
+    title: 'Your view, before the design review',
     steps: asked
       ? [{ text: 'You give your view', when: 'optional, now', current: true }, { text: decides }, { text: buildStep(product) }, last]
       : [{ text: 'You give your view', when: 'now', current: true }, { text: `${x.author} says Done exploring` }, { text: decides }, { text: buildStep(product) }],
-    lines: [asked ? `${lead} can decide without it. If you give it, ${leadName ? `${leadName} reads` : 'they read'} it first.` : `${x.author} shares it with you before it goes to ${midSentence(lead)}.`],
+    lines: [asked ? (leadName ? `${leadName} can review without it. If you give it, ${leadName} reads it first.` : 'The design reviewer can review without it. If you give it, they read it first.') : `${x.author} shares it with you before it goes to review.`],
     action: null,
   };
 }

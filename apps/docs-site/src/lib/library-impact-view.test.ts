@@ -189,9 +189,10 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'Dana', canDecide: false, conflicts: two, others: [sofia], reviewHref: href }));
     expect(c.tag).toBe('Dana picks');
     expect(c.noteParts).toEqual([{ text: 'Dana picks in ' }, { text: 'Library review', href }, { text: ', for both screens.' }]);
-    const unknown = conflictOf(libraryImpactView({ ...base, lead: 'the DS lead', canDecide: false, conflicts: two, others: [sofia] }));
-    expect(unknown.tag).toBe('The DS lead picks');
-    expect(unknown.note).toBe('The DS lead picks in Library review, for both screens.');
+    const unknown = conflictOf(libraryImpactView({ ...base, lead: 'the library owners', canDecide: false, conflicts: two, others: [sofia] }));
+    // Nobody named: the library owners pick, never one "DS lead".
+    expect(unknown.tag).toBe('The library owners pick');
+    expect(unknown.note).toBe('The library owners pick in Library review, for both screens.');
   });
 
   it("tells the build check what the library pieces wait for, instead of 'no library piece changed'", () => {

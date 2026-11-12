@@ -1773,7 +1773,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               className="lr-banner"
               title={
                 <span className="lr-banner-title">
-                  <NameFace name={data.lead ?? 'Design lead'} size="xs" />
+                  <NameFace name={data.lead ?? 'Library owners'} size="xs" />
                   {banner.strong}
                 </span>
               }

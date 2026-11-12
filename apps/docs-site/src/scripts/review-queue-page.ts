@@ -377,7 +377,7 @@ export function initReviewQueue() {
             ? 'New reviews, usage guidance drafts and library checks land here.'
             : // A design lead without a review right on GitHub (a lead by email): the explorations they decide on land here.
               viewerIsDesignLead()
-              ? 'Explorations that wait on a design lead land here.'
+              ? 'Explorations that wait on your design review land here.'
               : 'Reviewers look at changes here. When one sends your change back, it shows on Home.'),
       actions: signedIn
         ? h(ButtonLink, { variant: 'primary', href: studioHref() }, 'Back to Home')

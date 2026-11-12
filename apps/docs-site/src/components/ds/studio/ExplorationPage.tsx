@@ -244,7 +244,7 @@ export interface ExplorationPageProps {
    * The two reviews (lib/review-lines), once the team's reviews are read: the status second line ("Waiting for Dana's
    * design review", or why nothing was reviewed) and, while In review, each review as a current step for the author.
    */
-  reviews?: { line: string | null; steps: readonly { text: string; when?: string; current?: boolean }[] } | null;
+  reviews?: { line: string | null; steps: readonly { text: string; when?: string; current?: boolean; lines?: readonly string[] }[] } | null;
   /** The lead's last open word, for the designer to answer (boards L3, L4). */
   designerZone?: DesignerZoneView | null;
   /** The product manager of its product (boards R1, R3): their own zone for them, where they stand for the others. */
@@ -1295,6 +1295,7 @@ function ExplorationBody(p: ExplorationPageProps) {
         taken: p.lead?.take?.line ?? null,
         canKeepExploring: Boolean(p.lead?.onCancel),
         shared: sharedChoiceOf(p.me?.name, p.impact?.view.state === 'rows' ? p.impact.view.conflicts : []),
+        newPieces: p.impact?.view.state === 'rows' && p.impact.view.rows.length + p.impact.view.conflicts.length > 0,
         doneNote: p.done?.kind === 'note' ? p.done.text : null,
         steps: handoff?.steps ?? [],
         checkers,

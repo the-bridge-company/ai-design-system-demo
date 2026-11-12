@@ -71,7 +71,7 @@ describe('Library review feedback, with DS components', () => {
   it('tells a designer who decides in a DS Banner, with the way to how review works', async () => {
     history.replaceState(null, '', '/?view=list');
     render(createElement(LibraryReviewView, props(async () => 'x', true)));
-    const banner = await screen.findByRole('region', { name: /Dana reviews library pieces/ });
+    const banner = await screen.findByRole('region', { name: /Dana decides what the library keeps/ });
     expect(banner).toHaveTextContent('Nothing to do meanwhile.');
     expect(screen.getByRole('link', { name: 'How library review works' })).toHaveAttribute('href', '/how-review-works/');
   });

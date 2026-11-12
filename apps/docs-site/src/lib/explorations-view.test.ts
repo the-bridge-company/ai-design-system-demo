@@ -211,20 +211,25 @@ describe('done exploring and archive', () => {
     expect(donePieces('No record')).toEqual({ checked: false, pieces: [], sent: 0 });
     const copy = doneExploringCopy({ checked: true, pieces: 1, sent: 1 });
     expect(copy.description).toMatch(/Nothing closes/);
-    expect(copy.piecesLine).toMatch(/DS lead as a request, with a link to this preview/);
+    expect(copy.piecesLine).toMatch(/library owners as a request, with a link to this preview/);
+    expect(copy.piecesLabel).toBe('Propose to the library');
     expect(doneExploringCopy({ checked: false, pieces: 0, sent: 0 }).piecesLine).toMatch(/Not checked/);
     expect(doneExploringCopy({ checked: true, pieces: 0, sent: 0 }).piecesLine).toBeNull();
     for (const t of [copy.description, copy.piecesLine!, doneLine(0), doneLine(2)]) expect(jargonIn(t)).toEqual([]);
-    expect(doneLine(1)).toBe('Done exploring. 1 piece went to your DS lead, and your developers take it from here.');
-    // Through a review first: the lead by name when the team says who.
+    expect(doneLine(1)).toBe('Done exploring. 1 piece went to the library owners, and your developers take it from here.');
+    // Through the design review first: the reviewer by name when the team says who.
     expect(leadAskedLine(2, 'Dana')).toBe('Sent to Dana, with 2 pieces for the library. Your developers get it once Dana says it looks right.');
-    expect(leadAskedLine(0)).toBe('Sent to your lead. Your developers get it once they say it looks right.');
-    // A design lead exploring themselves, nobody else asked: the words never send them to "your DS lead".
+    expect(leadAskedLine(0)).toBe('Sent to the design reviewer. Your developers get it once they say it looks right.');
+    // A library owner exploring themselves, nobody else asked: the words never send them to someone.
     const self = doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true });
     expect(self.piecesLabel).toBe('Add to the library');
     for (const t of [self.description, self.piecesLine!, doneLine(1, true), doneLine(2, true)]) expect(t).not.toMatch(/DS lead/);
     expect(doneLine(1, true)).toBe('Done exploring. 1 piece went to the library as a request, and your developers take it from here.');
-    expect(doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true, viaLead: true }).piecesLabel).toBe('Propose to your DS lead');
+    const viaReview = doneExploringCopy({ checked: true, pieces: 1, sent: 0, youLead: true, viaLead: true });
+    expect(viaReview.piecesLabel).toBe('Propose to the library');
+    // Two hats, never one person holding both.
+    expect(viaReview.description).toMatch(/design reviewer checks the screen, the library owners decide/);
+    for (const t of [copy.description, copy.piecesLine!, viaReview.description, viaReview.piecesLine!, doneLine(1), leadAskedLine(0)]) expect(t).not.toMatch(/\blead\b/);
   });
 
   it('developers take it with fetch and checkout, as a starting point', () => {

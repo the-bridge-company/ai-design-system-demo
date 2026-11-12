@@ -111,7 +111,7 @@ export default function DoneExploring() {
             Bridge is checking what the library is missing.
           </p>
         ) : detail && detail.pieces.length > 0 ? (
-          <CheckboxGroup label={copy?.piecesLabel ?? 'Propose to your DS lead'} description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
+          <CheckboxGroup label={copy?.piecesLabel ?? 'Propose to the library'} description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
             {detail.pieces.map((p) => (
               <Checkbox key={p.id} value={p.id} label={p.title} description={p.summary} />
             ))}

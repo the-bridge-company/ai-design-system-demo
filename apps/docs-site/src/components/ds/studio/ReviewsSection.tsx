@@ -9,7 +9,8 @@
 //                                     (api/invites set-design-review, one call per product).
 // After the migration, the one time note "Reviews now have two parts" heads the section until an admin saves.
 // Only admins edit (data.canManage on a real team, with the reviews read from the invites server); everyone else
-// reads the same words from the team (scripts/contribute-session teamReview) with no control. Rules and words:
+// reads the same words from the team (scripts/contribute-session teamReview) with no control, and one quiet line says
+// only admins change them. Rules and words:
 // lib/reviews-settings.ts.
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, CardBody, Checkbox, CheckboxGroup, Skeleton, Switch } from '@bridge-ds/react';
@@ -99,7 +100,7 @@ export default function ReviewsSection({ repo, canEdit, members, reviews }: { re
     <section className="mem-review" aria-labelledby="set-reviews">
       <Header />
       {view ? (
-        <Body repo={repo} canEdit={editing} view={view} />
+        <Body repo={repo} canEdit={editing} readOnly={!canEdit} view={view} />
       ) : (
         <div role="status" aria-busy="true" aria-label={W.loading}>
           <Skeleton height="var(--size-20)" />
@@ -109,7 +110,7 @@ export default function ReviewsSection({ repo, canEdit, members, reviews }: { re
   );
 }
 
-function Body({ repo, canEdit, view }: { repo: string; canEdit: boolean; view: View }) {
+function Body({ repo, canEdit, readOnly, view }: { repo: string; canEdit: boolean; readOnly: boolean; view: View }) {
   const products: ProductConfig[] = useMemo(() => (Array.isArray(siteConfig().products) ? (siteConfig().products as ProductConfig[]) : []), []);
   const githubOwners = useMemo(githubOwnerLogins, []);
   const [map, setMap] = useState<DesignReviewMap | null>(view.map);
@@ -175,6 +176,7 @@ function Body({ repo, canEdit, view }: { repo: string; canEdit: boolean; view: V
   return (
     <div className="set-band-body">
       {note && canEdit && <Alert tone="info">{W.migrated}</Alert>}
+      {readOnly && <p className="set-row-help">{W.adminsOnly}</p>}
       <Card>
         <CardBody>
           <div className="set-rows">

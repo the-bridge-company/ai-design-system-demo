@@ -224,8 +224,8 @@ describe('inferLeadReason', () => {
 
 describe('libraryOrigin and originLine', () => {
   it('the stated origin wins, else the DS lead with its reason, else the DS lead alone', () => {
-    expect(originLine(libraryOrigin({ title: 'Add the Forest brand' }))).toBe(`From the DS lead${SEP}new brand`);
-    expect(originLine(libraryOrigin({ title: 'Card: subtle tone for secondary groups' }))).toBe('From the DS lead');
+    expect(originLine(libraryOrigin({ title: 'Add the Forest brand' }))).toBe(`From the library owners${SEP}new brand`);
+    expect(originLine(libraryOrigin({ title: 'Card: subtle tone for secondary groups' }))).toBe('From the library owners');
     expect(
       libraryOrigin({
         title: 'Add the Forest brand',
@@ -390,16 +390,16 @@ describe('groupByComponent', () => {
 
   it('another viewer reads the DS lead, not you', () => {
     const g = groupByComponent(LI7, { you: false });
-    expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the DS lead');
-    expect(g.at(-1)!.label).toBe('More from the DS lead');
+    expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the library owners');
+    expect(g.at(-1)!.label).toBe('More from the library owners');
   });
 
   it("the lead never reads 'you' for a change someone else made", () => {
     const others = LI7.map((i) => ({ ...i, mine: false }));
     const g = groupByComponent(others, { you: true });
-    expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the DS lead');
-    expect(g.at(-1)!.label).toBe('More from the DS lead');
-    expect(groupByExploration(others, { you: true }).at(-1)!.label).toBe('From the DS lead');
+    expect(g[1]!.summary).toBe('asked by 2 explorations and 1 change from the library owners');
+    expect(g.at(-1)!.label).toBe('More from the library owners');
+    expect(groupByExploration(others, { you: true }).at(-1)!.label).toBe('From the library owners');
   });
 
   it('one approved exploration and another waiting is no conflict', () => {

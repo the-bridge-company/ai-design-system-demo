@@ -229,7 +229,7 @@ export function libraryOrigin(c: ChangeFacts, products: readonly ProductConfig[]
 export function originLine(o: LibraryOrigin): string {
   if (o.kind === 'exploration') return `Needed by ${o.name}${o.product ? `${SEP}${o.product}` : ''}`;
   if (o.kind === 'audit') return auditOriginLine(o);
-  return o.reason ? `From the DS lead${SEP}${LEAD_REASON_LABEL[o.reason]}` : 'From the DS lead';
+  return o.reason ? `From the library owners${SEP}${LEAD_REASON_LABEL[o.reason]}` : 'From the library owners';
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ export type OriginFilter = 'all' | 'explorations' | 'lead';
 export const ORIGIN_FILTER_LABEL: Record<OriginFilter, string> = {
   all: 'All',
   explorations: 'From explorations',
-  lead: 'From the DS lead',
+  lead: 'From the library owners',
 };
 
 export function originFilterParam(search: string): OriginFilter {
@@ -299,7 +299,7 @@ export function libraryTag(x: { kind?: string | null; draft?: boolean; kept?: bo
     if (x.turn) return { state: 'needs', label: 'Needs you', tone: 'neutral' };
     // Never "Needs you" on a change that is not on the viewer's Waiting on me: one count everywhere.
     if (lead.you) return { state: 'review', label: 'In review', tone: 'neutral' };
-    return { state: 'needs', label: lead.name ? `Needs ${lead.name}` : 'Needs the DS lead', tone: 'neutral' };
+    return { state: 'needs', label: lead.name ? `Needs ${lead.name}` : 'Needs a library owner', tone: 'neutral' };
   }
   if (APPROVED_KINDS.has(k)) return { state: 'approved', label: 'Approved', tone: 'success' };
   if (BUILDING_KINDS.has(k)) return { state: 'building', label: 'Being built', tone: 'info' };
@@ -381,7 +381,7 @@ function sharedTag<R>(items: LibraryItem<R>[]): LibraryTag | null {
 
 /** Words of the DS lead's own changes: "you" for the lead, else "the DS lead". */
 /** Who made the DS lead's changes, in words: "you" only when the lead viewing made every one of them. */
-const leadWords = <R>(items: readonly LibraryItem<R>[], o: { you: boolean }) => (o.you && items.length > 0 && items.every((i) => i.mine) ? 'you' : 'the DS lead');
+const leadWords = <R>(items: readonly LibraryItem<R>[], o: { you: boolean }) => (o.you && items.length > 0 && items.every((i) => i.mine) ? 'you' : 'the library owners');
 
 /**
  * The lead's view by component (board LI7): one group per component, conflicts first, then what waits on the lead,
@@ -441,7 +441,7 @@ export function groupByComponent<R>(items: readonly LibraryItem<R>[], o: { you: 
     const reasons = [...new Set(quietLead.flatMap((i) => (i.origin.kind === 'lead' && i.origin.reason ? [LEAD_REASON_LABEL[i.origin.reason]] : [])))];
     groups.push({
       key: 'lead-own',
-      label: leadWords(quietLead, o) === 'you' ? 'Your own changes' : 'More from the DS lead',
+      label: leadWords(quietLead, o) === 'you' ? 'Your own changes' : 'More from the library owners',
       items: quietLead,
       summary: [plural(quietLead.length, 'change'), reasons.join(', ')].filter(Boolean).join(' · '),
       conflict: false,
@@ -491,7 +491,7 @@ export function groupByExploration<R>(items: readonly LibraryItem<R>[], o: { you
     const needsLead = lead.some((i) => i.tag?.state === 'needs');
     groups.push({
       key: 'lead',
-      label: leadWords(lead, o) === 'you' ? 'From you' : 'From the DS lead',
+      label: leadWords(lead, o) === 'you' ? 'From you' : 'From the library owners',
       items: lead,
       summary: plural(lead.length, 'change'),
       conflict: false,

@@ -50,6 +50,7 @@ export * from './components/Menu';
 export * from './components/Tabs';
 export * from './components/Breadcrumb';
 export * from './components/Pagination';
+export * from './components/Stepper';
 export * from './components/SidebarNav';
 
 // Data display

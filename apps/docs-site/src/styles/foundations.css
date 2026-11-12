@@ -280,6 +280,11 @@
   background-color: var(--color-surface-pressed);
 }
 
+/* Muted text on surface.pressed reads at 3.2:1: the token names in this card use the default text color. */
+.sp-surface-row .sp-tag {
+  color: var(--color-text-default);
+}
+
 .sp-surface-row.is-selected {
   background-color: var(--color-surface-selected);
 }
@@ -553,6 +558,10 @@
   position: absolute;
   bottom: var(--space-2);
   left: var(--space-3);
+  /* The scrim is translucent: bare inverse text on it reads at 3.2:1. A solid inverse plate keeps the name legible. */
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-inset);
+  background-color: var(--color-surface-inverse);
 }
 
 /* Feedback, selection, focus */

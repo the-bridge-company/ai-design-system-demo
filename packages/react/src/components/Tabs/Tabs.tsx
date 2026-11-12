@@ -133,7 +133,12 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab({ value,
     <BaseTabs.Tab ref={ref} value={value} disabled={disabled} className={cx(styles.tab, className)} {...rest}>
       {icon && <Icon icon={icon} size="sm" className={styles.icon} />}
       <span className={styles.label}>{children}</span>
-      {count !== undefined && <span className={styles.count}>{count}</span>}
+      {count !== undefined && (
+        <>
+          {' '}
+          <span className={styles.count}>{count}</span>
+        </>
+      )}
     </BaseTabs.Tab>
   );
 });

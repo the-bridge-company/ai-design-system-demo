@@ -14,7 +14,7 @@
     "Secondary: the alternatives next to the primary, like Save as draft or Request changes.",
     "Ghost: low-emphasis actions repeated in lists, tables or toolbars (Edit, View diff), where filled buttons would fight for attention.",
     "Danger: destructive actions (Delete, Revoke access). Usually inside a confirmation dialog.",
-    "Pressed: a toggle that stays on, like Compare or Show what changed in a toolbar. Set pressed to true or false; the selected look and aria-pressed follow it.",
+    "Pressed: a toggle that stays on, like Compare or Show what changed in a toolbar. It shows when it is on, and screen readers hear it.",
     "Link: an action on this screen inside a sentence, like \"Show only these\" after a count. It looks like a link and stays a button.",
     "Inverse: the action on a strong surface (Deep Harbor, the inverse terminal bars), where secondary would disappear.",
     "Size sm in dense rows and toolbars, md everywhere else, lg only for a single call to action on an empty or onboarding screen. Heights follow the density setting."
@@ -54,7 +54,7 @@
     },
     {
       "title": "A toggle says its state with pressed",
-      "text": "Pass pressed true or false, never swap variants to show the state. The look, aria-pressed and a script driving a static page stay in step.",
+      "text": "Show that it is on with the pressed state, never by switching to another variant. The look and what screen readers hear stay in step.",
       "example": { "c": "Row", "children": [
         { "c": "Button", "p": { "variant": "secondary", "pressed": false }, "children": ["Compare"] },
         { "c": "Button", "p": { "variant": "secondary", "pressed": true }, "children": ["Show what changed"] }
@@ -87,13 +87,13 @@
     }
   ],
   "accessibility": [
-    "Native button through Base UI: Enter and Space activate it, it is in the tab order, no extra ARIA needed.",
-    "The focus ring (focus.ring.color, 2px, offset 2px) shows on keyboard focus only, never on mouse click.",
-    "Loading sets aria-busy and aria-disabled, ignores clicks, and keeps the button focusable so keyboard users keep their place.",
+    "Enter and Space activate it, and it is in the tab order like any button.",
+    "The focus ring shows on keyboard focus only, never on mouse click.",
+    "While loading it ignores clicks, tells screen readers it is busy, and stays focusable so keyboard users keep their place.",
     "Disabled removes the button from the tab order and explains nothing. Prefer an enabled button plus a message saying what is missing.",
-    "pressed sets aria-pressed, so screen readers announce a toggle button and its state. Leave it unset on plain buttons: aria-pressed false still announces a toggle.",
-    "Variant link keeps the native button: Enter and Space work, it is announced as a button, and the focus ring is the DS ring.",
-    "With render={<a href />} the element stays a link (role link), which is right for navigation styled as a button.",
+    "A toggle is announced as a toggle button with its state. A plain button is never set up as a toggle, or it would be announced as one.",
+    "The link look stays a button: Enter and Space work, it is announced as a button, and it gets the same focus ring.",
+    "A button that takes the user to another page is built as a link, so it is announced as a link.",
     "Heights are 32/40/48px comfortable and 28/32/40px compact: all above the WCAG 2.2 minimum target of 24px."
   ],
   "contentGuidelines": [

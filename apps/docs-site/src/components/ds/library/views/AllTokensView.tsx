@@ -29,7 +29,7 @@ export default function AllTokensView({ data }: { data: LibraryData }) {
   // Type filter: a static DS SegmentedControl (data-vanilla), each type with its count; scripts/all-tokens.ts follows
   // it. The filter field and the type control share one DS size (md): a small SegmentedControl is taller than a small
   // Input (its track adds an inset around small-height segments), so the bar read as two heights.
-  const chipItems = chips.map((c) => ({ value: c.value, label: createElement('span', null, `${c.label} `, createElement('span', { className: 'at-chip-n num' }, c.count)) }));
+  const chipItems = chips.map((c) => ({ value: c.value, label: c.label, count: c.count }));
   // What the panel needs, keyed by path. Everything else is in the rendered rows.
   const panelData = Object.fromEntries(rows.map((r) => [r.path, { cssVar: r.cssVar, type: r.type, description: r.description, light: r.light, dark: r.dark }]));
   return (

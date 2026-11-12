@@ -235,7 +235,14 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               data-tab={t.id}
             >
               {t.label}
-              {t.id === 'changelog' && notes.length > 0 && <span className="muted num"> {notes.length}</span>}
+              {t.id === 'changelog' && notes.length > 0 && (
+                <>
+                  {' '}
+                  <Badge size="sm" className="page-tab-count">
+                    {notes.length}
+                  </Badge>
+                </>
+              )}
             </Link>
           ))}
         </nav>

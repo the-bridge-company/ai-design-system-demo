@@ -30,7 +30,8 @@
   min-width: var(--size-4);
   height: var(--size-4);
   padding: 0 var(--space-0-5);
-  font-size: 0.85em;
+  /* 12px, the type scale's floor: 0.85em rendered 11.9px beside 14px text. */
+  font-size: var(--font-size-100);
 }
 
 .plus {

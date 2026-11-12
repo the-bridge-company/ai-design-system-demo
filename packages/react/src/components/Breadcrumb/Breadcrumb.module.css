@@ -20,6 +20,8 @@
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
+  /* Items share one line: a page's own list spacing (li + li margins) would drop every crumb after the first. */
+  margin: 0;
 }
 
 .link,

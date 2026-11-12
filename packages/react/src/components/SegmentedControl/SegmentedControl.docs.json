@@ -101,6 +101,23 @@
           ]
         }
       }
+    },
+    {
+      "title": "Counts sit in a count tag",
+      "text": "Give a filter its count with the item's count field, never inside the label: it renders as a small neutral tag after the label, and the selected segment's tag takes the stronger tone.",
+      "example": {
+        "c": "SegmentedControl",
+        "p": {
+          "label": "Status",
+          "size": "sm",
+          "defaultValue": "open",
+          "items": [
+            { "value": "open", "label": "Open", "count": 8 },
+            { "value": "review", "label": "In review", "count": 3 },
+            { "value": "shipped", "label": "Shipped", "count": 21 }
+          ]
+        }
+      }
     }
   ],
   "donts": [

@@ -25,8 +25,28 @@ const SPECIMEN: Record<string, SpecimenGroup> = {
   focus: 'focus',
 };
 
-// Step label color: whichever of the system's own extremes reads better on the swatch.
-const labelOn = (hex?: string) => (hex && luminance(hex) > 0.36 ? 'var(--color-neutral-950)' : 'var(--color-neutral-0)');
+// Step label color: whichever of the system's own extremes (palette neutral 950 or 0) reads better on the swatch.
+// A translucent step (rgb(... / 0.08)) is drawn over white, so its label is picked on that composite, not on the
+// opaque hex. (The label used --color-neutral-*, which does not exist, so it fell back to the page's ink: 1.3:1 on
+// black.)
+const alphaOf = (css: string) => {
+  const m = /\/\s*([\d.]+)(%?)\s*\)\s*$/.exec(css);
+  return m ? Number(m[1]) / (m[2] ? 100 : 1) : 1;
+};
+const overWhite = (hex: string, a: number) => {
+  const n = parseInt(hex.slice(1, 7), 16);
+  const mix = (c: number) => Math.round(c * a + 255 * (1 - a));
+  return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => mix(c).toString(16).padStart(2, '0')).join('')}`;
+};
+/** Relative luminance of palette neutral 950, the darkest ink of both brands (about 0.009 to 0.012). */
+const INK_LUMINANCE = 0.011;
+const labelOn = (hex: string | undefined, css: string) => {
+  if (!hex) return 'var(--palette-neutral-950)';
+  const l = luminance(overWhite(hex, alphaOf(css)));
+  return (l + 0.05) / (INK_LUMINANCE + 0.05) >= 1.05 / (l + 0.05) ? 'var(--palette-neutral-950)' : 'var(--palette-neutral-0)';
+};
+const swatchOf = (cssVar: string, css: string) =>
+  alphaOf(css) < 1 ? { backgroundImage: `linear-gradient(var(${cssVar}), var(${cssVar}))`, backgroundColor: 'var(--palette-neutral-0)' } : { backgroundColor: `var(${cssVar})` };
 
 export const COLOR_PAGE = {
   title: 'Color',
@@ -65,7 +85,7 @@ export default function ColorView({ data }: { data: LibraryData }) {
                 const n = semanticUsing(p.path).length;
                 return (
                   <div key={p.path} className="ramp-step" id={anchorOf(p.cssVar)} role="listitem">
-                    <span className="ramp-color" style={{ backgroundColor: `var(${p.cssVar})`, color: labelOn(p.hex) }}>
+                    <span className="ramp-color" style={{ ...swatchOf(p.cssVar, p.css), color: labelOn(p.hex, p.css) }}>
                       <strong>{p.segments.slice(2).join('.') || p.segments.slice(1).join('.')}</strong>
                     </span>
                     <span className="ramp-meta">

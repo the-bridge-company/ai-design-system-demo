@@ -1488,55 +1488,9 @@
   gap: var(--space-2);
 }
 
-/* The lead's two steps while a library piece waits: the current one in Deep Harbor, the next one quiet. */
+/* The turn block's steps: the DS Stepper (vertical "What happens next", horizontal 1 of 2 for the lead). */
 .xp-turn-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  list-style: none;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.xp-turn-steps li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-}
-
-.xp-turn-steps .is-current {
-  color: var(--color-text-link);
-  font-weight: var(--font-weight-semibold);
-}
-
-.xp-turn-step-n {
-  display: inline-grid;
-  place-items: center;
-  width: var(--size-5);
-  height: var(--size-5);
-  border: var(--border-width-default) solid currentColor;
-  border-radius: var(--radius-pill);
-  font-size: var(--typography-caption-size);
-  font-variant-numeric: tabular-nums;
-}
-
-.xp-turn-steps .is-current .xp-turn-step-n {
-  border-width: var(--border-width-strong);
-}
-
-/* The steps still to come in the turn block (direction B): one per line, the current one's "now" quiet beside it. */
-.xp-turn-steps.is-list {
-  flex-direction: column;
-  flex-wrap: nowrap;
-  margin-block-end: var(--space-2);
-}
-
-.xp-turn-step-when {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
+  margin-block-end: var(--space-4);
 }
 
 /* Under a primary that leads to the next step: what comes after it, quiet, at the row's end. */

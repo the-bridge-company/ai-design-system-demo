@@ -111,6 +111,7 @@
   border: 0;
   border-radius: var(--radius-inset);
   background-color: transparent;
+  position: relative;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: background-color var(--motion-duration-instant) var(--motion-easing-standard);
@@ -121,6 +122,13 @@
     background-color: var(--color-surface-hover);
     color: var(--color-text-default);
   }
+}
+
+/* The target reaches 24px (WCAG 2.5.8) even where the button draws smaller (sm, compact). */
+.iconAction::after {
+  content: "";
+  position: absolute;
+  inset: min(0%, calc((100% - var(--size-6)) / 2));
 }
 
 .iconAction:focus-visible {

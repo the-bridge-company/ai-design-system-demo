@@ -2136,7 +2136,7 @@
     },
     {
       "name": "Avatar",
-      "hash": "37f28722",
+      "hash": "b37c6a87",
       "source": [
         "packages/react/src/components/Avatar/Avatar.tsx",
         "packages/react/src/components/Avatar/Avatar.module.css"
@@ -2282,6 +2282,7 @@
             "text": {
               "textFill": "avatar.text",
               "fontFamily": "font.family.sans",
+              "fontSize": "font.size.100",
               "fontWeight": "font.weight.semibold",
               "lineHeight": "font.line-height.none"
             }
@@ -2804,12 +2805,6 @@
           "property": "prop mark",
           "value": "node",
           "reason": "slot content is not drawn"
-        },
-        {
-          "part": "text",
-          "property": "font-size",
-          "value": "0.75em",
-          "reason": "literal value, not a token"
         }
       ]
     },
@@ -18643,7 +18638,7 @@
           ]
         }
       },
-      "hash": "93cfb064",
+      "hash": "ee1e5597",
       "source": [
         "packages/react/src/components/Kbd/Kbd.tsx",
         "packages/react/src/components/Kbd/Kbd.module.css"
@@ -18746,6 +18741,7 @@
             "text": {
               "textFill": "kbd.text",
               "fontFamily": "font.family.mono",
+              "fontSize": "font.size.100",
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.none"
             },
@@ -18773,6 +18769,7 @@
             "text-2": {
               "textFill": "kbd.text",
               "fontFamily": "font.family.mono",
+              "fontSize": "font.size.100",
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.none"
             }
@@ -18839,20 +18836,7 @@
           }
         }
       ],
-      "unmapped": [
-        {
-          "part": "text",
-          "property": "font-size",
-          "value": "0.85em",
-          "reason": "literal value, not a token"
-        },
-        {
-          "part": "text-2",
-          "property": "font-size",
-          "value": "0.85em",
-          "reason": "literal value, not a token"
-        }
-      ]
+      "unmapped": []
     },
     {
       "name": "Link",
@@ -29920,7 +29904,7 @@
           }
         ]
       },
-      "hash": "e711c569",
+      "hash": "25ac9c2a",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -30120,9 +30104,9 @@
           "parent": "item-3",
           "source": "SidebarNav.module.css .count",
           "layout": {
-            "direction": "VERTICAL",
-            "primary": "MIN",
-            "counter": "STRETCH"
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
           }
         },
         {
@@ -30188,7 +30172,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -30205,7 +30189,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -30222,23 +30206,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text-2": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         },
@@ -30296,7 +30283,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -30314,7 +30301,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -30332,23 +30319,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text-2": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         },
@@ -30406,7 +30396,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -30424,7 +30414,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -30442,23 +30432,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text-2": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         }
@@ -30564,7 +30557,7 @@
           }
         ]
       },
-      "hash": "7582515b",
+      "hash": "d2dccbb8",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -30766,9 +30759,9 @@
           "parent": "item-3",
           "source": "SidebarNav.module.css .count",
           "layout": {
-            "direction": "VERTICAL",
-            "primary": "MIN",
-            "counter": "STRETCH"
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
           }
         },
         {
@@ -30831,7 +30824,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -30848,7 +30841,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -30865,23 +30858,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         },
@@ -30936,7 +30932,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -30954,7 +30950,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -30972,23 +30968,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         },
@@ -31043,7 +31042,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-2": {},
             "item-2": {
@@ -31061,7 +31060,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "list-item-3": {},
             "item-3": {
@@ -31079,23 +31078,26 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             },
             "count": {
-              "fill": "color.bg.muted",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             }
           }
         }
@@ -31179,7 +31181,7 @@
     {
       "name": "SidebarNavItem",
       "component": "SidebarNav",
-      "hash": "7e90c90a",
+      "hash": "e911cf25",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -31286,7 +31288,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -31320,7 +31322,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -31354,7 +31356,7 @@
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.snug"
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -32009,6 +32011,498 @@
           "what": "Looping animation spin, 700 ms",
           "reason": "a Figma component cannot loop an animation on its own",
           "durationToken": "motion.duration.spin"
+        }
+      ]
+    },
+    {
+      "name": "Stepper",
+      "example": {
+        "c": "Stepper",
+        "p": {
+          "steps": [
+            {
+              "label": "You explore"
+            },
+            {
+              "label": "Dana decides",
+              "meta": "now, for 3 days"
+            },
+            {
+              "label": "Acme Prints developers build it"
+            },
+            {
+              "label": "Live in Acme Prints"
+            }
+          ],
+          "current": 1
+        }
+      },
+      "hash": "ba94cda2",
+      "source": [
+        "packages/react/src/components/Stepper/Stepper.tsx",
+        "packages/react/src/components/Icon/Icon.module.css",
+        "packages/react/src/components/Stepper/Stepper.module.css",
+        "packages/react/src/components/VisuallyHidden/VisuallyHidden.module.css"
+      ],
+      "axes": [],
+      "properties": [],
+      "parts": [
+        {
+          "id": "root",
+          "name": "Stepper",
+          "kind": "frame",
+          "source": "Stepper.module.css .stepper, Stepper.module.css .vertical, Stepper.module.css .list",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "fill": true
+        },
+        {
+          "id": "step",
+          "name": "step",
+          "kind": "frame",
+          "parent": "root",
+          "source": "Stepper.module.css .step, Stepper.module.css .done",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "MIN"
+          }
+        },
+        {
+          "id": "decoration",
+          "name": "Decoration",
+          "kind": "frame",
+          "parent": "step",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "pin": {
+            "top": "size.6",
+            "bottom": 0,
+            "left": "calc((size.6 - border-width.strong) / 2)"
+          }
+        },
+        {
+          "id": "marker",
+          "name": "marker",
+          "kind": "frame",
+          "parent": "step",
+          "source": "Stepper.module.css .marker",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
+          }
+        },
+        {
+          "id": "icon",
+          "name": "Icon",
+          "kind": "icon",
+          "parent": "marker",
+          "source": "Icon.module.css .icon, Icon.module.css .xs",
+          "icon": "Icon/Check"
+        },
+        {
+          "id": "body",
+          "name": "body",
+          "kind": "frame",
+          "parent": "step",
+          "source": "Stepper.module.css .body",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "grow": true
+        },
+        {
+          "id": "label",
+          "name": "Label",
+          "kind": "text",
+          "parent": "body",
+          "source": "Stepper.module.css .label",
+          "characters": "You explore"
+        },
+        {
+          "id": "step-2",
+          "name": "step",
+          "kind": "frame",
+          "parent": "root",
+          "source": "Stepper.module.css .step, Stepper.module.css .current",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "MIN"
+          }
+        },
+        {
+          "id": "decoration-2",
+          "name": "Decoration",
+          "kind": "frame",
+          "parent": "step-2",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "pin": {
+            "top": "size.6",
+            "bottom": 0,
+            "left": "calc((size.6 - border-width.strong) / 2)"
+          }
+        },
+        {
+          "id": "marker-2",
+          "name": "marker",
+          "kind": "frame",
+          "parent": "step-2",
+          "source": "Stepper.module.css .marker",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
+          }
+        },
+        {
+          "id": "text",
+          "name": "Text",
+          "kind": "text",
+          "parent": "marker-2",
+          "characters": "2"
+        },
+        {
+          "id": "body-2",
+          "name": "body",
+          "kind": "frame",
+          "parent": "step-2",
+          "source": "Stepper.module.css .body",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "grow": true
+        },
+        {
+          "id": "text-2",
+          "name": "Text",
+          "kind": "text",
+          "parent": "body-2",
+          "characters": "Dana decides now, for 3 days"
+        },
+        {
+          "id": "step-3",
+          "name": "step",
+          "kind": "frame",
+          "parent": "root",
+          "source": "Stepper.module.css .step, Stepper.module.css .upcoming",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "MIN"
+          }
+        },
+        {
+          "id": "decoration-3",
+          "name": "Decoration",
+          "kind": "frame",
+          "parent": "step-3",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "pin": {
+            "top": "size.6",
+            "bottom": 0,
+            "left": "calc((size.6 - border-width.strong) / 2)"
+          }
+        },
+        {
+          "id": "marker-3",
+          "name": "marker",
+          "kind": "frame",
+          "parent": "step-3",
+          "source": "Stepper.module.css .marker",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
+          }
+        },
+        {
+          "id": "text-3",
+          "name": "Text",
+          "kind": "text",
+          "parent": "marker-3",
+          "characters": "3"
+        },
+        {
+          "id": "body-3",
+          "name": "body",
+          "kind": "frame",
+          "parent": "step-3",
+          "source": "Stepper.module.css .body",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "grow": true
+        },
+        {
+          "id": "label-2",
+          "name": "Label",
+          "kind": "text",
+          "parent": "body-3",
+          "source": "Stepper.module.css .label",
+          "characters": "Acme Prints developers build it"
+        },
+        {
+          "id": "step-4",
+          "name": "step",
+          "kind": "frame",
+          "parent": "root",
+          "source": "Stepper.module.css .step, Stepper.module.css .upcoming",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "MIN"
+          }
+        },
+        {
+          "id": "marker-4",
+          "name": "marker",
+          "kind": "frame",
+          "parent": "step-4",
+          "source": "Stepper.module.css .marker",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
+          }
+        },
+        {
+          "id": "text-4",
+          "name": "Text",
+          "kind": "text",
+          "parent": "marker-4",
+          "characters": "4"
+        },
+        {
+          "id": "body-4",
+          "name": "body",
+          "kind": "frame",
+          "parent": "step-4",
+          "source": "Stepper.module.css .body",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "grow": true
+        },
+        {
+          "id": "label-3",
+          "name": "Label",
+          "kind": "text",
+          "parent": "body-4",
+          "source": "Stepper.module.css .label",
+          "characters": "Live in Acme Prints"
+        }
+      ],
+      "variants": [
+        {
+          "props": {},
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "step": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": "space.4",
+              "paddingLeft": 0,
+              "itemSpacing": "space.3"
+            },
+            "decoration": {
+              "fill": "color.control.checked.bg",
+              "width": "border-width.strong"
+            },
+            "marker": {
+              "fill": "color.control.checked.bg",
+              "cornerRadius": "radius.pill",
+              "width": "size.6",
+              "height": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.control.checked.fg",
+              "strokeWeight": "icon.stroke"
+            },
+            "body": {
+              "itemSpacing": "space.0-5"
+            },
+            "label": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "step-2": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": "space.4",
+              "paddingLeft": 0,
+              "itemSpacing": "space.3"
+            },
+            "decoration-2": {
+              "fill": "color.border.strong",
+              "width": "border-width.strong"
+            },
+            "marker-2": {
+              "fill": "color.control.checked.bg",
+              "cornerRadius": "radius.pill",
+              "width": "size.6",
+              "height": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "text": {
+              "textFill": "color.control.checked.fg",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.semibold",
+              "lineHeight": "font.line-height.none"
+            },
+            "body-2": {
+              "itemSpacing": "space.0-5"
+            },
+            "text-2": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "step-3": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": "space.4",
+              "paddingLeft": 0,
+              "itemSpacing": "space.3"
+            },
+            "decoration-3": {
+              "fill": "color.border.strong",
+              "width": "border-width.strong"
+            },
+            "marker-3": {
+              "fill": "color.surface.default",
+              "cornerRadius": "radius.pill",
+              "width": "size.6",
+              "height": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.text.muted"
+            },
+            "text-3": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.semibold",
+              "lineHeight": "font.line-height.none"
+            },
+            "body-3": {
+              "itemSpacing": "space.0-5"
+            },
+            "label-2": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "step-4": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.3"
+            },
+            "marker-4": {
+              "fill": "color.surface.default",
+              "cornerRadius": "radius.pill",
+              "width": "size.6",
+              "height": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.text.muted"
+            },
+            "text-4": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.semibold",
+              "lineHeight": "font.line-height.none"
+            },
+            "body-4": {
+              "itemSpacing": "space.0-5"
+            },
+            "label-3": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/Check"
+          }
+        }
+      ],
+      "unmapped": [
+        {
+          "part": "root",
+          "property": "prop orientation",
+          "value": "vertical | horizontal",
+          "reason": "changes nothing the set draws (margins, or content it does not show), not drawn"
+        },
+        {
+          "part": "root",
+          "property": "width",
+          "value": "100%",
+          "reason": "fills its container: Figma draws it at a fixed width"
+        },
+        {
+          "part": "body",
+          "property": "padding-top",
+          "value": "max(0%, calc((var(--_marker) - 1lh) / 2))",
+          "reason": "literal value, not a token"
+        },
+        {
+          "part": "body-2",
+          "property": "padding-top",
+          "value": "max(0%, calc((var(--_marker) - 1lh) / 2))",
+          "reason": "literal value, not a token"
+        },
+        {
+          "part": "body-3",
+          "property": "padding-top",
+          "value": "max(0%, calc((var(--_marker) - 1lh) / 2))",
+          "reason": "literal value, not a token"
+        },
+        {
+          "part": "body-4",
+          "property": "padding-top",
+          "value": "max(0%, calc((var(--_marker) - 1lh) / 2))",
+          "reason": "literal value, not a token"
         }
       ]
     },
@@ -34410,7 +34904,7 @@
           }
         ]
       },
-      "hash": "2070aa66",
+      "hash": "3e11a4a7",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -34579,9 +35073,9 @@
           "parent": "tab-3",
           "source": "Tabs.module.css .count",
           "layout": {
-            "direction": "VERTICAL",
-            "primary": "MIN",
-            "counter": "STRETCH"
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
           }
         },
         {
@@ -34685,20 +35179,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -34783,20 +35280,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -34881,20 +35381,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35018,20 +35521,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35155,20 +35661,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35253,20 +35762,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35351,20 +35863,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35488,20 +36003,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35629,20 +36147,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35742,20 +36263,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35855,20 +36379,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35995,20 +36522,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36135,20 +36665,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36248,20 +36781,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36361,20 +36897,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36501,20 +37040,23 @@
               "lineHeight": "font.line-height.tight"
             },
             "count": {
-              "fill": "color.bg.subtle",
+              "fill": "color.feedback.neutral.bg",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
               "paddingRight": "space.1-5",
               "paddingBottom": 0,
               "paddingLeft": "space.1-5",
-              "minWidth": "calc(space.5 + space.1-5 + space.1-5)"
+              "height": "size.5",
+              "minWidth": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
             },
             "text": {
-              "textFill": "color.text.default",
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "font.size.100",
+              "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.normal"
+              "lineHeight": "font.line-height.none"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -39164,6 +39706,10 @@
       "name": "Stack",
       "status": "layout",
       "reason": "layout only, use auto layout"
+    },
+    {
+      "name": "Stepper",
+      "status": "generated"
     },
     {
       "name": "Switch",

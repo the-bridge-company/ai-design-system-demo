@@ -230,7 +230,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-7);
+  /* Get started and Open the demo are one pair: the DS gap between buttons, not a section gap. */
+  gap: var(--space-3);
   margin-top: var(--space-10);
 }
 
@@ -352,7 +353,8 @@
   all: unset;
   box-sizing: border-box;
   display: flex;
-  align-items: center;
+  /* The number centers on the title's first line, not on a wrapped two-line block (.hp-tt pads to it). */
+  align-items: flex-start;
   gap: calc(var(--space-3) + var(--space-0-5));
   width: 100%;
   border-radius: var(--radius-lg);
@@ -387,6 +389,7 @@
   font-size: var(--_t18);
   font-weight: var(--font-weight-medium);
   line-height: var(--font-leading-26);
+  padding-block-start: calc((var(--size-7) + var(--space-0-5) - 1lh) / 2);
   transition: color var(--motion-duration-instant) var(--motion-easing-standard);
 }
 

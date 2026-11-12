@@ -164,8 +164,9 @@
   margin-block-end: var(--space-6);
 }
 
-/* Changelog: the copy button closes the announcement header row. */
-.announce-copy {
+/* Changelog: the copy button closes the announcement header row. Two classes: the DS Button's own margin reset loads
+   after this sheet and won, so the button floated right after the text. */
+.announce-head > .announce-copy {
   margin-inline-start: auto;
 }
 
@@ -179,7 +180,7 @@
     flex: 1 1 100%;
   }
 
-  .announce-copy {
+  .announce-head > .announce-copy {
     margin-inline-start: 0;
   }
 }

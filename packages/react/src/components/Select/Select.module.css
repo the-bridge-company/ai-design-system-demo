@@ -142,10 +142,6 @@
   align-items: center;
 }
 
-.value[data-placeholder] {
-  color: var(--color-text-disabled);
-}
-
 .affix {
   display: inline-flex;
   flex: none;

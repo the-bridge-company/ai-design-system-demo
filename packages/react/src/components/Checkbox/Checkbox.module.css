@@ -20,6 +20,7 @@
   justify-content: center;
   width: var(--size-4);
   height: var(--size-4);
+  position: relative;
   margin-block-start: calc((1lh - var(--size-4)) / 2);
   padding: 0;
   border: var(--border-width-default) solid var(--checkbox-border);
@@ -42,6 +43,13 @@
     border-color: var(--color-control-checked-bg-hover);
     background-color: var(--color-control-checked-bg-hover);
   }
+}
+
+/* A 24px target around the 16px box (WCAG 2.5.8), so it holds without a visible label to click. */
+.box::after {
+  content: "";
+  position: absolute;
+  inset: calc((100% - var(--size-6)) / 2);
 }
 
 .box:focus-visible {

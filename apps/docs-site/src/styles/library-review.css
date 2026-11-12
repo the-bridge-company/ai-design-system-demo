@@ -11,6 +11,12 @@
   min-width: 0;
 }
 
+/* The top bar is sticky: whatever the browser scrolls to (keyboard focus, a fragment, scrollIntoView) lands below it,
+   never under it (a focused control hidden by the bar fails WCAG 2.4.11). */
+html:has(.lr) {
+  scroll-padding-block-start: calc(var(--layout-header-height) + var(--space-2));
+}
+
 .lr-skel {
   min-height: var(--size-80);
 }
@@ -2055,7 +2061,8 @@ a.lr-reach-card:focus-visible {
   --lr-line: solid;
 }
 
-/* The stage: a dotted canvas that hugs what it draws, the looks in its middle. */
+/* The stage: a dotted canvas that hugs what it draws, the looks in its middle. A hairline edge so it holds together on
+   a dark page too, where the canvas ground and the page are close. */
 .lr-stage {
   display: flex;
   flex-wrap: wrap;
@@ -2063,6 +2070,7 @@ a.lr-reach-card:focus-visible {
   align-items: flex-start;
   gap: var(--space-6);
   padding: var(--space-6);
+  border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
   background-color: var(--color-bg-subtle);
   background-image: radial-gradient(var(--color-border-strong) var(--border-width-default), transparent var(--border-width-default));

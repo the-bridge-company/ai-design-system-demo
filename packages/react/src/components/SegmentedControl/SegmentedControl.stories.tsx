@@ -125,6 +125,10 @@ export const AllStates: Story = {
         <SegmentedControl label="Status strong" appearance="strong" items={statuses.slice(0, 4)} defaultValue="you" />
         <SegmentedControl label="Status strong sm" appearance="strong" size="sm" items={statuses.slice(0, 4)} defaultValue="you" />
       </Specimen>
+      <Specimen label="Counts (default and strong)">
+        <SegmentedControl label="Status counts" size="sm" items={statuses.slice(0, 3).map((x, i) => ({ ...x, count: [8, 3, 21][i] }))} defaultValue="open" />
+        <SegmentedControl label="Status counts strong" appearance="strong" size="sm" items={statuses.slice(0, 3).map((x, i) => ({ ...x, count: [8, 3, 21][i] }))} defaultValue="open" />
+      </Specimen>
       <Specimen label="Seven segments at phone width (scrolls sideways)">
         <div style={{ width: 358, maxWidth: '100%' }}>
           <SegmentedControl label="Status phone" appearance="strong" size="sm" items={statuses} defaultValue="open" />

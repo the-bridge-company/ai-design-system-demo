@@ -53,11 +53,6 @@
   text-overflow: ellipsis;
 }
 
-.brv-count {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-}
-
 .brv-progress {
   display: flex;
   align-items: center;

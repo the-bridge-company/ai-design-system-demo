@@ -261,7 +261,8 @@ export function LibraryChanges<X>(p: LibraryChangesProps<X>) {
               onValueChange={pickFilter}
               items={(['all', 'explorations', 'lead'] as const).map((f) => ({
                 value: f,
-                label: `${ORIGIN_FILTER_LABEL[f]} ${counts[f]}`,
+                label: ORIGIN_FILTER_LABEL[f],
+                count: counts[f],
               }))}
             />
           )}

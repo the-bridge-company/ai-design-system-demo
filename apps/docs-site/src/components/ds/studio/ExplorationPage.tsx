@@ -48,6 +48,7 @@ import {
   MenuTrigger,
   Skeleton,
   Spinner,
+  Stepper,
   Textarea,
   ToastProvider,
   TokenValue,
@@ -614,18 +615,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }:
 
 /** The lead's two steps while a library piece waits: 1 choose it (now), 2 send the screen to the developers. */
 function LeadSteps({ first }: { first: string }) {
-  return (
-    <ol className="xp-turn-steps" aria-label="Steps">
-      <li className="is-current" aria-current="step">
-        <span className="xp-turn-step-n" aria-hidden="true">1</span>
-        {first}
-      </li>
-      <li>
-        <span className="xp-turn-step-n" aria-hidden="true">2</span>
-        Send to the developers
-      </li>
-    </ol>
-  );
+  return <Stepper className="xp-turn-steps" orientation="horizontal" label="Steps" current={0} steps={[{ label: first }, { label: 'Send to the developers' }]} />;
 }
 
 /**

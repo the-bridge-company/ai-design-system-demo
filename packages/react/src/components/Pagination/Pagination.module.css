@@ -22,6 +22,8 @@
 
 .list > li {
   display: inline-flex;
+  /* Pages share one line: a page's own list spacing (li + li margins) would push every page after the first down. */
+  margin: 0;
 }
 
 .page {

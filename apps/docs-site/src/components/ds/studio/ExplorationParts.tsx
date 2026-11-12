@@ -6,7 +6,7 @@
 // Rules and words: lib/exploration-layout.ts. Styles: styles/exploration-page.css (xp-st-*, xp-turn*, xp-tl*, xp-code*).
 import { useState, type ReactNode } from 'react';
 import { Check, Code2, ExternalLink, GitBranch } from 'lucide-react';
-import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Tab, Tabs, TabsList, TabsPanel } from '@bridge-ds/react';
+import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { IllustrationName } from '../../../brand/illustrations';
@@ -162,20 +162,14 @@ export function AskQuote({ who, verb, text, action }: { who: PageFace; verb: str
  */
 export function TurnSteps({ steps }: { steps: readonly TurnStep[] }) {
   if (!steps.length) return null;
+  const current = steps.findIndex((s) => s.current);
   return (
-    <ol className="xp-turn-steps is-list" aria-label="What happens next">
-      {steps.map((s, i) => (
-        <li key={s.text} className={s.current ? 'is-current' : undefined} aria-current={s.current ? 'step' : undefined}>
-          <span className="xp-turn-step-n" aria-hidden="true">
-            {i + 1}
-          </span>
-          <span>
-            {s.text}
-            {s.when && <span className="xp-turn-step-when"> · {s.when}</span>}
-          </span>
-        </li>
-      ))}
-    </ol>
+    <Stepper
+      className="xp-turn-steps"
+      label="What happens next"
+      current={current < 0 ? undefined : current}
+      steps={steps.map((s) => ({ label: s.text, ...(s.when ? { meta: s.when } : {}) }))}
+    />
   );
 }
 

@@ -32,6 +32,7 @@ import HpPanorama from '../components/home/HpPanorama.astro';
 import HpWalkers from '../components/home/HpWalkers.astro';
 import HpConnectCard from '../components/home/HpConnectCard';
 import { signInHref } from '../lib/account';
+import { DEMO } from '../lib/nav';
 // Get started opens the sign-in screen with sign-up words; a new account then lands on /start/.
 const GET_STARTED = signInHref(null, true);
 
@@ -53,6 +54,7 @@ const GET_STARTED = signInHref(null, true);
         <p class="hp-lede"><span class="hp-hs">Bridge finds what your exploration added. </span><span class="hp-hs">You review it, then the code and Figma kit follow.</span></p>
         <div class="hp-go">
           <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Get started</span></ButtonLink>
+          <ButtonLink variant="secondary" size="lg" href={DEMO}>Open the demo</ButtonLink>
         </div>
       </div>
       <div class="hp-hero-vis">
@@ -86,7 +88,7 @@ const GET_STARTED = signInHref(null, true);
         <div slot="p0" class="hp-card hp-dlg">
           <span class="hp-xs hp-muted">Start an exploration</span>
           <strong class="hp-dt">What do you want to explore?</strong>
-          <div class="hp-opt hp-pick"><span class="hp-radio"></span><span><strong>Admin demo</strong><small>A new screen or flow, built with your library.</small></span></div>
+          <div class="hp-opt hp-pick"><span class="hp-radio"></span><span><strong>Acme CRM</strong><small>A new screen or flow, built with your library.</small></span></div>
           <div class="hp-opt"><span class="hp-radio"></span><span><strong>The library</strong><small>Tokens, variants, new components.</small></span></div>
           {
             JIRA_IN_BRIDGE && (
@@ -134,7 +136,7 @@ const GET_STARTED = signInHref(null, true);
         labels={[
           'Drawing: the Profile header page of your library, an open book; a pencil ridden by the AI robot writes the usage guidance line by line, drafted by AI, then Dana, DS lead, ticks it as reviewed',
           'Drawing: a balance standing on a post marked code, with the same Profile header on each pan, Figma kit and Storybook; it tips, then settles level, and a check says Matches',
-          'Drawing: a magnifier sweeps a page of the Docs site and flags three off-system pieces, a one-off card, a raw hex colour and an odd button; each snaps into its Harbor system version, and the components and tokens in use rise from 81.7 percent, before the audit, to 100 percent',
+          'Drawing: a magnifier sweeps a page of Acme Prints and flags three off-system pieces, a one-off card, a raw hex colour and an odd button; each snaps into its Harbor system version, and the components and tokens in use rise from 81.7 percent, before the audit, to 100 percent',
         ]}
       >
         <div slot="p0" class="hp-sc hp-sc-center"><HpTrustLib /></div>

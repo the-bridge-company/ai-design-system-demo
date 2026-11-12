@@ -243,7 +243,7 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
           label={W.sizes}
           value={size}
           onValueChange={(v) => setSize(v as SizeKey)}
-          items={(['laptop', 'small', 'phone'] as const).map((k) => ({ value: k, icon: k === 'laptop' ? Laptop : k === 'small' ? Monitor : Smartphone, label: <>{SIZE_WORDS[k]} <span className="brv-count">{counts[k]}</span></> }))}
+          items={(['laptop', 'small', 'phone'] as const).map((k) => ({ value: k, icon: k === 'laptop' ? Laptop : k === 'small' ? Monitor : Smartphone, label: SIZE_WORDS[k], count: counts[k] }))}
         />
       )}
       {!narrow && m?.urls.build && (

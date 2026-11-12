@@ -26,7 +26,8 @@
   --_size: var(--size-5);
   --_mark: var(--size-4);
 
-  font-size: 0.75em;
+  /* 12px, the type scale's floor (0.75em rendered the initials at 10.5px). Two initials still fit the 20px circle. */
+  font-size: var(--font-size-100);
 }
 
 .sm {

@@ -44,7 +44,6 @@ export default function ComponentsView({ data, Example, tools }: { data: Library
         {componentsLead(total, groups.length)}
       </LibraryHeader>
       <p className="gallery-stats">
-        <Badge>{plural(total, 'component')}</Badge>
         <Badge tone="success">{documented} with usage guidance</Badge>
         {total - documented > 0 && <Badge tone="warning">{total - documented} missing guidance</Badge>}
       </p>
@@ -54,7 +53,9 @@ export default function ComponentsView({ data, Example, tools }: { data: Library
         <details key={family} className="gallery-group family" id={`fam-${familySlug(family)}`} open data-cfam={family}>
           <summary>
             <h2>{family}</h2>
-            <span className="family-count">{list.length}</span>
+            <Badge size="sm" className="family-count">
+              {list.length}
+            </Badge>
           </summary>
           <ul className="gallery">
             {list.map((c) => {

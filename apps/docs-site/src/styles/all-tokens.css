@@ -45,16 +45,16 @@
 
 /* The filter field's column: the DS Input fills it (a phone gives it the whole row). */
 .at-filter {
-  flex: 0 1 var(--size-80);
+  flex: 1 1 var(--size-60);
   min-width: 0;
 }
 
+/* The type filter keeps every type in view (each with its count tag): the field gives up width first, and the chips
+   only scroll sideways once they have a row of their own that is still too narrow. */
 .at-chips {
+  flex: 0 0 auto;
+  max-width: 100%;
   min-width: 0;
-}
-
-.at-chip-n {
-  color: var(--color-text-muted);
 }
 
 /* ---- List and panel */

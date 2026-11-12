@@ -25,6 +25,8 @@ export interface SegmentedControlItem {
   icon?: LucideIcon;
   /** Decoration before the label that is not a Lucide icon, for example a color swatch. Hidden from assistive tech. */
   leading?: ReactNode;
+  /** Count shown in a tag after the label, like the number of items behind a filter. */
+  count?: number;
   disabled?: boolean;
   /** Spread on the segment's button. */
   attributes?: SegmentAttributes;
@@ -162,6 +164,12 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
             )}
             {item.icon && <Icon icon={item.icon} size="sm" className={styles.icon} />}
             <span className={styles.label}>{item.label}</span>
+            {item.count !== undefined && (
+              <>
+                {' '}
+                <span className={styles.count}>{item.count}</span>
+              </>
+            )}
           </BaseRadio.Root>
         ))}
       </div>

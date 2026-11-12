@@ -5,7 +5,7 @@
 // (StudioHome.tsx, lib/lead-tour.ts), and the contributor's, for someone without a review right
 // (StudioHome.tsx, lib/home-model.ts contributorTour). A floating step steps aside while a dialog is open (Add a product,
 // Start an exploration, Account...) and comes back, at the same step, once it closes (useDialogOpen).
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Button, Card, CardBody, Popover, PopoverContent, PopoverTrigger } from '@bridge-ds/react';
 import '../../../styles/demo-home.css';
 
@@ -62,7 +62,7 @@ export function useNarrow(): boolean {
   return narrow;
 }
 
-function TourFoot({ n, total, onNext, onFinish }: { n: number; total: number; onNext: () => void; onFinish: () => void }) {
+function TourFoot({ n, total, onNext, onFinish, primaryRef }: { n: number; total: number; onNext: () => void; onFinish: () => void; primaryRef?: RefObject<HTMLButtonElement> }) {
   const last = n === total;
   return (
     <div className="dh-tour-foot">
@@ -74,7 +74,7 @@ function TourFoot({ n, total, onNext, onFinish }: { n: number; total: number; on
             Skip tour
           </Button>
         )}
-        <Button variant="primary" size="sm" onClick={last ? onFinish : onNext}>
+        <Button ref={primaryRef} variant="primary" size="sm" onClick={last ? onFinish : onNext}>
           {last ? 'Done' : 'Next'}
         </Button>
       </span>
@@ -113,6 +113,8 @@ export function TourStep({ n, total, words, onNext, onFinish, onClose }: { n: nu
   // A floating step sits above dialogs (z.popover over z.modal): it waits, at this step, while one is open. A step in
   // the page flow stays under the dialog's backdrop like the rest of the page.
   const covered = useDialogOpen(!inline);
+  // Focus lands on Next (Done on the last step), the action the step asks for, not on Skip tour.
+  const primary = useRef<HTMLButtonElement>(null);
   // Room under the anchor when the page ends right after it (the step under the last cards): without it the page
   // cannot scroll far enough and the step flips above, over the cards.
   const [room, setRoom] = useState(false);
@@ -136,8 +138,8 @@ export function TourStep({ n, total, words, onNext, onFinish, onClose }: { n: nu
     // Closed, not gone, under a dialog: the anchor stays and the step opens again where it was.
     <Popover open={!covered} onOpenChange={(o) => !o && !covered && onClose()}>
       <PopoverTrigger nativeButton={false} render={<span className="dh-tour-anchor" data-tour-anchor={anchor} aria-hidden="true" tabIndex={-1} />} />
-      <PopoverContent side="bottom" align="start" className="dh-tour" title={words.title} description={words.text}>
-        <TourFoot n={n} total={total} onNext={onNext} onFinish={onFinish} />
+      <PopoverContent side="bottom" align="start" className="dh-tour" title={words.title} description={words.text} initialFocus={primary}>
+        <TourFoot n={n} total={total} onNext={onNext} onFinish={onFinish} primaryRef={primary} />
       </PopoverContent>
       {room && <span className="dh-tour-room" aria-hidden="true" />}
     </Popover>

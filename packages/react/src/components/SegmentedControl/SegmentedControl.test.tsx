@@ -91,4 +91,9 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: 'Closed' })).toHaveAttribute('aria-checked', 'true');
     await expectNoAxeViolations();
   });
+  it('shows a count after the label, inside the segment name', () => {
+    render(<SegmentedControl label="Status" items={[{ value: 'open', label: 'Open', count: 8 }, { value: 'done', label: 'Done' }]} defaultValue="open" />);
+    expect(screen.getByRole('radio', { name: 'Open 8' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Done' })).toBeInTheDocument();
+  });
 });

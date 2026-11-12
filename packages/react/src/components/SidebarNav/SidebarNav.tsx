@@ -106,7 +106,12 @@ export const SidebarNavItem = forwardRef<HTMLAnchorElement, SidebarNavItemProps>
             <span className={styles.indicator} aria-hidden="true" />
             {icon && <Icon icon={icon} size="sm" className={styles.icon} />}
             <span className={styles.label}>{children}</span>
-            {count !== undefined && <span className={styles.count}>{count}</span>}
+            {count !== undefined && (
+              <>
+                {' '}
+                <span className={styles.count}>{count}</span>
+              </>
+            )}
           </>
         ),
       },

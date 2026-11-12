@@ -3044,7 +3044,8 @@
   display: flex;
   align-items: center;
   gap: calc(var(--_u) * 8);
-  font-size: var(--font-size-100);
+  /* 14px, not 12: the waiting cards are scaled down (0.88 to 0.96), so 12px rendered at 10.6px. */
+  font-size: var(--font-size-200);
   line-height: var(--font-leading-16);
   /* Default text, not muted: the waiting cards fade (opacity) and muted text under it drops below 4.5:1. */
   color: var(--color-text-default);

@@ -1,0 +1,52 @@
+{
+  "summary": "The steps of a flow as one path: markers on a connecting line, done steps checked, the current step the focal point.",
+  "preview": { "c": "Stepper", "p": { "label": "What happens next", "current": 1, "steps": [
+    { "label": "You explore" },
+    { "label": "Dana decides", "meta": "now, for 3 days" },
+    { "label": "Acme Prints developers build it" },
+    { "label": "Live in Acme Prints" }
+  ] } },
+  "whenToUse": [
+    "Where work stands in a flow with a known order, and who acts next.",
+    "Horizontal for two to four short steps; vertical for longer labels or a second line."
+  ],
+  "whenNotToUse": [
+    "Location in a hierarchy: use Breadcrumb.",
+    "Checks that pass or fail in any order: use Checklist."
+  ],
+  "dos": [
+    {
+      "title": "Timing on a second line",
+      "text": "One current step. \"now, for 3 days\" goes in meta, never glued to the label with a dot.",
+      "example": { "c": "Stepper", "p": { "label": "Your turn", "orientation": "horizontal", "current": 0, "steps": [
+        { "label": "Card padding", "meta": "now" },
+        { "label": "Send to the developers" }
+      ] } }
+    }
+  ],
+  "donts": [
+    {
+      "title": "Timing glued to the label",
+      "text": "\"Dana decides · now\" crams two facts in one line. Put the timing in meta.",
+      "example": { "c": "Stepper", "p": { "label": "Steps", "current": 0, "steps": [
+        { "label": "Dana decides · now" },
+        { "label": "Acme Prints developers build it" }
+      ] } }
+    }
+  ],
+  "accessibility": [
+    "An ordered list named with label; the current step has aria-current=\"step\".",
+    "Done and upcoming steps say so in hidden text: state never rests on color.",
+    "Upcoming labels use the muted text color, AA on the default and Harbor surfaces."
+  ],
+  "contentGuidelines": [
+    "Who acts and the verb: \"Dana decides\". Sentence case, no period."
+  ],
+  "anatomy": {
+    "stepper": "Root",
+    "step": "Step",
+    "marker": "Number or check",
+    "label": "Label",
+    "meta": "Second line"
+  }
+}

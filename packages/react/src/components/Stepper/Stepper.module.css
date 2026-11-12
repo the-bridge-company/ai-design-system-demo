@@ -1,0 +1,138 @@
+/* Markers on one path. Horizontal only from a 30em container; narrower, it stacks. */
+.stepper {
+  --_marker: var(--size-6);
+  --_rail: var(--border-width-strong);
+  --_accent: var(--color-control-checked-bg);
+
+  /* Size containment ignores the content: fill the parent, or a flex parent shrinks it to nothing. */
+  width: 100%;
+  container: stepper / inline-size;
+  font-family: var(--font-family-sans);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 0 var(--space-4);
+}
+
+.step:last-child {
+  padding-block-end: 0;
+}
+
+/* The rail, unbroken from marker to marker (border.default vanishes on a Harbor zone). */
+.step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--_marker) 0;
+  inset-inline-start: calc((var(--_marker) - var(--_rail)) / 2);
+  width: var(--_rail);
+  background-color: var(--color-border-strong);
+}
+
+.done:not(:last-child)::before {
+  background-color: var(--_accent);
+}
+
+/* Upcoming ring in the number's color: border.strong is under 3:1 on a Harbor zone. */
+.marker {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--_marker);
+  height: var(--_marker);
+  border: var(--border-width-default) solid currentcolor;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--font-line-height-none);
+}
+
+.done .marker,
+.current .marker {
+  border-color: var(--_accent);
+  background-color: var(--_accent);
+  color: var(--color-control-checked-fg);
+}
+
+/* The label's first line centers on the marker. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  padding-block-start: max(0%, calc((var(--_marker) - 1lh) / 2));
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  color: var(--color-text-default);
+}
+
+.leading {
+  display: inline-flex;
+  flex: none;
+}
+
+.current .label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.upcoming .label,
+.meta {
+  color: var(--color-text-muted);
+}
+
+.meta {
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+/* Fixed-length connectors: even gaps whatever the labels. */
+@container stepper (min-width: 30em) {
+  .horizontal .list {
+    flex-direction: row;
+    gap: var(--space-3);
+  }
+
+  .horizontal .step {
+    flex: none;
+    padding: 0;
+  }
+
+  .horizontal .step:not(:last-child)::before {
+    content: none;
+  }
+
+  .horizontal .step:not(:last-child)::after {
+    content: "";
+    flex: 0 0 var(--size-12);
+    height: var(--_rail);
+    margin-block-start: calc((var(--_marker) - var(--_rail)) / 2);
+    background-color: var(--color-border-strong);
+  }
+
+  .horizontal .done:not(:last-child)::after {
+    background-color: var(--_accent);
+  }
+}

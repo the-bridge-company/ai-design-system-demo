@@ -216,6 +216,8 @@ export function TokenList({ data, rows, preview, label }: { data: LibraryData; r
                 </span>
               </span>
               {r.role && <span className="fd-role">{r.role}</span>}
+              {/* Its "Aa" preview reads under 4.5:1 on purpose: say so, so the page does not look like it ships a failure. */}
+              {kind === 'text' && /\bdisabled\b/.test(r.path) && <span className="fd-role">Disabled text: exempt from the contrast minimum (WCAG 1.4.3), low on purpose.</span>}
             </span>
             <span className="fd-ref">
               {value && <span className="fd-value">{value}</span>}

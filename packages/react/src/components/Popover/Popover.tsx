@@ -1,4 +1,4 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type ReactNode, type RefObject } from 'react';
 import { Popover as BasePopover } from '@base-ui/react/popover';
 import { X } from 'lucide-react';
 import { cx } from '../../utils/cx';
@@ -52,19 +52,24 @@ export interface PopoverContentProps extends Omit<HTMLAttributes<HTMLDivElement>
   showClose?: boolean;
   /** Default "Close". */
   closeLabel?: string;
+  /**
+   * The element that takes focus when the popover opens, like the primary action of a step. Default: the first
+   * focusable element inside. `false` leaves focus where it is.
+   */
+  initialFocus?: RefObject<HTMLElement | null> | boolean;
   children?: ReactNode;
 }
 
 /** The floating surface: positioner, popup, arrow, optional title, description and close. */
 export const PopoverContent = forwardRef<HTMLDivElement, PopoverContentProps>(function PopoverContent(
-  { title, description, side = 'bottom', align = 'center', arrow = true, showClose = false, closeLabel = 'Close', className, children, ...rest },
+  { title, description, side = 'bottom', align = 'center', arrow = true, showClose = false, closeLabel = 'Close', initialFocus, className, children, ...rest },
   ref,
 ) {
   const scope = useScopeAttributes();
   return (
     <BasePopover.Portal>
       <BasePopover.Positioner className={styles.positioner} side={side} align={align} sideOffset={8} collisionPadding={8} {...scope}>
-        <BasePopover.Popup ref={ref} className={cx(styles.popup, className)} {...rest}>
+        <BasePopover.Popup ref={ref} className={cx(styles.popup, className)} {...(initialFocus !== undefined ? { initialFocus } : {})} {...rest}>
           {arrow && <BasePopover.Arrow className={styles.arrow} />}
           <div className={styles.body}>
             {(title || showClose) && (

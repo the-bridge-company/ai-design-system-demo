@@ -53,12 +53,13 @@ export function pmStatusLine(said: PmSaid | null, x: { pm: string; when: string;
  * The PM's row on their Home (boards R3, R4), for an exploration of their product: its build ready for their check, or,
  * while it runs, their opinion asked for and not given yet. Null otherwise (archived, already said, nothing to do).
  */
-export function pmHomeRow(body: string | null | undefined, x: { buildReady: boolean }): { line: (designer: string) => string; action: string; since: string | null } | null {
+export function pmHomeRow(body: string | null | undefined, x: { buildReady: boolean }): { line: (designer: string) => string; action: string; since: string | null; optional: boolean } | null {
   const e = parseExplorationBody(body);
   if (!e) return null;
-  if (e.doneAt) return x.buildReady ? { line: () => 'The build is ready to check', action: 'Check', since: null } : null;
+  if (e.doneAt) return x.buildReady ? { line: () => 'The build is ready to check', action: 'Check', since: null, optional: false } : null;
   if (pmOpinionOf(body)) return null;
-  return { line: (designer) => `${designer} would like your opinion`, action: 'Look', since: e.leadAskedAt ?? null };
+  // Their opinion is optional (they never decide): an invitation on their Home, never a queue that waits on them.
+  return { line: (designer) => `${designer} would like your opinion`, action: 'Look', since: e.leadAskedAt ?? null, optional: true };
 }
 
 /** A PM word as Bridge keeps it on the exploration (core's Decision). */

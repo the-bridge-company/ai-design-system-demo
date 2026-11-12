@@ -320,6 +320,14 @@ describe('contributors: what waits on someone without a review right', () => {
     expect(holdsReviewRight({ viewer: 'leo@acme.example', contributor: true, approvers: [], write: true })).toBe(false);
   });
 
+  it('never makes a developer with write access a reviewer while the review rules are not read yet', () => {
+    expect(holdsReviewRight({ viewer: 'acme-malik', contributor: false, approvers: [], write: true, known: false })).toBe(false);
+    expect(holdsReviewRight({ viewer: 'acme-malik', contributor: false, approvers: ['acme-malik'], write: true, known: false })).toBe(false);
+    // Once read: a code owner reviews code; someone the rules do not name does not.
+    expect(holdsReviewRight({ viewer: 'acme-malik', contributor: false, approvers: ['acme-malik'], write: true, known: true })).toBe(true);
+    expect(holdsReviewRight({ viewer: 'acme-malik', contributor: false, approvers: ['peterbono'], write: true, known: true })).toBe(false);
+  });
+
   it('gives it to the people the approver or ship lists name, nobody else', () => {
     expect(holdsReviewRight({ viewer: 'Dana', contributor: false, approvers: ['dana'], write: true })).toBe(true);
     expect(holdsReviewRight({ viewer: 'ops', contributor: false, approvers: ['dana'], shippers: ['@ops'], write: true })).toBe(true);

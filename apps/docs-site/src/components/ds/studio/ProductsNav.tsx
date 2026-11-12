@@ -8,7 +8,8 @@
 // Built from the build's products on the self-hosted Studio; on a team shell from the team's own settings once they are
 // read (scripts/repo-context.ts, the bridge:team-model event). The same rail is the phone's menu. DS SidebarNav parts.
 import { useEffect, useState } from 'react';
-import { Folder, PanelsTopLeft } from 'lucide-react';
+import { PanelsTopLeft } from 'lucide-react';
+import { PRODUCT_ICON } from './ProductMark';
 import { SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref, productKeyFromPath } from '../../../lib/product-page';
@@ -56,7 +57,7 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
       {rows.shown.length > 0 && (
         <SidebarNavSection title="Products" className="rail-section rail-products" data-products-nav="">
           {rows.shown.map((p) => (
-            <SidebarNavItem key={p.key} href={productHref(p.key)} icon={Folder} active={current === p.key} data-keep-branch="" data-initials={productInitials(p.name, names)}>
+            <SidebarNavItem key={p.key} href={productHref(p.key)} icon={PRODUCT_ICON} active={current === p.key} data-keep-branch="" data-initials={productInitials(p.name, names)}>
               {p.name}
             </SidebarNavItem>
           ))}

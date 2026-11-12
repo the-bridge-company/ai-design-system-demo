@@ -108,8 +108,8 @@ describe('Settings, owner override row', () => {
     // Designer words and names, the same as the hosted team Settings: no merge, branch or @handle.
     expect(overrideRow({ owners: { design: ['ann'], tech: ['theo'] }, override })).toEqual({
       label: 'Exception',
-      help: 'Adds a change before every check is in. Owners only.',
-      value: 'ann, with a written reason of at least 20 characters.',
+      help: 'Adds a change to the library before every review is in, with a written reason.',
+      value: 'ann, with a reason of at least 20 characters.',
     });
     expect(overrideRow({ owners: { design: ['ann'], tech: ['theo'] }, override }, () => 'Dana')?.value).toMatch(/^Dana, /);
     expect(overrideRow({ owners: { design: ['theo'], tech: ['theo'] }, override })).toBeNull();
@@ -135,7 +135,7 @@ describe('team Settings in designer words (D9)', () => {
   });
 
   it('says the owner exception without developer words', () => {
-    expect(overridePlain(['Ann', 'Lea'], 20)).toEqual({ label: 'Exception', help: 'Adds a change before every check is in. Owners only.', value: 'Ann and Lea, with a written reason of at least 20 characters.' });
+    expect(overridePlain(['Ann', 'Lea'], 20)).toEqual({ label: 'Exception', help: 'Adds a change to the library before every review is in, with a written reason.', value: 'Ann and Lea, with a reason of at least 20 characters.' });
   });
 });
 
@@ -144,8 +144,9 @@ describe('token values (docs/BUILD-REQUESTS.md "The rule", decision TV-1)', () =
     const w = TOKEN_VALUES_PLAIN;
     expect(w.label).toBe('Token values');
     expect(w.help).toMatch(/in Studio or send from Figma/);
-    expect(w.title).toBe('Ship once the look is approved and the automatic checks pass.');
-    expect(w.text).toBe('Nobody checks the code. From Figma, sending counts as the approval. A renamed or removed token waits for a code check.');
+    expect(w.title).toBe('Go live once the look is approved and the automatic checks pass.');
+    expect(w.text).toBe('A new value needs no code review. Sending from Figma counts as the approval. Renaming or removing a token also needs a code review.');
+    expect(`${w.title} ${w.text}`).not.toMatch(/nobody/i);
     // Designer words: no repository, pull request, branch or main, no em dash.
     for (const s of Object.values(w)) expect(s).not.toMatch(/\b(repo|repository|pull request|PR|branch|main|merge)\b|\u2014/i);
   });
@@ -161,12 +162,12 @@ describe('settings stored in the design system files', () => {
   });
 });
 
-describe('Leads can publish small changes without review', () => {
+describe('Small changes', () => {
   it('reads on when absent, off when the team turned it off, in designer words', () => {
-    expect(leadsPublishRow({}).label).toBe('Leads can publish small changes without review');
-    expect(leadsPublishRow({}).value).toMatch(/^On: team admins and the reviewers of that part publish them/);
-    expect(leadsPublishRow({ leadsPublishTier1: true }).value).toMatch(/^On:/);
-    expect(leadsPublishRow({ leadsPublishTier1: false }).value).toBe('Off: every small change waits for one reviewer.');
+    expect(leadsPublishRow({}).label).toBe('Small changes');
+    expect(leadsPublishRow({}).value).toBe('Admins and reviewers publish them directly, once the automatic checks pass.');
+    expect(leadsPublishRow({ leadsPublishTier1: true }).value).toBe(leadsPublishRow({}).value);
+    expect(leadsPublishRow({ leadsPublishTier1: false }).value).toBe('Each one waits for one review.');
     for (const s of Object.values(leadsPublishRow({}))) expect(s).not.toMatch(/\b(repo|repository|pull request|PR|branch|merge|Tier)\b|\u2014/i);
   });
 });

@@ -3,10 +3,12 @@
 // the team's published activity, no GitHub API call). Read only (but Review rules, which an admin with GitHub access
 // edits: ReviewRulesEditor), in designer words (board D9): no repository, pull
 // request, branch or main on the screen, and people by name (the members Settings read, else their profile name).
-//   How changes reach your code  what happens once the team keeps a change (bridge.config.json `changes`)
 //   Review rules                 who checks the look, who checks the code, who adds it to the library: the team's own
-//                                rules (governance owners and rights), never Bridge's build-time tiers (RV-20), and that token values
-//                                ship once the look is approved and the checks pass (docs/BUILD-REQUESTS.md "The rule", TV-1)
+//                                rules (governance owners and rights, plus its design leads), never Bridge's build-time
+//                                tiers (RV-20), and only the team's own people (lib/review-people.ts: on the sample team,
+//                                its cast, never the account hosting it); token values go live once the look is approved
+//                                and the checks pass (docs/BUILD-REQUESTS.md "The rule", TV-1)
+//   How changes reach your code  what happens once the team keeps a change (bridge.config.json `changes`)
 //   Safety                       when the visual before and after runs
 // Each section closes on a "For developers" fold with the file, keys, repository and branch behind it. A member who is
 // not an admin reads who can change it, by name (SettingsParts AdminOnlyNote, BR-20).
@@ -25,34 +27,35 @@ import { knownNames } from '../../../scripts/people';
 import type { MembersData } from '../../../scripts/members';
 import GitHubUsage from './GitHubUsage';
 import { githubPhoto, Who } from './faces';
+import { castPersonOfLogin } from '../../../lib/demo-cast';
+import { isSampleTeam } from '../../../lib/demo';
+import { designLeads, rightPeople, teamEntries, teamSoloOwner, type RulePerson } from '../../../lib/review-people';
+import { groupsOf } from '../../../lib/roles-view';
 
-/** A person or a GitHub team, by the name designers know. */
-interface Named {
-  key: string;
-  name: string;
-  /** A person's GitHub login, for the face. */
-  login?: string;
-}
-
-/** Names for owner entries: the member list's names first, then the cached profile names, then the login. */
-function namer(people: MembersData | null): (entry: string) => Named | null {
+/**
+ * Names for owner entries: the member list's names first, then the cached profile names, then the login. A person of
+ * the sample team's cast is named and drawn as the cast says (lib/demo-cast.ts), never by their GitHub profile.
+ */
+function namer(people: MembersData | null, repo: string): (entry: string) => RulePerson | null {
   const members = people?.members ?? [];
   const names = knownNames();
   return (entry) => {
     const e = parseOwnerEntry(entry);
     if (!e) return null;
     if (e.kind === 'team') return { key: entry, name: teamPlain(e.slug) };
-    return { key: entry, login: e.login, name: ownerName(e.login, members, names) };
+    const cast = isSampleTeam(repo) ? castPersonOfLogin(e.login) : null;
+    if (cast) return { key: entry, name: cast.name, face: e.login };
+    return { key: entry, face: e.login, github: true, name: ownerName(e.login, members, names) };
   };
 }
 
-function People({ list }: { list: Named[] }) {
+function People({ list }: { list: RulePerson[] }) {
   if (!list.length) return <span className="set-quiet">{NOBODY_NAMED}</span>;
   return (
     <span className="set-owner-list">
       {list.map((p) => (
         <span className="set-owner" key={p.key}>
-          {p.login && <Who p={{ login: p.login, name: p.name, avatar: githubPhoto(p.login) }} size="xs" />}
+          {p.face && <Who p={{ login: p.face, name: p.name, avatar: p.github ? githubPhoto(p.face) : null }} size="xs" />}
           <span>{p.name}</span>
         </span>
       ))}
@@ -83,56 +86,30 @@ export default function TeamSettings() {
   const site = model.site;
   const full = `${owner}/${repo}`;
   const owners = site.owners as Owners;
-  const name = namer(people);
-  const named = (xs: string[]) => xs.map(name).filter((x): x is Named => Boolean(x));
+  const name = namer(people, full);
+  const leads = designLeads(full, people?.members);
   const gov = model.config.governance;
   const changes = CHANGES_PLAIN[site.changes];
   const rows = roleRows(owners, site.rights);
+  // Only this team's people are ever named (lib/review-people.ts): on the sample team, its cast.
   const solo = (() => {
     if (!site.soloOwnerCanApproveBoth) return null;
     const all = [...new Set([...owners.design, ...owners.tech].map(loginKey))];
     if (all.length !== 1 || all[0]!.includes('/')) return null;
-    return soloPlain(name(all[0]!)?.name ?? all[0]!);
+    const only = teamSoloOwner(full, all[0]);
+    return only ? soloPlain(name(only)?.name ?? only) : null;
   })();
   // Who may skip a missing check: owners only, the same list the Home and the branch page read.
-  const holders = overrideHolders(site.override, site.owners);
+  const holders = teamEntries(full, overrideHolders(site.override, site.owners));
   const holderNames = [...new Set(holders.map((l) => name(l)?.name ?? l))];
   const override = holders.length ? overridePlain(holderNames, overrideReasonMin(site.override)) : null;
-  const leads = leadsPublishRow(site);
+  const small = leadsPublishRow(site);
   const mode = site.visualImpact.mode;
   const branch = site.defaultBranch;
   const repoFact = { term: 'Repository', value: <Code>{full}</Code> };
 
   return (
     <>
-      <Band id="changes" title="How changes reach your code" intro="What happens once your team keeps a change.">
-        <Card>
-          <CardBody>
-            <div className="set-rows">
-              <div className="set-row">
-                <p className="set-row-label">Kept changes</p>
-                <div className="set-row-value set-row-span">
-                  <p className="set-who">{changes.title}</p>
-                  <p className="set-row-help">{changes.text}</p>
-                  <AdminOnlyNote />
-                </div>
-              </div>
-            </div>
-            <DevFold
-              facts={[
-                { term: 'Mode', value: <Code>{`"changes": "${site.changes}"`}</Code> },
-                { term: 'What Bridge does', value: CHANGES_DEV[site.changes] },
-                repoFact,
-                { term: 'Default branch', value: <Code>{branch}</Code> },
-                { term: 'Tokens', value: <Code>{model.tokens.root}</Code> },
-                { term: 'Set in', value: <Code>bridge.config.json</Code> },
-              ]}
-            />
-          </CardBody>
-        </Card>
-        <GitHubUsage />
-      </Band>
-
       <Band id="roles" title="Review rules" intro="Who checks a change before it reaches the library your products use.">
         <Card>
           <CardBody>
@@ -147,7 +124,7 @@ export default function TeamSettings() {
                       <p className="set-row-label">{plain.label}</p>
                       <p className="set-row-help">{plain.help}</p>
                     </div>
-                    <div className="set-row-value set-row-span">{unset ? <span>{ANYONE_WHO_CODES}</span> : <People list={named(x.logins)} />}</div>
+                    <div className="set-row-value set-row-span">{unset ? <span>{ANYONE_WHO_CODES}</span> : <People list={rightPeople({ repo: full, entries: x.logins, groups: groupsOf(x.choice!), leads, nameOf: name })} />}</div>
                   </div>
                 );
               })}
@@ -159,10 +136,10 @@ export default function TeamSettings() {
               )}
               <div className="set-row">
                 <div>
-                  <p className="set-row-label">{leads.label}</p>
-                  <p className="set-row-help">{leads.help}</p>
+                  <p className="set-row-label">{small.label}</p>
+                  <p className="set-row-help">{small.help}</p>
                 </div>
-                <p className="set-row-value set-row-span">{leads.value}</p>
+                <p className="set-row-value set-row-span">{small.value}</p>
               </div>
               {override && (
                 <div className="set-row">
@@ -202,6 +179,34 @@ export default function TeamSettings() {
             </DevFold>
           </CardBody>
         </Card>
+      </Band>
+
+      <Band id="changes" title="How changes reach your code" intro="What happens once your team keeps a change.">
+        <Card>
+          <CardBody>
+            <div className="set-rows">
+              <div className="set-row">
+                <p className="set-row-label">Kept changes</p>
+                <div className="set-row-value set-row-span">
+                  <p className="set-who">{changes.title}</p>
+                  <p className="set-row-help">{changes.text}</p>
+                  <AdminOnlyNote />
+                </div>
+              </div>
+            </div>
+            <DevFold
+              facts={[
+                { term: 'Mode', value: <Code>{`"changes": "${site.changes}"`}</Code> },
+                { term: 'What Bridge does', value: CHANGES_DEV[site.changes] },
+                repoFact,
+                { term: 'Default branch', value: <Code>{branch}</Code> },
+                { term: 'Tokens', value: <Code>{model.tokens.root}</Code> },
+                { term: 'Set in', value: <Code>bridge.config.json</Code> },
+              ]}
+            />
+          </CardBody>
+        </Card>
+        <GitHubUsage />
       </Band>
 
       <Band id="safety" title="Safety" intro="When Bridge shows what a change looks like before and after.">

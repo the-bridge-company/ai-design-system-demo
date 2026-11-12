@@ -10,7 +10,7 @@ export const FIGMA_FILE_WORDS = {
   placeholder: 'Paste the link of your Figma file',
   notSet: 'Not set yet.',
   /** An admin signed in by email: the file is a change to the design system's settings on GitHub. */
-  githubOnly: 'A lead or an admin signed in with GitHub sets the Figma file.',
+  githubOnly: "Saved in your design system's files, so a change to it goes through a review.",
   requested: 'Sent for review',
   applies: 'It applies once your team approves it.',
   /** The team shell's band. */

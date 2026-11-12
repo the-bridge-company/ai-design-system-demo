@@ -22,7 +22,7 @@ export const DELETE_TEAM_WORDS = {
   band: 'Danger zone',
   intro: {
     team: 'What you do here cannot be undone.',
-    repository: 'What you do here cannot be undone in Bridge. Your repository stays on GitHub.',
+    repository: 'What you do here cannot be undone in Bridge.',
   },
   label: { team: 'Delete this team', repository: 'Disconnect this team from Bridge' },
   help: {

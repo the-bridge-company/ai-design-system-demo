@@ -76,9 +76,9 @@ export function soloOwnerRow(gov: { owners: Owners; rights: Rights | null; soloO
  */
 export function leadsPublishRow(gov: { leadsPublishTier1?: boolean | undefined }): { label: string; help: string; value: string } {
   return {
-    label: 'Leads can publish small changes without review',
-    help: 'Guidance, docs and fixes with no visual change.',
-    value: gov.leadsPublishTier1 === false ? 'Off: every small change waits for one reviewer.' : 'On: team admins and the reviewers of that part publish them. They go live once the automatic checks pass.',
+    label: 'Small changes',
+    help: 'Guidance, docs and fixes that change nothing on screen.',
+    value: gov.leadsPublishTier1 === false ? 'Each one waits for one review.' : 'Admins and reviewers publish them directly, once the automatic checks pass.',
   };
 }
 
@@ -255,8 +255,8 @@ export const RIGHT_PLAIN: Record<'approveDesign' | 'approveTech' | 'ship', { lab
 export const TOKEN_VALUES_PLAIN = {
   label: 'Token values',
   help: 'Colors, sizes and other values your designers change in Studio or send from Figma.',
-  title: 'Ship once the look is approved and the automatic checks pass.',
-  text: 'Nobody checks the code. From Figma, sending counts as the approval. A renamed or removed token waits for a code check.',
+  title: 'Go live once the look is approved and the automatic checks pass.',
+  text: 'A new value needs no code review. Sending from Figma counts as the approval. Renaming or removing a token also needs a code review.',
 } as const;
 
 /** The same rule for developers (the Review rules fold). */
@@ -270,8 +270,8 @@ export const ANYONE_WHO_CODES = 'Any developer of the team';
 /** The owner exception (core overrideHolders, docs/GOVERNANCE.md), as a designer reads it. */
 export const overridePlain = (names: readonly string[], min: number) => ({
   label: 'Exception',
-  help: 'Adds a change before every check is in. Owners only.',
-  value: `${andList(names)}, with a written reason of at least ${min} characters.`,
+  help: 'Adds a change to the library before every review is in, with a written reason.',
+  value: `${andList(names)}, with a reason of at least ${min} characters.`,
 });
 
 /** "Sam", "Sam or Lee", "Sam, Lee or Ana". */

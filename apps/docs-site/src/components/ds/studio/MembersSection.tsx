@@ -28,6 +28,7 @@ import { adminCount, choiceOf, inviteChoice, memberActions as allowed, MEMBERS_W
 import type { MembersData } from '../../../scripts/members';
 import type { JoinRequest } from '../../../lib/entry';
 import { repoContext } from '../../../scripts/repo-context';
+import { castJob } from '../../../lib/demo-cast';
 import '../../../styles/invites.css';
 
 /** This page's team and its context, known before anything is read: the join requests start with it. */
@@ -75,7 +76,7 @@ function MemberRow({ m, data, admins, act, onNotice }: { m: Member; data: Member
     <>
       <TableRow>
         <TableCell label="">
-          <PersonCell name={m.name} seed={memberSeed(m)} line={memberLine(m)} you={m.you} avatar={m.avatar} />
+          <PersonCell name={m.name} seed={memberSeed(m)} line={castJob(data.repo, m) ?? memberLine(m)} you={m.you} avatar={m.avatar} />
         </TableCell>
         <TableCell className="mem-role-cell" label="">
           <span className="mem-role">
@@ -270,7 +271,7 @@ export default function MembersSection() {
         <TableHeader>
           <TableRow>
             <TableHead>Person</TableHead>
-            <TableHead className="mem-role-head">Role</TableHead>
+            <TableHead className="mem-role-head">{MEMBERS_WORDS.accessHead}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -406,7 +406,7 @@ export const MEMBERS_WORDS = {
   membersOnly: 'Only people on this team see who is in it.',
   membersIntro: (team: string) => `Who is in ${team} and what each person can do. Changes apply the next time they open Bridge.`,
   /** For admins, under the list: designers work in the design copies through Bridge, never with GitHub access to them. */
-  designersThroughBridge: 'Designers work in your products\' design copies through Bridge: they need no access to the copies on GitHub.',
+  designersThroughBridge: 'Designers explore your products in Bridge. They need no GitHub account.',
   membersIntroReader: (team: string) => `Who is in ${team} and what each person can do. Only admins can invite people or change roles.`,
   resend: 'Resend',
   resent: 'Sent again.',
@@ -415,8 +415,10 @@ export const MEMBERS_WORDS = {
   removeConfirm: (name: string, team: string) => `Remove ${name} from ${team}? They lose access on GitHub too.`,
   removeConfirmEmail: (name: string, team: string) => `Remove ${name} from ${team}? They are signed out at once.`,
   reviewerNote: 'Reviewers start once the settings change is approved.',
+  /** The members table's second column: what each person may do in Bridge (their job is the line under their name). */
+  accessHead: 'Access',
   /** An admin signed in by email reads it above GitHub members (the invites server's GITHUB_PEOPLE, in a list's words). */
-  githubPeople: 'People who work with GitHub: change their role while signed in with GitHub as an admin of the repository.',
+  githubPeople: 'People who joined with GitHub: an admin changes their access there.',
   /** A team with no repository yet: Reviewer waits (the invites server's REVIEWER_NEEDS_REPO). */
   limitReached: "You reached today's invite limit. Try again tomorrow.",
 } as const;

@@ -16,13 +16,15 @@ vi.mock('@bridge-ds/react', async (orig) => ({
   ...(await orig<typeof import('@bridge-ds/react')>()),
   Avatar: ({ name, src }: { name: string; src?: string }) => createElement('i', { 'data-avatar': name, 'data-src': src ?? '' }),
 }));
+// A real team by default; the sample team's test switches `at`.
+const at = { owner: 'acme', repo: 'acme-product' };
 vi.mock('./TeamState', () => ({
   useTeamData: () => ({
     load: {
       status: 'ready',
       data: {
-        owner: 'acme-design-demo',
-        repo: 'bridge-demo-ds',
+        owner: at.owner,
+        repo: at.repo,
         model: {
           site: { owners: { design: ['sam'], tech: ['acme-malik'] }, rights: null, changes: 'suggest', soloOwnerCanApproveBoth: false, override: { allowed: [] }, visualImpact: { mode: 'auto' }, defaultBranch: 'main' },
           config: { governance: { protectedBranches: ['main'], branchPrefix: '' } },
@@ -51,6 +53,10 @@ vi.mock('./SettingsParts', () => ({
 vi.mock('../../../scripts/people', () => ({ knownNames: () => new Map() }));
 
 const { default: TeamSettings } = await import('./TeamSettings');
+// The face check imports this module on first render (faces.tsx useDrawnFace): loaded here, so no test waits on a
+// cold dynamic import (it took more than waitFor's default second on a busy CI runner).
+await import('../../../scripts/github-photo');
+const settle = { timeout: 5000 };
 const { PersonCell } = await import('./MemberParts');
 
 const srcOf = (name: string) => [...document.querySelectorAll(`[data-avatar="${name}"]`)].map((el) => el.getAttribute('data-src'));
@@ -58,15 +64,30 @@ const srcOf = (name: string) => [...document.querySelectorAll(`[data-avatar="${n
 describe('Settings faces', () => {
   it('Review rules show the drawn face for an account without a photo, the photo for the others', async () => {
     render(createElement(TeamSettings));
-    await waitFor(() => expect(srcOf('Malik').every((s) => s === '')).toBe(true));
-    expect(srcOf('Malik').length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(srcOf('Malik').length).toBeGreaterThan(0);
+      expect(srcOf('Malik').every((s) => s === '')).toBe(true);
+    }, settle);
     expect(srcOf('sam')).toEqual(['https://github.com/sam.png?size=48']);
+  });
+
+  it('on the sample team, its developer is drawn as the cast draws him, never with a GitHub photo', () => {
+    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds' });
+    try {
+      render(createElement(TeamSettings));
+      // No photo address at all: nothing to wait for.
+      expect(srcOf('Malik')).toEqual(['']);
+      // sam is not one of the sample team's people: never named there.
+      expect(srcOf('sam')).toEqual([]);
+    } finally {
+      Object.assign(at, { owner: 'acme', repo: 'acme-product' });
+    }
   });
 
   it('a Members row checks the address GitHub gives by the member login', async () => {
     render(createElement(PersonCell, { name: 'Malik', seed: 'acme-malik', line: 'Can edit', avatar: 'https://avatars.githubusercontent.com/u/123456?v=4' }));
     render(createElement(PersonCell, { name: 'Sam', seed: 'sam', line: 'Admin', avatar: 'https://avatars.githubusercontent.com/u/42?v=4' }));
-    await waitFor(() => expect(srcOf('Malik')).toEqual(['']));
+    await waitFor(() => expect(srcOf('Malik')).toEqual(['']), settle);
     expect(srcOf('Sam')).toEqual(['https://avatars.githubusercontent.com/u/42?v=4']);
   });
 });

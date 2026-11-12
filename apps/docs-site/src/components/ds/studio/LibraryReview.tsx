@@ -8,13 +8,16 @@
 // in one banner and sees no buttons; her rows show only what changed (an exception). Decisions are the exploration's
 // own (scripts/library-review-data.ts): deciding here or on the exploration page is the same decision. Undo stays
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
+import { Who } from './faces';
+import { ProductMark as ProductIcon } from './ProductMark';
+import { namedFace } from '../../../lib/cast-faces';
 import { isNew, Sample, thumbOf } from './LibraryReviewSample';
 import { MapView } from './LibraryMap';
 import { ReachPage } from './LibraryReach';
@@ -68,7 +71,7 @@ import { askOther, commentOn, decide, loadLibraryReview, pickWay, readViewer, ty
 import { rememberMine } from '../../../scripts/needs-you';
 import { setReviewCount } from '../../../scripts/shell';
 import { exploringDemo, openMakeItYours } from '../../../scripts/demo-gate';
-import { readRepo } from '../../../scripts/github-session';
+import { onSampleTeam, readRepo } from '../../../scripts/github-session';
 import { siteConfig } from '../../../scripts/repo-context';
 import { AA_MIN, contrastRatio, defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref } from '../../../lib/product-page';
@@ -186,23 +189,34 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
 /** A product's mark for an exploration's product name ("Acme CRM" C), or null when Bridge knows no product. */
 type MarkOf = (product: string | null | undefined) => string | null;
 
-/** A person's face (the DS Avatar), whole: nothing sits on it. */
+/**
+ * How the review draws people it knows by name only: the sample team's cast by their own seeds, "You" as the viewer.
+ * Set once by the page (LibraryReviewView), read by every face below.
+ */
+const FaceNames = createContext<{ sample: boolean; you: string | null }>({ sample: false, you: null });
+
+/**
+ * A person known by name, as the same drawn face they have on every Studio surface (faces.tsx Who, seeded by
+ * lib/cast-faces namedFace), never initials.
+ */
+function NameFace({ name, size = 'sm', decorative = true }: { name: string; size?: 'xs' | 'sm'; decorative?: boolean }) {
+  const ctx = useContext(FaceNames);
+  const who = name === 'You' && ctx.you ? ctx.you : name;
+  return <Who p={namedFace(who, { sample: ctx.sample })} size={size} decorative={decorative} name={name} />;
+}
+
+/** A person's face, whole: nothing sits on it. */
 function Face({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm' }) {
   return (
     <span className="lr-face" title={name}>
-      <Avatar name={name} size={size} decorative />
+      <NameFace name={name} size={size} />
     </span>
   );
 }
 
 /** The product an exploration belongs to, as its small mark right after the exploration's name (never on the face). */
-function ProductMark({ mark, product }: { mark: string | null; product: string | null }) {
-  if (!mark) return null;
-  return (
-    <span className="lr-product-mark lr-asked-mark" title={product ?? undefined} aria-hidden="true">
-      {mark}
-    </span>
-  );
+function ProductMark({ product }: { mark?: string | null; product: string | null }) {
+  return <ProductIcon product={product} className="lr-asked-mark" />;
 }
 
 /** Up to three faces, overlapping (the DS AvatarGroup); the words next to them say who. */
@@ -210,7 +224,7 @@ function Faces({ names, size = 'sm' }: { names: string[]; size?: 'xs' | 'sm' }) 
   return (
     <AvatarGroup aria-label={names.join(', ')} aria-hidden="true" size={size} max={FACES_SHOWN} className="lr-faces">
       {names.slice(0, FACES_SHOWN).map((n, i) => (
-        <Avatar key={`${n}-${i}`} name={n} size={size} decorative />
+        <NameFace key={`${n}-${i}`} name={n} size={size} />
       ))}
     </AvatarGroup>
   );
@@ -440,7 +454,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
           <>
             <AvatarGroup aria-label="Who asked" size="xs" max={FACES_SHOWN}>
               {askers.map((a) => (
-                <Avatar key={a.key} name={a.designer ?? a.name} size="xs" />
+                <NameFace key={a.key} name={faceName(a)} size="xs" decorative={false} />
               ))}
             </AvatarGroup>
             <span>{askedCountLine(askers.length)}</span>
@@ -452,7 +466,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
           <>
             {!p.asked && p.by && !p.mine ? (
               <span className="lr-detail-who">
-                <Avatar name={p.by} size="sm" decorative />
+                <NameFace name={p.by} size="sm" />
                 <span className="lr-muted">From {p.by}</span>
               </span>
             ) : (
@@ -460,7 +474,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
             )}
             {p.asked?.designer && (
               <span className="lr-detail-who">
-                <Avatar name={p.asked.designer} size="sm" decorative />
+                <NameFace name={p.asked.designer} size="sm" />
                 <span className="lr-muted">{p.mine ? 'You asked for it' : `${p.asked.designer} asked for it`}</span>
               </span>
             )}
@@ -548,7 +562,7 @@ function OptionRow({ o, mark }: { o: CompareOption; mark: MarkOf }) {
       <span className={`lr-key is-hue-${o.hue ?? 'both'}`} aria-hidden="true" />
       <span className="lr-opt-who">
         {o.who ? (
-          <Avatar name={o.who} size="xs" decorative />
+          <NameFace name={o.who} size="xs" />
         ) : (
           <span className="lr-opt-lib" aria-hidden="true">
             <Icon icon={BookOpen} size="xs" />
@@ -565,11 +579,7 @@ function OptionRow({ o, mark }: { o: CompareOption; mark: MarkOf }) {
           o.where.text
         ) : (
           <>
-            {mark(o.where.product) && (
-              <span className="lr-product-mark" title={o.where.product} aria-hidden="true">
-                {mark(o.where.product)}
-              </span>
-            )}
+            <ProductIcon product={o.where.product} />
             {o.where.exploration}
           </>
         )}
@@ -907,7 +917,7 @@ function AskersList({ list }: { list: AskedBy[] }) {
           <ul className="lr-askers-list">
             {g.askers.map((a) => (
               <li key={a.key} className="lr-askers-row">
-                <Avatar name={a.designer ?? a.name} size="xs" decorative />
+                <NameFace name={faceName(a)} size="xs" />
                 {a.href ? (
                   <Link href={a.href} className="lr-askers-name">
                     {a.name}
@@ -1156,7 +1166,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           <span role="cell" className="lr-row-next">
             {actor && (
               <span className="lr-who">
-                <Avatar name={actor.name} size="xs" decorative />
+                <NameFace name={actor.name} size="xs" />
                 <span>{actor.label}</span>
               </span>
             )}
@@ -1205,18 +1215,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 {cr.names ? (
                   <>
                     <span>Reaches</span>
-                    <span className="lr-marks" title={cr.products.map((x) => x.name).join(', ')} aria-hidden="true">
-                      {cr.shown.map((x) => (
-                        <span key={x.key} className="lr-product-mark">
-                          {mark(x.name)}
-                        </span>
-                      ))}
-                    </span>
-                    {cr.more > 0 && (
-                      <Badge tone="neutral" size="sm" className="lr-more-tag" aria-hidden="true">
-                        {moreTag(cr.more).tag}
-                      </Badge>
-                    )}
+                    <ProductIcon product={cr.products.map((x) => x.name).join(', ')} />
                     <span className="lr-chapter-names">{cr.names}</span>
                   </>
                 ) : (
@@ -1657,8 +1656,10 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const banner = designerBanner(data.lead);
   const empty = emptyLine(decidedAll, v, data.lead);
   const sel = pieces.filter((p) => selected.has(p.key));
+  const faces = { sample: onSampleTeam(), you: v.name };
 
   return (
+    <FaceNames.Provider value={faces}>
     <div className="lr" data-review-count-owner="">
       {actions && showSwitch && !reachPiece && createPortal(viewSwitch, actions)}
       {data.failed && <p className="lr-notice" role="alert">{data.failed}</p>}
@@ -1721,7 +1722,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
           </div>
           {!v.reviews && (
             <aside className="lr-banner" aria-label="Who decides">
-              <Avatar name={data.lead ?? 'Design lead'} size="sm" decorative />
+              <NameFace name={data.lead ?? 'Design lead'} size="sm" />
               <p className="lr-banner-text">
                 <strong>{banner.strong}</strong> {banner.rest}
               </p>
@@ -1783,6 +1784,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
       </div>
       {view === 'list' && sel.length > 0 && <SelectionBar pieces={sel} busy={busy} onKeep={() => batch('keep')} onAdd={() => batch('add')} onClear={() => setSelected(new Set())} />}
     </div>
+    </FaceNames.Provider>
   );
 }
 

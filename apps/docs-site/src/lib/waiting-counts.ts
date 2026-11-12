@@ -1,6 +1,6 @@
 // The two counts of what waits on the viewer, one source each (owner rule "one source", 2026-11-09), pure:
 //   - explorations: what the Explorations page pins as "Waiting on you" (the lead's turn, a review asked, a question
-//     from the developers, the PM's word). Its nav badge is on Explorations.
+//     from the developers, the PM's build check; never the PM's optional opinion). Its nav badge is on Explorations.
 //   - library: the pieces waiting on the lead, Library review's own count with its own loader and rule
 //     (scripts/library-waiting). Its nav badge is on Library review.
 // Home's Needs you rows of an exploration are keyed by exploration (explorationOfNeed). Home, Explorations and the nav
@@ -46,6 +46,8 @@ export interface WaitingExploration {
 export function waitingCounts(needs: readonly NeedRow[]): { explorations: WaitingExploration[] } {
   const explorations: WaitingExploration[] = [];
   for (const r of needs) {
+    // An optional ask (a product manager's opinion) never waits on them: no badge, not pinned as "Waiting on you".
+    if (r.optional) continue;
     const key = explorationOfNeed(r);
     if (key && !explorations.some((e) => e.key === key)) explorations.push({ key, line: r.line });
   }

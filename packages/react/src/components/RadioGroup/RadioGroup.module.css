@@ -178,19 +178,19 @@
 }
 
 /*
- * Tile appearance: options that are pictures, in a grid of equal tiles. The tile is the target and shows the choice
+ * Tile appearance: options that are pictures, in rows of equal tiles that wrap. The tile is the target and shows the choice
  * (the checked edge and selected surface, as ChoiceCard, never the color alone: the edge doubles); the radio stays the
  * focusable element, visually hidden, its focus ring drawn on the tile.
  */
 .tile {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-16), 1fr));
+  flex-flow: row wrap;
   gap: var(--space-2);
 }
 
 .tile .item {
   position: relative;
   box-sizing: border-box;
+  inline-size: var(--size-20);
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;

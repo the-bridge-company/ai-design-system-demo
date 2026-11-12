@@ -26422,7 +26422,7 @@
           }
         ]
       },
-      "hash": "29e55255",
+      "hash": "eee703ab",
       "source": [
         "packages/react/src/components/RadioGroup/RadioGroup.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -26437,6 +26437,15 @@
             "horizontal"
           ],
           "default": "vertical"
+        },
+        {
+          "name": "Appearance",
+          "prop": "appearance",
+          "values": [
+            "list",
+            "tile"
+          ],
+          "default": "list"
         },
         {
           "name": "State",
@@ -26685,6 +26694,7 @@
         {
           "props": {
             "Orientation": "vertical",
+            "Appearance": "list",
             "State": "Default"
           },
           "values": {
@@ -26820,6 +26830,7 @@
         {
           "props": {
             "Orientation": "vertical",
+            "Appearance": "list",
             "State": "Hover"
           },
           "values": {
@@ -26955,6 +26966,7 @@
         {
           "props": {
             "Orientation": "vertical",
+            "Appearance": "list",
             "State": "Disabled"
           },
           "values": {
@@ -27089,7 +27101,556 @@
         },
         {
           "props": {
+            "Orientation": "vertical",
+            "Appearance": "tile",
+            "State": "Default"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.border"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.selected",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "radio-2": {
+              "fill": "checkbox.bg-checked",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.bg-checked"
+            },
+            "dot-2": {
+              "fill": "checkbox.fg-checked",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio-3": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.border"
+            },
+            "text-3": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            }
+          }
+        },
+        {
+          "props": {
+            "Orientation": "vertical",
+            "Appearance": "tile",
+            "State": "Hover"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio-2": {
+              "fill": "color.control.checked.bg-hover",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg-hover"
+            },
+            "dot-2": {
+              "fill": "checkbox.fg-checked",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio-3": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "text-3": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            }
+          }
+        },
+        {
+          "props": {
+            "Orientation": "vertical",
+            "Appearance": "tile",
+            "State": "Disabled"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "text": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.selected",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "radio-2": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "dot-2": {
+              "fill": "color.action.disabled.text",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio-3": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "text-3": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            }
+          }
+        },
+        {
+          "props": {
             "Orientation": "horizontal",
+            "Appearance": "list",
             "State": "Default"
           },
           "values": {
@@ -27234,6 +27795,7 @@
         {
           "props": {
             "Orientation": "horizontal",
+            "Appearance": "list",
             "State": "Hover"
           },
           "values": {
@@ -27378,6 +27940,7 @@
         {
           "props": {
             "Orientation": "horizontal",
+            "Appearance": "list",
             "State": "Disabled"
           },
           "values": {
@@ -27516,6 +28079,554 @@
               "primary": "MIN",
               "counter": "STRETCH",
               "wrap": true
+            }
+          }
+        },
+        {
+          "props": {
+            "Orientation": "horizontal",
+            "Appearance": "tile",
+            "State": "Default"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.border"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.selected",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "radio-2": {
+              "fill": "checkbox.bg-checked",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.bg-checked"
+            },
+            "dot-2": {
+              "fill": "checkbox.fg-checked",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio-3": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "checkbox.border"
+            },
+            "text-3": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            }
+          }
+        },
+        {
+          "props": {
+            "Orientation": "horizontal",
+            "Appearance": "tile",
+            "State": "Hover"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio-2": {
+              "fill": "color.control.checked.bg-hover",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg-hover"
+            },
+            "dot-2": {
+              "fill": "checkbox.fg-checked",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "fill": "color.surface.hover",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "radio-3": {
+              "fill": "checkbox.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.hover"
+            },
+            "text-3": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            }
+          }
+        },
+        {
+          "props": {
+            "Orientation": "horizontal",
+            "Appearance": "tile",
+            "State": "Disabled"
+          },
+          "values": {
+            "root": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "itemSpacing": "space.2"
+            },
+            "legend": {
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0
+            },
+            "label-text": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "description-text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "lineHeight": "typography.meta.line-height"
+            },
+            "group": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "item": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "text": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-2": {
+              "fill": "color.surface.selected",
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.control.checked.bg"
+            },
+            "radio-2": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "dot-2": {
+              "fill": "color.action.disabled.text",
+              "cornerRadius": "radius.pill",
+              "width": "space.1-5",
+              "height": "space.1-5"
+            },
+            "text-2": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "item-3": {
+              "cornerRadius": "radius.control",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.2",
+              "minHeight": "size.6",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "radio-3": {
+              "fill": "color.action.disabled.bg",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "width": "border.width.1",
+              "height": "border.width.1",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.default"
+            },
+            "text-3": {
+              "textFill": "color.text.disabled",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "error": {
+              "itemSpacing": "space.1-5"
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.feedback.danger.icon",
+              "strokeWeight": "icon.stroke"
+            },
+            "error-text": {
+              "textFill": "color.feedback.danger.text",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.meta.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.meta.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleAlert"
+          },
+          "hidden": [
+            "radio",
+            "radio-2",
+            "dot-2",
+            "radio-3"
+          ],
+          "layout": {
+            "group": {
+              "direction": "HORIZONTAL",
+              "primary": "MIN",
+              "counter": "STRETCH",
+              "wrap": true
+            },
+            "item": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-2": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
+            },
+            "item-3": {
+              "direction": "VERTICAL",
+              "primary": "MIN",
+              "counter": "CENTER"
             }
           }
         }
@@ -27538,6 +28649,12 @@
           "property": "prop hideLabel",
           "value": "boolean",
           "reason": "not drawn in this version"
+        },
+        {
+          "part": "item-2",
+          "property": "box-shadow",
+          "value": "inset 0 0 0 var(--border-width-default) var(--color-control-checked-bg)",
+          "reason": "shadows are code-only tokens (no Figma variable)"
         }
       ],
       "interactions": [

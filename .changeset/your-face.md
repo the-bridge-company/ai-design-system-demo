@@ -3,7 +3,7 @@
 "@bridge-ds/docs-site": minor
 ---
 
-RadioGroup gains `appearance="tile"`: options that are pictures in a grid of equal tiles, the tile is the control (no
+RadioGroup gains `appearance="tile"`: options that are pictures in wrapping rows of equal tiles, the tile is the control (no
 radio circle drawn, the radio stays focusable), the selected one ringed, a disabled tile's picture grey.
 
 Your face: a drawn face that is yours and never a teammate's. `@bridge-ds/react/avatar-illustrated` draws a face from

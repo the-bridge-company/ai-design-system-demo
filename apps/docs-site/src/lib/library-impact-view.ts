@@ -25,6 +25,7 @@ import {
 } from '@bridge-ds/core';
 import { SEP } from './sep';
 import { baselineOf, knownLibraryOptions, type LibraryOption } from './library-baseline';
+import { asIsLine, asIsOption, decisionConflicts } from './library-as-is';
 
 /** One side of a row's before and after: what it reads ("16", "Timeline") and what it is ("Today"). */
 export interface ImpactSide {
@@ -54,8 +55,11 @@ export interface ImpactRowView {
    * back to Library review with the reason. The lead's name, or null when the viewer cannot reply.
    */
   reply: string | null;
-  /** The piece's one tag on its header line (ledger board v3): "New", "New option", "2 new options", "Decided". */
-  tag: PieceTag;
+  /**
+   * The piece's one tag on its header line (ledger board v3): "New", "New option", "2 new options", "Decided". Null for
+   * a piece that uses the library as is (lib/library-as-is): no tag, its quiet line says it.
+   */
+  tag: PieceTag | null;
   /** Where it comes from, on the right of its header: the designers' faces and their products. */
   origin: { people: string[]; products: string[] };
   /**
@@ -324,7 +328,12 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   // The library's pieces in words ("Segmented control"), the way designers name them.
   const uses = (record.uses ?? []).map(componentWords);
   if (!items.length) return { state: 'nothing', line: `The best kind of exploration: ${x.designer} built it with the pieces the library already has. Nothing to decide here, and the developers can build it right away.`, uses };
-  const conflicts = (x.conflicts ?? []).filter((c) => items.some((i) => i.id === c.piece));
+  // Only the parts where a way is new to the library are decisions (lib/library-as-is): every way already in the
+  // library (Default, Compact) is no conflict, its row reads one quiet line.
+  const conflicts = decisionConflicts(
+    (x.conflicts ?? []).filter((c) => items.some((i) => i.id === c.piece)),
+    [...(x.others ?? []), ...(x.conflicts ?? []).map((c) => ({ key: c.mine.key, record }))],
+  );
   const names = x.names ?? {};
   const views = conflictViews(conflicts, {
     pieces: record.pieces,
@@ -343,6 +352,9 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     const link = record.links.find((l) => l.piece === i.id);
     const conflict = conflicts.find((c) => c.piece === i.id) ?? null;
     const cv = views.find((v) => v.piece === i.id) ?? null;
+    const raw = record.pieces.find((p) => p.id === i.id);
+    const asIs = !cv && !decision && !link && raw ? asIsOption(raw) : null;
+    if (asIs) return asIsRow(i, asIs, x.designer, x.product);
     const status = impactStatus({ item: i, decision, conflict, approved: x.approved, link, released: Boolean(link && x.released?.has(link.number)), lead: x.lead, asked: x.asked ?? true });
     const open = !x.approved && x.canDecide && status.key !== 'conflict';
     const settled = settledLine(i, status, decision, x.designer, names, x.now ?? new Date());
@@ -367,7 +379,9 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   const everywhere = items.some((i) => i.everywhere);
   const products = x.products ?? [];
   const waiting = rows.filter((r) => r.status.key === 'needs-lead' || r.status.key === 'conflict').length;
-  const done = rows.every((r) => SETTLED.has(r.status.key));
+  // A piece that uses the library as is (no tag) was never a decision: it never makes the block read "decided".
+  const decisions = rows.filter((r) => r.tag !== null);
+  const done = decisions.length > 0 && decisions.every((r) => SETTLED.has(r.status.key));
   const forWhom = /^you$/i.test(x.lead) ? 'you' : x.lead;
   const tail = waiting && (x.canDecide || (x.asked ?? true)) && !x.approved ? `${waiting} ${waiting === 1 ? 'waits' : 'wait'} for ${x.canDecide ? 'you' : forWhom}` : done ? 'decided' : null;
   return {
@@ -404,6 +418,29 @@ function conflictRow(base: ImpactRowView, cv: ConflictView, i: ImpactItem): Impa
   const people = [...new Set(cv.ways.map((w) => w.designer))];
   const products = [...new Set(cv.ways.map((w) => w.product).filter(Boolean))];
   return { ...base, kind: 'Change to', title: cv.component, summary, before: null, after: null, status, menu: [], tag, origin: { people, products }, settled: cv.decided?.parts ?? null };
+}
+
+/**
+ * A piece that uses the library as is (lib/library-as-is): settled from the start, no tag, no menu, one quiet line
+ * ("Leo's screen uses Compact, already in the library. Nothing to decide."). It waits for nobody.
+ */
+function asIsRow(i: ImpactItem, o: LibraryOption, designer: string, product: string | undefined): ImpactRowView {
+  return {
+    id: i.id,
+    kind: kindLine(i),
+    title: i.title,
+    summary: i.summary,
+    before: null,
+    after: null,
+    status: { key: 'existing', label: `Uses ${o.name}`, tone: 'neutral' },
+    note: null,
+    details: [],
+    menu: [],
+    reply: null,
+    tag: null,
+    origin: { people: [designer], products: product ? [product] : [] },
+    settled: [{ text: asIsLine(designer, i.of ?? 'The component', i.property ?? '', o) }],
+  };
 }
 
 /** The states a piece is answered in: its row folds, and the block reads "decided" once every row is. */

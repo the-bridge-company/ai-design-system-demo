@@ -7,6 +7,7 @@ import { explorationKeyOf, explorationStatus, isArchivedExploration, libraryConf
 import { ghGet } from './github-session';
 import { productPulls, siteProductRepos } from './product-repos';
 import { explorerName } from '../lib/author';
+import { decisionConflicts } from '../lib/library-as-is';
 
 /** One exploration as the conflict check reads it, from its pull request. */
 export function impactSourceOf(pull: { number: number; body?: string | null; title?: string; user?: { login?: string } | null }, repo: string, product: string): ImpactSource {
@@ -42,7 +43,8 @@ export async function conflictsOf(mine: ImpactSource): Promise<LibraryConflict[]
 export async function conflictsWithOthers(mine: ImpactSource): Promise<{ conflicts: LibraryConflict[]; others: ImpactSource[] }> {
   if (!mine.record?.pieces.length) return { conflicts: [], others: [] };
   const others = await otherExplorations().catch(() => [] as ImpactSource[]);
-  return { conflicts: libraryConflicts(mine, others), others };
+  // Only the parts where a way is new to the library are decisions (lib/library-as-is).
+  return { conflicts: decisionConflicts(libraryConflicts(mine, others), [mine, ...others]), others };
 }
 
 const releasedBy = new Map<string, Promise<boolean>>();

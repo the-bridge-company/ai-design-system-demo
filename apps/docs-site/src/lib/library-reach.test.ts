@@ -114,7 +114,7 @@ describe('who gets it, measured', () => {
 
   it('never lists a product to say it does not know: a change not measured yet says Bridge is measuring', () => {
     const m = measuredReach(change(), reachOf(change(), PRODUCTS), null, ASKING);
-    expect(m).toMatchObject({ status: 'measuring', products: [], screens: 0, headline: 'Bridge is measuring which screens change.', cell: 'Measuring', end: null });
+    expect(m).toMatchObject({ status: 'measuring', products: [], screens: 0, headline: 'Bridge has not counted the screens this changes yet. It counts them by comparing every product screen before and after the change.', cell: 'Not counted yet', end: null });
     const other = measuredReach(change({ number: 99 }), reachOf(change({ number: 99 }), PRODUCTS), DATA, ASKING);
     expect(other.status).toBe('measuring');
   });

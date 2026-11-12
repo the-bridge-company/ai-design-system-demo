@@ -344,7 +344,7 @@ const valueOf = (spec: ThumbSpec, side: 'before' | 'after'): string | null => {
   return null;
 };
 
-/** The reach link of a piece ("11 screens ›", "Measuring ›"): opens Who gets it. */
+/** The reach link of a piece ("11 screens ›", "Not counted yet ›"): opens Who gets it. */
 function ReachLink({ p, cell, onReach, label, text, quiet, hoverOnly }: { p: ReviewPiece; cell: string; onReach: (p: ReviewPiece) => void; label?: string; text?: string; quiet?: boolean; hoverOnly?: boolean }) {
   return (
     <Link
@@ -1210,10 +1210,14 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         const pickable = boxes ? pickableOf(rows) : [];
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
+        // The Group column only when a group has a name to show: a chapter whose one group is its one piece ("Button"
+        // over "Button: loading text...") left an empty Group cell under its header (Malik, 2026-11-12).
+        const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
+        const rail = ch.rail && [...labels.values()].some(Boolean);
         return (
           // A chapter is a plain wrapper: ARIA has no group of row groups, so its head row (with its h2) and each
           // group's rowgroup sit straight in the table (WCAG 1.3.1).
-          <div key={ch.key} className={`lr-chapter${ch.rail ? ' has-rail' : ''}`}>
+          <div key={ch.key} className={`lr-chapter${rail ? ' has-rail' : ''}`}>
             <div role="row" className="lr-chapter-head">
               <span role="cell" className="lr-chapter-title">
                 {ch.icon && <FamilyIcon name={ch.icon} />}
@@ -1239,7 +1243,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             </div>
             <div className="lr-chapter-card">
               <div role="row" className="lr-chapter-cols">
-                {ch.rail && (
+                {rail && (
                   <span role="columnheader" className="lr-rail-head">
                     Group
                   </span>
@@ -1267,10 +1271,10 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 const inGroup = boxes ? pickableOf(g.pieces) : [];
                 const on = inGroup.length > 0 && inGroup.every((p) => selected.has(p.key));
                 const some = inGroup.some((p) => selected.has(p.key));
-                const label = ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null;
+                const label = labels.get(g.key) ?? null;
                 return (
                   <div key={g.key} role="rowgroup" className="lr-list-group" aria-label={g.label}>
-                    {ch.rail && (
+                    {rail && (
                       <div role="row" className="lr-group-row">
                         {boxes && (
                           <span role="cell" className="lr-col-box lr-hover-ctl">

@@ -2025,15 +2025,16 @@ a.lr-reach-card:focus-visible {
   font-weight: var(--font-weight-semibold);
 }
 
-/* The colour key of each option: the chart series of the system, today neutral; a line style too (solid, dashed,
-   dotted), so the key never rests on colour alone. */
+/* The colour key of each option: today neutral, each way a calm brand hue (blue, teal, purple), never the orange or
+   amber series, which read as a danger or a warning on someone's work (owner, 2026-11-12). A line style too (solid,
+   dashed, dotted), so the key never rests on colour alone; past three ways the hues come back with the other style. */
 .is-hue-0 {
   --lr-hue: var(--color-chart-series-6);
   --lr-line: solid;
 }
 
 .is-hue-1 {
-  --lr-hue: var(--color-chart-series-5);
+  --lr-hue: var(--color-chart-series-1);
   --lr-line: dashed;
 }
 
@@ -2048,12 +2049,12 @@ a.lr-reach-card:focus-visible {
 }
 
 .is-hue-4 {
-  --lr-hue: var(--color-chart-series-4);
+  --lr-hue: var(--color-chart-series-1);
   --lr-line: dotted;
 }
 
 .is-hue-5 {
-  --lr-hue: var(--color-chart-series-1);
+  --lr-hue: var(--color-chart-series-3);
   --lr-line: dashed;
 }
 

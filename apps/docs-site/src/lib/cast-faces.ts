@@ -27,3 +27,13 @@ export function faceSeedForName(name: string, x: { sample?: boolean } = {}): str
 export function namedFace(name: string, x: { sample?: boolean } = {}): { login: string; name: string; avatar: null } {
   return { login: faceSeedForName(name, x), name, avatar: null };
 }
+
+/**
+ * The seed a face is drawn from, when it is not the face seed itself: the developer's GitHub login (acme-malik) drew
+ * long dark hair close to Dana's, so he is drawn from the seed of a clearly different face (short spiky hair and a
+ * moustache). Only the drawing changes: his login, his face seed and every lookup by them stay the same.
+ */
+export const FACE_DRAWING_SEEDS: Readonly<Record<string, string>> = { 'acme-malik': 'malik-7' };
+
+/** The seed to draw a face seed with (FACE_DRAWING_SEEDS), any case; itself otherwise. */
+export const drawingSeed = (seed: string): string => FACE_DRAWING_SEEDS[seed.trim().toLowerCase()] ?? seed;

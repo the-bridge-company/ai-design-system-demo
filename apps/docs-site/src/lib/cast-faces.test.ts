@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { illustratedAvatarSvg } from '@bridge-ds/react/avatar-illustrated';
-import { CAST_FACE_SEEDS, faceSeedForName, namedFace } from './cast-faces';
+import { createAvatar } from '@dicebear/core';
+import { notionists } from '@dicebear/collection';
+import { CAST_FACE_SEEDS, drawingSeed, faceSeedForName, namedFace } from './cast-faces';
 import { SAMPLE_CAST, castFaceLogin } from './demo-cast';
 import { emailMemberFace } from './people';
 import { requesterPerson } from './home-model';
@@ -12,8 +14,18 @@ describe('cast faces', () => {
   });
 
   it('draws five different faces (no two cast seeds give the same drawing)', () => {
-    const svgs = Object.values(CAST_FACE_SEEDS).map(illustratedAvatarSvg);
+    const svgs = Object.values(CAST_FACE_SEEDS).map((s) => illustratedAvatarSvg(drawingSeed(s)));
     expect(new Set(svgs).size).toBe(5);
+  });
+
+  it('tells the five apart by drawing id: no two share a hair drawing, the part that reads at 20 to 40 px', () => {
+    // The drawing ids the face generator picks for a seed (the same options as @bridge-ds/react avatar-illustrated).
+    const hair = (seed: string) => createAvatar(notionists, { seed: drawingSeed(seed).trim().toLowerCase(), gestureProbability: 0, bodyIconProbability: 0 }).toJson().extra['hair'];
+    const ids = Object.fromEntries(Object.entries(CAST_FACE_SEEDS).map(([k, s]) => [k, hair(s)]));
+    expect(new Set(Object.values(ids)).size).toBe(5);
+    // Malik was drawn with Dana's look (long dark hair): his drawing comes from its own seed now.
+    expect(drawingSeed('acme-malik')).not.toBe('acme-malik');
+    expect(ids['malik']).not.toBe(ids['dana']);
   });
 
   it('an email member is drawn with the same seed by name, by email and by cast', () => {

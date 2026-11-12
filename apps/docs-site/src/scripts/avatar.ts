@@ -3,6 +3,7 @@
 // on top of it (.avatar-photo in site.css covers the circle) and writes the viewer's initial into the fallback.
 
 import { safeUrl } from '../lib/html';
+import { drawingSeed } from '../lib/cast-faces';
 
 // Initials like the DS Avatar's initials() (GitHub logins also split on - and _), local so the page script does not
 // pull in the React bundle.
@@ -49,7 +50,7 @@ export function paintDrawnAvatar(root: HTMLElement, seed: string) {
       img.alt = '';
       root.prepend(img);
     }
-    const src = illustratedAvatarUri(seed);
+    const src = illustratedAvatarUri(drawingSeed(seed));
     if (img.getAttribute('src') !== src) img.src = src;
   });
 }

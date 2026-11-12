@@ -88,7 +88,7 @@ function ScreenCard({ s, mode, piece }: { s: MeasuredScreen; mode: Mode; piece: 
 /** The quiet place of the cards while Bridge measures: no count, no guess. */
 function Measuring() {
   return (
-    <div className="lr-reach-grid" aria-busy="true" aria-label="Bridge is measuring which screens change">
+    <div className="lr-reach-grid" aria-busy="true" aria-label="Bridge has not counted the screens this changes yet">
       {Array.from({ length: REACH_SHOWN }, (_, i) => (
         <span key={i} className="lr-reach-card lr-reach-wait">
           <Skeleton variant="rect" className="lr-reach-skel" />

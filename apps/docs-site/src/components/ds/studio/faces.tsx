@@ -5,6 +5,7 @@ import { Avatar } from '@bridge-ds/react';
 import type { Person } from '../../../lib/home-model';
 import { safeUrl } from '../../../lib/html';
 import { avatarLogin } from '../../../lib/github-photo';
+import { drawingSeed } from '../../../lib/cast-faces';
 
 /** A GitHub account's photo address as Studio writes it (github.com/<login>.png): Who checks it for a drawn face. */
 export const githubPhoto = (login: string, size = 48): string => `https://github.com/${encodeURIComponent(login)}.png?size=${size}`;
@@ -22,7 +23,8 @@ export function useFaces(): Draw | null {
   useEffect(() => {
     if (loaded) return;
     let live = true;
-    loading ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (loaded = m.illustratedAvatarUri));
+    // Every face of a React island draws through drawingSeed (lib/cast-faces), so one person keeps one drawing.
+    loading ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (loaded = (seed: string) => m.illustratedAvatarUri(drawingSeed(seed))));
     loading.then((d) => live && setDraw(() => d)).catch(() => {});
     return () => {
       live = false;

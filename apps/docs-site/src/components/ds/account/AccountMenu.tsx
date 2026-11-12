@@ -17,6 +17,7 @@ import { AccountDialog } from './AccountSettings';
 import { DEMO_HOME } from '../../../lib/start';
 import { DEMO_WORDS } from '../../../lib/demo';
 import '../../../styles/account.css';
+import { drawingSeed } from '../../../lib/cast-faces';
 
 /**
  * The drawn face of someone signed in by email (lazy: the drawings are a separate chunk), seeded by their name like
@@ -29,7 +30,7 @@ export function useFace(account: Account | null): string | undefined {
   useEffect(() => {
     let live = true;
     if (login) setFace(ownerAvatarUrl(login, 64));
-    else if (seed) void import('@bridge-ds/react/avatar-illustrated').then(({ illustratedAvatarUri }) => live && setFace(illustratedAvatarUri(seed)));
+    else if (seed) void import('@bridge-ds/react/avatar-illustrated').then(({ illustratedAvatarUri }) => live && setFace(illustratedAvatarUri(drawingSeed(seed))));
     else setFace(undefined);
     return () => {
       live = false;

@@ -59,7 +59,9 @@ describe('qualityVerdict', () => {
     expect(v.action).toEqual({ label: 'See each product', href: '#ql-adoption' });
     const both = qualityVerdict({ contrastFail: 0, findings: [finding('warn', 'VisuallyHidden guidance is a draft', 'Review'), pass], products });
     expect(both.sentence).toBe('Acme CRM takes 13% of its components from the library. VisuallyHidden guidance is a draft.');
-    expect(both.action?.label).toBe('Review guidance');
+    // The button follows the headline: the headline is adoption, so the button opens the products, not the draft
+    // (the draft keeps its own Review in the Documentation section).
+    expect(both.action).toEqual({ label: 'See each product', href: '#ql-adoption' });
   });
 
   it('counts a product at the threshold as using the library', () => {

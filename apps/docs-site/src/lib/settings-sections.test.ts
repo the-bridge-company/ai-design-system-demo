@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS_GROUP, SETTINGS_GROUPS, groupForHash, groupId, hashNamesBand } from './settings-sections';
+import { DEFAULT_SETTINGS_GROUP, SETTINGS_GROUPS, groupForHash, groupId, hashNamesBand, isSettingsGroup, tabId } from './settings-sections';
 
 describe('Team Settings in four groups', () => {
   it('has four short groups, each anchor in one group only', () => {
@@ -34,5 +34,13 @@ describe('Team Settings in four groups', () => {
     expect(hashNamesBand('#roles')).toBe(true);
     expect(hashNamesBand(`#${groupId('reviews')}`)).toBe(false);
     expect(hashNamesBand('')).toBe(false);
+  });
+
+  it('gives each group a tab id for its panel to name, and checks a tab value', () => {
+    expect(tabId('tools')).toBe('set-tab-tools');
+    expect(new Set(SETTINGS_GROUPS.map((g) => tabId(g.key))).size).toBe(SETTINGS_GROUPS.length);
+    expect(isSettingsGroup('you')).toBe(true);
+    expect(isSettingsGroup('roles')).toBe(false);
+    expect(isSettingsGroup(null)).toBe(false);
   });
 });

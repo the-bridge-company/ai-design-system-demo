@@ -1,6 +1,7 @@
-// Team Settings in four groups, one shown at a time (pages/team-shell/settings): a section nav on top, each group's
-// bands below it, instead of one long scroll with every section open. Pure, covered by settings-sections.test.ts;
-// scripts/settings-sections.ts switches the groups in the browser. Without script every group shows, in order.
+// Team Settings in four groups, one shown at a time (pages/team-shell/settings): the DS Tabs on top
+// (components/ds/studio/SettingsTabs.tsx), each group's bands below it as that tab's panel, instead of one long scroll
+// with every section open. Pure, covered by settings-sections.test.ts; scripts/settings-sections.ts switches the groups
+// in the browser. Without script every group shows, in order.
 //
 // Every anchor a link or a redirect may land on (#roles, #changes, #team, #figma...) opens the group that holds it, so
 // old links keep working even before the band itself is drawn (its island renders after the team is read).
@@ -9,7 +10,7 @@ export type SettingsGroupKey = 'team' | 'reviews' | 'tools' | 'you';
 
 export interface SettingsGroup {
   key: SettingsGroupKey;
-  /** The nav item, one or two words. */
+  /** The tab's label, one or two words. */
   label: string;
   /** The anchors of the bands inside it, in page order (and the older anchors that now land there). */
   anchors: readonly string[];
@@ -42,6 +43,12 @@ export const DEFAULT_SETTINGS_GROUP: SettingsGroupKey = 'team';
 
 /** The id of a group's region on the page ("set-group-team"): its own anchor too. */
 export const groupId = (key: SettingsGroupKey) => `set-group-${key}`;
+
+/** The id of a group's tab ("set-tab-team"): the panel's aria-labelledby. */
+export const tabId = (key: SettingsGroupKey) => `set-tab-${key}`;
+
+/** True for a known group key, so a value from the tabs or the address is checked before it is used. */
+export const isSettingsGroup = (key: unknown): key is SettingsGroupKey => SETTINGS_GROUPS.some((g) => g.key === key);
 
 /** The group an address hash opens ("#roles", "roles", "#set-group-tools"), else the default group. */
 export function groupForHash(hash: string | null | undefined): SettingsGroupKey {

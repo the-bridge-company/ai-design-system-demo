@@ -483,48 +483,19 @@ html:has(.set-page, .ts-band) {
   white-space: pre;
 }
 
-/* Team Settings: the section nav over its four groups (lib/settings-sections.ts), one group shown at a time. */
-.set-groups-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-5);
-  border-bottom: var(--border-width-default) solid var(--color-border-default);
-}
-
-.set-groups-nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-height-md);
-  margin-bottom: calc(var(--border-width-default) * -1);
-  border-bottom: var(--border-width-strong) solid transparent;
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-medium);
-  text-decoration: none;
-}
-
-@media (hover: hover) {
-  .set-groups-nav a:hover {
-    color: var(--color-text-default);
-  }
-}
-
-.set-groups-nav a:focus-visible {
-  border-radius: var(--radius-inset);
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.set-groups-nav a[aria-current="true"] {
-  border-bottom-color: var(--color-signal-default);
-  color: var(--color-text-default);
-}
-
+/* Team Settings: each group is the panel of its DS tab (SettingsTabs.tsx), one shown at a time. Focusable like a DS
+   TabsPanel, with the same ring. */
 .set-group {
   display: grid;
   gap: var(--space-8);
+  border-radius: var(--radius-container);
+}
+
+.set-group:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .set-group[hidden] {
   display: none;
 }
-

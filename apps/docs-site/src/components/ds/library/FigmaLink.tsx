@@ -28,6 +28,18 @@ export function figmaLinkFor(model: Pick<RepoModel, 'componentMap' | 'config'>, 
   return { link: link ? { name: link.name, url: link.url } : null, fileSet: Boolean(figmaFileOf(model.config)) };
 }
 
+/**
+ * Which Figma line a component page shows, one status at a time: the link when the map has it; nothing more when
+ * changes sent from Figma are being built (the "Figma is ahead" line says the component is in Figma, so "Not linked
+ * yet, add your Figma file" would contradict it); else the not-linked hint, to a lead or an admin only, once the
+ * build requests are read (`ahead` undefined while they are read).
+ */
+export function figmaLineKind(x: { link: FigmaLinkProps['link']; canFix: boolean; ahead?: string | null | undefined }): 'linked' | 'missing' | 'none' {
+  if (x.link) return 'linked';
+  if (x.ahead !== null) return 'none';
+  return x.canFix ? 'missing' : 'none';
+}
+
 export function FigmaLink({ link, fileSet, settingsHref, canFix }: FigmaLinkProps) {
   if (link) {
     return (

@@ -70,7 +70,7 @@ export const AllStates: Story = {
           <div key={padding} style={{ width: 280 }}>
             <Card padding={padding}>
               <CardHeader>Owners</CardHeader>
-              <CardBody>Design: Florian G. Tech: platform team.</CardBody>
+              <CardBody>Design: Dana. Tech: platform team.</CardBody>
               <CardFooter>
                 <Button size="sm" variant="secondary">Edit owners</Button>
               </CardFooter>

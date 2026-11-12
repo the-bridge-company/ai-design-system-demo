@@ -165,9 +165,11 @@ export default function TeamSettings() {
             </ReviewRulesEditor>
             <DevFold
               facts={[
-                { term: 'Design owners', value: <Code>{entries(site.owners.design)}</Code> },
-                { term: 'Tech owners', value: <Code>{entries(site.owners.tech)}</Code> },
-                ...rows.map((x) => ({ term: `governance.rights.${x.right}`, value: <Code>{x.choice === null ? 'not set: anyone with write access merges' : andList(x.choice === 'both' ? ['design', 'tech'] : [x.choice])}</Code> })),
+                // Only this team's people (lib/review-people.ts): on the sample team, its cast, never the account hosting it.
+                { term: 'Design owners', value: <Code>{entries(teamEntries(full, site.owners.design))}</Code> },
+                { term: 'Tech owners', value: <Code>{entries(teamEntries(full, site.owners.tech))}</Code> },
+                // Each right by its plain name ("Checks the look"), as the rows above say it.
+                ...rows.map((x) => ({ term: RIGHT_PLAIN[x.right].label, value: x.choice === null ? 'Not set: anyone who can write merges' : `${andList(x.choice === 'both' ? ['design', 'tech'] : [x.choice])} owners` })),
                 { term: 'Token values', value: TOKEN_VALUES_DEV },
                 { term: 'Protected branches', value: <Code>{gov.protectedBranches.join(', ') || 'none'}</Code> },
                 { term: 'Branch prefix', value: <Code>{gov.branchPrefix || 'none'}</Code> },

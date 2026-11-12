@@ -11,6 +11,7 @@
 // Reviewer ids: a lower case GitHub login, or `member:<ref>` for a member who joined by email (never an email).
 //
 // Pure: no DOM, no fetch. Unit tested in team-reviews.test.ts.
+import { isSampleTeam } from './demo';
 import {
   designReviewOf,
   impactItemOf,
@@ -70,6 +71,16 @@ export const SAMPLE_REVIEWS: DesignReviewMap = { [ANY_PRODUCT]: { on: true, revi
 
 const norm = (s: string | null | undefined) => (s ?? '').trim().replace(/^@/, '').toLowerCase();
 const people = (l: readonly string[]) => l.map(norm).filter((x) => x && !x.includes('/'));
+
+/**
+ * The GitHub design owners a team's reviews may name: the people of its bridge.config.json, none on the sample team.
+ * The sample team names only its cast (SAMPLE_REVIEWS); its repository's config names the real account hosting it,
+ * which is never merged into the demo's reviews.
+ */
+export function reviewGithubOwners(repo: string | null | undefined, owners: readonly string[] | null | undefined): string[] {
+  if (isSampleTeam(repo)) return [];
+  return [...new Set(people(owners ?? []))];
+}
 
 export const memberId = (ref: string): string => `member:${ref}`;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withDesignOk, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
-import { libraryOwners, productReviewers, reviewsToAsk, SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
+import { libraryOwners, productReviewers, reviewGithubOwners, reviewsToAsk, SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
 
 const DANA = 'a399f73add3dbb2d';
 const SOFIA = '0406ec723c59bb8d';
@@ -71,5 +71,13 @@ describe('a GitHub team: bridge.config.json decides', () => {
     expect(productReviewers(team, 'blog')).toBeNull();
     expect(productReviewers(team, 'crm')).toEqual([{ id: 'flo', name: 'flo' }]);
     expect(libraryOwners(team)).toEqual([{ id: 'flo', name: 'flo' }]);
+  });
+});
+
+describe('the GitHub design owners the reviews may name', () => {
+  it('are the config people of a real team, and none on the sample team (its cast only)', () => {
+    expect(reviewGithubOwners('acme/ds', ['@Lee', 'lee', '@acme/design'])).toEqual(['lee']);
+    expect(reviewGithubOwners('acme-design-demo/bridge-demo-ds', ['peterbono'])).toEqual([]);
+    expect(reviewGithubOwners('peterbono/bridge-demo-ds', ['peterbono'])).toEqual([]);
   });
 });

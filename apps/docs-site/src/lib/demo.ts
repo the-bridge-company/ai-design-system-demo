@@ -97,6 +97,11 @@ export const DEMO_WORDS = {
   /** The sample-team dialog's note: what happens on a real team. */
   sampleNote: 'With your own team, Bridge reads your design system and sends nothing until you ask.',
   keepExploring: 'Keep exploring',
+  /** Looks right on the sample team: it runs in this browser (SAMPLE_IN_BROWSER), nothing is sent. */
+  sampleLooksRight: 'You said it looks right. On the sample team it stays in this browser.',
+  /** Start an exploration on the sample team: it starts in this browser, nothing is sent. */
+  sampleStartTitle: 'Started in this browser',
+
   /** The account menu's way to the sample team, for a signed-in member (never between real teams in the team menu). */
   tryIt: `Try it · ${SAMPLE_TEAM}`,
 } as const;
@@ -176,7 +181,7 @@ const LOOKS_RIGHT = 'Looks right tells whoever made it that it is good to go, so
 const NEEDS_CHANGES = 'Needs changes sends them your notes, and the work waits for them to try again.';
 const APPROVE = 'Approve says this change is right for the library. Once the people who decide agree, every product that uses the library can take it.';
 const COMMENT = 'Your comment shows on the change for everyone working on it, and the people on it hear about it.';
-const START = 'Start an exploration gives you a safe place to try an idea with Claude on a live preview of your product. The library stays as it is.';
+const START = 'Start an exploration gives you a safe place to try an idea with Claude AI on a live preview of your product. The library stays as it is.';
 const INVITE = 'Invite emails the people you add, so they join your team in Bridge with the role you pick.';
 const SET_PM = 'The product manager is the person who says an exploration is right for the product before developers build it.';
 const LIBRARY_UPDATE = 'Bring the latest in: this product gets everything the library gained since, every change your team approved.';
@@ -265,6 +270,23 @@ export function demoActionLine(names: readonly (string | null | undefined)[]): s
   }
   return DEMO_ACTION_DEFAULT;
 }
+
+/** The start step's lines on the sample team: what started, and what Claude AI does with it on a real team. */
+export const sampleStartLines = (name: string, where: string): { line: string; next: string } => ({
+  line: `${name} is a new exploration in ${where}. On the sample team it stays in this browser.`,
+  next: `With your own team, Claude AI opens it on a live preview of ${where} and you explore from there.`,
+});
+
+/**
+ * The sample team's actions that run in this browser instead of opening the sample-team dialog: the banner says edits
+ * stay in this browser, so the two a visitor tries first do (Start an exploration as a designer, Looks right as Dana).
+ * Nothing is sent: the start is kept here for the visit and Looks right is painted from a copy kept here
+ * (lib/demo-in-browser.ts). Every other write needs a real repository and keeps the dialog (scripts/demo-gate.ts).
+ */
+export const SAMPLE_IN_BROWSER: readonly string[] = ['start explorations', 'start an exploration', 'start exploration', 'say the design looks right'];
+
+/** True when `action` (a [data-demo-write] mark) runs in this browser on `repo`: the sample team only. */
+export const runsInBrowser = (repo: string | null | undefined, action: string | null | undefined): boolean => isSampleTeam(repo) && Boolean(action) && SAMPLE_IN_BROWSER.includes(actionKey(action!));
 
 /** The names the dialog has a line for (demo.test.ts checks every line reads in the Bridge voice). */
 export const demoActionNames = (): string[] => Object.keys(ACTION_LINES);

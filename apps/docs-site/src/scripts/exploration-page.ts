@@ -103,6 +103,8 @@ import { explorationState } from '../lib/exploration-state';
 import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskStatus, devVersionUrl, type DesignAnswer } from '../lib/review-state';
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
+import { DEMO_WORDS, isSampleTeam } from '../lib/demo';
+import { keepSampleAnswer, sampleBodyOf, sampleLooksRightBody } from '../lib/demo-in-browser';
 import { conflictsWithOthers, impactSourceOf, releasedSet } from './library-impact';
 import { decidedParts, leadBuildLine, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
@@ -319,6 +321,15 @@ function leadViewOf(
       line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : hat ? hat.as : "Nothing reaches the developers before you send it.",
       bar: {
         onLooksRight: async (note) => {
+          // The sample team: the yes runs in this browser (lib/demo.ts SAMPLE_IN_BROWSER). The description as it
+          // reads after it is kept for the visit and the page paints from it; nothing is sent.
+          if (isSampleTeam(`${CFG.owner}/${CFG.repo}`)) {
+            const next = sampleLooksRightBody(body, { byName: emailLead?.name ?? leadName ?? 'You', note });
+            if (!next) return ALREADY_ANSWERED;
+            keepSampleAnswer(localStorage, r.number, next);
+            o.reopen(DEMO_WORDS.sampleLooksRight);
+            return DEMO_WORDS.sampleLooksRight;
+          }
           let pending: string[] = [];
           const said = await answered(async () => {
             const r2 = await designApproveOnGitHub(o.gh, r.number, { products: o.products, previewUrl: o.previewUrl, ...me, ...(note ? { note } : {}), ...(o.library ? { library: o.library() } : {}), source: 'studio' });
@@ -674,6 +685,8 @@ async function capturedImage(r: ExplorationRow, files: readonly string[] | null)
  * reads it again after a write and opens the page of its new state with `said`, the line the write produced.
  */
 export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pull: ExplorationPullLike, product: ProductConfig, products: readonly ProductConfig[], reopen: (said?: string) => void, said?: string) {
+  // The sample team: an answer given in this browser (Looks right) paints from the copy kept for the visit.
+  if (isSampleTeam(`${CFG.owner}/${CFG.repo}`)) pull = { ...pull, body: sampleBodyOf(localStorage, r.number, pull.body) ?? pull.body };
   // Try it in the product, on a private product too: the toolbar there reads the change with the member's pass.
   installReadPass();
   mod ??= await import('../components/ds/studio/ExplorationPage');

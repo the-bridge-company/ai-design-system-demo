@@ -14,20 +14,26 @@ export interface FigmaAheadProps {
   load: () => Promise<{ views: BuildRequestView[]; nameOf: (login: string) => string }>;
 }
 
-export function FigmaAhead({ component, href, load }: FigmaAheadProps) {
-  const [line, setLine] = useState<string | null>(null);
+/** The "Figma is ahead" sentence once read: undefined while reading, null when nothing is being built (or unreadable). */
+export function useFigmaAheadLine(component: string, load: FigmaAheadProps['load']): string | null | undefined {
+  const [line, setLine] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
+    setLine(undefined);
     load()
       .then((d) => live && setLine(figmaAheadLine(d.views, component, d.nameOf)?.sentence ?? null))
-      .catch(() => {});
+      .catch(() => live && setLine(null));
     return () => {
       live = false;
     };
     // Once per page and component.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [component]);
-  if (!line) return null;
+  return line;
+}
+
+/** The line itself, for FigmaAhead and the component page's one Figma status (FigmaStatus). */
+export function FigmaAheadLine({ line, href }: { line: string; href: string }) {
   return (
     <p className="t-ui cp-ahead" role="status">
       <Icon icon={Wrench} size="sm" />
@@ -35,4 +41,9 @@ export function FigmaAhead({ component, href, load }: FigmaAheadProps) {
       <Link href={href}>See what is being built</Link>
     </p>
   );
+}
+
+export function FigmaAhead({ component, href, load }: FigmaAheadProps) {
+  const line = useFigmaAheadLine(component, load);
+  return line ? <FigmaAheadLine line={line} href={href} /> : null;
 }

@@ -96,7 +96,7 @@ function Texts() {
           Approve the token change <TokenCaption>text.default</TokenCaption>
         </p>
         <p className="sp-text is-muted">
-          Edited 2 hours ago by Florian <TokenCaption>text.muted</TokenCaption>
+          Edited 2 hours ago by Dana <TokenCaption>text.muted</TokenCaption>
         </p>
         <p className="sp-text is-disabled">
           Not available in compact density <TokenCaption>text.disabled</TokenCaption>

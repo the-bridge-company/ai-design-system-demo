@@ -13,7 +13,7 @@ const PHOTO =
 const meta = {
   title: 'Data display/Avatar',
   component: Avatar,
-  args: { name: 'Florian Gouloubi', size: 'md' },
+  args: { name: 'Ana Lima', size: 'md' },
   argTypes: { size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg'] } },
 } satisfies Meta<typeof Avatar>;
 
@@ -24,11 +24,11 @@ export const Initials: Story = {};
 export const Image: Story = { args: { src: PHOTO } };
 export const BrokenImage: Story = { args: { src: 'https://invalid.example/avatar.png', name: 'Ana Lima' } };
 /** A drawn face from the seed (a login), on the Harbor zone color. Same seed, same face. */
-export const Illustrated: Story = { args: { name: 'Florian Gouloubi', seed: 'peterbono', fallback: 'illustrated', size: 'lg' } };
+export const Illustrated: Story = { args: { name: 'Ana Lima', seed: 'ana-lima', fallback: 'illustrated', size: 'lg' } };
 /** Claude as the author of an action: the Bridge agent mark (the Field Guide robot) on a Harbor tile, named "Claude AI". */
 export const Agent: Story = { args: { kind: 'agent', brand: 'claude', name: undefined, size: 'lg' } as never };
 
-const PEOPLE = ['Florian Gouloubi', 'Ana Lima', 'Kenji Sato', 'Maya Okafor', 'Lucas Martin', 'Ines Haddad', 'Tom Becker'];
+const PEOPLE = ['Sam Rivera', 'Ana Lima', 'Kenji Sato', 'Maya Okafor', 'Lucas Martin', 'Ines Haddad', 'Tom Becker'];
 
 export const Group: Story = {
   render: () => (

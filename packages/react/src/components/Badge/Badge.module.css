@@ -111,3 +111,33 @@
 .solid.info {
   --_bg: var(--color-feedback-info-solid);
 }
+
+/* Count: a number next to its label (Explorations 2, Colors 4), the one count tag of the system (Tabs, SegmentedControl
+   and SidebarNav render it too). Ink figures, medium, tabular, on a neutral fill and no border. The emphasis neutral is
+   the step that still reads as a tag on the page, on cards, on the subtle side nav ground and on raised surfaces, in
+   both themes, with the ink at 7:1 or more. */
+.count {
+  --_bg: var(--color-border-emphasis);
+  --_text: var(--color-text-default);
+  --_mark: var(--color-text-default);
+
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+
+.count.sm {
+  min-width: var(--size-5);
+}
+
+.count.md {
+  min-width: calc(var(--size-6) + var(--space-0-5));
+}
+
+/* Inside the current or selected item (current nav item, selected tab, checked segment) the count takes the stronger
+   tone. */
+:is([aria-current]:not([aria-current="false"]), [aria-selected="true"], [aria-checked="true"], [data-active]) .count {
+  --_bg: var(--color-surface-inverse);
+  --_text: var(--color-text-inverse);
+  --_mark: var(--color-text-inverse);
+}

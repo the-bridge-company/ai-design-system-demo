@@ -301,7 +301,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                       <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                       <span>{entry.label}</span>
                       {entry.badge && (
-                        <Badge tone="neutral" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
+                        <Badge appearance="count" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
                           <span data-nav-count-value aria-hidden="true"></span>
                           <span class="sr-only" data-nav-count-label></span>
                         </Badge>
@@ -321,7 +321,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                     <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                     <span>{entry.label}</span>
                     {entry.badge && (
-                      <Badge tone="neutral" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
+                      <Badge appearance="count" size="sm" className="rail-num" data-nav-count={entry.badge} hidden>
                         <span data-nav-count-value aria-hidden="true"></span>
                         <span class="sr-only" data-nav-count-label></span>
                       </Badge>

@@ -4,13 +4,17 @@ import { Icon, type LucideIcon } from '../Icon';
 import styles from './Badge.module.css';
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
-export type BadgeAppearance = 'subtle' | 'solid';
+export type BadgeAppearance = 'subtle' | 'solid' | 'count';
 export type BadgeSize = 'sm' | 'md';
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   /** Meaning of the status. The text must say it too: tone only reinforces. */
   tone?: BadgeTone;
-  /** `subtle` (tinted, default) for dense lists and tables; `solid` for the one status that must win a glance. */
+  /**
+   * `subtle` (tinted, default) for dense lists and tables; `solid` for the one status that must win a glance; `count`
+   * for a number next to its label (Explorations 2): ink figures on a neutral fill, the stronger tone inside the current
+   * or selected item. `count` ignores `tone`.
+   */
   appearance?: BadgeAppearance;
   size?: BadgeSize;
   /** Leading dot in the tone color. Ignored when an icon is set. */
@@ -20,7 +24,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Short, non-interactive status label. Color is never the only signal: the text itself carries the meaning.
+ * Short, non-interactive status label, or with `appearance="count"` the count tag next to a label. Color is never the only signal: the text itself carries the meaning.
  */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
   { tone = 'neutral', appearance = 'subtle', size = 'md', dot = false, icon, className, children, ...rest },

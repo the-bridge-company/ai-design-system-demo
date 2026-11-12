@@ -2810,7 +2810,7 @@
     },
     {
       "name": "Badge",
-      "hash": "c21d8067",
+      "hash": "b82c8d8b",
       "source": [
         "packages/react/src/components/Badge/Badge.tsx",
         "packages/react/src/components/Badge/Badge.module.css",
@@ -2834,7 +2834,8 @@
           "prop": "appearance",
           "values": [
             "subtle",
-            "solid"
+            "solid",
+            "count"
           ],
           "default": "subtle"
         },
@@ -3048,6 +3049,96 @@
         },
         {
           "props": {
+            "Tone": "neutral",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "neutral",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "success",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3190,6 +3281,96 @@
               "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "success",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "success",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
             }
           },
           "slots": {
@@ -3348,6 +3529,96 @@
         },
         {
           "props": {
+            "Tone": "warning",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "warning",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "danger",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3498,6 +3769,96 @@
         },
         {
           "props": {
+            "Tone": "danger",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "danger",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "info",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3640,6 +4001,96 @@
               "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "info",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "info",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
             }
           },
           "slots": {
@@ -27637,9 +28088,10 @@
           "defaultValue": "comfortable"
         }
       },
-      "hash": "ba711ef1",
+      "hash": "327462b1",
       "source": [
         "packages/react/src/components/SegmentedControl/SegmentedControl.tsx",
+        "packages/react/src/components/Badge/Badge.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
         "packages/react/src/components/SegmentedControl/SegmentedControl.module.css"
       ],
@@ -29855,9 +30307,10 @@
           }
         ]
       },
-      "hash": "347b6a04",
+      "hash": "a36cda46",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
+        "packages/react/src/components/Badge/Badge.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
         "packages/react/src/components/SidebarNav/SidebarNav.module.css"
       ],
@@ -30049,11 +30502,11 @@
           "grow": true
         },
         {
-          "id": "count",
-          "name": "count",
+          "id": "badge",
+          "name": "badge",
           "kind": "frame",
           "parent": "item-3",
-          "source": "SidebarNav.module.css .count",
+          "source": "Badge.module.css .badge, Badge.module.css .count, Badge.module.css .neutral, Badge.module.css .sm, SidebarNav.module.css .count",
           "layout": {
             "direction": "HORIZONTAL",
             "primary": "CENTER",
@@ -30064,7 +30517,7 @@
           "id": "text-2",
           "name": "Text",
           "kind": "text",
-          "parent": "count",
+          "parent": "badge",
           "characters": "3"
         }
       ],
@@ -30159,24 +30612,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text-2": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         },
@@ -30272,24 +30726,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text-2": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         },
@@ -30385,24 +30840,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text-2": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         }
@@ -30508,9 +30964,10 @@
           }
         ]
       },
-      "hash": "1f61a8ba",
+      "hash": "a1332dc8",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
+        "packages/react/src/components/Badge/Badge.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
         "packages/react/src/components/SidebarNav/SidebarNav.module.css"
       ],
@@ -30704,11 +31161,11 @@
           "grow": true
         },
         {
-          "id": "count",
-          "name": "count",
+          "id": "badge",
+          "name": "badge",
           "kind": "frame",
           "parent": "item-3",
-          "source": "SidebarNav.module.css .count",
+          "source": "Badge.module.css .badge, Badge.module.css .count, Badge.module.css .neutral, Badge.module.css .sm, SidebarNav.module.css .count",
           "layout": {
             "direction": "HORIZONTAL",
             "primary": "CENTER",
@@ -30719,7 +31176,7 @@
           "id": "text",
           "name": "Text",
           "kind": "text",
-          "parent": "count",
+          "parent": "badge",
           "characters": "3"
         }
       ],
@@ -30811,24 +31268,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         },
@@ -30921,24 +31379,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         },
@@ -31031,24 +31490,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             }
           }
         }
@@ -31132,9 +31592,10 @@
     {
       "name": "SidebarNavItem",
       "component": "SidebarNav",
-      "hash": "e911cf25",
+      "hash": "e4f9b797",
       "source": [
         "packages/react/src/components/SidebarNav/SidebarNav.tsx",
+        "packages/react/src/components/Badge/Badge.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
         "packages/react/src/components/SidebarNav/SidebarNav.module.css"
       ],
@@ -34831,9 +35292,10 @@
           }
         ]
       },
-      "hash": "35e7eeef",
+      "hash": "ad2d6e8a",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
+        "packages/react/src/components/Badge/Badge.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
         "packages/react/src/components/Tabs/Tabs.module.css"
       ],
@@ -34994,11 +35456,11 @@
           "characters": "Reviews"
         },
         {
-          "id": "count",
-          "name": "count",
+          "id": "badge",
+          "name": "badge",
           "kind": "frame",
           "parent": "tab-3",
-          "source": "Tabs.module.css .count",
+          "source": "Badge.module.css .badge, Badge.module.css .count, Badge.module.css .neutral, Badge.module.css .sm, Tabs.module.css .count",
           "layout": {
             "direction": "HORIZONTAL",
             "primary": "CENTER",
@@ -35009,7 +35471,7 @@
           "id": "text",
           "name": "Text",
           "kind": "text",
-          "parent": "count",
+          "parent": "badge",
           "characters": "3"
         },
         {
@@ -35105,24 +35567,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35206,24 +35669,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35307,24 +35771,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35447,24 +35912,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35587,24 +36053,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35688,24 +36155,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35789,24 +36257,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -35929,24 +36398,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36073,24 +36543,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36189,24 +36660,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36305,24 +36777,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36448,24 +36921,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36591,24 +37065,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36707,24 +37182,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36823,24 +37299,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"
@@ -36966,24 +37443,25 @@
               "fontWeight": "font.weight.medium",
               "lineHeight": "font.line-height.tight"
             },
-            "count": {
-              "fill": "color.feedback.neutral.bg",
+            "badge": {
+              "fill": "color.border.emphasis",
               "cornerRadius": "radius.pill",
               "paddingTop": 0,
-              "paddingRight": "space.1-5",
+              "paddingRight": "space.2",
               "paddingBottom": 0,
-              "paddingLeft": "space.1-5",
-              "height": "size.5",
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
               "minWidth": "size.5",
+              "minHeight": "size.5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.border.default"
+              "stroke": null
             },
             "text": {
-              "textFill": "color.text.muted",
+              "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.caption.size",
               "fontWeight": "font.weight.medium",
-              "lineHeight": "font.line-height.none"
+              "lineHeight": "typography.caption.line-height"
             },
             "panel": {
               "cornerRadius": "radius.container"

@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useRef, type HTMLAttributes, type R
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
 import { Radio as BaseRadio } from '@base-ui/react/radio';
 import { cx } from '../../utils/cx';
+import { Badge } from '../Badge';
 import { Icon, type LucideIcon } from '../Icon';
 import styles from './SegmentedControl.module.css';
 
@@ -167,7 +168,9 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
             {item.count !== undefined && (
               <>
                 {' '}
-                <span className={styles.count}>{item.count}</span>
+                <Badge appearance="count" size="sm" className={styles.count}>
+                  {item.count}
+                </Badge>
               </>
             )}
           </BaseRadio.Root>

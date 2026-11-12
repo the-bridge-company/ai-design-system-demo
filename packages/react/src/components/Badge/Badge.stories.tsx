@@ -9,7 +9,7 @@ const meta = {
   args: { children: 'Draft', tone: 'neutral', appearance: 'subtle', size: 'md' },
   argTypes: {
     tone: { control: 'select', options: ['neutral', 'success', 'warning', 'danger', 'info'] },
-    appearance: { control: 'inline-radio', options: ['subtle', 'solid'] },
+    appearance: { control: 'inline-radio', options: ['subtle', 'solid', 'count'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     icon: { control: false },
   },
@@ -21,6 +21,7 @@ type Story = StoryObj<typeof meta>;
 export const Subtle: Story = { args: { tone: 'success', children: 'Published' } };
 export const Solid: Story = { args: { tone: 'danger', appearance: 'solid', children: 'Build failed' } };
 export const WithDot: Story = { args: { tone: 'warning', dot: true, children: 'Needs review' } };
+export const Count: Story = { args: { appearance: 'count', size: 'sm', children: '12' } };
 
 const TONES: { label: string; value: BadgeTone }[] = [
   { label: 'Neutral', value: 'neutral' },
@@ -52,6 +53,20 @@ export const AllStates: Story = {
         <Badge tone="success" icon={CircleCheck}>Contrast 4.8:1</Badge>
         <Badge tone="warning" icon={TriangleAlert}>2 unused tokens</Badge>
         <Badge tone="danger" icon={CircleAlert} appearance="solid">Breaking</Badge>
+      </Specimen>
+      <Specimen label="Count, rest and current">
+        <span>
+          Explorations <Badge appearance="count" size="sm">2</Badge>
+        </span>
+        <span>
+          Library review <Badge appearance="count" size="sm">12</Badge>
+        </span>
+        <span aria-current="page">
+          Current <Badge appearance="count" size="sm">4</Badge>
+        </span>
+        <span>
+          Medium <Badge appearance="count">128</Badge>
+        </span>
       </Specimen>
     </SpecimenStack>
   ),

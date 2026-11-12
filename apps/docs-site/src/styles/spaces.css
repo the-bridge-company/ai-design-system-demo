@@ -183,13 +183,10 @@ a.menu-item:hover {
   transform: rotate(180deg);
 }
 
-/* The counts in the side nav (Explorations, Library review): a DS Badge, neutral and small, like every count next to a
-   label (owner rule, 2026-11-12). Its place in the row and tabular figures are the shell's. */
+/* The counts in the side nav (Explorations, Library review): the DS count tag (Badge appearance="count", small), like
+   every count next to a label; it takes the stronger tone on the current item. Its place in the row is the shell's. */
 .rail-num {
-  justify-content: center;
-  min-width: var(--size-5);
   margin-left: auto;
-  font-variant-numeric: tabular-nums;
 }
 
 .rail-num[hidden] {

@@ -8,6 +8,7 @@
 // Pure: no DOM. Read by components/ds/studio/LibraryReview.tsx, LibraryMap.tsx and LibraryReach.tsx. Tested in
 // library-askers.test.ts.
 import type { AskedBy, ReviewPiece } from './library-review';
+import { peopleNames } from './people-line';
 
 /** Every exploration that asked for a piece, the most recent first (one without a date keeps its place, last). */
 export function askersOf(p: Pick<ReviewPiece, 'asked' | 'also'>): AskedBy[] {
@@ -91,12 +92,7 @@ export type AskedFaces =
   | { kind: 'many'; askers: AskedBy[]; faces: AskedBy[]; more: number; words: string };
 
 /** "Sofia and Leo", "Sofia, Leo and Ann", "Sofia, Leo and 2 others". */
-export function peopleWords(names: readonly string[]): string {
-  const list = [...new Set(names)];
-  if (list.length <= 1) return list[0] ?? '';
-  if (list.length <= 3) return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
-  return `${list.slice(0, 2).join(', ')} and ${list.length - 2} others`;
-}
+export const peopleWords = peopleNames;
 
 export function askedFaces(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' | 'mine' | 'by'>): AskedFaces {
   if (p.conflict) {

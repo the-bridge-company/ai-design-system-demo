@@ -100,7 +100,7 @@ describe('the library block, ledger', () => {
     render(createElement(LibraryImpact, { view, actions: { onUndo }, say: vi.fn() }));
     expect(screen.getByText('Decided')).toBeInTheDocument();
     expect(screen.getByText('Comfortable 24 px')).toBeInTheDocument();
-    expect(screen.getByText('Sofia and Leo are told.')).toBeInTheDocument();
+    expect(screen.getByText('Sofia and Leo will be notified.')).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: /Padding/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Change' }));
     expect(onUndo).toHaveBeenCalledWith('card-timeline');

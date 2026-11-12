@@ -65,13 +65,7 @@
   width: var(--size-40);
 }
 
-.brv-faces {
-  display: flex;
-}
-
-.brv-faces > * + * {
-  margin-inline-start: calc(var(--space-2) * -1);
-}
+/* The reviewers' faces: the shared People group (styles/people.css), the DS AvatarGroup's own overlap. */
 
 /* --- Body: list, canvas, side panel -------------------------------------------------------------------------------- */
 

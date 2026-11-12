@@ -12,6 +12,7 @@ import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
 import { Accordion, AccordionItem, Avatar, AvatarGroup, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Textarea, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
+import { People } from './People';
 import { siteIcon } from '../../../brand/site-icons';
 import { ledgerLabel, ledgerPick, PIECE_ACTION_HINT, PIECE_ACTION_LABEL, type ConflictView, type ImpactRowView, type ImpactSide, type LibraryImpactView, type OptionRow, type PieceAction, type Said, type WayLook } from '../../../lib/library-impact-view';
 import { nameFace } from '../../../lib/people';
@@ -188,7 +189,12 @@ function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }:
             </>
           )}
         </p>
-        {conflict?.decided && <p className="li-said">{conflict.decided.told}.</p>}
+        {/* A div, not a p: the DS AvatarGroup inside People is a block. */}
+        {conflict?.decided && (
+          <div className="li-said">
+            <People names={conflict.decided.people} size="sm" text={conflict.decided.told} />
+          </div>
+        )}
       </>
     );
   } else if (conflict) {

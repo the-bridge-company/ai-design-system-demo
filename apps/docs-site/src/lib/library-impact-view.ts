@@ -26,6 +26,7 @@ import {
   type PieceVerdict,
 } from '@bridge-ds/core';
 import { SEP } from './sep';
+import { notifiedLine } from './people-line';
 import { baselineOf, knownLibraryOptions, type LibraryOption } from './library-baseline';
 import { asIsLine, asIsOption, decisionConflicts } from './library-as-is';
 
@@ -167,8 +168,10 @@ export interface DecidedView {
   parts: Said[];
   /** "Dana, just now". */
   by: string;
-  /** "Leo and Sofia are told". */
+  /** "Leo and Sofia will be notified." (lib/people-line notifiedLine), drawn with their faces (People.tsx). */
   told: string;
+  /** Who is notified, in that order. */
+  people: string[];
   plates: DecidedPlate[];
 }
 
@@ -201,7 +204,7 @@ export interface ConflictView {
   /** "Which way does Card take?", "Sofia's screen makes Card roomier". */
   question: string;
   context: Said[];
-  /** Beside the actions: "Answers both screens. Leo and Sofia are told." */
+  /** Beside the actions: "Answers both screens. Leo and Sofia will be notified." */
   note: string;
   /**
    * The same sentence in runs, one of them a link when the choice is made elsewhere: "Dana picks in [Library review],
@@ -909,8 +912,8 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
       ? [...listed, ...tail]
       : [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes it ${effect(other)}` }, ...mineSaid];
   }
-  const told = `${namesLine(ways.map((w) => w.designer))} ${ways.length === 1 ? 'is' : 'are'} told`;
-  const toldLine = ways.length > 3 ? 'Everyone who asked is told.' : `${told}.`;
+  const told = notifiedLine(ways.map((w) => w.designer));
+  const toldLine = told;
   const where = x.reviewHref;
   const noteParts: NotePart[] = decides
     ? [{ text: `Answers ${screens}. ${toldLine}` }]
@@ -1003,6 +1006,7 @@ function decidedView(pick: string, ways: readonly WayView[], component: string, 
     parts: decidedParts(pick, ways, component, ledger, by),
     by: when ? `${who}, ${when}` : who,
     told,
+    people: [...new Set(ways.map((w) => w.designer))],
     plates: [
       { key: 'today', label: 'Today', sub: mode === 'sizes' ? 'Stays the default' : 'Before', chip: null, today: true, look: null },
       ...kept.map((w) => ({ key: w.key, label: w.size, sub: w.mine ? null : w.screen, chip: w.mine ? 'This screen' : null, today: false, look: w.look })),

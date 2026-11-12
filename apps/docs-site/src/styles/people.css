@@ -1,0 +1,23 @@
+/* People: a group of people, one way everywhere in Studio (components/ds/studio/People.tsx, lib/people-line.ts).
+   Imported by People.tsx itself, so every page that draws a group gets the same line. */
+
+/* The DS AvatarGroup then the names, centred on one axis (never the text baseline), the DS gap between them. The
+   words are a real sentence: ui 14/20 in the default ink. They wrap under themselves, never under the faces. */
+.people {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.people-faces {
+  flex: none;
+}
+
+.people-names {
+  min-width: 0;
+}

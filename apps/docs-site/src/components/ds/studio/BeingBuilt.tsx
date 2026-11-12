@@ -3,9 +3,11 @@
 //   - One sentence first (the Harbor zone), then Explorations' filters row (lib/building-page, decisions 2026-11-11):
 //     Status (Waiting to be picked up, In progress, In review, Shipped in the last 30 days; default Not shipped yet),
 //     Product and People, the same checkbox menus (ListFilters MultiFilter), the count, then List, Grid or Board
-//     (ListCard ViewSwitch). The address keeps them (?status=, ?product=, ?people=). One row per build request: the
-//     shared BranchRow, when it was sent and who it waits on ("Asked by Leo", "Malik builds it"), one status tag in
-//     the filter's word. An In review row names who must review ("Waiting for Sofia's check", "Changes requested by
+//     (ListCard ViewSwitch). The address keeps them (?status=, ?product=, ?people=). List and Grid group by product as
+//     Explorations does (ListGroup: the product's title and count tag, the library's work under Library), the ladder's
+//     order inside a group (Ready to build, Being built, Checking). One row per build request: the shared BranchRow,
+//     when it was sent, one status tag in the filter's word; a card is Explorations' ListCard, its person line who has
+//     it now and when it last moved ("Malik · yesterday"), no product chip (the group says it). An In review row names who must review ("Waiting for Sofia's check", "Changes requested by
 //     Lee"); a merged library change reads In the next release until it is published. The whole row opens the detail
 //     in place (?request=N, ?pull=N); no row buttons. The Board: one column per status, read only, no tags on cards.
 //   - The detail: what was sent (summary, before and after, props needed, the Figma link), the status line, and a
@@ -54,6 +56,7 @@ import {
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
 import { CountTag } from "./CountTag";
+import { ListGroup } from "./ListGroup";
 import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
 import { MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
@@ -71,6 +74,8 @@ import {
   BUILD_STATE_LABEL,
   BUILD_STATES,
   buildBoardColumns,
+  buildGroups,
+  cardLine,
   buildCountLine,
   buildFiltersFromAddress,
   buildStateOf,
@@ -81,8 +86,8 @@ import {
   isDefaultStatus,
   NOT_SHIPPED,
   NOT_SHIPPED_LABEL,
+  movedAtOf,
   passesBuild,
-  personLine,
   type BuildFilters,
   type BuildState,
 } from "../../../lib/building-page";
@@ -210,7 +215,8 @@ interface CardContext {
   products: readonly ProductConfig[];
   shots: Map<string, ThumbSpec>;
   onOpen: (v: BuildRequestView) => void;
-  /** The product in the screen's corner (not when the list is filtered to one product: it goes without saying). */
+  now: number;
+  /** The product in the screen's corner: on the Board only, where no group title says it. */
   showProduct: boolean;
   /** The status tag (not on the Board: its column says it). */
   pill: boolean;
@@ -219,14 +225,14 @@ interface CardContext {
 }
 
 /**
- * One change as the Home's card (ListCard): the product in its screen's corner, its one status tag, and the person who
- * it waits on, saying why ("Asked by Leo", "Malik builds it", lib/building-page personLine).
+ * One change as Explorations' card (ListCard): its preview, its title, its one status tag, and Explorations' person
+ * line, who has it now and when it last moved ("Malik · yesterday", lib/building-page cardLine).
  */
 function buildCard(x: Item, c: CardContext) {
   const v = x.v;
   const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
-  const byline = personLine({ state: x.state, builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), requester: requesterName(v, c.data) });
-  const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline };
+  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), requester: requesterName(v, c.data), movedAt: movedAtOf(v), now: c.now });
+  const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline: line.who, when: line.when };
   if (isFix(v)) return <ListCard key={v.id} {...common} thumb={componentThumb(v.component, c.previewed)} title={v.component} href={studioHref(v.fix.href)} />;
   if (isExploration(v))
     return <ListCard key={v.id} {...common} thumb={c.shots.get(v.id) ?? { kind: "screen", src: null, product: v.exploration.product, seed: v.id }} title={v.title} href={studioHref(v.exploration.href)} />;
@@ -247,13 +253,23 @@ function buildCard(x: Item, c: CardContext) {
   );
 }
 
-/** The same changes as cards, in the Home's grid, each with the same one status tag as its row. */
-function Cards({ items, data, products, onOpen, previewed, oneProduct = false }: { items: Item[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[]; oneProduct?: boolean }) {
-  const shots = useShots(items.map((x) => x.v));
+/** A list's groups (lib/building-page buildGroups): one per product, as on Explorations (ListGroup). */
+type Groups = ReturnType<typeof buildGroups<Item>>;
+
+/**
+ * The same changes as cards, in the Home's grid, grouped by product as Explorations' grid is: the group title says the
+ * product once, so the cards carry no product chip. Each card has the same one status tag as its row.
+ */
+function Cards({ groups, data, products, onOpen, previewed, now }: { groups: Groups; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[]; now: number }) {
+  const shots = useShots(groups.flatMap((g) => g.rows.map((x) => x.v)));
   return (
-    <ul className="sh-cards bb-cards" aria-label="Build requests">
-      {items.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: !oneProduct, pill: true, previewed }))}
-    </ul>
+    <>
+      {groups.map((g) => (
+        <ListGroup key={g.key} id={`bb-${g.key}`} label={g.label} count={g.rows.length}>
+          <ul className="sh-cards bb-cards">{g.rows.map((x) => buildCard(x, { data, products, shots, onOpen, now, showProduct: false, pill: true, previewed }))}</ul>
+        </ListGroup>
+      ))}
+    </>
   );
 }
 
@@ -262,7 +278,7 @@ function Cards({ items, data, products, onOpen, previewed, oneProduct = false }:
  * most BUILD_BOARD_CAP cards then "Show all N"; the column says the status, so its cards carry no tag. An empty status
  * folds to a small column. It scrolls sideways inside its own region on a phone.
  */
-function Board({ items, status, data, products, onOpen, previewed }: { items: Item[]; status: readonly BuildState[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[] }) {
+function Board({ items, status, data, products, onOpen, previewed, now }: { items: Item[]; status: readonly BuildState[]; data: BuildData; products: readonly ProductConfig[]; onOpen: (v: BuildRequestView) => void; previewed: readonly string[]; now: number }) {
   const shots = useShots(items.map((x) => x.v));
   const [opened, setOpened] = useState<Set<string>>(new Set());
   const columns = buildBoardColumns(items, status);
@@ -276,7 +292,7 @@ function Board({ items, status, data, products, onOpen, previewed }: { items: It
             <h2 className="ex-col-h" id={`bb-col-${col.key}`}>
               {col.label} <CountTag n={col.rows.length} />
             </h2>
-            {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: true, pill: false, previewed }))}</ul>}
+            {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, now, showProduct: true, pill: false, previewed }))}</ul>}
             {col.rows.length > BUILD_BOARD_CAP && !open && (
               <Button variant="link" onClick={() => setOpened((s) => new Set(s).add(col.key))}>
                 Show all {col.rows.length}
@@ -303,7 +319,7 @@ function Rows({
   previewed: readonly string[];
 }) {
   return (
-    <ul className="sh-rows bb-rows" aria-label="Build requests">
+    <ul className="sh-rows bb-rows">
       {views.map((v) => {
         // Claude's fix: the row opens it in Studio (its review), like the home opens a branch.
         if (isFix(v))
@@ -792,6 +808,8 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
   // The Board shows Shipped too while the Status filter is on its default, as Explorations' Board does.
   const boardItems = view === "board" ? items.filter((x) => passesBuild(x, { ...filters, status: isDefaultStatus(filters.status) ? [...NOT_SHIPPED, "shipped"] : filters.status })) : kept;
   const shownCount = boardItems.length;
+  // List and Grid: one group per product, in Explorations' order, the ladder's order inside (lib/building-page).
+  const groups = buildGroups(kept, products);
   return (
     <ComponentPreviewsProvider value={previews}>
       <div className="bb ex">
@@ -852,11 +870,15 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
             )}
           </p>
         ) : view === "board" ? (
-          <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} previewed={previewed} />
+          <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} previewed={previewed} now={now} />
         ) : view === "grid" ? (
-          <Cards items={kept} data={data} products={products} onOpen={go} previewed={previewed} oneProduct={filters.product.length === 1} />
+          <Cards groups={groups} data={data} products={products} onOpen={go} previewed={previewed} now={now} />
         ) : (
-          <Rows views={kept.map((x) => x.v)} data={data} now={now} onOpen={go} previewed={previewed} />
+          groups.map((g) => (
+            <ListGroup key={g.key} id={`bb-${g.key}`} label={g.label} count={g.rows.length}>
+              <Rows views={g.rows.map((x) => x.v)} data={data} now={now} onOpen={go} previewed={previewed} />
+            </ListGroup>
+          ))
         )}
       </div>
     </ComponentPreviewsProvider>

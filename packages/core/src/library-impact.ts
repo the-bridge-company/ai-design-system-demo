@@ -16,6 +16,7 @@
 // library-impact-github.ts.
 
 import { pieceValueField, type LibraryLink, type MissingPiece, type PiecesRecord } from './prod-branch';
+import { existingOption, usesLibraryAsIs, type LibraryOption } from './library-options';
 
 /** What a row of "What this changes in the library" is. */
 export type ImpactKind = 'component' | 'variant' | 'token' | 'pattern';
@@ -402,15 +403,31 @@ export function impactQueueLine(record: PiecesRecord | null | undefined, conflic
 // What Looks right sends, and what waits for the library
 
 /**
+ * The library option a recorded piece already is: a change to one part of a library component ("Card padding 12"),
+ * nothing else changed, at a value the library has (library-options usesLibraryAsIs). Null for anything that asks the
+ * library for something new (a new component, a token, a size, a second property such as a fill, a value the library
+ * lacks or Bridge cannot read).
+ */
+export function asIsOption(p: MissingPiece): LibraryOption | null {
+  if (p.kind !== 'variant' || p.values.length !== 1) return null;
+  const i = impactItemOf(p);
+  if (!i.of || !i.property || i.property === 'size' || !i.after) return null;
+  return usesLibraryAsIs(i.of, i.property, [i.after]) ? existingOption(i.of, i.property, i.after) : null;
+}
+
+/**
  * The pieces Looks right adds to the library: every recorded piece, except the ones the lead answered on their own
- * (kept in the screen, an existing piece instead, changes asked) and the ones already sent. The pieces the designer
- * ticked come along even when the record no longer lists them (proposePiecesOnGitHub says they are unknown).
+ * (kept in the screen, an existing piece instead, changes asked), the ones already sent, and the ones that use the
+ * library as is (asIsOption: a Card at 12 px is Compact, nothing to build). The pieces the designer ticked come along
+ * even when the record no longer lists them (proposePiecesOnGitHub says they are unknown), unless the record says they
+ * use the library as is.
  */
 export function piecesToAdd(record: PiecesRecord | null | undefined, library: ExplorationLibrary | null | undefined, ticked: readonly string[] = []): string[] {
   const held = new Set((library?.decisions ?? []).filter((d) => d.verdict !== 'approved').map((d) => d.piece));
   const sent = new Set((record?.links ?? []).map((l) => l.piece));
+  const asIs = new Set((record?.pieces ?? []).filter((p) => asIsOption(p)).map((p) => p.id));
   const all = [...(record?.pieces ?? []).map((p) => p.id), ...ticked];
-  return [...new Set(all)].filter((id) => !held.has(id) && !sent.has(id));
+  return [...new Set(all)].filter((id) => !held.has(id) && !sent.has(id) && !asIs.has(id));
 }
 
 /** The pieces the lead kept in the screen: the developers build them in the product, flagged as library candidates. */

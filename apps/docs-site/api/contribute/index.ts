@@ -177,6 +177,7 @@ import {
 import { meteredFromEnv } from '../_lib/github-quota.js';
 import { approves, memberCanWrite, memberStore, type EmailMember, type MemberStore } from '../_lib/members.js';
 import { asksAnyReview, asksDesignReview, asksLibrary, decidesOnExplorations, designReviewsOf, needsReview, reviewsNoteOf, ANY_PRODUCT, OWNERS_ANY, type DesignReviewMap } from '../_lib/review-settings.js';
+import { reviewModeOf } from '../_lib/review-mode.js';
 
 /** The team's design reviews (api/_lib/review-settings.ts), migrated on first read. */
 const reviewsOf = (svc: Pick<Services, 'redis' | 'members'>, team: string): Promise<DesignReviewMap> => designReviewsOf(svc.redis, team, () => svc.members.list(team));
@@ -3517,7 +3518,8 @@ async function membersOf(ctx: Ctx, req: Request, full: string, m: EmailMember | 
   const joined = [...people].sort((x, y) => (Date.parse(x.at || '') || 0) - (Date.parse(y.at || '') || 0)).map((p) => nameFace(p.name));
   const saved = facesOf(await getTeamFaces(ctx.svc.redis, full).catch(() => ({})), new Set(joined));
   const faces = { saved, order: [...joined, ...collaborators.map((c) => c.login.toLowerCase())] };
-  return json(200, { collaborators, members, pms, reviews, faces }, { 'Cache-Control': 'private, no-store' });
+  // `reviewMode`: the older single setting, still sent for pages and clients that read it (deprecated, two-reviews).
+  return json(200, { collaborators, members, pms, reviews, reviewMode: await reviewModeOf(ctx.svc.redis, full), faces }, { 'Cache-Control': 'private, no-store' });
 }
 
 /**
@@ -3777,7 +3779,8 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       const admin = Boolean(m && svc.localAdmins && (await svc.localAdmins.isAdmin(full, m.email)));
       const map = m ? await reviewsOf(svc, full) : {};
       const member = m ? { ...publicMember(m, map), ...(admin ? { role: 'admin', decides: true } : {}), ...(visitor ? { visitor: true } : {}) } : null;
-      return json(200, { available: true, member, ...(m ? { reviews: { designReview: map } } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true, pick?.as) } : {});
+      // `reviewMode` stays as it was (deprecated): Studio reads the two reviews from ?members=1.
+      return json(200, { available: true, member, ...(m ? { reviewMode: await reviewModeOf(svc.redis, full) } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true, pick?.as) } : {});
     }
 
     if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);

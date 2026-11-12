@@ -87,6 +87,8 @@ import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { isTeamKey } from '../../src/lib/team-path.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { designReviewsOf, isDesignReviewSetting, isLibraryOwner, reviewsNoteOf, setDesignReview } from '../_lib/review-settings.js';
+// The older single setting, still sent as `reviewMode` (deprecated, two-reviews): read only.
+import { reviewModeOf } from '../_lib/review-mode.js';
 
 export { appJwt } from '../_lib/github-app.js';
 export { resendSender, sameOrigin };
@@ -1314,12 +1316,12 @@ async function onGet(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<
     const ad = await emailAdmin(ctx, req, repoArg);
     const list = await pending(ctx, ad.full);
     const members = await withLocalAdmins(ctx, ad.full, await ctx.svc.members!.list(ad.full));
-    return json(200, { invites: list.map(publicInvite), personal: false, members: members.map(publicMember), reviews: await reviewsFor(ctx, ad.full) }, { 'Cache-Control': 'private, no-store' });
+    return json(200, { invites: list.map(publicInvite), personal: false, members: members.map(publicMember), reviews: await reviewsFor(ctx, ad.full), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, ad.full) : 'one' }, { 'Cache-Control': 'private, no-store' });
   }
   const { facts } = await authorize(ctx, req, repoArg, 'push');
   const list = await pending(ctx, facts.full);
   const members = ctx.svc.members ? await withLocalAdmins(ctx, facts.full, await ctx.svc.members.list(facts.full)) : [];
-  return json(200, { invites: list.map(publicInvite), personal: facts.personal, members: members.map(publicMember), reviews: await reviewsFor(ctx, facts.full) });
+  return json(200, { invites: list.map(publicInvite), personal: facts.personal, members: members.map(publicMember), reviews: await reviewsFor(ctx, facts.full), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, facts.full) : 'one' });
 }
 
 async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<Response> {

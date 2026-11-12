@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T11:53:44.506Z",
-  "durationMs": 290876,
+  "createdAt": "2026-11-12T12:12:22.901Z",
+  "durationMs": 292447,
   "base": {
-    "ref": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246",
-    "sha": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246"
+    "ref": "ce41f937ec5b917e4da8b1707a756dc410ffdbde",
+    "sha": "4f436c58ce5b1609e4e3a9765722443b984447a7"
   },
   "head": {
-    "ref": "a89645516ec526966d7db0291c02fc7c198b6334",
-    "sha": "a89645516ec526966d7db0291c02fc7c198b6334"
+    "ref": "9395c11fe610a435057606567860f6713874d8f7",
+    "sha": "9395c11fe610a435057606567860f6713874d8f7"
   },
   "options": {
     "only": [
@@ -161,12 +161,12 @@
   },
   "summary": {
     "shots": 240,
-    "changed": 1,
-    "unchanged": 239,
+    "changed": 0,
+    "unchanged": 240,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 2.56
+    "maxPercent": 0
   },
   "shots": [
     {
@@ -4592,18 +4592,11 @@
       "storyId": "feedback-emptystate--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 27012,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 1054720,
-      "percent": 2.56,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 672,
-          "width": 960,
-          "height": 358
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -4614,12 +4607,7 @@
           "height": 1030
         }
       },
-      "images": {
-        "before": "before/story__feedback-emptystate--all-states__ocean-dark.png",
-        "after": "after/story__feedback-emptystate--all-states__ocean-dark.png",
-        "diff": "diff/story__feedback-emptystate--all-states__ocean-dark.png",
-        "composite": "composite/story__feedback-emptystate--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__feedback-progress--all-states__ocean-dark",

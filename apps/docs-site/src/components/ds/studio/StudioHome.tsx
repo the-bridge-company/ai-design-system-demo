@@ -610,7 +610,7 @@ function WaitingOnOthers({ rows }: { rows: readonly HomeWaiting[] }) {
       <ul className="sh-waiting-rows">
         {rows.map((r) => (
           <li key={r.key}>
-            <a href={r.href}>{r.title}</a>
+            <Link href={r.href}>{r.title}</Link>
             <span className="t-muted">
               {SEP}
               {r.line}

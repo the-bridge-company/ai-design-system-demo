@@ -29,12 +29,13 @@ import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
 import { SETTINGS_GROUPS, groupId } from '../../../lib/settings-sections';
+import { Link } from '@bridge-ds/react';
 ---
 
 <TeamShell route="settings/" title="Settings" scene="settings" summary="Your team, its people, and how changes reach your code." what="settings and roles" description="Your team: its name, its people, how changes reach your code and who checks them.">
   <nav class="set-groups-nav" aria-label="Settings sections">
     {SETTINGS_GROUPS.map((g, i) => (
-      <a href={`#${groupId(g.key)}`} data-set-tab={g.key} aria-current={i === 0 ? 'true' : undefined}>{g.label}</a>
+      <Link variant="subtle" href={`#${groupId(g.key)}`} data-set-tab={g.key} aria-current={i === 0 ? 'true' : undefined}>{g.label}</Link>
     ))}
   </nav>
 

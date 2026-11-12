@@ -228,9 +228,16 @@
   line-height: inherit;
 }
 
+/* The panel is focusable (role tabpanel, in the tab order) for keyboard users. A pointer focus (a click on its text,
+   or Safari handing focus to the panel when a button inside it is clicked) draws no ring, the browser's included: the
+   ring is for the keyboard only. It sits a step away from the panel's edge, so the content never touches it. */
+.panel:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .panel:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
+  outline-offset: var(--space-1);
 }
 
 .panel[hidden] {

@@ -191,12 +191,16 @@ export function faceHolder(face: FaceRecipe, saved: TeamFaces, mine: readonly st
   return null;
 }
 
-/** Four expressions that set the eyes, brows and lips together. */
+/**
+ * Four expressions that set the eyes, brows and lips together, picked by eye on drawings at 80px so each one reads
+ * apart from the others in the preview: calm (lowered lids, a soft closed smile), smile (open eyes, an open smile),
+ * curious (round eyes, raised brows, a small round mouth), focused (narrowed eyes, a straight heavy brow, a flat mouth).
+ */
 export const EXPRESSIONS = [
-  { value: 'calm', label: 'Calm', parts: { eyes: variant(1), brows: variant(7), lips: variant(14) } },
-  { value: 'smile', label: 'Smile', parts: { eyes: variant(3), brows: variant(2), lips: variant(23) } },
-  { value: 'curious', label: 'Curious', parts: { eyes: variant(5), brows: variant(11), lips: variant(6) } },
-  { value: 'focused', label: 'Focused', parts: { eyes: variant(2), brows: variant(13), lips: variant(9) } },
+  { value: 'calm', label: 'Calm', parts: { eyes: variant(1), brows: variant(7), lips: variant(17) } },
+  { value: 'smile', label: 'Smile', parts: { eyes: variant(5), brows: variant(1), lips: variant(25) } },
+  { value: 'curious', label: 'Curious', parts: { eyes: variant(4), brows: variant(11), lips: variant(29) } },
+  { value: 'focused', label: 'Focused', parts: { eyes: variant(2), brows: variant(3), lips: variant(4) } },
 ] as const;
 
 /** The expression a face shows, when it is one of the four. */
@@ -260,7 +264,7 @@ export const FACE_WORDS = {
   showAll: (n: number) => `Show all ${n} styles`,
   takenBy: (name: string) => `Taken by ${name}`,
   takenByShort: (name: string) => `taken by ${name}`,
-  expressionHelp: 'Shows from 40px up: in rows your hair does the talking.',
+  expressionHelp: 'Expressions show on bigger faces. In small rows, people recognise you by your hair.',
   save: 'Save face',
   cancel: 'Cancel',
   saved: 'Saved. Your team sees your new face.',

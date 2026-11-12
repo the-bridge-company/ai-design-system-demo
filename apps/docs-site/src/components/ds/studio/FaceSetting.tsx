@@ -18,8 +18,9 @@ import { Avatar, Button, Card, CardBody, Icon, Radio, RadioGroup, SegmentedContr
 import { drawingSeed } from '../../../lib/cast-faces';
 import { castFaceLogin, type CastKey } from '../../../lib/demo-cast';
 import { isSampleTeam, teamDisplayName } from '../../../lib/demo';
-import { EXPRESSIONS, FACE_WORDS as W, HAIR_STYLES, blockedHair, expressionOf, faceWords, firstHairTiles, partLabel, sameFace, shuffleFace, variant, FACE_PART_COUNTS, type Drawing, type FaceRecipe } from '../../../lib/team-faces';
+import { EXPRESSIONS, FACE_WORDS as W, HAIR_STYLES, blockedHair, expressionOf, firstHairTiles, sameFace, shuffleFace, variant, FACE_PART_COUNTS, type Drawing, type FaceRecipe } from '../../../lib/team-faces';
 import type { FaceDrawer } from '../../../scripts/team-faces';
+import { faceWords, partLabel } from '../../../lib/face-labels';
 
 /** Who the row is for, once the page knows. */
 interface Who {

@@ -51,5 +51,13 @@ describe('api functions load as Node ES modules', () => {
     }
     expect(bad).toEqual([]);
     expect(seen.size).toBeGreaterThan(10);
+    // The functions do not bundle @bridge-ds/react: a runtime import of it from any module /api can load crashed
+    // every /api call in production (2026-11-12). Type-only imports are erased and fine.
+    const react: string[] = [];
+    const runtime = /^\s*(?:import|export)\s+(?!type\s)[^'"]*?from\s+['"](@bridge-ds\/react[^'"]*)['"]/gm;
+    for (const file of seen) {
+      for (const m of readFileSync(file, 'utf8').matchAll(runtime)) react.push(`${relative(root, file)}: '${m[1]}'`);
+    }
+    expect(react).toEqual([]);
   });
 });

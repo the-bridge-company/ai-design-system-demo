@@ -9,17 +9,16 @@ import {
   LOOK_ALIKE_PAIRS,
   blockedHair,
   faceHolder,
-  faceWords,
   firstHairTiles,
   lookAlikesOf,
   parseFace,
   parseTeamFaces,
-  partLabel,
   shuffleFace,
   takenHair,
   teamDrawings,
   type FaceRecipe,
 } from './team-faces';
+import { faceWords, partLabel } from './face-labels';
 import { FACE_DRAWING_SEEDS } from './cast-faces';
 import { SAMPLE_CAST, castFaceLogin } from './demo-cast';
 

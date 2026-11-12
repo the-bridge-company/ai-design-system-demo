@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T12:57:14.485Z",
-  "sha": "a756fd6dcf99fccfc99acfadd4f1fdcc2ed6dcc1",
+  "createdAt": "2026-11-12T13:17:01.265Z",
+  "sha": "4753774fd297fd2e6e0975c5e8677e634b4201f6",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -1928,37 +1928,67 @@
       }
     },
     "RadioGroup": {
-      "specHash": "29e55255",
+      "specHash": "eee703ab",
       "variants": {
-        "Orientation=vertical, State=Default": {
-          "file": "radiogroup/orientation-vertical__state-default.png",
+        "Appearance=list, Orientation=vertical, State=Default": {
+          "file": "radiogroup/appearance-list__orientation-vertical__state-default.png",
           "width": 320,
           "height": 132
         },
-        "Orientation=vertical, State=Hover": {
-          "file": "radiogroup/orientation-vertical__state-hover.png",
+        "Appearance=list, Orientation=vertical, State=Hover": {
+          "file": "radiogroup/appearance-list__orientation-vertical__state-hover.png",
           "width": 320,
           "height": 132
         },
-        "Orientation=vertical, State=Disabled": {
-          "file": "radiogroup/orientation-vertical__state-disabled.png",
+        "Appearance=list, Orientation=vertical, State=Disabled": {
+          "file": "radiogroup/appearance-list__orientation-vertical__state-disabled.png",
           "width": 320,
           "height": 132
         },
-        "Orientation=horizontal, State=Default": {
-          "file": "radiogroup/orientation-horizontal__state-default.png",
+        "Appearance=tile, Orientation=vertical, State=Default": {
+          "file": "radiogroup/appearance-tile__orientation-vertical__state-default.png",
+          "width": 320,
+          "height": 176
+        },
+        "Appearance=tile, Orientation=vertical, State=Hover": {
+          "file": "radiogroup/appearance-tile__orientation-vertical__state-hover.png",
+          "width": 320,
+          "height": 176
+        },
+        "Appearance=tile, Orientation=vertical, State=Disabled": {
+          "file": "radiogroup/appearance-tile__orientation-vertical__state-disabled.png",
+          "width": 320,
+          "height": 176
+        },
+        "Appearance=list, Orientation=horizontal, State=Default": {
+          "file": "radiogroup/appearance-list__orientation-horizontal__state-default.png",
           "width": 320,
           "height": 132
         },
-        "Orientation=horizontal, State=Hover": {
-          "file": "radiogroup/orientation-horizontal__state-hover.png",
+        "Appearance=list, Orientation=horizontal, State=Hover": {
+          "file": "radiogroup/appearance-list__orientation-horizontal__state-hover.png",
           "width": 320,
           "height": 132
         },
-        "Orientation=horizontal, State=Disabled": {
-          "file": "radiogroup/orientation-horizontal__state-disabled.png",
+        "Appearance=list, Orientation=horizontal, State=Disabled": {
+          "file": "radiogroup/appearance-list__orientation-horizontal__state-disabled.png",
           "width": 320,
           "height": 132
+        },
+        "Appearance=tile, Orientation=horizontal, State=Default": {
+          "file": "radiogroup/appearance-tile__orientation-horizontal__state-default.png",
+          "width": 320,
+          "height": 176
+        },
+        "Appearance=tile, Orientation=horizontal, State=Hover": {
+          "file": "radiogroup/appearance-tile__orientation-horizontal__state-hover.png",
+          "width": 320,
+          "height": 176
+        },
+        "Appearance=tile, Orientation=horizontal, State=Disabled": {
+          "file": "radiogroup/appearance-tile__orientation-horizontal__state-disabled.png",
+          "width": 320,
+          "height": 176
         }
       }
     },

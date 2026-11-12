@@ -29,6 +29,9 @@ export function SignInScene() {
       <path className="ss-rope" d="M380 330V602" strokeWidth="1.8" />
       <path className="ss-hook" d="M372 350h16M380 342v8" />
 
+      {/* The missing piece's place, drawn as a dashed slot: from the first frame the deck reads as one bridge waiting
+          for its piece, never as a broken one (owner, 2026-11-12). The piece lands over it. */}
+      <path className="ss-slot" d="M320 470H440V486H320Z" strokeWidth="1.6" strokeDasharray="5 4" />
       <path data-paper d="M-1200 470H320V486H-1200Z" />
       <path data-paper d="M440 470H2000V486H440Z" />
       <path data-paper d="M68 462L92 461L94 662L66 663Z" />

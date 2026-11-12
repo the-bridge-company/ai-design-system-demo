@@ -93,8 +93,8 @@
   gap: var(--space-3);
 }
 
-/* The sentence sits beside the avatars and wraps on its own lines, never under them; the oldest wait follows it. */
-.sh-waitline > span:not(.sh-stack, .sh-oldest) {
+/* The sentence sits beside the avatars and wraps on its own lines, never under them. */
+.sh-waitline > span:not(.sh-stack) {
   flex: 0 1 auto;
   min-width: 0;
 }
@@ -987,13 +987,6 @@
 .sh-skel-card {
   width: 100%;
   min-height: var(--size-64);
-}
-
-/* The oldest wait is a tag the width of its words, wherever the line wraps. */
-.sh-oldest {
-  justify-self: start;
-  align-self: center;
-  width: fit-content;
 }
 
 /* On a phone a one-line title cut at 22 characters loses its meaning ("Toast: an undo action after deleti..."): the

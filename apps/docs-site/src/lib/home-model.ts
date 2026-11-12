@@ -177,20 +177,6 @@ export const waitPill = (iso: string, now: number, label: (iso: string, now: num
   tone: waitTone(daysSince(iso, now)),
 });
 
-/** "Oldest: 4 days" over the rows that wait for someone, null under a day or without any. */
-export function oldestLabel(rows: readonly Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): string | null {
-  const times = rows.filter((r) => r.waitsOnYou && r.since).map((r) => new Date(r.since!).getTime());
-  if (!times.length) return null;
-  const d = daysSince(new Date(Math.min(...times)).toISOString(), now);
-  return d ? `Oldest: ${d} ${d === 1 ? 'day' : 'days'}` : null;
-}
-
-/** The tone of the oldest wait's tag: grey, amber once it is late (waitTone, more than a week). */
-export function oldestTone(rows: Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): 'neutral' | 'warning' {
-  const times = rows.filter((r) => r.waitsOnYou && r.since).map((r) => new Date(r.since!).getTime());
-  return waitTone(times.length ? daysSince(new Date(Math.min(...times)).toISOString(), now) : null);
-}
-
 // ---------------------------------------------------------------------------------------------------------------
 // Needs you
 
@@ -213,7 +199,7 @@ export interface NeedRow {
   line: string;
   /** Since when it waits (ISO), when known. */
   since: string | null;
-  /** Someone waits on the viewer: counts in the greeting's people and "Oldest". */
+  /** Someone waits on the viewer: counts in the greeting's people. */
   waitsOnYou: boolean;
   /** Status on the right: "Waiting 4 days" (warning), what failed (danger). */
   pill: { label: string; tone: PillTone } | null;
@@ -234,7 +220,7 @@ export interface NeedRow {
   excerpt?: string | null;
   /**
    * An optional ask (a product manager's opinion, lib/pm-view pmHomeRow): an invitation, never a wait. It never counts
-   * in "waiting on you", "Oldest" or the nav badge, and carries the "Optional" tag instead of its age.
+   * in "waiting on you" or the nav badge, and carries the "Optional" tag instead of its age.
    */
   optional?: boolean;
 }
@@ -254,22 +240,19 @@ export const optionalNeed = (row: NeedRow): NeedRow => ({ ...row, waitsOnYou: fa
 
 /**
  * The greeting's line over the Needs you rows: who waits on the viewer and the oldest wait ("Sofia and Leo are waiting
- * on you." with "Oldest: 4 days"); when nothing waits on them and only optional asks are there (a product manager's
+ * on you."; each row says its own age, so the line adds none: said once); when nothing waits on them and only optional asks are there (a product manager's
  * opinion), who would like their view, with no age ("Sofia and Leo would like your opinion."; the rows say Optional). Null
  * without either.
  */
-export function waitingSummary(needs: readonly NeedRow[], now: number): { people: Person[]; names: string; rest: string; note: string | null; badge: { label: string; tone: PillTone } | null; group: string } | null {
+export function waitingSummary(needs: readonly NeedRow[], _now?: number): { people: Person[]; names: string; rest: string; note: string | null; group: string } | null {
   const blocking = uniquePeople(needs.filter((r) => r.waitsOnYou).map((r) => r.person));
   const s = waitingSentence(blocking);
-  if (s) {
-    const oldest = oldestLabel(needs, now);
-    return { people: blocking, ...s, note: null, badge: oldest ? { label: oldest, tone: oldestTone([...needs], now) } : null, group: 'Waiting on you' };
-  }
+  if (s) return { people: blocking, ...s, note: null, group: 'Waiting on you' };
   const asking = uniquePeople(needs.filter((r) => r.optional).map((r) => r.person));
   const o = waitingSentence(asking);
   if (!o) return null;
   // No second sentence: each row's "Optional" tag already says it (said once), and "your view" twice read as filler.
-  return { people: asking, names: o.names, rest: OPTIONAL_WORDS.rest, note: null, badge: null, group: OPTIONAL_WORDS.group };
+  return { people: asking, names: o.names, rest: OPTIONAL_WORDS.rest, note: null, group: OPTIONAL_WORDS.group };
 }
 
 /** The verb on a Needs you row's button: the row's own, else the kind's. */

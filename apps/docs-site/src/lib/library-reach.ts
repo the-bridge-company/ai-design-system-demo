@@ -205,7 +205,7 @@ export interface Measured {
   headline: string;
   /** One plain line at the end, when there is one ("No screen of Acme CRM changes."). */
   end: string | null;
-  /** The reach link and the List's cell: "11 screens", "No screen changes", "Measuring". */
+  /** The reach link and the List's cell: "11 screens", "No screen changes", "Not counted yet". */
   cell: string;
   measuredAt: string | null;
 }
@@ -282,7 +282,8 @@ export function measuredReach(p: ReviewPiece, reach: Reach, data: ReachData | nu
   }
 
   if (valueChange && p.source.kind === 'change' && !change) {
-    return { ...base, status: 'measuring', headline: 'Bridge is measuring which screens change.', cell: 'Measuring' };
+    // Plain words (owner, 2026-11-12): "Measuring" alone read as a stuck state. Say what is not known yet and why.
+    return { ...base, status: 'measuring', headline: 'Bridge has not counted the screens this changes yet. It counts them by comparing every product screen before and after the change.', cell: 'Not counted yet' };
   }
 
   // Nothing uses it yet, or it is not in the library yet: the screens that asked for it are the ones that change.

@@ -1,6 +1,6 @@
-// The Library <-> Studio switch at the end of the top bar (the owner's pill): a raised plate names the space you are in,
-// on a segmented-control track (the DS SegmentedControl's tokens); the other space waits at the end of the track as one drawn icon (pen and notes for Studio,
-// an open book for the Library). One link, not a button or a switch: it loads the other space, carrying the page's
+// The Library <-> Studio switch at the end of the top bar (the owner's pill): two equal segments on a segmented-control
+// track (the DS SegmentedControl's tokens), each with its drawn icon (an open book for the Library, pen and notes for
+// Studio) and its word, icon only on a phone; a raised plate sits under the space you are in. One link, not a button or a switch: it loads the other space, carrying the page's
 // item across (lib/space-switch.ts). Rendered statically by the layout (no hydration); scripts/space-switch.ts plays
 // the slide on click, refreshes the target where the query or the team decides it, and the first-visit hint.
 // Styles: styles/space-switch.css.
@@ -59,25 +59,28 @@ export default function SpaceSwitch({ space, href, item = null }: SpaceSwitchPro
       data-tooltip={switchTooltip(space, item)}
       data-tooltip-side="bottom"
     >
-      <span className="ss-icon ss-to-library" aria-hidden="true">
-        <BookIcon />
+      {/* Two equal segments, each its icon and its word (icon only on a phone); the raised plate sits under the space
+          you are in. Owner, 2026-11-12: an icon for one space and a word for the other read as one button. */}
+      <span className="ss-pill" aria-hidden="true" />
+      <span className="ss-seg ss-seg-library" aria-hidden="true">
+        <span className="ss-icon">
+          <BookIcon />
+        </span>
+        <span className="ss-label">Library</span>
       </span>
-      <span className="ss-icon ss-to-studio" aria-hidden="true">
-        <PenIcon />
-        {/* A signed-in maintainer sees their face here instead of the pen (scripts/maintainer.ts paints it). */}
-        {space === 'library' && (
-          <span className="ss-avatar" data-team-avatar="" hidden>
-            <Avatar name="Studio" size="xs" decorative data-team-avatar-img="" />
-          </span>
-        )}
+      <span className="ss-seg ss-seg-studio" aria-hidden="true">
+        <span className="ss-icon">
+          <PenIcon />
+          {/* A signed-in maintainer sees their face here instead of the pen (scripts/maintainer.ts paints it). */}
+          {space === 'library' && (
+            <span className="ss-avatar" data-team-avatar="" hidden>
+              <Avatar name="Studio" size="xs" decorative data-team-avatar-img="" />
+            </span>
+          )}
+        </span>
+        <span className="ss-label">Studio</span>
       </span>
       <span className="ss-hint" aria-hidden="true" />
-      <span className="ss-pill" aria-hidden="true">
-        <span className="ss-word">
-          <span data-when="library">Library</span>
-          <span data-when="studio">Studio</span>
-        </span>
-      </span>
       <span className="sr-only" id={SPACE_SWITCH_NOW_ID}>
         {currentLabel(space)}
       </span>

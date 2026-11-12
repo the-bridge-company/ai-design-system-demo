@@ -109,10 +109,19 @@ export function qualityVerdict(input: { contrastFail: number; findings: Finding[
     const first = open[0];
     const label = first?.action?.label === 'Review' ? 'Review guidance' : (first?.action?.label ?? null);
     const findingLine = !first ? '' : open.length === 1 ? `${first.title.replace(/\.$/, '')}.` : `${plural(open.length, 'thing needs', 'things need')} a look, starting with ${first.title.replace(/\.$/, '')}.`;
-    const action = first?.action && label ? { label: open.length === 1 ? label : 'Start with the first', href: first.action.href } : gaps[0] ? (gaps[0].kind === 'adoption' ? { label: 'See each product', href: `#${HEALTH_SECTION.adoption}` } : { label: 'See unused tokens', href: '#ql-tokens' }) : null;
+    // The button follows the headline (owner, 2026-11-12): a product far from using the library is the headline, so
+    // its button opens the products; otherwise the first finding's action, else the unused tokens.
+    const adoption = gaps.some((g) => g.kind === 'adoption');
+    const action = adoption
+      ? { label: 'See each product', href: `#${HEALTH_SECTION.adoption}` }
+      : first?.action && label
+        ? { label: open.length === 1 ? label : 'Start with the first', href: first.action.href }
+        : gaps[0]
+          ? { label: 'See unused tokens', href: '#ql-tokens' }
+          : null;
     return {
       mood: 'haze',
-      title: gaps.some((g) => g.kind === 'adoption') ? 'Nothing blocks the library, but not every product uses it yet' : 'Nothing blocks the library',
+      title: adoption ? 'Nothing blocks the library, but not every product uses it yet' : 'Nothing blocks the library',
       sentence: [sentenceOf(gaps.map((g) => g.text)), findingLine].filter(Boolean).join(' '),
       action,
     };

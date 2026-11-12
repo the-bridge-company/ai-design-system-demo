@@ -23,7 +23,6 @@ import {
   hintSnoozed,
   homeState,
   isOnlyReviewer,
-  oldestLabel,
   onlyReviewerLine,
   partOfDay,
   person,
@@ -134,17 +133,6 @@ describe('waiting time', () => {
     expect(waitingLabel(daysAgo(0, 3), NOW)).toBe('New today');
     expect(waitingLabel(daysAgo(1), NOW)).toBe('Waiting 1 day');
     expect(waitingLabel(daysAgo(4), NOW)).toBe('Waiting 4 days');
-  });
-  it('the oldest wait counts only what waits on the viewer', () => {
-    const rows = [
-      { since: daysAgo(2), waitsOnYou: true },
-      { since: daysAgo(9), waitsOnYou: false },
-      { since: daysAgo(4), waitsOnYou: true },
-      { since: null, waitsOnYou: true },
-    ];
-    expect(oldestLabel(rows, NOW)).toBe('Oldest: 4 days');
-    expect(oldestLabel([{ since: daysAgo(0, 2), waitsOnYou: true }], NOW)).toBeNull();
-    expect(oldestLabel([], NOW)).toBeNull();
   });
 });
 

@@ -30,23 +30,22 @@ describe("a product manager's optional opinion", () => {
     expect(said).not.toMatch(/waiting on you/i);
     expect(said).not.toMatch(/oldest/i);
     expect(said).not.toContain(String.fromCharCode(0x2014));
-    expect(s.badge).toBeNull();
     // Said once: the rows carry the Optional tag, the greeting adds no second sentence.
     expect(s.note).toBeNull();
     expect(s.people.map((p) => p.login)).toEqual(['~sofia', '~leo']);
   });
 
-  it('a lead keeps the normal queue: who waits on them and the oldest wait', () => {
+  it('a lead keeps the normal queue: who waits on them, no "Oldest" (each row says its own age)', () => {
     const s = waitingSummary([exploration(1, sofia, daysAgo(4)), exploration(2, leo, daysAgo(2))], NOW)!;
     expect(`${s.names}${s.rest}`).toBe('Sofia and Leo are waiting on you.');
-    expect(s.badge).toEqual({ label: 'Oldest: 4 days', tone: 'neutral' });
+    expect(JSON.stringify(s)).not.toMatch(/Oldest/);
     expect(s.note).toBeNull();
   });
 
   it('something that does wait on them wins the greeting; the optional asks stay out of it', () => {
     const s = waitingSummary([exploration(1, leo, daysAgo(1)), optionalNeed(exploration(2, sofia, daysAgo(6)))], NOW)!;
     expect(`${s.names}${s.rest}`).toBe('Leo is waiting on you.');
-    expect(s.badge?.label).toBe('Oldest: 1 day');
+    expect(s.people.map((p) => p.login)).toEqual(['~leo']);
   });
 
   it('nothing at all: no line', () => {

@@ -66,7 +66,6 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
   const s = waitingSummary(needs, now);
   if (!s) return null;
   const { people } = s;
-  const oldest = s.badge?.label;
   // A div, not a p: the avatar group is a block (a div inside a p is invalid HTML).
   return (
     <div className="t-body sh-waitline">
@@ -82,11 +81,6 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
         {s.rest}
         {s.note && <span className="t-muted">{` ${s.note}`}</span>}
       </span>
-      {oldest && (
-        <Badge tone={s.badge?.tone ?? 'neutral'} size="md" className="sh-oldest">
-          {oldest}
-        </Badge>
-      )}
     </div>
   );
 }

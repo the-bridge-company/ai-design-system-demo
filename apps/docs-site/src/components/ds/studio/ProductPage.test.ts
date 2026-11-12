@@ -299,7 +299,7 @@ describe('ProductPageView, one step before the first preview (admins)', () => {
 });
 
 describe('ProductPageView, the library line', () => {
-  const line = (over: Partial<LibraryLine> = {}): LibraryLine => ({ text: 'Product admin uses the library from 1.8.3. The latest is 1.8.4.', send: false, sent: false, link: null, ...over });
+  const line = (over: Partial<LibraryLine> = {}): LibraryLine => ({ text: 'Product admin uses an older version of the library (1.8.3, the latest is 1.8.4).', send: false, sent: false, link: null, ...over });
 
   it('a lead: the line and "Send the update to the developers" on it; once sent, it says so', async () => {
     let sent = false;
@@ -308,7 +308,7 @@ describe('ProductPageView, the library line', () => {
     });
     const { container, rerender } = render(createElement(ProductPageView, { productKey: 'admin-app', components: [], data: data({ cards: [card(1)] }), library: { line: line({ send: true }), send } }));
     const at = container.querySelector('[data-library-line]')!;
-    expect(at.textContent).toContain('Product admin uses the library from 1.8.3. The latest is 1.8.4.');
+    expect(at.textContent).toContain('Product admin uses an older version of the library (1.8.3, the latest is 1.8.4).');
     // In the header's quiet line, next to what it acts on; one primary action stays on the title's line.
     expect(at.closest('.pp-facts')).toBeTruthy();
     await act(async () => {

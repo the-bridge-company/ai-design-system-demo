@@ -1,6 +1,6 @@
-/* A Studio product page (components/ds/studio/ProductPage.tsx): the shared header with the product's facts on one
-   quiet line, then its explorations grouped by where they stand, on the home's card grid. Nothing yet: one calm Field
-   Guide moment in the Harbor zone, the reason and the one action. */
+/* A Studio product page (components/ds/studio/ProductPage.tsx): the shared header with the product's facts, one
+   quiet line each, then its explorations grouped by where they stand, on the home's card grid. Nothing yet: one calm
+   Field Guide moment in the Harbor zone, the reason and the one action. */
 
 .pp {
   display: grid;
@@ -13,11 +13,14 @@
   margin-bottom: calc(var(--space-6) - var(--space-8));
 }
 
+/* One fact per line, each sentence with its own action right after it: "Open the live product" is a way out, the
+   library version is a status with its action, two unrelated things. On one wrapping line a 16px column gap left
+   them side by side ("Open the live product   Acme CRM uses an older version of the library"), read as one. */
 .pp-facts {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: var(--space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: var(--space-1);
   margin: var(--space-2) 0 0;
 }
 
@@ -52,18 +55,13 @@
   background: var(--color-feedback-warning-icon);
 }
 
-/* The group heading of Changes (styles/changes.css .bl-h2): label, then a muted count. */
+/* The group heading of Changes (styles/changes.css .bl-h2): label, then its count tag. */
 .pp-h2 {
   margin: 0;
   font-family: var(--font-family-sans);
   font-size: var(--typography-body-size);
   font-weight: var(--font-weight-semibold);
   line-height: var(--typography-body-line-height);
-}
-
-.pp-count {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
 }
 
 .pp-group {

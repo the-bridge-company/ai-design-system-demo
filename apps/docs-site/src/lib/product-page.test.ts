@@ -59,7 +59,7 @@ describe('grouping by where explorations stand', () => {
   it('says what is in progress, in one sentence and on a folder line', () => {
     const cards = [card(1), card(2), card(3, { stage: 'with-devs', state: 'Waiting to be picked up', lifecycle: 'waiting-for-code' }), card(4, { stage: 'kept', state: 'Shipped', lifecycle: 'shipped' })];
     expect(productSummary(cards)).toBe('2 exploring, 1 waiting to be picked up.');
-    expect(folderLine(cards)).toBe('2 exploring · 1 waiting to be picked up');
+    expect(folderLine(cards)).toBe('2 exploring\u2004\u2060·\u20041 waiting to be picked up');
     expect(productSummary([card(4, { stage: 'kept', state: 'Shipped', lifecycle: 'shipped' })])).toBe('1 shipped, nothing in progress.');
     expect(folderLine([])).toBe('Nothing in progress');
     expect(productSummary([])).toBe('Nothing explored here yet.');
@@ -75,7 +75,7 @@ describe('grouping by where explorations stand', () => {
   it("counts the library's own changes on the Library folder, filed as Changes files them", () => {
     const more = (['review', 'building', 'code', null] as const).map(libraryChangeState).filter((k) => k !== null);
     expect(more).toEqual(['review', 'building', 'waiting']);
-    expect(folderLine([card(1)], ' · ', more)).toBe('1 exploring · 1 waiting to be picked up · 1 being built · 1 in review');
+    expect(folderLine([card(1)], '\u2004\u2060·\u2004', more)).toBe('1 exploring\u2004\u2060·\u20041 waiting to be picked up\u2004\u2060·\u20041 being built\u2004\u2060·\u20041 in review');
     const lib = { key: 'library', name: 'Library', default: true } as ProductConfig;
     expect(productFolders([lib], [], undefined, { library: ['review', 'review'] })[0]).toMatchObject({ line: '2 in review', total: 2 });
   });

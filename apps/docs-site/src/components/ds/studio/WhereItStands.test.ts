@@ -33,7 +33,7 @@ describe('Where it stands', () => {
     const { container } = paint({ notes: NOTES });
     expect(screen.getByRole('heading', { name: 'Where it stands' })).toBeTruthy();
     expect(screen.getByText('Try it in the cart.')).toBeTruthy();
-    expect(screen.getByText('2 decisions · 2 of 3 edge cases covered · 1 open question')).toBeTruthy();
+    expect(screen.getByText('2 decisions \u2060· 2 of 3 edge cases covered \u2060· 1 open question')).toBeTruthy();
     expect(screen.queryByText('Pill radius on primary only')).toBeNull();
     const show = screen.getByRole('button', { name: 'Show details' });
     expect(show.getAttribute('aria-expanded')).toBe('false');

@@ -84,6 +84,7 @@ import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOve
 import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
+import { SEP, SEP_SPLIT } from '../../../lib/sep';
 
 export { claudeNewUrl };
 
@@ -350,7 +351,7 @@ function ContinueButton({ p, tool, line, say, variant, children, size = 'lg' }: 
 }
 
 /** "Acme CRM" from the "Acme CRM · Nov 6" tail. */
-const productOf = (tail: string): string => tail.split(' · ')[0]?.trim() ?? '';
+const productOf = (tail: string): string => tail.split(SEP_SPLIT)[0]?.trim() ?? '';
 
 /** "Malik's", "James'". */
 const possessive = (name: string): string => `${name}${/s$/i.test(name) ? "'" : "'s"}`;
@@ -552,9 +553,11 @@ function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }:
   ) : (
     <>
       {bar.blocked ? (
-        // Step 1 of 2: the zone asks what is next and its primary takes the lead to that choice in the library section.
-        // Once the piece is decided the zone turns to step 2, Send to the developers. Never a disabled button.
-        <Button variant="primary" size="md" disabled={busy !== null} onClick={goToLibraryChoice}>
+        // Step 1 of 2: the zone asks what is next and its button takes the lead to that choice in the library section.
+        // Secondary: the choice's own button there ("Add Comfortable to Card") is the page's one primary; two primaries
+        // read as two different next steps. Once the piece is decided the zone turns to step 2, Send to the developers,
+        // its primary. Never a disabled button.
+        <Button variant="secondary" size="md" disabled={busy !== null} onClick={goToLibraryChoice}>
           {bar.blocked}
         </Button>
       ) : (
@@ -585,7 +588,7 @@ function LeadTurn({ bar, line, heading, designer, question, apply, extra, say }:
     // "Choose Card padding" -> "Which Card padding for Sofia's screen?"; several pieces -> "2 library pieces wait for you".
     const one = /^Choose (?!\d)(.+)$/.exec(bar.blocked)?.[1];
     return (
-      <TurnZone eyebrow="Your turn · 1 of 2" title={one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice')} drawing="guide" actions={actions}>
+      <TurnZone eyebrow={`Your turn${SEP}1 of 2`} title={one ? `Which ${one} for ${who} screen?` : bar.blocked.replace(/^Choose (\d+) (.+)$/, '$1 $2 wait for your choice')} drawing="guide" actions={actions}>
         <LeadSteps first={one ?? 'Library pieces'} />
         <p>{one ? `${who} screen changes ${one}. Choose what the library keeps, then the screen goes to the developers.` : 'Choose what the library keeps, then the screen goes to the developers.'}</p>
         {extra}
@@ -656,7 +659,7 @@ export function StartedFrom({ from, x, listed }: { from: NonNullable<Exploration
         </Link>
         {x && (
           <span data-from-mockup="">
-            {' · '}
+            {SEP}
             {listed ? (
           <Link
             href="#xp-library"
@@ -692,7 +695,7 @@ export function ScreenPlate({ product, screen, seed }: { product: string; screen
       <Drawing name={plateDrawing({ seed, screen, product })} width={88} className="xp-plate-art" />
       <span className="xp-plate-text">
         <span className="xp-plate-screen">{screen ?? product}</span>
-        <span className="xp-muted">{screen ? `${product} · no screenshot yet` : 'No screenshot yet'}</span>
+        <span className="xp-muted">{screen ? `${product}${SEP}no screenshot yet` : 'No screenshot yet'}</span>
       </span>
     </div>
   );

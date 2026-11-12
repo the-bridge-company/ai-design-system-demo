@@ -23,6 +23,7 @@ import {
   type MissingPiece,
   type PieceVerdict,
 } from '@bridge-ds/core';
+import { SEP } from './sep';
 
 /** One side of a row's before and after: what it reads ("16", "Timeline") and what it is ("Today"). */
 export interface ImpactSide {
@@ -661,7 +662,7 @@ export function ledgerOf(component: string, property: string, ways: readonly Led
     ways.flatMap((w) => (w.px === null ? [] : [w.px])),
     options,
   );
-  const where = (w: LedgerWay) => [w.screen, w.product].filter(Boolean).join(' · ');
+  const where = (w: LedgerWay) => [w.screen, w.product].filter(Boolean).join(SEP);
   const fresh: OptionRow[] = [];
   const have: OptionRow[] = [];
   if (def)
@@ -681,7 +682,7 @@ export function ledgerOf(component: string, property: string, ways: readonly Led
     const existing = w.px === null ? null : (options.find((o) => o.px === w.px) ?? null);
     if (existing?.isDefault) continue;
     if (existing) {
-      have.push({ keys: [w.key], name: existing.name, value: `${existing.px} px`, px: existing.px, delta: deltaWords(existing.px, base), isDefault: false, line: `${possessive(w.designer)} screen can use ${existing.name} as it is · ${where(w)}`, face: w.designer, designers: [w.designer], look: w.look });
+      have.push({ keys: [w.key], name: existing.name, value: `${existing.px} px`, px: existing.px, delta: deltaWords(existing.px, base), isDefault: false, line: `${possessive(w.designer)} screen can use ${existing.name} as it is${SEP}${where(w)}`, face: w.designer, designers: [w.designer], look: w.look });
       continue;
     }
     // Two screens asking for the same value share one option.
@@ -689,7 +690,7 @@ export function ledgerOf(component: string, property: string, ways: readonly Led
     if (same) {
       same.keys.push(w.key);
       same.designers.push(w.designer);
-      same.line = `${namesLine(same.designers)}'s way · ${same.designers.length} screens`;
+      same.line = `${namesLine(same.designers)}'s way${SEP}${same.designers.length} screens`;
       continue;
     }
     fresh.push({
@@ -699,7 +700,7 @@ export function ledgerOf(component: string, property: string, ways: readonly Led
       px: w.px,
       delta: deltaWords(w.px, base),
       isDefault: false,
-      line: `${w.label} · ${where(w)}`,
+      line: `${w.label}${SEP}${where(w)}`,
       face: w.designer,
       designers: [w.designer],
       look: w.look,
@@ -774,7 +775,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     ...w,
     label: `${w.designer}'s way${w.mine && x.designerHere ? ' (yours)' : ''}`,
     size: words[i]!.size,
-    hint: `${words[i]!.size}${words[i]!.thanToday ? ' than today' : ''} · ${w.mine ? 'this screen' : w.screen}`,
+    hint: `${words[i]!.size}${words[i]!.thanToday ? ' than today' : ''}${SEP}${w.mine ? 'this screen' : w.screen}`,
   }));
   const others = ways.filter((w) => !w.mine);
   const several = ways.length > 2;

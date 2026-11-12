@@ -7,6 +7,7 @@ import { changedThings, continueLines, explorationActivity, humanAuthorOf, parse
 import { emailMemberFace, isEmailAddress, nameFace } from './people';
 import { DEV_MESSAGE_WORDS } from './developers-message';
 import { isAppLogin, isNameAuthor, nameAuthor, nameOfAuthor } from './author';
+import { SEP } from './sep';
 
 /** A person or Claude on the page: the login (for the face), the name to show, and whether it is Claude. */
 export interface PageFace {
@@ -110,7 +111,7 @@ export function startedAtOf(body: string | null | undefined, createdAt: string |
 }
 
 /** "Started by" line after the name: " · Admin demo · today". */
-export const startedTail = (productName: string, startedAt: string | null | undefined, now?: Date): string => [productName, startedAt ? startedWhen(startedAt, now) : ''].filter(Boolean).join(' · ');
+export const startedTail = (productName: string, startedAt: string | null | undefined, now?: Date): string => [productName, startedAt ? startedWhen(startedAt, now) : ''].filter(Boolean).join(SEP);
 
 /** One row of the activity list, and the line under the title (the same words). */
 export interface ActivityRow {

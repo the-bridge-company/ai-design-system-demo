@@ -15,7 +15,7 @@ const N = {
 
 describe('exploration notes view', () => {
   it('counts in words, singular and plural', () => {
-    expect(notesCountLine(N)).toBe('1 decision · 1 of 3 edge cases covered');
+    expect(notesCountLine(N)).toBe('1 decision\u2004\u2060·\u20041 of 3 edge cases covered');
     expect(notesCountLine({ ...N, decisions: [], edgeCases: [], openQuestions: ['q', 'r'] })).toBe('2 open questions');
     expect(notesCountLine({ ...N, decisions: [], edgeCases: [] })).toBe('');
   });

@@ -329,7 +329,7 @@ describe('Being built', () => {
     // No kind tag: every change starts as an exploration.
     expect([...row.querySelectorAll('*')].some((e) => e.children.length === 0 && e.textContent === 'Exploration')).toBe(false);
     expect(row.textContent).toContain('Waiting to be picked up');
-    expect(row.textContent).toContain('Admin demo · Done exploring by Florian on');
+    expect(row.textContent).toContain('Admin demo\u2004\u2060·\u2004Done exploring by Florian on');
     expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/explorations/?exploration=611');
     // No "How it works" fold under the title, on the self-hosted and the team page: the summary sentence is enough.
     for (const page of ['../../../pages/studio/building.astro', '../../../pages/team-shell/building.astro']) {

@@ -45,6 +45,7 @@ import { explorationHref } from './explorations-view';
 import { explorationState } from './exploration-state';
 import { devReviewLine, LIFECYCLE_LABEL, pullLifecycle, reviewLine, reviewStateOf, taskStage, type DesignTaskRead, type DevPull, type LifecycleStage, type PullReviewLike } from './review-state';
 import { buildStateTag, personLine, possessive, SHIPPED_DAYS, stateOfStatus } from './building-page';
+import { SEP } from './sep';
 
 /**
  * Where the developers' version stands, on Being built: while Check the build waits, whose check it waits for
@@ -409,15 +410,15 @@ export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stal
   const sent = d === 0 ? 'Sent today' : d === 1 ? 'Sent yesterday' : `Sent ${d} days ago`;
   const requester = v.requestedBy ? nameOf(isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : v.requestedBy) : null;
   const who = personLine({ state: stateOfStatus(v.status), builders: v.builders.map(nameOf), requester });
-  if (v.status === 'requested') return [v.stale ? 'Nobody has picked it up yet' : sent, who].filter(Boolean).join(' · ');
+  if (v.status === 'requested') return [v.stale ? 'Nobody has picked it up yet' : sent, who].filter(Boolean).join(SEP);
   if (v.status === 'shipped' && v.nextRelease) return 'In the next release';
   if (v.status === 'shipped') {
     const s = v.shippedAt ? daysSince(v.shippedAt, now) : null;
     const when = s === null ? 'In the library' : s === 0 ? 'Shipped today' : s === 1 ? 'Shipped yesterday' : `Shipped ${s} days ago`;
     return v.builders.length && s !== null ? `${when} by ${listNames(v.builders.map(nameOf))}` : when;
   }
-  if (v.status === 'in-review') return [sent, v.builders.length ? who : null, v.reviewLine ?? (v.builders.length ? null : 'In code review')].filter(Boolean).join(' · ');
-  return `${sent} · ${v.builders.length ? who : v.sentence.replace(/\.$/, '')}`;
+  if (v.status === 'in-review') return [sent, v.builders.length ? who : null, v.reviewLine ?? (v.builders.length ? null : 'In code review')].filter(Boolean).join(SEP);
+  return `${sent}${SEP}${v.builders.length ? who : v.sentence.replace(/\.$/, '')}`;
 }
 
 const listNames = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
@@ -593,7 +594,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
     // line says it before who said done.
     const waiting = ctx.released && status !== 'shipped' && status !== 'not-planned' ? waitingForLibraryLine(p.body, ctx.released) : null;
     // One wait per row: while the library holds it, the line does not also name who else it waits for.
-    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, waiting, status === 'shipped' || waiting ? null : done, waiting ? null : where[status]]).filter(Boolean).join(' · ');
+    const line = (elsewhere ? [product, DEV_MESSAGE_WORDS.elsewhere] : [product, waiting, status === 'shipped' || waiting ? null : done, waiting ? null : where[status]]).filter(Boolean).join(SEP);
     const sentence: Record<BuildStatus, string> = {
       requested: 'Waiting for a developer.',
       'picked-up': 'Developers are building it.',

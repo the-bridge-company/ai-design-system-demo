@@ -117,17 +117,22 @@ export function ScreenStage({ name, nameHidden = false, about = null, sub, singl
 // The Your turn zone
 
 /**
- * The one Harbor zone, only when the viewer acts now: eyebrow and the question as title with the Field Guide drawing
- * beside them (its own column), the context, an open question as an avatar quote, then the buttons last on one row.
+ * The one Harbor zone, only when the viewer acts now: eyebrow and the question as title, tight together as one heading,
+ * with the Field Guide drawing at the top of their row (its top on the eyebrow's), the context, an open question as an
+ * avatar quote, then the buttons last on one row.
  */
 export function TurnZone({ eyebrow, title, drawing, children, quote, actions, id = 'xp-turn-h' }: { eyebrow: string; title: string; drawing: IllustrationName; children?: ReactNode; quote?: ReactNode; actions?: ReactNode; id?: string }) {
   return (
     <section className="xp-turn zone" aria-labelledby={id}>
-      <p className="xp-turn-eyebrow">{eyebrow}</p>
-      <h2 className="xp-turn-q" id={id}>
-        {title}
-      </h2>
-      <Drawing name={drawing} width={92} className="xp-turn-art" />
+      <div className="xp-turn-head">
+        <div className="xp-turn-head-text">
+          <p className="xp-turn-eyebrow">{eyebrow}</p>
+          <h2 className="xp-turn-q" id={id}>
+            {title}
+          </h2>
+        </div>
+        <Drawing name={drawing} width={80} className="xp-turn-art" />
+      </div>
       {children && <div className="xp-turn-body">{children}</div>}
       {quote && <div className="xp-turn-quote">{quote}</div>}
       {actions && <div className="xp-turn-acts">{actions}</div>}
@@ -241,7 +246,8 @@ export function Composer({ me, placeholder, onSend, say }: { me: PageFace | null
           .finally(() => setBusy(false));
       }}
     >
-      {me && <Who p={faceProps(me)} size="sm" />}
+      {/* The timeline's face size, so the composer's face sits on the same axis as the faces above it. */}
+      {me && <Who p={faceProps(me)} size="xs" />}
       <div className="xp-compose-field">
         <Input label={placeholder} hideLabel size="lg" placeholder={placeholder} value={text} onValueChange={setText} />
       </div>

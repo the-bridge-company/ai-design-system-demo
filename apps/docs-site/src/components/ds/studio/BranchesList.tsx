@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Skeleton } from '@bridge-ds/react';
 import DsButtonLink from '../ButtonLink';
 import { BranchRow } from './BranchRow';
+import { CountTag } from './CountTag';
 import { Who } from './faces';
 import { MultiFilter } from './ListFilters';
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from './ListCard';
@@ -448,7 +449,7 @@ export function BranchesList(p: BranchesListProps) {
                   {c.rows.length}
                 </span>
               ) : (
-                <span className="bl-count">{c.rows.length}</span>
+                <CountTag n={c.rows.length} />
               )}
             </h2>
             {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: x.status === 'waiting-for-library', product: true, turn: pinned.has(x.r) }))}</ul>}
@@ -509,7 +510,7 @@ export function BranchesList(p: BranchesListProps) {
       {waiting.length > 0 && view !== 'board' && (
         <section className="bl-group ex-waiting" aria-labelledby="bl-waiting">
           <h2 className="bl-h2" id="bl-waiting">
-            Waiting on you <span className="bl-count">{waiting.length}</span>
+            Waiting on you <CountTag n={waiting.length} />
           </h2>
           {asList(waiting, true)}
         </section>
@@ -527,7 +528,7 @@ export function BranchesList(p: BranchesListProps) {
         groups.map((g) => (
           <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
             <h2 className="bl-h2" id={`bl-${g.key}`}>
-              {g.label} <span className="bl-count">{g.rows.length}</span>
+              {g.label} <CountTag n={g.rows.length} />
             </h2>
             {asList(g.rows)}
           </section>

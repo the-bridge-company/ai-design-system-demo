@@ -507,7 +507,8 @@ export function updateBody(x: UpdateBodyInput): string {
 // The product page's words (designers never read a package name, a lockfile or a pull request)
 
 export const LIBRARY_UPDATE_WORDS = {
-  behind: (product: string, from: string, latest: string) => `${product} uses the library from ${from}. The latest is ${latest}.`,
+  // Designer words first, the version numbers after them for who needs them.
+  behind: (product: string, from: string, latest: string) => `${product} uses an older version of the library (${from}, the latest is ${latest}).`,
   current: (product: string, version: string) => `${product} uses the latest library, ${version}.`,
   unknown: (product: string, latest: string) => `The latest library is ${latest}. Bridge cannot tell which one ${product} uses yet.`,
   send: 'Send the update to the developers',

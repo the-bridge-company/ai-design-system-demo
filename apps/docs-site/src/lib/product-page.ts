@@ -13,6 +13,7 @@ import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
 import type { ExplorationCard } from './home-explorations';
 import type { ThumbSpec } from './branch-thumb';
 import type { StageTab } from './branches-page';
+import { SEP } from './sep';
 
 /** A product key as bridge.config.json writes it, and as a product page address carries it. */
 export const PRODUCT_KEY_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
@@ -106,7 +107,7 @@ function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: 
  * states of the product's work that is not an exploration card, the library's own changes (libraryChangeState), so
  * the Library folder counts what Changes lists under Library.
  */
-export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = ' · ', more: readonly ProductStateKey[] = []): string {
+export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = []): string {
   const parts = inProgress(cards, more);
   if (parts.length) return parts.join(sep);
   const shipped = productCounts(cards, more).shipped;
@@ -162,7 +163,7 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       name: p.name,
       href: productHref(p.key),
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
-      line: folderLine(mine, ' · ', more[p.key.toLowerCase()] ?? []),
+      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? []),
       total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
       library: p.key.toLowerCase() === library,
     };

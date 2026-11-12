@@ -17,6 +17,7 @@ import { ledgerLabel, ledgerPick, PIECE_ACTION_HINT, PIECE_ACTION_LABEL, type Co
 import { nameFace } from '../../../lib/people';
 import { statusTagClass } from '../../../lib/status-tag';
 import { possessiveOf, stagedPieces } from '../../../lib/exploration-layout';
+import { SEP } from '../../../lib/sep';
 
 /**
  * The lead's choice on each new library piece, on the exploration page (staged there: Send to the developers applies
@@ -121,7 +122,12 @@ export function LibraryImpact({
         </H>
         <p className="li-muted li-count">
           {view.count}
-          {view.tail && <span className="li-count-tail"> · {view.tail}</span>}
+          {view.tail && (
+            <span className="li-count-tail">
+              {SEP}
+              {view.tail}
+            </span>
+          )}
         </p>
       </header>
       <ul className="li-rows">
@@ -325,7 +331,7 @@ function NewPiece({ row, np, screen, onPiece, say }: { row: ImpactRowView; np: N
           {screen?.name ? `, from ${screen.name}` : ''}
           {screen?.href && (
             <>
-              {' · '}
+              {SEP}
               <Link href={screen.href} data-keep-branch="">
                 See it in the screen
               </Link>

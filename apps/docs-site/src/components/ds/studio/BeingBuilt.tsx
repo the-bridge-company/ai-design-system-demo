@@ -53,6 +53,7 @@ import {
 } from "@bridge-ds/core";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
+import { CountTag } from "./CountTag";
 import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
 import { MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
@@ -273,7 +274,7 @@ function Board({ items, status, data, products, onOpen, previewed }: { items: It
         return (
           <section className={col.rows.length ? "ex-col" : "ex-col is-empty"} key={col.key} aria-labelledby={`bb-col-${col.key}`}>
             <h2 className="ex-col-h" id={`bb-col-${col.key}`}>
-              {col.label} <span className="bl-count">{col.rows.length}</span>
+              {col.label} <CountTag n={col.rows.length} />
             </h2>
             {col.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => buildCard(x, { data, products, shots, onOpen, showProduct: true, pill: false, previewed }))}</ul>}
             {col.rows.length > BUILD_BOARD_CAP && !open && (

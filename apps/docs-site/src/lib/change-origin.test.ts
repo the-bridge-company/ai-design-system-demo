@@ -60,8 +60,8 @@ describe('neededByOfChange', () => {
 
 describe('the rows read the link', () => {
   it('a review row says where it comes from, before who asks', () => {
-    expect(changeNeed({ ...facts, task: 'requested', origin: 'Profile page' }, NOW).line).toBe('from Profile page · Ann asks for your review');
-    expect(changeNeed({ ...facts, task: 'tech', origin: 'Profile page' }, NOW).line).toBe('from Profile page · Ann asks for your tech review');
+    expect(changeNeed({ ...facts, task: 'requested', origin: 'Profile page' }, NOW).line).toBe('from Profile page\u2004\u2060·\u2004Ann asks for your review');
+    expect(changeNeed({ ...facts, task: 'tech', origin: 'Profile page' }, NOW).line).toBe('from Profile page\u2004\u2060·\u2004Ann asks for your tech review');
     expect(changeNeed({ ...facts, task: 'ship', origin: 'Profile page' }, NOW).line).toContain('from Profile page');
   });
 

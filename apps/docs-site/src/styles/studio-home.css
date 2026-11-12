@@ -84,20 +84,22 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.sh-waiting {
+/* "Sofia, Leo and Claude AI are waiting on you.": the avatars, the sentence and the oldest wait on one line. Its own
+   class: .sh-waiting is the "Waiting on others" section (building.css), whose grid stacked the three. */
+.sh-waitline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
 }
 
-/* The sentence sits beside the avatars and wraps on its own lines, never under them. */
-.sh-waiting > span:not(.sh-stack, .sh-oldest) {
-  flex: 1 1 var(--size-60);
+/* The sentence sits beside the avatars and wraps on its own lines, never under them; the oldest wait follows it. */
+.sh-waitline > span:not(.sh-stack, .sh-oldest) {
+  flex: 0 1 auto;
   min-width: 0;
 }
 
-.sh-waiting > .sh-stack {
+.sh-waitline > .sh-stack {
   flex: none;
 }
 
@@ -949,8 +951,7 @@
   min-height: var(--size-64);
 }
 
-/* The oldest wait is a tag the width of its words, wherever the line wraps (building.css also lays .sh-waiting as a
-   grid, which stretched it across the whole zone). */
+/* The oldest wait is a tag the width of its words, wherever the line wraps. */
 .sh-oldest {
   justify-self: start;
   align-self: center;

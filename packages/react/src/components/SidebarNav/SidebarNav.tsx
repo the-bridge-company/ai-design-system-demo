@@ -4,7 +4,6 @@ import { useRender } from '@base-ui/react/use-render';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { ChevronDown } from 'lucide-react';
 import { cx } from '../../utils/cx';
-import { Badge } from '../Badge';
 import { Icon, type LucideIcon } from '../Icon';
 import styles from './SidebarNav.module.css';
 
@@ -110,9 +109,7 @@ export const SidebarNavItem = forwardRef<HTMLAnchorElement, SidebarNavItemProps>
             {count !== undefined && (
               <>
                 {' '}
-                <Badge appearance="count" size="sm" className={styles.count}>
-                  {count}
-                </Badge>
+                <span className={styles.count}>{count}</span>
               </>
             )}
           </>

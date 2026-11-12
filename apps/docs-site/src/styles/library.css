@@ -168,3 +168,6 @@
   margin: 0;
 }
 
+.family-count {
+  font-variant-numeric: tabular-nums;
+}

@@ -12,8 +12,8 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
   /**
    * `subtle` (tinted, default) for dense lists and tables; `solid` for the one status that must win a glance; `count`
-   * for a number next to its label (Explorations 2): ink figures on a neutral fill, the stronger tone inside the current
-   * or selected item. `count` ignores `tone`.
+   * for the number next to a group heading in a review list (Foundations 5): ink figures on a neutral fill, the stronger
+   * tone inside the current or selected item. `count` ignores `tone`. Nav and tab counts use their component's count.
    */
   appearance?: BadgeAppearance;
   size?: BadgeSize;
@@ -24,7 +24,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Short, non-interactive status label, or with `appearance="count"` the count tag next to a label. Color is never the only signal: the text itself carries the meaning.
+ * Short, non-interactive status label, or with `appearance="count"` the count next to a group heading. Color is never the only signal: the text itself carries the meaning.
  */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
   { tone = 'neutral', appearance = 'subtle', size = 'md', dot = false, icon, className, children, ...rest },

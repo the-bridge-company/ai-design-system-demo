@@ -1,7 +1,6 @@
 import { createContext, forwardRef, useCallback, useContext, useEffect, useRef, type HTMLAttributes, type ReactNode, type Ref } from 'react';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { cx } from '../../utils/cx';
-import { Badge } from '../Badge';
 import { Icon, type LucideIcon } from '../Icon';
 import styles from './Tabs.module.css';
 
@@ -137,9 +136,7 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab({ value,
       {count !== undefined && (
         <>
           {' '}
-          <Badge appearance="count" size="sm" className={styles.count}>
-            {count}
-          </Badge>
+          <span className={styles.count}>{count}</span>
         </>
       )}
     </BaseTabs.Tab>

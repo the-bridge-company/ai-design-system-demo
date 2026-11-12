@@ -35,7 +35,7 @@
     },
     {
       "title": "Counts sit in a count tag",
-      "text": "Pass count, never a number typed into the label: it renders as the count tag (Badge appearance count) after the label: ink figures on a neutral fill, centered on the label, and the selected tab's tag takes the stronger tone.",
+      "text": "Pass count, never a number typed into the label: it renders as a small neutral tag after the label, centered on it, and the selected tab's tag takes the stronger tone.",
       "example": { "c": "Tabs", "p": { "defaultValue": "exploring" }, "children": [
         { "c": "TabsList", "p": { "aria-label": "Explorations" }, "children": [
           { "c": "Tab", "p": { "value": "exploring", "count": 4 }, "children": ["Exploring"] },

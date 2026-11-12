@@ -32,7 +32,7 @@ const withBadges = (options: BridgedOption[]) =>
     badge:
       badge ??
       (count === undefined ? undefined : (
-        <Badge appearance="count" size="sm">
+        <Badge size="sm" tone="neutral">
           {count}
         </Badge>
       )),

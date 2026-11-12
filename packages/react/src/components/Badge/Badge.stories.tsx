@@ -56,10 +56,10 @@ export const AllStates: Story = {
       </Specimen>
       <Specimen label="Count, rest and current">
         <span>
-          Explorations <Badge appearance="count" size="sm">2</Badge>
+          Foundations <Badge appearance="count" size="sm">5</Badge>
         </span>
         <span>
-          Library review <Badge appearance="count" size="sm">12</Badge>
+          Colors <Badge appearance="count" size="sm">4</Badge>
         </span>
         <span aria-current="page">
           Current <Badge appearance="count" size="sm">4</Badge>

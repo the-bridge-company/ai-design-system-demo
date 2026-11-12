@@ -104,7 +104,7 @@
     },
     {
       "title": "Counts sit in a count tag",
-      "text": "Give a filter its count with the item's count field, never inside the label: it renders as the count tag (Badge appearance count) after the label: ink figures on a neutral fill, and the selected segment's tag takes the stronger tone.",
+      "text": "Give a filter its count with the item's count field, never inside the label: it renders as a small neutral tag after the label, and the selected segment's tag takes the stronger tone.",
       "example": {
         "c": "SegmentedControl",
         "p": {

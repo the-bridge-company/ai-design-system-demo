@@ -22,7 +22,7 @@ export function ClearFilters({ onPick }: { onPick: (f: ListFilters) => void }) {
 }
 
 const count = (n: number) => (
-  <Badge appearance="count" size="sm">
+  <Badge tone="neutral" size="sm">
     {n}
   </Badge>
 );

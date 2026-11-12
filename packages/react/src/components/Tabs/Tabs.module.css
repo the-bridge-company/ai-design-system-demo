@@ -100,14 +100,35 @@
   flex: none;
 }
 
-/* The count is the DS count tag (Badge appearance="count"): its fill, ink, figures and the stronger tone inside the
-   selected item come from Badge, the same in Tabs, SegmentedControl and SidebarNav. */
 .count {
+  /* Count tag: a neutral pill, the same in Tabs, SegmentedControl and SidebarNav. */
+  box-sizing: border-box;
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-5);
+  height: var(--size-5);
+  padding: 0 var(--space-1-5);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-feedback-neutral-bg);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--font-line-height-none);
+}
+
+/* The selected tab's count takes the stronger tone. */
+.tab[data-active] .count {
+  border-color: transparent;
+  background-color: var(--color-surface-inverse);
+  color: var(--color-text-inverse);
 }
 
 .tab[data-disabled] .count {
-  --_text: var(--color-text-disabled);
+  color: var(--color-text-disabled);
 }
 
 /* Underline: a hairline under the whole list, the signal bar under the active tab. */

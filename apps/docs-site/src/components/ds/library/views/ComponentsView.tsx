@@ -53,7 +53,7 @@ export default function ComponentsView({ data, Example, tools }: { data: Library
         <details key={family} className="gallery-group family" id={`fam-${familySlug(family)}`} open data-cfam={family}>
           <summary>
             <h2>{family}</h2>
-            <Badge appearance="count" size="sm" className="family-count">
+            <Badge size="sm" className="family-count">
               {list.length}
             </Badge>
           </summary>

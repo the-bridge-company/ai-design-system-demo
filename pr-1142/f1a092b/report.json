@@ -1,0 +1,115 @@
+{
+  "pr": 1142,
+  "sha": "f1a092bda06c45c8b6c7e7760e6e8852830bc850",
+  "baseSha": "40e42e0ee866bc91b2f668a71ae7093de58b7087",
+  "failed": false,
+  "failures": [],
+  "warnings": 0,
+  "screens": [
+    "components"
+  ],
+  "variants": [
+    {
+      "screen": "components",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3393,
+      "png": "components-desktop-light.png",
+      "axe": [],
+      "ms": 11636,
+      "webp": "components-desktop-light.webp",
+      "diff": {
+        "ratio": 0.04578909465020576,
+        "pixels": 178028,
+        "box": {
+          "x0": 296,
+          "y0": 342,
+          "x1": 1399,
+          "y1": 2699
+        },
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "components",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3393,
+      "png": "components-desktop-dark.png",
+      "axe": [],
+      "ms": 10627,
+      "webp": "components-desktop-dark.webp",
+      "diff": {
+        "ratio": 0.049931327160493824,
+        "pixels": 194133,
+        "box": {
+          "x0": 296,
+          "y0": 342,
+          "x1": 1399,
+          "y1": 2699
+        },
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "components",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 3344,
+      "png": "components-mobile-light.png",
+      "axe": [],
+      "ms": 11709,
+      "webp": "components-mobile-light.webp",
+      "diff": {
+        "ratio": 0.07023028314497509,
+        "pixels": 69351,
+        "box": {
+          "x0": 16,
+          "y0": 370,
+          "x1": 373,
+          "y1": 2527
+        },
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "components",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 3344,
+      "png": "components-mobile-dark.png",
+      "axe": [],
+      "ms": 10610,
+      "webp": "components-mobile-dark.webp",
+      "diff": {
+        "ratio": 0.08048770608012314,
+        "pixels": 79480,
+        "box": {
+          "x0": 16,
+          "y0": 370,
+          "x1": 373,
+          "y1": 2527
+        },
+        "sizeChanged": false
+      }
+    }
+  ]
+}

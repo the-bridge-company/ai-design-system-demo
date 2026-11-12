@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T11:03:57.630Z",
-  "sha": "d121912f3826d04436148e9304f61cd2da2265fa",
+  "createdAt": "2026-11-12T11:28:53.799Z",
+  "sha": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -2233,7 +2233,7 @@
         "Default": {
           "file": "stepper/default.png",
           "width": 320,
-          "height": 160
+          "height": 162
         }
       }
     },

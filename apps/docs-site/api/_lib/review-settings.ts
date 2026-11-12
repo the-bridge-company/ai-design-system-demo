@@ -17,7 +17,7 @@
 
 import type { Redis } from './redis.js';
 import type { EmailMember } from './members.js';
-import { memberRef } from './exploration-member.js';
+import { explorationBlockOf, memberRef } from './exploration-member.js';
 import { reviewModeOf, type ReviewMode } from './review-mode.js';
 
 export type DesignReviewSetting = { on: false } | { on: true; reviewers: string[] | 'any-designer' };
@@ -93,12 +93,44 @@ export function asksAnyReview(m: Who | null | undefined, map: DesignReviewMap): 
 export const decidesOnExplorations = (m: Who | null | undefined, map: DesignReviewMap): boolean => Boolean(m && (asksAnyReview(m, map) || m.role === 'admin'));
 
 /**
- * Whether an exploration goes through a review before the developers: someone other than the author can give the
- * design review of some product, or the library decision. `members` are the team's email members other than the
- * author, `designOwners` the GitHub design owners other than the author.
+ * Whether an exploration goes through a review before the developers: someone other than the author can give its
+ * product's design review, or its library decision when the body has something new for the library. `members` are the
+ * team's email members other than the author, `designOwners` the GitHub design owners other than the author. Without
+ * a product or a body (older callers), any review anyone could give counts.
  */
-export function needsReview(x: { map: DesignReviewMap; designOwners: number; members: readonly Who[] }): boolean {
-  return x.designOwners > 0 || x.members.some((m) => asksAnyReview(m, x.map));
+export function needsReview(x: { map: DesignReviewMap; designOwners: number; members: readonly Who[]; product?: string | null | undefined; body?: unknown }): boolean {
+  if (x.product === undefined && x.body === undefined) return x.designOwners > 0 || x.members.some((m) => asksAnyReview(m, x.map));
+  const s = settingOf(x.map, x.product ?? null);
+  const design = s.on && (s.reviewers !== 'any-designer' && !s.reviewers.length ? x.designOwners > 0 : x.members.some((m) => asksDesignReview(m, x.product ?? null, x.map)));
+  const library = newLibraryPieces(x.body) > 0 && (x.designOwners > 0 || x.members.some((m) => asksLibrary(m, x.map)));
+  return design || library;
+}
+
+const PIECES = /<!-- bridge-pieces (\{[\s\S]*?\}) -->/;
+
+/**
+ * The pieces of an exploration's library check that ask the library for something new and have no library answer yet
+ * (the server's reading of core libraryPendingOf). A single value change of a library component may be the library as
+ * it is (core asIsOption, which needs the library's options): left out here, so this gate never asks more than Studio.
+ */
+export function newLibraryPieces(body: unknown): number {
+  const m = typeof body === 'string' ? PIECES.exec(body) : null;
+  if (!m) return 0;
+  let r: { pieces?: { id?: unknown; kind?: unknown; aspect?: unknown; values?: unknown[] }[]; links?: { piece?: unknown }[] };
+  try {
+    r = JSON.parse(m[1]!);
+  } catch {
+    return 0;
+  }
+  const block = explorationBlockOf(body);
+  const lib = block?.library && typeof block.library === 'object' ? (block.library as { decisions?: { piece?: unknown; verdict?: unknown }[] }) : null;
+  const answered = new Set((lib?.decisions ?? []).filter((d) => d && d.verdict !== 'changes').map((d) => d.piece));
+  const sent = new Set((Array.isArray(r.links) ? r.links : []).map((l) => l?.piece));
+  return (Array.isArray(r.pieces) ? r.pieces : []).filter((p) => {
+    if (!p || answered.has(p.id) || sent.has(p.id)) return false;
+    if (p.kind === 'variant') return p.aspect === 'size' || !Array.isArray(p.values) || p.values.length !== 1;
+    return true;
+  }).length;
 }
 
 /**

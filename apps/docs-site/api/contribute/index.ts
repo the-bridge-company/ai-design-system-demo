@@ -2755,7 +2755,7 @@ async function reviewFor(ctx: Ctx, c: Call, body: unknown): Promise<{ decides: b
   const mine = block === null || authorRef === me || Boolean(c.member.login && authorLogin === c.member.login.toLowerCase());
   const others = (await ctx.svc.members.list(c.team)).filter((m) => memberRef(m.email) !== (authorRef ?? me) && !sameEmail(m.email, c.member.email));
   const owners = (await teamFactsOf(ctx, c)).designOwnerLogins.filter((l) => l !== authorLogin && l !== c.member.login?.toLowerCase());
-  return { decides: !mine && decidesOnExplorations(c.member, map), needs: needsReview({ map, designOwners: owners.length, members: others }) };
+  return { decides: !mine && decidesOnExplorations(c.member, map), needs: needsReview({ map, designOwners: owners.length, members: others, product: c.scope?.pair.key ?? null, body }) };
 }
 
 /** A member who may not decide never writes a lead's words in a block (api/_lib/lead-gate.ts), read against GitHub's body. */

@@ -1,7 +1,7 @@
 // Team Settings, the tabs over the four groups (lib/settings-sections.ts): the DS Tabs, underline variant, so they look
 // and behave like every other DS tab list (signal indicator, arrow keys, Home and End, tablist and tab roles). The
-// groups stay in the page (pages/team-shell/settings) as the tab panels, since they hold islands of their own: each
-// tab points at its group (aria-controls), each group names its tab (aria-labelledby). scripts/settings-sections.ts
+// groups stay in the page (pages/team-shell/settings) as DS TabsPanels outside this Tabs root, since they hold islands
+// of their own: each tab points at its group (aria-controls), each group names its tab (tabId). scripts/settings-sections.ts
 // shows one group at a time and keeps it in the address, so every old anchor (#roles, #figma) opens the right tab.
 import { useEffect, useRef, useState } from 'react';
 import { Tab, Tabs, TabsList } from '@bridge-ds/react';

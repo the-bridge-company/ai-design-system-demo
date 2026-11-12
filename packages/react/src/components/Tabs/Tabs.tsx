@@ -11,8 +11,10 @@ export type TabsValue = string | number | null;
 interface TabsContextValue {
   variant: TabsVariant;
   size: TabsSize;
+  /** True under a Tabs root. A TabsPanel outside one renders as a linked panel (see TabsPanel). */
+  inRoot: boolean;
 }
-const TabsContext = createContext<TabsContextValue>({ variant: 'underline', size: 'md' });
+const TabsContext = createContext<TabsContextValue>({ variant: 'underline', size: 'md', inRoot: false });
 
 export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
   /** `underline` for page-level sections (signal underline); `contained` for a compact segmented switch. Default `underline`. */
@@ -35,7 +37,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   ref,
 ) {
   return (
-    <TabsContext.Provider value={{ variant, size }}>
+    <TabsContext.Provider value={{ variant, size, inRoot: true }}>
       <BaseTabs.Root
         ref={ref}
         orientation={orientation}
@@ -146,11 +148,39 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab({ value,
 export interface TabsPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** Value of the Tab that shows this panel. */
   value: string | number;
-  /** Keep the panel in the DOM while hidden (preserves form state). */
+  /** Keep the panel in the DOM while hidden (preserves form state). Panels outside the Tabs root always stay. */
   keepMounted?: boolean;
+  /**
+   * The `id` of the Tab that shows this panel, for a panel rendered outside its Tabs root: a static page whose tabs
+   * are one island and whose panels hold islands of their own, or are server-rendered so the page reads without
+   * JavaScript. Give that Tab `aria-controls` with this panel's `id`, and show the selected panel with
+   * `showTabsPanel()` from `@bridge-ds/react/dom`. Ignored inside the root, where Base UI wires both ids.
+   */
+  tabId?: string;
 }
 
-/** Content shown when its tab is selected. Focusable so keyboard users can reach content without a focusable child. */
-export const TabsPanel = forwardRef<HTMLDivElement, TabsPanelProps>(function TabsPanel({ value, keepMounted, className, ...rest }, ref) {
+/**
+ * Content shown when its tab is selected. Focusable so keyboard users can reach content without a focusable child.
+ *
+ * Inside a Tabs root it is the Base UI panel. Outside one it renders the same panel as a linked panel: role tabpanel,
+ * labelled by `tabId`, in the tab order, marked `data-tabs-panel` with its value, in the page's own text size (it holds
+ * sections of the page). It starts shown (so a page without
+ * JavaScript reads every panel) until `showTabsPanel()` picks one.
+ */
+export const TabsPanel = forwardRef<HTMLDivElement, TabsPanelProps>(function TabsPanel({ value, keepMounted, tabId, className, ...rest }, ref) {
+  const { inRoot } = useContext(TabsContext);
+  if (!inRoot) {
+    return (
+      <div
+        ref={ref}
+        role="tabpanel"
+        tabIndex={0}
+        aria-labelledby={tabId}
+        data-tabs-panel={String(value)}
+        className={cx(styles.panel, styles.linked, className)}
+        {...rest}
+      />
+    );
+  }
   return <BaseTabs.Panel ref={ref} value={value} keepMounted={keepMounted} className={cx(styles.panel, className)} {...rest} />;
 });

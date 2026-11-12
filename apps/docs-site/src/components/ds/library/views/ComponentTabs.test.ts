@@ -4,6 +4,8 @@
 // APG, one panel shown at a time, the address following the tab, old section anchors opening the tab that holds them.
 import '../../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { TabsPanel } from '@bridge-ds/react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -12,13 +14,19 @@ import { COMPONENT_TABS, componentTabButtonId, componentTabPanelId } from '../..
 import { initComponentPage } from '../../../../scripts/component-page';
 import ComponentTabs from './ComponentTabs';
 
-// The page as ComponentView draws it: the tabs slot, then one panel per tab with a section heading in it.
+// The page as ComponentView draws it: the tabs slot, then one DS TabsPanel per tab (outside the Tabs root, static)
+// with a section heading in it.
 const SECTIONS: Record<string, string> = { usage: 'do-dont', tokens: 'anatomy', code: 'props', changelog: 'changes' };
 const host = document.createElement('div');
 host.className = 'cp-page';
-host.innerHTML = `<div data-tabs-slot></div>${COMPONENT_TABS.map(
-  (t) =>
-    `<div class="cp-panel" role="tabpanel" tabindex="0" id="${componentTabPanelId(t.id)}" aria-labelledby="${componentTabButtonId(t.id)}" data-panel="${t.id}"><section><h2 id="${SECTIONS[t.id]}">${t.label} section</h2></section></div>`,
+host.innerHTML = `<div data-tabs-slot></div>${COMPONENT_TABS.map((t) =>
+  renderToStaticMarkup(
+    createElement(
+      TabsPanel,
+      { className: 'cp-panel', value: t.id, id: componentTabPanelId(t.id), tabId: componentTabButtonId(t.id), 'data-panel': t.id } as Parameters<typeof TabsPanel>[0],
+      createElement('section', null, createElement('h2', { id: SECTIONS[t.id] }, `${t.label} section`)),
+    ),
+  ),
 ).join('')}`;
 document.body.append(host);
 Element.prototype.scrollIntoView = () => {};

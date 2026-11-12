@@ -4,6 +4,8 @@
 // a time, the address following the tab, and every old anchor opening its group. Axe clean.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { TabsPanel } from '@bridge-ds/react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -11,12 +13,18 @@ import { expectNoAxeViolations } from '../../../../../../packages/react/src/test
 import { SETTINGS_GROUPS, groupId, tabId } from '../../../lib/settings-sections';
 import SettingsTabs from './SettingsTabs';
 
-// The page's four groups, as pages/team-shell/settings renders them, with one band each.
+// The page's four groups, as pages/team-shell/settings renders them (the DS TabsPanel outside the Tabs root, static),
+// with one band each.
 function mountPanels() {
   const host = document.createElement('div');
-  host.innerHTML = SETTINGS_GROUPS.map(
-    (g) =>
-      `<div class="set-group" id="${groupId(g.key)}" data-set-group="${g.key}" role="tabpanel" aria-labelledby="${tabId(g.key)}" tabindex="0"><section id="${g.anchors[0]}"><h2>${g.label} band</h2></section></div>`,
+  host.innerHTML = SETTINGS_GROUPS.map((g) =>
+    renderToStaticMarkup(
+      createElement(
+        TabsPanel,
+        { className: 'set-group', value: g.key, id: groupId(g.key), tabId: tabId(g.key), 'data-set-group': g.key } as Parameters<typeof TabsPanel>[0],
+        createElement('section', { id: g.anchors[0] }, createElement('h2', null, `${g.label} band`)),
+      ),
+    ),
   ).join('');
   document.body.appendChild(host);
   return host;

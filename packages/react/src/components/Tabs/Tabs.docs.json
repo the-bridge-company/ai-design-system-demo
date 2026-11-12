@@ -14,7 +14,8 @@
     "Two to seven peer views of the same context, where users switch back and forth.",
     "underline for page and card sections; contained for a compact switch inside a toolbar (Light or Dark preview).",
     "count to show how many items wait in a view, like open reviews.",
-    "Vertical orientation for settings pages with many sections next to their content."
+    "Vertical orientation for settings pages with many sections next to their content.",
+    "tabId on a TabsPanel rendered outside its Tabs root, when the tabs are one island and the panels are not (a static page, panels holding islands of their own): show the picked one with showTabsPanel from @bridge-ds/react/dom."
   ],
   "whenNotToUse": [
     "Steps of a sequence the user must complete in order: use a stepper or a form with sections.",
@@ -63,7 +64,8 @@
     "By default arrows move focus and Enter or Space selects; set activateOnFocus when panels are cheap to render.",
     "Give the TabsList an aria-label (or labelledby) so the tablist has a name.",
     "The selected tab has a visible signal underline plus stronger text: never color alone.",
-    "Disabled tabs are announced as disabled and cannot be selected."
+    "Disabled tabs are announced as disabled and cannot be selected.",
+    "A TabsPanel outside its root is still a labelled tabpanel in the tab order: give it tabId (the Tab's id) and give that Tab aria-controls (the panel's id). Panels start shown, so a page without JavaScript reads them all."
   ],
   "contentGuidelines": [
     "Sentence case nouns: \"Tokens\", \"Open reviews\".",
@@ -80,6 +82,7 @@
     "indicator": "Selection indicator (signal underline or raised plate)",
     "underline": "Underline variant",
     "contained": "Contained variant",
-    "panel": "Panel"
+    "panel": "Panel",
+    "linked": "Linked panel, outside the Tabs root (keeps the page's text size)"
   }
 }

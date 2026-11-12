@@ -9,7 +9,7 @@
 // docs.json examples with the real components: only Bridge, which runs its own components, has one; a team's guidance
 // reads as text. Repo content reaches the page as React text only.
 import type { ComponentType, ReactNode } from 'react';
-import { Alert, Badge, CodeBlock, Link, PageHeader, SegmentedControl } from '@bridge-ds/react';
+import { Alert, Badge, CodeBlock, Link, PageHeader, SegmentedControl, TabsPanel } from '@bridge-ds/react';
 import { BookOpen, Columns2, FileCode, Lock, Moon, Pencil, Sun } from 'lucide-react';
 import { storybookIframeUrl, storybookManagerUrl, type ExampleNode } from '@bridge-ds/core';
 import ButtonLink from '../../ButtonLink';
@@ -17,7 +17,7 @@ import PropsTable from '../../PropsTable';
 import MotionTable from '../../MotionTable';
 import UsagePanel from '../../../UsagePanel';
 import { playgroundSpec, type ComponentInfo } from '../../../../lib/library/components';
-import { componentMotion, componentNotes, exampleCode, mainStory, previewUrl, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf, tokenKindCounts } from '../../../../lib/library/component-page';
+import { componentMotion, componentNotes, componentTabButtonId, componentTabPanelId, exampleCode, mainStory, previewUrl, readableDocs, STATUS_LABEL, STATUS_TONE, statusOf, tokenKindCounts } from '../../../../lib/library/component-page';
 import { tokenAxes } from '../../../../lib/library/tokens';
 import { humanDate } from '../../../../lib/library/stats';
 import { mdTitleParts } from '../../../../lib/markdown';
@@ -229,8 +229,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
 
         <div className="cp-layout">
           <div className="cp-body">
-            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
-            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-usage" aria-labelledby="tab-usage-btn" data-panel="usage">
+            <TabsPanel className="cp-panel" value="usage" id={componentTabPanelId('usage')} tabId={componentTabButtonId('usage')} data-panel="usage">
               <div data-le-read="">
                 {d && <UsagePanel docs={d} Example={Example} />}
                 {!d && (
@@ -240,10 +239,9 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
                 )}
               </div>
               <div data-le-usage=""></div>
-            </div>
+            </TabsPanel>
 
-            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
-            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-tokens" aria-labelledby="tab-tokens-btn" data-panel="tokens">
+            <TabsPanel className="cp-panel" value="tokens" id={componentTabPanelId('tokens')} tabId={componentTabButtonId('tokens')} data-panel="tokens">
               {locked}
               <section aria-labelledby="anatomy">
                 <h2 id="anatomy">Anatomy and tokens</h2>
@@ -338,10 +336,9 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
                   <p className="muted">No motion reading for {c.name} yet: its component specs could not be read.</p>
                 )}
               </section>
-            </div>
+            </TabsPanel>
 
-            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
-            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-code" aria-labelledby="tab-code-btn" data-panel="code">
+            <TabsPanel className="cp-panel" value="code" id={componentTabPanelId('code')} tabId={componentTabButtonId('code')} data-panel="code">
               {locked}
               {fileLinks.length > 0 && (
                 <ul className="cp-files" aria-label="Source files">
@@ -468,10 +465,9 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
                   </details>
                 )}
               </section>
-            </div>
+            </TabsPanel>
 
-            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
-            <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-changelog" aria-labelledby="tab-changelog-btn" data-panel="changelog">
+            <TabsPanel className="cp-panel" value="changelog" id={componentTabPanelId('changelog')} tabId={componentTabButtonId('changelog')} data-panel="changelog">
               {locked}
               <section aria-labelledby="changes">
                 <h2 id="changes">Changelog</h2>
@@ -497,7 +493,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
                   <Link href={pageHref(data, 'changelog/')}>All release notes</Link>
                 </p>
               </section>
-            </div>
+            </TabsPanel>
           </div>
         </div>
       </div>

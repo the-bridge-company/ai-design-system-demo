@@ -81,19 +81,7 @@
   margin: var(--space-6) 0 var(--space-8);
 }
 
-.cp-panel {
-  border-radius: var(--radius-container);
-}
-
-.cp-panel:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.cp-panel[hidden] {
-  display: none;
-}
-
+/* The panels are DS TabsPanels (ComponentView.tsx): their radius, focus ring and hidden state come with them. */
 .cp-panel > h2:first-child {
   margin-top: 0;
 }

@@ -1,7 +1,8 @@
 // Library > Components > one component: the Usage, Tokens, Code and Changelog tabs. The DS Tabs (underline variant),
 // so they look and behave like every DS tab list: signal indicator, arrow keys, Home and End, tablist and tab roles,
-// the Changelog's release count in the tab's count tag. The panels stay in ComponentView.tsx (static on Bridge's own
-// page): each tab points at its panel (aria-controls), each panel names its tab (aria-labelledby). The page script
+// the Changelog's release count in the tab's count tag. The panels are DS TabsPanels in ComponentView.tsx, outside
+// this Tabs root (static on Bridge's own page): each tab points at its panel (aria-controls), each panel names its tab
+// (tabId), and the page script shows the picked one with showTabsPanel (@bridge-ds/react/dom). The page script
 // (scripts/component-page.ts) shows the panel, keeps the tab in the address and opens old anchors; the two talk
 // through CP_TAB_PICK and CP_TAB_SHOWN (lib/library/component-page.ts).
 import { useEffect, useState } from 'react';

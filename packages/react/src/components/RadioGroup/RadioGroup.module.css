@@ -43,7 +43,10 @@
   line-height: var(--typography-meta-line-height);
 }
 
+/* A description introduces the group: ui, not meta. The error stays meta. */
 .description {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   margin-block-start: calc(var(--space-2) * -1);
   color: var(--color-text-muted);
 }

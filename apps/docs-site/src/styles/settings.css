@@ -69,8 +69,8 @@ html:has(.set-page, .ts-band) {
   max-width: 45ch;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .set-muted {
@@ -145,8 +145,8 @@ html:has(.set-page, .ts-band) {
 
 .set-row-help {
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .set-row-value {

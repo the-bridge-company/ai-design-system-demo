@@ -194,7 +194,7 @@ Line heights are fixed pixel values on the 4px grid (`font.leading.*`).
 | `typography.h3` | 16 / 24 | 600 | Instrument Sans | default | Card, dialog, panel and group titles |
 | `typography.body` | 16 / 24 | 400 | Instrument Sans | default | Reading text, leads, empty state sentences |
 | `typography.ui` | 14 / 20 | 400 (500 for names and labels) | Instrument Sans | default | Controls, nav, menu items, list rows, table cells |
-| `typography.meta` | 13 / 18 | 400 | Instrument Sans | muted | The secondary line under a name or title: job, date, path |
+| `typography.meta` | 13 / 18 | 400 | Instrument Sans | muted | Row-level metadata under a name: who, when, path, a count's companion, a thumbnail caption |
 | `typography.caption` | 12 / 16 | 400 (500 + wide tracking for section labels) | Instrument Sans | muted | Badges, section labels, footnotes |
 
 Rules:
@@ -202,8 +202,13 @@ Rules:
 - **At most 4 font sizes on one screen.** If a screen needs a fifth, a role is being misused.
 - **Never below 12px.** Muted text (`color.text.muted`) passes AA (4.5:1) on every surface it sits on.
 - **12px is for labels, not sentences.** Section labels and table heads (500, wide tracking), badges, tags and
-  counts, keyboard keys, code values, chart ticks. Anything that reads as a line of text (who, when, a description,
-  a column label) is `meta`. In Bridge, `t-meta` or `t-ui t-muted` set it.
+  counts, keyboard keys, code values, chart ticks. Nothing that reads as a line of text is 12.
+- **Meta is for rows, descriptions are UI.** `meta` (13/18) is only row-level metadata: ages, bylines
+  ("Sofia · 2 days ago"), paths, a count's companion inside a dense row or card, a column label, a caption under a
+  thumbnail. A line that introduces something (the description under a section, chapter, card or page title, a page
+  intro under the h1, setting help under a setting label, an empty-state sentence, a "Reaches …" summary in a header,
+  banner detail text) is `ui` (14/20) in `color.text.muted`, never 13. In Bridge, `t-meta t-muted` sets row meta and
+  `t-ui t-muted` sets a description.
 - **Measure at most 65ch** for reading text.
 - **One step at a time.** A name over its secondary line changes size by one step (14 over 13) and weight by one
   step (500 over 400) and color (default over muted), never 600 over 400 at 12.

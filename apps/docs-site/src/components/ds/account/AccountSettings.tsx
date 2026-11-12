@@ -120,8 +120,8 @@ function GitHubRow({ account }: { account: Account }) {
       <Icon icon={GitHubMark} size="md" />
       <div className="acc-set-text">
         <p className="acc-set-title">{account.github ? W.githubLinked(account.github.login) : W.githubNone}</p>
-        {!account.github && <p className="acc-set-sub">{W.linkGitHubWhy}</p>}
-        {error && <p className="acc-set-sub" role="alert">{error}</p>}
+        {!account.github && <p className="acc-set-sub is-help">{W.linkGitHubWhy}</p>}
+        {error && <p className="acc-set-sub is-help" role="alert">{error}</p>}
       </div>
       {!account.github && (
         <Button variant="secondary" iconStart={GitHubMark} loading={busy} onClick={() => void link()}>

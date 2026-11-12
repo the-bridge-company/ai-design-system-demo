@@ -50,7 +50,7 @@ async function fill(path: string, section: HTMLElement) {
   const n = items.length;
   // The demo switch is a development aid: production builds show real history only.
   const toggle = !DEMO_AVAILABLE ? '' : switchHtml('Show demo history', { checked: demo, size: 'sm', labelId: 'hs-demo-label', attributes: { 'data-hs-demo': true } });
-  const banner = demo ? `<p class="hs-demo-note t-meta t-muted">${badgeHtml('Demo', { tone: 'warning', size: 'sm' })} ${esc(DEMO_BANNER)}</p>` : '';
+  const banner = demo ? `<p class="hs-demo-note t-ui t-muted">${badgeHtml('Demo', { tone: 'warning', size: 'sm' })} ${esc(DEMO_BANNER)}</p>` : '';
   const body = n
     ? `<ol class="hs-token-list">${items.map((it, i) => itemHtml(it, i, demo)).join('')}</ol>`
     : `<p class="tx-empty-line">${demo ? 'No demo change touches this token. The demo history changes color.text.muted, button.radius and alert.radius.' : report ? 'No recorded change to this token in the history Bridge can read. Changes merged from now on show up here.' : esc(L.data.realNote ?? 'History is not available in this build.')}</p>`;

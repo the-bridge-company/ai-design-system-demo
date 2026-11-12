@@ -80,8 +80,8 @@
 .pb-keep-note {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .pb-grid {

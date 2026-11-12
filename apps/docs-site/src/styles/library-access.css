@@ -48,8 +48,8 @@
 }
 
 .lac-note {
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Phones: a lone action fills its bar. */

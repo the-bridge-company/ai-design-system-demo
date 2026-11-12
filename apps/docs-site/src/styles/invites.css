@@ -109,8 +109,8 @@
   max-width: 70ch;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .mem-note {
@@ -223,8 +223,8 @@
 .inv-hint {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .inv-access {
@@ -417,9 +417,9 @@
 
 .rp-review-help {
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-regular);
-  line-height: var(--typography-meta-line-height);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rp-lead {
@@ -431,8 +431,8 @@
 .rp-note {
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Settings > Members, Entry (boards E7a and E7c): who asks to join, one row each, above the members; the discovery

@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T02:29:13.250Z",
-  "durationMs": 338394,
+  "createdAt": "2026-11-12T02:51:15.494Z",
+  "durationMs": 262043,
   "base": {
-    "ref": "5e53d9910c1e511c9cd8f9eb8966642025ede490",
-    "sha": "5e53d9910c1e511c9cd8f9eb8966642025ede490"
+    "ref": "15b4e5bb57b76232c752c5ed471748c56e6b2143",
+    "sha": "15b4e5bb57b76232c752c5ed471748c56e6b2143"
   },
   "head": {
-    "ref": "79b4f2bb22c190cbf3d8a121c93dc98bdd79667e",
-    "sha": "79b4f2bb22c190cbf3d8a121c93dc98bdd79667e"
+    "ref": "b70af3354e5c202d6791b2771043cc651d391c3b",
+    "sha": "b70af3354e5c202d6791b2771043cc651d391c3b"
   },
   "options": {
     "only": [
@@ -118,7 +118,7 @@
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 4.89
+    "maxPercent": 5.28
   },
   "shots": [
     {
@@ -4208,18 +4208,11 @@
       "storyId": "forms-form--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 40397,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 826368,
-      "percent": 4.89,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 672,
-          "width": 496,
-          "height": 135
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -4230,12 +4223,7 @@
           "height": 807
         }
       },
-      "images": {
-        "before": "before/story__forms-form--all-states__ocean-dark.png",
-        "after": "after/story__forms-form--all-states__ocean-dark.png",
-        "diff": "diff/story__forms-form--all-states__ocean-dark.png",
-        "composite": "composite/story__forms-form--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__forms-input--all-states__ocean-dark",
@@ -4460,11 +4448,18 @@
       "storyId": "feedback-banner--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 43036,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 5.28,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 720,
+          "width": 960,
+          "height": 76
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -4475,7 +4470,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__feedback-banner--all-states__ocean-dark.png",
+        "after": "after/story__feedback-banner--all-states__ocean-dark.png",
+        "diff": "diff/story__feedback-banner--all-states__ocean-dark.png",
+        "composite": "composite/story__feedback-banner--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__feedback-emptystate--all-states__ocean-dark",

@@ -88,9 +88,9 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   const leoBody = bodyWith([leoPiece]);
   const src = (n: number, name: string, designer: string, piece: MissingPiece) => ({ key: explorationKeyOf('acme/crm-design', n), name, product: 'Acme CRM', designer, record: { checkedAt: 'x', pieces: [piece], links: [] } });
   const leo = src(1, 'Deal pipeline cards', 'Leo', leoPiece);
-  const sofia = src(2, 'Contact page summary', 'Sofia', restyleOf('card-summary', [pad('var(--space-5)', '20px')]));
-  // Ann's way: a filled card with no border, the room inside of today.
-  const ann = src(3, 'Activity feed filters', 'Ann', restyleOf('card-feed', [pad('var(--space-4)', '16px'), { category: 'color', property: 'background-color', value: 'var(--color-bg-subtle)', resolved: '#f4f4f5' }, { category: 'border', property: 'border', value: 'none' }]));
+  const sofia = src(2, 'Contact page summary', 'Sofia', restyleOf('card-summary', [pad('var(--space-6)', '24px')]));
+  // Ann's way: a filled card with no border, the room inside of today (the library's Card padding, 20 px).
+  const ann = src(3, 'Activity feed filters', 'Ann', restyleOf('card-feed', [pad('var(--space-5)', '20px'), { category: 'color', property: 'background-color', value: 'var(--color-bg-subtle)', resolved: '#f4f4f5' }, { category: 'border', property: 'border', value: 'none' }]));
   const two = libraryConflicts(leo, [sofia]);
   const three = libraryConflicts(leo, [sofia, ann]);
   const base = { body: leoBody, designer: 'Leo', screen: 'Deal pipeline cards', product: 'Acme CRM', approved: false, now: new Date('2026-11-10T10:00:30Z') };
@@ -104,11 +104,11 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     if (v.state !== 'rows') throw new Error(v.state);
     expect(v.summary).toBe('1 change');
     expect(v.rows[0]).toMatchObject({ kind: 'Change to', title: 'Card', summary: 'Tighter cards on this screen. The library Card has no tighter size yet.', before: null, after: null, menu: [] });
-    expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Your choice', tone: 'warning' });
+    expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Your choice', tone: 'neutral' });
     const c = conflictOf(v);
     expect(c.ways.map((w) => [w.label, w.hint])).toEqual([
-      ["Leo's way", 'Tighter\u2004\u2060·\u2004this screen'],
-      ["Sofia's way", 'Roomier\u2004\u2060·\u2004Contact page summary'],
+      ["Leo's way", 'Tighter than today ⁠· this screen'],
+      ["Sofia's way", 'Roomier than today ⁠· Contact page summary'],
     ]);
     expect(c.question).toBe('Which way does Card take?');
     expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes Card roomier.");
@@ -125,6 +125,18 @@ describe('several ways for one component part (EB1 to EB4)', () => {
       { size: 'Tighter', thanToday: true },
       { size: 'Roomier', thanToday: true },
     ]);
+  });
+
+  it("says same as today for a way equal to the library's value, the words Library review uses", () => {
+    expect(wayWords([lookOf(null, '20px'), lookOf(leoPiece)], 20).map((w) => w.size)).toEqual(['Same as today', 'Tighter']);
+  });
+
+  it("compares every way to the library's own Card padding (20 px), whatever the check recorded as before", () => {
+    // The check of the product screen recorded 16 before; the baseline is still the library's 20 (lib/library-baseline).
+    const before = restyleOf('card-deal', [{ ...pad('var(--space-3)', '12px') }]);
+    const recorded = { ...before, change: { before: '16px', after: '12px' } } as MissingPiece;
+    const c = conflictOf(libraryImpactView({ ...base, body: bodyWith([recorded]), lead: 'you', canDecide: true, conflicts: two, others: [sofia] }));
+    expect(c.ledger.have.find((r) => r.isDefault)?.value).toBe('20 px');
   });
 
   it('shows the designer the same block, read only, their way marked theirs, the lead deciding', () => {
@@ -177,12 +189,12 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: three, others: [sofia, ann] }));
     expect(c.several).toBe(true);
     expect(c.ways.map((w) => w.size)).toEqual(['Tighter', 'Roomier', 'Filled, no border']);
-    expect(c.ways[2]!.look).toEqual({ padding: 16, gap: 8, radius: null, borderless: true, filled: true, shadowless: false });
+    expect(c.ways[2]!.look).toEqual({ padding: 20, gap: 10, radius: null, borderless: true, filled: true, shadowless: false });
     // Each plate draws its way's own values: tighter and roomier differ from each other, room and spacing alike.
     expect(c.ways.map((w) => [w.look.padding, w.look.gap])).toEqual([
       [12, 6],
+      [24, 12],
       [20, 10],
-      [16, 8],
     ]);
     expect(c.context.map((s) => s.text).join('')).toBe("Two more screens change Card: Sofia's Contact page summary makes it roomier, Ann's Activity feed filters makes it filled, no border. All in Acme CRM.");
     expect(c.note).toBe('Answers all 3 screens. Leo, Sofia and Ann are told.');
@@ -240,18 +252,18 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.rows[0]!.origin).toEqual({ people: ['Leo', 'Sofia'], products: ['Acme CRM'] });
     const L = conflictOf(v).ledger;
     expect(L.property).toBe('Padding');
-    expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '20 px', '+4 px', "Sofia's way\u2004\u2060·\u2004Contact page summary\u2004\u2060·\u2004Acme CRM"]]);
+    expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '24 px', '+4 px', "Sofia's way ⁠· Contact page summary ⁠· Acme CRM"]]);
     expect(L.have.map((r) => [r.name, r.value, r.delta, r.isDefault, r.line])).toEqual([
-      ['Default', '16 px', null, true, 'Every screen gets it today. It stays the default.'],
-      ['Compact', '12 px', '−4 px', false, "Leo's screen can use Compact as it is\u2004\u2060·\u2004Deal pipeline cards\u2004\u2060·\u2004Acme CRM"],
+      ['Default', '20 px', null, true, 'Every screen gets it today. It stays the default.'],
+      ['Compact', '12 px', '−8 px', false, "Leo's screen can use Compact as it is ⁠· Deal pipeline cards ⁠· Acme CRM"],
     ]);
   });
 
   it('continues the option series for new values and says the outcome on the button', () => {
     const card = libraryOptions('Card', 'padding', null);
-    expect([...proposeNames([20, 24], card)]).toEqual([
-      [20, 'Comfortable'],
-      [24, 'Spacious'],
+    expect([...proposeNames([24, 28], card)]).toEqual([
+      [24, 'Comfortable'],
+      [28, 'Spacious'],
     ]);
     expect([...proposeNames([8, 4, 28], card)]).toEqual([
       [28, 'Comfortable'],
@@ -278,12 +290,12 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.tail).toBe('decided');
     expect(v.rows[0]!.tag).toEqual({ label: 'Decided', tone: 'success' });
     const said = v.rows[0]!.settled!;
-    expect(said.map((s) => s.text).join('')).toBe("Card gets a new padding option, Comfortable 20 px, for Sofia's screen. Default 16 px stays the default. Decided by Dana, just now.");
-    expect(said.filter((s) => s.strong).map((s) => s.text)).toEqual(['Comfortable 20 px', 'Default 16 px']);
+    expect(said.map((s) => s.text).join('')).toBe("Card gets a new padding option, Comfortable 24 px, for Sofia's screen. Default 20 px stays the default. Decided by Dana, just now.");
+    expect(said.filter((s) => s.strong).map((s) => s.text)).toEqual(['Comfortable 24 px', 'Default 20 px']);
     const renamed = decidedParts(pick, v.conflicts[0]!.ways, 'Card', v.conflicts[0]!.ledger, '');
-    expect(renamed.map((s) => s.text).join('')).toBe("Card gets a new padding option, Roomy 20 px, for Sofia's screen. Default 16 px stays the default.");
+    expect(renamed.map((s) => s.text).join('')).toBe("Card gets a new padding option, Roomy 24 px, for Sofia's screen. Default 20 px stays the default.");
     const kept = decidedParts(KEEP_TODAY, v.conflicts[0]!.ways, 'Card', v.conflicts[0]!.ledger, '');
-    expect(kept.map((s) => s.text).join('')).toBe('Card keeps its padding options as they are. Default 16 px stays the default.');
+    expect(kept.map((s) => s.text).join('')).toBe('Card keeps its padding options as they are. Default 20 px stays the default.');
     expect(keptKeys(KEEP_TODAY, v.conflicts[0]!.ways)).toEqual({ mode: 'sizes', keys: [] });
   });
 

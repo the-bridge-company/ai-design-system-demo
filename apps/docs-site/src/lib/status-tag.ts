@@ -4,22 +4,27 @@
 // quality states all do), and the tag wears that meaning's tone. A new label therefore cannot pick a colour by itself.
 //
 //   blue  (Harbor) in progress: Exploring, Being built, In progress, Picked up, Developer on it
-//   amber          waiting on someone: Needs you, Needs Dana, Needs review, In review, Check the build, Waiting for lead
+//   grey           waiting on someone, a calm wait: In review, Ready to build, Checking, Needs you, Two ways
+//   amber          late: a wait past LATE_DAYS (core status-ladder.ts, more than a week). Nothing else is amber.
 //   green          done: Approved, Shipped, Passing
-//   red            blocked, or two ways: Two ways, Needs changes, Failing
+//   red            blocked: Needs changes, Failing
 //   grey           over or quiet: Closed, Archived, Not planned
 //
 // Blue is the selected surface and the link text (as on the validated boards and Home's cards), not the DS info tone:
 // the DS colours stay as they are (info stays plum for the rest of the library), so Studio adds `st-tag-harbor` on top
 // of any tag whose tone is info. Pure: no DOM. Tested in status-tag.test.ts. The class lives in styles/ds-studio.css.
 
+import { isLate } from '@bridge-ds/core';
+
 /** What a Studio status tag says about the work, one colour each. */
-export type TagMeaning = 'in-progress' | 'waiting' | 'done' | 'blocked' | 'over';
+export type TagMeaning = 'in-progress' | 'waiting' | 'late' | 'done' | 'blocked' | 'over';
 
 /** The DS Badge tone of each meaning. Info renders in Harbor in Studio (statusTagClass). */
 export const MEANING_TONE = {
   'in-progress': 'info',
-  waiting: 'warning',
+  // A wait is normal work: grey. Only a late one is amber (waitTone).
+  waiting: 'neutral',
+  late: 'warning',
   done: 'success',
   blocked: 'danger',
   over: 'neutral',
@@ -36,3 +41,9 @@ export function statusTagClass(tone: string | null | undefined, extra?: string):
   const out = [extra, tone === MEANING_TONE['in-progress'] ? 'st-tag-harbor' : null].filter(Boolean).join(' ');
   return out || undefined;
 }
+
+/**
+ * The tone of a wait, from how long it has waited (days, when known): grey, amber once late (core isLate, more than
+ * LATE_DAYS). The one place a status picks the warning colour.
+ */
+export const waitTone = (waitedDays: number | null | undefined): 'neutral' | 'warning' => (isLate(waitedDays) ? MEANING_TONE.late : MEANING_TONE.waiting);

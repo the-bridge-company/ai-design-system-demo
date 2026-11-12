@@ -23,7 +23,7 @@ describe('statusPill', () => {
       const gate = mergeGate({ tier: 3, ci: noCi, approvals, draft: false, mergeable, state: 'open' });
       const page = whoActs(needFromDetail({ state: 'open', ci: noCi, gate, changesRequestedBy: [], mergeable }), people);
       expect(statusPill(kind, row)).toEqual(statusPill(kind, page));
-      expect(statusPill(kind, row)).toEqual({ label: 'Owner override needed', tone: 'warning' });
+      expect(statusPill(kind, row)).toEqual({ label: 'Owner override needed', tone: 'neutral' });
     }
   });
 
@@ -36,7 +36,7 @@ describe('statusPill', () => {
 
   it('falls back to the status words when who acts adds nothing', () => {
     expect(statusPill('merged', null)).toEqual({ label: 'Added to the library', tone: 'neutral' });
-    expect(statusPill('needs-design', { short: null })).toEqual({ label: 'Needs design approval', tone: 'warning' });
+    expect(statusPill('needs-design', { short: null })).toEqual({ label: 'Needs design approval', tone: 'neutral' });
   });
 });
 

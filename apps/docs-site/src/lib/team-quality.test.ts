@@ -47,6 +47,8 @@ describe('teamQuality on this repository (parity with the build-time dashboard)'
 
   it('counts the same unused tokens, global stylesheets included', () => {
     expect(q.unusedTotal).toBe(s.unusedSemantic.length + s.orphanPrimitives.length);
+    // By kind, each against the total the page and Studio Tokens count (the self-hosted page's numbers).
+    expect(q.unused).toEqual({ tokens: { total: s.semantic, unused: s.unusedSemantic.length }, primitives: { total: s.primitives, unused: s.orphanPrimitives.length } });
     // Without the global stylesheets (a model cached before they were read), base.css readers would look unused.
     const { styles: _styles, ...older } = repoModel;
     const without = teamQuality({ model: older as typeof repoModel, ...team, audits: null });

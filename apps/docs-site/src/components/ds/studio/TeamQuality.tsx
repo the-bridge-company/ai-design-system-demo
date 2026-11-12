@@ -179,7 +179,7 @@ export default function TeamQuality() {
         adoptionUnmeasured={q.unmeasured}
         adoptionMeasure={<MeasureRest repo={`${data.owner}/${data.repo}`} developer={developer} products={q.unmeasured} />}
         guidance={{ lead: guidanceLead(q.guidance), findings: q.guidanceFindings }}
-        tokens={{ findings: q.tokenFindings, unusedTotal: q.unusedTotal, unusedHref: q.unusedHref, problems: q.problems }}
+        tokens={{ findings: q.tokenFindings, unused: q.unused, unusedHref: q.unusedHref, problems: q.problems }}
       />
     </div>
   );

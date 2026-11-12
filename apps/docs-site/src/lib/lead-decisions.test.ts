@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withDecision, withDoneExploring, withLeadAsked, withLeadAskedTo, withoutLeadAsked } from '@bridge-ds/core';
-import { decisionRows, decisionTag, designerZoneTitle, leadHomeRow, leadWaitLine, nextName, sayerName } from './lead-decisions';
+import { decisionRows, decisionTag, designerZoneTitle, leadHomeRow, leadWaitLine, nextName, rowAgeFrom, sayerName, turnSince } from './lead-decisions';
 
 const start = explorationPrBody({ name: 'Late tag', purpose: 'p', slug: 'late-tag', author: 'ann' }, { owner: 'o', repo: 'r', packages: [], apps: {} });
 const asked = withLeadAsked(start, { at: '2026-11-07T10:00:00.000Z', by: 'ann' });
@@ -29,8 +29,9 @@ describe('the Decisions list', () => {
 
 describe('the tag and the zone', () => {
   it('says what the talk made of it', () => {
-    expect(decisionTag({ kind: 'changes' }, 'Ann')).toEqual({ label: 'Needs changes', tone: 'danger' });
-    expect(decisionTag({ kind: 'question' }, 'Ann')).toEqual({ label: 'Waiting for Ann', tone: 'warning' });
+    // The one status ladder: changes asked is back to Exploring, a question keeps it In review (who answers is a line).
+    expect(decisionTag({ kind: 'changes' }, 'Ann')).toEqual({ label: 'Exploring', tone: 'info' });
+    expect(decisionTag({ kind: 'question' }, 'Ann')).toEqual({ label: 'In review', tone: 'neutral' });
     expect(decisionTag({ kind: 'not-doing' }, 'Ann')).toEqual({ label: 'Not doing this', tone: 'neutral' });
     expect(decisionTag(null, 'Ann')).toBeNull();
     expect(designerZoneTitle('changes', 'Florian')).toBe('Florian asks for changes');
@@ -80,5 +81,25 @@ describe('a lead while their question waits on the designer', () => {
   });
   it('another lead reads who asked', () => {
     expect(leadWaitLine({ by: 'dana', byName: 'Dana' }, 'flo', 'GoulouPhoto')).toBe('Dana asked GoulouPhoto. Waiting for their answer.');
+  });
+});
+
+describe('one clock for "waiting"', () => {
+  it('counts the lead\'s turn from when it was sent for review, never from when it started or last moved', () => {
+    expect(turnSince(start)).toBeNull();
+    expect(turnSince(asked)).toBe('2026-11-07T10:00:00.000Z');
+    // Home's row and the Explorations list read the same moment.
+    expect(leadHomeRow(asked, lead)?.since).toBe(turnSince(asked));
+    expect(rowAgeFrom({ body: asked, updated: '2026-11-10T03:47:20Z', yourTurn: true })).toBe('2026-11-07T10:00:00.000Z');
+    // Not the viewer's turn: when it last moved.
+    expect(rowAgeFrom({ body: asked, updated: '2026-11-10T03:47:20Z', yourTurn: false })).toBe('2026-11-10T03:47:20Z');
+    expect(rowAgeFrom({ body: start, updated: '2026-11-10T03:47:20Z', yourTurn: true })).toBe('2026-11-10T03:47:20Z');
+  });
+  it('restarts the clock when the designer answers, and counts the designer\'s turn from the question', () => {
+    const q = withDecision(asked, { kind: 'question', at: '2026-11-08T09:00:00.000Z', by: 'flo', text: 'Which tab?' });
+    expect(turnSince(q)).toBe('2026-11-08T09:00:00.000Z');
+    const a = withDecision(q, { kind: 'answer', at: '2026-11-09T09:00:00.000Z', by: 'ann', text: 'Orders' });
+    expect(turnSince(a)).toBe('2026-11-09T09:00:00.000Z');
+    expect(leadHomeRow(a, lead)?.since).toBe('2026-11-09T09:00:00.000Z');
   });
 });

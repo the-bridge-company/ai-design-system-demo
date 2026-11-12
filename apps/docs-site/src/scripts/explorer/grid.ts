@@ -1,7 +1,7 @@
 // The center table: an ARIA grid (div based, so section groups can use content-visibility and stay cheap with 535
 // rows). Groups are collapsible section rows, the header is sticky, there is one column per relevant mode, plus code
 // syntax and description columns. Rows render in chunks: the first screenful synchronously, the rest on idle.
-import { tooltipHtmlAttributes } from '@bridge-ds/react/dom';
+import { badgeHtml, tooltipHtmlAttributes } from '@bridge-ds/react/dom';
 import { codeSyntax, modeName, SYNTAX_LABEL } from '../../lib/explorer/format';
 import { beforeText, markLabel, type TokenMark } from '../../lib/view-scope';
 import { sectionsFor, type Column, type Section, type XToken } from '../../lib/explorer/model';
@@ -56,7 +56,8 @@ function rowHtml(d: ExplorerData, t: XToken, view: View, s: ExplorerState, secti
   const rel = !s.flat && section.key === t.group ? t.name : t.path;
   const mark = d.marks?.get(t.path);
   // Usage is the latest library's: a token new in the change has none to say.
-  const unused = t.used || mark?.kind === 'added' ? '' : '<span class="xp-flag">Unused</span>';
+  // Unused is a fact, not a warning: a calm grey tag (lib/status-tag, amber only for what is late).
+  const unused = t.used || mark?.kind === 'added' ? '' : badgeHtml('Unused', { tone: 'neutral', size: 'sm' });
   const changed = mark ? markHtml(mark, d) : '';
   // Studio: the name opens the read-only details, the value cells open the editor. No copy buttons in the cells
   // (C copies, and the row menu); the row menu sits at the end of the name cell.

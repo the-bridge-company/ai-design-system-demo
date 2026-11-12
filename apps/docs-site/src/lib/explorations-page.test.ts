@@ -17,6 +17,7 @@ import {
   splitWaiting,
   STATE_LABEL,
   statusOf,
+  statusNote,
   statusTriggerLabel,
   turnReason,
   YOU,
@@ -30,21 +31,26 @@ const question = withDecision(asked, { kind: 'question', at: '2026-11-07T11:00:0
 const notDoing = withDecision(withoutLeadAsked(asked), { kind: 'not-doing', at: '2026-11-07T11:00:00.000Z', by: 'dana', byName: 'Dana' });
 const looksRight = withDecision(withoutLeadAsked(asked), { kind: 'looks-right', at: '2026-11-07T11:00:00.000Z', by: 'dana', byName: 'Dana' });
 
-describe('one status per exploration, in designer words', () => {
+describe('one status per exploration, on the one status ladder', () => {
   it('reads the talk with the lead while it runs', () => {
     expect(statusOf({ lifecycle: 'exploration', stage: 'exploring', body: start })).toBe('exploring');
-    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-lead', body: asked })).toBe('waiting-for-lead');
-    expect(statusOf({ lifecycle: 'exploration', body: asked })).toBe('waiting-for-lead');
-    expect(statusOf({ lifecycle: 'exploration', stage: 'exploring', body: changes })).toBe('needs-changes');
+    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-lead', body: asked })).toBe('in-review');
+    expect(statusOf({ lifecycle: 'exploration', body: asked })).toBe('in-review');
+    // Changes asked: back with the designer, Exploring; the second line says why.
+    expect(statusOf({ lifecycle: 'exploration', stage: 'exploring', body: changes })).toBe('exploring');
+    expect(statusNote({ lifecycle: 'exploration', stage: 'exploring', body: changes })).toBe('Changes asked');
     expect(statusOf({ lifecycle: 'exploration', stage: 'exploring', body: notDoing })).toBe('not-doing');
   });
-  it('collapses every developer stage into With developers', () => {
-    for (const stage of ['being-built', 'in-review', 'approved'] as const) expect(statusOf({ lifecycle: 'exploration', stage, body: start })).toBe('with-developers');
-    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: start })).toBe('with-developers');
+  it('names each developer stage by its step: Ready to build, Being built, Checking', () => {
+    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: start })).toBe('ready-to-build');
+    expect(statusOf({ lifecycle: 'exploration', stage: 'being-built', body: start })).toBe('being-built');
+    for (const stage of ['in-review', 'approved'] as const) expect(statusOf({ lifecycle: 'exploration', stage, body: start })).toBe('checking');
   });
-  it('says Looks right once the lead approved, and Waiting for the library while pieces are missing', () => {
-    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight })).toBe('looks-right');
-    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight, waitsForLibrary: true })).toBe('waiting-for-library');
+  it('says Looks right and Waiting for the library on the second line, never as a status', () => {
+    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight })).toBe('ready-to-build');
+    expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight })).toBe('Looks right');
+    expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight, waitsForLibrary: true })).toBe('in-review');
+    expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight, waitsForLibrary: true })).toBe('Waiting for the library');
   });
   it('ends as Shipped, Not doing this or Archived', () => {
     expect(statusOf({ lifecycle: 'exploration', stage: 'next-release' })).toBe('shipped');
@@ -55,14 +61,14 @@ describe('one status per exploration, in designer words', () => {
     expect(statusOf({ lifecycle: 'exploration', archived: true, stage: 'exploring' })).toBe('archived');
   });
   it('maps a product branch by its review', () => {
-    expect(statusOf({ lifecycle: 'draft' })).toBe('with-developers');
-    expect(statusOf({ lifecycle: 'ready', statusKind: 'changes-requested' })).toBe('needs-changes');
-    expect(statusOf({ lifecycle: 'ready', statusKind: 'needs-design' })).toBe('waiting-for-lead');
-    expect(statusOf({ lifecycle: 'ready', statusKind: 'ready' })).toBe('looks-right');
+    expect(statusOf({ lifecycle: 'draft' })).toBe('being-built');
+    expect(statusOf({ lifecycle: 'ready', statusKind: 'changes-requested' })).toBe('exploring');
+    expect(statusOf({ lifecycle: 'ready', statusKind: 'needs-design' })).toBe('in-review');
+    expect(statusOf({ lifecycle: 'ready', statusKind: 'ready' })).toBe('ready-to-build');
   });
   it('never speaks developer jargon', () => {
     for (const l of [...Object.values(STATE_LABEL), ...BOARD_COLUMNS.map((c) => c.label)]) expect(jargonIn(l)).toEqual([]);
-    expect(IN_PROGRESS.map((s) => STATE_LABEL[s])).toEqual(['Exploring', 'Waiting for lead', 'Needs changes', 'Waiting for the library', 'Looks right', 'With developers']);
+    expect(IN_PROGRESS.map((s) => STATE_LABEL[s])).toEqual(['Exploring', 'In review', 'Ready to build', 'Being built', 'Checking']);
   });
 });
 
@@ -73,18 +79,21 @@ describe('filters and the address', () => {
     expect(addressWithFilters('', DEFAULT_FILTERS)).toBe('');
   });
   it('round-trips several statuses, products and people', () => {
-    const f = { status: ['needs-changes', 'exploring'] as const, product: ['crm', 'prints'], people: [YOU, 'leo'] };
+    const f = { status: ['checking', 'exploring'] as const, product: ['crm', 'prints'], people: [YOU, 'leo'] };
     const s = addressWithFilters('?pr=3', { ...f, status: [...f.status] });
-    expect(s).toBe('?pr=3&status=exploring,needs-changes&product=crm,prints&people=you,leo');
-    expect(filtersFromAddress(s)).toEqual({ status: ['exploring', 'needs-changes'], product: ['crm', 'prints'], people: [YOU, 'leo'] });
+    expect(s).toBe('?pr=3&status=exploring,checking&product=crm,prints&people=you,leo');
+    expect(filtersFromAddress(s)).toEqual({ status: ['exploring', 'checking'], product: ['crm', 'prints'], people: [YOU, 'leo'] });
   });
   it('maps the old ?state=, ?status= and History links to the Status filter', () => {
     expect(filtersFromAddress('?state=shipped').status).toEqual(['shipped']);
     expect(filtersFromAddress('?state=archived').status).toEqual(['archived']);
-    expect(filtersFromAddress('?state=code').status).toEqual(['with-developers']);
-    expect(filtersFromAddress('?state=building').status).toEqual(['with-developers']);
+    expect(filtersFromAddress('?state=code').status).toEqual(['ready-to-build']);
+    expect(filtersFromAddress('?state=building').status).toEqual(['being-built']);
     expect(filtersFromAddress('?status=merged').status).toEqual(['shipped']);
-    expect(filtersFromAddress('?status=draft').status).toEqual(['with-developers']);
+    expect(filtersFromAddress('?status=draft').status).toEqual(['being-built']);
+    // The old words of this page still open: With developers is every developer step.
+    expect(filtersFromAddress('?status=with-developers').status).toEqual(['ready-to-build', 'being-built', 'checking']);
+    expect(filtersFromAddress('?status=waiting-for-lead').status).toEqual(['in-review']);
     expect(filtersFromAddress('?view=history').status).toEqual(['shipped']);
     // Waiting on me is a section now, never a filter: the default.
     expect(filtersFromAddress('?state=waiting').status).toEqual([...IN_PROGRESS]);
@@ -115,7 +124,7 @@ describe('filters and the address', () => {
     expect(multiTriggerLabel([], (v) => v, 'Everyone')).toBe('Everyone');
     expect(multiTriggerLabel(['Leo', 'Ann'], (v) => v, 'Everyone')).toBe('Leo +1');
     const names = { person: (k: string) => ({ leo: 'Leo' })[k] ?? k, product: (k: string) => ({ crm: 'Acme CRM' })[k] ?? k };
-    expect(emptyFilterLine({ status: ['waiting-for-lead'], product: ['crm'], people: ['leo'] }, names)).toBe('Nothing waiting for lead by Leo in Acme CRM yet.');
+    expect(emptyFilterLine({ status: ['in-review'], product: ['crm'], people: ['leo'] }, names)).toBe('Nothing in review by Leo in Acme CRM yet.');
     expect(emptyFilterLine({ ...DEFAULT_FILTERS, people: [YOU] }, names)).toBe('Nothing in progress by you yet.');
     expect(countLine(3, 7)).toBe('3 of 7 explorations.');
     expect(countLine(1, 1)).toBe('1 exploration.');
@@ -146,16 +155,17 @@ describe('the Board', () => {
   const now = Date.parse('2026-11-09T12:00:00Z');
   const rows = [
     { id: 'a', status: 'exploring' as const },
-    { id: 'b', status: 'waiting-for-library' as const },
-    { id: 'c', status: 'looks-right' as const },
+    { id: 'b', status: 'in-review' as const },
+    { id: 'c', status: 'ready-to-build' as const },
     { id: 'd', status: 'shipped' as const, shippedAt: '2026-11-01T00:00:00Z' },
     { id: 'e', status: 'shipped' as const, shippedAt: '2026-09-01T00:00:00Z' },
     { id: 'f', status: 'archived' as const },
   ];
-  it('has one column per status, Looks right holding Waiting for the library, Shipped the last 30 days', () => {
+  it('has one column per open step, Shipped the last 30 days', () => {
     const cols = boardColumns(rows, [...IN_PROGRESS, 'shipped'], now);
-    expect(cols.map((c) => c.key)).toEqual(['exploring', 'waiting-for-lead', 'needs-changes', 'looks-right', 'with-developers', 'shipped']);
-    expect(cols.find((c) => c.key === 'looks-right')!.rows.map((r) => r.id)).toEqual(['b', 'c']);
+    expect(cols.map((c) => c.key)).toEqual(['exploring', 'in-review', 'ready-to-build', 'being-built', 'checking', 'shipped']);
+    expect(cols.find((c) => c.key === 'in-review')!.rows.map((r) => r.id)).toEqual(['b']);
+    expect(cols.find((c) => c.key === 'ready-to-build')!.rows.map((r) => r.id)).toEqual(['c']);
     expect(cols.find((c) => c.key === 'shipped')!.rows.map((r) => r.id)).toEqual(['d']);
     expect(cols.flatMap((c) => c.rows).some((r) => r.id === 'f')).toBe(false);
   });

@@ -293,8 +293,8 @@ describe('For you: the change lifecycle (lib/change-status)', () => {
   it('badges each change row with its state, in the status line words and tone', () => {
     const t = todo({ changes: [change(1, 'ready', 'ana', 'peterbono', { lifecycle: 'ready' }), change(2, 'needs-design', 'ana', 'peterbono', { lifecycle: 'ready' })], requests: [], viewer: 'peterbono', owners: ['peterbono'] });
     expect(t.mine.map((r) => r.state)).toEqual([
-      { lifecycle: 'ready', label: 'In review', tone: 'warning' },
-      { lifecycle: 'ready', label: 'In review', tone: 'warning' },
+      { lifecycle: 'ready', label: 'In review', tone: 'neutral' },
+      { lifecycle: 'ready', label: 'In review', tone: 'neutral' },
     ]);
     // Unknown lifecycle: no badge rather than a guess.
     expect(todo({ changes: [change(1, 'ready', 'ana', 'peterbono')], requests: [], viewer: 'peterbono', owners: ['peterbono'] }).mine[0]!.state).toBeUndefined();
@@ -314,6 +314,6 @@ describe('For you: the change lifecycle (lib/change-status)', () => {
   it('keeps a change that waits for code off For you, with no designer action', () => {
     const t = todo({ changes: [change(6, 'ci-failing', 'ana', 'peterbono', { failing: 2, lifecycle: 'waiting' })], requests: [], viewer: 'peterbono', owners: ['peterbono'] });
     expect(t.mine).toEqual([]);
-    expect(t.developer[0]).toMatchObject({ task: 'blocked', why: 'Design is approved. A developer finishes the code before it is added to the library.', state: { label: 'Approved, waiting for code', tone: 'neutral' } });
+    expect(t.developer[0]).toMatchObject({ task: 'blocked', why: 'Design is approved. A developer finishes the code before it is added to the library.', state: { label: 'Ready to build', tone: 'neutral' } });
   });
 });

@@ -129,6 +129,7 @@ const onboarding = {
     import { waitingCounts } from '../../lib/waiting-counts';
     import { loadHome, type HomeData, type HomeStatic } from '../../scripts/home-data';
     import { paintStudioHome, type HealthLine, type HomeComponent, type StudioHomeProps } from '../../components/ds/studio/StudioHome';
+    import { HOME_CLEAR_LINE } from '../../lib/quality-view';
     import { adoptionDropLine, greeting, homeState } from '../../lib/home-model';
     import { signedOutLine } from '../../lib/overview-todo';
     import { ghButton } from '../../lib/gh-wording';
@@ -207,7 +208,7 @@ const onboarding = {
     function health(): HealthLine | null {
       if (stat.adoptionDrop) return { text: adoptionDropLine(stat.adoptionDrop), tone: 'drop', href: studioHref('quality/#ql-adoption'), link: 'Open Quality' };
       // A failing contrast check is a Needs you row; otherwise one quiet line.
-      return stat.contrastFail ? null : { text: 'Library healthy.', tone: 'ok', href: studioHref('quality/'), link: 'Open Quality' };
+      return stat.contrastFail ? null : { text: HOME_CLEAR_LINE, tone: 'ok', href: studioHref('quality/'), link: 'Open Quality' };
     }
 
     const launcherSlot = document.querySelector<HTMLElement>('[data-team-launcher]');

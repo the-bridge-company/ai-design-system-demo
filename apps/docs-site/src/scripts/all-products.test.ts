@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // All products counts with the one status Home and the product page use (lib/exploration-state): a design copy
-// exploration whose developers' task was closed as done is Shipped, never "waiting to be picked up" (prod, 2026-11-05:
-// the Art print shop row said "2 waiting to be picked up" while Home and its cards said one).
+// exploration whose developers' task was closed as done is Shipped, never "ready to build" (prod, 2026-11-05:
+// the Art print shop row said "2 ready to build" while Home and its cards said one).
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProductConfig } from '@bridge-ds/core';
 import type { LifecycleStage } from '../lib/review-state';
@@ -64,7 +64,7 @@ describe('readAllProducts status', () => {
     const read = await readAllProducts();
     const byNumber = Object.fromEntries(read!.cards.map((c) => [c.number, c.lifecycle]));
     expect(byNumber).toEqual({ 1: 'waiting-for-code', 4: 'shipped' });
-    expect(folderLine(read!.cards)).toBe('1 waiting to be picked up');
+    expect(folderLine(read!.cards)).toBe('1 ready to build');
   });
 
   it('a task picked up reads Being built', async () => {

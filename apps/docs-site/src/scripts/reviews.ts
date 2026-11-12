@@ -7,7 +7,8 @@
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
 import { explorationWaitsOnViewer } from './design-lead';
-import { statusOf, turnReason } from '../lib/explorations-page';
+import { statusNote, statusOf, turnReason } from '../lib/explorations-page';
+import { rowAgeFrom } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
@@ -405,8 +406,9 @@ function listRow(r: Row): ListRow {
     author: (r.exploration ? explorationAuthorFor(r.user.login, r.body ?? null) : authorFor(r.user.login, r.body ?? null)) ?? r.user.login,
     agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
-    // An exploration says when it last moved, after who: "Florian · 2 h ago".
-    ago: r.exploration && r.updated_at ? shortAgo(r.updated_at) || null : null,
+    // An exploration says when it last moved, after who: "Florian · 2 h ago"; one that waits on the viewer, since it
+    // was sent to them (lib/lead-decisions rowAgeFrom, the clock of Home's "Waiting 4 days").
+    ago: r.exploration && r.updated_at ? shortAgo(rowAgeFrom({ body: r.body ?? null, updated: r.updated_at, yourTurn: turn })) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,
@@ -435,7 +437,11 @@ function listRow(r: Row): ListRow {
         }),
     requester: requesterOf(r.body),
     // Where it stands and, when it waits on the viewer, why (lib/explorations-page: designer words only).
-    status: statusOf({ lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)) }),
+    ...(() => {
+      // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
+      const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)) };
+      return { status: statusOf(at), statusNote: statusNote(at) };
+    })(),
     turnReason: turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null,
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),

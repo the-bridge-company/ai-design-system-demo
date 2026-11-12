@@ -636,7 +636,7 @@ export const setExplorationsCount = (n: number | null) => setCount('explorations
 function setCount(kind: 'drafts' | 'reviews' | 'explorations', n: number | null) {
   // The nav shows two numbers, one source each (lib/waiting-counts): on Explorations what waits on the viewer there,
   // on Library review the changes that wait on the viewer's decision (for whoever holds the review right). Hidden at 0.
-  // A link reads "Library review, 17 waiting for a review", never the clause alone.
+  // A link reads "Library review, 17 pieces wait for your decision", never the clause alone.
   const shown = kind === 'reviews' ? Boolean(n) && reviewsHere() : Boolean(n);
   document.querySelectorAll<HTMLElement>(`[data-nav-count="${kind}"]`).forEach((el) => {
     el.hidden = !shown;

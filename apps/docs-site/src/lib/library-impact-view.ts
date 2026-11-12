@@ -24,6 +24,7 @@ import {
   type PieceVerdict,
 } from '@bridge-ds/core';
 import { SEP } from './sep';
+import { baselineOf, knownLibraryOptions, type LibraryOption } from './library-baseline';
 
 /** One side of a row's before and after: what it reads ("16", "Timeline") and what it is ("Today"). */
 export interface ImpactSide {
@@ -139,8 +140,8 @@ export interface DecidedView {
   /** "Card gets two new sizes", "Card takes Sofia's way". */
   title: string;
   /**
-   * The ledger's one sentence (board v3): "Card gets a new padding option, **Comfortable 20 px**, for Sofia's screen.
-   * **Default 16 px** stays the default. Decided by Dana, just now."
+   * The ledger's one sentence (board v3): "Card gets a new padding option, **Comfortable 24 px**, for Sofia's screen.
+   * **Default 20 px** stays the default. Decided by Dana, just now."
    */
   parts: Said[];
   /** "Dana, just now". */
@@ -397,7 +398,7 @@ function conflictRow(base: ImpactRowView, cv: ConflictView, i: ImpactItem): Impa
     ? ['building', 'released'].includes(base.status.key)
       ? base.status
       : { key: 'approved', label: 'Decided', tone: 'success' }
-    : { key: 'conflict', label: cv.tag, tone: 'warning' };
+    : { key: 'conflict', label: cv.tag, tone: 'neutral' };
   const n = cv.ledger.fresh.length;
   const tag: PieceTag = settled ? { label: status.key === 'approved' ? 'Decided' : status.label, tone: status.key === 'approved' ? 'success' : status.tone } : { label: n > 1 ? `${n} new options` : 'New option', tone: 'info' };
   const people = [...new Set(cv.ways.map((w) => w.designer))];
@@ -518,7 +519,8 @@ export function wayWords(looks: readonly WayLook[], today: number | null): { siz
       if (today !== null && l.padding !== today) {
         words.push(l.padding < today ? 'tighter' : 'roomier');
         thanToday = true;
-      } else if (today === null && min !== max && (l.padding === min || l.padding === max)) words.push(l.padding === min ? 'tighter' : 'roomier');
+      } else if (today !== null && l.padding === today && !l.filled && !l.borderless && !l.shadowless) words.push('same as today');
+      else if (today === null && min !== max && (l.padding === min || l.padding === max)) words.push(l.padding === min ? 'tighter' : 'roomier');
     }
     if (l.filled) words.push('filled');
     if (l.borderless) words.push('no border');
@@ -582,28 +584,15 @@ export function ledgerLabel(component: string, names: readonly string[]): string
   return `Add ${names.length} options to ${component}`;
 }
 
-/** An option the library component already has, as its code says. */
-export interface LibraryOption {
-  name: string;
-  px: number;
-  isDefault?: boolean;
-}
+export type { LibraryOption };
 
 /**
- * The options of a library component part, from its code (packages/react/src/components/Card: padding is 'none',
- * 'compact' (space-3, 12 px) or 'default' (layout-inset, 16 px)). A part Bridge does not know reads today's value
- * alone, as the default.
+ * The options of a library component part, from its code (lib/library-baseline, the one baseline Library review also
+ * reads: Card padding is None 0, Compact 12 px and Default 20 px, the layout inset). A part Bridge does not know reads
+ * today's value alone, as the default.
  */
-const LIBRARY_OPTIONS: Record<string, readonly LibraryOption[]> = {
-  'card|padding': [
-    { name: 'None', px: 0 },
-    { name: 'Compact', px: 12 },
-    { name: 'Default', px: 16, isDefault: true },
-  ],
-};
-
 export function libraryOptions(component: string, property: string, today: number | null): readonly LibraryOption[] {
-  const known = LIBRARY_OPTIONS[`${component.toLowerCase()}|${property.toLowerCase()}`];
+  const known = knownLibraryOptions(component, property);
   if (known) return known;
   return today !== null ? [{ name: 'Default', px: today, isDefault: true }] : [];
 }
@@ -758,7 +747,8 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const first = group[0]!;
   const { component, property } = first;
   const minePiece = x.pieces.find((p) => p.id === first.piece) ?? null;
-  const today = pixels(minePiece ? (impactItemOf(minePiece).before ?? undefined) : undefined);
+  // One baseline (lib/library-baseline): the library's own value first, then what the check recorded as today.
+  const today = baselineOf(component, property, pixels(minePiece ? (impactItemOf(minePiece).before ?? undefined) : undefined) ?? null);
   const raw = [
     { key: first.mine.key, designer: first.mine.designer, mine: true, screen: x.screen, product: x.product, look: lookOf(minePiece, first.mine.value) },
     // The other ways in a steady order (oldest exploration first), whatever order the lists came back in.
@@ -863,8 +853,8 @@ function choiceFor(component: string, property: string, x: ConflictContext): Lib
 }
 
 /**
- * The ledger's one sentence once decided (board v3): "Card gets a new padding option, **Comfortable 20 px**, for
- * Sofia's screen. **Default 16 px** stays the default. Decided by Dana, just now."
+ * The ledger's one sentence once decided (board v3): "Card gets a new padding option, **Comfortable 24 px**, for
+ * Sofia's screen. **Default 20 px** stays the default. Decided by Dana, just now."
  */
 export function decidedParts(pick: string, ways: readonly { key: string; designer: string }[], component: string, ledger: LedgerView, by: string): Said[] {
   const { keys } = keptKeys(pick, ways);

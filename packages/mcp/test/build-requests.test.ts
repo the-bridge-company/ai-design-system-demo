@@ -85,7 +85,7 @@ describe('build requests in the MCP server and the CLI', () => {
 
   it('lists them with the status read from GitHub, and filters them', async () => {
     const r = await buildRequests.listBuildRequests(await ctx());
-    expect(r.summary).toBe('2 in progress, 1 waiting to be picked up, 1 for more than a week.');
+    expect(r.summary).toBe('2 being built, 1 ready to build, 1 for more than a week.');
     const by = Object.fromEntries(r.buildRequests.map((x) => [x.number, x]));
     expect(Object.keys(by).map(Number).sort()).toEqual([requested, picked, building, shipped].sort());
     expect(by[requested]).toMatchObject({ status: 'requested', stale: true, component: 'Button', title: 'Add a lg size', figma: input.figma.url });
@@ -114,7 +114,7 @@ describe('build requests in the MCP server and the CLI', () => {
     const list = cliIO();
     list.io.fetch = gh.fetch;
     expect(await runBuild(argv('build', 'list'), REPO, list.io)).toBe(0);
-    expect(list.out()).toContain('2 in progress, 1 waiting to be picked up, 1 for more than a week.');
+    expect(list.out()).toContain('2 being built, 1 ready to build, 1 for more than a week.');
     expect(list.out()).toMatch(new RegExp(`#${requested}\\s+Requested 10 days ago !`));
 
     const show = cliIO();

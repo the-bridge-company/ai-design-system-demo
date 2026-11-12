@@ -64,9 +64,9 @@ describe('explorations view', () => {
     const promoted = pull(3, { name: 'Dense tables', labels: [{ name: 'tier: 2' }], draft: false });
     const rows = explorationRows([normal, pull(1, { name: 'Pill buttons' }), promoted, pull(2, { name: 'Warm neutrals' }), pull(2)], cfg, { issues: [issue(40, 'explore/pill-buttons'), issue(41), issue(42, 'explore/other')] });
     expect(rows.map((r) => [r.number, r.status, r.statusLabel])).toEqual([
-      [2, 'active', 'Running'],
-      [1, 'active', 'Running'],
-      [3, 'promoted', 'Promoted to review'],
+      [2, 'active', 'Exploring'],
+      [1, 'active', 'Exploring'],
+      [3, 'promoted', 'In review'],
     ]);
     const pill = rows.find((r) => r.number === 1)!;
     expect(pill).toMatchObject({ name: 'Pill buttons', slug: 'pill-buttons', branch: 'explore/pill-buttons', purpose: 'Learn 1.', useCaseLabel: 'Prototype for a user test', author: 'designer', tone: 'neutral' });
@@ -177,15 +177,15 @@ describe('done exploring and archive', () => {
     return { ...base, body, labels: [{ name: 'ready-for-devs' }], ...over };
   };
 
-  it('rows: waiting to be picked up, then being built once developers push, shipped once merged; archived ones out by default', () => {
+  it('rows: ready to build, then being built once developers push, shipped once merged; archived ones out by default', () => {
     const ready = handed(4);
     const building = handed(5, { head: { ref: 'explore/handed-5', sha: 'newer' } });
     const shipped = handed(6, { state: 'closed', merged_at: '2026-10-31T00:00:00Z' });
     const archived = pull(7, { name: 'Old idea', labels: [{ name: 'exploration' }, { name: 'archived' }] });
     const rows = explorationRows([ready, building, shipped, archived, pull(1)], cfg);
     expect(rows.map((r) => [r.number, r.status, r.statusLabel])).toEqual([
-      [1, 'active', 'Running'],
-      [4, 'ready', 'Waiting to be picked up'],
+      [1, 'active', 'Exploring'],
+      [4, 'ready', 'Ready to build'],
       [5, 'building', 'Being built'],
       [6, 'shipped', 'Shipped'],
     ]);

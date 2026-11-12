@@ -18,7 +18,7 @@ import {
 import type { ThumbSpec, ThumbToken } from './branch-thumb';
 import { branchThumb } from './branch-thumb';
 import type { ShownValue } from './token-review';
-import { originPrefix, waitingLabel, type BranchCard, type NeedRow, type Person } from './home-model';
+import { originPrefix, waitPill, type BranchCard, type NeedRow, type Person } from './home-model';
 import { studioHref } from './team-path';
 import { tokenNoun } from './propose-copy';
 
@@ -182,7 +182,7 @@ export function suggestionNeed(s: { number: number; title: string; createdAt: st
     ...(s.apply ? { action: 'Apply' } : {}),
     since: s.createdAt,
     waitsOnYou: true,
-    pill: { label: waitingLabel(s.createdAt, now), tone: 'warning' },
+    pill: waitPill(s.createdAt, now),
     thumb: s.thumb ?? { kind: 'icon', icon: 'token' },
   };
 }

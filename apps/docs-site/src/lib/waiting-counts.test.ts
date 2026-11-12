@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { explorationKey, explorationOfNeed, mergeWaiting, onePerExploration, waitingCounts } from './waiting-counts';
+import { explorationKey, explorationOfNeed, inProgressCount, isInProgress, mergeWaiting, onePerExploration, waitingCounts, waitingToBePickedUp } from './waiting-counts';
 import type { NeedRow } from './home-model';
 
 const need = (key: string, kind: NeedRow['kind'] = 'review', line = 'l'): NeedRow => ({ key, kind, title: 't', href: '#', person: null, line, since: null, waitsOnYou: true, pill: null, thumb: { kind: 'icon', icon: 'branch' } });
@@ -30,5 +30,16 @@ describe('one Home row per exploration', () => {
     expect(kept).toHaveLength(4);
     // What Home lists is what the Explorations badge counts.
     expect(waitingCounts(kept).explorations).toHaveLength(kept.filter((r) => explorationOfNeed(r)).length);
+  });
+});
+
+describe('the other counts, one definition each', () => {
+  it('counts explorations in progress as the Explorations list does by default', () => {
+    const cards = ['exploring', 'waiting-for-lead', 'waiting-for-code', 'being-built', 'in-review', 'approved', 'shipped', 'next-release', 'closed', 'not-planned', 'archived'].map((lifecycle) => ({ lifecycle }));
+    expect(inProgressCount(cards)).toBe(6);
+    expect(isInProgress({ lifecycle: 'archived' })).toBe(false);
+  });
+  it('counts the build requests nobody picked up yet: what needs a developer', () => {
+    expect(waitingToBePickedUp([{ status: 'requested' }, { status: 'requested' }, { status: 'requested' }, { status: 'in-progress' }, { status: 'in-review' }])).toBe(3);
   });
 });

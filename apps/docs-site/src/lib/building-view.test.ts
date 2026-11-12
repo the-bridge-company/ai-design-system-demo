@@ -45,7 +45,7 @@ describe('Being built', () => {
   it('counts the filters and says the page in one sentence', () => {
     const views = fixture();
     expect(stateCounts(views)).toEqual({ waiting: 2, 'in-progress': 2, 'in-review': 1, shipped: 1 });
-    expect(pageSentence(views)).toBe('2 in progress, 1 in review, 2 waiting to be picked up, 1 for more than a week.');
+    expect(pageSentence(views)).toBe('2 being built, 1 being checked, 2 ready to build, 1 for more than a week.');
     expect(pageSentence([])).toBe('Nothing is being built yet.');
     // The Studio home line and the page header are one sentence over the same rows.
     expect(buildSummaryLine(views)).toBe(pageSentence(views));
@@ -54,7 +54,7 @@ describe('Being built', () => {
   it('gives each row one tag and one line, the stale one highlighted', () => {
     const views = fixture();
     const stale = views[0]!;
-    expect(statusTag(stale)).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
+    expect(statusTag(stale)).toEqual({ label: 'Ready to build', tone: 'warning' });
     expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet\u2004\u2060·\u2004Asked by dana');
     expect(rowLine(views[1]!, NOW)).toBe('Sent yesterday\u2004\u2060·\u2004Asked by dana');
     expect(rowLine(views[2]!, NOW, (l) => FIXTURE_BUILDERS[l] ?? l)).toBe('Sent 4 days ago\u2004\u2060·\u2004Malik builds it');
@@ -213,7 +213,7 @@ describe('Being built: explorations handed to developers', () => {
 
   it('lists each handed-off status in its tab, and leaves running, archived, closed and older shipped ones out', () => {
     const list = rows([
-      // Waiting to be picked up, for the admin product: the label could not be removed, Done exploring in the body stands (#611).
+      // Ready to build, for the admin product: the label could not be removed, Done exploring in the body stands (#611).
       pull(611, { name: 'explore new design pr being built', labels: ['exploration', 'product: admin', 'visual-change'] }),
       // Developers pushed past the head Done exploring left.
       pull(2, { name: 'Billing screen', head: { ref: 'explore/billing', sha: 'h2' }, assignees: [{ login: 'theo' }] }),
@@ -228,7 +228,7 @@ describe('Being built: explorations handed to developers', () => {
       pull(8, { state: 'closed' }),
       { ...pull(9, {}), body: 'Fixes the button', head: { ref: 'fix/button', sha: 'x' }, labels: [] },
     ]);
-    expect(list.map((r) => `${r.number}:${r.status}:${r.label}`)).toEqual(['611:requested:Waiting to be picked up', '2:in-progress:Being built', '3:in-review:In review', '4:shipped:Shipped']);
+    expect(list.map((r) => `${r.number}:${r.status}:${r.label}`)).toEqual(['611:requested:Ready to build', '2:in-progress:Being built', '3:in-review:Checking', '4:shipped:Shipped']);
     const [ready, building, , shipped] = list;
     expect(ready).toMatchObject({ title: 'Explore new design pr being built', requestedBy: 'ann', builders: [], stale: false, exploration: { href: 'explorations/?exploration=611', product: 'Admin demo' } });
     expect(ready!.exploration.line).toMatch(/^Admin demo\u2004\u2060·\u2004Done exploring by Ann on /);
@@ -271,10 +271,10 @@ describe('Being built: explorations handed to developers', () => {
     expect(list[2]!.exploration.line).toBe('Shop\u2004\u2060·\u2004Shipped 1 day ago');
     // Closed without being built while the copy still waits on them: the developers declined it, the row says so.
     const declined = list[3]!;
-    expect(declined).toMatchObject({ label: 'Not planned', sentence: 'Developers closed it without building it.' });
+    expect(declined).toMatchObject({ label: 'Not doing this', sentence: 'Developers closed it without building it.' });
     expect(declined.exploration.line).toMatch(/Developers closed it without building it$/);
     expect(declined.timeline.map((e) => e.status)).toEqual(['requested', 'not-planned']);
-    expect(statusTag(declined)).toEqual({ label: 'Not planned', tone: 'neutral' });
+    expect(statusTag(declined)).toEqual({ label: 'Not doing this', tone: 'neutral' });
     expect(listedRows([declined], NOW)).toHaveLength(1);
   });
 
@@ -322,8 +322,8 @@ describe('Being built: explorations handed to developers', () => {
     const copy = { ...pull(36, { name: 'Screen 36', head: { ref: 'explore/screen-36', sha: 'h9' }, done: { task } }), product: 'shop' };
     const read: DesignTaskRead = { assignees: [{ login: 'theo' }], state: 'open', stateReason: null, closedAt: null, devPull: { number: 96, url: 'https://github.com/acme/shop/pull/96', draft: false, answer: { kind: 'looks-right', login: 'ann' } } };
     const [row] = explorationBuildRows([copy], { products, now: NOW, nameOf, task: () => read });
-    expect(row).toMatchObject({ status: 'in-review', label: 'Approved, waiting to ship', approved: true });
-    expect(statusTag(row!)).toEqual({ label: 'In review', tone: 'warning' });
+    expect(row).toMatchObject({ status: 'in-review', label: 'Checking', approved: true });
+    expect(statusTag(row!)).toEqual({ label: 'Checking', tone: 'neutral' });
     expect(row!.exploration.line).toMatch(/said it looks right$/);
   });
 
@@ -346,7 +346,7 @@ describe('Being built: explorations handed to developers', () => {
     const views = fixture();
     const all = listedRows(mergeRows(views, late), NOW);
     expect(all).toHaveLength(7);
-    expect(pageSentence(all)).toBe('2 in progress, 1 in review, 3 waiting to be picked up, 2 for more than a week.');
+    expect(pageSentence(all)).toBe('2 being built, 1 being checked, 3 ready to build, 2 for more than a week.');
   });
 
   it('keeps the exploration block of a long body in the session cache, and the head commit', () => {
@@ -378,7 +378,7 @@ describe('Being built: explorations handed to developers', () => {
       [23, 'in-review', "Waiting for Dana's review"],
     ]);
     expect(rowLine(list[0]!, NOW)).toMatch(/Waiting for Florian's review$/);
-    expect(statusTag(list[0]!)).toEqual({ label: 'In review', tone: 'warning' });
+    expect(statusTag(list[0]!)).toEqual({ label: 'Checking', tone: 'neutral' });
     expect(list.filter((r) => buildStateOf(r, NOW) === 'in-review')).toHaveLength(4);
     expect(list.filter((r) => buildStateOf(r, NOW) === 'in-progress')).toHaveLength(0);
     // The viewer asked: their own words.
@@ -392,7 +392,7 @@ describe('Being built: explorations handed to developers', () => {
     const nextRelease = (p: RestPull) => (p.merge_commit_sha ?? '').startsWith('abc1234');
     const list = explorationBuildRows([merged, recent], { products, now: NOW, nameOf, nextRelease });
     expect(list.map((r) => [r.number, r.label, r.nextRelease ?? false, r.exploration.line])).toEqual([
-      [30, 'In the next release', true, 'In the next release'],
+      [30, 'Shipped', true, 'Shipped'],
       [31, 'Shipped', false, 'Shipped 1 day ago'],
     ]);
     expect(statusTag(list[0]!)).toEqual({ label: 'Shipped', tone: 'success' });

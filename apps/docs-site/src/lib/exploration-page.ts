@@ -2,7 +2,8 @@
 // pure view rules over @bridge-ds/core's exploration-resume words. Not started: the Continue in Claude panel and an
 // empty "Your preview" frame. Exploring: the preview, the last activity in words, Done exploring, the last 3 events.
 // Later states keep their own pages. No DOM, no fetch: tested in exploration-page.test.ts.
-import { DEV_VERSION_READY, LIFECYCLE_LABEL, LIFECYCLE_TONE, questionLine, type LifecycleStage } from './review-state';
+import { DEV_VERSION_READY, questionLine, type LifecycleStage } from './review-state';
+import { stepOfStage, stepTag, type StatusStep } from './status-ladder';
 import { changedThings, continueLines, explorationActivity, humanAuthorOf, parseExplorationBody, lastActivity, shortAgo, startedWhen, type BranchCommitLike, type PreviewApps } from '@bridge-ds/core';
 import { emailMemberFace, isEmailAddress, nameFace } from './people';
 import { DEV_MESSAGE_WORDS } from './developers-message';
@@ -219,25 +220,28 @@ export const isHandoffStatus = (s: string): s is HandoffStatus => s === 'ready' 
 export type TagTone = 'neutral' | 'info' | 'success' | 'warning';
 
 /**
- * The status tag of an exploration, everywhere it shows (the page title row, the Studio home cards): the same word
- * and the same tone. Not started is grey, Exploring is Harbor, Waiting for code waits on someone (amber), Being built
- * is in progress, Shipped is done.
+ * The status tag of an exploration, everywhere it shows (the page title row, the Studio home cards): its step on the
+ * one status ladder (lib/status-ladder), the same word and tone as every list. Not started is grey, Exploring and
+ * Being built are Harbor with a dot (someone works on it), a wait (In review, Ready to build, Checking) is grey,
+ * Shipped is green. Who it waits on is the line under it, never this tag.
  */
 export function explorationTag(status: string, opts: { notStarted?: boolean; stage?: LifecycleStage | null } = {}): { label: string; tone: TagTone; dot: boolean } {
-  // The lifecycle stage, once read (lib/review-state): Being built splits into In review, Shipped into In the next release.
-  if (opts.stage === 'waiting-for-lead') return { label: LIFECYCLE_LABEL['waiting-for-lead'], tone: LIFECYCLE_TONE['waiting-for-lead'], dot: false };
-  if (opts.stage === 'in-review') return { label: LIFECYCLE_LABEL['in-review'], tone: LIFECYCLE_TONE['in-review'], dot: false };
-  if (opts.stage === 'next-release') return { label: LIFECYCLE_LABEL['next-release'], tone: LIFECYCLE_TONE['next-release'], dot: false };
-  // The designer said it looks right: the developers ship it next. Declined: grey, nothing moves.
-  if (opts.stage === 'approved') return { label: LIFECYCLE_LABEL.approved, tone: LIFECYCLE_TONE.approved, dot: false };
-  if (opts.stage === 'not-planned') return { label: LIFECYCLE_LABEL['not-planned'], tone: LIFECYCLE_TONE['not-planned'], dot: false };
-  if (status === 'active') return opts.notStarted ? { label: 'Not started', tone: 'neutral', dot: false } : { label: LIFECYCLE_LABEL.exploring, tone: LIFECYCLE_TONE.exploring, dot: true };
-  if (status === 'ready') return { label: LIFECYCLE_LABEL['waiting-for-code'], tone: LIFECYCLE_TONE['waiting-for-code'], dot: false };
-  if (status === 'building') return { label: LIFECYCLE_LABEL['being-built'], tone: LIFECYCLE_TONE['being-built'], dot: true };
-  if (status === 'shipped') return { label: LIFECYCLE_LABEL.shipped, tone: LIFECYCLE_TONE.shipped, dot: false };
-  if (status === 'promoted') return { label: LIFECYCLE_LABEL['in-review'], tone: LIFECYCLE_TONE['in-review'], dot: false };
+  const of = (step: StatusStep) => {
+    const t = stepTag(step);
+    return { label: t.label, tone: t.tone, dot: step === 'exploring' || step === 'being-built' };
+  };
+  // The lifecycle stage, once read (lib/review-state), is the more precise read; a promoted exploration in review is
+  // In review (Library review decides), a handed-off one in review is Checking.
   if (status === 'kept') return { label: 'Kept in the library', tone: 'success', dot: false };
-  return { label: 'Closed', tone: 'neutral', dot: false };
+  if (opts.stage && opts.stage !== 'exploring') return of(stepOfStage(opts.stage, { promoted: status === 'promoted' }));
+  if (status === 'active') return opts.notStarted ? { label: 'Not started', tone: 'neutral', dot: false } : of('exploring');
+  if (status === 'ready') return of('ready-to-build');
+  if (status === 'building') return of('being-built');
+  if (status === 'shipped') return of('shipped');
+  if (status === 'promoted') return of('in-review');
+  if (status === 'checking') return of('checking');
+  if (status === 'archived') return of('archived');
+  return of('not-doing');
 }
 
 /** One row of the hand-off progress (the DS Checklist): done or waiting, a title, one line. */

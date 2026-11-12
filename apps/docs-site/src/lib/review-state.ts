@@ -9,7 +9,7 @@
 // (needsReviewRead): a few per page, never one per row. Pure: no DOM, no fetch. Tested in review-state.test.ts.
 import { DESIGN_TASK_BACK_COMMENT, explorationStatus, isArchivedExploration, isExplorationPull, isWaitingForLead, parseExplorationBody, previewAtScreen, type ExplorationStatus } from '@bridge-ds/core';
 import { sameRepo } from './team-path.js';
-import { toneOf } from './status-tag';
+import { stageWord, stepOfStage, stepTone } from './status-ladder';
 
 /** A review of the pull request as GitHub lists it (GET pulls/{n}/reviews). */
 export interface PullReviewLike {
@@ -130,46 +130,25 @@ export function reviewLine(s: ReviewState, opts: { viewer?: string | null; nameO
 /** Where a piece of work stands, on every page. */
 export type LifecycleStage = 'exploring' | 'waiting-for-lead' | 'waiting-for-code' | 'being-built' | 'in-review' | 'approved' | 'next-release' | 'shipped' | 'archived' | 'closed' | 'not-planned';
 
-/** The words of each stage: the tab, the tag and the line say the same. */
-export const LIFECYCLE_LABEL: Record<LifecycleStage, string> = {
-  exploring: 'Exploring',
-  // Done exploring was said; the design lead validates before anything reaches the developers.
-  'waiting-for-lead': 'Waiting for lead',
-  'waiting-for-code': 'Waiting to be picked up',
-  'being-built': 'Being built',
-  'in-review': 'In review',
-  // A design copy exploration the designer said looks right on: the developers ship it next.
-  approved: 'Approved, waiting to ship',
-  'next-release': 'In the next release',
-  shipped: 'Shipped',
-  archived: 'Archived',
-  closed: 'Closed',
-  // The developers closed their task without building it (a design copy exploration still handed off).
-  'not-planned': 'Not planned',
-};
+const STAGES: readonly LifecycleStage[] = ['exploring', 'waiting-for-lead', 'waiting-for-code', 'being-built', 'in-review', 'approved', 'next-release', 'shipped', 'archived', 'closed', 'not-planned'];
+
+/**
+ * The words of each stage: its step on the one status ladder (lib/status-ladder, core status-ladder.ts), so the tab,
+ * the tag and the line say the same on every surface. Waiting for lead is In review, waiting to be picked up is Ready
+ * to build, the developers' version waiting for the designer's check (and approved, waiting to ship) is Checking, the
+ * next release is Shipped. Who it waits on is a second line, never the tag.
+ */
+export const LIFECYCLE_LABEL: Record<LifecycleStage, string> = Object.fromEntries(STAGES.map((s) => [s, stageWord(s)])) as Record<LifecycleStage, string>;
 
 /** The DS Badge tones a stage's tag can take. */
 export type StageTone = 'neutral' | 'info' | 'warning' | 'success';
 
 /**
- * The colour of each stage's tag, on every page (Home, Changes, Being built, product and exploration pages), from what
- * the stage means (lib/status-tag, one meaning per tone): Harbor (info) is work moving, amber is work that waits on
- * someone (the lead, a developer to pick it up, a review), green is done (approved, shipped), grey is over.
+ * The colour of each stage's tag, on every page (Home, Changes, Being built, product and exploration pages): its
+ * step's tone (lib/status-ladder stepTone). Harbor (info) is work moving, grey a calm wait or stopped work, green
+ * shipped. Amber is never a stage's colour by itself: only a late wait (stepTone with its age) wears it.
  */
-export const LIFECYCLE_TONE: Record<LifecycleStage, StageTone> = {
-  exploring: toneOf('in-progress'),
-  'waiting-for-lead': toneOf('waiting'),
-  'waiting-for-code': toneOf('waiting'),
-  'being-built': toneOf('in-progress'),
-  'in-review': toneOf('waiting'),
-  // The design part is done: the designer said the developers' version looks right.
-  approved: toneOf('done'),
-  'next-release': toneOf('in-progress'),
-  shipped: toneOf('done'),
-  archived: toneOf('over'),
-  closed: toneOf('over'),
-  'not-planned': toneOf('over'),
-};
+export const LIFECYCLE_TONE: Record<LifecycleStage, StageTone> = Object.fromEntries(STAGES.map((s) => [s, stepTone(stepOfStage(s))])) as Record<LifecycleStage, StageTone>;
 
 /**
  * The stage of an exploration from core's status (explorationStatus), its archived label, the review read and, once

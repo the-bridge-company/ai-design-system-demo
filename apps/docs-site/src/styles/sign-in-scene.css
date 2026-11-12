@@ -1,5 +1,5 @@
 /* The sign-in scene (components/ds/account/SignInScene.tsx). One story on one timeline of about 24 seconds, every part reading the
-   same percentages; the water, cloud, gulls and boats breathe on their own. The base styles are the end of the story, so
+   same percentages; the water, cloud, gulls and boats breathe on their own. It all rests within 5 seconds (end of file). The base styles are the end of the story, so
    reduced motion (the rule below stops everything) shows the bridge closed. */
 
 .ss {
@@ -373,4 +373,12 @@
   .ss * {
     animation: none;
   }
+}
+
+/* Rest after five seconds (WCAG 2.2.2, pause, stop, hide). The story opens with the bridge whole (70% of its
+   timeline) and plays on; within 5 seconds (lib/scene-rest.ts sets data-still) every part rests where it is: the cart
+   crossing the closed bridge under its flag and "kept". Motion that starts by itself stops within 5 seconds, so the
+   zone needs no pause button. */
+.ss[data-still] * {
+  animation-play-state: paused;
 }

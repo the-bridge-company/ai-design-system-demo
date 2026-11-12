@@ -190,8 +190,8 @@ describe("the developers' version of a design task", () => {
     // The designer said it looks right on their version: the next state, not In review.
     expect(taskStage({ ...open, devPull: { number: 9, url: 'u', answer: { kind: 'looks-right', login: 'ann' } } })).toBe('approved');
     expect(taskStage({ ...open, devPull: { number: 9, url: 'u', answer: { kind: 'changes', login: 'ann' } } })).toBe('in-review');
-    expect(LIFECYCLE_LABEL.approved).toBe('Approved, waiting to ship');
-    expect(LIFECYCLE_LABEL['not-planned']).toBe('Not planned');
+    expect(LIFECYCLE_LABEL.approved).toBe('Checking');
+    expect(LIFECYCLE_LABEL['not-planned']).toBe('Not doing this');
   });
 
   it('finds the pull request that shipped a task, for who said it looks right', () => {

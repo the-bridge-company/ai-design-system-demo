@@ -103,7 +103,7 @@ describe('changeLifecycle and rowLifecycle', () => {
   });
 
   it('tones the lifecycle state alone: Ready for review is never red because a check fails', () => {
-    expect(lifecycleTone('ready')).toBe('warning');
+    expect(lifecycleTone('ready')).toBe('neutral');
     expect(lifecycleTone('waiting')).toBe('neutral');
     expect(lifecycleTone('shipped')).toBe('neutral');
     expect(lifecycleTone('draft')).toBe('neutral');
@@ -205,15 +205,15 @@ describe('statusOpener', () => {
 
 describe('todoBadge', () => {
   it('says the lifecycle in the status line words and tone, whatever the row asks', () => {
-    expect(todoBadge('ready')).toEqual({ label: 'In review', tone: 'warning' });
+    expect(todoBadge('ready')).toEqual({ label: 'In review', tone: 'neutral' });
     expect(todoBadge('draft')).toEqual({ label: 'Draft', tone: 'neutral' });
-    expect(todoBadge('waiting')).toEqual({ label: 'Approved, waiting for code', tone: 'neutral' });
+    expect(todoBadge('waiting')).toEqual({ label: 'Ready to build', tone: 'neutral' });
   });
 });
 
 describe('status filter', () => {
   it('names each state exactly as the status model does', () => {
-    expect(STATUS_FILTERS.map((f) => f.label)).toEqual(['All open', 'Draft', 'In review', 'Approved, waiting for code', 'Added to the library', 'Closed']);
+    expect(STATUS_FILTERS.map((f) => f.label)).toEqual(['All open', 'Draft', 'In review', 'Ready to build', 'Added to the library', 'Closed']);
     expect(STATUS_FILTERS.slice(1).map((f) => f.label)).toEqual(Object.values(LIFECYCLE).map((l) => l.label));
   });
   it('reads the address, Open by default', () => {

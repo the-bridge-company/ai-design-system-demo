@@ -1327,7 +1327,7 @@ async function paintLibraryImpact(
           const others = cv.ways.filter((w) => !w.mine).map((w) => explorationAt(w.key));
           if (!others.length || others.some((x) => !x)) throw new Error('Bridge cannot find the other exploration.');
           // What the library gets, in the ledger's own sentence (board v3): "Card gets a new padding option,
-          // Comfortable 20 px, for Sofia's screen. Default 16 px stays the default."
+          // Comfortable 24 px, for Sofia's screen. Default 20 px stays the default."
           const what = decidedParts(pick, cv.ways, cv.component, cv.ledger, '')
             .map((s) => s.text)
             .join('');

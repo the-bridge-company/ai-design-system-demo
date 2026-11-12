@@ -1,6 +1,7 @@
 // What the exploration page says about the talk between a designer and their design lead (boards L1 to L5): the
 // Decisions list, and who the next word is for. Pure: no DOM, no fetch. The record itself is core's (explorations.ts
 // decisionsOf, openDecisionOf). Bridge voice: a designer reads it.
+import { stepTag } from './status-ladder';
 import { isNameAuthor, nameOfAuthor } from './author';
 import { decisionsOf, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind } from '@bridge-ds/core';
 
@@ -53,12 +54,16 @@ export function decisionRows(all: readonly Decision[], names: Record<string, str
     .reverse();
 }
 
-/** The tag of the page while the talk decides what it is, over the lifecycle's own. */
-export function decisionTag(open: Pick<Decision, 'kind'> | null, designer: string): { label: string; tone: 'danger' | 'neutral' | 'warning' } | null {
+/**
+ * The tag of the page while the talk decides what it is, over the lifecycle's own: a step of the one status ladder
+ * (lib/status-ladder). A question keeps it In review (who must answer is the talk's line, never the tag); changes
+ * asked send it back to Exploring; not doing it stops it. `designer` names who answers, for the talk's own line.
+ */
+export function decisionTag(open: Pick<Decision, 'kind'> | null, _designer: string): { label: string; tone: 'danger' | 'neutral' | 'warning' | 'info' | 'success' } | null {
   if (!open) return null;
-  if (open.kind === 'not-doing') return { label: 'Not doing this', tone: 'neutral' };
-  if (open.kind === 'question') return { label: `Waiting for ${designer}`, tone: 'warning' };
-  return open.kind === 'changes' || open.kind === 'take-back' ? { label: 'Needs changes', tone: 'danger' } : null;
+  if (open.kind === 'not-doing') return stepTag('not-doing');
+  if (open.kind === 'question') return stepTag('in-review');
+  return open.kind === 'changes' || open.kind === 'take-back' ? stepTag('exploring') : null;
 }
 
 /** The words of a lead's last open word, for the zone's title. */
@@ -98,6 +103,33 @@ export interface LeadHomeRow {
  * spoke sees it, quietly, in Waiting on others, until the answer moves it up. Everyone else: nothing.
  */
 /** How long "I'll look" keeps an exploration off the other reviewers' Home: the reminder's 2 days (api/_lib/notify.ts). */
+/**
+ * Since when the current turn of an exploration waits (ISO), the one clock of "Waiting 4 days" on Home and of the
+ * Explorations list's "Sofia sent it for review · 4 days ago": the lead's turn counts from the last word of the talk
+ * (an answer, an ask to look), else from Done exploring (when it was sent for review); the designer's turn from the
+ * lead's open question or changes. Never from when the exploration started or last moved. Null when it waits on
+ * nobody or the record does not say.
+ */
+export function turnSince(body: string | null | undefined): string | null {
+  const e = parseExplorationBody(body);
+  if (!e) return null;
+  const turn = leadTurnOf(body);
+  if (turn === 'lead' && isWaitingForLead(body)) {
+    const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
+    return all[all.length - 1]?.at ?? e.leadAskedAt ?? null;
+  }
+  if (turn === 'designer') return openDecisionOf(body)?.at ?? null;
+  return null;
+}
+
+/**
+ * The moment a listed exploration's age counts from: on a row that waits on the viewer, since its turn began
+ * (turnSince, the same clock as Home's "Waiting 4 days"); otherwise when it last moved.
+ */
+export function rowAgeFrom(x: { body?: string | null; updated: string; yourTurn: boolean }): string {
+  return (x.yourTurn ? turnSince(x.body) : null) ?? x.updated;
+}
+
 export const TAKEN_FOR_MS = 2 * 24 * 60 * 60 * 1000;
 
 export function leadHomeRow(body: string | null | undefined, v: { viewer: string | null; lead: boolean; own: boolean; names?: Record<string, string>; viewerName?: string | null; now?: number }): LeadHomeRow | null {
@@ -119,7 +151,7 @@ export function leadHomeRow(body: string | null | undefined, v: { viewer: string
     const answered = last?.kind === 'answer';
     const before = answered ? [...all].reverse().find((d) => d.kind === 'question' || d.kind === 'changes' || d.kind === 'take-back') : null;
     const line = answered ? `${shown} answered your ${before?.kind === 'question' ? 'question' : 'changes'}` : last?.kind === 'asked-someone' ? `${sayerName(last, v.names)} asks you to look` : `${shown} is done exploring`;
-    return { where: 'needs', line, since: last?.at ?? e.leadAskedAt ?? null, action: 'Review', person: designer };
+    return { where: 'needs', line, since: turnSince(body), action: 'Review', person: designer };
   }
   if (turn === 'designer') {
     const open = openDecisionOf(body)!;

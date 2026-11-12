@@ -1,22 +1,33 @@
-// The Library review count (one source, lib/waiting-counts): what waits for the viewer's decision there, read with the
-// page's own loader and rule (scripts/library-review-data loadLibraryReview, lib/library-review waitingForYou), so
-// Home, the nav badge and Library review's "N wait for you" are one number. Remembered for the other pages
-// (scripts/needs-you rememberMine).
-import { waitingForYou } from '../lib/library-review';
+// The Library review counts (one source each, lib/waiting-counts), read with the page's own loader and rules
+// (scripts/library-review-data loadLibraryReview, lib/library-review):
+//   - forYou: what waits for the viewer's decision there (waitingForYou), so Home, the nav badge and Library review's
+//     "N wait for you" are one number. Remembered for the other pages (scripts/needs-you rememberMine).
+//   - yours: the viewer's own pieces still waiting (yourWaitingPieces), what Asked by: You lists, for Home's sentence.
+import { waitingForYou, yourWaitingPieces } from '../lib/library-review';
 import { rememberMine } from './needs-you';
 
-let reading: Promise<number | null> | null = null;
+export interface LibraryCounts {
+  forYou: number;
+  yours: number;
+}
 
-/** Reads Library review's pieces once per page and counts what waits for the viewer; null when it could not be read. */
-export function countLibraryWaiting(): Promise<number | null> {
+let reading: Promise<LibraryCounts | null> | null = null;
+
+/** Reads Library review's pieces once per page and counts them; null when they could not be read. */
+export function readLibraryCounts(): Promise<LibraryCounts | null> {
   reading ??= (async () => {
     const { loadLibraryReview } = await import('./library-review-data');
-    let last: number | null = null;
+    let last: LibraryCounts | null = null;
     await loadLibraryReview((d) => {
-      if (!d.loading && !d.failed) last = waitingForYou(d.pieces, d.viewer);
+      if (!d.loading && !d.failed) last = { forYou: waitingForYou(d.pieces, d.viewer), yours: yourWaitingPieces(d.pieces, d.viewer) };
     }).catch(() => undefined);
-    if (last !== null) rememberMine(last);
+    if (last !== null) rememberMine((last as LibraryCounts).forYou);
     return last;
   })();
   return reading;
+}
+
+/** What waits for the viewer's decision in Library review; null when it could not be read. */
+export function countLibraryWaiting(): Promise<number | null> {
+  return readLibraryCounts().then((c) => (c ? c.forYou : null));
 }

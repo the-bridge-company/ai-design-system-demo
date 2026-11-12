@@ -22,6 +22,7 @@ import { mockupLabel, mockupNameOf, mockupOf, type Mockup } from './mockup';
 import { githubLoginOf } from './github-login';
 import { cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
 import { slugify } from './pr-composer';
+import { STEP_LABEL } from './status-ladder';
 import { previewUrl, readPreviewComment, resolveBranchPreviews, type PreviewApps } from './previews';
 import { classifyRisk, type ChangedFile, type RiskTier } from './risk';
 
@@ -58,13 +59,14 @@ export const EXPLORATION_USE_CASES: { value: ExplorationUseCase; label: string; 
   { value: 'other', label: 'Other', hint: 'Anything else worth trying before it becomes a change.' },
 ];
 
+/** Core's statuses in the one status ladder's words (status-ladder.ts STEP_LABEL). */
 export const EXPLORATION_STATUS_LABEL: Record<ExplorationStatus, string> = {
-  active: 'Running',
-  ready: 'Waiting to be picked up',
-  building: 'Being built',
-  shipped: 'Shipped',
-  promoted: 'Promoted to review',
-  closed: 'Closed',
+  active: STEP_LABEL.exploring,
+  ready: STEP_LABEL['ready-to-build'],
+  building: STEP_LABEL['being-built'],
+  shipped: STEP_LABEL.shipped,
+  promoted: STEP_LABEL['in-review'],
+  closed: STEP_LABEL['not-doing'],
 };
 
 export interface Exploration {

@@ -208,11 +208,14 @@ export interface LifecycleExtra {
 
 /**
  * The one tag of a row: its status in the page's one word (lib/building-page, the same word as the Status filter and
- * the Board column, decision 2026-11-11), in the colour its stage wears on every page (LIFECYCLE_TONE). Picked up reads
- * In progress, approved In review, the next release Shipped: the row's line says the rest ("In the next release").
+ * the Board column, decision 2026-11-11), in the colour its step wears on every page (lib/status-ladder stepTone). Picked up reads
+ * Being built, approved Checking, the next release Shipped: the row's line says the rest ("In the next release").
  */
-export function statusTag(v: Pick<BuildRequestView, 'status'> & LifecycleExtra): { label: string; tone: PillTone | 'info' } {
-  return buildStateTag(stateOfStatus(v.status));
+export function statusTag(v: Pick<BuildRequestView, 'status'> & Partial<Pick<BuildRequestView, 'ageDays' | 'stale'>> & LifecycleExtra): { label: string; tone: PillTone | 'info' } {
+  // A request nobody picked up for more than a week (core LATE_DAYS, the same as its stale flag) is late: the only
+  // amber tag here.
+  const waited = v.status === 'requested' ? (v.ageDays ?? (v.stale ? BUILD_STALE_DAYS + 1 : null)) : null;
+  return buildStateTag(stateOfStatus(v.status), waited);
 }
 
 /**

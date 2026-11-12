@@ -31,7 +31,7 @@ describe('All products', () => {
     expect(first.textContent).toContain('2 exploring');
     expect(first.textContent).toContain('You explore here');
     expect(screen.getAllByText('You explore here')).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Billing' }).closest('li')!.textContent).toContain('1 waiting to be picked up');
+    expect(screen.getByRole('link', { name: 'Billing' }).closest('li')!.textContent).toContain('1 ready to build');
     expect(screen.getByRole('link', { name: 'Kiosk' }).closest('li')!.textContent).toContain('1 shipped');
     expect(screen.getByRole('link', { name: 'Admin console' }).closest('li')!.textContent).toContain('Nothing explored yet');
     expect(screen.getByRole('link', { name: 'Checkout' }).getAttribute('href')).toBe('/studio/products/checkout/');

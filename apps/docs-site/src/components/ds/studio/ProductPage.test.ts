@@ -65,10 +65,10 @@ const data = (over: Partial<ProductPageData> = {}): ProductPageData => ({
 
 describe('ProductPageView', () => {
   it('groups the explorations by where they stand, says it in the header, and counts the archived ones in one line', async () => {
-    const cards = [card(1), card(2), card(3, { stage: 'with-devs', state: 'Waiting to be picked up', lifecycle: 'waiting-for-code' }), card(4, { stage: 'kept', state: 'Shipped', lifecycle: 'shipped' })];
+    const cards = [card(1), card(2), card(3, { stage: 'with-devs', state: 'Ready to build', lifecycle: 'waiting-for-code' }), card(4, { stage: 'kept', state: 'Shipped', lifecycle: 'shipped' })];
     const { container } = render(createElement(ProductPageView, { productKey: 'admin-app', components: [], data: data({ cards, archived: [card(9)] }) }));
     expect(screen.getByRole('heading', { level: 1, name: 'Product admin' })).toBeTruthy();
-    expect(container.querySelector('[data-st-summary]')!.textContent).toBe('2 exploring, 1 waiting to be picked up.');
+    expect(container.querySelector('[data-st-summary]')!.textContent).toBe('2 exploring, 1 ready to build.');
     expect([...container.querySelectorAll('[data-state-group]')].map((g) => [g.getAttribute('data-state-group'), g.querySelectorAll('.sh-card-item').length])).toEqual([
       ['running', 2],
       ['waiting', 1],
@@ -79,7 +79,7 @@ describe('ProductPageView', () => {
     expect(screen.queryByRole('link', { name: /acme\/product-admin/ })).toBeNull();
     expect(screen.queryByText('Connected')).toBeNull();
     // On a product page the product goes without saying.
-    expect(container.querySelector('.sh-card-product')).toBeNull();
+    expect([...container.querySelectorAll('.sh-card-product')].map((e) => e.textContent).join('')).not.toContain('Product admin');
     // The one primary action on the title's line; archived ones are one quiet line to Changes' Archived tab, no cards.
     await waitFor(() => expect(container.querySelector('[data-st-actions]')!.textContent).toContain('Start an exploration'));
     const line = container.querySelector('[data-archived-line]')!;

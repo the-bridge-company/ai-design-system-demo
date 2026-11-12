@@ -19,13 +19,14 @@ import { DRAFTED_BY_CLAUDE_LABEL, FROM_FIGMA_LABEL, WAITING_FOR_CLAUDE_LABEL, pa
 import { closingIssueNumbers, composeRequestIssue, parseRequestIssue, REQUEST_KINDS, REQUEST_LABEL, requestIssueTitle, type ComponentChangeRequest, type RequestIssue, type RequestKind } from './requests';
 import { isGuardrail, type ChangedFile, type TokenChangeKind, type TokenChangeSummary } from './risk';
 import { pullState, type CiSummary } from './review-gate';
+import { LATE_DAYS, STEP_LABEL, stepCount } from './status-ladder';
 
 /** Every build request issue carries this label (with component-change, which the Jira Action mirrors). */
 export const BUILD_REQUEST_LABEL = 'bridge-build';
 /** The label the plugin puts on what it pushes (token pull requests, suggestions and requests). */
 export const SOURCE_FIGMA_LABEL = 'source: figma';
 /** A build request waits this many days before it reads as stale. */
-export const BUILD_STALE_DAYS = 7;
+export const BUILD_STALE_DAYS = LATE_DAYS;
 /** A request closed as not planned stays in the "All" list this many days after it was closed, then leaves it. */
 export const BUILD_DECLINED_DAYS = 7;
 
@@ -766,8 +767,8 @@ export type BuildFilter = 'all' | 'waiting' | 'in-progress' | 'shipped-this-week
 
 export const BUILD_FILTER_LABEL: Record<BuildFilter, string> = {
   all: 'All',
-  waiting: 'Waiting to be picked up',
-  'in-progress': 'In progress',
+  waiting: STEP_LABEL['ready-to-build'],
+  'in-progress': STEP_LABEL['being-built'],
   'shipped-this-week': 'Shipped this week',
 };
 
@@ -808,7 +809,8 @@ export function buildSummaryLine(views: readonly Pick<BuildRequestView, 'status'
   const review = open.filter((v) => v.status === 'in-review').length;
   const moving = open.length - waiting - review;
   const stale = open.filter((v) => v.stale).length;
-  const parts = [...(moving ? [`${moving} in progress`] : []), ...(review ? [`${review} in review`] : []), ...(waiting ? [`${waiting} waiting to be picked up`] : [])];
+  // The status ladder's words (status-ladder.ts): the same as every tag of these rows.
+  const parts = [...(moving ? [stepCount(moving, 'being-built')] : []), ...(review ? [stepCount(review, 'checking')] : []), ...(waiting ? [stepCount(waiting, 'ready-to-build')] : [])];
   return `${parts.join(', ')}${stale ? `, ${stale} for more than a week` : ''}.`.replace(/^./, (c) => c.toUpperCase());
 }
 

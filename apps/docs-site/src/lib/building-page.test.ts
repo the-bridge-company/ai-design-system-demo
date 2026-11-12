@@ -18,6 +18,7 @@ import {
 } from './building-page';
 import { checkLine } from './building-view';
 import { YOU } from './branches-page';
+import { LATE_DAYS } from './status-ladder';
 
 const NOW = Date.parse('2026-11-11T12:00:00Z');
 const ago = (days: number) => new Date(NOW - days * 86_400_000).toISOString();
@@ -40,9 +41,12 @@ describe('Being built: one word per status', () => {
   });
 
   it('tags a row with the same word as the filter, never Requested', () => {
-    expect(buildStateTag('waiting')).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
-    expect(buildStateTag('in-progress')).toEqual({ label: 'In progress', tone: 'info' });
-    expect(buildStateTag('in-review')).toEqual({ label: 'In review', tone: 'warning' });
+    expect(buildStateTag('waiting')).toEqual({ label: 'Ready to build', tone: 'neutral' });
+    // Amber only once the wait is late (core LATE_DAYS): never because it waits at all.
+    expect(buildStateTag('waiting', LATE_DAYS)).toEqual({ label: 'Ready to build', tone: 'neutral' });
+    expect(buildStateTag('waiting', LATE_DAYS + 1)).toEqual({ label: 'Ready to build', tone: 'warning' });
+    expect(buildStateTag('in-progress')).toEqual({ label: 'Being built', tone: 'info' });
+    expect(buildStateTag('in-review')).toEqual({ label: 'Checking', tone: 'neutral' });
     expect(buildStateTag('shipped')).toEqual({ label: 'Shipped', tone: 'success' });
     expect(Object.values(BUILD_STATE_LABEL)).not.toContain('Requested');
   });
@@ -93,7 +97,7 @@ describe('Being built: the filters', () => {
 
   it('says what the filters leave out when nothing matches', () => {
     expect(emptyBuildLine(DEFAULT_BUILD_FILTERS, { person: (k) => k, product: (k) => k })).toBe('Nothing waiting or being built right now.');
-    expect(emptyBuildLine({ status: ['in-review'], product: ['crm'], people: ['leo'] }, { person: () => 'Leo', product: () => 'Acme CRM' })).toBe('Nothing in review by Leo in Acme CRM right now.');
+    expect(emptyBuildLine({ status: ['in-review'], product: ['crm'], people: ['leo'] }, { person: () => 'Leo', product: () => 'Acme CRM' })).toBe('Nothing being checked by Leo in Acme CRM right now.');
   });
 });
 
@@ -108,9 +112,9 @@ describe('Being built: the Board', () => {
   it('has one column per status, Shipped added to the default, empty ones kept small', () => {
     const cols = buildBoardColumns(rows, NOT_SHIPPED);
     expect(cols.map((c) => [c.label, c.rows.length])).toEqual([
-      ['Waiting to be picked up', 1],
-      ['In progress', 0],
-      ['In review', 2],
+      ['Ready to build', 1],
+      ['Being built', 0],
+      ['Checking', 2],
       ['Shipped, last 30 days', 1],
     ]);
   });

@@ -44,7 +44,7 @@ import { loadVisualImpact, renderTopChange } from './reviews/visual-impact';
 import { explorationFromRequest, type PullLike, type RequestRow } from '../lib/requests-view';
 import { explorationWork } from '../lib/work-nature';
 import { devTag, markWork, natureAttr } from './work-filter';
-import { badgeHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, buttonHtml } from '@bridge-ds/react/dom';
 import { paintPeople, personHtml } from './people';
 import { sampleVisitor } from './demo-gate';
 import { currentAccess, currentContributor, currentViewer, esc, ghGet, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, relativeTime, setButtonBusy, showGhError } from './github-session';
@@ -57,7 +57,7 @@ import { forgetRequests, loadRequestRows, requestRow } from './requests';
 import { setSelect } from '../lib/select-bridge';
 import { parseJiraKey, shownJiraKey, VOCAB } from '../lib/vocabulary';
 import { isProductBranch } from '../lib/product-branch';
-import { attrUrl } from '../lib/html';
+import { attrUrl, safeUrl } from '../lib/html';
 import { studioHref } from '../lib/team-path';
 import { isEmailAddress } from '../lib/people';
 import { productClient, productRepoByKey, readProductPulls, type ProductPull } from './product-repos';
@@ -367,7 +367,7 @@ const crumbs = (n: number, product?: string | null) => {
 export function previewList(previews: BranchPreview[]): string {
   return `<ul class="ex-previews">${previews
     .map(previewRowCopy)
-    .map((p) => `<li>${p.url ? `<a class="btn btn-secondary btn-lg" href="${attrUrl(p.url)}" target="_blank" rel="noopener">Open ${esc(p.label)}</a>` : `<span class="ex-preview-name">${esc(p.label)}</span>`}${p.note ? ` <span class="cg-muted">${esc(p.note)}</span>` : ''}</li>`)
+    .map((p) => `<li>${p.url ? buttonHtml(`Open ${p.label}`, { variant: 'secondary', href: safeUrl(p.url, '#'), attributes: { target: '_blank', rel: 'noopener' } }) : `<span class="ex-preview-name">${esc(p.label)}</span>`}${p.note ? ` <span class="cg-muted">${esc(p.note)}</span>` : ''}</li>`)
     .join('')}</ul>`;
 }
 
@@ -386,7 +386,7 @@ const keeperOf = (r: ExplorationRow) => canKeepExploration({ viewer: currentView
  * older way: the change it became.
  */
 function detailActions(r: ExplorationRow, opts: { connected: boolean; suggest: boolean; keeper?: boolean }): string {
-  if (r.status === 'promoted') return `<a class="btn btn-primary btn-lg" href="?pr=${r.number}" data-open-pr="${r.number}">Open the change</a>`;
+  if (r.status === 'promoted') return buttonHtml('Open the change', { href: `?pr=${r.number}`, attributes: { 'data-open-pr': r.number } });
   const open = r.status === 'active' || r.status === 'ready' || r.status === 'building';
   if (!open || opts.suggest) return r.archived ? `<p class="cg-muted">${esc(ARCHIVED_LINE)}</p>` : '';
   if (opts.connected && opts.keeper === false) return `<p class="cg-muted">${esc(keepExplorationLine(r.author))}</p>`;
@@ -396,12 +396,12 @@ function detailActions(r: ExplorationRow, opts: { connected: boolean; suggest: b
     if (r.status !== 'active') return '';
     // The sample team: the button says what it does; a click opens the demo dialog (scripts/demo-gate.ts).
     return sampleVisitor()
-      ? `<button type="button" class="btn btn-primary btn-lg" data-demo-write="keep an exploration">Done exploring</button>`
-      : `<button type="button" class="btn btn-primary btn-lg" data-gh-open data-demo-write="keep an exploration">${ghAction('say it is done exploring', prefersSignIn())}</button>`;
+      ? buttonHtml('Done exploring', { attributes: { 'data-demo-write': 'keep an exploration' } })
+      : buttonHtml(ghAction('say it is done exploring', prefersSignIn()), { attributes: { 'data-gh-open': true, 'data-demo-write': 'keep an exploration' } });
   }
-  if (r.archived) return `<p class="cg-muted">${esc(ARCHIVED_LINE)}</p> <button type="button" class="btn btn-secondary btn-lg" data-ex-archive="${r.number}" data-unarchive>Unarchive</button>`;
-  const archive = `<button type="button" class="btn btn-secondary btn-lg" data-ex-archive="${r.number}">Archive</button>`;
-  return r.status === 'active' ? `<button type="button" class="btn btn-primary btn-lg" data-ex-done="${r.number}">Done exploring</button> ${archive}` : archive;
+  if (r.archived) return `<p class="cg-muted">${esc(ARCHIVED_LINE)}</p> ${buttonHtml('Unarchive', { variant: 'secondary', attributes: { 'data-ex-archive': r.number, 'data-unarchive': true } })}`;
+  const archive = buttonHtml('Archive', { variant: 'secondary', attributes: { 'data-ex-archive': r.number } });
+  return r.status === 'active' ? `${buttonHtml('Done exploring', { attributes: { 'data-ex-done': r.number } })} ${archive}` : archive;
 }
 
 /**

@@ -247,10 +247,6 @@
     text-align: left;
   }
 
-  .st-vi-row .btn {
-    justify-self: start;
-  }
-
   .st-review-row {
     align-items: flex-start;
   }

@@ -3,6 +3,7 @@
 // and More options (raw value, the other mode, the description) on demand. Nothing changes until Apply, which adds
 // the edit to the local draft (scripts/token-editor.ts: same draft, guardrails and pull request as before). Under the
 // contrast line, a mini preview of the real components that use the token, light and dark, repaints on every pick.
+import { buttonHtml } from '@bridge-ds/react/dom';
 import { aliasTarget, hexToRgba, isAlias, parseColor, rgbaToDtcg, rgbaToHex, type ContrastResult } from '@bridge-ds/core';
 import { contrastSummary, shortName, summarizePairs, type ContrastSummary } from '../../lib/explorer/contrast-summary';
 import { componentsUsing, transitiveDependents } from '../../lib/explorer/flow';
@@ -223,8 +224,8 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
       <div class="xe-foot">
         ${fam ? `<button type="button" class="xe-more-btn" aria-expanded="${state.moreOpen}" aria-controls="${id}-more" data-xe-more>${icon('chevron', 14)}More options</button>` : ''}
         <span class="xe-grow"></span>
-        <button type="button" class="btn btn-secondary btn-sm" data-xe-cancel>Cancel</button>
-        <button type="button" class="btn btn-primary btn-sm" data-xe-apply>Apply</button>
+        ${buttonHtml('Cancel', { variant: 'secondary', size: 'sm', attributes: { 'data-xe-cancel': true } })}
+        ${buttonHtml('Apply', { size: 'sm', attributes: { 'data-xe-apply': true } })}
       </div>`;
     if (fam)
       familyTabsRoot.render(pop.querySelector('[data-xe-tabs-slot]'), {

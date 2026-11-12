@@ -20,6 +20,10 @@ const ALLOWED: Record<string, string> = {
   'pages/studio/index.astro': 'jsonForScript',
   'pages/studio/settings/index.astro': 'jsonForScript; Review rules owner names through escapeHtml (person marks)',
   'components/ds/library/views/AllTokensView.tsx': 'jsonForScript',
+  // The DS Drawer's static markup from @bridge-ds/react/dom drawerHtml (escapes its text) with fixed options.
+  'components/explorer/TokenDetailDrawer.astro': 'drawerHtml (lib/token-drawer.ts, constant options)',
+  'components/foundations/LibraryShellKit.astro': 'drawerHtml (lib/token-drawer.ts, constant options)',
+  'components/ds/StaticDrawer.astro': 'drawerHtml split around the slot (it escapes the title and description)',
   // Build-time Markdown and constants.
   'components/ds/MarkdownTable.tsx': 'cells from inline()',
   'components/ds/InlineMd.tsx': 'inline() on repository Markdown (escaped, link schemes allow-listed)',

@@ -312,7 +312,8 @@
   padding-top: var(--space-6);
 }
 
-.hp-tabgrid {
+/* The DS Tabs root (HpSteps.tsx) lays out as the section's grid: the text column, then the drawing. */
+.hp-tabsec .hp-tabgrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-8);
@@ -325,45 +326,33 @@
   gap: var(--space-5);
 }
 
-.hp-tablist {
-  display: flex;
-  flex-direction: column;
+/* The DS vertical tab list (HpSteps.tsx): its hairline and the signal indicator mark the step; each tab holds a
+   number, the title, and (open on the active step) its sentence and the progress bar. */
+.hp-steps {
   margin-top: var(--space-3);
 }
 
-.hp-tabitem {
+.hp-steps .hp-step {
+  align-items: flex-start;
+  width: 100%;
+  min-height: 0;
   padding: calc(var(--space-3) + var(--space-0-5)) var(--space-5);
-  border-top: var(--border-width-default) solid var(--_line);
-  transition: background-color var(--motion-duration-moderate) var(--motion-easing-standard);
+  white-space: normal;
+  text-align: start;
 }
 
-.hp-tabitem:first-child,
-.hp-tabitem.hp-on,
-.hp-tabitem.hp-on + .hp-tabitem {
-  border-top-color: transparent;
-}
-
-.hp-tabitem.hp-on {
-  padding-block: calc(var(--space-4) + var(--space-0-5));
-  border-radius: var(--radius-container);
-  background-color: var(--_soft);
-}
-
-.hp-tab {
-  all: unset;
-  box-sizing: border-box;
+/* The Tab's label part: the number beside the title block. */
+.hp-step > span {
   display: flex;
-  /* The number centers on the title's first line, not on a wrapped two-line block (.hp-tt pads to it). */
   align-items: flex-start;
   gap: calc(var(--space-3) + var(--space-0-5));
-  width: 100%;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
+  min-width: 0;
 }
 
-.hp-tab:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--space-1);
+.hp-step-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .hp-n {
@@ -390,23 +379,24 @@
   font-size: var(--_t18);
   font-weight: var(--font-weight-medium);
   line-height: var(--font-leading-26);
+  /* The number centers on the title's first line, not on a wrapped two-line block. */
   padding-block-start: calc((var(--size-7) + var(--space-0-5) - 1lh) / 2);
   transition: color var(--motion-duration-instant) var(--motion-easing-standard);
 }
 
 @media (hover: hover) {
-  .hp-tab:hover .hp-tt {
+  .hp-step:hover .hp-tt {
     color: var(--color-text-default);
   }
 }
 
-.hp-tab[aria-selected="true"] .hp-n {
+.hp-step[data-active] .hp-n {
   border-color: var(--_deep);
   background-color: var(--_deep);
   color: var(--_on-deep);
 }
 
-.hp-tab[aria-selected="true"] .hp-tt {
+.hp-step[data-active] .hp-tt {
   color: var(--color-text-default);
   font-weight: var(--font-weight-semibold);
 }
@@ -417,18 +407,22 @@
   transition: grid-template-rows var(--motion-duration-moderate) var(--motion-easing-standard);
 }
 
-.hp-more > div {
+.hp-more > span {
+  display: block;
   min-height: 0;
   overflow: hidden;
 }
 
-.hp-tabitem.hp-on .hp-more {
+.hp-step[data-active] .hp-more {
   grid-template-rows: 1fr;
 }
 
-.hp-more p {
-  margin: calc(var(--space-2) + var(--space-0-5)) 0 0 var(--size-11);
+.hp-more-text {
+  display: block;
+  margin-top: calc(var(--space-2) + var(--space-0-5));
+  color: var(--color-text-default);
   font-size: var(--_t17);
+  font-weight: var(--font-weight-regular);
   line-height: var(--font-leading-28);
 }
 
@@ -436,7 +430,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin: var(--space-3) 0 var(--space-0-5) var(--size-11);
+  margin: var(--space-3) 0 var(--space-0-5);
 }
 
 .hp-bar {
@@ -474,25 +468,20 @@
   background-color: var(--color-surface-raised);
 }
 
+/* A step's drawing (a DS TabsPanel): it mounts when its step is picked, so it fades in and its animation starts over. */
 .hp-ui {
   grid-area: 1 / 1;
   width: 100%;
   min-width: 0;
   max-width: calc(var(--size-140) - var(--space-5));
-  opacity: 0;
-  visibility: hidden;
   container-type: inline-size;
-  transition:
-    opacity var(--motion-duration-moderate) var(--motion-easing-standard),
-    visibility var(--motion-duration-moderate) step-end;
+  animation: hp-ui-in var(--motion-duration-moderate) var(--motion-easing-standard) both;
 }
 
-.hp-ui.hp-on {
-  opacity: 1;
-  visibility: visible;
-  transition:
-    opacity var(--motion-duration-moderate) var(--motion-easing-standard),
-    visibility var(--motion-duration-moderate) step-start;
+@keyframes hp-ui-in {
+  from {
+    opacity: 0;
+  }
 }
 
 @media (min-width: 900px) {
@@ -500,12 +489,12 @@
     padding-block: calc(var(--space-24) + var(--space-4));
   }
 
-  .hp-tabgrid {
+  .hp-tabsec .hp-tabgrid {
     grid-template-columns: minmax(0, calc(var(--size-96) + var(--space-12) + var(--space-2))) minmax(0, 1fr);
     gap: var(--space-20);
   }
 
-  .hp-tabgrid.hp-flip {
+  .hp-tabsec .hp-tabgrid.hp-flip {
     grid-template-columns: minmax(0, 1fr) minmax(0, calc(var(--size-96) + var(--space-12) + var(--space-2)));
   }
 
@@ -574,30 +563,8 @@
   height: calc(var(--_u) * 15);
 }
 
-.hp-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  height: var(--size-9);
-  padding: 0 calc(var(--space-3) + var(--space-0-5));
-  border: var(--border-width-default) solid transparent;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-200);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-}
 
-.hp-btn-deep {
-  background-color: var(--_deep);
-  color: var(--_on-deep);
-}
 
-.hp-btn-line {
-  border-color: var(--_line-strong);
-  background-color: var(--_paper);
-}
 
 /* A panel's drawing, centred in its column. */
 .hp-sc {
@@ -725,6 +692,13 @@
 
 .hp-dlg-foot {
   margin-top: var(--space-1);
+}
+
+/* The robot mark sits in the DS Button's label, beside the words. */
+.hp-dlg-foot .hp-ring > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .hp-ui.hp-on .hp-ring {
@@ -1754,6 +1728,7 @@
   .hp-bob,
   .hp-leg-a,
   .hp-leg-b,
+  .hp-ui,
   .hp-ui.hp-on .hp-pick,
   .hp-ui.hp-on .hp-ring,
   .hp-ui.hp-on .hp-k4an,

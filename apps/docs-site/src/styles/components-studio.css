@@ -109,73 +109,15 @@
   display: none;
 }
 
-/* Detail drawer */
-/* The title takes focus when the drawer opens (announced by screen readers); it is not a control, so no ring. */
-.cm-d-title:focus,
-.cm-d-title:focus-visible {
-  outline: 0;
-  box-shadow: none;
-}
-
-.cm-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: var(--layer-overlay);
-  background-color: var(--color-overlay-scrim);
-}
-
-.cm-scrim[hidden],
-.cm-drawer[hidden],
+/* Detail drawer: the DS Drawer (components/ds/StaticDrawer.astro); its body stacks the parts. */
 .cm-d-panel[hidden] {
   display: none;
 }
 
-.cm-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--layer-modal);
+.cm-drawer [data-cm-body] {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  width: min(100%, var(--size-140));
-  padding: var(--space-6);
-  overflow-y: auto;
-  border-left: var(--border-width-default) solid var(--color-border-default);
-  background-color: var(--color-surface-default);
-  box-shadow: var(--elevation-overlay);
-}
-
-.cm-d-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-/* The family sits on the name as a quiet eyebrow: one group, read as "Actions / IconButton". */
-.cm-d-names {
-  display: grid;
-  gap: var(--space-1);
-  min-width: 0;
-  margin: 0;
-}
-
-.cm-d-eyebrow {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--typography-ui-line-height);
-}
-
-.cm-d-title {
-  margin: 0;
-  font-family: var(--typography-h2-family);
-  font-size: var(--typography-h2-size);
-  font-weight: var(--typography-h2-weight);
-  line-height: var(--typography-h2-line-height);
 }
 
 .cm-d-panel {
@@ -198,14 +140,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-2);
   margin-block-start: var(--space-1);
 }
 
 .cm-d-gh {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--space-2);
 }
 
 .cm-d-gh[hidden] {
@@ -418,10 +358,6 @@
 
   .cm-pill {
     margin-top: var(--space-1);
-  }
-
-  .cm-drawer {
-    padding: var(--space-5) var(--space-4);
   }
 
   /* The action row fills its width when it wraps: no ragged short buttons. */

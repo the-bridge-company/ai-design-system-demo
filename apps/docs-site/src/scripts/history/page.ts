@@ -5,6 +5,7 @@
 // of Changes. Real history only in production; in development the demo switch at the bottom swaps in the fixture
 // report and a banner. Filters wait behind the Filter button.
 import type { HistoryEntry, HistoryFilter, HistoryReport } from '@bridge-ds/core';
+import { buttonHtml } from '@bridge-ds/react/dom';
 import { closingIssueNumbers, parseSuggestionOverrideComment, publishedWithoutReview, tier1PublishOf, type SuggestionOverrideRecord } from '@bridge-ds/core';
 import { authorsOf, countsLabel, shortDate, viewTimeline } from '../../lib/history-view';
 import { renderTokenReview } from '../reviews';
@@ -22,7 +23,7 @@ import { onSelectPick, selectValue, setSelect } from '../../lib/select-bridge';
 import { shownJiraKey, VOCAB, withoutJiraKey } from '../../lib/vocabulary';
 import { agentMade } from '../../lib/work-nature';
 import { displayName, paintPeople, personHtml } from '../people';
-import { attrUrl } from '../../lib/html';
+import { attrUrl, safeUrl } from '../../lib/html';
 import { GUIDANCE_TAG, groupCountLine, isGuidanceEntry } from '../../lib/history-guidance';
 
 /** Claude made the change when its description carries an AI agent marker (lib/work-nature). */
@@ -157,7 +158,7 @@ function paintGuidanceDetail(e: HistoryEntry, ref: string) {
       <h3 class="cg-pr-title" tabindex="-1">${esc(withoutJiraKey(historySummary(e, { full: true })))}</h3>
       <p class="cg-pr-meta"><span class="cg-who">${personHtml(e.author, { agent: agentOf(e), size: 'sm' })}<span>, ${esc(shortDate(e.date))}</span></span><span>${esc([GUIDANCE_TAG, e.version && e.version !== 'Unreleased' ? e.version : 'next release'].join(', '))}</span>${ref}</p>
       <p class="cg-pr-state">Usage guidance changed. No token changed.</p>
-      ${at ? `<p class="cg-pr-cta"><a class="btn btn-secondary" href="${attrUrl(at)}">See the change</a></p>` : ''}
+      ${at ? `<p class="cg-pr-cta">${buttonHtml('See the change', { variant: 'secondary', href: safeUrl(at, '#') })}</p>` : ''}
     </header>`;
   void paintPeople($('hs-detail'));
 }

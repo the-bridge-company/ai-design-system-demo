@@ -5,7 +5,7 @@
 // Pure rules live in lib/requests-view.ts.
 import { workNature } from '../lib/work-nature';
 import { devTag, markWork, natureAttr } from './work-filter';
-import { badgeHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, buttonHtml } from '@bridge-ds/react/dom';
 import { JIRA_IN_BRIDGE, REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
 import { assignRequestOnGitHub, BUILD_IMAGE_LABEL, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
 import {
@@ -257,12 +257,16 @@ export function detailContext(): DetailContext {
  */
 function primaryAction(r: RequestRow, decide: boolean): string {
   if (decide)
-    return `<a class="btn btn-primary btn-lg" href="?view=explorations&amp;for=${r.number}" data-start-for="${r.number}" data-demo-write="start an exploration">Start an exploration</a><button type="button" class="btn btn-secondary btn-lg" data-rq-assign="${r.number}" data-demo-write="assign requests">Assign someone</button><button type="button" class="btn btn-secondary btn-lg" data-rq-decline="${r.number}" data-demo-write="decline requests">Decline</button>`;
+    return (
+      buttonHtml('Start an exploration', { href: `?view=explorations&for=${r.number}`, attributes: { 'data-start-for': r.number, 'data-demo-write': 'start an exploration' } }) +
+      buttonHtml('Assign someone', { variant: 'secondary', attributes: { 'data-rq-assign': r.number, 'data-demo-write': 'assign requests' } }) +
+      buttonHtml('Decline', { variant: 'secondary', attributes: { 'data-rq-decline': r.number, 'data-demo-write': 'decline requests' } })
+    );
   const open = r.prs.find((p) => p.state === 'open');
   const pr = open ?? r.prs.find((p) => p.merged);
   if (!pr) return '';
-  if (pr.exploration) return `<a class="btn btn-primary btn-lg" href="?exploration=${pr.number}" data-open-exploration="${pr.number}">Open the exploration</a>`;
-  return `<a class="btn btn-primary btn-lg" href="?pr=${pr.number}" data-open-pr="${pr.number}">${open ? 'Review the change' : 'Open the change'}</a>`;
+  if (pr.exploration) return buttonHtml('Open the exploration', { href: `?exploration=${pr.number}`, attributes: { 'data-open-exploration': pr.number } });
+  return buttonHtml(open ? 'Review the change' : 'Open the change', { href: `?pr=${pr.number}`, attributes: { 'data-open-pr': pr.number } });
 }
 
 export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer: null, owners: [] }): string {

@@ -3,7 +3,8 @@
 // the new Profile header of her AI exploration in the design system, then code and the Figma kit follow), two step-tab
 // sections (start in Bridge, ship) and "One system everyone can trust", the design system lead's queue, and the Horizon
 // closing (Florian carries the kept card across the bridge). Every drawing is decorative markup with a spoken label; the
-// controls are DS components, except the step tabs (see their audit comments). Behaviour: scripts/homepage.ts, pure
+// controls are DS components: the step tabs are the DS Tabs (components/home/HpSteps.tsx), and the drawn dialog of
+// the first step uses the real DS Buttons, inert like every drawing. Behaviour: scripts/homepage.ts, pure
 // parts in lib/homepage.ts. The Library home is at /library/ (lib/nav LIBRARY_HOME).
 import '../styles/homepage.css';
 import '../styles/home-illus.css';
@@ -11,6 +12,7 @@ import '../styles/home-hero.css';
 import '../styles/home-compare.css';
 import Landing from '../layouts/Landing.astro';
 import { JIRA_IN_BRIDGE } from '../lib/studio-flags';
+import { Button } from '@bridge-ds/react';
 import ButtonLink from '../components/ds/ButtonLink';
 import { ArrowRight } from 'lucide-react';
 import HpSprite from '../components/home/HpSprite.astro';
@@ -85,7 +87,7 @@ const GET_STARTED = signInHref(null, true);
           'Drawing: the kept Profile header is clipped onto a review easel; Dana, design, then Leo, code, tick their checklists, the swatch flips between light and dark, and it is approved',
         ]}
       >
-        <div slot="p0" class="hp-card hp-dlg">
+        <div slot="p0" class="hp-card hp-dlg" inert>
           <span class="hp-xs hp-muted">Start an exploration</span>
           <strong class="hp-dt">What do you want to explore?</strong>
           <div class="hp-opt hp-pick"><span class="hp-radio"></span><span><strong>Acme CRM</strong><small>A new screen or flow, built with your library.</small></span></div>
@@ -97,7 +99,7 @@ const GET_STARTED = signInHref(null, true);
               </div>
             )
           }
-          <div class="hp-row hp-dlg-foot"><span class="hp-sp"></span><span class="hp-btn hp-btn-line">Cancel</span><span class="hp-btn hp-btn-deep hp-ring"><span class="hp-ai"><svg aria-hidden="true"><use href="#hp-robot" /></svg></span>Start with Claude AI</span></div>
+          <div class="hp-row hp-dlg-foot"><span class="hp-sp"></span><Button variant="secondary" size="sm">Cancel</Button><Button variant="primary" size="sm" className="hp-ring"><span class="hp-ai"><svg aria-hidden="true"><use href="#hp-robot" /></svg></span>Start with Claude AI</Button></div>
         </div>
         <div slot="p1" class="hp-sc hp-sc-center"><HpSieve /></div>
         <div slot="p2" class="hp-sc hp-sc-center"><HpSignoff /></div>

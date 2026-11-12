@@ -73,7 +73,7 @@
 }
 
 /* The art: what each way gives, in shapes. Dashed outlines for a design system to connect; filled Bridge colors and a
-   button for the demo's sample library. */
+   real DS Button (inert, like the drawing it sits in) for the demo's sample library. */
 .gs-art {
   display: flex;
   align-items: center;
@@ -105,15 +105,6 @@
   background: var(--color-bg-zone);
 }
 
-.gs-shape-button {
-  inline-size: auto;
-  padding-inline: var(--space-3);
-  border: 0;
-  background: var(--color-action-primary-bg);
-  color: var(--color-action-primary-text);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
 
 .gs-shape-field {
   inline-size: var(--size-16);

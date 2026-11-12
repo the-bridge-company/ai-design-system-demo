@@ -17,12 +17,14 @@ import '../../../styles/storybook-quick.css';
 import Layout from '../../../layouts/Layout.astro';
 import StudioHeader from '../../../components/StudioHeader.astro';
 import ButtonLink from '../../../components/ds/ButtonLink';
+import StaticDrawer from '../../../components/ds/StaticDrawer.astro';
+import { SEP } from '../../../lib/sep';
 import Example from '../../../components/Example';
 import ComponentsSearch from '../../../components/ds/studio/ComponentsSearch';
 import BridgedSelect from '../../../components/ds/BridgedSelect';
 import ComponentsList, { exceptions, type ComponentListRow } from '../../../components/ds/studio/ComponentsList';
-import { Badge, Button, IconButton, Input, Link, SegmentedControl, Textarea } from '@bridge-ds/react';
-import { Copy, FileText, ImagePlus, Moon, Pencil, Sun, X } from 'lucide-react';
+import { Badge, Button, Input, Link, SegmentedControl, Textarea } from '@bridge-ds/react';
+import { Copy, FileText, ImagePlus, Moon, Pencil, Sun } from 'lucide-react';
 import ChangeIntent from '../../../components/ds/studio/ChangeIntent';
 import { GitHubMark } from '../../../components/ds/studio/brand-icons';
 import { docsEditHref, editTokensHref, guidanceState, loadComponents, type ComponentInfo } from '../../../lib/components';
@@ -122,15 +124,8 @@ const signIn = Boolean(signInConfig());
     <p class="cm-none" data-cm-none hidden>No component matches. <Button variant="link" data-cm-reset>Show every component</Button></p>
   </div>
 
-  <div class="cm-scrim" data-cm-scrim hidden></div>
-  <aside class="cm-drawer" role="dialog" aria-modal="true" aria-labelledby="cm-d-title" data-cm-drawer hidden>
-    <header class="cm-d-head">
-      <hgroup class="cm-d-names">
-        <p class="cm-d-eyebrow" data-cm-d-family></p>
-        <h2 id="cm-d-title" class="cm-d-title" tabindex="-1" data-cm-d-title>Component</h2>
-      </hgroup>
-      <IconButton icon={X} label="Close" size="sm" data-cm-close />
-    </header>
+  {/* The DS Drawer (StaticDrawer): its title names the component, its description the family. */}
+  <StaticDrawer id="cm-drawer" title="Component" description="" size="lg" closeLabel="Close" className="cm-drawer" attributes={{ 'data-cm-drawer': true }} bodyAttributes={{ 'data-cm-body': true }}>
     {
       components.map((c) => {
         const r = rows.find((x) => x.slug === c.slug)!;
@@ -154,7 +149,7 @@ const signIn = Boolean(signInConfig());
             <p class="cm-d-links">
               <Link href={`/components/${c.slug}/`}>Open in the Library</Link>
               <span class="cm-d-gh" data-cm-gh>
-                <span aria-hidden="true">·</span>
+                {SEP}
                 <Link href={sourceUrl(c.files.tsx)} external>{VOCAB.openOnGitHub}</Link>
               </span>
             </p>
@@ -249,7 +244,7 @@ const signIn = Boolean(signInConfig());
       <Textarea label={COPY_MESSAGE.field} name="devmsg" rows={7} readOnly />
       <Button variant="primary" iconStart={Copy} type="button" data-rq-devmsg-copy>{COPY_MESSAGE.label}</Button>
     </div>
-  </aside>
+  </StaticDrawer>
 
   <script type="application/json" id="bridge-branches" set:html={branchesJson} />
   <script>

@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 
 export default function PaletteField() {
   return (
+    // bridge-audit-ignore-next-line: the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox)
     <Input
       id="palette-q"
       data-palette-q=""

@@ -1,9 +1,11 @@
 // Library foundation pages: copy on token names and on each row's copy button (the CSS variable by default; the
-// button's menu copies as JS or the Figma name, and the last choice is remembered per browser), a toast, and opening
-// a token row in the detail drawer
+// page's Copy as switch picks JS or the Figma name instead, remembered per browser), a DS toast, and opening a token
+// row in the detail drawer
 // (scripts/explorer/drawer.ts listens to [data-fd-open]). Plain DOM, no framework.
 import { parseCopyFormat, type CopyFormat } from '../lib/library-rows';
 import { copyText } from './explorer/util';
+import { selectSegment } from './shell';
+import { toast } from '../lib/page-toast';
 
 const KEY = 'bridge-copy-format';
 const WHAT: Record<CopyFormat, string> = { css: 'CSS variable', js: 'JS reference', figma: 'Figma name' };
@@ -22,8 +24,6 @@ export function initFoundations() {
   if (!page || page.dataset.ready) return;
   page.dataset.ready = '';
   let format = stored();
-  const toast = document.getElementById('fd-toast');
-  let toastTimer = 0;
 
   function setFormat(next: CopyFormat, save = true) {
     format = next;
@@ -37,7 +37,7 @@ export function initFoundations() {
         b.setAttribute('aria-label', `${b.textContent?.trim() ?? ''}, copy ${WHAT[next]}`);
       }
     });
-    document.querySelectorAll<HTMLElement>('[data-fd-copy-as]').forEach((m) => m.setAttribute('aria-checked', String(m.dataset.fdCopyAs === next)));
+    document.querySelectorAll('[data-fd-copy-format]').forEach((sw) => selectSegment(sw, next));
     if (!save) return;
     try {
       localStorage.setItem(KEY, next);
@@ -47,33 +47,34 @@ export function initFoundations() {
   }
   setFormat(format, false);
 
-  function showToast(text: string) {
-    if (!toast) return;
-    toast.textContent = text;
-    toast.hidden = false;
-    toast.dataset.show = '';
-    window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => {
-      delete toast.dataset.show;
-      toastTimer = window.setTimeout(() => (toast.hidden = true), 200);
-    }, 1600);
+  const showToast = (text: string) => toast(text);
+  // The Copy as switch (a static DS SegmentedControl): the next copies use that format.
+  document.addEventListener('bridge:segment', (e) => {
+    if (!(e.target as HTMLElement).closest('[data-fd-copy-format]')) return;
+    setFormat(parseCopyFormat((e as CustomEvent<{ value: string }>).detail.value));
+  });
+
+  // "Used by" buttons: a disclosure each, one open at a time; a click outside or Escape closes it.
+  const openUses = () => document.querySelector<HTMLElement>('[data-fd-uses][aria-expanded="true"]');
+  function setUses(btn: HTMLElement, open: boolean) {
+    btn.setAttribute('aria-expanded', String(open));
+    const pop = document.getElementById(btn.getAttribute('aria-controls') ?? '');
+    if (pop) pop.hidden = !open;
   }
+  document.addEventListener('keydown', (e) => {
+    const btn = e.key === 'Escape' ? openUses() : null;
+    if (!btn) return;
+    setUses(btn, false);
+    btn.focus();
+  });
 
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
-    const as = t.closest<HTMLElement>('[data-fd-copy-as]');
-    if (as) {
-      const src = as.closest('.fd-copy')?.querySelector<HTMLElement>('[data-fd-copy-icon]');
-      const next = parseCopyFormat(as.dataset.fdCopyAs);
-      setFormat(next);
-      const menu = as.closest('details');
-      if (menu) menu.open = false;
-      if (src) {
-        const value = valueOf(src, next);
-        void copyText(value, src);
-        showToast(`Copied ${value}`);
-        src.focus();
-      }
+    const open = openUses();
+    const uses = t.closest<HTMLElement>('[data-fd-uses]');
+    if (open && open !== uses && !t.closest('[data-fd-pop]')) setUses(open, false);
+    if (uses) {
+      setUses(uses, uses.getAttribute('aria-expanded') !== 'true');
       return;
     }
     const name = t.closest<HTMLElement>('[data-fd-copy]');
@@ -85,7 +86,7 @@ export function initFoundations() {
     }
     // A click anywhere else on a row opens its details; links, menus and buttons keep their own job.
     const row = t.closest<HTMLElement>('[data-fd-row]');
-    if (row && !t.closest('a, button, summary, details, input, select, textarea')) {
+    if (row && !t.closest('a, button, summary, details, input, select, textarea, [data-fd-pop]')) {
       row.querySelector<HTMLButtonElement>('[data-fd-open]')?.click();
     }
   });

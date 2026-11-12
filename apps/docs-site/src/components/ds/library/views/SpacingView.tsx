@@ -2,7 +2,7 @@
 import { LayoutSpecimen } from '../../../foundations/Specimens';
 import { foundationRow, primitiveRows } from '../../../../lib/library/foundations';
 import { tokenRows } from '../../../../lib/library/tokens';
-import { GroupSection, INERT, LibraryHeader, ScopeSwitch, TokenList } from '../FoundationParts';
+import { CopyAsSwitch, GroupSection, INERT, LibraryHeader, ScopeSwitch, TokenList } from '../FoundationParts';
 import { pageHref, studioLink, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
 
@@ -24,7 +24,7 @@ export default function SpacingView({ data }: { data: LibraryData }) {
   const density = DENSITY.filter((p) => known.has(p)).map((p) => foundationRow(model, p));
   return (
     <div data-fd-page="">
-      <LibraryHeader title={SPACING_PAGE.title} art={SPACING_PAGE.art} studio={studioLink(data, SPACING_PAGE.studio)} canEdit={data.extras.canEdit} actions={<ConfluenceCopy data={data} route={pageHref(data, 'foundations/spacing/')} />}>
+      <LibraryHeader title={SPACING_PAGE.title} art={SPACING_PAGE.art} studio={studioLink(data, SPACING_PAGE.studio)} canEdit={data.extras.canEdit} actions={<><CopyAsSwitch /><ConfluenceCopy data={data} route={pageHref(data, 'foundations/spacing/')} /></>}>
         {data.team ? SPACING_PAGE.teamLead : SPACING_PAGE.lead}
       </LibraryHeader>
 

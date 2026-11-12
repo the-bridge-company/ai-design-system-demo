@@ -59,7 +59,7 @@ export default function ScopeMenu({ brands, densities }: ScopeMenuProps) {
             items={brands.map((b) => ({
               value: b.value,
               label: b.label,
-              leading: <span className="scope-chip" data-theme="light" data-brand={b.value} data-scope-fixed="" />,
+              leading: <span className="scope-brand-dot" data-theme="light" data-brand={b.value} data-scope-fixed="" />,
             }))}
           />
           <p className="shell-pop-label" id="scope-density-label">

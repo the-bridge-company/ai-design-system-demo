@@ -4,7 +4,7 @@
 // (scripts/foundations.ts, scripts/explorer/drawer.ts, scripts/shell.ts) drive them through their data attributes.
 // Token paths reach inline styles only as var() of a checked custom property name; labels are React text.
 import type { CSSProperties, ReactNode } from 'react';
-import { Button, Icon, IconButton, Link, SegmentedControl } from '@bridge-ds/react';
+import { Badge, Button, Icon, IconButton, Link, SegmentedControl } from '@bridge-ds/react';
 import { ChevronRight, Copy, Pencil } from 'lucide-react';
 import ButtonLink from '../ButtonLink';
 import { Drawing } from '../studio/Drawing';
@@ -95,6 +95,33 @@ export function ScopeSwitch({ data, axis }: { data: LibraryData; axis: 'brand' |
 }
 
 /**
+ * "Copy as", once per foundation page, in the page header: what the copy buttons and token names copy (the CSS
+ * variable, the JS reference or the Figma name). A static DS SegmentedControl (data-vanilla) that scripts/shell.ts
+ * drives; scripts/foundations.ts follows its `bridge:segment` and remembers the choice per browser.
+ */
+export function CopyAsSwitch() {
+  return (
+    <div className="fd-scope-field fd-copy-as">
+      <span className="fd-scope-label" id="fd-copy-as-label">
+        Copy as
+      </span>
+      <SegmentedControl
+        aria-labelledby="fd-copy-as-label"
+        size="sm"
+        data-vanilla
+        data-fd-copy-format=""
+        value="css"
+        items={[
+          { value: 'css', label: 'CSS variable' },
+          { value: 'js', label: 'JS' },
+          { value: 'figma', label: 'Figma name' },
+        ]}
+      />
+    </div>
+  );
+}
+
+/**
  * A token group in context, once per theme side by side (stacked on narrow screens). Each panel sets data-theme, so
  * the documented system's tokens resolve inside it; the shell adds the preview brand and density. The panels are
  * inert: the list and the detail drawer carry every value.
@@ -152,7 +179,7 @@ const valueText = (r: FoundationRow) => (r.type === 'color' ? '' : r.values.ligh
 /**
  * The light token list of a foundation page: one row per token with a preview (a dual light and dark swatch for
  * colors and shadows, a shape, bar or sample otherwise), the name once (a click copies it; the copy button copies
- * the CSS variable, or the last format picked in its menu), a one-line role, a muted alias line and a usage chip.
+ * the CSS variable, or the format picked in the page's Copy as switch), a one-line role, a muted alias line and a usage chip.
  * A click on the row opens the token detail drawer.
  */
 export function TokenList({ data, rows, preview, label }: { data: LibraryData; rows: FoundationRow[]; preview: Preview; label: string }) {
@@ -168,12 +195,12 @@ export function TokenList({ data, rows, preview, label }: { data: LibraryData; r
               {dual(r) ? (
                 modes.map((m: Mode) => (
                   <span key={m} className="fd-pv-half" data-theme={m} style={vars({ '--pv': v(r.path), '--on': kind ? onFor(r.path) : v('color.bg.default') })}>
-                    {kind === 'text' ? <span className="fd-pv-aa">Aa</span> : <span className="fd-pv-chip" />}
+                    {kind === 'text' ? <span className="fd-pv-aa">Aa</span> : <span className="fd-pv-swatch" />}
                   </span>
                 ))
               ) : preview === 'shadow' ? (
                 <span className="fd-pv-half" style={vars({ '--pv': v(r.path), '--on': v('color.bg.default') })}>
-                  <span className="fd-pv-chip" />
+                  <span className="fd-pv-swatch" />
                 </span>
               ) : preview === 'size' || preview === 'weight' || preview === 'family' || preview === 'tracking' ? (
                 <span className="fd-pv-type" style={vars({ '--pv': v(r.path) })}>
@@ -197,22 +224,6 @@ export function TokenList({ data, rows, preview, label }: { data: LibraryData; r
                 </button>
                 <span className="fd-copy">
                   <IconButton icon={Copy} variant="ghost" size="sm" className="fd-copy-btn" label={`Copy CSS variable ${r.copy.css}`} title="Copy CSS variable" data-fd-copy="" data-fd-copy-icon data-copy-css={r.copy.css} data-copy-js={r.copy.js} data-copy-figma={r.copy.figma} />
-                  <details className="fd-copy-more" data-menu="">
-                    <summary className="fd-copy-chev" aria-label={`Other copy formats for ${r.path}`} title="Copy as">
-                      <Icon icon={siteIcon('chevronDown')} size="xs" className="icon" />
-                    </summary>
-                    <div className="fd-copy-menu" role="menu" aria-label={`Copy ${r.path} as`}>
-                      <Button variant="ghost" size="sm" role="menuitemradio" aria-checked="true" data-fd-copy-as="css">
-                        Copy CSS variable
-                      </Button>
-                      <Button variant="ghost" size="sm" role="menuitemradio" aria-checked="false" data-fd-copy-as="js">
-                        Copy as JS
-                      </Button>
-                      <Button variant="ghost" size="sm" role="menuitemradio" aria-checked="false" data-fd-copy-as="figma">
-                        Copy Figma name
-                      </Button>
-                    </div>
-                  </details>
                 </span>
               </span>
               {r.role && <span className="fd-role">{r.role}</span>}
@@ -225,13 +236,14 @@ export function TokenList({ data, rows, preview, label }: { data: LibraryData; r
             </span>
             <span className="fd-use">
               {r.chip.kind === 'unused' ? (
-                <span className="fd-chip is-unused">{r.chip.label}</span>
+                <Badge>{r.chip.label}</Badge>
               ) : (
-                <details className="fd-uses" data-menu="">
-                  <summary className="fd-chip" aria-label={`${r.chip.label}, see who uses ${r.path}`}>
+                <span className="fd-uses">
+                  {/* A disclosure: the DS Button opens the list under it (scripts/foundations.ts). */}
+                  <Button variant="secondary" size="sm" className="fd-uses-btn" aria-expanded="false" aria-controls={`${anchorOf(r.cssVar)}-uses`} aria-label={`${r.chip.label}, see who uses ${r.path}`} data-fd-uses="">
                     {r.chip.label}
-                  </summary>
-                  <div className="fd-pop">
+                  </Button>
+                  <div className="fd-pop" id={`${anchorOf(r.cssVar)}-uses`} data-fd-pop="" hidden>
                     {r.components.length > 0 && (
                       <>
                         <p className="fd-pop-title">Components</p>
@@ -258,7 +270,7 @@ export function TokenList({ data, rows, preview, label }: { data: LibraryData; r
                     )}
                     {r.components.length === 0 && r.base.length === 0 && <p className="fd-pop-note">In use through a token that aliases it. Open the details to follow the chain.</p>}
                   </div>
-                </details>
+                </span>
               )}
             </span>
             <IconButton icon={ChevronRight} label={`Open details for ${r.path}`} title="Open details" size="sm" className="ds-fd-open" data-fd-open={r.path} />

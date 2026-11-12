@@ -59,6 +59,8 @@ import {
   type SectionId,
   type SendReview,
 } from '../lib/library-edit-model';
+import { componentTabButtonId } from '../lib/library/component-page';
+import { joinSep } from '../lib/sep';
 import type { DraftScope, DraftWay } from '../scripts/docs-ai';
 import { studioHref } from '../lib/team-path';
 import { COPY_SETUP, developerSetupMessage } from '../lib/docs-ai-model';
@@ -879,7 +881,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
     const aside = document.querySelector('.cp-toc');
     aside?.setAttribute('aria-label', editing ? 'Review' : 'On this page');
     if (editing) {
-      const usage = document.querySelector<HTMLElement>('[data-cp-tabs] [data-tab="usage"]');
+      const usage = document.getElementById(componentTabButtonId('usage'));
       if (usage?.getAttribute('aria-selected') !== 'true') usage?.click();
     }
   }, [editing]);
@@ -1345,9 +1347,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
   const narrowRail = (
         <details className="le-rail-narrow">
           <summary>
-            <span>{reviewCount ? `${reviewCount} to review` : 'Nothing to review'}</span>
-            <span className="le-rail-sep" aria-hidden="true">·</span>
-            <span>Changed: {changedNote.toLowerCase()}</span>
+            <span>{joinSep([reviewCount ? `${reviewCount} to review` : 'Nothing to review', `Changed: ${changedNote.toLowerCase()}`])}</span>
           </summary>
           <div className="le-rail le-rail-in">
             <RailContent />

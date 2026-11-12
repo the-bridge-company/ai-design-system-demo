@@ -1,15 +1,6 @@
 // The homepage ("/", pages/index.astro): the pure parts of its behaviour (scripts/homepage.ts), so they are tested.
-//   - Step tabs: three steps per section, arrow keys move between them, the active one advances on its own.
+//   - Step tabs (components/home/HpSteps.tsx): three steps per section, the active one advances on its own.
 //   - The closing panorama scaled to its band.
-
-/** The step a key moves to in a vertical tab list of `count` steps (wrapping), or null for other keys. */
-export function stepForKey(key: string, current: number, count = 3): number | null {
-  if (key === 'ArrowDown' || key === 'ArrowRight') return (current + 1) % count;
-  if (key === 'ArrowUp' || key === 'ArrowLeft') return (current - 1 + count) % count;
-  if (key === 'Home') return 0;
-  if (key === 'End') return count - 1;
-  return null;
-}
 
 /** How long each step shows before the next one, in ms. */
 export const STEP_MS = 4500;

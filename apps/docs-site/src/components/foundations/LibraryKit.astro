@@ -1,11 +1,12 @@
 ---
-// Everything a Library foundation page needs once: the token detail drawer (the explorer's panel in read mode), the
-// copy toast and the page script (Copy as switch, copy on names, open a row).
+// Everything a Library foundation page needs once: the token detail drawer (the explorer's panel in read mode, in the
+// DS Drawer), the DS Toast island for the copy toasts and the page script (Copy as switch, copy on names, open a row).
 import '../../styles/foundations.css';
 import TokenDetailDrawer from '../explorer/TokenDetailDrawer.astro';
+import PageToaster from '../ds/PageToaster';
 ---
 
-<div class="fd-toast" id="fd-toast" role="status" aria-live="polite" hidden></div>
+<PageToaster client:idle />
 <TokenDetailDrawer />
 
 <script>

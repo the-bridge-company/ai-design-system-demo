@@ -44,7 +44,6 @@ export default function ComponentTabs({ name, changelogCount = 0 }: ComponentTab
             value={t.id}
             id={componentTabButtonId(t.id)}
             aria-controls={componentTabPanelId(t.id)}
-            data-tab={t.id}
             count={t.id === 'changelog' && changelogCount > 0 ? changelogCount : undefined}
           >
             {t.label}

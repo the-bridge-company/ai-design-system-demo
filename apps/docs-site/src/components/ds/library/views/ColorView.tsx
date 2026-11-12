@@ -38,7 +38,8 @@ const overWhite = (hex: string, a: number) => {
   const mix = (c: number) => Math.round(c * a + 255 * (1 - a));
   return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => mix(c).toString(16).padStart(2, '0')).join('')}`;
 };
-const INK_LUMINANCE = luminance('#0b1825');
+/** Relative luminance of palette neutral 950, the darkest ink of both brands (about 0.009 to 0.012). */
+const INK_LUMINANCE = 0.011;
 const labelOn = (hex: string | undefined, css: string) => {
   if (!hex) return 'var(--palette-neutral-950)';
   const l = luminance(overWhite(hex, alphaOf(css)));

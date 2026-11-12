@@ -298,6 +298,7 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
 
   // Where the reader stands when they cannot give a verdict: someone answered first, or they only look.
   const status = first ? `${LEDGER_WORDS.answeredFirst(first.byName, builder)}: ${first.answer}. ${W.commentStill}` : !canAnswer ? W.readOnly : null;
+  // bridge-audit-ignore-next-line: an interactive stepper (each step a button that opens that difference, with its verdict); the DS Stepper is a static path
   const stepper = <Stepper ordered={ordered} verdicts={shown} cur={sel === 'answer' ? 'answer' : (item?.sig ?? null)} builder={builder} narrow={narrow} canSend={canAnswer} status={status} onPick={pick} onSend={() => setSel('answer')} onStep={step} />;
   const neighbours = (it: ReviewItem) => {
     const i = ordered.indexOf(it);

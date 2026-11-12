@@ -7,6 +7,7 @@
 import { relative } from 'node:path';
 import {
   addedComment,
+  type HatAsk,
   productRepoAccess,
   productRepos,
   designCopyOf,
@@ -95,6 +96,7 @@ import {
 } from '@bridge-ds/core';
 import { originRepo } from '@bridge-ds/core/node';
 import { productClient } from './product-repos.js';
+import { explorationsAskingMe } from './explorations.js';
 import type { BridgeContext } from './context.js';
 import { addToken, BlockedError, say } from './say.js';
 import { writesThroughBridge } from './whoami.js';
@@ -360,7 +362,8 @@ export async function whatNeedsMe(ctx: BridgeContext, a: { limit?: number | unde
   const listed = await Promise.all(
     queue.map(async (p) => {
       const f = await branchFacts(ctx, gh, p.number, viewer).catch(() => null);
-      if (!f) return { pr: p.number, title: p.title, url: p.url, author: p.author, status: 'unknown' as ReviewStatusKind, statusLabel: STATUS_WORDS.unknown, yours: same(p.author, viewer), needsYou: null as string | null };
+      // Every branch of this queue changes the library: what it asks is the library hat (core HatAsk).
+      if (!f) return { pr: p.number, title: p.title, url: p.url, author: p.author, status: 'unknown' as ReviewStatusKind, statusLabel: STATUS_WORDS.unknown, yours: same(p.author, viewer), needsYou: null as string | null, hat: 'library' as HatAsk };
       // A token push from Figma ships by itself: it needs nobody until something holds it (core autoShip).
       if (f.autoShip && f.status !== 'ci-failing' && f.status !== 'conflict' && f.status !== 'changes-requested') return null;
       const mine = same(p.author, viewer);
@@ -384,18 +387,22 @@ export async function whatNeedsMe(ctx: BridgeContext, a: { limit?: number | unde
       // Nobody else can give the missing approvals and the viewer may use the owner override: Studio says "Your turn:
       // owner override" on the same branch.
       if (viewer && !needsYou && f.gate.overridable && !reviewersToAsk({ tier: f.tier, approvals: f.approvals, owners: who.lists, author: p.author, viewer }).length) needsYou = 'Only the owner override can merge it';
-      return { pr: p.number, title: p.title, url: p.url, author: p.author, product: f.product.name, status: f.status, statusLabel: f.statusLabel, yours: mine, needsYou };
+      return { pr: p.number, title: p.title, url: p.url, author: p.author, product: f.product.name, status: f.status, statusLabel: f.statusLabel, yours: mine, needsYou, hat: 'library' as HatAsk };
     }),
   );
+  // The explorations In review that ask the viewer's design review, library decision, or both (one item each).
+  const asking = await explorationsAskingMe(ctx, gh, config, viewer, pulls).catch(() => []);
   const rows = listed.filter((r): r is NonNullable<typeof r> => r !== null);
   rows.sort((x, y) => Number(Boolean(y.needsYou)) - Number(Boolean(x.needsYou)) || REVIEW_STATUS_ORDER[x.status] - REVIEW_STATUS_ORDER[y.status]);
   const mineCount = rows.filter((r) => r.needsYou).length;
+  const reviews = asking.length ? `${asking.length} ${asking.length === 1 ? 'exploration asks' : 'explorations ask'} for your review (${asking.map((x) => x.line).join('; ')}). ` : '';
   return {
     viewer,
     summary: viewer
-    ? `${mineCount ? `${mineCount} ${mineCount === 1 ? 'branch needs' : 'branches need'} you` : 'Nothing needs you right now'}; ${rows.length} in review.`
+    ? `${reviews}${mineCount ? `${mineCount} ${mineCount === 1 ? 'branch needs' : 'branches need'} you` : asking.length ? 'No branch needs you' : 'Nothing needs you right now'}; ${rows.length} in review.`
       : `${rows.length} in review. Set a GitHub token so Bridge knows which ones need you.`,
     branches: rows,
+    explorations: asking,
   };
 }
 

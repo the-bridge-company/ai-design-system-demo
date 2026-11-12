@@ -11,7 +11,8 @@ import { castOn } from './demo-cast';
 
 const SAMPLE = 'acme-design-demo/bridge-demo-ds';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, visitor: true };
+// As the server's visitor session sends her (api/contribute publicMember): both hats of the two reviews.
+const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, libraryOwner: true, designReviews: ['*'], visitor: true };
 const visit = () => localStorage.setItem(`bridge.contribute.member:${SAMPLE}`, JSON.stringify(DANA));
 let answer: (url: string) => Response = () => json(200, {});
 

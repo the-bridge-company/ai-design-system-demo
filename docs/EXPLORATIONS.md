@@ -4,9 +4,9 @@ Try experimental variables and components in a real product staging branch, with
 
 An **exploration** is a branch named `explore/<name>` with an open **draft** pull request labeled `exploration`. It
 holds token edits and component work, gets the same per-branch previews and snapshot packages as any pull request,
-and is **never merged as is**. It is a living prototype that the designer, the DS lead, stakeholders and developers
+and is **never merged as is**. It is a living prototype that the designer, the reviewers, stakeholders and developers
 keep coming back to, so it is never closed: when the idea is ready the designer says **Done exploring** and the
-developers take the branch from there; an exploration nobody needs any more is **archived**, its link still alive.
+developers take the branch once the reviews it needs answered ([The two reviews](#the-two-reviews)); an exploration nobody needs any more is **archived**, its link still alive.
 
 | What | Where it comes from |
 | --- | --- |
@@ -265,7 +265,9 @@ are replaced, `answeredQuestions` takes questions out of Open questions.
   --record`, `bridge_missing_pieces`): a new token near the closest one, a variant such as "Badge: overdue tone", a
   library component restyled with tokens only (CSS on a class it carries or on a state such as `[aria-pressed]`:
   "IconButton: restyled when pressed"; layout around it is not a piece), a new component. When none is picked, or the
-  exploration was never checked, Bridge says so. Each piece the designer ticks becomes a request for the DS lead (an issue labeled
+  exploration was never checked, Bridge says so. First the two reviews ([below](#the-two-reviews)): while one waits the
+  exploration is In review and keeps running. Once Ready to build, each piece the designer ticks becomes a library
+  request (an issue labeled
   `component-change` and `needed-by-product`, with the "Needed by" block and a link to the exploration's preview);
   unticked pieces are not proposed. Then Bridge removes the exploration note from the branch, swaps the
   `exploration` label for `ready-for-devs`, and rewrites the body with a **For developers** section. Nothing is
@@ -346,7 +348,7 @@ What Bridge does with it:
   in the design system repository first, then in each product repository.
 - **Missing pieces** (`bridge pieces shop#12 --record`, `bridge_missing_pieces`, the Studio pieces dialog) read the
   product branch where it lives; every product file counts, since `path` is a folder of the design system repository.
-- **Done exploring** files the requests in the **design system repository**, where the DS lead works. Each one links
+- **Done exploring** files the requests in the **design system repository**, where the library owners work. Each one links
   back to the product pull request (`owner/name#12`, which GitHub links across repositories) and to its preview (the
   product's `preview` template). The product pull request records them as `owner/ds#n`, so a piece is never sent
   twice. Labels, the note and the **For developers** section change on the product pull request, as for any
@@ -421,20 +423,79 @@ asked for it. Screens are measured again when a change or a product address move
 - **Same review once developers mark it ready.** It gets its tier from the files it changes: a token edit is
   Tier 3 (design and tech owner approval), a component change Tier 2, docs Tier 1 ([GOVERNANCE.md](GOVERNANCE.md)).
 
-## The talk with the design lead
+## The two reviews
 
-Done exploring goes to a design lead first, unless the lead said it or nobody else can answer. While it waits, the lead
-answers with the bar at the bottom of the page: Comment asks a question without a verdict, Needs changes needs their
-words, Looks right sends it to the developers with any words they wrote, and "..." holds Ask someone else to review and
-Not doing this. The designer answers in the page's zone, and their Claude reads the same words
-(`bridge_continue_exploration` returns `leadWords`). After Looks right a lead can Take it back with a reason until a
-developer starts; then a word still reaches the developers on their task.
+Done exploring can ask two different reviews ([specs/two-reviews.md](specs/two-reviews.md)). Each has its own people,
+set in Studio, **Settings > Reviews**:
 
-Everything said is kept in the exploration's block, by round (core `decisionsOf`), and shows as Decisions. A body from
-before keeps working: its `leadNote` reads as one decision of the first round, and moves on the next write.
+| Role | Scope | Who | Can be off |
+| --- | --- | --- | --- |
+| **Decides what the library keeps** (the library decision) | The whole team, one library | The library owners: `governance.owners.design` in `bridge.config.json`, one list edited in Settings that writes it | No |
+| **Reviews the design before developers** (the design review) | Each product | A list of reviewers per product (`products[].designReview: { "reviewers": [...] }`); any one of them answers, never the author. Absent: the design owners. The Library: off by default | Yes, per product (`designReview: false`) |
 
-**A lead signed in by email:** an admin makes an email member a design lead in Settings, Members. They do all of this on an exploration, through Bridge's own write path; the last review on the developers' code stays on GitHub. On a team with design owners, nobody else writing through Bridge can add a lead's decision, their yes, Done exploring or the developers' task (403 `lead-only`). Someone with write access on GitHub can still edit the pull request body there: that history is a record, not a lock.
+When the designer says **Done exploring**, Bridge asks:
 
-**A push after the lead was asked** does not cancel the ask: the preview always shows the latest version, the bar says it
-changed, and each decision records the commit it was said on. **Library pieces** sent at Looks right stay with the DS
-lead on Take it back: they are their own requests, and Done exploring again does not send them twice.
+- **The library decision** when the screen has something new for the library: a piece the library does not have (a
+  new token value, a variant, a size, a restyle, a new component), not one that uses the library as it is. It goes to
+  the library owners.
+- **The design review** when the product has it on and someone other than the author can give it. It goes to that
+  product's reviewers.
+
+Both start at the same time and never wait on each other. **Ready to build** comes once the design review said Looks
+right (or there was none) and every new piece has a library answer: Add to the library, Keep in the screen only, or Use
+an existing piece instead. With neither review, Done exploring goes **straight to Ready to build**. There is no new
+status: In review always comes with its second line, who and why ("Waiting for Dana's design review and the library
+decision on Timeline", "Waiting for your library decision on Timeline"), and Ready to build without a review says why
+("No review needed: nothing new for the library, and Acme CRM has no design review").
+
+**What each answer does.** Design review, Needs changes: back to Exploring; library answers already given stay. Library,
+Ask for changes on a piece: back to Exploring; the design review's answer stays. Add to the library: the piece becomes a
+library request, and the screen can be Ready to build while it reads "Waiting for the library: Timeline". Keep in the
+screen only: the developers build it inside the product.
+
+The design reviewer answers with the bar at the bottom of the page: Comment asks a question without a verdict, Needs
+changes needs their words, Looks right with any words they wrote, and "..." holds Ask someone else to review and Not
+doing this. The library owners answer on each piece's row. The designer answers in the page's zone, and their Claude
+reads the same words by hat (`bridge_continue_exploration` returns `designReviewWords` and `libraryAnswers`). After Looks
+right a reviewer can Take it back with a reason until a developer starts; then a word still reaches the developers on
+their task.
+
+Everything said is kept in the exploration's block, by round (core `decisionsOf`), and shows as Decisions; each
+decision says which review said it (`hat`). A body from before keeps working: its `lead*` fields read as the design
+review (`designAskedAt`, `designAskedTo`...), its `leadNote` as one decision of the first round, both written in the new
+names on the next write; older decisions read as the design review.
+
+**Edge cases.** Nobody reviews their own exploration: when the author is the product's only design reviewer there is no
+design review ("No design review: Dana is Acme Prints' only reviewer"). When the author is the only library owner they
+decide and it is recorded (from Claude or the CLI, the pieces they pass are their decision). An admin may answer either
+review but is never asked. Pieces added after Looks right ask only the library decision. Turning a product's design
+review off sends the explorations waiting only on it to Ready to build.
+
+**A reviewer signed in by email:** an admin marks email members as library owners, or names them as a product's design
+reviewers, in Settings > Reviews. They answer on an exploration through Bridge's own write path; the last review on the
+developers' code stays on GitHub. Someone with write access on GitHub can still edit the pull request body there: that
+history is a record, not a lock.
+
+**A push after a review was asked** does not cancel the ask: the preview always shows the latest version, the bar says
+it changed, and each decision records the commit it was said on. A push that adds a new piece adds a library decision;
+it does not reset the design review. **Library pieces** sent on Add to the library stay requests on Take it back, and
+Done exploring again does not send them twice.
+
+### Moving from the one review
+
+Teams that had one "In review" waiting on "the design lead" moved once, at deploy, so nothing silently skips review:
+
+| Before (Settings, review mode) | Library owners | Design review |
+| --- | --- | --- |
+| One review, with design leads or design owners | The leads and `governance.owners.design` | On for every product, reviewers = the leads (else the design owners) |
+| Shared, with review | The leads and design owners, else every designer | On for every product, any designer but the author |
+| Shared, no review | The leads and design owners, else every designer | Off (the team chose no review); library decisions still asked |
+| Nobody else to ask (a team of one) | The owner | Off, as before |
+
+Explorations already In review keep waiting, with the second line computed by the new rules. Settings shows a one
+time note: "Reviews now have two parts. Check who reviews each product's design."
+
+**Deprecated names, removed after 2 releases:** the MCP field `leadWords` (now `designReviewWords`), the core
+`askLeadOnGitHub`, `leadApproveOnGitHub` and `isWaitingForLead` (now `askReviewsOnGitHub`, `designApproveOnGitHub`,
+`isInReview`). The `waiting-for-lead` status of `bridge_promote_exploration` is now `in-review`, and `done-exploring`
+is now `ready-to-build`. Tool names stay.

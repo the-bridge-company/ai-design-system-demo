@@ -223,6 +223,11 @@ export interface NeedRow {
    * in "waiting on you" or the nav badge, and carries the "Optional" tag instead of its age.
    */
   optional?: boolean;
+  /**
+   * The hats an exploration's row asks of the viewer (two reviews): one row names both. A row asking only a library
+   * decision is Library review's to count, never the Explorations badge (lib/waiting-counts).
+   */
+  hats?: ('design-review' | 'library')[];
 }
 
 /** The words of an optional ask (a product manager's opinion): no wait, no age, the choice stays theirs. */

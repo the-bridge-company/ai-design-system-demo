@@ -48,6 +48,8 @@ export function waitingCounts(needs: readonly NeedRow[]): { explorations: Waitin
   for (const r of needs) {
     // An optional ask (a product manager's opinion) never waits on them: no badge, not pinned as "Waiting on you".
     if (r.optional) continue;
+    // Two reviews: the Explorations badge counts design reviews; a library decision alone is Library review's.
+    if (r.hats && r.hats.length && !r.hats.includes('design-review')) continue;
     const key = explorationOfNeed(r);
     if (key && !explorations.some((e) => e.key === key)) explorations.push({ key, line: r.line });
   }

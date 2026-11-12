@@ -10,7 +10,7 @@
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
 import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
-import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupShownName, mockupPiecesLine, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
+import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, designApproveOnGitHub, handOverOnGitHub, HAT_WORDS, isDesignReviewWaiting, isWaitingForLead, leadTurnOf, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupShownName, mockupPiecesLine, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import { notesFromRead } from '../lib/exploration-notes-view';
 import {
   activityRows,
@@ -54,6 +54,9 @@ import { pieceRows, type PieceRowView } from '../lib/product-branch';
 import { checkPieces } from './connector-api';
 import { forgetClaudeLink, knownClaudeLink, viewerClaudeLink } from './claude-link';
 import { connectorUrl, copilotSetup, terminalSetup } from '../lib/claude-connector';
+import { loadTeamReviews, viewerReviewIds } from './team-reviews-data';
+import { viewerHats, waitingReviews, type TeamReviews } from '../lib/team-reviews';
+import { asOneStep, reviewSecondLine, reviewStepsOf, stillWaitsLine } from '../lib/review-lines';
 import { ARCHIVED_LINE, BACK_TO_EXPLORING_LINE, LEAD_CHANGES_LINE, LEAD_OK_LINE, LEAD_QUESTION_LINE, NOT_DOING_LINE, TOLD_DEVELOPERS_LINE, TOOK_BACK_LINE, UNARCHIVED_LINE, askedOtherLine, explorationHref, explorationKey, RENAMED_LINE, SCREEN_CLEARED_LINE, SCREEN_SAVED_LINE, takeItLines, type ExplorationPullLike, type ExplorationRow } from '../lib/explorations-view';
 import { developerLines, productCrumbs, productProduction, productTodayUrl, tryInProductView, TRY_BUILDING_NOTE, TRY_UNAVAILABLE_NOTE } from '../lib/product-branch';
 import { touchesVisuals } from '../lib/visual-impact';
@@ -262,7 +265,7 @@ const sentOf = (row: PieceRowView): SentPiece => ({
 function leadViewOf(
   r: ExplorationRow,
   pull: ExplorationPullLike,
-  o: { gh: GitHubClient; products: readonly ProductConfig[]; library: (() => GitHubClient) | null; previewUrl: string | null; keeper: boolean; reopen: (line: string) => void; onCopy: (t: string) => Promise<void> },
+  o: { gh: GitHubClient; products: readonly ProductConfig[]; library: (() => GitHubClient) | null; previewUrl: string | null; keeper: boolean; reopen: (line: string) => void; onCopy: (t: string) => Promise<void>; product?: ProductConfig | null; team?: TeamReviews | null },
 ): LeadView | null {
   const body = pull.body;
   if (!isWaitingForLead(body)) return null;
@@ -276,7 +279,14 @@ function leadViewOf(
   const emailLead = currentContributor();
   // An admin of the repository decides too (never asked): super power, never on their own exploration.
   const repoAdmin = Boolean(viewer && connected() && currentAccess()?.admin && !sameLogin(viewer, asker) && !sameLogin(viewer, r.author));
-  const isLead = Boolean(emailLead ? emailLead.decides && !startedByEmailMember(body, emailLead) : repoAdmin || (viewer && connected() && leads.some((l) => l.toLowerCase() === viewer.toLowerCase())));
+  // Two reviews (docs/specs/two-reviews.md), once the team's reviews are read: the bar is the design review's, for its
+  // reviewers (an admin may answer, never asked); a library owner answers each new piece on its row instead.
+  const ctx = o.team ? { team: o.team, product: o.product?.key ?? null, productName: o.product?.name ?? null, prAuthor: pull.user?.login ?? r.author } : null;
+  const hats = ctx ? viewerHats(body, { ...ctx, viewer: viewerReviewIds() }) : null;
+  const designWaits = isDesignReviewWaiting(block);
+  const isLead = hats
+    ? designWaits && (hats.includes('design-review') || (repoAdmin && !hats.includes('library')))
+    : Boolean(emailLead ? emailLead.decides && !startedByEmailMember(body, emailLead) : repoAdmin || (viewer && connected() && leads.some((l) => l.toLowerCase() === viewer.toLowerCase())));
   if (isLead) {
     const who = block?.designAskedByName ?? block?.designAskedBy ?? 'The designer';
     const leadName = viewer ? (knownNamesOf([viewer])[viewer] ?? undefined) : emailLead?.name;
@@ -298,13 +308,27 @@ function leadViewOf(
     const takenName = block?.designTakenAt ? (block.designTakenByName ?? (block.designTakenBy ? (knownNamesOf([block.designTakenBy])[block.designTakenBy] ?? block.designTakenBy) : 'Someone')) : null;
     const takenByMe = Boolean(block?.designTakenAt && (viewer ? sameLogin(block.designTakenBy, viewer) : !block.designTakenBy && block.designTakenByName === emailLead?.name));
     const take: LeadView['take'] = open ? null : takenName ? { line: takenByMe ? TAKEN_BY_YOU_LINE : `${takenName} is looking at it.` } : { onTake: () => answered(() => takeLeadOnGitHub(o.gh, r.number, me), TAKEN_LINE) };
+    // After Looks right, what still waits: the library decision on the new pieces, by name.
+    const libraryWait = ctx ? waitingReviews(body, ctx).library : null;
+    const hat = ctx ? { eyebrow: HAT_WORDS.designTurn, as: HAT_WORDS.designAs(o.product?.name ?? 'the product') } : null;
     return {
       ...(open ? { heading: `With ${who}` } : {}),
       take,
-      line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : "Nothing reaches the developers before you send it.",
+      hat,
+      line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : hat ? hat.as : "Nothing reaches the developers before you send it.",
       bar: {
-        onLooksRight: (note) =>
-          answered(() => leadApproveOnGitHub(o.gh, r.number, { products: o.products, previewUrl: o.previewUrl, ...me, ...(note ? { note } : {}), ...(o.library ? { library: o.library() } : {}), source: 'studio' }).then(() => undefined), LEAD_OK_LINE),
+        onLooksRight: async (note) => {
+          let pending: string[] = [];
+          const said = await answered(async () => {
+            const r2 = await designApproveOnGitHub(o.gh, r.number, { products: o.products, previewUrl: o.previewUrl, ...me, ...(note ? { note } : {}), ...(o.library ? { library: o.library() } : {}), source: 'studio' });
+            pending = r2.libraryPending;
+          }, LEAD_OK_LINE);
+          if (said === ALREADY_ANSWERED || !pending.length) return said;
+          // The design review is in; the screen still waits for the library decision on its new pieces.
+          const line = stillWaitsLine(libraryWait?.pieces.length ? libraryWait.pieces : pending, libraryWait?.owners ?? []);
+          o.reopen(line);
+          return line;
+        },
         onChanges: (note) => answered(() => leadChangesOnGitHub(o.gh, r.number, { note, ...me }), LEAD_CHANGES_LINE),
         onComment: (text) => answered(() => leadQuestionOnGitHub(o.gh, r.number, { text, ...me }), LEAD_QUESTION_LINE),
         onNotDoing: (reason) => answered(() => notDoingOnGitHub(o.gh, r.number, { reason, ...me }), NOT_DOING_LINE).then(() => undefined),
@@ -331,8 +355,10 @@ function leadViewOf(
   if (open) return null;
   const known = knownNamesOf(leads);
   const names = leads.length ? leads.map((l) => known[l] ?? l).join(', ') : 'your lead';
+  // Two reviews: who and why, the status second line (core waitingFor), never "the design lead" for a library decision.
+  const waiting = ctx ? reviewSecondLine(body, { ...ctx, viewer: viewerReviewIds() }) : null;
   return {
-    line: `Waiting for ${names}. Nothing goes to the developers until they say it looks right.`,
+    line: waiting ? `${waiting}. Nothing goes to the developers before the reviews are in.` : `Waiting for ${names}. Nothing goes to the developers until they say it looks right.`,
     onCancel: o.keeper
       ? async () => {
           await cancelLeadAskOnGitHub(o.gh, r.number);
@@ -897,7 +923,12 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const previewBuilding = v.state === 'building';
   const talkNow = leadTalkOf(r, pull, { gh, designer: answersLead, names, reopen: (line) => reopen(line), onReopenNew });
   const previewNote = v.state === 'today' ? 'These changes do not show there yet: it opens the product as it is today.' : previewBuilding ? TRY_BUILDING_NOTE : v.state === 'failed' ? TRY_UNAVAILABLE_NOTE : v.state === 'unknown' ? 'Your preview appears a few minutes after each change.' : null;
-  const lead = leadViewOf(r, pull, { gh, products, library: own ? () => dsClient() : null, previewUrl, keeper, reopen: (line) => reopen(line), onCopy: copyText });
+  const team = await loadTeamReviews().catch(() => null);
+  if (current?.key !== key) return;
+  const lead = leadViewOf(r, pull, { gh, products, library: own ? () => dsClient() : null, previewUrl, keeper, reopen: (line) => reopen(line), onCopy: copyText, product, team });
+  // The status second line and, while In review, each review as a current step (two reviews).
+  const reviewCtx = team ? { team, product: product.key, productName: product.name, prAuthor: pull.user?.login ?? r.author, viewer: viewerReviewIds() } : null;
+  const twoReviews = reviewCtx ? { line: reviewSecondLine(pull.body, reviewCtx), steps: asOneStep(reviewStepsOf(pull.body, reviewCtx)) } : null;
   repaint(d, key, {
     // A lead answering in their bar reads the page as the lead.
     ...(lead?.bar ? { role: 'lead' as const } : {}),
@@ -905,6 +936,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     // Handed off, the page waits for the hand-off read below, never painted as running in between.
     ...(handedOff ? {} : { stage: stageOfRunning(stage, { talked: isWaitingForLead(pull.body) || decisionsOf(parseExplorationBody(pull.body)).length > 0 }) }),
     lead,
+    reviews: twoReviews,
     ...talkNow,
     // A lead answers in their bar, never in the designer's zone.
     ...(lead?.bar ? { designerZone: null } : {}),
@@ -930,7 +962,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.designAskedBy ?? r.author] }), ownerLeads ? (member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null)) : null)
       .then((n) => n[0] && current?.key === key && !current.props.leadName && repaint(d, key, { leadName: n[0] }))
       .catch(() => undefined);
-  if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line) });
+  if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line), team });
   // The product manager of its product (boards R1, R3): read once, painted when known.
   if (!handedOff && own && !r.archived)
     void paintPm(d, key, { r, body: pull.body, product: own.product.key, copy: own.repo, viewer: { ref: member?.ref ?? null, login: member ? null : viewer }, designer: emailKeeper || designerKeeper || (!member && sameLogin(viewer, r.author)), lead: leadOther || Boolean(lead?.bar), names, reopen: (line) => reopen(line) });
@@ -1234,14 +1266,17 @@ async function leadNamesOf(leads: readonly string[], except?: string | null): Pr
 async function paintLibraryImpact(
   d: HTMLElement,
   key: string,
-  o: { r: ExplorationRow; pull: ExplorationPullLike; gh: GitHubClient; own: { repo: string } | null; product: ProductConfig; products: readonly ProductConfig[]; lead: LeadView | null; names: Record<string, string>; handedOff: boolean; previewUrl: string | null; reopen: (line: string) => void },
+  o: { r: ExplorationRow; pull: ExplorationPullLike; gh: GitHubClient; own: { repo: string } | null; product: ProductConfig; products: readonly ProductConfig[]; lead: LeadView | null; names: Record<string, string>; handedOff: boolean; previewUrl: string | null; reopen: (line: string) => void; team?: TeamReviews | null },
 ): Promise<void> {
   const body = o.pull.body;
   const block = parseExplorationBody(body);
   if (!parsePiecesRecord(body) && !(isWaitingForLead(body) && !o.handedOff)) return;
   const repo = o.own?.repo ?? `${CFG.owner}/${CFG.repo}`;
   const designer = block?.memberName ?? block?.designAskedByName ?? o.names[o.r.author] ?? (isNameAuthor(o.r.author) ? nameOfAuthor(o.r.author) : o.r.author);
-  const decides = Boolean(o.lead?.bar);
+  // Two reviews, once read: the library decision is the library owners' (their hat), apart from the design review's bar.
+  const hats = o.team ? viewerHats(body, { team: o.team, product: o.product.key, productName: o.product.name, prAuthor: o.pull.user?.login ?? o.r.author, viewer: viewerReviewIds() }) : null;
+  const libraryHat = Boolean(hats?.includes('library'));
+  const decides = hats ? libraryHat : Boolean(o.lead?.bar);
   const viewer = currentViewer()?.login ?? null;
   const member = currentContributor();
   const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
@@ -1274,6 +1309,7 @@ async function paintLibraryImpact(
     approved: o.handedOff,
     asked: o.handedOff || isWaitingForLead(body),
     canDecide: decides,
+    libraryHat: hats ? libraryHat : undefined,
     conflicts,
     others,
     screen: mine.name,
@@ -1388,12 +1424,13 @@ async function paintLibraryImpact(
       ? { onComment: comment }
       : {};
   const lead = current.props.lead;
-  const leadLine = lead ? leadLibraryLine(view, designer) : null;
+  const leadLine = lead && !hats ? leadLibraryLine(view, designer) : null;
   const wait = leadBuildLine(view, leadName);
   libraryWait = { key, wait };
   const check = current.props.handoff?.check;
   const handoff = check && current.props.handoff ? { handoff: { ...current.props.handoff, check: { ...check, rows: withLibraryWait(check.rows, wait) } } } : {};
-  const blocked = looksRightBlock(conflicts);
+  // Two reviews: the design review's Looks right never waits on a library choice.
+  const blocked = hats ? null : looksRightBlock(conflicts);
   repaint(d, key, {
     impact: { view, actions },
     ...handoff,

@@ -33,7 +33,7 @@ describe('bridge explore', () => {
   const dir = tempGitRepo(REPO, REAL_PATHS);
 
   it('start, list, request on it, implement brief, promote, close', async () => {
-    // The token's owner is the design lead: Done exploring goes straight to the developers.
+    // The token's owner decides what the library keeps, and the Library has no design review: straight to Ready to build.
     const config = join(dir, 'bridge.config.json');
     const was = readFileSync(config, 'utf8');
     writeFileSync(config, was.replace('"design": ["peterbono"]', '"design": ["owner"]'));
@@ -88,15 +88,16 @@ describe('bridge explore', () => {
     const pd = io(gh);
     expect(await runExplore(args('explore', 'done', 'pill-buttons', '--dry-run'), dir, pd.io)).toBe(0);
     expect(pd.out()).toContain('Dry run: done exploring #1');
-    // Never checked against the library: the CLI says no piece goes to the DS lead and how to find them.
-    expect(pd.out()).toContain('No piece would be sent to the DS lead: this exploration was not checked against the library yet. Run bridge pieces #1 --record');
+    // Never checked against the library: the CLI says no piece goes to the library owners and how to find them.
+    expect(pd.out()).toContain('No piece would be sent to the library owners: this exploration was not checked against the library yet. Run bridge pieces #1 --record');
     expect(gh.pulls[0]!.draft).toBe(true);
     // promote is the old name of done: nothing closes, merges or turns ready for review.
     const p = io(gh);
     expect(await runExplore(args('explore', 'promote', 'pill-buttons'), dir, p.io)).toBe(0);
-    expect(p.out()).toContain('Done exploring #1 (explore/pill-buttons). Nothing closed or merged: the preview stays.');
+    expect(p.out()).toContain('No review needed: nothing new for the library, and Library has no design review.');
+    expect(p.out()).toContain('Ready to build #1 (explore/pill-buttons). Nothing closed or merged: the preview stays.');
     expect(p.out()).toContain('For developers: git fetch origin && git checkout explore/pill-buttons');
-    expect(p.out()).toContain('No piece was sent to the DS lead');
+    expect(p.out()).toContain('No piece was sent to the library owners');
     expect(p.out()).not.toContain('not reviewed or tested');
     expect(gh.pulls[0]!.draft).toBe(true);
     expect(gh.pulls[0]!.state).toBe('open');

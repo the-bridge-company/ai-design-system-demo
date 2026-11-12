@@ -62,6 +62,9 @@ import { isHosted, studioHref } from '../lib/team-path';
 import { explorationNameOf, needsReviewRead, reviewersAsked, reviewsFromStatus, reviewStateOf, waitsOnViewer } from '../lib/review-state';
 import { explorationHref } from '../lib/explorations-view';
 import { leadHomeRow } from '../lib/lead-decisions';
+import { loadTeamReviews, viewerReviewIds } from './team-reviews-data';
+import { viewerHats, type TeamReviews } from '../lib/team-reviews';
+import { reviewSecondLine } from '../lib/review-lines';
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import type { HomeWaiting } from '../components/ds/studio/StudioHome';
 import { mineFromCards, noteMine } from '../lib/nav-products';
@@ -412,6 +415,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   })().catch(missed);
   const queue = reviewQueue(pulls);
   const products = homeProducts();
+  let homeTeam: TeamReviews | null = null;
   // The explorations kept lately: merged ones among the recently closed (the same read Changes makes), painted when read.
   let closed: HomePull[] = [];
   const closedRead = ghGet<HomePull[]>(`/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=30`)
@@ -547,11 +551,17 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     // who asked: a lead's own exploration waits on another lead).
     // The talk with the lead (board L6): a row only when the next word is the viewer's, the lead who spoke waits quietly.
     const waitingOnOthers: HomeWaiting[] = [];
+    // Two reviews: each row names the hats it asks of the viewer, one row for both (lib/team-reviews viewerHats). Before
+    // the team's reviews are read, the old words; Home repaints when they land.
+    const team = homeTeam;
+    const reviewIds = viewerReviewIds();
     for (const p of [...pulls, ...productOpen]) {
       const block = parseExplorationBody(p.body);
       if (!block || (block.designAskedAt === undefined && !block.decisions?.length && !block.leadNote)) continue;
       const asker = block.designAskedBy ?? p.user.login;
-      const row = leadHomeRow(p.body, { viewer, lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null });
+      const productKey = (p as { product?: string | null }).product ?? null;
+      const hats = team ? viewerHats(p.body, { team, product: productKey ?? products.find((x) => x.default)?.key ?? null, prAuthor: p.user.login, viewer: reviewIds }) : null;
+      const row = leadHomeRow(p.body, { viewer, lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null, hats });
       if (!row) continue;
       const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`);
       if (row.where === 'waiting') {
@@ -562,7 +572,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       // never the app's account that writes for them (Sofia and Leo would share one drawing).
       const askedBy = block.designAskedBy ? null : row.person.name;
       const who = (askedBy ? requesterPerson({ name: askedBy, login: null }) : null) ?? pick(row.person.login ?? asker)!;
-      needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line, action: row.action });
+      needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line, action: row.action, ...(row.hats ? { hats: row.hats } : {}) });
     }
     // The product manager (boards R3, R4): an exploration of their product that waits for their opinion, and a build of
     // the developers that waits for their check.
@@ -617,6 +627,12 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       // Who the exploration names, whoever's account opened it (the one rule of every surface).
       author: (p) => explorationPerson(p.user.login, p.body, (l) => pick(l)!),
       preview: (p) => shots.get(shotKeyOf(p)),
+      // Two reviews: who and why while In review, or why nothing was reviewed (lib/review-lines).
+      note: (p) => {
+        if (!homeTeam) return null;
+        const key = (p as { product?: string | null }).product ?? products.find((x) => x.default)?.key ?? null;
+        return reviewSecondLine(p.body, { team: homeTeam, product: key, prAuthor: p.user.login, viewer: reviewIds });
+      },
     });
     const branches: BranchCard[] = queue
       .filter((p) => same(p.user.login, viewer) && !isHomeExploration(p, products) && designWork(p))
@@ -649,6 +665,12 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
 
   repaint = paint;
   paint();
+  void loadTeamReviews()
+    .then((t) => {
+      homeTeam = t;
+      paint();
+    })
+    .catch(() => undefined);
   await Promise.all([
     loadStatuses(queue, (p, st) => {
       statuses.set(p.number, st);

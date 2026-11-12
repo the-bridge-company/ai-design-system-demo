@@ -88,7 +88,7 @@ export function LibraryImpact({
         <div className="li-nothing-text">
           <p className="li-kind li-kind-strong">What this changes in the library</p>
           <H className="li-display" id={`${id}-h`}>
-            Nothing. Every piece comes from the library.
+            {view.title}
           </H>
           <p className="li-lead">{view.line}</p>
           {view.uses.length > 0 && (
@@ -194,7 +194,9 @@ function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }:
   } else if (conflict) {
     body = <Ledger c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} />;
   } else if (isNew) {
-    body = <NewPiece row={row} np={staged ? newPieces : null} screen={screen} onPiece={changing ? (actions.onPiece ?? null) : null} say={say} />;
+    // Two reviews: the library decision on its row replaces the tick staged into the design review's Looks right.
+    const decision = Boolean(row.libraryDecision);
+    body = <NewPiece row={row} np={staged && !decision ? newPieces : null} screen={screen} onPiece={changing && !decision ? (actions.onPiece ?? null) : null} say={say} />;
   } else {
     body = <Row row={row} onPiece={actions.onPiece ?? null} onReply={actions.onReply ?? null} say={say} />;
   }
@@ -206,6 +208,37 @@ function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }:
     <div className="li-piece" data-waiting={conflict && !settled && !conflict.decided ? '' : undefined}>
       <PieceHead row={row} name={name} headingLevel={headingLevel} menu={headMenu.length ? <PieceMenu row={row} items={headMenu} onPiece={actions.onPiece!} say={say} /> : null} />
       {body}
+      {row.libraryDecision && !settled && !conflict && actions.onPiece && <LibraryDecision row={row} d={row.libraryDecision} onPiece={actions.onPiece} say={say} />}
+    </div>
+  );
+}
+
+/**
+ * The library decision on a piece's row (two reviews): the hat's words, then Library review's two answers. Apart from
+ * the design review: a library owner answers here whatever the screen's review says.
+ */
+function LibraryDecision({ row, d, onPiece, say }: { row: ImpactRowView; d: NonNullable<ImpactRowView['libraryDecision']>; onPiece: NonNullable<LibraryImpactActions['onPiece']>; say: (s: string) => void }) {
+  const [busy, setBusy] = useState<PieceAction | null>(null);
+  const act = (a: PieceAction) => {
+    setBusy(a);
+    onPiece(row.id, a)
+      .then((r) => r && say(r))
+      .catch((err: Error) => say(err.message))
+      .finally(() => setBusy(null));
+  };
+  return (
+    <div className="li-pick" role="group" aria-label={`${d.title}: ${row.title}`}>
+      <p className="li-said">
+        <strong>{d.title}.</strong> {d.as}
+      </p>
+      <ButtonGroup>
+        <Button variant="secondary" size="md" loading={busy === 'local'} disabled={busy !== null} data-demo-write="answer a library piece" onClick={() => act('local')}>
+          {d.keep}
+        </Button>
+        <Button variant="secondary" size="md" loading={busy === 'approve'} disabled={busy !== null} data-demo-write="answer a library piece" onClick={() => act('approve')}>
+          {d.add}
+        </Button>
+      </ButtonGroup>
     </div>
   );
 }

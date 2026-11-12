@@ -4,6 +4,7 @@
 import { BranchThumb } from './BranchThumb';
 import { colorLook, tokenGroup, type ReviewPiece } from '../../../lib/library-review';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
+import { emptySideWords } from '../../../lib/new-piece-preview';
 
 export const thumbOf = (p: ReviewPiece, thumbs: Map<string, ThumbSpec>): ThumbSpec => {
   const t = thumbs.get(p.key);
@@ -23,7 +24,7 @@ export function Sample({ spec, side, size, title = '' }: { spec: ThumbSpec; side
   const big = size === 'card';
   if (spec.kind === 'color') {
     const hex = spec[side];
-    if (!hex) return <span className="lr-plate-none">none</span>;
+    if (!hex) return <span className="lr-plate-none">{emptySideWords(side)}</span>;
     // The token in place (data colours, not style literals): text on its surface, a filled card, or the main button.
     // A dark piece is drawn in the dark theme's own surfaces (raised for popovers and menus), whatever the page theme.
     const { look, dark, raised } = colorLook(title);
@@ -49,7 +50,7 @@ export function Sample({ spec, side, size, title = '' }: { spec: ThumbSpec; side
   }
   if (spec.kind === 'space' || spec.kind === 'radius' || spec.kind === 'type') {
     const v = spec[side];
-    if (v === null) return <span className="lr-plate-none">none</span>;
+    if (v === null) return <span className="lr-plate-none">{emptySideWords(side)}</span>;
     const max = Math.max(spec.before ?? 0, spec.after ?? 0, 1);
     const room = big ? 160 : 40;
     if (spec.kind === 'space') return <span className="lr-space" style={{ width: `${Math.round((v / max) * room)}px` }} />;

@@ -4,7 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BridgeContext, explorations, ops, requests } from '../dist/lib.js';
+import { parseExplorationBody, withPiecesRecord } from '@bridge-ds/core';
+import { BridgeContext, branches, explorations, ops, requests, studio } from '../dist/lib.js';
 import { fakeGitHub, git, pinStart, readTree, REAL_PATHS, REPO, tempGitRepo } from './helpers.js';
 
 // pinStart: muted text starts at 600, so the edit to 700 is a real change whatever main says.
@@ -15,20 +16,132 @@ const asLead = (tree: Record<string, string>) => {
   cfg.governance.owners.design = ['owner'];
   return { ...tree, 'bridge.config.json': `${JSON.stringify(cfg, null, 2)}\n` };
 };
+/**
+ * The two reviews in bridge.config.json: the library owners (governance.owners.design), and the Library product's own
+ * design review (off when not given, as for every Library). Products with their own repository are left out.
+ */
+const withReviews = (tree: Record<string, string>, x: { owners: string[]; library?: { reviewers: string[] } | false }) => {
+  const cfg = JSON.parse(tree['bridge.config.json']!);
+  cfg.governance.owners.design = x.owners;
+  cfg.products = (cfg.products ?? []).filter((p: any) => !p.repo).map((p: any) => (p.key === 'library' && x.library !== undefined ? { ...p, designReview: x.library } : p));
+  return { ...tree, 'bridge.config.json': `${JSON.stringify(cfg, null, 2)}\n` };
+};
+/** The library check found a new component, Timeline, on the first exploration. */
+const withTimeline = (gh: ReturnType<typeof fakeGitHub>) => {
+  const piece = { id: 'timeline', kind: 'component', title: 'New component: Timeline', summary: 'A timeline of the order steps.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
+  gh.pulls[0]!.body = withPiecesRecord(gh.pulls[0]!.body, { checkedAt: '2026-11-12T00:00:00Z', pieces: [piece as any], links: [] });
+};
 const edit = { op: 'set' as const, path: 'color.text.muted', value: '{palette.neutral.700}', mode: { theme: 'light' } };
 const LIGHT = 'packages/tokens/src/semantic/light.tokens.json';
 
-describe('explorations on GitHub', () => {
-  it('Done exploring waits for the design lead: the exploration keeps running and nothing goes to the developers', async () => {
-    const gh = fakeGitHub('acme', 'ds', files());
+describe('Done exploring: the two reviews', () => {
+  it('asks both: the library decision on the new piece and the product design review', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'], library: { reviewers: ['sam'] } }));
     const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
-    await explorations.startExploration(ctx, { name: 'Pill buttons', purpose: 'Rounder buttons.' });
-    const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
-    expect(r).toMatchObject({ status: 'waiting-for-lead', branch: 'explore/pill-buttons' });
-    expect(gh.pulls[0]!.labels.map((l: { name: string }) => l.name)).toContain('exploration');
+    await explorations.startExploration(ctx, { name: 'Order timeline' });
+    withTimeline(gh);
+    const dry = (await explorations.doneExploring(ctx, { ref: 'order-timeline', dryRun: true })) as any;
+    expect(dry).toMatchObject({ status: 'dry-run', reviews: { design: { reviewers: [{ id: 'sam' }] }, library: { owners: [{ id: 'dana' }], pieces: ['Timeline'] } } });
+    expect(gh.pulls[0]!.body).not.toContain('designAskedAt');
+    const r = (await explorations.doneExploring(ctx, { ref: 'order-timeline', pieces: ['timeline'] })) as any;
+    expect(r).toMatchObject({ status: 'in-review', branch: 'explore/order-timeline', reviews: { design: { reviewers: [{ id: 'sam', name: 'sam' }] }, library: { owners: [{ id: 'dana' }], pieces: ['Timeline'] } } });
+    expect(r.waitingFor).toBe("Waiting for sam's design review and dana's library decision on Timeline");
+    expect(r.next).toContain(r.waitingFor);
+    // Still running: nothing reached the developers.
+    expect(gh.pulls[0]!.labels.map((l: { name: string }) => l.name)).toEqual(['exploration']);
     expect(gh.pulls[0]!.body).toContain('designAskedAt');
+    expect(parseExplorationBody(gh.pulls[0]!.body)!.library).toMatchObject({ askedTo: ['dana'] });
+
+    // Every list names who and why.
+    const list = await explorations.listExplorations(ctx, {});
+    expect(list.explorations[0]).toMatchObject({ ref: '#1', waitingFor: "Waiting for sam's design review and dana's library decision on Timeline" });
+    const reviews = (await ops.listReviews(ctx, {})) as any;
+    expect(reviews.pullRequests[0].waitingFor).toBe("Waiting for sam's design review and dana's library decision on Timeline");
+
+    // The reviewers' queue names the hat. Sam: the design review. Dana: the library decision.
+    gh.viewer.login = 'sam';
+    const sam = (await branches.whatNeedsMe(ctx, {})) as any;
+    expect(sam.explorations).toEqual([expect.objectContaining({ ref: '#1', hat: 'design-review', hats: ['design-review'], line: "agent's screen: your design review", waitingFor: "Waiting for your design review and dana's library decision on Timeline" })]);
+    expect(sam.summary).toMatch(/^1 exploration asks for your review/);
+    gh.viewer.login = 'dana';
+    const dana = (await branches.whatNeedsMe(ctx, {})) as any;
+    expect(dana.explorations).toEqual([expect.objectContaining({ hat: 'library', hats: ['library'], line: "agent's screen: a library decision" })]);
+    gh.viewer.login = 'owner';
+    expect(((await branches.whatNeedsMe(ctx, {})) as any).explorations).toEqual([]);
   });
 
+  it('one person holding both hats: one line, one queue item with both hats', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'], library: { reviewers: ['dana'] } }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Order timeline' });
+    withTimeline(gh);
+    const r = (await explorations.doneExploring(ctx, { ref: 'order-timeline' })) as any;
+    expect(r.waitingFor).toBe("Waiting for dana's design review and library decision on Timeline");
+    gh.viewer.login = 'dana';
+    const dana = (await branches.whatNeedsMe(ctx, {})) as any;
+    expect(dana.explorations[0]).toMatchObject({ hat: 'design-review', hats: ['design-review', 'library'], line: "agent's screen: your design review and a library decision" });
+  });
+
+  it('design review only: nothing new for the library', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'], library: { reviewers: ['sam'] } }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Pill buttons' });
+    const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
+    expect(r).toMatchObject({ status: 'in-review', reviews: { design: { reviewers: [{ id: 'sam' }] }, library: null }, waitingFor: "Waiting for sam's design review" });
+    expect(parseExplorationBody(gh.pulls[0]!.body)!.library?.askedAt).toBeUndefined();
+  });
+
+  it('library decision only: the product has no design review', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'] }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Order timeline' });
+    withTimeline(gh);
+    const r = (await explorations.doneExploring(ctx, { ref: 'order-timeline' })) as any;
+    expect(r).toMatchObject({ status: 'in-review', reviews: { design: null, library: { owners: [{ id: 'dana' }], pieces: ['Timeline'] } }, waitingFor: "Waiting for dana's library decision on Timeline" });
+    expect(gh.pulls[0]!.body).not.toContain('designAskedAt');
+  });
+
+  it('nothing to review: straight to Ready to build, the line says why', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'] }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Pill buttons' });
+    const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
+    expect(r).toMatchObject({ status: 'ready-to-build', exploration: 'ready', reviews: { design: null, library: null }, waitingFor: 'No review needed: nothing new for the library, and Library has no design review' });
+    expect(gh.pulls[0]!.labels.map((l: { name: string }) => l.name)).toEqual(['ready-for-devs']);
+    expect((await explorations.listExplorations(ctx, {})).explorations[0]).toMatchObject({ status: 'ready', waitingFor: null });
+  });
+
+  it('continue: the design review words (leadWords kept as a deprecated alias) and the library answer per piece', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'], library: { reviewers: ['sam'] } }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    await explorations.startExploration(ctx, { name: 'Order timeline' });
+    withTimeline(gh);
+    await explorations.doneExploring(ctx, { ref: 'order-timeline' });
+    // Sam asks for changes on the screen (back to exploring); Dana keeps the Timeline in the screen only.
+    const e = parseExplorationBody(gh.pulls[0]!.body)!;
+    const at = '2030-01-01T00:00:00.000Z';
+    const next = { ...e, designAskedAt: undefined, decisions: [{ kind: 'changes', at, round: 1, by: 'sam', text: 'Tighter rows, please.', hat: 'design' }], library: { ...e.library, decisions: [{ piece: 'timeline', verdict: 'local', at, by: 'dana' }] } };
+    gh.pulls[0]!.body = gh.pulls[0]!.body.replace(/<!-- bridge-exploration [\s\S]*? -->/, `<!-- bridge-exploration ${JSON.stringify(next)} -->`);
+    const r = (await explorations.continueExploration(ctx, { ref: '#1', checkout: false })) as any;
+    expect(r.designReviewWords).toBe('sam asked for changes: Tighter rows, please.');
+    expect(r.leadWords).toBe(r.designReviewWords);
+    expect(r.libraryAnswers).toEqual([expect.objectContaining({ piece: 'timeline', title: 'Timeline', verdict: 'local', answer: 'Keep in the screen only', by: 'dana' })]);
+    expect(r.next).toContain('designReviewWords');
+    expect(r.next).toContain('libraryAnswers');
+  });
+
+  it('settings and config name both roles', async () => {
+    const gh = fakeGitHub('acme', 'ds', withReviews(files(), { owners: ['dana'], library: { reviewers: ['sam'] } }));
+    const ctx = await BridgeContext.create({ repo: 'acme/ds', token: 't', fetch: gh.fetch });
+    const s = (await studio.getSettings(ctx)) as any;
+    expect(s.reviews.library).toMatchObject({ role: 'Decides what the library keeps', who: ['@dana'] });
+    expect(s.reviews.designReview.role).toBe('Reviews the design before developers');
+    expect(s.reviews.designReview.products.find((p: any) => p.key === 'library')).toMatchObject({ on: true, reviewers: ['@sam'] });
+    expect(((await ops.getConfig(ctx)) as any).reviews).toEqual(s.reviews);
+  });
+});
+
+describe('explorations on GitHub', () => {
   it('start: dry run and refusal without a token; branch, note and draft pull request labeled exploration with one', async () => {
     const gh = fakeGitHub('acme', 'ds', files());
     const ro = await BridgeContext.create({ repo: 'acme/ds', fetch: gh.fetch });
@@ -179,7 +292,7 @@ describe('explorations on GitHub', () => {
 
     // The old tool name runs Done exploring: nothing closes, merges or turns ready for review.
     const done = (await explorations.promoteExploration(ctx, { ref: 'explore/pill-buttons' })) as any;
-    expect(done).toMatchObject({ status: 'done-exploring', number: 1, exploration: 'ready', warnings: [] });
+    expect(done).toMatchObject({ status: 'ready-to-build', number: 1, exploration: 'ready', warnings: [] });
     expect(done.forDevelopers.take).toEqual(['git fetch origin', 'git checkout explore/pill-buttons']);
     expect(done.forDevelopers.note).toMatch(/starting point/);
     expect(done.next).toMatch(/not checked against the library/);

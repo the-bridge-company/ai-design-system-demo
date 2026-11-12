@@ -69,6 +69,11 @@ export interface ExplorationCard {
   preview: ThumbSpec;
   /** The viewer's own (isOwnExploration): a contributor's home shows only these. */
   own: boolean;
+  /**
+   * The status second line (two reviews, lib/review-lines reviewSecondLine): "Waiting for Dana's design review", or why
+   * nothing was reviewed. Null when the tag says it all.
+   */
+  note?: string | null;
 }
 
 const labelNames = (p: Pick<ExplorationPull, 'labels'>) => (p.labels ?? []).map((l) => (typeof l === 'string' ? l : (l.name ?? ''))).filter(Boolean);
@@ -237,6 +242,8 @@ export interface HomeExplorationsOptions<P extends ExplorationPull = Exploration
   author: (p: P) => Person;
   /** The explored screen, once known. */
   preview?: (p: P) => ThumbSpec | null | undefined;
+  /** The status second line of a card (two reviews, lib/review-lines), once the team's reviews are read. */
+  note?: (p: P) => string | null;
   /**
    * The changed files of a running exploration (undefined while read, null when unreadable): its card then says
    * "Not started" or "Exploring", as its page. Omitted: "Exploring".
@@ -318,6 +325,7 @@ export function homeExplorations<P extends ExplorationPull>(pulls: P[], opts: Ho
         updated: p.updated_at,
         preview: previewOf(opts.preview?.(p), { product: product ?? 'Library', screen: changedScreenOf(files?.(p), { library: !product }), seed: keyOf(p) }),
         own: isOwnExploration(p, opts.viewer, opts.viewerRef),
+        ...(opts.note && !archived ? { note: opts.note(p) } : {}),
       };
     })
     .sort((a, b) => ORDER[a.stage] - ORDER[b.stage] || b.updated.localeCompare(a.updated) || b.number - a.number);

@@ -486,6 +486,11 @@ export interface WaitInput {
   product: string;
   /** Whole days since the lead was asked (from the exploration's designAskedAt); null when unknown. */
   waitedDays?: number | null;
+  /**
+   * The two reviews it waits on (lib/review-lines), once the team's reviews are read: the title is the second line
+   * ("Waiting for Dana's design review and the library decision on Timeline"), each review one current step.
+   */
+  reviews?: { title: string; steps: readonly TurnStep[] } | null;
   /** "Dana is looking at it.": a reviewer took it. */
   taken?: string | null;
   /** Who asked the lead can take it back before the lead answers. */
@@ -643,6 +648,17 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       return { eyebrow: TURN_WORDS.nothing, title: owner ? 'You are exploring' : `${x.author} is exploring`, steps, lines, action: see };
     }
     case 'waiting-for-lead': {
+      // Two reviews (docs/specs/two-reviews.md): each hat its own step, both now, the second line as the title.
+      if (x.reviews?.steps.length) {
+        const steps: TurnStep[] = [...x.reviews.steps.map((s) => ({ ...s, current: true })), { text: buildStep(product) }, { text: checkStep(owner, x.author) }, { text: liveStep(product) }];
+        const lines: string[] = [];
+        if (x.taken) lines.push(x.taken);
+        if (dev) lines.push('You get a task in your repository once the reviews are in.');
+        else if (owner) lines.push('Bridge reminds them once after 2 days without an answer, and tells you as soon as there is one.');
+        else lines.push('Nothing reaches the developers before the reviews are in.');
+        const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
+        return { eyebrow: TURN_WORDS.nothing, title: x.reviews.title, steps, lines, action };
+      }
       const steps: TurnStep[] = [
         { text: leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true), when: waitedWhen(x.waitedDays), current: true },
         { text: buildStep(product) },

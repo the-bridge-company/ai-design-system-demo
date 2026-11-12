@@ -41,7 +41,6 @@ import { productProblems } from '../src/products';
 
 const dana: Reviewer = { id: 'member:dana', name: 'Dana' };
 const sam: Reviewer = { id: 'sam', name: 'Sam' };
-const sofia: Reviewer = { id: 'member:sofia', name: 'Sofia' };
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'New.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 // A Card at 12 px is Compact: the library as it is (library-impact asIsOption).

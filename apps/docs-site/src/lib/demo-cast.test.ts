@@ -5,7 +5,8 @@ import { CAST_PARAM, CAST_WORDS, DEFAULT_CAST, SAMPLE_CAST, castAccess, castFace
 import { emailMemberFace } from './people';
 import type { ContributeMember } from './contribute';
 
-const dana: ContributeMember = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, visitor: true };
+// As the server's visitor session sends her (api/contribute publicMember): both hats on the sample team.
+const dana: ContributeMember = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, libraryOwner: true, designReviews: ['*'], visitor: true };
 
 describe('See it as: the people of the sample team', () => {
   it('lists the five people in plain words, Dana first and by default', () => {
@@ -52,13 +53,25 @@ describe('See it as: the people of the sample team', () => {
     // A store seeded while Ann still reviewed: the page plays her as the cast says, never as a reviewer.
     const staleAnn: ContributeMember = { email: 'ann@acme.example', name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd', lead: true, decides: true, visitor: true };
     expect(playedMember(staleAnn, castPerson('ann')!)).toEqual({ email: 'ann@acme.example', name: 'Ann', role: 'edit', ref: 'b9cc21753b627efd', visitor: true });
-    // A team that shares review: every designer reviews.
-    expect(playedMember(dana, castPerson('leo')!, 'shared')).toMatchObject({ name: 'Leo', lead: true, decides: true });
+    // A team where any designer gives the design review: every designer reviews, the library stays Dana's.
+    expect(playedMember(dana, castPerson('leo')!, { '*': { on: true, reviewers: 'any-designer' } })).toMatchObject({ name: 'Leo', lead: true, decides: true, designReviews: ['*'] });
+    expect(playedMember(dana, castPerson('leo')!, { '*': { on: true, reviewers: 'any-designer' } })?.libraryOwner).toBeUndefined();
     expect(playedMember(dana, castPerson('dana')!)).toBe(dana);
     // The developer has no email membership: the GitHub side plays him.
     expect(playedMember(dana, castPerson('malik')!)).toBeNull();
     expect(castGitHub(castPerson('malik')!)).toMatchObject({ login: 'acme-malik', name: 'Malik' });
     expect(castGitHub(castPerson('sofia')!)).toBeNull();
+  });
+
+  it('gives the hats of the two reviews on the sample team: Dana both, Sofia and Leo none', () => {
+    expect(playedMember({ ...dana, email: 'sofia@acme.example' }, castPerson('dana')!)).toMatchObject({ name: 'Dana', lead: true, decides: true, libraryOwner: true, designReviews: ['*'] });
+    for (const k of ['sofia', 'leo'] as const) {
+      const m = playedMember(dana, castPerson(k)!)!;
+      expect([m.lead, m.decides, m.libraryOwner, m.designReviews]).toEqual([undefined, undefined, undefined, undefined]);
+    }
+    // A session read before the two reviews (lead and decides only): the page adds Dana's two hats.
+    const before: ContributeMember = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, visitor: true };
+    expect(playedMember(before, castPerson('dana')!)).toMatchObject({ libraryOwner: true, designReviews: ['*'] });
   });
 
   it('never replaces a real member or someone signed out: only a visitor session plays', () => {

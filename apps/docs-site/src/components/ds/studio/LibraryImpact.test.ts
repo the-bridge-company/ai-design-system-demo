@@ -27,7 +27,7 @@ describe('the library block, ledger', () => {
     const onChoice = vi.fn();
     const view = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, conflicts: libraryConflicts(sofia, [leo]) });
     const { container } = render(createElement(LibraryImpact, { view, actions: { onChoose, onComment: vi.fn(), onPiece: vi.fn() }, say: vi.fn(), screen: shot, newPieces: { capture: null, designer: 'Sofia', choices: {}, onChoice } }));
-    expect(screen.getByText('2 changes')).toBeInTheDocument();
+    expect(screen.getByText('2 new pieces')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Card padding' })).toBeInTheDocument();
     expect(screen.getByText('New option')).toBeInTheDocument();
     expect(screen.getByText('Add to the library')).toBeInTheDocument();
@@ -104,5 +104,31 @@ describe('the library block, ledger', () => {
     expect(screen.queryByRole('checkbox', { name: /Padding/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Change' }));
     expect(onUndo).toHaveBeenCalledWith('card-timeline');
+  });
+});
+
+describe('two reviews on the library block', () => {
+  it('the library decision sits on the new piece row for a library owner: Keep in the screen, Add to the library', async () => {
+    const onPiece = vi.fn().mockResolvedValue('Added.');
+    const solo = withPiecesRecord(start, { checkedAt: 'x', pieces: [timeline], links: [], uses: ['Badge'] });
+    const view = libraryImpactView({ ...base, others: [], body: solo, lead: 'you', canDecide: true, libraryHat: true });
+    const { container } = render(createElement(LibraryImpact, { view, actions: { onPiece }, say: vi.fn(), screen: shot }));
+    expect(screen.getByText('1 new piece')).toBeInTheDocument();
+    expect(screen.getByText('You decide as design system owner, apart from the screen')).toBeInTheDocument();
+    // Something new has no before: never an empty "Not in the library" tile, never "none".
+    expect(screen.queryByText(/^none$/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: "Keep in Sofia's screen" }));
+    expect(onPiece).toHaveBeenCalledWith('component-timeline', 'local');
+    await userEvent.click(screen.getByRole('button', { name: 'Add to the library' }));
+    expect(onPiece).toHaveBeenCalledWith('component-timeline', 'approve');
+    await expectNoAxeViolations(container);
+  });
+
+  it('nothing new: "Nothing new for the library", no count, one line, nobody named', () => {
+    const none = withPiecesRecord(start, { checkedAt: 'x', pieces: [], links: [], uses: ['Card'] });
+    render(createElement(LibraryImpact, { view: libraryImpactView({ ...base, body: none, lead: 'Dana', canDecide: false }), say: vi.fn() }));
+    expect(screen.getByRole('heading', { name: 'Nothing new for the library' })).toBeInTheDocument();
+    expect(screen.getByText("Sofia's screen uses Card, as it is in the library.")).toBeInTheDocument();
+    expect(screen.queryByText(/Dana|decides what the library keeps|Nothing to decide/)).toBeNull();
   });
 });

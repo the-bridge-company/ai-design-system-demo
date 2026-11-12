@@ -238,6 +238,21 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
     expect(daysSince(null, now)).toBeNull();
     expect(daysSince('not a date', now)).toBeNull();
   });
+  it('two reviews, the designer: the second line as the title, each review a current step, no "the design lead"', () => {
+    const b = waitBlockOf({
+      ...base,
+      canKeepExploring: true,
+      reviews: { title: "Waiting for Dana's design review and library decision on Timeline", steps: [{ text: 'Dana reviews the design', when: 'now' }, { text: 'Dana decides on Timeline for the library', when: 'now' }] },
+    })!;
+    expect(b.title).toBe("Waiting for Dana's design review and library decision on Timeline");
+    expect(b.steps.slice(0, 2)).toEqual([
+      { text: 'Dana reviews the design', when: 'now', current: true },
+      { text: 'Dana decides on Timeline for the library', when: 'now', current: true },
+    ]);
+    expect(b.steps[2]).toEqual({ text: 'Acme Prints developers build it' });
+    expect(JSON.stringify(b)).not.toMatch(/what the library keeps|design lead/);
+    expect(b.action).toEqual({ kind: 'keep-exploring', label: 'Keep exploring' });
+  });
   it('waiting for the lead, the designer: the lead step now, the steps to come, the reminder rule, Keep exploring', () => {
     const b = waitBlockOf({ ...base, waitedDays: 3, canKeepExploring: true })!;
     expect(b.eyebrow).toBe('Nothing to do for now');

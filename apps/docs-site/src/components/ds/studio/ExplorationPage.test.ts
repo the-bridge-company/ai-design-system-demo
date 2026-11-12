@@ -9,6 +9,7 @@ import { ExplorationPage, StartedFrom, type ExplorationPageProps } from './Explo
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { userEvent } from '@testing-library/user-event';
 import { explorationMenu } from '../../../lib/exploration-page';
+import { asOneStep } from '../../../lib/review-lines';
 
 // The connection read: once connected in Claude, the next read says yes.
 const linkReads = vi.hoisted(() => ({ forget: vi.fn() }));
@@ -962,6 +963,37 @@ describe('the talk with a lead on the page', () => {
       fireEvent.click(within(zone).getByRole('button', { name: 'Keep exploring' }));
     });
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('two reviews, the design review card names its hat; Looks right answers the screen only, even with a library choice open', async () => {
+    const onLooksRight = vi.fn(async () => 'Sent to the developers.');
+    const hat = { eyebrow: 'Your turn: design review', as: 'You review the screen as Acme Prints design lead' };
+    paint({ stage: 'exploring', lead: { line: hat.as, hat, bar: { ...bar, onLooksRight, blocked: 'Choose Card padding' } } });
+    const zone = screen.getByRole('region', { name: "Does Florian's screen look right?" });
+    expect(within(zone).getByText('Your turn: design review')).toBeTruthy();
+    expect(within(zone).getByText('You review the screen as Acme Prints design lead')).toBeTruthy();
+    expect(within(zone).getAllByRole('button').map((b) => b.textContent)).toEqual(['Needs changes', 'Looks right']);
+    await act(async () => {
+      fireEvent.click(within(zone).getByRole('button', { name: 'Looks right' }));
+    });
+    expect(onLooksRight).toHaveBeenCalledWith('');
+  });
+
+  it("two reviews, the author: the second line by the tag, both reviews as the current step, never 'the design lead'", () => {
+    const line = "Waiting for Dana's design review and library decision on Timeline";
+    const steps = asOneStep([
+      { text: 'Dana reviews the design', when: 'now', current: true },
+      { text: 'Dana decides on Timeline for the library', when: 'now', current: true },
+    ]);
+    paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', lead: { line: `${line}. Nothing goes to the developers before the reviews are in.` }, reviews: { line, steps } });
+    const zone = screen.getByRole('region', { name: line });
+    const items = within(zone).getAllByRole('listitem');
+    // Both reviews run now: one current step (the DS Stepper marks one), never one of them "to come".
+    expect(items[0]!.textContent).toBe('1Dana reviews the design and decides on Timeline for the librarynow');
+    expect(items[0]!.getAttribute('aria-current')).toBe('step');
+    expect(items[1]!.textContent).toMatch(/developers build it, to come$/);
+    expect(screen.getAllByText(line).length).toBeGreaterThan(0);
+    expect(zone.textContent).not.toMatch(/what the library keeps|design lead/);
   });
 
   it("the lead's turn: Needs changes then Send to the developers, a comment in Activity's box, the other answers in the page's menu", async () => {

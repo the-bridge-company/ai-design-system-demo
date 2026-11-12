@@ -61,6 +61,10 @@ export interface ContributeMember {
   lead?: boolean;
   /** May answer on someone else's exploration: whoever is asked, and an admin, who is never asked. */
   decides?: boolean;
+  /** Decides what the library keeps (two reviews, Settings > Reviews > The library). */
+  libraryOwner?: boolean;
+  /** The products whose design they review before developers ("*" for every product not listed). */
+  designReviews?: string[];
   /** Their stable member reference (api/_lib/exploration-member memberRef): how exploration blocks name them, never by email. */
   ref?: string;
   /**
@@ -134,7 +138,14 @@ export function parseMember(v: unknown): ContributeMember | null {
   if (typeof m.email !== 'string' || !m.email.includes('@')) return null;
   const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : m.email;
   const ref = typeof m.ref === 'string' && /^[0-9a-f]{16}$/.test(m.ref) ? m.ref : null;
-  return { email: m.email, name, role: m.role === 'view' ? 'view' : m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}), ...(m.visitor === true ? { visitor: true } : {}) };
+  return { email: m.email, name, role: m.role === 'view' ? 'view' : m.role === 'admin' ? 'admin' : 'edit', ...(ref ? { ref } : {}), ...(m.lead === true ? { lead: true } : {}), ...(m.decides === true || m.lead === true ? { decides: true } : {}), ...(m.libraryOwner === true ? { libraryOwner: true } : {}), ...(designReviewsOf(m.designReviews)), ...(m.visitor === true ? { visitor: true } : {}) };
+}
+
+/** The `designReviews` of a member as the server sends it: product keys only, else nothing. */
+function designReviewsOf(v: unknown): { designReviews?: string[] } {
+  if (!Array.isArray(v)) return {};
+  const keys = v.filter((k): k is string => typeof k === 'string' && k.length > 0 && k.length <= 64);
+  return keys.length ? { designReviews: keys } : {};
 }
 
 /** Every designer-facing sentence of the email path, in one place. */

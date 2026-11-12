@@ -595,22 +595,6 @@ html:has(.set-page, .ts-band) {
   padding-block-start: var(--space-4);
 }
 
-/* The part grids fill the card: as many equal columns as fit, every tile the same height (the caption line is kept
-   empty on a free style). */
-.yf-grid [role="radiogroup"] {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--size-20), 1fr));
-  gap: var(--space-3) var(--space-2);
-}
-
-.yf-tile .yf-tile-face {
-  display: flex;
-}
-
-.yf-tile > span:last-child {
-  align-items: center;
-}
-
 .yf-caption {
   overflow: hidden;
   max-inline-size: var(--size-16);
@@ -620,11 +604,6 @@ html:has(.set-page, .ts-band) {
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
-}
-
-.yf-tile:has([data-disabled]) .yf-tile-face {
-  filter: grayscale(1);
-  opacity: 0.5;
 }
 
 .yf-more {

@@ -7,6 +7,8 @@ import { Icon } from '../Icon';
 import styles from './RadioGroup.module.css';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
+/** `list` (default): a radio circle before each label. `tile`: each option is a tile, its content the control. */
+export type RadioGroupAppearance = 'list' | 'tile';
 
 export interface RadioGroupProps {
   /** Group label, rendered as the fieldset legend. Ask the question the options answer. */
@@ -18,8 +20,15 @@ export interface RadioGroupProps {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
-  /** Default `vertical`. Use `horizontal` only for two or three short options. */
+  /** Default `vertical`. Use `horizontal` only for two or three short options. Ignored by the `tile` appearance. */
   orientation?: RadioGroupOrientation;
+  /**
+   * `list` (default) or `tile`: options that are pictures (a face, a swatch, a layout) laid out in a grid of equal
+   * tiles, each tile the click target, the selected one ringed. No radio circle is drawn; the radio stays the focusable
+   * element, so the keyboard and screen readers work as in a list. Give each option a text name (a visually hidden one
+   * is fine when the picture says it).
+   */
+  appearance?: RadioGroupAppearance;
   name?: string;
   disabled?: boolean;
   readOnly?: boolean;
@@ -31,9 +40,9 @@ export interface RadioGroupProps {
   className?: string;
 }
 
-/** One choice among a few visible options. Base UI RadioGroup in a fieldset; arrow keys move the selection. */
+/** One choice among a few visible options (or a grid of picture tiles). Base UI RadioGroup in a fieldset; arrow keys move the selection. */
 export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(function RadioGroup(
-  { label, description, error, orientation = 'vertical', hideLabel = false, disabled, className, children, onValueChange, ...rest },
+  { label, description, error, orientation = 'vertical', appearance = 'list', hideLabel = false, disabled, className, children, onValueChange, ...rest },
   ref,
 ) {
   const uid = useId();
@@ -57,11 +66,11 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
         </p>
       )}
       <BaseRadioGroup
-        className={cx(styles.group, styles[orientation])}
+        className={cx(styles.group, appearance === 'tile' ? styles.tile : styles[orientation])}
         aria-labelledby={legendId}
         aria-describedby={[descriptionId, errorId].filter(Boolean).join(' ') || undefined}
         aria-invalid={invalid || undefined}
-        aria-orientation={orientation}
+        aria-orientation={appearance === 'tile' ? undefined : orientation}
         disabled={disabled}
         onValueChange={onValueChange ? (v: unknown) => onValueChange(v as string) : undefined}
         {...rest}

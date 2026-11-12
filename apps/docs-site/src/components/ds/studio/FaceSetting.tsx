@@ -3,7 +3,7 @@
 // person next to their team at the size of a review row, Shuffle (a 300ms riffle, skipped under reduced motion; a
 // polite live region says the new face) and, on demand, Pick the parts yourself (Hair, Glasses, Beard, Expression:
 // the DS Tabs, each a DS RadioGroup of faces; a style a teammate wears is greyed, captioned with their name, "Taken by
-// Sofia" in a DS Tooltip). Save face (the only primary, disabled until something changed) or Cancel (also Esc) close
+// Sofia" in a DS Tooltip). The tiles are the DS RadioGroup's tile appearance: the face is the control, no circle. Save face (the only primary, disabled until something changed) or Cancel (also Esc) close
 // it, and focus goes back to Change.
 //   - A Bridge account: saved on the account and in each of their teams (POST /api/account { action: 'face' }); the
 //     server refuses a style someone on one of their teams already wears, naming them.
@@ -237,13 +237,12 @@ export default function FaceSetting() {
   const tile = (part: 'hair' | 'glasses' | 'beard', value: string | null, f: FaceRecipe) => {
     const holder = part === 'hair' ? taken.get(value!) : undefined;
     const label = partLabel(part, value);
-    const face = <Avatar name={label} size="lg" fallback="illustrated" illustration={uri(f)} decorative className="yf-tile-face" />;
+    const face = <Avatar name={label} size="lg" fallback="illustrated" illustration={uri(f)} decorative />;
     return (
       <Radio
         key={value ?? 'none'}
         value={value ?? 'none'}
         disabled={Boolean(holder)}
-        className="yf-tile"
         label={
           <>
             {holder ? <Tooltip content={W.takenBy(holder)}>{face}</Tooltip> : face}
@@ -361,7 +360,7 @@ export default function FaceSetting() {
                         <Tab value="expression">{W.tabs.expression}</Tab>
                       </TabsList>
                       <TabsPanel value="hair" className="yf-panel">
-                        <RadioGroup label={W.tabs.hair} hideLabel orientation="horizontal" className="yf-grid" value={current.hair} onValueChange={(v) => !taken.has(v) && pick({ ...current, hair: v })}>
+                        <RadioGroup label={W.tabs.hair} hideLabel appearance="tile" value={current.hair} onValueChange={(v) => !taken.has(v) && pick({ ...current, hair: v })}>
                           {hairTiles.map((h) => tile('hair', h, { ...current, hair: h }))}
                         </RadioGroup>
                         <p className="set-row-help yf-more">
@@ -374,12 +373,12 @@ export default function FaceSetting() {
                         </p>
                       </TabsPanel>
                       <TabsPanel value="glasses" className="yf-panel">
-                        <RadioGroup label={W.tabs.glasses} hideLabel orientation="horizontal" className="yf-grid" value={current.glasses ?? 'none'} onValueChange={(v) => pick({ ...current, glasses: v === 'none' ? null : v })}>
+                        <RadioGroup label={W.tabs.glasses} hideLabel appearance="tile" value={current.glasses ?? 'none'} onValueChange={(v) => pick({ ...current, glasses: v === 'none' ? null : v })}>
                           {[null, ...Array.from({ length: FACE_PART_COUNTS.glasses }, (_, i) => variant(i + 1))].map((g) => tile('glasses', g, { ...current, glasses: g }))}
                         </RadioGroup>
                       </TabsPanel>
                       <TabsPanel value="beard" className="yf-panel">
-                        <RadioGroup label={W.tabs.beard} hideLabel orientation="horizontal" className="yf-grid" value={current.beard ?? 'none'} onValueChange={(v) => pick({ ...current, beard: v === 'none' ? null : v })}>
+                        <RadioGroup label={W.tabs.beard} hideLabel appearance="tile" value={current.beard ?? 'none'} onValueChange={(v) => pick({ ...current, beard: v === 'none' ? null : v })}>
                           {[null, ...Array.from({ length: FACE_PART_COUNTS.beard }, (_, i) => variant(i + 1))].map((b) => tile('beard', b, { ...current, beard: b }))}
                         </RadioGroup>
                       </TabsPanel>

@@ -1,6 +1,6 @@
 // Who is signed in, with a Bridge account (GET /api/account), on every Studio page: the account row at the foot of
 // the side nav (the GitHub-only block steps aside, styles/account.css) and the avatar of the top bar on screens
-// without a nav (the sign-in, start and invite screens). One DS Menu: the name, email and role on this team, GitHub linked or Link GitHub,
+// without a nav (the sign-in, start and invite screens). One DS Menu: the name and email, GitHub linked or Link GitHub,
 // Account settings (the Account dialog: name, email, teams, sign out everywhere, delete; Settings itself starts with
 // the team, board D9), Sign out. An old link to #account opens the dialog. The face is the GitHub photo once linked, else the DS drawn face (never initials). The
 // row's second line is the person's role on this team, else their email. Nothing shows signed out or on a site

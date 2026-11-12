@@ -15,6 +15,7 @@ import {
   ownChangeHref,
   isBuilderHome,
   quietParts,
+  PARTIAL_LINE,
   quietSentence,
   recentExplorations,
   RECENT_CARDS,
@@ -369,6 +370,8 @@ describe('the quiet team Home', () => {
 
   it('tells the truth after the greeting', () => {
     expect(quietSentence(null)).toBe('Nothing needs you, and you have nothing in progress.');
-    expect(quietSentence(null, true)).toBe('Nothing needs you.');
+    // A failed or partial read never says "Nothing needs you".
+    expect(quietSentence(null, true)).toBe(PARTIAL_LINE);
+    expect(quietSentence(ownOpenWork([]), true)).not.toMatch(/Nothing needs you/);
   });
 });

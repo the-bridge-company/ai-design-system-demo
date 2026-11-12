@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildSnapshot, GitHubClient, loadRepoModel, recordingSource, type FetchLike, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
-import { FALLBACK_REPO, loadTeamModel, repoContext, repoFromPath, siteConfig, type ModelCache } from './repo-context';
+import { FALLBACK_REPO, keptSite, loadTeamModel, repoContext, repoFromPath, siteConfig, siteKeepKey, siteKnown, transientFailure, type ModelCache } from './repo-context';
 import { planEviction } from './repo-cache';
 import type { TeamLoadEvent } from '../lib/load-progress';
 
@@ -156,6 +156,62 @@ describe('loadTeamModel', () => {
     expect((siteConfig() as { products?: { key: string }[] }).products?.map((p) => p.key)).toEqual(['admin-app']);
     // Nothing kept: the wait is thrown for the page to say (lib/team-load teamFailure), never an empty team.
     await expect(loadTeamModel(busyClient, { cache: memoryCache(), components: false })).rejects.toMatchObject({ status: 429 });
+  });
+
+  it('a read that fails after the head (the tree or the bodies, 503 or busy): the team as last read, never the defaults', async () => {
+    page({ hosted: true, path: '/studio/acme/ds/' });
+    const files = { 'bridge.config.json': JSON.stringify({ ...JSON.parse(CONFIG), name: 'Acme Design', products: [{ key: 'crm', name: 'Acme CRM' }] }) };
+    const { client } = fakeRepo(files);
+    const cache = memoryCache();
+    const first = await loadTeamModel(client, { cache, components: false });
+    // The head answers (another sha: a new commit), the tree does not (Bridge or GitHub down).
+    const NEW = 'c'.repeat(40);
+    const failing = (async (url: string) => {
+      if (url.endsWith('/repos/acme/ds')) return { ok: true, status: 200, headers: { get: () => null }, json: async () => ({ full_name: 'acme/ds', default_branch: 'trunk', private: false }), text: async () => '' };
+      if (url.endsWith('/git/ref/heads/trunk')) return { ok: true, status: 200, headers: { get: () => null }, json: async () => ({ object: { sha: NEW } }), text: async () => '' };
+      return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({ message: 'Service unavailable' }), text: async () => '' };
+    }) as unknown as FetchLike;
+    const down = new GitHubClient('acme/ds', '', failing, { attempts: 1, baseDelayMs: 0, sleep: async () => {} }, { etags: false });
+    const latest = async () => ({ model: first.model, sha: SHA, private: false });
+    const kept = await loadTeamModel(down, { cache: { ...cache, latest }, components: false });
+    expect(kept).toMatchObject({ sha: SHA, source: 'cache', cached: true, busy: { source: 'bridge' } });
+    expect(siteConfig()).toMatchObject({ name: 'Acme Design' });
+    expect((siteConfig() as { products?: { key: string }[] }).products?.map((p) => p.key)).toEqual(['crm']);
+    // Nothing kept at all: the failure is thrown (the page says why), never a model of the default settings.
+    await expect(loadTeamModel(down, { cache: memoryCache(), components: false })).rejects.toMatchObject({ status: 503 });
+  });
+
+  it('keeps a public team settings in this browser: a later page whose read fails knows the team, never the defaults', async () => {
+    page({ hosted: true, path: '/studio/acme/ds/' });
+    localStorage.removeItem(siteKeepKey('acme', 'ds'));
+    const { client } = fakeRepo({ 'bridge.config.json': JSON.stringify({ ...JSON.parse(CONFIG), name: 'Acme Design' }) });
+    await loadTeamModel(client, { cache: memoryCache(), components: false });
+    expect(keptSite('acme', 'ds')).toMatchObject({ name: 'Acme Design', owner: 'acme', repo: 'ds' });
+    // A private team's settings are never kept in this browser.
+    localStorage.removeItem(siteKeepKey('acme', 'ds'));
+    const priv = fakeRepo({ 'bridge.config.json': CONFIG }, { private: true });
+    await loadTeamModel(priv.client, { cache: memoryCache(), components: false });
+    expect(keptSite('acme', 'ds')).toBeUndefined();
+  });
+
+  it('a team never read here has no settings: siteKnown says so, so readers wait instead of painting the defaults', () => {
+    page({ hosted: true, path: '/studio/nobody-read/this-team/' });
+    expect(siteKnown()).toBe(false);
+    expect(siteConfig()).toEqual({});
+    // Kept by an earlier visit: known, with its own name.
+    localStorage.setItem(siteKeepKey('nobody-read', 'this-team'), JSON.stringify({ name: 'Kept team', owner: 'nobody-read', repo: 'this-team', defaultBranch: 'main' }));
+    expect(siteKnown()).toBe(true);
+    expect(siteConfig()).toMatchObject({ name: 'Kept team' });
+    localStorage.removeItem(siteKeepKey('nobody-read', 'this-team'));
+  });
+
+  it('transientFailure: a wait or an outage passes, a 404 or a refused sign-in does not', () => {
+    expect(transientFailure({ status: 503 })).toEqual({ resetsAt: null, source: 'bridge' });
+    expect(transientFailure({ status: 0 })).toEqual({ resetsAt: null, source: 'bridge' });
+    expect(transientFailure(new TypeError('Failed to fetch'))).toEqual({ resetsAt: null, source: 'bridge' });
+    expect(transientFailure({ status: 429, message: 'Bridge is busy, try again in 5 min.' })).toMatchObject({ source: 'bridge' });
+    expect(transientFailure({ status: 404 })).toBeNull();
+    expect(transientFailure({ status: 401 })).toBeNull();
   });
 
   it('gives a team shell its settings and default branch', async () => {

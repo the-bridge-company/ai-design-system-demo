@@ -5,7 +5,7 @@ import { ACCOUNT_COOKIE, putAccount, signAccountSession } from '../../api/_lib/a
 import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
 import { sha256 } from '../../api/_lib/http';
-import { clearReadMemory, countKey, memberBudgetId, FRESH_MS, immutable, KEEP_S, MAX_BATCH, MAX_CHANGES, isPublicTeam, readAllowed, READ_LIMITS, READ_WORDS } from '../../api/_lib/team-read';
+import { clearReadMemory, countKey, memberBudgetId, FRESH_MS, immutable, KEEP_S, STALE_KEEP_S, SWR_MS, PRODUCTS_KEEP_S, settleAfterAnswer, MAX_BATCH, MAX_CHANGES, isPublicTeam, readAllowed, READ_LIMITS, READ_WORDS } from '../../api/_lib/team-read';
 import { restoreMissing } from './contribute';
 import { type ContribDeps, cookieName, type FetchLike, handleContribute, signSession } from '../../api/contribute/index';
 
@@ -338,7 +338,7 @@ describe('team reads: the cache', () => {
     expect(JSON.stringify(body)).not.toMatch(/token/i);
   });
 
-  it('keeps the ETag a day: an answer read long ago is revalidated (free 304), never answered without GitHub past KEEP_S', async () => {
+  it('keeps the ETag a day: an answer read long ago is revalidated (free 304), never answered without GitHub past STALE_KEEP_S', async () => {
     const s = setup();
     const cookie = await s.member();
     await s.read(`${P}/pulls`, cookie);
@@ -348,11 +348,16 @@ describe('team reads: the cache', () => {
     expect(s.w.calls.filter((c) => c.path === `${P}/pulls`).pop()!.headers['If-None-Match']).toBe('"p1"');
     const kept = s.redis.snapshot().find((k) => k.key.startsWith(`bridge:read:get:${TEAM}:`))!;
     expect(kept.until! - (T0 + 6 * 3600 * 1000)).toBeGreaterThan(KEEP_S * 1000);
-    // GitHub slows down: confirmed KEEP_S ago or less stands in; older is busy, not a stale answer.
+    // GitHub slows down: the last good answer stands in, marked stale, well past KEEP_S (a busy screen is worse); past
+    // STALE_KEEP_S it is busy, not a stale answer.
     s.w.limited = true;
     s.tick(FRESH_MS + 1);
     expect((await s.read(`${P}/pulls`, cookie)).headers.get('x-bridge-cache')).toBe('stale');
-    s.tick(KEEP_S * 1000);
+    s.tick(KEEP_S * 1000 * 3);
+    const old = await s.read(`${P}/pulls`, cookie);
+    expect(old.headers.get('x-bridge-cache')).toBe('stale');
+    expect(await old.json()).toEqual([{ number: 1 }]);
+    s.tick(STALE_KEEP_S * 1000);
     expect((await s.read(`${P}/pulls`, cookie)).status).toBe(429);
   });
 
@@ -381,18 +386,29 @@ describe('team reads: the cache', () => {
 });
 
 describe('team reads: limits', () => {
-  it('over the limit per member, 429 busy with Retry-After, in Bridge words', async () => {
+  it('over the limit per member: what is kept still answers, never GitHub; else 429 busy with Retry-After, in Bridge words', async () => {
     const s = setup({}, { READ_MAX_IP: '3' });
     const cookie = await s.member();
     for (let i = 0; i < 3; i++) expect((await s.read(`${P}/pulls`, cookie)).status).toBe(200);
-    const r = await s.read(`${P}/pulls`, cookie);
+    // Over the budget: the kept answer is free for GitHub, it still answers (fresh: a hit; past its window: stale).
+    expect((await s.read(`${P}/pulls`, cookie)).headers.get('x-bridge-cache')).toBe('hit');
+    s.tick(FRESH_MS + 1);
+    const calls = s.w.calls.length;
+    expect((await s.read(`${P}/pulls`, cookie)).headers.get('x-bridge-cache')).toBe('stale');
+    expect(s.w.calls.length).toBe(calls);
+    // Nothing kept: busy, without asking GitHub.
+    const r = await s.read(`${P}/issues`, cookie);
     expect(r.status).toBe(429);
+    expect(s.w.calls.length).toBe(calls);
     const body = await r.json();
     expect(body.error).toBe('busy');
     expect(body.message).toMatch(/^Bridge is busy, try again in \d+ min\.$/);
     expect(Number(r.headers.get('retry-after'))).toBeGreaterThan(0);
     // The budget is the member's: another address does not give them more.
-    expect((await s.read(`${P}/pulls`, cookie, TEAM, { 'x-real-ip': '198.51.100.7' })).status).toBe(429);
+    expect((await s.read(`${P}/labels`, cookie, TEAM, { 'x-real-ip': '198.51.100.7' })).status).toBe(429);
+    // Past OVER_FACTOR times the budget (abuse): busy even for what is kept.
+    for (let i = 0; i < 5; i++) expect((await s.read(`${P}/pulls`, cookie)).status).toBe(200);
+    expect((await s.read(`${P}/pulls`, cookie)).status).toBe(429);
   });
 
   it('counts per signed-in member, not per address: a busy office on one address keeps reading', async () => {
@@ -401,13 +417,14 @@ describe('team reads: limits', () => {
     const leo = await s.member('leo@acme.example');
     const sam = await s.account('sam@acme.example', [TEAM]);
     // Same address (203.0.113.9) for all three.
+    // Over the budget, what nobody kept is busy (what is kept would still answer).
     for (let i = 0; i < 3; i++) expect((await s.read(`${P}/pulls`, mia)).status).toBe(200);
-    expect((await s.read(`${P}/pulls`, mia)).status).toBe(429);
+    expect((await s.read(`${P}/issues`, mia)).status).toBe(429);
     for (let i = 0; i < 3; i++) expect((await s.read(`${P}/pulls`, leo)).status).toBe(200);
-    expect((await s.read(`${P}/pulls`, leo)).status).toBe(429);
+    expect((await s.read(`${P}/issues`, leo)).status).toBe(429);
     // A Bridge account counts as its email, whatever the cookie: the team cookie and the account share one budget.
     for (let i = 0; i < 3; i++) expect((await s.read(`${P}/pulls`, sam)).status).toBe(200);
-    expect((await s.read(`${P}/pulls`, sam)).status).toBe(429);
+    expect((await s.read(`${P}/issues`, sam)).status).toBe(429);
     // A blob batch counts on the same budget.
     expect((await s.blobs([SHA('a')], mia)).status).toBe(429);
     // Keys never hold an email or an address.
@@ -419,8 +436,10 @@ describe('team reads: limits', () => {
   it('a signed-out visitor of a demo team still counts per address', async () => {
     const s = setup({}, { READ_MAX_GUEST: '1' });
     expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(200);
-    expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(429);
-    expect((await s.read(`${D}/pulls`, '', DEMO, { 'x-real-ip': '198.51.100.9' })).status).toBe(200);
+    // Over: the kept answer still answers, a read that would cost GitHub a call is busy.
+    expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(200);
+    expect((await s.read(`${D}/issues`, '', DEMO)).status).toBe(429);
+    expect((await s.read(`${D}/issues`, '', DEMO, { 'x-real-ip': '198.51.100.9' })).status).toBe(200);
   });
 
   it('visitors of a demo team have a lower limit per address', async () => {
@@ -428,8 +447,8 @@ describe('team reads: limits', () => {
     const s = setup({}, { READ_MAX_GUEST: '2' });
     expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(200);
     expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(200);
-    expect((await s.read(`${D}/pulls`, '', DEMO)).status).toBe(429);
-    expect((await s.read(`${D}/pulls`, '', DEMO, { 'x-real-ip': '198.51.100.2' })).status).toBe(200);
+    expect((await s.read(`${D}/issues`, '', DEMO)).status).toBe(429);
+    expect((await s.read(`${D}/issues`, '', DEMO, { 'x-real-ip': '198.51.100.2' })).status).toBe(200);
     expect(READ_WORDS.busy(30)).toBe('Bridge is busy, try again in 1 min.');
   });
 
@@ -531,6 +550,12 @@ describe('team reads: people by login', () => {
     const t = setup({}, { READ_MAX_IP: '1' });
     const c2 = await t.member();
     expect((await t.users(['dana'], c2)).status).toBe(200);
+    // Over the budget: a kept profile still answers, one Bridge never read is busy (no GitHub call).
+    expect((await t.users(['dana'], c2)).status).toBe(200);
+    expect((await t.users(['zed'], c2)).status).toBe(429);
+    expect(t.w.calls.filter((c) => c.path === '/users/zed')).toHaveLength(0);
+    expect((await t.users(['dana'], c2)).status).toBe(200);
+    // Past OVER_FACTOR (4) times the budget: busy, kept or not.
     expect((await t.users(['dana'], c2)).status).toBe(429);
   });
 });
@@ -596,6 +621,11 @@ describe('team reads: the status of open changes, once for the team', () => {
     const s = setup({}, { READ_MAX_IP: '2' });
     const cookie = await s.member();
     expect((await s.changes([`7:${H}`, `8:${H}`], cookie)).status).toBe(200);
+    // Over the budget: the kept bundle still answers (no GitHub call), until OVER_FACTOR times the budget.
+    const before = s.w.calls.length;
+    expect((await s.changes([`7:${H}`], cookie)).status).toBe(200);
+    expect(s.w.calls.length).toBe(before);
+    for (let i = 0; i < 5; i++) await s.changes([`7:${H}`], cookie);
     expect((await s.changes([`7:${H}`], cookie)).status).toBe(429);
   });
 });
@@ -933,5 +963,101 @@ describe('team reads: watching the products', () => {
     const s = setup({ configs: { [SAMPLE]: JSON.stringify({ products: [{ key: 'account', repo: 'acme-design-demo/acme-account', design: { repo: 'acme-design-demo/acme-account-design' } }] }) }, private: { [SAMPLE]: true } });
     await s.read(`/repos/acme-design-demo/acme-account/pulls`, '', SAMPLE);
     expect(JSON.parse(String(await s.redis.cmd('GET', 'bridge:notify:repo:acme-design-demo/acme-account')))).toEqual({ team: SAMPLE, kind: 'code', product: 'account' });
+  });
+});
+
+describe('team reads: the sample team stays up when GitHub does not (demo resilience)', () => {
+  const S = `/repos/${SAMPLE}`;
+  const sample = (world: Partial<World> = {}, env: Record<string, string> = {}) => setup({ private: { [SAMPLE]: true }, ...world }, env);
+  const visitor = (s: ReturnType<typeof setup>, path: string, ip = '203.0.113.9') => s.read(path, '', SAMPLE, { 'x-real-ip': ip });
+
+  it('hit: every visitor shares one kept answer, one GitHub call for all', async () => {
+    const s = sample();
+    expect((await visitor(s, `${S}/pulls`)).headers.get('x-bridge-cache')).toBe('miss');
+    for (let i = 0; i < 5; i++) expect((await visitor(s, `${S}/pulls`, `198.51.100.${i}`)).headers.get('x-bridge-cache')).toBe('hit');
+    expect(gets(s.w, `${S}/pulls`)).toBe(1);
+  });
+
+  it('stale-while-revalidate: past its fresh window a visitor gets the kept answer at once, Bridge checks GitHub behind it', async () => {
+    const s = sample();
+    await visitor(s, `${S}/pulls`);
+    s.w.pulls = 2;
+    s.tick(FRESH_MS + 1);
+    const r = await visitor(s, `${S}/pulls`);
+    expect(r.headers.get('x-bridge-cache')).toBe('swr');
+    expect(await r.json()).toEqual([{ number: 1 }]);
+    await settleAfterAnswer();
+    // Checked with the kept ETag (a 304 would be free); the next visitor gets the new answer from the cache.
+    expect(s.w.calls.filter((c) => c.path === `${S}/pulls`).pop()!.headers['If-None-Match']).toBe('"p1"');
+    const next = await visitor(s, `${S}/pulls`);
+    expect(next.headers.get('x-bridge-cache')).toBe('hit');
+    expect(await next.json()).toEqual([{ number: 2 }]);
+  });
+
+  it('coalesces: many visitors past the fresh window at once make one GitHub call', async () => {
+    const s = sample();
+    await visitor(s, `${S}/pulls`);
+    s.tick(FRESH_MS + 1);
+    const rs = await Promise.all(Array.from({ length: 12 }, (_, i) => visitor(s, `${S}/pulls`, `198.51.100.${i}`)));
+    await settleAfterAnswer();
+    expect(rs.every((r) => r.status === 200)).toBe(true);
+    expect(gets(s.w, `${S}/pulls`)).toBe(2);
+    // Concurrent misses of an answer nobody kept: one call too.
+    const ms = await Promise.all(Array.from({ length: 12 }, (_, i) => visitor(s, `${S}/labels`, `198.51.100.${i}`)));
+    expect(ms.every((r) => r.status === 200)).toBe(true);
+    expect(gets(s.w, `${S}/labels`)).toBe(1);
+  });
+
+  it('stale on 429: GitHub out of quota serves the last good answer marked stale, even an hour later, never busy', async () => {
+    const s = sample();
+    await visitor(s, `${S}/pulls`);
+    s.w.limited = true;
+    s.tick(60 * 60 * 1000);
+    const r = await visitor(s, `${S}/pulls`);
+    expect(r.status).toBe(200);
+    expect(r.headers.get('x-bridge-cache')).toBe('stale');
+    expect(await r.json()).toEqual([{ number: 1 }]);
+  });
+
+  it('stale on a GitHub 5xx or no answer at all', async () => {
+    const s = sample();
+    await visitor(s, `${S}/pulls`);
+    s.tick(SWR_MS + 1);
+    const f = s.deps.fetch;
+    s.deps.fetch = async () => new Response('bad gateway', { status: 502 });
+    expect((await visitor(s, `${S}/pulls`)).headers.get('x-bridge-cache')).toBe('stale');
+    s.deps.fetch = async () => {
+      throw new Error('socket hang up');
+    };
+    expect((await visitor(s, `${S}/pulls`)).headers.get('x-bridge-cache')).toBe('stale');
+    s.deps.fetch = f;
+  });
+
+  it('60 page loads from one address in a few minutes never turn the demo busy: kept answers cost GitHub nothing', async () => {
+    const s = sample();
+    const page = ['', '/pulls', '/issues', '/labels', '/branches', '/git/ref/heads/main', '/contents/bridge.config.json', '/commits'];
+    let busy = 0;
+    for (let load = 0; load < 60; load++) {
+      // Twenty reads per page load, every 5 s: 1,200 requests in 5 minutes, three times the visitor budget.
+      for (let i = 0; i < 20; i++) if ((await visitor(s, `${S}${page[i % page.length]}`)).status === 429) busy += 1;
+      s.tick(5000);
+    }
+    await settleAfterAnswer();
+    expect(busy).toBe(0);
+    expect(1200).toBeGreaterThan(READ_LIMITS.guest);
+    // GitHub was asked about each answer at most once per fresh window, never once per request.
+    expect(s.w.calls.length).toBeLessThan(page.length * 12);
+  });
+
+  it("the team's products stay listed while GitHub is busy: the last list Bridge read, never none", async () => {
+    const PROD = 'acme-design-demo/acme-prints';
+    const s = sample({ configs: { [SAMPLE]: JSON.stringify({ products: [{ key: 'prints', repo: PROD }] }) } });
+    expect((await visitor(s, `/repos/${PROD}/pulls`)).status).toBe(200);
+    // The current list expires (PRODUCTS_KEEP_S), and GitHub is busy when Bridge reads it again.
+    s.tick(Math.max(PRODUCTS_KEEP_S * 1000, SWR_MS) + 1000);
+    s.w.limited = true;
+    const r = await visitor(s, `/repos/${PROD}/pulls`);
+    expect(r.status).toBe(200);
+    expect(r.headers.get('x-bridge-cache')).toBe('stale');
   });
 });

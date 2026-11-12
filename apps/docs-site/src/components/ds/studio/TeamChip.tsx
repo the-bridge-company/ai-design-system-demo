@@ -177,7 +177,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
         if (siteConfig().owners === undefined) return live && setReviewer(false);
         const [{ viewerRole }, { loadTeams }] = await Promise.all([import('../../../scripts/needs-you'), import('../../../scripts/teams')]);
         await loadTeams().catch(() => undefined);
-        if (live) setReviewer(viewerRole() === 'reviewer');
+        // Never before the team's settings are known: without them nobody is named, and the rule would make any writer
+        // a reviewer (the badge of another team). Read again on bridge:team-model.
+        if (live) setReviewer(Object.keys(siteConfig()).length > 0 && viewerRole() === 'reviewer');
       };
       document.addEventListener('bridge:team-model', () => void readReviewer());
       void import('../../../scripts/linked-role').then(({ onLinkedRole }) =>

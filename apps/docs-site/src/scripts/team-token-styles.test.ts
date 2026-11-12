@@ -2,7 +2,7 @@
 // selectors that reach the previews inside the page only.
 import { describe, expect, it } from 'vitest';
 import type { RepoModel } from '@bridge-ds/core';
-import { scopeSelectors, teamTokenScopes } from './team-token-styles';
+import { insertScopeRules, scopeSelectorList, scopeSelectors, teamTokenScopes } from './team-token-styles';
 
 const row = (path: string, css: string) => ({ path, modes: { light: { css }, dark: { css } }, brands: { acme: { light: { css }, dark: { css: `${css}-dark` } } } });
 const model = {
@@ -28,5 +28,34 @@ describe('teamTokenScopes', () => {
     const sel = scopeSelectors('acme', 'dark');
     expect(sel).toContain(':root[data-library-shell] main [data-theme="dark"][data-brand="acme"]');
     expect(sel).toContain('main :is(.fd-pv, .fd-stage)');
+  });
+});
+
+describe('insertScopeRules', () => {
+  /** A stylesheet whose engine rejects :is(), as an older browser does: insertRule throws a SyntaxError. */
+  const sheet = () => {
+    const cssRules: { selectorText: string; style: { props: Record<string, string>; setProperty(n: string, v: string): void } }[] = [];
+    return {
+      cssRules: cssRules as unknown as CSSRuleList,
+      insertRule(rule: string, index: number) {
+        if (rule.includes(':is(')) throw new SyntaxError("Failed to execute 'insertRule' on 'CSSStyleSheet'");
+        const style = { props: {} as Record<string, string>, setProperty(n: string, v: string) { this.props[n] = v; } };
+        cssRules.splice(index, 0, { selectorText: rule.replace(/\s*\{\}$/, ''), style });
+        return index;
+      },
+      raw: cssRules,
+    };
+  };
+
+  it('gives each selector its own rule, so one the browser rejects drops only itself and never throws', () => {
+    const s = sheet();
+    const rules = insertScopeRules(s, scopeSelectorList('acme', 'dark'));
+    expect(rules).toHaveLength(1);
+    expect(s.raw[0]!.selectorText).toBe(':root[data-library-shell] main [data-theme="dark"][data-brand="acme"]');
+  });
+
+  it('keeps every rule when the browser reads them all', () => {
+    const s = sheet();
+    expect(insertScopeRules(s, ['a', 'b'])).toHaveLength(2);
   });
 });

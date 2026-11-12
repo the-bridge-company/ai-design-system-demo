@@ -11,6 +11,7 @@
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
 import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
 import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, handOverOnGitHub, isWaitingForLead, leadTurnOf, leadApproveOnGitHub, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupShownName, mockupPiecesLine, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
+import { notesFromRead } from '../lib/exploration-notes-view';
 import {
   activityRows,
   canPutInFigma,
@@ -138,8 +139,15 @@ const fromMockupOf = (body: string | null | undefined): ExplorationPageProps['fr
 };
 const dsClient = () => studioClient(`${CFG.owner}/${CFG.repo}`, undefined, { protectedBranches: [CFG.defaultBranch] });
 
-/** The branch's commits, read once per head (an empty list when GitHub cannot be read: the activity then says less). */
+/**
+ * The branch's commits, read once per head. When GitHub cannot be read: an empty list for the readers that only look
+ * for someone in it, the key in `commitsUnread` (the activity then says it could not be read, never fewer events),
+ * and the failure is not kept, so the next paint reads again.
+ */
 const commitsBy = new Map<string, Promise<BranchCommitLike[]>>();
+const commitsUnread = new Set<string>();
+/** Whether the commits of `r` (its head) could not be read: its activity is not shown as if complete. */
+const commitsFailed = (r: ExplorationRow) => commitsUnread.has(`${explorationKey(r)}@${r.headSha}`);
 function branchCommits(r: ExplorationRow): Promise<BranchCommitLike[]> {
   const own = productRepoByKey(r.product);
   const k = `${explorationKey(r)}@${r.headSha}`;
@@ -147,8 +155,15 @@ function branchCommits(r: ExplorationRow): Promise<BranchCommitLike[]> {
   if (!c) {
     c = ghGet<BranchCommitLike[]>(`${own ? `/repos/${own.repo}` : R}/pulls/${r.number}/commits?per_page=100`)
       // Each commit with its GitHub account (lib/exploration-page linkAuthors): the same face in every row, Done exploring included.
-      .then((f) => linkAuthors(f.data))
-      .catch(() => []);
+      .then((f) => {
+        commitsUnread.delete(k);
+        return linkAuthors(f.data);
+      })
+      .catch(() => {
+        commitsUnread.add(k);
+        commitsBy.delete(k);
+        return [] as BranchCommitLike[];
+      });
     commitsBy.set(k, c);
   }
   return c;
@@ -898,7 +913,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
     todayUrl,
     todayLabel: todayLinkLabel(isLibrary),
     headline: talkNow.headline ?? headlineOf({ commits, files, author: r.author, names }),
-    activity: activityRows({ commits, author: r.author, startedAt: startedAtOf(pull.body, pull.created_at), reopened: reopenedOf(pull.body), names }),
+    activity: commitsFailed(r) ? null : activityRows({ commits, author: r.author, startedAt: startedAtOf(pull.body, pull.created_at), reopened: reopenedOf(pull.body), names }),
+    activityUnread: commitsFailed(r),
     previewUrl,
     tryUrl,
     previewNote,
@@ -1089,7 +1105,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
         : null,
     plate,
     ...shotProps,
-    activity: handoffActivity({ commits, author: r.author, startedAt: startedAtOf(pull.body, pull.created_at), doneBy: doneLogin, doneAt, designAnswer: answer?.login ? answer : null, names: allNames }),
+    activityUnread: commitsFailed(r),
+    activity: commitsFailed(r) ? null : handoffActivity({ commits, author: r.author, startedAt: startedAtOf(pull.body, pull.created_at), doneBy: doneLogin, doneAt, designAnswer: answer?.login ? answer : null, names: allNames }),
     figma: figmaLine(status),
     // Shipped: the product itself, where it lives now. "See it in the product" still opens the change with the Bridge
     // toolbar when its preview is there (tryUrl, painted above): This change and Live product, its marked areas,
@@ -1400,8 +1417,12 @@ export function notesEditable(x: { writable: boolean; leadOnly?: boolean; member
 /** The notes read once per head (the note file at the branch), then painted; the save merges into a fresh read. */
 async function paintNotes(d: HTMLElement, key: string, r: ExplorationRow, gh: GitHubClient, files: readonly string[] | null, editable: boolean) {
   const path = explorationNotePathOf(files, r.branch);
-  const read = () => gh.getFileText(path, r.branch).catch(() => undefined);
-  const view = (notes: ExplorationNotes | null) => ({ notes, onSave: editable ? save : null });
+  // A missing file is "Nothing noted yet"; a read that failed (busy, down) is not: notesFromRead tells them apart.
+  const read = () => gh.getFileText(path, r.branch).then(
+    (text) => ({ ok: true as const, text }),
+    () => ({ ok: false as const }),
+  );
+  const view = (notes: ExplorationNotes | null, unread = false) => ({ notes, ...(unread ? { unread: true } : {}), onSave: editable && !unread ? save : null });
   const save = async (update: NotesUpdate): Promise<string | void> => {
     // A fresh read, so a section Claude or someone else wrote meanwhile stays; only the sections edited here change.
     const before = (await gh.getFileText(path, r.branch)) ?? explorationNote({ name: r.name, purpose: r.purpose ?? '', slug: explorationSlugFromBranch(r.branch) ?? undefined });
@@ -1410,9 +1431,9 @@ async function paintNotes(d: HTMLElement, key: string, r: ExplorationRow, gh: Gi
     repaint(d, key, { notes: view(parseExplorationNotes(md)) });
   };
   repaint(d, key, { notes: view(null) });
-  const text = await read();
+  const got = notesFromRead(await read(), parseExplorationNotes);
   if (current?.key !== key) return;
-  repaint(d, key, { notes: view(parseExplorationNotes(text)) });
+  repaint(d, key, { notes: view(got.notes, Boolean(got.unread)) });
 }
 
 /** Leaves the page (another view opens in the same place). */

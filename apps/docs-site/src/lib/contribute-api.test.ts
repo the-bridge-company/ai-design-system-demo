@@ -24,6 +24,8 @@ import {
   designPathsFrom,
   isDesignPath,
   publicEmail,
+  collaboratorsKey,
+  COLLABORATORS_FRESH_MS,
 } from '../../api/contribute/index';
 import { type EmailMessage } from '../../api/invites/index';
 import { clearReadMemory } from '../../api/_lib/team-read';
@@ -917,5 +919,37 @@ describe('GET ?members=1: the team for anyone on it', () => {
     expect((await reader.json()).members).toEqual([expect.objectContaining({ name: 'Mia Chen', role: 'edit' })]);
     expect((await handleContribute(list({ authorization: 'Bearer gho_strangerstranger001' }), ENV, withPeople(s))).status).toBe(401);
     expect((await handleContribute(list({}), ENV, withPeople(s))).status).toBe(401);
+  });
+
+  it('keeps the GitHub people a minute for everyone, and the last list while GitHub is busy or down', async () => {
+    const s = setup();
+    const cookie = await join(s);
+    let calls = 0;
+    let github: 'ok' | 'limited' | 'down' = 'ok';
+    const people = withPeople(s);
+    const deps: ContribDeps = {
+      ...people,
+      fetch: async (url, init) => {
+        if (new URL(url).pathname === '/repos/acme/design/collaborators') {
+          calls += 1;
+          if (github === 'limited') return res(403, { message: 'API rate limit exceeded' });
+          if (github === 'down') return res(502, { message: 'bad gateway' });
+        }
+        return people.fetch(url, init);
+      },
+    };
+    expect((await handleContribute(list({ cookie }), ENV, deps)).status).toBe(200);
+    expect((await handleContribute(list({ cookie }), ENV, deps)).status).toBe(200);
+    expect(calls).toBe(1);
+    for (const mode of ['limited', 'down'] as const) {
+      github = mode;
+      s.tick(COLLABORATORS_FRESH_MS + 1);
+      const r = await handleContribute(list({ cookie }), ENV, deps);
+      expect(r.status).toBe(200);
+      expect((await r.json()).collaborators).toEqual([expect.objectContaining({ login: 'peterbono' })]);
+    }
+    // Nothing kept and GitHub down: says so, never an empty team.
+    await s.redis.cmd('DEL', collaboratorsKey(REPO));
+    expect((await handleContribute(list({ cookie }), ENV, deps)).status).toBe(502);
   });
 });

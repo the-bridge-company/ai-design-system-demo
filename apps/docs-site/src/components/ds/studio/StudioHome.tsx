@@ -41,7 +41,7 @@ import {
   type NeedRow,
   type Person,
 } from '../../../lib/home-model';
-import { explorationsFor, libraryChangesLine, ownOpenWork, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
+import { explorationsFor, libraryChangesLine, ownOpenWork, PARTIAL_LINE, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
 import { studioHref } from '../../../lib/team-path';
 import { inProgressCount, waitingToBePickedUp } from '../../../lib/waiting-counts';
 import { openBuildRequests, type BuildRequestView } from '@bridge-ds/core';
@@ -347,6 +347,11 @@ export interface StudioHomeProps {
   signedOut: { line: string; button: string; signIn: boolean };
   /** GitHub could not be read. */
   failed: string | null;
+  /**
+   * Some reads behind the home failed (scripts/home-data HomeData.partial): what shows is real but may be incomplete,
+   * so the home says so in one quiet line, never "Nothing needs you" nor "Nothing in progress".
+   */
+  partial?: boolean;
   /** Kept for callers: the library ways to start live on their own pages now, not on the Home (the one button). */
   startHrefs: Record<'tokens' | 'component' | 'guidance', string>;
   /**
@@ -461,7 +466,7 @@ function JoinedNote({ text }: { text: string }) {
 /** The products' folders, the library's own changes counted on the Library folder as Changes lists them. */
 function homeFolders(p: StudioHomeProps) {
   const products = p.products ?? pageProducts();
-  return productFolders(products, p.explorations, undefined, { [defaultProduct(products).key.toLowerCase()]: p.libraryWork ?? [] });
+  return productFolders(products, p.explorations, undefined, { [defaultProduct(products).key.toLowerCase()]: p.libraryWork ?? [] }, Boolean(p.partial || p.failed));
 }
 
 export function StudioHome(p: StudioHomeProps) {
@@ -523,7 +528,9 @@ function HomeBody(p: StudioHomeProps) {
     );
   }
   const note = p.note ? <JoinedNote text={p.note} /> : null;
-  if (p.state === 'empty') {
+  // A read failed or came back partial: never the calm harbor ("Nothing needs you", "What do you want to explore?"),
+  // which would claim nothing waits: the zone says why, and what was read shows below it.
+  if (p.state === 'empty' && !p.failed && !p.partial) {
     return (
       <div className="sh">
         {note}
@@ -535,7 +542,7 @@ function HomeBody(p: StudioHomeProps) {
             <QuietScene scene="harbor" layout="window" />
             <div className="sh-head-text">
               <p className="t-body">
-                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed), { pieces: p.libraryPieces ?? null, pickUp })} />
+                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed || p.partial), { pieces: p.libraryPieces ?? null, pickUp })} />
               </p>
               <h1 id="sh-hello" className="sh-hello">
                 {p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}
@@ -572,7 +579,9 @@ function HomeBody(p: StudioHomeProps) {
     );
   }
   const loading = p.state === 'loading';
-  const quiet = !loading && p.needs.length === 0;
+  // Nothing waits AND every read answered: only then the calm harbor. A failed read says why, a partial one says so.
+  const quiet = !loading && p.needs.length === 0 && !p.failed && !p.partial;
+  const zoneLine = p.needs.length ? 'Your changes need you.' : (p.failed ?? (p.partial ? PARTIAL_LINE : QUIET_LINE));
   return (
     <div className="sh">
       {note}
@@ -585,7 +594,7 @@ function HomeBody(p: StudioHomeProps) {
             <h1 id="sh-hello" className="sh-hello" aria-label={p.greeting ? undefined : 'Home'}>
               {p.greeting || <Skeleton variant="text" className="sh-skel-line" />}
             </h1>
-            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{p.needs.length ? 'Your changes need you.' : QUIET_LINE}</p>}
+            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{zoneLine}</p>}
           </div>
         </div>
         {loading ? (
@@ -602,7 +611,8 @@ function HomeBody(p: StudioHomeProps) {
           p.needs.length > 0 && <Needs needs={p.needs} now={p.now} snoozed={snoozed} tour={tour} join={p.join} contributor={Boolean(p.contributor)} />
         )}
       </section>
-      {p.failed && <p className="t-ui t-muted sh-health">{p.failed}</p>}
+      {/* Said once: in the zone when nothing else is there, else under it, quietly. */}
+      {!loading && p.needs.length > 0 && (p.failed || p.partial) && <p className="t-ui t-muted sh-health">{p.failed ?? PARTIAL_LINE}</p>}
       {/* Until the read is done, nothing below the zone says anything: no empty explorations, no "Nothing in progress",
           no count that is about to change. The space they take is held instead, so nothing jumps when they come. */}
       {loading ? (
@@ -612,12 +622,14 @@ function HomeBody(p: StudioHomeProps) {
           <Status health={p.health} setup={p.setup} />
           <WaitingOnOthers rows={p.waitingOnOthers ?? []} />
           {p.building && <BuildLine />}
-          {explorations}
-          <YourChanges n={p.branches.length} />
+          {/* A failed read: no empty explorations ("Start your first") nor a count of 0 from it. */}
+          {!p.failed && explorations}
+          {!p.failed && <YourChanges n={p.branches.length} />}
         </>
       )}
       {/* The products, like project folders in Figma: each opens its page, with the explorations made in it. */}
-      {!loading && <ProductFolders folders={homeFolders(p)} />}
+      {/* The folders count what was read: without the team's reads (failed), they would count nothing. */}
+      {!loading && !p.failed && <ProductFolders folders={homeFolders(p)} />}
     </div>
   );
 }

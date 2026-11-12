@@ -110,11 +110,13 @@ function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: 
  * states of the product's work that is not an exploration card, the library's own changes (libraryChangeState), so
  * the Library folder counts what Changes lists under Library.
  */
-export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = [], noun: readonly [string, string] | null = null): string {
+export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = [], noun: readonly [string, string] | null = null, unsure = false): string {
   const parts = inProgress(cards, more, noun);
   if (parts.length) return parts.join(sep);
   const shipped = productCounts(cards, more).shipped;
-  return shipped ? `${shipped} shipped` : 'Nothing in progress';
+  if (shipped) return `${shipped} shipped`;
+  // A read failed on the way (`unsure`): no line rather than "Nothing in progress" when there may be some.
+  return unsure ? '' : 'Nothing in progress';
 }
 
 /**
@@ -159,7 +161,7 @@ export interface ProductFolder {
  * The Home's product folders: one per configured product, in the configured order, each with the screens of its
  * latest explorations and what is in progress. A product without any exploration keeps its folder (it is a real app).
  */
-export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS, more: Readonly<Record<string, readonly ProductStateKey[]>> = {}): ProductFolder[] {
+export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS, more: Readonly<Record<string, readonly ProductStateKey[]>> = {}, unsure = false): ProductFolder[] {
   const library = products.length ? defaultProduct(products).key.toLowerCase() : null;
   return products.map((p) => {
     const mine = cards.filter((c) => cardProductKey(c, products) === p.key.toLowerCase());
@@ -171,7 +173,7 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
       // The Library card counts changes to the library, whoever reviews them: it names them, so "11 changes in review"
       // never reads as the Library review badge (pieces waiting for the viewer's decision, lib/waiting-counts).
-      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? [], p.key.toLowerCase() === library ? LIBRARY_NOUN : null),
+      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? [], p.key.toLowerCase() === library ? LIBRARY_NOUN : null, unsure),
       total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
       library: p.key.toLowerCase() === library,
     };

@@ -52,6 +52,17 @@ vi.mock('./SettingsParts', () => ({
 }));
 vi.mock('../../../scripts/people', () => ({ knownNames: () => new Map() }));
 
+// The face check of faces.tsx (its dynamic import) can still reach the real scripts/github-photo, whose HEAD request
+// went to avatars.githubusercontent.com: on a CI runner GitHub answered 429 and Malik kept a photo. GitHub's answer is
+// given here instead, as GitHub gives it (Last-Modified: the identicon stamp for an account without a photo), and no
+// other request leaves the test.
+vi.stubGlobal('fetch', async (input: unknown) => {
+  const url = String(input);
+  const m = /^https:\/\/avatars\.githubusercontent\.com\/([^/?]+)\?s=8$/.exec(url);
+  if (!m) throw new Error(`No network in this test: ${url}`);
+  const lastModified = m[1] === 'acme-malik' ? 'Sat, 05 Nov 2016 20:57:12 GMT' : 'Tue, 03 Mar 2020 10:00:00 GMT';
+  return new Response(null, { status: 200, headers: { 'Last-Modified': lastModified } });
+});
 const { default: TeamSettings } = await import('./TeamSettings');
 // The face check imports this module on first render (faces.tsx useDrawnFace): loaded here, so no test waits on a
 // cold dynamic import (it took more than waitFor's default second on a busy CI runner).

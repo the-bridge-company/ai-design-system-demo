@@ -194,7 +194,7 @@ import { npmLatest, parseNpmNames, sendLibraryUpdate } from '../_lib/library-upd
 import { validPackageName } from '../../src/lib/library-update.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { mintReadPass, passOpens, verifyReadPass, type ReadPass } from '../_lib/read-pass.js';
-import { budgetOf, corsHeaders, isPublicRepo, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, type ReadCtx, type Reader } from '../_lib/team-read.js';
+import { budgetOf, corsHeaders, isPublicRepo, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, STALE_KEEP_S, type ReadCtx, type Reader } from '../_lib/team-read.js';
 
 export type { FetchLike };
 
@@ -3433,6 +3433,40 @@ async function githubReader(ctx: Ctx, req: Request, owner: string, repo: string)
   return r.status === 200 && Boolean(r.data?.permissions?.pull);
 }
 
+/** The team's GitHub people as Bridge last read them: { at, list }, fresh COLLABORATORS_FRESH_MS, kept STALE_KEEP_S. */
+export const collaboratorsKey = (full: string) => `bridge:read:collaborators:${full.toLowerCase()}`;
+export const COLLABORATORS_FRESH_MS = 60 * 1000;
+
+/**
+ * The team's GitHub people (login, avatar, role, permissions), shared by every member and visitor for a minute; past
+ * that read again, and when GitHub is busy or down the last list Bridge read (never an empty team, never an error while
+ * one is kept). Null: GitHub could not be read and nothing is kept.
+ */
+async function collaboratorsOf(ctx: Ctx, token: string, owner: string, repo: string): Promise<TeamCollaborator[] | null> {
+  const key = collaboratorsKey(`${owner}/${repo}`);
+  let kept: { at: number; list: TeamCollaborator[] } | null = null;
+  try {
+    const v = JSON.parse(String((await ctx.svc.redis.cmd('GET', key)) ?? 'null')) as { at?: unknown; list?: unknown } | null;
+    if (v && typeof v.at === 'number' && Array.isArray(v.list)) kept = { at: v.at, list: v.list as TeamCollaborator[] };
+  } catch {
+    kept = null;
+  }
+  if (kept && ctx.now() - kept.at < COLLABORATORS_FRESH_MS) return kept.list;
+  const r = await ghApp(ctx, token, 'GET', `/repos/${owner}/${repo}/collaborators?affiliation=all&per_page=100`).catch(() => null);
+  if (!r || r.status !== 200 || !Array.isArray(r.data)) return kept?.list ?? null;
+  const flags = ['admin', 'maintain', 'push', 'triage', 'pull'] as const;
+  const list: TeamCollaborator[] = r.data
+    .filter((c: any) => c && typeof c.login === 'string')
+    .map((c: any) => ({
+      login: c.login,
+      ...(typeof c.avatar_url === 'string' ? { avatar_url: c.avatar_url } : {}),
+      ...(typeof c.role_name === 'string' ? { role_name: c.role_name } : {}),
+      ...(c.permissions && typeof c.permissions === 'object' ? { permissions: Object.fromEntries(flags.filter((f) => typeof c.permissions[f] === 'boolean').map((f) => [f, c.permissions[f]])) } : {}),
+    }));
+  await ctx.svc.redis.cmd('SET', key, JSON.stringify({ at: ctx.now(), list }), 'EX', STALE_KEEP_S).catch(() => undefined);
+  return list;
+}
+
 /**
  * GET ?members=1: the team's people for a member who cannot list them on GitHub (an email contributor, a GitHub
  * reader). The GitHub people through the app's token, the email members by name and role. Never anyone's email:
@@ -3443,17 +3477,8 @@ async function membersOf(ctx: Ctx, req: Request, full: string, m: EmailMember | 
   if (!m && !(await githubReader(ctx, req, owner, repo))) return fail(401, 'signin', SIGNIN);
   const token = await ctx.svc.app.installationToken(owner, repo);
   if (!token) return fail(409, 'app_missing', APP_MISSING);
-  const r = await ghApp(ctx, token, 'GET', `/repos/${owner}/${repo}/collaborators?affiliation=all&per_page=100`);
-  if (r.status !== 200 || !Array.isArray(r.data)) return fail(502, 'unreachable', GITHUB_DOWN);
-  const flags = ['admin', 'maintain', 'push', 'triage', 'pull'] as const;
-  const collaborators: TeamCollaborator[] = r.data
-    .filter((c: any) => c && typeof c.login === 'string')
-    .map((c: any) => ({
-      login: c.login,
-      ...(typeof c.avatar_url === 'string' ? { avatar_url: c.avatar_url } : {}),
-      ...(typeof c.role_name === 'string' ? { role_name: c.role_name } : {}),
-      ...(c.permissions && typeof c.permissions === 'object' ? { permissions: Object.fromEntries(flags.filter((f) => typeof c.permissions[f] === 'boolean').map((f) => [f, c.permissions[f]])) } : {}),
-    }));
+  const collaborators = await collaboratorsOf(ctx, token, owner, repo);
+  if (!collaborators) return fail(502, 'unreachable', GITHUB_DOWN);
   const people = await ctx.svc.members.list(full);
   // Local mode only: members seeded as admin (api/_lib/local-admin.ts) say so.
   const admins = ctx.svc.localAdmins ? await ctx.svc.localAdmins.adminsOf(full) : [];

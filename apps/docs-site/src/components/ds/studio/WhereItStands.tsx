@@ -12,8 +12,10 @@ import { Drawing } from './Drawing';
 import { draftOf, edgeCaseGroups, NOTES_WORDS as W, notesCountLine, notesEmpty, notesHaveDetails, updateOfDraft, type NotesDraft } from '../../../lib/exploration-notes-view';
 
 export interface WhereItStandsView {
-  /** null while it is read. */
+  /** null while it is read (or when the read failed: `unread`). */
   notes: ExplorationNotes | null;
+  /** The notes could not be read just now (GitHub or Bridge busy, down): never "Nothing noted yet" from it. */
+  unread?: boolean;
   /** Saves an edit (the sections the person changed); null for a reader. */
   onSave?: ((update: NotesUpdate) => Promise<string | void>) | null;
 }
@@ -37,7 +39,9 @@ export function WhereItStands({ view, say, title, rail = false }: { view: WhereI
           </Button>
         )}
       </div>
-      {n === null ? (
+      {n === null && view.unread ? (
+        <p className="xp-muted">{W.unread}</p>
+      ) : n === null ? (
         <Skeleton variant="rect" className="xp-skel-rows" />
       ) : editing ? (
         <NotesForm notes={n} onSave={view.onSave!} onDone={() => setEditing(false)} say={say} />

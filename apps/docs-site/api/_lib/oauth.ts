@@ -19,6 +19,7 @@
 // Keys (Upstash Redis; hashes are SHA-256 hex):
 //   bridge:oauth:client:<client_id>       a registered client (DCR) or a fetched client metadata document (CIMD, 1 hour)
 //   bridge:oauth:req:<id>                 an authorization request waiting for the person, 30 minutes (sign-in on the way)
+//   bridge:oauth:handoff:<hash>           a request started on an older address, moving to SITE_ORIGIN, 10 minutes, once
 //   bridge:oauth:gh:<hash(state)>         the GitHub leg of a request, 10 minutes
 //   bridge:oauth:code:<hash(code)>        an authorization code, 2 minutes, used once (GETDEL)
 //   bridge:oauth:grant:<id>               a grant { repo, client, who, sealed GitHub tokens, dates }, 90 days after last use
@@ -34,6 +35,7 @@ import type { Redis } from './redis.js';
 import { seal, unseal, type Sealed } from './sealed.js';
 import { canonicalEmail, emailSpellings } from './canonical-email.js';
 import { canonicalRepo, repoNames } from '../../src/lib/team-path.js';
+import { requestSiteOrigin } from './site-origin.js';
 
 export const ACCESS_TTL_S = 60 * 60;
 export const REFRESH_TTL_S = 30 * 24 * 60 * 60;
@@ -84,13 +86,13 @@ export interface Site {
   resource: string;
 }
 
+/**
+ * The issuer is the host the request came in on when it is one of Bridge's own addresses (site-origin.ts): a connector
+ * added with the older address keeps one issuer and resource, its tokens and refreshes keep working. Else
+ * PUBLIC_SITE_URL, else the request's origin.
+ */
 export function siteOf(req: Request, publicUrl: string | undefined): Site {
-  let origin = new URL(req.url).origin;
-  try {
-    if (publicUrl?.trim()) origin = new URL(publicUrl.trim()).origin;
-  } catch {
-    /* the request's own origin */
-  }
+  const origin = requestSiteOrigin(req, publicUrl);
   return { issuer: origin, resource: `${origin}/mcp` };
 }
 
@@ -257,6 +259,8 @@ export interface AuthRequest {
   ghVerifier?: string;
   /** SHA-256 of the Bridge account's email (accountRef), so deleting the account ends the grant. */
   account?: string;
+  /** The issuer the client started with, when the person finishes on another address (an older one moved): `iss`. */
+  issuer?: string;
 }
 
 const reqKey = (id: string) => `bridge:oauth:req:${id}`;
@@ -315,6 +319,36 @@ export const dropRequest = (redis: Redis, id: string) => redis.cmd('DEL', reqKey
 
 /** The request belongs to this browser: the cookie set when it started. */
 export const sameBrowser = (r: AuthRequest, cookie: string | null) => Boolean(cookie) && hash(cookie!) === r.nonce;
+
+/** The issuer the client gets back in `iss`: the one it started with. */
+export const requestIssuer = (r: Pick<AuthRequest, 'issuer'>, site: Site) => r.issuer ?? site.issuer;
+
+const HANDOFF_TTL_S = 10 * 60;
+const handoffKey = (h: string) => `bridge:oauth:handoff:${hash(h)}`;
+
+/**
+ * A request started on an older address (its pages redirect to SITE_ORIGIN, where the person is signed in): the
+ * request keeps that issuer for `iss`, and a one-time handoff moves it to the new address, which binds it to the
+ * browser with its own cookie. The handoff is no stronger than the authorize link itself: whoever opens it starts there.
+ */
+export async function startHandoff(redis: Redis, r: AuthRequest, issuer: string, random: (n: number) => Uint8Array): Promise<string> {
+  await putRequest(redis, { ...r, issuer });
+  const h = b64url(Buffer.from(random(32)));
+  await redis.cmd('SET', handoffKey(h), r.id, 'EX', HANDOFF_TTL_S);
+  return h;
+}
+
+/** Takes a handoff (once): the request, now bound to this browser by a new cookie. Null when unknown or used. */
+export async function takeHandoff(redis: Redis, h: string, random: (n: number) => Uint8Array): Promise<{ req: AuthRequest; cookie: string } | null> {
+  if (!/^[A-Za-z0-9_-]{20,80}$/.test(h)) return null;
+  const id = await redis.cmd('GETDEL', handoffKey(h));
+  const r = typeof id === 'string' ? await getRequest(redis, id) : null;
+  if (!r) return null;
+  const cookie = b64url(Buffer.from(random(32)));
+  const req = { ...r, nonce: hash(cookie) };
+  await putRequest(redis, req);
+  return { req, cookie };
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // The GitHub leg: the Bridge GitHub App confirms who the person is and gives their user token to the server

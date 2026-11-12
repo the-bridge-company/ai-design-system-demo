@@ -12,7 +12,7 @@ test('Settings: legacy token, then Sign in with Bridge, then Sign out', async ()
     register: (routes) =>
       routes.push((method, path, body) => {
         if (path !== '/api/plugin-link' || method !== 'POST') return undefined;
-        if (body.action === 'start') return { status: 200, body: { code: 'ABCDEFGH23', secret: 's'.repeat(43), url: 'https://bridge.floriangouloubi.com/studio/connect-figma/?code=ABCDEFGH23', expiresIn: 300, interval: 2 } };
+        if (body.action === 'start') return { status: 200, body: { code: 'ABCDEFGH23', secret: 's'.repeat(43), url: 'https://bridgedesignsystem.com/studio/connect-figma/?code=ABCDEFGH23', expiresIn: 300, interval: 2 } };
         return { status: 200, body: { status: 'approved', repo: 'acme/acme-design-system', name: 'Acme DS', token: 'ghu_bridge', expiresAt: null, login: 'ana', defaultBranch: 'main' } };
       }),
   });

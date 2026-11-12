@@ -68,6 +68,7 @@ import {
   pkcePair,
   putRequest,
   registerClient,
+  requestIssuer,
   REQUEST_COOKIE,
   REQ_TTL_S,
   resourceMetadata,
@@ -78,11 +79,14 @@ import {
   serverMetadata,
   siteOf,
   startAuthorization,
+  startHandoff,
+  takeHandoff,
   TokenError,
   type Grant,
   type Site,
 } from '../_lib/oauth.js';
 import { redisRest, type Redis } from '../_lib/redis.js';
+import { isLegacyOrigin, SITE_ORIGIN } from '../_lib/site-origin.js';
 import { seal, sealingKey } from '../_lib/sealed.js';
 import { readCookie } from '../_lib/session.js';
 import { bearerOf, CALLER_WORDS, githubGet, teamCaller } from '../_lib/team-caller.js';
@@ -261,8 +265,22 @@ async function onOAuth(step: string, req: Request, env: ConnectorEnv, deps: Conn
     }
     case 'authorize': {
       if (!githubApp(env)) return errorPage(OAUTH_WORDS.notConfigured, 503);
-      const r = await startAuthorization(redis, deps.fetch, site, new URL(req.url).searchParams, random, now);
+      const q = new URL(req.url).searchParams;
+      const handoff = q.get('handoff');
+      if (handoff !== null) {
+        // The second half of a request started on an older address (below): bind it to this browser here.
+        const h = await takeHandoff(redis, handoff, random);
+        if (!h) return errorPage(OAUTH_WORDS.expired, 410);
+        return redirect(`${CONNECT_PAGE}?request=${encodeURIComponent(h.req.id)}`, { 'Set-Cookie': requestCookie(h.cookie, REQ_TTL_S) });
+      }
+      const r = await startAuthorization(redis, deps.fetch, site, q, random, now);
       if (!r.ok) return r.redirect ? redirect(r.redirect) : errorPage(r.message);
+      if (isLegacyOrigin(site.issuer)) {
+        // Started with the older address, whose pages redirect to SITE_ORIGIN: the person signs in and picks the team
+        // there. The client keeps this issuer (`iss`, tokens, refreshes on this host).
+        const h = await startHandoff(redis, r.req, site.issuer, random);
+        return redirect(`${SITE_ORIGIN}/oauth/authorize?handoff=${encodeURIComponent(h)}`);
+      }
       return redirect(`${CONNECT_PAGE}?request=${encodeURIComponent(r.req.id)}`, { 'Set-Cookie': requestCookie(r.cookie, REQ_TTL_S) });
     }
     case 'request': {
@@ -287,7 +305,7 @@ async function onOAuth(step: string, req: Request, env: ConnectorEnv, deps: Conn
       if (!sameBrowser(r, readCookie(req, REQUEST_COOKIE))) return fail(403, 'other_browser', OAUTH_WORDS.otherBrowser);
       if (body.allow !== true) {
         await dropRequest(redis, r.id);
-        return json(200, { redirect: clientRedirect(r, site.issuer, { error: 'access_denied', error_description: 'The person did not allow Bridge.' }) }, { 'Set-Cookie': requestCookie('', 0) });
+        return json(200, { redirect: clientRedirect(r, requestIssuer(r, site), { error: 'access_denied', error_description: 'The person did not allow Bridge.' }) }, { 'Set-Cookie': requestCookie('', 0) });
       }
       const account = await sessionAccount(req, redis, svc.secret, now);
       if (!account) return fail(401, 'signin', OAUTH_WORDS.signIn);
@@ -299,7 +317,7 @@ async function onOAuth(step: string, req: Request, env: ConnectorEnv, deps: Conn
         const grant = await createGrant(redis, svc.key, { repo: full, client: r, login: '', name: member.name || account.name, email: member.email, account: accountRef(account.email) }, random, now);
         const issued = await issueCode(redis, r, grant.id, random);
         await dropRequest(redis, r.id);
-        return json(200, { redirect: clientRedirect(r, site.issuer, { code: issued }) }, { ...NO_STORE, 'Set-Cookie': requestCookie('', 0) });
+        return json(200, { redirect: clientRedirect(r, requestIssuer(r, site), { code: issued }) }, { ...NO_STORE, 'Set-Cookie': requestCookie('', 0) });
       }
       const app = githubApp(env);
       if (!app) return fail(503, 'not_configured', OAUTH_WORDS.notConfigured);
@@ -321,7 +339,7 @@ async function onOAuth(step: string, req: Request, env: ConnectorEnv, deps: Conn
       const r = typeof id === 'string' ? await getRequest(redis, id) : null;
       if (!r || !r.repo || !r.ghVerifier) return errorPage(OAUTH_WORDS.expired, 410);
       if (!sameBrowser(r, readCookie(req, REQUEST_COOKIE))) return errorPage(OAUTH_WORDS.otherBrowser, 403);
-      const back = (error: string, description: string) => redirect(clientRedirect(r, site.issuer, { error, error_description: description }), { 'Set-Cookie': requestCookie('', 0) });
+      const back = (error: string, description: string) => redirect(clientRedirect(r, requestIssuer(r, site), { error, error_description: description }), { 'Set-Cookie': requestCookie('', 0) });
       const app = githubApp(env)!;
       const code = q.get('code');
       if (!code) return back('access_denied', OAUTH_WORDS.github);
@@ -340,7 +358,7 @@ async function onOAuth(step: string, req: Request, env: ConnectorEnv, deps: Conn
       const grant = await createGrant(redis, svc.key, { repo: r.repo, client: r, login: me.data.login, name: who, gh: tokens, account: r.account }, random, now);
       const issued = await issueCode(redis, r, grant.id, random);
       await dropRequest(redis, r.id);
-      return redirect(clientRedirect(r, site.issuer, { code: issued }), { 'Set-Cookie': requestCookie('', 0) });
+      return redirect(clientRedirect(r, requestIssuer(r, site), { code: issued }), { 'Set-Cookie': requestCookie('', 0) });
     }
     case 'token': {
       if (req.method !== 'POST') return fail(405, 'method', 'Use POST.');

@@ -316,7 +316,7 @@ Bridge** and **Give Bridge access** link and every installation check (docs/SIGN
 | `INVITE_EMAIL_FROM`      | The sender, on the verified domain: `Bridge <invites@bridge.floriangouloubi.com>` |
 | `GITHUB_APP_ID`          | Bridge Direct's App ID                                                   |
 | `GITHUB_APP_PRIVATE_KEY` | The whole `.pem` content (line breaks or `\n` both work)                 |
-| `PUBLIC_SITE_URL`        | Optional: the origin for links in emails, `https://bridge.floriangouloubi.com`. Default: the site the admin invited from |
+| `PUBLIC_SITE_URL`        | Optional: the origin for links in emails, `https://bridgedesignsystem.com`. Default: the site the admin invited from |
 | `INVITES_MAX_PER_ADMIN_DAY`, `INVITES_MAX_PER_TEAM_DAY`, `INVITES_MAX_SITE_DAY` | Optional: the daily caps (see Caps). Not sensitive |
 
 5. Redeploy. `GET /api/invites` answers `{ "available": true }` once everything is set.
@@ -696,7 +696,7 @@ The code is `apps/docs-site/api/_lib/github-webhook.ts`, served by `/api/contrib
    Redeploy.
 3. On GitHub, the settings of the app whose App ID is `GITHUB_APP_ID` (Bridge Direct: the app the read token comes
    from; its installations are the repositories Bridge reads), **General**, **Webhook**: check **Active**, **Webhook
-   URL** `https://bridge.floriangouloubi.com/api/github-webhook`, **Webhook secret** the same secret, **Save
+   URL** `https://bridgedesignsystem.com/api/github-webhook`, **Webhook secret** the same secret, **Save
    changes**. GitHub sends a `ping` at once; **Advanced**, **Recent Deliveries** should show it answered `200`.
 4. **Permissions & events**, **Subscribe to events**: check **Push**, **Create**, **Delete**, **Pull request**,
    **Pull request review**, **Pull request review comment**, **Pull request review thread**, **Issues**, **Issue

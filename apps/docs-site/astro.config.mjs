@@ -98,8 +98,20 @@ const teamShells = {
 
 // Absolute URLs (canonical, sitemap): SITE_URL, else the branch URL of a preview host. The site is always served
 // from the domain root: page links are root-relative.
+// Production on Vercel: the production address in bridge.config.json (previews.production.docs), so canonical and
+// og:url name it whichever of the site's addresses a page was opened on.
 const previewHost = process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined;
-const site = process.env.SITE_URL || previewHost || process.env.CF_PAGES_URL || process.env.DEPLOY_PRIME_URL || undefined;
+const productionHost = process.env.VERCEL_ENV === 'production' ? productionDocs() : undefined;
+const site = process.env.SITE_URL || previewHost || productionHost || process.env.CF_PAGES_URL || process.env.DEPLOY_PRIME_URL || undefined;
+
+function productionDocs() {
+  try {
+    const docs = JSON.parse(readFileSync(new URL('../../bridge.config.json', import.meta.url), 'utf8'))?.previews?.production?.docs;
+    return typeof docs === 'string' && /^https:\/\/[^/]+\/?$/.test(docs.trim()) ? docs.trim().replace(/\/$/, '') : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 // `npm run dev:full` (BRIDGE_LOCAL=1): the api/* functions run inside the dev server with local data only
 // (dev/local-api.ts). Never loaded otherwise, so the build and Vercel never see it.

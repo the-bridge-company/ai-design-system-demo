@@ -32,7 +32,7 @@
 // commit in the clone. An item's `check: true` runs Bridge's library check on it as its member once its files are saved
 // and records it (what the exploration page shows under "What this changes in the library"), as Studio runs it.
 //
-//   node scripts/seed-demo-explorations.mjs --plan explorations.json [--base https://bridge.floriangouloubi.com]   dry run
+//   node scripts/seed-demo-explorations.mjs --plan explorations.json [--base https://bridgedesignsystem.com]   dry run
 //   node scripts/seed-demo-explorations.mjs --plan explorations.json --apply [--base ...]                          does it
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -44,7 +44,7 @@ export const TEAM = 'acme-design-demo/bridge-demo-ds';
 const NOTES_DIR = '.bridge/explorations/';
 
 export function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com', apply: false, plan: null };
+  const o = { base: 'https://bridgedesignsystem.com', apply: false, plan: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
     else if (argv[i] === '--apply') o.apply = true;

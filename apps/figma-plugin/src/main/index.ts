@@ -1,7 +1,7 @@
 // Main thread: owns figma.* (variables, storage, plugin data). No network access here; the UI
 // iframe does GitHub calls and sends typed requests (src/shared/messages.ts).
 
-import { type RequestMap, type RequestType, type ResponseEnvelope, STUDIO_ORIGIN, isRequest, progressEnvelope } from '../shared/messages';
+import { type RequestMap, type RequestType, type ResponseEnvelope, isRequest, isStudioUrl, progressEnvelope } from '../shared/messages';
 import { applyPullPlan } from './apply';
 import { applyComponentPlan, renderIncoming, scanGenerated } from './build-components';
 import { exportVariants, readBuilt } from './fidelity';
@@ -87,7 +87,7 @@ const handlers: Handlers = {
     return { tagged };
   },
   async 'open-url'({ url }) {
-    if (/^https:\/\/(github\.com|claude\.ai)\//.test(url) || url.startsWith(`${STUDIO_ORIGIN}/`)) figma.openExternal(url);
+    if (/^https:\/\/(github\.com|claude\.ai)\//.test(url) || isStudioUrl(url)) figma.openExternal(url);
     return { opened: true };
   },
   async notify({ message, error }) {

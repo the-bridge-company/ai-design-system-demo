@@ -317,7 +317,11 @@ export const DEFAULT_SETTINGS: RepoSettings = {
 export const LEGACY_DEFAULT_REPO = defaults.repo?.owner ? `${defaults.repo.owner}/${defaults.repo.name}` : '';
 
 /** Hosted Bridge Studio, where a team reviews what designers send (each repository is a team: /studio/~/<owner>/<repo>/). */
-export const STUDIO_ORIGIN = 'https://bridge.floriangouloubi.com';
+export const STUDIO_ORIGIN = 'https://bridgedesignsystem.com';
+/** Bridge's former address: it still answers, and its Studio links redirect to STUDIO_ORIGIN. */
+export const LEGACY_STUDIO_ORIGINS: readonly string[] = ['https://bridge.floriangouloubi.com'];
+/** A link on Bridge's own site, at its current or former address. */
+export const isStudioUrl = (url: string): boolean => [STUDIO_ORIGIN, ...LEGACY_STUDIO_ORIGINS].some((o) => url.startsWith(`${o}/`));
 
 /** Figma collection of each tier. */
 /** Figma collection of each tier (same names as the tiers in @bridge-ds/core). */

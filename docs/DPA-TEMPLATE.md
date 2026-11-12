@@ -2,7 +2,7 @@
 
 > **Template. Not legal advice. Have it reviewed by a lawyer before signing.**
 >
-> Text in [square brackets] is to be filled in or agreed by the parties. Every fact about Bridge below comes from the public security page (https://bridge.floriangouloubi.com/docs/security/) and the code it points to. If the two ever differ, the code is what runs.
+> Text in [square brackets] is to be filled in or agreed by the parties. Every fact about Bridge below comes from the public security page (https://bridgedesignsystem.com/docs/security/) and the code it points to. If the two ever differ, the code is what runs.
 
 This Data Processing Agreement ("DPA") is made between:
 

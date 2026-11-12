@@ -11,14 +11,14 @@
 // Explorations (--update-branches): each open exploration of the design copies is brought up to date from its product
 // as its member ("Bring it in" in Studio), so its activity says "<member> brought in the latest product".
 //
-//   node scripts/refile-demo-items.mjs [--update-branches] [--base https://bridge.floriangouloubi.com]   dry run
+//   node scripts/refile-demo-items.mjs [--update-branches] [--base https://bridgedesignsystem.com]   dry run
 //   node scripts/refile-demo-items.mjs [--update-branches] --apply [--base ...]                          does it
 import { execFileSync } from 'node:child_process';
 
 export const TEAM = 'acme-design-demo/bridge-demo-ds';
 
 function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com', apply: false, branches: false };
+  const o = { base: 'https://bridgedesignsystem.com', apply: false, branches: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
     else if (argv[i] === '--apply') o.apply = true;

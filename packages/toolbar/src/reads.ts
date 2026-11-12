@@ -5,7 +5,7 @@
 // The requests stay "simple" (GET, Accept only, no credentials): no CORS preflight, no cookie sent.
 
 /** Production Bridge: the read proxy the toolbar uses unless the product says otherwise. */
-export const DEFAULT_PROXY = 'https://bridge.floriangouloubi.com';
+export const DEFAULT_PROXY = 'https://bridgedesignsystem.com';
 
 const API = 'https://api.github.com';
 const RAW = 'https://raw.githubusercontent.com';

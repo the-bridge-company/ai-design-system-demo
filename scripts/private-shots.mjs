@@ -2,7 +2,7 @@
 // Private shots: captures of the explorations of private design copies, kept by Bridge (apps/docs-site/api/_lib/
 // private-shots.ts) instead of a public branch. Run by .github/workflows/private-shots.yml in Bridge's own repository:
 //
-//   node scripts/private-shots.mjs [--base https://bridge.floriangouloubi.com] [--dry-run] [--force]
+//   node scripts/private-shots.mjs [--base https://bridgedesignsystem.com] [--dry-run] [--force]
 //   node scripts/private-shots.mjs --migrate [--dry-run]
 //
 // Asks Bridge which explorations need a capture (GET /api/contribute?shots=todo), fills each preview template with
@@ -52,7 +52,7 @@ export function looksLikeAWall(finalUrl) {
 }
 
 function args(argv) {
-  const o = { base: 'https://bridge.floriangouloubi.com', dryRun: false, force: false, migrate: false };
+  const o = { base: 'https://bridgedesignsystem.com', dryRun: false, force: false, migrate: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--base') o.base = argv[++i].replace(/\/$/, '');
     else if (argv[i] === '--dry-run') o.dryRun = true;

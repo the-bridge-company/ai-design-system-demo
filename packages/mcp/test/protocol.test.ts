@@ -114,9 +114,9 @@ describe('MCP over stdio', () => {
     const info = client.getServerVersion()!;
     expect(info.title).toBe('Bridge');
     expect(info.icons?.map((i) => [i.src, i.mimeType, i.sizes])).toEqual([
-      ['https://bridge.floriangouloubi.com/icon-192.png', 'image/png', ['192x192']],
-      ['https://bridge.floriangouloubi.com/icon-512.png', 'image/png', ['512x512']],
-      ['https://bridge.floriangouloubi.com/favicon.svg', 'image/svg+xml', ['any']],
+      ['https://bridgedesignsystem.com/icon-192.png', 'image/png', ['192x192']],
+      ['https://bridgedesignsystem.com/icon-512.png', 'image/png', ['512x512']],
+      ['https://bridgedesignsystem.com/favicon.svg', 'image/svg+xml', ['any']],
     ]);
     expect(client.getInstructions()).toMatch(/never writes to main/);
     expect(client.getInstructions()).toMatch(/Bridge never writes to the default branch/);

@@ -7,7 +7,7 @@ const config = {
   tokens: { root: 'packages/tokens/src' },
   previews: {
     apps: { admin: 'https://bridge-admin-git-{branch}-peterbonos-projects.vercel.app' },
-    production: { docs: 'https://bridge.floriangouloubi.com', admin: 'https://bridge-demo.floriangouloubi.com' },
+    production: { docs: 'https://bridgedesignsystem.com', admin: 'https://bridge-demo.floriangouloubi.com' },
   },
   products: [
     { key: 'admin', name: 'Admin demo', path: 'apps/admin', preview: 'https://bridge-admin-git-{branch}-peterbonos-projects.vercel.app' },
@@ -27,7 +27,7 @@ describe('buildFromConfig', () => {
     expect(b).toMatchObject({
       owner: 'the-bridge-company',
       repo: 'art-print-shop',
-      studio: 'https://bridge.floriangouloubi.com',
+      studio: 'https://bridgedesignsystem.com',
       production: 'https://bridge-product-admin.vercel.app',
       preview: 'https://bridge-product-admin-git-{branch}-peterbonos-projects.vercel.app',
       product: 'admin-app',
@@ -79,8 +79,8 @@ describe('studioChangeUrl', () => {
   it('opens a design system change by pull request and a product exploration by exploration and product', () => {
     const ds = buildFromConfig(config, 'the-bridge-company/ai-design-system-demo', 'admin')!;
     const own = buildFromConfig(config, 'the-bridge-company/ai-design-system-demo', 'admin-app')!;
-    expect(studioChangeUrl(ds, 12)).toBe('https://bridge.floriangouloubi.com/studio/changes/?pr=12');
-    expect(studioChangeUrl(own, 3)).toBe('https://bridge.floriangouloubi.com/studio/changes/?exploration=3&product=admin-app');
+    expect(studioChangeUrl(ds, 12)).toBe('https://bridgedesignsystem.com/studio/changes/?pr=12');
+    expect(studioChangeUrl(own, 3)).toBe('https://bridgedesignsystem.com/studio/changes/?exploration=3&product=admin-app');
     expect(studioChangeUrl({ ...own, studio: null }, 3)).toBe('https://github.com/the-bridge-company/art-print-shop/pull/3');
   });
 });

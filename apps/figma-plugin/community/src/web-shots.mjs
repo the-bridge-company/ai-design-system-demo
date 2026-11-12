@@ -10,7 +10,7 @@ import { chromium } from 'playwright-core';
 
 const outDir = process.argv[2];
 if (!outDir) throw new Error('usage: node web-shots.mjs <out-dir>');
-const bridge = (process.env.BRIDGE_URL || 'https://bridge.floriangouloubi.com').replace(/\/$/, '');
+const bridge = (process.env.BRIDGE_URL || 'https://bridgedesignsystem.com').replace(/\/$/, '');
 const only = process.env.ONLY?.split(',').filter(Boolean);
 const shots = [
   // The draft tray is fixed to the viewport, so a full-page capture paints it over the table; it is empty in a

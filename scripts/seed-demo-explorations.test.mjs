@@ -17,7 +17,7 @@ const write = (root, path, content) => {
 
 describe('seed-demo-explorations plan', () => {
   it('reads the options, a dry run by default', () => {
-    expect(args(['--plan', 'p.json'])).toEqual({ base: 'https://bridge.floriangouloubi.com', apply: false, plan: 'p.json' });
+    expect(args(['--plan', 'p.json'])).toEqual({ base: 'https://bridgedesignsystem.com', apply: false, plan: 'p.json' });
     expect(args(['--plan', 'p.json', '--apply', '--base', 'http://localhost:4321/'])).toMatchObject({ apply: true, base: 'http://localhost:4321' });
   });
 

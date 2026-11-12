@@ -96,7 +96,7 @@ export const MEASURE_WORKFLOW_HEADER = `# Bridge measure: keeps the measure of y
 # A Storybook behind a login: set it up without an address (\`npx @bridge-ds/cli measure setup --build\`), the run then
 # builds Storybook itself. If installing needs a private registry, add an NPM_TOKEN repository secret (optional); the
 # install step passes it as NODE_AUTH_TOKEN.
-# Docs: https://bridge.floriangouloubi.com/docs/automatic-measure/`;
+# Docs: https://bridgedesignsystem.com/docs/automatic-measure/`;
 
 /** The workflow YAML. */
 export function measureWorkflowYaml(o: MeasureWorkflowOptions = {}): string {

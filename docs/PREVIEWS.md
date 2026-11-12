@@ -79,7 +79,7 @@ goes, and the production URL of each app under `production`. This repository's v
     "admin": "https://bridge-admin-git-{branch}-peterbonos-projects.vercel.app"
   },
   "production": {
-    "docs": "https://bridge.floriangouloubi.com",
+    "docs": "https://bridgedesignsystem.com",
     "storybook": "https://bridge-storybook.floriangouloubi.com",
     "admin": "https://bridge-demo.floriangouloubi.com"
   }

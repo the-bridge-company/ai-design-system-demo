@@ -7,6 +7,7 @@ import { checkTeamShells, noindexSources, shellMarker, studioPathOfShell, TEAM_S
 import { studioNav } from './nav';
 import { libraryRewrites } from './library-shells';
 import { REPO_PATTERN, renamedStudioRedirects } from './team-path';
+import { legacyHostRedirects } from './legacy-host';
 
 const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8')) as {
   rewrites?: { source: string; destination: string }[];
@@ -17,8 +18,10 @@ const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.
 
 describe('vercel.json', () => {
   it('sends every old team address (a renamed repository or owner) to its current one first, permanently', () => {
+    // Right after the former address's redirects (legacy-host.ts), which come first.
     const rules = renamedStudioRedirects();
-    expect(vercel.redirects.slice(0, rules.length)).toEqual(rules);
+    const after = legacyHostRedirects().length;
+    expect(vercel.redirects.slice(after, after + rules.length)).toEqual(rules);
     expect(rules).toContainEqual({ source: '/studio/peterbono/ai-design-system-demo/:path*/', destination: '/studio/the-bridge-company/ai-design-system-demo/:path*/', permanent: true });
     expect(rules).toContainEqual({ source: '/studio/~/peterbono/ai-design-system-demo/:path*', destination: '/studio/the-bridge-company/ai-design-system-demo/:path*', permanent: true });
     expect(rules).toContainEqual({ source: `/studio/art-print-shop-co/:repo(${REPO_PATTERN})/:path*`, destination: '/studio/the-bridge-company/:repo/:path*', permanent: true });

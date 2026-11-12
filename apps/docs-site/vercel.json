@@ -9,6 +9,8 @@
   "git": { "deploymentEnabled": { "agent/**": false, "test/**": false, "changeset-release/**": false } },
   "crons": [{ "path": "/api/account?export=1", "schedule": "17 3 * * *" }, { "path": "/api/account?digest=1", "schedule": "5 8 * * *" }],
   "redirects": [
+    {"source": "/", "has": [{"type": "host", "value": "bridge.floriangouloubi.com"}], "destination": "https://bridgedesignsystem.com/", "permanent": true},
+    {"source": "/:path((?!(?:api|mcp|oauth|\\.well-known|claude-design-system|_astro)(?:/|$)|studio/auth/callback(?:/|$))(?!.*\\.(?:css|js|mjs|cjs|map|json|txt|md|html|xml|zip|png|jpe?g|gif|webp|avif|svg|ico|webmanifest|woff2?|ttf|otf|pdf|wasm)$).*)", "has": [{"type": "host", "value": "bridge.floriangouloubi.com"}], "destination": "https://bridgedesignsystem.com/:path", "permanent": true},
     {"source": "/studio/peterbono/ai-design-system-demo/:path*/", "destination": "/studio/the-bridge-company/ai-design-system-demo/:path*/", "permanent": true},
     {"source": "/studio/peterbono/ai-design-system-demo/:path*", "destination": "/studio/the-bridge-company/ai-design-system-demo/:path*", "permanent": true},
     {"source": "/studio/~/peterbono/ai-design-system-demo/:path*/", "destination": "/studio/the-bridge-company/ai-design-system-demo/:path*/", "permanent": true},

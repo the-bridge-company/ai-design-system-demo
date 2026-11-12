@@ -6,7 +6,7 @@
 # - activity.json: the team's open branches and their pages, open suggestions, component requests, recent merges and
 #   token history, read from GitHub with the run token;
 # - audits/<id>.json: adoption audits, when you ask for them below.
-# Hosted Bridge (https://bridge.floriangouloubi.com/studio/<owner>/<repo>/) reads them from raw.githubusercontent.com:
+# Hosted Bridge (https://bridgedesignsystem.com/studio/<owner>/<repo>/) reads them from raw.githubusercontent.com:
 # pages open faster, and a visitor who is not signed in spends none of the 60 GitHub requests an hour GitHub gives
 # them. Bridge works without it; it reads your repository live when the files are missing or old.
 #

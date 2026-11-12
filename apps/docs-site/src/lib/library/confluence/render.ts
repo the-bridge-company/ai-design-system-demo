@@ -36,7 +36,7 @@ export interface DocPage {
 }
 
 export interface RenderOptions {
-  /** The site origin links are made absolute against ("https://bridge.floriangouloubi.com"). */
+  /** The site origin links are made absolute against ("https://bridgedesignsystem.com"). */
   origin: string;
   /** The day the copy was generated, "2026-10-31". */
   date: string;

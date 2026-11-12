@@ -1,6 +1,6 @@
 {
   "pr": 1120,
-  "sha": "85306fe117a5485c58106192a19f1e506b555347",
+  "sha": "b18a898d6abf5b4082b5eb35ce35b69fd5b6e36f",
   "baseSha": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246",
   "failed": false,
   "failures": [],
@@ -34,7 +34,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 4944,
+      "ms": 5063,
       "webp": "home-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -61,7 +61,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 4990,
+      "ms": 4780,
       "webp": "home-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -82,7 +82,7 @@
       "fullHeight": 906,
       "png": "home-mobile-light.png",
       "axe": [],
-      "ms": 4755,
+      "ms": 4564,
       "webp": "home-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -103,7 +103,7 @@
       "fullHeight": 906,
       "png": "home-mobile-dark.png",
       "axe": [],
-      "ms": 4203,
+      "ms": 4165,
       "webp": "home-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -130,7 +130,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 10763,
+      "ms": 10609,
       "webp": "exploration-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -157,7 +157,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 10765,
+      "ms": 10570,
       "webp": "exploration-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -178,7 +178,7 @@
       "fullHeight": 906,
       "png": "exploration-mobile-light.png",
       "axe": [],
-      "ms": 9511,
+      "ms": 9653,
       "webp": "exploration-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -199,7 +199,7 @@
       "fullHeight": 906,
       "png": "exploration-mobile-dark.png",
       "axe": [],
-      "ms": 10103,
+      "ms": 10171,
       "webp": "exploration-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -226,7 +226,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 4251,
+      "ms": 4357,
       "webp": "settings-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -253,7 +253,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 3815,
+      "ms": 3800,
       "webp": "settings-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -274,7 +274,7 @@
       "fullHeight": 1073,
       "png": "settings-mobile-light.png",
       "axe": [],
-      "ms": 3600,
+      "ms": 3583,
       "webp": "settings-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -295,7 +295,7 @@
       "fullHeight": 1073,
       "png": "settings-mobile-dark.png",
       "axe": [],
-      "ms": 3505,
+      "ms": 3475,
       "webp": "settings-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -322,7 +322,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 3547,
+      "ms": 3678,
       "webp": "library-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -349,7 +349,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 4904,
+      "ms": 5802,
       "webp": "library-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -370,7 +370,7 @@
       "fullHeight": 1845,
       "png": "library-mobile-light.png",
       "axe": [],
-      "ms": 3592,
+      "ms": 3694,
       "webp": "library-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -391,7 +391,7 @@
       "fullHeight": 1845,
       "png": "library-mobile-dark.png",
       "axe": [],
-      "ms": 3457,
+      "ms": 3597,
       "webp": "library-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -418,7 +418,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 5542,
+      "ms": 7100,
       "webp": "library-component-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -445,7 +445,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 9571,
+      "ms": 5309,
       "webp": "library-component-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -466,7 +466,7 @@
       "fullHeight": 5107,
       "png": "library-component-mobile-light.png",
       "axe": [],
-      "ms": 4682,
+      "ms": 6259,
       "webp": "library-component-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -487,7 +487,7 @@
       "fullHeight": 5107,
       "png": "library-component-mobile-dark.png",
       "axe": [],
-      "ms": 4964,
+      "ms": 4975,
       "webp": "library-component-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -514,7 +514,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 11040,
+      "ms": 11356,
       "webp": "changes-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -541,7 +541,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 11309,
+      "ms": 11716,
       "webp": "changes-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -562,7 +562,7 @@
       "fullHeight": 906,
       "png": "changes-mobile-light.png",
       "axe": [],
-      "ms": 9950,
+      "ms": 9658,
       "webp": "changes-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -583,7 +583,7 @@
       "fullHeight": 906,
       "png": "changes-mobile-dark.png",
       "axe": [],
-      "ms": 9578,
+      "ms": 10377,
       "webp": "changes-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -610,12 +610,17 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 3857,
+      "ms": 8506,
       "webp": "building-desktop-light.webp",
       "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
+        "ratio": 0.001129013629013629,
+        "pixels": 1564,
+        "box": {
+          "x0": 329,
+          "y0": 411,
+          "x1": 420,
+          "y1": 563
+        },
         "sizeChanged": false
       }
     },
@@ -637,17 +642,12 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 8503,
+      "ms": 3554,
       "webp": "building-desktop-dark.webp",
       "diff": {
-        "ratio": 0.00004331254331254331,
-        "pixels": 60,
-        "box": {
-          "x0": 310,
-          "y0": 452,
-          "x1": 371,
-          "y1": 489
-        },
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
         "sizeChanged": false
       }
     },
@@ -663,7 +663,7 @@
       "fullHeight": 906,
       "png": "building-mobile-light.png",
       "axe": [],
-      "ms": 3460,
+      "ms": 3956,
       "webp": "building-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -684,7 +684,7 @@
       "fullHeight": 906,
       "png": "building-mobile-dark.png",
       "axe": [],
-      "ms": 3528,
+      "ms": 4188,
       "webp": "building-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -711,7 +711,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 3851,
+      "ms": 5589,
       "webp": "product-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -738,7 +738,7 @@
           "help": "Elements must have their visible text as part of their accessible name"
         }
       ],
-      "ms": 3634,
+      "ms": 3886,
       "webp": "product-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -759,7 +759,7 @@
       "fullHeight": 906,
       "png": "product-mobile-light.png",
       "axe": [],
-      "ms": 3880,
+      "ms": 3366,
       "webp": "product-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -780,7 +780,7 @@
       "fullHeight": 906,
       "png": "product-mobile-dark.png",
       "axe": [],
-      "ms": 3297,
+      "ms": 3271,
       "webp": "product-mobile-dark.webp",
       "diff": {
         "ratio": 0,

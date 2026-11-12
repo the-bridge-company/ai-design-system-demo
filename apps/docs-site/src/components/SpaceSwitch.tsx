@@ -4,7 +4,7 @@
 // that loads it, carrying the page's item across (lib/space-switch.ts). Rendered statically by the layout (no
 // hydration); scripts/space-switch.ts plays the switch on click, refreshes the target where the query or the team
 // decides it, and the first-visit hint. Styles: styles/space-switch.css.
-import { Avatar, SegmentedControl, type SegmentAttributes } from '@bridge-ds/react';
+import { SegmentedControl, type SegmentAttributes } from '@bridge-ds/react';
 import { otherSpace, SWITCH_LABEL, switchTooltip, type SwitchSpace } from '../lib/space-switch';
 
 export interface SpaceSwitchProps {
@@ -56,20 +56,13 @@ export default function SpaceSwitch({ space, href, item = null }: SpaceSwitchPro
     value: s,
     label: <span className="ss-label">{s === 'library' ? 'Library' : 'Studio'}</span>,
     leading: (
-      <span className="ss-icon">
-        {s === 'library' ? <BookIcon /> : <PenIcon />}
-        {/* A signed-in maintainer sees their face here instead of the pen (scripts/maintainer.ts paints it). */}
-        {s === 'studio' && space === 'library' && (
-          <span className="ss-avatar" data-team-avatar="" hidden>
-            <Avatar name="Studio" size="xs" decorative data-team-avatar-img="" />
-          </span>
-        )}
-      </span>
+      <span className="ss-icon">{s === 'library' ? <BookIcon /> : <PenIcon />}</span>
     ),
     href: s === other ? href : undefined,
     attributes: s === other ? link : { 'data-switch-current': '' },
   });
   // Owner, 2026-11-12: each segment shows its icon and its word; an icon for one space and a word for the other read
-  // as one button.
+  // as one button. The switch is navigation between two places: the same two icons for everyone, never the signed-in
+  // person's photo or a sample persona's face (that belongs in the account row).
   return <SegmentedControl className="space-nav" label={SWITCH_LABEL} value={space} data-mode={space} items={[segment('library'), segment('studio')]} />;
 }

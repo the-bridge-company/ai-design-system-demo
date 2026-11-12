@@ -130,8 +130,16 @@ describe('names', () => {
     expect(html).not.toContain(String.fromCharCode(0x2014));
     const other = renderToStaticMarkup(createElement(SpaceSwitch, { space: 'studio', href: '/library/' }));
     expect(other.match(/<a[^>]*data-value="library"[^>]*>/)![0]).toContain('data-tooltip="Open the Library"');
-    // The maintainer avatar slot only exists where Studio is the destination.
-    expect(other).not.toContain('data-team-avatar');
+  });
+
+  it('shows the same two drawn icons for everyone, never a photo of the person', () => {
+    for (const space of ['library', 'studio'] as const) {
+      const html = renderToStaticMarkup(createElement(SpaceSwitch, { space, href: '/x/' }));
+      // Navigation between two places: no <img>, no avatar slot a script could paint the signed-in face into.
+      expect(html).not.toMatch(/<img\b/);
+      expect(html).not.toMatch(/avatar/i);
+      expect(html.match(/class="ss-glyph"/g)).toHaveLength(2);
+    }
   });
 });
 

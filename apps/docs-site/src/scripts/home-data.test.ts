@@ -10,6 +10,7 @@ const s = vi.hoisted(() => ({
   site: { name: 'Acme Product' } as Record<string, unknown>,
   known: true,
   productReads: [] as { at: unknown; pulls: unknown[] | null }[],
+  taskReads: null as null | Promise<Map<string, unknown>>,
 }));
 
 vi.mock('./github-session', () => ({
@@ -32,6 +33,7 @@ vi.mock('../lib/team-path', async (orig) => ({ ...(await orig<object>()), isHost
 vi.mock('./teams', () => ({ loadTeams: async () => undefined }));
 vi.mock('./pr-status', () => ({ loadStatuses: async () => undefined, owners: () => ({ design: [], tech: [] }), shippers: () => [], rowWho: () => null }));
 vi.mock('./suggestions', () => ({ loadSuggestionNeeds: async () => [], loadOwnSuggestions: async () => [] }));
+vi.mock('./design-task', async (orig) => ({ ...(await orig<object>()), designTaskReads: () => s.taskReads ?? Promise.resolve(new Map()) }));
 vi.mock('./account-session', () => ({ getAccount: async () => ({ available: true, account: s.account }) }));
 
 import { loadHome, type HomeData } from './home-data';
@@ -41,6 +43,7 @@ const STAT = { guidance: [], contrastFail: 0 };
 const joinRows = (d: HomeData | undefined) => (d?.needs ?? []).filter((r) => r.request);
 
 beforeEach(() => {
+  s.taskReads = null;
   s.site = { name: 'Acme Product' };
   s.known = true;
   s.productReads = [];
@@ -148,5 +151,21 @@ describe('loadHome never paints the default settings nor an empty home from a fa
     void loadHome(STAT, (d) => again.push(d));
     await vi.waitFor(() => expect(again.at(-1)?.loading).toBe(false));
     expect(again.at(-1)!.partial).toBeFalsy();
+  });
+});
+
+describe('loadHome: no first paint that a second read changes', () => {
+  it("the home leaves its skeleton only once the developers' tasks are read (a card never jumps from Ready to build to Shipped)", async () => {
+    s.requests.mockResolvedValue([]);
+    s.pulls = () => Promise.resolve({ data: [] });
+    let land: (m: Map<string, unknown>) => void = () => undefined;
+    s.taskReads = new Promise((r) => (land = r));
+    const seen: HomeData[] = [];
+    void loadHome(STAT, (d) => seen.push(d));
+    await vi.waitFor(() => expect(seen.length).toBeGreaterThan(1));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seen.every((d) => d.loading)).toBe(true);
+    land(new Map());
+    await vi.waitFor(() => expect(seen.at(-1)?.loading).toBe(false));
   });
 });

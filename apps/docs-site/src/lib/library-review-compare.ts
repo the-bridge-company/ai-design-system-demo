@@ -159,3 +159,116 @@ export function stageLabels(view: Pick<CompareView, 'today' | 'ways'>): { value:
   }
   return out.sort((a, b) => b.value - a.value).map((x) => ({ value: x.value, hue: x.hue, keys: x.keys, label: `${x.value} ${x.names.join(', ')}` }));
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The checked rows (owner, 2026-11-12): every row is a checkbox, today included; no "Both" row. What is checked
+// drives the stage (one look per value) and says the outcome; it records the pick values the exploration page and
+// core chooseLibraryWayOnGitHub already read: "today", one way's key, "both" or "sizes:<key> <key>" (keptKeys).
+
+/** The pick that keeps today's component as it is (lib/library-impact-view KEEP_TODAY). */
+export const TODAY = 'today';
+
+type Rows = Pick<CompareView, 'today' | 'ways'>;
+const rowsOf = (view: Rows) => [view.today, ...view.ways];
+
+/**
+ * What the stage starts with: today and the way that differs most from it, so the first look is the real choice. A way
+ * equal to today adds nothing to look at. Without today's value, the first way.
+ */
+export function defaultChecked(view: Rows): string[] {
+  const t = view.today.value;
+  const differ = view.ways.filter((w) => w.value === null || t === null || w.value !== t);
+  if (!differ.length) return [view.today.key];
+  const far = t === null ? differ[0]! : differ.reduce((a, b) => (Math.abs((b.value ?? t) - t) > Math.abs((a.value ?? t) - t) ? b : a));
+  return [view.today.key, far.key];
+}
+
+/** The checked rows from a recorded pick: what the decision kept, today included when it stays the default. */
+export function checkedOfPick(pick: string, view: Rows): string[] {
+  if (pick === TODAY) return [view.today.key];
+  if (pick === BOTH) return rowsOf(view).map((o) => o.key);
+  if (pick.startsWith('sizes:')) {
+    const keys = pick
+      .slice('sizes:'.length)
+      .split(/\s+/)
+      .map((k) => k.split('=')[0]!);
+    return [view.today.key, ...view.ways.filter((w) => keys.includes(w.key)).map((w) => w.key)];
+  }
+  return view.ways.some((w) => w.key === pick) ? [pick] : [];
+}
+
+/**
+ * The stage's looks for the checked rows: one per value, in row order. Options with the same value share one look and
+ * its label names all of them ("20 Today, Sofia"), checked or not, since they look the same.
+ */
+export function checkedLooks(view: Rows, checked: readonly string[]): { value: number; hue: number; keys: string[]; label: string }[] {
+  const order = rowsOf(view).map((o) => o.key);
+  const first = (keys: string[]) => Math.min(...keys.filter((k) => checked.includes(k)).map((k) => order.indexOf(k)));
+  return stageLabels(view)
+    .filter((l) => l.keys.some((k) => checked.includes(k)))
+    .sort((a, b) => first(a.keys) - first(b.keys));
+}
+
+/**
+ * What the checked rows record, on the pick values that exist: null with nothing checked; "today" when nothing new is
+ * kept; one way's key when one new value replaces today's; else the new values as sizes next to today's ("both" when
+ * that is every way). A way equal to today counts as today.
+ */
+export function checkedPick(view: Rows, checked: readonly string[]): string | null {
+  const on = rowsOf(view).filter((o) => checked.includes(o.key));
+  if (!on.length) return null;
+  const t = view.today.value;
+  const isToday = (o: CompareOption) => o.key === view.today.key || (t !== null && o.value === t);
+  const adds = view.ways.filter((w) => checked.includes(w.key) && !isToday(w));
+  if (!adds.length) return TODAY;
+  const id = (o: CompareOption) => (o.value === null ? o.key : `${o.value}`);
+  const values = new Set(adds.map(id));
+  if (!on.some(isToday) && values.size === 1) return adds[0]!.key;
+  // Every way with a kept value, so each exploration keeps its own (same value, two screens).
+  const kept = view.ways.filter((w) => !isToday(w) && values.has(id(w)));
+  return kept.length === view.ways.length ? BOTH : `sizes:${kept.map((w) => w.key).join(' ')}`;
+}
+
+const NUMBER_WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six'];
+const listOf = (xs: readonly (string | number)[]) => (xs.length < 2 ? `${xs[0] ?? ''}` : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/** The values a sizes pick leaves in the library, today's included, smallest first. */
+function sizesOf(pick: string, view: Rows): number[] {
+  const keys = checkedOfPick(pick, view);
+  const values = [...view.ways.filter((w) => keys.includes(w.key)).map((w) => w.value), view.today.value];
+  return [...new Set(values.filter((v): v is number => v !== null))].sort((a, b) => a - b);
+}
+
+/**
+ * The decision line under the rows, from the checked rows: "Keep Leo's way: 12 px everywhere", "Keep 12 and 20 px as
+ * two sizes, today's 20 stays the default", "Keep today's Card: 20 px everywhere". Null with nothing checked.
+ */
+export function checkedOutcome(view: Rows & Pick<CompareView, 'component'>, checked: readonly string[]): string | null {
+  const pick = checkedPick(view, checked);
+  if (pick === null) return null;
+  const t = view.today.value;
+  if (pick === TODAY) return t === null ? `Keep today's ${view.component} as it is` : `Keep today's ${view.component}: ${t} px everywhere`;
+  const one = view.ways.find((w) => w.key === pick);
+  if (one) return one.value === null ? `Keep ${one.name}` : `Keep ${one.name}: ${one.value} px everywhere`;
+  const values = sizesOf(pick, view);
+  return `Keep ${listOf(values)} px as ${NUMBER_WORDS[values.length] ?? values.length} sizes${t === null ? '' : `, today's ${t} stays the default`}`;
+}
+
+/** The one primary for the checked rows: "Keep Leo's way", "Keep today's Card", "Keep both as sizes", "Keep 3 sizes"; "Decide" (off) with nothing checked. */
+export function checkedKeepLabel(view: Rows & Pick<CompareView, 'component'>, checked: readonly string[]): string {
+  const pick = checkedPick(view, checked);
+  if (pick === null) return 'Decide';
+  if (pick === TODAY) return `Keep today's ${view.component}`;
+  if (view.ways.some((w) => w.key === pick)) return compareKeepLabel(pick, view.ways, view.component);
+  const n = sizesOf(pick, view).length;
+  return n === 2 ? 'Keep both as sizes' : `Keep ${n} sizes`;
+}
+
+/** The words of a recorded pick, for the note both designers read: "Leo's way (12 px)", "today's Card", "12 and 20 px as two sizes". */
+export function pickWords(pick: string, view: Rows & Pick<CompareView, 'component'>): string {
+  if (pick === TODAY) return `today's ${view.component}`;
+  const one = view.ways.find((w) => w.key === pick);
+  if (one) return one.valueText ? `${one.name} (${one.valueText})` : one.name;
+  const out = checkedOutcome(view, checkedOfPick(pick, view));
+  return out ? out.replace(/^Keep /, '') : 'every way, as sizes';
+}

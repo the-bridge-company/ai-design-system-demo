@@ -744,6 +744,22 @@ export function designerBanner(lead: string | null): { strong: string; rest: str
 /** "2 of 6 seen": the One by one progress. */
 export const seenLine = (seen: number, total: number): string => `${Math.min(seen, total)} of ${total} seen`;
 
+/**
+ * The One by one progress (owner, 2026-11-12): the job is deciding, so the headline and the bar count decided pieces;
+ * seen is a quiet note on the end ("10 seen"), gone once every piece is decided. All decided reads as done.
+ */
+export function reviewProgress(total: number, seen: number, decided: number): { headline: string; value: number; seenNote: string | null; done: boolean } {
+  const d = Math.max(0, Math.min(decided, total));
+  const s = Math.max(d, Math.min(seen, total));
+  const done = total > 0 && d === total;
+  return {
+    headline: done ? `All ${total} decided` : `${d} of ${total} decided`,
+    value: total ? (d / total) * 100 : 0,
+    seenNote: done ? null : `${s} seen`,
+    done,
+  };
+}
+
 /** The empty state (lr-empty): the decided week in one sentence. */
 export function emptyLine(decided: readonly ReviewPiece[], v: Viewer, lead: string | null): { title: string; sentence: string } {
   if (!v.reviews) return { title: 'Nothing waits on the library', sentence: decided.length ? `${lead ?? 'The design lead'} decided all your pieces.` : 'Your explorations use what the library already has.' };
@@ -792,6 +808,20 @@ export function colorLook(title: string): { look: ColorLook; dark: boolean } {
   if (/\btext\b|\blabel\b|\bink\b/.test(t)) return { look: 'text', dark };
   if (/surface|background|zone|highlight|\bfill\b|\bcard\b|panel/.test(t)) return { look: 'surface', dark };
   return { look: 'action', dark };
+}
+
+/** A computed CSS colour ("rgb(26, 32, 44)", "rgba(0, 0, 0, 0.5)") as the 0 to 1 channels core's contrastRatio reads. */
+export function cssRgba(css: string): { r: number; g: number; b: number; a: number } | null {
+  const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)$/i.exec(css.trim());
+  if (!m) return null;
+  const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? Number.parseFloat(m[4]) / 100 : Number.parseFloat(m[4]);
+  return { r: Number(m[1]) / 255, g: Number(m[2]) / 255, b: Number(m[3]) / 255, a };
+}
+
+/** A colour plate's contrast in words, so it never rests on the badge colour: "4.6:1 passes AA", "2.1:1 fails AA". */
+export function contrastWords(ratio: number, min = 4.5): { text: string; pass: boolean } {
+  const pass = ratio >= min;
+  return { text: `${(Math.floor(ratio * 10) / 10).toFixed(1)}:1 ${pass ? 'passes' : 'fails'} AA`, pass };
 }
 
 /** Why the selection bar offers no Keep: some selected pieces were not asked for by an exploration. */

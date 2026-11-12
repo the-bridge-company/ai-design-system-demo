@@ -14,7 +14,7 @@
 // in the list at once (withJoined, BR-19), and a read after the row leaves confirms it.
 import { useEffect, useState } from 'react';
 import { Link2Off, MoreHorizontal, UserPlus } from 'lucide-react';
-import { Alert, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
+import { Alert, Badge, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import RolePicker from './RolePicker';
 import { NoticeLine, PersonCell } from './MemberParts';
 import InviteDialog from './InviteDialog';
@@ -246,7 +246,10 @@ export default function MembersSection() {
       <div className="mem-head">
         <div className="mem-head-text">
           <h2 id="set-members" className="mem-title">
-            {MEMBERS_WORDS.membersTitle} <span className="mem-count">{count}</span>
+            {MEMBERS_WORDS.membersTitle}{' '}
+            <Badge tone="neutral" size="sm" className="mem-count">
+              {count}
+            </Badge>
           </h2>
           <p className="mem-intro">{data.canManage ? MEMBERS_WORDS.membersIntro(data.team) : MEMBERS_WORDS.membersIntroReader(data.team)}</p>
           {data.emailAdmin && members.some((m) => m.via !== 'email') && <p className="mem-intro">{MEMBERS_WORDS.githubPeople}</p>}

@@ -176,15 +176,18 @@ a.lr-ask {
   padding-block-start: var(--space-4);
 }
 
-.lr-side-fam-count {
-  color: var(--color-text-muted);
-  font-family: var(--typography-body-family);
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-regular);
+/* A count next to its label (Count): a neutral pill, tabular numbers, on the label's centre line. */
+.lr-count {
+  flex: none;
+  font-family: var(--typography-ui-family);
+  font-variant-numeric: tabular-nums;
 }
 
 /* A group under its family: plain sans, semibold, its count quiet. */
 .lr-side-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   padding: var(--space-3) var(--space-4) var(--space-1);
   color: var(--color-text-default);
@@ -193,9 +196,6 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-.lr-side-label .lr-muted {
-  font-weight: var(--font-weight-regular);
-}
 
 /*
  * One block per family (canvas "En exploration" B, picked 2026-11-11): the list's ground is white and each family
@@ -205,6 +205,19 @@ a.lr-ask {
 .lr-side {
   padding-inline: var(--space-3);
   background-color: var(--color-surface-default);
+}
+
+/* The list's end, while it scrolls: the rows fade into the chapter's ground instead of being cut mid-word at the
+   card's edge. At the end of the list it lies over the last chapter's own bottom padding. */
+.lr-side::after {
+  content: "";
+  position: sticky;
+  inset-block-end: calc(var(--space-3) * -1);
+  display: block;
+  height: var(--space-10);
+  margin-block-start: calc(var(--space-10) * -1);
+  background-image: linear-gradient(transparent, var(--color-bg-subtle));
+  pointer-events: none;
 }
 
 .lr-side-head {
@@ -341,12 +354,25 @@ a.lr-ask {
 }
 
 .lr-detail-title {
-  margin: var(--space-1) 0 0;
+  margin: 0;
   font-family: var(--typography-h2-family);
   font-size: var(--typography-h2-size);
   font-weight: var(--typography-h2-weight);
   line-height: var(--typography-h2-line-height);
   letter-spacing: var(--typography-h2-tracking);
+}
+
+/* A middle dot with room on both sides, muted: the parts of one meta line. */
+.lr-sep {
+  margin-inline: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* "Sofia asked for it": the person's face first, on the text's centre line. */
+.lr-detail-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .lr-detail-ask {
@@ -362,16 +388,18 @@ a.lr-ask {
 .lr-plates {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
 }
 
 .lr-plates.has-match {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* Each plate spans the two rows of the plates (art, caption): the captions line up whatever the art's height. */
 .lr-plate {
   display: grid;
-  gap: var(--space-2);
+  grid-row: span 2;
+  grid-template-rows: subgrid;
   margin: 0;
 }
 
@@ -397,13 +425,27 @@ a.lr-ask {
 
 .lr-plate-cap {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
 }
 
 .lr-plate-label {
   font-weight: var(--font-weight-semibold);
+}
+
+/* The value and, for a colour drawn as text or a button, its measured contrast (words, not colour alone). */
+.lr-plate-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lr-plate-ratio {
+  font-variant-numeric: tabular-nums;
 }
 
 .lr-plate-value {
@@ -535,22 +577,16 @@ a.lr-ask {
 
 .lr-chapter-line {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
 }
 
 .lr-chapter-name {
   margin: 0;
   font-family: var(--typography-display-family);
-  font-size: var(--typography-h2-size);
+  font-size: var(--typography-h3-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--typography-h2-line-height);
-}
-
-.lr-chapter-count {
-  color: var(--color-text-muted);
-  font-size: var(--typography-body-size);
-  font-variant-numeric: tabular-nums;
+  line-height: var(--typography-h3-line-height);
 }
 
 .lr-chapter-note {
@@ -658,7 +694,7 @@ a.lr-ask {
 .lr-group-label {
   display: inline-flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -1753,26 +1789,22 @@ a.lr-reach-card:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* The decision stays in reach on a phone: right under what names the piece, before the plates, the list of who
-     asked and the screens, however long they are. */
-  .lr-detail > *,
+  /* Who gets it on a phone: the decision right under what names the piece, before the list of screens, however
+     long it is. A piece in One by one keeps its own order: look at the plates first, then decide under them. */
   .lr-reach > * {
     order: 3;
   }
 
-  .lr-detail > .lr-detail-head,
   .lr-reach > .lr-reach-back,
   .lr-reach > .lr-reach-head {
     order: 0;
   }
 
-  .lr-detail > .lr-detail-ask,
   .lr-reach > .lr-reach-sentence,
   .lr-reach > .lr-reach-origin {
     order: 1;
   }
 
-  .lr-detail > .lr-decide,
   .lr-reach > .lr-reach-decide {
     order: 2;
     margin-block-start: 0;
@@ -1971,13 +2003,14 @@ a.lr-reach-card:focus-visible {
 .lr-title-line {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2) var(--space-3);
   min-width: 0;
 }
 
-.lr-title-line .lr-detail-title {
-  margin: 0;
+/* A conflict's tags sit on the title's first line, whatever its length: centred in its line box. */
+.lr-title-line > :not(.lr-detail-title, .lr-page-link) {
+  margin-block-start: calc((var(--typography-h2-line-height) - var(--size-6)) / 2);
 }
 
 /* The title and its page link only: the title wraps beside the link, the link never drops under it on a line alone. */
@@ -2013,42 +2046,51 @@ a.lr-reach-card:focus-visible {
   font-weight: var(--font-weight-semibold);
 }
 
-/* The colour key of each option: the chart series of the system, today neutral. */
+/* The colour key of each option: the chart series of the system, today neutral; a line style too (solid, dashed,
+   dotted), so the key never rests on colour alone. */
 .is-hue-0 {
   --lr-hue: var(--color-chart-series-6);
+  --lr-line: solid;
 }
 
 .is-hue-1 {
   --lr-hue: var(--color-chart-series-5);
+  --lr-line: dashed;
 }
 
 .is-hue-2 {
   --lr-hue: var(--color-chart-series-3);
+  --lr-line: dotted;
 }
 
 .is-hue-3 {
   --lr-hue: var(--color-chart-series-2);
+  --lr-line: dashed;
 }
 
 .is-hue-4 {
   --lr-hue: var(--color-chart-series-4);
+  --lr-line: dotted;
 }
 
 .is-hue-5 {
   --lr-hue: var(--color-chart-series-1);
+  --lr-line: dashed;
 }
 
 .is-hue-both {
   --lr-hue: var(--color-text-muted);
+  --lr-line: solid;
 }
 
-/* The stage: a dotted canvas, the component in its middle. */
+/* The stage: a dotted canvas that hugs what it draws, the looks in its middle. */
 .lr-stage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: var(--size-80);
-  padding: var(--space-8) var(--space-6) var(--space-10);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--space-6);
+  padding: var(--space-6);
   border-radius: var(--radius-container);
   background-color: var(--color-bg-subtle);
   background-image: radial-gradient(var(--color-border-strong) var(--border-width-default), transparent var(--border-width-default));
@@ -2056,11 +2098,19 @@ a.lr-reach-card:focus-visible {
   overflow: hidden;
 }
 
-.lr-stage-row {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-3);
-  max-width: 100%;
+.lr-stage.is-empty {
+  align-items: center;
+  min-height: var(--size-40);
+}
+
+.lr-stage-empty {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-stage-art {
@@ -2106,64 +2156,33 @@ a.lr-reach-card:focus-visible {
   font-size: var(--typography-ui-size);
 }
 
-/* Each option's content box: dashed in its colour, the chosen one solid. */
+/* Each look's content box: a thin dashed line in its colour, its label under the Card. */
 .lr-ol {
   position: absolute;
-  border: var(--border-width-default) dashed var(--lr-hue);
+  border: var(--border-width-default) var(--lr-line, dashed) var(--lr-hue);
   border-radius: var(--radius-xs);
   pointer-events: none;
 }
 
-.lr-ol.is-base {
-  border-style: solid;
-  border-width: var(--border-width-2);
-}
-
-.lr-stage-keys {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lr-ol-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-1);
-  border: var(--border-width-default) solid var(--lr-hue);
-  border-radius: var(--radius-xs);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  font-size: var(--typography-caption-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-caption-line-height);
-  white-space: nowrap;
-}
-
-.lr-stage-note {
-  position: absolute;
-  inset-block-end: var(--space-3);
-  inset-inline-start: var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-}
-
-/* Side by side: each option drawn at its value, its key and value under it. */
+/* Side by side: one column per look, cards on one top line and labels on one row under them, whatever each card's
+   height (each look spans the two rows of the grid). */
 .lr-stage.is-side {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--size-60));
   justify-content: center;
-  align-items: flex-start;
-  gap: var(--space-6);
+  gap: var(--space-3) var(--space-6);
 }
 
+.lr-stage.is-side .lr-stage-way {
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+}
+
+/* One look: its Card, then its label on the Card's start edge. */
 .lr-stage-way {
   display: grid;
-  justify-items: center;
-  gap: var(--space-2);
+  justify-items: start;
+  gap: var(--space-3);
   margin: 0;
 }
 
@@ -2171,16 +2190,55 @@ a.lr-reach-card:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: var(--size-6);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
-/* The options: one radio list, no card per way. */
+.lr-stage-cap strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Overlay: the labels of every outline in one row under the Card, the scale on its end. */
+.lr-stage-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  width: 100%;
+}
+
+.lr-stage-keys ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lr-stage-keys li {
+  margin: 0;
+}
+
+.lr-stage-note {
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+}
+
+/* The options: one checkbox per row (today and each way), the same anatomy on every row. */
 .lr-opts {
   display: grid;
-  gap: var(--space-1);
-}
-
-.lr-opts .lr-opts-group {
   gap: var(--space-1);
 }
 
@@ -2195,59 +2253,41 @@ a.lr-reach-card:focus-visible {
   border-radius: var(--radius-container);
 }
 
+/* The box sits on the row's one centre line, not on the first text line. */
+.lr-opts .lr-opt > :first-child {
+  margin-block-start: 0;
+}
+
 .lr-opts .lr-opt > :last-child {
   flex: 1;
   min-width: 0;
 }
 
-/* Today, or a decided way: a row to look at on the stage, not a choice. */
-.lr-opts .lr-opt.is-look {
-  font: inherit;
-  color: inherit;
-  text-align: start;
-  background: none;
-  cursor: pointer;
-}
-
-.lr-opts .lr-opt.is-look:focus-visible {
-  outline: var(--border-width-2) solid var(--color-focus-ring);
-  outline-offset: var(--border-width-2);
-}
-
-.lr-opts .lr-opt.is-look.is-shown:not(.is-picked) {
-  border-color: var(--color-border-default);
-}
-
 @media (hover: hover) {
-  .lr-opts .lr-opt.is-look:hover,
-  .lr-opts label.lr-opt:hover {
+  .lr-opts .lr-opt:hover {
     background-color: var(--color-surface-hover);
   }
 }
 
-.lr-opts .lr-opt:has([data-checked]),
-.lr-opts .lr-opt.is-picked {
+.lr-opts .lr-opt:has([data-checked]) {
   border-color: var(--color-action-primary-bg);
   background-color: var(--color-surface-selected);
 }
 
-.lr-opt-slot {
-  flex: none;
-  width: var(--size-4);
-}
-
 .lr-opt-row {
   display: grid;
-  grid-template-columns: var(--space-3) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr);
+  grid-template-columns: var(--space-4) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr);
   align-items: center;
   gap: var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-key {
   display: block;
-  width: var(--space-3);
-  border-block-start: var(--border-width-2) solid var(--lr-hue);
+  flex: none;
+  width: var(--space-4);
+  border-block-start: var(--border-width-2) var(--lr-line, solid) var(--lr-hue);
 }
 
 .lr-opt-who {
@@ -2257,29 +2297,52 @@ a.lr-reach-card:focus-visible {
   min-width: 0;
 }
 
+/* Today's mark: the library, in the avatar's place and size, so every name starts on the same column. */
+.lr-opt-lib {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
 .lr-opt-who strong,
 .lr-opt-val strong {
   color: var(--color-text-default);
   font-weight: var(--font-weight-semibold);
 }
 
+/* The value, then its word: the same pattern on every row ("20 px same as today", "12 px tighter"). */
 .lr-opt-val,
 .lr-opt-where {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-1);
+  gap: var(--space-1-5);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-}
-
-.lr-opt-val strong {
-  font-size: var(--typography-ui-size);
 }
 
 .lr-opt-where {
   align-items: center;
+  gap: var(--space-2);
   color: var(--color-text-default);
+}
+
+/* The outcome of the checked rows, in one sentence above the footer. */
+.lr-compare-outcome {
+  margin: 0;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
+}
+
+.lr-compare-outcome.is-none {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
 }
 
 /* The footer: who is told, then the comment and the one primary. */
@@ -2320,24 +2383,12 @@ a.lr-reach-card:focus-visible {
 
 @media (max-width: 760px) {
   .lr-stage {
-    min-height: var(--size-60);
-    padding-inline: var(--space-3);
+    padding: var(--space-4) var(--space-3);
   }
 
-  /* On a phone the component is drawn at its own size, the keys under it. */
+  /* On a phone the component is drawn at its own size, its labels under it. */
   .lr-stage-art {
     zoom: 1;
-  }
-
-  .lr-stage-row {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .lr-stage-keys {
-    flex-flow: row wrap;
-    justify-content: center;
-    gap: var(--space-2);
   }
 
   .lr-stage-note {
@@ -2345,8 +2396,17 @@ a.lr-reach-card:focus-visible {
   }
 
   .lr-opt-row {
-    grid-template-columns: var(--space-3) minmax(0, 1fr);
+    grid-template-columns: var(--space-4) minmax(0, 1fr);
     row-gap: var(--space-1);
+  }
+
+  /* Rows fold on three lines: the box stays on the name's line, centred on its avatar. */
+  .lr-opts .lr-opt {
+    align-items: flex-start;
+  }
+
+  .lr-opts .lr-opt > :first-child {
+    margin-block-start: calc((var(--size-5) - var(--size-4)) / 2);
   }
 
   .lr-opt-val,

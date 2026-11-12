@@ -9,6 +9,9 @@ import {
   emptyLine,
   filterChoices,
   peopleOf,
+  contrastWords,
+  cssRgba,
+  reviewProgress,
   personKey,
   filterValue,
   groupPieces,
@@ -274,5 +277,26 @@ describe('groups and words', () => {
 
   it('maps the One by one keys', () => {
     expect(['a', 'K', 'ArrowDown', 'ArrowUp', 'x'].map(keyAction)).toEqual(['add', 'keep', 'next', 'prev', null]);
+  });
+
+  it('counts decided pieces in the One by one progress, seen as a quiet note', () => {
+    expect(reviewProgress(12, 0, 0)).toEqual({ headline: '0 of 12 decided', value: 0, seenNote: '0 seen', done: false });
+    // All seen, nothing decided: the bar stays empty, it never looks done.
+    expect(reviewProgress(12, 12, 0)).toEqual({ headline: '0 of 12 decided', value: 0, seenNote: '12 seen', done: false });
+    expect(reviewProgress(12, 10, 3)).toEqual({ headline: '3 of 12 decided', value: 25, seenNote: '10 seen', done: false });
+    // A decided piece was seen, whatever the seen count says.
+    expect(reviewProgress(4, 1, 2).seenNote).toBe('2 seen');
+    expect(reviewProgress(12, 12, 12)).toEqual({ headline: 'All 12 decided', value: 100, seenNote: null, done: true });
+    expect(reviewProgress(0, 0, 0)).toEqual({ headline: '0 of 0 decided', value: 0, seenNote: '0 seen', done: false });
+  });
+
+  it('reads a computed colour and says a contrast in words', () => {
+    expect(cssRgba('rgb(255, 255, 255)')).toEqual({ r: 1, g: 1, b: 1, a: 1 });
+    expect(cssRgba('rgba(0, 0, 0, 0.5)')).toEqual({ r: 0, g: 0, b: 0, a: 0.5 });
+    expect(cssRgba('#fff')).toBeNull();
+    expect(contrastWords(4.5)).toEqual({ text: '4.5:1 passes AA', pass: true });
+    // Never rounded up across the line: 4.49 fails and says 4.4.
+    expect(contrastWords(4.49)).toEqual({ text: '4.4:1 fails AA', pass: false });
+    expect(contrastWords(2.05).text).toBe('2.0:1 fails AA');
   });
 });

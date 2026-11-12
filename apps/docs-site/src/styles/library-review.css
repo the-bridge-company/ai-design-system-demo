@@ -150,6 +150,7 @@ a.lr-ask {
   gap: var(--space-2);
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-seen strong {
@@ -157,8 +158,8 @@ a.lr-ask {
 }
 
 .lr-seen .lr-muted {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-side-group {
@@ -300,8 +301,10 @@ a.lr-ask {
   min-width: 0;
 }
 
+/* A piece's name in the side list: UI 14 medium over its 13 meta line, one step apart. */
 .lr-side-title {
-  font-size: var(--typography-body-size);
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-medium);
   line-height: var(--typography-ui-line-height);
 }
 
@@ -311,8 +314,8 @@ a.lr-ask {
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-line-t {
@@ -608,8 +611,8 @@ a.lr-ask {
 
 .lr-chapter-note {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* "Reaches [P][C] Acme Prints, Acme CRM": the marks overlap like faces. */
@@ -619,8 +622,8 @@ a.lr-ask {
   align-items: center;
   gap: var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-chapter-names {
@@ -662,9 +665,9 @@ a.lr-ask {
 /* The column header: sentence case, quiet, on the same grid as the rows (the rail column first when there is one). */
 .lr-chapter-cols {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--typography-caption-line-height);
+  line-height: var(--typography-meta-line-height);
   border-block-end: var(--border-width-default) solid var(--color-border-default);
 }
 
@@ -729,8 +732,8 @@ a.lr-ask {
 }
 
 .lr-group-label .lr-muted {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-block {
@@ -807,14 +810,14 @@ a.lr-ask {
 .lr-row-title {
   min-width: 0;
   color: var(--color-text-default);
-  font-size: var(--typography-body-size);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
   line-height: var(--typography-ui-line-height);
 }
 
 .lr-row-kind {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The quiet link to the piece's page in the library: a 24px target, the icon muted until hovered or focused. */
@@ -915,6 +918,8 @@ a.lr-ask {
 
 .lr-from-name.lr-muted {
   color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The exploration links to it: plain until hovered, like the piece's name. */
@@ -928,8 +933,8 @@ a.lr-ask {
 
 .lr-from-product {
   overflow: hidden;
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1018,6 +1023,7 @@ a.lr-ask {
   box-shadow: var(--elevation-overlay);
   color: var(--color-text-inverse);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 
   --button-ghost-text: var(--color-text-inverse);
 }
@@ -1132,11 +1138,6 @@ body:has(.lr-bar) .lr-toasts {
   .lr-fam-icon {
     width: var(--size-10);
     height: var(--size-10);
-  }
-
-  .lr-chapter-name {
-    font-size: var(--typography-h3-size);
-    line-height: var(--typography-h3-line-height);
   }
 
   .lr-chapter-reach {
@@ -1319,6 +1320,7 @@ body:has(.lr-bar) .lr-toasts {
   align-items: center;
   gap: var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   white-space: nowrap;
 }
 
@@ -1746,8 +1748,8 @@ body:has(.lr-bar) .lr-toasts {
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-1) var(--space-3);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-reach-product-name {
@@ -1825,8 +1827,8 @@ a.lr-reach-card:focus-visible {
   place-items: center;
   padding: var(--space-3);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-align: center;
 }
 
@@ -2017,6 +2019,7 @@ a.lr-reach-card:focus-visible {
   gap: var(--space-2);
   min-height: var(--size-8);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-askers-name {
@@ -2044,6 +2047,8 @@ a.lr-reach-card:focus-visible {
 .lr-reach-link.is-quiet {
   color: var(--color-text-muted);
   text-decoration-line: none;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lr-reach-link.is-quiet .lr-reach-chev {
@@ -2103,6 +2108,7 @@ a.lr-reach-card:focus-visible {
 .lr-map-hint {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* --- One by one, a conflict: the compare stage and one radio list (direction D2) ---------------------------------- */
@@ -2265,6 +2271,7 @@ a.lr-reach-card:focus-visible {
   justify-content: space-between;
   gap: var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Each look's content box: a thin dashed line in its colour, its label under the Card. */
@@ -2343,8 +2350,8 @@ a.lr-reach-card:focus-visible {
   border-radius: var(--radius-control);
   background-color: var(--color-surface-default);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The options: one checkbox per row (today and each way), the same anatomy on every row. */
@@ -2487,7 +2494,8 @@ a.lr-reach-card:focus-visible {
   gap: var(--space-2);
   margin-inline-end: auto;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The Map's one piece: its row, then "Show all" on its end. */

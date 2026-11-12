@@ -29,6 +29,7 @@
   margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cm-none[hidden] {
@@ -42,6 +43,7 @@
   background-color: transparent;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -180,6 +182,7 @@
   display: grid;
   gap: var(--space-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cm-d-panel > * {
@@ -346,6 +349,7 @@
 .cm-req-frame-rule {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   color: var(--color-text-muted);
 }
 
@@ -355,6 +359,7 @@
   justify-items: start;
   gap: var(--space-1-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cm-req-img-label {

@@ -61,8 +61,8 @@
 
 .lp-detail {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   font-variant-numeric: tabular-nums;
 }
 

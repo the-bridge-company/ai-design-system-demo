@@ -19,6 +19,7 @@
 .brv-muted {
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
 }
 
 .brv-grow {
@@ -113,6 +114,7 @@
   padding: 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -177,6 +179,7 @@
   border-radius: var(--radius-full);
   background: var(--color-bg-subtle);
   font-size: var(--font-size-100);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-bold);
 }
 
@@ -203,7 +206,8 @@
 .brv-item-state {
   padding-top: var(--space-0-5);
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   white-space: nowrap;
 }
 
@@ -227,6 +231,7 @@
   padding: 0 var(--space-2);
   list-style: none;
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
 }
 
 .brv-notes li {
@@ -235,7 +240,8 @@
 }
 
 .brv-notes .brv-muted {
-  font-size: var(--font-size-100);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .brv-end {
@@ -361,6 +367,7 @@
   background: var(--color-action-primary-bg);
   color: var(--color-action-primary-text);
   font-size: var(--font-size-100);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-bold);
   transform: translate(-40%, -40%);
 }
@@ -452,6 +459,7 @@
   background: var(--color-surface-inverse);
   color: var(--color-text-inverse);
   font-size: var(--font-size-100);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-bold);
   transform: translate(-50%, -50%);
 }
@@ -525,6 +533,7 @@
   gap: var(--space-2);
   margin: 0;
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
 }
 
 .brv-facts div {
@@ -564,6 +573,7 @@
 
 .brv-ask-h {
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -796,6 +806,7 @@
   background: var(--color-surface-default);
   color: var(--color-text-default);
   font-size: var(--font-size-100);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -868,7 +879,8 @@
   margin: 0;
   padding: 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   list-style: none;
 }
 

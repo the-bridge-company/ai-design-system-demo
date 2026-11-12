@@ -3438,6 +3438,7 @@
   .hp-ldec-chip {
     height: calc(var(--_u) * 32);
     font-size: var(--font-size-200);
+    line-height: var(--typography-ui-line-height);
     padding: 0 calc(var(--_u) * 12) 0 calc(var(--_u) * 10);
   }
 

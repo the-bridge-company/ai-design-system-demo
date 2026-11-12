@@ -62,6 +62,7 @@
   margin: 0 0 var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .a11y-checks:not([data-view="compare"]) .a11y-legend {
@@ -128,6 +129,7 @@
   gap: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-variant-numeric: tabular-nums;
 }
 
@@ -247,6 +249,7 @@
 
 .a11y-matrix th {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   letter-spacing: normal;
 }
 

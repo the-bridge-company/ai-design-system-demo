@@ -246,6 +246,7 @@
   padding: var(--space-8) var(--space-5);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-align: center;
 }
 
@@ -308,6 +309,7 @@
   box-shadow: 0 0 0 var(--border-width-default) var(--color-border-default);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
 }
 
@@ -347,6 +349,7 @@
   min-width: 0;
   overflow: hidden;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

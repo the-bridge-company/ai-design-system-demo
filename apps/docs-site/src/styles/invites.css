@@ -35,8 +35,8 @@
 
 .mem-line {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Not joined yet: a dashed ring around the initials, and the words say it too. */
@@ -109,8 +109,8 @@
   max-width: 70ch;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .mem-note {
@@ -223,8 +223,8 @@
 .inv-hint {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .inv-access {
@@ -236,6 +236,7 @@
 .inv-access-title {
   margin: 0 0 var(--space-1);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -416,9 +417,9 @@
 
 .rp-review-help {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-regular);
-  line-height: var(--typography-caption-line-height);
+  line-height: var(--typography-meta-line-height);
 }
 
 .rp-lead {
@@ -430,8 +431,8 @@
 .rp-note {
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Settings > Members, Entry (boards E7a and E7c): who asks to join, one row each, above the members; the discovery

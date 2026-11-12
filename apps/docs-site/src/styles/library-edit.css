@@ -124,6 +124,7 @@ html:has(.cp-page[data-editing]) {
   margin: 0 0 var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The live preview stays on screen but is not editable: it sits flat on the desk instead of floating. */
@@ -252,6 +253,7 @@ html:has(.cp-page[data-editing]) {
   gap: var(--space-2) var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .le-status-hint {
@@ -275,6 +277,7 @@ html:has(.cp-page[data-editing]) {
   display: grid;
   gap: var(--space-8);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .le-rail-group .cp-toc-title {
@@ -349,6 +352,7 @@ html:has(.cp-page[data-editing]) {
   min-height: var(--size-11);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   cursor: pointer;
 }
 
@@ -392,6 +396,7 @@ html:has(.cp-page[data-editing]) {
   gap: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .le-flag {
@@ -455,6 +460,7 @@ html:has(.cp-page[data-editing]) {
 .le-empty {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Lists: the read list, each item a field with its remove button on the right. */
@@ -555,6 +561,7 @@ html:has(.cp-page[data-editing]) {
   justify-items: start;
   gap: var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .le-setup > p {

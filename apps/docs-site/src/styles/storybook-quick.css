@@ -59,6 +59,7 @@
   gap: var(--space-4);
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .sbq-strong {
@@ -93,6 +94,7 @@
   margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .sbq-locked-page {
@@ -176,6 +178,7 @@
   background-color: var(--color-bg-subtle);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-align: center;
 }
 

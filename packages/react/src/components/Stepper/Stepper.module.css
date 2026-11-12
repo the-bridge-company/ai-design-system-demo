@@ -104,8 +104,8 @@
 }
 
 .meta {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Fixed-length connectors: even gaps whatever the labels. */

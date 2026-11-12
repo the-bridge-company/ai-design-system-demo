@@ -152,8 +152,8 @@
 .tc-team-line {
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-overflow: ellipsis;
 }
 
@@ -374,6 +374,7 @@
   gap: var(--space-5);
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Settings on a team shell: the Your team band above the page's empty state. */
@@ -392,6 +393,8 @@
 .ts-intro {
   margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* A band's title and its one sentence, the action on the whole band on the same line (Members' .mem-head). */

@@ -8,6 +8,7 @@
   gap: var(--space-1);
   margin-block-end: var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar {
@@ -23,6 +24,7 @@
 .ar-error {
   color: var(--color-feedback-danger-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-verdict .ql-cta {
@@ -84,6 +86,7 @@
   align-items: center;
   gap: var(--space-1);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-trend.is-up {
@@ -101,8 +104,8 @@
 
 .ar-first {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ar-spark {
@@ -139,6 +142,7 @@
   justify-content: space-between;
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 /* Tabs and the panels' lead line. */
@@ -152,6 +156,7 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Groups: one Accordion item each; the trigger holds the words, then the two small pictures. */
@@ -186,9 +191,9 @@
 .ar-gain,
 .ar-cap {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-regular);
-  line-height: var(--typography-caption-line-height);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ar-gain strong {
@@ -200,6 +205,7 @@
   justify-self: start;
   color: var(--color-feedback-success-text);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -230,7 +236,8 @@
   border-radius: var(--radius-inset);
   background-color: var(--color-bg-subtle);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   font-weight: var(--font-weight-regular);
   text-align: center;
 }
@@ -433,7 +440,8 @@
 
 .ar-shot-line {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ar-shot-full {
@@ -476,6 +484,7 @@
   gap: var(--space-1);
   color: var(--color-feedback-success-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Colors and values: the product's swatches, an arrow, the library's, then how close. */
@@ -505,7 +514,8 @@
   border-radius: var(--radius-inset);
   box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ar-swatch-none {
@@ -521,6 +531,7 @@
 .ar-val {
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .ar-value .ar-head {
@@ -538,6 +549,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-values > li {
@@ -561,6 +573,7 @@
 .ar-dev-line {
   margin: 0 0 var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-change {
@@ -573,6 +586,7 @@
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-control);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-change > :last-child {
@@ -584,6 +598,7 @@
 .ar .mono {
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -620,6 +635,7 @@
   border-radius: var(--radius-control);
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-places > li {
@@ -658,6 +674,7 @@
   margin: 0;
   padding-inline: var(--space-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Pieces the library is missing: a strip of the same small cards. */
@@ -678,6 +695,7 @@
 .ar-gaps > p {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-gap-list {
@@ -688,6 +706,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-gap-list > li {
@@ -711,6 +730,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ar-ignored > li {
@@ -721,6 +741,7 @@
 .ar-foot p {
   margin: 0 0 var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Phone: cards and pictures stack, swatches wrap, a place reads on two lines. */

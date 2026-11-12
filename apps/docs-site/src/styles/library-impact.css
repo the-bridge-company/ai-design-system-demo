@@ -39,6 +39,8 @@
 .li-count {
   flex: none;
   white-space: nowrap;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .li-muted {
@@ -105,6 +107,8 @@
   gap: var(--space-2);
   margin-inline-start: auto;
   color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* A new piece's ⋯ at the header line's end, after where it comes from. */
@@ -122,6 +126,7 @@
 
 .li-said {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* A value never breaks from its unit ("Comfortable 20 px"). */
@@ -215,9 +220,9 @@
 /* The section labels of a component part: what it adds, what it already has. */
 .li-group {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--typography-caption-line-height);
+  line-height: var(--typography-meta-line-height);
 }
 
 .li-ledger {
@@ -270,7 +275,8 @@
 
 .li-opt-line {
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .li-opt-val {
@@ -281,8 +287,8 @@
 }
 
 .li-opt-val .li-muted {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Already in the library: read only, a step quieter than what is added. */
@@ -396,8 +402,8 @@
 
 .li-kind {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The eyebrow over "Nothing. Every piece comes from the library.": the ui size of the other Studio eyebrows (the
@@ -473,14 +479,14 @@
   background-color: var(--color-bg-subtle);
   color: var(--color-text-muted);
   font-family: var(--typography-ui-family);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .li-cap {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .li-arrow {

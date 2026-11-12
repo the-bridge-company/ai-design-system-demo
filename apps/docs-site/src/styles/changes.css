@@ -53,6 +53,7 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cg-asof[hidden] {
@@ -70,6 +71,7 @@
   border: var(--border-width-default) dashed var(--color-border-default);
   border-radius: var(--radius-container);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cg-draft[hidden] {
@@ -252,6 +254,7 @@ details[open] > summary .cg-sec-chev {
   min-width: 0;
   padding: 0 var(--space-5) var(--space-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cg-sec-body > * {
@@ -279,6 +282,7 @@ details[open] > summary .cg-sec-chev {
 .cg-more > summary {
   color: var(--color-text-link);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   cursor: pointer;
   list-style: none;
 }
@@ -289,6 +293,7 @@ details[open] > summary .cg-sec-chev {
   gap: var(--space-2);
   margin-bottom: var(--space-4);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cg-pr-open {
@@ -340,6 +345,7 @@ details[open] > summary .cg-sec-chev {
   gap: var(--space-2) var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cg-who {
@@ -401,6 +407,7 @@ details[open] > summary .cg-sec-chev {
 .cg-rel-meta {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-regular);
 }
 
@@ -429,6 +436,7 @@ details[open] > summary .cg-sec-chev {
 .cg-hs-log {
   margin-left: auto;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 @media (max-width: 760px) {.cg-open,
@@ -512,6 +520,7 @@ details[open] > summary .cg-sec-chev {
   min-width: 0;
   margin-top: var(--space-6);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rv-what > * {
@@ -551,6 +560,7 @@ details[open] > summary .cg-sec-chev {
 .cg-jira {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   white-space: nowrap;
 }
 
@@ -558,12 +568,14 @@ details[open] > summary .cg-sec-chev {
 .cg-gh {
   margin-inline-start: auto;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* What approval a branch needs, in plain words ("Design + tech"): text, never a colored pill. Color is for status. */
 .cg-need {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   white-space: nowrap;
 }
 
@@ -626,8 +638,8 @@ details[open] > summary .cg-sec-chev {
 .rv-lib-hint {
   display: block;
   margin-top: var(--space-0-5);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .rv-lib-hint:empty {
@@ -677,8 +689,8 @@ details[open] > summary .cg-sec-chev {
 
 .lib-meta {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lib-guard {
@@ -726,8 +738,8 @@ details[open] > summary .cg-sec-chev {
 
 .lib-note {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .lib-note.is-pick {

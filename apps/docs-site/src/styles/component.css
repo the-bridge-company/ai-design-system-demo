@@ -17,6 +17,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -73,6 +74,7 @@
   margin-right: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .hero-stage-panes {
@@ -141,12 +143,14 @@
   top: calc(var(--layout-header-height) + var(--space-8));
   align-self: start;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cp-toc-title {
   margin: 0 0 var(--space-2);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -201,6 +205,7 @@
   gap: var(--space-2);
   margin: 0 0 var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .usage-col.is-use h3 .icon {
@@ -214,6 +219,7 @@
 .usage-col ul {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Do and don't */
@@ -270,6 +276,7 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Accessibility */
@@ -291,6 +298,7 @@
   border-radius: var(--radius-control);
   background-color: var(--color-surface-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .a11y-list .icon {
@@ -341,6 +349,7 @@
   align-content: start;
   gap: var(--space-1);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .anatomy-sel {
@@ -349,6 +358,7 @@
   background-color: transparent;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .anatomy-tokens {
@@ -370,6 +380,7 @@
   color: var(--color-text-default);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -523,6 +534,7 @@ a.tchip:hover {
   padding: 0;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -606,6 +618,7 @@ a.tchip:hover {
 .gcard-empty {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gcard-body {
@@ -652,6 +665,7 @@ a.tchip:hover {
   overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -673,6 +687,7 @@ a.tchip:hover {
 .gcard-stats dt {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gcard-stats dd {
@@ -753,6 +768,7 @@ a.tchip:hover {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Tokens a component paints with through another component's stylesheet (IconButton through Button). */
@@ -847,6 +863,7 @@ a.tchip:hover {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* "Figma is ahead": build requests for this component are open (components/ds/library/FigmaAhead.tsx). */

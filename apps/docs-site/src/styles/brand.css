@@ -40,6 +40,15 @@
   color: var(--color-text-muted);
 }
 
+/* typography.meta: the secondary line under a name or title (who, when, how many, a short description). Muted UI
+   text is that line by definition, so `t-ui t-muted` reads in meta too: 13/18 under 14/500, one step at a time.
+   A paragraph that explains (the tour's text) stays UI. */
+.t-meta,
+.t-ui.t-muted:not(.dh-tour-text) {
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+}
+
 /* Fraunces in its soft optical style for every display role. */
 :where(h1, .t-display, .t-h1, .logo-word, .topbar-space) {
   font-variation-settings: "SOFT" 50;
@@ -219,9 +228,11 @@ a.fg-link {
 .hero-stage-bar [data-segmented-control] [data-segment],
 .shell-pop [data-segmented-control] [data-segment] {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Segmented controls of the chrome (toolbars, filters) use interface text; DS previews keep their own sizes. */
 [data-segmented-control]:not([data-theme]:not(html) [data-segmented-control]) [data-segment] {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }

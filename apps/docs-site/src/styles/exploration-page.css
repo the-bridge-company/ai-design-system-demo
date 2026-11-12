@@ -338,7 +338,8 @@
 .xp-cc-quiet {
   margin: var(--space-4) 0 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xp-cc-steps .xp-cc-quiet {
@@ -505,6 +506,8 @@
 
 .xp-when {
   white-space: nowrap;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xp-said:empty {
@@ -736,6 +739,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-3);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xp-notes-sum {
@@ -1231,6 +1236,8 @@
 .xp-st-sub {
   flex: 0 1 auto;
   min-width: 0;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* What the exploration does, in one sentence: its own line under the name. */
@@ -1498,8 +1505,8 @@
   flex: 1 1 100%;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-align: end;
 }
 
@@ -1529,7 +1536,8 @@
 }
 
 .xp-ask figcaption {
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xp-ask blockquote {
@@ -1620,6 +1628,8 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-1);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xp-compose {

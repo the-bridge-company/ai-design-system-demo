@@ -95,8 +95,8 @@
 .addp-row-repo {
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -20,6 +20,7 @@
   margin: 0 0 var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -145,8 +146,8 @@
 
 .ltm-card-meta {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* One component */
@@ -191,6 +192,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Tokens table */
@@ -201,14 +203,15 @@
 
 .ltm-token-path {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ltm-token-desc {
   display: block;
   margin-top: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ltm-values {
@@ -238,13 +241,15 @@
   flex: none;
   min-width: var(--size-10);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .ltm-value-text,
 .ltm-var {
   overflow-wrap: anywhere;
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .ltm-more {

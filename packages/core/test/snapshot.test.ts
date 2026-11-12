@@ -14,6 +14,7 @@ import {
   snapshotLlmsTxt,
   snapshotSource,
   SnapshotError,
+  snapshotFileBody,
   SNAPSHOT_MAX_RELEASES,
   SNAPSHOT_SCHEMA_VERSION,
   type RepoSnapshot,
@@ -248,4 +249,12 @@ test('extras: releases are capped, a spec of an odd shape leaves out its motion,
   assert.equal(snapshot.motion, undefined);
   assert.equal(snapshot.releases, undefined);
   assert.equal(snapshot.packages, undefined);
+});
+
+test('the snapshot carries only what the model reads: story titles and exports, stylesheets without comments', () => {
+  const story = "import x from 'y';\n/** About */\nconst meta = {\n  title: 'Navigation/Stepper',\n  component: Stepper,\n} satisfies Meta;\nexport const Default: Story = { args: { a: 1 } };\nexport const AllStates: Story = {\n  render: () => null,\n};\n";
+  assert.equal(snapshotFileBody('a/Stepper.stories.tsx', story), "export default { title: 'Navigation/Stepper' };\nexport const Default: Story = {};\nexport const AllStates: Story = {};");
+  assert.equal(snapshotFileBody('a/B.module.css', '/* why */\n.a {\n  /* note */\n  color: var(--x);\n}\n'), '\n.a {\n  color: var(--x);\n}\n');
+  const json = '{\n  "a": 1\n}\n';
+  assert.equal(snapshotFileBody('a/B.docs.json', json), json);
 });

@@ -20,8 +20,12 @@ export const SNAPSHOT_FILE = 'snapshot.json';
 export const SNAPSHOT_AUDITS_DIR = 'audits';
 /** Above this, a snapshot is refused (a published file the browser downloads whole). */
 export const SNAPSHOT_MAX_BYTES = 5_000_000;
-/** Releases a snapshot keeps, newest first (the pending one counts); older ones stay in the CHANGELOG.md files. */
-export const SNAPSHOT_MAX_RELEASES = 60;
+/**
+ * Releases a snapshot keeps, newest first (the pending one counts); older ones stay in the CHANGELOG.md files. 15, not
+ * 60: release notes were a third of the snapshot (371 KB for 39 releases, 2026-11) and the newest ones are the long
+ * ones, so this keeps a few weeks of history and leaves the snapshot about 15% under its budget.
+ */
+export const SNAPSHOT_MAX_RELEASES = 15;
 
 /** A workspace package of the repository, for the Library's Install page. */
 export interface SnapshotPackage {
@@ -284,6 +288,22 @@ export function snapshotSummary(model: RepoModel): SnapshotSummary {
   };
 }
 
+/**
+ * A file body as the snapshot carries it: only what loadRepoModel reads from it, so the snapshot stays well under its
+ * size budget (each new component used to add its full sources). A story file keeps its title and story exports
+ * (parseComponentStories reads nothing else); a stylesheet drops its comments (parseComponentCss strips them before
+ * reading). Every other file is kept as written: token and docs JSON are edited in place from their text.
+ */
+export function snapshotFileBody(path: string, body: string): string {
+  if (path.endsWith('.stories.tsx')) {
+    const title = body.match(/title:\s*'([^']+)'/)?.[1];
+    const stories = [...body.matchAll(/export const (\w+):\s*Story/g)].map((m) => `export const ${m[1]}: Story = {};`);
+    return [...(title ? [`export default { title: '${title}' };`] : []), ...stories].join('\n');
+  }
+  if (path.endsWith('.css')) return body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n+/g, '\n');
+  return body;
+}
+
 /** Assembles the snapshot from a model and the files it was read from. The specs file becomes the coverage list. */
 export function buildSnapshot(input: BuildSnapshotInput): RepoSnapshot {
   const { model } = input;
@@ -292,7 +312,7 @@ export function buildSnapshot(input: BuildSnapshotInput): RepoSnapshot {
   const specsPath = normalizeRepoPath(model.specs.path);
   for (const [k, v] of entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const p = normalizeRepoPath(k);
-    if (p !== specsPath) files[p] = v;
+    if (p !== specsPath) files[p] = snapshotFileBody(p, v);
   }
   const hasSpecs = entries.some(([k]) => normalizeRepoPath(k) === specsPath);
   const motion = snapshotMotion(model);

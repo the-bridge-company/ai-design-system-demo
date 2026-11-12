@@ -411,6 +411,12 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* The hairline above is an outline: keyboard focus on the current page keeps the DS focus ring (WCAG 2.4.7). */
+.rail-section a[aria-current="page"]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
 .rail-section a[aria-current="page"] svg {
   color: currentcolor;
 }

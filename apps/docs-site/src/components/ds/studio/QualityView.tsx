@@ -5,7 +5,7 @@
 // and the tokens last as a calm note. Details wait in DS Accordions: the contrast per brand and theme, adoption's
 // earlier runs. Numbers and words: lib/quality-view.ts.
 import type { ReactNode } from 'react';
-import { Accordion, AccordionItem, Badge, Card, CardBody, Icon, Link, Progress } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Badge, Card, CardBody, Icon, Link, Progress, VisuallyHidden } from '@bridge-ds/react';
 import { ChevronRight } from 'lucide-react';
 import ButtonLink from '../ButtonLink';
 import ContrastFailTable, { type ContrastFailRow } from './ContrastFailTable';
@@ -265,8 +265,9 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
               return (
                 <li key={p.product} className="ql-row-wrap">
                   {/* The whole row opens the product's report (Fitts): one link, its name read first. */}
+                  {/* Its name is what it shows (WCAG 2.5.3, label in name), then what it opens: no aria-label over the row. */}
                   {/* bridge-audit-ignore-next-line: the whole product row (name, run, two meters, chevron) is one link target, like the Explorations rows; a DS Link would underline every part of the row */}
-                  <a className="ql-product ql-product-link" href={safeUrl(p.latest.href, '#')} aria-label={`${p.name}, open the adoption report`} {...external(p.latest.href)}>
+                  <a className="ql-product ql-product-link" href={safeUrl(p.latest.href, '#')} {...external(p.latest.href)}>
                     <span className="ql-main">
                       <span className="ql-title">{p.name}</span>
                       <span className="ql-detail">
@@ -278,10 +279,12 @@ function AdoptionSection({ adoption, empty, unmeasured = [], measure }: { adopti
                       <div key={k} className="ql-metric">
                         <span className="ql-detail">{k === 'token' ? 'Tokens' : 'Components'}</span>
                         <span className="ql-metric-value num">{formatPct(p.latest[k])}</span>
-                        {p.latest[k] !== null && <Progress value={p.latest[k]} size="sm" aria-label={`${p.name}, ${k === 'token' ? 'tokens' : 'components'} from the design system: ${formatPct(p.latest[k])}`} />}
+                        {/* The percentage beside it says the same: the bar stays out of the link's name. */}
+                        {p.latest[k] !== null && <Progress value={p.latest[k]} size="sm" aria-hidden="true" />}
                       </div>
                     ))}
                     <Icon icon={ChevronRight} size="sm" className="ql-product-go" />
+                    <VisuallyHidden>Open the adoption report</VisuallyHidden>
                   </a>
                 </li>
               );

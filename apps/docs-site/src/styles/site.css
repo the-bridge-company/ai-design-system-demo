@@ -675,6 +675,14 @@ a.topbar-brand {
   background-color: var(--color-surface-default);
 }
 
+/* The hairline above is drawn with outline, so it would replace the focus ring: keyboard focus on the current page
+   still shows the ring (WCAG 2.4.7). */
+:root[data-space="studio"] .nav-link[aria-current="page"]:focus-visible,
+:root[data-space="studio"] .nav-sub a[aria-current="page"]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
 @media (hover: hover) {
   :root[data-space="studio"] .nav-link:hover,
   :root[data-space="studio"] .nav-sub a:hover {

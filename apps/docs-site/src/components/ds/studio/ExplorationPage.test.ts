@@ -100,6 +100,22 @@ describe('the Continue panel shows only the viewer\'s own AI tools', () => {
   });
 });
 
+describe('ExplorationPage, the browser tab (WCAG 2.4.2)', () => {
+  it('names the exploration opened in place, and gives the page title back when it closes', () => {
+    document.title = 'Explorations | Bridge Studio';
+    const { unmount } = paint();
+    expect(document.title).toBe('Orders: bulk actions | Explorations | Bridge Studio');
+    unmount();
+    expect(document.title).toBe('Explorations | Bridge Studio');
+  });
+
+  it('keeps the page title while the exploration is still loading', () => {
+    document.title = 'Explorations | Bridge Studio';
+    paint({ stage: 'loading' });
+    expect(document.title).toBe('Explorations | Bridge Studio');
+  });
+});
+
 describe('ExplorationPage, not started (X1)', () => {
   it('says nothing is built yet, who started it, and offers the line to paste in Claude', () => {
     paint();

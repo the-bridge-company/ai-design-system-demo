@@ -71,6 +71,8 @@ export function bindTooltips(root: Document | HTMLElement = document, { delay = 
   let popup: HTMLDivElement | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastClosed = 0;
+  /** A tooltip playing its exit motion. The next one replaces it at once, so it never covers what took focus. */
+  let fading: HTMLElement | null = null;
 
   const triggerOf = (t: EventTarget | null) => (t instanceof win.Element ? (t as Element).closest<HTMLElement>('[data-tooltip]') : null);
 
@@ -126,7 +128,11 @@ export function bindTooltips(root: Document | HTMLElement = document, { delay = 
     pop.removeAttribute('data-open');
     pop.setAttribute('data-ending-style', '');
     pop.setAttribute('data-closed', '');
-    const done = () => remove(pos);
+    fading = pos;
+    const done = () => {
+      remove(pos);
+      if (fading === pos) fading = null;
+    };
     pop.addEventListener('transitionend', done, { once: true });
     setTimeout(done, 200);
   };
@@ -134,6 +140,12 @@ export function bindTooltips(root: Document | HTMLElement = document, { delay = 
   const show = (el: HTMLElement, instant: boolean) => {
     const text = el.getAttribute('data-tooltip');
     if (!text) return;
+    // Tabbing along a row of triggers: the tooltip that is fading out goes now, or it would sit over the next trigger,
+    // the one that has the focus (WCAG 2.4.11, focus not obscured).
+    if (fading) {
+      remove(fading);
+      fading = null;
+    }
     if (positioner) {
       // Moving between triggers: swap at once, like a TooltipProvider group.
       remove(positioner);
@@ -226,6 +238,7 @@ export function bindTooltips(root: Document | HTMLElement = document, { delay = 
     win.removeEventListener('scroll', onScroll, true);
     clearTimeout(timer);
     remove(positioner);
+    remove(fading);
     if (trigger && popup) unlink(trigger, popup.id);
   };
   BOUND.set(root, { count: 1, cleanup });

@@ -624,8 +624,8 @@
 
 /* The zone is a window onto the calm harbor (QuietScene layout="window"), bled to the zone's edges and clipped by its
    corners: its bottom is the water. The sentence, the headline and "Start an exploration" stand in the sky, the
-   harbor to their right, the water along the window's bottom. A tour step on a phone (an inline card) follows it on
-   the zone. Phones: only the water (quiet-scene.css). */
+   harbor to their right, the water along the window's bottom. The tour's "Where to start" floats beside the button,
+   over the sky, and never changes the window's height. Phones: only the water (quiet-scene.css). */
 .sh-window {
   --_view: 44%;
   position: relative;

@@ -1,19 +1,19 @@
-// The home's first-visit tour: one DS Popover per step, anchored under what the step points at, "N of M", Skip tour
-// and Next (Done on the last). On a narrow screen (a phone) a floating popover has nowhere to go but over the cards it
-// talks about, so the step is a DS Card in the page flow instead, where the anchor sits: it moves the cards down and
-// covers none of them (tourPlacement). Remembered in this browser once finished. Two tours use it: the lead's
-// (StudioHome.tsx, lib/lead-tour.ts), and the contributor's, for someone without a review right
-// (StudioHome.tsx, lib/home-model.ts contributorTour). A floating step steps aside while a dialog is open (Add a product,
-// Start an exploration, Account...) and comes back, at the same step, once it closes (useDialogOpen).
+// The home's first-visit tour: one DS Popover per step, floating by what the step points at (portaled, the DS
+// Popover's own positioning and collision handling), "N of M", Skip tour and Next (Done on the last). It is a transient
+// overlay: it takes no room in the page, so nothing moves when it opens or closes (the anchor is a zero-size mark and
+// no blank space is ever reserved for the step). A step points under a block ("below": rows, cards) or beside a
+// control ("beside": the hero's primary button, the step to its right over the drawing, flipping under it on a phone).
+// Remembered in this browser once finished. Two tours use it: the lead's (StudioHome.tsx, lib/lead-tour.ts), and the
+// contributor's, for someone without a review right (StudioHome.tsx, lib/home-model.ts contributorTour). A step steps
+// aside while a dialog is open (Add a product, Start an exploration, Account...) and comes back, at the same step, once
+// it closes (useDialogOpen).
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Button, Card, CardBody, Popover, PopoverContent, PopoverTrigger } from '@bridge-ds/react';
+import { Button, Popover, PopoverContent, PopoverTrigger } from '@bridge-ds/react';
 import '../../../styles/demo-home.css';
 
 /** Phone widths, the home's own breakpoint (studio-home.css). */
 export const NARROW_TOUR = '(max-width: 640px)';
 
-/** The room a floating step needs under its anchor before it is measured, in CSS pixels: a title, three lines, buttons. */
-const TOUR_ROOM = 240;
 /** Waits for the popover to open and take focus before measuring, in ms. */
 const TOUR_SETTLE = 120;
 
@@ -45,10 +45,7 @@ export function useDialogOpen(watch: boolean): boolean {
   return open;
 }
 
-/** Where a step shows: floating by what it points at, or in the page flow on a narrow screen (it never covers a card). */
-export const tourPlacement = (narrow: boolean): 'popover' | 'inline' => (narrow ? 'inline' : 'popover');
-
-/** True on a narrow screen (NARROW_TOUR): where a step sits in the page flow, so the page can pick its anchor. */
+/** True on a narrow screen (NARROW_TOUR), the home's phone layout. */
 export function useNarrow(): boolean {
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(NARROW_TOUR).matches);
   useEffect(() => {
@@ -61,6 +58,16 @@ export function useNarrow(): boolean {
   }, []);
   return narrow;
 }
+
+/** Where a step points: under a block (rows, cards), or beside a control (the hero's primary button). */
+export type TourPlace = 'below' | 'beside';
+
+/**
+ * The DS Popover side for a place. Below: under the block, from its start. Beside: to the control's right, its top
+ * level with the control, over the hero's sky and drawing; with no room there (a phone) the Popover flips it under the
+ * control and keeps it in the viewport. Never over the control itself.
+ */
+export const tourSide = (place: TourPlace): { side: 'bottom' | 'inline-end'; align: 'start' } => ({ side: place === 'beside' ? 'inline-end' : 'bottom', align: 'start' });
 
 function TourFoot({ n, total, onNext, onFinish, primaryRef }: { n: number; total: number; onNext: () => void; onFinish: () => void; primaryRef?: RefObject<HTMLButtonElement> }) {
   const last = n === total;
@@ -82,71 +89,51 @@ function TourFoot({ n, total, onNext, onFinish, primaryRef }: { n: number; total
   );
 }
 
-/** A step in the page flow (narrow screens): the same words and buttons, brought into view from the second step on. */
-function InlineStep({ n, total, words, onNext, onFinish }: { n: number; total: number; words: { title: string; text: string }; onNext: () => void; onFinish: () => void }) {
-  const id = useId();
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    // The first step shows where the page opens; a later one may sit below the fold (after the cards).
-    if (n > 1) ref.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [n]);
-  return (
-    <Card ref={ref} role="group" aria-labelledby={`${id}-t`} aria-describedby={`${id}-d`} className="dh-tour-inline" data-tour-inline="">
-      <CardBody className="dh-tour-inline-body">
-        <p id={`${id}-t`} className="dh-tour-title">
-          {words.title}
-        </p>
-        <p id={`${id}-d`} className="t-ui t-muted dh-tour-text">
-          {words.text}
-        </p>
-        <TourFoot n={n} total={total} onNext={onNext} onFinish={onFinish} />
-      </CardBody>
-    </Card>
-  );
-}
-
-/** One step of a tour: a DS Popover anchored where the step points, or a card in the flow on a narrow screen. */
-export function TourStep({ n, total, words, onNext, onFinish, onClose }: { n: number; total: number; words: { title: string; text: string }; onNext: () => void; onFinish: () => void; onClose: () => void }) {
-  const narrow = useNarrow();
+/** One step of a tour: a DS Popover floating by what the step points at. It reserves no room in the page. */
+export function TourStep({
+  n,
+  total,
+  words,
+  place = 'below',
+  onNext,
+  onFinish,
+  onClose,
+}: {
+  n: number;
+  total: number;
+  words: { title: string; text: string };
+  place?: TourPlace;
+  onNext: () => void;
+  onFinish: () => void;
+  onClose: () => void;
+}) {
   const anchor = useId();
-  const inline = tourPlacement(narrow) === 'inline';
-  // A floating step sits above dialogs (z.popover over z.modal): it waits, at this step, while one is open. A step in
-  // the page flow stays under the dialog's backdrop like the rest of the page.
-  const covered = useDialogOpen(!inline);
+  // The step sits above dialogs (z.popover over z.modal): it waits, at this step, while one is open.
+  const covered = useDialogOpen(true);
   // Focus lands on Next (Done on the last step), the action the step asks for, not on Skip tour.
   const primary = useRef<HTMLButtonElement>(null);
-  // The room the step takes under its anchor, in CSS pixels, measured once it opened: an empty block of that height
-  // follows the anchor, so the step floats over blank space and never over what comes next (the status lines, the next
-  // section's heading and cards). It also lets the page scroll far enough when it ends right after the anchor.
-  const [room, setRoom] = useState<number | null>(null);
   useEffect(() => {
-    if (inline || covered) return;
+    if (covered) return;
     const t = window.setTimeout(() => {
+      // When what the step points at sits low on the screen, scroll (nothing in the page changes size) so the step is
+      // in view, never so far that what it points at leaves the top.
       const anchorBox = document.querySelector(`[data-tour-anchor="${anchor}"]`)?.getBoundingClientRect();
-      const pop = document.querySelector<HTMLElement>('.dh-tour')?.getBoundingClientRect();
       if (!anchorBox) return;
-      if (pop && pop.height > 0) {
-        // Under the anchor: from its bottom to the step's bottom. Flipped above (no room yet): the step's own height
-        // and its gap, so it comes back under once the room is there.
-        const below = pop.top >= anchorBox.bottom - 1;
-        const need = Math.ceil(below ? pop.bottom - anchorBox.bottom : pop.height + (anchorBox.top - pop.bottom));
-        if (need > 0 && need !== room) setRoom(need);
-      }
-      // The step floats under what it points at: when that sits low on the screen, bring it up so the step is in view.
-      const short = anchorBox.bottom + (room ?? TOUR_ROOM) - window.innerHeight;
+      const pop = document.querySelector<HTMLElement>('.dh-tour')?.getBoundingClientRect();
+      const bottom = Math.max(anchorBox.bottom, pop && pop.height > 0 ? pop.bottom : anchorBox.bottom);
+      const short = Math.min(bottom - window.innerHeight, anchorBox.top);
       if (short > 0) window.scrollBy({ top: short });
     }, TOUR_SETTLE);
     return () => window.clearTimeout(t);
-  }, [inline, covered, anchor, n, room]);
-  if (inline) return <InlineStep n={n} total={total} words={words} onNext={onNext} onFinish={onFinish} />;
+  }, [covered, anchor, n]);
+  const { side, align } = tourSide(place);
   return (
     // Closed, not gone, under a dialog: the anchor stays and the step opens again where it was.
     <Popover open={!covered} onOpenChange={(o) => !o && !covered && onClose()}>
-      <PopoverTrigger nativeButton={false} render={<span className="dh-tour-anchor" data-tour-anchor={anchor} aria-hidden="true" tabIndex={-1} />} />
-      <PopoverContent side="bottom" align="start" className="dh-tour" title={words.title} description={words.text} initialFocus={primary}>
+      <PopoverTrigger nativeButton={false} render={<span className={`dh-tour-anchor dh-tour-anchor-${place}`} data-tour-anchor={anchor} aria-hidden="true" tabIndex={-1} />} />
+      <PopoverContent side={side} align={align} className="dh-tour" title={words.title} description={words.text} initialFocus={primary}>
         <TourFoot n={n} total={total} onNext={onNext} onFinish={onFinish} primaryRef={primary} />
       </PopoverContent>
-      {room !== null && <span className="dh-tour-room" style={{ blockSize: `${room}px` }} aria-hidden="true" />}
     </Popover>
   );
 }
@@ -160,10 +147,10 @@ function done(key: string): boolean {
 }
 
 /**
- * A tour over `steps` (in order), stored under `key`: returns what to render at each anchor. `ready` false (still
- * loading) keeps it hidden without losing the step.
+ * A tour over `steps` (in order), stored under `key`: returns what to render at each anchor (below it by default,
+ * beside it for a control). `ready` false (still loading) keeps it hidden without losing the step.
  */
-export function useTour<A extends string>(key: string, steps: A[], words: (at: A) => { title: string; text: string }, ready: boolean): (at: A) => ReactNode {
+export function useTour<A extends string>(key: string, steps: A[], words: (at: A) => { title: string; text: string }, ready: boolean): (at: A, place?: TourPlace) => ReactNode {
   const [step, setStep] = useState<number | null>(() => (done(key) ? null : 0));
   const finish = () => {
     try {
@@ -173,6 +160,8 @@ export function useTour<A extends string>(key: string, steps: A[], words: (at: A
     }
     setStep(null);
   };
-  return (at: A) =>
-    ready && step !== null && steps[step] === at ? <TourStep key={at} n={step + 1} total={steps.length} words={words(at)} onNext={() => setStep(step + 1)} onFinish={finish} onClose={() => setStep(null)} /> : null;
+  return (at: A, place?: TourPlace) =>
+    ready && step !== null && steps[step] === at ? (
+      <TourStep key={at} n={step + 1} total={steps.length} words={words(at)} place={place} onNext={() => setStep(step + 1)} onFinish={finish} onClose={() => setStep(null)} />
+    ) : null;
 }

@@ -10,7 +10,7 @@ import { expectNoAxeViolations } from '../../../../../../packages/react/src/test
 import { EXPLORE_LINE, QUIET_LINE, StudioHome, type StudioHomeProps } from './StudioHome';
 import { changeNeed, joinNeed, optionalNeed, person, SEP, type BranchCard } from '../../../lib/home-model';
 import type { ExplorationCard } from '../../../lib/home-explorations';
-import { NARROW_TOUR, tourPlacement } from './HomeTour';
+import { NARROW_TOUR } from './HomeTour';
 
 const NOW = Date.parse('2026-10-22T10:00:00Z');
 const dana = person('dana', 'Dana Kim', null);
@@ -303,31 +303,25 @@ describe('StudioHome, the tour on a phone', () => {
     delete (window as { matchMedia?: unknown }).matchMedia;
   });
 
-  it('places a step in the page flow on a narrow screen, a popover otherwise', () => {
-    expect(tourPlacement(true)).toBe('inline');
-    expect(tourPlacement(false)).toBe('popover');
-  });
-
-  it('shows the step as a card between the heading and the cards: it covers no card', async () => {
+  it('floats the step on a phone too: a transient overlay, never a card in the page flow', async () => {
     phone(true);
     const { container } = render(createElement(StudioHome, props()));
-    const step = await screen.findByRole('group', { name: 'Your explorations' });
-    expect(step.hasAttribute('data-tour-inline')).toBe(true);
-    // In the section, right before the cards, never floating over them.
-    expect(step.nextElementSibling?.classList.contains('sh-cards')).toBe(true);
+    expect(await screen.findByText(/until a reviewer approves it/)).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Your explorations' })).toBeNull();
+    // Nothing joins the section's flow but the zero-size anchor.
+    expect(container.querySelector('.sh-section .dh-tour-anchor-below')).toBeTruthy();
     expect(screen.getByText('1 of 2')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
     await expectNoAxeViolations(container);
   });
 
-  it('puts the lead tour first step above the rows, in view where the page opens', async () => {
+  it('anchors the lead tour first step on the zone of rows, on a phone as on a wide screen', async () => {
     phone(true);
     const review = changeNeed({ number: 7, title: 'Deeper primary blue', author: leo, asker: leo, since: null, task: 'design', thumb: { kind: 'icon', icon: 'branch' } }, NOW);
-    render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [review] })));
-    const step = await screen.findByRole('group', { name: /Changes wait for the lead/ });
+    const { container } = render(createElement(StudioHome, props({ contributor: false, lead: true, needs: [review] })));
+    expect(await screen.findByText(/Changes wait for the lead/)).toBeTruthy();
     expect(screen.getByText('1 of 2')).toBeTruthy();
-    // Before the rows, right under the heading: never below a long list on a phone.
-    expect(step.compareDocumentPosition(screen.getByText('Deeper primary blue')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector('.sh-zone > .dh-tour-anchor-below')).toBeTruthy();
   });
 
   it('anchors the wide popover under the cards, never over the first one ("Start an exploration")', async () => {

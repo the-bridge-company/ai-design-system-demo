@@ -7,7 +7,10 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Dialog, DialogContent } from '@bridge-ds/react';
-import { dialogOpen, useTour } from './HomeTour';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { dialogOpen, tourSide, useTour } from './HomeTour';
+import { StudioHome, type StudioHomeProps } from './StudioHome';
 
 const KEY = 'bridge.test.tour';
 const words = (at: 'one' | 'two') => (at === 'one' ? { title: 'Changes wait for the lead', text: 'They review it.' } : { title: 'Start here', text: 'Pick a product.' });
@@ -64,5 +67,86 @@ describe('HomeTour under dialogs', () => {
     alert.remove();
     add('<div role="dialog" aria-modal="true">Account</div>');
     expect(dialogOpen()).toBe(true);
+  });
+});
+
+// The tour is a transient overlay: opening it never changes the Harbor hero's height (no blank room reserved under
+// what it points at, the regression of PR #1108). Checked on the layout contract, not in a browser: the hero holds the
+// same boxes with the tour open or done, plus one anchor whose CSS takes no room.
+describe('HomeTour takes no room in the hero', () => {
+  const css = readFileSync(join(__dirname, '../../../styles/demo-home.css'), 'utf8');
+  const homeCss = readFileSync(join(__dirname, '../../../styles/studio-home.css'), 'utf8');
+  /** The declarations of one exact selector's rule. */
+  const rule = (src: string, selector: string) => {
+    const at = src.indexOf(`\n${selector} {`);
+    expect(at, selector).toBeGreaterThan(-1);
+    return src.slice(at, src.indexOf('}', at));
+  };
+  const empty: StudioHomeProps = {
+    state: 'empty',
+    greeting: 'Good morning, Sofia.',
+    needs: [],
+    branches: [],
+    explorations: [],
+    health: null,
+    now: Date.parse('2026-11-12T10:00:00Z'),
+    components: [],
+    signedOut: { line: '', button: '', signIn: true },
+    failed: null,
+    startHrefs: { tokens: '#t', component: '#c', guidance: '#g' },
+    contributor: true,
+  };
+  /** The hero's markup without the tour's anchor: the boxes that set its height. */
+  const hero = (root: HTMLElement) => {
+    const zone = root.querySelector<HTMLElement>('.sh-zone')!.cloneNode(true) as HTMLElement;
+    // Base UI's helpers by the trigger (focus guards, the aria-owns span) are position: fixed and clipped: out of the flow.
+    zone.querySelectorAll('.dh-tour-anchor, [style*="position: fixed"]').forEach((a) => a.remove());
+    // Base UI ids differ between renders.
+    return zone.outerHTML.replace(/ (id|aria-controls|aria-describedby|aria-labelledby)="[^"]*"/g, '');
+  };
+
+  it('keeps the hero the same with the tour open: no reserved room, the step floats outside it', async () => {
+    const open = render(createElement(StudioHome, empty));
+    expect(await screen.findByText('Where to start')).toBeTruthy();
+    const withTour = open.container;
+    const zone = withTour.querySelector<HTMLElement>('.sh-zone')!;
+    // The step is portaled out of the hero; nothing inside the hero has a size of its own from the tour.
+    expect(zone.contains(screen.getByText('Where to start'))).toBe(false);
+    // (Base UI's focus guards are position: fixed, 1px and clipped: out of the flow.)
+    const sized = [...zone.querySelectorAll<HTMLElement>('.dh-tour-room, [data-tour-inline], [style*="block-size"], [style*="height"]')];
+    expect(sized.filter((el) => el.style.position !== 'fixed')).toEqual([]);
+    // One anchor, beside the primary button in its row.
+    const anchors = zone.querySelectorAll('.dh-tour-anchor');
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0]!.classList.contains('dh-tour-anchor-beside')).toBe(true);
+    expect(anchors[0]!.parentElement!.classList.contains('sh-start')).toBe(true);
+    const openHero = hero(withTour);
+    cleanup();
+
+    localStorage.setItem('bridge.home.contributor-tour', 'done');
+    const closed = render(createElement(StudioHome, empty));
+    expect(screen.queryByText('Where to start')).toBeNull();
+    expect(closed.container.querySelector('.dh-tour-anchor')).toBeNull();
+    expect(hero(closed.container)).toBe(openHero);
+  });
+
+  it('gives the anchor no size and no gap, and reserves nothing (CSS contract)', () => {
+    expect(css).not.toMatch(/dh-tour-room/);
+    expect(css).not.toMatch(/dh-tour-inline/);
+    const below = rule(css, '.dh-tour-anchor-below');
+    expect(below).toMatch(/position: absolute;/);
+    expect(below).toMatch(/block-size: 0;/);
+    expect(below).not.toMatch(/margin/);
+    const beside = rule(css, '.dh-tour-anchor-beside');
+    expect(beside).toMatch(/inline-size: 0;/);
+    expect(beside).not.toMatch(/margin|padding|min-|block-size/);
+    // Its row has no gap, so a zero-width item adds no width; its height is the button's (align-self: stretch).
+    expect(rule(homeCss, '.sh-start')).not.toMatch(/gap/);
+    expect(rule(css, ':has(> .dh-tour-anchor-below)')).toMatch(/^\s*\n?:has\(> \.dh-tour-anchor-below\) \{\s*position: relative;\s*$/);
+  });
+
+  it('floats beside the button, over the drawing, and under a block elsewhere', () => {
+    expect(tourSide('beside')).toEqual({ side: 'inline-end', align: 'start' });
+    expect(tourSide('below')).toEqual({ side: 'bottom', align: 'start' });
   });
 });

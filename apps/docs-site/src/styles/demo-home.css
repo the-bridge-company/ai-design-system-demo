@@ -156,50 +156,43 @@
   border-block-start: var(--border-width-default) solid var(--color-border-subtle);
 }
 
-/* --- The tour: a DS Popover anchored under what each step points at, in the flow on a phone ----------------------- */
+/* --- The tour: a DS Popover floating by what each step points at (HomeTour.tsx) ------------------------------------ */
 
-/* The anchor: a line across the bottom of what the step points at, no height of its own. */
+/* The tour is a transient overlay: its anchor is a zero-size mark that takes no room and no gap, and nothing is ever
+   reserved for the step, so the page (the Harbor hero included) keeps its natural height whether the tour is open or
+   not. The popover is portaled and floats over the page. */
 .dh-tour-anchor {
-  display: block;
-  /* A short mark, not the whole width: the popover's arrow points at its middle, so it lands by the first column of
-     what the step talks about (the row thumbnails), not at an arbitrary spot clamped to the popover's far corner. */
-  inline-size: var(--size-12);
-  height: 0;
-  /* Takes no room: cancels the gap the zone puts before it. */
-  margin-block-start: calc(var(--space-5) * -1);
-  margin-inline-start: var(--space-6);
   pointer-events: none;
 }
 
-/* The blank room under a floating step's anchor (HomeTour.tsx): the step floats over it, never over the content after
-   it. Its measured height is set on the element; this is the size before it is measured. */
-.dh-tour-room {
+/* Below a block (rows, cards): a short mark on the block's bottom edge, out of the flow (position: absolute takes no
+   grid or flex gap). Short, not the whole width: the arrow points at its middle, by the first column of what the step
+   talks about (the row thumbnails), not at a spot clamped to the popover's far corner. */
+.dh-tour-anchor-below {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: var(--space-6);
+  inline-size: var(--size-12);
+  block-size: 0;
+}
+
+/* The block the mark sits on is its containing block; position: relative alone moves nothing. */
+:has(> .dh-tour-anchor-below) {
+  position: relative;
+}
+
+/* Beside a control (the hero's primary button, in its flex row with no gap): no width, the row's height, so the arrow
+   points at the control's middle from its right edge and the row keeps its size. */
+.dh-tour-anchor-beside {
   display: block;
-  block-size: var(--size-60);
+  align-self: stretch;
+  inline-size: 0;
 }
 
 .dh-tour {
   /* Never wider than the screen less the popover's collision padding on each side (no sideways scroll on a phone).
-     320px, not 384: the step floats under what it points at, so the narrower it is, the less of the next section it
-     covers (step 1 hid the Library and build lines, step 2 the Products heading). */
+     320px, not 384: the narrower it is, the less of the page it covers. */
   max-width: min(var(--size-80), calc(100vw - var(--size-4)));
-}
-
-/* On a narrow screen the step sits in the page flow, where the anchor would be (HomeTour.tsx InlineStep): a DS Card
-   that moves what follows down instead of floating over it. */
-.dh-tour-inline-body {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.dh-tour-title {
-  margin: 0;
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--font-line-height-snug);
-}
-
-.dh-tour-text {
-  margin: 0;
 }
 
 .dh-tour-foot {

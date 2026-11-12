@@ -366,7 +366,7 @@
    "Access" label column (it was the only fact left, so the label added nothing and pushed the value right). */
 .gh-acct[data-contributor] .gh-facts {
   display: block;
-  margin: 0 var(--space-2) var(--space-2);
+  margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--typography-meta-size);
   line-height: var(--typography-meta-line-height);

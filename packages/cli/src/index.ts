@@ -119,7 +119,10 @@ Usage:
   bridge audit <path> [--json [out.json]] [--md [out.md]] [--fail-under 80] [--baseline prev.json]
                [--label "..."] [--ds dir] [--no-regress] [--allowlist known.json]
                                       design system adoption in a product folder: token and component
-                                      adoption, hardcoded values with the closest token, top files.
+                                      adoption, hardcoded values with the closest token, top files,
+                                      and component imitations (role="tab" on a Link, a hand-drawn
+                                      toggle group, a count span): not counted as adoption, each with
+                                      the DS component to use.
                                       Reads CSS, SCSS, Less, TS/JS, TSX/JSX, and Astro, Vue and Svelte
                                       (template markup, frontmatter and <script>, <style> blocks).
                                       Leave one exception out with a comment on the line above:
@@ -722,6 +725,10 @@ async function audit(a: Args, root: string): Promise<number> {
     print(`bridge audit ${report.target.path}: ${report.target.files} files`);
     print(`  token adoption      ${m.tokenAdoption ?? 'n/a'}${m.tokenAdoption === null ? '' : '%'}  (${m.tokenUsages} token refs, ${m.hardcoded} hardcoded, ${m.themeRefs} other theme refs)`);
     print(`  component adoption  ${m.componentAdoption ?? 'n/a'}${m.componentAdoption === null ? '' : '%'}  (${m.dsComponentInstances} of ${m.uiComponentInstances} UI component instances)`);
+    if (m.imitations !== undefined) {
+      const d = report.baseline?.imitations?.delta;
+      print(`  imitations          ${m.imitations}${d != null ? ` (${d > 0 ? '+' : ''}${d} since baseline)` : ''}  hand-made versions of DS components, not counted as adoption`);
+    }
     if (report.baseline) {
       const b = report.baseline;
       const d = (x: number | null) => (x === null ? 'n/a' : `${x > 0 ? '+' : ''}${x} pts`);
@@ -737,6 +744,14 @@ async function audit(a: Args, root: string): Promise<number> {
     if (fixes.length) {
       print('  top fixes:');
       for (const f of fixes) print(`    ${f.value} -> var(${f.suggestion!.cssVar})  ${f.suggestion!.level}, ${f.count}x`);
+    }
+    const im = report.imitations;
+    if (im?.total) {
+      print('  top imitation fixes:');
+      for (const f of im.topFixes.slice(0, 5)) print(`    use ${f.suggestion} instead of ${f.pattern}  ${f.count}x in ${f.files} file(s)`);
+      const first = report.files.flatMap((f) => (f.imitations ?? []).map((x) => ({ file: f.path, ...x }))).slice(0, 10);
+      for (const x of first) print(`    ${x.file}:${x.line}  ${x.pattern} -> ${x.suggestion}`);
+      if (im.total > first.length) print(`    ... ${im.total - first.length} more in --json and --md`);
     }
     const ig = report.ignored;
     if (ig?.total) print(`  ignored on purpose  ${ig.total} (${ig.comment} by comment, ${ig.allowlist} by the allowlist); listed in --json and --md`);

@@ -1,0 +1,8 @@
+.page-tabs {
+  display: flex;
+  border-bottom: var(--border-width-default) solid var(--color-border-default);
+}
+
+.page-tabs a[aria-selected="true"] {
+  border-bottom-color: var(--color-signal-default);
+}

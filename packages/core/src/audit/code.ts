@@ -7,7 +7,8 @@ import { scanCssText } from './css';
 import { isColorLiteral, scanJsStyle, type JsStyleContext, type ValueHit } from './scan-value';
 import { scanClassString, type TailwindHit } from './tailwind';
 import type { DesignSystemIndex } from './ds-index';
-import type { ComponentFinding, FindingCategory, FindingSource, StyleFinding } from './types';
+import { elementImitation, htmlStringImitations, imitationRules, isDsComponentSource, SEPARATOR_GLYPHS, settleToggles, type ElementFacts } from './imitations';
+import type { ComponentFinding, FindingCategory, FindingSource, ImitationFinding, StyleFinding } from './types';
 import { parseCssColor } from './color';
 
 export interface CodeScan {
@@ -19,6 +20,10 @@ export interface CodeScan {
   components: ComponentFinding[];
   /** Local component definitions (PascalCase functions, classes, consts). */
   definitions: { name: string; line: number }[];
+  /** Component imitations: elements left out of `ds` and `components`, and markup built in strings. */
+  imitations: ImitationFinding[];
+  /** Static class names set on elements, with the DS component they are set on (to tell a DS override from an imitation). */
+  classUses: { cls: string; ds?: string }[];
 }
 
 const CLASS_FNS = /^(cn|clsx|classnames|classNames|cva|twMerge|twJoin|tw|cx)$/;
@@ -194,7 +199,9 @@ export function tailwindFindings(hits: TailwindHit[], offset: number, pos: (offs
 
 export function scanCode(path: string, text: string, ds: DesignSystemIndex): CodeScan {
   const sf = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, kindFor(path));
-  const out: CodeScan = { findings: [], tokenUsages: 0, themeRefs: 0, ds: {}, components: [], definitions: [] };
+  const out: CodeScan = { findings: [], tokenUsages: 0, themeRefs: 0, ds: {}, components: [], definitions: [], imitations: [], classUses: [] };
+  const rules = imitationRules(ds.components);
+  const checkImitations = !isDsComponentSource(path, ds.components);
   const handled = new Set<ts.Node>();
   const imports: ImportMap = new Map();
   const pos = (offset: number) => {
@@ -302,10 +309,92 @@ export function scanCode(path: string, text: string, ds: DesignSystemIndex): Cod
     const typeAttr = node.attributes.properties.find((p): p is ts.JsxAttribute => ts.isJsxAttribute(p) && p.name.getText(sf) === 'type');
     const type = typeAttr?.initializer && ts.isStringLiteral(typeAttr.initializer) ? typeAttr.initializer.text : undefined;
     const hasHref = node.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === 'href');
-    const r = classifyTag({ name, ...pos(node.getStart(sf)), ...(type !== undefined ? { type } : {}), hasHref, inRenderProp: isRenderElement(node) }, imports, ds);
+    const inRenderProp = isRenderElement(node);
+    const r = classifyTag({ name, ...pos(node.getStart(sf)), ...(type !== undefined ? { type } : {}), hasHref, inRenderProp }, imports, ds);
+    const facts = elementFacts(node, name, r.ds);
+    for (const cls of facts.classes) out.classUses.push({ cls, ...(r.ds ? { ds: r.ds } : {}) });
+    // An imitation is not adoption: the element leaves the DS and non-DS counts and is listed on its own.
+    const imitation = checkImitations && !inRenderProp ? elementImitation(facts, rules) : undefined;
+    if (imitation) {
+      out.imitations.push(imitation);
+      return;
+    }
     if (r.ds) out.ds[r.ds] = (out.ds[r.ds] ?? 0) + 1;
     if (r.component) out.components.push(r.component);
     if (r.localCandidate) pendingLocal.push(r.localCandidate);
+  };
+
+  /** Static values of an attribute: a string, or each string branch of a condition; [] when dynamic. */
+  const attrValues = (init: ts.JsxAttributeValue | undefined): string[] => {
+    if (!init) return [''];
+    const vals: string[] = [];
+    const add = (e: ts.Expression): void => {
+      if (ts.isParenthesizedExpression(e)) return add(e.expression);
+      if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) vals.push(e.text);
+      else if (ts.isConditionalExpression(e)) {
+        add(e.whenTrue);
+        add(e.whenFalse);
+      } else if (ts.isBinaryExpression(e) && [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.AmpersandAmpersandToken].includes(e.operatorToken.kind)) {
+        add(e.left);
+        add(e.right);
+      }
+    };
+    if (ts.isStringLiteral(init)) vals.push(init.text);
+    else if (ts.isJsxExpression(init) && init.expression) add(init.expression);
+    return vals;
+  };
+  /** Class tokens written as strings in a className expression (`"a b"`, `cn('a', x && 'b')`, template parts). */
+  const classTokens = (init: ts.JsxAttributeValue | undefined): string[] => {
+    const out: string[] = [];
+    const walk = (n: ts.Node): void => {
+      if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) out.push(...(n as ts.LiteralLikeNode).text.split(/\s+/).filter((t) => /^-?[_a-zA-Z][\w-]*$/.test(t)));
+      else if (!ts.isJsxElement(n) && !ts.isJsxSelfClosingElement(n)) n.forEachChild(walk);
+    };
+    if (init) walk(init);
+    return out;
+  };
+  const isMapCallback = (n: ts.Node): boolean => {
+    for (let p: ts.Node | undefined = n.parent; p; p = p.parent) {
+      if (ts.isArrowFunction(p) || ts.isFunctionExpression(p)) {
+        const call = p.parent;
+        return Boolean(call && ts.isCallExpression(call) && ts.isPropertyAccessExpression(call.expression) && /^(map|flatMap)$/.test(call.expression.name.text));
+      }
+      if (ts.isFunctionDeclaration(p) || ts.isSourceFile(p)) return false;
+    }
+    return false;
+  };
+  /** The only content of an element, when it is a separator glyph (`<span>·</span>`, `<span>{' · '}</span>`). */
+  const separatorContent = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement): string | undefined => {
+    if (!ts.isJsxOpeningElement(node)) return undefined;
+    const kids = node.parent.children.filter((c) => !(ts.isJsxText(c) && !c.text.trim()));
+    if (kids.length !== 1) return undefined;
+    const k = kids[0]!;
+    const t = ts.isJsxText(k) ? k.text : ts.isJsxExpression(k) && k.expression && ts.isStringLiteral(k.expression) ? k.expression.text : undefined;
+    return t !== undefined && SEPARATOR_GLYPHS.test(t) ? t : undefined;
+  };
+  const elementFacts = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement, name: string, dsName: string | undefined): ElementFacts => {
+    const attrs = new Map<string, string[]>();
+    let classes: string[] = [];
+    for (const p of node.attributes.properties) {
+      if (!ts.isJsxAttribute(p)) continue;
+      const n = p.name.getText(sf);
+      if (n === 'className' || n === 'class') classes = classTokens(p.initializer);
+      else attrs.set(n, attrValues(p.initializer));
+    }
+    const sep = separatorContent(node);
+    const native = /^[a-z][\w-]*$/.test(name) ? name : undefined;
+    return { name, ...pos(node.getStart(sf)), ...(dsName ? { ds: dsName } : {}), ...(native ? { native } : {}), attrs, classes, repeated: isMapCallback(node), ...(sep ? { separatorOnly: sep } : {}) };
+  };
+  /** A separator glyph typed between elements (`<Link /> · <Link />`, `{' · '}`), not wrapped in an element of its own. */
+  const looseSeparator = (node: ts.JsxText | ts.JsxExpression) => {
+    if (!checkImitations || !ds.components.has('Divider')) return;
+    const t = ts.isJsxText(node) ? node.text : node.expression && ts.isStringLiteral(node.expression) ? node.expression.text : undefined;
+    if (t === undefined || !SEPARATOR_GLYPHS.test(t)) return;
+    const parent = node.parent;
+    if (!ts.isJsxElement(parent) && !ts.isJsxFragment(parent)) return;
+    if (parent.children.filter((c) => !(ts.isJsxText(c) && !c.text.trim())).length < 2) return; // `<span>·</span>`: the element is the separator
+    const start = ts.isJsxText(node) ? node.getStart(sf) + node.text.search(/[·•]/) : node.getStart(sf);
+    out.imitations.push({ ...pos(start), rule: 'separator', pattern: `typed separator "${t.trim()}"`, element: 'text', suggestion: 'Divider' });
   };
   const pendingLocal: ComponentFinding[] = [];
 
@@ -363,6 +452,8 @@ export function scanCode(path: string, text: string, ds: DesignSystemIndex): Cod
       return visit(expr, ctx, classCtx);
     }
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) element(node);
+    if (ts.isJsxText(node) || (ts.isJsxExpression(node) && ts.isJsxElement(node.parent))) looseSeparator(node as ts.JsxText | ts.JsxExpression);
+    if (ts.isJsxExpression(node) && ts.isJsxFragment(node.parent)) looseSeparator(node);
     if (ts.isTaggedTemplateExpression(node) && CSS_TAGS.test(node.tag.getText(sf))) {
       cssTemplate(node.template);
       return;
@@ -436,6 +527,8 @@ export function scanCode(path: string, text: string, ds: DesignSystemIndex): Cod
           const component = LOOKALIKE_ATTRS[m[1]!];
           if (component && ds.components.has(component)) out.components.push({ ...pos(base + m.index! + 1), name: `[${m[1]}]`, kind: 'recreated', library: 'local', suggestion: component });
         }
+        // Interactive markup built in a string (`<button role="tab">`, `class="xe-tablist"`): imitations.
+        if (checkImitations) out.imitations.push(...htmlStringImitations(t, base, pos, rules));
       }
       for (const m of t.matchAll(/var\(\s*(--[\w-]+)/g)) {
         if (ds.isDsVar(m[1]!)) out.tokenUsages++;
@@ -455,5 +548,6 @@ export function scanCode(path: string, text: string, ds: DesignSystemIndex): Cod
   out.components.push(...pendingLocal.filter((f) => defined.has(f.suggestion!)));
   out.findings.sort((a, b) => a.line - b.line || a.column - b.column);
   out.components.sort((a, b) => a.line - b.line || a.column - b.column);
+  out.imitations = settleToggles(out.imitations, rules).sort((a, b) => a.line - b.line || a.column - b.column);
   return out;
 }

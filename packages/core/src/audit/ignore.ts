@@ -2,7 +2,7 @@
 // (`bridge-audit-ignore-next-line: reason`, in any comment syntax) and an allowlist file of file:line entries.
 // Both need a reason, and both keep the ignored items in the report.
 import { lineCol } from './css';
-import type { AllowlistEntry, ComponentFinding, IgnoredItem, IgnoreVia, StyleFinding } from './types';
+import type { AllowlistEntry, ComponentFinding, IgnoredItem, IgnoreVia, ImitationFinding, StyleFinding } from './types';
 
 export const IGNORE_DIRECTIVE = 'bridge-audit-ignore-next-line';
 
@@ -47,16 +47,32 @@ export function ignoreDirectives(text: string): IgnoreDirective[] {
 export interface IgnoreResult {
   findings: StyleFinding[];
   components: ComponentFinding[];
+  imitations: ImitationFinding[];
   ignored: IgnoredItem[];
 }
 
-const item = (x: StyleFinding | ComponentFinding, reason: string, via: IgnoreVia): IgnoredItem =>
+type Item = StyleFinding | ComponentFinding | ImitationFinding;
+
+const item = (x: Item, reason: string, via: IgnoreVia): IgnoredItem =>
   'category' in x
     ? { line: x.line, column: x.column, kind: 'value', what: x.value, reason, via }
-    : { line: x.line, column: x.column, kind: 'component', what: x.name, reason, via };
+    : 'rule' in x
+      ? { line: x.line, column: x.column, kind: 'imitation', what: x.element, reason, via }
+      : { line: x.line, column: x.column, kind: 'component', what: x.name, reason, via };
 
-/** Apply the file's ignore comments. Comments without a reason, or that match nothing, are reported as errors. */
-export function applyIgnoreComments(text: string, findings: StyleFinding[], components: ComponentFinding[]): IgnoreResult & { errors: { line: number; message: string }[] } {
+/** What an allowlist entry's `what` names: the value, the component, or the imitation's element or pattern. */
+const whatOf = (x: Item): string[] => ('category' in x ? [x.value] : 'rule' in x ? [x.element, x.pattern] : [x.name]);
+
+/**
+ * Apply the file's ignore comments (to values, components and imitations alike). Comments without a reason, or
+ * that match nothing, are reported as errors.
+ */
+export function applyIgnoreComments(
+  text: string,
+  findings: StyleFinding[],
+  components: ComponentFinding[],
+  imitations: ImitationFinding[] = [],
+): IgnoreResult & { errors: { line: number; message: string }[] } {
   const errors: { line: number; message: string }[] = [];
   const reasons = new Map<number, string>();
   for (const d of ignoreDirectives(text)) {
@@ -64,31 +80,31 @@ export function applyIgnoreComments(text: string, findings: StyleFinding[], comp
       errors.push({ line: d.line, message: `${IGNORE_DIRECTIVE} needs a reason after a colon (${IGNORE_DIRECTIVE}: why this one stays); nothing was ignored` });
       continue;
     }
-    if (!findings.some((f) => f.line === d.target) && !components.some((c) => c.line === d.target)) {
+    if (!findings.some((f) => f.line === d.target) && !components.some((c) => c.line === d.target) && !imitations.some((c) => c.line === d.target)) {
       errors.push({ line: d.line, message: `${IGNORE_DIRECTIVE} ignores nothing: line ${d.target} has no finding; remove the comment` });
       continue;
     }
     reasons.set(d.target, d.reason);
   }
   const ignored: IgnoredItem[] = [];
-  const keep = <T extends StyleFinding | ComponentFinding>(xs: T[]) =>
+  const keep = <T extends Item>(xs: T[]) =>
     xs.filter((x) => {
       const r = reasons.get(x.line);
       if (r === undefined) return true;
       ignored.push(item(x, r, 'comment'));
       return false;
     });
-  return { findings: keep(findings), components: keep(components), ignored, errors };
+  return { findings: keep(findings), components: keep(components), imitations: keep(imitations), ignored, errors };
 }
 
 /** Apply allowlist entries for one file; returns what each entry matched (index in `entries`). */
-export function applyAllowlist(entries: AllowlistEntry[], findings: StyleFinding[], components: ComponentFinding[]): IgnoreResult & { used: Set<number> } {
+export function applyAllowlist(entries: AllowlistEntry[], findings: StyleFinding[], components: ComponentFinding[], imitations: ImitationFinding[] = []): IgnoreResult & { used: Set<number> } {
   const used = new Set<number>();
   const ignored: IgnoredItem[] = [];
-  const keep = <T extends StyleFinding | ComponentFinding>(xs: T[]) =>
+  const keep = <T extends Item>(xs: T[]) =>
     xs.filter((x) => {
-      const what = 'category' in x ? x.value : x.name;
-      const fits = (e: AllowlistEntry) => e.line === x.line && (e.what === undefined || e.what === what);
+      const what = whatOf(x);
+      const fits = (e: AllowlistEntry) => e.line === x.line && (e.what === undefined || what.includes(e.what));
       // One entry per item when the list has one per item (two links on a line); else one entry covers them all.
       let i = entries.findIndex((e, k) => fits(e) && !used.has(k));
       if (i < 0) i = entries.findIndex(fits);
@@ -97,7 +113,7 @@ export function applyAllowlist(entries: AllowlistEntry[], findings: StyleFinding
       ignored.push(item(x, entries[i]!.reason, 'allowlist'));
       return false;
     });
-  return { findings: keep(findings), components: keep(components), ignored, used };
+  return { findings: keep(findings), components: keep(components), imitations: keep(imitations), ignored, used };
 }
 
 /** Validate an allowlist file's JSON: `{ "entries": [{ "file", "line", "what"?, "reason" }] }`, a reason on each entry. */

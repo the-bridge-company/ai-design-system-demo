@@ -70,6 +70,28 @@ export interface ComponentFinding {
   suggestion?: string;
 }
 
+/** Which rule found an imitation: an ARIA role, a data attribute, an aria-pressed toggle, a class name on an element,
+ * a style sheet rule, markup built in a string, a typed separator. */
+export type ImitationRuleId = 'role' | 'data-attr' | 'toggle' | 'class' | 'css' | 'html-string' | 'separator';
+
+/**
+ * A component imitation: code that rebuilds a pattern the design system ships (tabs, a toggle group, a count badge),
+ * often out of DS parts. Not adoption: the element is left out of the component adoption counts.
+ */
+export interface ImitationFinding {
+  line: number;
+  column: number;
+  rule: ImitationRuleId;
+  /** What gives it away: `role="tab"`, `data-set-tab attribute`, `.page-tabs drawn by hand (border-bottom)`. */
+  pattern: string;
+  /** The element, component or selector as written: `Link`, `button`, `.page-tabs a[aria-selected="true"]`. */
+  element: string;
+  /** The DS component to use. */
+  suggestion: string;
+  /** Other DS components that may fit better. */
+  also?: string[];
+}
+
 export interface FileReport {
   /** Path relative to the audited root, with forward slashes. */
   path: string;
@@ -83,6 +105,8 @@ export interface FileReport {
   otherComponents: number;
   findings: StyleFinding[];
   components: ComponentFinding[];
+  /** Component imitations (absent when none). */
+  imitations?: ImitationFinding[];
   /** Findings and components left out of the counts on purpose, each with its reason. */
   ignored?: IgnoredItem[];
   /** `bridge-audit-ignore-next-line` comments that ignored nothing because they give no reason. */
@@ -96,8 +120,8 @@ export type IgnoreVia = 'comment' | 'allowlist';
 export interface IgnoredItem {
   line: number;
   column: number;
-  kind: 'value' | 'component';
-  /** The value as written ("13px") or the element or component name ("select"). */
+  kind: 'value' | 'component' | 'imitation';
+  /** The value as written ("13px"), the element or component name ("select"), or the imitated pattern's element. */
   what: string;
   reason: string;
   via: IgnoreVia;
@@ -139,6 +163,19 @@ export interface AuditMetrics {
   themeRefs: number;
   dsComponentInstances: number;
   uiComponentInstances: number;
+  /**
+   * Component imitations: hand-made versions of a pattern a DS component covers. Left out of componentAdoption (an
+   * imitation is not adoption). Absent in reports written before imitation detection.
+   */
+  imitations?: number;
+}
+
+/** An imitated pattern to fix across the code: the DS component to use and how often. */
+export interface ImitationFix {
+  suggestion: string;
+  pattern: string;
+  count: number;
+  files: number;
 }
 
 export interface HistoryPoint {
@@ -151,6 +188,7 @@ export interface HistoryPoint {
   hardcoded: number;
   uiComponentInstances: number;
   dsComponentInstances: number;
+  imitations?: number;
 }
 
 export interface BaselineDiff {
@@ -159,6 +197,8 @@ export interface BaselineDiff {
   tokenAdoption: { before: number | null; after: number | null; delta: number | null };
   componentAdoption: { before: number | null; after: number | null; delta: number | null };
   hardcoded: { before: number; after: number; delta: number };
+  /** Null `before` when the baseline was written before imitation detection. */
+  imitations?: { before: number | null; after: number; delta: number | null };
   byCategory: Partial<Record<FindingCategory, { before: number; after: number; delta: number }>>;
   /** Files with fewer hardcoded values or non-DS components than in the baseline. */
   improved: { path: string; before: number; after: number }[];
@@ -240,6 +280,12 @@ export interface AuditReport {
   };
   topFiles: { path: string; hardcoded: number; otherComponents: number; tokenUsages: number; dsComponents: number }[];
   topFixes: TopFix[];
+  /** Component imitations across the code: by DS component to use, and the patterns to fix first. */
+  imitations?: {
+    total: number;
+    byComponent: Record<string, number>;
+    topFixes: ImitationFix[];
+  };
   files: FileReport[];
   baseline?: BaselineDiff;
   /** What was left out of the counts on purpose (escape-hatch comments, allowlist), and allowlist entries that match nothing. */

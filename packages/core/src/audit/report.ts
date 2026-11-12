@@ -4,6 +4,7 @@ import { scanCode } from './code';
 import { lineCol, scanCssText } from './css';
 import type { DesignSystemIndex } from './ds-index';
 import { applyAllowlist, applyIgnoreComments, ignoreDirectives } from './ignore';
+import { cssImitations, imitationRules, isDsComponentSource, isDsOverride, type ClassUses, type CssImitation } from './imitations';
 import { MARKUP_EXTENSIONS, scanMarkup } from './markup';
 import type { ValueHit } from './scan-value';
 import { auditCssText, isSafeFix } from './style';
@@ -18,6 +19,8 @@ import {
   type FindingCategory,
   type HistoryPoint,
   type IgnoredItem,
+  type ImitationFinding,
+  type ImitationFix,
   type TopFix,
 } from './types';
 
@@ -44,26 +47,30 @@ const langOf = (path: string): FileReport['lang'] => {
   return 'js';
 };
 
-export type AuditedFile = FileReport & { definitions: { name: string; line: number }[]; dsByName: Record<string, number> };
+export type AuditedFile = FileReport & { definitions: { name: string; line: number }[]; dsByName: Record<string, number>; classUses: { cls: string; ds?: string }[] };
 
 /** Audit one file. `bridge-audit-ignore-next-line: reason` comments leave the next line's findings out of the counts. */
 export function auditFile(path: string, text: string, ds: DesignSystemIndex): AuditedFile {
   const lang = langOf(path);
   if (lang === 'css' || lang === 'scss' || lang === 'less') {
-    const r = auditCssText(text, lang, ds, { pos: lineCol(text) });
-    return withIgnores(text, { path, lang, tokenUsages: r.tokenUsages, themeRefs: r.themeRefs, hardcoded: 0, dsComponents: 0, otherComponents: 0, findings: r.findings, components: [], definitions: [], dsByName: {} });
+    const pos = lineCol(text);
+    const r = auditCssText(text, lang, ds, { pos });
+    const imitations = isDsComponentSource(path, ds.components) ? [] : cssImitations(text, lang, imitationRules(ds.components), pos);
+    return withIgnores(text, { path, lang, tokenUsages: r.tokenUsages, themeRefs: r.themeRefs, hardcoded: 0, dsComponents: 0, otherComponents: 0, findings: r.findings, components: [], imitations, definitions: [], dsByName: {}, classUses: [] });
   }
   const c = lang === 'astro' || lang === 'vue' || lang === 'svelte' ? scanMarkup(path, text, lang, ds) : scanCode(path, text, ds);
   const dsCount = Object.values(c.ds).reduce((a, b) => a + b, 0);
-  return withIgnores(text, { path, lang, tokenUsages: c.tokenUsages, themeRefs: c.themeRefs, hardcoded: 0, dsComponents: dsCount, otherComponents: 0, findings: c.findings, components: c.components, definitions: c.definitions, dsByName: c.ds });
+  return withIgnores(text, { path, lang, tokenUsages: c.tokenUsages, themeRefs: c.themeRefs, hardcoded: 0, dsComponents: dsCount, otherComponents: 0, findings: c.findings, components: c.components, imitations: c.imitations, definitions: c.definitions, dsByName: c.ds, classUses: c.classUses });
 }
 
 function withIgnores(text: string, f: AuditedFile): AuditedFile {
-  const r = applyIgnoreComments(text, f.findings, f.components);
+  const r = applyIgnoreComments(text, f.findings, f.components, f.imitations ?? []);
+  const { imitations: _i, ...rest } = f;
   return {
-    ...f,
+    ...rest,
     findings: r.findings,
     components: r.components,
+    ...(r.imitations.length ? { imitations: r.imitations } : {}),
     hardcoded: r.findings.length,
     otherComponents: r.components.length,
     ...(r.ignored.length ? { ignored: r.ignored } : {}),
@@ -88,19 +95,48 @@ export interface AuditInput {
 export function buildAuditReport(input: AuditInput, ds: DesignSystemIndex): AuditReport {
   const allow = input.allowlist ?? [];
   const usedAllow = new Set<number>();
-  const reports = input.files.map((f) => {
-    const r = auditFile(f.path, f.text, ds);
-    const idx = allow.flatMap((e, i) => (e.file === f.path ? [i] : []));
+  const audited = input.files.map((f) => auditFile(f.path, f.text, ds));
+  // A style sheet rule on a class only ever set on the DS component it names (`<Badge className="tab-count">`) styles
+  // that component: an override, not an imitation.
+  const uses: ClassUses = new Map();
+  for (const r of audited) {
+    for (const u of r.classUses) {
+      const x = uses.get(u.cls) ?? { ds: new Set<string>(), other: 0 };
+      if (u.ds) x.ds.add(u.ds);
+      else x.other++;
+      uses.set(u.cls, x);
+    }
+  }
+  const reports = audited.map((r0): AuditedFile => {
+    const { imitations: found, ...base } = r0;
+    const kept = (found ?? []).filter((x) => !isDsOverride(x as CssImitation, uses, ds.components)).map(({ classes: _c, candidates: _k, ...x }: CssImitation): ImitationFinding => x);
+    const r: AuditedFile = { ...base, ...(kept.length ? { imitations: kept } : {}) };
+    const idx = allow.flatMap((e, i) => (e.file === r.path ? [i] : []));
     if (!idx.length) return r;
-    const a = applyAllowlist(idx.map((i) => allow[i]!), r.findings, r.components);
+    const a = applyAllowlist(idx.map((i) => allow[i]!), r.findings, r.components, kept);
     a.used.forEach((k) => usedAllow.add(idx[k]!));
     if (!a.ignored.length) return r;
     const ignored = [...(r.ignored ?? []), ...a.ignored].sort((x, y) => x.line - y.line || x.column - y.column);
-    return { ...r, findings: a.findings, components: a.components, hardcoded: a.findings.length, otherComponents: a.components.length, ignored };
+    return { ...base, findings: a.findings, components: a.components, ...(a.imitations.length ? { imitations: a.imitations } : {}), hardcoded: a.findings.length, otherComponents: a.components.length, ignored };
   });
   const ignoredItems = reports.flatMap((r) => (r.ignored ?? []).map((x): IgnoredItem & { file: string } => ({ file: r.path, ...x })));
   const staleAllowlist = allow.filter((_e, i) => !usedAllow.has(i));
-  const files: FileReport[] = reports.map(({ definitions: _d, dsByName: _n, ...r }) => r);
+  const files: FileReport[] = reports.map(({ definitions: _d, dsByName: _n, classUses: _u, ...r }) => r);
+  const imitationFixes = new Map<string, ImitationFix & { fileSet: Set<string> }>();
+  const imitationsBy: Record<string, number> = {};
+  let imitationCount = 0;
+  for (const r of reports) {
+    for (const x of r.imitations ?? []) {
+      imitationCount++;
+      imitationsBy[x.suggestion] = (imitationsBy[x.suggestion] ?? 0) + 1;
+      const kind = imitationKind(x);
+      const key = `${x.suggestion}|${kind}`;
+      const fx = imitationFixes.get(key) ?? { suggestion: x.suggestion, pattern: kind, count: 0, files: 0, fileSet: new Set<string>() };
+      fx.count++;
+      fx.fileSet.add(r.path);
+      imitationFixes.set(key, fx);
+    }
+  }
   const byCategory: Partial<Record<FindingCategory, CategoryCount>> = {};
   const fixes = new Map<string, TopFix & { fileSet: Set<string> }>();
   const components: AuditReport['components'] = { ds: {}, foreign: {}, native: {}, recreated: [] };
@@ -162,11 +198,19 @@ export function buildAuditReport(input: AuditInput, ds: DesignSystemIndex): Audi
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     target: { path: input.target, files: files.length, skipped: input.skipped ?? 0 },
     designSystem: { packages: ds.packages, components: ds.components.size, tokens: ds.tokenCount, modes: ds.modes },
-    metrics: { tokenAdoption: pct(tokenUsages, tokenUsages + hardcoded), componentAdoption: pct(dsInstances, uiInstances), tokenUsages, hardcoded, themeRefs, dsComponentInstances: dsInstances, uiComponentInstances: uiInstances },
+    metrics: { tokenAdoption: pct(tokenUsages, tokenUsages + hardcoded), componentAdoption: pct(dsInstances, uiInstances), tokenUsages, hardcoded, themeRefs, dsComponentInstances: dsInstances, uiComponentInstances: uiInstances, imitations: imitationCount },
     byCategory: Object.fromEntries(FINDING_CATEGORIES.filter((c) => byCategory[c]).map((c) => [c, byCategory[c]!])),
     components: { ...components, recreated: components.recreated.sort((a, b) => b.instances - a.instances || a.name.localeCompare(b.name)) },
     topFiles,
     topFixes,
+    imitations: {
+      total: imitationCount,
+      byComponent: Object.fromEntries(Object.entries(imitationsBy).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))),
+      topFixes: [...imitationFixes.values()]
+        .sort((a, b) => b.count - a.count || a.suggestion.localeCompare(b.suggestion))
+        .slice(0, 15)
+        .map(({ fileSet, ...f }) => ({ ...f, files: fileSet.size })),
+    },
     files: files.sort((a, b) => a.path.localeCompare(b.path)),
     ...(ignoredItems.length || staleAllowlist.length
       ? {
@@ -183,6 +227,26 @@ export function buildAuditReport(input: AuditInput, ds: DesignSystemIndex): Audi
   };
 }
 
+/** The kind of an imitation, to group the fixes: `role="tab"`, `style sheet rules that draw it by hand`. */
+export function imitationKind(x: ImitationFinding): string {
+  switch (x.rule) {
+    case 'role':
+      return x.pattern;
+    case 'html-string':
+      return 'markup built in a string';
+    case 'css':
+      return 'style sheet rules that draw it by hand';
+    case 'data-attr':
+      return 'data attributes that wire it by hand';
+    case 'toggle':
+      return 'aria-pressed toggles';
+    case 'class':
+      return 'class names on plain elements';
+    case 'separator':
+      return 'typed separators';
+  }
+}
+
 const delta = (a: number | null, b: number | null) => (a === null || b === null ? null : Math.round((b - a) * 10) / 10);
 
 export function historyPoint(r: AuditReport): HistoryPoint {
@@ -195,6 +259,7 @@ export function historyPoint(r: AuditReport): HistoryPoint {
     hardcoded: r.metrics.hardcoded,
     uiComponentInstances: r.metrics.uiComponentInstances,
     dsComponentInstances: r.metrics.dsComponentInstances,
+    ...(r.metrics.imitations !== undefined ? { imitations: r.metrics.imitations } : {}),
   };
 }
 
@@ -224,6 +289,15 @@ export function compareWithBaseline(report: AuditReport, baseline: AuditReport):
     tokenAdoption: { before: baseline.metrics.tokenAdoption, after: report.metrics.tokenAdoption, delta: delta(baseline.metrics.tokenAdoption, report.metrics.tokenAdoption) },
     componentAdoption: { before: baseline.metrics.componentAdoption, after: report.metrics.componentAdoption, delta: delta(baseline.metrics.componentAdoption, report.metrics.componentAdoption) },
     hardcoded: { before: baseline.metrics.hardcoded, after: report.metrics.hardcoded, delta: report.metrics.hardcoded - baseline.metrics.hardcoded },
+    ...(report.metrics.imitations !== undefined
+      ? {
+          imitations: {
+            before: baseline.metrics.imitations ?? null,
+            after: report.metrics.imitations,
+            delta: baseline.metrics.imitations === undefined ? null : report.metrics.imitations - baseline.metrics.imitations,
+          },
+        }
+      : {}),
     byCategory,
     improved: improved.sort((x, y) => y.before - y.after - (x.before - x.after)),
     regressed: regressed.sort((x, y) => y.after - y.before - (x.after - x.before)),
@@ -258,7 +332,7 @@ const fmtDelta = (n: number | null) => (n === null ? '' : ` (${n > 0 ? '+' : ''}
 const esc = (s: string) => s.replace(/\|/g, '\\|').replace(/`/g, "'");
 
 /** Short Markdown summary for a PR comment or a CI job summary. */
-export function auditMarkdown(r: AuditReport, opts: { topFiles?: number; topFixes?: number; ignored?: number } = {}): string {
+export function auditMarkdown(r: AuditReport, opts: { topFiles?: number; topFixes?: number; ignored?: number; imitations?: number } = {}): string {
   const m = r.metrics;
   const b = r.baseline;
   const lines = [
@@ -270,6 +344,7 @@ export function auditMarkdown(r: AuditReport, opts: { topFiles?: number; topFixe
     '| --- | --- |',
     `| Token adoption | **${fmtPct(m.tokenAdoption)}**${fmtDelta(b?.tokenAdoption.delta ?? null)} |`,
     `| Component adoption | **${fmtPct(m.componentAdoption)}**${fmtDelta(b?.componentAdoption.delta ?? null)} |`,
+    ...(m.imitations !== undefined ? [`| Component imitations (not adoption) | **${m.imitations}**${b?.imitations?.delta != null ? ` (${b.imitations.delta > 0 ? '+' : ''}${b.imitations.delta})` : ''} |`] : []),
     `| Token references | ${m.tokenUsages} |`,
     `| Hardcoded values | ${m.hardcoded}${b ? ` (${b.hardcoded.delta > 0 ? '+' : ''}${b.hardcoded.delta})` : ''} |`,
     `| Other theme references | ${m.themeRefs} |`,
@@ -297,6 +372,25 @@ export function auditMarkdown(r: AuditReport, opts: { topFiles?: number; topFixe
     if (r.components.recreated.length) lines.push(`- **Re-created DS components**: ${r.components.recreated.map((x) => `${x.name} (${x.file}:${x.line})`).join(', ')}`);
     const dsUsed = Object.entries(r.components.ds).sort((a, b) => b[1] - a[1]);
     if (dsUsed.length) lines.push(`- **DS components used**: ${dsUsed.map(([n, k]) => `${n} ${k}`).join(', ')}`);
+    lines.push('');
+  }
+  const im = r.imitations;
+  if (im?.total) {
+    lines.push(
+      '### Component imitations',
+      '',
+      `${im.total} place(s) rebuild a pattern a DS component covers. They do not count as adoption. By component to use: ${Object.entries(im.byComponent).map(([c, k]) => `${c} ${k}`).join(', ')}.`,
+      '',
+      '| Use | Instead of | Count | Files |',
+      '| --- | --- | ---: | ---: |',
+    );
+    for (const f of im.topFixes.slice(0, opts.topFixes ?? 10)) lines.push(`| ${f.suggestion} | ${esc(f.pattern)} | ${f.count} | ${f.files} |`);
+    lines.push('');
+    const all = r.files.flatMap((f) => (f.imitations ?? []).map((x) => ({ file: f.path, ...x })));
+    const shown = all.slice(0, opts.imitations ?? 100);
+    lines.push('| Where | Pattern | Use |', '| --- | --- | --- |');
+    for (const x of shown) lines.push(`| \`${esc(x.file)}:${x.line}\` | ${esc(x.pattern)} on \`${esc(x.element)}\` | ${x.suggestion}${x.also?.length ? ` (or ${x.also.join(', ')})` : ''} |`);
+    if (all.length > shown.length) lines.push(`| ... | ${all.length - shown.length} more (--json lists them all) | |`);
     lines.push('');
   }
   const files = r.topFiles.slice(0, opts.topFiles ?? 10);

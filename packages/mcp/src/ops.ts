@@ -890,6 +890,13 @@ export async function auditOp(ctx: BridgeContext, a: { path: string; baseline?: 
       native: report.components.native,
       recreated: report.components.recreated,
     },
+    // Hand-made versions of DS components (role="tab" on a Link, a count span): left out of componentAdoption.
+    imitations: {
+      total: report.imitations?.total ?? 0,
+      byComponent: report.imitations?.byComponent ?? {},
+      topFixes: (report.imitations?.topFixes ?? []).slice(0, limit),
+      ...(report.baseline?.imitations ? { sinceBaseline: report.baseline.imitations } : {}),
+    },
     ...(report.ignored ? { ignored: { total: report.ignored.total, comment: report.ignored.comment, allowlist: report.ignored.allowlist, items: report.ignored.items.slice(0, limit * 5), staleAllowlist: report.ignored.staleAllowlist } } : {}),
     ...(report.files.some((f) => f.ignoreErrors?.length) ? { ignoreErrors: report.files.flatMap((f) => (f.ignoreErrors ?? []).map((e) => ({ file: f.path, ...e }))) } : {}),
     topFiles: report.topFiles.slice(0, limit),
@@ -897,12 +904,13 @@ export async function auditOp(ctx: BridgeContext, a: { path: string; baseline?: 
     ...(withFindings
       ? {
           findings: report.files
-            .filter((f) => f.findings.length || f.components.length)
+            .filter((f) => f.findings.length || f.components.length || f.imitations?.length)
             .slice(0, single ? 1 : limit)
             .map((f) => ({
               file: f.path,
               values: f.findings.map((x) => ({ line: x.line, value: x.value, category: x.category, ...(x.property ? { property: x.property } : {}), ...(x.suggestion ? { use: `var(${x.suggestion.cssVar})`, confidence: x.suggestion.level } : {}) })),
               components: f.components.map((c) => ({ line: c.line, name: c.name, kind: c.kind, library: c.library, ...(c.suggestion ? { use: c.suggestion } : {}) })),
+              imitations: (f.imitations ?? []).map((x) => ({ line: x.line, pattern: x.pattern, element: x.element, use: x.suggestion, ...(x.also?.length ? { orUse: x.also } : {}) })),
             })),
         }
       : {}),

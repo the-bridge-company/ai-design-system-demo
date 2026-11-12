@@ -101,7 +101,9 @@
 }
 
 /* Cells line up on their first line of text, so a label stays level with its value however long the value runs. */
-.set-row-stack {
+/* A row that stacks (AI tools: the choice, its sentence, Save): doubled class so it wins over .set-row's grid below,
+   which put the sentence and Save mid-height beside the checkboxes. */
+.set-row.set-row-stack {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -217,6 +219,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* A row of faces has no text baseline of its own (the avatar's bottom would sit on the label's baseline and lift the
+   names): it starts at the row's top instead, each face and name on one line as tall as the label's first line. */
+.set-row-value:has(> .set-owner-list) {
+  align-self: start;
+}
+
+.set-owner-list > .set-owner {
+  min-height: var(--typography-ui-line-height);
 }
 
 /* Edit in place: viewing shows who holds each right (or the visual mode); editing swaps it for a segmented control on

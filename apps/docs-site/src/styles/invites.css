@@ -29,8 +29,8 @@
 
 .mem-you,
 .mem-count {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
+  font-family: var(--typography-ui-family);
+  font-variant-numeric: tabular-nums;
 }
 
 .mem-line {
@@ -94,6 +94,9 @@
 }
 
 .mem-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-family: var(--typography-h3-family);
   font-size: var(--typography-h3-size);
@@ -127,8 +130,10 @@
   gap: var(--space-3);
 }
 
+/* The Role header starts where the roles' words start (inside the pickers and the plain role text), not at the row end. */
 .mem-role-head {
-  text-align: end;
+  text-align: start;
+  text-indent: calc(var(--control-padding-x-sm) + var(--border-width-default));
 }
 
 .mem-role-cell {

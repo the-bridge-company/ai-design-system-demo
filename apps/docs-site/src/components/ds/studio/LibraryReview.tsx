@@ -8,9 +8,9 @@
 // in one banner and sees no buttons; her rows show only what changed (an exception). Decisions are the exploration's
 // own (scripts/library-review-data.ts): deciding here or on the exploration page is the same decision. Undo stays
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, Radio, RadioGroup, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
@@ -24,12 +24,15 @@ import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy,
 import { studioHref } from '../../../lib/team-path';
 import { askedCountLine, askedFaces, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
 import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
-import { BOTH, compareKeepLabel, compareView, STAGE_SCALE, stageLabels, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
+import { BOTH, checkedKeepLabel, checkedLooks, checkedOfPick, checkedOutcome, checkedPick, compareView, defaultChecked, STAGE_SCALE, TODAY, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
   batchable,
   keepMissing,
   canDecide,
+  colorLook,
+  contrastWords,
+  cssRgba,
   decidedTag,
   designerBanner,
   emptyLine,
@@ -43,7 +46,7 @@ import {
   waitingForYou,
   passes,
   reviewParams,
-  seenLine,
+  reviewProgress,
   selectionLine,
   STATUS_CHOICES,
   summaryLine,
@@ -52,6 +55,7 @@ import {
   withReviewParams,
   YOU,
   type AskedBy,
+  type ColorLook,
   type FilterChoice,
   type ReviewFilters,
   type ReviewPiece,
@@ -66,7 +70,7 @@ import { setReviewCount } from '../../../scripts/shell';
 import { exploringDemo, openMakeItYours } from '../../../scripts/demo-gate';
 import { readRepo } from '../../../scripts/github-session';
 import { siteConfig } from '../../../scripts/repo-context';
-import { defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
+import { AA_MIN, contrastRatio, defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref } from '../../../lib/product-page';
 import { libraryHref } from '../../../lib/library-shells';
 
@@ -110,12 +114,42 @@ function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; k
 }
 
 /** The exploration that asked, as a chip that opens it. */
+/** A count next to its label: a small neutral pill with tabular numbers, centred on the label (owner, 2026-11-12). */
+function Count({ n }: { n: number }) {
+  return (
+    <Badge tone="neutral" size="sm" className="lr-count">
+      {n}
+    </Badge>
+  );
+}
+
+/** A middle dot between two parts of one line, with room on both sides (a bare " · " reads cramped at 12 to 14 px). */
+function Sep() {
+  return (
+    <span className="lr-sep" aria-hidden="true">
+      {' · '}
+    </span>
+  );
+}
+
+/** The detail's eyebrow, said once: "Colors · new color", "Docs" (never "Docs · docs"). */
+const eyebrowParts = (p: ReviewPiece): string[] => {
+  const what = p.category === p.title ? 'Components' : p.category;
+  const kind = p.kind.toLowerCase();
+  return what.toLowerCase() === kind ? [what] : [what, kind];
+};
+
 function AskedChip({ p }: { p: ReviewPiece }) {
   if (!p.asked) return <span className="lr-ask is-lead">{p.mine ? 'From you' : p.by ? `From ${p.by}` : 'From a lead'}</span>;
   const words = (
     <>
       {p.asked.name}
-      {p.asked.product && <span className="lr-ask-product"> · {p.asked.product}</span>}
+      {p.asked.product && (
+        <span className="lr-ask-product">
+          <Sep />
+          {p.asked.product}
+        </span>
+      )}
     </>
   );
   return p.asked.href ? (
@@ -244,13 +278,45 @@ function LibraryPageLink({ p, title = false }: { p: ReviewPiece; title?: boolean
 // ---------------------------------------------------------------------------------------------------------------
 // One by one
 
-function Plate({ children, caption, value, tone }: { children: ReactNode; caption: string; value?: string | null; tone?: 'match' }) {
+/**
+ * A colour drawn as text or as the main button: its contrast, measured on the plate as drawn (the text on its surface,
+ * the label on the colour), with AA said in words so the result never rests on the badge colour alone.
+ */
+function useDrawnContrast(art: RefObject<HTMLDivElement | null>, hex: string | null | undefined, look: ColorLook | null): number | null {
+  const [ratio, setRatio] = useState<number | null>(null);
+  useEffect(() => {
+    const el = art.current?.querySelector<HTMLElement>('.lr-look');
+    if (!el || !hex || (look !== 'text' && look !== 'action')) return setRatio(null);
+    const cs = getComputedStyle(el);
+    const drawn = cssRgba(look === 'text' ? cs.backgroundColor : cs.color);
+    try {
+      setRatio(drawn ? (look === 'text' ? contrastRatio(hex, drawn) : contrastRatio(drawn, hex)) : null);
+    } catch {
+      setRatio(null);
+    }
+  }, [art, hex, look]);
+  return ratio;
+}
+
+function Plate({ children, caption, value, tone, contrast }: { children: ReactNode; caption: string; value?: string | null; tone?: 'match'; contrast?: { hex: string | null; look: ColorLook } | null }) {
+  const art = useRef<HTMLDivElement | null>(null);
+  const ratio = useDrawnContrast(art, contrast?.hex, contrast?.look ?? null);
+  const said = ratio === null ? null : contrastWords(ratio, AA_MIN.text);
   return (
     <figure className={`lr-plate${tone === 'match' ? ' is-match' : ''}`}>
-      <div className="lr-plate-art">{children}</div>
+      <div className="lr-plate-art" ref={art}>
+        {children}
+      </div>
       <figcaption className="lr-plate-cap">
         <span className="lr-plate-label">{caption}</span>
-        {value && <span className="lr-plate-value">{value}</span>}
+        <span className="lr-plate-meta">
+          {said && (
+            <Badge tone={said.pass ? 'success' : 'danger'} size="sm" className={`lr-plate-ratio ${statusTagClass(said.pass ? 'success' : 'danger')}`}>
+              {said.text}
+            </Badge>
+          )}
+          {value && <span className="lr-plate-value">{value}</span>}
+        </span>
       </figcaption>
     </figure>
   );
@@ -341,13 +407,19 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
       />
     );
   // Two parts and a separator the CSS spaces (.lr-eyebrow-sep): typed " · " left 2px each side of a 1px dot.
+  // Said once: "Docs", never "Docs · docs".
+  const [what, kind] = eyebrowParts(p);
   const eyebrow = (
     <>
-      <span>{p.category === p.title ? 'Components' : p.category}</span>
-      <span className="lr-eyebrow-sep" aria-hidden="true">
-        ·
-      </span>
-      <span>{p.kind.toLowerCase()}</span>
+      <span>{what}</span>
+      {kind && (
+        <>
+          <span className="lr-eyebrow-sep" aria-hidden="true">
+            ·
+          </span>
+          <span>{kind}</span>
+        </>
+      )}
     </>
   );
   return (
@@ -378,8 +450,20 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
           </>
         ) : (
           <>
-            <AskedChip p={p} />
-            {p.asked?.designer && <span className="lr-muted">{p.mine ? 'You asked for it' : `${p.asked.designer} asked for it`}</span>}
+            {!p.asked && p.by && !p.mine ? (
+              <span className="lr-detail-who">
+                <Avatar name={p.by} size="sm" decorative />
+                <span className="lr-muted">From {p.by}</span>
+              </span>
+            ) : (
+              <AskedChip p={p} />
+            )}
+            {p.asked?.designer && (
+              <span className="lr-detail-who">
+                <Avatar name={p.asked.designer} size="sm" decorative />
+                <span className="lr-muted">{p.mine ? 'You asked for it' : `${p.asked.designer} asked for it`}</span>
+              </span>
+            )}
           </>
         )}
         {(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
@@ -391,10 +475,10 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
       {(
         <>
           <div className={`lr-plates${p.match ? ' has-match' : ''}`}>
-            <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before}>
+            <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before} contrast={spec.kind === 'color' ? { hex: spec.before, look: colorLook(p.title).look } : null}>
               {valued || !isNew(p) ? <Sample spec={spec} side="before" size="card" title={p.title} /> : none}
             </Plate>
-            <Plate caption={p.match ? 'Asked for' : 'With this change'} value={valueOf(spec, 'after') ?? p.after}>
+            <Plate caption={p.match ? 'Asked for' : 'With this change'} value={valueOf(spec, 'after') ?? p.after} contrast={spec.kind === 'color' ? { hex: spec.after, look: colorLook(p.title).look } : null}>
               <Sample spec={spec} side="after" size="card" title={p.title} />
             </Plate>
             {p.match && (
@@ -454,38 +538,27 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
   );
 }
 
-/** One option of a conflict, on one row: its colour key, the person, the value and its word, where it is used. */
 /**
- * A row that is not a choice (today, or the ways once decided): clicking it shows that value on the stage above. A row
- * Bridge cannot draw (no value) stays plain text.
+ * One option of a conflict, on one row: its colour key, the person (the library's mark for today), the value and its
+ * word, where it is used. Every row has the same anatomy, so the columns line up whatever the row.
  */
-function LookRow({ o, shown, onShow, className, children }: { o: CompareOption; shown: string; onShow: (k: string) => void; className: string; children: ReactNode }) {
-  if (o.value === null)
-    return (
-      <div className={className}>
-        <span className="lr-opt-slot" aria-hidden="true" />
-        {children}
-      </div>
-    );
-  return (
-    // bridge-audit-ignore-next-line: a whole option row as one native button (shows it on the stage); the library Button is a compact action, not a list row
-    <button type="button" className={`${className} is-look${shown === o.key ? ' is-shown' : ''}`} aria-pressed={shown === o.key} onClick={() => onShow(o.key)}>
-      <span className="lr-opt-slot" aria-hidden="true" />
-      {children}
-    </button>
-  );
-}
-
 function OptionRow({ o, mark }: { o: CompareOption; mark: MarkOf }) {
   return (
     <span className="lr-opt-row">
       <span className={`lr-key is-hue-${o.hue ?? 'both'}`} aria-hidden="true" />
       <span className="lr-opt-who">
-        {o.who && <Avatar name={o.who} size="xs" decorative />}
+        {o.who ? (
+          <Avatar name={o.who} size="xs" decorative />
+        ) : (
+          <span className="lr-opt-lib" aria-hidden="true">
+            <Icon icon={BookOpen} size="xs" />
+          </span>
+        )}
         <strong>{o.name}</strong>
       </span>
       <span className="lr-opt-val">
-        {o.valueText && <strong>{o.valueText}</strong>} {o.sameAsToday ? `· ${o.words}` : o.words}
+        {o.valueText && <strong>{o.valueText}</strong>}
+        {o.words && <span>{o.words}</span>}
       </span>
       <span className="lr-opt-where">
         {'text' in o.where ? (
@@ -550,71 +623,84 @@ function useLibraryInset(on: boolean): [number | null, ReactNode] {
 }
 
 /**
- * The compare stage (direction D2): Overlay draws the chosen way's component for real at 150%, the other options'
- * content boxes outlined in their colour and labelled ("20 Sofia", "16 Today"); Side by side draws each option.
+ * The compare stage (direction D2, owner 2026-11-12): what the checked rows look like, one look per value. Side by side
+ * draws one Card per look, each with its room inside; Overlay draws one Card at 150% with each look's content box
+ * outlined in its colour. Each look's label sits under its Card, its colour key first, on the Card's start edge.
  */
-function Stage({ view, mode, pick, component }: { view: CompareView; mode: 'overlay' | 'side'; pick: string; component: string }) {
-  // One outline and one label per value: a way equal to today shares today's ("20 Today, Sofia").
-  const labels = stageLabels(view);
+function Stage({ view, mode, checked, component }: { view: CompareView; mode: 'overlay' | 'side'; checked: readonly string[]; component: string }) {
+  const looks = checkedLooks(view, checked);
+  if (!looks.length)
+    return (
+      <div className="lr-stage is-empty">
+        <p className="lr-stage-empty">Check a way below to see it here.</p>
+      </div>
+    );
+  const label = (l: (typeof looks)[number]) => (
+    <>
+      <span className={`lr-key is-hue-${l.hue}`} aria-hidden="true" />
+      <span>
+        <strong>{l.value} px</strong> {l.label.replace(/^\S+\s/, '')}
+      </span>
+    </>
+  );
   if (mode === 'side')
     return (
       <div className="lr-stage is-side">
-        {labels.map((l) => (
-          <figure key={l.label} className={`lr-stage-way${l.keys.includes(pick) ? ' is-pick' : ''}`}>
+        {looks.map((l) => (
+          <figure key={l.label} className="lr-stage-way">
             <Specimen component={component} value={l.value} />
-            <figcaption className="lr-stage-cap">
-              <span className={`lr-key is-hue-${l.hue}`} aria-hidden="true" />
-              {l.label}
-            </figcaption>
+            <figcaption className="lr-stage-cap">{label(l)}</figcaption>
           </figure>
         ))}
       </div>
     );
-  const base = [view.today, ...view.ways].find((w) => w.key === pick && w.value !== null) ?? view.ways[0]!;
+  // The Card drawn at the roomiest look: every other content box is wider and stays outside the content.
+  const base = Math.max(...looks.map((l) => l.value));
   return (
     <div className="lr-stage">
-      <div className="lr-stage-row">
+      <figure className="lr-stage-way">
         <div className="lr-stage-art" style={{ ['--lr-scale' as string]: STAGE_SCALE }}>
           <span className="lr-stage-card">
-            <Specimen component={component} value={base.value} />
-            {labels.map((l) => (
-              <span key={l.label} className={`lr-ol is-hue-${l.hue}${l.keys.includes(base.key) ? ' is-base' : ''}`} style={{ inset: `${l.value}px` }} aria-hidden="true" />
+            <Specimen component={component} value={base} />
+            {looks.map((l) => (
+              <span key={l.label} className={`lr-ol is-hue-${l.hue}`} style={{ inset: `${l.value}px` }} aria-hidden="true" />
             ))}
           </span>
         </div>
-        <ul className="lr-stage-keys" aria-label="The content box of each way">
-          {labels.map((l) => (
-            <li key={l.label} className={`lr-ol-tag is-hue-${l.hue}`}>
-              {l.label}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <span className="lr-stage-note">Shown at 150%</span>
+        <figcaption className="lr-stage-keys">
+          <ul aria-label="The content box of each way">
+            {looks.map((l) => (
+              <li key={l.label} className="lr-stage-cap">
+                {label(l)}
+              </li>
+            ))}
+          </ul>
+          <span className="lr-stage-note">Shown at 150%</span>
+        </figcaption>
+      </figure>
     </div>
   );
 }
 
 /**
- * A conflict in One by one (direction D2): the title with its ways tag, the part that differs said once, the compare
- * stage, then one radio list (today as the reference, each way, both as two sizes) and one footer: who is told,
- * "Comment to both", one primary that names the outcome. No card per way, no button per way.
+ * A conflict in One by one (direction D2, rows as checkboxes since 2026-11-12): the title with its ways tag, the part
+ * that differs said once, the compare stage, then one checkbox per row (today and each way) that drives the stage, the
+ * outcome in one sentence and one footer: who is told, "Comment to both", one primary that names the outcome. Checking
+ * two or more values keeps them as sizes; the pick recorded is one the exploration page reads (checkedPick).
  */
 function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpen, commentBox, tag }: { p: ReviewPiece; decides: boolean; busy: boolean; onAct: (p: ReviewPiece, a: Act) => void; wait: string | null; mark: MarkOf; commenting: boolean; onCommentOpen: () => void; commentBox: ReactNode; tag: ReactNode }) {
   const c = p.conflict!;
   const [inset, probe] = useLibraryInset(c.component === 'Card' && /^padding/i.test(c.property) && (c.today === null || c.today === undefined));
   const view = compareView(p, 'Every screen', inset)!;
   const [mode, setMode] = useState<'overlay' | 'side'>(view.overlay ? 'overlay' : 'side');
-  const [pick, setPick] = useState<string>(p.conflict!.pick ?? view.ways[0]!.key);
-  // What the stage draws: the way ticked, or any row clicked to look at it (today included), never a decision by itself.
-  const [shown, setShown] = useState<string>(pick);
-  const choose = (k: string) => {
-    setPick(k);
-    setShown(k);
-  };
-  const open = decides && !p.conflict!.pick;
-  const options = [...view.ways, ...(view.both ? [view.both] : [])];
-  const component = p.conflict!.component;
+  // Null until the lead ticks a row: the start follows today's value once the library is measured.
+  const [ticked, setTicked] = useState<string[] | null>(null);
+  const checked = ticked ?? (c.pick ? checkedOfPick(c.pick, view) : defaultChecked(view));
+  const toggle = (key: string, on: boolean) => setTicked(on ? [...checked.filter((k) => k !== key), key] : checked.filter((k) => k !== key));
+  const open = decides && !c.pick;
+  const pick = checkedPick(view, checked);
+  const outcome = checkedOutcome(view, checked);
+  const rows = [view.today, ...view.ways];
   return (
     <article className="lr-detail lr-compare" aria-labelledby="lr-detail-title">
       <div className="lr-detail-head">
@@ -622,9 +708,9 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
           <h2 className="lr-detail-title" id="lr-detail-title">
             {p.title}
           </h2>
-          {!p.conflict!.pick && (
+          {!c.pick && (
             <Badge tone="warning" size="md" className={statusTagClass('warning')}>
-              {waysTag(p.conflict!.ways.length)}
+              {waysTag(c.ways.length)}
             </Badge>
           )}
           {tag}
@@ -646,26 +732,18 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
       <p className="lr-compare-what">
         <strong>{view.part}</strong> differs.
       </p>
-      <Stage view={view} mode={mode} pick={shown} component={component} />
+      <Stage view={view} mode={mode} checked={checked} component={c.component} />
       {probe}
-      <div className="lr-opts">
-        <LookRow o={view.today} shown={shown} onShow={setShown} className="lr-opt is-today">
-          <OptionRow o={view.today} mark={mark} />
-        </LookRow>
-        {open ? (
-          <RadioGroup label="What the library keeps" hideLabel value={pick} onValueChange={choose} className="lr-opts-group">
-            {options.map((o) => (
-              <Radio key={o.key} value={o.key} className="lr-opt" label={<OptionRow o={o} mark={mark} />} />
-            ))}
-          </RadioGroup>
-        ) : (
-          options.map((o) => (
-            <LookRow key={o.key} o={o} shown={shown} onShow={setShown} className={`lr-opt${p.conflict!.pick === o.key ? ' is-picked' : ''}`}>
-              <OptionRow o={o} mark={mark} />
-            </LookRow>
-          ))
-        )}
+      <div className="lr-opts" role="group" aria-label={open ? 'What the library keeps' : 'Ways to look at'}>
+        {rows.map((o) => (
+          <Checkbox key={o.key} value={o.key} className="lr-opt" checked={checked.includes(o.key)} onCheckedChange={(on) => toggle(o.key, on)} label={<OptionRow o={o} mark={mark} />} />
+        ))}
       </div>
+      {open && (
+        <p className={`lr-compare-outcome${outcome ? '' : ' is-none'}`} aria-live="polite">
+          {outcome ? `${outcome}.` : 'Check at least one row to decide.'}
+        </p>
+      )}
       <div className="lr-compare-foot">
         <span className="lr-compare-told">
           {open ? (
@@ -683,8 +761,8 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
           </Button>
         )}
         {open && (
-          <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
-            {compareKeepLabel(pick, view.ways, view.component)}
+          <Button variant="primary" size="lg" disabled={busy || pick === null} onClick={() => pick && onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
+            {checkedKeepLabel(view, checked)}
           </Button>
         )}
       </div>
@@ -727,8 +805,10 @@ function useSideFitsScreen() {
   return ref;
 }
 
-function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, mark }: { groups: ReturnType<typeof joinSmallGroups>; all: ReviewPiece[]; current: string | null; seen: Set<string>; decidedCount: number; onPick: (k: string) => void; detail: ReactNode; mark: MarkOf }) {
+function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups: ReturnType<typeof joinSmallGroups>; all: ReviewPiece[]; current: string | null; seen: Set<string>; onPick: (k: string) => void; detail: ReactNode; mark: MarkOf }) {
   const seenN = all.filter((p) => seen.has(p.key)).length;
+  // The pieces the filters show, so the count follows the active filter.
+  const progress = reviewProgress(all.length, seenN, all.filter((p) => p.state === 'decided').length);
   // On a phone: a compact "1 of 12" bar with previous and next above the piece, the list behind "All pieces".
   const [listOpen, setListOpen] = useState(false);
   const sideRef = useSideFitsScreen();
@@ -765,17 +845,17 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
       <nav ref={sideRef} className={`lr-side${listOpen ? ' is-open' : ''}`} id="lr-side" aria-label="Pieces">
         <div className="lr-side-head">
           <p className="lr-seen">
-            <strong>{seenLine(seenN, all.length)}</strong>
-            <span className="lr-muted">{decidedCount} decided</span>
+            <strong>{progress.headline}</strong>
+            {progress.seenNote && <span className="lr-muted">{progress.seenNote}</span>}
           </p>
-          <Progress value={all.length ? (seenN / all.length) * 100 : 0} size="sm" aria-label={seenLine(seenN, all.length)} />
+          <Progress value={progress.value} size="sm" tone={progress.done ? 'success' : 'signal'} aria-label={progress.headline} />
         </div>
         {chaptersOf(groups).map((ch) => (
           <section key={ch.key} className="lr-side-chapter" aria-label={ch.label}>
             <h3 className="lr-side-fam">
               {ch.icon && <FamilyIcon name={ch.icon} size="sm" />}
               <span className="lr-side-fam-name">{ch.label}</span>
-              <span className="lr-side-fam-count">{ch.groups.reduce((n, g) => n + g.pieces.length, 0)}</span>
+              <Count n={ch.groups.reduce((n, g) => n + g.pieces.length, 0)} />
             </h3>
             {ch.groups.map((g) => {
               const label = ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null;
@@ -783,7 +863,8 @@ function OneByOne({ groups, all, current, seen, decidedCount, onPick, detail, ma
                 <div key={g.key} className="lr-side-group">
                   {label && (
                     <h4 className="lr-side-label">
-                      {label} <span className="lr-muted">{g.pieces.length}</span>
+                      {label}{' '}
+                      <Count n={g.pieces.length} />
                     </h4>
                   )}
                   <ul className="lr-side-list" aria-label={g.label}>
@@ -1115,7 +1196,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 <span className="lr-chapter-text">
                   <span className="lr-chapter-line">
                     <h2 className="lr-chapter-name">{ch.label}</h2>
-                    <span className="lr-chapter-count">{rows.length}</span>
+                    <Count n={rows.length} />
                   </span>
                   {ch.note && <span className="lr-chapter-note">{ch.note}</span>}
                 </span>
@@ -1187,7 +1268,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                           {label && (
                             <>
                               <span className="lr-group-name">{label}</span>
-                              <span className="lr-muted">{g.pieces.length}</span>
+                              <Count n={g.pieces.length} />
                             </>
                           )}
                         </span>
@@ -1479,7 +1560,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const act = (p: ReviewPiece, a: Act) => {
     if (demo()) return void openDemo();
     const decided: ReviewPiece['decided'] = a.kind === 'keep' || a.kind === 'keep-both' ? 'kept' : a.kind === 'existing' ? 'existing' : 'added';
-    const line = a.kind === 'add' ? `Added ${p.title}.` : a.kind === 'keep-both' ? `Kept ${p.title} in both screens.` : a.kind === 'keep' ? `Kept ${p.title} in ${p.asked?.designer ? `${p.asked.designer}'s` : 'its'} screen.` : a.kind === 'existing' ? `${p.title}: use ${p.match?.label ?? 'the existing piece'}.` : a.kind === 'pick' && a.way === BOTH ? `Kept every way of ${p.title}, as sizes.` : `Kept ${p.conflict?.ways.find((w) => a.kind === 'pick' && w.key === a.way)?.designer ?? 'one'}'s way for ${p.title}.`;
+    const line = a.kind === 'add' ? `Added ${p.title}.` : a.kind === 'keep-both' ? `Kept ${p.title} in both screens.` : a.kind === 'keep' ? `Kept ${p.title} in ${p.asked?.designer ? `${p.asked.designer}'s` : 'its'} screen.` : a.kind === 'existing' ? `${p.title}: use ${p.match?.label ?? 'the existing piece'}.` : a.kind === 'pick' && a.way === TODAY ? `Kept today's ${p.title}.` : a.kind === 'pick' && (a.way === BOTH || a.way.startsWith('sizes:')) ? `Kept ${p.title} as sizes.` : `Kept ${p.conflict?.ways.find((w) => a.kind === 'pick' && w.key === a.way)?.designer ?? 'one'}'s way for ${p.title}.`;
     const pnd: Pending = { key: p.key, act: a, line };
     setLocal((m) => new Map(m).set(p.key, decided));
     setPending((l) => [...l.filter((x) => x.key !== p.key), pnd]);
@@ -1664,7 +1745,6 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               all={ordered}
               current={cur.key}
               seen={seen}
-              decidedCount={local.size}
               onPick={setCurrent}
               mark={mark}
               detail={<Detail key={cur.key} p={cur} thumbs={data.thumbs} viewer={v} lead={data.lead} tech={data.tech} onAct={act} busy={busy} measured={measure(cur)} onReach={openReach} mark={mark} onComment={(p, t) => (demo() ? Promise.resolve(openDemo()) : comment(p, t).then(setNotice, (e: Error) => setNotice(e.message)))} />}

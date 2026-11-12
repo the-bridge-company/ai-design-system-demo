@@ -150,11 +150,14 @@ const withPm = (all: Record<string, TeamPm>, key: string, pm: TeamPm | null): Re
 
 const pmValue = (pm: TeamPm | undefined): string => (!pm ? '' : 'login' in pm ? `login:${pm.login}` : `ref:${pm.ref}`);
 
+const NO_PM = 'none';
+
 /** The product manager of one product (board R2): anyone on the team, Can view is enough. Saved as soon as picked. */
 export function PmPicker({ repo, product, people, token, onSaved }: { repo: string; product: string; people: TeamPeople; token: string | null; onSaved: (pm: TeamPm | null) => void }) {
   const [error, setError] = useState<string | null>(null);
   const options = [
-    { value: '', label: W.noPm },
+    // A real choice, not the empty placeholder: 'No product manager' is a state the team picked, read at full contrast.
+    { value: NO_PM, label: W.noPm },
     ...people.members.filter((m) => m.ref).map((m) => ({ value: `ref:${m.ref}`, label: m.name })),
     ...people.collaborators.map((c) => ({ value: `login:${c.login}`, label: c.login })),
   ];
@@ -165,7 +168,7 @@ export function PmPicker({ repo, product, people, token, onSaved }: { repo: stri
       placeholder={W.noPm}
       size="sm"
       options={options}
-      value={pmValue(people.pms[product.toLowerCase()])}
+      value={pmValue(people.pms[product.toLowerCase()]) || NO_PM}
       onValueChange={(v) => {
         const pick = v ?? '';
         const next = pick.startsWith('ref:') ? { ref: pick.slice(4) } : pick.startsWith('login:') ? { login: pick.slice(6) } : null;

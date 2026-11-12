@@ -2,10 +2,11 @@
 // small size, so they look and behave like every DS tab list (raised plate, arrow keys, Home and End, tablist and tab
 // roles). Arrow keys pick the family as they move, as before: the ramp under the tabs follows at once. The editor
 // itself is vanilla and redraws on every pick, so it mounts this island once (mountFamilyTabs) and moves its node back
-// into each redraw. "More" stays beside the list: it opens a menu, it is not a tab.
+// into each redraw. "More" stays beside the list: it opens the DS Menu of the other families, it is not a tab.
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { Tab, Tabs, TabsList } from '@bridge-ds/react';
+import { ChevronDown } from 'lucide-react';
+import { Button, Menu, MenuContent, MenuItem, MenuTrigger, Tab, Tabs, TabsList } from '@bridge-ds/react';
 
 export interface FamilyTab {
   value: number;
@@ -14,21 +15,37 @@ export interface FamilyTab {
 
 export interface FamilyTabsProps {
   tabs: FamilyTab[];
+  /** The other families, in the More menu. */
+  more?: FamilyTab[];
   value: number;
   onPick: (value: number) => void;
 }
 
-export function FamilyTabs({ tabs, value, onPick }: FamilyTabsProps) {
+export function FamilyTabs({ tabs, more = [], value, onPick }: FamilyTabsProps) {
   return (
-    <Tabs variant="contained" size="sm" value={value} onValueChange={(v) => typeof v === 'number' && v !== value && onPick(v)} className="xe-family-tabs">
-      <TabsList aria-label="Families" activateOnFocus>
-        {tabs.map((t) => (
-          <Tab key={t.value} value={t.value} data-xe-family-tab={t.value}>
-            {t.label}
-          </Tab>
-        ))}
-      </TabsList>
-    </Tabs>
+    <>
+      <Tabs variant="contained" size="sm" value={value} onValueChange={(v) => typeof v === 'number' && v !== value && onPick(v)} className="xe-family-tabs">
+        <TabsList aria-label="Families" activateOnFocus>
+          {tabs.map((t) => (
+            <Tab key={t.value} value={t.value} data-xe-fam={t.value}>
+              {t.label}
+            </Tab>
+          ))}
+        </TabsList>
+      </Tabs>
+      {more.length > 0 && (
+        <Menu>
+          <MenuTrigger render={<Button variant="ghost" size="sm" iconEnd={ChevronDown} data-xe-family-menu>More</Button>} />
+          <MenuContent align="end" className="xe-fam-menu" aria-label="More families">
+            {more.map((t) => (
+              <MenuItem key={t.value} data-xe-family={t.value} onClick={() => onPick(t.value)}>
+                {t.label}
+              </MenuItem>
+            ))}
+          </MenuContent>
+        </Menu>
+      )}
+    </>
   );
 }
 

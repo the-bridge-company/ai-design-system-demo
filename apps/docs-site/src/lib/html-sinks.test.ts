@@ -41,7 +41,6 @@ const ALLOWED: Record<string, string> = {
   'scripts/product-connections.ts': 'esc on product names, repos and the admin message; badgeHtml escapes',
   'scripts/explorer/detail.ts': 'esc, attrUrl, cssValue on token values',
   'scripts/explorer/grid.ts': 'esc; cells via cellHtml (cssValue)',
-  'scripts/explorer/index.ts': 'esc; tiers and categories from fixed sets',
   'scripts/explorer/inline-edit.ts': 'esc, cssValue',
   'scripts/explorer/review.ts': 'esc, attrUrl, cssValue',
   'scripts/github-session.ts': 'esc, attrUrl (showGhError, prLinksHtml)',

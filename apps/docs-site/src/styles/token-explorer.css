@@ -49,7 +49,6 @@
 }
 
 .xp-lens-n,
-.xp-tree-n,
 .xp-sec-n,
 .xp-d-n {
   color: var(--color-text-muted);
@@ -59,105 +58,13 @@
   font-weight: var(--font-weight-medium);
 }
 
-.xp-tree-list,
-.xp-tree-sub {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* The tree is the DS SidebarNav (components/explorer/CollectionTree.tsx): groups and subgroups indent under it. */
+.xp-tree-d1 {
+  padding-inline-start: var(--space-6);
 }
 
-.xp-tree-sub {
-  margin-left: var(--space-3);
-  padding-left: var(--space-1);
-  border-left: var(--border-width-default) solid var(--color-border-default);
-}
-
-.xp-tree-item {
-  position: relative;
-}
-
-.xp-tree-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: var(--size-8);
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  border-radius: var(--radius-control);
-  background-color: transparent;
-  color: var(--color-text-default);
-  font: inherit;
-  font-size: var(--typography-ui-size);
-  text-align: left;
-  cursor: pointer;
-}
-
-.depth-1 > .xp-tree-btn,
-.depth-2 > .xp-tree-btn {
-  min-height: var(--size-7);
-  padding-left: var(--space-5);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.depth-2 > .xp-tree-btn {
-  padding-left: var(--space-2);
-}
-
-.xp-tree-btn:hover {
-  background-color: var(--color-bg-subtle);
-}
-
-.xp-tree-btn[aria-current="true"] {
-  background-color: var(--color-surface-default);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: 0 0 0 var(--border-width-default) var(--color-border-default);
-}
-
-.xp-tree-btn[aria-current="true"] .xp-tree-label::before {
-  content: "";
-  display: inline-block;
-  width: var(--space-1-5);
-  height: var(--space-1-5);
-  margin-right: var(--space-2);
-  border-radius: 50%;
-  background-color: var(--color-signal-default);
-  vertical-align: middle;
-}
-
-.xp-tree-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.xp-tree-twist {
-  position: absolute;
-  top: var(--space-1);
-  left: var(--space-0-5);
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: var(--size-5);
-  height: var(--size-5);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-control);
-  background-color: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.xp-tree-twist .icon,
-.xp-tree-twist svg {
-  transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
-}
-
-.xp-tree-twist[aria-expanded="true"] svg {
-  transform: rotate(90deg);
+.xp-tree-d2 {
+  padding-inline-start: var(--space-10);
 }
 
 .xp-tree-note {
@@ -208,9 +115,6 @@
 
 .xp-count {
   flex: none;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
 }
 
 .xp-tools {
@@ -738,44 +642,31 @@
   mask-image: linear-gradient(to right, var(--color-text-default) 80%, transparent 82%, transparent 86%, var(--color-text-default) 88%);
 }
 
-.xp-chip {
+/* An alias (a DS Tag) that goes to its token: the button only adds the target and the focus ring. */
+.xp-alias {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   max-width: 100%;
-  min-height: var(--size-6);
-  padding: 0 var(--space-1-5);
-  overflow: hidden;
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text-default);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 
-.xp-chip:hover {
-  border-color: var(--color-border-emphasis);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+.xp-alias:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
-.xp-chip-flag {
-  display: inline-grid;
-  place-items: center;
-  width: var(--size-4);
-  height: var(--size-4);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-feedback-info-bg);
-  color: var(--color-feedback-info-text);
-  font-family: var(--font-family-sans);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-bold);
+@media (hover: hover) {
+  .xp-alias:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
 }
 
 .xp-literal {
@@ -869,35 +760,6 @@
 
 .xp-copy[data-copied] .xp-copy-done {
   display: grid;
-}
-
-/* Badges */
-
-.xp-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-1-5);
-  border-radius: var(--radius-pill);
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--font-line-height-relaxed);
-  white-space: nowrap;
-}
-
-.xp-badge.is-pass {
-  background-color: var(--color-feedback-success-bg);
-  color: var(--color-feedback-success-text);
-}
-
-.xp-badge.is-warn {
-  background-color: var(--color-feedback-warning-bg);
-  color: var(--color-feedback-warning-text);
-}
-
-.xp-badge.is-fail {
-  background-color: var(--color-feedback-danger-bg);
-  color: var(--color-feedback-danger-text);
 }
 
 /* Detail panel */
@@ -1234,7 +1096,7 @@
   line-height: var(--font-line-height-snug);
 }
 
-.xp-ratio .xp-badge {
+.xp-ratio .xp-ratio-badge {
   grid-row: 1 / span 2;
   grid-column: 3;
 }
@@ -1342,43 +1204,10 @@
     border-bottom: var(--border-width-default) solid var(--color-border-default);
   }
 
-  .xp-tree-list {
-    display: flex;
-    gap: var(--space-1);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .xp-tree-item {
-    flex: none;
-  }
-
-  .xp-tree-sub,
-  .xp-tree-twist,
+  /* Narrow: the collections only, the groups come back on a wide screen. */
+  .xp-tree-d1,
+  .xp-tree-d2,
   .xp-tree-note {
-    display: none;
-  }
-
-  .xp-tree-btn {
-    gap: var(--space-1-5);
-    min-height: var(--size-8);
-    padding: 0 var(--space-2);
-    border: var(--border-width-default) solid var(--color-border-default);
-    border-radius: var(--radius-pill);
-    background-color: var(--color-surface-default);
-  }
-
-  .xp-tree-btn[aria-current="true"] {
-    border-color: var(--color-action-primary-bg);
-    background-color: var(--color-action-primary-bg);
-    color: var(--color-action-primary-text);
-  }
-
-  .xp-tree-btn[aria-current="true"] .xp-tree-n {
-    color: var(--color-action-primary-text);
-  }
-
-  .xp-tree-btn[aria-current="true"] .xp-tree-label::before {
     display: none;
   }
 
@@ -1481,8 +1310,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .xp-sec-icon,
-  .xp-tree-twist svg {
+  .xp-sec-icon {
     transition: none;
   }
 }
@@ -1533,27 +1361,6 @@
 .xp[data-surface="app"] .xp-left {
   gap: var(--space-2);
   padding: var(--space-2);
-}
-
-.xp[data-surface="app"] .xp-tree-btn {
-  min-height: var(--size-7);
-  padding: var(--space-0-5) var(--space-2);
-}
-
-.xp[data-surface="app"] .depth-1 > .xp-tree-btn,
-.xp[data-surface="app"] .depth-2 > .xp-tree-btn {
-  min-height: calc(var(--size-6) + var(--space-0-5));
-  font-family: var(--font-family-sans);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.xp[data-surface="app"] .depth-1 > .xp-tree-btn {
-  padding-left: var(--space-5);
-}
-
-.xp[data-surface="app"] .xp-tree-twist {
-  top: var(--space-0-5);
 }
 
 /* Toolbar: one row */
@@ -1739,24 +1546,6 @@
 
 .xp[data-surface="app"] .xp-grid .xp-line:not(.is-error) {
   display: none;
-}
-
-.xp[data-surface="app"] .xp-grid .xp-chip {
-  min-height: var(--size-5);
-  margin-left: calc(var(--space-1) * -1);
-  padding: 0 var(--space-1);
-  border-color: transparent;
-  background-color: transparent;
-  color: var(--color-text-muted);
-  font-family: var(--font-family-sans);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.xp[data-surface="app"] .xp-grid .xp-chip:hover {
-  border-color: transparent;
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text-default);
 }
 
 .xp[data-surface="app"] .xp-grid .xp-literal.mono {
@@ -1973,74 +1762,23 @@
   color: var(--color-text-signal);
 }
 
-/* Row menu: shows on row hover and focus, at the end of the name cell. */
+/* Row actions: a DS IconButton at the end of the name cell, shown on row hover and focus. */
 .xp-rowmenu {
-  display: grid;
   flex: none;
-  place-items: center;
-  width: var(--size-8);
-  height: var(--size-8);
   margin-left: auto;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
   opacity: 0;
 }
 
 .xp-tr:is(:hover, :focus-within) .xp-rowmenu,
-.xp-rowmenu[aria-expanded="true"] {
-  opacity: 1;
-}
-
-.xp-rowmenu:hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-text-default);
-}
-
 .xp-rowmenu:focus-visible {
   opacity: 1;
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: calc(var(--focus-ring-width) * -1);
 }
 
-.xp-rowmenu-pop {
-  position: absolute;
-  z-index: var(--layer-dropdown);
-  display: grid;
-  min-width: var(--size-60);
-  padding: var(--space-1);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-raised);
-  box-shadow: var(--elevation-overlay);
-}
-
-.xp-rowmenu-pop button {
+/* While the row menu is open its button is the DS Menu trigger (components/explorer/RowMenu.tsx), in the same place. */
+.xp-rowmenu-host {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-8);
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-inset);
-  background: none;
-  color: var(--color-text-default);
-  font: inherit;
-  font-size: var(--typography-ui-size);
-  text-align: left;
-  cursor: pointer;
-}
-
-.xp-rowmenu-pop button:is(:hover, :focus-visible) {
-  outline: none;
-  background-color: var(--color-surface-hover-raised);
-}
-
-.xp-rowmenu-pop svg {
-  color: var(--color-text-muted);
+  flex: none;
+  margin-left: auto;
 }
 
 .xp-keyhelp {
@@ -2167,7 +1905,7 @@
 
 /* The family tabs: the DS Tabs, contained and small (components/explorer/FamilyTabs.tsx), with More beside them as a
    quiet button at the same height and type (it opens a menu, it is not a tab). */
-.xe-tabs {
+.xe-families {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -2184,156 +1922,18 @@
   min-width: 0;
 }
 
-.xe-more-fam {
-  position: relative;
-  display: flex;
-  flex: none;
-}
-
-.xe-tab-more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-height: var(--control-height-sm);
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-200);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .xe-tab-more:hover {
-    color: var(--color-text-default);
-  }
-}
-
-.xe-tab-more:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: calc(var(--focus-ring-width) * -1);
-}
-
-.xe-fam-menu {
-  position: absolute;
-  top: calc(100% + var(--space-1));
-  right: 0;
-  z-index: var(--layer-dropdown);
-  display: grid;
-  min-width: var(--size-40);
-  padding: var(--space-1);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-raised);
-  box-shadow: var(--elevation-overlay);
-}
-
-.xe-fam-menu button {
-  min-height: var(--size-8);
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-inset);
-  background: none;
-  color: var(--color-text-default);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.xe-fam-menu button:is(:hover, :focus-visible) {
-  outline: none;
-  background-color: var(--color-surface-hover-raised);
-}
-
-.xe-ramp,
-.xe-ticks {
-  display: grid;
-  grid-template-columns: repeat(var(--xe-n), minmax(0, 1fr));
-  gap: var(--space-1);
+/* The ramp: a DS SegmentedControl of swatches (colors) or a DS RadioGroup of steps (other types),
+   components/explorer/RampPicker.tsx. */
+.xe-ramp-host {
   padding: var(--space-3) var(--space-4) 0;
 }
 
-.xe-sw {
-  position: relative;
-  height: var(--size-8);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-inset);
-  background: none;
-  cursor: pointer;
-}
-
-.xe-sw i {
+.xe-swatch {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: var(--size-5);
+  height: var(--size-5);
   border-radius: var(--radius-inset);
   box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
-}
-
-.xe-sw[aria-checked="true"] {
-  outline: var(--border-width-strong) solid var(--color-text-signal);
-  outline-offset: var(--border-width-strong);
-}
-
-.xe-sw:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.xe-sw.is-was::after {
-  content: "";
-  position: absolute;
-  bottom: calc(var(--space-2) * -1);
-  left: 50%;
-  width: var(--space-1);
-  height: var(--space-1);
-  border-radius: var(--radius-full);
-  background-color: var(--color-text-muted);
-  transform: translateX(-50%);
-}
-
-/* The hovered or focused swatch's name and hex, under the ramp where the step ticks sit (never over the family
-   tabs above it). The ticks hide while it shows. */
-.xe-tip {
-  position: absolute;
-  top: calc(100% + var(--space-1-5));
-  left: 50%;
-  z-index: var(--layer-tooltip);
-  display: none;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-  white-space: nowrap;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.xe-sw:is(:hover, :focus-visible) .xe-tip {
-  display: block;
-}
-
-.xe-ramp:has(.xe-sw:is(:hover, :focus-visible)) + .xe-ticks {
-  visibility: hidden;
-}
-
-.xe-sw:first-child .xe-tip {
-  left: 0;
-  transform: none;
-}
-
-.xe-sw:last-child .xe-tip {
-  right: 0;
-  left: auto;
-  transform: none;
 }
 
 @media (max-width: 640px) {
@@ -2342,54 +1942,10 @@
   }
 }
 
-.xe-ticks {
-  padding-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-  text-align: center;
-}
-
+/* Steps of a dimension or duration: a scrolling list, the picked one in view. */
 .xe-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
   max-height: var(--size-40);
-  margin-top: var(--space-3);
-  padding: 0 var(--space-4);
   overflow-y: auto;
-}
-
-.xe-step {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1-5);
-  min-height: var(--size-7);
-  padding: 0 var(--space-2);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  font: inherit;
-  cursor: pointer;
-}
-
-.xe-step-v {
-  color: var(--color-text-muted);
-}
-
-.xe-step[aria-checked="true"] {
-  border-color: var(--color-text-signal);
-  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-text-signal);
-}
-
-.xe-step.is-was {
-  border-style: dashed;
-}
-
-.xe-step:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }
 
 .xe-status {
@@ -2540,31 +2096,10 @@
   flex: 1;
 }
 
-.xe-more-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-left: calc(var(--space-1) * -1);
-  padding: var(--space-1);
-  border: 0;
-  border-radius: var(--radius-inset);
-  background: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-}
-
-.xe-more-btn svg {
-  transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
-}
-
-.xe-more-btn[aria-expanded="true"] svg {
-  transform: rotate(90deg);
-}
-
-.xe-more-btn:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+/* More options: a DS Button (components/explorer/MoreOptionsToggle.tsx), its icon in line with the editor's edge. */
+.xe-more-host {
+  display: flex;
+  margin-inline-start: calc(var(--space-2) * -1);
 }
 
 /* The draft bar: one count, one action. */
@@ -2622,7 +2157,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   }
 
   .xe-bar-count {
-    flex: 1 1 auto;
+    margin-inline-end: auto;
   }
 
   body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
@@ -2630,77 +2165,13 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   }
 }
 
-.xe-bar-dot {
-  width: var(--space-2);
-  height: var(--space-2);
-  border-radius: var(--radius-full);
-  background-color: var(--color-bg-zone);
-}
-
-/* The review sheet */
-
-.xe-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: var(--layer-overlay);
-  background-color: var(--color-overlay-scrim);
-}
-
-.xe-scrim[hidden],
-.xe-sheet[hidden] {
-  display: none;
-}
-
-.xe-sheet {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--layer-modal);
-  display: flex;
-  flex-direction: column;
-  width: min(calc(var(--size-96) + var(--size-20)), 100vw);
-  border-left: var(--border-width-default) solid var(--color-border-default);
-  background-color: var(--color-surface-default);
-  box-shadow: var(--elevation-modal);
-  color: var(--color-text-default);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.xe-sheet-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-5) var(--space-6) var(--space-4);
-}
-
-.xe-sheet-title {
-  flex: 1;
-  margin: 0;
-  font-family: var(--typography-h3-family);
-  font-size: var(--typography-h3-size);
-  font-weight: var(--typography-h3-weight);
-  line-height: var(--typography-h3-line-height);
-}
-
-.xe-sheet-title:focus {
-  outline: none;
-}
-
-.xe-sheet-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 var(--space-6) var(--space-6);
-}
+/* The review: the DS Dialog (TokenEditorKit.astro). Its footer holds the note on its own line, then the actions. */
 
 .xe-sheet-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  border-top: var(--border-width-default) solid var(--color-border-default);
 }
 
 .xe-sheet-note {
@@ -2872,28 +2343,6 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 
 .xe-ctx {
   color: var(--color-text-muted);
-}
-
-.xe-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-1-5);
-  border-radius: var(--radius-pill);
-  font-size: var(--typography-caption-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-caption-line-height);
-  white-space: nowrap;
-}
-
-.xe-badge.is-pass {
-  background-color: var(--color-feedback-success-bg);
-  color: var(--color-feedback-success-text);
-}
-
-.xe-badge.is-fail {
-  background-color: var(--color-feedback-danger-bg);
-  color: var(--color-feedback-danger-text);
 }
 
 .xe-comps {
@@ -3392,16 +2841,8 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 }
 
 @media (min-width: 861px) {
-  .xp[data-surface="app"]:not(.has-detail) .xp-chips {
-    flex: 0 0 auto;
-  }
-
-  /* Every type chip stays whole: when the row has no room left (a team's six types on a laptop), Options and New
-     token move to a second line, at its end, instead of running past the page edge. */
-  .xp[data-surface="app"] .xp-tools {
-    flex-wrap: wrap;
-  }
-
+  /* One row: the filter field gives up width first, then the type filter (a DS SegmentedControl) scrolls inside
+     its frame with faded edges, so Options never drops to a second line. */
   .xp[data-surface="app"] .xp-options {
     margin-inline-start: auto;
   }
@@ -3414,76 +2855,15 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 .xp-chips {
   display: flex;
   flex: 0 1 auto;
-  gap: var(--space-1-5);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-/* More chips past an edge (lib/overflow-edges): that edge fades, as on the DS Tabs list. Alpha-only mask. */
-.xp-chips[data-overflow-end] {
-  mask-image: linear-gradient(to right, var(--color-text-default) calc(100% - var(--space-10)), transparent);
-}
-
-.xp-chips[data-overflow-start] {
-  mask-image: linear-gradient(to right, transparent, var(--color-text-default) var(--space-10));
-}
-
-.xp-chips[data-overflow-start][data-overflow-end] {
-  mask-image: linear-gradient(to right, transparent, var(--color-text-default) var(--space-10) calc(100% - var(--space-10)), transparent);
-}
-
-.xp-chip-btn {
-  display: inline-flex;
-  flex: none;
   align-items: center;
   gap: var(--space-1-5);
-  /* A primary touch target: the DS control height, like the filter field and the buttons on the same row. */
-  min-height: var(--control-height-md);
-  padding: 0 var(--control-padding-x-sm);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  font: inherit;
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
+  min-width: 0;
 }
 
-.xp-chip-n {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
-}
-
-/* The selected type: the selected fill and the checked-color edge, like a pressed DS Button toggle or a selected
-   SegmentedControl option. The inverse fill was a near-black block in light and a white one in dark, louder than the
-   page's one primary action. */
-.xp-chip-btn[aria-pressed="true"] {
-  border-color: var(--color-control-checked-bg);
-  background-color: var(--color-surface-selected);
-  color: var(--color-text-default);
-}
-
-/* Studio ?component= filter: a removable chip ahead of the type chips. */
-.xp-chip-filter {
-  border-color: var(--color-border-emphasis);
-  background-color: var(--color-bg-subtle);
-}
-
-.xp-chip-filter svg {
-  color: var(--color-text-muted);
-}
-
-.xp-chip-btn:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-@media (hover: hover) {
-  .xp-chip-btn:not([aria-pressed="true"]):hover {
-    border-color: var(--color-border-emphasis);
-  }
+/* The type filter (DS SegmentedControl) scrolls inside the row on a phone instead of widening it. */
+.xp-types {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .xp-options {

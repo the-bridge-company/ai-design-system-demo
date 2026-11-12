@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The token cell editor's family tabs (components/explorer/FamilyTabs.tsx in scripts/explorer/inline-edit.ts): the DS
 // Tabs, not buttons styled as tabs. A labelled tablist, arrow keys and Home and End that pick the family as they move
-// (the ramp follows), focus that stays on the tab through the editor's redraws, More beside the list, axe clean.
+// (the ramp follows), focus that stays on the tab through the editor's redraws, More (the DS Menu) beside the list, axe clean.
 import '../../../../../packages/react/src/test/setup';
 import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from '@testing-library/user-event';
@@ -99,11 +99,41 @@ describe('Token editor family tabs', () => {
     const user = userEvent.setup();
     const pop = open();
     await user.click(pop.querySelector<HTMLElement>('[data-xe-family-menu]')!);
-    await user.click(pop.querySelector<HTMLElement>('[role="menuitem"][data-xe-family="4"]')!);
+    // The DS Menu renders in a portal; picking in it never closes the editor.
+    const item = await vi.waitFor(() => {
+      const el = document.querySelector<HTMLElement>('[role="menuitem"][data-xe-family="4"]');
+      if (!el) throw new Error('no menu yet');
+      return el;
+    });
+    await user.click(item);
     expect(tabs(pop).map((t) => t.textContent)).toEqual(['Neutral', 'Primary', 'Warning']);
     expect(tabs(pop)[2]!.getAttribute('aria-selected')).toBe('true');
     expect(ramp_(pop)).toBe('Warning');
     closeInlineEditor(false);
     expect(document.querySelector('.xe-pop')).toBeNull();
+  });
+
+  it('the ramp is the DS SegmentedControl: arrow keys pick the next swatch, focus stays on it, More options is a DS Button', async () => {
+    const user = userEvent.setup();
+    const pop = open();
+    await new Promise((r) => setTimeout(r, 80));
+    const swatches = () => [...pop.querySelectorAll<HTMLElement>('[data-segmented-control] [role="radio"]')];
+    expect(swatches().map((s) => s.getAttribute('data-xe-pick'))).toEqual(['palette.neutral.100', 'palette.neutral.200', 'palette.neutral.300']);
+    const picked = swatches().find((s) => s.getAttribute('aria-checked') === 'true')!;
+    expect(picked).toHaveAccessibleName('neutral.300, #404040');
+    expect(picked.getAttribute('data-tooltip')).toBe('neutral.300 · #404040');
+    await user.click(picked);
+    await user.keyboard('{ArrowLeft}');
+    expect(pop.querySelector('.xe-pick-name')?.textContent).toBe('neutral.200');
+    expect(document.activeElement?.getAttribute('data-xe-pick')).toBe('palette.neutral.200');
+    await new Promise((r) => setTimeout(r, 80));
+    expect(document.activeElement?.getAttribute('data-xe-pick')).toBe('palette.neutral.200');
+    const more = pop.querySelector<HTMLElement>('[data-xe-more]')!;
+    expect(more.getAttribute('aria-expanded')).toBe('false');
+    await user.click(more);
+    expect(pop.querySelector<HTMLElement>('[data-xe-more]')!.getAttribute('aria-expanded')).toBe('true');
+    expect(pop.querySelector<HTMLElement>('.xe-more')!.hidden).toBe(false);
+    await expectNoAxeViolations(pop);
+    closeInlineEditor(false);
   });
 });

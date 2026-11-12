@@ -1,7 +1,7 @@
 // Parity: buttonHtml and iconButtonHtml return exactly the markup <Button> and <IconButton> render.
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { Pencil, Undo2, X } from 'lucide-react';
+import { MoreHorizontal, Pencil, Undo2, X } from 'lucide-react';
 import { expectNoAxeViolations } from '../test/axe';
 import { Button } from '../components/Button';
 import { IconButton } from '../components/IconButton';
@@ -42,6 +42,7 @@ describe('iconButtonHtml', () => {
   it.each([
     ['x' as const, 'Close token details', {}, <IconButton icon={X} label="Close token details" />],
     ['undo-2' as const, 'Undo', { size: 'sm' as const, attributes: { 'data-xe-undo': '0', title: 'Undo' } }, <IconButton icon={Undo2} label="Undo" size="sm" data-xe-undo="0" title="Undo" />],
+    ['ellipsis' as const, 'Actions for color.bg', { size: 'sm' as const, className: 'xp-rowmenu', attributes: { 'data-xp-rowmenu': true, tabindex: -1, 'aria-haspopup': 'menu' } }, <IconButton icon={MoreHorizontal} label="Actions for color.bg" size="sm" className="xp-rowmenu" data-xp-rowmenu="" tabIndex={-1} aria-haspopup="menu" />],
   ])('matches <IconButton icon=%s>', (icon, label, opts, el) => {
     expect(iconButtonHtml(icon, label, opts)).toBe(renderToStaticMarkup(el));
   });

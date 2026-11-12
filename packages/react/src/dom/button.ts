@@ -67,6 +67,8 @@ export interface IconButtonHtmlOptions {
 export function iconButtonHtml(icon: DomIconName, label: string, options: IconButtonHtmlOptions = {}): string {
   const { variant = 'ghost', size = 'md', disabled = false, className, attributes } = options;
   const cls = classNames(styles.button, styles[variant], styles[size], styles.iconOnly, iconButtonStyles.iconButton, className);
-  const head = attrs({ type: 'button', 'data-disabled': disabled || undefined, tabindex: 0, disabled: disabled || undefined, 'aria-label': label });
-  return `<button${head}${attrs(attributes)} class="${cls}">${iconHtml(icon, size === 'lg' ? 'md' : 'sm')}</button>`;
+  // A tabindex in attributes replaces the default one, like tabIndex on the React one (a roving grid cell: -1).
+  const { tabindex = 0, ...rest } = attributes ?? {};
+  const head = attrs({ type: 'button', 'data-disabled': disabled || undefined, tabindex, disabled: disabled || undefined, 'aria-label': label });
+  return `<button${head}${attrs(rest)} class="${cls}">${iconHtml(icon, size === 'lg' ? 'md' : 'sm')}</button>`;
 }

@@ -16,7 +16,7 @@ import '../../styles/preview-frames.css';
 import { siteIcon } from '../../brand/site-icons';
 import SummaryButton from '../ds/studio/SummaryButton';
 import ButtonLink from '../ds/ButtonLink';
-import { Button, Checkbox, EmptyState, Icon, SegmentedControl, Switch } from '@bridge-ds/react';
+import { Badge, Button, Checkbox, EmptyState, Icon, SegmentedControl, Switch } from '@bridge-ds/react';
 import BridgedSelect from '../ds/BridgedSelect';
 import TokenSearch from '../ds/TokenSearch';
 import UsageRadios from '../ds/UsageRadios';
@@ -101,7 +101,7 @@ const lensLabel = (text: string) => createElement(RFragment, null, `${text} `, c
             { value: 'types', label: lensLabel('By type') },
           ]}
         />
-        <nav class="xp-tree" aria-label="Collections and groups" data-xp-tree></nav>
+        <div class="xp-tree" data-xp-tree></div>
       </aside>
     )
   }
@@ -114,7 +114,7 @@ const lensLabel = (text: string) => createElement(RFragment, null, `${text} `, c
             <div class="xp-search" role="search">
               <TokenSearch surface="app" />
             </div>
-            <div class="xp-chips" role="group" aria-label="Filter by type" data-xp-chips></div>
+            <div class="xp-chips" data-xp-chips></div>
             <span class="xp-grow" aria-hidden="true"></span>
             <details class="xp-menu xp-options" data-xp-filters>
               <SummaryButton variant="secondary" size="md" iconStart={SlidersHorizontal} title="Collections, usage, brand and modes, columns">
@@ -160,7 +160,7 @@ const lensLabel = (text: string) => createElement(RFragment, null, `${text} `, c
           <>
             <div class="xp-heading">
               <h2 class="xp-title" id="xp-title" data-xp-title>Tokens</h2>
-              <span class="xp-count num" data-xp-count aria-live="polite"></span>
+              <Badge className="xp-count num" data-xp-count aria-live="polite" />
             </div>
             <div class="xp-tools">
               <div class="xp-search" role="search">

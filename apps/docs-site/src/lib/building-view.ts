@@ -46,6 +46,7 @@ import { explorationState } from './exploration-state';
 import { devReviewLine, LIFECYCLE_LABEL, pullLifecycle, reviewLine, reviewStateOf, taskStage, type DesignTaskRead, type DevPull, type LifecycleStage, type PullReviewLike } from './review-state';
 import { buildStateTag, personLine, possessive, SHIPPED_DAYS, stateOfStatus } from './building-page';
 import { SEP } from './sep';
+import { buildOriginLine, originOfRow } from './build-origin';
 
 /**
  * Where the developers' version stands, on Being built: while Check the build waits, whose check it waits for
@@ -160,10 +161,15 @@ const EXPLORATION_BLOCK = /<!-- bridge-exploration \{[\s\S]*?\} -->/;
 function slimBody(body: string | null | undefined): string {
   const b = body ?? '';
   if (b.length <= 4000) return b;
+  // Where the change comes from (lib/build-origin) is kept wherever it sits: Being built lists nothing without it.
+  const origins = [...b.matchAll(ORIGIN_BLOCKS)].filter((o) => o.index! + o[0].length > 4000).map((o) => o[0]);
   const m = EXPLORATION_BLOCK.exec(b);
-  if (!m || m.index + m[0].length <= 4000) return b.slice(0, 4000);
-  return `${b.slice(0, Math.min(4000, m.index)).trim()}\n\n${m[0]}`;
+  const head = !m || m.index + m[0].length <= 4000 ? b.slice(0, 4000) : `${b.slice(0, Math.min(4000, m.index)).trim()}\n\n${m[0]}`;
+  return [head, ...origins].join('\n\n');
 }
+
+/** The Bridge blocks that say where a change comes from: an origin, or the exploration a library branch is needed by. */
+const ORIGIN_BLOCKS = /<!--\s*bridge-(?:origin|needed-by|request)\s[\s\S]*?-->/g;
 
 /** The release pull request the changesets action keeps open: its body is the release plan, kept whole. */
 const isReleaseHead = (p: RestPull) => /^changeset-release\//.test(p.head?.ref ?? '');
@@ -405,14 +411,16 @@ export const buildCacheKey = (repo: string, what: 'requests' | 'builds' | 'pulls
 export const BUILD_CACHE_MS = 5 * 60 * 1000;
 
 /**
- * Line 2 of a row: when it was sent, then who it waits on (lib/building-page personLine):
- * "Sent 4 days ago · Asked by Leo", "Sent 4 days ago · Malik builds it", then who must review when GitHub says.
+ * Line 2 of a row: when it was sent, then who it waits on, in the words of its card (lib/building-page personLine):
+ * "Sent 4 days ago · Library change Dana approved", "Sent 4 days ago · Malik builds it", then who must review when
+ * GitHub says.
  */
 export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stale' | 'sentence' | 'shippedAt' | 'builders' | 'requestedBy'> & LifecycleExtra, now: number, nameOf: (login: string) => string = (l) => l): string {
   const d = daysSince(v.createdAt, now);
   const sent = d === 0 ? 'Sent today' : d === 1 ? 'Sent yesterday' : `Sent ${d} days ago`;
   const requester = v.requestedBy ? nameOf(isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : v.requestedBy) : null;
-  const who = personLine({ state: stateOfStatus(v.status), builders: v.builders.map(nameOf), requester });
+  const o = originOfRow(v);
+  const who = personLine({ state: stateOfStatus(v.status), builders: v.builders.map(nameOf), requester, origin: o ? buildOriginLine(o) : null });
   if (v.status === 'requested') return [v.stale ? 'Nobody has picked it up yet' : sent, who].filter(Boolean).join(SEP);
   if (v.status === 'shipped' && v.nextRelease) return 'In the next release';
   if (v.status === 'shipped') {
@@ -482,6 +490,8 @@ export interface ExplorationBuildRow extends BuildRequestView {
     product: string | null;
     /** Who said Done exploring, when the row's line names them. */
     doneBy?: string | null;
+    /** The lead whose Looks right sent it to developers, by name (lib/build-origin: "Exploration Dana sent"). */
+    sentBy?: string | null;
     /**
      * A product added from its address, for a team member: the plain message for its developers, who work elsewhere
      * (lib/developers-message). The row says so and offers "Copy for your developers".
@@ -635,7 +645,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
         jira: null,
         figmaUrl: null,
         timeline,
-        exploration: { href: `explorations/${explorationHref({ number: Number(p.number), product: p.product })}`, line, product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, ...(forDevelopers ? { forDevelopers } : {}) },
+        exploration: { href: `explorations/${explorationHref({ number: Number(p.number), product: p.product })}`, line, product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, sentBy: sentByOf(block, nameOf), ...(forDevelopers ? { forDevelopers } : {}) },
         productKey: productConfig?.key ?? null,
         ...(reviewWords ? { reviewLine: reviewWords } : {}),
         ...(nextRelease ? { nextRelease: true } : {}),
@@ -643,6 +653,13 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
       },
     ];
   });
+}
+
+/** Who sent an exploration to developers: the lead whose Looks right is recorded (the latest), else null. */
+export function sentByOf(block: Pick<NonNullable<ReturnType<typeof parseExplorationBody>>, 'leadOkBy' | 'decisions'> | null | undefined, nameOf: (login: string) => string = (l) => l): string | null {
+  const ok = [...(block?.decisions ?? [])].reverse().find((d) => d.kind === 'looks-right');
+  const name = ok?.byName?.trim() || (ok?.by ? nameOf(ok.by) : '') || (block?.leadOkBy ? nameOf(block.leadOkBy) : '');
+  return name ? name.split(/\s+/)[0]! : null;
 }
 
 /**

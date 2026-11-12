@@ -91,7 +91,7 @@ const num = (v: unknown): number | null => {
 };
 
 /** Every Bridge block of a body (`<!-- bridge-<name> {json} -->`), parsed; a block that is not JSON is skipped. */
-function bridgeBlocks(body: string): { mark: string; data: Record<string, unknown> }[] {
+export function bridgeBlocks(body: string): { mark: string; data: Record<string, unknown> }[] {
   const out: { mark: string; data: Record<string, unknown> }[] = [];
   const re = /<!--\s*(bridge-[a-z0-9-]+)\s+([\s\S]*?)\s*-->/g;
   for (let m = re.exec(body); m; m = re.exec(body)) {

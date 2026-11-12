@@ -151,12 +151,12 @@ describe('Being built: who a card names, and why', () => {
 });
 
 describe('Being built: a card names who has it now, then when it last moved (as Explorations)', () => {
-  it('names the builders once someone builds it, else who asked, then the age', () => {
-    expect(cardLine({ builders: [], requester: 'Leo', movedAt: ago(2), now: NOW })).toEqual({ who: 'Leo', when: '2 days ago' });
-    expect(cardLine({ builders: ['Malik Benali'], requester: 'Leo', movedAt: ago(1), now: NOW })).toEqual({ who: 'Malik', when: 'yesterday' });
-    expect(cardLine({ builders: ['Malik', 'Ana'], requester: 'Leo', movedAt: null, now: NOW })).toEqual({ who: 'Malik and Ana', when: null });
-    expect(cardLine({ builders: [], requester: 'Ann Leroy', movedAt: 'not a date', now: NOW })).toEqual({ who: 'Ann', when: null });
-    expect(cardLine({ builders: [], requester: null, movedAt: null, now: NOW })).toEqual({ who: null, when: null });
+  it('names the builders once someone builds it, else where it comes from (never who asked), then the age', () => {
+    expect(cardLine({ builders: [], origin: 'Library change Dana approved', movedAt: ago(2), now: NOW })).toEqual({ who: 'Library change Dana approved', when: '2 days ago' });
+    expect(cardLine({ builders: ['Malik Benali'], origin: 'From Contact page summary', movedAt: ago(1), now: NOW })).toEqual({ who: 'Malik', when: 'yesterday' });
+    expect(cardLine({ builders: ['Malik', 'Ana'], origin: 'Exploration Dana sent', movedAt: null, now: NOW })).toEqual({ who: 'Malik and Ana', when: null });
+    expect(cardLine({ builders: [], origin: 'From Order fulfilment timeline', movedAt: 'not a date', now: NOW })).toEqual({ who: 'From Order fulfilment timeline', when: null });
+    expect(cardLine({ builders: [], origin: null, movedAt: null, now: NOW })).toEqual({ who: null, when: null });
   });
 
   it('dates a row by its latest step, else by when it was sent', () => {

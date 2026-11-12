@@ -5,6 +5,8 @@
 // Being built also lists Claude's fixes (the fix sessions of the team's Claude, api/mcp ?view=sessions) as rows of the
 // same list, reconciled with the pull requests read here (lib/claude-connector fixRows). They stay out of `views`, so
 // the home line and "Figma is ahead" count build requests only.
+// Every row carries where it comes from (lib/build-origin withBuildOrigins); a row with no origin from the lead is
+// not listed, so the page, the home line and every count agree with Explorations.
 // Explorations handed to developers (Done exploring) are rows of the same list too, read from the pull requests read
 // here (no read per row) and, for products with their own repository, from the one read of their open pull requests
 // that Changes and the home make too (scripts/product-repos.ts). They stay out of `views` as well.
@@ -26,6 +28,7 @@ import { teamMember } from '../lib/developers-message';
 import { previewShotOf } from './preview-shots';
 import { knownNames, lookUpNames } from './people';
 import { siteConfig } from './repo-context';
+import { withBuildOrigins } from '../lib/build-origin';
 import { isHosted } from '../lib/team-path';
 
 export interface BuildData {
@@ -67,7 +70,7 @@ async function readSessions(repo: string): Promise<Session[]> {
 /** Claude's fixes read again (every 10 seconds while Claude works), against the pull requests already read. */
 export async function readFixes(data: Pick<BuildData, 'pulls' | 'nameOf' | 'products'>): Promise<FixRow[]> {
   const pulls = data.pulls ?? [];
-  return withProducts(fixRows(await readSessions(repoName()), pulls, Date.now(), data.nameOf).filter(fixStaysListed), { pulls, products: data.products ?? DEFAULT_PRODUCTS });
+  return withBuildOrigins(withProducts(fixRows(await readSessions(repoName()), pulls, Date.now(), data.nameOf).filter(fixStaysListed), { pulls, products: data.products ?? DEFAULT_PRODUCTS }));
 }
 
 const repoName = () => {
@@ -203,15 +206,18 @@ async function read(): Promise<BuildData> {
   const needs = explored.flatMap((p) => parseExplorationBody(p.body)?.library?.neededBy ?? []);
   const releasedKeys = new Set((await Promise.all(needs.map(async (n) => ((await requestReleased(n)) ? `${n.repo.toLowerCase()}#${n.number}` : null)))).filter((k): k is string => Boolean(k)));
   const released = (n: LibraryNeed) => releasedKeys.has(`${n.repo.toLowerCase()}#${n.number}`);
+  // Only what comes from the lead is listed (lib/build-origin): an exploration sent to developers, or a library change
+  // the lead approved. Every reader of these rows (the page, the home line, the counts) follows.
+  const origins = { issues, pulls: pulls.data, products };
   return {
-    views: withProducts(withLifecycle(assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.data.map(toBuildPull), now, nameOf }), { pulls: pulls.data, ...lifecycle }), { issues, pulls: pulls.data, products }),
+    views: withBuildOrigins(withProducts(withLifecycle(assembleBuildRequests({ issues: issues.map(toBuildIssue), pulls: pulls.data.map(toBuildPull), now, nameOf }), { pulls: pulls.data, ...lifecycle }), { issues, pulls: pulls.data, products }), origins),
     bodies: new Map(issues.map((i) => [i.number, i.body ?? ''])),
     stale: requests.stale || builds.stale || pulls.stale,
     nameOf,
     jiraBase: jiraBase(),
-    fixes: withProducts(fixRows(sessions, fixPulls, now, nameOf).filter(fixStaysListed), { pulls: fixPulls, products }),
+    fixes: withBuildOrigins(withProducts(fixRows(sessions, fixPulls, now, nameOf).filter(fixStaysListed), { pulls: fixPulls, products }), origins),
     pulls: fixPulls,
-    explorations: explorationBuildRows(explored, { products, now, approvers: approversNow(), ...lifecycle, task, member, shot: (k) => shots.get(k) ?? null, released }),
+    explorations: withBuildOrigins(explorationBuildRows(explored, { products, now, approvers: approversNow(), ...lifecycle, task, member, shot: (k) => shots.get(k) ?? null, released }), origins),
     products,
     ...viewerOf(),
   };

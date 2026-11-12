@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T12:33:43.259Z",
-  "durationMs": 290071,
+  "createdAt": "2026-11-12T12:44:04.010Z",
+  "durationMs": 295511,
   "base": {
-    "ref": "c31c0b2caca263d558cf29878ae76142664965bd",
-    "sha": "7704ca1cc6c4905a37937491f7d3585207a281a8"
+    "ref": "67e34aecd7e0067e11499f2f155f8f4688349ed4",
+    "sha": "67e34aecd7e0067e11499f2f155f8f4688349ed4"
   },
   "head": {
-    "ref": "8be3bfb9968c6a5b721780443b538c77efaa1e42",
-    "sha": "8be3bfb9968c6a5b721780443b538c77efaa1e42"
+    "ref": "e4544c328f4de6f6455781083c71a4a93d2aac1c",
+    "sha": "e4544c328f4de6f6455781083c71a4a93d2aac1c"
   },
   "options": {
     "only": [
@@ -57,6 +57,7 @@
       "apps/docs-site/src/scripts/team-faces.test.ts",
       "apps/docs-site/src/scripts/team-faces.ts",
       "apps/docs-site/src/styles/settings.css",
+      "packages/react/component-specs.json",
       "packages/react/src/avatar-illustrated/avatar-illustrated.test.tsx",
       "packages/react/src/avatar-illustrated/index.tsx",
       "packages/react/src/components/RadioGroup/RadioGroup.docs.json",
@@ -159,12 +160,12 @@
   },
   "summary": {
     "shots": 252,
-    "changed": 4,
-    "unchanged": 248,
+    "changed": 5,
+    "unchanged": 247,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 17.37
+    "maxPercent": 2.16
   },
   "shots": [
     {
@@ -175,21 +176,33 @@
       "brand": "bridge",
       "theme": "light",
       "status": "changed",
-      "changedPixels": 168585,
-      "totalPixels": 972800,
-      "percent": 17.33,
+      "changedPixels": 16849,
+      "totalPixels": 815104,
+      "percent": 2.07,
       "boxes": [
         {
           "x": 32,
           "y": 256,
           "width": 416,
-          "height": 416
+          "height": 352
         },
         {
-          "x": 0,
-          "y": 704,
-          "width": 1024,
-          "height": 246
+          "x": 320,
+          "y": 288,
+          "width": 48,
+          "height": 64
+        },
+        {
+          "x": 400,
+          "y": 288,
+          "width": 48,
+          "height": 64
+        },
+        {
+          "x": 496,
+          "y": 288,
+          "width": 48,
+          "height": 64
         }
       ],
       "size": {
@@ -199,7 +212,7 @@
         },
         "after": {
           "width": 1024,
-          "height": 950
+          "height": 796
         }
       },
       "images": {
@@ -770,17 +783,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 815104,
+      "totalPixels": 958464,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 796
+          "height": 936
         },
         "after": {
           "width": 1024,
-          "height": 796
+          "height": 936
         }
       },
       "images": {}
@@ -1561,21 +1574,33 @@
       "brand": "bridge",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 168943,
-      "totalPixels": 972800,
-      "percent": 17.37,
+      "changedPixels": 17579,
+      "totalPixels": 815104,
+      "percent": 2.16,
       "boxes": [
         {
           "x": 32,
           "y": 256,
           "width": 416,
-          "height": 416
+          "height": 352
         },
         {
-          "x": 0,
-          "y": 704,
-          "width": 1024,
-          "height": 246
+          "x": 320,
+          "y": 288,
+          "width": 48,
+          "height": 64
+        },
+        {
+          "x": 400,
+          "y": 288,
+          "width": 48,
+          "height": 48
+        },
+        {
+          "x": 496,
+          "y": 288,
+          "width": 48,
+          "height": 48
         }
       ],
       "size": {
@@ -1585,7 +1610,7 @@
         },
         "after": {
           "width": 1024,
-          "height": 950
+          "height": 796
         }
       },
       "images": {
@@ -2156,17 +2181,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 815104,
+      "totalPixels": 958464,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 796
+          "height": 936
         },
         "after": {
           "width": 1024,
-          "height": 796
+          "height": 936
         }
       },
       "images": {}
@@ -2947,21 +2972,33 @@
       "brand": "ocean",
       "theme": "light",
       "status": "changed",
-      "changedPixels": 166269,
-      "totalPixels": 972800,
-      "percent": 17.09,
+      "changedPixels": 14036,
+      "totalPixels": 815104,
+      "percent": 1.72,
       "boxes": [
         {
           "x": 32,
           "y": 256,
           "width": 416,
-          "height": 416
+          "height": 352
         },
         {
-          "x": 0,
-          "y": 704,
-          "width": 1024,
-          "height": 246
+          "x": 320,
+          "y": 288,
+          "width": 48,
+          "height": 64
+        },
+        {
+          "x": 400,
+          "y": 288,
+          "width": 48,
+          "height": 48
+        },
+        {
+          "x": 496,
+          "y": 288,
+          "width": 48,
+          "height": 48
         }
       ],
       "size": {
@@ -2971,7 +3008,7 @@
         },
         "after": {
           "width": 1024,
-          "height": 950
+          "height": 796
         }
       },
       "images": {
@@ -3542,17 +3579,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 815104,
+      "totalPixels": 958464,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 796
+          "height": 936
         },
         "after": {
           "width": 1024,
-          "height": 796
+          "height": 936
         }
       },
       "images": {}
@@ -4333,21 +4370,33 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 166260,
-      "totalPixels": 972800,
-      "percent": 17.09,
+      "changedPixels": 14017,
+      "totalPixels": 815104,
+      "percent": 1.72,
       "boxes": [
         {
           "x": 32,
           "y": 256,
           "width": 416,
-          "height": 416
+          "height": 352
         },
         {
-          "x": 0,
-          "y": 704,
-          "width": 1024,
-          "height": 246
+          "x": 320,
+          "y": 288,
+          "width": 48,
+          "height": 64
+        },
+        {
+          "x": 400,
+          "y": 288,
+          "width": 48,
+          "height": 48
+        },
+        {
+          "x": 496,
+          "y": 288,
+          "width": 48,
+          "height": 48
         }
       ],
       "size": {
@@ -4357,7 +4406,7 @@
         },
         "after": {
           "width": 1024,
-          "height": 950
+          "height": 796
         }
       },
       "images": {
@@ -4928,17 +4977,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 815104,
+      "totalPixels": 958464,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 796
+          "height": 936
         },
         "after": {
           "width": 1024,
-          "height": 796
+          "height": 936
         }
       },
       "images": {}
@@ -5214,11 +5263,18 @@
       "storyId": "navigation-breadcrumb--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 1773,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 0.22,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 720,
+          "width": 688,
+          "height": 64
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -5229,7 +5285,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__navigation-breadcrumb--all-states__ocean-dark.png",
+        "after": "after/story__navigation-breadcrumb--all-states__ocean-dark.png",
+        "diff": "diff/story__navigation-breadcrumb--all-states__ocean-dark.png",
+        "composite": "composite/story__navigation-breadcrumb--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__navigation-pagination--all-states__ocean-dark",

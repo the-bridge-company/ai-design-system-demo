@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T03:28:35.709Z",
-  "sha": "4268880966a41b0cc26c54d216c1a0d22b632fc1",
+  "createdAt": "2026-11-12T03:49:33.913Z",
+  "sha": "5c042f8a550bc795e015e923c5e5e0eb4a494fc9",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -107,7 +107,7 @@
       }
     },
     "Avatar": {
-      "specHash": "37f28722",
+      "specHash": "b37c6a87",
       "variants": {
         "Fallback=initials, Kind=person, Size=xs": {
           "file": "avatar/fallback-initials__kind-person__size-xs.png",
@@ -1405,7 +1405,7 @@
       }
     },
     "Kbd": {
-      "specHash": "93cfb064",
+      "specHash": "ee1e5597",
       "variants": {
         "Size=sm": {
           "file": "kbd/size-sm.png",
@@ -2088,7 +2088,7 @@
       }
     },
     "SidebarNav": {
-      "specHash": "e711c569",
+      "specHash": "25ac9c2a",
       "variants": {
         "State=Default": {
           "file": "sidebarnav/state-default.png",
@@ -2108,7 +2108,7 @@
       }
     },
     "SidebarNavSection": {
-      "specHash": "7582515b",
+      "specHash": "d2dccbb8",
       "variants": {
         "State=Default": {
           "file": "sidebarnavsection/state-default.png",
@@ -2128,7 +2128,7 @@
       }
     },
     "SidebarNavItem": {
-      "specHash": "7e90c90a",
+      "specHash": "e911cf25",
       "variants": {
         "State=Default": {
           "file": "sidebarnavitem/state-default.png",
@@ -2224,6 +2224,16 @@
           "file": "spinner/size-lg__tone-signal.png",
           "width": 24,
           "height": 24
+        }
+      }
+    },
+    "Stepper": {
+      "specHash": "ba94cda2",
+      "variants": {
+        "Default": {
+          "file": "stepper/default.png",
+          "width": 320,
+          "height": 160
         }
       }
     },
@@ -2378,7 +2388,7 @@
       }
     },
     "Tabs": {
-      "specHash": "2070aa66",
+      "specHash": "3e11a4a7",
       "variants": {
         "Orientation=horizontal, Size=sm, State=Default, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-sm__state-default__variant-underline.png",

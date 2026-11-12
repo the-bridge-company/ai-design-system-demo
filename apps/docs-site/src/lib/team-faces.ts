@@ -7,7 +7,6 @@
 // team never wear the same hair style; Bridge's own picks (Shuffle, a new member's face) also avoid the look-alikes of
 // a taken style. A person may still pick a look-alike by hand (allowed silently).
 import type { FaceRecipe } from '@bridge-ds/react/avatar-illustrated';
-import { faceVariantName } from '@bridge-ds/react/avatar-illustrated/names';
 
 export type { FaceRecipe };
 
@@ -222,23 +221,6 @@ export function shuffleFace(rand: () => number, blocked: ReadonlySet<string>, cu
     glasses: rand() < 0.25 ? pick(FACE_PART_COUNTS.glasses) : null,
     beard: rand() < 0.15 ? pick(FACE_PART_COUNTS.beard) : null,
   };
-}
-
-const num = (v: string) => Number(v.replace(/^variant/, ''));
-
-/** The words a part variant is named by, on its tile and for screen readers: its DS name ("Short curls"). */
-export function partLabel(part: 'hair' | 'glasses' | 'beard', v: string | null): string {
-  if (part === 'hair') return v === 'hat' ? 'Hat' : (faceVariantName('hair', v ?? '') ?? `Hair style ${num(v ?? '')}`);
-  if (part === 'glasses') return v ? (faceVariantName('glasses', v) ?? `Glasses ${num(v)}`) : 'No glasses';
-  return v ? (faceVariantName('beard', v) ?? `Beard ${num(v)}`) : 'No beard';
-}
-
-/** A face in a few words, for the live region after a Shuffle: "short curls, round glasses". */
-export function faceWords(f: FaceRecipe): string {
-  const parts = [partLabel('hair', f.hair).toLowerCase()];
-  if (f.glasses) parts.push(partLabel('glasses', f.glasses).toLowerCase());
-  if (f.beard) parts.push(partLabel('beard', f.beard).toLowerCase());
-  return parts.join(', ');
 }
 
 /** How many hair tiles show before "Show all 64 styles". */

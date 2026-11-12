@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-12T12:22:50.243Z",
+  "createdAt": "2026-11-12T12:53:54.789Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -3042,6 +3042,19 @@
             "children": "Needs review"
           }
         },
+        "Tone=neutral, Appearance=count, Size=sm": {
+          "file": "data-display-badge-count.png",
+          "width": 32.41,
+          "height": 20,
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "neutral",
+            "appearance": "count",
+            "size": "sm",
+            "dot": false,
+            "children": "12"
+          }
+        },
         "Tone=neutral, Appearance=subtle, Size=md": {
           "file": "data-display-badge-all-states.png",
           "width": 55.75,
@@ -3055,17 +3068,30 @@
             "children": "Draft"
           }
         },
-        "Tone=neutral, Appearance=solid, Size=sm": {
-          "file": "data-display-badge-solid__tone-neutral__appearance-solid__size-sm.png",
-          "width": 80.66,
+        "Tone=neutral, Appearance=subtle, Size=sm": {
+          "file": "data-display-badge-count__tone-neutral__appearance-subtle__size-sm.png",
+          "width": 29.53,
           "height": 20,
-          "story": "data-display-badge--solid",
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "neutral",
+            "appearance": "subtle",
+            "size": "sm",
+            "dot": false,
+            "children": "12"
+          }
+        },
+        "Tone=neutral, Appearance=solid, Size=sm": {
+          "file": "data-display-badge-count__tone-neutral__appearance-solid__size-sm.png",
+          "width": 29.53,
+          "height": 20,
+          "story": "data-display-badge--count",
           "props": {
             "tone": "neutral",
             "appearance": "solid",
             "size": "sm",
             "dot": false,
-            "children": "Build failed"
+            "children": "12"
           }
         },
         "Tone=neutral, Appearance=solid, Size=md": {
@@ -3079,6 +3105,19 @@
             "size": "md",
             "dot": false,
             "children": "Build failed"
+          }
+        },
+        "Tone=neutral, Appearance=count, Size=md": {
+          "file": "data-display-badge-count__tone-neutral__appearance-count__size-md.png",
+          "width": 38.81,
+          "height": 26,
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "neutral",
+            "appearance": "count",
+            "size": "md",
+            "dot": false,
+            "children": "12"
           }
         },
         "Tone=success, Appearance=subtle, Size=sm": {
@@ -3115,6 +3154,32 @@
           "props": {
             "tone": "success",
             "appearance": "solid",
+            "size": "md",
+            "dot": false,
+            "children": "Published"
+          }
+        },
+        "Tone=success, Appearance=count, Size=sm": {
+          "file": "data-display-badge-count__tone-success__appearance-count__size-sm.png",
+          "width": 32.41,
+          "height": 20,
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "success",
+            "appearance": "count",
+            "size": "sm",
+            "dot": false,
+            "children": "12"
+          }
+        },
+        "Tone=success, Appearance=count, Size=md": {
+          "file": "data-display-badge-subtle__tone-success__appearance-count__size-md.png",
+          "width": 86.72,
+          "height": 26,
+          "story": "data-display-badge--subtle",
+          "props": {
+            "tone": "success",
+            "appearance": "count",
             "size": "md",
             "dot": false,
             "children": "Published"
@@ -3159,6 +3224,32 @@
             "children": "Build failed"
           }
         },
+        "Tone=warning, Appearance=count, Size=sm": {
+          "file": "data-display-badge-count__tone-warning__appearance-count__size-sm.png",
+          "width": 32.41,
+          "height": 20,
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "warning",
+            "appearance": "count",
+            "size": "sm",
+            "dot": false,
+            "children": "12"
+          }
+        },
+        "Tone=warning, Appearance=count, Size=md": {
+          "file": "data-display-badge-with-dot__tone-warning__appearance-count__size-md.png",
+          "width": 118.75,
+          "height": 26,
+          "story": "data-display-badge--with-dot",
+          "props": {
+            "tone": "warning",
+            "appearance": "count",
+            "size": "md",
+            "dot": true,
+            "children": "Needs review"
+          }
+        },
         "Tone=danger, Appearance=subtle, Size=sm": {
           "file": "data-display-badge-subtle__tone-danger__appearance-subtle__size-sm.png",
           "width": 74.56,
@@ -3194,6 +3285,32 @@
             "tone": "danger",
             "appearance": "solid",
             "size": "sm",
+            "dot": false,
+            "children": "Build failed"
+          }
+        },
+        "Tone=danger, Appearance=count, Size=sm": {
+          "file": "data-display-badge-count__tone-danger__appearance-count__size-sm.png",
+          "width": 32.41,
+          "height": 20,
+          "story": "data-display-badge--count",
+          "props": {
+            "tone": "danger",
+            "appearance": "count",
+            "size": "sm",
+            "dot": false,
+            "children": "12"
+          }
+        },
+        "Tone=danger, Appearance=count, Size=md": {
+          "file": "data-display-badge-solid__tone-danger__appearance-count__size-md.png",
+          "width": 93.42,
+          "height": 26,
+          "story": "data-display-badge--solid",
+          "props": {
+            "tone": "danger",
+            "appearance": "count",
+            "size": "md",
             "dot": false,
             "children": "Build failed"
           }
@@ -3250,17 +3367,30 @@
             "children": "Build failed"
           }
         },
-        "Tone=neutral, Appearance=subtle, Size=sm": {
-          "file": "data-display-badge-all-states__tone-neutral__appearance-subtle__size-sm.png",
-          "width": 56,
-          "height": 26,
-          "story": "data-display-badge--all-states",
+        "Tone=info, Appearance=count, Size=sm": {
+          "file": "data-display-badge-count__tone-info__appearance-count__size-sm.png",
+          "width": 32.41,
+          "height": 20,
+          "story": "data-display-badge--count",
           "props": {
-            "tone": "neutral",
-            "appearance": "subtle",
+            "tone": "info",
+            "appearance": "count",
             "size": "sm",
             "dot": false,
-            "children": "Draft"
+            "children": "12"
+          }
+        },
+        "Tone=info, Appearance=count, Size=md": {
+          "file": "data-display-badge-subtle__tone-info__appearance-count__size-md.png",
+          "width": 86.72,
+          "height": 26,
+          "story": "data-display-badge--subtle",
+          "props": {
+            "tone": "info",
+            "appearance": "count",
+            "size": "md",
+            "dot": false,
+            "children": "Published"
           }
         }
       }
@@ -3875,6 +4005,17 @@
             "appearance": "neutral",
             "title": "Editing the Button guidelines",
             "children": "Changes stay in a draft until you open a pull request."
+          }
+        },
+        "Appearance=harbor": {
+          "file": "feedback-banner-harbor.png",
+          "width": 400,
+          "height": 108,
+          "story": "feedback-banner--harbor",
+          "props": {
+            "appearance": "harbor",
+            "title": "Ana Ruiz decides what joins the library.",
+            "children": "Leave a comment on any piece; your lead sees it before deciding."
           }
         }
       }

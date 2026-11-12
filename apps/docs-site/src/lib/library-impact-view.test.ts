@@ -180,7 +180,8 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.rows[0]!.status.label).toBe('Needs you');
     expect(c.question).toBe('Card, two ways');
     expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes it roomier; this screen makes it tighter.");
-    expect(c.noteParts).toEqual([{ text: 'Pick in Library review', href }, { text: ': it answers both screens. Leo and Sofia will be notified.' }]);
+    expect(c.noteParts).toEqual([{ text: 'Pick in Library review', href }, { text: ': it answers both screens.' }]);
+    expect(c.notified).toEqual({ text: 'Leo and Sofia will be notified.', people: ['Leo', 'Sofia'] });
     expect(c.note).not.toMatch(/your choice|exploration's page/i);
   });
 

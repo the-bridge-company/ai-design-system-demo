@@ -31,6 +31,11 @@ describe('the library block, ledger', () => {
     expect(screen.getByRole('heading', { name: 'Card padding' })).toBeInTheDocument();
     expect(screen.getByText('New option')).toBeInTheDocument();
     expect(screen.getByText('Add to the library')).toBeInTheDocument();
+    // Who will be notified: the same People line as Library review's footer, faces first, then the sentence.
+    const notified = screen.getByText('Sofia and Leo will be notified.');
+    expect(notified).toHaveClass('people-names');
+    expect(notified.closest('.people')!.querySelectorAll('[role="group"] > *')).toHaveLength(2);
+    expect(screen.getByText('Answers both screens.')).toBeInTheDocument();
     expect(screen.getByText('Already in the library')).toBeInTheDocument();
     expect(screen.getByText('The default')).toBeInTheDocument();
     expect(screen.getByText("Leo's screen can use Compact as it is \u2060· Deal pipeline cards \u2060· Acme CRM")).toBeInTheDocument();

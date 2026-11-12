@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // "See it as" on the sample banner (SeeItAs.tsx): its items sit inside the DS Menu's own padding, with the DS item
-// inset and concentric radius, and its footer note keeps the DS gap above its line. Checked on the class contract
+// inset and concentric radius (the note's gap above its line is the DS MenuSeparator's, #1137). Checked on the class contract
 // (the DS Menu's popup class on the content, no styles/demo-home.css rule that moves an item to the menu's edges).
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -49,11 +49,5 @@ describe('SeeItAs menu inset', () => {
   it('the DS Menu holds the inset: popup padding, item radius concentric with it', () => {
     expect(rule(menuCss, '.popup')).toMatch(/padding: var\(--space-1\);/);
     expect(rule(menuCss, '.item')).toMatch(/border-radius: calc\(var\(--popup-radius\) - var\(--space-1\)\);/);
-  });
-
-  it('the footer note keeps the DS gap above its divider', () => {
-    const note = rule(css, '.see-as-note');
-    expect(note).toMatch(/margin: var\(--space-1\) 0 0;/);
-    expect(note).toMatch(/border-block-start:/);
   });
 });

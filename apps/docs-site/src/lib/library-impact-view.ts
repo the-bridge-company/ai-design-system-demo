@@ -211,6 +211,11 @@ export interface ConflictView {
    * for both screens." or "[Pick in Library review]: it answers both screens."
    */
   noteParts: NotePart[];
+  /**
+   * Who the choice notifies, said after noteParts with their faces (People.tsx), the same line as Library review's
+   * footer: "Leo and Sofia will be notified." Null when the reader does not make the choice.
+   */
+  notified: { text: string; people: string[] } | null;
   /** "Comment to both", "Comment to all", "Comment". */
   comment: string;
   /** The row's one tag while open: "Your choice", "Dana picks". */
@@ -913,16 +918,16 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
       : [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes it ${effect(other)}` }, ...mineSaid];
   }
   const told = notifiedLine(ways.map((w) => w.designer));
-  const toldLine = told;
   const where = x.reviewHref;
   const noteParts: NotePart[] = decides
-    ? [{ text: `Answers ${screens}. ${toldLine}` }]
+    ? [{ text: `Answers ${screens}.` }]
     : x.designerHere
       ? [{ text: `Tell ${owners || !leadName ? 'the library owners' : leadName} why yours fits this screen. ${owners || !leadName ? "The library owners'" : `${leadName}'s`} choice answers ${screens}.` }]
       : leadElsewhere
-        ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}. ${toldLine}` }]
+        ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}.` }]
         : [{ text: `${leadName ?? 'The library owners'} ${picks} in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
-  const note = noteParts.map((p) => p.text).join('');
+  const notified = decides || leadElsewhere ? { text: told, people: [...new Set(ways.map((w) => w.designer))] } : null;
+  const note = [noteParts.map((p) => p.text).join(''), notified?.text].filter(Boolean).join(' ');
   const pick = group.find((c) => c.pick)?.pick ?? null;
   const rawValue = (key: string) => (key === first.mine.key ? first.mine.value : group.find((c) => c.other.key === key)?.other.value);
   const sized = /^padding|gap|radius|width|height|size/i.test(property);
@@ -943,6 +948,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     context,
     note,
     noteParts,
+    notified,
     comment: decides ? (ways.length === 2 ? 'Comment to both' : 'Comment to all') : 'Comment',
     // Who picks, said once: the lead deciding here reads "Your choice", the lead who picks in Library review "Needs you".
     tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The library owners'} ${picks}`,

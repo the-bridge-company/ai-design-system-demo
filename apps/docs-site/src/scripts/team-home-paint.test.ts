@@ -48,10 +48,27 @@ describe('initTeamHome', () => {
 
   it('keeps the home on screen and shows the failure under it when the read fails', async () => {
     s.team = () => Promise.reject(Object.assign(new Error('API rate limit exceeded'), { status: 429 }));
-    const { home, ds } = mount();
-    await act(async () => initTeamHome(home, null, ds));
-    await act(async () => undefined);
-    expect(home.textContent).toMatch(/Sam/);
-    expect(ds.textContent).toMatch(/Try again/);
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const { home, ds } = mount();
+      await act(async () => initTeamHome(home, null, ds));
+      await act(async () => undefined);
+      // Let a rejection nobody took in surface before checking.
+      await new Promise((r) => setTimeout(r, 20));
+      expect(home.textContent).toMatch(/Sam/);
+      expect(ds.textContent).toMatch(/Try again/);
+      // The failed state: the design system part says why GitHub could not be read, with its wait.
+      expect(ds.textContent).toMatch(/busy/i);
+      // The home gets the settings read and its failure to say (the kept settings, else why): never swallowed.
+      const settings = s.loadHome.mock.calls.at(-1)?.[3] as Promise<unknown> | undefined;
+      expect(settings).toBeInstanceOf(Promise);
+      await expect(settings).rejects.toMatchObject({ status: 429 });
+      // And nothing escaped unhandled, even though the mocked home never takes the settings read in.
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
   });
 });

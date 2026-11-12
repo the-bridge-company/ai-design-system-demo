@@ -282,6 +282,9 @@ export async function loadJoinNeeds(now: number): Promise<NeedRow[]> {
  * team shell, the read of its settings (bridge.config.json products), awaited before the products are known.
  */
 export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome: (d: HomeData) => void, onRepaint?: (repaint: () => void) => void, settings?: Promise<unknown>): Promise<void> {
+  // The settings read is taken in at once (its failure is the home's to say, below): a rejection while the reads before
+  // it run is never left unhandled.
+  const settingsRead: Promise<unknown> | null = settings ? settings.then(() => null, (err: unknown) => err ?? new Error('settings')) : null;
   // Once the explorations are settled, the products the viewer explores in: the side nav lists them first from the next
   // page on (lib/nav-products.ts).
   let noted = '';
@@ -342,8 +345,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   // The open changes start at once; on a team the products and their repositories wait for its settings (`settings`).
   const openRead = ghGet<HomePull[]>(`/repos/${owner}/${repo}/pulls?state=open&per_page=100`);
   openRead.catch(() => undefined);
-  let settingsFailed: unknown = null;
-  if (settings) await settings.catch((err: unknown) => (settingsFailed = err ?? new Error('settings')));
+  const settingsFailed: unknown = settingsRead ? await settingsRead : null;
   // The team's settings could not be read and this browser never kept them: its name, products and who reviews are
   // unknown. Say why, never the default settings (they read as another team: "Bridge demo ds", Admin demo, Reviewer).
   if (settingsFailed && !siteKnown()) {

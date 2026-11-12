@@ -1,6 +1,6 @@
 {
   "pr": 1131,
-  "sha": "8933425410fdb766ee66fb65733a1897867589f4",
+  "sha": "a5cd15b75c1ee604f0bad00e295153e6a1f854fc",
   "baseSha": "19300f5545c44760bfbfaf5ff54f4b47d2ec9111",
   "failed": false,
   "failures": [],
@@ -10,10 +10,10 @@
     "home",
     "changes",
     "settings",
+    "product",
     "library",
     "library-component",
-    "review",
-    "building"
+    "review"
   ],
   "variants": [
     {
@@ -27,7 +27,7 @@
       "fullHeight": 962,
       "png": "exploration-desktop-light.png",
       "axe": [],
-      "ms": 12269,
+      "ms": 11254,
       "webp": "exploration-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -47,7 +47,7 @@
       "fullHeight": 962,
       "png": "exploration-desktop-dark.png",
       "axe": [],
-      "ms": 12442,
+      "ms": 11399,
       "webp": "exploration-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -68,7 +68,7 @@
       "fullHeight": 906,
       "png": "exploration-mobile-light.png",
       "axe": [],
-      "ms": 16155,
+      "ms": 11069,
       "webp": "exploration-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -89,7 +89,7 @@
       "fullHeight": 906,
       "png": "exploration-mobile-dark.png",
       "axe": [],
-      "ms": 11454,
+      "ms": 10802,
       "webp": "exploration-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -109,7 +109,7 @@
       "fullHeight": 962,
       "png": "home-desktop-light.png",
       "axe": [],
-      "ms": 10566,
+      "ms": 10358,
       "webp": "home-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -129,7 +129,7 @@
       "fullHeight": 962,
       "png": "home-desktop-dark.png",
       "axe": [],
-      "ms": 9924,
+      "ms": 10359,
       "webp": "home-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -150,7 +150,7 @@
       "fullHeight": 906,
       "png": "home-mobile-light.png",
       "axe": [],
-      "ms": 9951,
+      "ms": 11144,
       "webp": "home-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -171,7 +171,7 @@
       "fullHeight": 906,
       "png": "home-mobile-dark.png",
       "axe": [],
-      "ms": 10421,
+      "ms": 10021,
       "webp": "home-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -191,7 +191,7 @@
       "fullHeight": 962,
       "png": "changes-desktop-light.png",
       "axe": [],
-      "ms": 11240,
+      "ms": 11939,
       "webp": "changes-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -211,7 +211,7 @@
       "fullHeight": 962,
       "png": "changes-desktop-dark.png",
       "axe": [],
-      "ms": 11728,
+      "ms": 10963,
       "webp": "changes-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -232,7 +232,7 @@
       "fullHeight": 906,
       "png": "changes-mobile-light.png",
       "axe": [],
-      "ms": 11630,
+      "ms": 11173,
       "webp": "changes-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -253,7 +253,7 @@
       "fullHeight": 906,
       "png": "changes-mobile-dark.png",
       "axe": [],
-      "ms": 11049,
+      "ms": 12365,
       "webp": "changes-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -273,7 +273,7 @@
       "fullHeight": 962,
       "png": "settings-desktop-light.png",
       "axe": [],
-      "ms": 10144,
+      "ms": 9276,
       "webp": "settings-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -293,7 +293,7 @@
       "fullHeight": 962,
       "png": "settings-desktop-dark.png",
       "axe": [],
-      "ms": 10328,
+      "ms": 9376,
       "webp": "settings-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -314,7 +314,7 @@
       "fullHeight": 1073,
       "png": "settings-mobile-light.png",
       "axe": [],
-      "ms": 9482,
+      "ms": 9062,
       "webp": "settings-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -335,8 +335,90 @@
       "fullHeight": 1073,
       "png": "settings-mobile-dark.png",
       "axe": [],
-      "ms": 9736,
+      "ms": 9171,
       "webp": "settings-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-light.png",
+      "axe": [],
+      "ms": 9531,
+      "webp": "product-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-dark.png",
+      "axe": [],
+      "ms": 9361,
+      "webp": "product-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-light.png",
+      "axe": [],
+      "ms": 9319,
+      "webp": "product-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-dark.png",
+      "axe": [],
+      "ms": 9321,
+      "webp": "product-mobile-dark.webp",
       "diff": {
         "ratio": 0,
         "pixels": 0,
@@ -355,7 +437,7 @@
       "fullHeight": 1201,
       "png": "library-desktop-light.png",
       "axe": [],
-      "ms": 10018,
+      "ms": 9403,
       "webp": "library-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -375,7 +457,7 @@
       "fullHeight": 1201,
       "png": "library-desktop-dark.png",
       "axe": [],
-      "ms": 10027,
+      "ms": 9265,
       "webp": "library-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -396,7 +478,7 @@
       "fullHeight": 1845,
       "png": "library-mobile-light.png",
       "axe": [],
-      "ms": 9551,
+      "ms": 9480,
       "webp": "library-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -417,7 +499,7 @@
       "fullHeight": 1845,
       "png": "library-mobile-dark.png",
       "axe": [],
-      "ms": 11592,
+      "ms": 9357,
       "webp": "library-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -437,7 +519,7 @@
       "fullHeight": 3431,
       "png": "library-component-desktop-light.png",
       "axe": [],
-      "ms": 13041,
+      "ms": 14152,
       "webp": "library-component-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -457,7 +539,7 @@
       "fullHeight": 3431,
       "png": "library-component-desktop-dark.png",
       "axe": [],
-      "ms": 12673,
+      "ms": 12211,
       "webp": "library-component-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -478,7 +560,7 @@
       "fullHeight": 5107,
       "png": "library-component-mobile-light.png",
       "axe": [],
-      "ms": 11582,
+      "ms": 10876,
       "webp": "library-component-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -499,7 +581,7 @@
       "fullHeight": 5107,
       "png": "library-component-mobile-dark.png",
       "axe": [],
-      "ms": 13403,
+      "ms": 12650,
       "webp": "library-component-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -519,12 +601,17 @@
       "fullHeight": 962,
       "png": "review-desktop-light.png",
       "axe": [],
-      "ms": 9847,
+      "ms": 11878,
       "webp": "review-desktop-light.webp",
       "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
+        "ratio": 0.002717140217140217,
+        "pixels": 3764,
+        "box": {
+          "x0": 502,
+          "y0": 237,
+          "x1": 927,
+          "y1": 387
+        },
         "sizeChanged": false
       }
     },
@@ -539,12 +626,17 @@
       "fullHeight": 962,
       "png": "review-desktop-dark.png",
       "axe": [],
-      "ms": 9895,
+      "ms": 10578,
       "webp": "review-desktop-dark.webp",
       "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
+        "ratio": 0.0027886059136059136,
+        "pixels": 3863,
+        "box": {
+          "x0": 502,
+          "y0": 237,
+          "x1": 927,
+          "y1": 387
+        },
         "sizeChanged": false
       }
     },
@@ -560,12 +652,17 @@
       "fullHeight": 906,
       "png": "review-mobile-light.png",
       "axe": [],
-      "ms": 10350,
+      "ms": 9390,
       "webp": "review-mobile-light.webp",
       "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
+        "ratio": 0.011031867323258051,
+        "pixels": 3898,
+        "box": {
+          "x0": 16,
+          "y0": 209,
+          "x1": 366,
+          "y1": 542
+        },
         "sizeChanged": false
       }
     },
@@ -581,94 +678,17 @@
       "fullHeight": 906,
       "png": "review-mobile-dark.png",
       "axe": [],
-      "ms": 10554,
+      "ms": 10005,
       "webp": "review-mobile-dark.webp",
       "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
-        "sizeChanged": false
-      }
-    },
-    {
-      "screen": "building",
-      "viewport": "desktop",
-      "theme": "light",
-      "consoleErrors": [],
-      "pageErrors": [],
-      "status": 200,
-      "height": 962,
-      "fullHeight": 962,
-      "png": "building-desktop-light.png",
-      "axe": [],
-      "ms": 12124,
-      "webp": "building-desktop-light.webp",
-      "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
-        "sizeChanged": false
-      }
-    },
-    {
-      "screen": "building",
-      "viewport": "desktop",
-      "theme": "dark",
-      "consoleErrors": [],
-      "pageErrors": [],
-      "status": 200,
-      "height": 962,
-      "fullHeight": 962,
-      "png": "building-desktop-dark.png",
-      "axe": [],
-      "ms": 10925,
-      "webp": "building-desktop-dark.webp",
-      "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
-        "sizeChanged": false
-      }
-    },
-    {
-      "screen": "building",
-      "viewport": "mobile",
-      "theme": "light",
-      "consoleErrors": [],
-      "pageErrors": [],
-      "status": 200,
-      "overflow": null,
-      "height": 1038,
-      "fullHeight": 1038,
-      "png": "building-mobile-light.png",
-      "axe": [],
-      "ms": 10718,
-      "webp": "building-mobile-light.webp",
-      "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
-        "sizeChanged": false
-      }
-    },
-    {
-      "screen": "building",
-      "viewport": "mobile",
-      "theme": "dark",
-      "consoleErrors": [],
-      "pageErrors": [],
-      "status": 200,
-      "overflow": null,
-      "height": 1038,
-      "fullHeight": 1038,
-      "png": "building-mobile-dark.png",
-      "axe": [],
-      "ms": 10639,
-      "webp": "building-mobile-dark.webp",
-      "diff": {
-        "ratio": 0,
-        "pixels": 0,
-        "box": null,
+        "ratio": 0.011365823286353088,
+        "pixels": 4016,
+        "box": {
+          "x0": 16,
+          "y0": 209,
+          "x1": 366,
+          "y1": 542
+        },
         "sizeChanged": false
       }
     }

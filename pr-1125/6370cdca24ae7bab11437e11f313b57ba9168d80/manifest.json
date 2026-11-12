@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T12:44:04.010Z",
-  "durationMs": 295511,
+  "createdAt": "2026-11-12T12:53:33.424Z",
+  "durationMs": 273723,
   "base": {
     "ref": "67e34aecd7e0067e11499f2f155f8f4688349ed4",
     "sha": "67e34aecd7e0067e11499f2f155f8f4688349ed4"
   },
   "head": {
-    "ref": "e4544c328f4de6f6455781083c71a4a93d2aac1c",
-    "sha": "e4544c328f4de6f6455781083c71a4a93d2aac1c"
+    "ref": "6370cdca24ae7bab11437e11f313b57ba9168d80",
+    "sha": "6370cdca24ae7bab11437e11f313b57ba9168d80"
   },
   "options": {
     "only": [
@@ -57,6 +57,7 @@
       "apps/docs-site/src/scripts/team-faces.test.ts",
       "apps/docs-site/src/scripts/team-faces.ts",
       "apps/docs-site/src/styles/settings.css",
+      "apps/figma-plugin/test/component-pull.test.ts",
       "packages/react/component-specs.json",
       "packages/react/src/avatar-illustrated/avatar-illustrated.test.tsx",
       "packages/react/src/avatar-illustrated/index.tsx",
@@ -160,8 +161,8 @@
   },
   "summary": {
     "shots": 252,
-    "changed": 5,
-    "unchanged": 247,
+    "changed": 4,
+    "unchanged": 248,
     "added": 0,
     "removed": 0,
     "errors": 0,
@@ -5263,18 +5264,11 @@
       "storyId": "navigation-breadcrumb--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 1773,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 0.22,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 720,
-          "width": 688,
-          "height": 64
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -5285,12 +5279,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__navigation-breadcrumb--all-states__ocean-dark.png",
-        "after": "after/story__navigation-breadcrumb--all-states__ocean-dark.png",
-        "diff": "diff/story__navigation-breadcrumb--all-states__ocean-dark.png",
-        "composite": "composite/story__navigation-breadcrumb--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__navigation-pagination--all-states__ocean-dark",

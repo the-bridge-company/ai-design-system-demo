@@ -1,7 +1,7 @@
 // The center table: an ARIA grid (div based, so section groups can use content-visibility and stay cheap with 535
 // rows). Groups are collapsible section rows, the header is sticky, there is one column per relevant mode, plus code
 // syntax and description columns. Rows render in chunks: the first screenful synchronously, the rest on idle.
-import { badgeHtml, tooltipHtmlAttributes } from '@bridge-ds/react/dom';
+import { badgeHtml, iconButtonHtml, tooltipHtmlAttributes } from '@bridge-ds/react/dom';
 import { codeSyntax, modeName, SYNTAX_LABEL } from '../../lib/explorer/format';
 import { beforeText, markLabel, type TokenMark } from '../../lib/view-scope';
 import { sectionsFor, type Column, type Section, type XToken } from '../../lib/explorer/model';
@@ -62,7 +62,8 @@ function rowHtml(d: ExplorerData, t: XToken, view: View, s: ExplorerState, secti
   // Studio: the name opens the read-only details, the value cells open the editor. No copy buttons in the cells
   // (C copies, and the row menu); the row menu sits at the end of the name cell.
   const nameEnd = editable
-    ? `<button type="button" class="xp-rowmenu" data-xp-rowmenu tabindex="-1" aria-label="Actions for ${esc(t.path)}" aria-haspopup="menu">${icon('more', 16)}</button>`
+    ? // The row's actions: a DS IconButton (roving grid cell, so tabindex -1) that opens the DS Menu (RowMenu.tsx).
+      iconButtonHtml('ellipsis', `Actions for ${t.path}`, { size: 'sm', className: 'xp-rowmenu', attributes: { 'data-xp-rowmenu': true, tabindex: -1, 'aria-haspopup': 'menu' } })
     : studio
       ? ''
       : copyButton(codeSyntax(t.path, t.tier, s.syntax), `${SYNTAX_LABEL[s.syntax]} ${codeSyntax(t.path, t.tier, s.syntax)}`);

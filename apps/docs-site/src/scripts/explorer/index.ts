@@ -27,7 +27,9 @@ import { editorReady, editorSnapshot, initTokenEditor, setEditing } from '../tok
 import { cellValue } from '../../lib/explorer/model';
 import { codeSyntax } from '../../lib/explorer/format';
 import { initReview } from './review';
-import { watchOverflowEdges } from '../../lib/overflow-edges';
+import { mountTypeFilter } from '../../components/explorer/TypeFilter';
+import { mountCollectionTree, type TreeEntry } from '../../components/explorer/CollectionTree';
+import { closeRowMenu, openRowMenu, rowMenuOpen } from '../../components/explorer/RowMenu';
 import { loadExplorerData, readJson } from './data';
 import { onSelectPick, setSelect } from '../../lib/select-bridge';
 import { paintVanilla } from '../vanilla-controls';
@@ -69,6 +71,8 @@ export function initTokenExplorer() {
   const main = $<HTMLElement>('[data-xp-main]');
   // The Library's lens and collections tree; Studio has none (type chips and the Options menu instead).
   const tree = root.querySelector<HTMLElement>('[data-xp-tree]');
+  // The tree is a React island: the DS SidebarNav (components/explorer/CollectionTree.tsx).
+  const treeView = tree ? mountCollectionTree(tree) : null;
   const detail = $<HTMLElement>('[data-xp-detail]');
   const scrim = $<HTMLElement>('[data-xp-scrim]');
   const q = $<HTMLInputElement>('[data-xp-q]');
@@ -85,9 +89,9 @@ export function initTokenExplorer() {
   // Static DS SegmentedControls (data-vanilla): scripts/shell.ts handles clicks and arrow keys and reports a change
   // with a bubbling bridge:segment event; this script keeps the state and selects with selectSegment().
   const lens = root.querySelector<HTMLElement>('[data-xp-lens]');
+  // Studio's type filter: a React island (DS SegmentedControl, and a DS Tag for a component scope) on this slot.
   const chips = root.querySelector<HTMLElement>('[data-xp-chips]');
-  // A phone scrolls the type chips: the edge with more chips past it fades (lib/overflow-edges).
-  if (chips) watchOverflowEdges(chips);
+  const typeFilter = chips ? mountTypeFilter(chips) : null;
   const brandSeg = root.querySelector<HTMLElement>('[data-xp-brand]');
   const densitySeg = root.querySelector<HTMLElement>('[data-xp-density]');
   const brandField = root.querySelector<HTMLElement>('[data-xp-mode-field="brand"]');
@@ -264,44 +268,39 @@ export function initTokenExplorer() {
       if (c) c.textContent = String(b.dataset.value === 'collections' ? collectionTree(d.tokens).length : categoryList(d.tokens).length);
     });
     const sel = s.selection;
-    const item = (label: string, count: number, attrs: string, current: boolean, extra = '', depth = 0) =>
-      `<li class="xp-tree-item depth-${depth}"><button type="button" class="xp-tree-btn" ${attrs} ${current ? 'aria-current="true"' : ''}><span class="xp-tree-label">${esc(label)}</span><span class="xp-tree-n">${count}</span></button>${extra}</li>`;
+    const entries: TreeEntry[] = [];
+    const item = (key: string, label: string, count: number, data: TreeEntry['data'], current: boolean, depth: TreeEntry['depth'] = 0) =>
+      entries.push({ key, label, count, data, current, depth });
     if (sel.lens === 'collections') {
-      const all = item('All collections', matching.length, 'data-tier="all"', sel.tier === 'all' && !sel.group);
-      const cols = collectionTree(d.tokens)
-        .map((c) => {
-          const open = sel.tier === c.tier || s.treeOpen.has(c.tier);
-          const groups = open
-            ? `<ul class="xp-tree-sub" role="list">${c.groups
-                .map((g) => {
-                  const gOpen = s.treeOpen.has(`${c.tier}:${g.key}`) || (sel.group ?? '').startsWith(`${g.key}.`);
-                  const kids =
-                    g.children.length && gOpen
-                      ? `<ul class="xp-tree-sub" role="list">${g.children
-                          .map((k) => item(k.label, n((t) => t.tier === c.tier && t.path.startsWith(`${k.key}.`)), `data-tier="${c.tier}" data-group="${esc(k.key)}"`, sel.tier === c.tier && sel.group === k.key, '', 2))
-                          .join('')}</ul>`
-                      : '';
-                  const toggle = g.children.length
-                    ? `<button type="button" class="xp-tree-twist" data-twist="${esc(`${c.tier}:${g.key}`)}" aria-expanded="${gOpen}" aria-label="${gOpen ? 'Collapse' : 'Expand'} ${esc(g.label)}">${icon('chevron', 12)}</button>`
-                    : '';
-                  return item(g.label, n((t) => t.tier === c.tier && (t.path === g.key || t.path.startsWith(`${g.key}.`))), `data-tier="${c.tier}" data-group="${esc(g.key)}"`, sel.tier === c.tier && sel.group === g.key, kids, 1).replace(
-                    '<button type="button" class="xp-tree-btn"',
-                    `${toggle}<button type="button" class="xp-tree-btn"`,
-                  );
-                })
-                .join('')}</ul>`
-            : '';
-          return item(c.label, n((t) => t.tier === c.tier), `data-tier="${c.tier}"`, sel.tier === c.tier && !sel.group, groups);
-        })
-        .join('');
-      tree.innerHTML = `<ul class="xp-tree-list" role="list">${all}${cols}</ul><p class="xp-tree-note">Same collections the Figma plugin creates.</p>`;
+      item('all', 'All collections', matching.length, { 'data-tier': 'all' }, sel.tier === 'all' && !sel.group);
+      for (const c of collectionTree(d.tokens)) {
+        item(c.tier, c.label, n((t) => t.tier === c.tier), { 'data-tier': c.tier }, sel.tier === c.tier && !sel.group);
+        // A collection's groups show while it is picked (or was opened); a group's subgroups while it or one of them is.
+        if (!(sel.tier === c.tier || s.treeOpen.has(c.tier))) continue;
+        for (const g of c.groups) {
+          item(`${c.tier}:${g.key}`, g.label, n((t) => t.tier === c.tier && (t.path === g.key || t.path.startsWith(`${g.key}.`))), { 'data-tier': c.tier, 'data-group': g.key }, sel.tier === c.tier && sel.group === g.key, 1);
+          const gOpen = s.treeOpen.has(`${c.tier}:${g.key}`) || (sel.tier === c.tier && (sel.group === g.key || (sel.group ?? '').startsWith(`${g.key}.`)));
+          if (!gOpen) continue;
+          for (const k of g.children)
+            item(`${c.tier}:${k.key}`, k.label, n((t) => t.tier === c.tier && t.path.startsWith(`${k.key}.`)), { 'data-tier': c.tier, 'data-group': k.key }, sel.tier === c.tier && sel.group === k.key, 2);
+        }
+      }
+      treeView?.render({ entries, note: 'Same collections the Figma plugin creates.', onPick: pickTree });
     } else {
-      const all = item('All types', matching.length, 'data-category="all"', sel.category === 'all');
-      const cats = categoryList(d.tokens)
-        .map((c) => item(c.label, n((t) => t.category === c.category), `data-category="${c.category}"`, sel.category === c.category))
-        .join('');
-      tree.innerHTML = `<ul class="xp-tree-list" role="list">${all}${cats}</ul>`;
+      item('type:all', 'All types', matching.length, { 'data-category': 'all' }, sel.category === 'all');
+      for (const c of categoryList(d.tokens)) item(`type:${c.category}`, c.label, n((t) => t.category === c.category), { 'data-category': c.category }, sel.category === c.category);
+      treeView?.render({ entries, onPick: pickTree });
     }
+  }
+  /** An entry of the left pane picked: the table follows, focus stays on the entry. */
+  function pickTree(e: TreeEntry) {
+    const { 'data-category': category, 'data-tier': tier, 'data-group': group } = e.data;
+    if (category) s.selection = { lens: 'types', category: category as TypeCategory | 'all' };
+    else s.selection = { lens: 'collections', tier: tier as Tier | 'all', group: group || undefined };
+    if (group && tier) s.treeOpen.add(`${tier}:${group.split('.')[0]}`);
+    s.collapsed.clear();
+    render();
+    tree?.querySelector<HTMLElement>('[aria-current]')?.focus();
   }
 
   // ---- toolbar
@@ -314,13 +313,24 @@ export function initTokenExplorer() {
     const cats = [...new Set(scope.map((t) => t.category))]
       .map((c) => ({ c, label: CHIP_LABEL[c] ?? CATEGORY_LABEL[c] }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    const current = s.filters.categories[0] ?? 'all';
-    const chip = (value: string, label: string, n: number) =>
-      `<button type="button" class="xp-chip-btn" aria-pressed="${current === value}" data-xp-chip="${value}">${esc(label)} <span class="xp-chip-n num">${n}</span></button>`;
-    const used = comp
-      ? `<button type="button" class="xp-chip-btn xp-chip-filter" data-xp-chip-clear aria-label="Remove filter: used by ${esc(compLabel(comp))}" title="Show every token again">Used by ${esc(compLabel(comp))} ${icon('close', 12)}</button>`
-      : '';
-    chips.innerHTML = [used, chip('all', 'All', matching.length), ...cats.map(({ c, label }) => chip(c, label, matching.filter((t) => t.category === c).length))].join('');
+    typeFilter?.render({
+      options: [{ value: 'all', label: 'All', count: matching.length }, ...cats.map(({ c, label }) => ({ value: c, label, count: matching.filter((t) => t.category === c).length }))],
+      value: s.filters.categories[0] ?? 'all',
+      onPick: pickType,
+      ...(comp ? { component: compLabel(comp), onClearComponent: clearComponentFilter } : {}),
+    });
+  }
+  /** A type picked in the filter: focus stays on its segment (the filter is redrawn with the table). */
+  function pickType(c: string) {
+    s.filters.categories = c === 'all' ? [] : [c as TypeCategory];
+    render();
+    chips?.querySelector<HTMLElement>(`[data-xp-chip="${CSS.escape(c)}"]`)?.focus();
+  }
+  /** The "Used by" tag removed: every token again, focus on the selected type. */
+  function clearComponentFilter() {
+    clearComponent();
+    render();
+    chips?.querySelector<HTMLElement>('[data-xp-chip][aria-checked="true"]')?.focus();
   }
 
   function renderAppToolbar() {
@@ -576,75 +586,42 @@ export function initTokenExplorer() {
     } else if (t) void copyText(codeSyntax(path, t.tier, 'css'), button);
   }
 
-  // ---- row menu (Studio): copy, details and edit, one menu at a time
-  let rowMenu: HTMLElement | null = null;
-  function closeRowMenu(focusBack = true) {
-    if (!rowMenu) return;
-    const anchor = rowMenu.dataset.anchor ? grid.querySelector<HTMLElement>(`.xp-tr[data-path="${CSS.escape(rowMenu.dataset.anchor)}"] [data-xp-rowmenu]`) : null;
-    rowMenu.remove();
-    rowMenu = null;
-    anchor?.setAttribute('aria-expanded', 'false');
-    if (focusBack) anchor?.focus();
-  }
-  function openRowMenu(btn: HTMLElement) {
-    closeRowMenu(false);
+  // ---- row menu (Studio): edit, details and copy, the DS Menu (components/explorer/RowMenu.tsx), one at a time
+  function showRowMenu(btn: HTMLElement) {
     const row = btn.closest<HTMLElement>('.xp-tr');
     const path = row?.dataset.path;
     const t = path ? d.set.byPath.get(path) : undefined;
     if (!row || !path || !t) return;
-    const menu = document.createElement('div');
-    menu.className = 'xp-rowmenu-pop';
-    menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', `Actions for ${path}`);
-    menu.dataset.anchor = path;
-    const items = [
-      `<button type="button" role="menuitem" data-act="edit">${icon('pencil', 16)}Edit value</button>`,
-      `<button type="button" role="menuitem" data-act="details">${icon('info', 16)}Details</button>`,
-      `<button type="button" role="menuitem" data-act="copy-var">${icon('copy', 16)}Copy CSS variable</button>`,
-      ...view.columns.map((c, i) => `<button type="button" role="menuitem" data-act="copy-col" data-i="${i}">${icon('copy', 16)}Copy ${esc(c.label.toLowerCase())} value</button>`),
-    ];
-    menu.innerHTML = items.join('');
-    main.append(menu);
-    const m = main.getBoundingClientRect();
-    const r = btn.getBoundingClientRect();
-    menu.style.top = `${r.bottom - m.top + 4}px`;
-    menu.style.left = `${Math.max(8, r.right - m.left - menu.offsetWidth)}px`;
     btn.setAttribute('aria-expanded', 'true');
-    rowMenu = menu;
-    const buttons = [...menu.querySelectorAll<HTMLElement>('button')];
-    buttons[0]?.focus();
-    menu.addEventListener('keydown', (e) => {
-      const i = buttons.indexOf(document.activeElement as HTMLElement);
-      if (e.key === 'ArrowDown') buttons[(i + 1) % buttons.length]?.focus();
-      else if (e.key === 'ArrowUp') buttons[(i - 1 + buttons.length) % buttons.length]?.focus();
-      else if (e.key === 'Escape' || e.key === 'Tab') closeRowMenu();
-      else return;
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    menu.addEventListener('click', (e) => {
-      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
-      if (!b) return;
-      const act = b.dataset.act;
-      closeRowMenu(act !== 'edit' && act !== 'details');
-      const cells = cellsOf(row);
-      if (act === 'edit') {
-        const cell = row.querySelector<HTMLElement>('.xp-td.is-mode');
-        if (cell) {
-          focusCell(row, Number(cell.dataset.col));
-          openEditorFor(row, cell);
+    openRowMenu({
+      trigger: btn,
+      label: `Actions for ${path}`,
+      items: [
+        { id: 'edit', label: 'Edit value', icon: 'edit' },
+        { id: 'details', label: 'Details', icon: 'details' },
+        { id: 'copy-var', label: 'Copy CSS variable', icon: 'copy' },
+        ...view.columns.map((c, i) => ({ id: `copy-col:${i}`, label: `Copy ${c.label.toLowerCase()} value`, icon: 'copy' as const })),
+      ],
+      onAction: (act) => {
+        const cells = cellsOf(row);
+        if (act === 'edit') {
+          const cell = row.querySelector<HTMLElement>('.xp-td.is-mode');
+          if (cell) {
+            focusCell(row, Number(cell.dataset.col));
+            openEditorFor(row, cell);
+          }
+        } else if (act === 'details') openDetail(path, { focusTitle: true });
+        else if (act === 'copy-var') {
+          copyFrom(row, cells[0]!);
+          btn.focus({ preventScroll: true });
+        } else if (act.startsWith('copy-col:')) {
+          const cell = row.querySelectorAll<HTMLElement>('.xp-td.is-mode')[Number(act.slice(9))];
+          if (cell) copyFrom(row, cell);
+          btn.focus({ preventScroll: true });
         }
-      } else if (act === 'details') openDetail(path, { focusTitle: true });
-      else if (act === 'copy-var') copyFrom(row, cells[0]!);
-      else if (act === 'copy-col') {
-        const cell = row.querySelectorAll<HTMLElement>('.xp-td.is-mode')[Number(b.dataset.i)];
-        if (cell) copyFrom(row, cell);
-      }
+      },
     });
   }
-  document.addEventListener('pointerdown', (e) => {
-    if (rowMenu && !rowMenu.contains(e.target as Node) && !(e.target as HTMLElement).closest('[data-xp-rowmenu]')) closeRowMenu(false);
-  });
 
   // ---- events: left pane
   const segValue = (e: Event) => (e as CustomEvent<{ value: string }>).detail.value;
@@ -653,27 +630,6 @@ export function initTokenExplorer() {
     s.collapsed.clear();
     render();
   });
-  tree?.addEventListener('click', (e) => {
-    const twist = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-twist]');
-    if (twist) {
-      const k = twist.dataset.twist!;
-      if (s.treeOpen.has(k)) s.treeOpen.delete(k);
-      else s.treeOpen.add(k);
-      renderTree();
-      tree?.querySelector<HTMLElement>(`[data-twist="${CSS.escape(k)}"]`)?.focus();
-      return;
-    }
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.xp-tree-btn');
-    if (!b) return;
-    if (b.dataset.category) s.selection = { lens: 'types', category: b.dataset.category as TypeCategory | 'all' };
-    else s.selection = { lens: 'collections', tier: b.dataset.tier as Tier | 'all', group: b.dataset.group || undefined };
-    if (b.dataset.group && b.dataset.tier) s.treeOpen.add(`${b.dataset.tier}:${b.dataset.group.split('.')[0]}`);
-    s.collapsed.clear();
-    render();
-    const sel = tree?.querySelector<HTMLElement>('[aria-current="true"]');
-    sel?.focus();
-  });
-
   // ---- events: toolbar
   let qTimer = 0;
   q.addEventListener('input', () => {
@@ -698,20 +654,6 @@ export function initTokenExplorer() {
   exact.addEventListener('click', () => {
     s.filters.exact = !s.filters.exact;
     render();
-  });
-  chips?.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('[data-xp-chip-clear]')) {
-      clearComponent();
-      render();
-      chips.querySelector<HTMLElement>('[data-xp-chip]')?.focus();
-      return;
-    }
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-xp-chip]');
-    if (!b) return;
-    const c = b.dataset.xpChip!;
-    s.filters.categories = c === 'all' ? [] : [c as TypeCategory];
-    render();
-    chips.querySelector<HTMLElement>(`[data-xp-chip="${CSS.escape(c)}"]`)?.focus();
   });
   filtersEl.addEventListener('change', (e) => {
     const el = e.target as HTMLInputElement;
@@ -819,10 +761,11 @@ export function initTokenExplorer() {
       void copyText(copy.dataset.copy!, copy);
       return;
     }
+    // The open row menu's own trigger (DS Menu) toggles it: nothing else to do here.
+    if (target.closest('.xp-rowmenu-host')) return;
     const menuBtn = target.closest<HTMLElement>('[data-xp-rowmenu]');
     if (menuBtn) {
-      if (rowMenu?.dataset.anchor === menuBtn.closest<HTMLElement>('.xp-tr')?.dataset.path) closeRowMenu();
-      else openRowMenu(menuBtn);
+      showRowMenu(menuBtn);
       return;
     }
     const chip = target.closest<HTMLElement>('[data-goto]');
@@ -959,8 +902,9 @@ export function initTokenExplorer() {
   document.addEventListener('keydown', (e) => {
     const el = e.target as HTMLElement;
     const typing = el.closest('input, textarea, select, [contenteditable="true"]');
-    if (e.key === 'Escape' && !typing) {
-      if (rowMenu) closeRowMenu();
+    // A DS Menu (row actions, More families) closes itself on Escape and keeps what opened it.
+    if (e.key === 'Escape' && !typing && !e.defaultPrevented && !el.closest('[role="menu"]')) {
+      if (rowMenuOpen()) closeRowMenu();
       else if (inlineEditorOpen()) closeInlineEditor();
       else if (!detail.hidden && (root.contains(el) || el === document.body)) closeDetail();
     }

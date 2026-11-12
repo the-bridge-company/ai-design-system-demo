@@ -1,4 +1,5 @@
-// After Apply: a slim bar "N changes · Review" at the bottom of Studio Tokens, and the review side sheet it opens.
+// After Apply: a slim bar "N changes · Review" at the bottom of Studio Tokens, and the review it opens (the DS Dialog,
+// components/explorer/TokenEditorKit.astro: focus trap, Escape and scrim close it, stacked under the propose dialog).
 // The sheet shows each change as before and after per mode, then the impact collapsed with counts (contrast, the
 // components using it, a visual preview of those real components on that background), and one primary action:
 // Propose change (Connect GitHub to propose without a token). Proposing still goes through scripts/token-editor.ts.
@@ -22,6 +23,7 @@ import { attrUrl } from '../../lib/html';
 import { cssValue, esc, icon } from './util';
 import { isStageToken, previewSamples } from '../../lib/preview-fit';
 import { fitFrames, sampleFrame, sampleNames } from './preview-frames';
+import { badgeHtml, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
 
 const FALLBACK_SAMPLES = ['Card', 'Table', 'Button'];
 const MODE_NAME: Record<string, string> = { light: 'Light', dark: 'Dark', bridge: 'Bridge', ocean: 'Ocean', comfortable: 'Comfortable', compact: 'Compact', value: 'Value' };
@@ -31,14 +33,15 @@ type ValueEdit = Extract<DraftEdit, { kind: 'value' }>;
 
 export function initReview(d: ExplorerData) {
   const bar = document.querySelector<HTMLElement>('[data-xe-bar]');
+  // The DS Dialog's popup (role="dialog"), its title and its body.
   const sheet = document.querySelector<HTMLElement>('[data-xe-sheet]');
-  const scrim = document.querySelector<HTMLElement>('[data-xe-scrim]');
   const body = document.querySelector<HTMLElement>('[data-xe-sheet-body]');
-  const title = document.querySelector<HTMLElement>('[data-xe-sheet-title]');
+  const title = sheet?.querySelector<HTMLElement>('h2') ?? null;
   const propose = document.getElementById('ed-propose') as HTMLButtonElement | null;
   const note = document.querySelector<HTMLElement>('[data-xe-note]');
   const samples = document.querySelector<HTMLTemplateElement>('template[data-xe-samples]');
-  if (!bar || !sheet || !scrim || !body || !title) return;
+  if (!bar || !sheet || !body || !title) return;
+  const isOpen = () => isDialogOpen(sheet);
   // The visual preview is what a designer reviews first: open by default, the other sections on demand.
   const open = new Set<string>(['preview']);
   let returnTo: HTMLElement | null = null;
@@ -103,7 +106,7 @@ export function initReview(d: ExplorerData) {
 
   const paintBar = () => {
     const n = count();
-    bar.hidden = n === 0 || !sheet.hidden;
+    bar.hidden = n === 0 || isOpen();
     const label = bar.querySelector('[data-xe-bar-count]');
     if (label) label.textContent = `${n} edit${n === 1 ? '' : 's'}`;
   };
@@ -185,7 +188,7 @@ export function initReview(d: ExplorerData) {
         const was = before.get(`${r.brand}/${r.theme}:${r.pair.foreground}|${r.pair.background}`);
         return `<li class="${fail ? 'is-fail' : ''}"><span class="mono">${esc(shortName(r.pair.foreground))} on ${esc(shortName(r.pair.background))}</span><span class="xe-ctx">${esc(modeLabel(r.theme))}</span><span class="num">${
           was !== undefined && was !== r.ratio ? `${was.toFixed(2)} ${icon('arrowRight', 12)} ` : ''
-        }${r.ratio === undefined ? 'n/a' : `${r.ratio.toFixed(2)}:1`}</span><span class="xe-badge ${fail ? 'is-fail' : 'is-pass'}">${icon(fail ? 'x' : 'check', 12)}${fail ? `Needs ${esc(String(r.pair.min))}` : 'Pass'}</span></li>`;
+        }${r.ratio === undefined ? 'n/a' : `${r.ratio.toFixed(2)}:1`}</span>${badgeHtml(fail ? `Needs ${r.pair.min}` : 'Pass', { tone: fail ? 'danger' : 'success', size: 'sm', icon: fail ? 'x' : 'check' })}</li>`;
       })
       .join('');
 
@@ -270,7 +273,8 @@ export function initReview(d: ExplorerData) {
       body.innerHTML = '<p class="xe-empty">No change in your draft. Click a value in the table to change it.</p>';
       return;
     }
-    const scroller = body.closest<HTMLElement>('[data-xe-sheet-scroll]') ?? body;
+    // The dialog body scrolls (DS Dialog): keep its place through a repaint.
+    const scroller = body.parentElement ?? body;
     const scroll = scroller.scrollTop;
     body.innerHTML = `${changeCards(tokenOnly(snap.draft.edits))}${impact(tokenOnly(snap.draft.edits))}`;
     const pv = body.querySelector<HTMLElement>('[data-xe-preview]');
@@ -279,29 +283,23 @@ export function initReview(d: ExplorerData) {
   };
 
   const setOpen = (on: boolean) => {
-    sheet.hidden = !on;
-    scrim.hidden = !on;
-    document.body.classList.toggle('no-scroll', on);
     if (on) {
       returnTo = document.activeElement as HTMLElement | null;
       paintSheet();
-      sheet.querySelector<HTMLElement>('[data-xe-sheet-title]')?.focus();
-    } else {
-      (returnTo && document.contains(returnTo) ? returnTo : bar.querySelector<HTMLElement>('[data-xe-review]'))?.focus();
-      returnTo = null;
-    }
+      // Focus on the dialog itself, named by its title, as before on the sheet's heading; focus comes back on close.
+      openDialog(sheet, { initialFocus: sheet, returnFocus: null });
+    } else closeDialog(sheet);
     paintBar();
   };
+  // Closed by its close button, Escape, the scrim or setOpen(false): the bar comes back and focus returns to what
+  // opened it (the Review button when that is gone).
+  sheet.closest('[data-bridge-dialog]')?.addEventListener('close', () => {
+    paintBar();
+    (returnTo && document.contains(returnTo) && returnTo.offsetParent !== null ? returnTo : bar.querySelector<HTMLElement>('[data-xe-review]'))?.focus();
+    returnTo = null;
+  });
 
   bar.querySelector('[data-xe-review]')?.addEventListener('click', () => setOpen(true));
-  sheet.querySelector('[data-xe-close]')?.addEventListener('click', () => setOpen(false));
-  scrim.addEventListener('click', () => setOpen(false));
-  sheet.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
-      e.stopPropagation();
-      setOpen(false);
-    }
-  });
   sheet.addEventListener(
     'toggle',
     (e) => {
@@ -331,13 +329,13 @@ export function initReview(d: ExplorerData) {
   document.addEventListener('bridge:draft', () => {
     paintBar();
     paintFoot();
-    if (!sheet.hidden) {
+    if (isOpen()) {
       if (!count()) setOpen(false);
       else paintSheet();
     }
   });
   document.addEventListener('bridge:scope', () => {
-    if (!sheet.hidden) paintSheet();
+    if (isOpen()) paintSheet();
   });
   paintBar();
   return { open: () => setOpen(true) };

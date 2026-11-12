@@ -16,6 +16,14 @@ const GLYPHS = {
     ],
   },
   check: { names: ['check'], node: [['path', { d: 'M20 6 9 17l-5-5' }]] },
+  ellipsis: {
+    names: ['ellipsis', 'more-horizontal'],
+    node: [
+      ['circle', { cx: '12', cy: '12', r: '1' }],
+      ['circle', { cx: '19', cy: '12', r: '1' }],
+      ['circle', { cx: '5', cy: '12', r: '1' }],
+    ],
+  },
   pencil: {
     names: ['pencil'],
     node: [

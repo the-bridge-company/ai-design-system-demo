@@ -6,6 +6,7 @@ import { aliasLabel, bezierPath, colorAlpha, cssText, isForeground, numericValue
 import { cellValue, pairedBackground, type CellValue, type Column } from '../../lib/explorer/model';
 import type { ExplorerData } from './types';
 import { swatchLabel } from '../../lib/explorer/swatch-ramp';
+import { badgeHtml, tagHtml } from '@bridge-ds/react/dom';
 import { copyButton, cssValue, esc, icon, inkOn } from './util';
 
 const CANVAS = 'color.bg.default';
@@ -81,7 +82,8 @@ export function cellHtml(d: ExplorerData, path: string, col: Column, editable: b
   const type = t?.type ?? '';
   const v = cellValue(d.set, path, col.ctx);
   const chip = v.alias
-    ? `<button type="button" class="xp-chip" data-goto="${esc(v.alias)}" tabindex="-1" title="Go to ${esc(v.alias)}">${v.override ? '<span class="xp-chip-flag" title="Brand override">B</span>' : ''}${esc(aliasLabel(v.alias))}</button>`
+    ? // The alias: a DS Tag (a brand override flagged by a DS Badge) inside a plain button that goes to that token.
+      `<button type="button" class="xp-alias" data-goto="${esc(v.alias)}" tabindex="-1" title="Go to ${esc(v.alias)}">${v.override ? badgeHtml('B', { tone: 'info', size: 'sm', attributes: { title: 'Brand override' } }) : ''}${tagHtml(aliasLabel(v.alias), { size: 'sm' })}</button>`
     : '';
   const main = chip || `<span class="xp-literal mono">${esc(v.line || cssText(type, v.raw))}</span>`;
   const line = v.alias ? `<span class="xp-line mono">${esc(v.line)}</span>` : '';

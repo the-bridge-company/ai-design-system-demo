@@ -12,6 +12,7 @@ import { cellValue, pairedBackground, tokenFocusHref, type CellValue, type Colum
 import { activeReport, loadHistory } from '../history/state';
 import type { ExplorerData, ExplorerState, View } from './types';
 import { swatchLabel } from '../../lib/explorer/swatch-ramp';
+import { badgeHtml, tagHtml } from '@bridge-ds/react/dom';
 import { attrUrl } from '../../lib/html';
 import { copyButton, cssValue, esc, icon } from './util';
 
@@ -69,7 +70,7 @@ function flowParts(d: ExplorerData, path: string, columns: Column[], words: Flow
   const depList = deps.length
     ? `<ul class="xp-deps">${deps
         .slice(0, MAX_DOWNSTREAM)
-        .map((x) => `<li><button type="button" class="xp-chip" data-goto="${esc(x.path)}" title="${esc(x.path)}">${esc(aliasLabel(x.path))}</button><span class="xp-dep-tier">${esc(words.tiers[x.tier] ?? x.tier)}</span></li>`)
+        .map((x) => `<li><button type="button" class="xp-alias" data-goto="${esc(x.path)}" title="${esc(x.path)}">${tagHtml(aliasLabel(x.path), { size: 'sm' })}</button><span class="xp-dep-tier">${esc(words.tiers[x.tier] ?? x.tier)}</span></li>`)
         .join('')}</ul>${deps.length > MAX_DOWNSTREAM ? `<p class="small muted">and ${deps.length - MAX_DOWNSTREAM} more</p>` : ''}`
     : '<p class="xp-empty-line">No token aliases this one.</p>';
   const compList = comps.length
@@ -129,7 +130,7 @@ function pairRow(d: ExplorerData, r: PairRow, edit: boolean, through = false): s
       const tone = !c.passes ? 'is-fail' : c.badge === 'AA large' ? 'is-warn' : 'is-pass';
       return `<li class="xp-ratio ${tone}">${sample}<span class="xp-ratio-ctx">${esc(contextLabel(c))}</span><span class="xp-ratio-num num">${
         moved ? `<span class="muted">${c.before!.toFixed(2)}</span> ${icon('arrowRight', 12)} ` : ''
-      }${esc(ratio)}</span><span class="xp-badge ${tone}">${icon(c.passes ? 'check' : 'x', 12)}${esc(c.badge)}</span></li>`;
+      }${esc(ratio)}</span>${badgeHtml(c.badge, { tone: !c.passes ? 'danger' : c.badge === 'AA large' ? 'warning' : 'success', size: 'sm', icon: c.passes ? 'check' : 'x', className: 'xp-ratio-badge' })}</li>`;
     })
     .join('');
   const need = r.kind === 'ui' ? 'UI, needs 3:1' : `text, needs ${r.min}:1`;

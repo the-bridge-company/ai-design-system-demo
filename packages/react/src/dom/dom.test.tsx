@@ -4,13 +4,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { act, fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../test/axe';
+import { Check, X } from 'lucide-react';
 import { Badge } from '../components/Badge';
+import { Tag } from '../components/Tag';
 import { CodeBlock } from '../components/CodeBlock';
 import { TokenValue } from '../components/TokenValue';
 import { Checklist, ChecklistRow } from '../components/Checklist';
 import { Avatar, type AvatarPersonProps } from '../components/Avatar';
 import { illustratedAvatarUri } from '../avatar-illustrated';
-import { avatarHtml, badgeClassName, badgeHtml, bindCodeBlocks, bindTooltips, checklistHtml, checklistRowHtml, codeBlockHtml, tokenValueHtml, tooltipAttributes, tooltipHtmlAttributes, trusted } from './index';
+import { avatarHtml, badgeClassName, badgeHtml, tagHtml, bindCodeBlocks, bindTooltips, checklistHtml, checklistRowHtml, codeBlockHtml, tokenValueHtml, tooltipAttributes, tooltipHtmlAttributes, trusted } from './index';
 
 describe('badgeHtml', () => {
   it.each([
@@ -29,6 +31,22 @@ describe('badgeHtml', () => {
 
   it('passes trusted markup through', () => {
     expect(badgeHtml(trusted('<b>2</b> left'))).toContain('<b>2</b> left');
+  });
+
+  it('matches <Badge icon>', () => {
+    expect(badgeHtml('AA', { tone: 'success', icon: 'check' })).toBe(renderToStaticMarkup(<Badge tone="success" icon={Check}>AA</Badge>));
+    expect(badgeHtml('Needs 4.5', { tone: 'danger', size: 'sm', icon: 'x', dot: true })).toBe(renderToStaticMarkup(<Badge tone="danger" size="sm" icon={X} dot>Needs 4.5</Badge>));
+  });
+});
+
+describe('tagHtml', () => {
+  it.each([
+    [{}, 'color.bg.canvas'],
+    [{ tone: 'signal' as const, size: 'sm' as const }, 'brand <override>'],
+    [{ className: 'row-tag', attributes: { 'data-goto': 'color.bg', title: 'Go to "x"' } }, 'bg'],
+  ])('matches static <Tag %j>', (opts, text) => {
+    const { attributes, ...props } = opts as { attributes?: Record<string, string> };
+    expect(tagHtml(text, opts)).toBe(renderToStaticMarkup(<Tag {...props} {...attributes}>{text}</Tag>));
   });
 });
 

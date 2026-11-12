@@ -1,5 +1,6 @@
 // The Studio cell editor: ONE popover anchored to the value cell (a bottom sheet on phones). It decides from the
-// swatches: palette families as tabs (the DS Tabs, components/explorer/FamilyTabs.tsx), one ramp with the current step ringed, one contrast line for the pending value,
+// swatches: palette families as tabs (the DS Tabs, components/explorer/FamilyTabs.tsx, with the DS Menu for the
+// others), one ramp with the current step selected (a DS SegmentedControl of swatches, components/explorer/RampPicker.tsx), one contrast line for the pending value,
 // and More options (raw value, the other mode, the description) on demand. Nothing changes until Apply, which adds
 // the edit to the local draft (scripts/token-editor.ts: same draft, guardrails and pull request as before). Under the
 // contrast line, a mini preview of the real components that use the token, light and dark, repaints on every pick.
@@ -11,11 +12,13 @@ import { isStageToken, previewSamples } from '../../lib/preview-fit';
 import { fitFrames, sampleFrame, sampleNames, sampleTemplate } from './preview-frames';
 import { cssText } from '../../lib/explorer/format';
 import { cellValue, modeKeyFor, tierAxis, type Column } from '../../lib/explorer/model';
-import { familyTabs, locateSwatch, rampFamilies, rampTicks, swatchLabel, type RampFamily, type Swatch } from '../../lib/explorer/swatch-ramp';
+import { familyTabs, locateSwatch, rampFamilies, swatchLabel, type RampFamily } from '../../lib/explorer/swatch-ramp';
 import { aliasOptions, applyValues, draftDescription, draftValue, editDescription, pendingOverrides, previewContrast } from '../token-editor';
 import type { ExplorerData } from './types';
 import { cssValue, esc, icon } from './util';
 import { mountFamilyTabs } from '../../components/explorer/FamilyTabs';
+import { mountRampPicker } from '../../components/explorer/RampPicker';
+import { mountMoreOptionsToggle } from '../../components/explorer/MoreOptionsToggle';
 
 interface Open {
   pop: HTMLElement;
@@ -70,7 +73,11 @@ function position(pop: HTMLElement, cell: HTMLElement, container: HTMLElement) {
   }
   const c = container.getBoundingClientRect();
   const r = cell.getBoundingClientRect();
-  const width = Math.min(360, c.width - 16);
+  // Wide enough for the whole ramp (the DS SegmentedControl of swatches) when the page has the room: every step at
+  // a glance, no sideways scroll to reach 950. Its side padding is the editor's (space 4, twice).
+  const track = pop.querySelector<HTMLElement>('.xe-ramp [data-segment-track]');
+  const ramp = track ? track.scrollWidth + 2 * parseFloat(getComputedStyle(pop).getPropertyValue('--space-4') || '16') + 4 : 0;
+  const width = Math.min(Math.max(360, Math.ceil(ramp)), c.width - 16);
   pop.style.width = `${width}px`;
   const left = Math.max(8, Math.min(r.left - c.left, c.width - width - 8));
   pop.style.left = `${left}px`;
@@ -115,7 +122,6 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     family: Math.max(0, locateSwatch(families, isAlias(start) ? aliasTarget(start) : undefined)?.family ?? 0),
     moreOpen: false,
     showPairs: false,
-    familyMenu: false,
   };
   const id = `xe-${Math.random().toString(36).slice(2, 8)}`;
   // Pairs in scope: the edited token and every token that aliases it, in the cell's brand and in the edited mode.
@@ -139,6 +145,10 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   pop.dataset.theme = document.documentElement.dataset.theme ?? 'light';
   // The family tabs are a React island (DS Tabs): one root for this editor, moved into every redraw.
   const familyTabsRoot = mountFamilyTabs();
+  // The ramp too (DS SegmentedControl of swatches, or a DS RadioGroup of steps for other types).
+  const rampRoot = mountRampPicker();
+  // And More options (a DS Button that shows the raw value, the other mode and the description).
+  const moreRoot = mountMoreOptionsToggle();
 
   let summary: ContrastSummary | null = null;
   let failing: { fg: string; bg: string; ratio?: number; min: number }[] = [];
@@ -152,37 +162,21 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     failing = summarizePairs(checks).filter((p) => !p.passes);
   };
 
-  const swatchBtn = (s: Swatch, i: number, selected: boolean, was: boolean, tab: boolean) =>
-    isColor
-      ? `<button type="button" role="radio" class="xe-sw${was ? ' is-was' : ''}" aria-checked="${selected}" tabindex="${tab ? 0 : -1}" data-xe-pick="${esc(s.path)}" data-i="${i}" aria-label="${esc(s.label)}, ${esc(s.hex ?? '')}"><i style="background-color:${cssValue(s.hex ?? 'transparent')}"></i><span class="xe-tip" aria-hidden="true">${esc(s.label)} · ${esc(s.hex ?? '')}</span></button>`
-      : `<button type="button" role="radio" class="xe-step${was ? ' is-was' : ''}" aria-checked="${selected}" tabindex="${tab ? 0 : -1}" data-xe-pick="${esc(s.path)}" data-i="${i}"><span class="mono">${esc(s.step)}</span><span class="xe-step-v">${esc(s.value ?? '')}</span></button>`;
-
   const draw = () => {
     drawPop();
     paintPreview();
   };
   const drawPop = () => {
     const target = isAlias(state.value) ? aliasTarget(state.value) : undefined;
-    const startTarget = isAlias(start) ? aliasTarget(start) : undefined;
     const fam = families[state.family];
     const tabs = familyTabs(families, state.family);
     const hex = isColor ? (target ? cellValue(d.head, target, col.ctx).hex : colorOf(state.value)) : undefined;
     const changed = JSON.stringify(state.value) !== JSON.stringify(start);
     const sub = isColor ? `${esc(hex ?? '')}${changed ? ` <span class="xe-was">· was ${esc(valueText(t.type, start))}</span>` : ''}` : changed ? `<span class="xe-was">was ${esc(valueText(t.type, start))}</span>` : '';
     const picker = fam
-      ? // The tabs (DS Tabs, drawn into the slot after this markup) sit in their own tablist: "More" opens a menu, it
-        // is not a tab, so it stays beside the list.
-        `<div class="xe-tabs"><div data-xe-tabs-slot></div>${
-          tabs.more.length
-            ? `<div class="xe-more-fam"><button type="button" class="xe-tab-more" aria-haspopup="true" aria-expanded="${state.familyMenu}" data-xe-family-menu>More ${icon('chevronDown', 14)}</button>${
-                state.familyMenu ? `<div class="xe-fam-menu" role="menu">${tabs.more.map((f) => `<button type="button" role="menuitem" data-xe-family="${f}">${esc(families[f]!.label)}</button>`).join('')}</div>` : ''
-              }</div>`
-            : ''
-        }</div>
-        <div class="${isColor ? 'xe-ramp' : 'xe-steps'}" role="radiogroup" aria-label="${esc(fam.label)}" style="--xe-n:${fam.swatches.length}">${fam.swatches
-          .map((s, i, all) => swatchBtn(s, i, s.path === target, s.path === startTarget && s.path !== target, s.path === target || (i === 0 && !all.some((x) => x.path === target))))
-          .join('')}</div>
-        ${isColor ? `<div class="xe-ticks" aria-hidden="true" style="--xe-n:${fam.swatches.length}">${rampTicks(fam.swatches).map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : ''}`
+      ? // The tabs and More (DS Tabs and Menu) and the ramp are drawn into their slots after this markup.
+        `<div class="xe-families"><div data-xe-tabs-slot></div></div>
+        <div data-xe-ramp-slot></div>`
       : '';
     const status = !isColor || !summary
       ? ''
@@ -222,17 +216,27 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
       ${shown.usesToken ? `<div class="xe-pop-pv" data-xe-pop-pv><p class="xe-pop-pv-label">${esc(shown.names.join(', '))}, as they will look</p><div class="xe-pop-pv-grid" data-xe-pop-pv-grid></div></div>` : ''}
       ${more}
       <div class="xe-foot">
-        ${fam ? `<button type="button" class="xe-more-btn" aria-expanded="${state.moreOpen}" aria-controls="${id}-more" data-xe-more>${icon('chevron', 14)}More options</button>` : ''}
+        ${fam ? '<span data-xe-more-slot></span>' : ''}
         <span class="xe-grow"></span>
         ${buttonHtml('Cancel', { variant: 'secondary', size: 'sm', attributes: { 'data-xe-cancel': true } })}
         ${buttonHtml('Apply', { size: 'sm', attributes: { 'data-xe-apply': true } })}
       </div>`;
-    if (fam)
+    if (fam) {
       familyTabsRoot.render(pop.querySelector('[data-xe-tabs-slot]'), {
         tabs: tabs.tabs.map((f) => ({ value: f, label: families[f]!.label })),
+        more: tabs.more.map((f) => ({ value: f, label: families[f]!.label })),
         value: state.family,
         onPick: pickFamily,
       });
+      rampRoot.render(pop.querySelector('[data-xe-ramp-slot]'), {
+        kind: isColor ? 'color' : 'steps',
+        label: fam.label,
+        steps: fam.swatches.map((x) => ({ path: x.path, label: x.label, step: x.step, ...(x.hex ? { hex: x.hex } : {}), ...(x.value ? { value: x.value } : {}) })),
+        value: fam.swatches.some((x) => x.path === target) ? target! : '',
+        onPick: pickStep,
+      });
+      moreRoot.render(pop.querySelector('[data-xe-more-slot]'), { open: state.moreOpen, controls: `${id}-more` });
+    }
   };
 
   /** Light and dark frames of the components, with the pending value painted on top of the draft. */
@@ -269,7 +273,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   };
   const selectorOf = (el: HTMLElement) => {
     if (el.dataset.xePick) return `[data-xe-pick="${CSS.escape(el.dataset.xePick)}"]`;
-    if (el.dataset.xeFamilyTab) return `[data-xe-family-tab="${el.dataset.xeFamilyTab}"]`;
+    if (el.dataset.xeFam) return `[data-xe-fam="${el.dataset.xeFam}"]`;
+    // A step of the ramp of another type (DS RadioGroup): the picked one.
+    if (el.getAttribute('role') === 'radio') return '.xe-ramp-host [role="radio"][aria-checked="true"]';
     for (const a of ['data-xe-hex', 'data-xe-num', 'data-xe-json', 'data-xe-other', 'data-xe-desc', 'data-xe-more', 'data-xe-pairs', 'data-xe-apply', 'data-xe-cancel', 'data-xe-other-on', 'data-xe-color'])
       if (el.hasAttribute(a)) return `[${a}]`;
     return null;
@@ -278,8 +284,12 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   // A family picked from the tabs or from the More menu: its ramp shows, focus stays on (or lands on) its tab.
   function pickFamily(f: number) {
     state.family = f;
-    state.familyMenu = false;
-    refresh(`[data-xe-family-tab="${f}"]`);
+    refresh(`[data-xe-fam="${f}"]`);
+  }
+  // A step picked in the ramp (click or arrow keys): the pending value, focus stays on the step.
+  function pickStep(p: string) {
+    state.value = `{${p}}`;
+    refresh(isColor ? `[data-xe-pick="${CSS.escape(p)}"]` : '.xe-ramp-host [role="radio"][aria-checked="true"]');
   }
 
   const apply = () => {
@@ -293,16 +303,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   pop.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('button');
     if (!b) return;
-    if (b.dataset.xePick) {
-      state.value = `{${b.dataset.xePick}}`;
-      refresh(`[data-xe-pick="${CSS.escape(b.dataset.xePick)}"]`);
-    } else if (b.dataset.xeFamily !== undefined) {
-      pickFamily(Number(b.dataset.xeFamily));
-    } else if (b.hasAttribute('data-xe-family-menu')) {
-      state.familyMenu = !state.familyMenu;
-      draw();
-      pop.querySelector<HTMLElement>(state.familyMenu ? '.xe-fam-menu button' : '[data-xe-family-menu]')?.focus();
-    } else if (b.hasAttribute('data-xe-pairs')) {
+    if (b.hasAttribute('data-xe-pairs')) {
       state.showPairs = !state.showPairs;
       draw();
       pop.querySelector<HTMLElement>('[data-xe-pairs]')?.focus();
@@ -377,26 +378,11 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      if (state.familyMenu) {
-        state.familyMenu = false;
-        draw();
-        pop.querySelector<HTMLElement>('[data-xe-family-menu]')?.focus();
-        return;
-      }
       closeInlineEditor();
       return;
     }
-    // Arrow keys move inside the ramp (and select, like a radio group). The family tabs have their own (DS Tabs).
-    const group = el.closest('[role="radiogroup"]');
-    if (group && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
-      const items = [...group.querySelectorAll<HTMLElement>('[role="radio"]')];
-      const i = items.indexOf(el);
-      if (i !== -1) {
-        e.preventDefault();
-        const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? Math.max(0, i - 1) : Math.min(items.length - 1, i + 1);
-        items[next]?.click();
-      }
-    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    // Arrow keys in the ramp and the family tabs are their DS components' own (Base UI radio group and tabs).
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       apply();
     } else if (e.key === 'Tab') {
@@ -415,7 +401,10 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   });
 
   const outside = (e: PointerEvent) => {
-    if (!pop.contains(e.target as Node) && !cell.contains(e.target as Node)) closeInlineEditor(false);
+    const target = e.target as Element;
+    // The More families menu (DS Menu) and the swatch tooltips render in a portal: they belong to the editor.
+    if (target.closest?.('.xe-fam-menu')) return;
+    if (!pop.contains(target) && !cell.contains(target)) closeInlineEditor(false);
   };
   document.addEventListener('pointerdown', outside, true);
 
@@ -432,6 +421,8 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     dispose: () => {
       window.clearTimeout(timer);
       familyTabsRoot.unmount();
+      rampRoot.unmount();
+      moreRoot.unmount();
       document.removeEventListener('pointerdown', outside, true);
     },
   };

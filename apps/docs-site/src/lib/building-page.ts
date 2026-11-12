@@ -215,26 +215,30 @@ const names = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs
 /**
  * The person line of a card, the rule of Explorations' cards ("Sofia · 2 days ago", owner decision 2026-11-12): who has
  * the change now, then when it last moved. Who has it: its builders once someone builds it ("Malik", "Malik and Ana"),
- * else who asked for it. When: its latest step (lib/building-view timeline), else when it was sent. Names are short
- * ("Ann", never "Ann Leroy"). The card (ListCard) joins the two with the shared separator (lib/sep), as Explorations'.
+ * else where it comes from ("Library change Dana approved", lib/build-origin buildOriginLine), never who asked: nobody
+ * asks for build work directly. When: its latest step (lib/building-view timeline), else when it was sent. Names are
+ * short ("Ann", never "Ann Leroy"). The card (ListCard) joins the two with the shared separator (lib/sep), as
+ * Explorations'.
  */
-export function cardLine(x: { builders: readonly string[]; requester: string | null; movedAt: string | null; now: number }): { who: string | null; when: string | null } {
+export function cardLine(x: { builders: readonly string[]; origin: string | null; movedAt: string | null; now: number }): { who: string | null; when: string | null } {
   const b = x.builders.filter(Boolean).map((n) => shortName(n) ?? n);
-  const requester = x.requester ? (shortName(x.requester) ?? x.requester) : null;
-  return { who: b.length ? names(b) : requester, when: x.movedAt && Number.isFinite(Date.parse(x.movedAt)) ? ago(x.movedAt, x.now) : null };
+  return { who: b.length ? names(b) : x.origin, when: x.movedAt && Number.isFinite(Date.parse(x.movedAt)) ? ago(x.movedAt, x.now) : null };
 }
 
 /**
- * The "who" of a list row's line, saying why that person is there (lib/building-view rowLine): "Asked by Leo" while it
- * waits (or nobody builds it yet), "Malik builds it" (or "Malik and Ana build it") once picked up or in review,
- * "Shipped by Malik" once shipped. Null when the row names nobody. Cards use cardLine instead.
+ * The "who" of a list row's line, saying why it is there (lib/building-view rowLine): its origin ("Library change Dana
+ * approved", lib/build-origin; "Asked by Leo" only for a row read without one) while it waits (or nobody builds it
+ * yet), "Malik builds it" (or "Malik and Ana build it") once picked up or in review, "Shipped by Malik" once shipped.
+ * Null when the row names nobody. Cards use cardLine instead.
  */
-export function personLine(x: { state: BuildState; builders: readonly string[]; requester: string | null }): string | null {
+export function personLine(x: { state: BuildState; builders: readonly string[]; requester: string | null; origin?: string | null }): string | null {
   const b = x.builders.filter(Boolean).map((n) => shortName(n) ?? n);
   const requester = x.requester ? (shortName(x.requester) ?? x.requester) : null;
-  if (x.state === 'shipped') return b.length ? `Shipped by ${names(b)}` : requester ? `Asked by ${requester}` : null;
+  // Where it comes from (lib/build-origin) says why it is there, never who asked: nobody asks for build work directly.
+  const why = x.origin ?? (requester ? `Asked by ${requester}` : null);
+  if (x.state === 'shipped') return b.length ? `Shipped by ${names(b)}` : why;
   if ((x.state === 'in-progress' || x.state === 'in-review') && b.length) return `${names(b)} ${b.length > 1 ? 'build' : 'builds'} it`;
-  return requester ? `Asked by ${requester}` : null;
+  return why;
 }
 
 /** When a row last moved: its latest dated step, else when it was sent. */

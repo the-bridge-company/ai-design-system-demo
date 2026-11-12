@@ -7,7 +7,8 @@
 //     Explorations does (ListGroup: the product's title and count tag, the library's work under Library), the ladder's
 //     order inside a group (Ready to build, Being built, Checking). One row per build request: the shared BranchRow,
 //     when it was sent, one status tag in the filter's word; a card is Explorations' ListCard, its person line who has
-//     it now and when it last moved ("Malik · yesterday"), no product chip (the group says it). An In review row names who must review ("Waiting for Sofia's check", "Changes requested by
+//     it now and when it last moved ("Malik · yesterday"; before anyone builds it, where it comes from: "Library change
+//     Dana approved", lib/build-origin), no product chip (the group says it). An In review row names who must review ("Waiting for Sofia's check", "Changes requested by
 //     Lee"); a merged library change reads In the next release until it is published. The whole row opens the detail
 //     in place (?request=N, ?pull=N); no row buttons. The Board: one column per status, read only, no tags on cards.
 //   - The detail: what was sent (summary, before and after, props needed, the Figma link), the status line, and a
@@ -68,6 +69,7 @@ import { Drawing } from "./Drawing";
 import { Who } from "./faces";
 import { YOU } from "../../../lib/branches-page";
 import { multiTriggerLabel } from "../../../lib/explorations-page";
+import { buildOriginLine, originOfRow } from "../../../lib/build-origin";
 import {
   addressWithBuildFilters,
   BUILD_BOARD_CAP,
@@ -207,8 +209,6 @@ function auditNoteOf(v: Row, data: BuildData) {
   return o?.kind === 'audit' ? <AuditNote origin={o} /> : undefined;
 }
 
-/** The name a row's requester goes by ("name:Leo" reads Leo), or null. */
-const requesterName = (v: Row, data: BuildData) => (v.requestedBy ? (isNameAuthor(v.requestedBy) ? nameOfAuthor(v.requestedBy) : data.nameOf(v.requestedBy)) : null);
 
 interface CardContext {
   data: BuildData;
@@ -227,11 +227,14 @@ interface CardContext {
 /**
  * One change as Explorations' card (ListCard): its preview, its title, its one status tag, and Explorations' person
  * line, who has it now and when it last moved ("Malik · yesterday", lib/building-page cardLine).
+ * Before anyone builds it, the line says where it comes from, never who asked ("Library change Dana approved").
  */
 function buildCard(x: Item, c: CardContext) {
   const v = x.v;
   const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
-  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), requester: requesterName(v, c.data), movedAt: movedAtOf(v), now: c.now });
+  // Where it comes from, never who asked (lib/build-origin): an adoption report's origin is its note, with the link.
+  const o = originOfRow(v);
+  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), origin: o && o.kind !== 'audit' ? buildOriginLine(o) : null, movedAt: movedAtOf(v), now: c.now });
   const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline: line.who, when: line.when };
   if (isFix(v)) return <ListCard key={v.id} {...common} thumb={componentThumb(v.component, c.previewed)} title={v.component} href={studioHref(v.fix.href)} />;
   if (isExploration(v))
@@ -560,7 +563,9 @@ function Detail({
               </p>
             )}
             <p className="t-ui t-muted bb-meta">
-              {v.requestedBy
+              {originOfRow(v)
+                ? `${buildOriginLine(originOfRow(v)!)}. Sent on ${shortDate(v.createdAt)}.`
+                : v.requestedBy
                 ? `Sent by ${data.nameOf(v.requestedBy)} on ${shortDate(
                     v.createdAt
                   )}.`

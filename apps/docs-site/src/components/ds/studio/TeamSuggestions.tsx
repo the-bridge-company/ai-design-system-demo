@@ -8,6 +8,7 @@ import { ListCard, useListView } from './ListCard';
 import { Who } from './faces';
 import { person, requesterPerson } from '../../../lib/home-model';
 import type { SuggestionRow } from '../../../lib/team-branches';
+import { CountTag } from './CountTag';
 
 const avatarOf = (login: string) => `https://github.com/${encodeURIComponent(login)}.png?size=64`;
 
@@ -17,7 +18,7 @@ export function TeamSuggestions({ rows }: { rows: SuggestionRow[] }) {
   return (
     <section className="bl-group tb-suggestions" aria-labelledby="tb-sg-title">
       <h2 className="bl-h2" id="tb-sg-title">
-        Suggestions <span className="bl-count">{rows.length}</span>
+        Suggestions <CountTag n={rows.length} />
       </h2>
       <p className="t-ui t-muted tb-sg-lead">Changes proposed from Figma or Bridge. Once owners approve one, a developer applies it.</p>
       <ul className={view === 'grid' ? 'sh-cards' : 'sh-rows'} aria-labelledby="tb-sg-title">

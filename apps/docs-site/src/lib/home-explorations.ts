@@ -423,10 +423,12 @@ export interface QuietPart {
 /** What each stage says of its things, for one and for several. */
 const STAGE_WORDS: Record<OpenStage, [string, string]> = {
   exploring: ['is still being explored', 'are still being explored'],
-  lead: ['waits for the design lead', 'wait for the design lead'],
-  code: ['waits for a developer to pick it up', 'wait for a developer to pick them up'],
+  // The status ladder's words (core STEP_COUNT_WORDS), so the sentence says what the card tags under it say: sent to
+  // the lead is In review, handed to developers is Ready to build, their version waiting for the designer is Checking.
+  lead: ['is in review', 'are in review'],
+  code: ['is ready to build', 'are ready to build'],
   building: ['is being built', 'are being built'],
-  review: ['is in review', 'are in review'],
+  review: ['is being checked', 'are being checked'],
 };
 
 /** Changes on the viewer's own work at one stage: where the counted things are. */
@@ -493,6 +495,11 @@ export const PARTIAL_LINE = 'Part of this could not be read just now. Reload in 
 export interface QuietExtras {
   pieces?: number | null;
   pickUp?: number | null;
+  /**
+   * The hero's button already opens what waits to be picked up (a developer's "Pick up a build request"): that clause
+   * is then plain words, and the sentence's one link goes to the next thing it counts.
+   */
+  pickUpButton?: boolean;
 }
 
 /** Library review on the viewer's own waiting pieces. */
@@ -511,8 +518,23 @@ export function quietParts(work: OwnOpenWork | null, failed = false, extras: Qui
   const changes = work && pieces !== null ? { ...work.changes, review: 0 } : work?.changes;
   const piecesSentence: QuietPart[] = pieces ? [{ text: `${pieces} of your library ${pieces === 1 ? 'pieces waits' : 'pieces wait'} in Library review`, href: ownPiecesHref() }, { text: '.' }] : [];
   const sentences = [work ? workSentence(work.explorations, 'explorations') : [], changes ? workSentence(changes, 'library changes', ownChangeHref) : [], piecesSentence].filter((s) => s.length);
-  if (!sentences.length) return pickUp > 0 ? head : [{ text: 'Nothing needs you, and you have nothing in progress.' }];
-  return [...head, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])];
+  if (!sentences.length) return oneLink(pickUp > 0 ? head : [{ text: 'Nothing needs you, and you have nothing in progress.' }], extras.pickUpButton);
+  return oneLink([...head, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])], extras.pickUpButton);
+}
+
+/**
+ * At most one link in the hero sentence (owner, 2026-11-12): the first count that opens somewhere keeps its link, the
+ * others are words (the cards and lists under the zone open them). With `skipPickUp`, the button already opens what
+ * waits to be picked up, so that clause gives the link to the next one.
+ */
+function oneLink(parts: QuietPart[], skipPickUp = false): QuietPart[] {
+  let linked = false;
+  return parts.map((p) => {
+    if (!p.href) return p;
+    if (linked || (skipPickUp && p.href === pickUpHref())) return { text: p.text };
+    linked = true;
+    return p;
+  });
 }
 
 /** The quiet sentence as plain text: quietParts without the links. */

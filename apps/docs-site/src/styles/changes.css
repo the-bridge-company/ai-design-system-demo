@@ -863,11 +863,6 @@ details[open] > summary .cg-sec-chev {
   line-height: var(--typography-body-line-height);
 }
 
-.bl-count {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
-}
-
 /* The checkbox leads the row; its label is for screen readers only. The label is the target: at least 24px. */
 .bl-pick {
   flex: none;

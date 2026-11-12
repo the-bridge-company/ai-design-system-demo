@@ -77,6 +77,7 @@ import { siteConfig } from '../../../scripts/repo-context';
 import { AA_MIN, contrastRatio, defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref } from '../../../lib/product-page';
 import { libraryHref } from '../../../lib/library-shells';
+import { SEP } from '../../../lib/sep';
 
 /** How long a decision waits, with Undo, before it is sent. */
 const UNDO_MS = 5000;
@@ -127,11 +128,11 @@ function Count({ n }: { n: number }) {
   );
 }
 
-/** A middle dot between two parts of one line, with room on both sides (a bare " · " reads cramped at 12 to 14 px). */
+/** A middle dot between two parts of one line: the shared separator (lib/sep SEP), its room built in. */
 function Sep() {
   return (
     <span className="lr-sep" aria-hidden="true">
-      {' · '}
+      {SEP}
     </span>
   );
 }
@@ -649,8 +650,10 @@ function Stage({ view, mode, checked, component }: { view: CompareView; mode: 'o
   const label = (l: (typeof looks)[number]) => (
     <>
       <span className={`lr-key is-hue-${l.hue}`} aria-hidden="true" />
+      {/* Whose look, then its value, said once each ("Today and Sofia 20 px", "Leo 12 px (Compact)"). */}
       <span>
-        <strong>{l.value} px</strong> {l.label.replace(/^\S+\s/, '')}
+        {l.who} <strong>{l.value} px</strong>
+        {l.option && <span className="lr-stage-option"> ({l.option})</span>}
       </span>
     </>
   );
@@ -679,7 +682,8 @@ function Stage({ view, mode, checked, component }: { view: CompareView; mode: 'o
           </span>
         </div>
         <figcaption className="lr-stage-keys">
-          <ul aria-label="The content box of each way">
+          {/* A class keeps the global prose list spacing (li + li) off: the labels share one centre line. */}
+          <ul className="lr-stage-key-list" aria-label="The content box of each way">
             {looks.map((l) => (
               <li key={l.label} className="lr-stage-cap">
                 {label(l)}
@@ -766,15 +770,21 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
             wait && `${wait}.`
           )}
         </span>
-        {!commenting && (
-          <Button variant="secondary" size="lg" onClick={onCommentOpen}>
-            {view.people.length === 2 ? 'Comment to both' : view.people.length > 2 ? 'Comment to all' : 'Comment'}
-          </Button>
-        )}
-        {open && (
-          <Button variant="primary" size="lg" disabled={busy || pick === null} onClick={() => pick && onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
-            {checkedKeepLabel(view, checked)}
-          </Button>
+        {/* The two actions stay together on one line: when the footer wraps, they move under who is told as a pair,
+            never the comment above the primary. */}
+        {(!commenting || open) && (
+          <span className="lr-compare-acts">
+            {!commenting && (
+              <Button variant="secondary" size="lg" onClick={onCommentOpen}>
+                {view.people.length === 2 ? 'Comment to both' : view.people.length > 2 ? 'Comment to all' : 'Comment'}
+              </Button>
+            )}
+            {open && (
+              <Button variant="primary" size="lg" disabled={busy || pick === null} onClick={() => pick && onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
+                {checkedKeepLabel(view, checked)}
+              </Button>
+            )}
+          </span>
         )}
       </div>
       {commentBox}

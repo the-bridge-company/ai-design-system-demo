@@ -78,6 +78,7 @@ import type { ChangeOrigin } from '../../../lib/product-branch';
 import type { ShownValue } from '../../../lib/token-review';
 import type { Lifecycle, LifecycleTone } from '../../../lib/change-status';
 import { statusTagClass } from '../../../lib/status-tag';
+import { SEP } from '../../../lib/sep';
 
 export interface PersonRef {
   login: string;
@@ -555,9 +556,9 @@ function CommentLine({ c, people, onReply, here }: { c: ConvEntry; people: Recor
       <p className="br-comment-body">
         <strong>{who.name}</strong>
         <span className="br-muted">
-          {c.role ? ` · ${ROLE_LABEL[c.role]}` : ''}
-          {here ? ' · on this change' : ''}
-          {c.at ? ` · ${relative(c.at)}` : ''}
+          {c.role ? `${SEP}${ROLE_LABEL[c.role]}` : ''}
+          {here ? `${SEP}on this change` : ''}
+          {c.at ? `${SEP}${relative(c.at)}` : ''}
         </span>
         <br />
         {c.text}
@@ -586,7 +587,7 @@ function Outline(p: BranchReviewProps & { current: string | null; seen: Set<stri
         <strong>
           {p.changes.length} changes
         </strong>
-        <span className="br-muted"> · {progress.line}</span>
+        <span className="br-muted">{SEP}{progress.line}</span>
       </p>
       <Progress value={progress.looked} max={progress.total} size="sm" aria-label={progress.line} className="br-outline-bar" getAriaValueText={() => progress.line} />
       <SidebarNav aria-label="Jump to a change" className="br-toc">
@@ -658,7 +659,7 @@ function MultiBody(p: BranchReviewProps & { current: string | null; seen: Set<st
               <Icon icon={Check} size="sm" className="br-toc-mark is-done" />
               <span className="br-change-line">
                 <strong className={c.kind === 'tokens' && c.id !== MOTION_CHANGE ? 'br-mono' : undefined}>{c.title}</strong>
-                <span className="br-muted"> · {meta(c)}</span>
+                <span className="br-muted">{SEP}{meta(c)}</span>
               </span>
               <Button variant="ghost" size="sm" onClick={() => p.pick(c.id)}>
                 Show again
@@ -681,7 +682,7 @@ function NextRows({ rows, meta, pick }: { rows: ReviewChange[]; meta: (c: Review
         <div className="br-next-row" key={c.id} id={anchor(c.id)}>
           <span className="br-change-line">
             <strong className={c.kind === 'tokens' && c.id !== MOTION_CHANGE ? 'br-mono' : undefined}>{c.title}</strong>
-            <span className="br-muted"> · {meta(c)}</span>
+            <span className="br-muted">{SEP}{meta(c)}</span>
           </span>
           <Button variant="ghost" size="sm" onClick={() => pick(c.id)}>
             Open
@@ -1077,7 +1078,7 @@ export function BranchReview(p: BranchReviewProps) {
             {who.lead && <strong>{who.lead}</strong>} {who.rest}
             {p.jira && (
               <>
-                {' · '}
+                {SEP}
                 <span className="br-mono">{p.jira}</span>
               </>
             )}

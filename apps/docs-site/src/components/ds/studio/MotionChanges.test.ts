@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { parseComponentSpecs } from '@bridge-ds/core';
 import type { MotionChange } from '../../../lib/motion-changes';
 import MotionChanges from './MotionChanges';
+import { SEP } from '../../../lib/sep';
 
 const specs = parseComponentSpecs(readFileSync(join(__dirname, '../../../../../../packages/react/component-specs.json'), 'utf8'));
 const change: MotionChange = {
@@ -34,7 +35,7 @@ describe('MotionChanges', () => {
     expect(t).not.toContain('motion.duration.moderate');
     expect(t).toContain('BeforeDialog opens in 200 ms');
     expect(t).toContain('AfterDialog opens in 150 ms');
-    expect(t).toContain('Also changes: AlertDialog, Accordion, Tabs · See all 5');
+    expect(t).toContain(`Also changes: AlertDialog, Accordion, Tabs${SEP}See all 5`);
     expect(html).toContain('href="/components/alert-dialog/#motion"');
     expect(html).not.toContain('Replay');
   });

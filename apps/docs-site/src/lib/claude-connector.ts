@@ -7,6 +7,7 @@
 import { BUILD_STATUS_LABEL, type BuildRequestView, type BuildStatus } from '@bridge-ds/core';
 import type { RestPull } from './building-view';
 import { daysSince } from './home-model';
+import { SEP } from './sep';
 
 export const CONNECTOR_WORDS = {
   title: 'Claude',
@@ -283,7 +284,7 @@ export function fixRows(sessions: readonly Session[], pulls: readonly PullState[
       timeline,
       fix: {
         href: review ?? `components/?c=${encodeURIComponent(slug)}`,
-        line: `${FIX_ROW_TITLE}${who ? `, asked by ${who}` : ''} · ${where[status]}`,
+        line: `${FIX_ROW_TITLE}${who ? `, asked by ${who}` : ''}${SEP}${where[status]}`,
         working: s.state === 'working',
       },
     };

@@ -17,6 +17,7 @@ import { storybookHost, type WorkspaceStorybook } from '../../../lib/workspace';
 import { STORYBOOK_PAGE } from './StorybookField';
 import '../../../styles/workspace.css';
 import '../../../styles/invites.css';
+import { SEP } from '../../../lib/sep';
 
 export interface WorkspaceTeam {
   /** `_team/<id>`. */
@@ -78,7 +79,7 @@ function LibraryCard({ kind, title, line, filled }: { kind: 'tokens' | 'componen
 }
 
 /** "2 members · People with @northwind.io can find it": the team in one muted line. */
-const teamLine = (t: WorkspaceTeam) => `${TW.members(t.memberCount)} · ${t.discovery?.enabled ? TW.findable(t.discovery.domain) : TW.inviteOnly}`;
+const teamLine = (t: WorkspaceTeam) => `${TW.members(t.memberCount)}${SEP}${t.discovery?.enabled ? TW.findable(t.discovery.domain) : TW.inviteOnly}`;
 
 /** The people asking to join a team made in Bridge, for its admin: the queue rows of the home (JoinRequests.tsx). */
 function TeamRequests({ team }: { team: WorkspaceTeam }) {

@@ -35,6 +35,8 @@ import {
 } from '../../../lib/invites';
 import type { MembersData } from '../../../scripts/members';
 import '../../../styles/invites.css';
+import { CountTag } from './CountTag';
+import { SEP } from '../../../lib/sep';
 
 export interface InviteDialogProps {
   open: boolean;
@@ -59,7 +61,7 @@ function AccessList({ data, update, notice, onNotice }: { data: MembersData; upd
   return (
     <section className="inv-access" aria-labelledby="inv-access-title">
       <h3 id="inv-access-title" className="inv-access-title">
-        {MEMBERS_WORDS.who} <span className="mem-count">{data.members.length + data.pending.length}</span>
+        {MEMBERS_WORDS.who} <CountTag n={data.members.length + data.pending.length} />
       </h3>
       <NoticeLine notice={notice} />
       <ul className="inv-access-list">
@@ -89,7 +91,7 @@ function AccessList({ data, update, notice, onNotice }: { data: MembersData; upd
                   {pendingLine(p.sentAt, now)}
                   {data.canManage && (
                     <>
-                      {' · '}
+                      {SEP}
                       <Button variant="link" size="sm" className="mem-resend" onClick={() => void run(() => act.resend(p))}>
                         {MEMBERS_WORDS.resend}
                       </Button>

@@ -17,6 +17,7 @@ import { auditAskMessage, auditStep, guidanceLead, teamQuality, unmeasuredNames,
 import { ADOPTION_MEANING } from '../../../lib/quality';
 import { HOSTED_DOCS_URL, SNAPSHOT_TEMPLATE_URL } from '../../../lib/team-load';
 import { studioHref } from '../../../lib/team-path';
+import { SEP } from '../../../lib/sep';
 
 /** The setup a developer does: the workflow, then one audit per product (a checkout first for its own repo), then a push. */
 function AuditSetup({ products }: { products: UnmeasuredProduct[] }) {
@@ -58,7 +59,7 @@ function AuditSetup({ products }: { products: UnmeasuredProduct[] }) {
         <Link href={SNAPSHOT_TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
           Get the workflow
         </Link>
-        {' · '}
+        {SEP}
         <Link href={HOSTED_DOCS_URL} target="_blank" rel="noopener noreferrer">
           How the snapshot works
         </Link>

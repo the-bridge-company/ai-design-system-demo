@@ -168,7 +168,8 @@
   pointer-events: none;
 }
 
-/* Room under the last anchor of the page, so the step can float below it (HomeTour.tsx TOUR_ROOM). */
+/* The blank room under a floating step's anchor (HomeTour.tsx): the step floats over it, never over the content after
+   it. Its measured height is set on the element; this is the size before it is measured. */
 .dh-tour-room {
   display: block;
   block-size: var(--size-60);

@@ -12,7 +12,7 @@ import '../../../styles/demo-home.css';
 /** Phone widths, the home's own breakpoint (studio-home.css). */
 export const NARROW_TOUR = '(max-width: 640px)';
 
-/** The room a floating step needs under its anchor, in CSS pixels: a title, three lines and the buttons. */
+/** The room a floating step needs under its anchor before it is measured, in CSS pixels: a title, three lines, buttons. */
 const TOUR_ROOM = 240;
 /** Waits for the popover to open and take focus before measuring, in ms. */
 const TOUR_SETTLE = 120;
@@ -115,21 +115,26 @@ export function TourStep({ n, total, words, onNext, onFinish, onClose }: { n: nu
   const covered = useDialogOpen(!inline);
   // Focus lands on Next (Done on the last step), the action the step asks for, not on Skip tour.
   const primary = useRef<HTMLButtonElement>(null);
-  // Room under the anchor when the page ends right after it (the step under the last cards): without it the page
-  // cannot scroll far enough and the step flips above, over the cards.
-  const [room, setRoom] = useState(false);
+  // The room the step takes under its anchor, in CSS pixels, measured once it opened: an empty block of that height
+  // follows the anchor, so the step floats over blank space and never over what comes next (the status lines, the next
+  // section's heading and cards). It also lets the page scroll far enough when it ends right after the anchor.
+  const [room, setRoom] = useState<number | null>(null);
   useEffect(() => {
     if (inline || covered) return;
-    // The step floats under what it points at: when that sits low on the screen, bring it up first so the step has
-    // room below it, instead of flipping above and covering what it talks about. Measured once the popover opened and
-    // took focus (which may scroll on its own).
     const t = window.setTimeout(() => {
-      const bottom = document.querySelector(`[data-tour-anchor="${anchor}"]`)?.getBoundingClientRect().bottom;
-      const short = bottom === undefined ? 0 : bottom + TOUR_ROOM - window.innerHeight;
-      if (short <= 0) return;
-      const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
-      if (short > left && !room) setRoom(true);
-      else window.scrollBy({ top: short });
+      const anchorBox = document.querySelector(`[data-tour-anchor="${anchor}"]`)?.getBoundingClientRect();
+      const pop = document.querySelector<HTMLElement>('.dh-tour')?.getBoundingClientRect();
+      if (!anchorBox) return;
+      if (pop && pop.height > 0) {
+        // Under the anchor: from its bottom to the step's bottom. Flipped above (no room yet): the step's own height
+        // and its gap, so it comes back under once the room is there.
+        const below = pop.top >= anchorBox.bottom - 1;
+        const need = Math.ceil(below ? pop.bottom - anchorBox.bottom : pop.height + (anchorBox.top - pop.bottom));
+        if (need > 0 && need !== room) setRoom(need);
+      }
+      // The step floats under what it points at: when that sits low on the screen, bring it up so the step is in view.
+      const short = anchorBox.bottom + (room ?? TOUR_ROOM) - window.innerHeight;
+      if (short > 0) window.scrollBy({ top: short });
     }, TOUR_SETTLE);
     return () => window.clearTimeout(t);
   }, [inline, covered, anchor, n, room]);
@@ -141,7 +146,7 @@ export function TourStep({ n, total, words, onNext, onFinish, onClose }: { n: nu
       <PopoverContent side="bottom" align="start" className="dh-tour" title={words.title} description={words.text} initialFocus={primary}>
         <TourFoot n={n} total={total} onNext={onNext} onFinish={onFinish} primaryRef={primary} />
       </PopoverContent>
-      {room && <span className="dh-tour-room" aria-hidden="true" />}
+      {room !== null && <span className="dh-tour-room" style={{ blockSize: `${room}px` }} aria-hidden="true" />}
     </Popover>
   );
 }

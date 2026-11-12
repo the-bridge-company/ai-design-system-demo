@@ -243,10 +243,8 @@ export interface NeedRow {
 export const OPTIONAL_WORDS = {
   /** The row's tag, where a review shows how long it waits. */
   pill: 'Optional',
-  /** After the names in the greeting: "Sofia and Leo would like your view." */
-  rest: ' would like your view.',
-  /** The second sentence of the greeting. */
-  note: 'Your view is welcome on these, and it is optional.',
+  /** After the names in the greeting, the rows' own words: "Sofia and Leo would like your opinion." */
+  rest: ' would like your opinion.',
   /** The faces' group, for a screen reader. */
   group: 'Asking for your view',
 } as const;
@@ -257,7 +255,7 @@ export const optionalNeed = (row: NeedRow): NeedRow => ({ ...row, waitsOnYou: fa
 /**
  * The greeting's line over the Needs you rows: who waits on the viewer and the oldest wait ("Sofia and Leo are waiting
  * on you." with "Oldest: 4 days"); when nothing waits on them and only optional asks are there (a product manager's
- * opinion), who would like their view, with no age ("Sofia and Leo would like your view." and a quiet note). Null
+ * opinion), who would like their view, with no age ("Sofia and Leo would like your opinion."; the rows say Optional). Null
  * without either.
  */
 export function waitingSummary(needs: readonly NeedRow[], now: number): { people: Person[]; names: string; rest: string; note: string | null; badge: { label: string; tone: PillTone } | null; group: string } | null {
@@ -270,7 +268,8 @@ export function waitingSummary(needs: readonly NeedRow[], now: number): { people
   const asking = uniquePeople(needs.filter((r) => r.optional).map((r) => r.person));
   const o = waitingSentence(asking);
   if (!o) return null;
-  return { people: asking, names: o.names, rest: OPTIONAL_WORDS.rest, note: OPTIONAL_WORDS.note, badge: null, group: OPTIONAL_WORDS.group };
+  // No second sentence: each row's "Optional" tag already says it (said once), and "your view" twice read as filler.
+  return { people: asking, names: o.names, rest: OPTIONAL_WORDS.rest, note: null, badge: null, group: OPTIONAL_WORDS.group };
 }
 
 /** The verb on a Needs you row's button: the row's own, else the kind's. */

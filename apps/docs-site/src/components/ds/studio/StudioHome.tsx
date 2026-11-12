@@ -41,7 +41,7 @@ import {
   type NeedRow,
   type Person,
 } from '../../../lib/home-model';
-import { explorationsFor, libraryChangesLine, ownOpenWork, PARTIAL_LINE, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
+import { explorationsFor, libraryChangesLine, ownOpenWork, PARTIAL_LINE, pickUpHref, quietParts, recentExplorations, YOUR_CHANGES_HREF, type ExplorationCard, type QuietPart } from '../../../lib/home-explorations';
 import { studioHref } from '../../../lib/team-path';
 import { inProgressCount, waitingToBePickedUp } from '../../../lib/waiting-counts';
 import { openBuildRequests, type BuildRequestView } from '@bridge-ds/core';
@@ -60,7 +60,7 @@ import { NeedList, type JoinHandlers } from './NeedRows';
 
 /**
  * "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait; for a product
- * manager whose opinion is only asked, "Sofia and Leo would like your view." and no age (home-model waitingSummary).
+ * manager whose opinion is only asked, "Sofia and Leo would like your opinion." and no age (home-model waitingSummary).
  */
 function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
   const s = waitingSummary(needs, now);
@@ -408,7 +408,7 @@ const LEAD_TOUR_KEY = 'bridge.home.lead-tour';
 const REVIEW_CROP = '0 98 232 86';
 
 /** A developer's quiet home (StudioHomeProps.builder): what they build, on Being built. */
-export const BUILDER_WORDS = { title: 'What are you building today?', button: 'See what you are building', path: 'building/?people=you' } as const;
+export const BUILDER_WORDS = { title: 'What are you building today?', button: 'See what you are building', path: 'building/?people=you', pickUp: 'Pick up a build request' } as const;
 
 /** The Harbor zone's line when nothing waits on the viewer: honest first, then the calm. */
 export const QUIET_LINE = 'Nothing needs you. The harbor is calm.';
@@ -542,15 +542,16 @@ function HomeBody(p: StudioHomeProps) {
             <QuietScene scene="harbor" layout="window" />
             <div className="sh-head-text">
               <p className="t-body">
-                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed || p.partial), { pieces: p.libraryPieces ?? null, pickUp })} />
+                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed || p.partial), { pieces: p.libraryPieces ?? null, pickUp, pickUpButton: Boolean(p.builder && pickUp) })} />
               </p>
               <h1 id="sh-hello" className="sh-hello">
                 {p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}
               </h1>
               {p.builder ? (
                 <span className="sh-start">
-                  <ButtonLink variant="primary" href={studioHref(BUILDER_WORDS.path)}>
-                    {BUILDER_WORDS.button}
+                  {/* Build requests wait: the button picks one up, the sentence's count says how many (said once). */}
+                  <ButtonLink variant="primary" href={pickUp ? pickUpHref() : studioHref(BUILDER_WORDS.path)}>
+                    {pickUp ? BUILDER_WORDS.pickUp : BUILDER_WORDS.button}
                   </ButtonLink>
                 </span>
               ) : (
@@ -594,7 +595,9 @@ function HomeBody(p: StudioHomeProps) {
             <h1 id="sh-hello" className="sh-hello" aria-label={p.greeting ? undefined : 'Home'}>
               {p.greeting || <Skeleton variant="text" className="sh-skel-line" />}
             </h1>
-            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{zoneLine}</p>}
+            {/* Optional asks (a product manager's view) get their own line, "Sofia would like your opinion.", never "Your
+                changes need you.": they are not Ann's changes and nothing waits on her. */}
+            {loading ? <p className="t-body">Checking what needs you.</p> : p.needs.some((r) => r.waitsOnYou || r.optional) ? <Waiting needs={p.needs} now={p.now} /> : <p className="t-body">{zoneLine}</p>}
           </div>
         </div>
         {loading ? (

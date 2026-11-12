@@ -23,6 +23,7 @@ import {
   type LibraryTag,
 } from './library-origin';
 import { studioHref } from './team-path';
+import { SEP } from './sep';
 
 const PRODUCTS: ProductConfig[] = [
   { key: 'library', name: 'Library', default: true },
@@ -140,7 +141,7 @@ describe('statedOrigin', () => {
       }),
       PRODUCTS
     )!;
-    expect(originLine(o)).toBe('Needed by Order fulfilment timeline · Acme Prints');
+    expect(originLine(o)).toBe(`Needed by Order fulfilment timeline${SEP}Acme Prints`);
     expect(originLine(o)).not.toMatch(/#|\d|acme\//);
   });
 });
@@ -223,7 +224,7 @@ describe('inferLeadReason', () => {
 
 describe('libraryOrigin and originLine', () => {
   it('the stated origin wins, else the DS lead with its reason, else the DS lead alone', () => {
-    expect(originLine(libraryOrigin({ title: 'Add the Forest brand' }))).toBe('From the DS lead · new brand');
+    expect(originLine(libraryOrigin({ title: 'Add the Forest brand' }))).toBe(`From the DS lead${SEP}new brand`);
     expect(originLine(libraryOrigin({ title: 'Card: subtle tone for secondary groups' }))).toBe('From the DS lead');
     expect(
       libraryOrigin({

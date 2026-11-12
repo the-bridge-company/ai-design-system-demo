@@ -8,7 +8,7 @@ import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { EXPLORE_LINE, QUIET_LINE, StudioHome, type StudioHomeProps } from './StudioHome';
-import { changeNeed, joinNeed, person, SEP, type BranchCard } from '../../../lib/home-model';
+import { changeNeed, joinNeed, optionalNeed, person, SEP, type BranchCard } from '../../../lib/home-model';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { NARROW_TOUR, tourPlacement } from './HomeTour';
 
@@ -72,6 +72,16 @@ describe('StudioHome, contributor', () => {
     expect(screen.getByText('Update')).toBeTruthy();
     expect(screen.queryByText('Review')).toBeNull();
     expect(screen.queryByText(/until a reviewer approves it/)).toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
+  it("a product manager's optional asks say who would like her view, never \"Your changes need you.\" (Ann)", async () => {
+    localStorage.setItem('bridge.home.contributor-tour', 'done');
+    const ask = optionalNeed({ ...sentBack, key: 'pm-1', person: leo, line: 'Leo would like your opinion', action: 'Look' });
+    const { container } = render(createElement(StudioHome, props({ needs: [ask] })));
+    expect(screen.queryByText('Your changes need you.')).toBeNull();
+    expect(container.querySelector('.sh-zone')!.textContent).toContain('Leo would like your opinion.');
+    expect(screen.queryByText(/Oldest/)).toBeNull();
     await expectNoAxeViolations(container);
   });
 
@@ -441,7 +451,7 @@ describe('StudioHome, quiet team Home (recent)', () => {
     expect(screen.getByRole('link', { name: 'See what you are building' }).getAttribute('href')).toMatch(/building\/\?people=you$/);
     // The sentence's first clause is its one link: Being built on the viewer, at that status; the next clause is words.
     expect(screen.getByRole('link', { name: '1 of your library changes is being built' }).getAttribute('href')).toMatch(/building\/\?status=in-progress&people=you$/);
-    expect(screen.queryByRole('link', { name: '1 is in review' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '1 is being checked' })).toBeNull();
     // No explorations tour for a developer.
     expect(screen.queryByText(/1 of 2/)).toBeNull();
     await expectNoAxeViolations(container);
@@ -453,9 +463,9 @@ describe('StudioHome, quiet team Home (recent)', () => {
     const { container } = render(createElement(StudioHome, quiet({ explorations: [waiting] })));
     expect(screen.getByRole('heading', { level: 1, name: 'What do you want to explore?' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Start an exploration' })).toHaveLength(1);
-    expect(container.querySelector('.sh-zone')!.textContent).toContain('Good evening, Florian. Nothing needs you. 1 of your explorations waits for a developer to pick it up.');
+    expect(container.querySelector('.sh-zone')!.textContent).toContain('Good evening, Florian. Nothing needs you. 1 of your explorations is ready to build.');
     // The clause opens Changes on the viewer's own explorations ready to build.
-    expect(screen.getByRole('link', { name: '1 of your explorations waits for a developer to pick it up' }).getAttribute('href')).toMatch(/explorations\/\?status=with-developers&people=you$/);
+    expect(screen.getByRole('link', { name: '1 of your explorations is ready to build' }).getAttribute('href')).toMatch(/explorations\/\?status=with-developers&people=you$/);
     // Nothing needs the viewer: the zone is one window onto the harbor (water only on a phone), with the one primary
     // button "Start an exploration" under the headline, no card.
     expect(container.querySelector('.sh-zone .sh-window [data-scene="harbor"][data-layout="window"]')).toBeTruthy();

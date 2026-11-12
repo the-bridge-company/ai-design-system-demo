@@ -15,6 +15,7 @@ import { positionLabel, queueWindow, type QueueOutcome } from '../../../lib/queu
 import { Who, type Face } from './faces';
 import { studioHref } from '../../../lib/team-path';
 import { statusTagClass } from '../../../lib/status-tag';
+import { SEP } from '../../../lib/sep';
 
 export interface QueueRow {
   key: string;
@@ -53,7 +54,7 @@ export function QueueList({ rows, selected, outcomes, onSelect }: QueueListProps
       </Link>
       <p className="rq-count">
         <strong>Review all</strong>
-        <span className="rq-muted"> · {index >= 0 ? positionLabel(rows.length, index) : `${rows.length} waiting`}</span>
+        <span className="rq-muted">{SEP}{index >= 0 ? positionLabel(rows.length, index) : `${rows.length} waiting`}</span>
       </p>
       <Progress value={done} max={Math.max(rows.length, 1)} size="sm" aria-label={`${done} of ${rows.length} done`} getAriaValueText={() => `${done} of ${rows.length} done`} />
       <SidebarNav aria-label="Waiting on you" className="rq-items">

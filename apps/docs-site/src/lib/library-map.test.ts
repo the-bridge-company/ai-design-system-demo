@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildMap, focusOf, mapAvailable, mapListOf, readMapFocus, withMapFocus } from './library-map';
 import { change, conflict, LEAD, leadChange, newComponent, PRODUCTS } from './library-fixtures.test-helpers';
+import { SEP } from './sep';
 
 const pieces = () => [conflict(), change(), newComponent(), leadChange(30, 'Deepen the blue'), leadChange(31, 'Lighter border')];
 
@@ -9,9 +10,9 @@ describe('the map graph', () => {
   it('has one box per exploration, the lead’s own changes as one dashed box, and the products', () => {
     const g = buildMap(pieces(), PRODUCTS, LEAD);
     expect(g.sources.map((s) => [s.label, s.sub, s.lead])).toEqual([
-      ['Contact page summary', 'Sofia · Acme CRM', false],
-      ['Deal pipeline cards', 'Leo · Acme CRM', false],
-      ['Bulk actions on products', 'Leo · Acme Prints', false],
+      ['Contact page summary', `Sofia${SEP}Acme CRM`, false],
+      ['Deal pipeline cards', `Leo${SEP}Acme CRM`, false],
+      ['Bulk actions on products', `Leo${SEP}Acme Prints`, false],
       ['You, library changes', '2 changes', true],
     ]);
     // The lead's own pieces themselves in the middle: who made them is said once, on the left.

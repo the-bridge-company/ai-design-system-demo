@@ -14,7 +14,7 @@
 // in the list at once (withJoined, BR-19), and a read after the row leaves confirms it.
 import { useEffect, useState } from 'react';
 import { Link2Off, MoreHorizontal, UserPlus } from 'lucide-react';
-import { Alert, Badge, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
+import { Alert, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import RolePicker from './RolePicker';
 import { NoticeLine, PersonCell } from './MemberParts';
 import InviteDialog from './InviteDialog';
@@ -30,6 +30,8 @@ import type { JoinRequest } from '../../../lib/entry';
 import { repoContext } from '../../../scripts/repo-context';
 import { castJob } from '../../../lib/demo-cast';
 import '../../../styles/invites.css';
+import { CountTag } from './CountTag';
+import { SEP } from '../../../lib/sep';
 
 /** This page's team and its context, known before anything is read: the join requests start with it. */
 function pageTeam(): { repo: string; context: MembersData['context'] } {
@@ -140,7 +142,7 @@ function PendingRow({ p, data, act, onNotice }: { p: PendingInvite; data: Member
               {pendingLine(p.sentAt, Date.now())}
               {data.canManage && (
                 <>
-                  {' · '}
+                  {SEP}
                   <Button variant="link" size="sm" className="mem-resend" onClick={() => void run(() => act.resend(p))}>
                     {MEMBERS_WORDS.resend}
                   </Button>
@@ -248,9 +250,7 @@ export default function MembersSection() {
         <div className="mem-head-text">
           <h2 id="set-members" className="mem-title">
             {MEMBERS_WORDS.membersTitle}{' '}
-            <Badge tone="neutral" size="sm" className="mem-count">
-              {count}
-            </Badge>
+<CountTag n={count} />
           </h2>
           <p className="mem-intro">{data.canManage ? MEMBERS_WORDS.membersIntro(data.team) : MEMBERS_WORDS.membersIntroReader(data.team)}</p>
           {data.emailAdmin && members.some((m) => m.via !== 'email') && <p className="mem-intro">{MEMBERS_WORDS.githubPeople}</p>}

@@ -41,6 +41,7 @@ import { Face, TokenRows, type PersonRef } from './BranchReview';
 import { Who, type Face as FaceData } from './faces';
 import { OWNER_OVERRIDE_WORDS, plainSummary, suggestionHref, SUGGESTION_WORDS, tokenLabel, type ProofChip, type StaleView, type SuggestionGate, type SuggestionTokenRow } from '../../../lib/suggestions-view';
 import { valueName } from '../../../lib/review-page';
+import { SEP } from '../../../lib/sep';
 
 /** A queue item waiting after this one, drawn as a card stacked behind. */
 export interface NextCard {
@@ -125,7 +126,7 @@ function TokenPane({ rows, side }: { rows: SuggestionTokenRow[]; side: 'before' 
               {/* What it paints, in words; the token path stays in Details. */}
               <span className="sg-pane-name">
                 {tokenLabel(r.path)}
-                {r.contexts.length > 0 && ` · ${r.contexts.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`}
+                {r.contexts.length > 0 && `${SEP}${r.contexts.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')}`}
               </span>
               {v ? <span className="sg-pane-value">{valueName(v)}</span> : <span className="sg-muted">{side === 'before' ? 'Not in the library yet' : 'Removed'}</span>}
             </span>
@@ -472,7 +473,7 @@ function QueueSuggestion({ p }: { p: SuggestionReviewProps }) {
         <p className="br-who">
           <Face person={p.author} size="sm" />
           <span>
-            <strong>{p.author.name}</strong> suggests a change · {p.kind}
+            <strong>{p.author.name}</strong> suggests a change{SEP}{p.kind}
           </span>
         </p>
         {p.origin && <OriginLine origin={p.origin} className="br-from" />}

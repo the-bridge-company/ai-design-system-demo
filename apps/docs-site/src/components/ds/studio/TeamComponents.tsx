@@ -31,6 +31,7 @@ import { readWorkspace, onWorkspaceChange } from '../../../scripts/workspace';
 import { loadTeamProductUsage, teamLead, type TeamData } from '../../../scripts/team-data';
 import { FigmaLink, figmaLinkFor } from '../library/FigmaLink';
 import { statusTagClass } from '../../../lib/status-tag';
+import { SEP } from '../../../lib/sep';
 
 const words = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
@@ -214,7 +215,7 @@ function ComponentDrawer({
             <FigmaLink {...figmaLinkFor(data.model, row.name)} settingsHref={studioHref('settings/#figma')} canFix={teamLead(data)} />
             <p className="tcm-muted">
               {/* The list's words ("12 examples"); the folder is a developer's, behind More > Open the code on GitHub. */}
-              {words(row.stories.length, 'example')} · {words(row.tokens, 'token')}
+              {words(row.stories.length, 'example')}{SEP}{words(row.tokens, 'token')}
             </p>
             {rowExceptions(row).length > 0 && (
               <p className="tcm-badges">
@@ -336,11 +337,12 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
               hideLabel
               value={family || ALL}
               onValueChange={(v) => setFamily(!v || v === ALL ? '' : v)}
-              options={[{ value: ALL, label: `All families (${rows.length})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
+              options={[{ value: ALL, label: 'All families' }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
             />
           </div>
           <p className="tcm-muted" role="status" aria-live="polite">
-            {shown.length === rows.length ? `Showing all ${words(rows.length, 'component')}.` : `Showing ${shown.length} of ${rows.length}.`}
+            {/* Said once: the lead already says how many there are; this line speaks only once a filter narrows the list. */}
+            {shown.length === rows.length ? '' : `Showing ${shown.length} of ${rows.length}.`}
           </p>
           {shown.length === 0 ? (
             <p className="tcm-muted">

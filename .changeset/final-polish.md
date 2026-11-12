@@ -1,0 +1,5 @@
+---
+"@bridge-ds/docs-site": patch
+---
+
+Studio final polish pass. The quiet Home's sentence keeps one link and says each stage in the status ladder's words (In review, Ready to build, Being built, being checked), the same as the cards under it. A developer's Home leads with "Pick up a build request" when some wait, and no longer repeats the Being built line; the library's health and the Being built line show to the lead only. A product manager's optional asks read "Sofia and Leo would like your opinion.", never "Your changes need you.". The home tour reserves its own room under what it points at, so it no longer covers the next lines or section. Compare ways: each look's caption says whose it is and its value once ("Today and Sofia 20 px", "Leo 12 px (Compact)") on one centre line, every option row fits one line, and Comment and the primary stay together as a pair. Counts after a label are count tags everywhere (Suggestions, Members, join requests), Components says its count once, separators go through the shared one, and long row titles take two lines on a phone.

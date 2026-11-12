@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T03:49:33.913Z",
-  "sha": "5c042f8a550bc795e015e923c5e5e0eb4a494fc9",
+  "createdAt": "2026-11-12T10:38:55.054Z",
+  "sha": "06282ec42c1adfff0d308e73b9ebd485ca586f92",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -12,42 +12,42 @@
   "storyId": "internal-figma-reference--variant",
   "components": {
     "Accordion": {
-      "specHash": "5e65c109",
+      "specHash": "1ad6148f",
       "variants": {
         "Appearance=contained, State=Default": {
           "file": "accordion/appearance-contained__state-default.png",
           "width": 320,
-          "height": 161
+          "height": 159
         },
         "Appearance=contained, State=Hover": {
           "file": "accordion/appearance-contained__state-hover.png",
           "width": 320,
-          "height": 161
+          "height": 159
         },
         "Appearance=contained, State=Disabled": {
           "file": "accordion/appearance-contained__state-disabled.png",
           "width": 320,
-          "height": 161
+          "height": 159
         },
         "Appearance=flush, State=Default": {
           "file": "accordion/appearance-flush__state-default.png",
           "width": 320,
-          "height": 159
+          "height": 157
         },
         "Appearance=flush, State=Hover": {
           "file": "accordion/appearance-flush__state-hover.png",
           "width": 320,
-          "height": 159
+          "height": 157
         },
         "Appearance=flush, State=Disabled": {
           "file": "accordion/appearance-flush__state-disabled.png",
           "width": 320,
-          "height": 159
+          "height": 157
         }
       }
     },
     "AccordionItem": {
-      "specHash": "03444621",
+      "specHash": "9fd8fe81",
       "variants": {
         "State=Default": {
           "file": "accordionitem/state-default.png",
@@ -92,17 +92,17 @@
       }
     },
     "AlertDialog/Popup": {
-      "specHash": "91904bda",
+      "specHash": "121fb68e",
       "variants": {
         "Tone=danger": {
           "file": "alertdialog-popup/tone-danger.png",
           "width": 384,
-          "height": 225
+          "height": 222
         },
         "Tone=primary": {
           "file": "alertdialog-popup/tone-primary.png",
           "width": 384,
-          "height": 225
+          "height": 222
         }
       }
     },
@@ -312,17 +312,17 @@
       }
     },
     "Breadcrumb": {
-      "specHash": "304b25e2",
+      "specHash": "60b1045e",
       "variants": {
         "State=Default": {
           "file": "breadcrumb/state-default.png",
           "width": 320,
-          "height": 19
+          "height": 20
         },
         "State=Hover": {
           "file": "breadcrumb/state-hover.png",
           "width": 320,
-          "height": 19
+          "height": 20
         }
       }
     },
@@ -692,7 +692,7 @@
       }
     },
     "Card": {
-      "specHash": "bbaaef62",
+      "specHash": "aa032d69",
       "variants": {
         "Padding=none": {
           "skipped": "Figma shows a media placeholder (Slot/Media); code shows the image it is given, nothing to compare"
@@ -700,17 +700,17 @@
         "Padding=compact": {
           "file": "card/padding-compact.png",
           "width": 320,
-          "height": 129
+          "height": 124
         },
         "Padding=default": {
           "file": "card/padding-default.png",
           "width": 320,
-          "height": 145
+          "height": 140
         }
       }
     },
     "Checkbox": {
-      "specHash": "9646e8d7",
+      "specHash": "a529c126",
       "variants": {
         "Checked=false, State=Default": {
           "file": "checkbox/checked-false__state-default.png",
@@ -760,37 +760,37 @@
       }
     },
     "CheckboxGroup": {
-      "specHash": "44389b96",
+      "specHash": "0ece3e54",
       "variants": {
         "Orientation=vertical, State=Default": {
           "file": "checkboxgroup/orientation-vertical__state-default.png",
           "width": 320,
-          "height": 115
+          "height": 116
         },
         "Orientation=vertical, State=Hover": {
           "file": "checkboxgroup/orientation-vertical__state-hover.png",
           "width": 320,
-          "height": 115
+          "height": 116
         },
         "Orientation=vertical, State=Disabled": {
           "file": "checkboxgroup/orientation-vertical__state-disabled.png",
           "width": 320,
-          "height": 115
+          "height": 116
         },
         "Orientation=horizontal, State=Default": {
           "file": "checkboxgroup/orientation-horizontal__state-default.png",
           "width": 320,
-          "height": 83
+          "height": 84
         },
         "Orientation=horizontal, State=Hover": {
           "file": "checkboxgroup/orientation-horizontal__state-hover.png",
           "width": 320,
-          "height": 83
+          "height": 84
         },
         "Orientation=horizontal, State=Disabled": {
           "file": "checkboxgroup/orientation-horizontal__state-disabled.png",
           "width": 320,
-          "height": 83
+          "height": 84
         }
       }
     },
@@ -910,32 +910,32 @@
       }
     },
     "Combobox/Popup": {
-      "specHash": "3977cd1a",
+      "specHash": "a7b2b3a1",
       "variants": {
         "Default": {
           "file": "combobox-popup/default.png",
           "width": 244,
-          "height": 132
+          "height": 138
         }
       }
     },
     "Dialog/Popup": {
-      "specHash": "df468a0d",
+      "specHash": "8cc03ba4",
       "variants": {
         "Size=sm": {
           "file": "dialog-popup/size-sm.png",
           "width": 384,
-          "height": 147
+          "height": 148
         },
         "Size=md": {
           "file": "dialog-popup/size-md.png",
           "width": 560,
-          "height": 147
+          "height": 148
         },
         "Size=lg": {
           "file": "dialog-popup/size-lg.png",
           "width": 720,
-          "height": 147
+          "height": 148
         }
       }
     },
@@ -955,7 +955,7 @@
       }
     },
     "Drawer/Popup": {
-      "specHash": "6c415fb5",
+      "specHash": "ae44c189",
       "variants": {
         "Size=sm": {
           "file": "drawer-popup/size-sm.png",
@@ -975,7 +975,7 @@
       }
     },
     "EmptyState": {
-      "specHash": "867af469",
+      "specHash": "aa4863c3",
       "variants": {
         "Align=center, Size=sm": {
           "file": "emptystate/align-center__size-sm.png",
@@ -1010,27 +1010,27 @@
       }
     },
     "Field": {
-      "specHash": "d48d054a",
+      "specHash": "23318747",
       "variants": {
         "State=Default": {
           "file": "field/state-default.png",
           "width": 320,
-          "height": 69
+          "height": 70
         },
         "State=Hover": {
           "file": "field/state-hover.png",
           "width": 320,
-          "height": 69
+          "height": 70
         },
         "State=Disabled": {
           "file": "field/state-disabled.png",
           "width": 320,
-          "height": 69
+          "height": 70
         }
       }
     },
     "Form": {
-      "specHash": "ebb2ae14",
+      "specHash": "97672af3",
       "variants": {
         "State=Default": {
           "file": "form/state-default.png",
@@ -1455,7 +1455,7 @@
       }
     },
     "Menu/Popup": {
-      "specHash": "47df6448",
+      "specHash": "15075559",
       "variants": {
         "Default": {
           "skipped": "drawn open from no code example: nothing to open in code"
@@ -1463,7 +1463,7 @@
       }
     },
     "MenuItem": {
-      "specHash": "5619df15",
+      "specHash": "760b172f",
       "variants": {
         "State=Default, Tone=default": {
           "file": "menuitem/state-default__tone-default.png",
@@ -1488,7 +1488,7 @@
       }
     },
     "MenuCheckboxItem": {
-      "specHash": "75f3892d",
+      "specHash": "92138637",
       "variants": {
         "Checked=false, State=Default": {
           "file": "menucheckboxitem/checked-false__state-default.png",
@@ -1513,7 +1513,7 @@
       }
     },
     "MenuRadioGroup": {
-      "specHash": "3d9926e7",
+      "specHash": "12803dc7",
       "variants": {
         "State=Default": {
           "file": "menuradiogroup/state-default.png",
@@ -1528,7 +1528,7 @@
       }
     },
     "MenuRadioItem": {
-      "specHash": "f42d6781",
+      "specHash": "0d2cd901",
       "variants": {
         "Checked=false, State=Default": {
           "file": "menuradioitem/checked-false__state-default.png",
@@ -1553,7 +1553,7 @@
       }
     },
     "MenuGroup": {
-      "specHash": "9e4b3e41",
+      "specHash": "ef7fac42",
       "variants": {
         "Default": {
           "file": "menugroup/default.png",
@@ -1573,7 +1573,7 @@
       }
     },
     "MenuSubmenu": {
-      "specHash": "bf1dfb3e",
+      "specHash": "0f9b6b8e",
       "variants": {
         "State=Default": {
           "file": "menusubmenu/state-default.png",
@@ -1653,12 +1653,12 @@
       }
     },
     "PageHeader": {
-      "specHash": "85705e3c",
+      "specHash": "00421344",
       "variants": {
         "Default": {
           "file": "pageheader/default.png",
           "width": 320,
-          "height": 88
+          "height": 74
         }
       }
     },
@@ -1733,12 +1733,12 @@
       }
     },
     "Popover/Popup": {
-      "specHash": "caff0a81",
+      "specHash": "728287c9",
       "variants": {
         "Default": {
           "file": "popover-popup/default.png",
           "width": 289,
-          "height": 112
+          "height": 111
         }
       }
     },
@@ -1873,7 +1873,7 @@
       }
     },
     "RadioGroup": {
-      "specHash": "ce58019b",
+      "specHash": "29e55255",
       "variants": {
         "Orientation=vertical, State=Default": {
           "file": "radiogroup/orientation-vertical__state-default.png",
@@ -1908,7 +1908,7 @@
       }
     },
     "Radio": {
-      "specHash": "8c4fc4dc",
+      "specHash": "2bf5ab18",
       "variants": {
         "Checked=false, State=Default": {
           "file": "radio/checked-false__state-default.png",
@@ -2078,7 +2078,7 @@
       }
     },
     "Select/Popup": {
-      "specHash": "26f40784",
+      "specHash": "cad30341",
       "variants": {
         "Default": {
           "file": "select-popup/default.png",
@@ -2088,7 +2088,7 @@
       }
     },
     "SidebarNav": {
-      "specHash": "25ac9c2a",
+      "specHash": "347b6a04",
       "variants": {
         "State=Default": {
           "file": "sidebarnav/state-default.png",
@@ -2108,7 +2108,7 @@
       }
     },
     "SidebarNavSection": {
-      "specHash": "d2dccbb8",
+      "specHash": "1f61a8ba",
       "variants": {
         "State=Default": {
           "file": "sidebarnavsection/state-default.png",
@@ -2238,7 +2238,7 @@
       }
     },
     "Switch": {
-      "specHash": "2d8ab09e",
+      "specHash": "a20616da",
       "variants": {
         "Checked=false, Label placement=end, Size=sm, State=Default": {
           "file": "switch/checked-false__label-placement-end__size-sm__state-default.png",
@@ -2363,7 +2363,7 @@
       }
     },
     "Table": {
-      "specHash": "80b9c6b2",
+      "specHash": "8be19724",
       "variants": {
         "State=Default": {
           "file": "table/state-default.png",
@@ -2383,22 +2383,22 @@
         "Default": {
           "file": "tableempty/default.png",
           "width": 110,
-          "height": 83
+          "height": 84
         }
       }
     },
     "Tabs": {
-      "specHash": "3e11a4a7",
+      "specHash": "35e7eeef",
       "variants": {
         "Orientation=horizontal, Size=sm, State=Default, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-sm__state-default__variant-underline.png",
           "width": 320,
-          "height": 69
+          "height": 68
         },
         "Orientation=horizontal, Size=sm, State=Hover, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-sm__state-hover__variant-underline.png",
           "width": 320,
-          "height": 69
+          "height": 68
         },
         "Orientation=vertical, Size=sm, State=Default, Variant=underline": {
           "file": "tabs/orientation-vertical__size-sm__state-default__variant-underline.png",
@@ -2413,12 +2413,12 @@
         "Orientation=horizontal, Size=md, State=Default, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-md__state-default__variant-underline.png",
           "width": 320,
-          "height": 81
+          "height": 80
         },
         "Orientation=horizontal, Size=md, State=Hover, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-md__state-hover__variant-underline.png",
           "width": 320,
-          "height": 81
+          "height": 80
         },
         "Orientation=vertical, Size=md, State=Default, Variant=underline": {
           "file": "tabs/orientation-vertical__size-md__state-default__variant-underline.png",
@@ -2433,12 +2433,12 @@
         "Orientation=horizontal, Size=sm, State=Default, Variant=contained": {
           "file": "tabs/orientation-horizontal__size-sm__state-default__variant-contained.png",
           "width": 320,
-          "height": 69
+          "height": 68
         },
         "Orientation=horizontal, Size=sm, State=Hover, Variant=contained": {
           "file": "tabs/orientation-horizontal__size-sm__state-hover__variant-contained.png",
           "width": 320,
-          "height": 69
+          "height": 68
         },
         "Orientation=vertical, Size=sm, State=Default, Variant=contained": {
           "file": "tabs/orientation-vertical__size-sm__state-default__variant-contained.png",
@@ -2453,12 +2453,12 @@
         "Orientation=horizontal, Size=md, State=Default, Variant=contained": {
           "file": "tabs/orientation-horizontal__size-md__state-default__variant-contained.png",
           "width": 320,
-          "height": 81
+          "height": 80
         },
         "Orientation=horizontal, Size=md, State=Hover, Variant=contained": {
           "file": "tabs/orientation-horizontal__size-md__state-hover__variant-contained.png",
           "width": 320,
-          "height": 81
+          "height": 80
         },
         "Orientation=vertical, Size=md, State=Default, Variant=contained": {
           "file": "tabs/orientation-vertical__size-md__state-default__variant-contained.png",
@@ -2553,37 +2553,37 @@
       }
     },
     "Toast": {
-      "specHash": "224542db",
+      "specHash": "ebe2330b",
       "variants": {
         "Tone=neutral": {
           "file": "toast/tone-neutral.png",
           "width": 384,
-          "height": 82
+          "height": 80
         },
         "Tone=info": {
           "file": "toast/tone-info.png",
           "width": 384,
-          "height": 82
+          "height": 80
         },
         "Tone=success": {
           "file": "toast/tone-success.png",
           "width": 384,
-          "height": 82
+          "height": 80
         },
         "Tone=warning": {
           "file": "toast/tone-warning.png",
           "width": 384,
-          "height": 82
+          "height": 80
         },
         "Tone=danger": {
           "file": "toast/tone-danger.png",
           "width": 384,
-          "height": 82
+          "height": 80
         },
         "Tone=loading": {
           "file": "toast/tone-loading.png",
           "width": 384,
-          "height": 82
+          "height": 80
         }
       }
     },

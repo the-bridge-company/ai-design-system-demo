@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-11T11:17:02.543Z",
+  "createdAt": "2026-11-12T03:22:32.294Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -10576,7 +10576,7 @@
         },
         "story=overlays-tooltip--toolbar": {
           "file": "overlays-tooltip-toolbar.png",
-          "width": 73.63,
+          "width": 77.81,
           "height": 24.19,
           "story": "overlays-tooltip--toolbar",
           "props": {
@@ -10642,7 +10642,7 @@
         },
         "story=overlays-tooltip--toolbar": {
           "file": "overlays-tooltip-toolbar.png",
-          "width": 73.63,
+          "width": 77.81,
           "height": 24.19,
           "story": "overlays-tooltip--toolbar",
           "props": {

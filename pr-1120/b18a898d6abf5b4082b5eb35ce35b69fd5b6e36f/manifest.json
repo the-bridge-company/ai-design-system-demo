@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T11:50:15.120Z",
-  "durationMs": 193518,
+  "createdAt": "2026-11-12T12:00:05.734Z",
+  "durationMs": 169864,
   "base": {
     "ref": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246",
     "sha": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246"
   },
   "head": {
-    "ref": "85306fe117a5485c58106192a19f1e506b555347",
-    "sha": "85306fe117a5485c58106192a19f1e506b555347"
+    "ref": "b18a898d6abf5b4082b5eb35ce35b69fd5b6e36f",
+    "sha": "b18a898d6abf5b4082b5eb35ce35b69fd5b6e36f"
   },
   "options": {
     "only": [
@@ -35,6 +35,8 @@
       ".changeset/count-tag-style.md",
       "apps/docs-site/src/components/ds/studio/LibraryReview.tsx",
       "apps/docs-site/src/styles/library-review.css",
+      "apps/figma-plugin/test/axis-change.test.ts",
+      "apps/figma-plugin/test/component-pull.test.ts",
       "packages/react/component-specs.json",
       "packages/react/src/components/Badge/Badge.docs.json",
       "packages/react/src/components/Badge/Badge.module.css",
@@ -842,18 +844,11 @@
       "storyId": "data-display-badge--subtle",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 309,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 0.04,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 704,
-          "width": 96,
-          "height": 48
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -864,12 +859,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__data-display-badge--subtle__ocean-dark.png",
-        "after": "after/story__data-display-badge--subtle__ocean-dark.png",
-        "diff": "diff/story__data-display-badge--subtle__ocean-dark.png",
-        "composite": "composite/story__data-display-badge--subtle__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__data-display-badge--solid__ocean-dark",
@@ -902,11 +892,18 @@
       "storyId": "data-display-badge--with-dot",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 2592,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 0.32,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 704,
+          "width": 128,
+          "height": 48
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -917,7 +914,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__data-display-badge--with-dot__ocean-dark.png",
+        "after": "after/story__data-display-badge--with-dot__ocean-dark.png",
+        "diff": "diff/story__data-display-badge--with-dot__ocean-dark.png",
+        "composite": "composite/story__data-display-badge--with-dot__ocean-dark.png"
+      }
     },
     {
       "key": "story__data-display-accordion--all-states__ocean-dark",

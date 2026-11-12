@@ -62,6 +62,13 @@ describe('Where it stands', () => {
     expect(screen.getByRole('button', { name: NOTES_WORDS.write })).toBeTruthy();
   });
 
+  it('a read that failed: says so quietly, never "Nothing noted yet" nor Write it yourself', () => {
+    const { container } = paint({ notes: null, unread: true, onSave: null });
+    expect(screen.getByText(NOTES_WORDS.unread)).toBeTruthy();
+    expect(container.textContent).not.toMatch(/Nothing noted yet/);
+    expect(screen.queryByRole('button', { name: NOTES_WORDS.write })).toBeNull();
+  });
+
   it('edits in place: only the changed sections are saved, then says so', async () => {
     const onSave = vi.fn(async (_u: unknown) => undefined);
     const { say, container } = paint({ notes: NOTES, onSave });

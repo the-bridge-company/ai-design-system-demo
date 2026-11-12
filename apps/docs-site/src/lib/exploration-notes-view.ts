@@ -25,6 +25,8 @@ export const NOTES_WORDS = {
   /** The empty state: how the notes fill themselves, quietly. */
   empty: 'Nothing noted yet. When someone works on it in Claude, the decisions, edge cases and next step fill in here, so anyone can carry on.',
   saved: 'Saved. Whoever opens it next starts from here.',
+  /** The notes could not be read (a failed read is never the empty state). */
+  unread: 'These notes could not be read just now. Reload in a minute to see them.',
   linesHint: 'One per line.',
 } as const;
 
@@ -46,6 +48,14 @@ export function notesCountLine(n: ExplorationNotes): string {
 export const notesHaveDetails = (n: ExplorationNotes): boolean => Boolean(n.context || n.decisions.length || n.edgeCases.length || n.openQuestions.length);
 
 export { notesEmpty };
+
+/**
+ * What "Where it stands" shows from a read of the note file: the notes (an absent file, `undefined`, is the empty
+ * state, "Nothing noted yet"), or `unread` when the read failed. A failed read never reads as empty notes.
+ */
+export function notesFromRead(read: { ok: true; text: string | undefined } | { ok: false }, parse: (text: string | undefined) => ExplorationNotes): { notes: ExplorationNotes | null; unread?: true } {
+  return read.ok ? { notes: parse(read.text) } : { notes: null, unread: true };
+}
 
 /** The edge cases grouped by component, in first-seen order, for one checklist per component. */
 export function edgeCaseGroups(cases: readonly EdgeCase[]): { component: string; cases: EdgeCase[] }[] {

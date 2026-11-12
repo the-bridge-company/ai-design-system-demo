@@ -229,6 +229,8 @@ export interface ExplorationPageProps {
   thumbCapturedAt?: string | null;
   /** X2: the last 3 events; null while read. */
   activity: ActivityRow[] | null;
+  /** The activity could not be read just now: said quietly, never fewer events as if that were all. */
+  activityUnread?: boolean;
   done: DoneAction;
   onDone: (focus: HTMLElement | null) => void;
   /** Done exploring asked the design lead and they have not answered yet. */
@@ -1540,7 +1542,7 @@ function ExplorationBody(p: ExplorationPageProps) {
               handoff && <LibraryPart h={handoff} p={p} say={setSaid} />
             )}
             {/* The slot for "Start the check" (the Check the build review mode, its own route, coming next). */}
-            <Timeline items={timeline} composer={composer} />
+            <Timeline items={timeline} composer={composer} unread={Boolean(p.activityUnread)} />
           </div>
           </div>
           <div className="xp-b-right">

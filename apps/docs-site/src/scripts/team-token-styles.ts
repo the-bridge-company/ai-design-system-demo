@@ -38,13 +38,37 @@ export function teamTokenScopes(model: Pick<RepoModel, 'tokens'>): TeamTokenScop
   return out;
 }
 
-/** Where the values go: the preview scopes inside the page, never the chrome around it. */
-export function scopeSelectors(brand: string, theme: string): string {
+/** The selectors the values go to, one per scope kind: the preview scopes inside the page, never the chrome around it. */
+export function scopeSelectorList(brand: string, theme: string): string[] {
   const shell = ':root[data-library-shell]';
   return [
     `${shell} main [data-theme="${theme}"][data-brand="${brand}"]`,
     `${shell}[data-theme="${theme}"][data-preview-brand="${brand}"] main :is(.fd-pv, .fd-stage):not([data-theme])`,
-  ].join(', ');
+  ];
+}
+
+/** Where the values go, as one selector list. */
+export function scopeSelectors(brand: string, theme: string): string {
+  return scopeSelectorList(brand, theme).join(', ');
+}
+
+/**
+ * One empty rule per selector: a browser that rejects one selector (an older engine without :is()) throws on
+ * insertRule ("Failed to execute 'insertRule'"), and a selector list fails as a whole, so each selector gets its own
+ * rule and a rejected one only drops itself. Returns the rules that took. Never throws.
+ */
+export function insertScopeRules(sheet: Pick<CSSStyleSheet, 'insertRule' | 'cssRules'>, selectors: readonly string[]): CSSStyleRule[] {
+  const out: CSSStyleRule[] = [];
+  for (const selector of selectors) {
+    try {
+      const index = sheet.insertRule(`${selector} {}`, sheet.cssRules.length);
+      const rule = sheet.cssRules[index];
+      if (rule && 'style' in rule) out.push(rule as CSSStyleRule);
+    } catch {
+      /* This browser does not read that selector: the previews keep Bridge's values there. */
+    }
+  }
+  return out;
 }
 
 let sheet: CSSStyleSheet | null = null;
@@ -54,9 +78,9 @@ export function applyTeamTokens(model: Pick<RepoModel, 'tokens'>, doc: Document 
   if (typeof CSSStyleSheet === 'undefined' || !('adoptedStyleSheets' in doc)) return;
   const next = new CSSStyleSheet();
   for (const scope of teamTokenScopes(model)) {
-    const index = next.insertRule(`${scopeSelectors(scope.brand, scope.theme)} {}`, next.cssRules.length);
-    const rule = next.cssRules[index] as CSSStyleRule;
-    for (const [name, value] of Object.entries(scope.vars)) rule.style.setProperty(name, value);
+    for (const rule of insertScopeRules(next, scopeSelectorList(scope.brand, scope.theme))) {
+      for (const [name, value] of Object.entries(scope.vars)) rule.style.setProperty(name, value);
+    }
   }
   doc.adoptedStyleSheets = [...doc.adoptedStyleSheets.filter((s) => s !== sheet), next];
   sheet = next;

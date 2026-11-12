@@ -7,7 +7,8 @@
 // Contract (GET only; JSON errors are { error, message } in Bridge's words):
 //   GET /api/contribute?repo=owner/name&gh=<GitHub REST path under /repos/owner/name, URL-encoded>
 //       GitHub's status, body, Content-Type, Link and ETag, from the cache when it is fresh. If-None-Match that
-//       matches the kept ETag answers 304. X-Bridge-Cache says hit, revalidated, miss or stale.
+//       matches the kept ETag answers 304. X-Bridge-Cache says hit, revalidated, miss, swr (kept, answered at once and
+//       checked with GitHub behind it) or stale (kept, GitHub could not be asked: the page may say it is not live).
 //       A member's request that carries X-Bridge-Fresh: 1 (the page wrote to GitHub itself a moment ago: a lead or an
 //       admin signed in with GitHub, lib/token-session readCacheMode) skips the fresh window: Bridge asks GitHub again
 //       with the kept ETag (a 304 costs nothing) and keeps the answer for the team. A visitor's is ignored.
@@ -58,7 +59,8 @@
 //                                                 revalidated with If-None-Match (a 304 does not count against
 //                                                 GitHub's limit). Kept ETAG_KEEP_S so an answer past its fresh window
 //                                                 is revalidated (free) instead of read again; answered without GitHub
-//                                                 for KEEP_S at most after GitHub last confirmed it (stale-on-limit)
+//                                                 for STALE_KEEP_S at most after GitHub last confirmed it, marked
+//                                                 stale (GitHub busy or down, a budget spent)
 //   bridge:read:changed:<repo>:<topic>            when GitHub last said <topic> of <repo> changed (api/_lib/github-
 //                                                 webhook.ts): answers of that topic kept before it (and SETTLE_MS
 //                                                 after) are revalidated at once. <repo> is the repository read (a
@@ -95,9 +97,14 @@
 // may keep it as long as it asks again with its ETag each time (private, no-cache): an unchanged list costs a 304.
 // Concurrent misses of one answer make one GitHub call (single flight, per function), and a function has at most
 // MAX_UPSTREAM_IN_FLIGHT GitHub calls in flight (the others wait their turn).
-// Over the reader's or the team's GitHub calls, a read answers what is kept (confirmed within KEEP_S); nothing kept
-// answers busy.
-// Over a limit, or when GitHub says slow down and nothing is kept: 429 { error: 'busy', message: "Bridge is busy, try
+// A visitor of a public demo team (the sample team's signed-out visitors, who never write) gets a kept answer past its
+// fresh window at once (SWR_MS), marked swr, while one function checks it with GitHub behind the answer (a Redis lock,
+// bridge:read:lock:<key>, so many functions make one call, and Vercel's waitUntil keeps the function up for it).
+// Over the reader's request budget (READ_LIMITS ip, guest), the team's or the reader's GitHub calls, or when GitHub is
+// busy or down, a read answers what is kept (STALE_KEEP_S, marked stale) and never calls GitHub: cached answers cost
+// GitHub nothing, so a demo never turns busy because a visitor reloaded a lot. Nothing kept answers busy; so does a
+// reader past OVER_FACTOR times their request budget (abuse).
+// When GitHub says slow down, or over a limit, and nothing is kept: 429 { error: 'busy', message: "Bridge is busy, try
 // again in N min." } with Retry-After.
 
 import { GITHUB_DOWN, HttpError, SECURITY_HEADERS, clientIp, envInt, json, sha256, type FetchLike } from './http.js';
@@ -139,14 +146,32 @@ export const HOOK_HEALTHY_MS = 15 * 60 * 1000;
  */
 export const SETTLE_MS = 5 * 1000;
 /**
- * How long after GitHub last confirmed it a kept answer may stand in without GitHub (busy, down, over a budget), and
- * how long Bridge listens to a repository's webhook events after it last kept one of its answers.
+ * How long Bridge listens to a repository's webhook events after it last kept one of its answers (and keeps the
+ * change and write marks). Kept answers stand in for STALE_KEEP_S.
  */
 export const KEEP_S = 20 * 60;
 /**
+ * How long after GitHub last confirmed it a kept answer may stand in, marked stale, when GitHub cannot be asked (its
+ * limit, down, a budget spent): as long as it is kept. The last good answer beats a busy screen; the page says it may not
+ * be live (X-Bridge-Cache: stale).
+ */
+export const STALE_KEEP_S = 24 * 60 * 60;
+/**
+ * A visitor's kept answer confirmed less than this ago is answered at once past its fresh window, and checked with
+ * GitHub behind the answer (stale-while-revalidate). Visitors never write, so they never wait on a change of their own.
+ */
+export const SWR_MS = 10 * 60 * 1000;
+/** One function checks a kept answer with GitHub behind the answer at a time, across functions (Redis lock, seconds). */
+export const REVALIDATE_LOCK_S = 15;
+/**
+ * Past its request budget, a reader still gets what is kept (no GitHub call). Past this many times the budget, busy
+ * (abuse protection: every request still costs a storage round trip).
+ */
+export const OVER_FACTOR = 4;
+/**
  * How long a GET answer and its ETag are kept to be revalidated: past its fresh window (FRESH_MS, HOOK_FRESH_MS),
  * Bridge asks GitHub with the ETag (a 304 does not count against GitHub's limit) instead of reading it again. Never
- * answered without GitHub past KEEP_S. Each entry is at most MAX_KEPT_CHARS.
+ * answered without GitHub past STALE_KEEP_S. Each entry is at most MAX_KEPT_CHARS.
  */
 export const ETAG_KEEP_S = 24 * 60 * 60;
 export const IMMUTABLE_KEEP_S = 24 * 60 * 60;
@@ -422,9 +447,12 @@ async function countAndRead(ctx: ReadCtx, req: Request, full: string, reader: Re
   // One MGET for every read: Upstash bills it as one command however many keys it reads (a batch of 100 blobs cost
   // 105 commands as separate GETs, 3 now).
   const r = await ctx.redis.pipe([['INCRBY', k, weight], ['EXPIRE', k, READ_WINDOW_S + 5], ['MGET', wroteKey(full), countKey('up', budget.who, now), countKey('team', full.toLowerCase(), now), ...extra]]);
-  if (Number(r[0]) > limit) throw busy(secondsToNextWindow(now));
+  const count = Number(r[0]);
+  if (count > limit * OVER_FACTOR) throw busy(secondsToNextWindow(now));
   const got = Array.isArray(r[2]) ? (r[2] as unknown[]) : [];
-  return { values: extra.map((_, i) => got[3 + i] ?? null), wrote: Number(got[0]) || 0, up: upstreamOf(ctx, req, reader, full, got[1], got[2], now) };
+  const up = upstreamOf(ctx, req, reader, full, got[1], got[2], now);
+  // Over the request budget: what is kept only, never a GitHub call (a kept answer costs GitHub nothing).
+  return { values: extra.map((_, i) => got[3 + i] ?? null), wrote: Number(got[0]) || 0, up: count > limit ? { ...up, left: 0 } : up };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -468,8 +496,28 @@ export function clearReadMemory() {
   flights.clear();
 }
 
-/** A kept answer GitHub confirmed within KEEP_S: it may stand in when GitHub cannot be asked. */
-const standIn = (k: Kept | null, now: number): Kept | null => (k && now - k.at < KEEP_S * 1000 ? k : null);
+/** A kept answer GitHub confirmed within STALE_KEEP_S: it stands in, marked stale, when GitHub cannot be asked. */
+const standIn = (k: Kept | null, now: number): Kept | null => (k && now - k.at < STALE_KEEP_S * 1000 ? k : null);
+
+/** Redis key of the lock of one function checking a kept answer with GitHub behind the answer. */
+export const revalidateLockKey = (key: string) => `bridge:read:lock:${key.slice('bridge:read:'.length)}`;
+
+/** Work after the answer: Vercel keeps the function up for it (waitUntil, no dependency), elsewhere it simply runs. */
+const pending = new Set<Promise<unknown>>();
+export function afterAnswer(p: Promise<unknown>): void {
+  const q: Promise<unknown> = p.catch(() => undefined).finally(() => pending.delete(q));
+  pending.add(q);
+  try {
+    const rc = (globalThis as Record<symbol, unknown>)[Symbol.for('@vercel/request-context')] as { get?: () => { waitUntil?: (p: Promise<unknown>) => void } | undefined } | undefined;
+    rc?.get?.()?.waitUntil?.(q);
+  } catch {
+    /* not on Vercel */
+  }
+}
+/** Tests: waits for the work started after answers. */
+export async function settleAfterAnswer(): Promise<void> {
+  while (pending.size) await Promise.all([...pending]);
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Single flight and concurrency, per warm function
@@ -568,9 +616,16 @@ export async function isPublicRepo(ctx: ReadCtx, owner: string, repo: string): P
   if (hit && ctx.now() - hit.at < 10 * 60 * 1000) return hit.public;
   const token = await tokenFor(ctx, owner, repo);
   const res = await upstream(ctx, `${API}/repos/${owner}/${repo}`, token, 'application/vnd.github+json', null);
-  if (res.status >= 500) throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+  // GitHub busy or down: what it said last (this function's memory), else busy.
+  if (res.status >= 500) {
+    if (hit) return hit.public;
+    throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+  }
   const wait = limitedFor(res, ctx.now());
-  if (wait !== null) throw busy(wait);
+  if (wait !== null) {
+    if (hit) return hit.public;
+    throw busy(wait);
+  }
   let pub = false;
   if (res.status === 200) {
     const data = (await res.json().catch(() => null)) as { private?: unknown } | null;
@@ -586,6 +641,9 @@ export async function isPublicRepo(ctx: ReadCtx, owner: string, repo: string): P
 /** How long the team's list of product repositories (and the origins of its products) is kept. */
 export const PRODUCTS_KEEP_S = 5 * 60;
 export const productsKey = (team: string) => `bridge:read:products:${team.toLowerCase()}`;
+/** The last list Bridge could read, used while GitHub cannot be asked (never "no products" because GitHub was busy). */
+export const productsLastKey = (team: string) => `bridge:read:products-last:${team.toLowerCase()}`;
+export const PRODUCTS_LAST_KEEP_S = 7 * 24 * 60 * 60;
 const REPO_FULL = /^[\w.-]+\/[\w.-]+$/;
 
 /** What Bridge reads of a team's bridge.config.json for its reads: product repositories and product origins. */
@@ -642,6 +700,20 @@ export function originAllowed(origin: string, templates: readonly string[]): boo
   });
 }
 
+/** A kept list of product repositories and origins, or null when it is not one (kept before origins: read again). */
+function parseTeamReadConfig(kept: unknown): TeamReadConfig | null {
+  if (typeof kept !== 'string') return null;
+  try {
+    const v = JSON.parse(kept) as Partial<TeamReadConfig>;
+    if (v && Array.isArray(v.repos) && Array.isArray(v.origins)) {
+      return { repos: v.repos.filter((x): x is string => typeof x === 'string'), origins: v.origins.filter((x): x is string => typeof x === 'string') };
+    }
+  } catch {
+    /* read it again */
+  }
+  return null;
+}
+
 /**
  * The product repositories and product origins the team's bridge.config.json lists. Read on the default branch with
  * the team's read token, kept PRODUCTS_KEEP_S. A team without the file lists none; a read that fails lists none and is
@@ -649,24 +721,17 @@ export function originAllowed(origin: string, templates: readonly string[]): boo
  */
 export async function teamReadConfigOf(ctx: ReadCtx, owner: string, repo: string): Promise<TeamReadConfig> {
   const full = `${owner}/${repo}`.toLowerCase();
-  const kept = await ctx.redis.cmd('GET', productsKey(full));
-  if (typeof kept === 'string') {
-    try {
-      const v = JSON.parse(kept) as Partial<TeamReadConfig>;
-      // An entry kept before origins were listed is read again.
-      if (v && Array.isArray(v.repos) && Array.isArray(v.origins)) {
-        return { repos: v.repos.filter((x): x is string => typeof x === 'string'), origins: v.origins.filter((x): x is string => typeof x === 'string') };
-      }
-    } catch {
-      /* read it again */
-    }
-  }
+  const got = await ctx.redis.cmd('MGET', productsKey(full), productsLastKey(full));
+  const [current, last] = Array.isArray(got) ? got : [null, null];
+  const kept = parseTeamReadConfig(current);
+  if (kept) return kept;
   const none: TeamReadConfig = { repos: [], origins: [] };
-  // Deny by default: a config Bridge cannot read now (no app, GitHub busy or down) lists nothing, and is not kept.
+  // Deny by default: a config Bridge cannot read now (no app) lists nothing. GitHub busy or down: the last list Bridge
+  // read (never "no products" because GitHub was busy), else nothing; neither is kept as the current list.
   const token = await ctx.token(owner, repo).catch(() => null);
   if (!token) return none;
   const res = await upstream(ctx, `${API}/repos/${owner}/${repo}/contents/bridge.config.json`, token, 'application/vnd.github.raw', null).catch(() => null);
-  if (!res || (res.status !== 200 && res.status !== 404)) return none;
+  if (!res || (res.status !== 200 && res.status !== 404)) return parseTeamReadConfig(last) ?? none;
   let out = none;
   let watched: { repo: string; meta: RepoMeta }[] = [];
   if (res.status === 200) {
@@ -693,7 +758,12 @@ export async function teamReadConfigOf(ctx: ReadCtx, owner: string, repo: string
   // Known: a push to bridge.config.json drops this list at once (api/_lib/github-webhook.ts).
   // Its product repositories are watched too: GitHub's webhook then knows their team (Design check, notifications),
   // even on a team only visitors read, such as the demo.
-  await ctx.redis.pipe([['SET', productsKey(full), JSON.stringify(out), 'EX', PRODUCTS_KEEP_S], ['SET', knownKey(full), '1', 'EX', KEEP_S], ...watchWrites(watched)]);
+  await ctx.redis.pipe([
+    ['SET', productsKey(full), JSON.stringify(out), 'EX', PRODUCTS_KEEP_S],
+    ['SET', productsLastKey(full), JSON.stringify(out), 'EX', PRODUCTS_LAST_KEEP_S],
+    ['SET', knownKey(full), '1', 'EX', KEEP_S],
+    ...watchWrites(watched),
+  ]);
   return out;
 }
 
@@ -756,7 +826,7 @@ export async function productReadAllowed(
   if (reader.kind === 'guest' && !openToVisitors(`${team.owner}/${team.repo}`) && !(await isPublicRepo(ctx, product.owner, product.repo))) throw new HttpError(403, 'not-allowed', READ_WORDS.notAllowed);
 }
 
-function answerKept(k: Kept, source: 'hit' | 'revalidated' | 'miss' | 'stale', inm: string | null, missingOk = false, revalidate = false): Response {
+function answerKept(k: Kept, source: 'hit' | 'revalidated' | 'miss' | 'stale' | 'swr', inm: string | null, missingOk = false, revalidate = false): Response {
   const headers: Record<string, string> = {
     ...SECURITY_HEADERS,
     'Content-Security-Policy': "default-src 'none'; sandbox",
@@ -793,7 +863,7 @@ interface Through {
 /**
  * A kept answer that is not fresh any more (or none): GitHub again, with the kept ETag (a 304 does not count against
  * GitHub's limit), kept for the next reader. Concurrent misses of the same answer share one call (once). GitHub busy
- * or down: what was kept (confirmed within KEEP_S), else busy or unreachable.
+ * or down: what was kept (confirmed within STALE_KEEP_S), else busy or unreachable.
  */
 async function throughGitHub(ctx: ReadCtx, owner: string, repo: string, url: string, accept: string, key: string, kept: Kept | null, o: { keep: boolean; forever: boolean; slim: boolean }): Promise<Through> {
   const { v, leader } = await once(`get:${key}`, () => askGitHub(ctx, owner, repo, url, accept, key, kept, o));
@@ -853,7 +923,7 @@ export async function onRead(req: Request, ctx: ReadCtx, t: ReadTarget, reader: 
   const inm = req.headers.get('if-none-match');
   // GitHub's 404 answered as a 200 "missing" result, for a page that asked for it (MISSING_HEADER).
   const missingOk = req.headers.get(MISSING_HEADER) === '1';
-  const answer = (k: Kept, source: 'hit' | 'revalidated' | 'miss' | 'stale', etagIn: string | null) => answerKept(k, source, etagIn, missingOk, slim);
+  const answer = (k: Kept, source: 'hit' | 'revalidated' | 'miss' | 'stale' | 'swr', etagIn: string | null) => answerKept(k, source, etagIn, missingOk, slim);
   const now = ctx.now();
 
   // A member who just wrote to GitHub from the page asks GitHub again (with the kept ETag); a visitor never does.
@@ -872,8 +942,21 @@ export async function onRead(req: Request, ctx: ReadCtx, t: ReadTarget, reader: 
     if (forever) remember(key, kept);
     return answer(kept, 'hit', inm);
   }
-  // The reader or the team spent their share of the app's GitHub calls: what is kept (confirmed within KEEP_S), else
-  // busy until the window turns.
+  // A visitor (never a write of their own to wait for): a kept answer confirmed within SWR_MS at once, checked with
+  // GitHub behind it by one function at a time (the lock), so a slow or busy GitHub never shows on the page.
+  if (kept && !fresh && (reader.kind === 'guest' || reader.visitor) && now - kept.at < SWR_MS && up.left > 0) {
+    const lock = await ctx.redis.cmd('SET', revalidateLockKey(key), '1', 'NX', 'EX', REVALIDATE_LOCK_S).catch(() => null);
+    if (lock === 'OK') {
+      afterAnswer(
+        throughGitHub(ctx, t.owner, t.repo, url, accept, key, kept, { keep, forever, slim }).then(async (r) => {
+          if (r.spent) await up.spend(1);
+        }),
+      );
+    }
+    return answer(kept, 'swr', inm);
+  }
+  // The reader or the team spent their share of the app's GitHub calls, or the reader is over their request budget:
+  // what is kept (confirmed within STALE_KEEP_S), else busy until the window turns.
   if (up.left <= 0) {
     const old = standIn(kept, now);
     if (old) return answer(old, 'stale', inm);
@@ -974,7 +1057,7 @@ export async function onChanges(req: Request, ctx: ReadCtx, t: Pick<ReadTarget, 
       const topic = topicOf(path.split('?')[0]!.split('/').filter(Boolean));
       if (k0 && stillFresh(k0.at, now, freshFor(topic, hookLast, now), wrote, changedAt(topic))) k = k0;
       else if (left <= 0) {
-        // The reader or the team spent their GitHub calls: what is kept (confirmed within KEEP_S), else this change is
+        // The reader or the team spent their GitHub calls: what is kept (confirmed within STALE_KEEP_S), else this change is
         // left out (the page reads it alone).
         const old = standIn(k0, now);
         if (!old) {

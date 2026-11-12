@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { draftOf, edgeCaseGroups, notesCountLine, updateOfDraft } from './exploration-notes-view';
+import { draftOf, edgeCaseGroups, notesCountLine, notesEmpty, notesFromRead, NOTES_WORDS, updateOfDraft } from './exploration-notes-view';
+import { parseExplorationNotes } from '@bridge-ds/core';
 
 const N = {
   context: 'c',
@@ -33,5 +34,19 @@ describe('exploration notes view', () => {
     expect(updateOfDraft(N, d)).toEqual({ decisions: ['A', 'B'] });
     expect(updateOfDraft(N, { ...draftOf(N), edgeCases: [] })).toEqual({ edgeCases: [] });
     expect(updateOfDraft(N, { ...draftOf(N), edgeCases: [...N.edgeCases, { component: '', state: ' ', covered: false }] })).toEqual({});
+  });
+});
+
+describe('notesFromRead: a failed read is never "Nothing noted yet"', () => {
+  it('no file yet: the empty notes (the empty state is honest)', () => {
+    const got = notesFromRead({ ok: true, text: undefined }, parseExplorationNotes);
+    expect(got.unread).toBeUndefined();
+    expect(got.notes && notesEmpty(got.notes)).toBe(true);
+  });
+
+  it('the read failed (busy, down): no notes and unread, so the page says so instead of the empty state', () => {
+    const got = notesFromRead({ ok: false }, parseExplorationNotes);
+    expect(got).toEqual({ notes: null, unread: true });
+    expect(NOTES_WORDS.unread).not.toMatch(/Nothing noted/);
   });
 });

@@ -154,6 +154,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         components: f.components,
         signedOut: { line: signedOutLine(signIn), button: ghButton(signIn), signIn },
         failed: d?.failed ?? null,
+        partial: Boolean(d?.partial),
         startHrefs: f.startHrefs,
         // No review right and not a design lead: only what waits on them, and their tour (once the owner teams are read).
         // A design lead (lib/design-lead: an admin or lead by email or GitHub) or a reviewer: the lead tour.
@@ -201,8 +202,9 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         if (mine === run) repaintHome = fn;
       },
       // The team's products (its bridge.config.json) before the explorations are sorted into them and its product
-      // repositories read: the same settings Changes and the product pages wait for. A failed read keeps the defaults.
-      loadTeamData().catch(() => null),
+      // repositories read: the same settings Changes and the product pages wait for. A failed read keeps the settings
+      // this browser last read; with none, the home says why instead of painting the default settings (loadHome).
+      loadTeamData(),
     );
   }
 

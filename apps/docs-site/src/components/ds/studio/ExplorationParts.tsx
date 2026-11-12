@@ -176,7 +176,10 @@ export function TurnSteps({ steps }: { steps: readonly TurnStep[] }) {
 // ---------------------------------------------------------------------------------------------------------------
 // Activity
 
-export function Timeline({ items, earlierBy, composer }: { items: readonly TimelineItem[] | null; earlierBy?: string | null; composer?: ReactNode }) {
+/** The Activity's quiet note when its read failed (lib/home-explorations PARTIAL_LINE's words for the activity). */
+export const ACTIVITY_UNREAD = 'Part of the activity could not be read just now. Reload in a minute to see all of it.';
+
+export function Timeline({ items, earlierBy, composer, unread = false }: { items: readonly TimelineItem[] | null; earlierBy?: string | null; composer?: ReactNode; /** The activity read failed: one quiet line, never fewer events as if complete. */ unread?: boolean }) {
   const [all, setAll] = useState(false);
   const { earlier, shown } = foldTimeline(items ?? []);
   const rows = all ? [...earlier, ...shown] : shown;
@@ -194,6 +197,7 @@ export function Timeline({ items, earlierBy, composer }: { items: readonly Timel
           </Button>
         </p>
       )}
+      {unread && <p className="xp-muted">{ACTIVITY_UNREAD}</p>}
       {items && (
         <ol className="xp-tl">
           {rows.map((r) => (

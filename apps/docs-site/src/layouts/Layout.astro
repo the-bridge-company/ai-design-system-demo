@@ -168,6 +168,11 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     <meta name="theme-color" content="#0b1825" media="(prefers-color-scheme: dark)" />
     <SiteIcons />
     {!library && <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />}
+    {/* A tab open across a deploy reloads once to the new version when a code file of the old build is gone (lib/chunk-reload.ts). */}
+    <script>
+      import { installChunkReload } from '../lib/chunk-reload';
+      installChunkReload();
+    </script>
     {/* Sample-team drafts stay apart from real ones (scripts/demo-drafts.ts): first, before any page script reads a draft. */}
     <script>
       import '../scripts/demo-drafts';

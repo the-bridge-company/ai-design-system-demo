@@ -6,7 +6,7 @@
 // are pure in lib/home-model.ts and lib/branch-thumb.ts. Admins of a real team on the hosted site also get the people
 // asking to join it (board E7b, GET /api/entry?requests=), first in the list.
 import { closingIssueNumbers, defaultProduct, isGuardedExploration, isHandedOff, isToolingPull, parseNeededBy, productsOf, requesterOf, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
-import { siteConfig } from './repo-context';
+import { siteConfig, siteKnown } from './repo-context';
 import { designTaskReads, rememberQuestions, taskUrlOf } from './design-task';
 import { askerRole, devQuestionOf, taskStage, type DesignTaskRead } from '../lib/review-state';
 import { parseExplorationBody } from '@bridge-ds/core';
@@ -65,7 +65,7 @@ import { leadHomeRow } from '../lib/lead-decisions';
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import type { HomeWaiting } from '../components/ds/studio/StudioHome';
 import { mineFromCards, noteMine } from '../lib/nav-products';
-import { busyText } from '../lib/team-load';
+import { busyText, teamFailure } from '../lib/team-load';
 import { neededByOfChange } from '../lib/product-branch';
 
 /** Rows of the Needs you list whose closed request or suggestion is read for its origin: one read each, kept by ghGet. */
@@ -100,6 +100,11 @@ export interface HomeData {
   settled: boolean;
   /** GitHub could not be read: what to tell the viewer. */
   failed: string | null;
+  /**
+   * Some of the reads behind the home failed (a product repository, the recent explorations, statuses...): what is
+   * shown is real but may be incomplete, so the home never claims "Nothing needs you" nor "Nothing in progress".
+   */
+  partial?: boolean;
   needs: NeedRow[];
   /** The viewer's own library changes and suggestions: the home counts them under the explorations (Changes lists them). */
   branches: BranchCard[];
@@ -337,18 +342,38 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   // The open changes start at once; on a team the products and their repositories wait for its settings (`settings`).
   const openRead = ghGet<HomePull[]>(`/repos/${owner}/${repo}/pulls?state=open&per_page=100`);
   openRead.catch(() => undefined);
-  if (settings) await settings.catch(() => undefined);
+  let settingsFailed: unknown = null;
+  if (settings) await settings.catch((err: unknown) => (settingsFailed = err ?? new Error('settings')));
+  // The team's settings could not be read and this browser never kept them: its name, products and who reviews are
+  // unknown. Say why, never the default settings (they read as another team: "Bridge demo ds", Admin demo, Reviewer).
+  if (settingsFailed && !siteKnown()) {
+    failed = teamFailure(settingsFailed, `${owner}/${repo}`).title;
+    repaint();
+    return;
+  }
+  // Reads that failed on the way (a product repository, the recent ones, statuses): the home says less, never "nothing".
+  let partial = false;
+  const missed = () => {
+    partial = true;
+  };
   // The explorations in products' own repositories, one read each in parallel; an unreachable one adds nothing.
   let productOpen: HomePull[] = [];
   const productRead = import('./product-repos')
-    .then((m) => m.productPulls())
+    .then((m) => m.readProductPulls())
+    .then((reads) => {
+      if (reads.some((x) => x.pulls === null)) missed();
+      return reads.flatMap((x) => x.pulls ?? []);
+    })
     .then((list) => (productOpen = list.map((p) => ({ ...p, user: p.user ?? { login: 'unknown' }, created_at: p.updated_at, base: { ref: p.base?.ref ?? '', sha: '' }, labels: p.labels.map((l) => ({ name: typeof l === 'string' ? l : (l.name ?? '') })) }) as unknown as HomePull)))
-    .catch(() => (productOpen = []));
+    .catch(() => {
+      missed();
+      productOpen = [];
+    });
   // A design copy exploration handed to the developers: its card says what its task says (Being built's words). Read
   // once the products' explorations are in; the cards paint again when it lands.
   // The same read says when the developers asked the viewer something on a task (their Needs you row).
   let taskReads = new Map<string, DesignTaskRead>();
-  const taskRead = productRead.then(() => designTaskReads(productOpen)).then((m) => (taskReads = m)).catch(() => undefined);
+  const taskRead = productRead.then(() => designTaskReads(productOpen)).then((m) => (taskReads = m)).catch(missed);
   let pulls: HomePull[];
   try {
     pulls = (await openRead).data;
@@ -364,7 +389,10 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   let suggestions: NeedRow[] = [];
   const suggestionsRead = loadSuggestionNeeds(personOf)
     .then((rows) => (suggestions = rows))
-    .catch(() => (suggestions = []));
+    .catch(() => {
+      if (reviewer) missed();
+      suggestions = [];
+    });
   // The viewer's own open suggestions sit with their branches: they wait on the reviewers, calmly. An email member's
   // are filed by Bridge for them (the server's list says which).
   let ownSuggestions: BranchCard[] = [];
@@ -375,18 +403,21 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     if (!viewerRef && !token) return;
     const { contributeTeam } = await import('./contribute-session');
     pms = (await contributeTeam(`${owner}/${repo}`, token)).pms;
-  })().catch(() => undefined);
+  })().catch(missed);
   const ownSuggestionsRead = (async () => {
     const mine = currentContributor() ? await import('./contribute-session').then((m) => m.contributeMine(`${owner}/${repo}`)).catch(() => null) : null;
     ownSuggestions = await loadOwnSuggestions(viewer, mine);
-  })().catch(() => undefined);
+  })().catch(missed);
   const queue = reviewQueue(pulls);
   const products = homeProducts();
   // The explorations kept lately: merged ones among the recently closed (the same read Changes makes), painted when read.
   let closed: HomePull[] = [];
   const closedRead = ghGet<HomePull[]>(`/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=30`)
     .then((r) => (closed = r.data.filter((p) => p.merged_at)))
-    .catch(() => (closed = []));
+    .catch(() => {
+      missed();
+      closed = [];
+    });
   // The explored screens: the preview capture (scripts/preview-shots.ts), else the visual impact's top change. By
   // "product#number", a product's own exploration included.
   const shots = new Map<string, ThumbSpec>();
@@ -611,7 +642,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     // Suggestions wait on their reviewers only.
     if (reviewer) needs.push(...suggestions);
     const sorted = sortNeeds(needs);
-    onUpdate({ viewer, loading, settled, failed: null, needs: sorted, branches: [...branches, ...ownSuggestions], explorations, libraryWork, waitingOnOthers, decisions: badgeRows(sorted), reviewer });
+    onUpdate({ viewer, loading, settled, failed: null, ...(partial ? { partial: true } : {}), needs: sorted, branches: [...branches, ...ownSuggestions], explorations, libraryWork, waitingOnOthers, decisions: badgeRows(sorted), reviewer });
   };
 
   repaint = paint;
@@ -619,7 +650,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   await Promise.all([
     loadStatuses(queue, (p, st) => {
       statuses.set(p.number, st);
-    }),
+    }).catch(missed),
     suggestionsRead,
     joinsRead,
     ownSuggestionsRead,

@@ -28,6 +28,7 @@ import { addedKey, parseAdded, withAddedProducts, type AddedProduct } from '../l
 import { blobCacheFor, getCachedModel, getLatestCachedModel, putCachedModel } from './repo-cache';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { isHosted, repoFromPath } from '../lib/team-path';
+import { isSampleTeam } from '../lib/demo';
 import type { TeamLoadEvent } from '../lib/load-progress';
 
 export interface RepoContext {
@@ -100,8 +101,42 @@ export function repoContext(): RepoContext {
 export function siteConfig(): Partial<SiteRepo> {
   const team = hostedRepo();
   if (!team) return withAdded(embedded());
-  const site = runtime.get(key(team.owner, team.repo))?.site;
+  // Read this session, else as this browser last read it (keptSite): a team whose settings read fails now keeps its
+  // own name, products and owners, never the defaults (which look like another team: "Bridge demo ds", Admin demo).
+  const site = runtime.get(key(team.owner, team.repo))?.site ?? keptSite(team.owner, team.repo);
   return site ? withAdded({ ...site, owner: team.owner, repo: team.repo }) : {};
+}
+
+/**
+ * Whether the page's team settings are known (read this session or kept in this browser). False on a team shell
+ * whose settings were never read here: readers must wait (or say the team could not be read), never paint defaults.
+ */
+export function siteKnown(): boolean {
+  const team = hostedRepo();
+  if (!team) return true;
+  return Boolean(runtime.get(key(team.owner, team.repo))?.site ?? keptSite(team.owner, team.repo));
+}
+
+/** Where this browser keeps a team's settings (bridge.config.json as read), so a failed read later never means defaults. */
+export const siteKeepKey = (owner: string, repo: string) => `bridge:team-site:${key(owner, repo)}`;
+
+/** The team's settings as this browser last read them, or undefined. Never throws. */
+export function keptSite(owner: string, repo: string): SiteRepo | undefined {
+  try {
+    if (typeof localStorage === 'undefined') return undefined;
+    const v = JSON.parse(localStorage.getItem(siteKeepKey(owner, repo)) ?? 'null') as unknown;
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as SiteRepo) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function keepSite(owner: string, repo: string, site: SiteRepo): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(siteKeepKey(owner, repo), JSON.stringify(site));
+  } catch {
+    /* storage full or blocked: the next failed read waits instead */
+  }
 }
 
 /** The products this tab just added (lib/add-product.ts AddedProduct), for the page's team. */
@@ -139,9 +174,12 @@ export function noteAddedProduct(entry: ProductConfig): void {
 }
 
 /** Records what GitHub said about a team's repository (default branch, settings) for repoContext and siteConfig. */
-export function rememberRepo(owner: string, repo: string, facts: { defaultBranch?: string; site?: SiteRepo }) {
+export function rememberRepo(owner: string, repo: string, facts: { defaultBranch?: string; site?: SiteRepo }, opts: { keep?: boolean } = {}) {
   const k = key(owner, repo);
   runtime.set(k, { ...runtime.get(k), ...facts });
+  // Kept in this browser for the next read that fails (siteConfig): the settings of a public team or the sample team
+  // (private on GitHub, open to every visitor), never a private team's.
+  if (opts.keep && facts.site) keepSite(owner, repo, facts.site);
   // Readers that painted before the team's settings were known (the team chip, Settings > Your team) repaint.
   if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('bridge:team-model', { detail: { owner, repo } }));
 }
@@ -201,27 +239,45 @@ export async function loadTeamModel(
     batch?: (shas: string[]) => Promise<Record<string, string | null>>;
   } = {},
 ): Promise<TeamModel> {
-  const { cache = indexedDbCache, snapshot: readSnapshot, onProgress, batch, ...modelOptions } = opts;
+  const { cache = indexedDbCache, onProgress } = opts;
   const repo = `${client.owner}/${client.name}`;
-  onProgress?.({ step: 'head' });
-  let info: Awaited<ReturnType<GitHubClient['getRepo']>>;
-  let sha: string | undefined;
   try {
-    info = await client.getRepo();
-    sha = await client.getBranchSha(info.defaultBranch);
+    return await readTeamModel(client, opts);
   } catch (err) {
-    // GitHub busy: the team's settings and design system as last read here, never an empty team ("Product not found").
-    const busy = githubBusy(err);
-    const kept = busy ? await (cache.latest?.(repo) ?? Promise.resolve(undefined)).catch(() => undefined) : undefined;
-    if (!busy || !kept) throw err;
+    // GitHub (or Bridge in front of it) busy, down or unreachable, at any step (the head, the tree, the bodies): the
+    // team's settings and design system as last read here, never an empty team nor the default settings.
+    const wait = transientFailure(err);
+    const kept = wait ? await (cache.latest?.(repo) ?? Promise.resolve(undefined)).catch(() => undefined) : undefined;
+    if (!wait || !kept) throw err;
     onProgress?.({ step: 'cache' });
     const defaultBranch = kept.model.site?.defaultBranch || 'main';
     rememberRepo(client.owner, client.name, { defaultBranch, site: { ...kept.model.site, owner: client.owner, repo: client.name, defaultBranch } });
-    return { model: kept.model, sha: kept.sha, defaultBranch, private: kept.private, cached: true, source: 'cache', busy };
+    return { model: kept.model, sha: kept.sha, defaultBranch, private: kept.private, cached: true, source: 'cache', busy: wait };
   }
+}
+
+/**
+ * A failure that passes (a wait: GitHub's or Bridge's limit; GitHub or Bridge down: 5xx; no answer: status 0 or a
+ * network error), as a wait the page can say, or null for a failure that stays (404, a refused sign-in, too large).
+ */
+export function transientFailure(err: unknown): GitHubBusy | null {
+  const busy = githubBusy(err);
+  if (busy) return busy;
+  const status = (err as { status?: unknown } | null)?.status;
+  if (typeof status === 'number' ? status === 0 || status >= 500 : err instanceof TypeError) return { resetsAt: null, source: 'bridge' };
+  return null;
+}
+
+async function readTeamModel(client: GitHubClient, opts: Parameters<typeof loadTeamModel>[1] = {}): Promise<TeamModel> {
+  const { cache = indexedDbCache, snapshot: readSnapshot, onProgress, batch, ...modelOptions } = opts;
+  const repo = `${client.owner}/${client.name}`;
+  onProgress?.({ step: 'head' });
+  const info = await client.getRepo();
+  const sha = await client.getBranchSha(info.defaultBranch);
   if (!sha) throw new GitHubError(404, `${repo} has no library on ${info.defaultBranch}.`);
+  const keep = !info.private || isSampleTeam(repo);
   const remember = (model: RepoModel) =>
-    rememberRepo(client.owner, client.name, { defaultBranch: info.defaultBranch, site: { ...model.site, owner: client.owner, repo: client.name, defaultBranch: info.defaultBranch } });
+    rememberRepo(client.owner, client.name, { defaultBranch: info.defaultBranch, site: { ...model.site, owner: client.owner, repo: client.name, defaultBranch: info.defaultBranch } }, { keep });
 
   const kept = await cache.get(repo, sha);
   if (kept) {

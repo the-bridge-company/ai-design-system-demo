@@ -472,10 +472,16 @@ function workSentence(counts: Record<OpenStage, number>, things: string, href: (
 }
 
 /**
+ * The one quiet note of a home or list that is real but may be incomplete (a read failed on the way): never "Nothing
+ * needs you", "Nothing in progress" nor a count of 0 from it.
+ */
+export const PARTIAL_LINE = 'Part of this could not be read just now. Reload in a minute to see all of it.';
+
+/**
  * The quiet Home's sentence after the greeting: "Nothing needs you." then what is open of the viewer's own work, in
  * designer words, each count a link ("2 of your explorations wait for a developer to pick them up."), or "Nothing
- * needs you, and you have nothing in progress." only when truly nothing is. `failed`: GitHub could not be read, so
- * Bridge does not claim there is nothing.
+ * needs you, and you have nothing in progress." only when truly nothing is. `failed`: a read failed, so Bridge does
+ * not claim there is nothing (PARTIAL_LINE instead).
  */
 /**
  * What the quiet sentence counts besides the viewer's explorations (lib/waiting-counts says what each number is):
@@ -496,6 +502,8 @@ export const ownPiecesHref = () => studioHref('library-review/?asked=you');
 export const pickUpHref = () => studioHref('building/?status=waiting');
 
 export function quietParts(work: OwnOpenWork | null, failed = false, extras: QuietExtras = {}): QuietPart[] {
+  // Part of the home could not be read: Bridge cannot know that nothing needs the viewer, so it never says so.
+  if (failed) return [{ text: PARTIAL_LINE }];
   const pickUp = extras.pickUp ?? 0;
   const pieces = extras.pieces ?? null;
   const head: QuietPart[] = pickUp > 0 ? [{ text: `${pickUp} build ${pickUp === 1 ? 'request waits' : 'requests wait'} to be picked up`, href: pickUpHref() }, { text: '.' }] : [{ text: 'Nothing needs you.' }];
@@ -503,7 +511,7 @@ export function quietParts(work: OwnOpenWork | null, failed = false, extras: Qui
   const changes = work && pieces !== null ? { ...work.changes, review: 0 } : work?.changes;
   const piecesSentence: QuietPart[] = pieces ? [{ text: `${pieces} of your library ${pieces === 1 ? 'pieces waits' : 'pieces wait'} in Library review`, href: ownPiecesHref() }, { text: '.' }] : [];
   const sentences = [work ? workSentence(work.explorations, 'explorations') : [], changes ? workSentence(changes, 'library changes', ownChangeHref) : [], piecesSentence].filter((s) => s.length);
-  if (!sentences.length) return pickUp > 0 ? head : [{ text: failed ? 'Nothing needs you.' : 'Nothing needs you, and you have nothing in progress.' }];
+  if (!sentences.length) return pickUp > 0 ? head : [{ text: 'Nothing needs you, and you have nothing in progress.' }];
   return [...head, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])];
 }
 

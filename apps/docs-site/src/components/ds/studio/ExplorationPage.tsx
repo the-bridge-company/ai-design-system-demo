@@ -85,6 +85,7 @@ import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass } from '../../../lib/status-tag';
 import { SEP, SEP_SPLIT } from '../../../lib/sep';
+import { usePageTitle } from '../../../lib/page-title';
 
 export { claudeNewUrl };
 
@@ -1061,6 +1062,8 @@ function ExplorationBody(p: ExplorationPageProps) {
   const [ask, setAsk] = useState<'rename' | 'screen' | 'reopen' | 'take-back' | 'take-over' | 'hand-over' | 'archive' | null>(null);
   const [reopening, setReopening] = useState(false);
   const [notDoing, setNotDoing] = useState(false);
+  // The tab names the exploration opened in place, not only "Explorations" (WCAG 2.4.2).
+  usePageTitle(p.stage === 'loading' ? null : p.title);
   // The lead's choice on each new library piece (Add it to the library, or Keep it in the designer's screen): Send to
   // the developers applies it. Add is the default.
   const [choices, setChoices] = useState<Record<string, 'approve' | 'local'>>({});

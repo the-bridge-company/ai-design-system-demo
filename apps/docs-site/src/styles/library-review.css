@@ -170,6 +170,8 @@ a.lr-ask {
   font-size: var(--typography-h3-size);
   font-weight: var(--font-weight-medium);
   line-height: var(--typography-h3-line-height);
+  /* An h2 for the outline that keeps the look it had as an h3: no h2 tracking. */
+  letter-spacing: normal;
 }
 
 .lr-side-head + .lr-side-chapter .lr-side-fam {

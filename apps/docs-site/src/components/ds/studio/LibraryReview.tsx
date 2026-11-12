@@ -852,20 +852,21 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
         </div>
         {chaptersOf(groups).map((ch) => (
           <section key={ch.key} className="lr-side-chapter" aria-label={ch.label}>
-            <h3 className="lr-side-fam">
+            {/* The outline under the page's h1: an h2 per family, an h3 per group, no level skipped (WCAG 1.3.1). */}
+            <h2 className="lr-side-fam">
               {ch.icon && <FamilyIcon name={ch.icon} size="sm" />}
               <span className="lr-side-fam-name">{ch.label}</span>
               <Count n={ch.groups.reduce((n, g) => n + g.pieces.length, 0)} />
-            </h3>
+            </h2>
             {ch.groups.map((g) => {
               const label = ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null;
               return (
                 <div key={g.key} className="lr-side-group">
                   {label && (
-                    <h4 className="lr-side-label">
+                    <h3 className="lr-side-label">
                       {label}{' '}
                       <Count n={g.pieces.length} />
-                    </h4>
+                    </h3>
                   )}
                   <ul className="lr-side-list" aria-label={g.label}>
                     {g.pieces.map((p) => (
@@ -903,7 +904,7 @@ function AskersList({ list }: { list: AskedBy[] }) {
     <div className="lr-askers">
       {groupAskers(list).map((g) => (
         <section key={g.product} className="lr-askers-group" aria-label={g.product}>
-          <h4 className="lr-askers-product">{g.product}</h4>
+          <h3 className="lr-askers-product">{g.product}</h3>
           <ul className="lr-askers-list">
             {g.askers.map((a) => (
               <li key={a.key} className="lr-askers-row">
@@ -1189,7 +1190,9 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
         return (
-          <div key={ch.key} role="rowgroup" className={`lr-chapter${ch.rail ? ' has-rail' : ''}`} aria-label={ch.label}>
+          // A chapter is a plain wrapper: ARIA has no group of row groups, so its head row (with its h2) and each
+          // group's rowgroup sit straight in the table (WCAG 1.3.1).
+          <div key={ch.key} className={`lr-chapter${ch.rail ? ' has-rail' : ''}`}>
             <div role="row" className="lr-chapter-head">
               <span role="cell" className="lr-chapter-title">
                 {ch.icon && <FamilyIcon name={ch.icon} />}

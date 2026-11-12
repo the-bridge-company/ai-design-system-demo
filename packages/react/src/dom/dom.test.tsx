@@ -173,6 +173,27 @@ describe('tooltips outside React', () => {
     stop();
   });
 
+  it('tabbing to the next trigger removes the fading tooltip at once, so it never covers the focused one (WCAG 2.4.11)', () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = ['Copy a', 'Copy b'].map((t) => `<button type="button"${tooltipHtmlAttributes(t)}>${t}</button>`).join('');
+    const stop = bindTooltips(document, { delay: 0 });
+    const [a, b] = [...document.querySelectorAll('button')];
+    const spies = [a!, b!].map((el) => vi.spyOn(el, 'matches').mockImplementation((s: string) => s === ':focus-visible'));
+    try {
+      a!.focus();
+      expect(document.querySelectorAll('[data-bridge-tooltip]')).toHaveLength(1);
+      // Tab: a loses focus (its tooltip starts its exit motion), b gets it.
+      b!.focus();
+      const left = [...document.querySelectorAll('[data-bridge-tooltip] .tooltip')].map((p) => p.textContent);
+      expect(left).toEqual(['Copy b']);
+      expect(b).toHaveAccessibleDescription('Copy b');
+    } finally {
+      spies.forEach((s) => s.mockRestore());
+      stop();
+      vi.useRealTimers();
+    }
+  });
+
   it('opens on hover after the delay, never on touch', async () => {
     vi.useFakeTimers();
     document.body.innerHTML = `<span${tooltipHtmlAttributes('Approved by @ana', { focusable: true })}>${badgeHtml('Approved', { tone: 'success' })}</span>`;

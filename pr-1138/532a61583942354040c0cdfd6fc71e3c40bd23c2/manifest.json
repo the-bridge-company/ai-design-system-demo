@@ -1,0 +1,1228 @@
+{
+  "version": 1,
+  "tool": "@bridge-ds/visual",
+  "createdAt": "2026-11-12T19:07:28.633Z",
+  "durationMs": 157656,
+  "base": {
+    "ref": "414350e2b09631116eecc7683aad8dd83e2a367f",
+    "sha": "414350e2b09631116eecc7683aad8dd83e2a367f"
+  },
+  "head": {
+    "ref": "532a61583942354040c0cdfd6fc71e3c40bd23c2",
+    "sha": "532a61583942354040c0cdfd6fc71e3c40bd23c2"
+  },
+  "options": {
+    "only": [
+      "stories",
+      "app"
+    ],
+    "threshold": 0.03,
+    "viewport": {
+      "stories": {
+        "width": 1024,
+        "height": 768
+      },
+      "app": {
+        "width": 1280,
+        "height": 800
+      }
+    }
+  },
+  "selection": {
+    "tokens": [],
+    "vars": [],
+    "files": [
+      ".changeset/harbor-note-anatomy.md",
+      "apps/docs-site/src/components/ds/studio/LibraryReview.toasts.test.ts",
+      "apps/docs-site/src/components/ds/studio/LibraryReview.tsx",
+      "apps/docs-site/src/lib/library-review.ts",
+      "apps/docs-site/src/styles/demo-home.css",
+      "apps/docs-site/src/styles/library-review.css",
+      "packages/react/component-specs.json",
+      "packages/react/src/components/Banner/Banner.docs.json",
+      "packages/react/src/components/Banner/Banner.module.css",
+      "packages/react/src/components/Banner/Banner.stories.tsx",
+      "packages/react/src/components/Banner/Banner.test.tsx",
+      "packages/react/src/components/Banner/Banner.tsx"
+    ],
+    "components": [
+      {
+        "id": "Banner",
+        "reasons": [
+          "file changed: packages/react/src/components/Banner/Banner.module.css",
+          "file changed: packages/react/src/components/Banner/Banner.stories.tsx",
+          "file changed: packages/react/src/components/Banner/Banner.tsx"
+        ],
+        "indirect": false
+      }
+    ],
+    "stories": [
+      "feedback-banner--all-states",
+      "feedback-banner--preview",
+      "feedback-banner--with-detail",
+      "feedback-banner--neutral"
+    ],
+    "fallback": null,
+    "app": {
+      "include": true,
+      "reason": "Component code changed"
+    }
+  },
+  "summary": {
+    "shots": 40,
+    "changed": 12,
+    "unchanged": 28,
+    "added": 0,
+    "removed": 0,
+    "errors": 0,
+    "maxPercent": 21.49
+  },
+  "shots": [
+    {
+      "key": "story__feedback-banner--all-states__bridge-light",
+      "kind": "story",
+      "label": "Feedback/Banner: All States",
+      "storyId": "feedback-banner--all-states",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 204844,
+      "totalPixels": 989184,
+      "percent": 20.71,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 192,
+          "width": 1024,
+          "height": 774
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 936
+        },
+        "after": {
+          "width": 1024,
+          "height": 966
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--all-states__bridge-light.png",
+        "after": "after/story__feedback-banner--all-states__bridge-light.png",
+        "diff": "diff/story__feedback-banner--all-states__bridge-light.png",
+        "composite": "composite/story__feedback-banner--all-states__bridge-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--preview__bridge-light",
+      "kind": "story",
+      "label": "Feedback/Banner: Preview",
+      "storyId": "feedback-banner--preview",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 815104,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "story__feedback-banner--with-detail__bridge-light",
+      "kind": "story",
+      "label": "Feedback/Banner: With Detail",
+      "storyId": "feedback-banner--with-detail",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 11653,
+      "totalPixels": 815104,
+      "percent": 1.43,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 48,
+          "width": 960,
+          "height": 64
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--with-detail__bridge-light.png",
+        "after": "after/story__feedback-banner--with-detail__bridge-light.png",
+        "diff": "diff/story__feedback-banner--with-detail__bridge-light.png",
+        "composite": "composite/story__feedback-banner--with-detail__bridge-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--neutral__bridge-light",
+      "kind": "story",
+      "label": "Feedback/Banner: Neutral",
+      "storyId": "feedback-banner--neutral",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 10452,
+      "totalPixels": 815104,
+      "percent": 1.28,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--neutral__bridge-light.png",
+        "after": "after/story__feedback-banner--neutral__bridge-light.png",
+        "diff": "diff/story__feedback-banner--neutral__bridge-light.png",
+        "composite": "composite/story__feedback-banner--neutral__bridge-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--all-states__bridge-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: All States",
+      "storyId": "feedback-banner--all-states",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 212603,
+      "totalPixels": 989184,
+      "percent": 21.49,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 192,
+          "width": 1024,
+          "height": 774
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 936
+        },
+        "after": {
+          "width": 1024,
+          "height": 966
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--all-states__bridge-dark.png",
+        "after": "after/story__feedback-banner--all-states__bridge-dark.png",
+        "diff": "diff/story__feedback-banner--all-states__bridge-dark.png",
+        "composite": "composite/story__feedback-banner--all-states__bridge-dark.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--preview__bridge-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: Preview",
+      "storyId": "feedback-banner--preview",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 815104,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "story__feedback-banner--with-detail__bridge-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: With Detail",
+      "storyId": "feedback-banner--with-detail",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 12266,
+      "totalPixels": 815104,
+      "percent": 1.5,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--with-detail__bridge-dark.png",
+        "after": "after/story__feedback-banner--with-detail__bridge-dark.png",
+        "diff": "diff/story__feedback-banner--with-detail__bridge-dark.png",
+        "composite": "composite/story__feedback-banner--with-detail__bridge-dark.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--neutral__bridge-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: Neutral",
+      "storyId": "feedback-banner--neutral",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 10275,
+      "totalPixels": 815104,
+      "percent": 1.26,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--neutral__bridge-dark.png",
+        "after": "after/story__feedback-banner--neutral__bridge-dark.png",
+        "diff": "diff/story__feedback-banner--neutral__bridge-dark.png",
+        "composite": "composite/story__feedback-banner--neutral__bridge-dark.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--all-states__ocean-light",
+      "kind": "story",
+      "label": "Feedback/Banner: All States",
+      "storyId": "feedback-banner--all-states",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 89950,
+      "totalPixels": 989184,
+      "percent": 9.09,
+      "boxes": [
+        {
+          "x": 0,
+          "y": 192,
+          "width": 1024,
+          "height": 774
+        },
+        {
+          "x": 816,
+          "y": 448,
+          "width": 176,
+          "height": 32
+        },
+        {
+          "x": 896,
+          "y": 560,
+          "width": 96,
+          "height": 64
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 936
+        },
+        "after": {
+          "width": 1024,
+          "height": 966
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--all-states__ocean-light.png",
+        "after": "after/story__feedback-banner--all-states__ocean-light.png",
+        "diff": "diff/story__feedback-banner--all-states__ocean-light.png",
+        "composite": "composite/story__feedback-banner--all-states__ocean-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--preview__ocean-light",
+      "kind": "story",
+      "label": "Feedback/Banner: Preview",
+      "storyId": "feedback-banner--preview",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 815104,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "story__feedback-banner--with-detail__ocean-light",
+      "kind": "story",
+      "label": "Feedback/Banner: With Detail",
+      "storyId": "feedback-banner--with-detail",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 11835,
+      "totalPixels": 815104,
+      "percent": 1.45,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 48,
+          "width": 960,
+          "height": 64
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--with-detail__ocean-light.png",
+        "after": "after/story__feedback-banner--with-detail__ocean-light.png",
+        "diff": "diff/story__feedback-banner--with-detail__ocean-light.png",
+        "composite": "composite/story__feedback-banner--with-detail__ocean-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--neutral__ocean-light",
+      "kind": "story",
+      "label": "Feedback/Banner: Neutral",
+      "storyId": "feedback-banner--neutral",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "changed",
+      "changedPixels": 6855,
+      "totalPixels": 815104,
+      "percent": 0.84,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--neutral__ocean-light.png",
+        "after": "after/story__feedback-banner--neutral__ocean-light.png",
+        "diff": "diff/story__feedback-banner--neutral__ocean-light.png",
+        "composite": "composite/story__feedback-banner--neutral__ocean-light.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--all-states__ocean-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: All States",
+      "storyId": "feedback-banner--all-states",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 153727,
+      "totalPixels": 989184,
+      "percent": 15.54,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 192,
+          "width": 960,
+          "height": 496
+        },
+        {
+          "x": 0,
+          "y": 880,
+          "width": 1024,
+          "height": 86
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 936
+        },
+        "after": {
+          "width": 1024,
+          "height": 966
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--all-states__ocean-dark.png",
+        "after": "after/story__feedback-banner--all-states__ocean-dark.png",
+        "diff": "diff/story__feedback-banner--all-states__ocean-dark.png",
+        "composite": "composite/story__feedback-banner--all-states__ocean-dark.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--preview__ocean-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: Preview",
+      "storyId": "feedback-banner--preview",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 815104,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "story__feedback-banner--with-detail__ocean-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: With Detail",
+      "storyId": "feedback-banner--with-detail",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 12467,
+      "totalPixels": 815104,
+      "percent": 1.53,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--with-detail__ocean-dark.png",
+        "after": "after/story__feedback-banner--with-detail__ocean-dark.png",
+        "diff": "diff/story__feedback-banner--with-detail__ocean-dark.png",
+        "composite": "composite/story__feedback-banner--with-detail__ocean-dark.png"
+      }
+    },
+    {
+      "key": "story__feedback-banner--neutral__ocean-dark",
+      "kind": "story",
+      "label": "Feedback/Banner: Neutral",
+      "storyId": "feedback-banner--neutral",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "changed",
+      "changedPixels": 10462,
+      "totalPixels": 815104,
+      "percent": 1.28,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 32,
+          "width": 960,
+          "height": 80
+        }
+      ],
+      "size": {
+        "before": {
+          "width": 1024,
+          "height": 796
+        },
+        "after": {
+          "width": 1024,
+          "height": 796
+        }
+      },
+      "images": {
+        "before": "before/story__feedback-banner--neutral__ocean-dark.png",
+        "after": "after/story__feedback-banner--neutral__ocean-dark.png",
+        "diff": "diff/story__feedback-banner--neutral__ocean-dark.png",
+        "composite": "composite/story__feedback-banner--neutral__ocean-dark.png"
+      }
+    },
+    {
+      "key": "app__dashboard__northwind__light",
+      "kind": "route",
+      "label": "Dashboard",
+      "route": "/",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__orders-list__northwind__light",
+      "kind": "route",
+      "label": "Orders list",
+      "route": "/orders",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__order-edit__northwind__light",
+      "kind": "route",
+      "label": "Order edit",
+      "route": "/orders/12",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__reviews-drawer__northwind__light",
+      "kind": "route",
+      "label": "Reviews, drawer open",
+      "route": "/reviews/4",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__customers__northwind__light",
+      "kind": "route",
+      "label": "Customers",
+      "route": "/customers",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__products__northwind__light",
+      "kind": "route",
+      "label": "Products",
+      "route": "/products",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__dashboard__northwind__dark",
+      "kind": "route",
+      "label": "Dashboard",
+      "route": "/",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__orders-list__northwind__dark",
+      "kind": "route",
+      "label": "Orders list",
+      "route": "/orders",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__order-edit__northwind__dark",
+      "kind": "route",
+      "label": "Order edit",
+      "route": "/orders/12",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__reviews-drawer__northwind__dark",
+      "kind": "route",
+      "label": "Reviews, drawer open",
+      "route": "/reviews/4",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__customers__northwind__dark",
+      "kind": "route",
+      "label": "Customers",
+      "route": "/customers",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__products__northwind__dark",
+      "kind": "route",
+      "label": "Products",
+      "route": "/products",
+      "tenant": "northwind",
+      "brand": "bridge",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__dashboard__harbor__light",
+      "kind": "route",
+      "label": "Dashboard",
+      "route": "/",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__orders-list__harbor__light",
+      "kind": "route",
+      "label": "Orders list",
+      "route": "/orders",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__order-edit__harbor__light",
+      "kind": "route",
+      "label": "Order edit",
+      "route": "/orders/12",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__reviews-drawer__harbor__light",
+      "kind": "route",
+      "label": "Reviews, drawer open",
+      "route": "/reviews/4",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__customers__harbor__light",
+      "kind": "route",
+      "label": "Customers",
+      "route": "/customers",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__products__harbor__light",
+      "kind": "route",
+      "label": "Products",
+      "route": "/products",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "light",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__dashboard__harbor__dark",
+      "kind": "route",
+      "label": "Dashboard",
+      "route": "/",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__orders-list__harbor__dark",
+      "kind": "route",
+      "label": "Orders list",
+      "route": "/orders",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__order-edit__harbor__dark",
+      "kind": "route",
+      "label": "Order edit",
+      "route": "/orders/12",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__reviews-drawer__harbor__dark",
+      "kind": "route",
+      "label": "Reviews, drawer open",
+      "route": "/reviews/4",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__customers__harbor__dark",
+      "kind": "route",
+      "label": "Customers",
+      "route": "/customers",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    },
+    {
+      "key": "app__products__harbor__dark",
+      "kind": "route",
+      "label": "Products",
+      "route": "/products",
+      "tenant": "harbor",
+      "brand": "ocean",
+      "theme": "dark",
+      "status": "unchanged",
+      "changedPixels": 0,
+      "totalPixels": 1024000,
+      "percent": 0,
+      "boxes": [],
+      "size": {
+        "before": {
+          "width": 1280,
+          "height": 800
+        },
+        "after": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "images": {}
+    }
+  ]
+}

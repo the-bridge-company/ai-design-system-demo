@@ -22,7 +22,7 @@ import { Check, ChevronsUpDown, LogIn, Plus, UserPlus, X } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
 import type { RepoAccessState } from '@bridge-ds/core';
-import { busyBadge, chipIdentity, isDemoTeam, memberRole, ownerAvatarUrl, recentTeamName, roleBadge } from '../../../lib/access-view';
+import { accountRowSaysRole, busyBadge, chipIdentity, chipShowsBadge, isDemoTeam, memberRole, ownerAvatarUrl, recentTeamName, roleBadge } from '../../../lib/access-view';
 import { forgetRecentTeam, knownTeamName, loadRecentTeams, loadTeamNames, loadTeamRoles, noteTeamAccess, noteTeamName, noteTeamRole } from '../../../lib/recent-teams';
 import { pillState } from '../../../lib/access';
 import { isHosted, pageTeamFromPath, teamHref } from '../../../lib/team-path';
@@ -37,6 +37,7 @@ import { GitHubMark } from './brand-icons';
 import { Drawing } from './Drawing';
 import { shortName } from '../../../lib/home-model';
 import { isSampleTeam } from '../../../lib/demo';
+import { isCastLogin } from '../../../lib/demo-cast';
 import { pickableTeams } from '../../../lib/pickable-teams';
 import { DEMO_HOME, MENU_WORDS, ownTeams, TEAM_HOME_WORDS, WORKSPACE_HOME, WORKSPACE_WORDS, workspaceHref, workspaceName, workspaceTeamKey, type StartFacts } from '../../../lib/start';
 import { isTeamKey, sameRepo, teamKeyId } from '../../../lib/team-path';
@@ -111,6 +112,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   const [linked, setLinked] = useState<RepoAccessState | null>(null);
   // That linked role is still being read: the chip says "Checking", never "Explore freely" to a member who just signed in.
   const [linkedKnown, setLinkedKnown] = useState(true);
+  // Without a Bridge account, the GitHub block at the foot of the nav says the role of an email member, and of the
+  // sample team's developer a visitor plays (scripts/github-session.ts): the chip then leaves it out (say it once).
+  const [blockRole, setBlockRole] = useState({ emailMember: false, castDeveloper: false });
 
   // A team shell names its team from the address at once, before the session and its scripts load (a cold first visit
   // can take seconds): never "Your team" while the address already says which.
@@ -149,6 +153,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
         setSessionKnown(true);
         setLinkedKnown(session.linkedRoleKnown());
         setSignedIn(Boolean(v));
+        setBlockRole({ emailMember: Boolean(v?.email), castDeveloper: Boolean(v && !v.email && !session.signedInWithGitHub() && session.onSampleTeam() && isCastLogin(v.login)) });
         setViewerName(v ? (shortName(v.name) ?? v.login) : null);
         if (!v) setAccess(r.hosted ? (session.currentAccess()?.state ?? null) : null);
       });
@@ -233,6 +238,14 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
       chipIdentity(name, { demo: isDemoTeam(name, hosted), state: shownAccess, signedIn: roleSignedIn, name: cfg.name ?? (name ? (accountTeamName(name) ?? knownTeamName(name)) : null) });
   const shownBadge = ((!sessionKnown && !account) || (account && !ghSignedIn && !linkedKnown)) && chip.kind !== 'workspace' ? { label: 'Checking', tone: 'neutral' as const } : chip.kind === 'team' ? roleBadge(shownAccess, roleSignedIn, reviewer) : chip.badge;
   const badge = accessBusy && sessionKnown && !access && shownBadge.label === 'Checking' ? busyBadge(name ? roles[name.toLowerCase()] : null) : shownBadge;
+  // Say it once: the account row at the foot of the nav already names the person's role on this team (AccountMenu.tsx,
+  // or the GitHub block for an email member and the played developer), so the trigger shows only the team's name.
+  const rowRole = accountRowSaysRole({
+    account: Boolean(account),
+    accountTeamRole: !workspace && hosted && name ? (account?.teams.find((t) => sameRepo(t.repo, name))?.role ?? null) : null,
+    ...blockRole,
+  });
+  const showBadge = chipShowsBadge(badge.label, rowRole);
   const offerTeams = launcher || hosted;
   // "Your teams": the teams the signed-in person belongs to (their role known in this browser), the one you are on first
   // with a check and your role. The browser workspace shows only while you are in it or have no team of your own; from
@@ -402,14 +415,18 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
           )}
           <span className="tc-text">
             {/* Named by what it shows (WCAG 2.5.3: voice control finds it by its visible text): the team's name and the
-                role, never its repository, then a hidden "team menu". The avatar is decorative, out of the name. */}
+                badge when it shows, never its repository, then a hidden "team menu". The avatar is decorative, out of the name. */}
             <span className="tc-name" title={chip.title}>
               {chip.name}
             </span>
-            <VisuallyHidden>,</VisuallyHidden>{' '}
-            <Badge size="sm" tone={badge.tone} dot className="tc-badge">
-              {badge.label}
-            </Badge>
+            {showBadge && (
+              <>
+                <VisuallyHidden>,</VisuallyHidden>{' '}
+                <Badge size="sm" tone={badge.tone} dot className="tc-badge">
+                  {badge.label}
+                </Badge>
+              </>
+            )}
             <VisuallyHidden>, team menu</VisuallyHidden>
           </span>
           <Icon icon={ChevronsUpDown} size="sm" className="tc-chev" />

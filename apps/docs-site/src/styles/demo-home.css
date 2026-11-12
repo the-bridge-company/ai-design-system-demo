@@ -34,18 +34,44 @@
   gap: var(--space-2);
 }
 
+/* The DS Button (size sm, its own padding and end chevron) holds one label span: "See it as", the face, then the name
+   and what they do. A flex row centred on one axis, never the text baseline, so the face sits level with the words.
+   The chevron keeps the same step from the words as the face. */
 .see-as-trigger {
   gap: var(--space-2);
 }
 
+.see-as-trigger > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .see-as-label {
-  margin-inline-end: var(--space-1);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-regular);
 }
 
+.see-as-face {
+  flex: none;
+}
+
+.see-as-person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  white-space: nowrap;
+}
+
 .see-as-name {
   font-weight: var(--font-weight-semibold);
+}
+
+.see-as-role {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
 }
 
 .see-as-menu {

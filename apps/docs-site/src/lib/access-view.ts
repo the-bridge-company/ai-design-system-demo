@@ -6,6 +6,7 @@
 // "set up", never collaborator, installation, permission scopes or tokens.
 
 import { CONTRIBUTE_WORDS } from './contribute';
+import { ROLE_WORDS } from './invites';
 import type { ChangesMode, RepoAccessState } from '@bridge-ds/core';
 import { isDemoRepo, isSampleTeam, teamDisplayName } from './demo';
 
@@ -360,6 +361,42 @@ export function roleBadge(state: RepoAccessState | null, signedIn: boolean, revi
  */
 export function busyBadge(lastRole: string | null | undefined): { label: string; tone: ChipTone } {
   return { label: lastRole?.trim() || 'Signed in', tone: 'neutral' };
+}
+
+/** What the account row at the foot of the side nav shows, as far as the team chip needs to know. */
+export interface AccountRowFacts {
+  /** Signed in with a Bridge account: its row (AccountMenu.tsx) replaces the GitHub block. */
+  account: boolean;
+  /** That account's role on this team page (its teams list), null when it is not a member or the page reads no team. */
+  accountTeamRole: string | null;
+  /** No Bridge account, and the GitHub block's viewer is an email member of this team: its second line is their role. */
+  emailMember: boolean;
+  /** No Bridge account, and a visitor plays the sample team's developer: the block's second line is his role. */
+  castDeveloper: boolean;
+}
+
+/**
+ * Whether the account row says the person's role on this team (the same rules as AccountMenu.tsx and
+ * scripts/github-session.ts paint): a Bridge account that belongs to the team, else an email member or the played
+ * developer in the GitHub block. A GitHub sign-in alone shows the team's name there, a Bridge account outside the team
+ * its email.
+ */
+export function accountRowSaysRole(f: AccountRowFacts): boolean {
+  if (f.account) return Boolean(f.accountTeamRole?.trim());
+  return f.emailMember || f.castDeveloper;
+}
+
+/** The words of a role on a team (lib/invites ROLE_WORDS): what the account row says. */
+const ROLE_LABELS = new Set(Object.values(ROLE_WORDS).map((w) => w.label));
+
+/**
+ * Whether the team chip's trigger shows its badge. Say it once: when the account row already says the person's role,
+ * a role on the chip ("Admin", "Can edit", "Reviewer", "Can view") is left out. Any other badge stays, it says what the
+ * row does not: "Checking" or "Signed in" while the access is read, "Explore freely" or "Guest" for a visitor, "Not
+ * set up", "No access". The teams list in the chip's menu keeps every role: there it tells one team from another.
+ */
+export function chipShowsBadge(label: string, rowSaysRole: boolean): boolean {
+  return !rowSaysRole || !ROLE_LABELS.has(label.trim());
 }
 
 /** The design system the self-hosted site shows to everyone: Bridge's own. */

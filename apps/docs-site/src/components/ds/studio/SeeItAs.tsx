@@ -1,10 +1,10 @@
 // "See it as" on the sample team's banner (DemoBanner.tsx): one menu of the team's five people, each with their face
-// and what they do in plain words. Picking one shows Studio again as that person (scripts/demo-cast.ts playCast):
+// and what they do in plain words. The switch names the person played and what they do (lib/demo-cast castRole). Picking one shows Studio again as that person (scripts/demo-cast.ts playCast):
 // their home, their gates, their words. Only on the sample team, only for a visitor (lib/demo-cast.ts).
 import { ChevronDown } from 'lucide-react';
-import { Button, Icon, Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
+import { Button, Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
 import { Who } from './faces';
-import { CAST_WORDS, SAMPLE_CAST, castFaceLogin, castPerson, type CastKey, type CastPerson } from '../../../lib/demo-cast';
+import { CAST_WORDS, SAMPLE_CAST, castFaceLogin, castPerson, castRole, type CastKey, type CastPerson } from '../../../lib/demo-cast';
 
 export interface SeeItAsProps {
   /** Who the page plays now. */
@@ -20,12 +20,15 @@ export function SeeItAs({ current, onPick }: SeeItAsProps) {
   const now = castPerson(current) ?? SAMPLE_CAST[0]!;
   return (
     <Menu>
-      <MenuTrigger render={<Button variant="ghost" size="sm" className="see-as-trigger" />}>
+      {/* One row on one axis (styles/demo-home.css): "See it as", the face, the name and what they do, then the DS
+          Button's own end icon. Named by its visible text (WCAG 2.5.3). */}
+      <MenuTrigger render={<Button variant="ghost" size="sm" iconEnd={ChevronDown} className="see-as-trigger" />}>
         <span className="see-as-label">{CAST_WORDS.seeItAs}</span>
-        <Who p={face(now)} size="xs" />
-        <span className="see-as-name">{now.name}</span>
-        <VisuallyHidden>, {now.job}</VisuallyHidden>
-        <Icon icon={ChevronDown} size="sm" />
+        <Who p={face(now)} size="xs" className="see-as-face" />
+        <span className="see-as-person">
+          <span className="see-as-name">{now.name}</span>
+          <VisuallyHidden>,</VisuallyHidden> <span className="see-as-role">{castRole(now)}</span>
+        </span>
       </MenuTrigger>
       <MenuContent className="see-as-menu" align="end">
         <MenuRadioGroup label={CAST_WORDS.menuTitle} value={now.key} onValueChange={(v) => v !== now.key && castPerson(v) && onPick(castPerson(v)!.key)}>

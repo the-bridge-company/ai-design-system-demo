@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_MEMBERS, DEMO_PM, RETIRED_DEMO_MEMBERS } from '../../api/_lib/demo-members';
 import { memberRef } from '../../api/_lib/exploration-member';
-import { CAST_PARAM, CAST_WORDS, DEFAULT_CAST, SAMPLE_CAST, castAccess, castFaceLogin, castGitHub, castPerson, chooseCast, isCastLogin, onlySamplePeople, playedMember } from './demo-cast';
+import { CAST_PARAM, CAST_WORDS, DEFAULT_CAST, SAMPLE_CAST, castAccess, castFaceLogin, castGitHub, castPerson, castRole, chooseCast, isCastLogin, onlySamplePeople, playedMember } from './demo-cast';
 import { emailMemberFace } from './people';
 import type { ContributeMember } from './contribute';
 
@@ -104,5 +104,12 @@ describe('onlySamplePeople', () => {
 describe('castGitHub', () => {
   it('draws the developer: no GitHub photo', () => {
     expect(castGitHub(castPerson('malik')!)?.avatar_url).toBe('');
+  });
+});
+
+describe('castRole', () => {
+  it('names what each person does in the words of their job', () => {
+    expect(SAMPLE_CAST.map((p) => `${p.name} ${castRole(p)}`)).toEqual(['Dana Design lead', 'Sofia Designer', 'Leo Designer', 'Malik Developer', 'Ann Product manager']);
+    for (const p of SAMPLE_CAST) expect(p.job.startsWith(castRole(p))).toBe(true);
   });
 });

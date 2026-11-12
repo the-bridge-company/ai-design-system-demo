@@ -3,12 +3,14 @@
 // fits, the hook lays it in, the flag rises, it reads "kept" and a cart crosses. Motion and colors: styles/sign-in-scene.css.
 // Decorative: the zone's words say the same. Reduced motion: the bridge closed, nothing moves.
 import '../../../styles/sign-in-scene.css';
+import { useSceneRest } from '../../../lib/scene-rest';
 
 const wave = (x: number, y: number, n: number) => `M${x} ${y}` + 'q20 -5 40 0t40 0'.repeat(n);
 
 export function SignInScene() {
+  const still = useSceneRest();
   return (
-    <svg className="ss" fill="none" stroke="currentColor" viewBox="0 250 760 594" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+    <svg className="ss" data-still={still ? '' : undefined} fill="none" stroke="currentColor" viewBox="0 250 760 594" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
       <g className="ss-cloud">
         <path data-paper d="M560 322Q552 306 571 303Q576 286 597 291Q610 278 626 291Q646 288 646 308Q656 322 637 322Z" />
       </g>

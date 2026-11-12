@@ -11,7 +11,10 @@ import { demoActionLine, DEMO_WORDS } from '../lib/demo';
 
 const SAMPLE = 'acme-design-demo/bridge-demo-ds';
 
-beforeAll(() => {
+beforeAll(async () => {
+  // The gate loads the dialog on first use; a cold load of its component graph takes seconds in jsdom. Load it once
+  // here so each case times the click and the dialog, not the first import.
+  await import('../components/ds/studio/MakeItYours');
   bindDemoGate({ repo: () => SAMPLE, login: () => 'dana@acme.example', write: () => false, signIn: () => false, known: () => true, visitor: () => true, subscribe: () => {} });
 });
 

@@ -10,8 +10,8 @@
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, Tooltip, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -420,9 +420,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
       <span>{what}</span>
       {kind && (
         <>
-          <span className="lr-eyebrow-sep" aria-hidden="true">
-            ·
-          </span>
+          <Sep />
           <span>{kind}</span>
         </>
       )}
@@ -844,11 +842,7 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
   return (
     <div className="lr-one">
       <div className="lr-compact">
-        <IconButton icon={ChevronLeft} label="Previous piece" variant="secondary" size="md" disabled={at <= 0} onClick={() => go(-1)} />
-        <span className="lr-compact-count">
-          {at + 1} of {all.length}
-        </span>
-        <IconButton icon={ChevronRight} label="Next piece" variant="secondary" size="md" disabled={at >= all.length - 1} onClick={() => go(1)} />
+        <Pagination variant="compact" size="md" aria-label="Pieces, one by one" pageCount={all.length} page={at + 1} onPageChange={(n) => go(n - 1 - at)} />
         <Button variant="ghost" size="md" className="lr-compact-all" aria-expanded={listOpen} aria-controls="lr-side" onClick={() => setListOpen((o) => !o)}>
           {listOpen ? 'Hide pieces' : 'All pieces'}
         </Button>
@@ -1760,15 +1754,19 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
             )}
           </div>
           {!v.reviews && (
-            <aside className="lr-banner" aria-label="Who decides">
-              <NameFace name={data.lead ?? 'Design lead'} size="sm" />
-              <p className="lr-banner-text">
-                <strong>{banner.strong}</strong> {banner.rest}
-              </p>
-              <Link href={links.howItWorks} className="lr-banner-link">
-                How library review works
-              </Link>
-            </aside>
+            <Banner
+              appearance="neutral"
+              className="lr-banner"
+              title={
+                <span className="lr-banner-title">
+                  <NameFace name={data.lead ?? 'Design lead'} size="xs" />
+                  {banner.strong}
+                </span>
+              }
+              actions={<Link href={links.howItWorks}>How library review works</Link>}
+            >
+              {banner.rest}
+            </Banner>
           )}
           {data.loading && !shown.length ? (
             <Skeleton variant="rect" className="lr-skel" />
@@ -1803,30 +1801,66 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
           )}
         </>
       )}
-      <div className="lr-toasts" aria-live="polite">
-        {pending.map((x) => (
-          <p key={x.key} className="lr-toast">
-            <span>{x.line}</span>
-            <Button variant="ghost" size="sm" onClick={() => undo(x.key)}>
-              Undo
-            </Button>
-          </p>
-        ))}
-        {notice && !pending.length && (
-          <p className="lr-toast">
-            <span>{notice}</span>
-            <Button variant="ghost" size="sm" onClick={() => setNotice(null)}>
-              Close
-            </Button>
-          </p>
-        )}
-      </div>
+      <DecisionToasts pending={pending} notice={notice} onUndo={undo} onCloseNotice={() => setNotice(null)} />
       {view === 'list' && sel.length > 0 && <SelectionBar pieces={sel} busy={busy} onKeep={() => batch('keep')} onAdd={() => batch('add')} onClear={() => setSelected(new Set())} />}
     </div>
     </FaceNames.Provider>
   );
 }
 
+
+/**
+ * What was just decided, as DS toasts: one per decision with Undo while it waits to be sent (it closes when sent or
+ * undone), then the line the send answered, until closed.
+ */
+function DecisionToasts(props: { pending: Pending[]; notice: string | null; onUndo: (key: string) => void; onCloseNotice: () => void }) {
+  return (
+    <ToastProvider limit={3}>
+      <DecisionToastSync {...props} />
+    </ToastProvider>
+  );
+}
+
+function DecisionToastSync({ pending, notice, onUndo, onCloseNotice }: { pending: Pending[]; notice: string | null; onUndo: (key: string) => void; onCloseNotice: () => void }) {
+  const api = useToast();
+  const shown = useRef(new Set<string>());
+  const undoRef = useRef(onUndo);
+  undoRef.current = onUndo;
+  const closeRef = useRef(onCloseNotice);
+  closeRef.current = onCloseNotice;
+  useEffect(() => {
+    const now = new Set(pending.map((x) => `lr-pending-${x.key}`));
+    for (const id of shown.current) if (!now.has(id)) api.close(id);
+    for (const x of pending) {
+      const id = `lr-pending-${x.key}`;
+      if (shown.current.has(id)) api.update(id, { title: x.line });
+      else api.add({ id, title: x.line, timeout: 0, action: { label: 'Undo', onClick: () => undoRef.current(x.key) } });
+    }
+    shown.current = now;
+  }, [pending, api]);
+  const showNotice = notice && !pending.length ? notice : null;
+  const noticeOpen = useRef(false);
+  useEffect(() => {
+    if (!showNotice) {
+      if (noticeOpen.current) api.close('lr-notice');
+      noticeOpen.current = false;
+      return;
+    }
+    if (noticeOpen.current) api.update('lr-notice', { title: showNotice });
+    else
+      api.add({
+        id: 'lr-notice',
+        title: showNotice,
+        timeout: 0,
+        onClose: () => {
+          noticeOpen.current = false;
+          closeRef.current();
+        },
+      });
+    noticeOpen.current = true;
+  }, [showNotice, api]);
+  return null;
+}
 
 /** The island: the page's data and writes (scripts/library-review-data.ts), the sample team's gate, the links. */
 export default function LibraryReview() {

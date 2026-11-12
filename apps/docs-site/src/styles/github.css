@@ -30,37 +30,6 @@
   color: var(--color-text-default);
 }
 
-.gh-dialog {
-  width: min(calc(var(--size-64) * 2), calc(100vw - var(--size-8)));
-  padding: 0;
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  box-shadow: var(--elevation-modal);
-}
-
-.gh-dialog::backdrop {
-  background-color: var(--color-overlay-scrim);
-}
-
-.gh-dialog-box {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-5) var(--space-6) var(--space-6);
-}
-
-.gh-dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.gh-dialog-head h2 {
-  margin: 0;
-  font-size: var(--typography-h3-size);
-}
-
 /* Body and footer row of a DS Dialog a script opens (components/ds/ScriptDialog.astro): stacked blocks, then the
    actions on one line with the secondary ones pushed to the start by .gh-spacer. */
 .gh-dialog-body {
@@ -84,12 +53,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-}
-
-.gh-dialog p {
-  margin: 0;
-  font-size: var(--typography-ui-size);
-  line-height: var(--font-line-height-normal);
 }
 
 .gh-steps {
@@ -139,13 +102,6 @@
   color: var(--color-feedback-danger-text);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
-}
-
-.gh-dialog-foot {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
 }
 
 .gh-spacer {

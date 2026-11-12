@@ -175,46 +175,6 @@
   color: var(--color-action-primary-text);
 }
 
-.deck-chips {
-  position: absolute;
-  left: 17%;
-  right: 17%;
-  top: 30%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1-5) var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.deck-chips li + li {
-  margin-top: 0;
-}
-
-.deck-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  min-width: 0;
-  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  box-shadow: var(--elevation-raised);
-}
-
-.deck-chip code {
-  overflow: hidden;
-  padding: 0;
-  background-color: transparent;
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .deck-swatch {
   width: var(--size-4);
   height: var(--size-4);
@@ -932,16 +892,6 @@
   .bank-icon {
     width: var(--size-6);
     height: var(--size-6);
-  }
-
-  .deck-chips {
-    left: 6%;
-    right: 6%;
-    top: 26%;
-  }
-
-  .deck-chip:nth-child(3) {
-    display: none;
   }
 
   .bank-left,

@@ -1,7 +1,7 @@
 // Changes > pull request > Visual impact: reads the manifest the visual impact workflow published for the head
 // commit, then shows each changed story or screen with a before/after slider and a diff toggle. Returns what the
 // collapsed section header shows: the number of changed screens and a small before/after thumbnail.
-import { badgeHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, bindSegmentedControls, segmentedControlHtml } from '@bridge-ds/react/dom';
 import { hasVisualWorkflow, VISUAL_CHECK_LABEL, VISUAL_CHECKS_DOCS } from '@bridge-ds/core';
 import { changeLabel, facet, filterShots, modeLabel, VISUAL_BRANCH, visualAsk, visualBase, visualState, type VisualFilter, type VisualManifest, type VisualShot } from '../../lib/visual-impact';
 import { attrUrl } from '../../lib/html';
@@ -128,10 +128,12 @@ export async function loadVisualImpact(
   const shots = state.shots;
   const filter: VisualFilter = { brand: 'all', theme: 'all', kind: 'all' };
   let shown = PAGE;
+  // The DS SegmentedControl (its DOM renderer): one choice per facet, arrow keys move it (bindSegmentedControls).
   const seg = (name: keyof VisualFilter, label: string, opts: [string, string][]) =>
-    `<div class="vi-filter"><span class="vi-filter-label" id="vi-f-${name}">${label}</span><div class="rv-seg" role="group" aria-labelledby="vi-f-${name}">${opts
-      .map(([v, t]) => `<button type="button" data-f="${name}" data-v="${esc(v)}" aria-pressed="${filter[name] === v}">${esc(t)}</button>`)
-      .join('')}</div></div>`;
+    `<div class="vi-filter"><span class="vi-filter-label" id="vi-f-${name}">${label}</span>${segmentedControlHtml(
+      opts.map(([v, t]) => ({ value: v, label: t.charAt(0).toUpperCase() + t.slice(1) })),
+      { value: filter[name], size: 'sm', attributes: { 'aria-labelledby': `vi-f-${name}`, 'data-f': name } },
+    )}</div>`;
   const kinds = new Set(shots.map((s) => s.kind));
   slot.innerHTML = `${head}
     <div class="vi-filters">
@@ -152,14 +154,18 @@ export async function loadVisualImpact(
     more.hidden = visible.length <= shown;
     wire(list);
   };
-  slot.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-f]');
-    if (b) {
-      filter[b.dataset.f as keyof VisualFilter] = b.dataset.v as never;
-      slot.querySelectorAll<HTMLButtonElement>(`[data-f="${b.dataset.f}"]`).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      shown = PAGE;
-      render();
-    }
+  // Once per slot: a second binding would move the selection twice per arrow key.
+  if (!slot.hasAttribute('data-vi-bound')) {
+    slot.setAttribute('data-vi-bound', '');
+    bindSegmentedControls(slot);
+  }
+  slot.addEventListener('change', (e) => {
+    const group = (e.target as HTMLElement).closest<HTMLElement>('[data-segmented-control][data-f]');
+    const v = group?.querySelector<HTMLElement>('[data-segment][aria-checked="true"]')?.dataset.value;
+    if (!group || v === undefined) return;
+    filter[group.dataset.f as keyof VisualFilter] = v as never;
+    shown = PAGE;
+    render();
   });
   more.addEventListener('click', () => {
     shown += PAGE;
@@ -286,7 +292,7 @@ function shotCard(s: VisualShot, base: string, meta: string = modeLabel(s)): str
           ${s.images.diff ? `<img class="vi-img vi-diffimg" src="${esc(url(s.images.diff))}" alt="Changed pixels: ${esc(alt)}" loading="lazy" hidden />` : ''}
           <div class="vi-boxes" aria-hidden="true">${boxes}</div>
           <span class="vi-handle" aria-hidden="true"></span>
-          <span class="vi-tag is-before" aria-hidden="true">Before</span><span class="vi-tag is-after" aria-hidden="true">After</span>
+          ${badgeHtml('Before', { appearance: 'solid', className: 'vi-tag is-before', attributes: { 'aria-hidden': 'true' } })}${badgeHtml('After', { appearance: 'solid', className: 'vi-tag is-after', attributes: { 'aria-hidden': 'true' } })}
         </div>
         <div class="vi-controls">
           <label class="vi-range"><span>Before</span><input type="range" min="0" max="100" value="${START}" aria-label="Before and after: drag to compare ${esc(alt)}" /><span>After</span></label>

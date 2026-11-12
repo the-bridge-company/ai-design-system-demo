@@ -9,7 +9,7 @@
 // this browser, like every other edit there. Repo content is React text only; links go through safeUrl.
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, Code, Download, ExternalLink, ImageOff, Maximize2, Send } from 'lucide-react';
-import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
+import { Accordion, AccordionItem, Badge, Button, Card, CardBody, Dialog, DialogContent, DialogTrigger, Icon, Link, Tab, Tabs, TabsList, TabsPanel, Textarea, ToastProvider, TokenValue, useToast } from '@bridge-ds/react';
 import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf, type AuditIgnore } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -305,7 +305,7 @@ function DevFold({ summary, fix, use, places }: { summary: string; fix?: PieceRo
                 <span className="ar-muted">:{p.line}</span>
               </span>
               <span className="ar-place-what">
-                <code className="ar-tag">{p.what}</code> <span className="ar-muted">{p.from}</span>
+                <TokenValue size="sm" value={p.what} /> <span className="ar-muted">{p.from}</span>
               </span>
               {p.href ? (
                 <Link href={safeUrl(p.href, '#')} {...external} className="ar-place-go">
@@ -550,14 +550,14 @@ function ValueItem({ row, actions }: { row: ValueRow; actions: ReportActions }) 
           <li key={p.value}>
             {isColor && <Swatch color={p.color} label={p.name} />}
             <span>{isColor ? p.name : 'As written'}</span>
-            <code className="ar-tag">{p.value}</code>
+            <TokenValue size="sm" value={p.value} swatch={isColor ? false : undefined} />
             <span className="ar-muted">{row.group.values.find((v) => v.value === p.value)?.count ?? 0}×</span>
           </li>
         ))}
       </ul>
       {row.library && (
         <p className="ar-callout">
-          <strong>Use the library's {row.library.name}</strong> <code className="ar-tag">{row.library.token}</code> {row.library.value}
+          <strong>Use the library's {row.library.name}</strong> <TokenValue size="sm" name={row.library.token} value={row.library.value} />
           {row.match.tone === 'warning' ? '. It is close, not the same: check it means the same thing first.' : '.'}
         </p>
       )}

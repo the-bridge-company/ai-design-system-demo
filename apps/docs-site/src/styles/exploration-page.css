@@ -1331,20 +1331,12 @@
   transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-.xp-shotlink-pill {
+/* The DS Button (secondary, on a span) and the DS Tag, placed on the capture: position and reveal only. */
+.xp-shotlink .xp-shotlink-pill {
   position: absolute;
   inset-block-start: 50%;
   inset-inline-start: 50%;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  box-shadow: var(--elevation-raised);
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   opacity: 0;
   transform: translate(-50%, -50%);
@@ -1352,20 +1344,12 @@
   pointer-events: none;
 }
 
-.xp-shotlink-chip {
+.xp-shotlink .xp-shotlink-chip {
   position: absolute;
   inset-block-end: var(--space-2);
   inset-inline-end: var(--space-2);
   z-index: 1;
   display: none;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-0-5) var(--space-2);
-  border: var(--border-width-1) solid var(--color-border-default);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
 }
 
 .xp-shotlink:focus-visible {
@@ -1391,7 +1375,7 @@
 }
 
 @media (hover: none) {
-  .xp-shotlink-chip {
+  .xp-shotlink .xp-shotlink-chip {
     display: inline-flex;
   }
 }

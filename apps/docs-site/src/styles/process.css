@@ -271,16 +271,6 @@
   margin: 0;
 }
 
-.announce-avatar {
-  display: grid;
-  place-items: center;
-  width: var(--size-9);
-  height: var(--size-9);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-}
-
 .announce-body {
   position: relative;
   max-width: calc(var(--size-180) + var(--size-4));
@@ -506,15 +496,6 @@
   border-radius: var(--radius-control);
   background-color: var(--tone);
   color: var(--color-surface-default);
-}
-
-.rule-count {
-  padding: 0 var(--space-1-5);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
 }
 
 .rule-list {

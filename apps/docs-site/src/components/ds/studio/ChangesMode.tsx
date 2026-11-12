@@ -12,6 +12,7 @@ import { currentViewer, getToken, initGitHubConnect, prefersSignIn, type Viewer 
 import { proposeChangesMode, readAppPermissions } from '../../../scripts/roles';
 import { studioHref } from '../../../lib/team-path';
 import { DevFold } from './SettingsParts';
+import { SEP } from '../../../lib/sep';
 
 function ChoiceText({ mode }: { mode: ChangesMode }) {
   const c = CHANGES_CHOICE[mode];
@@ -212,7 +213,8 @@ export default function ChangesModeSetting({ set, repo, prefix, protectedBranche
               <strong>Sent for review.</strong> It applies once your team approves it.
             </p>
             <p>
-              <Link href={studioHref(`explorations/?pr=${done.number}`)}>See the change</Link> ·{' '}
+              <Link href={studioHref(`explorations/?pr=${done.number}`)}>See the change</Link>
+              {SEP}
               <Link href={done.url} external>
                 {VOCAB.openOnGitHub}
               </Link>

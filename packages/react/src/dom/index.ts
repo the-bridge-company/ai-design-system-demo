@@ -15,6 +15,8 @@ export { tooltipAttributes, tooltipHtmlAttributes, bindTooltips, type TooltipAtt
 export { codeBlockHtml, bindCodeBlocks, type CodeBlockHtmlOptions } from './code-block';
 export { tokenValueHtml, type TokenValueHtmlOptions } from './token-value';
 export { checklistHtml, checklistRowHtml, type ChecklistHtmlOptions, type ChecklistRowHtmlOptions } from './checklist';
+export { segmentedControlHtml, bindSegmentedControls, selectSegment, type SegmentHtmlItem, type SegmentedControlHtmlOptions } from './segmented-control';
+export { switchHtml, bindSwitches, setSwitchChecked, type SwitchHtmlOptions } from './switch';
 export { dialogHtml, bindDialogs, openDialog, closeDialog, isDialogOpen, dialogReturnValue, type DialogHtmlOptions, type OpenDialogOptions } from './dialog';
 export { copyText } from '../utils/copy';
 export type { BadgeTone, BadgeAppearance, BadgeSize } from '../components/Badge';
@@ -23,3 +25,5 @@ export type { ChecklistStatus } from '../components/Checklist';
 export type { TokenValueSize } from '../components/TokenValue';
 export type { TooltipSide } from '../components/Tooltip';
 export type { DialogSize } from '../components/Dialog';
+export type { SwitchSize, SwitchLabelPlacement } from '../components/Switch';
+export type { SegmentedControlSize, SegmentedControlAppearance } from '../components/SegmentedControl';

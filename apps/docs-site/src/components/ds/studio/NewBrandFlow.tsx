@@ -579,7 +579,7 @@ function ColorField({ label, description, value, onChange, swatches, mark, warni
           onValueChange={onChange}
           spellCheck={false}
           autoComplete="off"
-          prefix={<span className="nb-chip" style={{ background: valid ?? 'transparent' }} aria-hidden="true" />}
+          prefix={<span className="nb-hex-swatch" style={{ background: valid ?? 'transparent' }} aria-hidden="true" />}
           error={valid ? undefined : 'Use a 6-digit hex, for example 1F5F3A.'}
           className="nb-hex"
         />

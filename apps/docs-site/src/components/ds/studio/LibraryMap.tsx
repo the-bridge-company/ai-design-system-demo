@@ -6,7 +6,7 @@
 // one piece. Read only: the list under it has no checkboxes and no decision. The curves are measured from the boxes once laid out, so
 // they follow any width and any number of boxes. Styles: styles/library-review.css (lr-map-*).
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Button } from '@bridge-ds/react';
+import { Badge, Button } from '@bridge-ds/react';
 import { buildMap, focusOf, mapLinkId, mapListOf, readMapFocus, withMapFocus, type MapGraph } from '../../../lib/library-map';
 import type { ReachProductInput } from '../../../lib/library-reach';
 import type { ReviewPiece, Viewer } from '../../../lib/library-review';
@@ -156,9 +156,9 @@ export function MapView({ pieces, products, viewer, list }: { pieces: ReviewPiec
                 {focus.line.before}
                 <strong>{focus.line.strong}</strong>
                 {focus.line.after}
-                <span className="lr-muted lr-map-focus-count">
+                <Badge tone="neutral" size="sm" className="lr-map-focus-count">
                   {shown.length} of {pieces.length}
-                </span>
+                </Badge>
               </p>
               <Button variant="link" onClick={showAll}>
                 Show all {pieces.length}

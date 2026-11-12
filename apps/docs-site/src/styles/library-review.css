@@ -56,28 +56,12 @@ html:has(.lr) {
   color: var(--color-text-muted);
 }
 
-/* --- The designer's banner: who decides, nothing to do meanwhile --------------------------------------------------- */
+/* --- The designer's banner (DS Banner, neutral): the lead's face on the title's line ------------------------------ */
 
-.lr-banner {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+.lr-banner-title {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-container);
-  background-color: var(--color-signal-subtle);
-}
-
-.lr-banner-text {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
-}
-
-.lr-banner-text strong {
-  color: var(--color-text-default);
-  font-weight: var(--font-weight-semibold);
+  gap: var(--space-2);
 }
 
 /* --- The exploration chip: the exploration and its product, one click to its page ---------------------------------- */
@@ -1001,37 +985,6 @@ a.lr-ask {
   line-height: var(--typography-body-line-height);
 }
 
-/* --- What was just decided, with Undo while it waits to be sent --------------------------------------------------- */
-
-.lr-toasts {
-  position: fixed;
-  inset-block-end: var(--space-7);
-  inset-inline-end: var(--space-6);
-  z-index: var(--layer-toast);
-  display: grid;
-  gap: var(--space-2);
-}
-
-.lr-toast {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-overlay);
-  background-color: var(--color-surface-inverse);
-  box-shadow: var(--elevation-overlay);
-  color: var(--color-text-inverse);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-
-  --button-ghost-text: var(--color-text-inverse);
-}
-
-body:has(.lr-bar) .lr-toasts {
-  inset-block-end: calc(var(--size-16) + var(--space-10));
-}
-
 .lr-notice {
   margin: 0;
   color: var(--color-feedback-danger-text);
@@ -1116,14 +1069,6 @@ body:has(.lr-bar) .lr-toasts {
   .lr-plate-art {
     min-height: var(--size-20);
     padding: var(--space-3);
-  }
-
-  .lr-banner {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .lr-banner-link {
-    grid-column: 2;
   }
 
   /* A chapter on a phone: its head wraps (what it reaches on its own line), no column header, the rail on top. */
@@ -1242,11 +1187,6 @@ body:has(.lr-bar) .lr-toasts {
   .lr-empty-art {
     max-inline-size: var(--size-60);
   }
-
-  .lr-toasts {
-    inset-inline: var(--space-4);
-    inset-block-end: var(--space-4);
-  }
 }
 
 /* --- Samples: one side of a piece, drawn from its data -------------------------------------------------------------- */
@@ -1352,12 +1292,6 @@ body:has(.lr-bar) .lr-toasts {
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
     border-block-end: var(--border-width-default) solid var(--color-border-default);
-  }
-
-  .lr-compact-count {
-    min-width: var(--size-16);
-    font-weight: var(--font-weight-semibold);
-    text-align: center;
   }
 
   .lr-compact-all {
@@ -1674,8 +1608,6 @@ body:has(.lr-bar) .lr-toasts {
 
 .lr-map-focus-count {
   margin-inline-start: var(--space-2);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
 }
 
 /* --- Who gets it, the page (lr-reach) ------------------------------------------------------------------------------- */

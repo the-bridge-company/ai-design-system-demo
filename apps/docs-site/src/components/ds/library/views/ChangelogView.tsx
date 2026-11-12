@@ -3,10 +3,9 @@
 // the title at full width, one line on what it means, a small meta line (bump, packages); the rest of a long release
 // and the internal changes fold. An announcement per release, ready to paste. Bridge's own page (pages/changelog.astro)
 // renders it from its CHANGELOG.md files as a hydrated island; a team's Library from its snapshot's releases.
-import { Badge, Button, EmptyState, Icon, Link, Tag } from '@bridge-ds/react';
+import { Avatar, Badge, Button, EmptyState, Link, Tag } from '@bridge-ds/react';
 import { Clock, Copy } from 'lucide-react';
 import { shortPackage, type ChangelogEntry } from '@bridge-ds/core';
-import { siteIcon } from '../../../../brand/site-icons';
 import { mdTitleHtml } from '../../../../lib/markdown';
 import { VOCAB } from '../../../../lib/vocabulary';
 import { humanDate } from '../../../../lib/library/stats';
@@ -108,9 +107,8 @@ export default function ChangelogView({ data }: { data: ChangelogData }) {
 
                 <div className="announce">
                   <div className="announce-head">
-                    <span className="announce-avatar" aria-hidden="true">
-                      <Icon icon={siteIcon('agent')} size="md" className="icon" />
-                    </span>
+                    {/* The Bridge agent mark (the DS agent preset), decorative: the heading names the block. */}
+                    <Avatar kind="agent" brand="claude" size="md" decorative />
                     <div>
                       <h3 id={`a-${slug(r.name)}`}>Announcement</h3>
                       <p className="muted small">Ready to paste into Slack, Teams or an email.</p>

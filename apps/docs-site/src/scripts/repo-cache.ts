@@ -8,6 +8,7 @@
 // do nothing; the caller then reads from GitHub as if the cache were cold.
 
 import type { BlobCache, RepoModel } from '@bridge-ds/core';
+import { KEPT_VERSION } from '../lib/kept-version';
 
 export const CACHE_DB = 'bridge-repo-cache';
 const DB_VERSION = 1;
@@ -34,7 +35,15 @@ export interface ModelEntry {
   /** Read from a private repository: removed on sign-out. */
   private: boolean;
   model: RepoModel;
+  /**
+   * The shape and app build that kept it (lib/kept-version.ts). A model kept by another build is never read: the same
+   * commit read by newer code may give another model (statuses, settings read differently).
+   */
+  v?: string;
 }
+
+/** Whether a kept entry was kept by this build in this shape, with a full model (one read of global stylesheets). Pure. */
+export const usableEntry = (e: Pick<ModelEntry, 'model'> & { v?: string } | undefined, version: string = KEPT_VERSION): boolean => Boolean(e?.model && 'styles' in e.model && e.v === version);
 
 interface BlobEntry {
   key: string;
@@ -120,10 +129,13 @@ export function getCachedModel(repo: string, sha: string): Promise<RepoModel | u
     const tx = d.transaction(MODELS, 'readwrite');
     const store = tx.objectStore(MODELS);
     const hit = (await done(store.get(modelKey(repo, sha)))) as ModelEntry | undefined;
-    if (hit) store.put({ ...hit, at: Date.now() });
+    // A model cached before the model read global stylesheets has no `styles`, or kept by another build: dropped, the
+    // repository is read again.
+    const usable = usableEntry(hit);
+    if (hit && usable) store.put({ ...hit, at: Date.now() });
+    else if (hit) store.delete(hit.key);
     await committed(tx);
-    // A model cached before the model read global stylesheets has no `styles`: read the repository again.
-    return hit?.model && 'styles' in hit.model ? hit.model : undefined;
+    return usable ? hit!.model : undefined;
   });
 }
 
@@ -139,9 +151,9 @@ export function getLatestCachedModel(repo: string): Promise<{ model: RepoModel; 
   });
 }
 
-/** The most recently used entry that still carries a full model (the rule of getCachedModel). Pure. */
-export function latestEntry<E extends Pick<ModelEntry, 'at' | 'model'>>(entries: readonly E[]): E | undefined {
-  return [...entries].filter((e) => e.model && 'styles' in e.model).sort((a, b) => b.at - a.at)[0];
+/** The most recently used entry that still carries a full model, kept by this build (the rule of getCachedModel). Pure. */
+export function latestEntry<E extends Pick<ModelEntry, 'at' | 'model'> & { v?: string }>(entries: readonly E[], version: string = KEPT_VERSION): E | undefined {
+  return [...entries].filter((e) => usableEntry(e, version)).sort((a, b) => b.at - a.at)[0];
 }
 
 /** Keeps `model` for `repo` at `sha`, then drops what is over the limits (with the bodies of dropped repositories). */
@@ -149,7 +161,7 @@ export function putCachedModel(repo: string, sha: string, model: RepoModel, opts
   return withDb(undefined, async (d) => {
     const tx = d.transaction([MODELS, BLOBS], 'readwrite');
     const models = tx.objectStore(MODELS);
-    const entry: ModelEntry = { key: modelKey(repo, sha), repo: repoKey(repo), sha, at: Date.now(), private: opts.private, model };
+    const entry: ModelEntry = { key: modelKey(repo, sha), repo: repoKey(repo), sha, at: Date.now(), private: opts.private, model, v: KEPT_VERSION };
     models.put(entry);
     const all = (await done(models.getAll())) as ModelEntry[];
     const drop = planEviction(all);

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildSnapshot, GitHubClient, loadRepoModel, recordingSource, type FetchLike, type RepoModel, type RepoSnapshot } from '@bridge-ds/core';
-import { FALLBACK_REPO, keptSite, loadTeamModel, repoContext, repoFromPath, siteConfig, siteKeepKey, siteKnown, transientFailure, type ModelCache } from './repo-context';
-import { planEviction } from './repo-cache';
+import { FALLBACK_REPO, keptSite, loadTeamModel, noteTeamReadFailed, repoContext, repoFromPath, resetTeamReadFailures, siteConfig, siteKeepKey, siteKnown, transientFailure, type ModelCache } from './repo-context';
+import { latestEntry, planEviction, usableEntry } from './repo-cache';
+import { KEPT_VERSION, keptEnvelope } from '../lib/kept-version';
 import type { TeamLoadEvent } from '../lib/load-progress';
 
 const SHA = 'a'.repeat(40);
@@ -195,14 +196,80 @@ describe('loadTeamModel', () => {
   });
 
   it('a team never read here has no settings: siteKnown says so, so readers wait instead of painting the defaults', () => {
+    resetTeamReadFailures();
     page({ hosted: true, path: '/studio/nobody-read/this-team/' });
     expect(siteKnown()).toBe(false);
     expect(siteConfig()).toEqual({});
-    // Kept by an earlier visit: known, with its own name.
-    localStorage.setItem(siteKeepKey('nobody-read', 'this-team'), JSON.stringify({ name: 'Kept team', owner: 'nobody-read', repo: 'this-team', defaultBranch: 'main' }));
+    localStorage.setItem(siteKeepKey('nobody-read', 'this-team'), JSON.stringify(keptEnvelope({ name: 'Kept team', owner: 'nobody-read', repo: 'this-team', defaultBranch: 'main' })));
+    // Kept by an earlier visit, while this page's read is on its way: never the first paint (the page waits).
+    expect(siteKnown()).toBe(false);
+    expect(siteConfig()).toEqual({});
+    // This page's read failed: the kept settings stand in.
+    noteTeamReadFailed('nobody-read', 'this-team');
     expect(siteKnown()).toBe(true);
     expect(siteConfig()).toMatchObject({ name: 'Kept team' });
     localStorage.removeItem(siteKeepKey('nobody-read', 'this-team'));
+    resetTeamReadFailures();
+  });
+
+  it('kept settings from an older build or shape are ignored and dropped', () => {
+    resetTeamReadFailures();
+    page({ hosted: true, path: '/studio/old-copy/team/' });
+    noteTeamReadFailed('old-copy', 'team');
+    // Kept before versions (a bare object), and by another build.
+    localStorage.setItem(siteKeepKey('old-copy', 'team'), JSON.stringify({ name: 'Bare', owner: 'old-copy', repo: 'team' }));
+    expect(keptSite('old-copy', 'team')).toBeUndefined();
+    expect(localStorage.getItem(siteKeepKey('old-copy', 'team'))).toBeNull();
+    localStorage.setItem(siteKeepKey('old-copy', 'team'), JSON.stringify(keptEnvelope({ name: 'Other build', owner: 'old-copy', repo: 'team' }, '1:abc123')));
+    expect(keptSite('old-copy', 'team')).toBeUndefined();
+    expect(siteKnown()).toBe(false);
+    resetTeamReadFailures();
+  });
+
+  it('network answers: the live team, never the kept model nor the kept settings first', async () => {
+    resetTeamReadFailures();
+    page({ hosted: true, path: '/studio/acme/ds/' });
+    localStorage.setItem(siteKeepKey('acme', 'ds'), JSON.stringify(keptEnvelope({ name: 'Old name', owner: 'acme', repo: 'ds', defaultBranch: 'trunk' })));
+    const { client } = fakeRepo({ 'bridge.config.json': JSON.stringify({ ...JSON.parse(CONFIG), name: 'Live name' }) });
+    let askedLatest = false;
+    const cache = memoryCache();
+    const read = await loadTeamModel(client, {
+      cache: {
+        ...cache,
+        latest: async () => {
+          askedLatest = true;
+          return undefined;
+        },
+      },
+      components: false,
+    });
+    expect(read.source).toBe('live');
+    expect(read.busy).toBeUndefined();
+    expect(askedLatest).toBe(false);
+    expect(siteConfig()).toMatchObject({ name: 'Live name' });
+    localStorage.removeItem(siteKeepKey('acme', 'ds'));
+  });
+
+  it('network fails: the kept copy stands in, with the wait the page says (its quiet line)', async () => {
+    resetTeamReadFailures();
+    page({ hosted: true, path: '/studio/acme/ds/' });
+    const down = new GitHubClient('acme/ds', '', (async () => ({ ok: false, status: 502, headers: { get: () => null }, json: async () => ({}), text: async () => '' })) as unknown as FetchLike, { attempts: 1, baseDelayMs: 0, sleep: async () => {} }, { etags: false });
+    const { client } = fakeRepo({ 'bridge.config.json': JSON.stringify({ ...JSON.parse(CONFIG), name: 'Kept name' }) });
+    const first = await loadTeamModel(client, { cache: memoryCache(), components: false });
+    const kept = await loadTeamModel(down, { cache: { ...memoryCache(), latest: async () => ({ model: first.model, sha: SHA, private: false }) }, components: false });
+    expect(kept).toMatchObject({ source: 'cache', cached: true, busy: { source: 'bridge' } });
+    expect(siteKnown()).toBe(true);
+    localStorage.removeItem(siteKeepKey('acme', 'ds'));
+    resetTeamReadFailures();
+  });
+
+  it('a kept model of another build is never read: getCachedModel and the fallback skip it', () => {
+    const model = { styles: {} } as unknown as RepoModel;
+    expect(usableEntry({ model, v: KEPT_VERSION })).toBe(true);
+    expect(usableEntry({ model })).toBe(false);
+    expect(usableEntry({ model, v: '1:old' })).toBe(false);
+    expect(latestEntry([{ at: 2, model, v: '1:old' }, { at: 1, model, v: KEPT_VERSION }])?.at).toBe(1);
+    expect(latestEntry([{ at: 2, model, v: '1:old' }])).toBeUndefined();
   });
 
   it('transientFailure: a wait or an outage passes, a 404 or a refused sign-in does not', () => {

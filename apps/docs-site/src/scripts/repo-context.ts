@@ -29,6 +29,7 @@ import { blobCacheFor, getCachedModel, getLatestCachedModel, putCachedModel } fr
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { isHosted, repoFromPath } from '../lib/team-path';
 import { isSampleTeam } from '../lib/demo';
+import { keptEnvelope, keptValue } from '../lib/kept-version';
 import type { TeamLoadEvent } from '../lib/load-progress';
 
 export interface RepoContext {
@@ -101,31 +102,63 @@ export function repoContext(): RepoContext {
 export function siteConfig(): Partial<SiteRepo> {
   const team = hostedRepo();
   if (!team) return withAdded(embedded());
-  // Read this session, else as this browser last read it (keptSite): a team whose settings read fails now keeps its
-  // own name, products and owners, never the defaults (which look like another team: "Bridge demo ds", Admin demo).
-  const site = runtime.get(key(team.owner, team.repo))?.site ?? keptSite(team.owner, team.repo);
+  const site = currentSite(team.owner, team.repo);
   return site ? withAdded({ ...site, owner: team.owner, repo: team.repo }) : {};
 }
 
 /**
- * Whether the page's team settings are known (read this session or kept in this browser). False on a team shell
- * whose settings were never read here: readers must wait (or say the team could not be read), never paint defaults.
+ * The team's settings as read this session; as this browser last read them (keptSite) only once this session's read
+ * failed (noteTeamReadFailed): a team whose settings read fails keeps its own name, products and owners, never the
+ * defaults (which look like another team: "Bridge demo ds", Admin demo). Never the kept copy while the read is on its
+ * way: the page waits for it (its skeleton), so it never paints an older team first and another one a second later.
+ */
+function currentSite(owner: string, repo: string): SiteRepo | undefined {
+  const k = key(owner, repo);
+  return runtime.get(k)?.site ?? (readFailed.has(k) ? keptSite(owner, repo) : undefined);
+}
+
+/** Teams whose settings read failed on this page (a wait, an outage, no answer): their kept settings may stand in. */
+const readFailed = new Set<string>();
+
+/** Notes that this page could not read the team now: its kept settings stand in (siteConfig, siteKnown). */
+export function noteTeamReadFailed(owner: string, repo: string): void {
+  readFailed.add(key(owner, repo));
+}
+
+/** Exposed for tests: forgets the failed reads of this page. */
+export function resetTeamReadFailures(): void {
+  readFailed.clear();
+}
+
+/**
+ * Whether the page's team settings are known: read this session, or kept in this browser and this session's read
+ * failed. False on a team shell whose settings are not read yet: readers wait (or say the team could not be read),
+ * never paint defaults nor an older copy.
  */
 export function siteKnown(): boolean {
   const team = hostedRepo();
   if (!team) return true;
-  return Boolean(runtime.get(key(team.owner, team.repo))?.site ?? keptSite(team.owner, team.repo));
+  return Boolean(currentSite(team.owner, team.repo));
 }
 
 /** Where this browser keeps a team's settings (bridge.config.json as read), so a failed read later never means defaults. */
 export const siteKeepKey = (owner: string, repo: string) => `bridge:team-site:${key(owner, repo)}`;
 
-/** The team's settings as this browser last read them, or undefined. Never throws. */
+/**
+ * The team's settings as this browser last read them, or undefined, also when they were kept by another build or in
+ * an older shape (lib/kept-version.ts; such a copy is dropped). Never throws.
+ */
 export function keptSite(owner: string, repo: string): SiteRepo | undefined {
   try {
     if (typeof localStorage === 'undefined') return undefined;
-    const v = JSON.parse(localStorage.getItem(siteKeepKey(owner, repo)) ?? 'null') as unknown;
-    return v && typeof v === 'object' && !Array.isArray(v) ? (v as SiteRepo) : undefined;
+    const raw = JSON.parse(localStorage.getItem(siteKeepKey(owner, repo)) ?? 'null') as unknown;
+    if (raw === null) return undefined;
+    const v = keptValue<SiteRepo>(raw);
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+      localStorage.removeItem(siteKeepKey(owner, repo));
+      return undefined;
+    }
+    return v;
   } catch {
     return undefined;
   }
@@ -133,7 +166,7 @@ export function keptSite(owner: string, repo: string): SiteRepo | undefined {
 
 function keepSite(owner: string, repo: string, site: SiteRepo): void {
   try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(siteKeepKey(owner, repo), JSON.stringify(site));
+    if (typeof localStorage !== 'undefined') localStorage.setItem(siteKeepKey(owner, repo), JSON.stringify(keptEnvelope(site)));
   } catch {
     /* storage full or blocked: the next failed read waits instead */
   }
@@ -247,6 +280,8 @@ export async function loadTeamModel(
     // GitHub (or Bridge in front of it) busy, down or unreachable, at any step (the head, the tree, the bodies): the
     // team's settings and design system as last read here, never an empty team nor the default settings.
     const wait = transientFailure(err);
+    // This page could not read the team: what this browser kept may stand in (the settings, the model below).
+    if (wait) noteTeamReadFailed(client.owner, client.name);
     const kept = wait ? await (cache.latest?.(repo) ?? Promise.resolve(undefined)).catch(() => undefined) : undefined;
     if (!wait || !kept) throw err;
     onProgress?.({ step: 'cache' });

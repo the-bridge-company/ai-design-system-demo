@@ -126,6 +126,8 @@ export default defineConfig({
   build: { format: 'directory' },
   devToolbar: { enabled: false },
   vite: {
+    // The build that kept copies in the browser are tagged with (src/lib/kept-version.ts): a new deploy ignores old ones.
+    define: { __BRIDGE_BUILD__: JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA || process.env.CF_PAGES_COMMIT_SHA || process.env.COMMIT_REF || '').slice(0, 12) || 'dev') },
     // Scripts always ship as files (never inlined into the page), so the CSP lists a few stable hashes, not one per build.
     build: { assetsInlineLimit: 0 },
     // Workspace packages export TypeScript sources under the `source` condition; resolve those (not the built

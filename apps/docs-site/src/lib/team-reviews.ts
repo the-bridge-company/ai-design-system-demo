@@ -37,6 +37,9 @@ export const ANY_PRODUCT = '*';
 /** Every designer decides what the library keeps (a shared team with no lead, migrated). */
 export const OWNERS_ANY = '~library-owners';
 
+/** An exploration's Bridge block as parsed (core parseExplorationBody). */
+type ExplorationBlock = NonNullable<ReturnType<typeof parseExplorationBody>>;
+
 /** A team member as the reviews read them. */
 export interface ReviewMember {
   name: string;
@@ -143,6 +146,17 @@ export function reviewsToAsk(body: string | null | undefined, x: { team: TeamRev
   return reviewsFor({ author: x.author, designReviewers: productReviewers(x.team, x.product), libraryOwners: libraryOwners(x.team), newPieces: pending, designDone: Boolean(e?.designOkAt) });
 }
 
+/**
+ * An exploration asked before the two reviews (one ask to the lead, `leadAskedAt`, no library ask on record): that one
+ * review also decided its new pieces, so while it waits its new pieces wait for a library decision too, asked at the
+ * same time (two-reviews decision 7: one row names both hats). Asked with the two reviews, or once the design review
+ * answered, the exploration as it is.
+ */
+export function legacyLibraryAsk(e: ExplorationBlock | null | undefined): ExplorationBlock | null | undefined {
+  if (!e || e.library?.askedAt || !e.designAskedAt || e.designOkAt || e.doneAt) return e;
+  return { ...e, library: { ...(e.library ?? {}), askedAt: e.designAskedAt } };
+}
+
 /** What an exploration In review waits on, for core waitingFor. Both null when nothing waits. */
 export function waitingReviews(body: string | null | undefined, x: { team: TeamReviews; product: string | null | undefined; productName?: string | null | undefined; prAuthor?: string | null }): { design: WaitingDesign | null; library: WaitingLibrary | null } {
   const e = parseExplorationBody(body);
@@ -157,7 +171,7 @@ export function waitingReviews(body: string | null | undefined, x: { team: TeamR
     const taken: Reviewer | null = e.designTakenBy ? reviewerOf(e.designTakenBy, x.team) : takerMember ? { id: memberId(takerMember.ref!), name: takerMember.name } : takerName ? { id: `name:${takerName}`, name: takerName } : null;
     design = { reviewers: all.filter((r) => !author.has(r.id)), takenBy: taken, product: x.productName ?? x.team.products.find((p) => p.key === x.product)?.name ?? null };
   }
-  const pending = libraryPendingOf(e, parsePiecesRecord(body));
+  const pending = libraryPendingOf(legacyLibraryAsk(e), parsePiecesRecord(body));
   let library: WaitingLibrary | null = null;
   if (pending.length) {
     const asked = (e.library?.askedTo ?? []).map((l) => reviewerOf(l, x.team));

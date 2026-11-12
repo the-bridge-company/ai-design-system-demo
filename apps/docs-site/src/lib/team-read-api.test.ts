@@ -994,6 +994,23 @@ describe('team reads: the sample team stays up when GitHub does not (demo resili
     expect(await next.json()).toEqual([{ number: 2 }]);
   });
 
+  it('a kept answer older than a minute is never answered first: the visitor waits for GitHub, the kept one stands in only when it fails', async () => {
+    expect(SWR_MS).toBe(60 * 1000);
+    const s = sample();
+    await visitor(s, `${S}/pulls`);
+    s.w.pulls = 2;
+    s.tick(SWR_MS + 1);
+    const r = await visitor(s, `${S}/pulls`);
+    expect(r.headers.get('x-bridge-cache')).not.toBe('swr');
+    expect(await r.json()).toEqual([{ number: 2 }]);
+    // GitHub refuses later: the last good answer stands in, marked stale.
+    s.w.limited = true;
+    s.tick(SWR_MS + 1);
+    const late = await visitor(s, `${S}/pulls`);
+    expect(late.headers.get('x-bridge-cache')).toBe('stale');
+    expect(await late.json()).toEqual([{ number: 2 }]);
+  });
+
   it('coalesces: many visitors past the fresh window at once make one GitHub call', async () => {
     const s = sample();
     await visitor(s, `${S}/pulls`);

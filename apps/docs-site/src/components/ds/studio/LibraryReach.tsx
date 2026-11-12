@@ -14,6 +14,7 @@ import { ProductMark } from './ProductMark';
 import { originSentence, REACH_SHOWN, shownScreens, type Measured, type MeasuredScreen } from '../../../lib/library-reach';
 import { canDecide, keepLabel, tokenGroup, type ReviewPiece, type Viewer } from '../../../lib/library-review';
 import { reachImageSrc } from '../../../scripts/library-reach-data';
+import { usePageTitle } from '../../../lib/page-title';
 
 type Mode = 'today' | 'with' | 'side';
 
@@ -108,6 +109,8 @@ export function ReachPage({ p, measured, viewer, busy, onBack, backHref, onAct, 
   useEffect(() => {
     titleRef.current?.focus();
   }, [p.key]);
+  // The tab says which piece too, as a new page would (WCAG 2.4.2).
+  usePageTitle(`Who gets ${p.title}`);
   const origin = originSentence(p, viewer.name);
   const m = measured;
   const decides = canDecide(p, viewer);

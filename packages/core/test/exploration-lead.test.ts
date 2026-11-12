@@ -18,7 +18,7 @@ describe('the design lead validates before the developers', () => {
   it('keeps it running while the lead has not answered', () => {
     expect(isWaitingForLead(asked)).toBe(true);
     expect(explorationStatus({ state: 'open', labels: ['exploration'], body: asked, draft: true })).toBe('active');
-    expect(parseExplorationBody(asked)?.leadPieces).toEqual(['tag']);
+    expect(parseExplorationBody(asked)?.askedPieces).toEqual(['tag']);
   });
 
   it('returns to the designer with the lead\'s words, gone at the next ask', () => {
@@ -29,14 +29,14 @@ describe('the design lead validates before the developers', () => {
   });
 
   it('ends at the hand-off, and Back to exploring does not bring the ask back', () => {
-    const done = withDoneExploring(asked, { branch: 'explore/late-tag', doneAt: '2026-11-06T11:00:00.000Z', leadOkBy: 'flo' });
+    const done = withDoneExploring(asked, { branch: 'explore/late-tag', doneAt: '2026-11-06T11:00:00.000Z', designOkBy: 'flo' });
     expect(isWaitingForLead(done)).toBe(false);
-    expect(parseExplorationBody(done)?.leadOkBy).toBe('flo');
+    expect(parseExplorationBody(done)?.designOkBy).toBe('flo');
     expect(isWaitingForLead(withoutDoneExploring(done, '2026-11-06T12:00:00.000Z'))).toBe(false);
   });
 
   it('never keeps an email as who asked', () => {
-    expect(parseExplorationBody(withLeadAsked(body, { at: 'x', byName: 'a@b.c' }))?.leadAskedByName).toBeUndefined();
+    expect(parseExplorationBody(withLeadAsked(body, { at: 'x', byName: 'a@b.c' }))?.designAskedByName).toBeUndefined();
   });
 });
 
@@ -86,7 +86,7 @@ describe('decisions', () => {
 
   it('keeps the ticked pieces for when the designer sends it back', () => {
     const back = withDecision(withoutLeadAsked(asked), { kind: 'changes', at: 't', text: 'x' });
-    expect(parseExplorationBody(withLeadAsked(back, { at: 't2' }))!.leadPieces).toEqual(['p1']);
+    expect(parseExplorationBody(withLeadAsked(back, { at: 't2' }))!.askedPieces).toEqual(['p1']);
   });
 
   it('gives the words waiting on the designer to their Claude', () => {
@@ -96,9 +96,9 @@ describe('decisions', () => {
   });
 
   it('forgets the lead yes on Back to exploring', () => {
-    const done = withDoneExploring(asked, { branch: 'explore/late-tag', doneAt: '2026-11-07T11:00:00.000Z', leadOkBy: 'flo' });
-    expect(parseExplorationBody(done)?.leadOkBy).toBe('flo');
-    expect(parseExplorationBody(withoutDoneExploring(done, '2026-11-07T12:00:00.000Z'))?.leadOkBy).toBeUndefined();
+    const done = withDoneExploring(asked, { branch: 'explore/late-tag', doneAt: '2026-11-07T11:00:00.000Z', designOkBy: 'flo' });
+    expect(parseExplorationBody(done)?.designOkBy).toBe('flo');
+    expect(parseExplorationBody(withoutDoneExploring(done, '2026-11-07T12:00:00.000Z'))?.designOkBy).toBeUndefined();
   });
 
   it('moves the keeper and the Requested by line', () => {

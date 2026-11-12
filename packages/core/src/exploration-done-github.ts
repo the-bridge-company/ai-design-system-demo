@@ -16,14 +16,20 @@ import {
   explorationNotePath,
   explorationStartingPoint,
   explorationStatus,
+  isDesignReviewWaiting,
   isGuardedExploration,
+  isInReview,
   isWaitingForLead,
+  hatOf,
+  libraryPendingOf,
   openDecisionOf,
   parseExplorationBody,
   startPageOf,
   withDoneExploring,
   withDecision,
+  withDesignOk,
   withKeeper,
+  withLibraryAsked,
   withLeadAsked,
   withLeadAskedTo,
   withLeadTaken,
@@ -69,7 +75,7 @@ export interface DoneExploringInput {
    */
   library?: GitHubClient | undefined;
   /** The design lead who validated it, when one did: the hand-off names them. */
-  leadOkBy?: string | undefined;
+  designOkBy?: string | undefined;
   /** Pieces the lead kept in this screen only: the developers' task asks to build them as local pieces. */
   local?: readonly string[] | undefined;
 }
@@ -203,7 +209,7 @@ export async function doneExploringOnGitHub(gh: GitHubClient, ref: string | numb
   // The pieces wrote their links into the body: read it again before the developer section goes in.
   const latest = await gh.getPullRequest(p.number).catch(() => p);
   const doneAt = parseExplorationBody(plan.body)?.doneAt ?? (input.date ?? new Date()).toISOString();
-  await x.updatePullRequest(p.number, { body: withDoneExploring(latest.body, { branch: p.headRef, doneAt, doneBy: doneByOfInput(input), doneSha, checks, ...(githubLoginOf(input.leadOkBy) ? { leadOkBy: githubLoginOf(input.leadOkBy)! } : {}), ...(codeRepo ? { copy: gh.fullName } : {}), ...(task ? { task } : {}), ...(spec && !codeRepo ? { spec } : {}) }) });
+  await x.updatePullRequest(p.number, { body: withDoneExploring(latest.body, { branch: p.headRef, doneAt, doneBy: doneByOfInput(input), doneSha, checks, ...(githubLoginOf(input.designOkBy) ? { designOkBy: githubLoginOf(input.designOkBy)! } : {}), ...(codeRepo ? { copy: gh.fullName } : {}), ...(task ? { task } : {}), ...(spec && !codeRepo ? { spec } : {}) }) });
   return out;
 }
 
@@ -262,45 +268,126 @@ export interface LeadAsked {
   branch: string;
 }
 
+/** What Done exploring asked (two-reviews.ts): the design review to these reviewers, the library decision on these pieces. */
+export interface ReviewsAskedOnGitHub extends LeadAsked {
+  /** GitHub logins (or member names) the design review was asked to; null when it was not asked. */
+  design: string[] | null;
+  /** The library owners asked and the new pieces they decide on; null when nothing is new for the library. */
+  library: { owners: string[]; pieces: string[] } | null;
+}
+
+export interface ReviewsAskInput {
+  pieces?: readonly string[] | undefined;
+  openedBy?: string | undefined;
+  openedByName?: string | undefined;
+  date?: Date | undefined;
+  /** The design review, to these reviewers (GitHub logins are told on GitHub, member names are not). Null: not asked. */
+  design?: { to: readonly string[] } | null | undefined;
+  /**
+   * The library decision, to these owners. Asked only when the exploration has something new for the library
+   * (libraryPendingOf once asked); otherwise left out, so "nothing new for the library" never asks them.
+   */
+  library?: { to: readonly string[] } | null | undefined;
+}
+
 /**
- * "Done exploring" where a design lead validates first: only the body changes. The exploration keeps running, so its
- * label, note and preview stay and no developer sees anything until the lead says it looks right.
+ * "Done exploring" with reviews (two-reviews.ts): only the body changes. The exploration keeps running, so its label,
+ * note and preview stay and no developer sees anything until both reviews settled. The design review and the library
+ * decision start together; either may be left out (null). With neither, call doneExploringOnGitHub instead: nothing
+ * waits.
  */
-export async function askLeadOnGitHub(gh: GitHubClient, ref: string | number, input: { pieces?: readonly string[] | undefined; openedBy?: string | undefined; openedByName?: string | undefined; date?: Date | undefined; leads?: readonly string[] | undefined } = {}): Promise<LeadAsked> {
+export async function askReviewsOnGitHub(gh: GitHubClient, ref: string | number, input: ReviewsAskInput): Promise<ReviewsAskedOnGitHub> {
   if (!gh.canWrite) throw new GitHubError(401, 'Saying "Done exploring" needs a GitHub token (pull requests: write).');
   const p = await findExplorationOnGitHub(gh, ref);
   const status = explorationStatus({ state: p.state, labels: p.labels, headRef: p.headRef, body: p.body, headSha: p.headSha, draft: p.draft });
   if (status !== 'active') throw new GitHubError(422, `#${p.number} is no longer being explored.`);
   const at = (input.date ?? new Date()).toISOString();
-  await gh.updatePullRequest(p.number, { body: withLeadAskedTo(withLeadAsked(p.body, { at, by: doneByOfInput(input), byName: input.openedByName, pieces: input.pieces, sha: p.headSha }), (input.leads ?? []).map(githubLoginOf).filter((l): l is string => Boolean(l))) });
-  // GitHub tells the leads; a refused comment changes nothing, the exploration already waits for them in Studio.
-  const leads = (input.leads ?? []).map(githubLoginOf).filter((l): l is string => Boolean(l));
-  if (leads.length) await gh.createIssueComment(p.number, `${leads.map((l) => `@${l}`).join(' ')} ready for your validation in Bridge. Nothing goes to the developers until you answer.`).catch(() => undefined);
-  return { number: p.number, url: p.url, branch: p.headRef };
+  const by = doneByOfInput(input);
+  const designTo = input.design ? [...input.design.to] : null;
+  let body = p.body;
+  if (designTo) body = withLeadAskedTo(withLeadAsked(body, { at, by, byName: input.openedByName, pieces: input.pieces, sha: p.headSha }), designTo.map(githubLoginOf).filter((l): l is string => Boolean(l)));
+  // The library decision only when something is new for it: the pieces it would decide on, from the library check.
+  const before = parseExplorationBody(body);
+  const libraryTo = input.library ? [...input.library.to] : null;
+  let pieces: string[] = [];
+  if (libraryTo) {
+    const asked = withLibraryAsked(body, { at, to: libraryTo, by, byName: input.openedByName, pieces: input.pieces ?? before?.askedPieces ?? [] });
+    pieces = libraryPendingOf(parseExplorationBody(asked), parsePiecesRecord(asked));
+    if (pieces.length) body = asked;
+  }
+  const library = libraryTo && pieces.length ? { owners: libraryTo, pieces } : null;
+  if (!designTo && !library) throw new GitHubError(422, 'Nothing to review: say Done exploring without a review, it goes straight to Ready to build.');
+  await gh.updatePullRequest(p.number, { body });
+  // GitHub tells the people with a login; a refused comment changes nothing, the exploration already waits in Studio.
+  const mention = (list: readonly string[] | null) => (list ?? []).map(githubLoginOf).filter((l): l is string => Boolean(l));
+  const lines = [
+    ...(mention(designTo).length ? [`${mention(designTo).map((l) => `@${l}`).join(' ')} ready for your design review in Bridge. Nothing goes to the developers until you answer.`] : []),
+    ...(library && mention(library.owners).length ? [`${mention(library.owners).map((l) => `@${l}`).join(' ')} a library decision waits for you in Bridge.`] : []),
+  ];
+  if (lines.length) await gh.createIssueComment(p.number, lines.join('\n\n')).catch(() => undefined);
+  return { number: p.number, url: p.url, branch: p.headRef, design: designTo, library };
 }
 
 /**
- * The design lead's "Looks right": what Done exploring always did, under the name of the person who asked, with the
- * pieces they ticked. A refused step leaves the ask in place, so the lead can say it again.
+ * @deprecated Done exploring asks two reviews now: askReviewsOnGitHub. Kept for older callers: the leads give the design
+ * review, and the library decision too when something is new for the library.
  */
-export async function leadApproveOnGitHub(gh: GitHubClient, ref: string | number, input: Omit<DoneExploringInput, 'pieces' | 'openedBy' | 'openedByName'> & { lead?: string | undefined; leadName?: string | undefined; note?: string | undefined }): Promise<DoneExploring> {
+export async function askLeadOnGitHub(gh: GitHubClient, ref: string | number, input: { pieces?: readonly string[] | undefined; openedBy?: string | undefined; openedByName?: string | undefined; date?: Date | undefined; leads?: readonly string[] | undefined } = {}): Promise<LeadAsked> {
+  const { leads, ...rest } = input;
+  const r = await askReviewsOnGitHub(gh, ref, { ...rest, design: { to: leads ?? [] }, library: { to: leads ?? [] } });
+  return { number: r.number, url: r.url, branch: r.branch };
+}
+
+/**
+ * Ready to build once both reviews settled (two-reviews.ts): whichever answer comes last calls this. It says Done
+ * exploring under the name of the person who asked, with the new pieces nobody answered on their own and the pieces
+ * kept in the screen. Null when something still waits, or when nothing was asked.
+ */
+export async function settleReviewsOnGitHub(gh: GitHubClient, ref: string | number, input: Omit<DoneExploringInput, 'pieces' | 'openedBy' | 'openedByName' | 'designOkBy'> = {}): Promise<DoneExploring | null> {
   const p = await findExplorationOnGitHub(gh, ref);
   const e = parseExplorationBody(p.body);
-  if (!isWaitingForLead(p.body)) throw new GitHubError(422, ALREADY_ANSWERED);
-  const { lead, leadName, note, ...rest } = input;
-  // Looks right approves the screen and every library piece it needs, except the ones the lead answered on their own
-  // (library-impact.ts): kept in this screen (the developers build it in the product), an existing piece instead,
-  // changes asked. The pieces the designer ticked come along.
+  if (!e || e.doneAt) return null;
+  if (!e.designAskedAt && !e.library?.askedAt) return null;
+  if (isInReview(p.body)) return null;
   const record = parsePiecesRecord(p.body);
-  const pieces = piecesToAdd(record, e?.library, e?.leadPieces ?? []);
-  const local = localPieces(record, e?.library).map((x) => impactItemOf(x)).map((i) => (i.of ? `${i.of}: ${i.title}` : i.title));
-  const done = await doneExploringOnGitHub(gh, p.number, { ...rest, pieces, ...(local.length ? { local } : {}), ...(e?.leadAskedBy ? { openedBy: e.leadAskedBy } : {}), ...(e?.leadAskedByName ? { openedByName: e.leadAskedByName } : {}), ...(lead ? { leadOkBy: lead } : {}) });
-  if (input.dryRun) return done;
-  // The yes goes in the history, and its words to the developers: they build from them.
-  const now = await findExplorationOnGitHub(gh, p.number);
-  await gh.updatePullRequest(p.number, { body: withDecision(now.body, { kind: 'looks-right', ...sayer({ by: lead, byName: leadName, date: input.date }), ...(note?.trim() ? { text: note.trim() } : {}), sha: now.headSha }) });
-  if (note?.trim()) await tellDevelopersOnGitHub(gh, p.number, { text: note, byName: leadName ?? githubLoginOf(lead) ?? undefined }).catch(() => undefined);
-  return done;
+  const pieces = piecesToAdd(record, e.library, e.askedPieces ?? []);
+  const local = localPieces(record, e.library).map((x) => impactItemOf(x)).map((i) => (i.of ? `${i.of}: ${i.title}` : i.title));
+  const openedBy = e.designAskedBy ?? e.library?.askedBy;
+  const openedByName = e.designAskedByName ?? e.library?.askedByName;
+  return doneExploringOnGitHub(gh, p.number, { ...input, pieces, ...(local.length ? { local } : {}), ...(openedBy ? { openedBy } : {}), ...(openedByName ? { openedByName } : {}), ...(e.designOkBy ? { designOkBy: e.designOkBy } : {}) });
+}
+
+/** What the design review's Looks right did: handed to the developers (Ready to build), or still waiting on the library. */
+export interface DesignApproved {
+  /** The hand-off, when the library had nothing left to answer; null while it waits. */
+  done: DoneExploring | null;
+  /** The new pieces still waiting for a library answer. */
+  libraryPending: string[];
+}
+
+/**
+ * The design review's "Looks right" (two-reviews.ts). It no longer answers the library pieces: they have their own
+ * answers. When the library has nothing left to answer, it is Ready to build at once (settleReviewsOnGitHub); otherwise
+ * the yes is recorded and the last library answer hands it off. A refused step leaves the ask in place.
+ */
+export async function designApproveOnGitHub(gh: GitHubClient, ref: string | number, input: Omit<DoneExploringInput, 'pieces' | 'openedBy' | 'openedByName'> & { lead?: string | undefined; leadName?: string | undefined; note?: string | undefined }): Promise<DesignApproved> {
+  const p = await findExplorationOnGitHub(gh, ref);
+  const e = parseExplorationBody(p.body);
+  if (!isDesignReviewWaiting(e)) throw new GitHubError(422, ALREADY_ANSWERED);
+  const { lead, leadName, note, ...rest } = input;
+  const pending = libraryPendingOf(e, parsePiecesRecord(p.body));
+  if (input.dryRun) return { done: null, libraryPending: pending };
+  const at = (input.date ?? new Date()).toISOString();
+  // The yes goes in the history first (the hand-off keeps it), with the hat that said it.
+  await gh.updatePullRequest(p.number, { body: withDecision(withDesignOk(p.body, { at, by: lead }), { kind: 'looks-right', hat: 'design', ...sayer({ by: lead, byName: leadName, date: input.date }), ...(note?.trim() ? { text: note.trim() } : {}), sha: p.headSha }) });
+  const done = pending.length ? null : await settleReviewsOnGitHub(gh, p.number, rest);
+  if (done && note?.trim()) await tellDevelopersOnGitHub(gh, p.number, { text: note, byName: leadName ?? githubLoginOf(lead) ?? undefined }).catch(() => undefined);
+  return { done, libraryPending: pending };
+}
+
+/** @deprecated The design review's yes: designApproveOnGitHub. Returns the hand-off, null while the library decision waits. */
+export async function leadApproveOnGitHub(gh: GitHubClient, ref: string | number, input: Parameters<typeof designApproveOnGitHub>[2]): Promise<DoneExploring | null> {
+  return (await designApproveOnGitHub(gh, ref, input)).done;
 }
 
 /** A lead answered first: the second one reads this and the page shows the first answer. */
@@ -313,8 +400,8 @@ const sayer = (s: Sayer) => ({ at: (s.date ?? new Date()).toISOString(), ...(git
 /** The design lead's "Needs changes": back to the designer with the lead's words, nothing reached developers. */
 export async function leadChangesOnGitHub(gh: GitHubClient, ref: string | number, input: { note: string; lead?: string | undefined; leadName?: string | undefined; date?: Date | undefined }): Promise<void> {
   const p = await findExplorationOnGitHub(gh, ref);
-  if (!isWaitingForLead(p.body)) throw new GitHubError(422, ALREADY_ANSWERED);
-  await gh.updatePullRequest(p.number, { body: withDecision(withoutLeadAsked(p.body), { kind: 'changes', ...sayer({ by: input.lead, byName: input.leadName, date: input.date }), text: input.note, sha: p.headSha }) });
+  if (!isDesignReviewWaiting(parseExplorationBody(p.body))) throw new GitHubError(422, ALREADY_ANSWERED);
+  await gh.updatePullRequest(p.number, { body: withDecision(withoutLeadAsked(p.body), { kind: 'changes', hat: 'design', ...sayer({ by: input.lead, byName: input.leadName, date: input.date }), text: input.note, sha: p.headSha }) });
 }
 
 /** A lead's question, no verdict: it keeps waiting, now on the designer's answer. */
@@ -339,7 +426,14 @@ export async function answerLeadOnGitHub(gh: GitHubClient, ref: string | number,
     return;
   }
   const leads = (input.leads ?? []).map(githubLoginOf).filter((l): l is string => Boolean(l));
-  await gh.updatePullRequest(p.number, { body: withLeadAskedTo(withLeadAsked(body, { at: sayer(input).at, by: githubLoginOf(input.by), byName: input.byName, sha: p.headSha }), leads) });
+  // The same reviews as Done exploring: the design review again unless its yes stands (or the library asked for the
+  // changes on a screen that had no design review), and the library decision again when the owners were asked before.
+  const e = parseExplorationBody(body);
+  const at = sayer(input).at;
+  const designAgain = hatOf(open) === 'design' || Boolean(e?.designAskedTo?.length || e?.designOkBy) || !e?.library?.askedTo?.length;
+  let next = designAgain ? withLeadAskedTo(withLeadAsked(body, { at, by: githubLoginOf(input.by), byName: input.byName, sha: p.headSha }), leads.length ? leads : (e?.designAskedTo ?? [])) : body;
+  if (e?.library?.askedTo?.length) next = withLibraryAsked(next, { at, to: e.library.askedTo, by: githubLoginOf(input.by), byName: input.byName });
+  await gh.updatePullRequest(p.number, { body: next });
   if (leads.length) await gh.createIssueComment(p.number, `${leads.map((l) => `@${l}`).join(' ')} ready for your validation in Bridge again.`).catch(() => undefined);
 }
 
@@ -362,7 +456,7 @@ export async function askOtherLeadOnGitHub(gh: GitHubClient, ref: string | numbe
 export async function takeLeadOnGitHub(gh: GitHubClient, ref: string | number, input: { lead?: string | undefined; leadName?: string | undefined; date?: Date | undefined }): Promise<void> {
   const p = await findExplorationOnGitHub(gh, ref);
   if (!isWaitingForLead(p.body)) throw new GitHubError(422, ALREADY_ANSWERED);
-  if (parseExplorationBody(p.body)?.leadTakenAt) throw new GitHubError(409, ALREADY_TAKEN);
+  if (parseExplorationBody(p.body)?.designTakenAt) throw new GitHubError(409, ALREADY_TAKEN);
   await gh.updatePullRequest(p.number, { body: withLeadTaken(p.body, { at: (input.date ?? new Date()).toISOString(), by: input.lead, byName: input.leadName }) });
 }
 

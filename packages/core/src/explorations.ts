@@ -20,7 +20,8 @@
 import type { BridgeConfig } from './config';
 import { mockupLabel, mockupNameOf, mockupOf, type Mockup } from './mockup';
 import { githubLoginOf } from './github-login';
-import { cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
+import { asIsOption, cleanExplorationLibrary, type ExplorationLibrary } from './library-impact';
+import { parsePiecesRecord, type PiecesRecord } from './prod-branch';
 import { slugify } from './pr-composer';
 import { STEP_LABEL } from './status-ladder';
 import { previewUrl, readPreviewComment, resolveBranchPreviews, type PreviewApps } from './previews';
@@ -138,34 +139,40 @@ export interface Exploration {
   memberName?: string | undefined;
   doneByMember?: string | undefined;
   /**
-   * The designer said "Done exploring" and the design lead has not answered yet (decision 2026-11-06): nothing reached
-   * the developers. Who asked (a GitHub login, or the display name of a member without one, never an email) and the
-   * pieces they ticked travel with it: they are used when the lead says it looks right.
+   * The design review (two-reviews.ts, decision 2026-11-12): the designer said "Done exploring" and the product's design
+   * reviewers have not answered yet: nothing reached the developers. Who asked (a GitHub login, or the display name of
+   * a member without one, never an email) and the pieces they ticked travel with it. Bodies written before 2026-11-12
+   * hold the same fields as `leadAskedAt`, `leadAskedBy`...: parseExplorationBody reads them as these.
    */
-  leadAskedAt?: string | undefined;
-  leadAskedBy?: string | undefined;
-  leadAskedByName?: string | undefined;
-  leadPieces?: string[] | undefined;
+  designAskedAt?: string | undefined;
+  designAskedBy?: string | undefined;
+  designAskedByName?: string | undefined;
+  askedPieces?: string[] | undefined;
   /**
    * The leads asked by name ("Ask someone else to review"): their Home shows it, the others' no longer does. Any lead
    * may still answer on the page. The head commit when it was asked: a newer one means it changed since.
    */
-  leadAskedTo?: string[] | undefined;
-  leadAskedSha?: string | undefined;
+  designAskedTo?: string[] | undefined;
+  designAskedSha?: string | undefined;
   /**
    * "I'll look": the reviewer who took it (a GitHub login, or a member's display name) and when. It leaves the other
    * reviewers' Home; any of them may still answer on the page. Gone with the ask.
    */
-  leadTakenAt?: string | undefined;
-  leadTakenBy?: string | undefined;
-  leadTakenByName?: string | undefined;
+  designTakenAt?: string | undefined;
+  designTakenBy?: string | undefined;
+  designTakenByName?: string | undefined;
   /** Before decisions (read only, never written): the lead's last "Needs changes". decisionsOf turns it into a round. */
   leadNote?: string | undefined;
   leadNoteBy?: string | undefined;
   /** Everything the design lead and the designer said about it, by round, oldest first (decisionsOf). */
   decisions?: Decision[] | undefined;
-  /** The lead who said it looks right, so the hand-off names them. */
-  leadOkBy?: string | undefined;
+  /** The design reviewer who said it looks right, so the hand-off names them. */
+  designOkBy?: string | undefined;
+  /**
+   * When the design review said Looks right while the library decision still waited: the yes stays, Ready to build
+   * comes with the last library answer. Gone once handed off (Back to exploring asks again).
+   */
+  designOkAt?: string | undefined;
   /**
    * What it changes in the library, as decided (library-impact.ts, decision 2026-11-09): the lead's answer per piece,
    * the conflicts settled with another exploration, and the library requests it needs (Waiting for the library).
@@ -202,7 +209,15 @@ export interface Decision {
   to?: string[] | undefined;
   /** "asked-someone": the reviewers asked who joined by email, by display name (no GitHub login, never mentioned). */
   toNames?: string[] | undefined;
+  /** Which review said it (two-reviews.ts): the design review, or the library decision. Absent reads `design`. */
+  hat?: ReviewHat | undefined;
 }
+
+/** The two reviews an exploration can go through: the product's design review and the library decision. */
+export type ReviewHat = 'design' | 'library';
+
+/** The hat of a decision: written ones say it, older ones were all the design lead's. */
+export const hatOf = (d: Pick<Decision, 'hat'>): ReviewHat => (d.hat === 'library' ? 'library' : 'design');
 
 const DECISIONS_MAX = 30;
 const DECISION_TEXT_MAX = 2000;
@@ -534,7 +549,7 @@ function cleanDecision(d: Decision): Decision {
   const byName = d.byName?.trim().slice(0, 80);
   const to = d.to?.map((t) => t.trim().slice(0, 80)).filter((t) => t && !t.includes('@'));
   const toNames = d.toNames?.map((t) => t.trim().slice(0, 80)).filter((t) => t && !t.includes('@'));
-  return { kind: d.kind, at: d.at, round: d.round, ...(by ? { by } : {}), ...(byName && !byName.includes('@') ? { byName } : {}), ...(text ? { text } : {}), ...(d.sha ? { sha: d.sha } : {}), ...(to?.length ? { to } : {}), ...(toNames?.length ? { toNames } : {}) };
+  return { kind: d.kind, at: d.at, round: d.round, ...(by ? { by } : {}), ...(byName && !byName.includes('@') ? { byName } : {}), ...(text ? { text } : {}), ...(d.sha ? { sha: d.sha } : {}), ...(to?.length ? { to } : {}), ...(toNames?.length ? { toNames } : {}), ...(d.hat === 'library' || d.hat === 'design' ? { hat: d.hat } : {}) };
 }
 
 /** The hidden block tools read: the exploration as JSON. */
@@ -567,20 +582,49 @@ function explorationBlock(e: Exploration): string {
     ...(memberRefOf(e.member) ? { member: e.member } : {}),
     ...(memberRefOf(e.member) && e.memberName && !e.memberName.includes('@') ? { memberName: e.memberName.trim().slice(0, 80) } : {}),
     ...(e.doneAt && memberRefOf(e.doneByMember) ? { doneByMember: e.doneByMember } : {}),
-    ...(e.leadAskedAt ? { leadAskedAt: e.leadAskedAt } : {}),
-    ...(e.leadAskedAt && githubLoginOf(e.leadAskedBy) ? { leadAskedBy: githubLoginOf(e.leadAskedBy) } : {}),
-    ...(e.leadAskedAt && e.leadAskedByName && !e.leadAskedByName.includes('@') ? { leadAskedByName: e.leadAskedByName.trim().slice(0, 80) } : {}),
-    ...(e.leadPieces?.length ? { leadPieces: e.leadPieces } : {}),
-    ...(e.leadAskedAt && e.leadAskedTo?.length ? { leadAskedTo: e.leadAskedTo.map(githubLoginOf).filter(Boolean) } : {}),
-    ...(e.leadAskedAt && e.leadAskedSha ? { leadAskedSha: e.leadAskedSha } : {}),
-    ...(e.leadAskedAt && e.leadTakenAt ? { leadTakenAt: e.leadTakenAt } : {}),
-    ...(e.leadAskedAt && e.leadTakenAt && githubLoginOf(e.leadTakenBy) ? { leadTakenBy: githubLoginOf(e.leadTakenBy) } : {}),
-    ...(e.leadAskedAt && e.leadTakenAt && e.leadTakenByName && !e.leadTakenByName.includes('@') ? { leadTakenByName: e.leadTakenByName.trim().slice(0, 80) } : {}),
+    ...(e.designAskedAt ? { designAskedAt: e.designAskedAt } : {}),
+    ...(e.designAskedAt && githubLoginOf(e.designAskedBy) ? { designAskedBy: githubLoginOf(e.designAskedBy) } : {}),
+    ...(e.designAskedAt && e.designAskedByName && !e.designAskedByName.includes('@') ? { designAskedByName: e.designAskedByName.trim().slice(0, 80) } : {}),
+    ...(e.askedPieces?.length ? { askedPieces: e.askedPieces } : {}),
+    ...(!e.doneAt && e.designAskedTo?.length ? { designAskedTo: e.designAskedTo.map(githubLoginOf).filter(Boolean) } : {}),
+    ...(e.designAskedAt && e.designAskedSha ? { designAskedSha: e.designAskedSha } : {}),
+    ...(e.designAskedAt && e.designTakenAt ? { designTakenAt: e.designTakenAt } : {}),
+    ...(e.designAskedAt && e.designTakenAt && githubLoginOf(e.designTakenBy) ? { designTakenBy: githubLoginOf(e.designTakenBy) } : {}),
+    ...(e.designAskedAt && e.designTakenAt && e.designTakenByName && !e.designTakenByName.includes('@') ? { designTakenByName: e.designTakenByName.trim().slice(0, 80) } : {}),
     ...(e.decisions?.length ? { decisions: e.decisions.slice(-DECISIONS_MAX).map(cleanDecision) } : {}),
-    ...(githubLoginOf(e.leadOkBy) ? { leadOkBy: githubLoginOf(e.leadOkBy) } : {}),
+    ...(githubLoginOf(e.designOkBy) ? { designOkBy: githubLoginOf(e.designOkBy) } : {}),
+    ...(e.designOkAt && !e.doneAt ? { designOkAt: e.designOkAt } : {}),
     ...(cleanExplorationLibrary(e.library) ? { library: cleanExplorationLibrary(e.library) } : {}),
   };
   return `<!-- ${MARK} ${JSON.stringify(data).replace(/-->/g, '--\\u003e')} -->`;
+}
+
+/**
+ * The fields of the design review as bodies written before 2026-11-12 name them (one "lead" for both reviews). Read as
+ * the design review; the next write uses the new names.
+ */
+export const LEGACY_REVIEW_FIELDS: Readonly<Record<string, keyof Exploration>> = {
+  leadAskedAt: 'designAskedAt',
+  leadAskedBy: 'designAskedBy',
+  leadAskedByName: 'designAskedByName',
+  leadPieces: 'askedPieces',
+  leadAskedTo: 'designAskedTo',
+  leadAskedSha: 'designAskedSha',
+  leadTakenAt: 'designTakenAt',
+  leadTakenBy: 'designTakenBy',
+  leadTakenByName: 'designTakenByName',
+  leadOkBy: 'designOkBy',
+};
+
+/** A block read with its old field names moved to the new ones (a new name already there wins). */
+export function withLegacyNames<T extends object>(raw: T): T {
+  const out = { ...raw } as Record<string, unknown>;
+  for (const [old, now] of Object.entries(LEGACY_REVIEW_FIELDS)) {
+    if (!(old in out)) continue;
+    if (out[now] === undefined) out[now] = out[old];
+    delete out[old];
+  }
+  return out as T;
 }
 
 /** The exploration inside a pull request body, or undefined when it has no valid Bridge block. */
@@ -589,8 +633,9 @@ export function parseExplorationBody(body: string | null | undefined): Explorati
   const m = new RegExp(`<!-- ${MARK} (\\{[\\s\\S]*?\\}) -->`).exec(body);
   if (!m) return undefined;
   try {
-    const e = JSON.parse(m[1]!) as Exploration;
-    if (!e || typeof e.name !== 'string') return undefined;
+    const raw = JSON.parse(m[1]!) as Exploration;
+    if (!raw || typeof raw.name !== 'string') return undefined;
+    const e = withLegacyNames(raw);
     // Started without a purpose: nothing was asked, the exploration reads with an empty one.
     return typeof e.purpose === 'string' ? e : e.purpose === undefined ? { ...e, purpose: '' } : undefined;
   } catch {
@@ -806,7 +851,7 @@ const DEV_SECTION = '### For developers';
  */
 export function withDoneExploring(
   body: string | null | undefined,
-  done: { branch: string; doneAt: string; doneBy?: string | undefined; doneSha?: string | undefined; checks?: ExplorationChecks | null | undefined; copy?: string | undefined; task?: string | undefined; spec?: string | null | undefined; leadOkBy?: string | undefined },
+  done: { branch: string; doneAt: string; doneBy?: string | undefined; doneSha?: string | undefined; checks?: ExplorationChecks | null | undefined; copy?: string | undefined; task?: string | undefined; spec?: string | null | undefined; designOkBy?: string | undefined },
 ): string {
   const e = parseExplorationBody(body);
   const [fetch, checkout] = done.copy ? designCopyTakeCommands(done.copy, done.branch) : explorationTakeCommands(done.branch);
@@ -850,8 +895,8 @@ export function withDoneExploring(
   if (!e || !block.test(kept)) return `${kept.trim()}${kept.trim() ? '\n\n' : ''}${section}`;
   const at = kept.search(block);
   // The lead's ask ends here: Back to exploring must not bring it back.
-  const { leadAskedAt: _askedAt, leadAskedBy: _askedBy, leadAskedByName: _askedName, leadPieces: _pieces, leadNote: _note, leadNoteBy: _noteBy, leadAskedTo: _to, leadAskedSha: _sha, ...started } = { ...e, decisions: decisionsOf(e) };
-  const nextBlock = explorationBlock({ ...started, doneAt: done.doneAt, ...(done.doneBy ? { doneBy: done.doneBy } : {}), ...(done.doneSha ? { doneSha: done.doneSha } : {}), ...(done.task ? { task: done.task } : {}), ...(done.leadOkBy ? { leadOkBy: done.leadOkBy } : {}) });
+  const { designAskedAt: _askedAt, designAskedBy: _askedBy, designAskedByName: _askedName, askedPieces: _pieces, leadNote: _note, leadNoteBy: _noteBy, designAskedTo: _to, designAskedSha: _sha, designOkAt: _okAt, ...started } = { ...e, decisions: decisionsOf(e), library: handedOffLibrary(e.library) };
+  const nextBlock = explorationBlock({ ...started, doneAt: done.doneAt, ...(done.doneBy ? { doneBy: done.doneBy } : {}), ...(done.doneSha ? { doneSha: done.doneSha } : {}), ...(done.task ? { task: done.task } : {}), ...(done.designOkBy ? { designOkBy: done.designOkBy } : {}) });
   const after = kept.slice(at).replace(block, () => nextBlock).trim();
   return `${kept.slice(0, at).trim()}\n\n${section}\n\n${after}`.trim();
 }
@@ -867,7 +912,7 @@ export function withoutDoneExploring(body: string | null | undefined, reopenedAt
   const kept = (body ?? '').replace(/### For developers[\s\S]*?(?=### |<!-- |$)/, '');
   if (!e || !block.test(kept)) return kept.trim();
   // The lead's yes ends here too: the next hand-off asks again and must not read this one.
-  const { doneAt: _doneAt, doneSha: _doneSha, reopenedBy: _by, doneByMember: _byMember, leadOkBy: _ok, ...rest } = e;
+  const { doneAt: _doneAt, doneSha: _doneSha, reopenedBy: _by, doneByMember: _byMember, designOkBy: _ok, designOkAt: _okAt, ...rest } = e;
   const at = kept.search(block);
   const after = kept.slice(at).replace(block, () => explorationBlock({ ...rest, reopenedAt, ...(reopenedBy ? { reopenedBy } : {}) }));
   return `${kept.slice(0, at).trim()}\n\n${after.trim()}`.trim();
@@ -909,7 +954,7 @@ export function withDecision(body: string | null | undefined, d: Omit<Decision, 
 
 /** The designer asked the design lead: the exploration keeps running (label, note, preview), nothing reaches developers. */
 export function withLeadAsked(body: string | null | undefined, ask: { at: string; by?: string | null | undefined; byName?: string | null | undefined; pieces?: readonly string[] | undefined; sha?: string | null | undefined }): string {
-  return withBlock(body, ({ leadNote: _note, leadNoteBy: _by, leadAskedTo: _to, leadTakenAt: _ta, leadTakenBy: _tb, leadTakenByName: _tn, ...e }) => ({ ...e, decisions: decisionsOf({ ...e, leadNote: _note, leadNoteBy: _by }), leadAskedAt: ask.at, leadAskedBy: ask.by ?? undefined, leadAskedByName: ask.byName ?? undefined, leadPieces: [...(ask.pieces ?? e.leadPieces ?? [])], leadAskedSha: ask.sha ?? undefined }));
+  return withBlock(body, ({ leadNote: _note, leadNoteBy: _by, designAskedTo: _to, designTakenAt: _ta, designTakenBy: _tb, designTakenByName: _tn, ...e }) => ({ ...e, decisions: decisionsOf({ ...e, leadNote: _note, leadNoteBy: _by }), designAskedAt: ask.at, designAskedBy: ask.by ?? undefined, designAskedByName: ask.byName ?? undefined, askedPieces: [...(ask.pieces ?? e.askedPieces ?? [])], designAskedSha: ask.sha ?? undefined }));
 }
 
 /**
@@ -917,17 +962,49 @@ export function withLeadAsked(body: string | null | undefined, ask: { at: string
  * (withDecision), the caller's to write.
  */
 export function withoutLeadAsked(body: string | null | undefined): string {
-  return withBlock(body, ({ leadAskedAt: _at, leadAskedBy: _by, leadAskedByName: _name, leadAskedTo: _to, leadAskedSha: _sha, leadTakenAt: _ta, leadTakenBy: _tb, leadTakenByName: _tn, ...e }) => e);
+  // Who was asked stays (designAskedTo, library.askedTo): an answer to the changes asks the same reviews again.
+  return withBlock(body, ({ designAskedAt: _at, designAskedBy: _by, designAskedByName: _name, designAskedSha: _sha, designTakenAt: _ta, designTakenBy: _tb, designTakenByName: _tn, ...e }) => ({ ...e, library: withoutLibraryAsk(e.library) }));
+}
+
+/** Both asks taken away (back to Exploring): the design review's yes and the library answers already given stay. */
+export const withoutReviewAsks = withoutLeadAsked;
+
+/** The design review's yes, while the library decision still waits: the ask stays, marked answered. */
+export function withDesignOk(body: string | null | undefined, ok: { at: string; by?: string | null | undefined }): string {
+  return withBlock(body, (e) => ({ ...e, designOkAt: ok.at, ...(githubLoginOf(ok.by ?? undefined) ? { designOkBy: githubLoginOf(ok.by ?? undefined)! } : {}) }));
+}
+
+/** The library decision asked: the owners (GitHub logins, or member names) and who said Done exploring. */
+export function withLibraryAsked(body: string | null | undefined, ask: { at: string; to?: readonly string[] | undefined; by?: string | null | undefined; byName?: string | null | undefined; pieces?: readonly string[] | undefined }): string {
+  return withBlock(body, (e) => ({
+    ...e,
+    ...(ask.pieces ? { askedPieces: [...ask.pieces] } : {}),
+    library: { ...(e.library ?? {}), askedAt: ask.at, ...(ask.to?.length ? { askedTo: [...ask.to] } : {}), ...(ask.by ? { askedBy: ask.by } : {}), ...(ask.byName ? { askedByName: ask.byName } : {}) },
+  }));
+}
+
+/** The library part once handed off: no ask left, the answers and the requests stay. */
+function handedOffLibrary(l: ExplorationLibrary | undefined): ExplorationLibrary | undefined {
+  if (!l) return l;
+  const { askedAt: _a, askedTo: _t, askedBy: _b, askedByName: _n, ...rest } = l;
+  return rest;
+}
+
+/** The library part without its ask (askedAt): who was asked and the answers given stay. */
+function withoutLibraryAsk(l: ExplorationLibrary | undefined): ExplorationLibrary | undefined {
+  if (!l) return l;
+  const { askedAt: _a, ...rest } = l;
+  return rest;
 }
 
 /** "Ask someone else to review": these leads are now the ones it waits on. */
 export function withLeadAskedTo(body: string | null | undefined, to: readonly string[]): string {
-  return withBlock(body, ({ leadTakenAt: _ta, leadTakenBy: _tb, leadTakenByName: _tn, ...e }) => ({ ...e, leadAskedTo: [...to] }));
+  return withBlock(body, ({ designTakenAt: _ta, designTakenBy: _tb, designTakenByName: _tn, ...e }) => ({ ...e, designAskedTo: [...to] }));
 }
 
 /** "I'll look": one reviewer takes it, the others no longer see it waiting on them. */
 export function withLeadTaken(body: string | null | undefined, take: { at: string; by?: string | null | undefined; byName?: string | null | undefined }): string {
-  return withBlock(body, (e) => ({ ...e, leadTakenAt: take.at, leadTakenBy: take.by ?? undefined, leadTakenByName: take.byName ?? undefined }));
+  return withBlock(body, (e) => ({ ...e, designTakenAt: take.at, designTakenBy: take.by ?? undefined, designTakenByName: take.byName ?? undefined }));
 }
 
 /**
@@ -980,11 +1057,46 @@ export function leadWordsForClaude(body: string | null | undefined): string | nu
   return `${who} asked for changes: ${d.text}`;
 }
 
-/** Waits on the design lead: asked, and not handed to developers since. */
-export function isWaitingForLead(body: string | null | undefined): boolean {
-  const e = parseExplorationBody(body);
-  return Boolean(e?.leadAskedAt && !e.doneAt);
+/** Waits on the design review: asked, not answered Looks right, and not handed to developers since. */
+export function isDesignReviewWaiting(e: Exploration | null | undefined): boolean {
+  return Boolean(e?.designAskedAt && !e.designOkAt && !e.doneAt);
 }
+
+/**
+ * The new pieces the library owners still have to answer (two-reviews.ts): asked, not handed off, and a new piece (not
+ * one the library already has as it is, not sent already) with no answer since they were asked. A "changes" answer
+ * given before this ask is asked again. Without the library check, the pieces the designer ticked stand in.
+ */
+export function libraryPendingOf(e: Exploration | null | undefined, record: PiecesRecord | null | undefined): string[] {
+  const asked = e?.library?.askedAt;
+  if (!e || !asked || e.doneAt) return [];
+  const answered = new Map((e.library?.decisions ?? []).map((d) => [d.piece, d]));
+  const sent = new Set((record?.links ?? []).map((l) => l.piece));
+  const ids = record ? record.pieces.filter((p) => !asIsOption(p)).map((p) => p.id) : (e.askedPieces ?? []);
+  return ids.filter((id) => {
+    if (sent.has(id)) return false;
+    const d = answered.get(id);
+    return !d || (d.verdict === 'changes' && d.at < asked);
+  });
+}
+
+/** Waits on the library decision: some new piece has no answer yet (libraryPendingOf). */
+export function isLibraryWaiting(body: string | null | undefined): boolean {
+  return libraryPendingOf(parseExplorationBody(body), parsePiecesRecord(body)).length > 0;
+}
+
+/**
+ * In review (two-reviews.ts): Done exploring was said, and the design review or the library decision has not answered
+ * yet. Nothing reached the developers.
+ */
+export function isInReview(body: string | null | undefined): boolean {
+  const e = parseExplorationBody(body);
+  if (!e || e.doneAt) return false;
+  return isDesignReviewWaiting(e) || libraryPendingOf(e, parsePiecesRecord(body)).length > 0;
+}
+
+/** @deprecated The design review and the library decision are two reviews now: isInReview. Kept for older callers. */
+export const isWaitingForLead = isInReview;
 
 /**
  * Whether Done exploring goes through the design lead first. A lead saying it on someone else's exploration is that

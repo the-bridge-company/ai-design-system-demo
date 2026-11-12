@@ -43,6 +43,12 @@ export interface ProductConfig {
   screens?: Record<string, string | string[]>;
   /** The product a branch belongs to when nothing else matches: the library. */
   default?: boolean;
+  /**
+   * The design review before developers (two-reviews.ts): `false` turns it off for this product, `{ reviewers }` names
+   * the GitHub logins who may give it (any one of them answers, never the author). Absent: the team default (on, the
+   * design owners review), except the Library, where it is off.
+   */
+  designReview?: false | { reviewers: string[] };
 }
 
 /** The design team's copy of a product repository (ProductConfig.design). */
@@ -218,7 +224,7 @@ export function productOfDesignCopy(products: readonly ProductConfig[], repo: st
 
 const KEY = /^[a-z0-9][a-z0-9-]*$/;
 const REPO = /^[\w.-]+\/[\w.-]+$/;
-const FIELDS = ['key', 'name', 'repo', 'design', 'path', 'preview', 'production', 'address', 'framework', 'screens', 'default'];
+const FIELDS = ['key', 'name', 'repo', 'design', 'path', 'preview', 'production', 'address', 'framework', 'screens', 'default', 'designReview'];
 
 /** What is wrong with a `products` value, each problem saying how to fix it. Empty: valid (or absent). */
 export function productProblems(raw: unknown): string[] {
@@ -266,6 +272,11 @@ export function productProblems(raw: unknown): string[] {
     if (o.framework !== undefined && (typeof o.framework !== 'string' || !o.framework.trim())) problems.push(`${at}.framework" must be a name such as "react", "vue" or "other"`);
     problems.push(...screensProblems(o.screens, `products[${i}].screens`));
     if (o.default !== undefined && typeof o.default !== 'boolean') problems.push(`${at}.default" must be true or false`);
+    if (o.designReview !== undefined && o.designReview !== false) {
+      const r = o.designReview as Record<string, unknown> | null;
+      const ok = r && typeof r === 'object' && !Array.isArray(r) && Array.isArray(r.reviewers) && r.reviewers.every((x) => typeof x === 'string' && x.trim()) && Object.keys(r).every((k) => k === 'reviewers');
+      if (!ok) problems.push(`${at}.designReview" must be false (no design review) or { "reviewers": ["login"] }: who checks this product's screens before the developers`);
+    }
     if (o.default === true) defaults++;
   });
   if (defaults > 1) problems.push('"products" marks more than one product as default: keep "default": true on the library only');

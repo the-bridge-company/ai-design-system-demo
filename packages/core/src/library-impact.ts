@@ -67,6 +67,15 @@ export interface ExplorationLibrary {
   decisions?: PieceDecision[] | undefined;
   choices?: LibraryChoice[] | undefined;
   neededBy?: LibraryNeed[] | undefined;
+  /**
+   * The library decision asked (two-reviews.ts): when Done exploring asked the library owners, who they are (GitHub
+   * logins, or member names), and who said Done exploring. Gone once the exploration is handed off or goes back to
+   * Exploring; the answers in `decisions` stay.
+   */
+  askedAt?: string | undefined;
+  askedTo?: string[] | undefined;
+  askedBy?: string | undefined;
+  askedByName?: string | undefined;
 }
 
 const VERDICTS: readonly PieceVerdict[] = ['approved', 'changes', 'local', 'existing'];
@@ -107,6 +116,13 @@ export function cleanExplorationLibrary(l: ExplorationLibrary | null | undefined
     ...(decisions.size ? { decisions: [...decisions.values()] } : {}),
     ...(choices.size ? { choices: [...choices.values()] } : {}),
     ...(needs.size ? { neededBy: [...needs.values()] } : {}),
+    ...(typeof l.askedAt === 'string' ? { askedAt: l.askedAt } : {}),
+    ...(Array.isArray(l.askedTo) ? (() => {
+      const to = l.askedTo.filter((t): t is string => typeof t === 'string').map((t) => t.trim().slice(0, NAME_MAX)).filter((t) => t && !t.includes('@'));
+      return to.length ? { askedTo: to } : {};
+    })() : {}),
+    ...(cleanLogin(l.askedBy) ? { askedBy: l.askedBy } : {}),
+    ...(cleanName(l.askedByName) ? { askedByName: cleanName(l.askedByName) } : {}),
   };
   return Object.keys(out).length ? out : undefined;
 }

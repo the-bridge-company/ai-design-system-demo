@@ -866,6 +866,19 @@
           "default": {
             "type": "boolean",
             "description": "The product a branch belongs to when nothing else matches: the library. At most one. Without one, the last product is the default."
+          },
+          "designReview": {
+            "description": "The design review before developers, for this product: false turns it off, { \"reviewers\": [\"login\"] } names who may give it (any one of them answers, never the author of the exploration). Leave it out for the team default: on, the design owners review (off for the Library). Separate from the library decision, which the design owners (governance.owners.design) take for every product.",
+            "oneOf": [
+              { "const": false },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reviewers"],
+                "properties": { "reviewers": { "type": "array", "items": { "type": "string", "minLength": 1 } } }
+              }
+            ],
+            "examples": [false, { "reviewers": ["dana-design"] }]
           }
         }
       },

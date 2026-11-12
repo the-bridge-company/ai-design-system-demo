@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-12T13:22:26.150Z",
+  "createdAt": "2026-11-12T14:30:54.543Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -6328,10 +6328,28 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "md",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
             "disabled": false
+          }
+        },
+        "Size=lg, State=Default": {
+          "file": "forms-combobox-inline.png",
+          "width": 252,
+          "height": 48,
+          "story": "forms-combobox--inline",
+          "props": {
+            "inline": true,
+            "size": "lg",
+            "emptyMessage": "Nothing matches. Try a token path like color.action.",
+            "multiple": false,
+            "loading": false,
+            "loadingMessage": "Loading results",
+            "placeholder": "Search tokens, components, pages",
+            "disabled": false,
+            "aria-label": "Search"
           }
         },
         "Size=sm, State=Default": {
@@ -6345,6 +6363,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "sm",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6362,6 +6381,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "sm",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6380,6 +6400,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "sm",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6398,6 +6419,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "sm",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6415,6 +6437,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "md",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6433,6 +6456,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "md",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -6451,80 +6475,64 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "md",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
             "disabled": true
           }
         },
-        "Size=lg, State=Default": {
-          "file": "forms-combobox-default__size-lg.png",
-          "width": 360,
-          "height": 48,
-          "story": "forms-combobox--default",
-          "props": {
-            "multiple": false,
-            "loading": false,
-            "loadingMessage": "Loading results",
-            "emptyMessage": "No matches. Try another name.",
-            "size": "lg",
-            "label": "Component",
-            "placeholder": "Search components",
-            "hint": "Type to filter 20 components.",
-            "disabled": false
-          }
-        },
         "Size=lg, State=Hover": {
-          "file": "forms-combobox-default__size-lg__state-hover.png",
-          "width": 360,
+          "file": "forms-combobox-inline__size-lg__state-hover.png",
+          "width": 252,
           "height": 48,
-          "story": "forms-combobox--default",
+          "story": "forms-combobox--inline",
           "props": {
+            "inline": true,
+            "size": "lg",
+            "emptyMessage": "Nothing matches. Try a token path like color.action.",
             "multiple": false,
             "loading": false,
             "loadingMessage": "Loading results",
-            "emptyMessage": "No matches. Try another name.",
-            "size": "lg",
-            "label": "Component",
-            "placeholder": "Search components",
-            "hint": "Type to filter 20 components.",
-            "disabled": false
+            "placeholder": "Search tokens, components, pages",
+            "disabled": false,
+            "aria-label": "Search"
           },
           "state": "hover"
         },
-        "story=forms-combobox--default, size=lg, state=active": {
-          "file": "forms-combobox-default__size-lg__state-active.png",
-          "width": 360,
+        "story=forms-combobox--inline, size=lg, state=active": {
+          "file": "forms-combobox-inline__size-lg__state-active.png",
+          "width": 252,
           "height": 48,
-          "story": "forms-combobox--default",
+          "story": "forms-combobox--inline",
           "props": {
+            "inline": true,
+            "size": "lg",
+            "emptyMessage": "Nothing matches. Try a token path like color.action.",
             "multiple": false,
             "loading": false,
             "loadingMessage": "Loading results",
-            "emptyMessage": "No matches. Try another name.",
-            "size": "lg",
-            "label": "Component",
-            "placeholder": "Search components",
-            "hint": "Type to filter 20 components.",
-            "disabled": false
+            "placeholder": "Search tokens, components, pages",
+            "disabled": false,
+            "aria-label": "Search"
           },
           "state": "active"
         },
         "Size=lg, State=Disabled": {
-          "file": "forms-combobox-default__size-lg__disabled-true.png",
-          "width": 360,
+          "file": "forms-combobox-inline__size-lg__disabled-true.png",
+          "width": 252,
           "height": 48,
-          "story": "forms-combobox--default",
+          "story": "forms-combobox--inline",
           "props": {
+            "inline": true,
+            "size": "lg",
+            "emptyMessage": "Nothing matches. Try a token path like color.action.",
             "multiple": false,
             "loading": false,
             "loadingMessage": "Loading results",
-            "emptyMessage": "No matches. Try another name.",
-            "size": "lg",
-            "label": "Component",
-            "placeholder": "Search components",
-            "hint": "Type to filter 20 components.",
-            "disabled": true
+            "placeholder": "Search tokens, components, pages",
+            "disabled": true,
+            "aria-label": "Search"
           }
         }
       }
@@ -6542,6 +6550,7 @@
             "loadingMessage": "Loading results",
             "emptyMessage": "No matches. Try another name.",
             "size": "md",
+            "inline": false,
             "label": "Component",
             "placeholder": "Search components",
             "hint": "Type to filter 20 components.",
@@ -7013,102 +7022,220 @@
     },
     "RadioGroup": {
       "variants": {
-        "Orientation=vertical, State=Default": {
+        "Orientation=vertical, Appearance=list, State=Default": {
           "file": "forms-radiogroup-default.png",
           "width": 400,
           "height": 166,
           "story": "forms-radiogroup--default",
           "props": {
             "orientation": "vertical",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Merge strategy",
             "defaultValue": "squash"
           }
         },
-        "Orientation=horizontal, State=Default": {
+        "Orientation=horizontal, Appearance=list, State=Default": {
           "file": "forms-radiogroup-horizontal.png",
           "width": 400,
           "height": 52,
           "story": "forms-radiogroup--horizontal",
           "props": {
             "orientation": "horizontal",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Theme",
             "defaultValue": "light"
           }
         },
-        "Orientation=vertical, State=Hover": {
-          "file": "forms-radiogroup-default__orientation-vertical__state-hover.png",
+        "Orientation=vertical, Appearance=tile, State=Default": {
+          "file": "forms-radiogroup-tile.png",
+          "width": 400,
+          "height": 144,
+          "story": "forms-radiogroup--tile",
+          "props": {
+            "hideLabel": true,
+            "appearance": "tile",
+            "orientation": "vertical",
+            "label": "Pick a face",
+            "defaultValue": "Ben Okafor"
+          }
+        },
+        "Orientation=vertical, Appearance=list, State=Hover": {
+          "file": "forms-radiogroup-default__orientation-vertical__appearance-list__state-hover.png",
           "width": 400,
           "height": 166,
           "story": "forms-radiogroup--default",
           "props": {
             "orientation": "vertical",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Merge strategy",
             "defaultValue": "squash"
           },
           "state": "hover"
         },
-        "story=forms-radiogroup--default, orientation=vertical, state=active": {
-          "file": "forms-radiogroup-default__orientation-vertical__state-active.png",
+        "story=forms-radiogroup--default, orientation=vertical, appearance=list, state=active": {
+          "file": "forms-radiogroup-default__orientation-vertical__appearance-list__state-active.png",
           "width": 400,
           "height": 166,
           "story": "forms-radiogroup--default",
           "props": {
             "orientation": "vertical",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Merge strategy",
             "defaultValue": "squash"
           },
           "state": "active"
         },
-        "Orientation=vertical, State=Disabled": {
-          "file": "forms-radiogroup-default__orientation-vertical__disabled-true.png",
+        "Orientation=vertical, Appearance=list, State=Disabled": {
+          "file": "forms-radiogroup-default__orientation-vertical__appearance-list__disabled-true.png",
           "width": 400,
           "height": 166,
           "story": "forms-radiogroup--default",
           "props": {
             "orientation": "vertical",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Merge strategy",
             "defaultValue": "squash",
             "disabled": true
           }
         },
-        "Orientation=horizontal, State=Hover": {
-          "file": "forms-radiogroup-horizontal__orientation-horizontal__state-hover.png",
+        "Orientation=vertical, Appearance=tile, State=Hover": {
+          "file": "forms-radiogroup-tile__orientation-vertical__appearance-tile__state-hover.png",
+          "width": 400,
+          "height": 144,
+          "story": "forms-radiogroup--tile",
+          "props": {
+            "hideLabel": true,
+            "appearance": "tile",
+            "orientation": "vertical",
+            "label": "Pick a face",
+            "defaultValue": "Ben Okafor"
+          },
+          "state": "hover"
+        },
+        "story=forms-radiogroup--tile, orientation=vertical, appearance=tile, state=active": {
+          "file": "forms-radiogroup-tile__orientation-vertical__appearance-tile__state-active.png",
+          "width": 400,
+          "height": 144,
+          "story": "forms-radiogroup--tile",
+          "props": {
+            "hideLabel": true,
+            "appearance": "tile",
+            "orientation": "vertical",
+            "label": "Pick a face",
+            "defaultValue": "Ben Okafor"
+          },
+          "state": "active"
+        },
+        "Orientation=vertical, Appearance=tile, State=Disabled": {
+          "file": "forms-radiogroup-tile__orientation-vertical__appearance-tile__disabled-true.png",
+          "width": 400,
+          "height": 144,
+          "story": "forms-radiogroup--tile",
+          "props": {
+            "hideLabel": true,
+            "appearance": "tile",
+            "orientation": "vertical",
+            "label": "Pick a face",
+            "defaultValue": "Ben Okafor",
+            "disabled": true
+          }
+        },
+        "Orientation=horizontal, Appearance=list, State=Hover": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-list__state-hover.png",
           "width": 400,
           "height": 52,
           "story": "forms-radiogroup--horizontal",
           "props": {
             "orientation": "horizontal",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Theme",
             "defaultValue": "light"
           },
           "state": "hover"
         },
-        "story=forms-radiogroup--horizontal, orientation=horizontal, state=active": {
-          "file": "forms-radiogroup-horizontal__orientation-horizontal__state-active.png",
+        "story=forms-radiogroup--horizontal, orientation=horizontal, appearance=list, state=active": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-list__state-active.png",
           "width": 400,
           "height": 52,
           "story": "forms-radiogroup--horizontal",
           "props": {
             "orientation": "horizontal",
+            "appearance": "list",
             "hideLabel": false,
             "label": "Theme",
             "defaultValue": "light"
           },
           "state": "active"
         },
-        "Orientation=horizontal, State=Disabled": {
-          "file": "forms-radiogroup-horizontal__orientation-horizontal__disabled-true.png",
+        "Orientation=horizontal, Appearance=list, State=Disabled": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-list__disabled-true.png",
           "width": 400,
           "height": 52,
           "story": "forms-radiogroup--horizontal",
           "props": {
             "orientation": "horizontal",
+            "appearance": "list",
+            "hideLabel": false,
+            "label": "Theme",
+            "defaultValue": "light",
+            "disabled": true
+          }
+        },
+        "Orientation=horizontal, Appearance=tile, State=Default": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-tile.png",
+          "width": 400,
+          "height": 62,
+          "story": "forms-radiogroup--horizontal",
+          "props": {
+            "orientation": "horizontal",
+            "appearance": "tile",
+            "hideLabel": false,
+            "label": "Theme",
+            "defaultValue": "light"
+          }
+        },
+        "Orientation=horizontal, Appearance=tile, State=Hover": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-tile__state-hover.png",
+          "width": 400,
+          "height": 62,
+          "story": "forms-radiogroup--horizontal",
+          "props": {
+            "orientation": "horizontal",
+            "appearance": "tile",
+            "hideLabel": false,
+            "label": "Theme",
+            "defaultValue": "light"
+          },
+          "state": "hover"
+        },
+        "story=forms-radiogroup--horizontal, orientation=horizontal, appearance=tile, state=active": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-tile__state-active.png",
+          "width": 400,
+          "height": 62,
+          "story": "forms-radiogroup--horizontal",
+          "props": {
+            "orientation": "horizontal",
+            "appearance": "tile",
+            "hideLabel": false,
+            "label": "Theme",
+            "defaultValue": "light"
+          },
+          "state": "active"
+        },
+        "Orientation=horizontal, Appearance=tile, State=Disabled": {
+          "file": "forms-radiogroup-horizontal__orientation-horizontal__appearance-tile__disabled-true.png",
+          "width": 400,
+          "height": 62,
+          "story": "forms-radiogroup--horizontal",
+          "props": {
+            "orientation": "horizontal",
+            "appearance": "tile",
             "hideLabel": false,
             "label": "Theme",
             "defaultValue": "light",
@@ -8857,6 +8984,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -8871,6 +8999,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -8885,7 +9014,23 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
+            "pageCount": 12
+          }
+        },
+        "story=navigation-pagination--compact-items": {
+          "file": "navigation-pagination-compact-items.png",
+          "width": 400,
+          "height": 44,
+          "story": "navigation-pagination--compact-items",
+          "props": {
+            "defaultPage": 3,
+            "siblingCount": 1,
+            "variant": "compact",
+            "size": "md",
+            "noun": "Piece",
+            "aria-label": "Pieces, one by one",
             "pageCount": 12
           }
         },
@@ -8899,6 +9044,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -8913,6 +9059,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -8927,6 +9074,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -8942,6 +9090,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -8957,6 +9106,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -8972,6 +9122,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -8986,6 +9137,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9001,6 +9153,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9016,6 +9169,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9031,6 +9185,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9045,6 +9200,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9060,6 +9216,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9075,6 +9232,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9090,6 +9248,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9104,6 +9263,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9119,6 +9279,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9134,6 +9295,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9153,6 +9315,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9167,6 +9330,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9182,6 +9346,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9197,6 +9362,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9212,6 +9378,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9226,6 +9393,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9241,6 +9409,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9256,6 +9425,7 @@
             "siblingCount": 1,
             "variant": "full",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9275,6 +9445,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9289,6 +9460,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9304,6 +9476,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9319,6 +9492,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "md",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -9334,6 +9508,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           }
@@ -9348,6 +9523,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9363,6 +9539,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12
           },
@@ -9378,6 +9555,7 @@
             "siblingCount": 1,
             "variant": "compact",
             "size": "sm",
+            "noun": "Page",
             "aria-label": "Pagination",
             "pageCount": 12,
             "disabled": true
@@ -10218,6 +10396,16 @@
             "disablePointerDismissal": false
           }
         },
+        "story=overlays-drawer--keep-mounted": {
+          "file": "overlays-drawer-keep-mounted.png",
+          "width": 99.83,
+          "height": 44,
+          "story": "overlays-drawer--keep-mounted",
+          "props": {
+            "side": "end",
+            "disablePointerDismissal": false
+          }
+        },
         "story=overlays-drawer--all-states": {
           "file": "overlays-drawer-all-states.png",
           "width": 480,
@@ -10404,6 +10592,15 @@
             "loopFocus": true
           }
         },
+        "story=overlays-menu--anchored": {
+          "file": "overlays-menu-anchored.png",
+          "width": 240,
+          "height": 82,
+          "story": "overlays-menu--anchored",
+          "props": {
+            "loopFocus": true
+          }
+        },
         "story=overlays-menu--checkable-items": {
           "file": "overlays-menu-checkable-items.png",
           "width": 240,
@@ -10418,6 +10615,15 @@
           "width": 240,
           "height": 199,
           "story": "overlays-menu--all-states",
+          "props": {
+            "loopFocus": true
+          }
+        },
+        "story=overlays-menu--all-states-anchored": {
+          "file": "overlays-menu-all-states-anchored.png",
+          "width": 240,
+          "height": 82,
+          "story": "overlays-menu--all-states-anchored",
           "props": {
             "loopFocus": true
           }
@@ -10582,6 +10788,15 @@
             "loopFocus": true
           }
         },
+        "story=overlays-menu--anchored": {
+          "file": "overlays-menu-anchored.png",
+          "width": 240,
+          "height": 82,
+          "story": "overlays-menu--anchored",
+          "props": {
+            "loopFocus": true
+          }
+        },
         "story=overlays-menu--checkable-items": {
           "file": "overlays-menu-checkable-items.png",
           "width": 240,
@@ -10596,6 +10811,15 @@
           "width": 240,
           "height": 199,
           "story": "overlays-menu--all-states",
+          "props": {
+            "loopFocus": true
+          }
+        },
+        "story=overlays-menu--all-states-anchored": {
+          "file": "overlays-menu-all-states-anchored.png",
+          "width": 240,
+          "height": 82,
+          "story": "overlays-menu--all-states-anchored",
           "props": {
             "loopFocus": true
           }
@@ -10779,7 +11003,7 @@
         },
         "story=overlays-tooltip--toolbar": {
           "file": "overlays-tooltip-toolbar.png",
-          "width": 77.81,
+          "width": 73.63,
           "height": 24.19,
           "story": "overlays-tooltip--toolbar",
           "props": {
@@ -10845,7 +11069,7 @@
         },
         "story=overlays-tooltip--toolbar": {
           "file": "overlays-tooltip-toolbar.png",
-          "width": 77.81,
+          "width": 73.63,
           "height": 24.19,
           "story": "overlays-tooltip--toolbar",
           "props": {

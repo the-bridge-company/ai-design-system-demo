@@ -23,6 +23,40 @@
   font-weight: var(--font-weight-regular);
 }
 
+/* Details (DemoBanner.tsx): phones only. Its vertical margins take back what the 32px button adds to the 20px title
+   line, so the line keeps its height and the info icon stays centred on it. */
+.demo-banner-more {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .demo-banner-more {
+    display: inline-flex;
+    margin-block: calc((var(--typography-ui-line-height) - var(--control-height-sm)) / 2);
+    margin-inline-start: var(--space-1);
+    vertical-align: middle;
+  }
+
+  .demo-banner[data-open] .demo-banner-more svg {
+    rotate: 180deg;
+  }
+
+  /* Folded: one line. The team name, Details and the one action; the sentence and "See it as" wait behind Details. */
+  .demo-strip > .demo-banner:not([data-open]) {
+    flex-wrap: nowrap;
+  }
+
+  .demo-banner:not([data-open]) .demo-banner-text,
+  .demo-banner:not([data-open]) .demo-banner-actions > :not(:last-child) {
+    display: none;
+  }
+
+  .demo-banner:not([data-open]) > :last-child,
+  .demo-banner:not([data-open]) > :last-child > * {
+    flex: none;
+  }
+}
+
 /* The demo banner (boards D1, EmptyA2): the board's warm tint, from the warning tones so its
    text pair is one the contrast gate checks (warning text on its tint). It says "this is not your work", not alarm:
    the icon stays the neutral info mark. */
@@ -141,8 +175,10 @@
 }
 
 .dh-tour {
-  /* Never wider than the screen less the popover's collision padding on each side (no sideways scroll on a phone). */
-  max-width: min(var(--size-96), calc(100vw - var(--size-4)));
+  /* Never wider than the screen less the popover's collision padding on each side (no sideways scroll on a phone).
+     320px, not 384: the step floats under what it points at, so the narrower it is, the less of the next section it
+     covers (step 1 hid the Library and build lines, step 2 the Products heading). */
+  max-width: min(var(--size-80), calc(100vw - var(--size-4)));
 }
 
 /* On a narrow screen the step sits in the page flow, where the anchor would be (HomeTour.tsx InlineStep): a DS Card

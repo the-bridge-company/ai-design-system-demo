@@ -1,5 +1,5 @@
-// The Library <-> Studio switch at the end of the top bar (the owner's pill): a white pill names the space you are in,
-// on a Deep Harbor track; the other space waits at the end of the track as one drawn icon (pen and notes for Studio,
+// The Library <-> Studio switch at the end of the top bar (the owner's pill): a raised plate names the space you are in,
+// on a segmented-control track (the DS SegmentedControl's tokens); the other space waits at the end of the track as one drawn icon (pen and notes for Studio,
 // an open book for the Library). One link, not a button or a switch: it loads the other space, carrying the page's
 // item across (lib/space-switch.ts). Rendered statically by the layout (no hydration); scripts/space-switch.ts plays
 // the slide on click, refreshes the target where the query or the team decides it, and the first-visit hint.

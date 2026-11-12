@@ -122,6 +122,21 @@
   animation-delay: calc(var(--_beat) * -0.5);
 }
 
+/* The story opens where the bridge is whole (70% of the timeline: the missing span set in place, its flag up), not at
+   its first frame, where the deck has a hole and nothing moves yet: on load that read as a broken drawing. It then
+   plays on and loops as before. */
+.ss-boat-a,
+.ss-boat-b,
+.ss-block-x,
+.ss-block-y,
+.ss-hook,
+.ss-rope,
+.ss-flag,
+.ss-kept,
+.ss-cart {
+  animation-delay: calc(var(--_t) * -0.7);
+}
+
 @keyframes ss-boat-a {
   0% {
     transform: translateX(calc(var(--space-1) * -175));

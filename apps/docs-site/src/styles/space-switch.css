@@ -1,5 +1,6 @@
-/* The Library <-> Studio switch (components/SpaceSwitch.tsx): a white pill names the space you are in, on a Deep Harbor
-   track; the other space waits at the end as one drawn icon. Click: the pill slides with a slight stretch in flight,
+/* The Library <-> Studio switch (components/SpaceSwitch.tsx): drawn with the DS SegmentedControl's track and selected
+   plate tokens, so it reads as two segments with one selected, not as one solid button: the raised plate names the
+   space you are in, the other space waits in the second segment as one drawn icon. Click: the pill slides with a slight stretch in flight,
    the word flips, the icons swap with a spin and a small overshoot, then the other space loads (scripts/space-switch.ts).
    Hover: the pill leans toward the icon, a soft halo opens and the icon acts out its space (the pen scribbles, the book
    turns a page). Press: the control squishes to 96%. Reduced motion: no movement, the pieces change in place. */
@@ -19,22 +20,19 @@ a.space-switch {
   width: calc(var(--_pw) + var(--_iw) + var(--_inset) * 2);
   height: var(--_h);
   border-radius: var(--radius-pill);
-  background-color: var(--color-surface-strong);
-  color: var(--color-text-on-solid);
+  /* One step darker than the SegmentedControl's subtle track: the top bar is already the subtle grey. */
+  background-color: var(--color-bg-muted);
+  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
+  color: var(--color-text-muted);
   text-decoration-line: none;
   margin-inline-start: var(--space-2);
   -webkit-tap-highlight-color: transparent;
   transition: scale var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-/* The pill keeps dark ink on its light face in both themes. */
-:root[data-theme="dark"] a.space-switch {
-  --_ink: var(--color-text-inverse);
-}
-
 @media (hover: hover) {
   a.space-switch:hover {
-    color: var(--color-text-on-solid);
+    color: var(--color-text-default);
   }
 }
 
@@ -52,8 +50,10 @@ a.space-switch:focus-visible {
   place-items: center;
   width: var(--_pw);
   height: calc(var(--_h) - var(--_inset) * 2);
+  box-sizing: border-box;
+  border: var(--border-width-default) solid var(--color-control-checked-bg);
   border-radius: var(--radius-pill);
-  background-color: var(--color-control-thumb);
+  background-color: var(--color-surface-raised);
   box-shadow: var(--elevation-raised);
   color: var(--_ink);
   perspective: 10em;
@@ -120,14 +120,14 @@ a.space-switch[data-mode="studio"] .ss-word > [data-when="library"] {
   left: calc(var(--_inset) + var(--_pw));
 }
 
-/* The halo behind the icon on hover and focus: the track's own white, faint. */
+/* The halo behind the icon on hover and focus: the ink, faint. */
 .ss-icon::before {
   content: "";
   position: absolute;
   width: var(--size-7);
   height: var(--size-7);
   border-radius: var(--radius-pill);
-  background-color: var(--color-text-on-solid);
+  background-color: var(--color-text-default);
   opacity: 0;
   scale: 0.4;
   transition:
@@ -170,7 +170,7 @@ a.space-switch[data-mode="studio"] .ss-to-studio .ss-glyph {
 }
 
 .ss-leaf {
-  fill: var(--color-surface-strong);
+  fill: var(--color-bg-muted);
   transform-box: view-box;
   transform-origin: 50% 50%;
   transition: transform var(--_slide) var(--motion-easing-enter);
@@ -203,7 +203,7 @@ a.space-switch[data-mode="studio"] .ss-to-studio .ss-glyph {
   width: var(--space-1);
   height: var(--space-1);
   border-radius: var(--radius-pill);
-  background-color: var(--color-text-on-solid);
+  background-color: var(--color-text-muted);
   opacity: 0;
   pointer-events: none;
 }
@@ -265,14 +265,14 @@ a.space-switch[data-mode="studio"] .ss-hint {
 @media (hover: hover) {
   a.space-switch[data-mode="library"]:hover .ss-to-studio::before,
   a.space-switch[data-mode="studio"]:hover .ss-to-library::before {
-    opacity: 0.16;
+    opacity: 0.08;
     scale: 1;
   }
 }
 
 a.space-switch[data-mode="library"]:focus-visible .ss-to-studio::before,
 a.space-switch[data-mode="studio"]:focus-visible .ss-to-library::before {
-  opacity: 0.16;
+  opacity: 0.08;
   scale: 1;
 }
 

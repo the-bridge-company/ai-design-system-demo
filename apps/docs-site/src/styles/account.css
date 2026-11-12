@@ -18,6 +18,20 @@
   min-height: calc(100dvh - var(--layout-header-height));
 }
 
+/* The screen is drawn in the browser (SignIn.tsx is client-only): it fades in once instead of popping in whole a beat
+   after the top bar. */
+@media (prefers-reduced-motion: no-preference) {
+  .acc-page {
+    animation: acc-page-in var(--motion-duration-moderate) var(--motion-easing-enter) both;
+  }
+}
+
+@keyframes acc-page-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* The step stands in the middle of its column, the privacy link at the foot, level with the bottom of the zone. */
 .acc-pane {
   display: grid;
@@ -28,11 +42,18 @@
   padding: var(--space-8) var(--space-8) var(--space-2);
 }
 
+/* One column box for every step (the email, the code, the entry rooms): the rooms' width, so moving from Send code to
+   an invite keeps the same left edge (it jumped 49px, a 384px column then a 480px one, both centred). The sign-in
+   steps keep their 384px measure inside it, from that edge. */
 .acc {
   display: grid;
   gap: var(--space-3);
   align-self: center;
   width: 100%;
+  max-width: var(--size-120);
+}
+
+.acc:not(.acc-room) > * {
   max-width: var(--size-96);
 }
 
@@ -165,7 +186,7 @@
 
 .acc-foot {
   width: 100%;
-  max-width: var(--size-96);
+  max-width: var(--size-120);
   margin: 0;
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
@@ -178,11 +199,7 @@
   line-height: var(--typography-ui-line-height);
 }
 
-/* --- Entry rooms (EntryRooms.tsx, boards E3 to E5): the same column, a little wider for the team cards. --------- */
-
-.acc-room {
-  max-width: var(--size-120);
-}
+/* --- Entry rooms (EntryRooms.tsx, boards E3 to E5): the same column, its full width for the team cards. ---------- */
 
 .ent-card,
 .ent-list,

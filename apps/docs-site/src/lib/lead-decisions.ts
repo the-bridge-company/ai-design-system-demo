@@ -116,7 +116,7 @@ export function turnSince(body: string | null | undefined): string | null {
   const turn = leadTurnOf(body);
   if (turn === 'lead' && isWaitingForLead(body)) {
     const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
-    return all[all.length - 1]?.at ?? e.leadAskedAt ?? null;
+    return all[all.length - 1]?.at ?? e.designAskedAt ?? null;
   }
   if (turn === 'designer') return openDecisionOf(body)?.at ?? null;
   return null;
@@ -139,15 +139,15 @@ export function leadHomeRow(body: string | null | undefined, v: { viewer: string
   const turn = leadTurnOf(body);
   const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
   const last = all[all.length - 1];
-  const designer = { login: e.leadAskedBy ?? e.author ?? null, name: e.leadAskedByName ?? e.memberName ?? e.leadAskedBy ?? e.author ?? 'The designer' };
+  const designer = { login: e.designAskedBy ?? e.author ?? null, name: e.designAskedByName ?? e.memberName ?? e.designAskedBy ?? e.author ?? 'The designer' };
   const shown = v.names?.[designer.login ?? ''] ?? designer.name;
   if (turn === 'lead' && isWaitingForLead(body)) {
     if (!v.lead || v.own) return null;
     // Who was asked by name are GitHub logins: a lead signed in by email has none, and answers all the same.
-    if (v.viewer && e.leadAskedTo?.length && !e.leadAskedTo.some((l) => same(l, v.viewer))) return null;
+    if (v.viewer && e.designAskedTo?.length && !e.designAskedTo.some((l) => same(l, v.viewer))) return null;
     // "I'll look": another reviewer took it, it leaves this one's Home; 2 days later with no decision, it comes back.
-    const takenFresh = Boolean(e.leadTakenAt && (v.now ?? Date.now()) - Date.parse(e.leadTakenAt) < TAKEN_FOR_MS);
-    if (takenFresh && !(same(e.leadTakenBy, v.viewer) || (!e.leadTakenBy && same(e.leadTakenByName, v.viewerName)))) return null;
+    const takenFresh = Boolean(e.designTakenAt && (v.now ?? Date.now()) - Date.parse(e.designTakenAt) < TAKEN_FOR_MS);
+    if (takenFresh && !(same(e.designTakenBy, v.viewer) || (!e.designTakenBy && same(e.designTakenByName, v.viewerName)))) return null;
     const answered = last?.kind === 'answer';
     const before = answered ? [...all].reverse().find((d) => d.kind === 'question' || d.kind === 'changes' || d.kind === 'take-back') : null;
     const line = answered ? `${shown} answered your ${before?.kind === 'question' ? 'question' : 'changes'}` : last?.kind === 'asked-someone' ? `${sayerName(last, v.names)} asks you to look` : `${shown} is done exploring`;

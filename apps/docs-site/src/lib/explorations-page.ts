@@ -68,7 +68,7 @@ export interface StatusInput {
 function leadSaidLooksRight(body: string | null | undefined): boolean {
   const e = parseExplorationBody(body ?? null);
   if (!e) return false;
-  if (e.leadOkBy) return true;
+  if (e.designOkBy) return true;
   const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
   return all[all.length - 1]?.kind === 'looks-right';
 }

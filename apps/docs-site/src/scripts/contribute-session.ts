@@ -6,6 +6,7 @@
 // checked with the server on every page.
 // scripts/github-session.ts uses it: getToken() gives the stand-in token (lib/contribute CONTRIB_TOKEN) to every
 // feature, and the session's fetch sends each call that carries it here (contributeFetch). No feature changes.
+import type { DesignReviewMap, ReviewMember } from '../lib/team-reviews';
 import { GitHubError } from '@bridge-ds/core';
 import { mineIn } from '../lib/branches-page';
 import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
@@ -250,25 +251,30 @@ export interface TeamPeople {
   collaborators: TeamCollaborator[];
   /** Email members by name and role; `you` marks the signed-in one. Never another member's email. */
   /** 'admin' only in `npm run dev:full`, for a member seeded as admin (api/_lib/local-admin.ts). */
-  /** `ref`: their member reference (blocks name them by it); `lead`: asked to review explorations. */
-  members: { name: string; role: 'view' | 'edit' | 'admin'; ref?: string; you?: boolean; lead?: boolean }[];
+  /**
+   * `ref`: their member reference (blocks name them by it); `lead`: asked some review; `libraryOwner`: decides what the
+   * library keeps; `designReviews`: the products whose design they review ("*": every product not listed).
+   */
+  members: { name: string; role: 'view' | 'edit' | 'admin'; ref?: string; you?: boolean; lead?: boolean; libraryOwner?: boolean; designReviews?: string[] }[];
   /** Each product's product manager (Settings > Products): a GitHub person by login, an email member by reference. */
   pms: Record<string, TeamPm>;
-  /** Who looks after the design system (api/_lib/review-mode.ts). */
-  reviewMode?: ReviewMode;
+  /** The two reviews (api/_lib/review-settings.ts): each product's design review, and the one time migration note. */
+  reviews?: { designReview: DesignReviewMap; note?: boolean };
 }
 
-/** Who looks after the design system: one person, shared with review, shared with no review. */
-export type ReviewMode = 'one' | 'shared' | 'shared-none';
-const REVIEW_MODES: readonly ReviewMode[] = ['one', 'shared', 'shared-none'];
-export const asReviewMode = (v: unknown): ReviewMode => (REVIEW_MODES.includes(v as ReviewMode) ? (v as ReviewMode) : 'one');
-
-/** The team's review facts for Done exploring: its mode, and the member references asked to review (email members). */
+/**
+ * The team's review facts for Done exploring and every surface that names a hat (lib/team-reviews.ts): each product's
+ * design review (null: none kept server side, bridge.config.json decides), the members with their library owner flag,
+ * and `asked`: every email member asked some review (kept for the pages that only need "is someone asked").
+ */
 export interface TeamReview {
-  mode: ReviewMode;
+  designReview: DesignReviewMap | null;
+  members: ReviewMember[];
   asked: { ref: string; name: string; role?: string }[];
   /** Each product's product manager (Settings > Products), by product key. */
   pms?: Record<string, TeamPm>;
+  /** Settings > Reviews shows "Reviews now have two parts" once after the migration. */
+  note?: boolean;
 }
 const reviews = new Map<string, Promise<TeamReview>>();
 
@@ -281,8 +287,14 @@ export function teamReview(repo: string, githubToken: string | null = null): Pro
   let p = reviews.get(k);
   if (!p) {
     p = contributeTeam(repo, githubToken).then(
-      (t) => ({ mode: asReviewMode(t.reviewMode), asked: t.members.filter((m) => m.lead && m.ref).map((m) => ({ ref: m.ref!, name: m.name, role: m.role })), pms: t.pms }),
-      () => ({ mode: 'one' as const, asked: [] }),
+      (t) => ({
+        designReview: t.reviews?.designReview ?? null,
+        members: t.members.map((m) => ({ name: m.name, role: m.role, ...(m.ref ? { ref: m.ref } : {}), ...(m.libraryOwner ? { libraryOwner: true } : {}) })),
+        asked: t.members.filter((m) => m.lead && m.ref).map((m) => ({ ref: m.ref!, name: m.name, role: m.role })),
+        pms: t.pms,
+        ...(t.reviews?.note ? { note: true } : {}),
+      }),
+      () => ({ designReview: null, members: [], asked: [] }),
     );
     reviews.set(k, p);
   }
@@ -320,10 +332,14 @@ export async function contributeTeam(repo: string, githubToken: string | null = 
           ...(m.you ? { you: true } : {}),
           ...(typeof m.ref === 'string' && /^[0-9a-f]{16}$/.test(m.ref) ? { ref: m.ref } : {}),
           ...(m.lead === true ? { lead: true } : {}),
+          ...(m.libraryOwner === true ? { libraryOwner: true } : {}),
+          ...(Array.isArray(m.designReviews) ? { designReviews: m.designReviews.filter((k): k is string => typeof k === 'string') } : {}),
         }))
     : [];
   noteTeamFaces(repo, (r as { faces?: unknown }).faces, members, collaborators);
-  return { collaborators, members, pms: parsePms((r as { pms?: unknown }).pms), reviewMode: asReviewMode(r.reviewMode) };
+  const reviews = (r as { reviews?: { designReview?: unknown; note?: unknown } }).reviews;
+  const designReview = reviews && reviews.designReview && typeof reviews.designReview === 'object' ? (reviews.designReview as DesignReviewMap) : null;
+  return { collaborators, members, pms: parsePms((r as { pms?: unknown }).pms), ...(designReview ? { reviews: { designReview, ...(reviews?.note === true ? { note: true } : {}) } } : {}) };
 }
 
 /**

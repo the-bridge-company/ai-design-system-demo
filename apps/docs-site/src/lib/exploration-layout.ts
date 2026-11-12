@@ -484,7 +484,7 @@ export interface WaitInput {
   /** The viewer is that lead (or a lead exploring with nobody else to ask). */
   viewerLeads: boolean;
   product: string;
-  /** Whole days since the lead was asked (from the exploration's leadAskedAt); null when unknown. */
+  /** Whole days since the lead was asked (from the exploration's designAskedAt); null when unknown. */
   waitedDays?: number | null;
   /** "Dana is looking at it.": a reviewer took it. */
   taken?: string | null;

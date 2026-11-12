@@ -671,9 +671,9 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
 }
 
 /** Who sent an exploration to developers: the lead whose Looks right is recorded (the latest), else null. */
-export function sentByOf(block: Pick<NonNullable<ReturnType<typeof parseExplorationBody>>, 'leadOkBy' | 'decisions'> | null | undefined, nameOf: (login: string) => string = (l) => l): string | null {
+export function sentByOf(block: Pick<NonNullable<ReturnType<typeof parseExplorationBody>>, 'designOkBy' | 'decisions'> | null | undefined, nameOf: (login: string) => string = (l) => l): string | null {
   const ok = [...(block?.decisions ?? [])].reverse().find((d) => d.kind === 'looks-right');
-  const name = ok?.byName?.trim() || (ok?.by ? nameOf(ok.by) : '') || (block?.leadOkBy ? nameOf(block.leadOkBy) : '');
+  const name = ok?.byName?.trim() || (ok?.by ? nameOf(ok.by) : '') || (block?.designOkBy ? nameOf(block.designOkBy) : '');
   return name ? name.split(/\s+/)[0]! : null;
 }
 

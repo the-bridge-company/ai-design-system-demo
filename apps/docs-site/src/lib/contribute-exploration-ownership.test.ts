@@ -198,7 +198,7 @@ async function expectOwnerWorks(d: Designer, s: World0, b: string, n: number) {
   expect((await d.call('PUT', `${C}/contents/src/Orders.tsx`, { message: 'x', content: 'eA==', branch: b })).status).toBe(200);
   expect((await d.call('POST', `${C}/merges`, { base: b, head: 'main' })).status).toBe(201);
   // This team has a design lead: Done exploring asks them, the hand-off is the lead's yes (api/_lib/lead-gate.ts).
-  const done = s.w.pulls[n]!.body.replace(/"name":/, '"leadAskedAt":"2026-11-02T10:00:00Z","name":');
+  const done = s.w.pulls[n]!.body.replace(/"name":/, '"designAskedAt":"2026-11-02T10:00:00Z","name":');
   expect((await d.call('PATCH', `${C}/pulls/${n}`, { body: done })).status).toBe(200);
   expect((await d.call('POST', `${C}/issues/${n}/labels`, { labels: ['archived'] })).status).toBe(201);
   expect((await d.call('POST', `${C}/issues/${n}/comments`, { body: 'Ready' })).status).toBe(201);
@@ -363,7 +363,7 @@ describe('a design lead signed in by email (the member record says so, never the
     const s = setup();
     const ann = await emailDesigner(s, 'ann@acme.com', 'Ann');
     const n = await start(s, ann, 'orders');
-    for (const body of [words({ decisions: [{ ...yes, kind: 'looks-right' }] }), words({ leadOkBy: 'lena' }), words({ doneAt: '2026-11-02T11:00:00Z' })]) {
+    for (const body of [words({ decisions: [{ ...yes, kind: 'looks-right' }] }), words({ designOkBy: 'lena' }), words({ doneAt: '2026-11-02T11:00:00Z' })]) {
       const r = await ann.call('PATCH', `${C}/pulls/${n}`, { body });
       expect(r.status).toBe(403);
       expect(((await r.json()) as { error: string }).error).toBe('lead-only');
@@ -374,7 +374,7 @@ describe('a design lead signed in by email (the member record says so, never the
     const s = setup();
     const ann = await emailDesigner(s, 'ann@acme.com', 'Ann');
     const n = await start(s, ann, 'orders');
-    expect((await ann.call('PATCH', `${C}/pulls/${n}`, { body: words({ leadAskedAt: '2026-11-02T11:00:00Z', leadAskedTo: ['lena'] }) })).status).toBe(200);
+    expect((await ann.call('PATCH', `${C}/pulls/${n}`, { body: words({ designAskedAt: '2026-11-02T11:00:00Z', designAskedTo: ['lena'] }) })).status).toBe(200);
   });
   it('the keeper action refuses anyone but a lead, whatever they send', async () => {
     const s = setup();

@@ -26,7 +26,7 @@ describe('explorations on GitHub', () => {
     const r = (await explorations.doneExploring(ctx, { ref: 'pill-buttons' })) as any;
     expect(r).toMatchObject({ status: 'waiting-for-lead', branch: 'explore/pill-buttons' });
     expect(gh.pulls[0]!.labels.map((l: { name: string }) => l.name)).toContain('exploration');
-    expect(gh.pulls[0]!.body).toContain('leadAskedAt');
+    expect(gh.pulls[0]!.body).toContain('designAskedAt');
   });
 
   it('start: dry run and refusal without a token; branch, note and draft pull request labeled exploration with one', async () => {

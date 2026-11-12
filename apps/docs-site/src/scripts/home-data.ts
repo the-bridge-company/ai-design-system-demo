@@ -549,8 +549,8 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     const waitingOnOthers: HomeWaiting[] = [];
     for (const p of [...pulls, ...productOpen]) {
       const block = parseExplorationBody(p.body);
-      if (!block || (block.leadAskedAt === undefined && !block.decisions?.length && !block.leadNote)) continue;
-      const asker = block.leadAskedBy ?? p.user.login;
+      if (!block || (block.designAskedAt === undefined && !block.decisions?.length && !block.leadNote)) continue;
+      const asker = block.designAskedBy ?? p.user.login;
       const row = leadHomeRow(p.body, { viewer, lead: viewerDecidesExplorations() && !(viewer && same(asker, viewer)), own: isOwnExploration(p, viewer, viewerRef), viewerName: currentContributor()?.name ?? null });
       if (!row) continue;
       const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`);
@@ -560,7 +560,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       }
       // A designer who joined by email has no GitHub login: their name and the face of their name (requesterPerson),
       // never the app's account that writes for them (Sofia and Leo would share one drawing).
-      const askedBy = block.leadAskedBy ? null : row.person.name;
+      const askedBy = block.designAskedBy ? null : row.person.name;
       const who = (askedBy ? requesterPerson({ name: askedBy, login: null }) : null) ?? pick(row.person.login ?? asker)!;
       needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line, action: row.action });
     }

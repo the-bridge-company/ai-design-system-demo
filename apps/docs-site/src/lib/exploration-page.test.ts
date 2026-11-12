@@ -476,8 +476,8 @@ describe('an email lead says it looks right (Bridge\'s app account writes it)', 
 
   it('keeps the people it named before', () => {
     // A lead with a GitHub login: the designer the block keeps.
-    expect(doneLoginOf({ block: { leadOkBy: 'dana', doneBy: 'ann' }, commits: [], author: 'ann' })).toBe('ann');
-    expect(leadApproverOf({ leadOkBy: 'dana' })).toBe('dana');
+    expect(doneLoginOf({ block: { designOkBy: 'dana', doneBy: 'ann' }, commits: [], author: 'ann' })).toBe('ann');
+    expect(leadApproverOf({ designOkBy: 'dana' })).toBe('dana');
     // An email member who said it themselves.
     expect(doneLoginOf({ block: { member: 'm1', memberName: 'Dino', doneByMember: 'm1' }, commits: [], labelLogin: BOT, author: BOT })).toBe('name:Dino');
     // A person's ready label.

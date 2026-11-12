@@ -271,7 +271,7 @@ export interface DoneBlockLike {
   doneByMember?: string | undefined;
   member?: string | undefined;
   memberName?: string | undefined;
-  leadOkBy?: string | undefined;
+  designOkBy?: string | undefined;
   decisions?: readonly { kind: string; by?: string | undefined; byName?: string | undefined }[] | undefined;
 }
 
@@ -283,7 +283,7 @@ export const TEAM_DONE_NAME = 'Your team';
  * joined by email (leadApproveOnGitHub records only their name in the decision). Null when no lead approved it.
  */
 export function leadApproverOf(block: DoneBlockLike | null | undefined): string | null {
-  if (block?.leadOkBy?.trim() && !isAppLogin(block.leadOkBy)) return block.leadOkBy.trim();
+  if (block?.designOkBy?.trim() && !isAppLogin(block.designOkBy)) return block.designOkBy.trim();
   const ok = [...(block?.decisions ?? [])].reverse().find((d) => d.kind === 'looks-right');
   if (!ok) return null;
   if (ok.by?.trim() && !isAppLogin(ok.by)) return ok.by.trim();
@@ -299,7 +299,7 @@ export function leadApproverOf(block: DoneBlockLike | null | undefined): string 
 export function doneLoginOf(input: { block: DoneBlockLike | null | undefined; commits: readonly BranchCommitLike[]; labelLogin?: string | null | undefined; author: string }): string {
   const b = input.block;
   const memberDone = b?.doneByMember && b.doneByMember === b.member && b.memberName?.trim() ? nameAuthor(b.memberName) : null;
-  const picked = (b?.leadOkBy ? (b.doneBy ?? input.author) : null) ?? memberDone ?? doneByOf(input.commits) ?? input.labelLogin ?? input.author;
+  const picked = (b?.designOkBy ? (b.doneBy ?? input.author) : null) ?? memberDone ?? doneByOf(input.commits) ?? input.labelLogin ?? input.author;
   if (!isAppLogin(picked)) return picked;
   if (b?.memberName?.trim()) return nameAuthor(b.memberName);
   const lead = leadApproverOf(b);

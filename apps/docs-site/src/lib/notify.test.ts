@@ -467,7 +467,7 @@ describe('the talk with a design lead', () => {
   const none = block({});
 
   it('Done exploring tells the leads asked, and a reminder starts', () => {
-    const n = leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedByName: 'Mia', leadAskedTo: ['flo', 'dana'] }), base);
+    const n = leadNoticesOf(none, block({ designAskedAt: 't', designAskedByName: 'Mia', designAskedTo: ['flo', 'dana'] }), base);
     expect(n).toMatchObject([{ kind: 'lead-ask', to: ['flo', 'dana'], actorName: 'Mia', title: 'Late tag', items: [7], waits: true }]);
   });
   it.each([
@@ -485,11 +485,11 @@ describe('the talk with a design lead', () => {
   it('the answer goes to the lead who asked; asking someone else to them', () => {
     const a = leadNoticesOf(block({ decisions: [said('question', { text: 'Which?' })] }), block({ decisions: [said('question', { text: 'Which?' }), { kind: 'answer', at: 't', round: 1, byName: 'Mia', text: 'Orders' }] }), base);
     expect(a).toMatchObject([{ kind: 'lead-answer', to: ['flo'], quote: 'Orders', waits: true }]);
-    expect(leadNoticesOf(none, block({ leadAskedAt: 't', decisions: [said('asked-someone', { to: ['dana'] })] }), base).map((x) => [x.kind, x.to])).toContainEqual(['lead-delegated', ['dana']]);
+    expect(leadNoticesOf(none, block({ designAskedAt: 't', decisions: [said('asked-someone', { to: ['dana'] })] }), base).map((x) => [x.kind, x.to])).toContainEqual(['lead-delegated', ['dana']]);
   });
   it('sent back with an answer is one mail, not two; an edit that says nothing new, none', () => {
     const before = block({ decisions: [said('changes')] });
-    const after = block({ leadAskedAt: 't', leadAskedTo: ['flo'], decisions: [said('changes'), { kind: 'answer', at: 't', round: 2, byName: 'Mia' }] });
+    const after = block({ designAskedAt: 't', designAskedTo: ['flo'], decisions: [said('changes'), { kind: 'answer', at: 't', round: 2, byName: 'Mia' }] });
     expect(leadNoticesOf(before, after, base).map((x) => x.kind)).toEqual(['lead-answer']);
     expect(leadNoticesOf(after, after, base)).toEqual([]);
   });
@@ -531,7 +531,7 @@ describe('the talk with a design lead', () => {
 
   it('a lead with a Bridge account gets it by email, on the exploration page; without one GitHub tells them', async () => {
     const { d, sent } = await setup();
-    const out = await deliverNotices(leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedByName: 'Mia', leadAskedTo: ['flo', 'dana'] }), base), d, 'e1');
+    const out = await deliverNotices(leadNoticesOf(none, block({ designAskedAt: 't', designAskedByName: 'Mia', designAskedTo: ['flo', 'dana'] }), base), d, 'e1');
     expect(out.map((o) => o.status)).toEqual(['sent', 'skipped']);
     expect(sent[0]!.to).toBe('florian@acme.example');
     expect(sent[0]!.text).toContain('explorations/?exploration=7&product=shop');
@@ -543,7 +543,7 @@ describe('the talk with a design lead', () => {
     expect(sent[0]!.text).toContain('Tighter');
     const own = await deliverNotices([{ kind: 'lead-ok', repo: COPY, items: [7], title: 'Late tag', actor: { login: '', id: null }, actorName: 'Mia', copy: null, scope: 'any' }], d, 'e3');
     expect(own).toEqual([{ kind: 'lead-ok', status: 'skipped', reason: 'own' }]);
-    const self = await deliverNotices(leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedBy: 'flo', leadAskedTo: ['flo'] }), base), d, 'e4');
+    const self = await deliverNotices(leadNoticesOf(none, block({ designAskedAt: 't', designAskedBy: 'flo', designAskedTo: ['flo'] }), base), d, 'e4');
     expect(self).toEqual([]);
   });
   it('went to the developers: in the daily summary', async () => {
@@ -555,7 +555,7 @@ describe('the talk with a design lead', () => {
   });
   it('reminds a lead once after 2 days, and not if someone answered', async () => {
     const { d, redis, sent, later } = await setup();
-    const ask = leadNoticesOf(none, block({ leadAskedAt: 't', leadAskedByName: 'Mia', leadAskedTo: ['flo'] }), base);
+    const ask = leadNoticesOf(none, block({ designAskedAt: 't', designAskedByName: 'Mia', designAskedTo: ['flo'] }), base);
     await deliverNotices(ask, d, 'e6');
     expect(sent).toHaveLength(1);
     later(1 * 24 * 60 * 60 * 1000);
@@ -581,11 +581,11 @@ describe('the talk with a design lead', () => {
     const LEA = 'lea@acme.example';
     await memberStore(redis).put(TEAM, { email: LEA, name: 'Lea', role: 'edit', lead: true, version: 1, addedBy: 'x', at: 't' });
     const DAY = 24 * 60 * 60 * 1000;
-    const asked = { leadAskedAt: new Date(T0).toISOString(), leadAskedByName: 'Mia', leadAskedTo: ['flo'] };
+    const asked = { designAskedAt: new Date(T0).toISOString(), designAskedByName: 'Mia', designAskedTo: ['flo'] };
     await deliverNotices(leadNoticesOf(none, block(asked), base), d, 't1');
     expect(sent.map((m) => m.to).sort()).toEqual(['florian@acme.example', LEA]);
     later(DAY);
-    const taken = await deliverNotices(leadNoticesOf(block(asked), block({ ...asked, leadTakenAt: 'x', leadTakenByName: 'Lea' }), base), d, 't2');
+    const taken = await deliverNotices(leadNoticesOf(block(asked), block({ ...asked, designTakenAt: 'x', designTakenByName: 'Lea' }), base), d, 't2');
     expect(taken).toEqual([]);
     expect(sent).toHaveLength(2);
     const fresh = async () => {
@@ -606,9 +606,9 @@ describe('the talk with a design lead', () => {
   });
   it("I'll look, then a decision: no reminder at all", async () => {
     const { d, redis, later } = await setup();
-    const asked = { leadAskedAt: new Date(T0).toISOString(), leadAskedByName: 'Mia', leadAskedTo: ['flo'] };
-    await deliverNotices(leadNoticesOf(block(asked), block({ ...asked, leadTakenAt: 'x', leadTakenBy: 'flo' }), base), d, 't3');
-    await deliverNotices(leadNoticesOf(block({ ...asked, leadTakenAt: 'x', leadTakenBy: 'flo' }), block({ decisions: [said('changes', { text: 'Tighter' })] }), base), d, 't4');
+    const asked = { designAskedAt: new Date(T0).toISOString(), designAskedByName: 'Mia', designAskedTo: ['flo'] };
+    await deliverNotices(leadNoticesOf(block(asked), block({ ...asked, designTakenAt: 'x', designTakenBy: 'flo' }), base), d, 't3');
+    await deliverNotices(leadNoticesOf(block({ ...asked, designTakenAt: 'x', designTakenBy: 'flo' }), block({ decisions: [said('changes', { text: 'Tighter' })] }), base), d, 't4');
     later(5 * 24 * 60 * 60 * 1000);
     expect(await sendReminders(d)).toBe(0);
     expect(await redis.cmd('GET', waitingKey(COPY, 7))).toBeNull();

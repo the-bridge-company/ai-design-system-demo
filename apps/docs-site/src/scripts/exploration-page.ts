@@ -269,7 +269,7 @@ function leadViewOf(
   const block = parseExplorationBody(body);
   // A question of a lead waits on the designer, whose zone says it. The leads keep their bar: the question never stops them deciding.
   const open = leadTurnOf(body) === 'designer' ? openDecisionOf(body) : null;
-  const asker = block?.leadAskedBy ?? r.author;
+  const asker = block?.designAskedBy ?? r.author;
   const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [asker] });
   const viewer = currentViewer()?.email ? null : (currentViewer()?.login ?? null);
   // A lead signed in by email: the member record says it, and the server checks it again on every write. Never the person who asked.
@@ -278,7 +278,7 @@ function leadViewOf(
   const repoAdmin = Boolean(viewer && connected() && currentAccess()?.admin && !sameLogin(viewer, asker) && !sameLogin(viewer, r.author));
   const isLead = Boolean(emailLead ? emailLead.decides && !startedByEmailMember(body, emailLead) : repoAdmin || (viewer && connected() && leads.some((l) => l.toLowerCase() === viewer.toLowerCase())));
   if (isLead) {
-    const who = block?.leadAskedByName ?? block?.leadAskedBy ?? 'The designer';
+    const who = block?.designAskedByName ?? block?.designAskedBy ?? 'The designer';
     const leadName = viewer ? (knownNamesOf([viewer])[viewer] ?? undefined) : emailLead?.name;
     const me = { ...(viewer ? { lead: viewer } : {}), ...(leadName ? { leadName } : {}) };
     // Someone else answered first: the page shows what they said.
@@ -295,8 +295,8 @@ function leadViewOf(
     };
     const others = leads.filter((l) => l.toLowerCase() !== viewer?.toLowerCase());
     // "I'll look": one reviewer takes it, the others no longer see it on their Home. Any of them can still answer.
-    const takenName = block?.leadTakenAt ? (block.leadTakenByName ?? (block.leadTakenBy ? (knownNamesOf([block.leadTakenBy])[block.leadTakenBy] ?? block.leadTakenBy) : 'Someone')) : null;
-    const takenByMe = Boolean(block?.leadTakenAt && (viewer ? sameLogin(block.leadTakenBy, viewer) : !block.leadTakenBy && block.leadTakenByName === emailLead?.name));
+    const takenName = block?.designTakenAt ? (block.designTakenByName ?? (block.designTakenBy ? (knownNamesOf([block.designTakenBy])[block.designTakenBy] ?? block.designTakenBy) : 'Someone')) : null;
+    const takenByMe = Boolean(block?.designTakenAt && (viewer ? sameLogin(block.designTakenBy, viewer) : !block.designTakenBy && block.designTakenByName === emailLead?.name));
     const take: LeadView['take'] = open ? null : takenName ? { line: takenByMe ? TAKEN_BY_YOU_LINE : `${takenName} is looking at it.` } : { onTake: () => answered(() => takeLeadOnGitHub(o.gh, r.number, me), TAKEN_LINE) };
     return {
       ...(open ? { heading: `With ${who}` } : {}),
@@ -315,7 +315,7 @@ function leadViewOf(
             ? async () => {
                 const ask = await reviewAskHere({ ref: emailLead?.ref ?? null, login: viewer, name: emailLead?.name ?? null });
                 // Never the designer who asked, when they review too.
-                const designerFirst = (block?.leadAskedByName ?? block?.memberName ?? '').trim().split(/\s+/)[0]!.toLowerCase();
+                const designerFirst = (block?.designAskedByName ?? block?.memberName ?? '').trim().split(/\s+/)[0]!.toLowerCase();
                 const names = ask.names.filter((n) => n.toLowerCase() !== designerFirst);
                 if (names.length) return answered(() => askOtherLeadOnGitHub(o.gh, r.number, { to: [], toNames: names, ...me }), askedOtherLine(names, {}));
                 if (ask.names.length || !others.length) throw new Error('There is nobody else to ask.');
@@ -324,7 +324,7 @@ function leadViewOf(
             : null,
         link: location.href,
         onCopy: o.onCopy,
-        changedSince: Boolean(block?.leadAskedSha && pull.head?.sha && block.leadAskedSha !== pull.head.sha),
+        changedSince: Boolean(block?.designAskedSha && pull.head?.sha && block.designAskedSha !== pull.head.sha),
       },
     };
   }
@@ -554,7 +554,7 @@ function leadTalkOf(
   const all = decisionsOf(block);
   const open = openDecisionOf(pull.body);
   const known = { ...knownNamesOf(all.map((d) => d.by ?? '').filter(Boolean)), ...o.names };
-  const designer = block?.leadAskedByName ?? block?.memberName ?? known[r.author] ?? (isNameAuthor(r.author) ? nameOfAuthor(r.author) : r.author);
+  const designer = block?.designAskedByName ?? block?.memberName ?? known[r.author] ?? (isNameAuthor(r.author) ? nameOfAuthor(r.author) : r.author);
   const out = { decisions: decisionRows(all, known), tag: decisionTag(open, designer), designerZone: null, notDoing: null } as ReturnType<typeof leadTalkOf>;
   if (!open) return out;
   const who = sayerName(open, known);
@@ -751,7 +751,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       crumbs: productCrumbs(product.name, shownJiraKey(pull.title), r.name),
       title: r.name,
       purpose: parseExplorationBody(pull.body)?.purpose ?? r.purpose ?? null,
-      leadAskedAt: parseExplorationBody(pull.body)?.leadAskedAt ?? null,
+      designAskedAt: parseExplorationBody(pull.body)?.designAskedAt ?? null,
       startedFrom: startedFromOf(parseExplorationBody(pull.body)),
       fromMockup: fromMockupOf(pull.body),
       stage: 'loading',
@@ -927,7 +927,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   // (the lead reads "Then you pick"). Waiting for the lead or with pieces checked, the library block below names them.
   // A lead exploring themselves reads the other lead's name when there is one, never their own.
   if (!r.archived && !handedOff && !leadOther && !lead?.bar && (!viewerDecidesExplorations() || ownerLeads))
-    void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.leadAskedBy ?? r.author] }), ownerLeads ? (member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null)) : null)
+    void leadNamesOf(reviewersAsked({ approvers: siteApprovers().design, builders: [parseExplorationBody(pull.body)?.designAskedBy ?? r.author] }), ownerLeads ? (member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null)) : null)
       .then((n) => n[0] && current?.key === key && !current.props.leadName && repaint(d, key, { leadName: n[0] }))
       .catch(() => undefined);
   if (!r.archived) void paintLibraryImpact(d, key, { r, pull, gh, own: own ? { repo: own.repo } : null, product, products, lead, names, handedOff, previewUrl, reopen: (line) => reopen(line) });
@@ -1018,7 +1018,7 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
   const answer = devRead?.answer ?? null;
   const shippedAnswer = status === 'shipped' ? (task?.shippedAnswer ?? null) : null;
   const askers = [question?.login, declineNote?.login, shippedAnswer?.login].filter((l): l is string => Boolean(l));
-  const more = connected() ? await namesOf([...new Set([doneLogin, ...builders, ...asked, ...(verdict ? [verdict.login] : []), ...(answer?.login ? [answer.login] : []), ...askers, ...(block?.leadOkBy ? [block.leadOkBy] : [])])]).catch(() => ({}) as Record<string, string>) : {};
+  const more = connected() ? await namesOf([...new Set([doneLogin, ...builders, ...asked, ...(verdict ? [verdict.login] : []), ...(answer?.login ? [answer.login] : []), ...askers, ...(block?.designOkBy ? [block.designOkBy] : [])])]).catch(() => ({}) as Record<string, string>) : {};
   if (current?.key !== key) return;
   const allNames = { ...names, ...knownNamesOf([...asked, ...(verdict ? [verdict.login] : [])]), ...more };
   // Done exploring by someone known by name only (an email member's commit, or the requester of the app's pull
@@ -1056,8 +1056,8 @@ export async function openExplorationPage(d: HTMLElement, r: ExplorationRow, pul
       ? { message: developersMessage({ name: r.name, product: product.name, address, startPage: startPageOf(block), purpose: block?.purpose ?? r.purpose, previewUrl: atRoute((v.state === 'branch' ? v.url : null) ?? branchPreviewUrl(product.preview, r.branch) ?? '', screenNow) || null, shotUrl: shot?.src ?? null }) }
       : null;
   // The lead who validated it, by login or, for a lead who joined by email, by name.
-  const leadOkBy = leadApproverOf(block);
-  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: leadOkBy ? faceAs(leadOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames)), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
+  const designOkBy = leadApproverOf(block);
+  const steps = handoffSteps({ status, doneBy, doneAt, leadOk: designOkBy ? faceAs(designOkBy, allNames) : null, builders: builders.map((l) => faceAs(l, allNames)), shippedAt, product: isLibrary ? 'the library' : product.name, library: isLibrary, review, nextRelease, question: questionOn, declined, elsewhere: Boolean(address) });
   const taskUrl = block?.task ?? null;
   const ref = r.product ? `${r.product}#${r.number}` : String(r.number);
   // Who may run the check: someone who can write it, in a team that writes branches. Bridge's server runs it for them:
@@ -1240,18 +1240,18 @@ async function paintLibraryImpact(
   const block = parseExplorationBody(body);
   if (!parsePiecesRecord(body) && !(isWaitingForLead(body) && !o.handedOff)) return;
   const repo = o.own?.repo ?? `${CFG.owner}/${CFG.repo}`;
-  const designer = block?.memberName ?? block?.leadAskedByName ?? o.names[o.r.author] ?? (isNameAuthor(o.r.author) ? nameOfAuthor(o.r.author) : o.r.author);
+  const designer = block?.memberName ?? block?.designAskedByName ?? o.names[o.r.author] ?? (isNameAuthor(o.r.author) ? nameOfAuthor(o.r.author) : o.r.author);
   const decides = Boolean(o.lead?.bar);
   const viewer = currentViewer()?.login ?? null;
   const member = currentContributor();
   const myName = member?.name ?? (viewer ? (knownNamesOf([viewer])[viewer] ?? viewer) : null);
-  const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.leadAskedBy ?? o.r.author] });
+  const leads = reviewersAsked({ approvers: siteApprovers().design, builders: [block?.designAskedBy ?? o.r.author] });
   // The viewer decides on explorations (scripts/design-lead viewerDecidesExplorations, the one rule: a lead by GitHub or
   // by email, the sample team's visitor reading as Dana): once Done exploring asked, the pieces wait on them, "Needs
   // you", the words of Review all and the Changes Library row. Anyone else reads the lead's name, never a GitHub login:
   // unknown, "the DS lead". Before Done exploring, every piece reads Exploring for everyone (nobody is asked yet).
   // A lead exploring themselves while the team has another lead: that lead decides, by name, never "you".
-  const ownerHere = !decides && viewerDecidesExplorations() && (Boolean(viewer && sameLogin(viewer, block?.leadAskedBy ?? o.r.author)) || Boolean(member?.name && block?.memberName && member.name.trim().toLowerCase() === block.memberName.trim().toLowerCase()) || startedByEmailMember(body, member));
+  const ownerHere = !decides && viewerDecidesExplorations() && (Boolean(viewer && sameLogin(viewer, block?.designAskedBy ?? o.r.author)) || Boolean(member?.name && block?.memberName && member.name.trim().toLowerCase() === block.memberName.trim().toLowerCase()) || startedByEmailMember(body, member));
   const otherLeads = ownerHere ? await leadNamesOf(leads, myName) : [];
   const viewerLeads = decides || (viewerDecidesExplorations() && otherLeads.length === 0);
   const leadNames = otherLeads.length ? otherLeads : viewerLeads ? knownLeadNames(leads) : await leadNamesOf(leads);

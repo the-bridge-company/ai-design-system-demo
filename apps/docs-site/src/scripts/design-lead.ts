@@ -37,9 +37,9 @@ export const viewerDecidesExplorations = (): boolean => currentContributor()?.de
  */
 export function explorationWaitsOnViewer(p: { body?: string | null; user: { login: string } }): boolean {
   const block = parseExplorationBody(p.body ?? null);
-  if (!block || (block.leadAskedAt === undefined && !block.decisions?.length && !block.leadNote)) return false;
+  if (!block || (block.designAskedAt === undefined && !block.decisions?.length && !block.leadNote)) return false;
   const viewer = currentViewer()?.login ?? null;
-  const asker = block.leadAskedBy ?? p.user.login;
+  const asker = block.designAskedBy ?? p.user.login;
   const same = (a?: string | null, b?: string | null) => Boolean(a && b && a.toLowerCase() === b.toLowerCase());
   const row = leadHomeRow(p.body, {
     viewer,

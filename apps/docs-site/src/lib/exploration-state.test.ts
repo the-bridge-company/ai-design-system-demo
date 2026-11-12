@@ -185,7 +185,7 @@ describe('who started it and when (M2)', () => {
 });
 
 describe('waiting for the design lead', () => {
-  const body = `<!-- bridge-exploration ${JSON.stringify({ name: 'Late tag', purpose: '', slug: 'late-tag', leadAskedAt: '2026-11-06T10:00:00.000Z' })} -->`;
+  const body = `<!-- bridge-exploration ${JSON.stringify({ name: 'Late tag', purpose: '', slug: 'late-tag', designAskedAt: '2026-11-06T10:00:00.000Z' })} -->`;
   const pull = { state: 'open', draft: true, labels: [{ name: 'exploration' }], head: { ref: 'explore/late-tag' }, body };
   it('reads Waiting for lead, with no developers task yet', () => {
     expect(explorationState({ pull })).toBe('waiting-for-lead');

@@ -71,7 +71,7 @@ async function libraryGlance(pull: { number: number; title: string; body: string
   const record = parsePiecesRecord(pull.body);
   if (!record) return null;
   const block = parseExplorationBody(pull.body);
-  const designer = block?.memberName ?? block?.leadAskedByName ?? pull.user?.login ?? 'The designer';
+  const designer = block?.memberName ?? block?.designAskedByName ?? pull.user?.login ?? 'The designer';
   const conflicts = await conflictsOf({ ...impactSourceOf(pull, repo, product), designer }).catch(() => []);
   const line = impactQueueLine(record, conflicts);
   if (!line) return null;

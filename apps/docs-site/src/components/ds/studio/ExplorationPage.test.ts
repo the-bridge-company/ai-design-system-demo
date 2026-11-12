@@ -947,7 +947,7 @@ describe('the talk with a lead on the page', () => {
   it('waiting for the lead, its designer: nothing to do, the lead deciding now for the real time, Keep exploring', async () => {
     const onCancel = vi.fn(async () => 'Back to exploring.');
     const asked = new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString();
-    paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', leadAskedAt: asked, lead: { line: 'Waiting for Dana.', onCancel } });
+    paint({ stage: 'exploring', role: 'owner', leadName: 'Dana', designAskedAt: asked, lead: { line: 'Waiting for Dana.', onCancel } });
     const zone = screen.getByRole('region', { name: 'Dana decides what the library keeps' });
     expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
     const rows = within(zone).getAllByRole('listitem');

@@ -98,13 +98,13 @@ describe('the lists and a new round', () => {
   });
 
   it('a new round: the developer section and the done marker go, the reason is a decision', () => {
-    const body = `Notes\n\n### For developers\n\nBuild it.\n\n<!-- bridge-exploration ${JSON.stringify({ name: 'Late tag', doneAt: 'x', doneSha: 'y', leadOkBy: 'flo', decisions: [{ kind: 'looks-right', at: 'a', round: 1 }] })} -->`;
+    const body = `Notes\n\n### For developers\n\nBuild it.\n\n<!-- bridge-exploration ${JSON.stringify({ name: 'Late tag', doneAt: 'x', doneSha: 'y', designOkBy: 'flo', decisions: [{ kind: 'looks-right', at: 'a', round: 1 }] })} -->`;
     const out = reopenedBody(body, { at: '2026-11-07T10:00:00Z', byName: 'Dino', text: 'Keep the date' })!;
     expect(out).not.toContain('For developers');
     const e = JSON.parse(/<!-- bridge-exploration (\{[\s\S]*?\}) -->/.exec(out)![1]!);
     expect(e).toMatchObject({ name: 'Late tag', reopenedAt: '2026-11-07T10:00:00Z' });
     expect(e.doneAt).toBeUndefined();
-    expect(e.leadOkBy).toBeUndefined();
+    expect(e.designOkBy).toBeUndefined();
     expect(e.decisions.at(-1)).toEqual({ kind: 'take-back', at: '2026-11-07T10:00:00Z', round: 1, byName: 'Dino', text: 'Keep the date' });
   });
 });

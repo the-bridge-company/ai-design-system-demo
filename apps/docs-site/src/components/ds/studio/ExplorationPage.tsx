@@ -151,8 +151,8 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
-  /** When the design lead was asked (ISO, the exploration's leadAskedAt): "Dana decides · now, for 3 days". */
-  leadAskedAt?: string | null;
+  /** When the design lead was asked (ISO, the exploration's designAskedAt): "Dana decides · now, for 3 days". */
+  designAskedAt?: string | null;
   /**
    * The owner is a design lead themselves: with no other lead named, the page talks to them ("Then you pick what the
    * library keeps"), never "your design lead"; a lead it waits on is "Another design lead" until named.
@@ -1256,7 +1256,7 @@ function ExplorationBody(p: ExplorationPageProps) {
         lead: p.leadName ?? null,
         viewerLeads,
         product,
-        waitedDays: daysSince(p.leadAskedAt, Date.now()),
+        waitedDays: daysSince(p.designAskedAt, Date.now()),
         taken: p.lead?.take?.line ?? null,
         canKeepExploring: Boolean(p.lead?.onCancel),
         shared: sharedChoiceOf(p.me?.name, p.impact?.view.state === 'rows' ? p.impact.view.conflicts : []),

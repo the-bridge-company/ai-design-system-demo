@@ -5,9 +5,9 @@ const block = (o: Record<string, unknown>) => `Requested by Dino through Bridge.
 
 describe('explorerName: who explored it, on every screen', () => {
   it('names the exploration record before the account that opened it', () => {
-    expect(explorerName(block({ name: 'Order fulfilment timeline', memberName: 'Sofia', leadAskedByName: 'Leo' }), 'bridge-design-studio[bot]')).toBe('Sofia');
+    expect(explorerName(block({ name: 'Order fulfilment timeline', memberName: 'Sofia', designAskedByName: 'Leo' }), 'bridge-design-studio[bot]')).toBe('Sofia');
     expect(explorerName('Requested by Leo through Bridge.', 'bridge-design-studio[bot]')).toBe('Leo');
-    expect(explorerName(`<!-- bridge-exploration ${JSON.stringify({ name: 'x', leadAskedByName: 'Ann' })} -->`, null)).toBe('Ann');
+    expect(explorerName(`<!-- bridge-exploration ${JSON.stringify({ name: 'x', designAskedByName: 'Ann' })} -->`, null)).toBe('Ann');
   });
   it('keeps a person login, never the app', () => {
     expect(explorerName('', 'acme-malik')).toBe('acme-malik');

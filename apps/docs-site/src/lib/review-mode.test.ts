@@ -35,11 +35,11 @@ describe('who looks after the design system', () => {
     const b = (e: Record<string, unknown>) =>
       `x\n<!-- bridge-exploration ${JSON.stringify({
         name: 'Orders',
-        leadAskedAt: 'a',
+        designAskedAt: 'a',
         ...e,
       })} -->`;
     expect(
-      addsLeadWords(b({}), b({ leadTakenAt: 't', leadTakenByName: 'Ann' }), {
+      addsLeadWords(b({}), b({ designTakenAt: 't', designTakenByName: 'Ann' }), {
         hasLeads: true,
       }),
     ).toBe(true);
@@ -110,7 +110,7 @@ const edit = (
     body: {
       from: `x\n<!-- bridge-exploration ${JSON.stringify({
         name: 'Orders',
-        leadAskedAt: 'a',
+        designAskedAt: 'a',
         author: 'ann',
         ...e.before,
       })} -->`,
@@ -121,7 +121,7 @@ const edit = (
     user: { login: 'ann' },
     body: `x\n<!-- bridge-exploration ${JSON.stringify({
       name: 'Orders',
-      leadAskedAt: 'a',
+      designAskedAt: 'a',
       author: 'ann',
       ...(e.after ?? {
         decisions: [{ kind: 'looks-right', at: 't', round: 1, by: 'dev' }],
@@ -201,7 +201,7 @@ describe("I'll look on the other reviewers' Home", () => {
   it('leaves their Home, and comes back 2 days later with no decision', async () => {
     const { leadHomeRow, TAKEN_FOR_MS } = await import('./lead-decisions');
     const at = Date.parse('2026-11-07T10:00:00Z');
-    const body = `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', leadAskedAt: '2026-11-07T09:00:00Z', leadAskedByName: 'Ann', leadTakenAt: new Date(at).toISOString(), leadTakenByName: 'Lea' })} -->`;
+    const body = `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', designAskedAt: '2026-11-07T09:00:00Z', designAskedByName: 'Ann', designTakenAt: new Date(at).toISOString(), designTakenByName: 'Lea' })} -->`;
     const v = { viewer: null, lead: true, own: false, viewerName: 'Dino' };
     expect(leadHomeRow(body, { ...v, now: at + 1000 })).toBeNull();
     expect(leadHomeRow(body, { ...v, viewerName: 'Lea', now: at + 1000 })).not.toBeNull();

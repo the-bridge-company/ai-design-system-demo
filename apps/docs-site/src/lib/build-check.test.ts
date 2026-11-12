@@ -78,6 +78,9 @@ describe('in words', () => {
     expect(pmHomeRow(body({ decisions: [{ kind: 'pm-ok', at: 'x', round: 1 }] }), { buildReady: false })).toBeNull();
     expect(pmHomeRow(body({ doneAt: 'x' }), { buildReady: false })).toBeNull();
     expect(pmHomeRow(body({ doneAt: 'x' }), { buildReady: true })).toMatchObject({ action: 'Check' });
+    // Their opinion is optional (an invitation, never a wait); the build check is theirs to do.
+    expect(pmHomeRow(body({}), { buildReady: false })?.optional).toBe(true);
+    expect(pmHomeRow(body({ doneAt: 'x' }), { buildReady: true })?.optional).toBe(false);
   });
 });
 

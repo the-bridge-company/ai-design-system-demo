@@ -33,11 +33,9 @@ import {
   type ContributorTourAt,
   SEP,
   hintSnoozed,
-  oldestLabel,
   onlyReviewerLine,
   splitNeeds,
-  uniquePeople,
-  waitingSentence,
+  waitingSummary,
   type BranchCard,
   type HomeState,
   type NeedRow,
@@ -57,17 +55,20 @@ export { NeedList, NeedRowItem, type JoinHandlers, type JoinOutcome } from './Ne
 import { NeedList, type JoinHandlers } from './NeedRows';
 
 
-/** "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait. */
+/**
+ * "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait; for a product
+ * manager whose opinion is only asked, "Sofia and Leo would like your view." and no age (home-model waitingSummary).
+ */
 function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
-  const people = uniquePeople(needs.filter((r) => r.waitsOnYou).map((r) => r.person));
-  const s = waitingSentence(people);
-  const oldest = oldestLabel(needs, now);
+  const s = waitingSummary(needs, now);
   if (!s) return null;
+  const { people } = s;
+  const oldest = s.badge?.label;
   // A div, not a p: the avatar group is a block (a div inside a p is invalid HTML).
   return (
     <div className="t-body sh-waitline">
       {people.length > 0 && (
-        <AvatarGroup aria-label="Waiting on you" max={AVATARS_SHOWN} size="md" className="sh-stack">
+        <AvatarGroup aria-label={s.group} max={AVATARS_SHOWN} size="md" className="sh-stack">
           {people.map((p) => (
             <Who key={p.agent ? '#agent' : p.login} p={p} name={p.name} decorative={false} />
           ))}
@@ -76,6 +77,7 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
       <span>
         <b className="sh-strong">{s.names}</b>
         {s.rest}
+        {s.note && <span className="t-muted">{` ${s.note}`}</span>}
       </span>
       {oldest && (
         <Badge tone="warning" size="md" className="sh-oldest">

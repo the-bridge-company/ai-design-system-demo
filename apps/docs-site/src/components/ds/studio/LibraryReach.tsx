@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Icon, Link, SegmentedControl, Skeleton } from '@bridge-ds/react';
 import { ChevronLeft } from 'lucide-react';
 import { BranchThumb } from './BranchThumb';
+import { ProductMark } from './ProductMark';
 import { originSentence, REACH_SHOWN, shownScreens, type Measured, type MeasuredScreen } from '../../../lib/library-reach';
 import { canDecide, keepLabel, tokenGroup, type ReviewPiece, type Viewer } from '../../../lib/library-review';
 import { reachImageSrc } from '../../../scripts/library-reach-data';
@@ -18,13 +19,11 @@ type Mode = 'today' | 'with' | 'side';
 
 export type ReachAct = { kind: 'add' | 'keep' | 'existing' };
 
-/** A product as a chip: its initial in a small mark, then its name (the Map's product boxes, Who gets it's sections). */
+/** A product as a chip: its mark (the side nav's folder, ProductMark), then its name (the Map's product boxes, Who gets it's sections). */
 export function ProductChip({ name, as: Tag = 'span', id }: { name: string; as?: 'span' | 'h2'; id?: string }) {
   return (
     <Tag className="lr-product" id={id}>
-      <span className="lr-product-mark" aria-hidden="true">
-        {name.trim().replace(/^acme\s+/i, '').charAt(0).toUpperCase() || '?'}
-      </span>
+      <ProductMark product={name} />
       <span className="lr-product-name">{name}</span>
     </Tag>
   );

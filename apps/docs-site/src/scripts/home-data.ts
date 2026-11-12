@@ -45,6 +45,7 @@ import {
   guidanceChangeOf,
   guidanceNeed,
   isOnlyReviewer,
+  optionalNeed,
   person,
   requesterPerson,
   explorationPerson,
@@ -524,9 +525,10 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
         waitingOnOthers.push({ key: `${p.product ?? ''}#${p.number}`, title: explorationNameOf(p), line: row.line, href });
         continue;
       }
-      // A designer who joined by email has no GitHub login: their name, never the app that writes for them.
+      // A designer who joined by email has no GitHub login: their name and the face of their name (requesterPerson),
+      // never the app's account that writes for them (Sofia and Leo would share one drawing).
       const askedBy = block.leadAskedBy ? null : row.person.name;
-      const who = askedBy ? { login: asker, name: askedBy, avatar: null } : pick(row.person.login ?? asker)!;
+      const who = (askedBy ? requesterPerson({ name: askedBy, login: null }) : null) ?? pick(row.person.login ?? asker)!;
       needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line, action: row.action });
     }
     // The product manager (boards R3, R4): an exploration of their product that waits for their opinion, and a build of
@@ -542,7 +544,9 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
       if (!row) continue;
       const who = explorationPerson(p.user.login, p.body, (l) => pick(l)!);
       const href = studioHref(`explorations/${explorationHref({ number: p.number, product: p.product })}`);
-      needs.push({ ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line(who.name ?? 'The designer'), action: row.action });
+      const pmRow: NeedRow = { ...explorationReviewNeed({ number: p.number, product: p.product ?? null, author: who, asker: who, since: row.since, thumb: { kind: 'icon', icon: 'branch' }, name: explorationNameOf(p), href }, now), title: explorationNameOf(p), line: row.line(who.name ?? 'The designer'), action: row.action };
+      // Their opinion is optional: an invitation with the "Optional" tag, never "waiting on you" nor its age.
+      needs.push(row.optional ? optionalNeed(pmRow) : pmRow);
     }
     // Someone asked a question on the task of an exploration the viewer handed off (named, never "the developers" by
     // default): theirs to answer (the one rule, lib/waiting-on). Remembered for the nav badge on the other pages.

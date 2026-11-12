@@ -606,18 +606,6 @@ a.lr-ask {
   line-height: var(--typography-caption-line-height);
 }
 
-.lr-marks {
-  display: inline-flex;
-}
-
-.lr-marks .lr-product-mark {
-  box-shadow: 0 0 0 var(--border-width-2) var(--color-bg-default);
-}
-
-.lr-marks .lr-product-mark + .lr-product-mark {
-  margin-inline-start: calc(var(--space-1) * -1);
-}
-
 .lr-chapter-names {
   color: var(--color-text-default);
   font-weight: var(--font-weight-medium);
@@ -889,16 +877,6 @@ a.lr-asked:hover .lr-asked-name {
   flex: none;
 }
 
-/* The product's small mark right after the exploration's name: never on the face, so the initial stays whole. */
-.lr-asked-mark.lr-product-mark {
-  width: auto;
-  min-width: var(--size-4);
-  height: var(--size-4);
-  padding-inline: var(--space-0-5);
-  border-radius: var(--radius-xs);
-  font-size: var(--typography-caption-size);
-  line-height: var(--size-4);
-}
 
 .lr-faces {
   flex: none;
@@ -1974,18 +1952,12 @@ a.lr-reach-card:focus-visible {
   line-height: var(--typography-ui-line-height);
 }
 
+/* A product's mark (ProductMark.tsx): the side nav's folder, a line icon in the muted text color, never a filled square. */
 .lr-product-mark {
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: var(--size-5);
-  height: var(--size-5);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-action-primary-bg);
-  color: var(--color-action-primary-text);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
-  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
 }
 
 .lr-map-box .lr-product {

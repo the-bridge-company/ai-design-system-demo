@@ -168,7 +168,7 @@ export function waitingLabel(iso: string, now: number): string {
 }
 
 /** "Oldest: 4 days" over the rows that wait for someone, null under a day or without any. */
-export function oldestLabel(rows: Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): string | null {
+export function oldestLabel(rows: readonly Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): string | null {
   const times = rows.filter((r) => r.waitsOnYou && r.since).map((r) => new Date(r.since!).getTime());
   if (!times.length) return null;
   const d = daysSince(new Date(Math.min(...times)).toISOString(), now);
@@ -216,6 +216,45 @@ export interface NeedRow {
   question?: boolean;
   /** A guidance draft: its first lines, shown in the review queue. */
   excerpt?: string | null;
+  /**
+   * An optional ask (a product manager's opinion, lib/pm-view pmHomeRow): an invitation, never a wait. It never counts
+   * in "waiting on you", "Oldest" or the nav badge, and carries the "Optional" tag instead of its age.
+   */
+  optional?: boolean;
+}
+
+/** The words of an optional ask (a product manager's opinion): no wait, no age, the choice stays theirs. */
+export const OPTIONAL_WORDS = {
+  /** The row's tag, where a review shows how long it waits. */
+  pill: 'Optional',
+  /** After the names in the greeting: "Sofia and Leo would like your view." */
+  rest: ' would like your view.',
+  /** The second sentence of the greeting. */
+  note: 'Your view is welcome on these, and it is optional.',
+  /** The faces' group, for a screen reader. */
+  group: 'Asking for your view',
+} as const;
+
+/** A row turned into an optional ask: no wait on the viewer, the "Optional" tag in place of its age. */
+export const optionalNeed = (row: NeedRow): NeedRow => ({ ...row, waitsOnYou: false, optional: true, pill: { label: OPTIONAL_WORDS.pill, tone: 'neutral' } });
+
+/**
+ * The greeting's line over the Needs you rows: who waits on the viewer and the oldest wait ("Sofia and Leo are waiting
+ * on you." with "Oldest: 4 days"); when nothing waits on them and only optional asks are there (a product manager's
+ * opinion), who would like their view, with no age ("Sofia and Leo would like your view." and a quiet note). Null
+ * without either.
+ */
+export function waitingSummary(needs: readonly NeedRow[], now: number): { people: Person[]; names: string; rest: string; note: string | null; badge: { label: string; tone: PillTone } | null; group: string } | null {
+  const blocking = uniquePeople(needs.filter((r) => r.waitsOnYou).map((r) => r.person));
+  const s = waitingSentence(blocking);
+  if (s) {
+    const oldest = oldestLabel(needs, now);
+    return { people: blocking, ...s, note: null, badge: oldest ? { label: oldest, tone: 'warning' } : null, group: 'Waiting on you' };
+  }
+  const asking = uniquePeople(needs.filter((r) => r.optional).map((r) => r.person));
+  const o = waitingSentence(asking);
+  if (!o) return null;
+  return { people: asking, names: o.names, rest: OPTIONAL_WORDS.rest, note: OPTIONAL_WORDS.note, badge: null, group: OPTIONAL_WORDS.group };
 }
 
 /** The verb on a Needs you row's button: the row's own, else the kind's. */
@@ -430,7 +469,7 @@ export function devQuestionNeed(c: { key: string; name: string; href: string; as
  * The Needs you rows the nav badge counts: the reviews, the usage guidance drafts and the developers' questions. The
  * same things Changes > Waiting on me lists, so the badge and the tab say one number.
  */
-export const badgeRows = (rows: readonly NeedRow[]): number => rows.filter((r) => r.kind === 'review' || r.kind === 'guidance' || r.question).length;
+export const badgeRows = (rows: readonly NeedRow[]): number => rows.filter((r) => !r.optional && (r.kind === 'review' || r.kind === 'guidance' || r.question)).length;
 
 /** A usage guidance draft by Claude, as the home reads it (the component's slug finds its open change). */
 export interface GuidanceDraft {

@@ -15,6 +15,16 @@
   line-height: var(--typography-ui-line-height);
 }
 
+/* The status line only speaks once a filter narrows the list. Empty, it leaves the flow (the section's gap would
+   otherwise count twice under the search bar) but stays in the page as a polite live region. */
+.tcm-muted:empty {
+  position: absolute;
+  inline-size: var(--border-width-default);
+  block-size: var(--border-width-default);
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 .tcm-tools {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

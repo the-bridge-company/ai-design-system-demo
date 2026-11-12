@@ -201,7 +201,7 @@ describe('the product page’s words', () => {
   const pr = { number: 7, url: 'https://github.com/acme/shop/pull/7', version: '1.8.4' };
 
   it('behind, for a lead: the line and the one action', () => {
-    expect(libraryLine('Art print shop', behind, { update: null, canSend: true, github: true })).toEqual({ text: 'Art print shop uses the library from 1.8.3. The latest is 1.8.4.', send: true, sent: false, link: null });
+    expect(libraryLine('Art print shop', behind, { update: null, canSend: true, github: true })).toEqual({ text: 'Art print shop uses an older version of the library (1.8.3, the latest is 1.8.4).', send: true, sent: false, link: null });
   });
 
   it('for anyone who cannot send the update (a designer): no line at all, a fact they cannot act on', () => {
@@ -224,7 +224,7 @@ describe('the product page’s words', () => {
     const pnpm = libraryState({ pkg: PKG, lock: null, lockKind: 'pnpm', latest: { '@bridge-ds/react': '1.8.4' } });
     expect(libraryLine('Art print shop', pnpm, { update: null, canSend: true, github: true })?.text).toBe('The latest library is 1.8.4. Bridge cannot tell which one Art print shop uses yet.');
     const out = libraryState({ pkg: PKG, lock: null, lockKind: 'yarn', latest: { '@bridge-ds/react': '2.0.0' } });
-    expect(libraryLine('Art print shop', out, { update: null, canSend: true, github: true })).toMatchObject({ text: 'Art print shop uses the library from 1.8.2. The latest is 2.0.0.', send: true });
+    expect(libraryLine('Art print shop', out, { update: null, canSend: true, github: true })).toMatchObject({ text: 'Art print shop uses an older version of the library (1.8.2, the latest is 2.0.0).', send: true });
     expect(libraryLine('Art print shop', null, { update: null, canSend: true, github: true })).toBeNull();
   });
 

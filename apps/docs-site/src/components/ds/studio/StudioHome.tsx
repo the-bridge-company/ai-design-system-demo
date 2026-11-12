@@ -65,7 +65,7 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
   if (!s) return null;
   // A div, not a p: the avatar group is a block (a div inside a p is invalid HTML).
   return (
-    <div className="t-body sh-waiting">
+    <div className="t-body sh-waitline">
       {people.length > 0 && (
         <AvatarGroup aria-label="Waiting on you" max={AVATARS_SHOWN} size="md" className="sh-stack">
           {people.map((p) => (
@@ -392,7 +392,7 @@ const LEAD_TOUR_KEY = 'bridge.home.lead-tour';
 const REVIEW_CROP = '0 98 232 86';
 
 /** A developer's quiet home (StudioHomeProps.builder): what they build, on Being built. */
-export const BUILDER_WORDS = { title: 'What are you building today?', button: 'See what you build', path: 'building/?people=you' } as const;
+export const BUILDER_WORDS = { title: 'What are you building today?', button: 'See what you are building', path: 'building/?people=you' } as const;
 
 /** The Harbor zone's line when nothing waits on the viewer: honest first, then the calm. */
 export const QUIET_LINE = 'Nothing needs you. The harbor is calm.';
@@ -609,7 +609,10 @@ function WaitingOnOthers({ rows }: { rows: readonly HomeWaiting[] }) {
         {rows.map((r) => (
           <li key={r.key}>
             <a href={r.href}>{r.title}</a>
-            <span className="t-muted"> · {r.line}</span>
+            <span className="t-muted">
+              {SEP}
+              {r.line}
+            </span>
           </li>
         ))}
       </ul>

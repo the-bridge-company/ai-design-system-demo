@@ -74,7 +74,7 @@ describe('exploration page model', () => {
   });
 
   it('says who started it, where and when', () => {
-    expect(startedTail('Admin demo', '2026-10-30T09:00:00Z', NOW)).toBe('Admin demo · today');
+    expect(startedTail('Admin demo', '2026-10-30T09:00:00Z', NOW)).toBe('Admin demo\u2004\u2060·\u2004today');
     expect(startedTail('Admin demo', null)).toBe('Admin demo');
   });
 

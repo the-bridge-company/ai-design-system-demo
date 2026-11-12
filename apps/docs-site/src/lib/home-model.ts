@@ -42,11 +42,9 @@ export interface Person {
   agent?: boolean;
 }
 
-/**
- * The separator between two parts of a status line (" · "), glued to what comes before it by a no-break space: when
- * the line wraps, the dot ends the first line and never starts the next.
- */
-export const SEP = '\u00a0· ';
+/** The status line separator: lib/sep.ts says why it is not a plain " · ". */
+import { SEP } from './sep';
+export { SEP, joinSep } from './sep';
 
 export const CLAUDE: Person = { login: 'claude', name: 'Claude AI', avatar: null, agent: true };
 
@@ -313,7 +311,7 @@ export function splitNeeds<R extends Pick<NeedRow, 'kind'>>(rows: R[], max = NEE
     n(['guidance']) ? plural(n(['guidance']), 'documentation draft', 'documentation drafts') : '',
     n(['health', 'setup']) ? plural(n(['health', 'setup']), 'library check', 'library checks') : '',
   ].filter(Boolean);
-  return { shown: rows.slice(0, max), more: { count: rest.length, label: `${rest.length} more`, parts: parts.join(' · ') } };
+  return { shown: rows.slice(0, max), more: { count: rest.length, label: `${rest.length} more`, parts: parts.join(SEP) } };
 }
 
 /** "You are the only reviewer for 12 of them." when at least ONLY_REVIEWER_MIN rows have no other reviewer. */
@@ -536,7 +534,7 @@ export function joinNeed(r: { id: string; name: string; email: string; createdAt
     href: studioHref('settings/#members'),
     person: { login: r.email, name: shortName(r.name) ?? r.name, avatar: null },
     line: `asks to join ${team}`,
-    detail: `${r.email} · joins as Can edit`,
+    detail: `${r.email}${SEP}joins as Can edit`,
     since,
     waitsOnYou: true,
     pill: since ? { label: askedPill(since, now), tone: 'warning' } : null,

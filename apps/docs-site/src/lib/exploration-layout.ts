@@ -6,6 +6,7 @@
 // Left column: the screen, What this changes in the library, Activity (one timeline with the decisions, the comment box
 // at its end naming who reads it). Right column: the turn block (the one Harbor zone, always there: "Your turn" when
 // the viewer acts now, else what happens now and the steps still to come, waitBlockOf), then the handover notes.
+import { SEP_SPLIT } from './sep';
 
 /** Who reads the page, as its rules see them. */
 export type PageRole = 'owner' | 'designer' | 'lead' | 'developer' | 'pm' | 'viewer';
@@ -120,7 +121,7 @@ export function notesContext(next: string | null | undefined): string | null {
 
 /** "Sofia's exploration in Acme CRM, started Nov 6", from the author's name and the "Acme CRM · Nov 6" tail. */
 export function ownerLine(name: string, tail: string, viewerIsAuthor = false): string {
-  const [product, when] = tail.split(' · ').map((s) => s.trim());
+  const [product, when] = tail.split(SEP_SPLIT).map((s) => s.trim());
   const who = viewerIsAuthor ? 'Your exploration' : `${name}${/s$/i.test(name) ? "'" : "'s"} exploration`;
   return [product ? `${who} in ${product}` : who, when ? `started ${when}` : ''].filter(Boolean).join(', ');
 }

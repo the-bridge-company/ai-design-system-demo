@@ -400,10 +400,14 @@
   line-height: var(--typography-caption-line-height);
 }
 
+/* The eyebrow over "Nothing. Every piece comes from the library.": the ui size of the other Studio eyebrows (the
+   turn zone's), not the 12px caption under a 30px title. */
 .li-kind-strong {
   margin: 0;
   color: var(--color-text-signal);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-ui-line-height);
 }
 
 .li-details {
@@ -529,7 +533,8 @@
 .li-nothing {
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-8);
-  align-items: center;
+  /* The drawing's top on the eyebrow's top, as in the turn zone: centered, it floated beside the lead sentence. */
+  align-items: start;
   padding: var(--space-6) var(--space-8);
   border-color: var(--color-bg-zone);
   background-color: var(--color-bg-zone);

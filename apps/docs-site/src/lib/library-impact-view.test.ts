@@ -107,8 +107,8 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Your choice', tone: 'warning' });
     const c = conflictOf(v);
     expect(c.ways.map((w) => [w.label, w.hint])).toEqual([
-      ["Leo's way", 'Tighter · this screen'],
-      ["Sofia's way", 'Roomier · Contact page summary'],
+      ["Leo's way", 'Tighter\u2004\u2060·\u2004this screen'],
+      ["Sofia's way", 'Roomier\u2004\u2060·\u2004Contact page summary'],
     ]);
     expect(c.question).toBe('Which way does Card take?');
     expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes Card roomier.");
@@ -240,10 +240,10 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.rows[0]!.origin).toEqual({ people: ['Leo', 'Sofia'], products: ['Acme CRM'] });
     const L = conflictOf(v).ledger;
     expect(L.property).toBe('Padding');
-    expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '20 px', '+4 px', "Sofia's way · Contact page summary · Acme CRM"]]);
+    expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '20 px', '+4 px', "Sofia's way\u2004\u2060·\u2004Contact page summary\u2004\u2060·\u2004Acme CRM"]]);
     expect(L.have.map((r) => [r.name, r.value, r.delta, r.isDefault, r.line])).toEqual([
       ['Default', '16 px', null, true, 'Every screen gets it today. It stays the default.'],
-      ['Compact', '12 px', '−4 px', false, "Leo's screen can use Compact as it is · Deal pipeline cards · Acme CRM"],
+      ['Compact', '12 px', '−4 px', false, "Leo's screen can use Compact as it is\u2004\u2060·\u2004Deal pipeline cards\u2004\u2060·\u2004Acme CRM"],
     ]);
   });
 

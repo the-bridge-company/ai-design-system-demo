@@ -341,7 +341,7 @@ describe('StudioHome, status lines', () => {
     const status = container.querySelector('.sh-card-foot')!;
     const parts = [...status.children].map((c) => c.textContent ?? '');
     for (const p of parts) expect(p.trimStart().startsWith('·')).toBe(false);
-    expect(SEP).toBe(' · ');
+    expect(SEP).toBe('\u2004\u2060·\u2004');
     // No breakable space before a dot anywhere on the home.
     expect(container.textContent).not.toMatch(/ ·/);
   });
@@ -401,7 +401,7 @@ describe('StudioHome, products', () => {
     expect(container.querySelector('[aria-labelledby="sh-explorations"]')!.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const folders = [...section.querySelectorAll('.sh-cards > li')];
     expect(folders.map((f) => f.querySelector('[data-card-primary]')!.textContent)).toEqual(['Product admin', 'Library']);
-    expect(folders[0]!.textContent).toContain('2 exploring · 1 waiting to be picked up');
+    expect(folders[0]!.textContent).toContain('2 exploring\u2004\u2060·\u20041 waiting to be picked up');
     expect(folders[1]!.textContent).toContain('1 shipped');
     expect(folders[0]!.querySelector('a')!.getAttribute('href')).toBe('/studio/products/admin-app/');
     // The mosaic: the latest screens, three panes.
@@ -436,10 +436,10 @@ describe('StudioHome, quiet team Home (recent)', () => {
     const { container } = render(createElement(StudioHome, quiet({ contributor: true, lead: false, builder: true, branches, explorations: [exploration(7, { own: false })], greeting: 'Good afternoon, Malik.' })));
     expect(screen.getByRole('heading', { level: 1, name: 'What are you building today?' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Start an exploration' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'See what you build' }).getAttribute('href')).toMatch(/building\/\?people=you$/);
-    // Each clause of the sentence opens Being built on the viewer, at its status.
+    expect(screen.getByRole('link', { name: 'See what you are building' }).getAttribute('href')).toMatch(/building\/\?people=you$/);
+    // The sentence's first clause is its one link: Being built on the viewer, at that status; the next clause is words.
     expect(screen.getByRole('link', { name: '1 of your library changes is being built' }).getAttribute('href')).toMatch(/building\/\?status=in-progress&people=you$/);
-    expect(screen.getByRole('link', { name: '1 is in review' }).getAttribute('href')).toMatch(/building\/\?status=in-review&people=you$/);
+    expect(screen.queryByRole('link', { name: '1 is in review' })).toBeNull();
     // No explorations tour for a developer.
     expect(screen.queryByText(/1 of 2/)).toBeNull();
     await expectNoAxeViolations(container);

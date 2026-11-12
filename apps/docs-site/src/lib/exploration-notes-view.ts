@@ -2,6 +2,7 @@
 // exploration (@bridge-ds/core exploration-notes.ts), in the words the page shows, and the edit form's values back
 // into an update. Designers never read a technical word here: no file, no branch, no commit.
 import { notesCounts, notesEmpty, type EdgeCase, type ExplorationNotes, type NotesUpdate } from '@bridge-ds/core';
+import { SEP } from './sep';
 
 export const NOTES_WORDS = {
   title: 'Where it stands',
@@ -38,7 +39,7 @@ export function notesCountLine(n: ExplorationNotes): string {
     c.questions ? plural(c.questions, 'open question', 'open questions') : '',
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 }
 
 /** True when the collapsed view holds everything (no details to open). */

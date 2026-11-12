@@ -2,13 +2,13 @@
 //   - The shared page header (StudioHead): the product's name, one live summary sentence ("2 exploring, 1 waiting for
 //     code."), and "Start an exploration" at the end of the title's line, preselected with this product (the one start
 //     flow, StartExploration). No drawing in the header: the action owns the end of the line.
-//   - One quiet line under the header: "Open the live product", a warning only when Bridge cannot reach it, and, for a
+//   - Quiet lines under the header, one fact each: "Open the live product", a warning only when Bridge cannot reach it, and, for a
 //     product explored in the design team's copy (products[].design), "Art print shop changed since your copy. Get the
 //     latest" only when the product moved on and the viewer can get it (anyone who can edit the team: GitHub write, or
 //     an email member through Bridge, api/contribute merge-upstream); never the sentence without its action
 //     (scripts/design-copy.ts, lib/design-copy.ts). For a product with its own repository, and only for a lead or an
-//     admin (who can act on it), on the same line, which library it uses ("Art print shop uses the library from 1.8.3.
-//     The latest is 1.8.4.") and "Send the update to the developers"; once sent, "Update sent to the developers." with
+//     admin (who can act on it), on its own line, which library it uses ("Art print shop uses an older version of the library
+//     (1.8.3, the latest is 1.8.4).") and "Send the update to the developers"; once sent, "Update sent to the developers." with
 //     "Open their update" for people signed in with GitHub (lib/library-update.ts, scripts/library-update.ts). Nobody
 //     else reads it, so nobody else reads the product's library either. Never on the sample team.
 //   - The designers' copy is a one-time team setup the admin chose in Add a product: nobody ever sees "Make my copy".
@@ -82,6 +82,7 @@ import type { LibraryView } from '../../../scripts/library-update';
 import type { GitHubBusy } from '../../../lib/github-busy';
 import type { HomeComponent } from './StudioHome';
 import { BusyNotice } from './BusyNotice';
+import { CountTag } from './CountTag';
 import { ProductPreviewsStep } from './ProductPreviewsStep';
 import { isTeamAdmin, previewsStep, showsPreviewsStep, type PreviewsLike, type PreviewsStep } from '../../../lib/product-previews';
 
@@ -429,7 +430,7 @@ function CopySetupLine({ setup }: { setup: CopySetup }) {
 }
 
 /**
- * "Art print shop uses the library from 1.8.3. The latest is 1.8.4." and, on the same line, the one thing to do:
+ * "Art print shop uses an older version of the library (1.8.3, the latest is 1.8.4)." and, on the same line, the one thing to do:
  * "Send the update to the developers" (a lead or an admin), or "Update sent to the developers." with "Open their
  * update" for people signed in with GitHub. No package name, lockfile or pull request in a designer's words.
  */
@@ -495,7 +496,7 @@ function Facts({ product, data, copy, library }: { product: ProductConfig; data:
   return (
     <p className="t-ui t-muted pp-facts">
       {f.production && (
-        <Link href={f.production.href} variant="subtle" external>
+        <Link href={f.production.href} external>
           Open the live product
         </Link>
       )}
@@ -709,9 +710,9 @@ export function ProductPageView({
         productGroups(cards).map((g) => (
           <section className="sh-section pp-group" key={g.key} aria-labelledby={`pp-${g.key}`} data-state-group={g.key}>
             <header className="sh-section-head">
-              {/* The group heading of Changes (label and a muted count): the same kind of list reads the same. */}
+              {/* The group heading of Changes (label and its count tag): the same kind of list reads the same. */}
               <h2 id={`pp-${g.key}`} className="pp-h2">
-                {g.label} <span className="pp-count">{g.cards.length}</span>
+                {g.label} <CountTag n={g.cards.length} />
               </h2>
             </header>
             <ul className="sh-cards">

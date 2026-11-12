@@ -232,7 +232,7 @@ describe('order and grouping', () => {
     const rows = [...Array.from({ length: 12 }, (_, i) => row(`r${i}`, 'review', null)), ...Array.from({ length: 5 }, (_, i) => row(`g${i}`, 'guidance', null)), row('o', 'own', null), row('h', 'health', null)];
     const s = splitNeeds(sortNeeds(rows));
     expect(s.shown).toHaveLength(3);
-    expect(s.more).toEqual({ count: 16, label: '16 more', parts: '9 reviews · 1 of your changes · 5 documentation drafts · 1 library check' });
+    expect(s.more).toEqual({ count: 16, label: '16 more', parts: '9 reviews\u2004\u2060·\u20041 of your changes\u2004\u2060·\u20045 documentation drafts\u2004\u2060·\u20041 library check' });
     expect(splitNeeds(rows.slice(0, 3)).more).toBeNull();
     expect(splitNeeds([...rows.slice(0, 3), row('g', 'guidance', null)]).more?.parts).toBe('1 documentation draft');
   });
@@ -369,7 +369,7 @@ describe('join requests on the home (board E7b)', () => {
       kind: 'join',
       title: 'Jordan Lee',
       line: 'asks to join Acme Design',
-      detail: 'jordan.lee@acme.com · joins as Can edit',
+      detail: 'jordan.lee@acme.com\u2004\u2060·\u2004joins as Can edit',
       waitsOnYou: true,
       pill: { label: 'Waiting 1 h', tone: 'warning' },
       request: { id: 'r1', name: 'Jordan Lee' },

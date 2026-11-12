@@ -164,8 +164,8 @@ describe('join request on the admin home (E7b)', () => {
     const back = vi.fn();
     const { container } = render(createElement(StudioHome, home({ needs: [jordan, review(1)], join: joinHandlers(() => 'acme/ds', gone, back) })));
     expect(screen.getByText('Jordan Lee')).toBeInTheDocument();
-    expect(screen.getByText('· asks to join Acme Design')).toBeInTheDocument();
-    expect(screen.getByText('jordan.lee@acme.com · joins as Can edit')).toBeInTheDocument();
+    expect(screen.getByText('\u2060· asks to join Acme Design')).toBeInTheDocument();
+    expect(screen.getByText(/^jordan\.lee@acme\.com\s\u2060·\sjoins as Can edit$/)).toBeInTheDocument();
     expect(screen.getByText('Waiting 1 h')).toBeInTheDocument();
     expect(screen.getByText(/are waiting on you/).textContent).toContain('Jordan and Ann');
     await expectNoAxeViolations(container);
@@ -224,7 +224,7 @@ describe('Settings, Members (E7c, E7a)', () => {
     const list = screen.getByRole('list', { name: 'Asks to join' });
     expect(list).toHaveClass('sh-rows');
     expect(list).toHaveTextContent('asks to join Acme Design');
-    expect(list).toHaveTextContent('jordan.lee@acme.com · joins as Can edit');
+    expect(list).toHaveTextContent('jordan.lee@acme.com \u2060· joins as Can edit');
     expect(list).toHaveTextContent('Waiting 1 h');
     // Nothing to pick: an email account joins as Can edit (BR-20, no dead control).
     expect(screen.queryByRole('button', { name: /Role for/ })).toBeNull();

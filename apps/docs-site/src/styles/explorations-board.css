@@ -13,10 +13,6 @@
   margin-block-start: 0;
 }
 
-.ex-waiting .bl-count {
-  color: var(--color-text-signal);
-}
-
 .ex-waiting .ex-turn > :is(.sh-row, .sh-card) {
   border-color: transparent;
 }
@@ -31,7 +27,8 @@
   margin-inline-start: var(--space-1);
 }
 
-/* Review: on hover or keyboard focus of a waiting card, always on touch (a 44px target there). */
+/* Review: always at the end of a waiting row, as on the Home's rows (the same row, the same action); on a waiting card
+   (grid, board) on hover or keyboard focus, always on touch (a 44px target there). */
 .ex-review {
   position: relative;
   z-index: 1;
@@ -60,11 +57,13 @@
 }
 
 @media (hover: hover) {
-  .ex-turn .ex-review {
+  .sh-cards .ex-turn .ex-review,
+  .ex-col-cards .ex-turn .ex-review {
     opacity: 0;
   }
 
-  .ex-turn:is(:hover, :focus-within) .ex-review {
+  .sh-cards .ex-turn:is(:hover, :focus-within) .ex-review,
+  .ex-col-cards .ex-turn:is(:hover, :focus-within) .ex-review {
     opacity: 1;
   }
 }
@@ -131,12 +130,6 @@
   font-size: var(--font-size-200);
   font-weight: var(--font-weight-semibold);
   line-height: var(--font-line-height-tight);
-}
-
-/* The column's count, quiet after its status (the same as changes.css .bl-count, for pages that do not load it). */
-.ex-col-h .bl-count {
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-regular);
 }
 
 .ex-col-cards {

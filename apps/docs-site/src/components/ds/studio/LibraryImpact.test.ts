@@ -33,7 +33,7 @@ describe('the library block, ledger', () => {
     expect(screen.getByText('Add to the library')).toBeInTheDocument();
     expect(screen.getByText('Already in the library')).toBeInTheDocument();
     expect(screen.getByText('The default')).toBeInTheDocument();
-    expect(screen.getByText("Leo's screen can use Compact as it is · Deal pipeline cards · Acme CRM")).toBeInTheDocument();
+    expect(screen.getByText("Leo's screen can use Compact as it is \u2060· Deal pipeline cards \u2060· Acme CRM")).toBeInTheDocument();
     // The new component: one tick, its outcome in words.
     const add = screen.getByRole('checkbox', { name: 'Add Timeline to the library' });
     expect(add).toBeChecked();

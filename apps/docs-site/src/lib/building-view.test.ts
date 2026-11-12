@@ -55,9 +55,9 @@ describe('Being built', () => {
     const views = fixture();
     const stale = views[0]!;
     expect(statusTag(stale)).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
-    expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet · Asked by dana');
-    expect(rowLine(views[1]!, NOW)).toBe('Sent yesterday · Asked by dana');
-    expect(rowLine(views[2]!, NOW, (l) => FIXTURE_BUILDERS[l] ?? l)).toBe('Sent 4 days ago · Malik builds it');
+    expect(rowLine(stale, NOW)).toBe('Nobody has picked it up yet\u2004\u2060·\u2004Asked by dana');
+    expect(rowLine(views[1]!, NOW)).toBe('Sent yesterday\u2004\u2060·\u2004Asked by dana');
+    expect(rowLine(views[2]!, NOW, (l) => FIXTURE_BUILDERS[l] ?? l)).toBe('Sent 4 days ago\u2004\u2060·\u2004Malik builds it');
     expect(rowLine(views[5]!, NOW)).toBe('Shipped 2 days ago by theo');
     expect(statusTag(views[5]!)).toEqual({ label: 'Shipped', tone: 'success' });
     expect(ageLabel(new Date(NOW).toISOString(), NOW)).toBe('Today');
@@ -231,7 +231,7 @@ describe('Being built: explorations handed to developers', () => {
     expect(list.map((r) => `${r.number}:${r.status}:${r.label}`)).toEqual(['611:requested:Waiting to be picked up', '2:in-progress:Being built', '3:in-review:In review', '4:shipped:Shipped']);
     const [ready, building, , shipped] = list;
     expect(ready).toMatchObject({ title: 'Explore new design pr being built', requestedBy: 'ann', builders: [], stale: false, exploration: { href: 'explorations/?exploration=611', product: 'Admin demo' } });
-    expect(ready!.exploration.line).toMatch(/^Admin demo · Done exploring by Ann on /);
+    expect(ready!.exploration.line).toMatch(/^Admin demo\u2004\u2060·\u2004Done exploring by Ann on /);
     expect(building!.builders).toEqual(['theo']);
     expect(building!.exploration.line).toMatch(/Developers are building it$/);
     expect(shipped!.exploration.line).toBe('Shipped 1 day ago');
@@ -268,7 +268,7 @@ describe('Being built: explorations handed to developers', () => {
     const list = explorationBuildRows([copy(30), copy(31), copy(32), copy(33), copy(34)], { products, now: NOW, nameOf, task: (u) => reads[u] ?? null });
     expect(list.map((r) => `${r.number}:${r.status}`)).toEqual(['30:requested', '31:in-progress', '32:shipped', '33:not-planned', '34:requested']);
     expect(list[1]!.builders).toEqual(['theo']);
-    expect(list[2]!.exploration.line).toBe('Shop · Shipped 1 day ago');
+    expect(list[2]!.exploration.line).toBe('Shop\u2004\u2060·\u2004Shipped 1 day ago');
     // Closed without being built while the copy still waits on them: the developers declined it, the row says so.
     const declined = list[3]!;
     expect(declined).toMatchObject({ label: 'Not planned', sentence: 'Developers closed it without building it.' });
@@ -285,7 +285,7 @@ describe('Being built: explorations handed to developers', () => {
       product: 'poster',
     });
     const [row] = explorationBuildRows([explored(40)], { products: withAddress, now: NOW, nameOf, member: true, shot: (k) => (k === 'poster#40' ? 'https://raw.githubusercontent.com/acme/ds/bridge-shots/acme/poster-design/40.webp' : null) });
-    expect(row!.exploration.line).toBe('Poster Studio · Their developers work elsewhere: send them the message.');
+    expect(row!.exploration.line).toBe('Poster Studio\u2004\u2060·\u2004Their developers work elsewhere: send them the message.');
     const m = row!.exploration.forDevelopers!.message;
     expect(m).toContain('A change to Poster Studio is ready to build: Bigger frame picker.');
     expect(m).toContain('What changes: Larger swatches');
@@ -412,7 +412,7 @@ describe('Being built: explorations handed to developers', () => {
     expect(s2.nextRelease).toBe(true);
     expect(rowLine(s2, NOW)).toBe('In the next release');
     const r2 = out.find((v) => v.id === review.id)!;
-    expect(rowLine(r2, NOW)).toMatch(/· Waiting for Lee's review$/);
+    expect(rowLine(r2, NOW)).toMatch(/·\u2004Waiting for Lee's review$/);
     // Nothing read about it: the row keeps its words.
     expect(withLifecycle(views, { pulls: [] })).toEqual(views);
   });

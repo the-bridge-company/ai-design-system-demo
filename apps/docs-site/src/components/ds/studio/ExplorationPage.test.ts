@@ -27,7 +27,7 @@ const base: ExplorationPageProps = {
   title: 'Orders: bulk actions',
   stage: 'not-started',
   author: florian,
-  startedTail: 'Admin demo · today',
+  startedTail: 'Admin demo\u2004\u2060·\u2004today',
   lines: { app: 'Continue Bridge exploration #611 "Orders: bulk actions" in Admin demo and use the Bridge library.', terminal: 'claude "Continue Bridge exploration #611"' },
   todayUrl: 'https://bridge-demo.example.com',
   headline: null,
@@ -134,7 +134,7 @@ describe('ExplorationPage, not started (X1)', () => {
     // One line, the mockup named once, never its node id.
     const lines = document.querySelectorAll('[data-started-from]');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.textContent).toMatch(/^Started from Contacts v3.* \u00b7 2 pieces the library doesn't have$/);
+    expect(lines[0]!.textContent).toMatch(/^Started from Contacts v3.*\u2004\u2060\u00b7\u20042 pieces the library doesn't have$/);
     expect(lines[0]!.textContent).not.toMatch(/212|\u2014|From Contacts/);
     // Nothing lists the pieces on a page not started yet: the count opens their names under the line.
     const count = screen.getByRole('button', { name: "2 pieces the library doesn't have" });
@@ -434,7 +434,7 @@ describe('ExplorationPage, after Done exploring (Waiting to be picked up, Being 
     expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy();
     // No capture: the plate names the screen and the product, never a fake wireframe.
     expect(document.querySelector('.xp-plate')!.textContent).toContain('Orders table');
-    expect(document.querySelector('.xp-plate')!.textContent).toContain('Admin demo · no screenshot yet');
+    expect(document.querySelector('.xp-plate')!.textContent).toContain('Admin demo\u2004\u2060·\u2004no screenshot yet');
     // Nothing waits on this viewer: the one block says so, no button, no grey footnote that repeats the state.
     expect(document.querySelectorAll('.zone')).toHaveLength(1);
     expect(within(block).queryAllByRole('button')).toHaveLength(0);
@@ -920,7 +920,7 @@ describe('the talk with a lead on the page', () => {
     paint({ stage: 'exploring', previewUrl: 'https://p.example.com', activity: [], headline: { who: face, text: 'made a change', when: '2 h ago' }, lead: { line: 'Sending also adds the Timeline to the library.', bar: { ...bar, changedSince: true, blocked: 'Choose Card padding' } } });
     // Step 1 of 2: the zone asks the library question itself, with its own primary; Send comes back after.
     const zone = screen.getByRole('region', { name: "Which Card padding for Florian's screen?" });
-    expect(zone.querySelector('.xp-turn-eyebrow')!.textContent).toBe('Your turn · 1 of 2');
+    expect(zone.querySelector('.xp-turn-eyebrow')!.textContent).toBe('Your turn\u2004\u2060·\u20041 of 2');
     expect(within(zone).getByRole('list', { name: 'Steps' }).textContent).toMatch(/1Card padding.*2Send to the developers/);
     expect(within(zone).queryByRole('button', { name: 'Send to the developers' })).toBeNull();
     expect(within(zone).queryByRole('button', { name: 'Needs changes' })).toBeNull();

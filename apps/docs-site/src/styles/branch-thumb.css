@@ -284,6 +284,13 @@
   overflow: hidden;
 }
 
+/* At thumbnail size the Library's 24px checkerboard read as a broken, transparent image (two or three squares per
+   thumbnail, nothing else while the story loads): a plain neutral surface instead, the same as the other thumbnails. */
+.bt-stage.stage-checker {
+  background-color: var(--color-bg-subtle);
+  background-image: none;
+}
+
 .bt-frame {
   display: block;
   width: 100%;

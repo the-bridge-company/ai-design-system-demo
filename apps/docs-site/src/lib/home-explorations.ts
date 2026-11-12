@@ -443,8 +443,8 @@ export const ownChangeHref = (stage: OpenStage) => studioHref(`building/?status=
 
 /**
  * One sentence for one kind of work: "2 of your explorations wait for a developer to pick them up, 1 is being built
- * and 1 is in review." The first count says what the things are and whose, the next ones follow it; each clause opens
- * Changes on the viewer's own work at that stage. Nothing open: no sentence.
+ * and 1 is in review." The first count says what the things are and whose, the next ones follow it; the first clause
+ * (only) opens Changes on the viewer's own work at that stage. Nothing open: no sentence.
  */
 function workSentence(counts: Record<OpenStage, number>, things: string, href: (s: OpenStage) => string = ownWorkHref): QuietPart[] {
   const at = OPEN_STAGES.filter((s) => counts[s] > 0);
@@ -452,8 +452,10 @@ function workSentence(counts: Record<OpenStage, number>, things: string, href: (
   at.forEach((s, i) => {
     const n = counts[s];
     if (i > 0) parts.push({ text: i === at.length - 1 ? ' and ' : ', ' });
-    // The whole clause is the link: a lone "1" would be a target too small to hit.
-    parts.push({ text: `${i === 0 ? `${n} of your ${things}` : n} ${STAGE_WORDS[s][n === 1 ? 0 : 1]}`, href: href(s) });
+    // One link per sentence, on its first clause (the whole clause: a lone "1" would be a target too small to hit). A
+    // link on every clause made three inline links in one hero sentence; the rest is on the cards below.
+    const text = `${i === 0 ? `${n} of your ${things}` : n} ${STAGE_WORDS[s][n === 1 ? 0 : 1]}`;
+    parts.push(i === 0 ? { text, href: href(s) } : { text });
   });
   if (parts.length) parts.push({ text: '.' });
   return parts;

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-12T11:04:57.223Z",
+  "createdAt": "2026-11-12T11:55:13.429Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -9358,7 +9358,7 @@
         "story=navigation-stepper--default": {
           "file": "navigation-stepper-default.png",
           "width": 400,
-          "height": 160,
+          "height": 162,
           "story": "navigation-stepper--default",
           "props": {
             "orientation": "vertical",
@@ -9369,7 +9369,7 @@
         "story=navigation-stepper--all-states": {
           "file": "navigation-stepper-all-states.png",
           "width": 400,
-          "height": 160,
+          "height": 162,
           "story": "navigation-stepper--all-states",
           "props": {
             "orientation": "vertical",
@@ -9380,7 +9380,7 @@
         "story=navigation-stepper--default, , state=hover": {
           "file": "navigation-stepper-default__state-hover.png",
           "width": 400,
-          "height": 160,
+          "height": 162,
           "story": "navigation-stepper--default",
           "props": {
             "orientation": "vertical",
@@ -9392,7 +9392,7 @@
         "story=navigation-stepper--default, , state=active": {
           "file": "navigation-stepper-default__state-active.png",
           "width": 400,
-          "height": 160,
+          "height": 162,
           "story": "navigation-stepper--default",
           "props": {
             "orientation": "vertical",
@@ -9404,7 +9404,7 @@
         "story=navigation-stepper--default, disabled=true": {
           "file": "navigation-stepper-default__disabled-true.png",
           "width": 400,
-          "height": 160,
+          "height": 162,
           "story": "navigation-stepper--default",
           "props": {
             "orientation": "vertical",
@@ -10263,6 +10263,15 @@
             "loopFocus": true
           }
         },
+        "story=overlays-menu--checkable-items": {
+          "file": "overlays-menu-checkable-items.png",
+          "width": 240,
+          "height": 287,
+          "story": "overlays-menu--checkable-items",
+          "props": {
+            "loopFocus": true
+          }
+        },
         "story=overlays-menu--all-states": {
           "file": "overlays-menu-all-states.png",
           "width": 240,
@@ -10428,6 +10437,15 @@
           "width": 240,
           "height": 127,
           "story": "overlays-menu--row-overflow",
+          "props": {
+            "loopFocus": true
+          }
+        },
+        "story=overlays-menu--checkable-items": {
+          "file": "overlays-menu-checkable-items.png",
+          "width": 240,
+          "height": 287,
+          "story": "overlays-menu--checkable-items",
           "props": {
             "loopFocus": true
           }

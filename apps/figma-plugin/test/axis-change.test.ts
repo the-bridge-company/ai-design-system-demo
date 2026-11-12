@@ -126,7 +126,7 @@ test('the code adds an axis, then drops a value, then removes the axis: every se
   const third = await pull(gh, sha1);
   assert.deepEqual(third.report.failed, []);
   const orphans = set('Badge').children.filter(isOrphan);
-  assert.equal(orphans.length, 8);
+  assert.equal(orphans.length, 12);
   assert.ok(orphans.every((o) => o.variantProperties!.Tone === 'info'));
   assert.deepEqual(pendingComponents(third.again), []);
 

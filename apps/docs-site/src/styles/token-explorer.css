@@ -946,14 +946,14 @@
 
 
 
-.xp-detail .tx-d-sec {
+:is(.xp-detail, .fd-drawer) .tx-d-sec {
   display: grid;
   gap: var(--space-2);
   padding: var(--space-4) 0;
   border-top: var(--border-width-default) solid var(--color-border-default);
 }
 
-.xp-detail .tx-d-sec h3 {
+:is(.xp-detail, .fd-drawer) .tx-d-sec h3 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -973,7 +973,7 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.xp-detail .tx-d-n {
+:is(.xp-detail, .fd-drawer) .tx-d-n {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
@@ -981,7 +981,7 @@
 }
 
 .xp-empty-line,
-.xp-detail .tx-empty-line {
+:is(.xp-detail, .fd-drawer) .tx-empty-line {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
@@ -1487,9 +1487,7 @@
   }
 }
 
-.xp-detail h2,
-.xp-detail h3,
-.xp-detail h4 {
+:is(.xp-detail, .fd-drawer) :is(h2, h3, h4) {
   margin: 0;
 }
 
@@ -1575,11 +1573,6 @@
 .xp[data-surface="app"] .xp-search {
   flex: 1 1 auto;
   min-width: calc(var(--size-64) / 2);
-}
-
-/* The Studio toolbar row: every control at the DS control height (md), the buttons as the DS draws them. */
-.xp[data-surface="app"] .xp-tools .btn {
-  flex: none;
 }
 
 .xp-menu {

@@ -3147,10 +3147,11 @@
   color: var(--color-text-muted);
 }
 
+/* The parts are joined by the status line separator (lib/sep.ts SEP), which brings its own room around the dot. */
 .hp-ldec-keys {
   display: flex;
   align-items: center;
-  gap: calc(var(--_u) * 8);
+  gap: calc(var(--_u) * 4);
   font-size: var(--font-size-200);
   line-height: var(--font-leading-16);
   color: var(--color-text-muted);
@@ -3161,10 +3162,6 @@
   display: inline-flex;
   align-items: center;
   gap: calc(var(--_u) * 6);
-}
-
-.hp-ldec-dot {
-  color: var(--color-text-muted);
 }
 
 .hp-ldec-ba {
@@ -3297,6 +3294,7 @@
   gap: calc(var(--_u) * 8);
 }
 
+/* bridge-audit-ignore-next-line: drawn check chips inside the lead board picture (role img, aria-hidden), scaled with the drawing unit --_u like the rest of the card; a DS Tag has fixed control sizes and would not scale with it */
 .hp-ldec-chip {
   height: calc(var(--_u) * 36);
   box-sizing: border-box;

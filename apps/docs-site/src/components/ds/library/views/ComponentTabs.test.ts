@@ -43,7 +43,6 @@ describe('Library component page tabs', () => {
     for (const [i, t] of COMPONENT_TABS.entries()) {
       expect(tabs[i]).toHaveAttribute('id', componentTabButtonId(t.id));
       expect(tabs[i]).toHaveAttribute('aria-controls', componentTabPanelId(t.id));
-      expect(tabs[i]).toHaveAttribute('data-tab', t.id);
     }
     expect(tabs[3]!.textContent).toMatch(/Changelog\s*3/);
     expect(tabs[0]!.textContent).toBe('Usage');

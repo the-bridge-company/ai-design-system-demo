@@ -8,7 +8,7 @@
 // recent team of the visitor's own, else the browser workspace). Nothing is read from GitHub for a guest.
 import '../styles/start.css';
 import Layout from '../layouts/Layout.astro';
-import { Card, Icon } from '@bridge-ds/react';
+import { Button, Card, Icon } from '@bridge-ds/react';
 import { Check } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
 import { CONNECT_HREF, START_WORDS as W, startTitle } from '../lib/start';
@@ -37,10 +37,10 @@ import { DEMO } from '../lib/nav';
         <ButtonLink variant="primary" size="lg" href={CONNECT_HREF} className="gs-action" data-start-connect>{W.connectButton}</ButtonLink>
       </Card>
       <Card className="gs-card" aria-labelledby="gs-demo">
-        <span class="gs-art" aria-hidden="true">
+        <span class="gs-art" aria-hidden="true" inert>
           <span class="gs-shape gs-shape-solid" />
           <span class="gs-shape gs-shape-zone" />
-          <span class="gs-shape gs-shape-button">Button</span>
+          <Button variant="primary" size="sm">Button</Button>
           <span class="gs-shape gs-shape-field" />
         </span>
         <h2 id="gs-demo" class="gs-h2">{W.demoTitle}</h2>

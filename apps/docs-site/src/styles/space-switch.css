@@ -5,6 +5,7 @@
    other space and its icon acts it out (the pen scribbles, the book turns a page). Press: the control squishes to 96%.
    Reduced motion: no movement, the plate changes in place. */
 
+/* bridge-audit-ignore-next-line: the Library and Studio switch is one navigation link to the other space (it loads a page, it holds no state), drawn on the DS SegmentedControl track and plate tokens; a DS Switch or SegmentedControl is a form control with a checked state, the wrong semantics for a link (Tier 2 request: a link mode for SegmentedControl) */
 a.space-switch {
   --_h: var(--size-10);
   --_inset: var(--space-0-5);
@@ -37,6 +38,7 @@ a.space-switch:focus-visible {
 }
 
 /* The raised plate under the space you are in: half the track, slid to the Studio half in Studio. */
+/* bridge-audit-ignore-next-line: the raised plate of the Library and Studio link above (a selected-segment plate, not a badge); see the reason on a.space-switch */
 .ss-pill {
   position: absolute;
   z-index: 0;

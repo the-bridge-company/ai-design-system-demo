@@ -1,7 +1,10 @@
 // The token detail drawer of the Library foundation pages (components/explorer/TokenDetailDrawer.astro): the same
-// renderDetail() as the token explorer, in read mode, opened from a token row. Values follow the brand and density
+// renderDetail() as the token explorer, in read mode, opened from a token row, inside the DS Drawer (lib/token-drawer.ts)
+// that openDialog opens: focus trap, Escape, scrim click, scroll lock and focus return are the DS's. Values follow the brand and density
 // the previews use (top bar), in both themes. Links inside the panel ("Aliased by", contrast pairs) open that token.
+import { closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
 import { initTokenHistoryPanel } from '../history/token-panel';
+import { TOKEN_DRAWER_ID } from '../../lib/token-drawer';
 import { currentScope } from '../shell';
 import { emptyFilters, planColumns, type ViewState } from '../../lib/explorer/model';
 import { loadExplorerData } from './data';
@@ -10,14 +13,17 @@ import type { ExplorerData, ExplorerState, View } from './types';
 import { copyText } from './util';
 
 export function initTokenDrawer() {
-  const root = document.querySelector<HTMLElement>('[data-fd-drawer]');
-  if (!root || root.dataset.ready) return;
-  root.dataset.ready = '';
+  const found = document.getElementById(TOKEN_DRAWER_ID);
+  if (!found || found.dataset.ready) return;
+  found.dataset.ready = '';
+  const root: HTMLElement = found;
+  // The drawer moves to the end of <body> when it opens: keep its parts, not selectors from the page.
   const panel = root.querySelector<HTMLElement>('[data-fd-detail]')!;
-  const scrim = root.querySelector<HTMLElement>('[data-fd-scrim]')!;
+  const popup = root.querySelector<HTMLElement>('[role="dialog"]')!;
+  const title = root.querySelector<HTMLElement>(`#${TOKEN_DRAWER_ID}-title`);
+  const crumb = root.querySelector<HTMLElement>(`#${TOKEN_DRAWER_ID}-description`);
   let data: ExplorerData | null = null;
   let current: string | null = null;
-  let returnFocus: HTMLElement | null = null;
   initTokenHistoryPanel();
 
   function viewFor(d: ExplorerData, path: string): View | null {
@@ -63,32 +69,27 @@ export function initTokenDrawer() {
     data ??= loadExplorerData();
     const view = viewFor(data, path);
     if (!view) return;
-    const wasOpen = !panel.hidden;
+    const wasOpen = isDialogOpen(root);
     current = path;
     renderDetail(panel, data, view, state(path), path);
-    panel.hidden = false;
-    scrim.hidden = false;
-    document.body.classList.add('no-scroll');
-    if (!wasOpen) returnFocus = opener ?? (document.activeElement as HTMLElement | null);
+    // The DS header names the drawer: the token path, and where it sits (the panel's own bar and name stay hidden).
+    if (title) title.textContent = path;
+    if (crumb) crumb.textContent = panel.querySelector('.xp-d-crumb')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     document.querySelectorAll('[data-fd-row][aria-current]').forEach((r) => r.removeAttribute('aria-current'));
     document.querySelector(`[data-fd-row="${CSS.escape(path)}"]`)?.setAttribute('aria-current', 'true');
-    // Focus goes to the dialog itself (labelled by the token name): the heading is not a control and shows no ring.
-    panel.focus();
+    // Focus goes to the dialog itself (named by the token path): the heading is not a control and shows no ring.
+    if (!wasOpen) openDialog(root, { returnFocus: opener ?? (document.activeElement as HTMLElement | null), initialFocus: popup });
+    else popup.focus();
     syncUrl(path);
   }
 
-  function close() {
-    if (panel.hidden) return;
-    panel.hidden = true;
-    scrim.hidden = true;
-    document.body.classList.remove('no-scroll');
+  // Closed by the DS (close button, Escape, scrim) or by closeDialog: forget the token.
+  root.addEventListener('close', () => {
     document.querySelectorAll('[data-fd-row][aria-current]').forEach((r) => r.removeAttribute('aria-current'));
     current = null;
     syncUrl(null);
-    const back = returnFocus;
-    returnFocus = null;
-    back?.focus();
-  }
+  });
+  const close = () => closeDialog(root);
 
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
@@ -109,15 +110,8 @@ export function initTokenDrawer() {
     if (go?.dataset.goto) return open(go.dataset.goto);
     if (t.closest('[data-xp-close]')) close();
   });
-  panel.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
-    }
-  });
-  scrim.addEventListener('click', close);
   document.addEventListener('bridge:scope', () => {
-    if (current && !panel.hidden) open(current);
+    if (current && isDialogOpen(root)) open(current);
   });
 
   const deep = new URLSearchParams(location.search).get('t');

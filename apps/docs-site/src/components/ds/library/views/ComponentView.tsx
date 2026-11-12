@@ -229,6 +229,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
 
         <div className="cp-layout">
           <div className="cp-body">
+            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
             <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-usage" aria-labelledby="tab-usage-btn" data-panel="usage">
               <div data-le-read="">
                 {d && <UsagePanel docs={d} Example={Example} />}
@@ -241,6 +242,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               <div data-le-usage=""></div>
             </div>
 
+            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
             <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-tokens" aria-labelledby="tab-tokens-btn" data-panel="tokens">
               {locked}
               <section aria-labelledby="anatomy">
@@ -338,6 +340,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               </section>
             </div>
 
+            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
             <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-code" aria-labelledby="tab-code-btn" data-panel="code">
               {locked}
               {fileLinks.length > 0 && (
@@ -467,6 +470,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               </section>
             </div>
 
+            {/* bridge-audit-ignore-next-line: a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands) */}
             <div className="cp-panel" role="tabpanel" tabIndex={0} id="tab-changelog" aria-labelledby="tab-changelog-btn" data-panel="changelog">
               {locked}
               <section aria-labelledby="changes">

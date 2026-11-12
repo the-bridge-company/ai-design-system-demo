@@ -2,18 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ROOT } from './repo';
-import { FAQ, STEP_MS, panoramaFit, stepForKey, stepTick } from './homepage';
+import { FAQ, STEP_MS, panoramaFit, stepTick } from './homepage';
 
 describe('step tabs', () => {
-  it('moves with arrows, wrapping, and jumps with Home and End', () => {
-    expect(stepForKey('ArrowDown', 2)).toBe(0);
-    expect(stepForKey('ArrowUp', 0)).toBe(2);
-    expect(stepForKey('ArrowRight', 0)).toBe(1);
-    expect(stepForKey('Home', 2)).toBe(0);
-    expect(stepForKey('End', 0)).toBe(2);
-    expect(stepForKey('Enter', 1)).toBeNull();
-  });
-
   it('advances after the step time, never while paused, and ignores long frames', () => {
     expect(stepTick(STEP_MS - 10, 16, 2, false)).toEqual({ elapsed: 0, step: 0 });
     expect(stepTick(100, 16, 1, true)).toEqual({ elapsed: 100, step: 1 });

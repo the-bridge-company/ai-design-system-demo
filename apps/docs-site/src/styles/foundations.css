@@ -422,6 +422,7 @@
   padding: 0 var(--space-3) var(--space-2);
 }
 
+/* bridge-audit-ignore-next-line: a token specimen, an inert aria-hidden miniature that shows one token at work; it is drawn from the documented system's own tokens (a team's tokens on its Library), so it cannot be a Bridge DS component */
 .sp-border-box.is-list > span:not(.sp-tag) {
   padding: var(--space-1-5) 0;
   border-bottom: var(--border-width-default) solid var(--color-border-subtle);
@@ -486,6 +487,7 @@
   white-space: normal;
 }
 
+/* bridge-audit-ignore-next-line: a token specimen, an inert aria-hidden miniature that shows one token at work; it is drawn from the documented system's own tokens (a team's tokens on its Library), so it cannot be a Bridge DS component */
 .sp-tabs {
   display: flex;
   gap: var(--space-4);
@@ -552,6 +554,7 @@
   background-color: var(--color-overlay-scrim);
 }
 
+/* bridge-audit-ignore-next-line: a token specimen, an inert aria-hidden miniature that shows one token at work; it is drawn from the documented system's own tokens (a team's tokens on its Library), so it cannot be a Bridge DS component */
 .sp-overlay-dialog {
   display: grid;
   gap: var(--space-1);
@@ -562,6 +565,7 @@
   box-shadow: var(--elevation-modal);
 }
 
+/* bridge-audit-ignore-next-line: a token specimen, an inert aria-hidden miniature that shows one token at work; it is drawn from the documented system's own tokens (a team's tokens on its Library), so it cannot be a Bridge DS component */
 .sp-overlay-tag {
   position: absolute;
   bottom: var(--space-2);
@@ -739,7 +743,7 @@
   background-color: var(--on);
 }
 
-.fd-pv-chip {
+.fd-pv-swatch {
   width: 62%;
   height: 58%;
   border-radius: var(--radius-inset);
@@ -747,19 +751,19 @@
   border: var(--border-width-default) solid var(--color-border-default);
 }
 
-.fd-pv.is-border .fd-pv-chip {
+.fd-pv.is-border .fd-pv-swatch {
   border: var(--border-width-strong) solid var(--pv);
   background-color: var(--color-surface-default);
   box-shadow: none;
 }
 
-.fd-pv.is-ring .fd-pv-chip {
+.fd-pv.is-ring .fd-pv-swatch {
   outline: var(--border-width-strong) solid var(--pv);
   outline-offset: var(--border-width-default);
   background-color: var(--color-surface-default);
 }
 
-.fd-pv.is-shadow .fd-pv-chip {
+.fd-pv.is-shadow .fd-pv-swatch {
   height: 52%;
   background-color: var(--color-surface-default);
   border: 0;
@@ -900,12 +904,8 @@
 }
 
 .fd-copy {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-default);
 }
 
 @media (hover: hover) {
@@ -914,72 +914,13 @@
   }
 
   .fd-row:hover .fd-copy,
-  .fd-row:focus-within .fd-copy,
-  .fd-copy:has(details[open]) {
+  .fd-row:focus-within .fd-copy {
     opacity: 1;
   }
 }
 
-.fd-copy-chev {
-  display: inline-grid;
-  place-items: center;
-  height: var(--size-8);
-  border: 0;
-  background-color: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
 .fd-copy-btn[data-copied] {
   color: var(--color-feedback-success-text);
-}
-
-.fd-copy-more {
-  position: static;
-}
-
-.fd-copy-chev {
-  width: var(--size-6);
-  border-left: var(--border-width-default) solid var(--color-border-default);
-  border-radius: 0 var(--radius-control) var(--radius-control) 0;
-  list-style: none;
-}
-
-.fd-copy-chev::-webkit-details-marker {
-  display: none;
-}
-
-.fd-copy-chev:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-@media (hover: hover) {
-  .fd-copy-chev:hover {
-    background-color: var(--color-bg-subtle);
-    color: var(--color-text-default);
-  }
-}
-
-.fd-copy-menu {
-  position: absolute;
-  top: calc(100% + var(--space-1));
-  left: 0;
-  z-index: var(--layer-dropdown);
-  display: grid;
-  justify-items: start;
-  min-width: var(--size-40);
-  padding: var(--space-1);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-surface-default);
-  box-shadow: var(--elevation-overlay);
-  cursor: default;
-}
-
-/* The current format (scripts/foundations.ts sets aria-checked on the DS Buttons). */
-.fd-copy-menu [data-fd-copy-as][aria-checked="true"] {
-  font-weight: var(--font-weight-semibold);
 }
 
 .fd-role {
@@ -1010,7 +951,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Usage chip and its popover */
+/* Usage: a DS Button that opens the list of who uses the token */
 
 .fd-use {
   grid-area: use;
@@ -1021,52 +962,8 @@
   position: relative;
 }
 
-.fd-uses[open] > summary {
-  margin-bottom: 0;
-}
-
-.fd-chip {
-  display: inline-flex;
-  align-items: center;
-  height: var(--size-8);
-  padding: 0 var(--space-2);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-default);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-semibold);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  list-style: none;
-}
-
-summary.fd-chip {
-  cursor: pointer;
-}
-
-summary.fd-chip::-webkit-details-marker {
+.fd-pop[hidden] {
   display: none;
-}
-
-@media (hover: hover) {
-  summary.fd-chip:hover {
-    border-color: var(--color-border-emphasis);
-    color: var(--color-text-default);
-  }
-}
-
-.fd-uses[open] > .fd-chip {
-  border-color: var(--color-border-emphasis);
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text-default);
-}
-
-.fd-chip.is-unused {
-  border-style: dashed;
-  background-color: transparent;
-  color: var(--color-text-muted);
 }
 
 .fd-pop {
@@ -1119,61 +1016,16 @@ summary.fd-chip::-webkit-details-marker {
   line-height: var(--font-line-height-normal);
 }
 
-/* Copy toast */
+/* Detail drawer: the DS Drawer (lib/token-drawer.ts) holding the explorer's panel. The DS header names the token, so
+   the panel's own bar (crumb and close) and its name heading stay hidden; the panel keeps its own padding. */
 
-.fd-toast {
-  position: fixed;
-  bottom: var(--space-6);
-  left: 50%;
-  z-index: var(--layer-toast);
-  max-width: calc(100vw - var(--size-8));
-  padding: var(--space-2) var(--space-3);
-  overflow: hidden;
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-  font-family: var(--font-family-mono);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  box-shadow: var(--elevation-modal);
-  opacity: 0;
-  transform: translate(-50%, var(--space-2));
-  transition:
-    opacity var(--motion-duration-fast) var(--motion-easing-enter),
-    transform var(--motion-duration-moderate) var(--motion-easing-enter);
+.fd-drawer [data-fd-detail] {
+  padding: 0;
 }
 
-.fd-toast[data-show] {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fd-toast {
-    transition: none;
-  }
-}
-
-/* Detail drawer: the explorer's panel, always as a drawer on these pages */
-
-.fd-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--layer-modal);
-  width: min(calc(var(--size-96) + var(--size-16)), 100vw);
-  box-shadow: var(--elevation-modal);
-}
-
-.fd-scrim:not([hidden]) {
-  position: fixed;
-  inset: 0;
-  z-index: var(--layer-overlay);
-  display: block;
-  background-color: var(--color-overlay-scrim);
+.fd-drawer [data-fd-detail] > .xp-d-bar,
+.fd-drawer .xp-dd-name {
+  display: none;
 }
 
 /* Narrow: rows wrap, the specimens stack (auto-fit above) */
@@ -1331,6 +1183,7 @@ summary.fd-chip::-webkit-details-marker {
   min-height: var(--control-height-md);
 }
 
+/* bridge-audit-ignore-next-line: a token specimen, an inert aria-hidden miniature that shows one token at work; it is drawn from the documented system's own tokens (a team's tokens on its Library), so it cannot be a Bridge DS component */
 .sp-radius-card,
 .sp-radius-dialog {
   display: inline-grid;

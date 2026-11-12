@@ -7,6 +7,7 @@
 // anything focusable: no links, buttons or tabindex inside the stack.
 // The faces are the DS illustrated avatars (Notionists, seeds `ann` and `dana`), drawn at build time: no JS on the page.
 import { Kbd } from '@bridge-ds/react';
+import { SEP } from '../../lib/sep';
 import { illustratedAvatarUri } from '@bridge-ds/react/avatar-illustrated';
 
 const ann = illustratedAvatarUri('ann');
@@ -30,7 +31,7 @@ const dana = illustratedAvatarUri('dana');
         <div class="hp-ldec-hd">
           <span class="hp-ldec-ann"><img src={ann} alt="" width="36" height="36" /></span>
           <span class="hp-ldec-ask"><span class="hp-ldec-l1"><b>Ann Leroy</b> <span class="hp-ldec-mut">asks for your review</span></span><span class="hp-ldec-l2">Profile header, follow button and avatar</span></span>
-          <span class="hp-ldec-keys"><span class="hp-ldec-k"><Kbd keys="A" size="sm" />approve</span><span class="hp-ldec-dot">·</span><span class="hp-ldec-k"><Kbd keys="S" size="sm" />suggest</span><span class="hp-ldec-dot">·</span><span class="hp-ldec-k"><Kbd keys="J" size="sm" />next</span></span>
+          <span class="hp-ldec-keys"><span class="hp-ldec-k"><Kbd keys="A" size="sm" />approve</span>{SEP}<span class="hp-ldec-k"><Kbd keys="S" size="sm" />suggest</span>{SEP}<span class="hp-ldec-k"><Kbd keys="J" size="sm" />next</span></span>
         </div>
         <div class="hp-ldec-ba">
           <div class="hp-ldec-col"><span class="hp-ldec-lab">Before</span><div class="hp-ldec-pane"><div class="hp-ldec-pc"><span class="hp-ldec-pav">AL</span><span class="hp-ldec-pt"><b>Ann Leroy</b><small>Product designer</small><span class="hp-ldec-fol">Follow</span></span></div></div></div>

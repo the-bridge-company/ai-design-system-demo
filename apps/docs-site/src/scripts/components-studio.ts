@@ -6,6 +6,7 @@
 // line counts open requests (GitHub issues labeled component-change) when they can be read.
 // Teams triage requests where they plan (Jira, GitHub): the drawer links to them on GitHub, not to a Studio list.
 import { REQUEST_LABEL } from '@bridge-ds/core';
+import { isDialogOpen, openDialog } from '@bridge-ds/react/dom';
 import { openRequestCounts, REQUEST_SENT_EVENT, requestFact } from '../lib/components-studio';
 import { VOCAB } from '../lib/vocabulary';
 import { currentContributor, onAccess, readRepo } from './github-session';
@@ -33,10 +34,12 @@ export function initComponentsStudio() {
   const bodies = [...root.querySelectorAll<HTMLElement>('[data-cm-family]')];
   const count = root.querySelector<HTMLElement>('[data-cm-count]');
   const none = root.querySelector<HTMLElement>('[data-cm-none]');
+  // The DS Drawer (components/ds/StaticDrawer.astro): its root moves to the end of <body> when it opens.
   const drawer = document.querySelector<HTMLElement>('[data-cm-drawer]')!;
-  const scrim = document.querySelector<HTMLElement>('[data-cm-scrim]')!;
-  const title = drawer.querySelector<HTMLElement>('[data-cm-d-title]')!;
-  const eyebrow = drawer.querySelector<HTMLElement>('[data-cm-d-family]');
+  const sheet = drawer.closest<HTMLElement>('[data-bridge-dialog]')!;
+  const title = sheet.querySelector<HTMLElement>('#cm-drawer-title')!;
+  const eyebrow = sheet.querySelector<HTMLElement>('#cm-drawer-description');
+  const isOpen = () => isDialogOpen(sheet);
   const shared = drawer.querySelector<HTMLElement>('[data-cm-shared]')!;
   const themeSeg = drawer.querySelector<HTMLElement>('[data-cm-theme]');
   const panels = [...drawer.querySelectorAll<HTMLElement>('[data-cm-panel]')];
@@ -106,11 +109,9 @@ export function initComponentsStudio() {
     openRow?.removeAttribute('aria-expanded');
     openRow = row;
     row.setAttribute('aria-expanded', 'true');
-    drawer.hidden = false;
-    scrim.hidden = false;
-    document.body.classList.add('no-scroll');
-    // Focus the title: screen readers announce the component, and Tab reaches the actions next.
-    title.focus();
+    // Focus the sheet itself, named by the component: screen readers announce it, and Tab reaches the actions next.
+    if (!isOpen()) openDialog(sheet, { returnFocus: row, initialFocus: drawer });
+    else drawer.focus();
     requestAnimationFrame(() => fitFrames(panel));
     syncUrl();
   }
@@ -147,7 +148,7 @@ export function initComponentsStudio() {
       requestCounts = undefined;
     }
     const open = panels.find((p) => !p.hidden);
-    if (open && !drawer.hidden) paintDrawerRequests(open);
+    if (open && isOpen()) paintDrawerRequests(open);
   }
 
   // A request just sent from the drawer (scripts/request-form.ts): one more open request for that component, said at once.
@@ -158,20 +159,26 @@ export function initComponentsStudio() {
     if (!requestCounts) return;
     requestCounts.set(name, (requestCounts.get(name) ?? 0) + 1);
     const panel = panels.find((p) => !p.hidden);
-    if (panel && !drawer.hidden) paintDrawerRequests(panel);
+    if (panel && isOpen()) paintDrawerRequests(panel);
   });
 
-  function close() {
-    if (drawer.hidden) return;
-    drawer.hidden = true;
-    scrim.hidden = true;
-    document.body.classList.remove('no-scroll');
-    const back = openRow;
+  // Closed by the DS (close button, Escape, scrim): the row is no longer open; focus returns to it (openDialog).
+  sheet.addEventListener('close', () => {
     openRow?.removeAttribute('aria-expanded');
     openRow = null;
     syncUrl();
-    back?.focus();
-  }
+  });
+  // Escape inside Change this component closes that step first, not the drawer (before the DS Drawer's own Escape).
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key !== 'Escape' || !isOpen() || drawer.dataset.mode !== 'change') return;
+      e.stopPropagation();
+      e.preventDefault();
+      resetChangeFlow(drawer, true);
+    },
+    true,
+  );
 
   rows.forEach((r) => {
     r.addEventListener('click', (e) => {
@@ -213,7 +220,6 @@ export function initComponentsStudio() {
     if (q) q.value = '';
     apply();
   });
-  drawer.querySelector('[data-cm-close]')?.addEventListener('click', close);
   themeSeg?.addEventListener('bridge:segment', (e) => {
     previewTheme = (e as CustomEvent<{ value: string }>).detail.value;
     const panel = panels.find((p) => !p.hidden);
@@ -227,30 +233,6 @@ export function initComponentsStudio() {
   const paintGitHubLinks = () => drawer.querySelectorAll<HTMLElement>('[data-cm-gh]').forEach((el) => (el.hidden = Boolean(currentContributor())));
   paintGitHubLinks();
   onAccess(paintGitHubLinks);
-  scrim.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => {
-    // Escape inside Change this component closes that step first, not the drawer.
-    if (e.key === 'Escape' && drawer.dataset.mode === 'change') {
-      resetChangeFlow(drawer, true);
-      return;
-    }
-    if (e.key === 'Escape') close();
-    // Keep Tab inside the open drawer.
-    if (e.key === 'Tab' && !drawer.hidden) {
-      const focusables = [...drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input,select,textarea')].filter((el) => el.offsetParent !== null);
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (!first || !last) return;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  });
-
   void loadRequestCounts();
   // Showing an open change (?change=N): previews paint with its tokens (scripts/view-components).
   void initViewOnComponents(root);

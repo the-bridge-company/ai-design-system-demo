@@ -1,11 +1,11 @@
 // Changes > pull request > Visual impact: reads the manifest the visual impact workflow published for the head
 // commit, then shows each changed story or screen with a before/after slider and a diff toggle. Returns what the
 // collapsed section header shows: the number of changed screens and a small before/after thumbnail.
-import { badgeHtml, bindSegmentedControls, segmentedControlHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, bindSegmentedControls, buttonHtml, segmentedControlHtml } from '@bridge-ds/react/dom';
 import { hasVisualWorkflow, VISUAL_CHECK_LABEL, VISUAL_CHECKS_DOCS } from '@bridge-ds/core';
 import { changeLabel, facet, filterShots, modeLabel, VISUAL_BRANCH, visualAsk, visualBase, visualState, type VisualFilter, type VisualManifest, type VisualShot } from '../../lib/visual-impact';
 import { attrUrl } from '../../lib/html';
-import { esc, GitHubError, ghGet, ghWrite, hasWorkingToken, onAccess, showGhError } from '../github-session';
+import { esc, GitHubError, ghGet, ghWrite, hasWorkingToken, onAccess, setButtonBusy, setButtonLabel, showGhError } from '../github-session';
 import { siteConfig } from '../repo-context';
 
 const PAGE = 8;
@@ -143,7 +143,7 @@ export async function loadVisualImpact(
     </div>
     <p class="small muted vi-count" role="status" aria-live="polite"></p>
     <div class="vi-list"></div>
-    <p><button type="button" class="btn btn-secondary btn-sm vi-more" hidden>Show more</button></p>`;
+    <p>${buttonHtml('Show more', { variant: 'secondary', size: 'sm', className: 'vi-more', attributes: { hidden: true } })}</p>`;
   const list = slot.querySelector<HTMLElement>('.vi-list')!;
   const count = slot.querySelector<HTMLElement>('.vi-count')!;
   const more = slot.querySelector<HTMLButtonElement>('.vi-more')!;
@@ -238,13 +238,12 @@ async function notRun(slot: HTMLElement, o: { owner: string; repo: string; pr: n
         : ask === 'asked'
           ? `<p class="cg-line">The before and after shows here once the run on GitHub finishes. ${run}</p>`
           : ask === 'ask'
-            ? `<div class="vi-ask">${lead}<button type="button" class="btn btn-secondary btn-lg" data-vi-ask>Show the visual impact</button></div><p class="rv-error" role="alert" data-vi-ask-error hidden></p>`
-            : `<div class="vi-ask">${lead}<a class="btn btn-secondary btn-lg" href="https://github.com/${esc(o.owner)}/${esc(o.repo)}/pull/${o.pr}" target="_blank" rel="noopener">Add the ${VISUAL_CHECK_LABEL} label on GitHub</a></div>`;
+            ? `<div class="vi-ask">${lead}${buttonHtml('Show the visual impact', { variant: 'secondary', attributes: { 'data-vi-ask': true } })}</div><p class="rv-error" role="alert" data-vi-ask-error hidden></p>`
+            : `<div class="vi-ask">${lead}${buttonHtml(`Add the ${VISUAL_CHECK_LABEL} label on GitHub`, { variant: 'secondary', href: `https://github.com/${o.owner}/${o.repo}/pull/${o.pr}`, attributes: { target: '_blank', rel: 'noopener' } })}</div>`;
     const btn = slot.querySelector<HTMLButtonElement>('[data-vi-ask]');
     btn?.addEventListener('click', async () => {
       const error = slot.querySelector<HTMLElement>('[data-vi-ask-error]')!;
-      btn.disabled = true;
-      btn.textContent = 'Asking GitHub';
+      setButtonBusy(btn, true, 'Asking GitHub');
       try {
         await ghWrite('POST', `/repos/${o.owner}/${o.repo}/issues/${o.pr}/labels`, { labels: [VISUAL_CHECK_LABEL] });
         labels = [...(labels ?? []), { name: VISUAL_CHECK_LABEL }];
@@ -252,8 +251,7 @@ async function notRun(slot: HTMLElement, o: { owner: string; repo: string; pr: n
         const meta = document.querySelector('#cg-sec-visual [data-sec-meta]');
         if (meta) meta.textContent = 'Asked';
       } catch (err) {
-        btn.disabled = false;
-        btn.textContent = 'Show the visual impact';
+        setButtonBusy(btn, false, 'Show the visual impact');
         showGhError(error, err, `GitHub did not add the ${VISUAL_CHECK_LABEL} label: ${(err as Error).message}`, 'add labels');
         error.hidden = false;
       }
@@ -296,7 +294,7 @@ function shotCard(s: VisualShot, base: string, meta: string = modeLabel(s)): str
         </div>
         <div class="vi-controls">
           <label class="vi-range"><span>Before</span><input type="range" min="0" max="100" value="${START}" aria-label="Before and after: drag to compare ${esc(alt)}" /><span>After</span></label>
-          ${s.images.diff ? '<button type="button" class="btn btn-secondary btn-sm vi-toggle" aria-pressed="false">Show diff</button>' : ''}
+          ${s.images.diff ? buttonHtml('Show diff', { variant: 'secondary', size: 'sm', pressed: false, className: 'vi-toggle' }) : ''}
           ${s.images.composite ? `<a class="small" href="${esc(url(s.images.composite))}" target="_blank" rel="noopener">Side by side</a>` : ''}
         </div>`
       : s.images.after || s.images.before
@@ -316,7 +314,7 @@ function wire(root: HTMLElement) {
     toggle?.addEventListener('click', () => {
       const on = toggle.getAttribute('aria-pressed') !== 'true';
       toggle.setAttribute('aria-pressed', String(on));
-      toggle.textContent = on ? 'Hide diff' : 'Show diff';
+      setButtonLabel(toggle, on ? 'Hide diff' : 'Show diff');
       if (diff) diff.hidden = !on;
       cmp.classList.toggle('is-diff', on);
       range.disabled = on;

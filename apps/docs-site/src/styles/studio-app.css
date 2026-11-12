@@ -172,14 +172,6 @@
   color: var(--color-text-muted);
 }
 
-/* Studio pages share smaller controls. */
-:root:is([data-space="studio"], [data-space="settings"]) main .btn:not(.btn-lg) {
-  min-height: var(--size-8);
-  padding: 0 var(--space-3);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
 /* The account block at the bottom of the Studio side nav (and of the phone menu sheet). */
 .gh-acct {
   display: grid;

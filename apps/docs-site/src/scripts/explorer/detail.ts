@@ -4,6 +4,7 @@
 // Figma (with one quiet "Open on GitHub" link to the file). One action, "Edit in Studio", in the footer.
 // Studio (edit mode): renderStudioDetail, read-only and compact. The history panel fills its section itself.
 import { contextLabel, TIER_NAMES, tokenHistory } from '@bridge-ds/core';
+import { buttonHtml, iconButtonHtml } from '@bridge-ds/react/dom';
 import { contrastMeta, definedIn, splitDescription, summarySentence, usedByRows, type UsedByRow } from '../../lib/explorer/detail-summary';
 import { aliasLabel, bezierPath, CATEGORY_LABEL, codeSyntax, colorAlpha, isForeground, numericValue, STUDIO_TIER_NAMES, SYNTAX_LABEL, type Syntax } from '../../lib/explorer/format';
 import { componentsUsing, contrastFor, stylesUsing, usedByLine, directDependents, introducedIn, transitiveDependents, upstreamLanes, type PairRow } from '../../lib/explorer/flow';
@@ -101,7 +102,7 @@ function renderStudioDetail(host: HTMLElement, d: ExplorerData, view: View, path
   host.innerHTML = `
     <div class="xp-d-bar is-studio">
       <h2 class="xp-d-name mono" id="xp-d-title" tabindex="-1">${esc(path)}</h2>
-      <button type="button" class="icon-btn" data-xp-close aria-label="Close token details">${icon('close', 18)}</button>
+      ${iconButtonHtml('x', 'Close token details', { attributes: { 'data-xp-close': true } })}
     </div>
     <div class="xp-d-body is-studio" data-xp-detail-body>
       ${x.description ? `<p class="xp-d-line" title="${esc(x.description)}">${esc(x.description)}</p>` : '<p class="xp-d-line muted">No description yet.</p>'}
@@ -112,7 +113,7 @@ function renderStudioDetail(host: HTMLElement, d: ExplorerData, view: View, path
         ${acc('history', 'clock', 'History', 'Reading', '<div class="tx-d-foot" hidden></div>')}
       </div>
     </div>
-    <div class="xp-d-editbar"><button type="button" class="btn btn-secondary" data-xp-edit-cell>${icon('pencil', 16)}Edit</button><span class="xp-d-editnote">Opens the value editor on the row.</span></div>`;
+    <div class="xp-d-editbar">${buttonHtml('Edit', { variant: 'secondary', iconStart: 'pencil', attributes: { 'data-xp-edit-cell': true } })}<span class="xp-d-editnote">Opens the value editor on the row.</span></div>`;
   watchHistory(host, path);
 }
 
@@ -265,7 +266,7 @@ function chainLines(d: ExplorerData, path: string, columns: Column[]): string {
 function rowList(rows: string[]): string {
   const more = rows.length - ROWS_SHOWN;
   return `<ul class="xp-dd-rows">${rows.map((r, i) => (i >= ROWS_SHOWN ? r.replace('<li class="xp-dd-row"', '<li class="xp-dd-row" hidden') : r)).join('')}</ul>${
-    more > 0 ? `<button type="button" class="btn btn-secondary btn-sm xp-dd-more" data-xp-more>Show all ${rows.length}</button>` : ''
+    more > 0 ? buttonHtml(`Show all ${rows.length}`, { variant: 'secondary', size: 'sm', className: 'xp-dd-more', attributes: { 'data-xp-more': true } }) : ''
   }`;
 }
 
@@ -311,7 +312,7 @@ function renderLibraryDetail(host: HTMLElement, d: ExplorerData, view: View, pat
   host.innerHTML = `
     <div class="xp-d-bar">
       <span class="xp-d-crumb">${esc(x.collection)} <span aria-hidden="true">/</span> ${esc(CATEGORY_LABEL[x.category])}</span>
-      <button type="button" class="icon-btn" data-xp-close aria-label="Close token details">${icon('close', 18)}</button>
+      ${iconButtonHtml('x', 'Close token details', { attributes: { 'data-xp-close': true } })}
     </div>
     <div class="xp-d-body xp-dd" data-xp-detail-body>
       <header class="xp-dd-head">
@@ -329,7 +330,7 @@ function renderLibraryDetail(host: HTMLElement, d: ExplorerData, view: View, pat
         ${named}
       </div>
     </div>
-    <div class="xp-d-editbar xp-dd-editbar" data-maintainer-only><a class="btn btn-primary xp-dd-edit" href="${esc(tokenFocusHref(path))}" data-xp-studio>${icon('pencil', 16)}Edit in Studio</a></div>`;
+    <div class="xp-d-editbar xp-dd-editbar" data-maintainer-only>${buttonHtml('Edit in Studio', { href: tokenFocusHref(path), iconStart: 'pencil', className: 'xp-dd-edit', attributes: { 'data-xp-studio': true } })}</div>`;
   host.querySelectorAll<HTMLElement>('[data-xp-more]').forEach((b) =>
     b.addEventListener('click', (e) => {
       e.stopPropagation();

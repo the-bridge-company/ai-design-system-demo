@@ -2,7 +2,7 @@
 // with "Restore this value". Real history by default; demo only with the toggle, under the same banner.
 import { formatValue, tokenHistory, type TokenHistoryItem } from '@bridge-ds/core';
 import { shortDate } from '../../lib/history-view';
-import { badgeHtml, switchHtml, tokenValueHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, buttonHtml, switchHtml, tokenValueHtml } from '@bridge-ds/react/dom';
 import { esc } from '../github-session';
 import { displayName } from '../people';
 import { openRestorePlanner } from './planner';
@@ -37,7 +37,7 @@ function itemHtml(it: TokenHistoryItem, i: number, demo: boolean): string {
     <p class="hs-ti-head">${badgeHtml(it.modeLabel, { size: 'sm' })} <span class="small muted">${esc(shortDate(it.date))}, ${esc(displayName(it.author))}</span></p>
     <p class="hs-ti-what">${what}</p>
     <p class="small">${title}</p>
-    ${canRestore ? `<button type="button" class="btn btn-secondary btn-sm" data-hs-restore="${i}">Restore this value</button>` : ''}
+    ${canRestore ? buttonHtml('Restore this value', { variant: 'secondary', size: 'sm', attributes: { 'data-hs-restore': i } }) : ''}
   </li>`;
 }
 

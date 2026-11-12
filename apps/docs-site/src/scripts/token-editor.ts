@@ -38,7 +38,7 @@ import {
   type DraftEdit,
   type Guardrails,
 } from '../lib/editor-model';
-import { badgeHtml, closeDialog, isDialogOpen, openDialog, tokenValueHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, buttonHtml, closeDialog, isDialogOpen, openDialog, tokenValueHtml } from '@bridge-ds/react/dom';
 import { currentViewer, esc, getToken, hasWorkingToken, initGitHubConnect, onAccess, paintGates, prefersSignIn, readRepo, relativeTime, setButtonDisabled, setButtonLabel, showGhError, studioClient } from './github-session';
 import { suggestionHref } from '../lib/suggestions-view';
 import { ghVerb, notSentLine, SEE_SUGGESTION, sendButton, sendDialogTitle, sendingLine, suggestionSentLine } from '../lib/gh-wording';
@@ -225,7 +225,7 @@ function paintTray() {
           (r) => `<li class="ed-tray-row">
             <div class="ed-tray-main"><span class="mono">${esc(r.label)}</span>${r.context ? badgeHtml(r.context, { size: 'sm' }) : ''}</div>
             <div class="ed-tray-vals">${r.before ? tokenValueHtml(r.before.text, { swatch: r.before.hex ?? false, previous: true, size: 'sm' }) : ''}${r.before && r.after ? '<span class="muted">-></span>' : ''}${r.after ? tokenValueHtml(r.after.text, { swatch: r.after.hex ?? false, size: 'sm' }) : ''}</div>
-            <button type="button" class="btn btn-secondary btn-sm" data-ed-undo="${r.index}">Undo</button>
+            ${buttonHtml('Undo', { variant: 'secondary', size: 'sm', attributes: { 'data-ed-undo': r.index } })}
           </li>`,
         )
         .join('') +

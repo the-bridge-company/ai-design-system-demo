@@ -162,7 +162,7 @@
   overflow-wrap: anywhere;
 }
 
-.hs-ti .btn {
+.hs-ti > button {
   justify-self: start;
 }
 

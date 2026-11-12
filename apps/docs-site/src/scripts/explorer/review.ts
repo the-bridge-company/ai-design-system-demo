@@ -8,6 +8,7 @@ import { componentsUsing, pairUsage, stylesUsing, transitiveDependents, usedByLi
 import { cellValue, tierAxis } from '../../lib/explorer/model';
 import { swatchLabel } from '../../lib/explorer/swatch-ramp';
 import { isAlias, aliasTarget } from '@bridge-ds/core';
+import { iconButtonHtml } from '@bridge-ds/react/dom';
 import type { DraftEdit } from '../../lib/editor-model';
 import { initGitHubConnect, prefersSignIn, setButtonLabel } from '../github-session';
 import { ghAction, sendGoal } from '../../lib/gh-wording';
@@ -146,7 +147,7 @@ export function initReview(d: ExplorerData) {
           })
           .join('');
         const idx = mine.map((x) => x.index).join(',');
-        return `<div class="xe-chg"><div class="xe-chg-head"><span class="mono">${esc(path)}</span><button type="button" class="icon-btn" data-xe-undo="${idx}" aria-label="Undo the changes to ${esc(path)}" title="Undo">${icon('undo', 16)}</button></div>${rows}${others}</div>`;
+        return `<div class="xe-chg"><div class="xe-chg-head"><span class="mono">${esc(path)}</span>${iconButtonHtml('undo-2', `Undo the changes to ${path}`, { size: 'sm', attributes: { 'data-xe-undo': idx, title: 'Undo' } })}</div>${rows}${others}</div>`;
       })
       .join('');
   }

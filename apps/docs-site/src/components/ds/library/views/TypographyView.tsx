@@ -2,7 +2,7 @@
 // tracking and font families. Roles, line heights and tracking per step come from docs/DESIGN-LANGUAGE.md (section 5),
 // mapped to the nearest token of the scale; a step the map does not know reads its token's own description.
 import { primitiveRows, groupRows, type FoundationRow } from '../../../../lib/library/foundations';
-import { GroupSection, LibraryHeader, ScopeSwitch, TokenList, v } from '../FoundationParts';
+import { CopyAsSwitch, GroupSection, LibraryHeader, ScopeSwitch, TokenList, v } from '../FoundationParts';
 import { pageHref, studioLink, systemName, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
 
@@ -58,7 +58,7 @@ export default function TypographyView({ data }: { data: LibraryData }) {
   const lh = (name: string) => leadingRows.find((r) => r.path.endsWith(`.${name}`))?.values.light ?? '';
   return (
     <div data-fd-page="">
-      <LibraryHeader title={TYPOGRAPHY_PAGE.title} art={TYPOGRAPHY_PAGE.art} studio={studioLink(data, TYPOGRAPHY_PAGE.studio)} canEdit={data.extras.canEdit} actions={<ConfluenceCopy data={data} route={pageHref(data, 'foundations/typography/')} />}>
+      <LibraryHeader title={TYPOGRAPHY_PAGE.title} art={TYPOGRAPHY_PAGE.art} studio={studioLink(data, TYPOGRAPHY_PAGE.studio)} canEdit={data.extras.canEdit} actions={<><CopyAsSwitch /><ConfluenceCopy data={data} route={pageHref(data, 'foundations/typography/')} /></>}>
         {data.team ? TYPOGRAPHY_PAGE.teamLead : TYPOGRAPHY_PAGE.lead}
       </LibraryHeader>
 

@@ -506,10 +506,8 @@ details[open] > summary .cg-sec-chev {
   line-height: var(--typography-body-line-height);
 }
 
-/* Main actions at the DS control height (44px comfortable): the Studio shrinks plain .btn to 32px. */
-.rv-ap-act,
-.rv-ap-acts .btn-lg,
-.cg-pr-cta .btn-lg {
+/* Main actions at the DS control height (44px comfortable). */
+.rv-ap-act {
   min-height: var(--control-height-md);
 }
 

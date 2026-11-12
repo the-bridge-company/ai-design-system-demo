@@ -3,7 +3,7 @@
 import { Link } from '@bridge-ds/react';
 import { RadiusSpecimen } from '../../../foundations/Specimens';
 import { groupRows, primitiveRows } from '../../../../lib/library/foundations';
-import { GroupSection, INERT, LibraryHeader, ScopeSwitch, TokenList } from '../FoundationParts';
+import { CopyAsSwitch, GroupSection, INERT, LibraryHeader, ScopeSwitch, TokenList } from '../FoundationParts';
 import { pageHref, studioLink, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
 
@@ -22,7 +22,7 @@ export default function RadiusView({ data }: { data: LibraryData }) {
   const focus = groupRows(model, 'focus').filter((r) => r.type !== 'color');
   return (
     <div data-fd-page="">
-      <LibraryHeader title={RADIUS_PAGE.title} art={RADIUS_PAGE.art} studio={studioLink(data, RADIUS_PAGE.studio)} canEdit={data.extras.canEdit} actions={<ConfluenceCopy data={data} route={pageHref(data, 'foundations/radius/')} />}>
+      <LibraryHeader title={RADIUS_PAGE.title} art={RADIUS_PAGE.art} studio={studioLink(data, RADIUS_PAGE.studio)} canEdit={data.extras.canEdit} actions={<><CopyAsSwitch /><ConfluenceCopy data={data} route={pageHref(data, 'foundations/radius/')} /></>}>
         {RADIUS_PAGE.lead}
       </LibraryHeader>
 

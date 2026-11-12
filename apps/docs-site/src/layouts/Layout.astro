@@ -468,6 +468,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     <ScriptDialog id="palette" title="Search" size="lg" closeLabel="Close search">
       <div class="palette-box" role="search">
         <PaletteField />
+        {/* bridge-audit-ignore-next-line: the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox) */}
         <ul id="palette-list" class="palette-list" role="listbox" aria-label="Results"></ul>
         {/* The kind glyph of each result, cloned by scripts/shell.ts: the side nav's icons, as DS Icons. */}
         <template id="palette-icons">

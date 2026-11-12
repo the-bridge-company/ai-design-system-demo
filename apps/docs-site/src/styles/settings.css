@@ -5,6 +5,11 @@
    primary action, status color only on badges. */
 
 /* The page stops at 1200px and sits centred: rows never stretch across a wide monitor. */
+/* The top bar is sticky: keyboard focus and fragment links land below it, never under it. */
+html:has(.set-page, .ts-band) {
+  scroll-padding-block-start: calc(var(--layout-header-height) + var(--space-2));
+}
+
 .set-page {
   max-width: var(--size-300);
   margin-inline: auto;

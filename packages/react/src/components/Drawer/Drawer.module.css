@@ -50,8 +50,8 @@
   box-shadow: var(--drawer-shadow);
   color: var(--color-text-default);
   font-family: var(--font-family-sans);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   outline: none;
   pointer-events: auto;
   overscroll-behavior: contain;

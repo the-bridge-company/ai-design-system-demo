@@ -173,9 +173,9 @@ a.lr-ask {
   margin: 0;
   padding: var(--space-6) var(--space-4) var(--space-1);
   font-family: var(--typography-display-family);
-  font-size: var(--typography-h3-size);
+  font-size: var(--font-size-400);
   font-weight: var(--font-weight-medium);
-  line-height: var(--typography-h3-line-height);
+  line-height: var(--font-leading-28);
   /* An h2 for the outline that keeps the look it had as an h3: no h2 tracking. */
   letter-spacing: normal;
 }
@@ -601,9 +601,9 @@ a.lr-ask {
 .lr-chapter-name {
   margin: 0;
   font-family: var(--typography-display-family);
-  font-size: var(--typography-h3-size);
+  font-size: var(--font-size-400);
   font-weight: var(--font-weight-medium);
-  line-height: var(--typography-h3-line-height);
+  line-height: var(--font-leading-28);
 }
 
 .lr-chapter-note {

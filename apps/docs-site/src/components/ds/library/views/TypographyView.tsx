@@ -9,14 +9,15 @@ import { ConfluenceCopy } from '../ConfluenceCopy';
 export const TYPE_STEPS: Record<string, { role: string; leading: string; tracking: string }> = {
   '1000': { role: 'Display: the home hero and onboarding only (typography.display)', leading: 'none', tracking: 'tighter' },
   '900': { role: 'Numbers that must win a glance', leading: 'none', tracking: 'tighter' },
-  '800': { role: 'Page titles (typography.h1)', leading: 'tight', tracking: 'tight' },
+  '800': { role: 'Docs and onboarding heroes, never an app page title', leading: 'tight', tracking: 'tight' },
   '700': { role: 'Rare emphasis in dense views', leading: 'tight', tracking: 'tight' },
-  '600': { role: 'Section titles (typography.h2), page titles on phones', leading: 'tight', tracking: 'snug' },
-  '500': { role: 'Headings inside dense Studio views', leading: 'tight', tracking: 'snug' },
-  '400': { role: 'Card, dialog and group titles (typography.h3)', leading: 'snug', tracking: 'snug' },
-  '300': { role: 'Reading body and leads (typography.body)', leading: 'normal', tracking: 'normal' },
+  '600': { role: 'Page titles (typography.h1)', leading: 'tight', tracking: 'snug' },
+  '500': { role: 'Section titles (typography.h2)', leading: 'tight', tracking: 'snug' },
+  '400': { role: 'The wordmark and large numbers', leading: 'snug', tracking: 'snug' },
+  '300': { role: 'Reading body and leads (typography.body), card and dialog titles in semibold (typography.h3)', leading: 'normal', tracking: 'normal' },
   '200': { role: 'Interface text, labels, table cells (typography.ui)', leading: 'normal', tracking: 'normal' },
-  '100': { role: 'Captions, badges, table meta (typography.caption)', leading: 'snug', tracking: 'wide' },
+  '150': { role: 'The secondary line under a name or title (typography.meta)', leading: 'normal', tracking: 'normal' },
+  '100': { role: 'Captions, badges and section labels (typography.caption)', leading: 'snug', tracking: 'wide' },
 };
 const FALLBACK_STEP = { role: '', leading: 'normal', tracking: 'normal' };
 export const TYPE_WEIGHTS: Record<string, string> = {
@@ -40,7 +41,7 @@ export const TYPOGRAPHY_PAGE = {
   title: 'Typography',
   art: 'foundations',
   studio: 'tokens/?focus=font',
-  lead: 'Fraunces for display and page titles, Instrument Sans for reading and interface text, IBM Plex Mono for code and token names. Seven roles set size, line height and weight together; a screen uses four sizes at most. If a design needs a step that is not here, propose a token instead of picking a value by eye.',
+  lead: 'Fraunces for display and page titles, Instrument Sans for reading and interface text, IBM Plex Mono for code and token names. Eight roles set size, line height and weight together; a screen uses four sizes at most. If a design needs a step that is not here, propose a token instead of picking a value by eye.',
   teamLead: 'The type scale at every step, with the weights, line heights, tracking and font families it pairs with. If a design needs a step that is not here, propose a token instead of picking a value by eye.',
 } as const;
 

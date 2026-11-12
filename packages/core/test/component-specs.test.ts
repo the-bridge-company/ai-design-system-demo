@@ -91,7 +91,7 @@ describe('component specs', () => {
       ['Slot/Card body text', 'text'],
       ['Slot/Media', 'media'],
     ]);
-    expect(file.slots![0]!.values).toMatchObject({ textFill: 'color.text.default', fontSize: 'font.size.200' });
+    expect(file.slots![0]!.values).toMatchObject({ textFill: 'color.text.default', fontSize: 'typography.ui.size' });
   });
 
   it('cascade: specificity, :not(), :has() and combinators', () => {
@@ -182,12 +182,12 @@ export const Pill = forwardRef(function Pill({ size = 'md', children }, ref) {
     expect(tag!.parts[0]!.fill).toBeUndefined();
   });
 
-  it('a menu part drawn alone takes what the popup gives its content: snug lines, as in code', () => {
+  it('a menu part drawn alone takes what the popup gives its content: role line heights (UI text 20px, group labels 16px), as in code', () => {
     const file = generateRepoComponentSpecs(ROOT);
     const menuSets = file.components.filter((c) => c.component === 'Menu' && c.view === 'without-popup');
     expect(menuSets.map((c) => c.name)).toContain('MenuGroup');
     for (const set of menuSets)
-      for (const v of set.variants) for (const values of Object.values(v.values)) if (values.lineHeight !== undefined) expect([set.name, values.lineHeight]).toEqual([set.name, 'font.line-height.snug']);
+      for (const v of set.variants) for (const values of Object.values(v.values)) if (values.lineHeight !== undefined) expect([set.name, ['typography.ui.line-height', 'typography.caption.line-height'].includes(values.lineHeight as string)]).toEqual([set.name, true]);
   });
 
   it('width media queries read at the viewport the code images use: the page title is h1 sized at 1200 px', () => {

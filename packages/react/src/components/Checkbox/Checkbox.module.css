@@ -6,8 +6,8 @@
   padding-block: var(--space-0-5);
   color: var(--color-text-default);
   font-family: var(--font-family-sans);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   cursor: pointer;
   user-select: none;
 }
@@ -104,8 +104,8 @@
 
 .description {
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Disabled */

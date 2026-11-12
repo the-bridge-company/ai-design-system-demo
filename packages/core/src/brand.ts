@@ -34,7 +34,7 @@ export interface BrandRadiusInput {
 export interface BrandFontsInput {
   /** Display and headings (typography display, h1, h2). A curated font id, see BRAND_FONTS. */
   heading?: string;
-  /** Body, UI and captions (typography h3, body, ui, caption). */
+  /** Body, UI, meta lines and captions (typography h3, body, ui, meta, caption). */
   text?: string;
 }
 
@@ -100,7 +100,7 @@ export const RADIUS_PRESETS: RadiusPreset[] = [
 ];
 
 const HEADING_ROLES = ['display', 'h1', 'h2'];
-const TEXT_ROLES = ['h3', 'body', 'ui', 'caption'];
+const TEXT_ROLES = ['h3', 'body', 'ui', 'meta', 'caption'];
 const RADIUS_ROLES = ['inset', 'control', 'container', 'overlay'] as const;
 const RESERVED = new Set(['default', 'base', 'all', 'none', 'new', 'blank', 'primitives', 'semantic', 'components', 'density']);
 export const BRAND_SLUG_RE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;

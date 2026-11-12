@@ -13,7 +13,9 @@ html {
   color: var(--color-text-default);
   font-family: var(--typography-body-family);
   font-size: inherit;
-  line-height: var(--typography-body-line-height);
+  /* A ratio, not the body's 24px: text that sets a size but no line height (a 14px list, a 12px note) inherits
+     1.5 of its own size instead of 24px. Every role still sets its own px line height. */
+  line-height: var(--font-line-height-normal);
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizelegibility;
@@ -259,12 +261,13 @@ a.skip:focus {
   color: var(--color-text-default);
 }
 
+/* The wordmark is a logo, not a text role: its own fixed step (21/28), so it does not move when the title roles do. */
 .logo-word {
   font-family: var(--typography-h2-family);
-  font-size: var(--typography-h3-size);
+  font-size: var(--font-size-400);
   font-weight: var(--typography-h2-weight);
   letter-spacing: var(--font-tracking-snug);
-  line-height: var(--typography-h3-line-height);
+  line-height: var(--font-leading-28);
 }
 
 /* Buttons */
@@ -420,10 +423,10 @@ a.topbar-brand {
 .topbar-space {
   color: var(--color-text-signal);
   font-family: var(--typography-h2-family);
-  font-size: var(--typography-h3-size);
+  font-size: var(--font-size-400);
   font-weight: var(--typography-h2-weight);
   letter-spacing: var(--font-tracking-snug);
-  line-height: var(--typography-h3-line-height);
+  line-height: var(--font-leading-28);
 }
 
 .rail-toggle-slot {
@@ -597,18 +600,17 @@ a.topbar-brand {
   }
 }
 
-/* Where you are. A page entry: Deep Harbor text on a quiet plate. A group you are in: its label in ink, semibold,
-   and the page inside it: Deep Harbor text, the plate and a Deep Harbor marker on the guide line. */
+/* Where you are. A page entry: Deep Harbor text on a quiet plate. A group you are in: its label in ink, and the page
+   inside it: Deep Harbor text, the plate and a Deep Harbor marker on the guide line. Color and plate say it, not
+   weight: every entry keeps the same medium weight, so the current one does not grow wider or louder. */
 .rail .nav-link[aria-current="page"],
 .nav-link[data-active]:not(.nav-toggle),
 .nav-sub a[aria-current="page"] {
   color: var(--color-text-signal);
-  font-weight: var(--font-weight-semibold);
 }
 
 .nav-toggle[data-active] {
   color: var(--color-text-default);
-  font-weight: var(--font-weight-semibold);
 }
 
 .nav-link[aria-current="page"],

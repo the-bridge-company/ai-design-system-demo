@@ -13,9 +13,9 @@
   margin-block-end: var(--space-1);
   padding: 0;
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
 }
 
 .fieldset:disabled .legend {
@@ -39,9 +39,8 @@
 .description,
 .error {
   margin: 0;
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-normal);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .description {
@@ -83,8 +82,8 @@
   min-height: var(--size-6);
   padding-block: var(--space-0-5);
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   cursor: pointer;
   user-select: none;
 }
@@ -156,8 +155,8 @@
 
 .itemDescription {
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  letter-spacing: var(--font-tracking-wide);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .item:has([data-disabled]) {

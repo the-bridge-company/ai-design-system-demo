@@ -38,8 +38,8 @@
 .body {
   padding: var(--_inset);
   color: var(--color-text-default);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .header + .body {

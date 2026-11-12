@@ -24,8 +24,8 @@
   border-spacing: 0;
   color: var(--color-text-default);
   font-family: var(--font-family-sans);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-snug);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-variant-numeric: tabular-nums;
 }
 
@@ -54,8 +54,9 @@
   border-bottom: var(--border-width-default) solid var(--color-border-default);
   background-color: var(--table-header-bg);
   color: var(--table-header-text);
-  font-size: var(--font-size-100);
+  font-size: var(--typography-caption-size);
   font-weight: var(--font-weight-medium);
+  line-height: var(--typography-caption-line-height);
   letter-spacing: var(--font-tracking-wide);
   text-align: start;
   white-space: nowrap;

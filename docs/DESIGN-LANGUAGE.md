@@ -180,23 +180,41 @@ Why these fonts:
 Use the role tokens, not raw sizes: `typography.<role>.{size,line-height,weight,family,tracking}`.
 Line heights are fixed pixel values on the 4px grid (`font.leading.*`).
 
-| Role | Size / line height | Weight | Family (bridge) | Use |
-| --- | --- | --- | --- | --- |
-| `typography.display` | 64 / 68 | 500 | Fraunces | Home hero only |
-| `typography.h1` | 44 / 50 | 500 | Fraunces | Page titles, zone headers |
-| `typography.h2` | 30 / 38 | 600 | Fraunces | Section headings |
-| `typography.h3` | 21 / 28 | 600 | Instrument Sans | Card, dialog and sub-section titles |
-| `typography.body` | 16 / 26 | 400 | Instrument Sans | Reading text, guidance, changelogs |
-| `typography.ui` | 14 / 20 | 400 | Instrument Sans | Labels, controls, table cells, dense views |
-| `typography.caption` | 12 / 16 | 400 | Instrument Sans | Captions, badges, table meta |
+| Role | Size / line height | Weight | Family (bridge) | Color | Use |
+| --- | --- | --- | --- | --- | --- |
+| `typography.display` | 64 / 68 | 500 | Fraunces | default | Marketing and Library home hero only |
+| `typography.h1` | 30 / 38 | 500 | Fraunces | default | Page titles, one per page |
+| `typography.h2` | 24 / 32 | 500 | Fraunces | default | Section titles inside a page |
+| `typography.h3` | 16 / 24 | 600 | Instrument Sans | default | Card, dialog, panel and group titles |
+| `typography.body` | 16 / 24 | 400 | Instrument Sans | default | Reading text, leads, empty state sentences |
+| `typography.ui` | 14 / 20 | 400 (500 for names and labels) | Instrument Sans | default | Controls, nav, menu items, list rows, table cells |
+| `typography.meta` | 13 / 18 | 400 | Instrument Sans | muted | The secondary line under a name or title: job, date, path |
+| `typography.caption` | 12 / 16 | 400 (500 + wide tracking for section labels) | Instrument Sans | muted | Badges, section labels, footnotes |
 
 Rules:
 
 - **At most 4 font sizes on one screen.** If a screen needs a fifth, a role is being misused.
+- **Never below 12px.** Muted text (`color.text.muted`) passes AA (4.5:1) on every surface it sits on.
 - **Measure at most 65ch** for reading text.
-- Weights: 400 body, 500 labels and buttons, 600 titles, 700 only for numbers that must win a glance.
+- **One step at a time.** A name over its secondary line changes size by one step (14 over 13) and weight by one
+  step (500 over 400) and color (default over muted), never 600 over 400 at 12.
+- Weights: 400 body, 500 labels, names, nav and buttons, 600 titles, 700 only for numbers that must win a glance.
+  The current nav entry is set apart by color and plate, not by weight, so it does not grow wider.
+- **Operate vs read.** App screens (Studio) run on `ui`, `meta` and `caption`; `body` is for leads and sentences.
+  Docs pages (Library) read in `body`.
 - Sentence case everywhere. Numbers in tables use `font-variant-numeric: tabular-nums`.
 - Fixed pixel scale, not fluid: product UI is read at a steady distance.
+
+Fraunces rules:
+
+- Only for `display`, `h1`, `h2`, the wordmark and big numbers. Never at 16px or below: under 21px it is set in
+  Instrument Sans (`h3`).
+- At most one `h1` per page. A side card or panel narrower than 400px takes `h3`, not `h2`, so its title stays on
+  two lines at most.
+
+Why these sizes: Instrument Sans measures 0.51 em x-height (Inter 0.55, SF Pro 0.51), so 14px Instrument Sans
+reads like 13px Inter (Linear's UI size) and 14px SF Pro (Notion, GitHub); it sets about 11% wider than SF Pro,
+which is why 16px body is the ceiling for app text.
 
 ### Primitive scale
 
@@ -205,17 +223,18 @@ The roles alias these primitives. Reach for a primitive only when no role fits, 
 | Token | px | Typical role |
 | --- | --- | --- |
 | `font.size.100` | 12 | caption |
+| `font.size.150` | 13 | meta |
 | `font.size.200` | 14 | ui |
-| `font.size.300` | 16 | body |
-| `font.size.400` | 21 | h3 |
-| `font.size.500` | 24 | Large UI numbers, KPI labels |
-| `font.size.600` | 30 | h2 |
+| `font.size.300` | 16 | body, h3 |
+| `font.size.400` | 21 | The wordmark, large numbers |
+| `font.size.500` | 24 | h2 |
+| `font.size.600` | 30 | h1 |
 | `font.size.700` | 36 | Empty states, onboarding |
-| `font.size.800` | 44 | h1 |
+| `font.size.800` | 44 | Docs and onboarding heroes |
 | `font.size.900` | 50 | KPI numbers |
 | `font.size.1000` | 64 | display |
 
-Line height primitives: `font.leading.16`, `20`, `26`, `28`, `32`, `38`, `50`, `68` (px). The unitless
+Line height primitives: `font.leading.16`, `18`, `20`, `24`, `26`, `28`, `32`, `38`, `50`, `68` (px). The unitless
 `font.line-height.*` and the `font.tracking.*` steps (`tighter` -0.025em to `wide` +0.01em) remain for
 component use.
 

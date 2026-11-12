@@ -40,9 +40,9 @@
 .summaryTitle {
   margin: 0;
   color: var(--color-feedback-danger-text);
-  font-size: var(--font-size-200);
+  font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
-  line-height: var(--font-line-height-snug);
+  line-height: var(--typography-ui-line-height);
 }
 
 .summaryList {
@@ -51,8 +51,8 @@
   gap: var(--space-0-5);
   margin: 0;
   padding-inline-start: var(--space-4);
-  font-size: var(--font-size-200);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .summaryLink {

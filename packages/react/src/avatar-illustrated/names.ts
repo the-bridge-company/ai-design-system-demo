@@ -1,0 +1,111 @@
+// @bridge-ds/react/avatar-illustrated/names: the human names of the illustrated face's parts, without the drawings.
+// Data only (no DiceBear import), so a page or a server can name a face without loading the 120 kB of drawings.
+// The same names are exported by @bridge-ds/react/avatar-illustrated; a test keeps them in step with its variants.
+
+/** The parts a person picks by look (hair, glasses, beard), each variant with a name. */
+export type NamedFacePart = 'hair' | 'glasses' | 'beard';
+
+/**
+ * A short human name for every variant of hair, glasses and beard, written by looking at each drawing: what a tile
+ * label or a screen reader says instead of `variant12`. Sentence case, 2 to 4 words, unique within its part.
+ */
+export const FACE_PART_NAMES: Readonly<Record<NamedFacePart, Readonly<Record<string, string>>>> = {
+  hair: {
+    hat: 'Hat',
+    variant01: 'Big wavy top',
+    variant02: 'Wavy bob',
+    variant03: 'Tall quiff',
+    variant04: 'Side-swept bob',
+    variant05: 'Short side part',
+    variant06: 'Slicked quiff',
+    variant07: 'Faded sides',
+    variant08: 'Long with headband',
+    variant09: 'Curly side fringe',
+    variant10: 'Straight shoulder length',
+    variant11: 'Short wavy bob',
+    variant12: 'Tousled short',
+    variant13: 'Short rounded crop',
+    variant14: 'Paper cap',
+    variant15: 'Short straight fringe',
+    variant16: 'Short side sweep',
+    variant17: 'Wide swept top',
+    variant18: 'Short peak',
+    variant19: 'Side-swept fringe',
+    variant20: 'Big curls',
+    variant21: 'Flat top',
+    variant22: 'Short curls',
+    variant23: 'Long side part',
+    variant24: 'Short with nape curls',
+    variant25: 'Bowl cut',
+    variant26: 'Quiff with shaved side',
+    variant27: 'Swoop quiff',
+    variant28: 'Long windswept',
+    variant29: 'Small top bun',
+    variant30: 'Puffy crop',
+    variant31: 'Short wavy top',
+    variant32: 'Dotted side quiff',
+    variant33: 'Curly top',
+    variant34: 'Neat wavy crop',
+    variant35: 'High pompadour',
+    variant36: 'Wavy shoulder length',
+    variant37: 'Windswept bob',
+    variant38: 'Short with tuft',
+    variant39: 'Side ponytail',
+    variant40: 'Curly puffs',
+    variant41: 'Long straight with fringe',
+    variant42: 'Light spiky',
+    variant43: 'Chin-length bob',
+    variant44: 'Short mohawk',
+    variant45: 'Ponytail with scrunchie',
+    variant46: 'Long with bow',
+    variant47: 'High ponytail',
+    variant48: 'Messy bun',
+    variant49: 'Brushed up crop',
+    variant50: 'Spiky',
+    variant51: 'Punk spikes',
+    variant52: 'Messy spikes',
+    variant53: 'Spiky quiff',
+    variant54: 'Side swoop',
+    variant55: 'Short textured crop',
+    variant56: 'Short with flick',
+    variant57: 'Bun with hair stick',
+    variant58: 'Shaggy shoulder length',
+    variant59: 'Space buns',
+    variant60: 'Buzz cut',
+    variant61: 'Head wrap',
+    variant62: 'Draped headscarf',
+    variant63: 'Hijab',
+  },
+  glasses: {
+    variant01: 'Classic sunglasses',
+    variant02: 'Wide dark shades',
+    variant03: 'Clear aviators',
+    variant04: 'Rounded sunglasses',
+    variant05: 'Heart sunglasses',
+    variant06: 'Square sunglasses',
+    variant07: 'Narrow dark shades',
+    variant08: 'Rectangle glasses',
+    variant09: 'Round sunglasses',
+    variant10: 'Round dark lenses',
+    variant11: 'Round glasses',
+  },
+  beard: {
+    variant01: 'Circle beard',
+    variant02: 'Full beard',
+    variant03: 'Thick moustache',
+    variant04: 'Tiny moustache',
+    variant05: 'Long thin moustache',
+    variant06: 'Short thin moustache',
+    variant07: 'Handlebar moustache',
+    variant08: 'Pointed goatee',
+    variant09: 'Wavy moustache',
+    variant10: 'Bushy moustache',
+    variant11: 'Moustache and goatee',
+    variant12: 'Chin beard',
+  },
+};
+
+/** The human name of a hair, glasses or beard variant ("Short curls"), or undefined for a variant the drawings lack. */
+export function faceVariantName(part: NamedFacePart, variant: string): string | undefined {
+  return Object.prototype.hasOwnProperty.call(FACE_PART_NAMES[part], variant) ? FACE_PART_NAMES[part][variant] : undefined;
+}

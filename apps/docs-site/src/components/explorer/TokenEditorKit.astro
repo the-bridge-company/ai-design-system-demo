@@ -1,12 +1,13 @@
 ---
 // Everything token editing needs besides the explorer itself: the slim draft bar (its count a DS Badge), the review
-// (the DS Dialog: before and after, impact, a visual preview of real components), the add and propose dialogs, the
+// (the DS Drawer: before and after, impact, a visual preview of real components), the add and propose dialogs, the
 // GitHub and revert dialogs.
 // TokenExplorer includes it in mode="edit". The cell editor popover is built by scripts/explorer/inline-edit.ts.
 import { Alert, Badge, Button, ButtonGroup, Input, Textarea } from '@bridge-ds/react';
 import { ArrowRight, Send } from 'lucide-react';
 import GitHubDialog from '../GitHubDialog.astro';
 import ScriptDialog from '../ds/ScriptDialog.astro';
+import StaticDrawer from '../ds/StaticDrawer.astro';
 import HistoryPlanner from '../HistoryPlanner.astro';
 import EditorPreview from '../EditorPreview.tsx';
 import { explorerTokens } from '../../lib/explorer';
@@ -44,8 +45,9 @@ const previews = hosted ? [] : loadComponents().flatMap((c) => (c.docs?.preview 
     <Button variant="inverse" iconEnd={ArrowRight} data-xe-review>Review</Button>
   </div>
 
-  {/* The review: the DS Dialog, opened and closed by scripts/explorer/review.ts (openDialog, focus trap, Escape). */}
-  <ScriptDialog id="xe-review" title="Review changes" size="lg" closeLabel="Close the review" class="xe-sheet" popup={{ 'data-xe-sheet': '' }}>
+  {/* The review: the DS Drawer (StaticDrawer, in the page from load like DrawerContent keepMounted, so the scripts bind
+      its footer at once), opened and closed by scripts/explorer/review.ts (openDialog, focus trap, Escape, scrim). */}
+  <StaticDrawer id="xe-review" title="Review changes" size="lg" closeLabel="Close the review" className="xe-sheet" attributes={{ 'data-xe-sheet': true }}>
     <div data-xe-sheet-body></div>
     <Fragment slot="footer">
       <div class="xe-sheet-foot">
@@ -55,7 +57,7 @@ const previews = hosted ? [] : loadComponents().flatMap((c) => (c.docs?.preview 
         <Button variant="primary" iconStart={Send} id="ed-propose" data-gh-open data-demo-write="send changes for review" disabled>{ghAction(sendGoal('tokens', mode), signIn)}</Button>
       </div>
     </Fragment>
-  </ScriptDialog>
+  </StaticDrawer>
 
   <ScriptDialog id="ed-add-dialog" title="New semantic color" closeLabel="Close">
     <div class="gh-dialog-body">

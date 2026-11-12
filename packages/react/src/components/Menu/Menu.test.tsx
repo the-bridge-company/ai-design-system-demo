@@ -1,10 +1,11 @@
+import { useRef, useState } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../test/axe';
 import { Pencil } from 'lucide-react';
 import { Button } from '../Button';
-import { Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from './Menu';
+import { Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuSeparator, MenuTrigger, type MenuAnchor } from './Menu';
 
 function TokenMenu({ onRename = () => {} }: { onRename?: () => void }) {
   return (
@@ -86,5 +87,83 @@ describe('Menu', () => {
     expect(rename.querySelector('svg')?.closest('[aria-hidden="true"]')).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Open in Figma' })).toContainElement(screen.getByTestId('brand'));
     await expectNoAxeViolations(screen.getByRole('menu'));
+  });
+
+  describe('anchor', () => {
+    function RowMenu({ onEdit = () => {} }: { onEdit?: () => void }) {
+      const [open, setOpen] = useState(false);
+      const button = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={button} type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(true)}>
+            Actions for color.bg
+          </button>
+          <Menu
+            open={open}
+            onOpenChange={(next) => {
+              setOpen(next);
+              if (!next) button.current?.focus();
+            }}
+          >
+            <MenuContent anchor={button} aria-label="Actions for color.bg">
+              <MenuItem onClick={onEdit}>Edit value</MenuItem>
+              <MenuItem>Copy CSS variable</MenuItem>
+            </MenuContent>
+          </Menu>
+        </>
+      );
+    }
+
+    it('opens from an element that is not its trigger, with the menu keyboard and ARIA', async () => {
+      const user = userEvent.setup();
+      const onEdit = vi.fn();
+      render(<RowMenu onEdit={onEdit} />);
+      const button = screen.getByRole('button', { name: 'Actions for color.bg' });
+      const measured = vi.spyOn(button, 'getBoundingClientRect');
+      await user.click(button);
+      const menu = await screen.findByRole('menu', { name: 'Actions for color.bg' });
+      // The positioner measures the anchor, not a trigger.
+      await waitFor(() => expect(measured).toHaveBeenCalled());
+      screen.getByRole('menuitem', { name: 'Edit value' }).focus();
+      await user.keyboard('{ArrowDown}');
+      await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Copy CSS variable' })).toHaveFocus());
+      await expectNoAxeViolations(menu);
+      await user.keyboard('{ArrowUp}{Enter}');
+      expect(onEdit).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+      await waitFor(() => expect(button).toHaveFocus());
+    });
+
+    it('Escape closes an anchored menu; focus goes where onOpenChange puts it', async () => {
+      const user = userEvent.setup();
+      render(<RowMenu />);
+      const button = screen.getByRole('button', { name: 'Actions for color.bg' });
+      await user.click(button);
+      await screen.findByRole('menu');
+      screen.getByRole('menuitem', { name: 'Edit value' }).focus();
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+      await waitFor(() => expect(button).toHaveFocus());
+    });
+
+    it('takes a virtual box or a point', async () => {
+      const rect = { x: 120, y: 80, width: 0, height: 0, top: 80, right: 120, bottom: 80, left: 120 };
+      const virtual = { getBoundingClientRect: vi.fn(() => rect) };
+      const anchors: MenuAnchor[] = [virtual, { x: 120, y: 80 }];
+      for (const anchor of anchors) {
+        const { unmount } = render(
+          <Menu defaultOpen>
+            <MenuContent anchor={anchor} aria-label="Selection actions">
+              <MenuItem>Copy</MenuItem>
+            </MenuContent>
+          </Menu>,
+        );
+        const menu = await screen.findByRole('menu', { name: 'Selection actions' });
+        expect(screen.getByRole('menuitem', { name: 'Copy' })).toBeInTheDocument();
+        await expectNoAxeViolations(menu);
+        unmount();
+      }
+      expect(virtual.getBoundingClientRect).toHaveBeenCalled();
+    });
   });
 });

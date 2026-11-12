@@ -829,12 +829,17 @@ export const isRemoval = (p: Pick<ReviewPiece, 'kind'>): boolean => /(removed|re
 /** How a color piece is drawn in place: as text on its surface, as a filled card, or as the main button. */
 export type ColorLook = 'text' | 'surface' | 'action';
 
-export function colorLook(title: string): { look: ColorLook; dark: boolean } {
+/**
+ * How a color piece is drawn, from its title. `dark` draws it in the dark theme; `raised` puts text on the raised
+ * surface (popovers, menus, dialogs) instead of the page surface, so the contrast badge measures the pair the title names.
+ */
+export function colorLook(title: string): { look: ColorLook; dark: boolean; raised: boolean } {
   const t = title.toLowerCase();
   const dark = /\bdark\b/.test(t);
-  if (/\btext\b|\blabel\b|\bink\b/.test(t)) return { look: 'text', dark };
-  if (/surface|background|zone|highlight|\bfill\b|\bcard\b|panel/.test(t)) return { look: 'surface', dark };
-  return { look: 'action', dark };
+  const raised = /\braised\b|\bpopovers?\b|\bmenus?\b|\bdialogs?\b/.test(t);
+  if (/\btext\b|\blabel\b|\bink\b/.test(t)) return { look: 'text', dark, raised };
+  if (/surface|background|zone|highlight|\bfill\b|\bcard\b|panel/.test(t)) return { look: 'surface', dark, raised: false };
+  return { look: 'action', dark, raised: false };
 }
 
 /** A computed CSS colour ("rgb(26, 32, 44)", "rgba(0, 0, 0, 0.5)") as the 0 to 1 channels core's contrastRatio reads. */

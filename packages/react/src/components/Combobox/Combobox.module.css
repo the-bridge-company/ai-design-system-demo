@@ -357,3 +357,57 @@
     font-size: var(--font-size-300);
   }
 }
+
+/* Option slots: a kind glyph or swatch before the label, a short muted word after it. */
+.itemPrefix {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.itemSuffix {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+}
+
+/* Inline: the list sits under the field in the page flow (a command palette), always open, no popup. The wrapper
+   carries the consumer's className, so a palette can give the list a height. */
+.inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  color: var(--color-text-default);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-200);
+}
+
+.inlineResults {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.inlineResults .list {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+
+.inlineResults .item {
+  border-radius: var(--radius-control);
+}
+
+.inlineResults .item[data-highlighted] {
+  background-color: var(--color-surface-hover);
+}
+
+.inlineResults .empty {
+  justify-content: center;
+  padding-block: var(--space-6);
+}

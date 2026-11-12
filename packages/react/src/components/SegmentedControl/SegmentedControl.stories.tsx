@@ -89,6 +89,18 @@ export const WithVisibleLabel: Story = { render: () => <ExternalLabel id="story-
 
 type Row = 'md' | 'sm' | 'icons' | 'disabled' | 'disabledItem';
 
+/** Links: each segment is a link to its own page, the current one marked as the page you are on. */
+export const Links: Story = {
+  args: {
+    label: 'Space',
+    value: 'library',
+    items: [
+      { value: 'library', label: 'Library', href: '#library' },
+      { value: 'studio', label: 'Studio', href: '#studio' },
+    ],
+  },
+};
+
 export const AllStates: Story = {
   render: () => (
     <SpecimenStack>
@@ -133,6 +145,16 @@ export const AllStates: Story = {
         <div style={{ width: 358, maxWidth: '100%' }}>
           <SegmentedControl label="Status phone" appearance="strong" size="sm" items={statuses} defaultValue="open" />
         </div>
+      </Specimen>
+      <Specimen label="Links (navigation, current page)">
+        <SegmentedControl
+          label="Space"
+          value="studio"
+          items={[
+            { value: 'library', label: 'Library', href: '#library' },
+            { value: 'studio', label: 'Studio', href: '#studio' },
+          ]}
+        />
       </Specimen>
       <Specimen label="Full width">
         <div style={{ maxWidth: 320 }}>

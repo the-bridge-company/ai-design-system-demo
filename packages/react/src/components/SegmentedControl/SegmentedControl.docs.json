@@ -14,6 +14,7 @@
   "whenToUse": [
     "Switching how the same content is shown: Light or Dark, Comfortable or Compact, Grid or List.",
     "Short options where seeing every option at once helps the choice: two to five usually, more for filters people switch between often (status filters). On a phone the track scrolls sideways and never widens the page.",
+    "Switching between sibling pages or spaces that are separate addresses (Library and Studio, Overview and Activity): give every segment an href. Each segment is a link, the current one marked as the page you are on.",
     "Appearance strong when the control is what the view is about (the status filter of a list): the selected segment fills with Deep Harbor. At most one strong control per view.",
     "The change applies immediately, with no Save button.",
     "Size sm in dense toolbars, menus and panels; md everywhere else, including a page's filter bar, where it matches the md search field and Select beside it. Heights follow the density setting.",
@@ -176,6 +177,7 @@
   ],
   "accessibility": [
     "Base UI RadioGroup with native button radios: role radiogroup on the row, role radio and aria-checked on each segment.",
+    "With href on the segments it is navigation, not a choice: a nav named by label, each segment a link, the current one aria-current=\"page\". Tab moves from link to link; there is no arrow-key selection and no checked state.",
     "Tab enters the group on the selected segment and leaves it; arrow keys move the selection, Home and End jump to the ends.",
     "Give the group a name: aria-labelledby pointing at the visible label outside the track, or label (aria-label) when the context already names it.",
     "The selected segment is marked by a raised plate with a checked-color edge (or the Deep Harbor fill with strong) and a darker text color, not by color alone.",
@@ -197,6 +199,7 @@
     "segment": "One option (native button, role radio)",
     "leading": "Decoration before the label, for example a color swatch",
     "icon": "Leading Lucide icon",
-    "label": "Label"
+    "label": "Label",
+    "links": "Navigation mode: segments are links, the current one is the page you are on"
   }
 }

@@ -842,7 +842,7 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
   return (
     <div className="lr-one">
       <div className="lr-compact">
-        <Pagination variant="compact" size="md" aria-label="Pieces, one by one" pageCount={all.length} page={at + 1} onPageChange={(n) => go(n - 1 - at)} />
+        <Pagination variant="compact" size="md" noun="Piece" aria-label="Pieces, one by one" pageCount={all.length} page={at + 1} onPageChange={(n) => go(n - 1 - at)} />
         <Button variant="ghost" size="md" className="lr-compact-all" aria-expanded={listOpen} aria-controls="lr-side" onClick={() => setListOpen((o) => !o)}>
           {listOpen ? 'Hide pieces' : 'All pieces'}
         </Button>

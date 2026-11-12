@@ -1369,8 +1369,13 @@ a.lr-ask {
   font-size: var(--typography-body-size);
 }
 
+/* Drawn inside data-theme="dark": these are the dark theme's own surfaces, in either page theme. */
 .lr-look.is-dark.lr-look-text {
-  background-color: var(--color-surface-inverse);
+  background-color: var(--color-surface-default);
+}
+
+.lr-look.is-raised.lr-look-text {
+  background-color: var(--color-surface-raised);
 }
 
 .lr-look-line {

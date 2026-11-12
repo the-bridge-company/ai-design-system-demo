@@ -79,8 +79,8 @@ describe('Library review feedback, with DS components', () => {
   it('moves through the pieces with the DS Pagination (compact) in One by one', async () => {
     render(createElement(LibraryReviewView, props(async () => 'x')));
     const pager = await screen.findByRole('navigation', { name: 'Pieces, one by one' });
-    expect(pager).toHaveTextContent('Page 1 of 3');
-    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
-    await waitFor(() => expect(pager).toHaveTextContent('Page 2 of 3'));
+    expect(pager).toHaveTextContent('Piece 1 of 3');
+    fireEvent.click(screen.getByRole('button', { name: 'Next piece' }));
+    await waitFor(() => expect(pager).toHaveTextContent('Piece 2 of 3'));
   });
 });

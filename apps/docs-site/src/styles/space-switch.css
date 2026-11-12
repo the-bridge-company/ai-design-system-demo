@@ -1,93 +1,23 @@
-/* The Library <-> Studio switch (components/SpaceSwitch.tsx): drawn with the DS SegmentedControl's track and selected
-   plate tokens, so it reads as two equal segments with one selected: each segment has its icon and its word (icon only
-   on a phone), the raised plate sits under the space you are in. Click: the plate slides to the other space with a
-   slight stretch in flight, then the other space loads (scripts/space-switch.ts). Hover: the plate leans toward the
-   other space and its icon acts it out (the pen scribbles, the book turns a page). Press: the control squishes to 96%.
-   Reduced motion: no movement, the plate changes in place. */
+/* The Library <-> Studio switch (components/SpaceSwitch.tsx): the DS SegmentedControl in link mode. Two segments,
+   each its drawn icon and its word (icon only on a phone); the space you are in is the current page and wears the
+   control's raised plate. Click: the plate moves to the other space and stretches as it lands, then the other space
+   loads (scripts/space-switch.ts). Hover: the other space's icon acts it out (the pen scribbles, the book turns a
+   page). Press: the control squishes to 96%. Reduced motion: no movement, the plate changes in place.
+   This file only places the control in the top bar and draws the icons and the motion: the track, the segments and
+   the plate are the DS component's own. */
 
-/* bridge-audit-ignore-next-line: the Library and Studio switch is one navigation link to the other space (it loads a page, it holds no state), drawn on the DS SegmentedControl track and plate tokens; a DS Switch or SegmentedControl is a form control with a checked state, the wrong semantics for a link (Tier 2 request: a link mode for SegmentedControl) */
-a.space-switch {
-  --_h: var(--size-10);
-  --_inset: var(--space-0-5);
-  --_lean: var(--space-1);
+.space-nav {
   --_slide: calc(var(--motion-duration-moderate) * 2);
 
-  position: relative;
-  display: inline-grid;
   flex: none;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  align-items: stretch;
-  height: var(--_h);
-  box-sizing: border-box;
-  padding: var(--_inset);
-  border-radius: var(--radius-pill);
-  /* One step darker than the SegmentedControl's subtle track: the top bar is already the subtle grey. */
-  background-color: var(--color-bg-muted);
-  box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
-  color: var(--color-text-muted);
-  text-decoration-line: none;
   margin-inline-start: var(--space-2);
   -webkit-tap-highlight-color: transparent;
   transition: scale var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-a.space-switch:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-/* The raised plate under the space you are in: half the track, slid to the Studio half in Studio. */
-/* bridge-audit-ignore-next-line: the raised plate of the Library and Studio link above (a selected-segment plate, not a badge); see the reason on a.space-switch */
-.ss-pill {
-  position: absolute;
-  z-index: 0;
-  top: var(--_inset);
-  bottom: var(--_inset);
-  left: var(--_inset);
-  width: calc(50% - var(--_inset));
-  box-sizing: border-box;
-  border: var(--border-width-default) solid var(--color-control-checked-bg);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-raised);
-  box-shadow: var(--elevation-raised);
-  transition:
-    transform var(--_slide) var(--motion-easing-enter),
-    scale var(--motion-duration-fast) var(--motion-easing-standard);
-}
-
-a.space-switch[data-mode="studio"] .ss-pill {
-  transform: translateX(100%);
-}
-
-/* A segment: its icon then its word, centred, the same anatomy for both spaces. */
-.ss-seg {
+/* The track is the hint's frame: the dot crosses it from the plate toward the other space. */
+.space-nav [data-segment-track] {
   position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1-5);
-  padding-inline: var(--space-3);
-  font-family: var(--typography-ui-family);
-  font-size: var(--font-size-300);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-ui-line-height);
-  letter-spacing: var(--font-tracking-snug);
-  white-space: nowrap;
-  transition: color var(--motion-duration-fast) var(--motion-easing-standard);
-}
-
-/* The space you are in reads in the default ink, the other one muted until hovered. */
-a.space-switch[data-mode="library"] .ss-seg-library,
-a.space-switch[data-mode="studio"] .ss-seg-studio {
-  color: var(--color-text-default);
-}
-
-@media (hover: hover) {
-  a.space-switch:hover .ss-seg {
-    color: var(--color-text-default);
-  }
 }
 
 .ss-icon {
@@ -121,7 +51,7 @@ a.space-switch[data-mode="studio"] .ss-seg-studio {
 }
 
 .ss-leaf {
-  fill: var(--color-bg-muted);
+  fill: var(--color-bg-subtle);
   transform-box: view-box;
   transform-origin: 50% 50%;
   transition: transform var(--_slide) var(--motion-easing-enter);
@@ -143,11 +73,11 @@ a.space-switch[data-mode="studio"] .ss-seg-studio {
 }
 
 /* The first-visit hint: a small dot leaves the plate and crosses once toward the other space (scripts/space-switch.ts). */
-.ss-hint {
+.space-nav [data-segment-track]::after {
   --_to: var(--space-8);
 
+  content: "";
   position: absolute;
-  z-index: 0;
   top: calc(50% - var(--space-1) / 2);
   left: calc(50% - var(--space-3));
   width: var(--space-1);
@@ -158,52 +88,40 @@ a.space-switch[data-mode="studio"] .ss-seg-studio {
   pointer-events: none;
 }
 
-a.space-switch[data-mode="studio"] .ss-hint {
+.space-nav[data-mode="studio"] [data-segment-track]::after {
   --_to: calc(var(--space-8) * -1);
 
   left: calc(50% + var(--space-2));
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Hover: the plate leans toward the other space, and that space's icon acts it out. */
+  /* Hover: the other space's icon acts it out. */
   @media (hover: hover) {
-    a.space-switch[data-mode="library"]:hover .ss-pill {
-      transform: translateX(var(--_lean));
-    }
-
-    a.space-switch[data-mode="studio"]:hover .ss-pill {
-      transform: translateX(calc(100% - var(--_lean)));
-    }
-
-    a.space-switch[data-mode="library"]:hover .ss-seg-studio .ss-nib {
+    .space-nav[data-mode="library"]:hover [data-value="studio"] .ss-nib {
       animation: ss-scribble calc(var(--motion-duration-slow) * 2) var(--motion-easing-standard) both;
     }
 
-    a.space-switch[data-mode="library"]:hover .ss-seg-studio .ss-scrib {
+    .space-nav[data-mode="library"]:hover [data-value="studio"] .ss-scrib {
       stroke-dashoffset: 0;
       transition: stroke-dashoffset calc(var(--motion-duration-slow) * 2) var(--motion-easing-enter);
     }
 
-    a.space-switch[data-mode="studio"]:hover .ss-seg-library .ss-leaf {
+    .space-nav[data-mode="studio"]:hover [data-value="library"] .ss-leaf {
       transform: scaleX(-1);
     }
   }
 
-  /* Press: the whole control squishes, the plate flattens. */
-  a.space-switch:active {
+  /* Press: the whole control squishes. */
+  .space-nav:active {
     scale: 0.96;
   }
 
-  a.space-switch:active .ss-pill {
-    scale: 1.04 0.92;
-  }
-
-  /* The switch: the plate stretches in flight and settles under the other space. */
-  a.space-switch[data-anim] .ss-pill {
+  /* The switch: the plate lands on the other space with a slight stretch. */
+  .space-nav[data-anim] [aria-current="page"] {
     animation: ss-stretch var(--_slide) var(--motion-easing-standard) both;
   }
 
-  a.space-switch[data-hint] .ss-hint {
+  .space-nav[data-hint] [data-segment-track]::after {
     animation: ss-hint calc(var(--motion-duration-slow) * 3) var(--motion-easing-standard) calc(var(--motion-duration-slow) * 2) both;
   }
 }
@@ -274,23 +192,19 @@ a.space-switch[data-mode="studio"] .ss-hint {
   }
 }
 
-/* Phones: the compact switch, icons only (both segments the same), the plate under the space you are in; the link's
-   name and its tooltip say both spaces. The "Studio" next to the logo steps aside rather than clip. */
+/* Phones: the compact switch, icons only (both segments the same); each link keeps its word as its name, and the
+   tooltip names the destination. The "Studio" next to the logo steps aside rather than clip. */
 @media (max-width: 640px) {
   .topbar-space {
     display: none;
   }
 
-  a.space-switch {
-    --_h: var(--size-9);
-  }
-
-  .ss-seg {
-    width: var(--size-9);
-    padding-inline: 0;
-  }
-
-  .ss-label {
-    display: none;
+  .space-nav .ss-label {
+    position: absolute;
+    width: var(--border-width-default);
+    height: var(--border-width-default);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

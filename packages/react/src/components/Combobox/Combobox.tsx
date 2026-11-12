@@ -20,12 +20,15 @@ export interface ComboboxOption {
   disabled?: boolean;
   /** Group heading. Options with the same group render under one label. */
   group?: string;
+  /** Before the label, for example an Icon or a color swatch that says what kind of result it is. Decorative: keep the meaning in `label` or `suffix`. */
+  prefix?: ReactNode;
+  /** After the label, for example a short muted word that names the kind of result ("Page", "Token"). */
+  suffix?: ReactNode;
 }
 
 type ComboboxValue = string | string[] | null;
 
-export interface ComboboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange' | 'size' | 'prefix' | 'children'> {
+export interface ComboboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange' | 'size' | 'prefix' | 'children'> {
   /** The options to filter. For async search, pass the latest results and set `filter={null}`. */
   options: ComboboxOption[];
   /** Pick several values, shown as removable chips. */
@@ -60,6 +63,14 @@ export interface ComboboxProps
   size?: ComboboxSize;
   /** Content before the query, usually a search Icon. */
   prefix?: ReactNode;
+  /** Content after the query, for example a Kbd hint ("Esc"). */
+  suffix?: ReactNode;
+  /**
+   * Always-open list under the input, in the page flow instead of a popup: a command palette, or a picker that fills
+   * a Dialog. No Show options or Clear button. The first result is highlighted as you type; arrows move, Enter picks.
+   * `className` goes on the wrapper of the input and the list, so the list can be given a height there.
+   */
+  inline?: boolean;
   /** Popup open state (controlled). */
   open?: boolean;
   defaultOpen?: boolean;
@@ -107,6 +118,8 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
     name,
     size = 'md',
     prefix,
+    suffix,
+    inline = false,
     placeholder,
     open,
     defaultOpen,
@@ -133,7 +146,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
   // The listbox carries the field's name too. While it closes it stays in the page for its exit motion, no longer
   // referenced by the input, and an unnamed listbox there is announced as an anonymous list.
   const labelledBy = rest['aria-labelledby'];
-  const listName = labelledBy ? undefined : (rest['aria-label'] ?? label);
+  const listName = labelledBy ? undefined : rest['aria-label'] ?? label;
 
   const grouped = options.some((o) => o.group);
   const items = useMemo<ComboboxOption[] | OptionGroup[]>(() => {
@@ -149,10 +162,16 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
 
   const renderItem = (o: ComboboxOption) => (
     <BaseCombobox.Item key={o.value} value={o} disabled={o.disabled} className={styles.item}>
+      {o.prefix != null && (
+        <span className={styles.itemPrefix} aria-hidden="true">
+          {o.prefix}
+        </span>
+      )}
       <span className={styles.itemBody}>
         <span className={styles.itemText}>{o.label}</span>
         {o.description && <span className={styles.itemDescription}>{o.description}</span>}
       </span>
+      {o.suffix != null && <span className={styles.itemSuffix}>{o.suffix}</span>}
       <BaseCombobox.ItemIndicator className={styles.indicator}>
         <Icon icon={Check} size="sm" />
       </BaseCombobox.ItemIndicator>
@@ -168,6 +187,30 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
       aria-invalid={field.invalid || (error ? true : undefined)}
       {...rest}
     />
+  );
+
+  const results = (
+    <>
+      <BaseCombobox.Status className={styles.status}>
+        {loading ? (
+          <>
+            <Spinner size="sm" tone="signal" />
+            <span>{loadingMessage}</span>
+          </>
+        ) : null}
+      </BaseCombobox.Status>
+      {!loading && <BaseCombobox.Empty className={styles.empty}>{emptyMessage}</BaseCombobox.Empty>}
+      <BaseCombobox.List className={styles.list} aria-labelledby={labelledBy} aria-label={listName}>
+        {grouped
+          ? (group: OptionGroup) => (
+              <BaseCombobox.Group key={group.label} items={group.items} className={styles.group}>
+                <BaseCombobox.GroupLabel className={styles.groupLabel}>{group.label}</BaseCombobox.GroupLabel>
+                <BaseCombobox.Collection>{renderItem}</BaseCombobox.Collection>
+              </BaseCombobox.Group>
+            )
+          : renderItem}
+      </BaseCombobox.List>
+    </>
   );
 
   const combobox = (
@@ -191,15 +234,17 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
       itemToStringLabel={optionLabel}
       itemToStringValue={(o: ComboboxOption) => o.value}
       isItemEqualToValue={sameOption}
-      open={open}
-      defaultOpen={defaultOpen}
-      onOpenChange={onOpenChange ? (next: boolean) => onOpenChange(next) : undefined}
+      open={inline ? true : open}
+      defaultOpen={inline ? undefined : defaultOpen}
+      onOpenChange={onOpenChange && !inline ? (next: boolean) => onOpenChange(next) : undefined}
+      inline={inline || undefined}
+      autoHighlight={inline || undefined}
       disabled={disabled}
       readOnly={readOnly}
       required={required ?? (field.required || undefined)}
       name={name}
     >
-      <BaseCombobox.InputGroup className={cx(styles.control, styles[size], multiple && styles.multiple, className)} data-pseudo-root="">
+      <BaseCombobox.InputGroup className={cx(styles.control, styles[size], multiple && styles.multiple, !inline && className)} data-pseudo-root="">
         {prefix != null && <span className={styles.affix}>{prefix}</span>}
         {multiple ? (
           <BaseCombobox.Value>
@@ -207,7 +252,9 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
               <BaseCombobox.Chips className={styles.chips} aria-label={selected.length > 0 ? 'Selected options' : undefined}>
                 {selected.map((o) => (
                   <BaseCombobox.Chip key={o.value} className={styles.chip} aria-label={o.label}>
-                    <span className={styles.chipText} title={o.label}>{o.label}</span>
+                    <span className={styles.chipText} title={o.label}>
+                      {o.label}
+                    </span>
                     <BaseCombobox.ChipRemove className={styles.chipRemove} aria-label={`Remove ${o.label}`}>
                       <Icon icon={X} size="xs" />
                     </BaseCombobox.ChipRemove>
@@ -220,47 +267,39 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
         ) : (
           input()
         )}
-        {!multiple && !disabled && (
+        {suffix != null && <span className={styles.affix}>{suffix}</span>}
+        {!multiple && !disabled && !inline && (
           <BaseCombobox.Clear className={styles.iconAction} aria-label="Clear selection">
             <Icon icon={X} size="sm" />
           </BaseCombobox.Clear>
         )}
-        <BaseCombobox.Trigger className={cx(styles.iconAction, styles.trigger)} aria-label="Show options">
-          <Icon icon={ChevronDown} size="sm" />
-        </BaseCombobox.Trigger>
+        {!inline && (
+          <BaseCombobox.Trigger className={cx(styles.iconAction, styles.trigger)} aria-label="Show options">
+            <Icon icon={ChevronDown} size="sm" />
+          </BaseCombobox.Trigger>
+        )}
       </BaseCombobox.InputGroup>
-      <BaseCombobox.Portal container={portalContainer ?? undefined}>
-        <BaseCombobox.Positioner className={styles.positioner} sideOffset={4} {...scope}>
-          <BaseCombobox.Popup className={styles.popup} aria-busy={loading || undefined}>
-            <BaseCombobox.Status className={styles.status}>
-              {loading ? (
-                <>
-                  <Spinner size="sm" tone="signal" />
-                  <span>{loadingMessage}</span>
-                </>
-              ) : null}
-            </BaseCombobox.Status>
-            {!loading && <BaseCombobox.Empty className={styles.empty}>{emptyMessage}</BaseCombobox.Empty>}
-            <BaseCombobox.List className={styles.list} aria-labelledby={labelledBy} aria-label={listName}>
-              {grouped
-                ? (group: OptionGroup) => (
-                    <BaseCombobox.Group key={group.label} items={group.items} className={styles.group}>
-                      <BaseCombobox.GroupLabel className={styles.groupLabel}>{group.label}</BaseCombobox.GroupLabel>
-                      <BaseCombobox.Collection>{renderItem}</BaseCombobox.Collection>
-                    </BaseCombobox.Group>
-                  )
-                : renderItem}
-            </BaseCombobox.List>
-          </BaseCombobox.Popup>
-        </BaseCombobox.Positioner>
-      </BaseCombobox.Portal>
+      {inline ? (
+        <div className={styles.inlineResults} aria-busy={loading || undefined}>
+          {results}
+        </div>
+      ) : (
+        <BaseCombobox.Portal container={portalContainer ?? undefined}>
+          <BaseCombobox.Positioner className={styles.positioner} sideOffset={4} {...scope}>
+            <BaseCombobox.Popup className={styles.popup} aria-busy={loading || undefined}>
+              {results}
+            </BaseCombobox.Popup>
+          </BaseCombobox.Positioner>
+        </BaseCombobox.Portal>
+      )}
     </BaseCombobox.Root>
   );
 
-  if (label === undefined) return combobox;
+  const placed = inline ? <div className={cx(styles.inline, className)}>{combobox}</div> : combobox;
+  if (label === undefined) return placed;
   return (
     <Field label={label} description={hint} error={error} required={required} disabled={disabled} hideLabel={hideLabel}>
-      {combobox}
+      {placed}
     </Field>
   );
 });

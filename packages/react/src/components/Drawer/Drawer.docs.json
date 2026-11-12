@@ -4,7 +4,8 @@
   "whenToUse": [
     "Details or editing for one item of a list or table, where the user wants to keep the list in mind.",
     "Filters and settings for the current view.",
-    "side end (default) for details, start for navigation, bottom for small screens and quick choices."
+    "side end (default) for details, start for navigation, bottom for small screens and quick choices.",
+    "keepMounted on DrawerContent when a script binds the body or footer at load: the sheet stays in the DOM, hidden, while closed."
   ],
   "whenNotToUse": [
     "A short task that needs full attention: use Dialog.",
@@ -37,6 +38,7 @@
     "Swipe to dismiss is an extra for touch, never the only way: the close button and Escape always work.",
     "The page behind is inert while the drawer is open.",
     "When the body is taller than the sheet it becomes a focusable region named by the title, so keyboard users can Tab to it and scroll with the arrow keys. A body that fits adds no tab stop.",
+    "With keepMounted the closed sheet stays in the DOM but hidden, so it is out of the tab order and the accessibility tree until it opens.",
     "Slides in 300ms with an exponential ease-out; reduced motion shows it instantly.",
     "start and end follow the physical left and right in v1; RTL layouts should pass the mirrored side."
   ],

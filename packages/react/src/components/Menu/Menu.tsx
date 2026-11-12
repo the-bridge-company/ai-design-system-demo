@@ -1,4 +1,4 @@
-import { forwardRef, isValidElement, type HTMLAttributes, type ReactElement, type ReactNode } from 'react';
+import { forwardRef, isValidElement, useMemo, type HTMLAttributes, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { Check, ChevronRight } from 'lucide-react';
 import { cx } from '../../utils/cx';
@@ -8,6 +8,53 @@ import styles from './Menu.module.css';
 
 export type MenuSide = 'top' | 'bottom' | 'left' | 'right' | 'inline-start' | 'inline-end';
 export type MenuAlign = 'start' | 'center' | 'end';
+
+/** A box in viewport coordinates, as `element.getBoundingClientRect()` returns it. */
+export interface MenuAnchorRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/** Something that is not an element but has a place on screen: a text selection, a canvas hit, a row cell drawn by a script. */
+export interface MenuVirtualAnchor {
+  getBoundingClientRect: () => MenuAnchorRect;
+  /** The element the virtual box scrolls with, so the menu follows it. */
+  contextElement?: Element;
+}
+
+/** A point in viewport coordinates, such as a pointer position. */
+export interface MenuAnchorPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * What the menu opens from when it is not its MenuTrigger: an element, a ref to one, a virtual box or a point.
+ * `null` or leaving it out means the trigger.
+ */
+export type MenuAnchor = Element | RefObject<Element | null> | MenuVirtualAnchor | MenuAnchorPoint | null;
+
+function pointRect(x: number, y: number): MenuAnchorRect {
+  return { x, y, width: 0, height: 0, top: y, right: x, bottom: y, left: x };
+}
+
+/** A point becomes a zero-size virtual box (kept stable while it does not move); anything else goes to the positioner as it is. */
+function useAnchor(anchor: MenuAnchor | undefined) {
+  const point = anchor != null && !('current' in anchor) && !('getBoundingClientRect' in anchor) ? anchor : null;
+  const x = point?.x;
+  const y = point?.y;
+  const virtualPoint = useMemo<MenuVirtualAnchor | undefined>(
+    () => (x === undefined || y === undefined ? undefined : { getBoundingClientRect: () => pointRect(x, y) }),
+    [x, y],
+  );
+  return point ? virtualPoint : (anchor as Exclude<MenuAnchor, MenuAnchorPoint> | undefined);
+}
 
 export interface MenuProps {
   open?: boolean;
@@ -40,6 +87,7 @@ export function Menu({ open, defaultOpen, onOpenChange, loopFocus = true, childr
 export const MenuTrigger = BaseMenu.Trigger;
 
 interface PopupProps extends HTMLAttributes<HTMLDivElement> {
+  anchor?: MenuAnchor;
   side?: MenuSide;
   align?: MenuAlign;
   sideOffset?: number;
@@ -47,12 +95,14 @@ interface PopupProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
 }
 
-const MenuPopup = forwardRef<HTMLDivElement, PopupProps>(function MenuPopup({ side, align, sideOffset, alignOffset, className, children, ...rest }, ref) {
+const MenuPopup = forwardRef<HTMLDivElement, PopupProps>(function MenuPopup({ anchor, side, align, sideOffset, alignOffset, className, children, ...rest }, ref) {
   const scope = useScopeAttributes();
+  const positionAnchor = useAnchor(anchor);
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner
         className={styles.positioner}
+        anchor={positionAnchor}
         side={side}
         align={align}
         sideOffset={sideOffset}
@@ -73,6 +123,12 @@ export interface MenuContentProps extends HTMLAttributes<HTMLDivElement> {
   side?: MenuSide;
   /** Default `start`: the menu lines up with the trigger's leading edge. */
   align?: MenuAlign;
+  /**
+   * Open from something other than the MenuTrigger: an element or a ref to one (a button a script drew in a large
+   * table), a virtual box (`{ getBoundingClientRect }`) or a point (`{ x, y }`, such as where the pointer was).
+   * Control the menu with `open` and `onOpenChange`; there is no MenuTrigger then, so move focus back yourself on close.
+   */
+  anchor?: MenuAnchor;
   children?: ReactNode;
 }
 

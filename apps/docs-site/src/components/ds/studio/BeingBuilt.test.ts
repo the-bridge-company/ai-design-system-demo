@@ -347,7 +347,8 @@ describe('Being built', () => {
     // No kind tag: every change starts as an exploration.
     expect([...row.querySelectorAll('*')].some((e) => e.children.length === 0 && e.textContent === 'Exploration')).toBe(false);
     expect(row.textContent).toContain('Ready to build');
-    expect(row.textContent).toContain('Admin demo\u2004\u2060·\u2004Done exploring by Florian on');
+    // The pattern of every row: when it was sent and where it comes from, never an absolute date (the group names the product).
+    expect(row.querySelector('.sh-row-line')!.textContent).toBe('Sent yesterday\u2004\u2060·\u2004Asked by Florian');
     expect(row.querySelector('a')!.getAttribute('href')).toBe('/studio/explorations/?exploration=611');
     // No "How it works" fold under the title, on the self-hosted and the team page: the summary sentence is enough.
     for (const page of ['../../../pages/studio/building.astro', '../../../pages/team-shell/building.astro']) {
@@ -356,8 +357,8 @@ describe('Being built', () => {
       expect(src).not.toContain('Explorations handed to developers, and changes from Figma or from Components that need code, land here.');
     }
     expect(container.textContent).not.toMatch(/—/);
-    // Marked ready for review by the developers: In review, with who must review on its line.
-    expect(screen.getByText('Billing screen').closest('li')!.textContent).toContain('Waiting for a reviewer');
+    // Marked ready for review by the developers: In review, with who must review under its tag.
+    expect(screen.getByText('Billing screen').closest('li')!.querySelector('.sh-row-status-note')!.textContent).toBe('Waiting for a reviewer');
     await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
     const menu = await screen.findByRole('menu');
     expect(within(menu).getAllByRole('menuitemcheckbox').map((i) => i.textContent)).toEqual(['Not shipped yet', 'Ready to build3', 'Being built2', 'Checking2', 'Shipped2']);

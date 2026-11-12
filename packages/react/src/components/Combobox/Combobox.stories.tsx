@@ -125,6 +125,19 @@ export const AsyncSearch: Story = {
   },
 };
 
+const SEARCH: ComboboxOption[] = [
+  { value: '/foundations/color', label: 'Color', description: 'Palette, roles and contrast', prefix: <Icon icon={Search} size="sm" />, suffix: 'Page' },
+  { value: '/components/button', label: 'Button', description: 'Actions', suffix: 'Component' },
+  { value: '/components/badge', label: 'Badge', description: 'Data display', suffix: 'Component' },
+  { value: 'color.action.primary.bg', label: 'color.action.primary.bg', description: '#0B3A5B', suffix: 'Token' },
+];
+
+/** Inline: a command palette. The list sits under the input, always open, the first result highlighted. */
+export const Inline: Story = {
+  decorators: [(Story) => <div style={{ maxWidth: 480, height: 320, display: 'flex' }}><Story /></div>],
+  args: { label: undefined, hint: undefined, 'aria-label': 'Search', inline: true, size: 'lg', options: SEARCH, placeholder: 'Search tokens, components, pages', prefix: <Icon icon={Search} size="sm" />, emptyMessage: 'Nothing matches. Try a token path like color.action.' },
+};
+
 /** Loading row, rendered open. */
 export const Loading: Story = {
   decorators: [(Story) => <div style={{ maxWidth: 360, minHeight: 200 }}><Story /></div>],
@@ -159,6 +172,11 @@ export const AllStates: Story = {
       <Specimen label="Multiple with chips">
         <div style={{ width: 320 }}>
           <Combobox label="Reviewers" multiple options={REVIEWERS} defaultValue={['ada', 'bao', 'dev']} />
+        </div>
+      </Specimen>
+      <Specimen label="Inline (command palette)">
+        <div style={{ width: 400 }}>
+          <Combobox inline aria-label="Search" options={SEARCH} placeholder="Search tokens, components, pages" prefix={<Icon icon={Search} size="sm" />} />
         </div>
       </Specimen>
       <Specimen label="Sizes (follow density)">

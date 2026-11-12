@@ -19,6 +19,9 @@ function page(path: string, space: SwitchSpace, href: string, extra = '') {
   return document.querySelector<HTMLAnchorElement>('a[data-space-switch]')!;
 }
 
+/** The SegmentedControl around the link: it holds data-mode, data-anim and data-hint. */
+const control = (a: HTMLElement) => a.closest<HTMLElement>('[data-segmented-control]')!;
+
 describe('initSpaceSwitch', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
@@ -31,9 +34,13 @@ describe('initSpaceSwitch', () => {
     const a = page('/components/button/', 'library', '/studio/components/?c=button');
     const navigate = vi.fn();
     initSpaceSwitch({ navigate, reducedMotion: false, store: memory(true) });
+    expect(a.hasAttribute('aria-current')).toBe(false);
     a.click();
-    expect(a.dataset.mode).toBe('studio');
-    expect(a.hasAttribute('data-anim')).toBe(true);
+    expect(control(a).dataset.mode).toBe('studio');
+    expect(control(a).hasAttribute('data-anim')).toBe(true);
+    // The plate moves: the link is now the current segment, the Library one no longer is.
+    expect(a.getAttribute('aria-current')).toBe('page');
+    expect(control(a).querySelectorAll('[aria-current="page"]')).toHaveLength(1);
     expect(navigate).not.toHaveBeenCalled();
     a.click();
     vi.advanceTimersByTime(NAVIGATE_AFTER_MS);
@@ -47,8 +54,8 @@ describe('initSpaceSwitch', () => {
     initSpaceSwitch({ navigate, reducedMotion: true, store: memory() });
     a.click();
     expect(navigate).toHaveBeenCalledTimes(1);
-    expect(a.dataset.mode).toBe('library');
-    expect(a.hasAttribute('data-hint')).toBe(false);
+    expect(control(a).dataset.mode).toBe('library');
+    expect(control(a).hasAttribute('data-hint')).toBe(false);
   });
 
   it('leaves a new-tab click to the browser', () => {
@@ -58,7 +65,7 @@ describe('initSpaceSwitch', () => {
     const e = new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true });
     a.dispatchEvent(e);
     expect(e.defaultPrevented).toBe(false);
-    expect(a.hasAttribute('data-anim')).toBe(false);
+    expect(control(a).hasAttribute('data-anim')).toBe(false);
     vi.advanceTimersByTime(NAVIGATE_AFTER_MS);
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -69,7 +76,7 @@ describe('initSpaceSwitch', () => {
     initSpaceSwitch({ navigate: vi.fn(), reducedMotion: false, store: memory(true) });
     expect(a.getAttribute('href')).toBe('/components/button/');
     expect(a.getAttribute('data-tooltip')).toBe('Open Button in the Library');
-    expect(a.getAttribute('aria-label')).toBe('Studio, open Library');
+    expect(a.textContent).toContain('Library');
     // The drawer closes: the next use opens the catalog.
     history.replaceState(null, '', '/studio/components/');
     a.dispatchEvent(new Event('pointerenter'));
@@ -87,10 +94,10 @@ describe('initSpaceSwitch', () => {
     const store = memory();
     const a = page('/library/', 'library', '/studio/');
     initSpaceSwitch({ navigate: vi.fn(), reducedMotion: false, store });
-    expect(a.hasAttribute('data-hint')).toBe(true);
+    expect(control(a).hasAttribute('data-hint')).toBe(true);
     expect(store.m.get(HINT_KEY)).toBe('1');
     const b = page('/library/', 'library', '/studio/');
     initSpaceSwitch({ navigate: vi.fn(), reducedMotion: false, store });
-    expect(b.hasAttribute('data-hint')).toBe(false);
+    expect(control(b).hasAttribute('data-hint')).toBe(false);
   });
 });

@@ -3,14 +3,13 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
-import SpaceSwitch, { SPACE_SWITCH_NOW_ID } from '../components/SpaceSwitch';
+import SpaceSwitch from '../components/SpaceSwitch';
 import {
-  currentLabel,
   HINT_KEY,
   isPlainClick,
   markHintSeen,
   shouldShowHint,
-  switchLabel,
+  SWITCH_LABEL,
   switchTarget,
   switchTooltip,
 } from './space-switch';
@@ -101,11 +100,8 @@ describe('switchTarget from Studio', () => {
 });
 
 describe('names', () => {
-  it('names the action, and says where you are in the description', () => {
-    expect(switchLabel('library')).toBe('Library, open Studio');
-    expect(switchLabel('studio')).toBe('Studio, open Library');
-    expect(currentLabel('library')).toBe("You're in the Library");
-    expect(currentLabel('studio')).toBe("You're in the Studio");
+  it('names the switch after both spaces', () => {
+    expect(SWITCH_LABEL).toBe('Library and Studio');
   });
 
   it('says the item in the tooltip when one is carried', () => {
@@ -115,23 +111,27 @@ describe('names', () => {
     expect(switchTooltip('studio', null)).toBe('Open the Library');
   });
 
-  it('renders one link with the action as its name, the current space as its description', () => {
+  it('renders the DS SegmentedControl as links: the space you are in is the current page, the other one the link', () => {
     const html = renderToStaticMarkup(createElement(SpaceSwitch, { space: 'library', href: '/studio/components/?c=button', item: 'Button' }));
-    const links = html.match(/<a\b/g) ?? [];
-    expect(links).toHaveLength(1);
-    expect(html).not.toMatch(/role="(switch|button|tab)"/);
-    expect(html).toContain('aria-label="Library, open Studio"');
-    expect(html).toContain(`aria-describedby="${SPACE_SWITCH_NOW_ID}"`);
-    expect(html).toContain(`id="${SPACE_SWITCH_NOW_ID}"`);
-    expect(html).toContain('You&#x27;re in the Library');
-    expect(html).toContain('data-tooltip="Open Button in Studio"');
-    expect(html).toContain('href="/studio/components/?c=button"');
+    expect(html).toMatch(/^<nav[^>]*aria-label="Library and Studio"/);
+    expect(html).toContain('data-segmented-control');
+    expect(html).not.toMatch(/role="(switch|button|tab|radio)"/);
+    // Two segments: Library, current (no href), and the Studio link with the hooks and the tooltip.
+    const library = html.match(/<a[^>]*data-value="library"[^>]*>/)![0];
+    const studio = html.match(/<a[^>]*data-value="studio"[^>]*>/)![0];
+    expect(library).toContain('aria-current="page"');
+    expect(library).not.toContain('href=');
+    expect(studio).not.toContain('aria-current');
+    expect(studio).toContain('href="/studio/components/?c=button"');
+    expect(studio).toContain('data-space-switch=""');
+    expect(studio).toContain('data-tooltip="Open Button in Studio"');
+    expect(html).toContain('>Library</span>');
+    expect(html).toContain('>Studio</span>');
     expect(html).not.toContain(String.fromCharCode(0x2014));
-    const studio = renderToStaticMarkup(createElement(SpaceSwitch, { space: 'studio', href: '/library/' }));
-    expect(studio).toContain('aria-label="Studio, open Library"');
-    expect(studio).toContain('data-tooltip="Open the Library"');
+    const other = renderToStaticMarkup(createElement(SpaceSwitch, { space: 'studio', href: '/library/' }));
+    expect(other.match(/<a[^>]*data-value="library"[^>]*>/)![0]).toContain('data-tooltip="Open the Library"');
     // The maintainer avatar slot only exists where Studio is the destination.
-    expect(studio).not.toContain('data-team-avatar');
+    expect(other).not.toContain('data-team-avatar');
   });
 });
 

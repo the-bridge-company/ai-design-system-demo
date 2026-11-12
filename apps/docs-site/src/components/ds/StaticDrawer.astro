@@ -1,14 +1,17 @@
 ---
 // The DS Drawer on a static Astro page: the exact markup of <Drawer><DrawerContent> from @bridge-ds/react/dom
-// drawerHtml, with the default slot as its body, so Astro and React content (islands too) sit inside the real sheet.
-// Hidden until a script calls openDialog(id) (focus trap, Escape, scrim click, scroll lock and focus return are the
-// DS's); it fires `open`, `cancel` (cancelable, before Escape, scrim or close dismiss it) and `close` on its root.
-import { drawerHtml, type DrawerHtmlOptions } from '@bridge-ds/react/dom';
+// drawerHtml, with the default slot as its body and the "footer" slot as its sticky footer, so Astro and React content
+// (islands too) sit inside the real sheet. Like <DrawerContent keepMounted>, it is in the page from load, hidden, so
+// scripts bind its body and footer at once. Hidden until a script calls openDialog(id) (focus trap, Escape, scrim click,
+// scroll lock and focus return are the DS's); it fires `open`, `cancel` (cancelable, before Escape, scrim or close
+// dismiss it) and `close` on its root.
+import { drawerHtml, trusted, type DrawerHtmlOptions } from '@bridge-ds/react/dom';
 
-type Props = Omit<DrawerHtmlOptions, 'body'>;
+type Props = Omit<DrawerHtmlOptions, 'body' | 'footer'>;
 
 const MARK = '<!--bridge-drawer-body-->';
-const [before, after] = drawerHtml({ ...Astro.props, body: { html: MARK } }).split(MARK);
+const footer = Astro.slots.has('footer') ? await Astro.slots.render('footer') : undefined;
+const [before, after] = drawerHtml({ ...Astro.props, body: { html: MARK }, ...(footer?.trim() ? { footer: trusted(footer) } : {}) }).split(MARK);
 ---
 
 <Fragment set:html={before} /><slot /><Fragment set:html={after} />

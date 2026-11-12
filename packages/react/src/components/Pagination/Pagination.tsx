@@ -22,6 +22,11 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, 'onCh
   siblingCount?: number;
   /** `full` lists page numbers; `compact` shows "Page 3 of 12" between previous and next (narrow spaces). Default `full`. */
   variant?: PaginationVariant;
+  /**
+   * What one step is, in sentence case: "Item", "Piece", "Step". It names the status ("Piece 3 of 12") and the buttons
+   * ("Previous piece", "Piece 3"). Default "Page".
+   */
+  noun?: string;
   /** Button height from the density tokens. Default `md`. */
   size?: PaginationSize;
   /** Accessible name of the navigation landmark. Default "Pagination". */
@@ -44,9 +49,12 @@ export function getPageItems(page: number, pageCount: number, siblingCount = 1):
   return [1, 'start-ellipsis', ...range(left, right), 'end-ellipsis', pageCount];
 }
 
-/** Moves through a long list split into pages: tokens, review history, audit logs. */
+/**
+ * Moves through a long list split into pages: tokens, review history, audit logs. With `noun`, it steps through
+ * items one by one ("Piece 3 of 12").
+ */
 export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagination(
-  { pageCount, page: pageProp, defaultPage = 1, onPageChange, siblingCount = 1, variant = 'full', size = 'md', 'aria-label': ariaLabel = 'Pagination', className, ...rest },
+  { pageCount, page: pageProp, defaultPage = 1, onPageChange, siblingCount = 1, variant = 'full', noun = 'Page', size = 'md', 'aria-label': ariaLabel = 'Pagination', className, ...rest },
   ref,
 ) {
   const [internal, setInternal] = useState(defaultPage);
@@ -58,6 +66,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
     if (pageProp === undefined) setInternal(clamped);
     onPageChange?.(clamped);
   };
+  const unit = noun.toLowerCase();
   const atStart = page <= 1;
   const atEnd = page >= count;
 
@@ -65,16 +74,16 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
     <nav ref={ref} aria-label={ariaLabel} className={cx(styles.pagination, styles[size], className)} {...rest}>
       {variant === 'compact' ? (
         <div className={styles.compact}>
-          <IconButton icon={ChevronLeft} label="Previous page" variant="ghost" size={size} disabled={atStart} onClick={() => go(page - 1)} />
+          <IconButton icon={ChevronLeft} label={`Previous ${unit}`} variant="ghost" size={size} disabled={atStart} onClick={() => go(page - 1)} />
           <span className={styles.status} aria-live="polite">
-            Page <span className={styles.number}>{page}</span> of <span className={styles.number}>{count}</span>
+            {noun} <span className={styles.number}>{page}</span> of <span className={styles.number}>{count}</span>
           </span>
-          <IconButton icon={ChevronRight} label="Next page" variant="ghost" size={size} disabled={atEnd} onClick={() => go(page + 1)} />
+          <IconButton icon={ChevronRight} label={`Next ${unit}`} variant="ghost" size={size} disabled={atEnd} onClick={() => go(page + 1)} />
         </div>
       ) : (
         <ul className={styles.list}>
           <li>
-            <Button variant="ghost" size={size} iconStart={ChevronLeft} disabled={atStart} onClick={() => go(page - 1)} aria-label="Previous page">
+            <Button variant="ghost" size={size} iconStart={ChevronLeft} disabled={atStart} onClick={() => go(page - 1)} aria-label={`Previous ${unit}`}>
               Previous
             </Button>
           </li>
@@ -85,7 +94,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
                   type="button"
                   className={cx(styles.page, item === page && styles.current)}
                   aria-current={item === page ? 'page' : undefined}
-                  aria-label={`Page ${item}`}
+                  aria-label={`${noun} ${item}`}
                   onClick={() => go(item)}
                 >
                   {item}
@@ -98,7 +107,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
             ),
           )}
           <li>
-            <Button variant="ghost" size={size} iconEnd={ChevronRight} disabled={atEnd} onClick={() => go(page + 1)} aria-label="Next page">
+            <Button variant="ghost" size={size} iconEnd={ChevronRight} disabled={atEnd} onClick={() => go(page + 1)} aria-label={`Next ${unit}`}>
               Next
             </Button>
           </li>

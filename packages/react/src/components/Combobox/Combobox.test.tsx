@@ -102,4 +102,57 @@ describe('Combobox', () => {
     await waitFor(() => expect(input).toHaveValue('Select'));
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
   });
+
+  describe('inline', () => {
+    const PAGES: ComboboxOption[] = [
+      { value: '/tokens', label: 'Tokens', description: 'Every color, size and motion value', suffix: 'Page', prefix: <span>T</span> },
+      { value: '/button', label: 'Button', suffix: 'Component' },
+      { value: '/badge', label: 'Badge', suffix: 'Component' },
+    ];
+
+    it('shows the list under the input with no popup, Show options or Clear button', async () => {
+      render(<Combobox inline aria-label="Search" options={PAGES} />);
+      const input = screen.getByRole('combobox', { name: 'Search' });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByRole('listbox', { name: 'Search' })).toBeInTheDocument();
+      expect(screen.getAllByRole('option')).toHaveLength(3);
+      expect(screen.queryByRole('button', { name: 'Show options' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Clear selection' })).toBeNull();
+      expect(screen.getByRole('option', { name: /Tokens/ })).toHaveTextContent('Page');
+      await expectNoAxeViolations();
+    });
+
+    it('highlights the first result while typing and picks it with Enter', async () => {
+      const onValueChange = vi.fn();
+      render(<Combobox inline aria-label="Search" options={PAGES} onValueChange={onValueChange} />);
+      const input = screen.getByRole('combobox', { name: 'Search' });
+      await userEvent.type(input, 'b');
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
+      await waitFor(() => expect(screen.getByRole('option', { name: /Button/ })).toHaveAttribute('data-highlighted'));
+      await userEvent.keyboard('{ArrowDown}');
+      await waitFor(() => expect(screen.getByRole('option', { name: /Badge/ })).toHaveAttribute('data-highlighted'));
+      await userEvent.keyboard('{Enter}');
+      expect(onValueChange).toHaveBeenCalledWith('/badge');
+    });
+
+    it('says when nothing matches, and puts className on the wrapper', async () => {
+      const { container } = render(<Combobox inline aria-label="Search" className="palette" options={PAGES} emptyMessage="Nothing matches." />);
+      await userEvent.type(screen.getByRole('combobox', { name: 'Search' }), 'zzz');
+      expect(await screen.findByText('Nothing matches.')).toBeInTheDocument();
+      expect(container.firstElementChild).toHaveClass('palette');
+      await expectNoAxeViolations();
+    });
+
+    it('lets Escape reach the Dialog around it', async () => {
+      const onKey = vi.fn();
+      render(
+        <div onKeyDown={(e) => onKey(e.key)}>
+          <Combobox inline aria-label="Search" options={PAGES} />
+        </div>,
+      );
+      await userEvent.click(screen.getByRole('combobox', { name: 'Search' }));
+      await userEvent.keyboard('{Escape}');
+      expect(onKey).toHaveBeenCalledWith('Escape');
+    });
+  });
 });

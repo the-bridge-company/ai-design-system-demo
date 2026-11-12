@@ -1,7 +1,26 @@
 // The drawn faces by recipe (Studio's Your face): a seed's recipe draws the very face the seed draws, every part
 // variant is listed, and a part the drawings do not know falls back instead of breaking the face.
 import { describe, expect, it } from 'vitest';
-import { FACE_PART_VARIANTS, faceRecipe, illustratedAvatarSvg, illustratedFaceSvg, illustratedFaceUri } from './index';
+import { FACE_PART_NAMES, FACE_PART_VARIANTS, faceRecipe, faceVariantName, illustratedAvatarSvg, illustratedFaceSvg, illustratedFaceUri } from './index';
+
+describe('avatar-illustrated part names', () => {
+  it.each(['hair', 'glasses', 'beard'] as const)('names every %s variant once, in plain words', (part) => {
+    const names = FACE_PART_VARIANTS[part].map((v) => faceVariantName(part, v));
+    for (const n of names) {
+      expect(n).toBeTruthy();
+      expect(n).toMatch(/^[A-Z][a-z -]*$/);
+      expect(n!.split(' ').length).toBeLessThanOrEqual(4);
+    }
+    expect(new Set(names).size).toBe(names.length);
+    expect(Object.keys(FACE_PART_NAMES[part]).sort()).toEqual([...FACE_PART_VARIANTS[part]]);
+  });
+
+  it('has no name for a variant the drawings lack', () => {
+    expect(faceVariantName('hair', 'variant99')).toBeUndefined();
+    expect(faceVariantName('beard', 'toString')).toBeUndefined();
+    expect(faceVariantName('hair', 'hat')).toBe('Hat');
+  });
+});
 
 describe('avatar-illustrated recipes', () => {
   it('lists every variant of each part', () => {

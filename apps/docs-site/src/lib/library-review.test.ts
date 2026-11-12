@@ -10,6 +10,7 @@ import {
   filterChoices,
   peopleOf,
   contrastWords,
+  colorLook,
   cssRgba,
   reviewProgress,
   askedByViewer,
@@ -322,5 +323,12 @@ describe('groups and words', () => {
     // Never rounded up across the line: 4.49 fails and says 4.4.
     expect(contrastWords(4.49)).toEqual({ text: '4.4:1 fails AA', pass: false });
     expect(contrastWords(2.05).text).toBe('2.0:1 fails AA');
+  });
+
+  it('draws a dark raised text piece on the dark raised surface, so its badge measures the pair it names', () => {
+    expect(colorLook('Muted text readable on dark raised surfaces')).toEqual({ look: 'text', dark: true, raised: true });
+    expect(colorLook('Fix muted text contrast on dark raised surfaces')).toEqual({ look: 'text', dark: true, raised: true });
+    expect(colorLook('Muted text on dark pages')).toEqual({ look: 'text', dark: true, raised: false });
+    expect(colorLook('Raised surface in dark')).toEqual({ look: 'surface', dark: true, raised: false });
   });
 });

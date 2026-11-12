@@ -120,6 +120,16 @@ describe('Invite collaborators', () => {
     await expectNoAxeViolations(document.body);
   });
 
+  it('on the sample team, says each person’s job under their name, as Settings > Members, and keeps the access on the right', async () => {
+    const { dialog } = await openDialog();
+    const row = (name: string) => within(dialog).getByText(name, { selector: '.inv-access-row *' }).closest('li')!;
+    expect(row('Sofia').textContent).toContain('Designer');
+    expect(row('Dana').textContent).toContain('Design lead, runs the team');
+    // The line is the job, never the access said again in other words.
+    expect(row('Sofia').textContent).not.toContain('Explores designs and suggests library changes');
+    expect(row('Sofia').textContent).toContain('Can edit');
+  });
+
   it('takes several pasted addresses at once', async () => {
     const { user, dialog } = await openDialog();
     await user.click(within(dialog).getByLabelText('Work email'));

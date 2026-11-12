@@ -55,18 +55,22 @@ describe('Type filter', () => {
 });
 
 describe('Row actions menu', () => {
-  it('opens the DS Menu from the row button, runs the picked action after it closes, and puts the button back', async () => {
+  it('opens the DS Menu anchored to the row button, which stays in place; runs the picked action after it closes', async () => {
     const user = userEvent.setup();
     const cell = document.createElement('div');
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.setAttribute('aria-label', 'Actions for color.bg');
+    btn.setAttribute('aria-haspopup', 'menu');
     btn.dataset.xpRowmenu = '';
     cell.append(btn);
     document.body.append(cell);
     const action = vi.fn();
+    const measured = vi.spyOn(btn, 'getBoundingClientRect');
     openRowMenu({ trigger: btn, label: 'Actions for color.bg', items: [{ id: 'edit', label: 'Edit value', icon: 'edit' }, { id: 'copy', label: 'Copy CSS variable', icon: 'copy' }], onAction: action });
-    expect(btn.isConnected).toBe(false);
+    // No swap: the row's own button stays in its cell, expanded, and the menu is positioned against it.
+    expect(cell.contains(btn)).toBe(true);
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
     expect(rowMenuOpen()).toBe(true);
     const menu = await waitFor(() => {
       const m = document.querySelector<HTMLElement>('[role="menu"]');
@@ -74,17 +78,31 @@ describe('Row actions menu', () => {
       return m;
     });
     expect(menu).toHaveAccessibleName('Actions for color.bg');
+    await waitFor(() => expect(measured).toHaveBeenCalled());
+    await expectNoAxeViolations(menu);
     await user.click(document.querySelector<HTMLElement>('[role="menuitem"][data-act="copy"]')!);
     await waitFor(() => expect(action).toHaveBeenCalledWith('copy'));
-    expect(btn.isConnected).toBe(true);
+    expect(cell.contains(btn)).toBe(true);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
     expect(rowMenuOpen()).toBe(false);
+    await waitFor(() => expect(document.querySelector('.xp-rowmenu-host')).toBeNull());
 
     // Escape: no action, focus back on the row's button.
     openRowMenu({ trigger: btn, label: 'Actions for color.bg', items: [{ id: 'edit', label: 'Edit value', icon: 'edit' }], onAction: action });
     await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull());
     (document.querySelector<HTMLElement>('[role="menuitem"]') ?? document.querySelector<HTMLElement>('[role="menu"]'))!.focus();
     await user.keyboard('{Escape}');
-    await waitFor(() => expect(btn.isConnected).toBe(true));
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(btn));
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(action).toHaveBeenCalledOnce();
+
+    // The open menu's button again: it closes the menu instead of opening a second one.
+    openRowMenu({ trigger: btn, label: 'Actions for color.bg', items: [{ id: 'edit', label: 'Edit value', icon: 'edit' }], onAction: action });
+    expect(rowMenuOpen()).toBe(true);
+    openRowMenu({ trigger: btn, label: 'Actions for color.bg', items: [{ id: 'edit', label: 'Edit value', icon: 'edit' }], onAction: action });
+    expect(rowMenuOpen()).toBe(false);
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(btn));
     expect(action).toHaveBeenCalledOnce();
     cell.remove();

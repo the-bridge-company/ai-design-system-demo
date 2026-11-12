@@ -23,7 +23,7 @@ const ALLOWED: Record<string, string> = {
   // The DS Drawer's static markup from @bridge-ds/react/dom drawerHtml (escapes its text) with fixed options.
   'components/explorer/TokenDetailDrawer.astro': 'drawerHtml (lib/token-drawer.ts, constant options)',
   'components/foundations/LibraryShellKit.astro': 'drawerHtml (lib/token-drawer.ts, constant options)',
-  'components/ds/StaticDrawer.astro': 'drawerHtml split around the slot (it escapes the title and description)',
+  'components/ds/StaticDrawer.astro': 'drawerHtml split around the body slot (it escapes the title and description); the footer is a slot',
   // Build-time Markdown and constants.
   'components/ds/MarkdownTable.tsx': 'cells from inline()',
   'components/ds/InlineMd.tsx': 'inline() on repository Markdown (escaped, link schemes allow-listed)',

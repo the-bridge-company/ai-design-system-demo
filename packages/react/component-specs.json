@@ -12282,7 +12282,7 @@
           ]
         }
       },
-      "hash": "82f36849",
+      "hash": "700e8b53",
       "source": [
         "packages/react/src/components/Combobox/Combobox.tsx",
         "packages/react/src/components/Combobox/Combobox.module.css",
@@ -12324,10 +12324,22 @@
           "default": "Placeholder"
         },
         {
+          "name": "Suffix",
+          "type": "TEXT",
+          "default": "Suffix",
+          "prop": "suffix"
+        },
+        {
           "name": "Show prefix",
           "type": "BOOLEAN",
           "default": false,
           "prop": "prefix"
+        },
+        {
+          "name": "Show suffix",
+          "type": "BOOLEAN",
+          "default": false,
+          "prop": "suffix"
         }
       ],
       "parts": [
@@ -12371,6 +12383,15 @@
           "kind": "text",
           "parent": "input",
           "text": "Placeholder"
+        },
+        {
+          "id": "suffix",
+          "name": "Suffix",
+          "kind": "text",
+          "parent": "root",
+          "source": "Combobox.module.css .affix",
+          "text": "Suffix",
+          "visible": "Show suffix"
         },
         {
           "id": "icon-action",
@@ -12433,6 +12454,12 @@
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": null,
               "cornerRadius": "radius.inset",
@@ -12493,6 +12520,12 @@
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": "color.surface.hover",
               "cornerRadius": "radius.inset",
@@ -12549,6 +12582,12 @@
             },
             "placeholder": {
               "textFill": "input.placeholder",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
+            "suffix": {
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
@@ -12613,6 +12652,12 @@
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": null,
               "cornerRadius": "radius.inset",
@@ -12673,6 +12718,12 @@
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": "color.surface.hover",
               "cornerRadius": "radius.inset",
@@ -12729,6 +12780,12 @@
             },
             "placeholder": {
               "textFill": "input.placeholder",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
+            "suffix": {
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
               "lineHeight": "font.line-height.normal"
@@ -12793,6 +12850,12 @@
               "fontSize": "font.size.300",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.300",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": null,
               "cornerRadius": "radius.inset",
@@ -12853,6 +12916,12 @@
               "fontSize": "font.size.300",
               "lineHeight": "font.line-height.normal"
             },
+            "suffix": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.300",
+              "lineHeight": "font.line-height.normal"
+            },
             "icon-action": {
               "fill": "color.surface.hover",
               "cornerRadius": "radius.inset",
@@ -12909,6 +12978,12 @@
             },
             "placeholder": {
               "textFill": "input.placeholder",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.300",
+              "lineHeight": "font.line-height.normal"
+            },
+            "suffix": {
+              "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.300",
               "lineHeight": "font.line-height.normal"
@@ -12969,6 +13044,12 @@
         {
           "part": "root",
           "property": "prop hideLabel",
+          "value": "boolean",
+          "reason": "not drawn in this version"
+        },
+        {
+          "part": "root",
+          "property": "prop inline",
           "value": "boolean",
           "reason": "not drawn in this version"
         },
@@ -13049,7 +13130,7 @@
           ]
         }
       },
-      "hash": "a7b2b3a1",
+      "hash": "c9127c85",
       "source": [
         "packages/react/src/components/Combobox/Combobox.tsx",
         "packages/react/src/components/Combobox/Combobox.module.css",
@@ -13291,6 +13372,18 @@
           "property": "prop prefix",
           "value": "node",
           "reason": "slot content is not drawn"
+        },
+        {
+          "part": "root",
+          "property": "prop suffix",
+          "value": "node",
+          "reason": "slot content is not drawn"
+        },
+        {
+          "part": "root",
+          "property": "prop inline",
+          "value": "boolean",
+          "reason": "not drawn in this version"
         },
         {
           "part": "root",
@@ -14228,7 +14321,7 @@
           }
         ]
       },
-      "hash": "ae44c189",
+      "hash": "6e7ecdc6",
       "source": [
         "packages/react/src/components/Drawer/Drawer.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -14687,6 +14780,12 @@
         {
           "part": "root",
           "property": "prop hideClose",
+          "value": "boolean",
+          "reason": "not drawn in this version"
+        },
+        {
+          "part": "root",
+          "property": "prop keepMounted",
           "value": "boolean",
           "reason": "not drawn in this version"
         },

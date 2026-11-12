@@ -119,10 +119,10 @@ function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; k
 }
 
 /** The exploration that asked, as a chip that opens it. */
-/** A count next to its label: a small neutral pill with tabular numbers, centred on the label (owner, 2026-11-12). */
+/** A count next to its label: the DS count tag (ink tabular figures on a neutral fill), centred on the label. */
 function Count({ n }: { n: number }) {
   return (
-    <Badge tone="neutral" size="sm" className="lr-count">
+    <Badge appearance="count" size="sm" className="lr-count">
       {n}
     </Badge>
   );

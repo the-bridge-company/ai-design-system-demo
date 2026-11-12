@@ -1,5 +1,5 @@
 {
-  "summary": "A short, non-interactive status label like Draft, Published or Failed. The words carry the meaning; the tone reinforces it.",
+  "summary": "A short, non-interactive status label like Draft, Published or Failed. The words carry the meaning; the tone reinforces it. With appearance count, the count next to a group heading in a review list.",
   "preview": { "c": "Row", "children": [
     { "c": "Badge", "p": { "tone": "neutral" }, "children": ["Draft"] },
     { "c": "Badge", "p": { "tone": "success" }, "children": ["Published"] },
@@ -11,6 +11,7 @@
     "The status of one item in a table row, a list or a card header.",
     "subtle (default) in lists and tables where many badges sit together; solid for the single status that must win a glance (Breaking, Build failed).",
     "Tone by meaning: success done or healthy, warning needs attention, danger failed or blocked, info new or changed, neutral no judgement.",
+    "appearance count for the number next to a group heading in a dense review list (Library review: Foundations 5, Colors 4): ink figures in tabular numbers on a neutral fill, no border, so it reads on a tinted group card; inside the current or selected item it takes the stronger tone. Navigation and tab counts keep their own count slot: use the count prop of Tabs, SegmentedControl and SidebarNav there.",
     "Plain-script pages that build rows as HTML strings use badgeHtml() from @bridge-ds/react/dom: the same markup, tones and sizes, without React. Never a homemade pill: the design system audit counts those as look-alikes."
   ],
   "whenNotToUse": [
@@ -25,6 +26,16 @@
       "example": { "c": "Row", "children": [
         { "c": "Badge", "p": { "tone": "success" }, "children": ["Published"] },
         { "c": "Badge", "p": { "tone": "danger" }, "children": ["Failed"] }
+      ] }
+    },
+    {
+      "title": "Group counts in the count appearance",
+      "text": "A group heading in a review list takes appearance count: dark figures that read at a glance, on a fill that stays a tag on a tinted group card.",
+      "example": { "c": "Row", "children": [
+        "Foundations",
+        { "c": "Badge", "p": { "appearance": "count", "size": "sm" }, "children": ["5"] },
+        "Colors",
+        { "c": "Badge", "p": { "appearance": "count", "size": "sm" }, "children": ["4"] }
       ] }
     },
     {
@@ -51,6 +62,7 @@
   "accessibility": [
     "Static text read in reading order. No role, not focusable.",
     "Subtle tones use feedback text on feedback bg (4.5:1); solid tones use text.on-solid on feedback solid (4.5:1). Checked by the token build in every brand and theme.",
+    "The count tag puts text.default on the emphasis neutral (7:1 or more in every brand and theme) and text.inverse on surface.inverse in the current or selected item (15:1). Give it an accessible name when the number alone is unclear (\"5 pieces\").",
     "The dot and icon are decorative; the text carries the status.",
     "If a status changes while the user watches (Running to Failed), announce it with a live region; the badge itself is silent."
   ],
@@ -62,6 +74,7 @@
     "badge": "Container",
     "subtle": "Subtle appearance (default)",
     "solid": "Solid appearance",
+    "count": "Count appearance: ink tabular figures on a neutral fill",
     "dot": "Leading dot",
     "icon": "Leading icon",
     "sm": "Size sm",

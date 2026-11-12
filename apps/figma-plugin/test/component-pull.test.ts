@@ -212,16 +212,16 @@ test('code removes a variant: the Figma variant is flagged [orphan], kept, and n
   const next = await pulledFile({ sim: first.sim, gh });
   const planned = next.plan.components.find((c) => c.name === 'Badge')!;
   assert.equal(planned.status, 'updated');
-  assert.equal(planned.removedVariants.length, 4);
+  assert.equal(planned.removedVariants.length, 6);
   const report = await applyComponentPlan(writablePlan(next.plan));
-  assert.deepEqual([report.created, report.updated, report.orphaned], [0, 1, 4]);
+  assert.deepEqual([report.created, report.updated, report.orphaned], [0, 1, 6]);
   const set = first.sim.sets().find((s) => s.name === 'Badge')!;
-  assert.equal(set.children.length, 20, 'removed variants are kept');
+  assert.equal(set.children.length, 30, 'removed variants are kept');
   const orphans = set.children.filter((c) => c.getSharedPluginData('dsbridge', 'orphan') === 'true');
-  assert.deepEqual(orphans.map((o) => o.description.slice(0, 9)), ['[orphan] ', '[orphan] ', '[orphan] ', '[orphan] ']);
+  assert.deepEqual(orphans.map((o) => o.description.slice(0, 9)), Array(6).fill('[orphan] '));
   assert.ok(first.sim.nodes.has(designerNote.id), 'layers outside generated sets are untouched');
   const after = await scanGenerated();
-  assert.equal(after.find((g) => g.componentId === 'Badge')!.variants.length, 16);
+  assert.equal(after.find((g) => g.componentId === 'Badge')!.variants.length, 24);
 });
 
 test('fonts: a brand font missing in Figma falls back to Inter, said once', async () => {
@@ -421,7 +421,7 @@ test('review: per set, the variants, props and bound variables an update changes
   assert.deepEqual(reviews.map((r) => r.name), ['Badge', 'Card']);
   const badge = reviews[0]!;
   assert.deepEqual(badge.changes[0], { field: 'Variant Tone', before: 'danger, info, neutral, success, warning', after: 'info, neutral, success, warning' });
-  assert.equal(badge.removedVariants.length, 4);
+  assert.equal(badge.removedVariants.length, 6);
   const card = reviews[1]!;
   // card.bg gone, onto a variable another layer already uses: still bound, so what the fill may use now, never "none"
   // (Padding none also shows the Media plate).
@@ -447,7 +447,7 @@ test('update one by one: only that set is rebuilt; Update all builds the rest, n
   const rest = withoutComponents(writablePlan(next.plan), new Set(['Card']));
   assert.deepEqual(rest.components.map((c) => c.name), ['Badge']);
   const all = await applyComponentPlan(rest);
-  assert.deepEqual([all.created, all.updated, all.orphaned], [0, 1, 4]);
+  assert.deepEqual([all.created, all.updated, all.orphaned], [0, 1, 6]);
   assert.deepEqual(first.sim.sets().map((s) => s.id), ids, 'updated in place, same nodes');
 });
 

@@ -2810,7 +2810,7 @@
     },
     {
       "name": "Badge",
-      "hash": "c21d8067",
+      "hash": "b82c8d8b",
       "source": [
         "packages/react/src/components/Badge/Badge.tsx",
         "packages/react/src/components/Badge/Badge.module.css",
@@ -2834,7 +2834,8 @@
           "prop": "appearance",
           "values": [
             "subtle",
-            "solid"
+            "solid",
+            "count"
           ],
           "default": "subtle"
         },
@@ -3048,6 +3049,96 @@
         },
         {
           "props": {
+            "Tone": "neutral",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "neutral",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "success",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3190,6 +3281,96 @@
               "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "success",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "success",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
             }
           },
           "slots": {
@@ -3348,6 +3529,96 @@
         },
         {
           "props": {
+            "Tone": "warning",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "warning",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "danger",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3498,6 +3769,96 @@
         },
         {
           "props": {
+            "Tone": "danger",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "danger",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
             "Tone": "info",
             "Appearance": "subtle",
             "Size": "sm"
@@ -3640,6 +4001,96 @@
               "fontSize": "typography.ui.size",
               "fontWeight": "font.weight.medium",
               "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "info",
+            "Appearance": "count",
+            "Size": "sm"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "space.2",
+              "paddingBottom": 0,
+              "paddingLeft": "space.2",
+              "itemSpacing": "space.1",
+              "minWidth": "size.5",
+              "minHeight": "size.5",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.caption.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.caption.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CircleCheck"
+          }
+        },
+        {
+          "props": {
+            "Tone": "info",
+            "Appearance": "count",
+            "Size": "md"
+          },
+          "values": {
+            "root": {
+              "fill": "color.border.emphasis",
+              "cornerRadius": "radius.pill",
+              "paddingTop": 0,
+              "paddingRight": "calc(space.2 + space.0-5)",
+              "paddingBottom": 0,
+              "paddingLeft": "calc(space.2 + space.0-5)",
+              "itemSpacing": "space.1",
+              "minWidth": "calc(size.6 + space.0-5)",
+              "minHeight": "calc(size.6 + space.0-5)",
+              "strokeWeight": "border-width.default",
+              "stroke": null
+            },
+            "icon": {
+              "width": "icon.size.xs",
+              "height": "icon.size.xs",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "layout": {
+            "root": {
+              "direction": "HORIZONTAL",
+              "primary": "CENTER",
+              "counter": "CENTER"
             }
           },
           "slots": {

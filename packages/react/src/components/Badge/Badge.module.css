@@ -111,3 +111,32 @@
 .solid.info {
   --_bg: var(--color-feedback-info-solid);
 }
+
+/* Count: the number next to a group heading in a review list (Library review: Foundations 5, Colors 4). Ink figures,
+   medium, tabular, caption size (12/16), on a neutral fill and no border. The emphasis neutral is the step that still
+   reads as a tag on the page, on tinted group cards and on raised surfaces, in both themes, with the ink at 7:1 or more.
+   Nav and tab counts keep their own count slot (Tabs, SegmentedControl, SidebarNav). */
+.count {
+  --_bg: var(--color-border-emphasis);
+  --_text: var(--color-text-default);
+  --_mark: var(--color-text-default);
+
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+
+.count.sm {
+  min-width: var(--size-5);
+}
+
+.count.md {
+  min-width: calc(var(--size-6) + var(--space-0-5));
+}
+
+/* Inside the current or selected item the count takes the stronger tone. */
+:is([aria-current]:not([aria-current="false"]), [aria-selected="true"], [aria-checked="true"], [data-active]) .count {
+  --_bg: var(--color-surface-inverse);
+  --_text: var(--color-text-inverse);
+  --_mark: var(--color-text-inverse);
+}

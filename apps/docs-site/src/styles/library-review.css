@@ -169,11 +169,10 @@ a.lr-ask {
   padding-block-start: var(--space-4);
 }
 
-/* A count next to its label (Count): a neutral pill, tabular numbers, on the label's centre line. */
+/* A count next to its label (Count): the DS count tag, on the label's centre line, in the UI face. */
 .lr-count {
   flex: none;
   font-family: var(--typography-ui-family);
-  font-variant-numeric: tabular-nums;
 }
 
 /* A group under its family: plain sans, semibold, its count quiet. */

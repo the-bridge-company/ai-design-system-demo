@@ -158,7 +158,9 @@ describe('StudioHome, explorations only', () => {
     const items = [...container.querySelectorAll('[aria-labelledby="sh-explorations"] .sh-cards > li')];
     // "Start an exploration" first, then the cards.
     expect(items[0]!.classList.contains('sh-create')).toBe(true);
-    expect(items[0]!.textContent).toBe('Start an exploration');
+    // The card says what it is for: the action, then one line (a card, never an empty dashed box).
+    expect(within(items[0] as HTMLElement).getByRole('button', { name: 'Start an exploration' })).toBeTruthy();
+    expect(items[0]!.textContent).toBe('Start an explorationTry a product screen or a library idea with Claude AI.');
     expect(items[1]!.querySelector('img.bt-screen')?.getAttribute('src')).toBe('/sample/explorations/36.png');
     expect(items[1]!.querySelector('.bt--icon')).toBeNull();
     expect(screen.getByRole('link', { name: 'Billing screen' }).getAttribute('href')).toBe('/studio/explorations/?exploration=37');

@@ -28,6 +28,7 @@
 import { VOCAB } from '../../../lib/vocabulary';
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Check, Copy, ExternalLink, Plus, X } from 'lucide-react';
+import { Drawing } from './Drawing';
 import { addressDomain, defaultProduct, liveAddressOf, mockupCard, mockupLabel, MOCKUP_PROBLEM, parseJiraKey, parseMockupLink, productMarks, productsOf, type Mockup, type ProductConfig } from '@bridge-ds/core';
 import { Alert, Button, Combobox, Dialog, DialogContent, DialogTrigger, Icon, IconButton, Input, Select, Spinner } from '@bridge-ds/react';
 import AddProduct, { useCanAddProduct } from './AddProduct';
@@ -204,6 +205,9 @@ function MockupField({ open, link, mockup, error, inputRef, onOpen, onChange, on
     />
   );
 }
+
+/** Under the Home card's action: what an exploration is for, in the tour's words. */
+export const CARD_LINE = 'Try a product screen or a library idea with Claude AI.';
 
 export default function StartExploration({ components, appearance = 'menu', product = null }: StartExplorationProps) {
   // The server render and the first client render agree; the page's choice comes in right after.
@@ -854,8 +858,20 @@ export default function StartExploration({ components, appearance = 'menu', prod
         <DialogTrigger
           render={
             appearance === 'card' ? (
-              <Button variant="ghost" iconStart={Plus} fullWidth className="sh-create-btn" data-start-change data-demo-write={gate}>
-                {label}
+              // The Home's first card: the same size as the exploration cards beside it, so it says what it is for (the
+              // Field Guide drawing, the action, one line) instead of a lone "+ Start an exploration" in an empty box.
+              <Button variant="ghost" fullWidth className="sh-create-btn" data-start-change data-demo-write={gate}>
+                <span className="sh-create-body">
+                  <Drawing name="paint" width={88} />
+                  <span className="sh-create-title">
+                    <Icon icon={Plus} size="sm" />
+                    {label}
+                  </span>
+                  {/* Seen, not read twice: the button is named by its action alone. */}
+                  <span className="t-ui t-muted sh-create-line" aria-hidden="true">
+                    {CARD_LINE}
+                  </span>
+                </span>
               </Button>
             ) : appearance === 'choice' ? (
               <Button variant="link" className="sh-choice-btn" data-card-primary data-start-change data-demo-write={gate}>

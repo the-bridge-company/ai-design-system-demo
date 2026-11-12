@@ -49,9 +49,15 @@ export interface BranchRowProps {
   lineLead?: ReactNode;
   /** Compact rows only: a second muted line under the title (a join request's email and role). */
   detail?: string | null;
+  /**
+   * Two-line rows: the tags and the status tag at the row's end, in one column every row shares (before `end`), instead
+   * of after the line. Full-width lists (Explorations, Being built) use it: the status column fills the row's right
+   * side, where a tag right after a short line left half the row empty.
+   */
+  statusAtEnd?: boolean;
 }
 
-export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note, eyebrow, lineLead }: BranchRowProps) {
+export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note, eyebrow, lineLead, statusAtEnd }: BranchRowProps) {
   const chip = pill && (
     <Badge tone={TONE[pill.tone]} size="md" className={statusTagClass(TONE[pill.tone], 'sh-row-pill')}>
       {pill.label}
@@ -72,8 +78,9 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
                 <span className="sh-strong">{title}</span>
                 {jira && <span className="t-ui t-muted sh-mono"> {jira}</span>}
                 {line && (
-                  <span className="t-ui t-muted">
-                    {SEP}
+                  <span className="t-ui t-muted sh-row-meta">
+                    {/* Its own span: on a phone the line goes under the title and the dot goes. */}
+                    <span className="sh-row-sep">{SEP}</span>
                     {line}
                   </span>
                 )}
@@ -106,17 +113,23 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             <Link href={href} variant="subtle" className="t-body sh-row-title" title={hint ?? title} data-card-primary onClick={onClick} aria-current={selected ? 'true' : undefined} {...linkAttributes}>
               <span className="sh-strong">{title}</span>
             </Link>
-            {(jira || line || pill || tags || note) && (
+            {(jira || line || (!statusAtEnd && (pill || tags)) || note) && (
               <span className="sh-row-sub">
                 {jira && <span className="t-ui t-muted sh-mono sh-row-jira">{jira}</span>}
                 {lineLead}
                 {line && <span className="t-ui t-muted sh-row-line">{line}</span>}
                 {note}
-                {tags}
-                {chip}
+                {!statusAtEnd && tags}
+                {!statusAtEnd && chip}
               </span>
             )}
           </span>
+          {statusAtEnd && (tags || chip) && (
+            <span className="sh-row-chips sh-row-status-end">
+              {tags}
+              {chip}
+            </span>
+          )}
           {end}
         </CardBody>
       </Card>

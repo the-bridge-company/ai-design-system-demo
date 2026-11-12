@@ -134,7 +134,7 @@ function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRo
       {narrow && tour?.('rows')}
       {/* One item: its button is the page's primary. Two or three: secondary buttons. More: no row buttons, each row is
           its own link and "Review all" acts. */}
-      <NeedList rows={shown} compact action={more ? undefined : shown.length === 1 ? 'primary' : 'secondary'} join={join} />
+      <NeedList rows={shown} compact shots action={more ? undefined : shown.length === 1 ? 'primary' : 'secondary'} join={join} />
       {!narrow && tour?.('rows')}
       {more && (
         <div className="sh-more">
@@ -159,7 +159,7 @@ function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRo
           </ButtonLink>
         </div>
       )}
-      {more && unfolded && !contributor && <NeedList rows={needs.slice(shown.length)} compact join={join} />}
+      {more && unfolded && !contributor && <NeedList rows={needs.slice(shown.length)} compact shots join={join} />}
       {more && tour?.('more')}
       <OnlyReviewerHint needs={needs} snoozed={snoozed} />
     </>

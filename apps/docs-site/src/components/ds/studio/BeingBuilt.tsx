@@ -317,6 +317,7 @@ function Rows({
               href={studioHref(v.fix.href)}
               line={v.fix.line}
               pill={statusTag(v)}
+              statusAtEnd
               className={v.stale ? "bb-stale" : undefined}
             />
           );
@@ -335,6 +336,7 @@ function Rows({
               href={studioHref(v.exploration.href)}
               line={v.exploration.line}
               pill={statusTag(v)}
+              statusAtEnd
               className={v.stale ? "bb-stale" : undefined}
             />
           );
@@ -355,6 +357,7 @@ function Rows({
             line={rowLine(v, now, data.nameOf)}
             note={auditNoteOf(v, data)}
             pill={statusTag(v)}
+            statusAtEnd
             className={v.stale ? "bb-stale" : undefined}
           />
         );
@@ -379,6 +382,7 @@ function SendRow({ v, message, who }: { v: ExplorationBuildRow & LifecycleExtra;
       href={studioHref(v.exploration.href)}
       line={copied || failed ? said : v.exploration.line}
       pill={statusTag(v)}
+      statusAtEnd
       className={v.stale ? "bb-stale bb-send-row" : "bb-send-row"}
       end={
         <span className="bb-send">

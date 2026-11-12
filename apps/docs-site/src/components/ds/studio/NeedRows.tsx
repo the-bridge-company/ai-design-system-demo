@@ -10,6 +10,7 @@ import { BranchRow } from './BranchRow';
 import ButtonLink from '../ButtonLink';
 import { rowAction, type NeedRow } from '../../../lib/home-model';
 import { ENTRY_WORDS } from '../../../lib/entry';
+import { useExplorationShots } from './ListCard';
 // The row styles (sh-rows, sh-join), also on pages that are not a home (Settings > Members).
 import '../../../styles/studio-home.css';
 
@@ -90,6 +91,20 @@ function JoinActions({ row, join, action = 'secondary' }: { row: NeedRow; join: 
 }
 
 /** One Needs you row: before/after, who, what and why, the status on the right (the shared BranchRow). */
+/**
+ * The exploration a row opens ("?exploration=1&product=prints"), read from its address: its capture is the row's
+ * thumbnail, the same one the Explorations list shows. Null for every other row.
+ */
+export function explorationRefOf(href: string): { number: number; product: string | null } | null {
+  try {
+    const q = new URL(href, 'https://bridge.invalid/').searchParams;
+    const n = Number(q.get('exploration'));
+    return Number.isInteger(n) && n > 0 ? { number: n, product: q.get('product') } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function NeedRowItem({ row, selected, onSelect, action, compact, join }: { row: NeedRow; selected?: boolean; onSelect?: (row: NeedRow) => void; action?: 'primary' | 'secondary'; compact?: boolean; join?: JoinHandlers }) {
   const click = onSelect
     ? (e: MouseEvent<HTMLAnchorElement>) => {
@@ -125,12 +140,25 @@ export function NeedRowItem({ row, selected, onSelect, action, compact, join }: 
   );
 }
 
-export function NeedList({ rows, selectedKey, onSelect, label = 'Needs you', action, compact, join }: { rows: NeedRow[]; selectedKey?: string | null; onSelect?: (row: NeedRow) => void; label?: string; action?: 'primary' | 'secondary'; compact?: boolean; join?: JoinHandlers }) {
+/**
+ * `shots`: an exploration row shows its capture (lazy, as on Explorations); until it comes, and when there is none,
+ * the row's own neutral thumbnail stays.
+ */
+export function NeedList({ rows, selectedKey, onSelect, label = 'Needs you', action, compact, join, shots = false }: { rows: NeedRow[]; selectedKey?: string | null; onSelect?: (row: NeedRow) => void; label?: string; action?: 'primary' | 'secondary'; compact?: boolean; join?: JoinHandlers; shots?: boolean }) {
+  const captures = useExplorationShots(
+    shots
+      ? rows.flatMap((r) => {
+          const ref = explorationRefOf(r.href);
+          return ref ? [{ key: r.key, ...ref }] : [];
+        })
+      : [],
+  );
   return (
     <ul className="sh-rows" aria-label={label}>
-      {rows.map((r) => (
-        <NeedRowItem key={r.key} row={r} selected={selectedKey === r.key} onSelect={onSelect} action={action} compact={compact} join={join} />
-      ))}
+      {rows.map((r) => {
+        const shot = captures.get(r.key);
+        return <NeedRowItem key={r.key} row={shot ? { ...r, thumb: shot } : r} selected={selectedKey === r.key} onSelect={onSelect} action={action} compact={compact} join={join} />;
+      })}
     </ul>
   );
 }

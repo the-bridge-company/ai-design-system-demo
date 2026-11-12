@@ -39,7 +39,7 @@
 // Self-hosted (pages/studio/products/[key].astro) the key comes from the build; on a team shell
 // (pages/team-shell/products/item.astro) from the address, once the team's settings are read. Reads:
 // scripts/product-page.ts.
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight, Ellipsis, Pencil, Unplug } from 'lucide-react';
 import {
   Alert,
@@ -707,21 +707,25 @@ export function ProductPageView({
           )}
         </section>
       ) : (
-        productGroups(cards).map((g) => (
-          <section className="sh-section pp-group" key={g.key} aria-labelledby={`pp-${g.key}`} data-state-group={g.key}>
-            <header className="sh-section-head">
-              {/* The group heading of Changes (label and its count tag): the same kind of list reads the same. */}
-              <h2 id={`pp-${g.key}`} className="pp-h2">
-                {g.label} <CountTag n={g.cards.length} />
-              </h2>
-            </header>
-            <ul className="sh-cards">
-              {g.cards.map((c) => (
-                <ExplorationCardItem key={c.key ?? c.number} c={c} showProduct={false} />
-              ))}
-            </ul>
-          </section>
-        ))
+        // The groups flow side by side, each as wide as its cards: "Exploring" with 2, "Waiting for lead" with 1 and
+        // "In review" with 1 share one row instead of three rows of a four-column grid holding 1 or 2 cards.
+        <div className="pp-groups">
+          {productGroups(cards).map((g) => (
+            <section className="sh-section pp-group" key={g.key} aria-labelledby={`pp-${g.key}`} data-state-group={g.key} style={{ '--pp-n': g.cards.length } as CSSProperties}>
+              <header className="sh-section-head">
+                {/* The group heading of Changes (label and its count tag): the same kind of list reads the same. */}
+                <h2 id={`pp-${g.key}`} className="pp-h2">
+                  {g.label} <CountTag n={g.cards.length} />
+                </h2>
+              </header>
+              <ul className="sh-cards">
+                {g.cards.map((c) => (
+                  <ExplorationCardItem key={c.key ?? c.number} c={c} showProduct={false} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
       {/* The designers' copy is made, but only a tick on GitHub lets Bridge open it: an admin's one more step. */}
       {copySetup?.kind === 'access' && product && (

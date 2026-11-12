@@ -41,11 +41,9 @@
     rotate: 180deg;
   }
 
-  /* Folded: one line. The team name, Details and the one action; the sentence and "See it as" wait behind Details.
-     One line only, so it centres in the banner's height (the DS Banner aligns to the first line for wrapping text). */
+  /* Folded: one line. The team name, Details and the one action; the sentence and "See it as" wait behind Details. */
   .demo-strip > .demo-banner:not([data-open]) {
     flex-wrap: nowrap;
-    align-items: center;
   }
 
   .demo-banner:not([data-open]) .demo-banner-text,
@@ -56,6 +54,11 @@
   .demo-banner:not([data-open]) > :last-child,
   .demo-banner:not([data-open]) > :last-child > * {
     flex: none;
+  }
+
+  /* Folded, the one action stays on the title's line: no step down from the text (DS Banner phones layout). */
+  .demo-banner:not([data-open]) > :last-child {
+    margin-block-start: 0;
   }
 }
 

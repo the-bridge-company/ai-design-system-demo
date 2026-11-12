@@ -3,7 +3,7 @@
   "preview": { "c": "Banner", "p": { "icon": "Eye", "title": "Viewing the library as change #118. Nothing is saved." } },
   "whenToUse": [
     "The whole page is in a mode the reader must not forget: previewing a past change, editing guidelines, viewing as another brand.",
-    "Give the way out as an action on the same line (\"Back to latest library\"), a Button with size sm and variant secondary, and at most one more action. The actions centre on the title's first line, never on the whole banner; on narrow screens they go under the text and fill the row.",
+    "Give the way out as an action on the same line (\"Back to latest library\"), a Button with size sm and variant secondary, and at most one more action. The title and the actions centre together on the first line, whatever the control height; the detail goes under the title, never under the actions; on narrow screens they go under the text and fill the row.",
     "A link that reads as part of the note (\"How library review works\") closes the detail, inline after its last sentence, rather than floating at the far end as an action.",
     "strong (default, Deep Harbor) for a mode the whole page is in; neutral for a quieter, scoped mode such as an editor; harbor (the light Harbor zone) for a designer note or a Field Guide moment that opens a space, such as who decides in Library review.",
     "sticky=\"top\" or sticky=\"below-header\" when the page scrolls long, so the way back stays in view."
@@ -59,18 +59,17 @@
     "No exclamation marks, no apology."
   ],
   "anatomy": {
-    "banner": "Container, a landmark region named by the title",
+    "banner": "Container, a landmark region named by the title. One row that wraps: the first line centres the icon, the title and the actions together",
     "strong": "Strong appearance: Deep Harbor (default)",
     "neutral": "Neutral appearance: subtle ground",
     "harbor": "Harbor appearance: the light Harbor zone, for a designer note",
     "stickyTop": "Sticky at the top of the scroll area",
     "stickyHeader": "Sticky under the app header",
-    "hasActions": "With actions: the first line takes the sm control height, so the icon, the title's first line and the actions share one centre line",
-    "lead": "Icon and text, kept together on the left",
-    "icon": "Mode icon, centred on the title's first line",
-    "content": "Text column: the title and the detail share it, indented past the icon",
-    "title": "Title: the mode in one sentence",
-    "description": "Detail",
-    "actions": "The way back, and at most one more action, centred on the title's first line"
+    "hasIcon": "With an icon: the detail is indented past it, under the title",
+    "hasActions": "With actions: the controls come close to the edges (toolbar padding); without, the text has the same inset on every side",
+    "icon": "Mode icon, centred on the first line",
+    "title": "Title: the mode in one sentence, on the first line",
+    "description": "Detail: its own line under the title, in the title's column",
+    "actions": "The way back, and at most one more action, centred with the title on the first line; under the detail on phones"
   }
 }

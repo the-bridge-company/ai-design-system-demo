@@ -4109,7 +4109,7 @@
     },
     {
       "name": "Banner",
-      "hash": "f1b2eec8",
+      "hash": "c1ea9e69",
       "source": [
         "packages/react/src/components/Banner/Banner.tsx",
         "packages/react/src/components/Banner/Banner.module.css",
@@ -4168,29 +4168,16 @@
           "layout": {
             "direction": "HORIZONTAL",
             "primary": "MIN",
-            "counter": "MIN",
+            "counter": "CENTER",
             "wrap": true
           },
           "fill": true
         },
         {
-          "id": "lead",
-          "name": "lead",
-          "kind": "frame",
-          "parent": "root",
-          "source": "Banner.module.css .lead",
-          "layout": {
-            "direction": "HORIZONTAL",
-            "primary": "MIN",
-            "counter": "MIN"
-          },
-          "grow": true
-        },
-        {
           "id": "icon",
           "name": "Icon",
           "kind": "icon",
-          "parent": "lead",
+          "parent": "root",
           "source": "Icon.module.css .icon, Icon.module.css .md, Banner.module.css .icon",
           "visible": "Icon",
           "swap": {
@@ -4200,29 +4187,17 @@
           }
         },
         {
-          "id": "content",
-          "name": "content",
+          "id": "title",
+          "name": "title",
           "kind": "frame",
-          "parent": "lead",
-          "source": "Banner.module.css .content",
+          "parent": "root",
+          "source": "Banner.module.css .title",
           "layout": {
             "direction": "VERTICAL",
             "primary": "MIN",
             "counter": "STRETCH"
           },
           "grow": true
-        },
-        {
-          "id": "title",
-          "name": "title",
-          "kind": "frame",
-          "parent": "content",
-          "source": "Banner.module.css .title",
-          "layout": {
-            "direction": "VERTICAL",
-            "primary": "MIN",
-            "counter": "STRETCH"
-          }
         },
         {
           "id": "title-text",
@@ -4235,13 +4210,14 @@
           "id": "description",
           "name": "description",
           "kind": "frame",
-          "parent": "content",
+          "parent": "root",
           "source": "Banner.module.css .description",
           "layout": {
             "direction": "VERTICAL",
             "primary": "MIN",
             "counter": "STRETCH"
-          }
+          },
+          "grow": true
         },
         {
           "id": "text",
@@ -4281,27 +4257,21 @@
             "root": {
               "fill": "color.surface.strong",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.surface.strong"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.on-solid",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {
@@ -4341,27 +4311,21 @@
             "root": {
               "fill": "color.bg.subtle",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.border.default"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.default",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {
@@ -4401,27 +4365,21 @@
             "root": {
               "fill": "color.bg.zone",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.bg.zone"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.default",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {

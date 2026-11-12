@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Eye, PencilRuler } from 'lucide-react';
+import { Compass, Eye, PencilRuler } from 'lucide-react';
 import { Specimen, SpecimenStack } from '../../stories/StateGrid';
 import { Button } from '../Button';
+import { Link } from '../Link';
 import { Banner } from './Banner';
 
 /** A 390px phone viewport, so the media queries see a narrow screen (a narrow wrapper would not). */
@@ -18,7 +19,7 @@ const meta = {
     appearance: 'strong',
   },
   argTypes: {
-    appearance: { control: 'inline-radio', options: ['strong', 'neutral'] },
+    appearance: { control: 'inline-radio', options: ['strong', 'neutral', 'harbor'] },
     sticky: { control: 'inline-radio', options: [undefined, 'top', 'below-header'] },
     icon: { control: false },
     actions: { control: false },
@@ -52,6 +53,16 @@ export const Neutral: Story = {
         <Button size="sm" variant="ghost">Stop editing</Button>
       </>
     ),
+  },
+};
+/** Harbor: the light Harbor zone for a designer note or a Field Guide moment. One Harbor zone per screen. */
+export const Harbor: Story = {
+  args: {
+    appearance: 'harbor',
+    icon: Compass,
+    title: 'Ana Ruiz decides what joins the library.',
+    children: 'Leave a comment on any piece; your lead sees it before deciding.',
+    actions: <Link href="#">How library review works</Link>,
   },
 };
 export const TitleOnly: Story = { args: { icon: Eye } };
@@ -109,6 +120,25 @@ export const AllStates: Story = {
             }
           >
             Changes stay in a draft until you open a pull request.
+          </Banner>
+        </div>
+      </Specimen>
+      <Specimen label="Harbor: designer note, link">
+        <div style={{ width: '100%' }}>
+          <Banner
+            appearance="harbor"
+            icon={Compass}
+            title="Ana Ruiz decides what joins the library."
+            actions={<Link href="#">How library review works</Link>}
+          >
+            Leave a comment on any piece; your lead sees it before deciding.
+          </Banner>
+        </div>
+      </Specimen>
+      <Specimen label="Harbor: action button">
+        <div style={{ width: '100%' }}>
+          <Banner appearance="harbor" title="Your first exploration is saved." actions={<Button size="sm" variant="secondary">Open it</Button>}>
+            Keep going in any AI tool: it stays linked to this library.
           </Banner>
         </div>
       </Specimen>

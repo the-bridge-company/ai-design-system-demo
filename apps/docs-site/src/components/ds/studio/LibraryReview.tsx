@@ -1755,7 +1755,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
           </div>
           {!v.reviews && (
             <Banner
-              appearance="neutral"
+              appearance="harbor"
               className="lr-banner"
               title={
                 <span className="lr-banner-title">

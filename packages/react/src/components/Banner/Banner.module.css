@@ -35,6 +35,16 @@
   --_muted: var(--color-text-muted);
 }
 
+/* Harbor is the zone color (color.bg.zone: harbor.200 in light, harbor.900 in dark), the light blue block that
+   opens a space. Everything on it is a checked zone pair: text.default (13.07:1 light, 14.05:1 dark), text.muted
+   (4.64:1, 6.40:1), text.link and the focus ring (7.03:1, 6.47:1). The icon takes text.default. */
+.harbor {
+  --_bg: var(--color-bg-zone);
+  --_border: var(--color-bg-zone);
+  --_text: var(--color-text-default);
+  --_muted: var(--color-text-muted);
+}
+
 .stickyTop,
 .stickyHeader {
   position: sticky;

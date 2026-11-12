@@ -223,6 +223,40 @@ describe('bridge CLI', () => {
       expect(bridge(REPO, 'audit', join(APPS, 'clean-app'), '--baseline', join(dir, 'clean.json'), '--no-regress').code).toBe(0);
     });
 
+    it('--no-regress fails when imitations go up, skipped while the baseline has no imitations count', () => {
+      const dir = mkdtempSync(join(tmpdir(), 'bridge-test-audit-'));
+      const app = join(APPS, 'imitations-app');
+      const same = join(dir, 'same.json');
+      expect(bridge(REPO, 'audit', app, '--json', same).code).toBe(0);
+      const report = JSON.parse(readFileSync(same, 'utf8'));
+      const count = report.metrics.imitations as number;
+      expect(count).toBeGreaterThan(0);
+      // Same count as the baseline: no regression.
+      const ok = bridge(REPO, 'audit', app, '--baseline', same, '--no-regress');
+      expect(ok.code).toBe(0);
+      expect(ok.err).not.toMatch(/imitations went up/);
+      // A baseline with fewer imitations: one more since then fails, and says by how much.
+      const lower = join(dir, 'lower.json');
+      writeFileSync(lower, JSON.stringify({ ...report, metrics: { ...report.metrics, imitations: count - 1 } }));
+      const worse = bridge(REPO, 'audit', app, '--baseline', lower, '--no-regress');
+      expect(worse.code).toBe(1);
+      expect(worse.err).toContain(`component imitations went up since the baseline (${count - 1} to ${count}, +1)`);
+      expect(worse.err).not.toMatch(/adoption regressed/);
+      // Without --no-regress the same baseline only reports the delta.
+      expect(bridge(REPO, 'audit', app, '--baseline', lower).code).toBe(0);
+      // A baseline written before imitation detection (no metrics.imitations): the rule is skipped.
+      const { imitations: _drop, ...older } = report.metrics;
+      const legacy = join(dir, 'legacy.json');
+      writeFileSync(legacy, JSON.stringify({ ...report, metrics: older }));
+      const skipped = bridge(REPO, 'audit', app, '--baseline', legacy, '--no-regress');
+      expect(skipped.code).toBe(0);
+      expect(skipped.err).not.toMatch(/imitations went up/);
+      // Fewer imitations than the baseline passes.
+      const higher = join(dir, 'higher.json');
+      writeFileSync(higher, JSON.stringify({ ...report, metrics: { ...report.metrics, imitations: count + 3 } }));
+      expect(bridge(REPO, 'audit', app, '--baseline', higher, '--no-regress').code).toBe(0);
+    });
+
     it('--baseline that is not an audit report says how to write one, never "undefined"', () => {
       const dir = mkdtempSync(join(tmpdir(), 'bridge-test-audit-'));
       writeFileSync(join(dir, 'other.json'), '{ "name": "x" }');

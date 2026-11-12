@@ -173,7 +173,7 @@ describe('activity faces follow the person each row names', () => {
   });
 });
 
-describe('after Done exploring (Waiting to be picked up, Being built, Shipped)', () => {
+describe('after Done exploring (Ready to build, Being built, Shipped)', () => {
   const done = c('n', 'chore(explore): done exploring, remove the exploration note', '2026-10-30T12:30:00Z', 'ann');
   const dev = c('x', 'feat(orders): wire the bulk actions to the API', '2026-10-30T13:00:00Z', 'sam');
   const florian = faceOf('florian', false, { florian: 'Florian' });
@@ -184,7 +184,7 @@ describe('after Done exploring (Waiting to be picked up, Being built, Shipped)',
     expect(['active', 'promoted', 'closed'].some(isHandoffStatus)).toBe(false);
     expect(explorationTag('active')).toEqual({ label: 'Exploring', tone: 'info', dot: true });
     expect(explorationTag('active', { notStarted: true })).toMatchObject({ label: 'Not started', tone: 'neutral' });
-    expect(explorationTag('ready')).toEqual({ label: 'Waiting to be picked up', tone: 'warning', dot: false });
+    expect(explorationTag('ready')).toEqual({ label: 'Ready to build', tone: 'neutral', dot: false });
     expect(explorationTag('building')).toMatchObject({ label: 'Being built', tone: 'info' });
     expect(explorationTag('shipped')).toMatchObject({ label: 'Shipped', tone: 'success' });
   });
@@ -422,7 +422,7 @@ describe('canPutInFigma', () => {
 
 describe('waiting for the design lead', () => {
   it('the tag says so while the exploration still runs', () => {
-    expect(explorationTag('active', { stage: 'waiting-for-lead' })).toMatchObject({ label: 'Waiting for lead', tone: 'warning', dot: false });
+    expect(explorationTag('active', { stage: 'waiting-for-lead' })).toMatchObject({ label: 'In review', tone: 'neutral', dot: false });
   });
 });
 

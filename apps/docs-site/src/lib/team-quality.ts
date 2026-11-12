@@ -12,7 +12,7 @@ import { isBaselineRun, productOfRun } from './components-studio';
 import type { Issue } from './stats';
 import { qualityModel, type ComboResult, type Finding } from './quality';
 import { HEALTH_SECTION, combinedAdoption, healthFigures, healthSentence, type HealthFigure } from './library-health';
-import { adoptionFigureInput, adoptionView, qualityPillars, qualityVerdict, type AdoptionView, type Pillar, type Verdict } from './quality-view';
+import { adoptionFigureInput, adoptionView, qualityPillars, qualityVerdict, unusedCount, type AdoptionView, type TokenUsageCount, type Pillar, type Verdict } from './quality-view';
 import { fileUrl, HOSTED_DOCS_URL } from './team-load';
 import { studioHref } from './team-path';
 
@@ -59,6 +59,8 @@ export interface TeamQuality {
   guidanceFindings: Finding[];
   cleanup: Issue[];
   unusedTotal: number;
+  /** The same unused tokens by kind, each against its total (quality-view TokenUsageCount): what the Tokens note and the verdict read. */
+  unused: TokenUsageCount;
   figures: HealthFigure[];
   /** The shared summary's verdict line (Share). */
   sentence: string;
@@ -324,8 +326,10 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
   const open = all2.filter((f) => f.severity === 'fail' || f.severity === 'warn');
   const only = open.length === 1 ? open[0] : null;
   const sentence = healthSentence(contrast.fail, open.length, only?.title);
-  const verdict = qualityVerdict({ contrastFail: contrast.fail, findings: all2 });
   const combined = adoption ? combinedAdoption(adoptionFigureInput(adoption)) : null;
+  const unused: TokenUsageCount = { tokens: { total: scanned ? semantic.length : 0, unused: unusedSemantic.length }, primitives: { total: scanned ? primitives.length : 0, unused: orphanPrimitives.length } };
+  const shares = adoption?.products.map((p) => ({ name: p.name, pct: p.latest.component })) ?? [];
+  const verdict = qualityVerdict({ contrastFail: contrast.fail, findings: all2, products: shares, tokens: unused });
   const pillars = qualityPillars({ figures, contrast: { total: contrast.total, fail: contrast.fail, hasChecks }, combos: contrast.combos, adoption: combined?.now ?? null, adoptionBefore: combined?.before, adoptionSince: 'at the first audit', products: adoption?.products.map((p) => ({ name: p.name, pct: p.latest.component, uses: p.latest.ui })), guidance });
 
   return {
@@ -336,7 +340,8 @@ export function teamQuality(input: TeamQualityInput): TeamQuality {
     tokenFindings,
     guidanceFindings,
     cleanup,
-    unusedTotal: unusedSemantic.length + orphanPrimitives.length,
+    unusedTotal: unusedCount(unused),
+    unused,
     figures,
     sentence,
     verdict,

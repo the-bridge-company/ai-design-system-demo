@@ -10,9 +10,9 @@ type Tagged = Pick<BuildRequestView, 'status' | 'label' | 'stale'>;
 const build = (status: Tagged['status'], label: string, stale = false): Tagged => ({ status, label, stale });
 
 describe('LIFECYCLE_TONE', () => {
-  it('waiting is amber, moving is Harbor, shipped is green, over is grey', () => {
-    expect(LIFECYCLE_TONE['waiting-for-code']).toBe('warning');
-    expect(LIFECYCLE_TONE['in-review']).toBe('warning');
+  it('waiting is grey (amber only once late), moving is Harbor, shipped is green, over is grey', () => {
+    expect(LIFECYCLE_TONE['waiting-for-code']).toBe('neutral');
+    expect(LIFECYCLE_TONE['in-review']).toBe('neutral');
     expect(LIFECYCLE_TONE['being-built']).toBe('info');
     expect(LIFECYCLE_TONE.shipped).toBe('success');
     expect(LIFECYCLE_TONE['not-planned']).toBe('neutral');
@@ -31,12 +31,12 @@ describe('LIFECYCLE_TONE', () => {
     }
     expect(explorationTag('ready').label).toBe(LIFECYCLE_LABEL['waiting-for-code']);
     expect(explorationTag('building').label).toBe(LIFECYCLE_LABEL['being-built']);
-    // In review is amber wherever it shows, a promoted exploration included.
+    // In review has one colour wherever it shows, a promoted exploration included.
     expect(explorationTag('promoted').tone).toBe(LIFECYCLE_TONE['in-review']);
     expect(statusTag(build('in-review', '')).tone).toBe(LIFECYCLE_TONE['in-review']);
   });
 
   it('a request waiting for more than a week keeps its stage colour and its status word (its line says how long)', () => {
-    expect(statusTag(build('requested', 'Requested 10 days ago', true))).toEqual({ label: 'Waiting to be picked up', tone: 'warning' });
+    expect(statusTag(build('requested', 'Requested 10 days ago', true))).toEqual({ label: 'Ready to build', tone: 'warning' });
   });
 });

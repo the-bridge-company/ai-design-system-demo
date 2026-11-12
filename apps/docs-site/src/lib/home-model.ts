@@ -18,6 +18,7 @@ import { isClaudeLogin, nameFace } from './people';
 import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { studioHref } from './team-path';
 import { questionLine } from './review-state';
+import { waitTone } from './status-tag';
 
 /** Rows of the Needs you list before the grouped row. */
 export const NEEDS_SHOWN = 3;
@@ -167,12 +168,27 @@ export function waitingLabel(iso: string, now: number): string {
   return d === 0 ? 'New today' : `Waiting ${d} ${d === 1 ? 'day' : 'days'}`;
 }
 
+/**
+ * The tag of a wait: "Waiting 4 days", grey, amber only once late (lib/status-tag waitTone: more than a week, core
+ * LATE_DAYS). Every Needs you row's wait wears this one tag.
+ */
+export const waitPill = (iso: string, now: number, label: (iso: string, now: number) => string = waitingLabel): { label: string; tone: 'neutral' | 'warning' } => ({
+  label: label(iso, now),
+  tone: waitTone(daysSince(iso, now)),
+});
+
 /** "Oldest: 4 days" over the rows that wait for someone, null under a day or without any. */
 export function oldestLabel(rows: readonly Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): string | null {
   const times = rows.filter((r) => r.waitsOnYou && r.since).map((r) => new Date(r.since!).getTime());
   if (!times.length) return null;
   const d = daysSince(new Date(Math.min(...times)).toISOString(), now);
   return d ? `Oldest: ${d} ${d === 1 ? 'day' : 'days'}` : null;
+}
+
+/** The tone of the oldest wait's tag: grey, amber once it is late (waitTone, more than a week). */
+export function oldestTone(rows: Pick<NeedRow, 'since' | 'waitsOnYou'>[], now: number): 'neutral' | 'warning' {
+  const times = rows.filter((r) => r.waitsOnYou && r.since).map((r) => new Date(r.since!).getTime());
+  return waitTone(times.length ? daysSince(new Date(Math.min(...times)).toISOString(), now) : null);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -249,7 +265,7 @@ export function waitingSummary(needs: readonly NeedRow[], now: number): { people
   const s = waitingSentence(blocking);
   if (s) {
     const oldest = oldestLabel(needs, now);
-    return { people: blocking, ...s, note: null, badge: oldest ? { label: oldest, tone: 'warning' } : null, group: 'Waiting on you' };
+    return { people: blocking, ...s, note: null, badge: oldest ? { label: oldest, tone: oldestTone([...needs], now) } : null, group: 'Waiting on you' };
   }
   const asking = uniquePeople(needs.filter((r) => r.optional).map((r) => r.person));
   const o = waitingSentence(asking);
@@ -404,7 +420,7 @@ const changeHref = (n: number) => studioHref(`explorations/?pr=${n}`);
 /** One Needs you row for a change. */
 export function changeNeed(c: ChangeFacts, now: number): NeedRow {
   const base = { key: `change-${c.number}`, title: c.title, href: changeHref(c.number), number: c.number, thumb: c.thumb, since: c.since, onlyReviewer: c.onlyReviewer };
-  const waiting = c.since ? { label: waitingLabel(c.since, now), tone: 'warning' as const } : null;
+  const waiting = c.since ? waitPill(c.since, now) : null;
   const from = originPrefix(c.origin);
   switch (c.task) {
     case 'ship':
@@ -422,7 +438,7 @@ export function changeNeed(c: ChangeFacts, now: number): NeedRow {
       return { ...base, kind: 'review', person: c.asker, line: `${from}${c.asker.name} asks for your review`, waitsOnYou: true, pill: waiting };
     case 'own-changes': {
       const by = c.changesBy?.length ? c.changesBy.map((p) => p.name).join(' and ') : 'A reviewer';
-      return { ...base, kind: 'own', person: c.changesBy?.[0] ?? null, line: `${by} asked for changes`, waitsOnYou: false, pill: { label: 'Changes requested', tone: 'warning' }, action: 'Update' };
+      return { ...base, kind: 'own', person: c.changesBy?.[0] ?? null, line: `${by} asked for changes`, waitsOnYou: false, pill: { label: 'Changes requested', tone: 'neutral' }, action: 'Update' };
     }
     case 'own-blocked':
       return { ...base, kind: 'own', person: null, line: `Your ${VOCAB.branch} cannot be added to the library yet`, waitsOnYou: false, pill: { label: c.blocker ? capitalize(c.blocker) : 'Blocked', tone: 'danger' } };
@@ -458,7 +474,7 @@ export function devQuestionNeed(c: { key: string; name: string; href: string; as
     line: questionLine(c.asker, c.role),
     since: c.since,
     waitsOnYou: true,
-    pill: c.since ? { label: waitingLabel(c.since, now), tone: 'warning' } : null,
+    pill: c.since ? waitPill(c.since, now) : null,
     thumb: c.thumb,
     action: 'Answer',
     question: true,
@@ -539,7 +555,7 @@ export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChan
     since: g.since,
     waitsOnYou: true,
     // Its status tag like every row that waits on the viewer, even when Bridge cannot say since when.
-    pill: { label: g.since ? waitingLabel(g.since, now) : 'Waiting', tone: 'warning' },
+    pill: g.since ? waitPill(g.since, now) : { label: 'Waiting', tone: 'neutral' },
   };
 }
 
@@ -578,7 +594,7 @@ export function joinNeed(r: { id: string; name: string; email: string; createdAt
     detail: `${r.email}${SEP}joins as Can edit`,
     since,
     waitsOnYou: true,
-    pill: since ? { label: askedPill(since, now), tone: 'warning' } : null,
+    pill: since ? waitPill(since, now, askedPill) : null,
     thumb: { kind: 'icon', icon: 'person' },
     request: { id: r.id, name: r.name },
   };

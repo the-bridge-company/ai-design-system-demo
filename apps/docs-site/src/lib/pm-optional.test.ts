@@ -37,7 +37,7 @@ describe("a product manager's optional opinion", () => {
   it('a lead keeps the normal queue: who waits on them and the oldest wait', () => {
     const s = waitingSummary([exploration(1, sofia, daysAgo(4)), exploration(2, leo, daysAgo(2))], NOW)!;
     expect(`${s.names}${s.rest}`).toBe('Sofia and Leo are waiting on you.');
-    expect(s.badge).toEqual({ label: 'Oldest: 4 days', tone: 'warning' });
+    expect(s.badge).toEqual({ label: 'Oldest: 4 days', tone: 'neutral' });
     expect(s.note).toBeNull();
   });
 

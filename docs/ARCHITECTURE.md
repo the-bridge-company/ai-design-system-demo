@@ -81,8 +81,8 @@ A brand may override a handful of semantic decisions per theme in `src/brands/<b
 
 ### Contrast gate
 
-`src/contrast.checks.json` lists 55 foreground/background pairs with a minimum ratio. The build resolves
-them for every brand x theme (220 checks today) and exits non-zero on any failure, before CSS ships.
+`src/contrast.checks.json` lists 76 foreground/background pairs with a minimum ratio. The build resolves
+them for every brand x theme (304 checks today) and exits non-zero on any failure, before CSS ships.
 `dist/resolved.json` keeps the ratios for the docs site and the Figma plugin.
 
 ## Behavior layer: Base UI

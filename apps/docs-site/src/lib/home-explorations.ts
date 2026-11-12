@@ -15,8 +15,10 @@ import { studioHref } from './team-path';
 import type { Person } from './home-model';
 import type { ThumbSpec } from './branch-thumb';
 import { changedScreenOf, explorationTag, type TagTone } from './exploration-page';
-import { LIFECYCLE_LABEL, LIFECYCLE_TONE, type LifecycleStage } from './review-state';
+import { LIFECYCLE_LABEL, type LifecycleStage } from './review-state';
+import { stageWord, STATUS_STEPS, STEP_LABEL, stepTone } from './status-ladder';
 import { explorationState, withDevTask } from './exploration-state';
+import { inProgressCount } from './waiting-counts';
 
 /** The fields of an open (or closed) pull request the home reads. */
 export interface ExplorationPull {
@@ -152,7 +154,8 @@ export function cardOfLifecycle(
     case 'next-release':
       return { stage: 'kept', state: isHandedOff({ labels: p.labels ?? [], body: p.body }) ? LIFECYCLE_LABEL[lifecycle] : 'Kept in the library' };
     case 'in-review':
-      return { stage: 'in-review', state: LIFECYCLE_LABEL['in-review'] };
+      // Sent to Library review without a hand-off: In review; the developers' version waiting for a check: Checking.
+      return { stage: 'in-review', state: stageWord('in-review', { promoted: !isHandedOff({ labels: p.labels ?? [], body: p.body }) }) };
     case 'waiting-for-lead':
       return { stage: 'in-review', state: LIFECYCLE_LABEL['waiting-for-lead'] };
     case 'archived':
@@ -211,13 +214,11 @@ export const SCREEN_SKETCH: ThumbSpec = { kind: 'screen', src: null };
 
 /** The tag of a card's state: the exploration page's words and tones (lib/exploration-page explorationTag). */
 export function cardTag(stage: ExplorationStage, state: string): { tone: TagTone; dot: boolean } {
-  const byWord: Record<string, string> = { 'Not started': 'active', Exploring: 'active', 'Waiting for code': 'ready', 'Waiting to be picked up': 'ready', 'Being built': 'building', Shipped: 'shipped', 'In review': 'promoted', 'Kept in the library': 'kept', 'Not planned': 'closed' };
-  if (state === LIFECYCLE_LABEL.approved) return { tone: LIFECYCLE_TONE.approved, dot: false };
-  const status = byWord[state];
-  if (status) {
-    const t = explorationTag(status, { notStarted: state === 'Not started' });
-    return { tone: t.tone, dot: t.dot };
-  }
+  // The card's word is a step of the one status ladder (lib/status-ladder): its tag is that step's.
+  const step = STATUS_STEPS.find((s) => STEP_LABEL[s] === state);
+  if (step) return { tone: stepTone(step), dot: step === 'exploring' || step === 'being-built' };
+  if (state === 'Not started') return { tone: 'neutral', dot: false };
+  if (state === 'Kept in the library') return { tone: 'success', dot: false };
   // "2 new pieces found": still exploring, with news.
   return { tone: 'info', dot: stage === 'found' };
 }
@@ -347,19 +348,26 @@ export function explorationsFor(cards: ExplorationCard[], contributor: boolean):
 /** Explorations on the quiet team Home: at most this many cards, under the ways to start. */
 export const RECENT_CARDS = 4;
 
-/** "Recent explorations" under the ways to start: newest activity first, RECENT_CARDS at most, and how many in all. */
+/**
+ * "Recent explorations" under the ways to start: newest activity first, RECENT_CARDS at most, and `total`, the
+ * number "See all N" says: the explorations in progress (lib/waiting-counts inProgressCount), which is what the
+ * Explorations list it opens shows by default.
+ */
 export function recentExplorations(cards: readonly ExplorationCard[], n = RECENT_CARDS): { cards: ExplorationCard[]; total: number } {
   const sorted = [...cards].sort((a, b) => b.updated.localeCompare(a.updated) || b.number - a.number);
-  return { cards: sorted.slice(0, n), total: cards.length };
+  return { cards: sorted.slice(0, n), total: inProgressCount(cards) };
 }
 
 /** A library change of the viewer's (home-model BranchCard): where it stands, as Changes files it (lib/branches-page stateOf). */
 type OwnBranch = { stage: 'draft' | 'waiting' | 'ready' };
 
-/** Where a piece of open work stands: the lifecycle tabs of Changes (lib/branches-page StageTab). */
-export type OpenStage = 'exploring' | 'code' | 'building' | 'review';
+/**
+ * Where a piece of open work stands: the lifecycle tabs of Changes (lib/branches-page StageTab), and `lead` for an
+ * exploration sent for review that waits on the design lead (never "still being explored": the designer is done).
+ */
+export type OpenStage = 'exploring' | 'lead' | 'code' | 'building' | 'review';
 
-const OPEN_STAGES: readonly OpenStage[] = ['exploring', 'code', 'building', 'review'];
+const OPEN_STAGES: readonly OpenStage[] = ['exploring', 'lead', 'code', 'building', 'review'];
 
 /** How many of the viewer's own explorations, and of their library changes, stand at each open stage. */
 export interface OwnOpenWork {
@@ -375,8 +383,9 @@ export interface OwnOpenWork {
 export function openStageOf(c: Pick<ExplorationCard, 'lifecycle'>): OpenStage | null {
   switch (c.lifecycle) {
     case 'exploring':
-    case 'waiting-for-lead':
       return 'exploring';
+    case 'waiting-for-lead':
+      return 'lead';
     case 'waiting-for-code':
       return 'code';
     case 'being-built':
@@ -395,7 +404,7 @@ export function openStageOf(c: Pick<ExplorationCard, 'lifecycle'>): OpenStage | 
  * picked up, one sent is in review). Null when nothing is open.
  */
 export function ownOpenWork(cards: readonly Pick<ExplorationCard, 'lifecycle' | 'own'>[], branches: readonly OwnBranch[] = []): OwnOpenWork | null {
-  const zero = (): Record<OpenStage, number> => ({ exploring: 0, code: 0, building: 0, review: 0 });
+  const zero = (): Record<OpenStage, number> => ({ exploring: 0, lead: 0, code: 0, building: 0, review: 0 });
   const w: OwnOpenWork = { explorations: zero(), changes: zero() };
   for (const x of cards) {
     const at = x.own ? openStageOf(x) : null;
@@ -414,13 +423,14 @@ export interface QuietPart {
 /** What each stage says of its things, for one and for several. */
 const STAGE_WORDS: Record<OpenStage, [string, string]> = {
   exploring: ['is still being explored', 'are still being explored'],
+  lead: ['waits for the design lead', 'wait for the design lead'],
   code: ['waits for a developer to pick it up', 'wait for a developer to pick them up'],
   building: ['is being built', 'are being built'],
   review: ['is in review', 'are in review'],
 };
 
 /** Changes on the viewer's own work at one stage: where the counted things are. */
-export const ownWorkHref = (stage: OpenStage) => studioHref(`explorations/?status=${stage === 'exploring' ? 'exploring' : 'with-developers'}&people=you`);
+export const ownWorkHref = (stage: OpenStage) => studioHref(`explorations/?status=${stage === 'exploring' ? 'exploring' : stage === 'lead' ? 'waiting-for-lead' : 'with-developers'}&people=you`);
 
 /**
  * A developer's home (house rule: developers see what is being built for or by them): someone with no review right
@@ -433,7 +443,7 @@ export function isBuilderHome(x: { contributor: boolean; github: boolean; viewOn
 }
 
 /** Being built's status (lib/building-page BuildState) for a library change at one stage. */
-const BUILD_STATUS: Record<OpenStage, string> = { exploring: 'in-progress', code: 'waiting', building: 'in-progress', review: 'in-review' };
+const BUILD_STATUS: Record<OpenStage, string> = { exploring: 'in-progress', lead: 'in-progress', code: 'waiting', building: 'in-progress', review: 'in-review' };
 
 /**
  * The viewer's own library changes at one stage: where they are, Being built, on that status and on the viewer (a
@@ -467,15 +477,39 @@ function workSentence(counts: Record<OpenStage, number>, things: string, href: (
  * needs you, and you have nothing in progress." only when truly nothing is. `failed`: GitHub could not be read, so
  * Bridge does not claim there is nothing.
  */
-export function quietParts(work: OwnOpenWork | null, failed = false): QuietPart[] {
-  if (!work) return [{ text: failed ? 'Nothing needs you.' : 'Nothing needs you, and you have nothing in progress.' }];
-  const sentences = [workSentence(work.explorations, 'explorations'), workSentence(work.changes, 'library changes', ownChangeHref)].filter((s) => s.length);
-  return [{ text: 'Nothing needs you.' }, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])];
+/**
+ * What the quiet sentence counts besides the viewer's explorations (lib/waiting-counts says what each number is):
+ *   - `pieces`: the viewer's pieces still waiting in Library review (Asked by: You), once Library review was read.
+ *     It then replaces the "library changes ... in review" clause, so Home and the queue say one number.
+ *   - `pickUp`: on a developer's Home, the build requests nobody picked up yet: they need the viewer, so the sentence
+ *     no longer says "Nothing needs you".
+ */
+export interface QuietExtras {
+  pieces?: number | null;
+  pickUp?: number | null;
+}
+
+/** Library review on the viewer's own waiting pieces. */
+export const ownPiecesHref = () => studioHref('library-review/?asked=you');
+
+/** Being built on what waits to be picked up. */
+export const pickUpHref = () => studioHref('building/?status=waiting');
+
+export function quietParts(work: OwnOpenWork | null, failed = false, extras: QuietExtras = {}): QuietPart[] {
+  const pickUp = extras.pickUp ?? 0;
+  const pieces = extras.pieces ?? null;
+  const head: QuietPart[] = pickUp > 0 ? [{ text: `${pickUp} build ${pickUp === 1 ? 'request waits' : 'requests wait'} to be picked up`, href: pickUpHref() }, { text: '.' }] : [{ text: 'Nothing needs you.' }];
+  // Library review read: its count of the viewer's waiting pieces stands for the changes in review.
+  const changes = work && pieces !== null ? { ...work.changes, review: 0 } : work?.changes;
+  const piecesSentence: QuietPart[] = pieces ? [{ text: `${pieces} of your library ${pieces === 1 ? 'pieces waits' : 'pieces wait'} in Library review`, href: ownPiecesHref() }, { text: '.' }] : [];
+  const sentences = [work ? workSentence(work.explorations, 'explorations') : [], changes ? workSentence(changes, 'library changes', ownChangeHref) : [], piecesSentence].filter((s) => s.length);
+  if (!sentences.length) return pickUp > 0 ? head : [{ text: failed ? 'Nothing needs you.' : 'Nothing needs you, and you have nothing in progress.' }];
+  return [...head, ...sentences.flatMap((s): QuietPart[] => [{ text: ' ' }, ...s])];
 }
 
 /** The quiet sentence as plain text: quietParts without the links. */
-export function quietSentence(work: OwnOpenWork | null, failed = false): string {
-  return quietParts(work, failed)
+export function quietSentence(work: OwnOpenWork | null, failed = false, extras: QuietExtras = {}): string {
+  return quietParts(work, failed, extras)
     .map((p) => p.text)
     .join('');
 }

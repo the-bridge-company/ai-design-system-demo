@@ -8,9 +8,11 @@ import { createElement, Fragment } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { currentContributor, currentViewer, getToken, initGitHubConnect, onAccess, prefersSignIn } from './github-session';
 import { setReviewCount } from './shell';
-import { countLibraryWaiting } from './library-waiting';
+import { readLibraryCounts } from './library-waiting';
 
 let libraryCounted = false;
+/** The viewer's own pieces still waiting in Library review (lib/waiting-counts), once read: Home's sentence says it. */
+let libraryPieces: number | null = null;
 import { rememberWaitingExplorations } from './waiting-counts';
 import { waitingCounts } from '../lib/waiting-counts';
 import { viewerIsDesignLead } from './design-lead';
@@ -20,6 +22,7 @@ import { paintStudioHome, type HealthLine, type HomeComponent, type JoinHandlers
 import { JOINED_KEY, joinedNote } from '../lib/entry';
 import { joinHandlers } from './join-handlers';
 import { TeamLoadError, TeamLoadProgress, TeamSourceNote } from '../components/ds/studio/TeamState';
+import { HOME_CLEAR_LINE } from '../lib/quality-view';
 import { greeting, homeState } from '../lib/home-model';
 import { isBuilderHome } from '../lib/home-explorations';
 import { startChangeHref } from '../lib/overview-board';
@@ -121,7 +124,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
 
   function health(): HealthLine | null {
     if (!stat) return null;
-    return stat.contrastFail ? null : { text: 'Library healthy.', tone: 'ok', href: studioHref('quality/'), link: 'Open Quality' };
+    return stat.contrastFail ? null : { text: HOME_CLEAR_LINE, tone: 'ok', href: studioHref('quality/'), link: 'Open Quality' };
   }
 
   function paint() {
@@ -143,6 +146,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         branches: d?.branches ?? [],
         explorations: d?.explorations ?? [],
         libraryWork: d?.libraryWork ?? [],
+        libraryPieces,
         waitingOnOthers: d?.waitingOnOthers ?? [],
         health: health(),
         building: true,
@@ -183,7 +187,12 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
           // Library review's own count, with its own loader and rule (once per Home load).
           if (!libraryCounted) {
             libraryCounted = true;
-            void countLibraryWaiting().then((n) => n !== null && setReviewCount(n));
+            void readLibraryCounts().then((c) => {
+              if (!c) return;
+              setReviewCount(c.forYou);
+              libraryPieces = c.yours;
+              paint();
+            });
           }
         }
         if (!d.viewer) setReviewCount(null);

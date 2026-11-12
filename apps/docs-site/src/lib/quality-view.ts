@@ -23,11 +23,68 @@ export interface Verdict {
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * The verdict, from the open findings (fail or warn, most severe first). Contrast failures block the token build:
- * fog, and the action takes the viewer to the failing pairs. Other open findings: haze, and the action is the first
- * one's. Nothing open: clear and no action, because nothing needs the viewer.
+ * A product counts as barely using the library under this share of its components from the design system. The one
+ * threshold the verdict uses: the page shows each product's share next to it, so the verdict never calls a library
+ * healthy next to a product far under it.
  */
-export function qualityVerdict(input: { contrastFail: number; findings: Finding[] }): Verdict {
+export const LOW_ADOPTION_PCT = 50;
+
+/**
+ * Unused tokens count against health past this share of the tokens designers pick from (the semantic set Studio
+ * Tokens lists). Unused primitives never do: a palette keeps steps no role reads yet.
+ */
+export const UNUSED_TOKENS_SHARE = 0.25;
+
+/**
+ * Token counts, one definition for the Quality page, its verdict and the line that links to Studio Tokens:
+ * `tokens` are the semantic tokens designers pick from (the set Studio Tokens lists by default), `primitives` the raw
+ * palette and scale values under them. "Unused" means no component or global stylesheet reads it, directly or
+ * through an alias (core tokenUsage).
+ */
+export interface TokenUsageCount {
+  tokens: { total: number; unused: number };
+  primitives: { total: number; unused: number };
+}
+
+/** Every unused token, both kinds. */
+export const unusedCount = (u: TokenUsageCount): number => u.tokens.unused + u.primitives.unused;
+
+/** One product's share of components from the design system, as the adoption card shows it. */
+export interface ProductShare {
+  name: string;
+  pct: number | null;
+}
+
+/** A reason the library is not called healthy although nothing blocks it. */
+export interface HealthGap {
+  kind: 'adoption' | 'tokens';
+  text: string;
+}
+
+/** What keeps the library from being healthy although nothing blocks it, in plain words, from the shown numbers. */
+export function healthGaps(input: { products?: readonly ProductShare[] | undefined; tokens?: TokenUsageCount | undefined }): HealthGap[] {
+  const out: HealthGap[] = [];
+  const low = (input.products ?? []).filter((p): p is { name: string; pct: number } => p.pct !== null && p.pct < LOW_ADOPTION_PCT).sort((a, b) => a.pct - b.pct);
+  for (const p of low) out.push({ kind: 'adoption', text: `${p.name} takes ${Math.round(p.pct)}% of its components from the library` });
+  const t = input.tokens?.tokens;
+  if (t && t.total > 0 && t.unused / t.total > UNUSED_TOKENS_SHARE) out.push({ kind: 'tokens', text: `${t.unused} of ${t.total} tokens are not in use` });
+  return out;
+}
+
+const sentenceOf = (parts: readonly string[]) => {
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : (parts[0] ?? '');
+  return list ? `${list.charAt(0).toUpperCase()}${list.slice(1)}.` : '';
+};
+
+/** The verdict's words when every shown number is fine: the only place the page says the library is healthy. */
+export const HEALTHY_TITLE = 'The library is healthy';
+
+/**
+ * The verdict, from the same numbers the page shows: contrast failures and blocking findings (fog), then the other
+ * open findings and the health gaps (haze: low adoption in a product, many unused tokens), else clear. "The library
+ * is healthy" only when nothing blocks it, nothing needs a look and no product is far from using it.
+ */
+export function qualityVerdict(input: { contrastFail: number; findings: Finding[]; products?: readonly ProductShare[] | undefined; tokens?: TokenUsageCount | undefined }): Verdict {
   const open = input.findings.filter((f) => f.severity === 'fail' || f.severity === 'warn');
   const blocking = open.filter((f) => f.severity === 'fail');
   if (input.contrastFail) {
@@ -47,17 +104,20 @@ export function qualityVerdict(input: { contrastFail: number; findings: Finding[
       action: first.action ? { label: 'Fix it', href: first.action.href } : null,
     };
   }
-  if (open.length) {
-    const first = open[0]!;
-    const label = first.action?.label === 'Review' ? 'Review guidance' : (first.action?.label ?? null);
+  const gaps = healthGaps(input);
+  if (open.length || gaps.length) {
+    const first = open[0];
+    const label = first?.action?.label === 'Review' ? 'Review guidance' : (first?.action?.label ?? null);
+    const findingLine = !first ? '' : open.length === 1 ? `${first.title.replace(/\.$/, '')}.` : `${plural(open.length, 'thing needs', 'things need')} a look, starting with ${first.title.replace(/\.$/, '')}.`;
+    const action = first?.action && label ? { label: open.length === 1 ? label : 'Start with the first', href: first.action.href } : gaps[0] ? (gaps[0].kind === 'adoption' ? { label: 'See each product', href: `#${HEALTH_SECTION.adoption}` } : { label: 'See unused tokens', href: '#ql-tokens' }) : null;
     return {
       mood: 'haze',
-      title: 'The library is healthy',
-      sentence: open.length === 1 ? `Nothing blocks it. ${first.title.replace(/\.$/, '')}.` : `Nothing blocks it. ${plural(open.length, 'thing needs', 'things need')} a look, starting with ${first.title.replace(/\.$/, '')}.`,
-      action: first.action && label ? { label: open.length === 1 ? label : 'Start with the first', href: first.action.href } : null,
+      title: gaps.some((g) => g.kind === 'adoption') ? 'Nothing blocks the library, but not every product uses it yet' : 'Nothing blocks the library',
+      sentence: [sentenceOf(gaps.map((g) => g.text)), findingLine].filter(Boolean).join(' '),
+      action,
     };
   }
-  return { mood: 'clear', title: 'The library is healthy', sentence: 'Nothing blocks it and nothing needs you. Bridge checks again with every change.', action: null };
+  return { mood: 'clear', title: HEALTHY_TITLE, sentence: 'Nothing blocks it and nothing needs you. Bridge checks again with every change.', action: null };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -280,8 +340,16 @@ export function productTrend(p: ProductAdoption): string | null {
 /** A percentage as the page shows it: one decimal, "n/a" when the audit has nothing to count. */
 export const pctLabel = (v: number | null) => (v === null ? 'n/a' : `${Math.round(v * 10) / 10}%`);
 
-/** The calm token note: "99 tokens are not in use yet", or that every token is in use. */
-export const unusedLine = (n: number) => (n === 0 ? 'Every token is in use' : `${n} ${n === 1 ? 'token is' : 'tokens are'} not in use yet`);
+/**
+ * The calm token note, each kind counted against its own total so the number matches the list it opens:
+ * "14 of 119 tokens and 86 of 267 primitives are not in use yet", or that every token is in use.
+ */
+export function unusedLine(u: TokenUsageCount): string {
+  if (!unusedCount(u)) return 'Every token is in use';
+  const part = (n: number, total: number, one: string, many: string) => (total ? `${n} of ${total} ${total === 1 ? one : many}` : `${n} ${n === 1 ? one : many}`);
+  const parts = [u.tokens.unused ? part(u.tokens.unused, u.tokens.total, 'token', 'tokens') : '', u.primitives.unused ? part(u.primitives.unused, u.primitives.total, 'primitive', 'primitives') : ''].filter(Boolean);
+  return `${parts.join(' and ')} ${unusedCount(u) === 1 ? 'is' : 'are'} not in use yet`;
+}
 
 /**
  * The biggest gain of a run in one plain line ("Buttons would take it from 13% to 24%."), or null when the run does not
@@ -293,3 +361,9 @@ export function gainLine(run: Pick<AdoptionRun, 'component' | 'topGain'>): strin
   const what = pieceWord(g.component, 2);
   return `${what.charAt(0).toUpperCase()}${what.slice(1)} would take it from ${pctWord(run.component, g.gain)} to ${pctWord(g.gain, run.component)}.`;
 }
+
+/**
+ * The Home health line when no contrast check fails. Home knows only the contrast gate (not adoption nor unused
+ * tokens), so it says what it knows, in the verdict own words, and leaves "healthy" to the Quality page.
+ */
+export const HOME_CLEAR_LINE = 'Nothing blocks the library.';

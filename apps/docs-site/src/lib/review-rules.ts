@@ -144,9 +144,10 @@ export const REVIEW_STATUS: Record<ReviewStatusKind, { label: string; tone: Stat
   'ci-failing': { label: REVIEW_STATUS_LABEL['ci-failing'], tone: 'danger' },
   'changes-requested': { label: REVIEW_STATUS_LABEL['changes-requested'], tone: 'danger' },
   'ci-running': { label: REVIEW_STATUS_LABEL['ci-running'], tone: 'neutral' },
-  'needs-design': { label: REVIEW_STATUS_LABEL['needs-design'], tone: 'warning' },
-  'needs-tech': { label: REVIEW_STATUS_LABEL['needs-tech'], tone: 'warning' },
-  'needs-approval': { label: REVIEW_STATUS_LABEL['needs-approval'], tone: 'warning' },
+  // A review that waits is calm work: grey (lib/status-tag). Amber is only for a late wait.
+  'needs-design': { label: REVIEW_STATUS_LABEL['needs-design'], tone: 'neutral' },
+  'needs-tech': { label: REVIEW_STATUS_LABEL['needs-tech'], tone: 'neutral' },
+  'needs-approval': { label: REVIEW_STATUS_LABEL['needs-approval'], tone: 'neutral' },
   conflict: { label: 'Conflict with the library', tone: 'danger' },
   checking: { label: REVIEW_STATUS_LABEL.checking, tone: 'neutral' },
   ready: { label: VOCAB.readyToMerge, tone: 'success' },
@@ -163,7 +164,7 @@ export function reviewStatus(input: Parameters<typeof reviewStatusKind>[0]): Rev
  * "Updated, look again" and waits like an approval (core reviewStatusLabel), never a stale red "Changes requested".
  */
 export function statusOf(kind: ReviewStatusKind, lookAgain?: readonly string[] | null): ReviewStatus {
-  if (kind === 'changes-requested' && (lookAgain?.length ?? 0) > 0) return { kind, label: reviewStatusLabel(kind, lookAgain), tone: 'warning' };
+  if (kind === 'changes-requested' && (lookAgain?.length ?? 0) > 0) return { kind, label: reviewStatusLabel(kind, lookAgain), tone: 'neutral' };
   return { kind, ...REVIEW_STATUS[kind] };
 }
 

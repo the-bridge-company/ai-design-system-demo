@@ -33,34 +33,34 @@ describe('the Review line in lists', () => {
 });
 
 describe('lists take the task words', () => {
-  const row = { status: 'ready' as const, statusLabel: 'Waiting to be picked up', archived: false };
+  const row = { status: 'ready' as const, statusLabel: 'Ready to build', archived: false };
   it('Changes rows', () => {
-    expect(withTaskRow(row, 'in-review')).toMatchObject({ status: 'building', statusLabel: 'In review' });
+    expect(withTaskRow(row, 'in-review')).toMatchObject({ status: 'building', statusLabel: 'Checking' });
     expect(withTaskRow(row, 'being-built')).toMatchObject({ status: 'building', statusLabel: 'Being built' });
     expect(withTaskRow(row, 'shipped')).toMatchObject({ status: 'shipped', statusLabel: 'Shipped' });
     expect(withTaskRow(row, null)).toBe(row);
     expect(withTaskRow({ ...row, status: 'active' as const }, 'in-review').status).toBe('active');
-    expect(withTaskRow({ ...row, archived: true }, 'in-review')).toMatchObject({ statusLabel: 'Waiting to be picked up' });
+    expect(withTaskRow({ ...row, archived: true }, 'in-review')).toMatchObject({ statusLabel: 'Ready to build' });
   });
   it('Home and product cards', () => {
-    const handed = { stage: 'with-devs' as const, state: 'Waiting to be picked up' };
+    const handed = { stage: 'with-devs' as const, state: 'Ready to build' };
     expect(withTaskStage(handed, 'in-review').state).toBe('In review');
     expect(withTaskStage(handed, 'closed')).toBe(handed);
     expect(withTaskStage({ stage: 'exploring', state: 'Exploring' }, 'in-review').state).toBe('Exploring');
   });
-  it('Approved, waiting to ship and Not planned, in designer words', () => {
-    expect(withTaskRow(row, 'approved')).toMatchObject({ status: 'building', statusLabel: 'Approved, waiting to ship' });
+  it('Checking and Not doing this, in designer words', () => {
+    expect(withTaskRow(row, 'approved')).toMatchObject({ status: 'building', statusLabel: 'Checking' });
     // Declined while still handed off: listed, under its own words, never dropped.
-    expect(withTaskRow(row, 'not-planned')).toMatchObject({ status: 'ready', statusLabel: 'Not planned' });
+    expect(withTaskRow(row, 'not-planned')).toMatchObject({ status: 'ready', statusLabel: 'Not doing this' });
     // Taken back by Bridge's Back to exploring: the exploration runs again, its own words stay.
     expect(withTaskRow({ ...row, status: 'active' as const, statusLabel: 'Exploring' }, 'not-planned')).toMatchObject({ status: 'active', statusLabel: 'Exploring' });
-    const handed = { stage: 'with-devs' as const, state: 'Waiting to be picked up' };
-    expect(withTaskStage(handed, 'not-planned').state).toBe('Not planned');
-    expect(withTaskStage(handed, 'approved').state).toBe('Approved, waiting to ship');
-    expect(cardTag('with-devs', 'Not planned')).toEqual({ tone: 'neutral', dot: false });
-    expect(cardTag('with-devs', 'Approved, waiting to ship')).toEqual({ tone: 'success', dot: false });
-    expect(explorationTag('ready', { stage: 'not-planned' })).toEqual({ label: 'Not planned', tone: 'neutral', dot: false });
-    expect(explorationTag('building', { stage: 'approved' })).toEqual({ label: 'Approved, waiting to ship', tone: 'success', dot: false });
+    const handed = { stage: 'with-devs' as const, state: 'Ready to build' };
+    expect(withTaskStage(handed, 'not-planned').state).toBe('Not doing this');
+    expect(withTaskStage(handed, 'approved').state).toBe('Checking');
+    expect(cardTag('with-devs', 'Not doing this')).toEqual({ tone: 'neutral', dot: false });
+    expect(cardTag('with-devs', 'Checking')).toEqual({ tone: 'neutral', dot: false });
+    expect(explorationTag('ready', { stage: 'not-planned' })).toEqual({ label: 'Not doing this', tone: 'neutral', dot: false });
+    expect(explorationTag('building', { stage: 'approved' })).toEqual({ label: 'Checking', tone: 'neutral', dot: false });
   });
 });
 

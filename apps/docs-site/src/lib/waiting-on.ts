@@ -139,10 +139,10 @@ export const reviewCount = (changes: WaitChange[], v: WaitViewer): number => cha
 export const countsInBadge = (t: WaitTask | null | undefined): boolean => isReviewTask(t) || t === 'dev-question';
 
 /**
- * What a screen reader hears after "Changes" for the nav badge: ", 17 waiting for a review", or nothing at all when no
- * count is shown (never the clause without its number).
+ * What a screen reader hears after "Library review" for the nav badge: ", 12 pieces wait for your decision" (pieces the
+ * viewer can decide, lib/waiting-counts), or nothing at all when no count is shown (never the clause without its number).
  */
-export const reviewBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} waiting for a review` : '');
+export const reviewBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} ${n === 1 ? 'piece waits' : 'pieces wait'} for your decision` : '');
 
 /** What a screen reader hears after "Explorations" for its nav badge: ", 2 waiting on you", or nothing at 0. */
 export const explorationsBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} waiting on you` : '');

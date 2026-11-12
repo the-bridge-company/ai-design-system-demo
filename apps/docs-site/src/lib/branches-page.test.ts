@@ -90,15 +90,15 @@ describe('state tabs and the address', () => {
     expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Not started' } })).toBe('exploring');
     expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Exploring' } })).toBe('exploring');
     expect(stateOf({ lifecycle: 'exploration', pill: null })).toBe('exploring');
-    expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Waiting to be picked up' } })).toBe('code');
+    expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Ready to build' } })).toBe('code');
     expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Being built' } })).toBe('building');
     expect(stateOf({ lifecycle: 'exploration', pill: { label: 'In review' } })).toBe('review');
     // The stage, once read, decides over the tag.
     expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Being built' }, stage: 'in-review' })).toBe('review');
-    expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Approved, waiting to ship' }, stage: 'approved' })).toBe('review');
+    expect(stateOf({ lifecycle: 'exploration', pill: { label: 'Checking' }, stage: 'approved' })).toBe('review');
     expect(stateOf({ lifecycle: 'exploration', pill: null, stage: 'archived' })).toBeNull();
     expect(stateOf({ lifecycle: 'draft', pill: { label: 'Being built' } })).toBe('building');
-    expect(stateOf({ lifecycle: 'draft', pill: { label: 'Waiting to be picked up' } })).toBe('code');
+    expect(stateOf({ lifecycle: 'draft', pill: { label: 'Ready to build' } })).toBe('code');
     expect(stateOf({ lifecycle: 'draft', pill: { label: 'Waiting for a developer' } })).toBe('code');
     expect(stateOf({ lifecycle: 'ready', pill: { label: 'Waiting for Ann' } })).toBe('review');
     expect(stateOf({ lifecycle: 'waiting', pill: null })).toBe('code');
@@ -110,7 +110,7 @@ describe('state tabs and the address', () => {
     expect(tabs({ all: 3, exploring: 2, review: 1 })).toEqual(['All 3', 'Waiting on me 0', 'Exploring 2', 'Shipped 0']);
     expect(tabs({ archived: 2 })).toEqual(['All 0', 'Waiting on me 0', 'Exploring 0', 'Shipped 0', 'Archived 2']);
     // An old link to a developer tab still opens it.
-    expect(tabs({ review: 1 }, 'review')).toContain('In review 1');
+    expect(tabs({ review: 1 }, 'review')).toContain('Checking 1');
   });
 
   it('says what an empty tab is for, in designer words', () => {

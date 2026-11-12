@@ -8,7 +8,8 @@
 //     its own), a Field Guide drawing holds the mosaic's place.
 import { Badge, Card, Link } from '@bridge-ds/react';
 import { Who } from './faces';
-import { BranchThumb, captureAgeOf } from './BranchThumb';
+import { shortAgo } from '@bridge-ds/core';
+import { BranchThumb } from './BranchThumb';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
@@ -19,7 +20,8 @@ import { Drawing } from './Drawing';
 const LIBRARY = 'Library';
 
 export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationCard; showProduct?: boolean }) {
-  const age = captureAgeOf(c.preview);
+  // When it last moved, the same age as its row on Explorations (core shortAgo of updated_at), never the capture's.
+  const age = c.updated ? shortAgo(c.updated) || null : null;
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card">
@@ -30,8 +32,8 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
               <span className="sh-strong">{c.title}</span>
             </Link>
           </span>
-          {/* A fixed footer, pinned to the bottom: the DS tag of its page, then who explores it and when its screen was
-              captured, on one line (a long one ends in an ellipsis). Every card of a row has the same footer, so the
+          {/* A fixed footer, pinned to the bottom: the DS tag of its page, then who explores it and when it last moved (as
+              on Explorations), on one line (a long one ends in an ellipsis). Every card of a row has the same footer, so the
               tags and the names line up whatever the titles' length. The product sits in the screen's corner; on a
               product page it goes without saying and is left out. */}
           <span className="sh-card-foot">

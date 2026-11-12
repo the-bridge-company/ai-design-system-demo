@@ -130,7 +130,7 @@ describe('bridge connect', () => {
     expect(c.out()).toMatch(/^shop#1 Wishlist button \(Demo shop\): /);
     const l = io(fetch);
     expect(await runExplore(args('explore', 'list'), dir, l.io)).toBe(0);
-    expect(l.out()).toContain('shop#1 Wishlist button  Running  explore/wishlist-button in acme/shop');
+    expect(l.out()).toContain('shop#1 Wishlist button  Exploring  explore/wishlist-button in acme/shop');
   });
 });
 

@@ -71,7 +71,7 @@ describe('the one status of an exploration', () => {
     expect(explorationState({ pull: M1_PULL, task: taskStage(M1_TASK) })).toBe('shipped');
   });
 
-  it('M7: the task is open and nobody is on it: Waiting to be picked up', () => {
+  it('M7: the task is open and nobody is on it: Ready to build', () => {
     expect(explorationState({ pull: M7_PULL, task: taskStage(M7_TASK) })).toBe('waiting-for-code');
   });
 
@@ -123,7 +123,7 @@ describe('every screen says the same for M1 and M7', () => {
 
   it('Home cards', () => {
     expect(m1).toMatchObject({ lifecycle: 'shipped', state: 'Shipped', tone: 'success' });
-    expect(m7).toMatchObject({ lifecycle: 'waiting-for-code', state: 'Waiting to be picked up' });
+    expect(m7).toMatchObject({ lifecycle: 'waiting-for-code', state: 'Ready to build' });
   });
 
   it('the Home greeting counts only M7 as waiting', () => {
@@ -132,15 +132,15 @@ describe('every screen says the same for M1 and M7', () => {
 
   it('the Home product folder and the product page groups and header', () => {
     expect(productGroups(cards).map((g) => [g.label, g.cards.map((c) => c.number)])).toEqual([
-      ['Waiting to be picked up', [1]],
+      ['Ready to build', [1]],
       ['Shipped', [4]],
     ]);
-    expect(productSummary(cards)).toBe('1 waiting to be picked up.');
-    expect(folderLine(cards)).toBe('1 waiting to be picked up');
-    expect(productFolders(products, cards)[0]).toMatchObject({ line: '1 waiting to be picked up', total: 2 });
+    expect(productSummary(cards)).toBe('1 ready to build.');
+    expect(folderLine(cards)).toBe('1 ready to build');
+    expect(productFolders(products, cards)[0]).toMatchObject({ line: '1 ready to build', total: 2 });
   });
 
-  it('Changes: M1 leaves All for Shipped, M7 sits under Waiting to be picked up', () => {
+  it('Changes: M1 leaves All for Shipped, M7 sits under Ready to build', () => {
     const rows = [
       { number: 4, lifecycle: 'exploration', pill: null, stage: explorationState({ pull: M1_PULL, task: stageOf(M1_PULL) }) },
       { number: 1, lifecycle: 'exploration', pill: null, stage: explorationState({ pull: M7_PULL, task: stageOf(M7_PULL) }) },
@@ -154,16 +154,16 @@ describe('every screen says the same for M1 and M7', () => {
     const rows = listedRows(explorationBuildRows([M1_PULL, M7_PULL], { products, now: NOW, task: (u) => TASKS[u] ?? null }), NOW);
     expect(rows.map((r) => [r.number, r.status, r.label])).toEqual([
       [4, 'shipped', 'Shipped'],
-      [1, 'requested', 'Waiting to be picked up'],
+      [1, 'requested', 'Ready to build'],
     ]);
     expect(rows.map((r) => buildStateOf(r, NOW))).toEqual(['shipped', 'waiting']);
-    expect(pageSentence(rows)).toBe('1 waiting to be picked up.');
+    expect(pageSentence(rows)).toBe('1 ready to build.');
   });
 
   it('the Explorations rows', () => {
-    const row = { status: 'ready' as const, statusLabel: 'Waiting to be picked up', archived: false };
+    const row = { status: 'ready' as const, statusLabel: 'Ready to build', archived: false };
     expect(withTaskRow(row, stageOf(M1_PULL))).toMatchObject({ status: 'shipped', statusLabel: 'Shipped' });
-    expect(withTaskRow(row, stageOf(M7_PULL))).toMatchObject({ status: 'ready', statusLabel: 'Waiting to be picked up' });
+    expect(withTaskRow(row, stageOf(M7_PULL))).toMatchObject({ status: 'ready', statusLabel: 'Ready to build' });
   });
 });
 

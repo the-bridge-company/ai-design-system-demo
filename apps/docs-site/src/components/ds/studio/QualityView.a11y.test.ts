@@ -21,7 +21,7 @@ const props = (): QualityViewProps => ({
   contrast: { hasChecks: true, gate: pass, combos: [], failRows: [] },
   adoption: adoptionView([run('a1', 'web', '2026-01-01', 50), run('a2', 'web', '2026-03-01', 70)]),
   guidance: { lead: 'Guidance.', findings: [] },
-  tokens: { findings: [], unusedTotal: 0, unusedHref: '/tokens/' },
+  tokens: { findings: [], unused: { tokens: { total: 0, unused: 0 }, primitives: { total: 0, unused: 0 } }, unusedHref: '/tokens/' },
 });
 
 describe('Quality adoption rows', () => {

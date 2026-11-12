@@ -1,8 +1,8 @@
 // The Being built page (components/ds/studio/BeingBuilt.tsx): its filters, words and Board, built like Explorations
 // (lib/explorations-page, owner decisions 2026-11-11). Pure: no DOM, no fetch. Unit tested in building-page.test.ts.
-//   - One status per row, one word per status everywhere (filter, tag, Board column): Waiting to be picked up, In
-//     progress, In review, Shipped (the last SHIPPED_DAYS days, the window of Explorations), and Not planned while a
-//     declined request stays listed.
+//   - One status per row, one word per status everywhere (filter, tag, Board column), the one status ladder's
+//     (lib/status-ladder): Ready to build, Being built, Checking, Shipped (the last SHIPPED_DAYS days, the window of
+//     Explorations), and Not doing this while a declined request stays listed. A wait is grey; amber once late.
 //   - Filters are Explorations' checkbox dropdowns: Status (default Not shipped yet = the first three), Product, People
 //     (?status=, ?product=, ?people=, comma separated). No tabs.
 //   - Three views: List, Grid, Board (read only, one column per status, the column says the status so its cards do not).
@@ -10,7 +10,7 @@
 //     "Shipped by Malik" once shipped (personLine).
 import type { BuildRequestView } from '@bridge-ds/core';
 import { shortName, type PillTone } from './home-model';
-import { LIFECYCLE_TONE } from './review-state';
+import { STEP_COUNT_WORDS, STEP_LABEL, stepTone, type StatusStep } from './status-ladder';
 import { YOU } from './branches-page';
 
 export type BuildState = 'waiting' | 'in-progress' | 'in-review' | 'shipped' | 'not-planned';
@@ -18,22 +18,19 @@ export type BuildState = 'waiting' | 'in-progress' | 'in-review' | 'shipped' | '
 /** Every status, in the lifecycle's order: the Status filter lists them so (Not planned only while one is listed). */
 export const BUILD_STATES: readonly BuildState[] = ['waiting', 'in-progress', 'in-review', 'shipped', 'not-planned'];
 
-export const BUILD_STATE_LABEL: Record<BuildState, string> = {
-  waiting: 'Waiting to be picked up',
-  'in-progress': 'In progress',
-  'in-review': 'In review',
-  shipped: 'Shipped',
-  'not-planned': 'Not planned',
+/** Each status on the one status ladder (lib/status-ladder): the same word and tone as every other surface. */
+const BUILD_STEP: Record<BuildState, StatusStep> = {
+  waiting: 'ready-to-build',
+  'in-progress': 'being-built',
+  'in-review': 'checking',
+  shipped: 'shipped',
+  'not-planned': 'not-doing',
 };
 
-/** The tag of each status, in the colour its stage wears on every page (lib/review-state LIFECYCLE_TONE). */
-export const BUILD_STATE_TONE: Record<BuildState, PillTone | 'info'> = {
-  waiting: LIFECYCLE_TONE['waiting-for-code'],
-  'in-progress': LIFECYCLE_TONE['being-built'],
-  'in-review': LIFECYCLE_TONE['in-review'],
-  shipped: LIFECYCLE_TONE.shipped,
-  'not-planned': LIFECYCLE_TONE['not-planned'],
-};
+export const BUILD_STATE_LABEL: Record<BuildState, string> = Object.fromEntries(BUILD_STATES.map((s) => [s, STEP_LABEL[BUILD_STEP[s]]])) as Record<BuildState, string>;
+
+/** The calm tag of each status (a wait is grey); buildStateTag turns a late wait amber. */
+export const BUILD_STATE_TONE: Record<BuildState, PillTone | 'info'> = Object.fromEntries(BUILD_STATES.map((s) => [s, stepTone(BUILD_STEP[s])])) as Record<BuildState, PillTone | 'info'>;
 
 /** The default of the Status filter: everything not shipped yet. */
 export const NOT_SHIPPED: readonly BuildState[] = ['waiting', 'in-progress', 'in-review'];
@@ -86,7 +83,7 @@ export function stateOfStatus(status: BuildRequestView['status']): BuildState {
 }
 
 /** The one tag of a row: its status word, in its colour. */
-export const buildStateTag = (s: BuildState): { label: string; tone: PillTone | 'info' } => ({ label: BUILD_STATE_LABEL[s], tone: BUILD_STATE_TONE[s] });
+export const buildStateTag = (s: BuildState, waitedDays?: number | null): { label: string; tone: PillTone | 'info' } => ({ label: BUILD_STATE_LABEL[s], tone: stepTone(BUILD_STEP[s], waitedDays) });
 
 // ---------------------------------------------------------------------------------------------------------------
 // Filters and the address
@@ -183,10 +180,10 @@ export function buildCountLine(shown: number, total: number): string {
   return shown === total ? `${total} ${word(total)}.` : `${shown} of ${total} ${word(total)}.`;
 }
 
-/** "Nothing in review by Leo in Acme CRM yet." The line when the filters leave nothing. */
+/** "Nothing being checked by Leo in Acme CRM yet." The line when the filters leave nothing. */
 export function emptyBuildLine(f: BuildFilters, names: { person: (k: string) => string; product: (k: string) => string }): string {
   const join = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`);
-  const status = isDefaultStatus(f.status) ? 'waiting or being built' : join(BUILD_STATES.filter((s) => f.status.includes(s)).map((s) => BUILD_STATE_LABEL[s].toLowerCase()));
+  const status = isDefaultStatus(f.status) ? 'waiting or being built' : join(BUILD_STATES.filter((s) => f.status.includes(s)).map((s) => STEP_COUNT_WORDS[BUILD_STEP[s]]));
   const by = f.people.length ? ` by ${join(f.people.map((p) => (p === YOU ? 'you' : names.person(p))))}` : '';
   const where = f.product.length ? ` in ${join(f.product.map(names.product))}` : '';
   return `Nothing ${status}${by}${where} right now.`;

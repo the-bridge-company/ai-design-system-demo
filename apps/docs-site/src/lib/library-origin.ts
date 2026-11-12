@@ -295,10 +295,10 @@ export function libraryTag(x: { kind?: string | null; draft?: boolean; kept?: bo
   if (x.draft) return { state: 'building', label: 'Being built', tone: 'info' };
   const k = x.kind ?? '';
   if (NEEDS_KINDS.has(k)) {
-    if (x.turn) return { state: 'needs', label: 'Needs you', tone: 'warning' };
+    if (x.turn) return { state: 'needs', label: 'Needs you', tone: 'neutral' };
     // Never "Needs you" on a change that is not on the viewer's Waiting on me: one count everywhere.
-    if (lead.you) return { state: 'review', label: 'In review', tone: 'warning' };
-    return { state: 'needs', label: lead.name ? `Needs ${lead.name}` : 'Needs the DS lead', tone: 'warning' };
+    if (lead.you) return { state: 'review', label: 'In review', tone: 'neutral' };
+    return { state: 'needs', label: lead.name ? `Needs ${lead.name}` : 'Needs the DS lead', tone: 'neutral' };
   }
   if (APPROVED_KINDS.has(k)) return { state: 'approved', label: 'Approved', tone: 'success' };
   if (BUILDING_KINDS.has(k)) return { state: 'building', label: 'Being built', tone: 'info' };

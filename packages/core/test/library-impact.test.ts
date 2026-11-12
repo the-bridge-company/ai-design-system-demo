@@ -162,7 +162,7 @@ describe('conflicts', () => {
 describe('status per piece', () => {
   const base = { item: { id: 'component-timeline' }, lead: 'Dana' };
   it('waits for the lead until the screen or the piece is approved', () => {
-    expect(impactStatus({ ...base, approved: false })).toEqual({ key: 'needs-lead', label: 'Needs Dana', tone: 'warning' });
+    expect(impactStatus({ ...base, approved: false })).toEqual({ key: 'needs-lead', label: 'Needs Dana', tone: 'neutral' });
     expect(impactStatus({ ...base, approved: true }).label).toBe('Approved');
     expect(impactStatus({ ...base, approved: true, link: { number: 7 } }).label).toBe('Being built');
     expect(impactStatus({ ...base, approved: true, link: { number: 7 }, released: true }).label).toBe('In the library');

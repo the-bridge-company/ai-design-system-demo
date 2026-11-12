@@ -230,10 +230,12 @@ export function rowAction(kind: NeedKind, action?: string): string {
  * Whether the viewer holds a review right (core rights.ts: approve design, approve tech or ship), so the home shows
  * them the review queue. An email contributor never does. A GitHub account does when the approver or ship lists
  * (owners through governance.rights, teams expanded) name them; when the team names nobody yet, anyone who can write
- * reviews, as the review rules allow then (`write` null: not read yet, counted as able).
+ * reviews, as the review rules allow then (`write` null: not read yet, counted as able). `known` false: the team's
+ * review rules are not read yet, so nobody holds a right yet (write access alone never reads as "Reviewer" while the
+ * owner lists are still empty).
  */
-export function holdsReviewRight(x: { viewer: string | null; contributor: boolean; approvers: string[]; shippers?: string[]; write: boolean | null }): boolean {
-  if (!x.viewer || x.contributor) return false;
+export function holdsReviewRight(x: { viewer: string | null; contributor: boolean; approvers: string[]; shippers?: string[]; write: boolean | null; known?: boolean }): boolean {
+  if (!x.viewer || x.contributor || x.known === false) return false;
   const named = [...x.approvers, ...(x.shippers ?? [])].map((l) => l.trim().toLowerCase().replace(/^@/, '')).filter(Boolean);
   if (!named.length) return x.write !== false;
   return named.includes(x.viewer.trim().toLowerCase());

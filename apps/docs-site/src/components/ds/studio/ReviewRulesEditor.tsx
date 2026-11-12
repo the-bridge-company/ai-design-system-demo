@@ -107,7 +107,7 @@ export default function ReviewRulesEditor(p: ReviewRulesEditorProps) {
       ))}
       <div className="set-row">
         <div className="set-row-value set-row-full">
-          <Switch label="Leads can publish small changes without review" description="Guidance, docs and fixes with no visual change. Team admins and the reviewers of that part publish them." labelPlacement="start" checked={leads} onCheckedChange={setLeads} />
+          <Switch label="Publish small changes directly" description="Guidance, docs and fixes that change nothing on screen. Admins and reviewers publish them once the automatic checks pass." labelPlacement="start" checked={leads} onCheckedChange={setLeads} />
         </div>
       </div>
       <Alert tone="info" announce="off">

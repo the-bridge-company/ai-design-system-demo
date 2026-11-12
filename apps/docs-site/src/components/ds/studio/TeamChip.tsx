@@ -172,6 +172,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
         const member = session.currentContributor();
         if (member) return live && setReviewer(member.role === 'edit' && member.lead === true);
         if (!a || a.contributor || a.state !== 'writer') return live && setReviewer(false);
+        // The team's review rules not read yet: write access alone never reads as "Reviewer" (empty owner lists are
+        // "not known" until then, lib/home-model holdsReviewRight `known`). bridge:team-model reads again.
+        if (siteConfig().owners === undefined) return live && setReviewer(false);
         const [{ viewerRole }, { loadTeams }] = await Promise.all([import('../../../scripts/needs-you'), import('../../../scripts/teams')]);
         await loadTeams().catch(() => undefined);
         if (live) setReviewer(viewerRole() === 'reviewer');

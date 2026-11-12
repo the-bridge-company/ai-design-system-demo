@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Settings on a team shell: the owner exception reads once, in designer words; the sample team names its sample
-// members (the same as Members), never the repository's accounts; token values never wait for a code check.
+// Settings on a team shell: the owner exception reads once, in designer words; the sample team names its cast only
+// (lib/review-people.ts), never the account that hosts its repository; token values need no code review.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { render, screen } from '@testing-library/react';
@@ -52,32 +52,55 @@ describe('TeamSettings', () => {
   it('shows the owner exception once, by name', () => {
     render(createElement(TeamSettings));
     expect(screen.getAllByText('Exception')).toHaveLength(1);
-    expect(screen.getByText('Sam Rivera, with a written reason of at least 20 characters.')).toBeInTheDocument();
+    expect(screen.getByText('Sam Rivera, with a reason of at least 20 characters.')).toBeInTheDocument();
   });
 
-  it('says token values ship once the look is approved and the automatic checks pass, with no code check', () => {
-    render(createElement(TeamSettings));
+  it('says token values go live once the look is approved and the automatic checks pass, calmly', () => {
+    const { container } = render(createElement(TeamSettings));
     expect(screen.getByText('Token values')).toBeInTheDocument();
-    expect(screen.getByText('Ship once the look is approved and the automatic checks pass.')).toBeInTheDocument();
-    expect(screen.getByText('Nobody checks the code. From Figma, sending counts as the approval. A renamed or removed token waits for a code check.')).toBeInTheDocument();
+    expect(screen.getByText('Go live once the look is approved and the automatic checks pass.')).toBeInTheDocument();
+    expect(screen.getByText('A new value needs no code review. Sending from Figma counts as the approval. Renaming or removing a token also needs a code review.')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Nobody checks/);
+    expect(container.textContent).not.toMatch(/\u2014/);
   });
 
-  it('on the sample team, shows its own rules and people as on any team, with no sample note', () => {
-    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds', site: sampleSite });
+  const onSample = (s: Record<string, unknown>, run: (c: HTMLElement) => void) => {
+    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds', site: s });
     try {
-      const { container } = render(createElement(TeamSettings));
-      const row = (label: string) => screen.getByText(label).closest('.set-row')!;
-      const names = (label: string) => [...row(label).querySelectorAll('.set-owner > span:last-child')].map((o) => o.textContent);
-      // The repository's own owners, named as any team names them (no persona rewrite).
-      expect(names('Checks the look')).toEqual(['peterbono']);
-      expect(names('Checks the code')).toEqual(['peterbono']);
-      expect(screen.getByText('peterbono, with a written reason of at least 20 characters.')).toBeInTheDocument();
-      expect(screen.getByText('Token values')).toBeInTheDocument();
-      expect(container.textContent).not.toMatch(/a sample team/);
-      // The rules editor and the admin notes of any team.
-      expect(container.querySelectorAll('.set-row').length).toBeGreaterThan(3);
+      run(render(createElement(TeamSettings)).container);
     } finally {
       Object.assign(at, { owner: 'acme', repo: 'acme-product', site });
     }
+  };
+  const row = (label: string) => screen.getByText(label).closest('.set-row')!;
+  const names = (label: string) => [...row(label).querySelectorAll('.set-owner > span:last-child')].map((o) => o.textContent);
+
+  it('on the sample team, never names the account that hosts its repository: its design lead checks the look', () => {
+    onSample(sampleSite, (container) => {
+      expect(container.textContent).not.toMatch(/peterbono|Florian/);
+      expect(names('Checks the look')).toEqual(['Dana']);
+      // Nobody of the cast is a code owner in this config: nobody is named, never someone from elsewhere.
+      expect(names('Checks the code')).toEqual([]);
+      expect(screen.queryByText('Exception')).toBeNull();
+      expect(screen.queryByText('Only owner')).toBeNull();
+      expect(container.textContent).not.toMatch(/a sample team/);
+    });
+  });
+
+  it('on the sample team, names its cast as its config holds them: Dana checks the look and adds to the library, Malik checks the code', () => {
+    const cast = {
+      ...sampleSite,
+      owners: { design: ['peterbono'], tech: ['acme-malik'] },
+      rights: { approveDesign: ['design'], approveTech: ['tech'], ship: ['design'] },
+      soloOwnerCanApproveBoth: false,
+      override: { allowed: ['acme-malik'], requireReason: true, minReasonLength: 20 },
+    };
+    onSample(cast, (container) => {
+      expect(names('Checks the look')).toEqual(['Dana']);
+      expect(names('Checks the code')).toEqual(['Malik']);
+      expect(names('Adds it to the library')).toEqual(['Dana']);
+      expect(screen.getByText('Malik, with a reason of at least 20 characters.')).toBeInTheDocument();
+      expect(container.textContent).not.toMatch(/peterbono|acme-malik/);
+    });
   });
 });

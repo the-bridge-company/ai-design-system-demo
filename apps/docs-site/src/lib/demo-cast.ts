@@ -116,9 +116,32 @@ export function castGitHub(person: CastPerson): { login: string; name: string; a
   return v.kind === 'github' ? { login: v.login, name: person.name, avatar_url: '' } : null;
 }
 
+/** The sample person whose GitHub account this is (the developer, acme-malik), else null. */
+export function castPersonOfLogin(login: string | null | undefined): CastPerson | null {
+  const k = (login ?? '').trim().replace(/^@/, '').toLowerCase();
+  return (k && SAMPLE_CAST.find((p) => p.via.kind === 'github' && p.via.login.toLowerCase() === k)) || null;
+}
+
 /** True for the GitHub account of a sample person (the developer, acme-malik): drawn, never his GitHub picture. */
-export const isCastLogin = (login: string | null | undefined): boolean =>
-  Boolean(login) && SAMPLE_CAST.some((p) => p.via.kind === 'github' && p.via.login.toLowerCase() === login!.trim().replace(/^@/, '').toLowerCase());
+export const isCastLogin = (login: string | null | undefined): boolean => castPersonOfLogin(login) !== null;
+
+/**
+ * Job and access, one rule on every screen of the sample team:
+ *   - the job (what someone does: "Design lead, runs the team", "Developer") is the line under a person's name: the
+ *     See it as switch and menu, Settings > Members, and wherever a person is introduced;
+ *   - the access level (Admin, Can edit, Can view) is what they may do in Bridge: the Members role column and the
+ *     account row, never said as a job;
+ *   - "Reviewer" only for someone who holds a review right in the team's review rules, once those are read
+ *     (lib/home-model holdsReviewRight `known`), never for write access alone.
+ * The job of a member of the sample team (by email address or GitHub login), else null: any other team, or someone
+ * the cast does not name.
+ */
+export function castJob(repo: string | null | undefined, who: { email?: string | null; login?: string | null }): string | null {
+  if (!isSampleTeam(repo)) return null;
+  const email = (who.email ?? (who.login?.includes('@') ? who.login : null))?.trim().toLowerCase();
+  const byEmail = email ? SAMPLE_CAST.find((p) => p.via.kind === 'email' && p.via.email === email) : undefined;
+  return (byEmail ?? castPersonOfLogin(who.login))?.job ?? null;
+}
 
 /**
  * The people a list of the sample team shows: its email members and its GitHub people of the cast (the developer);

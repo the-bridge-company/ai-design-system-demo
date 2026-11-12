@@ -11,6 +11,9 @@
 // On the demo, that is the demo's sample team. Appearance (light or dark) is this browser's own choice, there for
 // everyone whatever the team read gives (AppearanceSetting.tsx).
 // Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
+// The bands sit in four groups, one shown at a time under a section nav (lib/settings-sections.ts,
+// scripts/settings-sections.ts): Team (name, members, products, library access, danger zone), Reviews (review rules,
+// how changes reach your code, safety), Tools (Claude, Figma), You (appearance, AI tools). Every old anchor opens its group.
 import '../../../styles/settings.css';
 import TeamShell from '../../../components/TeamShell.astro';
 import MembersSection from '../../../components/ds/studio/MembersSection';
@@ -25,39 +28,61 @@ import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
+import { SETTINGS_GROUPS, groupId } from '../../../lib/settings-sections';
 ---
 
 <TeamShell route="settings/" title="Settings" scene="settings" summary="Your team, its people, and how changes reach your code." what="settings and roles" description="Your team: its name, its people, how changes reach your code and who checks them.">
-  <section class="ts-band" id="general" aria-labelledby="ts-general">
-    <h2 id="ts-general" class="ts-h">{TEAM_NAME_WORDS.generalTitle}</h2>
-    <p class="ts-intro">{TEAM_NAME_WORDS.generalIntro}</p>
-    <TeamNameSetting client:only="react" />
-  </section>
-  <section class="ts-band" id="team" aria-labelledby="set-members">
-    <MembersSection client:only="react" />
-  </section>
-  <section class="ts-band" id="library-access" aria-labelledby="set-library-access">
-    <LibraryAccessSection client:only="react" />
-  </section>
-  <section class="ts-band" id="team-claude" aria-labelledby="set-claude">
-    <ClaudeConnector client:only="react" />
-  </section>
-  <section class="ts-band" id="figma" aria-labelledby="ts-figma">
-    <h2 id="ts-figma" class="ts-h">{FIGMA_FILE_WORDS.bandTitle}</h2>
-    <p class="ts-intro">{FIGMA_FILE_WORDS.bandIntro}</p>
-    <FigmaFileSetting client:only="react" />
-  </section>
-  <TeamProducts client:only="react" />
-  <TeamSettings client:load />
-  <section class="ts-band" id="ai-tools" aria-labelledby="ts-ai-tools">
-    <h2 id="ts-ai-tools" class="ts-h">Your AI tools</h2>
-    <p class="ts-intro">The AI you build with: Bridge shows the next step in these only. Your own choice; an admin also sets the team default.</p>
-    <AiToolsSetting client:only="react" />
-  </section>
-  <section class="ts-band" id="appearance" aria-labelledby="ts-appearance">
-    <h2 id="ts-appearance" class="ts-h">Appearance</h2>
-    <p class="ts-intro">How Bridge looks for you, only in this browser. It changes nothing for your team.</p>
-    <AppearanceSetting client:load />
-  </section>
-  <DeleteTeamBand client:only="react" />
+  <nav class="set-groups-nav" aria-label="Settings sections">
+    {SETTINGS_GROUPS.map((g, i) => (
+      <a href={`#${groupId(g.key)}`} data-set-tab={g.key} aria-current={i === 0 ? 'true' : undefined}>{g.label}</a>
+    ))}
+  </nav>
+
+  <div class="set-group" id={groupId('team')} data-set-group="team">
+    <section class="ts-band" id="general" aria-labelledby="ts-general">
+      <h2 id="ts-general" class="ts-h">{TEAM_NAME_WORDS.generalTitle}</h2>
+      <p class="ts-intro">{TEAM_NAME_WORDS.generalIntro}</p>
+      <TeamNameSetting client:only="react" />
+    </section>
+    <section class="ts-band" id="team" aria-labelledby="set-members">
+      <MembersSection client:only="react" />
+    </section>
+    <TeamProducts client:only="react" />
+    <section class="ts-band" id="library-access" aria-labelledby="set-library-access">
+      <LibraryAccessSection client:only="react" />
+    </section>
+    <DeleteTeamBand client:only="react" />
+  </div>
+
+  <div class="set-group" id={groupId('reviews')} data-set-group="reviews">
+    <TeamSettings client:load />
+  </div>
+
+  <div class="set-group" id={groupId('tools')} data-set-group="tools">
+    <section class="ts-band" id="team-claude" aria-labelledby="set-claude">
+      <ClaudeConnector client:only="react" />
+    </section>
+    <section class="ts-band" id="figma" aria-labelledby="ts-figma">
+      <h2 id="ts-figma" class="ts-h">{FIGMA_FILE_WORDS.bandTitle}</h2>
+      <p class="ts-intro">{FIGMA_FILE_WORDS.bandIntro}</p>
+      <FigmaFileSetting client:only="react" />
+    </section>
+  </div>
+
+  <div class="set-group" id={groupId('you')} data-set-group="you">
+    <section class="ts-band" id="appearance" aria-labelledby="ts-appearance">
+      <h2 id="ts-appearance" class="ts-h">Appearance</h2>
+      <p class="ts-intro">How Bridge looks for you, only in this browser. It changes nothing for your team.</p>
+      <AppearanceSetting client:load />
+    </section>
+    <section class="ts-band" id="ai-tools" aria-labelledby="ts-ai-tools">
+      <h2 id="ts-ai-tools" class="ts-h">Your AI tools</h2>
+      <p class="ts-intro">The AI you build with. An admin also sets the team default.</p>
+      <AiToolsSetting client:only="react" />
+    </section>
+  </div>
+  <script>
+    import { initSettingsSections } from '../../../scripts/settings-sections';
+    initSettingsSections();
+  </script>
 </TeamShell>

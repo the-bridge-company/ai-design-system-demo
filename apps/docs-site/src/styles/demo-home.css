@@ -69,8 +69,8 @@
   color: var(--color-feedback-warning-text);
 }
 
-/* "See it as" (SeeItAs.tsx): next to the banner's one action, the same secondary DS Button at the smaller size, so
-   the warm banner has one button language. */
+/* "See it as" (SeeItAs.tsx): next to the banner's one action, the same secondary DS Button at the same size, so the
+   warm banner has one button language. */
 .demo-banner-actions {
   display: inline-flex;
   flex-wrap: wrap;
@@ -151,10 +151,13 @@
   line-height: var(--typography-meta-line-height);
 }
 
-/* The footer note sits under the DS MenuSeparator: the menu's inset spaces it, its text lines up with the faces. */
+/* The footer note sits under the DS MenuSeparator and the menu's inset spaces it. Its text starts on the items' text
+   column, after the face: the item's padding, the radio slot (icon-size-sm) and its gap, the sm face (size-6) and the
+   gap before the name (.see-as-item > :last-child). */
 .see-as-note {
   margin: 0;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1)
+    calc(var(--space-2) + var(--icon-size-sm) + var(--space-2) + var(--size-6) + var(--space-3));
 }
 
 /* --- The tour: a DS Popover floating by what each step points at (HomeTour.tsx) ------------------------------------ */

@@ -21,9 +21,10 @@ export function SeeItAs({ current, onPick }: SeeItAsProps) {
   return (
     <Menu>
       {/* One row on one axis (styles/demo-home.css): "See it as", the face, the name and what they do, then the DS
-          Button's own end icon. Named by its visible text (WCAG 2.5.3). Secondary, as the banner's Get started next to
-          it: one button language on the warm banner, the surface fill behind the face. */}
-      <MenuTrigger render={<Button variant="secondary" size="sm" iconEnd={ChevronDown} className="see-as-trigger" />}>
+          Button's own end icon. Named by its visible text (WCAG 2.5.3). Secondary at md, as the banner's Get started
+          (ButtonLink's default) next to it: one button language and one height on the warm banner, the surface fill
+          behind the face. */}
+      <MenuTrigger render={<Button variant="secondary" size="md" iconEnd={ChevronDown} className="see-as-trigger" />}>
         <span className="see-as-label">{CAST_WORDS.seeItAs}</span>
         <Who p={face(now)} size="xs" className="see-as-face" />
         <span className="see-as-person">

@@ -152,7 +152,7 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('draws "See it as" with the same DS Button variant as Get started: one button language on the warm banner', async () => {
+  it('draws "See it as" with the same DS Button variant and size as Get started: one button language on the warm banner', async () => {
     const { container } = render(createElement(DemoBanner, { repo: SAMPLE, cast: { current: 'leo', onPick: () => undefined } }));
     const start = screen.getByRole('link', { name: 'Get started' });
     const seeAs = screen.getByRole('button', { name: /^See it as/ });
@@ -161,8 +161,10 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
     expect(variant(start)).toHaveLength(1);
     expect(variant(start)[0]).toMatch(/secondary/);
     expect(variant(seeAs)).toEqual(variant(start));
-    // Its own smaller size stays, and the face rides on the button's surface fill.
-    expect([...seeAs.classList].some((c) => /^_?sm(_|$)/.test(c))).toBe(true);
+    // The same height as Get started, and the face rides on the button's surface fill.
+    const size = (el: Element) => [...el.classList].filter((c) => /^_?(sm|md|lg)(_|$)/.test(c));
+    expect(size(start)).toHaveLength(1);
+    expect(size(seeAs)).toEqual(size(start));
     expect(seeAs.querySelector('.see-as-face')).not.toBeNull();
     await expectNoAxeViolations(container);
   });

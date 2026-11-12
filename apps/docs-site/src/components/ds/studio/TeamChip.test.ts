@@ -17,7 +17,7 @@ import { setAccountFetch } from '../../../scripts/account-session';
 const page = vi.hoisted(() => ({
   team: { owner: 'acme', repo: 'ds' },
   site: {} as { name?: string },
-  viewer: null as { login: string; name?: string } | null,
+  viewer: null as { login: string; name?: string; email?: string } | null,
   /** The GitHub session has not answered yet (a cold first visit). */
   pending: false,
   listeners: [] as ((a: { state: RepoAccessState } | null) => void)[],
@@ -39,6 +39,9 @@ vi.mock('../../../scripts/github-session', () => ({
   resolveAccess: async () => null,
   linkedGitHubRole: () => page.linked,
   linkedRoleKnown: () => true,
+  // A viewer without an email signed in with GitHub (an email member is a viewer with `email`).
+  signedInWithGitHub: () => Boolean(page.viewer && !('email' in page.viewer)),
+  onSampleTeam: () => false,
 }));
 
 const stored = () => JSON.parse(localStorage.getItem(RECENT_TEAMS_KEY) ?? '[]') as string[];
@@ -315,6 +318,35 @@ describe('TeamChip pill and name, from the server', () => {
     act(() => page.listeners.forEach((l) => l({ state: 'writer', contributor: true, admin: false } as never)));
     expect(await screen.findByRole('button', { name: 'Ds, Admin, team menu' })).toBeInTheDocument();
     setContributeFetch(null);
+  });
+
+  it('says the role once: an email member reads it in the account row, the chip shows only the team', async () => {
+    const { setContributeFetch } = await import('../../../scripts/contribute-session');
+    setContributeFetch(async () => new Response(JSON.stringify({ available: true, member: { email: 'leo@acme.example', name: 'Leo', role: 'admin' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    page.viewer = { login: 'leo@acme.example', name: 'Leo', email: 'leo@acme.example' };
+    const user = userEvent.setup();
+    render(createElement(TeamChip, { launcher: true }));
+    await waitFor(() => expect(page.listeners.length).toBeGreaterThan(0));
+    act(() => page.listeners.forEach((l) => l({ state: 'writer', contributor: true, admin: false } as never)));
+    const trigger = await screen.findByRole('button', { name: 'Ds, team menu' });
+    expect(within(trigger).queryByText('Admin')).toBeNull();
+    // The teams list keeps the role: there it tells one team from another.
+    await user.click(trigger);
+    const yours = within(await screen.findByRole('menu')).getByRole('group', { name: 'Your teams' });
+    expect(within(yours).getByText('Admin')).toBeInTheDocument();
+    setContributeFetch(null);
+  });
+
+  it("says the role once: a Bridge account on its own team, the role in the account row, none on the chip", async () => {
+    setAccountFetch(async () =>
+      new Response(JSON.stringify({ available: true, account: { email: 'leo@acme.example', name: 'Leo', github: null, teams: [{ repo: 'acme/ds', name: 'Acme Design', role: 'admin', via: 'email' }] } }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    page.viewer = { login: 'leo', name: 'Leo' };
+    render(createElement(TeamChip, { launcher: true }));
+    await waitFor(() => expect(page.listeners.length).toBeGreaterThan(0));
+    act(() => page.listeners.forEach((l) => l({ state: 'admin' } as never)));
+    expect(await screen.findByRole('button', { name: 'Acme Design, team menu' })).toBeInTheDocument();
+    setAccountFetch(null);
   });
 
   it('names the team from the first paint with the name the account keeps, before its settings are read', async () => {

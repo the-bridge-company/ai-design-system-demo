@@ -70,6 +70,12 @@ export function castPerson(key: unknown): CastPerson | null {
 }
 
 /**
+ * What a person does, in one or two words: the start of their job, the words the menu shows under their name ("Design
+ * lead" for Dana, "Designer", "Developer", "Product manager"). The switch shows it next to their name.
+ */
+export const castRole = (person: CastPerson): string => person.job.split(',')[0]!.trim();
+
+/**
  * Who the page plays: the address first (?as=, so a link or a script shows one person), then this browser's pick,
  * else Dana. Anything that names nobody is ignored.
  */

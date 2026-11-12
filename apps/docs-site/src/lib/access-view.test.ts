@@ -246,6 +246,38 @@ describe('roleBadge: a GitHub reviewer reads Reviewer', () => {
   });
 });
 
+describe('the team chip says the role once (accountRowSaysRole, chipShowsBadge)', () => {
+  it('the account row says a role for a member by account, an email member or the played developer', async () => {
+    const { accountRowSaysRole } = await import('./access-view');
+    const base = { account: false, accountTeamRole: null, emailMember: false, castDeveloper: false };
+    expect(accountRowSaysRole({ ...base, account: true, accountTeamRole: 'admin' })).toBe(true);
+    // A Bridge account outside this team, or on a page without a team: the row shows the email.
+    expect(accountRowSaysRole({ ...base, account: true })).toBe(false);
+    expect(accountRowSaysRole({ ...base, account: true, accountTeamRole: ' ' })).toBe(false);
+    // The account row replaces the GitHub block: what the block would say does not count.
+    expect(accountRowSaysRole({ ...base, account: true, emailMember: true, castDeveloper: true })).toBe(false);
+    // The sample team as Dana or Sofia (email members) and as Malik (the played developer).
+    expect(accountRowSaysRole({ ...base, emailMember: true })).toBe(true);
+    expect(accountRowSaysRole({ ...base, castDeveloper: true })).toBe(true);
+    // A GitHub sign-in alone, or signed out: the row shows the team's name or a Sign in button.
+    expect(accountRowSaysRole(base)).toBe(false);
+  });
+
+  it('leaves a role out of the chip when the row says it, keeps every other badge', async () => {
+    const { chipShowsBadge, accessBadge, roleBadge, chipIdentity } = await import('./access-view');
+    for (const label of ['Admin', 'Can edit', 'Can view', 'Reviewer', roleBadge('writer', true, true).label]) {
+      expect(chipShowsBadge(label, true)).toBe(false);
+      expect(chipShowsBadge(label, false)).toBe(true);
+    }
+    for (const label of ['Checking', 'Signed in', 'Guest', 'Explore freely', 'Not set up', 'No access', 'Storybook', 'Can suggest', 'Read only']) {
+      expect(chipShowsBadge(label, true)).toBe(true);
+    }
+    // A visitor on Bridge's own design system and a signed-out visitor keep theirs.
+    expect(chipShowsBadge(chipIdentity('the-bridge-company/ai-design-system-demo', { demo: true, state: 'anonymous-public', signedIn: false }).badge.label, false)).toBe(true);
+    expect(chipShowsBadge(accessBadge(null, false).label, false)).toBe(true);
+  });
+});
+
 describe('busyBadge (GitHub busy before the access was read)', () => {
   it('the role last noted for the team, else a neutral word; never "Checking"', () => {
     expect(busyBadge('Admin')).toEqual({ label: 'Admin', tone: 'neutral' });

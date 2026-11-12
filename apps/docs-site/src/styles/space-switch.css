@@ -57,19 +57,9 @@
   transition: transform var(--_slide) var(--motion-easing-enter);
 }
 
-/* A signed-in maintainer: their face in place of the pen. */
-.ss-avatar {
-  position: absolute;
-  display: inline-flex;
-}
-
-.ss-avatar[hidden],
-:root:not([data-maintainer]) .ss-avatar {
-  display: none;
-}
-
-:root[data-maintainer] .ss-icon:has(.ss-avatar:not([hidden])) .ss-glyph {
-  visibility: hidden;
+/* On the current segment's plate (the DS link-mode fill) the leaf takes the plate's color, not a light page. */
+.space-nav [aria-current="page"] .ss-leaf {
+  fill: var(--color-control-checked-bg);
 }
 
 /* The first-visit hint: a small dot leaves the plate and crosses once toward the other space (scripts/space-switch.ts). */

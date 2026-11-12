@@ -122,7 +122,7 @@ function ComponentThumb({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'comp
   const previews = useComponentPreviews();
   const c = previews?.components.get(spec.name);
   if (!previews || !c || !stageSource(c, previews.storybook, previews.Example)) return <Icon icon={ICONS.component} size={size === 'row' ? 'sm' : 'lg'} />;
-  return <ComponentStage c={c} storybook={previews.storybook} Example={previews.Example} as="span" className="bt-stage" frameClassName="bt-frame" queued />;
+  return <ComponentStage c={c} storybook={previews.storybook} Example={previews.Example} as="span" className="bt-stage" frameClassName="bt-frame" queued fit />;
 }
 
 function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode {

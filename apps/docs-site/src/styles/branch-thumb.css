@@ -269,8 +269,10 @@
   width: 56%;
 }
 
-/* Component: the component's Library preview (components/ds/library/ComponentStage), its story at its own size on a
-   card, as Library > Components cards show it. Without a preview, the icon on the subtle surface, as .bt--icon. */
+/* Component: the component's Library preview (components/ds/library/ComponentStage), the whole of it scaled to fit
+   the thumbnail inside one inner padding and centered (ComponentStage `fit`, owner decision 2026-11-12: a preview cut
+   at the edge, "Tokens changed in this", read as broken). Without a preview, the icon on the subtle surface, as
+   .bt--icon. */
 .bt--component {
   position: relative;
   align-items: center;
@@ -305,4 +307,13 @@
   height: 300%;
   transform: scale(0.3333);
   transform-origin: top left;
+}
+
+/* The fitted preview's inner padding: the same on every side, so every component sits centered with the same air. */
+.bt--card .bt-stage.is-fit {
+  padding: var(--space-4);
+}
+
+.bt--row .bt-stage.is-fit {
+  padding: var(--space-1);
 }

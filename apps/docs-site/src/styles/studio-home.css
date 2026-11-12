@@ -469,9 +469,10 @@
   border-radius: 0;
 }
 
-/* Title on one line (the whole title on hover and in the link's name), then the state tag right under it, then who
-   explores it and when its screen was captured. Every card's text is the same height, so a row of cards lines up
-   its tags and names with no space held for a second title line. */
+/* Title on up to two lines, then an ellipsis (the whole title on hover and in the link's name, owner decision
+   2026-11-12: one line cut "Toast: an undo action after d..." mid-meaning). Then the footer, the state tag and who has
+   it and when, pushed to the card's bottom: cards of a row share one height (the grid stretches them), so their tags
+   and names line up whether a title takes one line or two. */
 .sh-card-body {
   display: flex;
   flex: 1;
@@ -481,20 +482,24 @@
 }
 
 .sh-card-title {
-  display: block;
+  display: -webkit-box;
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   line-height: var(--typography-h3-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
-/* The footer: the tag, then the person and when the screen was captured on one line, right under the title. */
+/* The footer: the tag, then the person and when on one line, at the bottom of the card. */
 .sh-card-foot {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
+  margin-block-start: auto;
 }
 
 .sh-card-tagline {
@@ -945,7 +950,7 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-100);
   line-height: var(--font-line-height-normal);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .sc-foot {

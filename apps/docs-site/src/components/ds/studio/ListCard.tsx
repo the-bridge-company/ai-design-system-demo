@@ -1,7 +1,8 @@
 // A listed change as a card, for the grid view of Changes and Being built: the same card as the Home's explorations
-// (ExplorationCards, styles sh-card-*), fed by what a row already knows. The screen on top, the title, then the fixed
-// footer: its one status tag, then who it belongs to and when its screen was captured. The product, when the list
-// does not group by product, sits in the screen's corner (BranchThumb chip), so it reads at a glance.
+// (ExplorationCards, styles sh-card-*), fed by what a row already knows. The screen on top, the title (up to two
+// lines, the whole of it in the link's name and tooltip), then the footer: its one status tag, then one person line,
+// "Sofia · 2 days ago": who it belongs to now and when (its screen's capture, or the age the list gives). A grouped
+// list says the product once in its group title; only an ungrouped list (the Board) puts it in the screen's corner.
 // The grid itself is the Home's grid (ul.sh-cards), so a card is the same size everywhere in Studio.
 // The switch between the two views sits in each list's filter bar (ViewSwitch).
 import { Badge, Card, Link, SegmentedControl } from '@bridge-ds/react';
@@ -10,7 +11,8 @@ import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Who } from './faces';
 import { BranchThumb, captureAgeOf } from './BranchThumb';
 import type { ThumbSpec } from '../../../lib/branch-thumb';
-import { SEP, type Person, type PillTone } from '../../../lib/home-model';
+import type { Person, PillTone } from '../../../lib/home-model';
+import { SEP } from '../../../lib/sep';
 import { LIST_VIEW_EVENT, LIST_VIEW_WORDS, readListView, rememberListView, type ListView, type ListViewChange } from '../../../lib/list-view';
 import { statusTagClass } from '../../../lib/status-tag';
 
@@ -71,9 +73,11 @@ export interface ListCardProps {
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
   /** Whose it is: the face and the name in the footer. */
   person: Person;
-  /** What the footer says after the face instead of the bare name, when the name needs its why ("Asked by Leo"). */
+  /** What the footer says after the face instead of the bare name ("Malik and Ana"). */
   byline?: string | null;
-  /** In the screen's corner, when the group heading does not already say it: "Account app". */
+  /** The "when" after the name ("2 days ago"), when the list knows a better one than the screen's capture; null for none. */
+  when?: string | null;
+  /** In the screen's corner, when no group heading says it (the Board): "Account app". */
   product?: string | null;
   pill?: { label: string; tone: PillTone | 'info' } | null;
   /** A chip before the tag ("Exploration", "Sample"). */
@@ -88,8 +92,8 @@ export interface ListCardProps {
   action?: ReactNode;
 }
 
-export function ListCard({ thumb, title, href, linkAttributes, onClick, person, byline, product, pill, tags, note, eyebrow, className, action }: ListCardProps) {
-  const age = captureAgeOf(thumb);
+export function ListCard({ thumb, title, href, linkAttributes, onClick, person, byline, when, product, pill, tags, note, eyebrow, className, action }: ListCardProps) {
+  const age = when !== undefined ? when : captureAgeOf(thumb);
   return (
     <li className={className ? `sh-card-item ${className}` : 'sh-card-item'}>
       <Card interactive padding="none" className="sh-card">

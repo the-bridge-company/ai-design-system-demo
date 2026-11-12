@@ -2,6 +2,9 @@
    opened in place, the undo panel. Four sizes on a screen: the page title, body (row titles, group headings), ui
    (lines, pills, filters), caption (none on the list). Color only for status: the pills. */
 
+/* The group title and its count tag: one stylesheet for every Studio list (ListGroup), Library review's groups too. */
+@import './list-group.css';
+
 .cg {
   max-width: var(--studio-page-max);
 }
@@ -848,19 +851,6 @@ details[open] > summary .cg-sec-chev {
 /* Waiting on me lists the suggestions that wait under their kind: the full Suggestions section steps aside. */
 .cg-panel:has(.bl.is-waiting) #tb-suggestions {
   display: none;
-}
-
-.bl-group {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.bl-h2 {
-  margin: 0;
-  font-family: var(--font-family-sans);
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-body-line-height);
 }
 
 /* The checkbox leads the row; its label is for screen readers only. The label is the target: at least 24px. */

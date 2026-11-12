@@ -47,6 +47,8 @@ describe('Being built', () => {
     expect(screen.getAllByText('Ready to build').length).toBeGreaterThan(0);
     // Shipped is not in the default: five of the six changes.
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(5);
+    // The list groups by product as Explorations' does: each group a heading with its count tag.
+    expect(container.querySelectorAll('section.bl-group > h2.bl-h2 .count-tag').length).toBeGreaterThan(0);
     expect(screen.queryByText('Avatar: add an xs size')).toBeNull();
     expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
     expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
@@ -93,8 +95,11 @@ describe('Being built', () => {
     expect(heads).toEqual(['Ready to build 2', 'Being built 2', 'Checking 1', 'Shipped, last 30 days 1']);
     expect(board.querySelectorAll('.sh-card-item')).toHaveLength(6);
     expect(board.querySelectorAll('.sh-card-tag')).toHaveLength(0);
-    expect(board.textContent).toContain('Asked by Dana');
-    expect(board.textContent).toContain('Shipped by');
+    // Explorations' person line on every card: who has it now, then when it last moved, never "Asked by".
+    const names = [...board.querySelectorAll('.sh-card-name')].map((n) => n.textContent ?? '');
+    expect(names.some((n) => n.startsWith('Dana'))).toBe(true);
+    expect(names.every((n) => /·/.test(n))).toBe(true);
+    expect(board.textContent).not.toMatch(/Asked by|Shipped by|builds it/);
     expect(container.querySelector('.bl-bar')!.textContent).toContain('6 changes.');
     await expectNoAxeViolations(container);
     // Filtered to In review: one column.
@@ -168,6 +173,19 @@ describe('Being built', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Grid' }));
     expect(container.querySelectorAll('.sh-card-item')).toHaveLength(5);
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(0);
+    // Grouped by product as Explorations' grid: a title with its count tag, so no card repeats the product in its corner.
+    const groups = [...container.querySelectorAll('section.bl-group')];
+    expect(groups.length).toBeGreaterThan(0);
+    expect(groups.reduce((n, g) => n + Number(g.querySelector('.count-tag')?.textContent), 0)).toBe(5);
+    expect(container.querySelectorAll('.bt-chip')).toHaveLength(0);
+    // Inside a group, the ladder's order: Ready to build, Being built, Checking.
+    const LADDER = ['Ready to build', 'Being built', 'Checking', 'Shipped'];
+    for (const g of groups) {
+      const ranks = [...g.querySelectorAll('.sh-card-tag')].map((t) => LADDER.indexOf(t.textContent ?? ''));
+      expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    }
+    // The whole title stays the link's name (the card shows two lines at most).
+    for (const a of container.querySelectorAll('a.sh-card-title')) expect(a.getAttribute('title')).toBe(a.textContent);
     await expectNoAxeViolations(container);
     // The next visit opens on the cards: the choice is this person's, and this page's.
     unmount();

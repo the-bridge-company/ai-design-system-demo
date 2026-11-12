@@ -3,6 +3,8 @@ import {
   addressWithBuildFilters,
   BUILD_STATE_LABEL,
   buildBoardColumns,
+  buildGroups,
+  cardLine,
   buildCountLine,
   buildFiltersFromAddress,
   buildStateOf,
@@ -11,6 +13,7 @@ import {
   DEFAULT_BUILD_FILTERS,
   emptyBuildLine,
   isBuildFiltered,
+  movedAtOf,
   NOT_SHIPPED,
   passesBuild,
   personLine,
@@ -144,5 +147,50 @@ describe('Being built: who a card names, and why', () => {
     expect(checkLine({ check: { state: 'pending', waiting: ['James'], changesBy: null } }, nameOf)).toBe("Waiting for James' check");
     expect(checkLine({ check: { state: 'failure', waiting: [], changesBy: 'Sofia' } }, nameOf)).toBe('Sofia asked for changes');
     expect(possessive('Leo')).toBe("Leo's");
+  });
+});
+
+describe('Being built: a card names who has it now, then when it last moved (as Explorations)', () => {
+  it('names the builders once someone builds it, else who asked, then the age', () => {
+    expect(cardLine({ builders: [], requester: 'Leo', movedAt: ago(2), now: NOW })).toEqual({ who: 'Leo', when: '2 days ago' });
+    expect(cardLine({ builders: ['Malik Benali'], requester: 'Leo', movedAt: ago(1), now: NOW })).toEqual({ who: 'Malik', when: 'yesterday' });
+    expect(cardLine({ builders: ['Malik', 'Ana'], requester: 'Leo', movedAt: null, now: NOW })).toEqual({ who: 'Malik and Ana', when: null });
+    expect(cardLine({ builders: [], requester: 'Ann Leroy', movedAt: 'not a date', now: NOW })).toEqual({ who: 'Ann', when: null });
+    expect(cardLine({ builders: [], requester: null, movedAt: null, now: NOW })).toEqual({ who: null, when: null });
+  });
+
+  it('dates a row by its latest step, else by when it was sent', () => {
+    expect(movedAtOf({ createdAt: ago(9), timeline: [{ at: ago(9) }, { at: ago(3) }, {}] })).toBe(ago(3));
+    expect(movedAtOf({ createdAt: ago(9), timeline: [] })).toBe(ago(9));
+    expect(movedAtOf({})).toBeNull();
+  });
+});
+
+describe('Being built: List and Grid group by product, as Explorations', () => {
+  const products = [
+    { key: 'shop', name: 'Acme Prints' },
+    { key: 'crm', name: 'Acme CRM' },
+    { key: 'library', name: 'Library' },
+  ];
+  const row = (id: string, product: string, state: 'waiting' | 'in-progress' | 'in-review' | 'shipped') => ({ id, product, state });
+
+  it("keeps the products' order, the library's work under Library, and drops empty groups", () => {
+    const groups = buildGroups([row('a', 'library', 'waiting'), row('b', 'crm', 'in-review'), row('c', 'library', 'in-progress')], products);
+    expect(groups.map((g) => [g.label, g.rows.length])).toEqual([
+      ['Acme CRM', 1],
+      ['Library', 2],
+    ]);
+  });
+
+  it('orders a group along the ladder: Ready to build, Being built, Checking, Shipped, keeping the order within one', () => {
+    const groups = buildGroups(
+      [row('1', 'library', 'in-review'), row('2', 'library', 'shipped'), row('3', 'library', 'waiting'), row('4', 'library', 'in-progress'), row('5', 'library', 'waiting')],
+      products,
+    );
+    expect(groups[0]!.rows.map((r) => r.id)).toEqual(['3', '5', '4', '1', '2']);
+  });
+
+  it('lists a product the configuration does not name after the known ones, by its key', () => {
+    expect(buildGroups([row('x', 'admin', 'waiting'), row('y', 'shop', 'waiting')], products).map((g) => g.label)).toEqual(['Acme Prints', 'admin']);
   });
 });

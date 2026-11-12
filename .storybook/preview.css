@@ -27,3 +27,17 @@ body {
 .sb-embed .sb-theme-root {
   min-height: 0;
 }
+
+/* Embedded as a Bridge Studio thumbnail (embed=bridge-thumb, see preview.tsx): the story at its own size, on a
+   transparent canvas (the thumbnail's surface shows through), so its posted box is the story, not the viewport. */
+.sb-thumb,
+.sb-thumb body {
+  background-color: transparent;
+}
+
+.sb-thumb .sb-theme-root {
+  width: fit-content;
+  min-height: 0;
+  padding: 0;
+  background-color: transparent;
+}

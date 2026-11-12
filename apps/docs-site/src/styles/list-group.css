@@ -1,0 +1,15 @@
+/* A group of a Studio list (components/ds/studio/ListGroup.tsx, and the same classes on Library review): its title and
+   count tag, then its rows or cards. Explorations and Being built group by product with it. */
+
+.bl-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.bl-h2 {
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}

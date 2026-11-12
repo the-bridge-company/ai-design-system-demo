@@ -20,6 +20,7 @@ import { Button, Skeleton } from '@bridge-ds/react';
 import DsButtonLink from '../ButtonLink';
 import { BranchRow } from './BranchRow';
 import { CountTag } from './CountTag';
+import { ListGroup } from './ListGroup';
 import { Who } from './faces';
 import { MultiFilter } from './ListFilters';
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from './ListCard';
@@ -512,12 +513,9 @@ export function BranchesList(p: BranchesListProps) {
       </div>
 
       {waiting.length > 0 && view !== 'board' && (
-        <section className="bl-group ex-waiting" aria-labelledby="bl-waiting">
-          <h2 className="bl-h2" id="bl-waiting">
-            Waiting on you <CountTag n={waiting.length} />
-          </h2>
+        <ListGroup className="ex-waiting" id="bl-waiting" label="Waiting on you" count={waiting.length}>
           {asList(waiting, true)}
-        </section>
+        </ListGroup>
       )}
 
       {blind ? (
@@ -530,12 +528,9 @@ export function BranchesList(p: BranchesListProps) {
         board
       ) : (
         groups.map((g) => (
-          <section className="bl-group" key={g.key} aria-labelledby={`bl-${g.key}`}>
-            <h2 className="bl-h2" id={`bl-${g.key}`}>
-              {g.label} <CountTag n={g.rows.length} />
-            </h2>
+          <ListGroup key={g.key} id={`bl-${g.key}`} label={g.label} count={g.rows.length}>
             {asList(g.rows)}
-          </section>
+          </ListGroup>
         ))
       )}
       {filters.status.includes('shipped') && p.closed !== null && p.closed.length >= p.closedLimit && <p className="t-ui t-muted bl-merged">Shipped shows the most recent ones.</p>}

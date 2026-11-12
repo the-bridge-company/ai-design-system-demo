@@ -109,6 +109,11 @@ describe('BranchThumb, a component change without pictures', () => {
     // jsdom has no IntersectionObserver: the frame starts at once, as a plain lazy frame.
     expect(frame.getAttribute('src')).toContain('id=display-avatar--default');
     expect(frame.getAttribute('src')).toContain('theme:light');
+    // Fitted (lib/story-frame): the story asked for its thumbnail canvas, hidden until its posted size places it.
+    expect(frame.getAttribute('src')).toContain('embed=bridge-thumb');
+    expect(stage.classList.contains('is-fit')).toBe(true);
+    expect(frame.classList.contains('stage-fit-frame')).toBe(true);
+    expect(frame.classList.contains('is-fitted')).toBe(false);
     expect(container.querySelector('.bt')!.getAttribute('data-label')).toBe('Avatar');
   });
 
@@ -116,6 +121,8 @@ describe('BranchThumb, a component change without pictures', () => {
     const Example = ({ node }: { node: unknown }) => createElement('b', { className: 'ex' }, String((node as { c: string }).c));
     const { container } = withPreviews(previews({ components: new Map([['Avatar', { name: 'Avatar', preview: { c: 'Avatar' } }]]), Example }));
     expect(container.querySelector('.bt-stage .ex')?.textContent).toBe('Avatar');
+    // Measured in the page, inside the fitted box.
+    expect(container.querySelector('.bt-stage > .stage-fit > .ex')).toBeTruthy();
     expect(container.querySelector('iframe')).toBeNull();
   });
 

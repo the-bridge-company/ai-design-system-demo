@@ -405,7 +405,7 @@ export const buildCacheKey = (repo: string, what: 'requests' | 'builds' | 'pulls
 export const BUILD_CACHE_MS = 5 * 60 * 1000;
 
 /**
- * Line 2 of a row: when it was sent, then who it waits on, in the words of its card (lib/building-page personLine):
+ * Line 2 of a row: when it was sent, then who it waits on (lib/building-page personLine):
  * "Sent 4 days ago · Asked by Leo", "Sent 4 days ago · Malik builds it", then who must review when GitHub says.
  */
 export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stale' | 'sentence' | 'shippedAt' | 'builders' | 'requestedBy'> & LifecycleExtra, now: number, nameOf: (login: string) => string = (l) => l): string {

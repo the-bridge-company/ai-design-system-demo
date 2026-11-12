@@ -9,3 +9,41 @@
   color: var(--color-text-default);
   font-family: var(--font-family-sans);
 }
+
+/* A fitted stage (ComponentStage `fit`, a thumbnail): the preview is laid out at its own size on a canvas three times
+   the stage's width, then scaled and centered inside the stage's padding by an inline transform from its measured
+   size (lib/story-frame fitTransform). Hidden until that transform is known, so it never shows cut, then jumps. The
+   stage that fits sets its own padding (styles/branch-thumb.css). */
+.stage-checker.is-fit {
+  overflow: hidden;
+  /* Its own layer: the scaled frame stays under what the thumbnail draws on top (the Board's product chip). */
+  isolation: isolate;
+}
+
+.stage-checker.is-fit > .stage-fit,
+.stage-checker.is-fit > .stage-fit-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  visibility: hidden;
+}
+
+.stage-checker.is-fit > .is-fitted {
+  visibility: visible;
+}
+
+/* An Example: as wide as it draws, up to the canvas, so text wraps as it would in a page and never at the stage edge. */
+.stage-checker.is-fit > .stage-fit {
+  display: block;
+  width: max-content;
+  max-width: calc(100% * 3);
+}
+
+/* A story frame: a canvas three times the stage's width and six times its height, so a tall story is not cut by its
+   own frame before it is scaled. */
+.stage-checker.is-fit > .stage-fit-frame {
+  width: calc(100% * 3);
+  height: calc(100% * 6);
+  transform: none;
+}

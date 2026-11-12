@@ -6,10 +6,10 @@
 //   - Filters are Explorations' checkbox dropdowns: Status (default Not shipped yet = the first three), Product, People
 //     (?status=, ?product=, ?people=, comma separated). No tabs.
 //   - Three views: List, Grid, Board (read only, one column per status, the column says the status so its cards do not).
-//   - The person a card names says why it is there: "Asked by Leo" while it waits, "Malik builds it" once picked up,
-//     "Shipped by Malik" once shipped (personLine).
+//   - List and Grid group the rows by product as Explorations does (buildGroups), the ladder's order inside a group.
+//   - A card's person line is Explorations' rule: who has it now, then when it last moved (cardLine).
 import type { BuildRequestView } from '@bridge-ds/core';
-import { shortName, type PillTone } from './home-model';
+import { ago, shortName, type PillTone } from './home-model';
 import { STEP_COUNT_WORDS, STEP_LABEL, stepTone, type StatusStep } from './status-ladder';
 import { YOU } from './branches-page';
 
@@ -213,17 +213,68 @@ export function buildBoardColumns<R extends { state: BuildState }>(rows: readonl
 const names = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
 /**
- * The person line of a card, saying why that person is there: "Asked by Leo" while it waits (or nobody builds it yet),
- * "Malik builds it" (or "Malik and Ana build it") once picked up or in review, "Shipped by Malik" once shipped. Null
- * when the row names nobody: the card keeps its plain name.
+ * The person line of a card, the rule of Explorations' cards ("Sofia · 2 days ago", owner decision 2026-11-12): who has
+ * the change now, then when it last moved. Who has it: its builders once someone builds it ("Malik", "Malik and Ana"),
+ * else who asked for it. When: its latest step (lib/building-view timeline), else when it was sent. Names are short
+ * ("Ann", never "Ann Leroy"). The card (ListCard) joins the two with the shared separator (lib/sep), as Explorations'.
+ */
+export function cardLine(x: { builders: readonly string[]; requester: string | null; movedAt: string | null; now: number }): { who: string | null; when: string | null } {
+  const b = x.builders.filter(Boolean).map((n) => shortName(n) ?? n);
+  const requester = x.requester ? (shortName(x.requester) ?? x.requester) : null;
+  return { who: b.length ? names(b) : requester, when: x.movedAt && Number.isFinite(Date.parse(x.movedAt)) ? ago(x.movedAt, x.now) : null };
+}
+
+/**
+ * The "who" of a list row's line, saying why that person is there (lib/building-view rowLine): "Asked by Leo" while it
+ * waits (or nobody builds it yet), "Malik builds it" (or "Malik and Ana build it") once picked up or in review,
+ * "Shipped by Malik" once shipped. Null when the row names nobody. Cards use cardLine instead.
  */
 export function personLine(x: { state: BuildState; builders: readonly string[]; requester: string | null }): string | null {
-  // Every card names people the same short way ("Ann", never "Ann Leroy" from a "Requested by Ann Leroy." line).
   const b = x.builders.filter(Boolean).map((n) => shortName(n) ?? n);
   const requester = x.requester ? (shortName(x.requester) ?? x.requester) : null;
   if (x.state === 'shipped') return b.length ? `Shipped by ${names(b)}` : requester ? `Asked by ${requester}` : null;
   if ((x.state === 'in-progress' || x.state === 'in-review') && b.length) return `${names(b)} ${b.length > 1 ? 'build' : 'builds'} it`;
   return requester ? `Asked by ${requester}` : null;
+}
+
+/** When a row last moved: its latest dated step, else when it was sent. */
+export function movedAtOf(v: { createdAt?: string | null; timeline?: readonly { at?: string | undefined }[] | null }): string | null {
+  const dates = [...(v.timeline ?? []).map((t) => t.at), v.createdAt].filter((d): d is string => Boolean(d) && Number.isFinite(Date.parse(d!)));
+  return dates.length ? dates.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a)) : null;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Groups by product, as Explorations
+
+export interface BuildGroup<R> {
+  key: string;
+  label: string;
+  rows: R[];
+}
+
+/** Where a status sits on the ladder: Ready to build, Being built, Checking, then Shipped and Not doing this. */
+const LADDER_RANK: Record<BuildState, number> = Object.fromEntries(BUILD_STATES.map((s, i) => [s, i])) as Record<BuildState, number>;
+
+/**
+ * The List and Grid groups (owner decision 2026-11-12): one per product, in Explorations' order (the products of
+ * bridge.config.json in their order, then any other product a row names), the library's work under its own product
+ * ("Library"). Inside a group, the rows follow the ladder (Ready to build, Being built, Checking, ...), keeping their
+ * order within a status. Empty groups drop out. The group says the product once: its cards carry no product chip.
+ */
+export function buildGroups<R extends { state: BuildState; product: string }>(rows: readonly R[], products: readonly { key: string; name: string }[]): BuildGroup<R>[] {
+  const keys = [...new Set([...products.map((p) => p.key.toLowerCase()), ...rows.map((r) => r.product)])];
+  const nameOf = (k: string) => products.find((p) => p.key.toLowerCase() === k)?.name ?? k;
+  return keys
+    .map((k) => ({
+      key: k,
+      label: nameOf(k),
+      rows: rows
+        .map((r, i) => ({ r, i }))
+        .filter((x) => x.r.product === k)
+        .sort((a, b) => LADDER_RANK[a.r.state] - LADDER_RANK[b.r.state] || a.i - b.i)
+        .map((x) => x.r),
+    }))
+    .filter((g) => g.rows.length > 0);
 }
 
 /** "Sofia's", "James'": the possessive of a name. */

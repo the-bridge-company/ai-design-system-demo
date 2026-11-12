@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T11:54:47.579Z",
-  "durationMs": 315142,
+  "createdAt": "2026-11-12T12:31:17.136Z",
+  "durationMs": 284200,
   "base": {
-    "ref": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246",
-    "sha": "a3a21fc739fe7f6a1248414ab0e0e2cc2a6e7246"
+    "ref": "7704ca1cc6c4905a37937491f7d3585207a281a8",
+    "sha": "7704ca1cc6c4905a37937491f7d3585207a281a8"
   },
   "head": {
-    "ref": "7e66d9bf50c795a485f60d8e642ecb5acc43936c",
-    "sha": "7e66d9bf50c795a485f60d8e642ecb5acc43936c"
+    "ref": "391d65ac7af6a26378f20e20af31c40889866642",
+    "sha": "391d65ac7af6a26378f20e20af31c40889866642"
   },
   "options": {
     "only": [
@@ -46,13 +46,17 @@
       "apps/docs-site/src/scripts/explorer/cells.ts",
       "apps/docs-site/src/scripts/explorer/detail.ts",
       "apps/docs-site/src/scripts/explorer/family-tabs.test.ts",
+      "apps/docs-site/src/scripts/explorer/grid.ts",
       "apps/docs-site/src/scripts/explorer/index.ts",
       "apps/docs-site/src/scripts/explorer/inline-edit.ts",
       "apps/docs-site/src/scripts/explorer/review.ts",
       "apps/docs-site/src/scripts/explorer/xss-studio.test.ts",
       "apps/docs-site/src/styles/token-explorer.css",
       "packages/react/src/dom/badge.ts",
+      "packages/react/src/dom/button.test.tsx",
+      "packages/react/src/dom/button.ts",
       "packages/react/src/dom/dom.test.tsx",
+      "packages/react/src/dom/icons.ts",
       "packages/react/src/dom/index.ts",
       "packages/react/src/dom/tag.ts"
     ],
@@ -121,12 +125,12 @@
   },
   "summary": {
     "shots": 240,
-    "changed": 1,
-    "unchanged": 239,
+    "changed": 0,
+    "unchanged": 240,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 0.22
+    "maxPercent": 0
   },
   "shots": [
     {
@@ -4576,18 +4580,11 @@
       "storyId": "feedback-progress--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 1757,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 0.22,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 720,
-          "width": 368,
-          "height": 64
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -4598,12 +4595,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__feedback-progress--all-states__ocean-dark.png",
-        "after": "after/story__feedback-progress--all-states__ocean-dark.png",
-        "diff": "diff/story__feedback-progress--all-states__ocean-dark.png",
-        "composite": "composite/story__feedback-progress--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__feedback-skeleton--all-states__ocean-dark",

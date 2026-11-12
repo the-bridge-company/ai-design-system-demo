@@ -5,18 +5,21 @@
 // DS Tabs and radio groups where a teammate's style is disabled and named; Esc cancels and focus goes back to Change;
 // Save posts the face, and a style taken meanwhile is refused with the holder's name. Axe clean, collapsed and open.
 import '../../../../../../packages/react/src/test/setup';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createElement } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FACE_PART_NAMES, faceRecipe } from '@bridge-ds/react/avatar-illustrated';
+import { FACE_PART_NAMES, faceRecipe, illustratedFaceUri, type FaceRecipe } from '@bridge-ds/react/avatar-illustrated';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { setAccountFetch } from '../../../scripts/account-session';
 import { forgetDrawings } from '../../../scripts/team-faces';
-import { blockedHair } from '../../../lib/team-faces';
+import { EXPRESSIONS, blockedHair } from '../../../lib/team-faces';
 import FaceSetting from './FaceSetting';
 
-vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds', defaultBranch: 'main', hosted: true }) }));
+const at = { owner: 'acme', repo: 'ds' };
+vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => ({ ...at, defaultBranch: 'main', hosted: true }) }));
 vi.mock('../../../scripts/contribute-session', () => ({ contributeTeam: vi.fn(async () => ({ collaborators: [], members: [], pms: {} })), seedContributors: () => {}, forgetContributors: () => {} }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -108,6 +111,59 @@ describe('Your face', () => {
     expect(await screen.findByText('Saved. Your team sees your new face.')).toBeInTheDocument();
   });
 
+  it('an expression sets the eyes, brows and lips: the preview draws it and Save posts it', async () => {
+    const user = userEvent.setup();
+    render(createElement(FaceSetting));
+    await user.click(await screen.findByRole('button', { name: 'Change' }));
+    await user.click(screen.getByRole('button', { name: 'Pick the parts yourself' }));
+    await user.click(screen.getByRole('tab', { name: 'Expression' }));
+    const preview = () => screen.getByRole('img', { name: 'Your drawn face' }).querySelector('img')!.getAttribute('src');
+    const expression = screen.getByRole('radiogroup', { name: 'Expression' });
+    const drawn = new Map<string, string>();
+    for (const e of EXPRESSIONS) {
+      const radio = within(expression).getByRole('radio', { name: e.label });
+      await user.click(radio);
+      expect(radio).toHaveAttribute('aria-checked', 'true');
+      // A click focuses the segment, never the panel around it (whose ring is for the keyboard).
+      expect(radio).toHaveFocus();
+      drawn.set(e.value, preview()!);
+    }
+    // Four expressions, four different drawings.
+    expect(new Set(drawn.values()).size).toBe(EXPRESSIONS.length);
+    await user.click(within(expression).getByRole('radio', { name: 'Smile' }));
+    await user.click(screen.getByRole('button', { name: 'Save face' }));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    const saved = posts()[0]!.body!.face as FaceRecipe;
+    expect(saved).toMatchObject(EXPRESSIONS.find((e) => e.value === 'smile')!.parts);
+    // Each preview was the saved face wearing that expression: the recipe's eyes, brows and lips reach the drawing.
+    for (const e of EXPRESSIONS) expect(drawn.get(e.value), e.value).toBe(illustratedFaceUri({ ...saved, ...e.parts }));
+  });
+
+  it('on the sample team, played as Malik: the help line names the team as its chip does, the expression help is plain', async () => {
+    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds' });
+    history.replaceState(null, '', '/studio/acme-design-demo/bridge-demo-ds/settings/?as=malik');
+    try {
+      const user = userEvent.setup();
+      render(createElement(FaceSetting));
+      await user.click(await screen.findByRole('button', { name: 'Change' }));
+      expect(screen.getByText('Shuffle until it feels like you. Nobody in Acme Design gets the same face.')).toBeInTheDocument();
+      expect(screen.queryByText(/Bridge demo ds/)).toBeNull();
+      await user.click(screen.getByRole('button', { name: 'Pick the parts yourself' }));
+      await user.click(screen.getByRole('tab', { name: 'Expression' }));
+      expect(screen.getByText('Expressions show on bigger faces. In small rows, people recognise you by your hair.')).toBeInTheDocument();
+      // The control hugs its segments (the page grid would stretch it): a page class that only places it.
+      expect(screen.getByRole('radiogroup', { name: 'Expression' })).toHaveClass('yf-hug');
+      await user.click(screen.getByRole('radio', { name: 'Curious' }));
+      await user.click(screen.getByRole('button', { name: 'Save face' }));
+      // Kept in this browser for the sample team, with the expression.
+      await screen.findByText('Saved in this browser only: Acme Design is a sample team.');
+      expect(JSON.parse(localStorage.getItem('bridge.face.sample.malik')!)).toMatchObject(EXPRESSIONS.find((e) => e.value === 'curious')!.parts);
+      expect(posts()).toHaveLength(0);
+    } finally {
+      Object.assign(at, { owner: 'acme', repo: 'ds' });
+    }
+  });
+
   it('a style taken meanwhile is refused with the holder\'s name, the editor stays open', async () => {
     reply = (c) => (c.method === 'GET' ? json(200, { available: true, account: ACCOUNT }) : json(409, { error: 'face_taken', message: 'Leo already wears this hair style in Acme Design. Shuffle or pick another one.', holder: 'Leo' }));
     const user = userEvent.setup();
@@ -117,5 +173,16 @@ describe('Your face', () => {
     await user.click(screen.getByRole('button', { name: 'Save face' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Leo already wears this hair style in Acme Design. Shuffle or pick another one.');
     expect(screen.getByRole('button', { name: 'Save face' })).toBeInTheDocument();
+  });
+
+  // The parts are DS TabsPanels (focusable, for the keyboard). jsdom has no :focus-visible, so the DS rules are read:
+  // a mouse click never draws the ring around a panel, and the keyboard ring sits a step off the panel's content.
+  it('the parts panel ring is for the keyboard only, a step away from the content (DS Tabs)', () => {
+    const css = readFileSync(join(__dirname, '../../../../../../packages/react/src/components/Tabs/Tabs.module.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const rule = (selector: string) => new RegExp(`(^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? null;
+    expect(rule('.panel:focus-visible')).toContain('outline: var(--focus-ring-width) solid var(--focus-ring-color)');
+    expect(rule('.panel:focus-visible')).toContain('outline-offset: var(--space-1)');
+    expect(rule('.panel:focus:not(:focus-visible)')).toContain('outline: none');
+    expect(css).not.toMatch(/\.panel:focus\s*[,{]/);
   });
 });

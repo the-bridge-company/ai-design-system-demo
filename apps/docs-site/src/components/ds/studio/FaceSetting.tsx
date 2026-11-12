@@ -17,7 +17,7 @@ import { ChevronDown, ChevronUp, CircleCheck, Shuffle } from 'lucide-react';
 import { Avatar, Button, Card, CardBody, Icon, Radio, RadioGroup, SegmentedControl, Tab, Tabs, TabsList, TabsPanel, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { drawingSeed } from '../../../lib/cast-faces';
 import { castFaceLogin, type CastKey } from '../../../lib/demo-cast';
-import { isSampleTeam, teamDisplayName } from '../../../lib/demo';
+import { SAMPLE_TEAM, isSampleTeam, teamDisplayName } from '../../../lib/demo';
 import { EXPRESSIONS, FACE_WORDS as W, HAIR_STYLES, blockedHair, expressionOf, firstHairTiles, sameFace, shuffleFace, variant, FACE_PART_COUNTS, type Drawing, type FaceRecipe } from '../../../lib/team-faces';
 import type { FaceDrawer } from '../../../scripts/team-faces';
 import { faceWords, partLabel } from '../../../lib/face-labels';
@@ -52,7 +52,8 @@ async function whoIsHere(): Promise<Who | null> {
     const { castOn } = await import('../../../scripts/demo-cast');
     const person = castOn(team);
     if (!person) return null;
-    return { kind: 'sample', team, teamName: teamDisplayName(team), name: person.name, seeds: [castFaceLogin(person).toLowerCase()], castKey: person.key };
+    // The sample team by its name, as the team chip says it (its settings' name), never its repository in words.
+    return { kind: 'sample', team, teamName: teamDisplayName(team, { name: SAMPLE_TEAM }), name: person.name, seeds: [castFaceLogin(person).toLowerCase()], castKey: person.key };
   }
   const { getAccount } = await import('../../../scripts/account-session');
   const { account } = await getAccount().catch(() => ({ account: null }));
@@ -384,7 +385,9 @@ export default function FaceSetting() {
                         </RadioGroup>
                       </TabsPanel>
                       <TabsPanel value="expression" className="yf-panel">
+                        {/* The panel is a grid: the control keeps its own width (it hugs its segments, like the tabs). */}
                         <SegmentedControl
+                          className="yf-hug"
                           label={W.tabs.expression}
                           value={expressionOf(current) ?? ''}
                           items={EXPRESSIONS.map(({ value, label }) => ({ value, label }))}

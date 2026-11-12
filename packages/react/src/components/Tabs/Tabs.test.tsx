@@ -179,3 +179,23 @@ describe('watchOverflowEdges', () => {
     expect(el.hasAttribute('data-overflow-start') || el.hasAttribute('data-overflow-end')).toBe(false);
   });
 });
+
+// The panel's ring is for the keyboard (Tabs.module.css: :focus-visible only, a pointer focus draws none); a click on
+// a control inside the panel leaves focus on that control, so the panel never takes it.
+describe('TabsPanel focus', () => {
+  it('a click on a button inside the panel leaves focus on the button', async () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList aria-label="Parts">
+          <Tab value="a">A</Tab>
+        </TabsList>
+        <TabsPanel value="a">
+          <button type="button">Smile</button>
+        </TabsPanel>
+      </Tabs>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Smile' }));
+    expect(screen.getByRole('button', { name: 'Smile' })).toHaveFocus();
+    expect(screen.getByRole('tabpanel')).not.toHaveFocus();
+  });
+});

@@ -712,6 +712,7 @@
   grid-template-columns: minmax(0, 1fr) var(--size-96);
 }
 
+/* bridge-audit-ignore-next-line: the bar of the interactive stepper of BuildReview (each step a button that opens that difference); the DS Stepper is a static path, see the same exception in BuildReview.tsx */
 .brv-stepper {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

@@ -133,6 +133,7 @@
   box-shadow: var(--elevation-overlay);
 }
 
+/* bridge-audit-ignore-next-line: a wireframe block that stands for a button inside the motion sample (no label, not interactive, only its movement matters); a DS Button would bring a label and a focus stop */
 .mc-pill {
   align-self: flex-end;
   width: var(--size-16);

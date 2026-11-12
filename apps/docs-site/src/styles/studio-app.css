@@ -69,18 +69,6 @@
   line-height: var(--typography-h2-line-height);
 }
 
-.st-count {
-  color: var(--color-text-muted);
-  font-family: var(--font-family-sans);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-medium);
-}
-
-.st-count:empty {
-  display: none;
-}
-
 /* The summary sentence; the header's fixed height absorbs it when the page's island writes it late. */
 .st-sub {
   max-width: 65ch;

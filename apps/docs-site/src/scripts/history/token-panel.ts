@@ -2,7 +2,7 @@
 // with "Restore this value". Real history by default; demo only with the toggle, under the same banner.
 import { formatValue, tokenHistory, type TokenHistoryItem } from '@bridge-ds/core';
 import { shortDate } from '../../lib/history-view';
-import { badgeHtml, tokenValueHtml } from '@bridge-ds/react/dom';
+import { badgeHtml, switchHtml, tokenValueHtml } from '@bridge-ds/react/dom';
 import { esc } from '../github-session';
 import { displayName } from '../people';
 import { openRestorePlanner } from './planner';
@@ -49,8 +49,8 @@ async function fill(path: string, section: HTMLElement) {
   shownDemo = demo;
   const n = items.length;
   // The demo switch is a development aid: production builds show real history only.
-  const toggle = !DEMO_AVAILABLE ? '' : `<button type="button" class="hs-switch hs-switch-sm" data-hs-demo role="switch" aria-checked="${demo}"><span class="hs-switch-track" aria-hidden="true"><span class="hs-switch-thumb"></span></span><span>Show demo history</span></button>`;
-  const banner = demo ? `<p class="hs-banner"><strong>${esc(DEMO_BANNER)}</strong></p>` : '';
+  const toggle = !DEMO_AVAILABLE ? '' : switchHtml('Show demo history', { checked: demo, size: 'sm', labelId: 'hs-demo-label', attributes: { 'data-hs-demo': true } });
+  const banner = demo ? `<p class="hs-demo-note t-meta t-muted">${badgeHtml('Demo', { tone: 'warning', size: 'sm' })} ${esc(DEMO_BANNER)}</p>` : '';
   const body = n
     ? `<ol class="hs-token-list">${items.map((it, i) => itemHtml(it, i, demo)).join('')}</ol>`
     : `<p class="tx-empty-line">${demo ? 'No demo change touches this token. The demo history changes color.text.muted, button.radius and alert.radius.' : report ? 'No recorded change to this token in the history Bridge can read. Changes merged from now on show up here.' : esc(L.data.realNote ?? 'History is not available in this build.')}</p>`;

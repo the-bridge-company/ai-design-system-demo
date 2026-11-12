@@ -70,6 +70,7 @@ import { busyText } from '../lib/team-load';
 import { emailMemberFace } from '../lib/people';
 import { isSampleTeam } from '../lib/demo';
 import { castAccess } from '../lib/demo-cast';
+import { SEP } from '../lib/sep';
 
 export { GitHubError };
 
@@ -754,7 +755,7 @@ export function showGhError(el: HTMLElement, err: unknown, fallback: string, act
 
 /** "See the branch" and "Open on GitHub" links for a pull request GitHub just created (number and url from the API). */
 export function prLinksHtml(pr: { number: number; url: string }): string {
-  return `<a href="${studioHref(`explorations/?pr=${Number(pr.number)}`)}">See the change</a> · <a href="${attrUrl(pr.url)}" target="_blank" rel="noopener">Open on GitHub</a>`;
+  return `<a href="${studioHref(`explorations/?pr=${Number(pr.number)}`)}">See the change</a>${SEP}<a href="${attrUrl(pr.url)}" target="_blank" rel="noopener">Open on GitHub</a>`;
 }
 
 export class RateLimitError extends Error {

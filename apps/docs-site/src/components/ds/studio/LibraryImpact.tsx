@@ -123,7 +123,7 @@ export function LibraryImpact({
         <p className="li-muted li-count">
           {view.count}
           {view.tail && (
-            <span className="li-count-tail">
+            <span className="li-summary-tail">
               {SEP}
               {view.tail}
             </span>

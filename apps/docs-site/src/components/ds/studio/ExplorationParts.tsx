@@ -6,7 +6,7 @@
 // Rules and words: lib/exploration-layout.ts. Styles: styles/exploration-page.css (xp-st-*, xp-turn*, xp-tl*, xp-code*).
 import { useState, type ReactNode } from 'react';
 import { Check, Code2, ExternalLink, GitBranch } from 'lucide-react';
-import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel } from '@bridge-ds/react';
+import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel, Tag } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { IllustrationName } from '../../../brand/illustrations';
@@ -25,15 +25,14 @@ export function ShotLink({ href, label, children, chip = true }: { href: string 
     // bridge-audit-ignore-next-line: the whole capture is one link to its version (a block with a scrim and a pill on hover); DS Link styles inline text with an underline, so a block link is requested in the PR
     <a className="xp-shotlink" href={href} target="_blank" rel="noopener" aria-label={`${label} (opens in a new tab)`}>
       {children}
-      <span className="xp-shotlink-pill" aria-hidden="true">
+      {/* The DS Button's look on a span: the whole capture is the link, so the pill only shows where it goes. */}
+      <Button variant="secondary" iconEnd={ExternalLink} render={<span />} className="xp-shotlink-pill" aria-hidden="true">
         {label}
-        <Icon icon={ExternalLink} size="sm" />
-      </span>
+      </Button>
       {chip && (
-        <span className="xp-shotlink-chip" aria-hidden="true">
+        <Tag size="sm" icon={ExternalLink} className="xp-shotlink-chip" aria-hidden="true">
           {SCREEN_WORDS.openChip}
-          <Icon icon={ExternalLink} size="xs" />
-        </span>
+        </Tag>
       )}
     </a>
   );

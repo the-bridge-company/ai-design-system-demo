@@ -268,6 +268,7 @@
   gap: var(--space-2);
 }
 
+/* bridge-audit-ignore-next-line: an 8px dot in the color of a contrast verdict, the legend key of the table's marks; a dot with no text, not a Tag, and the DS status dot only exists inside Badge */
 .a11y-mark,
 .a11y-chip-key {
   display: inline-block;

@@ -95,8 +95,8 @@
   margin-inline-start: calc(var(--control-padding-x-sm) * -1);
 }
 
-/* Color chip: the Input prefix of a color field. */
-.nb-chip {
+/* Color swatch: the Input prefix of a color field (a square of the typed color, not a Tag). */
+.nb-hex-swatch {
   display: inline-block;
   inline-size: var(--size-4);
   block-size: var(--size-4);

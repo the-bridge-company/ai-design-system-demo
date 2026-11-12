@@ -1801,7 +1801,7 @@ export function renderTokenReview(review: TokenReview): string {
   const rows = review.changes
     .map(
       (c) => `<tr>
-        <th scope="row"><span class="mono">${esc(c.path)}</span><span class="rv-kind-tag is-${esc(c.kind)}">${esc(c.kind)}</span>${c.context ? `<span class="muted small">${esc(c.context)}</span>` : ''}</th>
+        <th scope="row"><span class="mono">${esc(c.path)}</span>${badgeHtml(c.kind, { tone: c.kind === 'added' ? 'success' : c.kind === 'removed' ? 'danger' : 'neutral', className: 'rv-kind-tag' })}${c.context ? `<span class="muted small">${esc(c.context)}</span>` : ''}</th>
         <td>${valueCell(c.before, true)}</td>
         <td><span class="rv-arrow"><span aria-hidden="true">→</span><span class="sr-only">becomes</span></span></td>
         <td>${valueCell(c.after)}</td>

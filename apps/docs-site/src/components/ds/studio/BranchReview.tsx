@@ -640,7 +640,11 @@ function MultiBody(p: BranchReviewProps & { current: string | null; seen: Set<st
             <section className="br-change is-open" key={c.id} id={anchor(c.id)} aria-labelledby={`${anchor(c.id)}-h`} tabIndex={-1}>
               <div className="br-line">
                 <h2 className="br-h2" id={`${anchor(c.id)}-h`}>
-                  {c.kind === 'tokens' && c.id !== MOTION_CHANGE ? <span className="br-mono">{c.title}</span> : c.title} <span className="br-muted br-h2-meta">· {meta(c)}</span>
+                  {c.kind === 'tokens' && c.id !== MOTION_CHANGE ? <span className="br-mono">{c.title}</span> : c.title}
+                  <span className="br-muted br-h2-meta">
+                    {SEP}
+                    {meta(c)}
+                  </span>
                 </h2>
                 <Button variant="secondary" iconStart={Check} onClick={() => p.mark(c.id)} disabled={p.seen.has(c.id)}>
                   {p.seen.has(c.id) ? 'Looked at' : 'Looks good'}

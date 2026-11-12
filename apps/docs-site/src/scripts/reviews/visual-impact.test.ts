@@ -100,4 +100,21 @@ describe('visual impact HTML (untrusted manifest)', () => {
     expectInert(slot);
     expect(slot.querySelector('a')?.getAttribute('href')).toBe('#');
   });
+
+  it('filters with the DS SegmentedControl: one radio group per facet, a pick narrows the list', async () => {
+    const plain = (key: string, brand: string, theme: string): VisualShot => ({ ...shot(), key, label: key, brand, theme, tenant: 'bridge', error: undefined, boxes: [], images: { after: 'a.png' } }) as unknown as VisualShot;
+    manifest = JSON.stringify({ ...hostile(), summary: { shots: 3 }, shots: [plain('one', 'bridge', 'light'), plain('two', 'bridge', 'dark'), plain('three', 'ocean', 'light')] });
+    const slot = document.createElement('div');
+    document.body.append(slot);
+    await loadVisualImpact(slot, o('https://github.com/o/r/actions'));
+    const theme = slot.querySelector<HTMLElement>('[data-segmented-control][data-f="theme"]')!;
+    expect(theme.getAttribute('role')).toBe('radiogroup');
+    expect(theme.getAttribute('aria-labelledby')).toBe('vi-f-theme');
+    expect([...theme.querySelectorAll('[role="radio"]')].map((r) => r.textContent)).toEqual(['All', 'Light', 'Dark']);
+    expect(slot.querySelectorAll('.vi-shot')).toHaveLength(3);
+    theme.querySelector<HTMLElement>('[data-value="dark"]')!.click();
+    expect(theme.querySelector('[data-value="dark"]')!.getAttribute('aria-checked')).toBe('true');
+    expect(slot.querySelectorAll('.vi-shot')).toHaveLength(1);
+    expect(slot.querySelector('.vi-shot h3')!.textContent).toBe('two');
+  });
 });

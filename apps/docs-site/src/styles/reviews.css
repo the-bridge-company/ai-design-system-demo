@@ -18,24 +18,6 @@
   margin-bottom: 0;
 }
 
-.rv-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: var(--size-9);
-  height: var(--size-9);
-  margin-left: var(--space-1);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-signal-subtle);
-  color: var(--color-text-signal);
-  font-size: var(--typography-body-size);
-  vertical-align: middle;
-}
-
-.rv-count:empty {
-  display: none;
-}
-
 /* Notices */
 
 .rv-error {
@@ -144,14 +126,6 @@
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
   overflow-wrap: anywhere;
-}
-
-.rv-avatar {
-  width: var(--size-5);
-  height: var(--size-5);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-bg-subtle);
-  vertical-align: middle;
 }
 
 .rv-skel {
@@ -341,22 +315,6 @@
 
 .rv-kind-tag {
   justify-self: start;
-  padding: 0 var(--space-1-5);
-  border-radius: var(--radius-control);
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.rv-kind-tag.is-added {
-  background-color: var(--color-feedback-success-bg);
-  color: var(--color-feedback-success-text);
-}
-
-.rv-kind-tag.is-removed {
-  background-color: var(--color-feedback-danger-bg);
-  color: var(--color-feedback-danger-text);
 }
 
 .rv-arrow {
@@ -584,45 +542,6 @@
 
 /* Visual impact: before/after slider, diff toggle, filters */
 
-.rv-seg {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--space-0-5);
-  padding: var(--space-0-5);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-bg-subtle);
-}
-
-.rv-seg button {
-  min-height: var(--size-8);
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-control);
-  background-color: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-medium);
-  text-transform: capitalize;
-  cursor: pointer;
-}
-
-.rv-seg button:hover {
-  color: var(--color-text-default);
-}
-
-.rv-seg button:focus-visible {
-  outline: var(--border-width-strong) solid var(--focus-ring-color);
-  outline-offset: var(--border-width-default);
-}
-
-.rv-seg button[aria-pressed="true"] {
-  background-color: var(--color-surface-default);
-  color: var(--color-text-default);
-  box-shadow: var(--elevation-raised);
-}
-
 .vi-empty {
   padding: var(--space-4);
   border: var(--border-width-default) dashed var(--color-border-emphasis);
@@ -737,16 +656,10 @@
   pointer-events: none;
 }
 
+/* The DS Badge (solid) placed on the picture: position only. */
 .vi-tag {
   position: absolute;
   top: var(--space-2);
-  padding: var(--space-0-5) var(--space-2);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-semibold);
   pointer-events: none;
 }
 

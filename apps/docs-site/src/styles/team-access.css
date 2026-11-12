@@ -4,6 +4,7 @@
 
 /* --- Team chip ---------------------------------------------------------------------------------------------- */
 
+/* bridge-audit-ignore-next-line: the side nav's slot for the TeamChip menu (a DS Button and Menu), with the rule that closes it; nothing here draws a Tag */
 .rail-chip {
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-4);

@@ -689,7 +689,7 @@ export function ProductPageView({
                 <li key={a.key}>
                   {choice(
                     a.drawing,
-                    <Link href={studioHref(a.path)} className="sh-choice-btn" data-card-primary="">
+                    <Link href={studioHref(a.path)} className="sh-choice-link" data-card-primary="">
                       <span className="sh-choice-title">{a.title}</span>
                     </Link>,
                     a.line,

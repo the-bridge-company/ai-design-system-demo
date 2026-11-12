@@ -703,8 +703,10 @@
 }
 
 /* "Start an exploration" as a way to start: a button that opens the start flow, set like the other choices' titles.
-   Static, so its card-wide click area (Card's data-card-primary ::after) spans the card, not only the button. */
-.sh-choice .sh-choice-btn {
+   Static, so its card-wide click area (Card's data-card-primary ::after) spans the card, not only the button. A card
+   that opens a page has a DS Link there (.sh-choice-link), set the same way. */
+.sh-choice .sh-choice-btn,
+.sh-choice .sh-choice-link {
   position: static;
   justify-self: start;
   height: auto;
@@ -924,6 +926,7 @@
   background: var(--color-text-muted);
 }
 
+/* bridge-audit-ignore-next-line: a 16 by 4 line that stands for a button in the thumbnail drawing of a mockup (aria-hidden, no text); not a Badge */
 .sc-mockup-thumb > .sc-mockup-pill {
   top: var(--space-3);
   width: var(--space-4);

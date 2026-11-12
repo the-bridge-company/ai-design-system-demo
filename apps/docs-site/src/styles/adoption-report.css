@@ -332,6 +332,7 @@
   text-decoration: underline;
 }
 
+/* bridge-audit-ignore-next-line: a drawing of a Drawer on a thumbnail plate (inert, aria-hidden), not a drawer; the DS Drawer is a modal portal and cannot sit in a thumbnail */
 .ar-pv-drawer {
   align-content: start;
   inline-size: var(--size-40);
@@ -594,7 +595,6 @@
 }
 
 .ar-code,
-.ar-tag,
 .ar .mono {
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);
@@ -619,12 +619,6 @@
 
 .ar-becomes {
   color: var(--color-text-muted);
-}
-
-.ar-tag {
-  padding-inline: var(--space-1);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-bg-muted);
 }
 
 .ar-places {

@@ -7,6 +7,7 @@ import type { DesignSystemIndex } from './ds-index';
 import { isColorLiteral } from './scan-value';
 import { auditCssText } from './style';
 import { scanClassString } from './tailwind';
+import { cssImitations, elementImitation, imitationRules, isDsComponentSource, settleToggles } from './imitations';
 import type { ComponentFinding } from './types';
 
 export type MarkupLang = 'astro' | 'vue' | 'svelte';
@@ -163,8 +164,10 @@ const NO_COLOR_ATTR_TAGS = new Set(['meta', 'link']);
 
 /** Audit an Astro, Vue or Svelte file. Line and column numbers are the file's own. */
 export function scanMarkup(path: string, text: string, lang: MarkupLang, ds: DesignSystemIndex): CodeScan {
-  const out: CodeScan = { findings: [], tokenUsages: 0, themeRefs: 0, ds: {}, components: [], definitions: [] };
+  const out: CodeScan = { findings: [], tokenUsages: 0, themeRefs: 0, ds: {}, components: [], definitions: [], imitations: [], classUses: [] };
   const pos = lineCol(text);
+  const rules = imitationRules(ds.components);
+  const checkImitations = !isDsComponentSource(path, ds.components);
   const blocks = markupBlocks(text, lang);
   const imports: ImportMap = new Map();
 
@@ -175,6 +178,8 @@ export function scanMarkup(path: string, text: string, lang: MarkupLang, ds: Des
     for (const [n, k] of Object.entries(c.ds)) out.ds[n] = (out.ds[n] ?? 0) + k;
     out.components.push(...c.components);
     out.definitions.push(...c.definitions);
+    out.imitations.push(...c.imitations);
+    out.classUses.push(...c.classUses);
   };
 
   // Frontmatter and scripts: the TS scanner on the file with everything else blanked, so positions stay put.
@@ -193,6 +198,7 @@ export function scanMarkup(path: string, text: string, lang: MarkupLang, ds: Des
     out.findings.push(...r.findings);
     out.tokenUsages += r.tokenUsages;
     out.themeRefs += r.themeRefs;
+    if (checkImitations) out.imitations.push(...cssImitations(text.slice(b.start, b.end), l === 'scss' || l === 'sass' ? 'scss' : l === 'less' ? 'less' : 'css', rules, pos, b.start));
   }
 
   /** A JS expression from the template, scanned in place: a prefix line above it keeps its line and column. */
@@ -200,7 +206,7 @@ export function scanMarkup(path: string, text: string, lang: MarkupLang, ds: Des
     const { line, column } = pos(offset);
     const src = line >= 2 ? `${'\n'.repeat(line - 2)}${prefix}\n${' '.repeat(column - 1)}${expr}${suffix}` : `${prefix}${expr}${suffix}`;
     const c = scanCode(`${path}.tsx`, src, ds);
-    merge({ ...c, components: keepLookalikes ? c.components.filter((x) => x.kind === 'recreated' && x.name.startsWith('.')) : [], definitions: [], ds: {} });
+    merge({ ...c, components: keepLookalikes ? c.components.filter((x) => x.kind === 'recreated' && x.name.startsWith('.')) : [], definitions: [], ds: {}, imitations: [], classUses: [] });
   };
 
   const styleAttr = (a: Attr) => {
@@ -282,10 +288,38 @@ export function scanMarkup(path: string, text: string, lang: MarkupLang, ds: Des
     if (isNative && noscript > 0) continue; // fallback markup for no-JS browsers
     const type = get('type');
     const r = classifyTag({ name, ...pos(m.index), ...(type?.kind === 'static' ? { type: type.value } : {}), hasHref: Boolean(get('href')) }, imports, ds);
+    // Attribute values the template states (a quoted string, or a string in braces), class names, a lone separator.
+    const facts = new Map<string, string[]>();
+    const classes: string[] = [];
+    for (const a of attrs) {
+      const n = attrName(a.name);
+      if (!n || a.kind === 'spread') continue;
+      const lit = a.kind === 'static' ? [a.value] : a.kind === 'bare' ? [''] : [...a.value.matchAll(/(["'`])([^"'`$]*)\1/g)].map((x) => x[2]!);
+      if (/^(class|className|class:list)$/.test(n)) classes.push(...lit.flatMap((v) => v.split(/\s+/)).filter((t) => /^-?[_a-zA-Z][\w-]*$/.test(t)));
+      else facts.set(n, a.kind === 'expr' && !/^\s*(["'`])[^"'`$]*\1\s*$/.test(a.value) && !/^[^?]*\?\s*["'`]/.test(a.value) ? [] : lit);
+    }
+    for (const cls of classes) out.classUses.push({ cls, ...(r.ds ? { ds: r.ds } : {}) });
+    const sep = tag.selfClosing ? null : /^\s*([·•])\s*<\//.exec(tpl.slice(tag.end, tag.end + 40));
+    const imitation = checkImitations
+      ? elementImitation({ name, ...pos(m.index), ...(r.ds ? { ds: r.ds } : {}), ...(isNative ? { native: lower } : {}), attrs: facts, classes, ...(sep ? { separatorOnly: sep[1]! } : {}) }, rules)
+      : undefined;
+    if (imitation) {
+      // An imitation is not adoption: left out of the DS and non-DS counts.
+      out.imitations.push(imitation);
+      continue;
+    }
     if (r.ds) out.ds[r.ds] = (out.ds[r.ds] ?? 0) + 1;
     if (r.component) out.components.push(r.component);
     if (r.localCandidate) pending.push(r.localCandidate);
   }
+
+  // A separator glyph typed between two elements (`</a> · <a`), not wrapped in an element of its own.
+  if (checkImitations && ds.components.has('Divider')) {
+    for (const m of tpl.matchAll(/(<\/[\w.-]+\s*>|\/>)([^\S\n]*[·•][^\S\n]*)</g)) {
+      out.imitations.push({ ...pos(m.index! + m[1]!.length + m[2]!.search(/[·•]/)), rule: 'separator', pattern: `typed separator "${m[2]!.trim()}"`, element: 'text', suggestion: 'Divider' });
+    }
+  }
+  out.imitations = settleToggles(out.imitations, rules).sort((a, b) => a.line - b.line || a.column - b.column);
 
   // The file itself defines a component named after it (Button.vue, Card.astro).
   const base = /([^/]+)\.(astro|vue|svelte)$/.exec(path)?.[1];

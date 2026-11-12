@@ -251,6 +251,12 @@ describe('MCP over stdio', () => {
     expect(data.findings).toBeUndefined();
     const clean = JSON.parse(text(await client.callTool({ name: 'bridge_audit', arguments: { path: 'packages/core/test/fixtures/audit/clean-app' } })));
     expect(clean.metrics).toMatchObject({ tokenAdoption: 100, componentAdoption: 100 });
+    expect(clean.imitations.total).toBe(0);
+    // Hand-made DS components (a Link with role="tab", a count span): counted apart, not as adoption.
+    const im = JSON.parse(text(await client.callTool({ name: 'bridge_audit', arguments: { path: 'packages/core/test/fixtures/audit/imitations-app', findings: true } })));
+    expect(im.imitations.total).toBe(im.metrics.imitations);
+    expect(im.imitations.byComponent.Tabs).toBeGreaterThan(0);
+    expect(im.findings.flatMap((f: { imitations: { pattern: string; use: string }[] }) => f.imitations)).toContainEqual(expect.objectContaining({ pattern: 'role="tab"', use: 'Tabs' }));
     const missing = await client.callTool({ name: 'bridge_audit', arguments: { path: 'nope/nothing' } });
     expect(missing.isError).toBe(true);
   });

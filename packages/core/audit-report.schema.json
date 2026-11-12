@@ -161,6 +161,11 @@
         "uiComponentInstances": {
           "type": "integer",
           "minimum": 0
+        },
+        "imitations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Component imitations: hand-made versions of a pattern a DS component covers (role=\"tab\" outside Tabs, a count span, a style sheet rule that draws a chip). Left out of componentAdoption: an imitation is not adoption. Absent in reports written before imitation detection."
         }
       }
     },
@@ -357,6 +362,57 @@
           },
           "suggestion": {
             "$ref": "#/$defs/suggestion"
+          }
+        }
+      }
+    },
+    "imitations": {
+      "type": "object",
+      "description": "Component imitations across the code: how many, by DS component to use, and the patterns to fix first.",
+      "required": [
+        "total",
+        "byComponent",
+        "topFixes"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byComponent": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "topFixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "suggestion",
+              "pattern",
+              "count",
+              "files"
+            ],
+            "properties": {
+              "suggestion": {
+                "type": "string",
+                "description": "The DS component to use."
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "files": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }
@@ -703,6 +759,12 @@
             }
           }
         },
+        "imitations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/imitation"
+          }
+        },
         "ignored": {
           "type": "array",
           "items": {
@@ -778,6 +840,10 @@
         },
         "ref": {
           "type": "string"
+        },
+        "imitations": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -820,6 +886,32 @@
             },
             "delta": {
               "type": "integer"
+            }
+          }
+        },
+        "imitations": {
+          "type": "object",
+          "description": "Null before when the baseline was written before imitation detection.",
+          "required": [
+            "before",
+            "after",
+            "delta"
+          ],
+          "properties": {
+            "before": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "after": {
+              "type": "integer"
+            },
+            "delta": {
+              "type": [
+                "integer",
+                "null"
+              ]
             }
           }
         },
@@ -919,7 +1011,8 @@
         "kind": {
           "enum": [
             "value",
-            "component"
+            "component",
+            "imitation"
           ]
         },
         "what": {
@@ -961,6 +1054,56 @@
         },
         "reason": {
           "type": "string"
+        }
+      }
+    },
+    "imitation": {
+      "type": "object",
+      "required": [
+        "line",
+        "column",
+        "rule",
+        "pattern",
+        "element",
+        "suggestion"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rule": {
+          "enum": [
+            "role",
+            "data-attr",
+            "toggle",
+            "class",
+            "css",
+            "html-string",
+            "separator"
+          ]
+        },
+        "pattern": {
+          "type": "string",
+          "description": "What gives it away: role=\"tab\", data-set-tab attribute, .page-tabs drawn by hand (border-bottom)."
+        },
+        "element": {
+          "type": "string",
+          "description": "The element, component or selector as written."
+        },
+        "suggestion": {
+          "type": "string",
+          "description": "The DS component to use."
+        },
+        "also": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

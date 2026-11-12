@@ -50,7 +50,7 @@ import { productFolders, type ProductStateKey } from '../../../lib/product-page'
 import { siteConfig } from '../../../scripts/repo-context';
 import { defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { leadTour, leadTourSteps, type LeadTourAt } from '../../../lib/lead-tour';
-import { useNarrow, useTour } from './HomeTour';
+import { useNarrow, useTour, type TourPlace } from './HomeTour';
 
 // The rows of the queue (NeedList) and Approve and Decline on a join request live in NeedRows.tsx, shared with
 // Settings > Members and the home of a team with no design system yet (JoinRequests.tsx).
@@ -125,8 +125,8 @@ function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRo
   // A reviewer's Review all opens Library review, the one queue of library pieces: the other rows (a usage guidance
   // draft, a library check, an exploration's review) unfold here, each row acting on its own.
   const [unfolded, setUnfolded] = useState(false);
-  // On a phone the rows can fill the first screen: the first step sits above them, in view where the page opens (a
-  // card in the flow, HomeTour.tsx). On a wide screen it floats under the rows it talks about.
+  // The step floats under the rows it talks about (HomeTour.tsx): its anchor sits on the zone's bottom edge wherever
+  // it renders, and takes no room.
   const narrow = useNarrow();
   return (
     <>
@@ -207,7 +207,7 @@ function Explorations({
         {/* "See all N": the explorations in progress, the number the list it opens shows by default (lib/waiting-counts). */}
         {explorations.length > EXPLORATION_CARDS && <Link href={seeAll}>{seeAllWords(inProgressCount(explorations))}</Link>}
       </header>
-      {/* On a phone the step is a card in the flow, before the cards; on a wide screen it floats under them, so it never
+      {/* The step floats under the cards (its anchor sits on the section's bottom edge, taking no room), so it never
           covers the first card ("Start an exploration"). */}
       {narrow && tour?.('branches')}
       {explorations.length ? (
@@ -392,8 +392,8 @@ export interface StudioHomeProps {
 
 /** Where a tour step can point: the lead's (lib/lead-tour LeadTourAt) and the contributor's ("start", the ways to start). */
 export type HomeTourAt = LeadTourAt | ContributorTourAt;
-/** The tour's popover for a step, anchored where it points, or nothing. */
-type HomeTour = (at: HomeTourAt) => ReactNode;
+/** The tour's popover for a step, anchored where it points (below a block, or beside a control), or nothing. */
+type HomeTour = (at: HomeTourAt, place?: TourPlace) => ReactNode;
 
 const CONTRIBUTOR_TOUR_KEY = 'bridge.home.contributor-tour';
 const LEAD_TOUR_KEY = 'bridge.home.lead-tour';
@@ -486,7 +486,7 @@ function HomeBody(p: StudioHomeProps) {
   const leadSteps = leadTourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
   const lead = useTour<LeadTourAt>(LEAD_TOUR_KEY, leadSteps, (at) => leadTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
   const tour: HomeTour | undefined = p.contributor
-    ? (at) => (at === 'branches' || at === 'start' ? own(at) : null)
+    ? (at, place) => (at === 'branches' || at === 'start' ? own(at, place) : null)
     : p.lead
       ? (at) => (at === 'rows' || at === 'more' || at === 'branches' ? lead(at) : null)
       : undefined;
@@ -552,13 +552,16 @@ function HomeBody(p: StudioHomeProps) {
                 !p.viewOnly && (
                   <span className="sh-start">
                     <StartExploration components={p.components} appearance="primary" />
+                    {/* "Where to start" floats beside the button it points at, over the harbor's sky: the hero keeps
+                        its height, the step covers neither the button nor the headline. */}
+                    {tour?.('start', 'beside')}
                   </span>
                 )
               )}
             </div>
           </div>
           {tour?.('branches')}
-          {tour?.('start')}
+          {p.viewOnly && tour?.('start')}
         </section>
         {p.failed && <p className="t-ui t-muted sh-health">{p.failed}</p>}
         <Status health={p.health} setup={p.setup} />

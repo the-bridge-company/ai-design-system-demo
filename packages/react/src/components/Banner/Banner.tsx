@@ -3,7 +3,7 @@ import { cx } from '../../utils/cx';
 import { Icon, type LucideIcon } from '../Icon';
 import styles from './Banner.module.css';
 
-export type BannerAppearance = 'strong' | 'neutral';
+export type BannerAppearance = 'strong' | 'neutral' | 'harbor';
 export type BannerSticky = 'top' | 'below-header';
 
 export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
@@ -17,7 +17,8 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title
   actions?: ReactNode;
   /**
    * `strong` (default): Deep Harbor, the one strong color, for a mode the whole page is in. `neutral`: the subtle
-   * ground, for a quieter mode such as a scoped editor.
+   * ground, for a quieter mode such as a scoped editor. `harbor`: the light Harbor zone (`color.bg.zone`), for a
+   * designer note or a Field Guide moment that opens a space; one Harbor zone per screen.
    */
   appearance?: BannerAppearance;
   /** Keep the banner in view while the page scrolls: at the top of the scroll area, or under the app header (`layout.header.height`). */

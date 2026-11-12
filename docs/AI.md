@@ -677,7 +677,9 @@ bridge audit ../my-app/src --allowlist known.json  # leave known file:line viola
   match nothing any more are printed so the list only shrinks.
 - The JSON report is versioned (`packages/core/audit-report.schema.json`). Commit it under
   `apps/docs-site/src/data/audits/` and the docs site shows it in Studio Quality (each report on its own page), with the trend across
-  baselines. Exit codes: 0 ok, 1 under `--fail-under` or regressed with `--no-regress`, 2 setup error.
+  baselines. Exit codes: 0 ok, 1 under `--fail-under` or regressed with `--no-regress`, 2 setup error. `--no-regress` fails
+  when token or component adoption drops, hardcoded values go up, or component imitations go up (skipped while the
+  baseline was written before imitation detection and has no `metrics.imitations`).
 - In the editor, the lint plugins give the same feedback while you type: `@bridge-ds/stylelint-plugin`
   (`bridge/use-tokens`, autofix for exact matches) and `@bridge-ds/eslint-plugin`
   (`bridge/no-hardcoded-style-values`, `bridge/prefer-ds-components`). See their READMEs.

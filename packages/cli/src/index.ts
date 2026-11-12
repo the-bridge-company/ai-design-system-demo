@@ -129,6 +129,8 @@ Usage:
                                       <!-- bridge-audit-ignore-next-line: reason --> (or // or /* */);
                                       --allowlist lists known file:line exceptions, each with a reason.
                                       Ignored items stay listed in the report.
+                                      --no-regress: exit 1 when adoption drops, hardcoded values or
+                                      imitations go up since --baseline.
                                       Exit 0 ok, 1 under --fail-under or regressed, 2 setup error
   bridge audit <path> --fix [--write] [--allowlist known.json] [--json]
                                       safe autofix: CSS values equal to a token become var(--token), with
@@ -778,6 +780,12 @@ async function audit(a: Args, root: string): Promise<number> {
     const b = report.baseline;
     if ((b.tokenAdoption.delta ?? 0) < 0 || (b.componentAdoption.delta ?? 0) < 0 || b.hardcoded.delta > 0) {
       process.stderr.write('bridge audit: adoption regressed since the baseline\n');
+      code = 1;
+    }
+    // Imitations must not increase. Skipped while the baseline predates imitation detection (before is null).
+    const im = b.imitations;
+    if (im && im.before != null && (im.delta ?? 0) > 0) {
+      process.stderr.write(`bridge audit: component imitations went up since the baseline (${im.before} to ${im.after}, +${im.delta}); use the DS components listed in --md, or refresh the baseline when a lower count lands\n`);
       code = 1;
     }
   }

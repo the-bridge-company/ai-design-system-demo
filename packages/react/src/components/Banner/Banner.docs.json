@@ -4,14 +4,15 @@
   "whenToUse": [
     "The whole page is in a mode the reader must not forget: previewing a past change, editing guidelines, viewing as another brand.",
     "Give the way out as an action on the same line (\"Back to latest library\"), a Button with size sm and variant secondary, and at most one more action. On narrow screens the actions go under the text and fill the row.",
-    "strong (default, Deep Harbor) for a mode the whole page is in; neutral for a quieter, scoped mode such as an editor.",
+    "strong (default, Deep Harbor) for a mode the whole page is in; neutral for a quieter, scoped mode such as an editor; harbor (the light Harbor zone) for a designer note or a Field Guide moment that opens a space, such as who decides in Library review.",
     "sticky=\"top\" or sticky=\"below-header\" when the page scrolls long, so the way back stays in view."
   ],
   "whenNotToUse": [
     "A message about the page's content (a failed build, a contrast warning): use Alert.",
     "Confirming an action the user just took: use a Toast.",
     "Marketing or announcements: Banner is for a state the page is in, not for news.",
-    "More than one per page: merge the modes into one sentence, or pick the one that matters."
+    "More than one per page: merge the modes into one sentence, or pick the one that matters.",
+    "A harbor banner when the screen already has a Harbor zone (a hero, a page header, the Studio greeting): one Harbor zone per screen. Use neutral instead."
   ],
   "dos": [
     {
@@ -23,6 +24,11 @@
       "title": "Neutral for a scoped mode",
       "text": "An edit mode on one part of the page does not need the strong color. Keep Deep Harbor for modes the whole page is in.",
       "example": { "c": "Banner", "p": { "appearance": "neutral", "icon": "PencilRuler", "title": "Editing the Button guidelines" }, "children": ["Changes stay in a draft until you open a pull request."] }
+    },
+    {
+      "title": "Harbor for a designer note",
+      "text": "A note that opens a space, such as who decides and how review works, sits on the light Harbor zone. Keep it the only Harbor zone on the screen.",
+      "example": { "c": "Banner", "p": { "appearance": "harbor", "icon": "Compass", "title": "Ana Ruiz decides what joins the library." }, "children": ["Leave a comment on any piece; your lead sees it before deciding."] }
     }
   ],
   "donts": [
@@ -42,6 +48,7 @@
     "Not a live region: the banner is part of the page when it loads. If a mode starts without a page load, move focus to the banner title or announce the mode once.",
     "The actions are real Buttons on the same line as the title, reached with Tab right after the title.",
     "The strong appearance uses color.surface.strong (Deep Harbor in both themes) with color.text.on-solid, 8.87:1, and the focus ring inside it takes the text color. The icon and the words carry the mode, never color alone.",
+    "The harbor appearance uses color.bg.zone with color.text.default for the title and icon (13.07:1 light, 14.05:1 dark) and color.text.muted for the detail (4.64:1 light, 6.40:1 dark); links and the focus ring are checked zone pairs too (7.03:1 light, 6.47:1 dark). Keep the detail short: muted text on the zone is the tightest pair.",
     "Sticky banners stay under the app header (layout.header.height) and above the content (layer.sticky), so they never hide the header's controls."
   ],
   "contentGuidelines": [
@@ -54,6 +61,7 @@
     "banner": "Container, a landmark region named by the title",
     "strong": "Strong appearance: Deep Harbor (default)",
     "neutral": "Neutral appearance: subtle ground",
+    "harbor": "Harbor appearance: the light Harbor zone, for a designer note",
     "stickyTop": "Sticky at the top of the scroll area",
     "stickyHeader": "Sticky under the app header",
     "lead": "Icon and text, kept together on the left",

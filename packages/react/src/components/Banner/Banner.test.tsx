@@ -4,6 +4,7 @@ import { Eye } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../test/axe';
 import { Button } from '../Button';
+import { Link } from '../Link';
 import styles from './Banner.module.css';
 import { Banner } from './Banner';
 
@@ -45,6 +46,10 @@ describe('Banner', () => {
     rerender(<Banner title={TITLE} appearance="neutral" sticky="top" />);
     expect(region()).toHaveClass(c('neutral'), c('stickyTop'));
     expect(region()).not.toHaveClass(c('strong'));
+    rerender(<Banner title={TITLE} appearance="harbor" />);
+    expect(region()).toHaveClass(c('banner'), c('harbor'));
+    expect(region()).not.toHaveClass(c('strong'));
+    expect(region()).not.toHaveClass(c('neutral'));
     rerender(<Banner title={TITLE} sticky="below-header" />);
     expect(region()).toHaveClass(c('stickyHeader'));
     expect(region()).not.toHaveClass(c('stickyTop'));
@@ -59,6 +64,20 @@ describe('Banner', () => {
     );
     expect(screen.getByRole('region', { name: 'Viewing the library as change #118.' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Editing the Button guidelines' })).toBeInTheDocument();
+    await expectNoAxeViolations();
+  });
+
+  it('harbor: a designer note is a region named by its title, its link reached with Tab, no axe violations', async () => {
+    render(
+      <Banner appearance="harbor" icon={Eye} title="Ana Ruiz decides what joins the library." actions={<Link href="#how">How library review works</Link>}>
+        Leave a comment on any piece; your lead sees it before deciding.
+      </Banner>,
+    );
+    const region = screen.getByRole('region', { name: 'Ana Ruiz decides what joins the library.' });
+    expect(region).toHaveClass(c('harbor'));
+    expect(region).toHaveTextContent('Leave a comment on any piece');
+    await userEvent.tab();
+    expect(screen.getByRole('link', { name: 'How library review works' })).toHaveFocus();
     await expectNoAxeViolations();
   });
 });

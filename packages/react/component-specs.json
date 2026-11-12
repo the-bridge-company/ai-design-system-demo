@@ -4109,7 +4109,7 @@
     },
     {
       "name": "Banner",
-      "hash": "684032b6",
+      "hash": "dd15480f",
       "source": [
         "packages/react/src/components/Banner/Banner.tsx",
         "packages/react/src/components/Banner/Banner.module.css",
@@ -4121,7 +4121,8 @@
           "prop": "appearance",
           "values": [
             "strong",
-            "neutral"
+            "neutral",
+            "harbor"
           ],
           "default": "strong"
         }
@@ -4349,6 +4350,66 @@
               "counterAxisSpacing": "space.2",
               "strokeWeight": "border-width.default",
               "stroke": "color.border.default"
+            },
+            "lead": {
+              "itemSpacing": "space.3"
+            },
+            "icon": {
+              "width": "icon.size.md",
+              "height": "icon.size.md",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "content": {
+              "itemSpacing": "space.0-5"
+            },
+            "title": {},
+            "title-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.semibold",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description": {},
+            "text": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "actions": {
+              "itemSpacing": "space.2",
+              "counterAxisSpacing": "space.2"
+            },
+            "actions-text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/Eye"
+          }
+        },
+        {
+          "props": {
+            "Appearance": "harbor"
+          },
+          "values": {
+            "root": {
+              "fill": "color.bg.zone",
+              "cornerRadius": "radius.container",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.4",
+              "itemSpacing": "space.3",
+              "minHeight": "calc(control.height.md + space.4)",
+              "counterAxisSpacing": "space.2",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.bg.zone"
             },
             "lead": {
               "itemSpacing": "space.3"
@@ -39643,6 +39704,11 @@
       "name": "Columns2",
       "lucide": "columns-2",
       "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M12 3v18\"/></svg>"
+    },
+    {
+      "name": "Compass",
+      "lucide": "compass",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"/></svg>"
     },
     {
       "name": "Copy",

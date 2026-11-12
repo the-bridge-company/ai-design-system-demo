@@ -37,7 +37,7 @@ import { canonicalEmail, emailSpellings } from './canonical-email.js';
 import { issueKey } from './former-member.js';
 import type { FetchLike } from './http.js';
 import { memberStore, type MemberStore } from './members.js';
-import { askedToReview, reviewModeOf } from './review-mode.js';
+import { asksAnyReview, designReviewsOf } from './review-settings.js';
 import { cleanTitle, NEEDS_KINDS, type Notice, type NotifyKind } from './notify-events.js';
 import { digestEmail, instantEmail, unsubToken, type NotifyItem, type UnsubKind } from './notify-mail.js';
 import type { Redis, RedisArg } from './redis.js';
@@ -346,10 +346,10 @@ async function withEmailLeads(notices: Notice[], d: NotifyDeps, members: MemberS
   if (!waits) return notices;
   const repoMeta = parse<RepoMeta>(await d.redis.cmd('GET', repoMetaKey(waits.repo)));
   if (!repoMeta || typeof repoMeta.team !== 'string') return notices;
-  // Who is asked (api/_lib/review-mode.ts): the design leads, or every designer when review is shared. An admin decides
-  // when they want to, and is never asked.
-  const mode = await reviewModeOf(d.redis, repoMeta.team);
-  const leads = (await members.list(repoMeta.team)).filter((m) => askedToReview(m, mode) && (!waits.takerOnly || (waits.taker?.name !== undefined && m.name === waits.taker.name)));
+  // Who is asked (api/_lib/review-settings.ts): the library owners and the design reviewers. An admin decides when they
+  // want to, and is never asked.
+  const map = await designReviewsOf(d.redis, repoMeta.team, () => members.list(repoMeta.team));
+  const leads = (await members.list(repoMeta.team)).filter((m) => asksAnyReview(m, map) && (!waits.takerOnly || (waits.taker?.name !== undefined && m.name === waits.taker.name)));
   const first = new Set<string>();
   const extra = originals.filter((n) => LEAD_WAITS.has(n.kind) && !first.has(n.kind) && first.add(n.kind)).flatMap((n) => leads.filter((m) => m.name !== n.actorName).map((m) => ({ ...n, to: [`email:${m.email}`] })));
   return [...notices, ...extra];

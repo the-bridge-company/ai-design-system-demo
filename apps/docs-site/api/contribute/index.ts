@@ -176,7 +176,10 @@ import {
 } from '../_lib/http.js';
 import { meteredFromEnv } from '../_lib/github-quota.js';
 import { approves, memberCanWrite, memberStore, type EmailMember, type MemberStore } from '../_lib/members.js';
-import { askedToReview, decidesOnExplorations, needsReview, reviewModeOf, type ReviewMode } from '../_lib/review-mode.js';
+import { asksAnyReview, asksDesignReview, asksLibrary, decidesOnExplorations, designReviewsOf, needsReview, reviewsNoteOf, ANY_PRODUCT, OWNERS_ANY, type DesignReviewMap } from '../_lib/review-settings.js';
+
+/** The team's design reviews (api/_lib/review-settings.ts), migrated on first read. */
+const reviewsOf = (svc: Pick<Services, 'redis' | 'members'>, team: string): Promise<DesignReviewMap> => designReviewsOf(svc.redis, team, () => svc.members.list(team));
 import { redisRest, type Redis } from '../_lib/redis.js';
 import { sharedAppTokens } from '../_lib/shared-token.js';
 import { configName, putTeamName } from '../_lib/teams.js';
@@ -533,17 +536,24 @@ export async function contributorOf(req: Request, repoFull: string, env: Contrib
 }
 
 /**
- * The member as their own browser reads them. `lead`: asked to review explorations (emails, Needs you); `decides`: may
- * answer on someone else's exploration (a lead, any designer when review is shared, an admin who is never asked).
+ * The member as their own browser reads them (two reviews, api/_lib/review-settings.ts). `lead`: asked some review
+ * (emails, Needs you); `libraryOwner`: decides what the library keeps; `designReviews`: the products whose design they
+ * review ("*" for every product not listed); `decides`: may answer on someone else's exploration (whoever is asked, and
+ * an admin who is never asked).
  */
-const publicMember = (m: EmailMember, mode: ReviewMode = 'one') => ({
-  email: m.email,
-  name: m.name,
-  role: m.role,
-  ref: memberRef(m.email),
-  ...(askedToReview(m, mode) ? { lead: true } : {}),
-  ...(decidesOnExplorations(m, mode) ? { decides: true } : {}),
-});
+const publicMember = (m: EmailMember, map: DesignReviewMap = {}) => {
+  const designReviews = [...Object.keys(map), ANY_PRODUCT].filter((k, i, all) => k !== OWNERS_ANY && all.indexOf(k) === i && asksDesignReview(m, k, map));
+  return {
+    email: m.email,
+    name: m.name,
+    role: m.role,
+    ref: memberRef(m.email),
+    ...(asksAnyReview(m, map) ? { lead: true } : {}),
+    ...(asksLibrary(m, map) ? { libraryOwner: true } : {}),
+    ...(designReviews.length ? { designReviews } : {}),
+    ...(decidesOnExplorations(m, map) ? { decides: true } : {}),
+  };
+};
 
 // ---------------------------------------------------------------------------------------------------------------
 // Small helpers
@@ -705,7 +715,7 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
       // A lead signed in by email hands an exploration over: the member record says they lead, never the browser.
       const team = parseRepo(body.repo);
       const m = await sessionMember(ctx, req, team.full);
-      if (!decidesOnExplorations(m, await reviewModeOf(ctx.svc.redis, team.full))) return fail(403, 'not-allowed', LEAD_ONLY);
+      if (!decidesOnExplorations(m, await reviewsOf(ctx.svc, team.full))) return fail(403, 'not-allowed', LEAD_ONLY);
       return explorationKeeper(ctx.svc, team.full.toLowerCase(), body);
     }
 
@@ -1612,7 +1622,7 @@ async function readBuild(req: Request, ctx: Ctx, body: Record<string, unknown>, 
   const pm = await pmOf(ctx.svc.redis, t.full, product);
   // The design lead checks again only when the exploration sent pieces to the library: those change since approval.
   const designerName = typeof block.memberName === 'string' ? block.memberName : typeof block.author === 'string' ? block.author : typeof block.doneBy === 'string' ? block.doneBy : undefined;
-  const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block.leadPieces) && block.leadPieces.length > 0, names: { ...(designerName ? { designer: designerName } : {}), ...(pm ? { pm: pm.name } : {}) } };
+  const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block.askedPieces) && block.askedPieces.length > 0, names: { ...(designerName ? { designer: designerName } : {}), ...(pm ? { pm: pm.name } : {}) } };
   const designer = Boolean((typeof block.member === 'string' && who.email && block.member === memberRef(who.email)) || (who.login && [block.author, block.doneBy].some((a) => typeof a === 'string' && a.toLowerCase() === who.login!.toLowerCase())));
   const role: BuildRole | null = designer ? 'designer' : isPm(pm, who) ? 'pm' : who.lead ? 'lead' : null;
   // Check the build, region by region: a read asks Bridge's workflow to measure this head when it has no measure yet.
@@ -2274,7 +2284,7 @@ async function planCall(ctx: Ctx, c: Call): Promise<Plan> {
   const info = async () => (facts ??= await repoFacts(ctx, c));
   const def = async () => (await info()).defaultBranch;
   const isDefault = async (b: string) => b.toLowerCase() === (await def()).toLowerCase();
-  const decider = async () => decidesOnExplorations(c.member, await reviewModeOf(ctx.svc.redis, c.team));
+  const decider = async () => decidesOnExplorations(c.member, await reviewsOf(ctx.svc, c.team));
   const ownsBranch = async (b: unknown) => typeof b === 'string' && validBranch(b) && !(await isDefault(b)) && (sameEmail(await ctx.svc.redis.cmd('GET', branchKey(c.full, b)), c.member.email) || Boolean(b.startsWith(EXPLORATION_PREFIX) && (await decider())));
   const ownsIssue = async (n: string | undefined) => n !== undefined && NUMBER.test(n) && (sameEmail(await ctx.svc.redis.cmd('GET', issueKey(c.full, n)), c.member.email) || Boolean((await decider()) && (await explorationOfLead(ctx, c, n))));
   const recordIssue = async (data: any) => {
@@ -2737,7 +2747,7 @@ const ownedByKey = async (ctx: Ctx, c: Call, n: string) => sameEmail(await ctx.s
  * on GitHub (null: not read, the caller counts as the author).
  */
 async function reviewFor(ctx: Ctx, c: Call, body: unknown): Promise<{ decides: boolean; needs: boolean }> {
-  const mode = await reviewModeOf(ctx.svc.redis, c.team);
+  const map = await reviewsOf(ctx.svc, c.team);
   const block = explorationBlockOf(body);
   const me = memberRef(c.member.email);
   const authorRef = typeof block?.member === 'string' ? block.member : null;
@@ -2745,7 +2755,7 @@ async function reviewFor(ctx: Ctx, c: Call, body: unknown): Promise<{ decides: b
   const mine = block === null || authorRef === me || Boolean(c.member.login && authorLogin === c.member.login.toLowerCase());
   const others = (await ctx.svc.members.list(c.team)).filter((m) => memberRef(m.email) !== (authorRef ?? me) && !sameEmail(m.email, c.member.email));
   const owners = (await teamFactsOf(ctx, c)).designOwnerLogins.filter((l) => l !== authorLogin && l !== c.member.login?.toLowerCase());
-  return { decides: !mine && decidesOnExplorations(c.member, mode), needs: needsReview({ mode, designOwners: owners.length, members: others }) };
+  return { decides: !mine && decidesOnExplorations(c.member, map), needs: needsReview({ map, designOwners: owners.length, members: others }) };
 }
 
 /** A member who may not decide never writes a lead's words in a block (api/_lib/lead-gate.ts), read against GitHub's body. */
@@ -2874,7 +2884,7 @@ async function ownedCopyPull(ctx: Ctx, m: ProxyMember, copy: RepoAt, token: stri
     head.repo.full_name.toLowerCase() === copy.full &&
     (await ownsExploration(ctx, m, copy, token, isDefault, head.ref, p.data));
   // A lead acts on it without owning it: nothing Bridge keeps about who it belongs to moves.
-  if (!mine && p.status === 200 && explorationBlockOf(p.data?.body) && decidesOnExplorations(m, await reviewModeOf(ctx.svc.redis, team))) return p.data;
+  if (!mine && p.status === 200 && explorationBlockOf(p.data?.body) && decidesOnExplorations(m, await reviewsOf(ctx.svc, team))) return p.data;
   const kept = await ctx.svc.redis.cmd('GET', key);
   if (mine) {
     if (!sameEmail(kept, m.email)) {
@@ -3486,21 +3496,28 @@ async function membersOf(ctx: Ctx, req: Request, full: string, m: EmailMember | 
   const admins = ctx.svc.localAdmins ? await ctx.svc.localAdmins.adminsOf(full) : [];
   // Each with their reference (a hash, never the email): Settings picks a product manager by it. Who is asked to
   // review explorations (api/_lib/review-mode.ts), so Studio knows whether Done exploring goes through someone.
-  const mode = await reviewModeOf(ctx.svc.redis, full);
-  const members = people.map((p) => ({
-    name: p.name,
-    role: admins.some((e) => sameEmail(e, p.email)) ? 'admin' : p.role,
-    ref: memberRef(p.email),
-    ...(askedToReview(p, mode) ? { lead: true } : {}),
-    ...(m && sameEmail(p.email, m.email) ? { you: true } : {}),
-  }));
+  const map = await reviewsOf(ctx.svc, full);
+  const members = people.map((p) => {
+    const pub = publicMember(p, map);
+    return {
+      name: p.name,
+      role: admins.some((e) => sameEmail(e, p.email)) ? 'admin' : p.role,
+      ref: pub.ref,
+      ...(pub.lead ? { lead: true } : {}),
+      ...(pub.libraryOwner ? { libraryOwner: true } : {}),
+      ...(pub.designReviews ? { designReviews: pub.designReviews } : {}),
+      ...(m && sameEmail(p.email, m.email) ? { you: true } : {}),
+    };
+  });
+  // The two reviews (Settings > Reviews): each product's design review, and the one time note after the migration.
+  const reviews = { designReview: map, note: await reviewsNoteOf(ctx.svc.redis, full) };
   const pms = Object.fromEntries(Object.entries(await pmsOf(ctx.svc.redis, full).catch(() => ({}) as Record<string, ProductPm>)).map(([k, v]) => [k, publicPm(v)]));
   // The team face map (api/_lib/team-faces.ts): the faces people saved, and who joined first (first claim wins), so
   // every member's Studio draws the team the same and apart (src/lib/team-faces.ts teamDrawings).
   const joined = [...people].sort((x, y) => (Date.parse(x.at || '') || 0) - (Date.parse(y.at || '') || 0)).map((p) => nameFace(p.name));
   const saved = facesOf(await getTeamFaces(ctx.svc.redis, full).catch(() => ({})), new Set(joined));
   const faces = { saved, order: [...joined, ...collaborators.map((c) => c.login.toLowerCase())] };
-  return json(200, { collaborators, members, pms, reviewMode: mode, faces }, { 'Cache-Control': 'private, no-store' });
+  return json(200, { collaborators, members, pms, reviews, faces }, { 'Cache-Control': 'private, no-store' });
 }
 
 /**
@@ -3567,7 +3584,7 @@ export function designCheckFor(ctx: Ctx): (event: string, payload: unknown) => P
     const block = ex?.status === 200 ? explorationBlockOf(ex.data?.body) : null;
     const pm = meta.product ? await pmOf(ctx.svc.redis, meta.team, meta.product) : null;
     const designer = typeof block?.memberName === 'string' ? block.memberName : typeof block?.author === 'string' ? block.author : typeof block?.doneBy === 'string' ? block.doneBy : undefined;
-    const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block?.leadPieces) && (block!.leadPieces as unknown[]).length > 0, names: { ...(designer ? { designer } : {}), ...(pm ? { pm: pm.name } : {}) } };
+    const need: BuildNeed = { pm: Boolean(pm), lead: Array.isArray(block?.askedPieces) && (block!.askedPieces as unknown[]).length > 0, names: { ...(designer ? { designer } : {}), ...(pm ? { pm: pm.name } : {}) } };
     const words = await saveBuild(ctx.svc.redis, repo, pr!.number as number, need);
     await write(designCheckStatus(buildStateOf(words, head, need), need.names, { designChanging: Boolean(block && typeof block.doneAt !== 'string') }));
     return 'linked';
@@ -3758,9 +3775,9 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       // Local mode only: a member seeded as admin reads as admin, so Studio shows them the admin screens (the server
       // checks again on every admin action).
       const admin = Boolean(m && svc.localAdmins && (await svc.localAdmins.isAdmin(full, m.email)));
-      const mode = m ? await reviewModeOf(svc.redis, full) : 'one';
-      const member = m ? { ...publicMember(m, mode), ...(admin ? { role: 'admin', decides: true } : {}), ...(visitor ? { visitor: true } : {}) } : null;
-      return json(200, { available: true, member, ...(m ? { reviewMode: mode } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true, pick?.as) } : {});
+      const map = m ? await reviewsOf(svc, full) : {};
+      const member = m ? { ...publicMember(m, map), ...(admin ? { role: 'admin', decides: true } : {}), ...(visitor ? { visitor: true } : {}) } : null;
+      return json(200, { available: true, member, ...(m ? { reviews: { designReview: map } } : {}) }, visit ? { 'Set-Cookie': issueSession(visit, full, svc.secret, ctx.now(), true, pick?.as) } : {});
     }
 
     if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);

@@ -101,7 +101,7 @@ export function reopenedBody(body: string, d: { at: string; by?: string; byName:
     return null;
   }
   const kept = body.replace(/### For developers[\s\S]*?(?=### |<!-- |$)/, '');
-  for (const k of ['doneAt', 'doneSha', 'reopenedBy', 'doneByMember', 'leadOkBy']) delete e[k];
+  for (const k of ['doneAt', 'doneSha', 'reopenedBy', 'doneByMember', 'designOkBy']) delete e[k];
   e.reopenedAt = d.at;
   if (d.by) e.reopenedBy = d.by;
   const before = Array.isArray(e.decisions) ? (e.decisions as { kind?: unknown }[]).filter((x) => x && typeof x === 'object') : [];

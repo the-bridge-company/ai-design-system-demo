@@ -36,7 +36,12 @@ export interface EmailMember {
   role: EmailRole;
   /** Bumped on every (re)join: a session signed for another version is refused. */
   version: number;
-  /** A design lead of the team, given by an admin: they answer on explorations, through api/contribute's policy. Never on GitHub reviews. */
+  /**
+   * Decides what the library keeps (Settings > Reviews > The library, api/_lib/review-settings.ts). Never on GitHub
+   * reviews. Written since 2026-11-12; `lead` is the older name of the same right and reads as it.
+   */
+  libraryOwner?: boolean;
+  /** @deprecated The older "design lead": reads as libraryOwner (review-settings isLibraryOwner), never written again. */
   lead?: boolean;
   /** Who added them: a GitHub login, or the name of the email admin who did. */
   addedBy: string;

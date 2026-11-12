@@ -216,7 +216,7 @@ export function leadNoticesOf(before: unknown, after: unknown, base: { repo: str
   const had = decisionsIn(was).length;
   const fresh = decisionsIn(now).slice(had);
   const title = cleanTitle(now.name);
-  const asked = logins(now.leadAskedTo);
+  const asked = logins(now.designAskedTo);
   const common = { repo: base.repo, items: [base.number], title, copy: null, scope: 'any' as const };
   const actor = (d: BlockDecision) => ({ login: typeof d.by === 'string' ? d.by : '', id: null });
   const out: Notice[] = [];
@@ -256,12 +256,12 @@ export function leadNoticesOf(before: unknown, after: unknown, base: { repo: str
     out.push({ ...common, kind: 'lead-library-choice', actor: actor(c as BlockDecision), ...named(c as BlockDecision) });
   }
   // "I'll look": nobody hears about it; the reminders move to the one who took it (notify.ts). Who waits stays the designer.
-  if (typeof now.leadTakenAt === 'string' && typeof was?.leadTakenAt !== 'string' && typeof now.leadAskedAt === 'string') {
-    const login = typeof now.leadTakenBy === 'string' ? now.leadTakenBy : '';
-    const name = typeof now.leadTakenByName === 'string' ? now.leadTakenByName : '';
-    const by = typeof now.leadAskedBy === 'string' ? now.leadAskedBy : '';
-    const byName = typeof now.leadAskedByName === 'string' ? now.leadAskedByName : typeof now.memberName === 'string' ? now.memberName : '';
-    const askedAt = Date.parse(now.leadAskedAt);
+  if (typeof now.designTakenAt === 'string' && typeof was?.designTakenAt !== 'string' && typeof now.designAskedAt === 'string') {
+    const login = typeof now.designTakenBy === 'string' ? now.designTakenBy : '';
+    const name = typeof now.designTakenByName === 'string' ? now.designTakenByName : '';
+    const by = typeof now.designAskedBy === 'string' ? now.designAskedBy : '';
+    const byName = typeof now.designAskedByName === 'string' ? now.designAskedByName : typeof now.memberName === 'string' ? now.memberName : '';
+    const askedAt = Date.parse(now.designAskedAt);
     out.push({
       ...common,
       kind: 'lead-taken',
@@ -273,10 +273,19 @@ export function leadNoticesOf(before: unknown, after: unknown, base: { repo: str
     });
   }
   // Asked now and it was not before, with nothing else said: Done exploring, or sent back without a word.
-  if (typeof now.leadAskedAt === 'string' && typeof was?.leadAskedAt !== 'string' && !fresh.some((d) => d.kind === 'answer')) {
-    const by = typeof now.leadAskedBy === 'string' ? now.leadAskedBy : '';
-    const byName = typeof now.leadAskedByName === 'string' ? now.leadAskedByName : typeof now.memberName === 'string' ? now.memberName : '';
+  if (typeof now.designAskedAt === 'string' && typeof was?.designAskedAt !== 'string' && !fresh.some((d) => d.kind === 'answer')) {
+    const by = typeof now.designAskedBy === 'string' ? now.designAskedBy : '';
+    const byName = typeof now.designAskedByName === 'string' ? now.designAskedByName : typeof now.memberName === 'string' ? now.memberName : '';
     out.push({ ...common, kind: 'lead-ask', actor: { login: by, id: null }, ...(byName ? { actorName: byName } : {}), to: asked, waits: true });
+  } else {
+    // The library decision asked on its own (two reviews: no design review on this product): its owners hear it.
+    const lib = (o: Record<string, unknown> | null) => (o?.library && typeof o.library === 'object' ? (o.library as Record<string, unknown>) : null);
+    const nowLib = lib(now);
+    if (typeof nowLib?.askedAt === 'string' && typeof lib(was)?.askedAt !== 'string' && !fresh.some((d) => d.kind === 'answer')) {
+      const by = typeof nowLib.askedBy === 'string' ? nowLib.askedBy : '';
+      const byName = typeof nowLib.askedByName === 'string' ? nowLib.askedByName : typeof now.memberName === 'string' ? now.memberName : '';
+      out.push({ ...common, kind: 'lead-ask', actor: { login: by, id: null }, ...(byName ? { actorName: byName } : {}), to: logins(nowLib.askedTo), waits: true });
+    }
   }
   return out;
 }

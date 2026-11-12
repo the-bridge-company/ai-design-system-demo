@@ -12,13 +12,40 @@ export const memberRef = (email: string): string => sha256(`member:${email.trim(
 
 const isEmail = (v: unknown) => typeof v === 'string' && v.includes('@');
 
+/**
+ * The design review's fields as bodies written before 2026-11-12 name them ("lead" for both reviews), moved to their
+ * names now. The server copy of core explorations.ts LEGACY_REVIEW_FIELDS (a test holds them equal).
+ */
+export const LEGACY_REVIEW_FIELDS: Readonly<Record<string, string>> = {
+  leadAskedAt: 'designAskedAt',
+  leadAskedBy: 'designAskedBy',
+  leadAskedByName: 'designAskedByName',
+  leadPieces: 'askedPieces',
+  leadAskedTo: 'designAskedTo',
+  leadAskedSha: 'designAskedSha',
+  leadTakenAt: 'designTakenAt',
+  leadTakenBy: 'designTakenBy',
+  leadTakenByName: 'designTakenByName',
+  leadOkBy: 'designOkBy',
+};
+
+function withLegacyNames(raw: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...raw };
+  for (const [old, now] of Object.entries(LEGACY_REVIEW_FIELDS)) {
+    if (!(old in out)) continue;
+    if (out[now] === undefined) out[now] = out[old];
+    delete out[old];
+  }
+  return out;
+}
+
 /** The exploration block of a pull request body as an object, or null (no block, or not one Bridge can read). */
 export function explorationBlockOf(body: unknown): Record<string, unknown> | null {
   const m = typeof body === 'string' ? BLOCK.exec(body) : null;
   if (!m) return null;
   try {
     const e = JSON.parse(m[1]!) as unknown;
-    return e && typeof e === 'object' && !Array.isArray(e) ? (e as Record<string, unknown>) : null;
+    return e && typeof e === 'object' && !Array.isArray(e) ? withLegacyNames(e as Record<string, unknown>) : null;
   } catch {
     return null;
   }

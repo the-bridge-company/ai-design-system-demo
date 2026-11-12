@@ -25,9 +25,11 @@ export function addsLeadWords(before: unknown, after: unknown, team: { hasLeads:
   if (!now) return false;
   const known = new Set(leadWords(was));
   if (leadWords(now).some((w) => !known.has(w))) return true;
-  if (now.leadOkBy !== undefined && now.leadOkBy !== was?.leadOkBy) return true;
+  if (now.designOkBy !== undefined && now.designOkBy !== was?.designOkBy) return true;
+  // The design review's yes while the library decision waits (two reviews): a reviewer's word.
+  if (now.designOkAt !== undefined && now.designOkAt !== was?.designOkAt) return true;
   // "I'll look" is a reviewer's word too.
-  if (now.leadTakenAt !== undefined && now.leadTakenAt !== was?.leadTakenAt) return true;
+  if (now.designTakenAt !== undefined && now.designTakenAt !== was?.designTakenAt) return true;
   return team.hasLeads && Boolean(now.doneAt) && !was?.doneAt;
 }
 

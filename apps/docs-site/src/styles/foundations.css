@@ -937,9 +937,11 @@
 }
 
 .fd-alias {
+  overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

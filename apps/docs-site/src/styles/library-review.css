@@ -322,6 +322,13 @@ a.lr-ask {
   white-space: nowrap;
 }
 
+/* The first name and the dot never shorten: only the exploration does. */
+.lr-line-who,
+.lr-line-sep {
+  flex: none;
+  white-space: nowrap;
+}
+
 .lr-side-flag {
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
@@ -531,9 +538,12 @@ a.lr-ask {
    each group's name in a sticky rail on the start side of its rows. */
 
 .lr-list {
-  /* The columns the rows fill, set by the list (LibraryReview ListView): no empty column, the same in every card. */
-  --lr-cols: var(--lr-cols-wide, minmax(0, var(--size-40)) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.9fr));
+  /* The columns a phone's stacked rows fill (below); wider screens use each card's own grid (--lr-grid). */
+  --lr-cols: minmax(0, 1fr) auto;
   --lr-rail: var(--size-40);
+
+  /* The container its rows measure: the columns fold by the room of the whole list (see below). */
+  container: lr-list / inline-size;
 
   display: grid;
   gap: var(--space-12);
@@ -624,7 +634,14 @@ a.lr-ask {
   font-variant-numeric: tabular-nums;
 }
 
-/* One card per chapter. */
+/* One card per chapter. Each card carries its own grid in three widths (LibraryReview ListView, lib/library-review-list
+   listGrid); the list picks which one by its room, the same for every card, so no cell ever cuts its words. */
+
+.lr-chapter-cols,
+.lr-row {
+  --lr-grid: var(--lr-cols-wide, var(--lr-cols));
+}
+
 .lr-chapter-card {
   min-width: 0;
   border: var(--border-width-default) solid var(--color-border-default);
@@ -636,7 +653,7 @@ a.lr-ask {
 .lr-chapter-cols,
 .lr-row {
   display: grid;
-  grid-template-columns: var(--lr-cols);
+  grid-template-columns: var(--lr-grid);
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-5);
@@ -652,7 +669,7 @@ a.lr-ask {
 }
 
 .lr-chapter.has-rail .lr-chapter-cols {
-  grid-template-columns: calc(var(--lr-rail) - var(--space-5)) var(--lr-cols);
+  grid-template-columns: calc(var(--lr-rail) - var(--space-5)) var(--lr-grid);
 }
 
 .lr-list-group {
@@ -703,13 +720,11 @@ a.lr-ask {
 }
 
 /* A row's name links to the piece: plain until hovered, like a table's first cell. */
-.lr-row-title:is(a),
-a.lr-asked {
+.lr-row-title:is(a) {
   text-decoration-line: none;
 }
 
-.lr-row-title:is(a):hover,
-a.lr-asked:hover .lr-asked-name {
+.lr-row-title:is(a):hover {
   text-decoration-line: underline;
 }
 
@@ -772,12 +787,14 @@ a.lr-asked:hover .lr-asked-name {
   color: var(--color-text-muted);
 }
 
-/* The Piece column: what the piece is, only. Its name (a link to it in One by one), its library page, its kind. */
+/* The Piece column: what the piece is, only. Its name (a link to it in One by one), its library page, its kind. Room
+   for a name on two lines on every row, so the rows of a list are all the same height. */
 .lr-row-piece {
   display: grid;
   align-content: center;
   gap: var(--space-0-5);
   min-width: 0;
+  min-height: calc(2 * var(--typography-ui-line-height) + var(--space-0-5) + var(--typography-caption-line-height));
 }
 
 .lr-row-head {
@@ -847,7 +864,14 @@ a.lr-asked:hover .lr-asked-name {
   background-color: var(--color-surface-default);
 }
 
-/* --- Asked by: a face wearing the product's mark, then the exploration (one kind of content) ---------------------- */
+/* --- Asked by and From: one kind of info per column, the same anatomy on every row --------------------------------
+   Asked by: a face and a first name, on one center line. From: the exploration on one line (an ellipsis only when the
+   card is narrow, its full name on hover), its product under it in muted text, or "Asked directly". */
+
+.lr-row-from {
+  display: flex;
+  min-width: 0;
+}
 
 .lr-asked {
   display: inline-flex;
@@ -857,25 +881,65 @@ a.lr-asked:hover .lr-asked-name {
   min-width: 0;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
-  line-height: var(--typography-caption-line-height);
-  text-align: start;
-  text-decoration-line: none;
-}
-
-a.lr-asked:hover .lr-asked-name {
-  text-decoration-line: underline;
+  line-height: var(--typography-ui-line-height);
+  white-space: nowrap;
 }
 
 .lr-asked-name {
-  display: -webkit-box;
   min-width: 0;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
-.lr-asked.lr-asked-many {
-  height: auto;
+.lr-from {
+  display: grid;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.lr-from-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.lr-from-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  text-decoration-line: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-from-name.lr-muted {
+  color: var(--color-text-muted);
+}
+
+/* The exploration links to it: plain until hovered, like the piece's name. */
+.lr-from-line a.lr-from-name {
+  text-decoration-line: none;
+}
+
+.lr-from-line a.lr-from-name:hover {
+  text-decoration-line: underline;
+}
+
+.lr-from-product {
+  overflow: hidden;
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "+N" after the exploration: a 24px target that opens every exploration that asked, no taller than the line. */
+.lr-from-line .lr-from-more {
+  flex: none;
+  min-width: var(--size-6);
+  min-height: var(--size-6);
+  height: var(--size-6);
   padding-inline: 0;
 }
 
@@ -965,6 +1029,52 @@ body:has(.lr-bar) .lr-toasts {
 .lr-notice {
   margin: 0;
   color: var(--color-feedback-danger-text);
+}
+
+/* --- List columns fold by the room of the list (wider than a phone) ----------------------------------------------
+   One rule for every chapter, so the cards show the same columns: Who gets it folds first (the Map and One by one still
+   say it), then Today › After. A list with a group rail (has-rails) gives its rows a rail's width less, so it folds
+   sooner. The widths keep Piece on at most two lines and From's exploration on one line, uncut. */
+@media (min-width: 761px) {
+  @container lr-list (max-width: 1120px) {
+    .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
+      --lr-grid: var(--lr-cols-mid);
+    }
+
+    .lr-list:not(.has-rails) .lr-col-reach {
+      display: none;
+    }
+  }
+
+  @container lr-list (max-width: 1280px) {
+    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
+      --lr-grid: var(--lr-cols-mid);
+    }
+
+    .lr-list.has-rails .lr-col-reach {
+      display: none;
+    }
+  }
+
+  @container lr-list (max-width: 940px) {
+    .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
+      --lr-grid: var(--lr-cols-narrow);
+    }
+
+    .lr-list:not(.has-rails) .lr-col-thumb {
+      display: none;
+    }
+  }
+
+  @container lr-list (max-width: 1000px) {
+    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
+      --lr-grid: var(--lr-cols-narrow);
+    }
+
+    .lr-list.has-rails .lr-col-thumb {
+      display: none;
+    }
+  }
 }
 
 /* --- Phones -------------------------------------------------------------------------------------------------------- */
@@ -1064,6 +1174,12 @@ body:has(.lr-bar) .lr-toasts {
     --lr-cols: minmax(0, 1fr) auto;
   }
 
+  /* A phone's rows stack: the list's two or three columns, not the card's grid. */
+  .lr-chapter-cols,
+  .lr-row {
+    --lr-grid: var(--lr-cols);
+  }
+
   .lr-list.is-lead {
     --lr-cols: var(--size-6) minmax(0, 1fr) auto;
   }
@@ -1077,20 +1193,33 @@ body:has(.lr-bar) .lr-toasts {
     display: none;
   }
 
-  /* Second line: who asked, the state and who acts next, under the piece. */
+  /* Under the piece, in the same order as the columns: who asked, where from, then the state and who acts next. */
   .lr-row-ask,
+  .lr-row-from,
   .lr-row-state,
   .lr-row-next {
     grid-column: 1 / -1;
   }
 
-  .lr-list.is-lead :is(.lr-row-ask, .lr-row-state, .lr-row-next) {
+  .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-state, .lr-row-next) {
     grid-column: 2 / -1;
+  }
+
+  /* From on one line on a phone: the exploration, then its product. */
+  .lr-row-from .lr-from {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
   }
 
   .lr-row .lr-col-box,
   .lr-row-piece {
     grid-row: 1;
+  }
+
+  /* A stacked row is as tall as its lines: no room kept for a second line of the name. */
+  .lr-row-piece {
+    min-height: 0;
   }
 
   .lr-row-end {

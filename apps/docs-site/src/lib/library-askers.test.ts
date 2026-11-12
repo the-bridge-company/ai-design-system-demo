@@ -1,7 +1,7 @@
 // Many explorations asking for one piece: one line in the List, grouped in the popover, counted in One by one and
 // folded on the Map.
 import { describe, expect, it } from 'vitest';
-import { askedCell, askedCountLine, askedFaces, askedSubline, askersOf, foldColumn, groupAskers, moreTag, peopleWords, waysTag } from './library-askers';
+import { ASKED_DIRECTLY, askedCell, askedColumns, askedCountLine, askedFaces, askedSubline, askersOf, firstName, foldColumn, groupAskers, moreTag, peopleWords, waysTag } from './library-askers';
 import { manyAskers, withManyAskers } from './library-review-fixtures';
 import { change, conflict, newComponent } from './library-fixtures.test-helpers';
 
@@ -20,6 +20,28 @@ describe('who asked, as faces', () => {
     expect(moreTag(3)).toEqual({ tag: '+3', label: '3 more explorations' });
     expect(moreTag(1, 'products')).toEqual({ tag: '+1', label: '1 more product' });
     expect(peopleWords(['Sofia', 'Leo', 'Ann', 'Maya'])).toBe('Sofia, Leo and 2 others');
+  });
+});
+
+describe('who asked, as two columns (Asked by, From)', () => {
+  it('gives every row the same anatomy: a person, then an exploration or "Asked directly"', () => {
+    expect(askedColumns(newComponent())).toMatchObject({ person: 'Sofia', morePeople: 0, from: { kind: 'exploration', first: { name: 'Contact page summary' }, more: 0 } });
+    expect(askedColumns({ ...change(), asked: null, also: [], by: 'Leo Martin' })).toEqual({ person: 'Leo', people: ['Leo'], morePeople: 0, from: { kind: 'direct' } });
+    expect(askedColumns({ ...change(), asked: null, also: [], mine: true }).person).toBe('You');
+    expect(ASKED_DIRECTLY).toBe('Asked directly');
+  });
+
+  it('counts the other people and explorations of a conflict as +N, never a second layout', () => {
+    const c = askedColumns(conflict());
+    expect(c).toMatchObject({ person: 'Sofia', people: ['Sofia', 'Leo'], morePeople: 1, from: { kind: 'exploration', more: 1 } });
+  });
+
+  it('says the product once, or how many products when explorations span several', () => {
+    const [a, ...rest] = manyAskers();
+    const c = askedColumns({ ...change(), asked: a!, also: rest, conflict: null });
+    expect(c.from).toMatchObject({ kind: 'exploration', more: 11, product: '2 products' });
+    expect(askedColumns(newComponent()).from).toMatchObject({ product: newComponent().asked!.product });
+    expect(firstName('Sofia Ramos')).toBe('Sofia');
   });
 });
 

@@ -115,3 +115,45 @@ export const moreTag = (n: number, what = 'explorations'): { tag: string; label:
 
 /** The face of an asker: the designer, else the exploration (an exploration Bridge knows no designer for). */
 export const faceName = (a: Pick<AskedBy, 'designer' | 'name'>): string => a.designer ?? a.name;
+
+/** A person's first name ("Sofia Ramos" -> "Sofia"), as the Asked by column shows it. */
+export const firstName = (name: string): string => name.trim().split(/\s+/)[0] || name;
+
+/** Where a piece came from, as the From column reads it: an exploration (and how many more), or asked directly. */
+export type AskedFrom = { kind: 'direct' } | { kind: 'exploration'; first: AskedBy; more: number; all: AskedBy[]; product: string | null };
+
+/**
+ * The List's two columns for who asked (owner, 2026-11-12: one kind of info per column, the same anatomy on every
+ * row). Asked by: the first person's face and first name, then "+N" when more people asked (a conflict's other
+ * designer, other explorations' designers). From: the most recent exploration on one line, its product under it, then
+ * "+N" when more explorations asked; a piece no exploration asked for says "Asked directly". The side list of One by
+ * one reads the same model on one line: "Sofia · Contact page summary".
+ */
+export interface AskedColumns {
+  /** Whose face and first name the Asked by column shows. */
+  person: string;
+  /** Every person who asked, first names, the most recent first. */
+  people: string[];
+  /** People past the first: the "+N" tag after the name. */
+  morePeople: number;
+  from: AskedFrom;
+}
+
+/** The line under the exploration: its product, or "2 products" when the explorations span several. */
+function productLine(list: readonly AskedBy[]): string | null {
+  const names = [...new Set(list.map((a) => a.product).filter((x): x is string => Boolean(x)))];
+  return names.length <= 1 ? (names[0] ?? null) : `${names.length} products`;
+}
+
+export function askedColumns(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' | 'mine' | 'by'>): AskedColumns {
+  const explorations: AskedBy[] = p.conflict
+    ? p.conflict.ways.map((w) => ({ key: w.key, name: w.exploration, product: w.product, productKey: null, href: null, designer: w.designer }))
+    : askersOf(p);
+  const people = [...new Set(explorations.map((a) => a.designer).filter((x): x is string => Boolean(x)).map(firstName))];
+  const list = people.length ? people : [p.mine ? 'You' : p.by ? firstName(p.by) : 'A lead'];
+  const from: AskedFrom = explorations.length ? { kind: 'exploration', first: explorations[0]!, more: explorations.length - 1, all: explorations, product: productLine(explorations) } : { kind: 'direct' };
+  return { person: list[0]!, people: list, morePeople: list.length - 1, from };
+}
+
+/** The From column's words for a piece no exploration asked for (a lead's own change). */
+export const ASKED_DIRECTLY = 'Asked directly';

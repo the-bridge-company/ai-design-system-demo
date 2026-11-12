@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T19:05:03.066Z",
-  "durationMs": 177167,
+  "createdAt": "2026-11-12T22:11:13.865Z",
+  "durationMs": 196076,
   "base": {
-    "ref": "414350e2b09631116eecc7683aad8dd83e2a367f",
-    "sha": "fe61c82a4716a2761fc51873929f99b68db07ff4"
+    "ref": "e84c2175b9254352e2cea2b67343cde1d3c79365",
+    "sha": "e84c2175b9254352e2cea2b67343cde1d3c79365"
   },
   "head": {
-    "ref": "b0aefec92e66df679530b8d40571161ff58d87a6",
-    "sha": "b0aefec92e66df679530b8d40571161ff58d87a6"
+    "ref": "0d492cc719359639acb0ec1ba3b1b7877de24699",
+    "sha": "0d492cc719359639acb0ec1ba3b1b7877de24699"
   },
   "options": {
     "only": [
@@ -91,12 +91,12 @@
   },
   "summary": {
     "shots": 72,
-    "changed": 9,
-    "unchanged": 63,
+    "changed": 8,
+    "unchanged": 64,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 12.86
+    "maxPercent": 4.27
   },
   "shots": [
     {
@@ -1060,18 +1060,11 @@
       "storyId": "forms-combobox--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 145688,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 1132544,
-      "percent": 12.86,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 688,
-          "width": 848,
-          "height": 418
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -1082,12 +1075,7 @@
           "height": 1106
         }
       },
-      "images": {
-        "before": "before/story__forms-combobox--all-states__ocean-dark.png",
-        "after": "after/story__forms-combobox--all-states__ocean-dark.png",
-        "diff": "diff/story__forms-combobox--all-states__ocean-dark.png",
-        "composite": "composite/story__forms-combobox--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__forms-combobox--default__ocean-dark",
@@ -1121,15 +1109,21 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 6095,
+      "changedPixels": 34767,
       "totalPixels": 815104,
-      "percent": 0.75,
+      "percent": 4.27,
       "boxes": [
         {
           "x": 240,
           "y": 432,
           "width": 544,
           "height": 240
+        },
+        {
+          "x": 0,
+          "y": 768,
+          "width": 1024,
+          "height": 28
         }
       ],
       "size": {

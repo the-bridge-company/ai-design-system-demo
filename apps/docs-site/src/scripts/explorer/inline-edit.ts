@@ -1,5 +1,5 @@
 // The Studio cell editor: ONE popover anchored to the value cell (a bottom sheet on phones). It decides from the
-// swatches: palette families as tabs, one ramp with the current step ringed, one contrast line for the pending value,
+// swatches: palette families as tabs (the DS Tabs, components/explorer/FamilyTabs.tsx), one ramp with the current step ringed, one contrast line for the pending value,
 // and More options (raw value, the other mode, the description) on demand. Nothing changes until Apply, which adds
 // the edit to the local draft (scripts/token-editor.ts: same draft, guardrails and pull request as before). Under the
 // contrast line, a mini preview of the real components that use the token, light and dark, repaints on every pick.
@@ -14,6 +14,7 @@ import { familyTabs, locateSwatch, rampFamilies, rampTicks, swatchLabel, type Ra
 import { aliasOptions, applyValues, draftDescription, draftValue, editDescription, pendingOverrides, previewContrast } from '../token-editor';
 import type { ExplorerData } from './types';
 import { cssValue, esc, icon } from './util';
+import { mountFamilyTabs } from '../../components/explorer/FamilyTabs';
 
 interface Open {
   pop: HTMLElement;
@@ -135,6 +136,8 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   pop.setAttribute('role', 'dialog');
   pop.setAttribute('aria-labelledby', `${id}-title`);
   pop.dataset.theme = document.documentElement.dataset.theme ?? 'light';
+  // The family tabs are a React island (DS Tabs): one root for this editor, moved into every redraw.
+  const familyTabsRoot = mountFamilyTabs();
 
   let summary: ContrastSummary | null = null;
   let failing: { fg: string; bg: string; ratio?: number; min: number }[] = [];
@@ -166,10 +169,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     const changed = JSON.stringify(state.value) !== JSON.stringify(start);
     const sub = isColor ? `${esc(hex ?? '')}${changed ? ` <span class="xe-was">· was ${esc(valueText(t.type, start))}</span>` : ''}` : changed ? `<span class="xe-was">was ${esc(valueText(t.type, start))}</span>` : '';
     const picker = fam
-      ? // The tabs sit in their own tablist: "More" opens a menu, it is not a tab, so it stays beside the list.
-        `<div class="xe-tabs"><div class="xe-tablist" role="tablist" aria-label="Families" style="--xe-tabs:${tabs.tabs.length}">${tabs.tabs
-          .map((f) => `<button type="button" role="tab" aria-selected="${f === state.family}" tabindex="${f === state.family ? 0 : -1}" data-xe-family="${f}">${esc(families[f]!.label)}</button>`)
-          .join('')}</div>${
+      ? // The tabs (DS Tabs, drawn into the slot after this markup) sit in their own tablist: "More" opens a menu, it
+        // is not a tab, so it stays beside the list.
+        `<div class="xe-tabs"><div data-xe-tabs-slot></div>${
           tabs.more.length
             ? `<div class="xe-more-fam"><button type="button" class="xe-tab-more" aria-haspopup="true" aria-expanded="${state.familyMenu}" data-xe-family-menu>More ${icon('chevronDown', 14)}</button>${
                 state.familyMenu ? `<div class="xe-fam-menu" role="menu">${tabs.more.map((f) => `<button type="button" role="menuitem" data-xe-family="${f}">${esc(families[f]!.label)}</button>`).join('')}</div>` : ''
@@ -224,6 +226,12 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
         <button type="button" class="btn btn-secondary btn-sm" data-xe-cancel>Cancel</button>
         <button type="button" class="btn btn-primary btn-sm" data-xe-apply>Apply</button>
       </div>`;
+    if (fam)
+      familyTabsRoot.render(pop.querySelector('[data-xe-tabs-slot]'), {
+        tabs: tabs.tabs.map((f) => ({ value: f, label: families[f]!.label })),
+        value: state.family,
+        onPick: pickFamily,
+      });
   };
 
   /** Light and dark frames of the components, with the pending value painted on top of the draft. */
@@ -260,11 +268,18 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   };
   const selectorOf = (el: HTMLElement) => {
     if (el.dataset.xePick) return `[data-xe-pick="${CSS.escape(el.dataset.xePick)}"]`;
-    if (el.dataset.xeFamily) return `[role="tab"][data-xe-family="${el.dataset.xeFamily}"]`;
+    if (el.dataset.xeFamilyTab) return `[data-xe-family-tab="${el.dataset.xeFamilyTab}"]`;
     for (const a of ['data-xe-hex', 'data-xe-num', 'data-xe-json', 'data-xe-other', 'data-xe-desc', 'data-xe-more', 'data-xe-pairs', 'data-xe-apply', 'data-xe-cancel', 'data-xe-other-on', 'data-xe-color'])
       if (el.hasAttribute(a)) return `[${a}]`;
     return null;
   };
+
+  // A family picked from the tabs or from the More menu: its ramp shows, focus stays on (or lands on) its tab.
+  function pickFamily(f: number) {
+    state.family = f;
+    state.familyMenu = false;
+    refresh(`[data-xe-family-tab="${f}"]`);
+  }
 
   const apply = () => {
     const values = [{ path, mode, value: state.value }];
@@ -281,9 +296,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
       state.value = `{${b.dataset.xePick}}`;
       refresh(`[data-xe-pick="${CSS.escape(b.dataset.xePick)}"]`);
     } else if (b.dataset.xeFamily !== undefined) {
-      state.family = Number(b.dataset.xeFamily);
-      state.familyMenu = false;
-      refresh(`[role="tab"][data-xe-family="${state.family}"]`);
+      pickFamily(Number(b.dataset.xeFamily));
     } else if (b.hasAttribute('data-xe-family-menu')) {
       state.familyMenu = !state.familyMenu;
       draw();
@@ -372,10 +385,10 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
       closeInlineEditor();
       return;
     }
-    // Arrow keys move inside the ramp (and select, like a radio group) and across the family tabs.
-    const group = el.closest('[role="radiogroup"], [role="tablist"]');
+    // Arrow keys move inside the ramp (and select, like a radio group). The family tabs have their own (DS Tabs).
+    const group = el.closest('[role="radiogroup"]');
     if (group && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
-      const items = [...group.querySelectorAll<HTMLElement>('[role="radio"], [role="tab"]')];
+      const items = [...group.querySelectorAll<HTMLElement>('[role="radio"]')];
       const i = items.indexOf(el);
       if (i !== -1) {
         e.preventDefault();
@@ -406,8 +419,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   document.addEventListener('pointerdown', outside, true);
 
   computeContrast();
-  draw();
+  // In the page before the first draw: the family tabs (Base UI) register their tabs when they mount, in the document.
   container.append(pop);
+  draw();
   cell.dataset.open = '';
   cell.setAttribute('aria-expanded', 'true');
   position(pop, cell, container);
@@ -416,6 +430,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     cell,
     dispose: () => {
       window.clearTimeout(timer);
+      familyTabsRoot.unmount();
       document.removeEventListener('pointerdown', outside, true);
     },
   };

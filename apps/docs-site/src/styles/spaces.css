@@ -284,59 +284,6 @@ a.menu-item:hover {
   content: "";
 }
 
-/* Page tabs (component pages: Usage, Tokens, Code, Changelog). */
-.page-tabs {
-  display: flex;
-  gap: var(--space-1);
-  margin: var(--space-6) 0 var(--space-8);
-  overflow-x: auto;
-  border-bottom: var(--border-width-default) solid var(--color-border-default);
-  scrollbar-width: none;
-}
-
-.page-tabs a {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-semibold);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.page-tabs a:hover {
-  color: var(--color-text-default);
-}
-
-.page-tabs a[aria-selected="true"] {
-  color: var(--color-text-default);
-}
-
-/* The count tag (a DS Badge): tabular figures; the selected tab's tag takes the stronger tone, as in the DS Tabs. */
-.page-tab-count {
-  font-variant-numeric: tabular-nums;
-}
-
-.page-tabs a[aria-selected="true"] .page-tab-count {
-  border-color: transparent;
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-}
-
-.page-tabs a[aria-selected="true"]::after {
-  position: absolute;
-  right: var(--space-3);
-  bottom: calc(var(--border-width-default) * -1);
-  left: var(--space-3);
-  height: var(--space-0-5);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-signal-default);
-  content: "";
-}
-
 /* The door from the Library to the Studio. */
 .door {
   display: inline-flex;

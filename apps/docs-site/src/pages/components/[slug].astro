@@ -1,7 +1,7 @@
 ---
 // Library > Components > one component: the shared view (components/ds/library/views/ComponentView.tsx), rendered at
-// build time. The islands it cannot hydrate itself come in as slots (the preview brand and density menu, the props
-// playground); edit mode (?edit=1, maintainers) stays on this page.
+// build time. The islands it cannot hydrate itself come in as slots (the DS Tabs, the preview brand and density menu,
+// the props playground); edit mode (?edit=1, maintainers) stays on this page.
 import '../../styles/component.css';
 import '../../styles/library.css';
 import '../../styles/library-edit.css';
@@ -9,6 +9,7 @@ import Layout from '../../layouts/Layout.astro';
 import Example from '../../components/Example.tsx';
 import PropsPlayground from '../../components/PropsPlayground.tsx';
 import ComponentView from '../../components/ds/library/views/ComponentView';
+import ComponentTabs from '../../components/ds/library/views/ComponentTabs';
 import LibraryEditMode from '../../components/LibraryEditMode';
 import GitHubDialog from '../../components/GitHubDialog.astro';
 import PreviewScope from '../../components/PreviewScope.astro';
@@ -17,7 +18,7 @@ import FigmaLinkSite from '../../components/FigmaLinkSite';
 import { figmaLinkFor } from '../../components/ds/library/FigmaLink';
 import { studioHref } from '../../lib/team-path';
 import { loadComponents, playgroundSpec, type ComponentInfo } from '../../lib/library/components';
-import { mainStory, previewScopes } from '../../lib/library/component-page';
+import { componentNotes, mainStory, previewScopes } from '../../lib/library/component-page';
 import { lastUpdated, exists, readText } from '../../lib/repo';
 import { componentPrefill } from '../../lib/docs-prefill';
 import { siteRepo } from '../../lib/config';
@@ -43,6 +44,7 @@ const repo = siteRepo();
 
 <Layout title={c.name} description={c.docs?.summary ?? c.description} sources={sources} updated={updated} crumbs={[{ label: 'Catalog', href: '/components/' }, { label: c.name }]} toc={false}>
   <ComponentView data={data} component={c} Example={Example}>
+    <ComponentTabs slot="tabs" client:load name={c.name} changelogCount={componentNotes(c.name, data.extras.releases ?? []).length} />
     <PreviewScope slot="heroTools" />
     <FigmaAheadSite slot="ahead" client:only="react" component={c.name} />
     <FigmaLinkSite slot="figma" client:only="react" {...figmaLinkFor(data.model, c.name)} settingsHref={studioHref('settings/#tools')} />

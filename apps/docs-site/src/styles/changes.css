@@ -821,20 +821,6 @@ details[open] > summary .cg-sec-chev {
   gap: var(--space-4);
 }
 
-/* The tabs alone on their row, the page's primary navigation, on a rule that spans the width. When the tabs outgrow
-   the line the tab list scrolls inside its row, never the page. */
-.bl-filters {
-  display: flex;
-  min-inline-size: 0;
-  border-block-end: var(--border-width-default) solid var(--color-border-default);
-}
-
-.bl-tabs {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  margin-block-end: calc(-1 * var(--border-width-default));
-}
-
 .bl-note,
 .bl-none,
 .bl-merged,

@@ -542,6 +542,28 @@
   color: var(--color-text-link);
 }
 
+/* Its content: the drawing, "+ Start an exploration" and one quiet line, centered, so the slot reads as the start of
+   something next to the capture cards (never an empty dashed box). The words wrap: the Button's own nowrap is undone. */
+.sh-create-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  white-space: normal;
+  text-align: center;
+}
+
+.sh-create-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: var(--font-weight-medium);
+}
+
+.sh-create-line {
+  max-width: var(--size-60);
+}
+
 @media (hover: hover) {
   .sh-cards .sh-create-btn:hover:not([data-disabled]) {
     border-color: var(--color-border-emphasis);
@@ -752,6 +774,22 @@
 
   .sh-row-chips {
     margin-inline-start: 0;
+  }
+
+  /* A one-line row on a phone (the Home's queue): the small thumbnail left of a two-line block, the title then who
+     asks (the dot goes), and the tag with Review on one row under them. Before, the text block took its content's
+     width, so it wrapped under the thumbnail, which sat alone on its own line (about 80px lost per row). */
+  .sh-row-compact .sh-row-text {
+    flex: 1 1 calc(100% - var(--size-16) - var(--space-3));
+  }
+
+  .sh-row-compact .sh-row-title {
+    display: grid;
+    gap: var(--space-0-5);
+  }
+
+  .sh-row-compact .sh-row-sep {
+    display: none;
   }
 
   /* A phone: the drawing (56px) above the text, left-aligned, so the title keeps the card's full width (two lines at

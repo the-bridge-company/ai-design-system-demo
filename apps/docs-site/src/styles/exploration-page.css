@@ -713,11 +713,20 @@
 }
 
 /* "Where it stands" (WhereItStands.tsx): the handover notes above the activity. A plain region, never a second Harbor
-   zone: the heading and Edit on one line, the next step, the counts with Show details on one line, then the details. */
+   zone: the heading and Edit on one line, the next step, the counts with Show details on one line, then the details.
+   Three levels that read as three: the section title (body size, semibold, like Activity), each part's label (ui
+   size, muted: "Next step", "Decisions") 4px above its text, and 16px between the parts, so each label groups with
+   its own text and the title with the whole section. Before, the title and "Next step" were the same size and weight
+   with the same 12px around them. */
 .xp-notes {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   align-content: start;
+}
+
+.xp-notes .xp-h3 {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
 }
 
 .xp-notes-head,
@@ -737,7 +746,7 @@
 .xp-notes-part,
 .xp-notes-details:not([hidden]) {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .xp-notes-details:not([hidden]) {
@@ -1586,10 +1595,18 @@
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
+/* The handover notes in the rail keep their own 16px between parts (the rail's 12px would put the title as close to the
+   first label as a label to its text's neighbour). */
+.xp-rail-sec.xp-notes {
+  gap: var(--space-4);
+}
+
+/* A rail section's title: the body size of the page's other section titles (Activity), one step above its parts'
+   labels. */
 .xp-rail-h {
-  font-size: var(--typography-ui-size);
+  font-size: var(--typography-body-size);
   font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-ui-line-height);
+  line-height: var(--typography-body-line-height);
 }
 
 /* Activity: one timeline, a line along the faces, key steps with a check dot, the words quoted under their line. */

@@ -80,10 +80,19 @@
 }
 
 @media (max-width: 640px) {
+  /* On the first line of the line it leads (20px face, 20px line): never at the middle of a wrapped line. */
   .ex-face {
     display: inline-flex;
     flex: none;
+    align-self: flex-start;
     align-items: center;
+  }
+
+  /* The face stays on its line's first line: the line wraps beside it instead of dropping under it (the face alone on
+     a line above "Sofia sent it for review"). */
+  .ex-face + .sh-row-line {
+    flex: 1 1 0;
+    white-space: normal;
   }
 
   /* The three filters wrap to a second row rather than cut their words. */

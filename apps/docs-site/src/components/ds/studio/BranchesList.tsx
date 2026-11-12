@@ -351,6 +351,7 @@ export function BranchesList(p: BranchesListProps) {
       href={hrefOf(x.r)}
       linkAttributes={linkOf(x.r)}
       pill={turn || shippedSaid(x) ? null : pillOf(x.status)}
+      statusAtEnd
     />
   );
   const card = (x: Item, opts: { pill?: boolean; product?: boolean; turn?: boolean } = {}) => (

@@ -132,7 +132,10 @@ ol {
   padding-left: var(--space-5);
 }
 
-li + li {
+/* Prose lists only (a list with no class: Markdown, docs text). A component's list sets its own spacing (gap, padding,
+   borders); this margin leaked into them: 6px added to their gap, flex rows (breadcrumb, pagination) nudged down,
+   bordered rows split by a white strip. */
+:where(ul, ol):not([class]) > li + li {
   margin-top: var(--space-1-5);
 }
 

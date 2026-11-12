@@ -1,0 +1,694 @@
+{
+  "pr": 1126,
+  "sha": "1e780fa4d4d4e288b61a85fb365c4a553e6645e3",
+  "baseSha": "7704ca1cc6c4905a37937491f7d3585207a281a8",
+  "failed": false,
+  "failures": [],
+  "warnings": 15,
+  "screens": [
+    "home",
+    "exploration",
+    "settings",
+    "library-component",
+    "changes",
+    "building",
+    "product"
+  ],
+  "variants": [
+    {
+      "screen": "home",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "home-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 5981,
+      "webp": "home-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "home-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 6012,
+      "webp": "home-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "home-mobile-light.png",
+      "axe": [],
+      "ms": 5639,
+      "webp": "home-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "home-mobile-dark.png",
+      "axe": [],
+      "ms": 5024,
+      "webp": "home-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "exploration-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 11405,
+      "webp": "exploration-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "exploration-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 11408,
+      "webp": "exploration-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "exploration-mobile-light.png",
+      "axe": [],
+      "ms": 10212,
+      "webp": "exploration-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "exploration-mobile-dark.png",
+      "axe": [],
+      "ms": 10664,
+      "webp": "exploration-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "settings-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 5058,
+      "webp": "settings-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "settings-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 4227,
+      "webp": "settings-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1073,
+      "fullHeight": 1073,
+      "png": "settings-mobile-light.png",
+      "axe": [],
+      "ms": 3976,
+      "webp": "settings-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1073,
+      "fullHeight": 1073,
+      "png": "settings-mobile-dark.png",
+      "axe": [],
+      "ms": 4609,
+      "webp": "settings-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3431,
+      "png": "library-component-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 7179,
+      "webp": "library-component-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3371,
+      "png": "library-component-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 10751,
+      "webp": "library-component-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 5107,
+      "png": "library-component-mobile-light.png",
+      "axe": [],
+      "ms": 4235,
+      "webp": "library-component-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": {
+        "scrollWidth": 402,
+        "offenders": []
+      },
+      "height": 2532,
+      "fullHeight": 5019,
+      "png": "library-component-mobile-dark.png",
+      "axe": [],
+      "ms": 4683,
+      "webp": "library-component-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "changes-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 11356,
+      "webp": "changes-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "changes-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 12099,
+      "webp": "changes-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "changes-mobile-light.png",
+      "axe": [],
+      "ms": 10016,
+      "webp": "changes-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "changes-mobile-dark.png",
+      "axe": [],
+      "ms": 9907,
+      "webp": "changes-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "building-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 6495,
+      "webp": "building-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "building-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 7763,
+      "webp": "building-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1038,
+      "fullHeight": 1038,
+      "png": "building-mobile-light.png",
+      "axe": [],
+      "ms": 4783,
+      "webp": "building-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1038,
+      "fullHeight": 1038,
+      "png": "building-mobile-dark.png",
+      "axe": [],
+      "ms": 4939,
+      "webp": "building-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 4025,
+      "webp": "product-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 4661,
+      "webp": "product-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-light.png",
+      "axe": [],
+      "ms": 3987,
+      "webp": "product-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-dark.png",
+      "axe": [],
+      "ms": 3245,
+      "webp": "product-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    }
+  ]
+}

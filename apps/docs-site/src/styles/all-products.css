@@ -58,11 +58,13 @@
 .ap-line {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ap-own {
   color: var(--color-text-signal);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
   white-space: nowrap;
 }
 

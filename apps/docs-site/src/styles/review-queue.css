@@ -84,8 +84,8 @@
 
 .rq-item-sub {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .rq-item-text {
@@ -296,7 +296,8 @@
 }
 
 .rq-shot figcaption {
-  font-size: var(--typography-caption-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .rq-shot-skel {

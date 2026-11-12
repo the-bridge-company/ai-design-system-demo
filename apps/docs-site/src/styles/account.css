@@ -380,8 +380,8 @@
 
 .acc-menu-line {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .acc-menu-head {
@@ -431,8 +431,8 @@
 .acc-set-sub {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   overflow-wrap: anywhere;
 }
 

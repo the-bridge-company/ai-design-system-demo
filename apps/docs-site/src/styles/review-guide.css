@@ -58,6 +58,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-regular);
   font-variant-numeric: tabular-nums;
 }
@@ -117,6 +118,7 @@
 /* Tables: header cells in the ui role, so the screen keeps four sizes. */
 .rw-table th {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rw-table td {

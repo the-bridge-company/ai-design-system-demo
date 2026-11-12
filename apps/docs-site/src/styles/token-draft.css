@@ -10,6 +10,7 @@
   border: var(--border-width-default) dashed var(--color-border-default);
   border-radius: var(--radius-container);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .tk-draft[hidden] {

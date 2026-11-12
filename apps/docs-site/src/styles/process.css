@@ -40,6 +40,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .kind-legend li {
@@ -143,6 +144,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .release-counts li {
@@ -203,6 +205,7 @@
   max-width: 72ch;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-wrap: pretty;
 }
 
@@ -214,6 +217,7 @@
   min-height: var(--size-8);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cl-tags {
@@ -260,6 +264,7 @@
 .announce-head h3 {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .announce-head p {
@@ -342,6 +347,7 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -355,12 +361,14 @@
 .tier-fields dt {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
 .tier-fields dd {
   margin: var(--space-0-5) 0 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Governance: stepper (a real sequence, so it is numbered) */
@@ -430,6 +438,7 @@
   margin: 0 0 var(--space-0-5);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   font-variant-numeric: tabular-nums;
 }
@@ -437,6 +446,7 @@
 .step-body h3 {
   margin: 0 0 var(--space-1-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .step-body p:last-child {
@@ -504,6 +514,7 @@
   background-color: var(--color-surface-default);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rule-list {
@@ -517,6 +528,7 @@
   padding: var(--space-3) var(--space-5);
   border-bottom: var(--border-width-default) solid var(--color-border-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rule-list li:last-child {
@@ -531,6 +543,7 @@
   margin-top: var(--space-1-5);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rule-list summary {
@@ -596,6 +609,7 @@
 
 .audience p {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .audience-foot {
@@ -643,6 +657,7 @@
   background-color: var(--color-bg-default);
   color: var(--color-text-signal);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
 }
@@ -672,6 +687,7 @@
 .stat-strip dt {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .stat-strip dd {

@@ -169,6 +169,17 @@
   min-width: 0;
 }
 
+/* A row's title is a name in a list: UI 14 medium, one step over its meta line (13 regular, muted), not a 16 semibold
+   card title two steps over it. */
+.sh-row-title.t-body {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.sh-row-title .sh-strong {
+  font-weight: var(--font-weight-medium);
+}
+
 .sh-row-text > .sh-row-title {
   display: block;
   overflow: hidden;
@@ -181,6 +192,8 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* Where a change comes from, under a row's title (components/ds/studio/LibraryChanges OriginNote and AuditNote): an
@@ -520,6 +533,8 @@
 
 .sh-card-who {
   color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The card's title. */
@@ -948,8 +963,8 @@
 
 .sc-mockup-meta {
   color: var(--color-text-muted);
-  font-size: var(--font-size-100);
-  line-height: var(--font-line-height-normal);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   overflow-wrap: break-word;
 }
 

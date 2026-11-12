@@ -47,8 +47,8 @@
 .pb-try-note {
   max-width: 32ch;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-align: end;
 }
 
@@ -80,8 +80,8 @@
 .pb-keep-note {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .pb-grid {

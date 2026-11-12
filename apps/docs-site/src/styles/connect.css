@@ -8,6 +8,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -44,6 +45,7 @@
 .cx-details p {
   margin: var(--space-3) 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .cx-cli {
@@ -75,6 +77,7 @@
 .cx-cli dd {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   color: var(--color-text-muted);
 }
 

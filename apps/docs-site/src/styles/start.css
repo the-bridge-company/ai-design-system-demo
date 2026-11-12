@@ -112,6 +112,7 @@
   background: var(--color-action-primary-bg);
   color: var(--color-action-primary-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gs-shape-field {

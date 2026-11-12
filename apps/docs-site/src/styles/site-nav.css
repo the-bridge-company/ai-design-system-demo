@@ -93,6 +93,7 @@ a.nv-top {
   border-radius: var(--radius-control);
   color: var(--color-text-default);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
   text-decoration-line: none;
   transition: background-color var(--motion-duration-instant) var(--motion-easing-standard);

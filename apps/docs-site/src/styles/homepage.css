@@ -377,6 +377,7 @@
   border-radius: var(--radius-pill);
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   transition:
     background-color var(--motion-duration-moderate) var(--motion-easing-standard),
@@ -457,6 +458,7 @@
 .hp-cnt {
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   white-space: nowrap;
 }
 
@@ -551,6 +553,7 @@
   background-color: var(--color-bg-zone);
   color: var(--color-text-link);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -581,6 +584,7 @@
   border: var(--border-width-default) solid transparent;
   border-radius: var(--radius-lg);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
 }
@@ -655,6 +659,7 @@
   display: block;
   color: var(--color-text-muted);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
 }
 
 .hp-radio {
@@ -1260,6 +1265,7 @@
   background-color: var(--_deep);
   color: var(--_on-deep);
   font-size: var(--font-size-200);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -1309,6 +1315,7 @@
   padding: 0 var(--space-2);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-100);
+  line-height: var(--typography-caption-line-height);
   font-weight: var(--font-weight-semibold);
 }
 

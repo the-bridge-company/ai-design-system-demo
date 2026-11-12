@@ -73,6 +73,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -188,6 +189,7 @@
   min-height: var(--size-8);
   padding: 0 var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The account block at the bottom of the Studio side nav (and of the phone menu sheet). */
@@ -252,6 +254,7 @@
 .gh-acct-note {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-align: center;
 }
 
@@ -300,7 +303,8 @@
 
 .gh-acct-repo {
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .gh-acct .menu-panel {
@@ -318,6 +322,7 @@
   gap: var(--space-1-5) var(--space-3);
   margin: var(--space-1) var(--space-2) var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gh-facts dt {
@@ -368,7 +373,8 @@
 .gh-acct-menu-email {
   margin: 0 var(--space-2) var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -396,6 +402,7 @@
   gap: var(--space-3);
   min-height: var(--size-9);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rail-section a svg {

@@ -195,6 +195,9 @@ Rules:
 
 - **At most 4 font sizes on one screen.** If a screen needs a fifth, a role is being misused.
 - **Never below 12px.** Muted text (`color.text.muted`) passes AA (4.5:1) on every surface it sits on.
+- **12px is for labels, not sentences.** Section labels and table heads (500, wide tracking), badges, tags and
+  counts, keyboard keys, code values, chart ticks. Anything that reads as a line of text (who, when, a description,
+  a column label) is `meta`. In Bridge, `t-meta` or `t-ui t-muted` set it.
 - **Measure at most 65ch** for reading text.
 - **One step at a time.** A name over its secondary line changes size by one step (14 over 13) and weight by one
   step (500 over 400) and color (default over muted), never 600 over 400 at 12.

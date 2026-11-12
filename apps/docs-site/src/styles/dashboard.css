@@ -47,6 +47,7 @@
   margin: var(--space-6) 0 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The bridge illustration */
@@ -140,6 +141,7 @@
 .bank small {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .bank-icon {
@@ -208,6 +210,7 @@
   padding: 0;
   background-color: transparent;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -240,6 +243,7 @@
 .panel-link {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -335,6 +339,7 @@
 .donut-center span {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .donut figcaption {
@@ -349,6 +354,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .legend li {
@@ -374,6 +380,7 @@
   min-width: var(--size-10);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-align: right;
 }
 
@@ -383,6 +390,7 @@
   margin-bottom: var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .legend-inline li {
@@ -398,6 +406,7 @@
 
 .stacked-table {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .stacked-table th,
@@ -440,6 +449,7 @@
 .stacked-total .muted {
   margin-left: var(--space-1);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-regular);
 }
 
@@ -458,6 +468,7 @@
   margin-bottom: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .waffle-score strong {
@@ -477,6 +488,7 @@
 .waffle-count {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .waffle-grid {
@@ -530,6 +542,7 @@
   padding-top: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .waffle-key > span {
@@ -599,6 +612,7 @@
   color: var(--color-text-default);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -617,6 +631,7 @@
 .issue-detail {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -688,6 +703,7 @@
 .tl-date {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .tl-title {
@@ -700,6 +716,7 @@
 .tl-ref {
   margin: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .tl-ref a,
@@ -781,6 +798,7 @@
   color: var(--color-text-signal);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-bold);
 }
 
@@ -904,6 +922,7 @@
   .bank {
     padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
     font-size: var(--typography-ui-size);
+    line-height: var(--typography-ui-line-height);
   }
 
   .bank small {
@@ -1004,6 +1023,7 @@
   margin: 0 0 var(--space-1);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .contribute p {

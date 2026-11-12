@@ -36,8 +36,8 @@
   border-radius: var(--radius-container) var(--radius-container) 0 0;
   background-color: var(--color-surface-default);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   opacity: 0.8;
 }
 
@@ -122,6 +122,7 @@
   align-items: center;
   gap: var(--space-3);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .sg-key {
@@ -167,6 +168,7 @@
 .sg-side-label {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -208,8 +210,8 @@
   max-width: 100%;
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -294,8 +296,8 @@
 }
 
 .sg-when {
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .sg-details {

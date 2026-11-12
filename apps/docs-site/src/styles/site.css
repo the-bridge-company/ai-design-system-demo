@@ -163,6 +163,7 @@ strong {
 
 .small {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .mono,
@@ -183,6 +184,7 @@ code {
   background-color: var(--color-bg-subtle);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -330,6 +332,7 @@ a.skip:focus {
   min-height: var(--control-height-sm);
   padding: 0 var(--space-3);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .icon-btn {
@@ -384,6 +387,7 @@ a.skip:focus {
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-semibold);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   min-height: var(--control-height-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-control);
@@ -699,6 +703,7 @@ a.topbar-brand {
   padding-top: var(--space-6);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .rail-foot p {
@@ -975,6 +980,7 @@ table:where(.stacked-table, .rv-table) {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-variant-numeric: tabular-nums;
 }
 
@@ -990,6 +996,7 @@ table:where(.stacked-table, .rv-table) {
   background-color: var(--color-bg-default);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
 }
@@ -1007,6 +1014,7 @@ table:where(.stacked-table, .rv-table) {
   color: var(--color-text-muted);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .names {
@@ -1059,6 +1067,7 @@ tr:target {
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -1111,6 +1120,7 @@ tr:target {
   border-radius: var(--radius-container);
   background-color: var(--color-surface-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   box-shadow: var(--elevation-raised);
 }
 
@@ -1126,6 +1136,7 @@ tr:target {
 
 .chip-meta strong {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Lookup */
@@ -1231,17 +1242,20 @@ tr:target {
 
 .palette-title {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
 .palette-title.mono {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .palette-meta {
   overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1249,12 +1263,14 @@ tr:target {
 .palette-tag {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .palette-empty {
   padding: var(--space-6) var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-align: center;
 }
 
@@ -1264,6 +1280,7 @@ tr:target {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .palette-foot span {

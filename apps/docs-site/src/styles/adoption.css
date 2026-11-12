@@ -172,6 +172,7 @@
   fill: var(--color-chart-axis);
   font-family: var(--typography-ui-family);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ad-line {
@@ -225,6 +226,7 @@
   margin: 0 0 var(--space-2);
   font-family: var(--typography-ui-family);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -234,6 +236,7 @@
   margin: 0;
   padding: 0;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   list-style: none;
 }
 
@@ -247,6 +250,7 @@
 .ad-col code,
 .ad-list code {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -259,6 +263,7 @@
   margin: 0;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .ad-ok .icon {

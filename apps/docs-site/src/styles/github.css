@@ -12,6 +12,7 @@
   gap: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gh-dot {
@@ -98,12 +99,14 @@
   padding-left: var(--space-5);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gh-field {
   display: grid;
   gap: var(--space-1-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -135,6 +138,7 @@
 .gh-error {
   color: var(--color-feedback-danger-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .gh-dialog-foot {

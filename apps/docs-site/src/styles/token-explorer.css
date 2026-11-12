@@ -54,6 +54,7 @@
 .xp-d-n {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-variant-numeric: tabular-nums;
   font-weight: var(--font-weight-medium);
 }
@@ -99,6 +100,7 @@
   padding-left: var(--space-5);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .depth-2 > .xp-tree-btn {
@@ -162,6 +164,7 @@
   margin: var(--space-3) var(--space-2) 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* Center: toolbar */
@@ -207,6 +210,7 @@
   flex: none;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-tools {
@@ -256,6 +260,7 @@
   background-color: var(--color-signal-default);
   color: var(--color-action-primary-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -290,6 +295,7 @@
   margin-bottom: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -367,6 +373,7 @@
 .xp-grid {
   min-width: var(--xp-minw, 100%);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-grid[hidden] {
@@ -400,12 +407,14 @@
   padding: var(--space-2) var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
 .xp-th.is-mode .xp-th-label {
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-th-sub {
@@ -455,6 +464,7 @@
   color: var(--color-text-default);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
 }
@@ -529,6 +539,7 @@
   overflow: hidden;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -592,6 +603,7 @@
 
 .xp-stage.is-aa {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--font-tracking-snug);
 }
@@ -740,6 +752,7 @@
   color: var(--color-text-default);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -761,6 +774,7 @@
   color: var(--color-feedback-info-text);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-bold);
 }
 
@@ -768,6 +782,7 @@
   overflow: hidden;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -777,6 +792,7 @@
   overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -791,6 +807,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -910,6 +927,7 @@
 .xp-d-crumb {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-d-body {
@@ -940,6 +958,7 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -950,12 +969,14 @@
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
 .xp-detail .tx-d-n {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
 }
 
@@ -964,6 +985,7 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 
@@ -983,6 +1005,7 @@
   margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-chain {
@@ -1038,10 +1061,12 @@
 .xp-node-tier {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-node-name {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   word-break: break-all;
 }
 
@@ -1056,6 +1081,7 @@
 .xp-node-value {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   word-break: break-all;
 }
 
@@ -1066,6 +1092,7 @@
   margin: 0;
   color: var(--color-feedback-danger-text);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-link {
@@ -1109,6 +1136,7 @@
 .xp-dep-tier {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-comps a {
@@ -1119,6 +1147,7 @@
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-pill);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-decoration: none;
 }
 
@@ -1135,6 +1164,7 @@
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-pill);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-pairs {
@@ -1148,6 +1178,7 @@
 .xp-pair-head {
   margin: 0 0 var(--space-1-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-ratios {
@@ -1182,6 +1213,7 @@
   border-radius: var(--radius-control);
   box-shadow: 0 0 0 var(--border-width-default) var(--color-border-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -1210,6 +1242,7 @@
 .xp-through summary {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   cursor: pointer;
 }
 
@@ -1237,6 +1270,7 @@
 .xp-names dt {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-names dd {
@@ -1252,6 +1286,7 @@
   overflow: hidden;
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1512,6 +1547,7 @@
   min-height: calc(var(--size-6) + var(--space-0-5));
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .depth-1 > .xp-tree-btn {
@@ -1607,11 +1643,13 @@
   display: grid;
   gap: var(--space-1-5);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-menu-field > span:first-child {
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -1644,6 +1682,7 @@
 
 .xp[data-surface="app"] .xp-th.is-mode .xp-th-label {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-th-sub {
@@ -1659,6 +1698,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-td {
@@ -1668,6 +1708,7 @@
 
 .xp[data-surface="app"] .xp-name-main {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-cv {
@@ -1695,10 +1736,12 @@
 
 .xp[data-surface="app"] .xp-grid .xp-stage.is-aa {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-grid .xp-stage.is-type {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-grid .xp-line:not(.is-error) {
@@ -1714,6 +1757,7 @@
   color: var(--color-text-muted);
   font-family: var(--font-family-sans);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-grid .xp-chip:hover {
@@ -1729,6 +1773,7 @@
 
 .xp[data-surface="app"] .xp-code {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp[data-surface="app"] .xp-td.is-desc {
@@ -1832,11 +1877,13 @@
   border-radius: var(--radius-control);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-field-main {
   overflow: hidden;
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1846,6 +1893,7 @@
   margin-left: auto;
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .xp-field.is-error .xp-field-end {
@@ -2116,8 +2164,8 @@
 
 .xe-pick-sub {
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .xe-was {
@@ -2543,6 +2591,7 @@
   box-shadow: var(--elevation-overlay);
   color: var(--color-text-inverse);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
   transform: translateX(-50%);
@@ -2623,6 +2672,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   box-shadow: var(--elevation-modal);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xe-sheet-head {
@@ -3141,6 +3191,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 
 .xp-dd-spec.is-leading {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .xp-dd-spec.is-color {
@@ -3463,6 +3514,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   margin-bottom: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -3628,6 +3680,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 
 .xp[data-surface="app"] .xp-field-end {
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* With the details panel open on a laptop screen, the hex steps back (the panel shows it for the selected token, and

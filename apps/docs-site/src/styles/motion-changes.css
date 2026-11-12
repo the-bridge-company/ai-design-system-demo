@@ -40,6 +40,7 @@
 .mc-token {
   font-family: var(--font-family-mono);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .mc-previews {
@@ -73,12 +74,14 @@
   gap: var(--space-1) var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .mc-also {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .mc-more {

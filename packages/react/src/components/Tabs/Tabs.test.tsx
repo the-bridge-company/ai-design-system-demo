@@ -199,3 +199,14 @@ describe('TabsPanel focus', () => {
     expect(screen.getByRole('tabpanel')).not.toHaveFocus();
   });
 });
+
+// The selected look and the focus ring are CSS contracts, checked in apps/docs-site/src/lib/tab-like-controls.test.ts
+// (Vitest empties stylesheets here, and jsdom has no :focus-visible).
+describe('Tabs selection', () => {
+  it('a clicked tab is selected and has no axe violations', async () => {
+    render(<Example />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Components' }));
+    expect(screen.getByRole('tab', { name: 'Components' })).toHaveAttribute('aria-selected', 'true');
+    await expectNoAxeViolations();
+  });
+});

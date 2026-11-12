@@ -1,6 +1,6 @@
 /* The Library <-> Studio switch (components/SpaceSwitch.tsx): the DS SegmentedControl in link mode. Two segments,
    each its drawn icon and its word (icon only on a phone); the space you are in is the current page and wears the
-   control's raised plate. Click: the plate moves to the other space and stretches as it lands, then the other space
+   control's strong fill (appearance="strong": the one strong SegmentedControl of the site). Click: the plate moves to the other space and stretches as it lands, then the other space
    loads (scripts/space-switch.ts). Hover: the other space's icon acts it out (the pen scribbles, the book turns a
    page). Press: the control squishes to 96%. Reduced motion: no movement, the plate changes in place.
    This file only places the control in the top bar and draws the icons and the motion: the track, the segments and
@@ -57,7 +57,7 @@
   transition: transform var(--_slide) var(--motion-easing-enter);
 }
 
-/* On the current segment's plate (the DS link-mode fill) the leaf takes the plate's color, not a light page. */
+/* On the current segment's strong fill (Deep Harbor) the leaf takes the plate's color, not a light page. */
 .space-nav [aria-current="page"] .ss-leaf {
   fill: var(--color-control-checked-bg);
 }

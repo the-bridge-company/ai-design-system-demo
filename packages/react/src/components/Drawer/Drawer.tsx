@@ -69,6 +69,11 @@ export interface DrawerContentProps extends Omit<HTMLAttributes<HTMLDivElement>,
   hideClose?: boolean;
   /** Default "Close panel". */
   closeLabel?: string;
+  /**
+   * Keep the sheet in the DOM while it is closed (hidden), so its content exists from the first render: a script or
+   * a test can find and bind its body and footer before the first open. Default false: it mounts when it opens.
+   */
+  keepMounted?: boolean;
   children?: ReactNode;
 }
 
@@ -93,17 +98,17 @@ function useOverflow(el: HTMLElement | null, content: ReactNode) {
 
 /** The sheet: scrim, panel, header with close, scrolling body, footer. */
 export const DrawerContent = forwardRef<HTMLDivElement, DrawerContentProps>(function DrawerContent(
-  { title, description, footer, size = 'md', hideClose = false, closeLabel = 'Close panel', className, children, ...rest },
+  { title, description, footer, size = 'md', hideClose = false, closeLabel = 'Close panel', keepMounted = false, className, children, ...rest },
   ref,
 ) {
   const side = useContext(SideContext);
   const scope = useScopeAttributes();
   const titleId = useId();
-  // Callback ref through state: the body mounts only when the drawer opens, so measuring starts on open.
+  // Callback ref through state: the body mounts when the drawer opens (or at once with keepMounted), and measuring starts then.
   const [body, setBody] = useState<HTMLDivElement | null>(null);
   const overflowing = useOverflow(body, children);
   return (
-    <BaseDrawer.Portal>
+    <BaseDrawer.Portal keepMounted={keepMounted}>
       <BaseDrawer.Backdrop className={styles.backdrop} {...scope} />
       <BaseDrawer.Viewport className={cx(styles.viewport, styles[`viewport-${side}`])} {...scope}>
         <BaseDrawer.Popup ref={ref} className={cx(styles.popup, styles[side], styles[size], className)} {...rest}>

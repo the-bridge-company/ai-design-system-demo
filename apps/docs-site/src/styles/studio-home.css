@@ -267,6 +267,18 @@
   margin-inline-start: 0;
 }
 
+/* The status tag with who it waits on under it (Being built): one column, the tag then the muted line. */
+.sh-row-status-end.has-note {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.sh-row-status-note {
+  max-width: var(--size-64);
+  text-align: end;
+}
+
 .sh-row-line {
   min-width: 0;
   overflow: hidden;

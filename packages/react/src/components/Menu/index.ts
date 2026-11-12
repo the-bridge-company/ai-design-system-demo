@@ -22,4 +22,8 @@ export type {
   MenuSubmenuProps,
   MenuSide,
   MenuAlign,
+  MenuAnchor,
+  MenuAnchorPoint,
+  MenuAnchorRect,
+  MenuVirtualAnchor,
 } from './Menu';

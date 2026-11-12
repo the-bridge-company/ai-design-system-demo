@@ -65,8 +65,14 @@ Two-pass plan, reviewed against the defaults a generated product UI drifts towar
 | Ink secondary | `#5B6672` | `color.ink.600` | Secondary text (`color.text.muted`). 5.85:1 on white. |
 | Paper | `#FFFFFF` | `color.white` | Canvas and surfaces (`color.bg.default`, `color.surface.default`). |
 | Line | `#E3E8EE` | `color.ink.200` | Borders and dividers (`color.border.default`), muted fills. |
-| Harbor | `#CFE8FF` | `color.harbor.200` | `color.bg.zone`: large flat blocks that open a space. Nothing else. |
+| Harbor | `#CFE8FF` | `color.harbor.200` (`palette.primary.200`) | `color.bg.zone`: large flat blocks that open a space. Nothing else. |
 | Deep Harbor | `#0B4A8B` | `color.harbor.700` | `color.action.primary.bg`, `color.control.checked.bg`, `color.text.link`, `focus.ring.color`. 8.87:1 against white. |
+
+The Harbor zone is the token, not a picked hex. In light, `color.bg.zone` is `palette.primary.200`, which the bridge
+brand maps to `color.harbor.200` (`#CFE8FF`, the Harbor swatch itself). In dark it is `palette.primary.900`, which
+maps to `color.harbor.900` (`#00274B`). The lighter step `color.harbor.100` (`#E4F1FE`) is not a zone: it is
+`color.signal.subtle` and `color.selection.bg`. If a zone measures `#E4F1FE` on screen, the block uses the wrong
+token. Ocean light zones use `palette.primary.50` (`#EDF9FF`); ocean dark keeps `palette.primary.900` (`#002B3B`).
 
 Status tones keep far-apart hues so they never borrow each other's meaning: teal for success
 (tint `#EEFAF6`, text `#036252`), ochre for warning (tint `#FEF6EA`, text `#6F4C03`), crimson for danger

@@ -1769,16 +1769,11 @@
   opacity: 0;
 }
 
+/* The open row menu (components/explorer/RowMenu.tsx) is anchored to this button: it stays shown while open. */
 .xp-tr:is(:hover, :focus-within) .xp-rowmenu,
-.xp-rowmenu:focus-visible {
+.xp-rowmenu:focus-visible,
+.xp-rowmenu[aria-expanded="true"] {
   opacity: 1;
-}
-
-/* While the row menu is open its button is the DS Menu trigger (components/explorer/RowMenu.tsx), in the same place. */
-.xp-rowmenu-host {
-  display: flex;
-  flex: none;
-  margin-left: auto;
 }
 
 .xp-keyhelp {

@@ -9,10 +9,12 @@ import {
   LOOK_ALIKE_PAIRS,
   blockedHair,
   faceHolder,
+  faceWords,
   firstHairTiles,
   lookAlikesOf,
   parseFace,
   parseTeamFaces,
+  partLabel,
   shuffleFace,
   takenHair,
   teamDrawings,
@@ -151,5 +153,25 @@ describe('firstHairTiles', () => {
     expect(tiles).toEqual(expect.arrayContaining(['variant40', 'variant59', 'hat']));
     expect(tiles).toEqual(HAIR_STYLES.filter((h) => tiles.includes(h)));
     expect(firstHairTiles('variant40', new Map(), true)).toHaveLength(64);
+  });
+});
+
+describe('partLabel and faceWords', () => {
+  it('names each style by its DS name, keeps Hat and the "No" choices', () => {
+    expect(partLabel('hair', 'variant22')).toBe('Short curls');
+    expect(partLabel('hair', 'hat')).toBe('Hat');
+    expect(partLabel('glasses', 'variant11')).toBe('Round glasses');
+    expect(partLabel('glasses', null)).toBe('No glasses');
+    expect(partLabel('beard', 'variant02')).toBe('Full beard');
+    expect(partLabel('beard', null)).toBe('No beard');
+    const labels = HAIR_STYLES.map((h) => partLabel('hair', h));
+    expect(new Set(labels).size).toBe(HAIR_STYLES.length);
+    expect(labels.some((l) => /^Hair style \d/.test(l))).toBe(false);
+  });
+
+  it('says a shuffled face in a few lowercase words', () => {
+    const f: FaceRecipe = { v: 1, hair: 'variant59', eyes: 'variant01', brows: 'variant01', nose: 'variant01', lips: 'variant01', body: 'variant01', glasses: 'variant09', beard: 'variant07' };
+    expect(faceWords(f)).toBe('space buns, round sunglasses, handlebar moustache');
+    expect(faceWords({ ...f, glasses: null, beard: null })).toBe('space buns');
   });
 });

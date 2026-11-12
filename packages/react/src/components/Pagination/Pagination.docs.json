@@ -4,6 +4,7 @@
   "whenToUse": [
     "Long, stable lists where users need to know where they are and jump back: token tables, audit logs.",
     "Below the list it controls, aligned with the list's start or end edge.",
+    "Stepping through items one at a time on a narrow screen (a review, one piece per screen): variant compact with noun (\"Piece 3 of 12\", \"Next piece\"), so it never says \"Page\" for something that is not a page.",
     "compact in narrow spaces (side panels, mobile) and in card footers."
   ],
   "whenNotToUse": [
@@ -33,6 +34,7 @@
     "In compact, the \"Page 3 of 12\" text is a polite live region, so page changes are announced."
   ],
   "contentGuidelines": [
+    "noun is what one step is, singular and in sentence case: \"Piece\", \"Item\", \"Step\". It replaces \"Page\" in the status and in the button names.",
     "Use \"Previous\" and \"Next\", not arrows alone or \"Back\" and \"Forward\".",
     "Show the total count of items near the list (\"412 tokens\"), not inside the pagination."
   ],

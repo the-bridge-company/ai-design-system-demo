@@ -1,9 +1,11 @@
 // The Library <-> Studio switch in the top bar (components/SpaceSwitch.tsx) in the browser:
 // - the target: the layout renders it at build time; where the query or the team decides it (a Studio drawer at
 //   ?c=button, a team shell, a team's Library) it is resolved again here, on load and before each use;
-// - the click: the pill slides, then the other space loads, NAVIGATE_AFTER_MS later (at once under reduced motion).
+// - the click: the plate moves to the other space (it becomes the current segment), then the other space loads, NAVIGATE_AFTER_MS later (at once under reduced motion).
 //   Modified clicks (new tab, new window) are left to the browser;
 // - the first-visit hint: once per browser, a dot crosses the track toward the other space.
+// The link to the other space carries the hooks (a[data-space-switch]); the control around it (the DS
+// SegmentedControl in link mode) carries the state the styles read: data-mode, data-anim, data-hint.
 import { isHosted, repoFromPath, studioBase, teamHref } from '../lib/team-path';
 import { libraryFromPath } from '../lib/library-shells';
 import {
@@ -28,6 +30,9 @@ export interface SpaceSwitchOptions {
 }
 
 const SELECTOR = 'a[data-space-switch]';
+
+/** The SegmentedControl around the link: where the plate and the motion live. */
+const controlOf = (el: HTMLElement): HTMLElement => el.closest<HTMLElement>('[data-segmented-control]') ?? el;
 
 function safeLocalStorage(): Storage | null {
   try {
@@ -71,20 +76,33 @@ export function refreshSpaceSwitch(root: ParentNode = document) {
   }
 }
 
-/** Plays the switch: the pill slides to the other end, the word flips, the icons swap. */
+/** The two segments: the one for the space you are in, and the link to the other one. */
+function segmentsOf(el: HTMLElement): { here: HTMLElement | null; there: HTMLElement } {
+  return { here: controlOf(el).querySelector<HTMLElement>('[data-switch-current]'), there: el };
+}
+
+/** Plays the switch: the plate moves to the other space (it is now the current one) and stretches as it lands. */
 export function playSwitch(el: HTMLElement) {
   const space = el.dataset.switchSpace as SwitchSpace;
-  el.removeAttribute('data-hint');
-  el.removeAttribute('data-anim');
-  void el.offsetWidth;
-  el.dataset.mode = otherSpace(space);
-  el.setAttribute('data-anim', '');
+  const control = controlOf(el);
+  const { here, there } = segmentsOf(el);
+  control.removeAttribute('data-hint');
+  control.removeAttribute('data-anim');
+  void control.offsetWidth;
+  control.dataset.mode = otherSpace(space);
+  here?.removeAttribute('aria-current');
+  there.setAttribute('aria-current', 'page');
+  control.setAttribute('data-anim', '');
 }
 
 /** Puts the switch back as the page rendered it (a page restored from the back/forward cache). */
 function settle(el: HTMLElement) {
-  el.removeAttribute('data-anim');
-  el.dataset.mode = el.dataset.switchSpace;
+  const control = controlOf(el);
+  const { here, there } = segmentsOf(el);
+  control.removeAttribute('data-anim');
+  control.dataset.mode = el.dataset.switchSpace;
+  there.removeAttribute('aria-current');
+  here?.setAttribute('aria-current', 'page');
 }
 
 export function initSpaceSwitch(opts: SpaceSwitchOptions = {}) {
@@ -101,10 +119,11 @@ export function initSpaceSwitch(opts: SpaceSwitchOptions = {}) {
   for (const el of els) {
     if (el.dataset.switchReady) continue;
     el.dataset.switchReady = '';
+    const control = controlOf(el);
     if (hint) {
-      el.setAttribute('data-hint', '');
-      el.addEventListener('animationend', (e) => {
-        if ((e.target as Element).classList.contains('ss-hint')) el.removeAttribute('data-hint');
+      control.setAttribute('data-hint', '');
+      control.addEventListener('animationend', (e) => {
+        if ((e as AnimationEvent).animationName === 'ss-hint') control.removeAttribute('data-hint');
       });
     }
     // The page's state can change after load (a Studio drawer opens a component): resolve again before each use.
@@ -113,7 +132,7 @@ export function initSpaceSwitch(opts: SpaceSwitchOptions = {}) {
     el.addEventListener('click', (e) => {
       refreshSpaceSwitch(el.parentElement ?? document);
       // Already on its way: a second click does not load the page twice.
-      if (el.hasAttribute('data-anim')) return e.preventDefault();
+      if (control.hasAttribute('data-anim')) return e.preventDefault();
       if (!isPlainClick(e)) return;
       const href = el.href;
       e.preventDefault();

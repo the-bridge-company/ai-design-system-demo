@@ -6,10 +6,10 @@
     "version": "0.21.2"
   },
   "label": "Bridge docs site, after",
-  "generatedAt": "2026-11-12T12:38:21.999Z",
+  "generatedAt": "2026-11-12T13:53:11.834Z",
   "target": {
     "path": "apps/docs-site/src",
-    "files": 792,
+    "files": 796,
     "skipped": 0
   },
   "designSystem": {
@@ -32,11 +32,11 @@
   "metrics": {
     "tokenAdoption": 100,
     "componentAdoption": 100,
-    "tokenUsages": 11499,
+    "tokenUsages": 11479,
     "hardcoded": 1,
-    "themeRefs": 1197,
-    "dsComponentInstances": 2467,
-    "uiComponentInstances": 2467,
+    "themeRefs": 1188,
+    "dsComponentInstances": 2496,
+    "uiComponentInstances": 2496,
     "imitations": 0
   },
   "byCategory": {
@@ -48,14 +48,14 @@
   },
   "components": {
     "ds": {
-      "Button": 528,
+      "Button": 534,
       "Input": 83,
       "Textarea": 33,
-      "SegmentedControl": 39,
-      "Link": 294,
-      "Card": 48,
+      "SegmentedControl": 41,
+      "Link": 293,
+      "Card": 50,
       "CardHeader": 2,
-      "CardBody": 36,
+      "CardBody": 38,
       "CardFooter": 1,
       "Table": 18,
       "TableHeader": 18,
@@ -65,24 +65,24 @@
       "TableCell": 80,
       "Alert": 77,
       "Badge": 149,
-      "Tabs": 7,
-      "TabsList": 7,
-      "Tab": 11,
+      "Tabs": 8,
+      "TabsList": 8,
+      "Tab": 15,
       "Checkbox": 22,
       "Switch": 14,
       "Tag": 17,
       "Progress": 13,
-      "Avatar": 33,
+      "Avatar": 39,
       "Kbd": 25,
-      "Icon": 120,
-      "IconButton": 40,
+      "Icon": 119,
+      "IconButton": 39,
       "Menu": 25,
-      "MenuTrigger": 26,
+      "MenuTrigger": 25,
       "MenuContent": 25,
       "MenuRadioGroup": 2,
       "MenuRadioItem": 2,
       "MenuGroup": 8,
-      "MenuItem": 56,
+      "MenuItem": 55,
       "MenuSeparator": 13,
       "Popover": 9,
       "PopoverTrigger": 9,
@@ -97,16 +97,17 @@
       "CodeBlock": 28,
       "Accordion": 23,
       "AccordionItem": 27,
-      "Tooltip": 20,
+      "Tooltip": 21,
+      "Combobox": 5,
       "Drawer": 4,
-      "RadioGroup": 10,
-      "Radio": 14,
+      "RadioGroup": 13,
+      "Radio": 15,
       "Divider": 1,
       "AvatarGroup": 7,
       "EmptyState": 17,
       "Breadcrumb": 8,
       "PageHeader": 1,
-      "TabsPanel": 14,
+      "TabsPanel": 18,
       "DialogClose": 19,
       "DialogTrigger": 2,
       "TokenValue": 14,
@@ -123,7 +124,6 @@
       "ChoiceCard": 10,
       "Banner": 5,
       "Stepper": 2,
-      "Combobox": 4,
       "MenuCheckboxItem": 4,
       "Pagination": 1,
       "Slider": 1,
@@ -243,7 +243,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 14,
+      "dsComponents": 13,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -741,27 +741,6 @@
       "components": []
     },
     {
-      "path": "components/ds/PaletteField.tsx",
-      "lang": "tsx",
-      "tokenUsages": 0,
-      "themeRefs": 0,
-      "hardcoded": 0,
-      "dsComponents": 2,
-      "otherComponents": 0,
-      "findings": [],
-      "components": [],
-      "ignored": [
-        {
-          "line": 10,
-          "column": 5,
-          "kind": "imitation",
-          "what": "Input",
-          "reason": "the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox)",
-          "via": "comment"
-        }
-      ]
-    },
-    {
       "path": "components/ds/PropsTable.tsx",
       "lang": "tsx",
       "tokenUsages": 0,
@@ -823,6 +802,17 @@
       "themeRefs": 0,
       "hardcoded": 0,
       "dsComponents": 1,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
+      "path": "components/ds/SearchPalette.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 4,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -1401,6 +1391,17 @@
       "themeRefs": 0,
       "hardcoded": 0,
       "dsComponents": 2,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
+      "path": "components/ds/studio/FaceSetting.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 33,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -2407,7 +2408,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 5,
+      "dsComponents": 3,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -3056,7 +3057,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 34,
+      "dsComponents": 31,
       "otherComponents": 0,
       "findings": [],
       "components": [],
@@ -3067,14 +3068,6 @@
           "kind": "component",
           "what": "button",
           "reason": "a side nav group opener styled as its sibling nav links (with the review count badge and chevron); the DS SidebarNav is a React island and would rebuild the whole rail",
-          "via": "comment"
-        },
-        {
-          "line": 472,
-          "column": 9,
-          "kind": "imitation",
-          "what": "ul",
-          "reason": "the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox)",
           "via": "comment"
         }
       ]
@@ -4763,6 +4756,17 @@
       "components": []
     },
     {
+      "path": "lib/palette-search.ts",
+      "lang": "ts",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 0,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
       "path": "lib/pending-action.ts",
       "lang": "ts",
       "tokenUsages": 0,
@@ -5391,6 +5395,17 @@
     },
     {
       "path": "lib/team-docs-ai.ts",
+      "lang": "ts",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 0,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
+      "path": "lib/team-faces.ts",
       "lang": "ts",
       "tokenUsages": 0,
       "themeRefs": 0,
@@ -7979,6 +7994,17 @@
       "components": []
     },
     {
+      "path": "scripts/team-faces.ts",
+      "lang": "ts",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 0,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
       "path": "scripts/team-home.ts",
       "lang": "ts",
       "tokenUsages": 0,
@@ -8712,7 +8738,7 @@
     {
       "path": "styles/library-review.css",
       "lang": "css",
-      "tokenUsages": 658,
+      "tokenUsages": 659,
       "themeRefs": 18,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -8942,7 +8968,7 @@
     {
       "path": "styles/settings.css",
       "lang": "css",
-      "tokenUsages": 114,
+      "tokenUsages": 143,
       "themeRefs": 0,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -8975,7 +9001,7 @@
     {
       "path": "styles/site.css",
       "lang": "css",
-      "tokenUsages": 517,
+      "tokenUsages": 495,
       "themeRefs": 2,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -8986,31 +9012,13 @@
     {
       "path": "styles/space-switch.css",
       "lang": "css",
-      "tokenUsages": 61,
-      "themeRefs": 13,
+      "tokenUsages": 31,
+      "themeRefs": 4,
       "hardcoded": 0,
       "dsComponents": 0,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "ignored": [
-        {
-          "line": 9,
-          "column": 1,
-          "kind": "imitation",
-          "what": "a.space-switch",
-          "reason": "the Library and Studio switch is one navigation link to the other space (it loads a page, it holds no state), drawn on the DS SegmentedControl track and plate tokens; a DS Switch or SegmentedControl is a form control with a checked state, the wrong semantics for a link (Tier 2 request: a link mode for SegmentedControl)",
-          "via": "comment"
-        },
-        {
-          "line": 42,
-          "column": 1,
-          "kind": "imitation",
-          "what": ".ss-pill",
-          "reason": "the raised plate of the Library and Studio link above (a selected-segment plate, not a badge); see the reason on a.space-switch",
-          "via": "comment"
-        }
-      ]
+      "components": []
     },
     {
       "path": "styles/spaces.css",
@@ -9059,7 +9067,7 @@
     {
       "path": "styles/studio-home.css",
       "lang": "css",
-      "tokenUsages": 229,
+      "tokenUsages": 231,
       "themeRefs": 2,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -9068,7 +9076,7 @@
       "components": [],
       "ignored": [
         {
-          "line": 930,
+          "line": 942,
           "column": 1,
           "kind": "imitation",
           "what": ".sc-mockup-thumb > .sc-mockup-pill",
@@ -9221,19 +9229,10 @@
     }
   ],
   "ignored": {
-    "total": 34,
-    "comment": 34,
+    "total": 30,
+    "comment": 30,
     "allowlist": 0,
     "items": [
-      {
-        "file": "components/ds/PaletteField.tsx",
-        "line": 10,
-        "column": 5,
-        "kind": "imitation",
-        "what": "Input",
-        "reason": "the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox)",
-        "via": "comment"
-      },
       {
         "file": "components/ds/library/FoundationParts.tsx",
         "line": 222,
@@ -9388,15 +9387,6 @@
         "via": "comment"
       },
       {
-        "file": "layouts/Layout.astro",
-        "line": 472,
-        "column": 9,
-        "kind": "imitation",
-        "what": "ul",
-        "reason": "the search palette is the WAI-ARIA combobox with an always-open listbox inside a DS Dialog (ScriptDialog), filled by scripts/shell.ts from the static search index; the DS Combobox is a popup anchored to its input with no inline-list mode (Tier 2 request: a Command or inline-list Combobox)",
-        "via": "comment"
-      },
-      {
         "file": "pages/studio/components/index.astro",
         "line": 216,
         "column": 11,
@@ -9496,26 +9486,8 @@
         "via": "comment"
       },
       {
-        "file": "styles/space-switch.css",
-        "line": 9,
-        "column": 1,
-        "kind": "imitation",
-        "what": "a.space-switch",
-        "reason": "the Library and Studio switch is one navigation link to the other space (it loads a page, it holds no state), drawn on the DS SegmentedControl track and plate tokens; a DS Switch or SegmentedControl is a form control with a checked state, the wrong semantics for a link (Tier 2 request: a link mode for SegmentedControl)",
-        "via": "comment"
-      },
-      {
-        "file": "styles/space-switch.css",
-        "line": 42,
-        "column": 1,
-        "kind": "imitation",
-        "what": ".ss-pill",
-        "reason": "the raised plate of the Library and Studio link above (a selected-segment plate, not a badge); see the reason on a.space-switch",
-        "via": "comment"
-      },
-      {
         "file": "styles/studio-home.css",
-        "line": 930,
+        "line": 942,
         "column": 1,
         "kind": "imitation",
         "what": ".sc-mockup-thumb > .sc-mockup-pill",

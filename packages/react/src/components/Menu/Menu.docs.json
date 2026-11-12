@@ -25,7 +25,8 @@
     "More than two or three actions on one item: show the main one as a button and the rest in a Menu.",
     "View options: checkable items for columns, a radio group for sort order.",
     "A submenu for one level of grouping (Move to group, then the groups).",
-    "Leading icons when they help scanning (Rename, Duplicate, Delete): pass icon, a Lucide icon or an element like a brand mark. Put icons on every item of the menu or on none; labels stay aligned either way."
+    "Leading icons when they help scanning (Rename, Duplicate, Delete): pass icon, a Lucide icon or an element like a brand mark. Put icons on every item of the menu or on none; labels stay aligned either way.",
+    "anchor on MenuContent when the menu opens from something that is not a MenuTrigger: a button a script drew in a large table, a ref, a virtual box (a text selection) or a point ({ x, y }). Control it with open and onOpenChange."
   ],
   "whenNotToUse": [
     "Choosing a value for a form field: use Select or Combobox, which work with Field and forms.",
@@ -94,7 +95,8 @@
     "Enter and Space activate; checkable items toggle aria-checked and keep the menu open.",
     "ArrowRight opens a submenu, ArrowLeft and Escape close it; Escape on the root returns focus to the trigger.",
     "Shortcut hints are visual only (aria-hidden); bind the shortcut yourself and document it elsewhere.",
-    "Disabled items stay in the list so users learn the action exists, but cannot be activated."
+    "Disabled items stay in the list so users learn the action exists, but cannot be activated.",
+    "An anchored menu has no MenuTrigger: give the element that opens it aria-haspopup=\"menu\" and aria-expanded, name the menu with aria-label, and move focus back to that element in onOpenChange when it closes."
   ],
   "contentGuidelines": [
     "Items are verbs in sentence case: \"Rename\", \"Duplicate\", \"Delete token\".",

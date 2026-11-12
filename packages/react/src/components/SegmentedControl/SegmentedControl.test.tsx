@@ -96,4 +96,47 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: 'Open 8' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: 'Done' })).toBeInTheDocument();
   });
+
+  describe('links', () => {
+    const spaces: SegmentedControlItem[] = [
+      { value: 'library', label: 'Library', href: '/library/' },
+      { value: 'studio', label: 'Studio', href: '/studio/', attributes: { 'data-tooltip': 'Open Studio' } },
+    ];
+
+    it('is a named nav of links, the current one marked as the page, with no radio semantics', async () => {
+      render(<SegmentedControl label="Space" items={spaces} value="library" />);
+      const nav = screen.getByRole('navigation', { name: 'Space' });
+      expect(nav).toHaveAttribute('data-segmented-control');
+      expect(screen.queryByRole('radiogroup')).toBeNull();
+      expect(screen.queryByRole('radio')).toBeNull();
+      const library = screen.getByRole('link', { name: 'Library' });
+      const studio = screen.getByRole('link', { name: 'Studio' });
+      expect(library).toHaveAttribute('aria-current', 'page');
+      expect(studio).not.toHaveAttribute('aria-current');
+      expect(studio).toHaveAttribute('href', '/studio/');
+      expect(studio).toHaveAttribute('data-tooltip', 'Open Studio');
+      await expectNoAxeViolations();
+    });
+
+    it('moves with Tab from link to link and reports the pick', async () => {
+      const onValueChange = vi.fn();
+      render(<SegmentedControl label="Space" items={spaces} value="library" onValueChange={onValueChange} />);
+      await userEvent.tab();
+      expect(screen.getByRole('link', { name: 'Library' })).toHaveFocus();
+      await userEvent.tab();
+      const studio = screen.getByRole('link', { name: 'Studio' });
+      expect(studio).toHaveFocus();
+      studio.addEventListener('click', (e) => e.preventDefault());
+      await userEvent.click(studio);
+      expect(onValueChange).toHaveBeenCalledWith('studio');
+    });
+
+    it('renders statically as plain links, and drops href from a disabled segment', () => {
+      const html = renderToStaticMarkup(<SegmentedControl label="Space" items={[spaces[0]!, { ...spaces[1]!, disabled: true }]} value="library" />);
+      expect(html).toMatch(/^<nav/);
+      expect(html).toContain('aria-current="page"');
+      expect(html).not.toContain('href="/studio/"');
+      expect(html).toContain('aria-disabled="true"');
+    });
+  });
 });

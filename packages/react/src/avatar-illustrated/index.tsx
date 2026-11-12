@@ -9,6 +9,8 @@ import { createAvatar } from '@dicebear/core';
 import { notionists } from '@dicebear/collection';
 import { Avatar as BaseAvatar, type AvatarProps } from '../components/Avatar';
 
+export { FACE_PART_NAMES, faceVariantName, type NamedFacePart } from './names';
+
 const cache = new Map<string, string>();
 
 /** The face framing every drawing shares: no hands, no body icon, zoomed on the face. */

@@ -25,6 +25,9 @@ export const Controlled: Story = {
   },
 };
 
+/** One by one through a list of items: noun names the step ("Piece 3 of 12", "Next piece"). */
+export const CompactItems: Story = { args: { variant: 'compact', noun: 'Piece', pageCount: 12, defaultPage: 3, 'aria-label': 'Pieces, one by one' } };
+
 export const AllStates: Story = {
   render: () => (
     <SpecimenStack>
@@ -46,6 +49,9 @@ export const AllStates: Story = {
       </Specimen>
       <Specimen label="Compact">
         <Pagination aria-label="Compact" variant="compact" pageCount={12} defaultPage={3} />
+      </Specimen>
+      <Specimen label="Compact, one item at a time (noun)">
+        <Pagination aria-label="Pieces, one by one" variant="compact" noun="Piece" pageCount={12} defaultPage={3} />
       </Specimen>
     </SpecimenStack>
   ),

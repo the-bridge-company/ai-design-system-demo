@@ -42,6 +42,11 @@
       "types": "./dist/avatar-illustrated/index.d.ts",
       "default": "./dist/avatar-illustrated.js"
     },
+    "./avatar-illustrated/names": {
+      "source": "./src/avatar-illustrated/names.ts",
+      "types": "./dist/avatar-illustrated/names.d.ts",
+      "default": "./dist/avatar-illustrated-names.js"
+    },
     "./styles.css": {
       "source": "./src/styles/base.css",
       "default": "./dist/styles.css"

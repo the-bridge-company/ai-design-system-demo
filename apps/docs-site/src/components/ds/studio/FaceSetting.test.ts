@@ -9,7 +9,7 @@ import { createElement } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { faceRecipe } from '@bridge-ds/react/avatar-illustrated';
+import { FACE_PART_NAMES, faceRecipe } from '@bridge-ds/react/avatar-illustrated';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { setAccountFetch } from '../../../scripts/account-session';
 import { forgetDrawings } from '../../../scripts/team-faces';
@@ -70,9 +70,11 @@ describe('Your face', () => {
     const status = () => document.querySelector('[aria-live="polite"]')!;
     for (let i = 0; i < 5; i++) {
       await user.click(screen.getByRole('button', { name: 'Shuffle' }));
-      expect(status().textContent).toMatch(/^New face: (hair style \d+|hat)/);
-      const hair = /hair style (\d+)/.exec(status().textContent ?? '')?.[1];
-      if (hair) expect(blockedHair(['variant40']).has(`variant${hair.padStart(2, '0')}`)).toBe(false);
+      // "New face: space buns, round glasses." names the hair style first, by its DS name.
+      const words = /^New face: ([^,.]+)/.exec(status().textContent ?? '')?.[1];
+      const hair = Object.entries(FACE_PART_NAMES.hair).find(([, name]) => name.toLowerCase() === words)?.[0];
+      expect(hair).toBeDefined();
+      expect(blockedHair(['variant40']).has(hair!)).toBe(false);
     }
     expect(screen.getByRole('button', { name: 'Save face' })).toBeEnabled();
     await user.keyboard('{Escape}');
@@ -88,7 +90,7 @@ describe('Your face', () => {
     await user.click(screen.getByRole('button', { name: 'Pick the parts yourself' }));
     expect(screen.getByRole('tablist', { name: 'Parts of your face' })).toBeInTheDocument();
     const hair = screen.getByRole('radiogroup', { name: 'Hair' });
-    const taken = within(hair).getByRole('radio', { name: 'Hair style 40, taken by Sofia' });
+    const taken = within(hair).getByRole('radio', { name: 'Curly puffs, taken by Sofia' });
     expect(taken).toHaveAttribute('aria-disabled', 'true');
     expect(within(hair).getByText('Sofia')).toBeInTheDocument();
     expect(screen.getByText('Styles a teammate wears are taken.')).toBeInTheDocument();
@@ -99,7 +101,7 @@ describe('Your face', () => {
     expect(within(hair).getByRole('radio', { checked: true })).not.toBe(mine);
     await expectNoAxeViolations(document.body);
     await user.click(screen.getByRole('tab', { name: 'Glasses' }));
-    await user.click(screen.getByRole('radio', { name: 'Glasses 3' }));
+    await user.click(screen.getByRole('radio', { name: 'Clear aviators' }));
     await user.click(screen.getByRole('button', { name: 'Save face' }));
     await waitFor(() => expect(posts()).toHaveLength(1));
     expect(posts()[0]!.body!.face).toMatchObject({ v: 1, glasses: 'variant03' });

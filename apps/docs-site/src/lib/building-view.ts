@@ -411,9 +411,10 @@ export const buildCacheKey = (repo: string, what: 'requests' | 'builds' | 'pulls
 export const BUILD_CACHE_MS = 5 * 60 * 1000;
 
 /**
- * Line 2 of a row: when it was sent, then who it waits on, in the words of its card (lib/building-page personLine):
- * "Sent 4 days ago · Library change Dana approved", "Sent 4 days ago · Malik builds it", then who must review when
- * GitHub says.
+ * Line 2 of every row of Being built (a build request and an exploration handed to developers alike): when it was sent,
+ * then where it comes from or who builds it, in the words of its card (lib/building-page personLine): "Sent 4 days ago
+ * · Library change Dana approved", "Sent 4 days ago · Exploration Dana sent", "Sent 4 days ago · Malik builds it".
+ * The status is the tag; who it waits on is the tag's second line (rowWaiting), never this line.
  */
 export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stale' | 'sentence' | 'shippedAt' | 'builders' | 'requestedBy'> & LifecycleExtra, now: number, nameOf: (login: string) => string = (l) => l): string {
   const d = daysSince(v.createdAt, now);
@@ -428,8 +429,17 @@ export function rowLine(v: Pick<BuildRequestView, 'status' | 'createdAt' | 'stal
     const when = s === null ? 'In the library' : s === 0 ? 'Shipped today' : s === 1 ? 'Shipped yesterday' : `Shipped ${s} days ago`;
     return v.builders.length && s !== null ? `${when} by ${listNames(v.builders.map(nameOf))}` : when;
   }
-  if (v.status === 'in-review') return [sent, v.builders.length ? who : null, v.reviewLine ?? (v.builders.length ? null : 'In code review')].filter(Boolean).join(SEP);
+  if (v.status === 'in-review') return [sent, who].filter(Boolean).join(SEP);
   return `${sent}${SEP}${v.builders.length ? who : v.sentence.replace(/\.$/, '')}`;
+}
+
+/**
+ * The second line under a row's status tag: who or what it waits on. The library piece an exploration needs first
+ * (one wait per row), else who must review an In review row ("Waiting for Sofia's check", "Changes requested by Lee").
+ */
+export function rowWaiting(v: Pick<BuildRequestView, 'status'> & LifecycleExtra & { exploration?: { waiting?: string | null } | null }): string | null {
+  if (v.exploration?.waiting) return v.exploration.waiting;
+  return v.status === 'in-review' ? (v.reviewLine ?? null) : null;
 }
 
 const listNames = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
@@ -484,8 +494,13 @@ export interface ExplorationBuildRow extends BuildRequestView {
   exploration: {
     /** The Studio path the row opens: `explorations/?exploration=12`, with `&product=shop` in a product's own repository. */
     href: string;
-    /** Line 2: the product, who said Done exploring and when, then where it stands. */
+    /**
+     * The exploration's own summary: the product, who said Done exploring and when, then where it stands. The list
+     * row reads rowLine and rowWaiting instead, like every other row; a row for developers who work elsewhere reads it.
+     */
     line: string;
+    /** The library piece it waits for before developers can build it (board LI6), under the status tag. */
+    waiting?: string | null;
     /** The product's name, when it was explored for one. */
     product: string | null;
     /** Who said Done exploring, when the row's line names them. */
@@ -645,7 +660,7 @@ export function explorationBuildRows(pulls: readonly RestPull[], ctx: Exploratio
         jira: null,
         figmaUrl: null,
         timeline,
-        exploration: { href: `explorations/${explorationHref({ number: Number(p.number), product: p.product })}`, line, product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, sentBy: sentByOf(block, nameOf), ...(forDevelopers ? { forDevelopers } : {}) },
+        exploration: { href: `explorations/${explorationHref({ number: Number(p.number), product: p.product })}`, line, ...(waiting ? { waiting } : {}), product, doneBy: elsewhere || status === 'shipped' ? null : doneBy, sentBy: sentByOf(block, nameOf), ...(forDevelopers ? { forDevelopers } : {}) },
         productKey: productConfig?.key ?? null,
         ...(reviewWords ? { reviewLine: reviewWords } : {}),
         ...(nextRelease ? { nextRelease: true } : {}),

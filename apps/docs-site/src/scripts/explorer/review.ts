@@ -1,5 +1,5 @@
-// After Apply: a slim bar "N changes · Review" at the bottom of Studio Tokens, and the review it opens (the DS Dialog,
-// components/explorer/TokenEditorKit.astro: focus trap, Escape and scrim close it, stacked under the propose dialog).
+// After Apply: a slim bar "N changes · Review" at the bottom of Studio Tokens, and the review it opens (the DS Drawer,
+// components/explorer/TokenEditorKit.astro: focus trap, Escape and scrim close it, the propose dialog stacks on it).
 // The sheet shows each change as before and after per mode, then the impact collapsed with counts (contrast, the
 // components using it, a visual preview of those real components on that background), and one primary action:
 // Propose change (Connect GitHub to propose without a token). Proposing still goes through scripts/token-editor.ts.
@@ -33,7 +33,7 @@ type ValueEdit = Extract<DraftEdit, { kind: 'value' }>;
 
 export function initReview(d: ExplorerData) {
   const bar = document.querySelector<HTMLElement>('[data-xe-bar]');
-  // The DS Dialog's popup (role="dialog"), its title and its body.
+  // The DS Drawer's popup (role="dialog"), its title and its body.
   const sheet = document.querySelector<HTMLElement>('[data-xe-sheet]');
   const body = document.querySelector<HTMLElement>('[data-xe-sheet-body]');
   const title = sheet?.querySelector<HTMLElement>('h2') ?? null;
@@ -273,7 +273,7 @@ export function initReview(d: ExplorerData) {
       body.innerHTML = '<p class="xe-empty">No change in your draft. Click a value in the table to change it.</p>';
       return;
     }
-    // The dialog body scrolls (DS Dialog): keep its place through a repaint.
+    // The drawer body scrolls (DS Drawer): keep its place through a repaint.
     const scroller = body.parentElement ?? body;
     const scroll = scroller.scrollTop;
     body.innerHTML = `${changeCards(tokenOnly(snap.draft.edits))}${impact(tokenOnly(snap.draft.edits))}`;
@@ -286,7 +286,7 @@ export function initReview(d: ExplorerData) {
     if (on) {
       returnTo = document.activeElement as HTMLElement | null;
       paintSheet();
-      // Focus on the dialog itself, named by its title, as before on the sheet's heading; focus comes back on close.
+      // Focus on the drawer itself, named by its title, as before on the sheet's heading; focus comes back on close.
       openDialog(sheet, { initialFocus: sheet, returnFocus: null });
     } else closeDialog(sheet);
     paintBar();

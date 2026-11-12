@@ -13,15 +13,7 @@ import { followThemePref } from '../lib/theme-pref';
 import { explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
 import { rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
 import { navGroupOpen, readNavGroup, writeNavGroup } from '../lib/nav-groups';
-
-interface SearchItem {
-  kind: 'page' | 'component' | 'token';
-  title: string;
-  href: string;
-  meta?: string;
-  keys?: string;
-  swatch?: string;
-}
+import { PALETTE_OPEN_EVENT } from '../lib/palette-search';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
 
@@ -356,151 +348,20 @@ function initNavGroups() {
   }
 }
 
-/** Subsequence fuzzy score: consecutive and word-start hits score higher. -1 when not all characters match. */
-export function fuzzy(query: string, text: string): number {
-  const q = query.toLowerCase();
-  const t = text.toLowerCase();
-  if (!q) return 0;
-  const direct = t.indexOf(q);
-  if (direct >= 0) return 1000 - direct * 2 - (t.length - q.length) * 0.5 + (direct === 0 ? 200 : 0);
-  let score = 0;
-  let ti = 0;
-  let streak = 0;
-  for (const ch of q) {
-    const found = t.indexOf(ch, ti);
-    if (found < 0) return -1;
-    const boundary = found === 0 || /[\s./_-]/.test(t[found - 1] ?? '');
-    streak = found === ti ? streak + 1 : 0;
-    score += 10 + streak * 6 + (boundary ? 12 : 0) - Math.min(found - ti, 10);
-    ti = found + 1;
-  }
-  return score;
-}
-
-const KIND_LABEL = { page: 'Page', component: 'Component', token: 'Token' } as const;
-
+/**
+ * The Cmd+K search palette: a DS Dialog (ScriptDialog `palette`) holding the SearchPalette island, a DS Combobox in
+ * inline mode. The shell opens it (the header button, Cmd+K, "/") and tells the island, which loads the index,
+ * clears the query and takes focus.
+ */
 function initPalette() {
   const dialog = $('palette');
-  const input = document.querySelector<HTMLInputElement>('[data-palette-q]');
-  const list = $<HTMLUListElement>('palette-list');
-  const count = $('palette-count');
   const trigger = $<HTMLButtonElement>('search-open');
-  if (!dialog || !input || !list || !trigger) return;
-  let data: SearchItem[] | null = null;
-  let results: SearchItem[] = [];
-  let active = 0;
+  if (!dialog || !trigger) return;
 
-  const load = async () => {
-    if (data) return data;
-    try {
-      if (document.documentElement.hasAttribute('data-library-shell')) {
-        // A team's Library searches the team, from the model its page already read (no extra request, none to
-        // the GitHub API for a reader who is signed out: scripts/team-data.ts reads the published snapshot).
-        const [{ loadTeamData }, { librarySearchIndex }] = await Promise.all([import('./team-data'), import('../lib/library/search-index')]);
-        const team = await loadTeamData();
-        data = librarySearchIndex(team.model, team.owner, team.repo);
-        return data;
-      }
-      const r = await fetch('/search-index.json');
-      data = (await r.json()) as SearchItem[];
-    } catch {
-      data = [];
-    }
-    return data;
-  };
-
-  const render = () => {
-    list.textContent = '';
-    if (!results.length) {
-      const li = document.createElement('li');
-      li.className = 'palette-empty';
-      li.textContent = input.value ? `Nothing matches "${input.value}". Try a token path like color.action, or a hex.` : 'Type to search.';
-      list.appendChild(li);
-    }
-    results.forEach((item, i) => {
-      const li = document.createElement('li');
-      li.id = `pal-${i}`;
-      li.setAttribute('role', 'option');
-      li.setAttribute('aria-selected', String(i === active));
-      const a = document.createElement('a');
-      a.href = item.href;
-      a.tabIndex = -1;
-      const sw = document.createElement('span');
-      sw.className = `palette-kind kind-${item.kind}`;
-      if (item.swatch) {
-        sw.classList.add('has-swatch');
-        sw.style.setProperty('--sw', item.swatch);
-      } else {
-        const glyph = document.querySelector<HTMLTemplateElement>('#palette-icons')?.content.querySelector(`[data-kind="${item.kind}"] > svg`);
-        if (glyph) sw.appendChild(glyph.cloneNode(true));
-      }
-      sw.setAttribute('aria-hidden', 'true');
-      const body = document.createElement('span');
-      body.className = 'palette-body';
-      const title = document.createElement('span');
-      title.className = item.kind === 'token' ? 'palette-title mono' : 'palette-title';
-      title.textContent = item.title;
-      body.appendChild(title);
-      if (item.meta) {
-        const meta = document.createElement('span');
-        meta.className = 'palette-meta';
-        meta.textContent = item.meta;
-        body.appendChild(meta);
-      }
-      const tag = document.createElement('span');
-      tag.className = 'palette-tag';
-      tag.textContent = KIND_LABEL[item.kind];
-      a.append(sw, body, tag);
-      li.appendChild(a);
-      li.addEventListener('mousemove', () => {
-        if (active !== i) {
-          active = i;
-          sync();
-        }
-      });
-      list.appendChild(li);
-    });
-    if (count) count.textContent = input.value ? `${results.length} result${results.length === 1 ? '' : 's'}` : '';
-    sync();
-  };
-
-  const sync = () => {
-    [...list.querySelectorAll('[role="option"]')].forEach((el, i) => el.setAttribute('aria-selected', String(i === active)));
-    const current = list.querySelector(`#pal-${active}`);
-    if (current) {
-      input.setAttribute('aria-activedescendant', current.id);
-      current.scrollIntoView({ block: 'nearest' });
-    } else input.removeAttribute('aria-activedescendant');
-  };
-
-  const search = () => {
-    const q = input.value.trim();
-    const all = data ?? [];
-    if (!q) {
-      results = all.filter((x) => x.kind !== 'token').slice(0, 12);
-    } else {
-      const weight = { page: 40, component: 60, token: 0 } as const;
-      results = all
-        .map((item) => {
-          const s = Math.max(fuzzy(q, item.title), fuzzy(q, item.keys ?? '') - 40);
-          return { item, s: s < 0 ? -1 : s + weight[item.kind] };
-        })
-        .filter((x) => x.s >= 0)
-        .sort((a, b) => b.s - a.s)
-        .slice(0, 40)
-        .map((x) => x.item);
-    }
-    active = 0;
-    render();
-  };
-
-  const open = async () => {
+  const open = () => {
     if (isDialogOpen(dialog)) return;
     openDialog(dialog);
-    input.value = '';
-    await load();
-    search();
-    input.focus();
+    dialog.dispatchEvent(new CustomEvent(PALETTE_OPEN_EVENT));
   };
 
   trigger.addEventListener('click', open);
@@ -512,22 +373,6 @@ function initPalette() {
     } else if (e.key === '/' && !isDialogOpen(dialog) && !(e.target as HTMLElement).closest('input, textarea, [contenteditable]')) {
       e.preventDefault();
       open();
-    }
-  });
-  input.addEventListener('input', search);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      active = Math.min(active + 1, results.length - 1);
-      sync();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      active = Math.max(active - 1, 0);
-      sync();
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const item = results[active];
-      if (item) window.location.href = item.href;
     }
   });
 }

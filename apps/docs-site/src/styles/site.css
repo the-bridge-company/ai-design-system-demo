@@ -1103,37 +1103,21 @@ tr:target {
   margin: var(--space-4) 0 var(--space-2);
 }
 
-/* Command palette: a DS Dialog (lg) opened by scripts/shell.ts. The field sits on top of the results; the list keeps
-   a minimum height so the dialog does not jump while results come and go. */
+/* Command palette: a DS Dialog (lg) opened by scripts/shell.ts, holding the DS Combobox in inline mode
+   (components/ds/SearchPalette.tsx). The list keeps a minimum height so the dialog does not jump while results come
+   and go. */
 
 .palette-box {
   display: grid;
-  gap: var(--space-2);
 }
 
-.palette-list {
+.palette-results [role="listbox"] {
   min-height: min(var(--size-80), 40vh);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-.palette-list li + li {
-  margin-top: 0;
-}
-
-.palette-list a {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-control);
-  color: var(--color-text-default);
-  text-decoration: none;
-}
-
-.palette-list [aria-selected="true"] a {
-  background-color: var(--color-bg-subtle);
+/* A token's name is code: Plex Mono, like every token name on the site. */
+.palette-results [role="option"]:has(.kind-token) > span:nth-child(2) > span:first-child {
+  font-family: var(--font-family-mono);
 }
 
 /* The kind of a result: the same glyph as the side nav (Components, a page, Tokens) in the muted text color; a color
@@ -1151,46 +1135,6 @@ tr:target {
 .palette-kind.has-swatch {
   border: var(--border-width-default) solid var(--color-border-default);
   background-color: var(--sw);
-}
-
-.palette-body {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-
-.palette-title {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  font-weight: var(--font-weight-medium);
-}
-
-.palette-title.mono {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.palette-meta {
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.palette-tag {
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.palette-empty {
-  padding: var(--space-6) var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-align: center;
 }
 
 .palette-foot {
@@ -1478,8 +1422,7 @@ label {
   touch-action: manipulation;
 }
 
-.rail,
-.palette-list {
+.rail {
   overscroll-behavior: contain;
 }
 

@@ -13,6 +13,8 @@ export type SegmentedControlAppearance = 'default' | 'strong';
 export interface SegmentAttributes {
   id?: string;
   title?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
   [key: `data-${string}`]: string | number | boolean | undefined;
 }
 
@@ -28,7 +30,12 @@ export interface SegmentedControlItem {
   /** Count shown in a tag after the label, like the number of items behind a filter. */
   count?: number;
   disabled?: boolean;
-  /** Spread on the segment's button. */
+  /**
+   * Makes the control navigation: give every segment an `href` and each one is a link to its view, the current one
+   * (`value`) marked `aria-current="page"`. The current segment may leave `href` out: it is the page you are on.
+   */
+  href?: string;
+  /** Spread on the segment's button (or link). */
   attributes?: SegmentAttributes;
 }
 
@@ -70,12 +77,14 @@ export function markSegmentOverflow(root: HTMLElement) {
   else root.removeAttribute('data-overflow');
 }
 
+const SELECTED = '[data-segment][aria-checked="true"], [data-segment][aria-current="page"]';
+
 /** Scrolls the track so the selected segment is fully visible, clear of the faded edge, without moving the page. */
 function revealSelected(root: HTMLElement | null) {
   if (!root) return;
   const track = trackOf(root);
   if (track.scrollWidth <= track.clientWidth) return;
-  const selected = track.querySelector<HTMLElement>('[data-segment][aria-checked="true"]');
+  const selected = track.querySelector<HTMLElement>(SELECTED);
   if (!selected) return;
   const pad = parseFloat(getComputedStyle(track).scrollPaddingInlineStart) || 0;
   const start = selected.offsetLeft - pad;
@@ -93,6 +102,9 @@ function revealSelected(root: HTMLElement | null) {
  * (and `tabindex`) drives a statically rendered control. A scrolling track fades the edges named by `data-overflow`
  * (`start`, `end`, `both`) on the root; the segments sit in an inner `data-segment-track` that scrolls: call
  * `markSegmentOverflow(root)` on its scroll and on resize.
+ *
+ * Links: when the items carry `href`, the control is navigation (a `nav` named by `label`), each segment a link and
+ * the current one (`value`, or `defaultValue`) `aria-current="page"`. Tab moves between links; no radio semantics.
  */
 export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps>(function SegmentedControl(
   { items, label, value, defaultValue, onValueChange, size = 'md', appearance = 'default', fullWidth = false, disabled, name, className, ...rest },
@@ -127,6 +139,56 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       observer?.disconnect();
     };
   }, []);
+
+  const content = (item: SegmentedControlItem) => (
+    <>
+      {item.leading != null && (
+        <span className={styles.leading} aria-hidden="true">
+          {item.leading}
+        </span>
+      )}
+      {item.icon && <Icon icon={item.icon} size="sm" className={styles.icon} />}
+      <span className={styles.label}>{item.label}</span>
+      {item.count !== undefined && (
+        <>
+          {' '}
+          <span className={styles.count}>{item.count}</span>
+        </>
+      )}
+    </>
+  );
+  const rootClass = cx(styles.root, styles[size], appearance === 'strong' && styles.strong, fullWidth && styles.fullWidth, className);
+
+  if (items.some((item) => item.href !== undefined)) {
+    const current = value ?? defaultValue;
+    return (
+      <nav ref={setRef as never} aria-label={label} className={cx(rootClass, styles.links)} data-segmented-control="" {...rest}>
+        <div className={styles.track} data-segment-track="">
+          {items.map((item) => {
+            const here = item.value === current;
+            const off = disabled || item.disabled;
+            return (
+              <a
+                key={item.value}
+                href={off ? undefined : item.href}
+                aria-current={here ? 'page' : undefined}
+                aria-disabled={off || undefined}
+                data-disabled={off || undefined}
+                className={styles.segment}
+                data-segment=""
+                data-value={item.value}
+                onClick={() => onValueChange?.(item.value)}
+                {...item.attributes}
+              >
+                {content(item)}
+              </a>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <BaseRadioGroup
       ref={setRef}
@@ -140,7 +202,7 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       }}
       disabled={disabled}
       name={name}
-      className={cx(styles.root, styles[size], appearance === 'strong' && styles.strong, fullWidth && styles.fullWidth, className)}
+      className={rootClass}
       data-segmented-control=""
       {...rest}
     >
@@ -157,19 +219,7 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
             data-value={item.value}
             {...item.attributes}
           >
-            {item.leading != null && (
-              <span className={styles.leading} aria-hidden="true">
-                {item.leading}
-              </span>
-            )}
-            {item.icon && <Icon icon={item.icon} size="sm" className={styles.icon} />}
-            <span className={styles.label}>{item.label}</span>
-            {item.count !== undefined && (
-              <>
-                {' '}
-                <span className={styles.count}>{item.count}</span>
-              </>
-            )}
+            {content(item)}
           </BaseRadio.Root>
         ))}
       </div>

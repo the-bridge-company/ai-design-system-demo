@@ -138,9 +138,10 @@ const BUILDERS = {
   async react() {
     const dir = pkgDir('react');
     rmSync(join(dir, 'dist'), { recursive: true, force: true });
-    // Three entry points: the components (index), the DOM renderers for plain-script pages (./dom) and the Avatar
-    // with its illustrated faces (./avatar-illustrated), kept apart because the drawings weigh about 120 kB gzipped.
-    await viteLib('react', { external: externalFor('react'), css: true, entry: { index: 'src/index.ts', dom: 'src/dom/index.ts', 'avatar-illustrated': 'src/avatar-illustrated/index.tsx' } });
+    // Four entry points: the components (index), the DOM renderers for plain-script pages (./dom) and the Avatar
+    // with its illustrated faces (./avatar-illustrated), kept apart because the drawings weigh about 120 kB gzipped,
+    // plus the faces' part names alone (./avatar-illustrated/names), data a server can import without the drawings.
+    await viteLib('react', { external: externalFor('react'), css: true, entry: { index: 'src/index.ts', dom: 'src/dom/index.ts', 'avatar-illustrated': 'src/avatar-illustrated/index.tsx', 'avatar-illustrated-names': 'src/avatar-illustrated/names.ts' } });
     tsc(['-p', 'tsconfig.build.json'], dir);
     // One stylesheet for consumers: the global base first, then every component's CSS Modules output.
     const base = readFileSync(join(dir, 'src/styles/base.css'), 'utf8');

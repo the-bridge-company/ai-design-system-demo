@@ -103,12 +103,12 @@
 
 /* Hover changes the text only: a fill would compete with the selected plate (in dark it reads brighter). */
 @media (hover: hover) {
-  .segment:hover:not(:disabled, [data-disabled], [aria-checked="true"]) {
+  .segment:hover:not(:disabled, [data-disabled], [aria-checked="true"], [aria-current="page"]) {
     color: var(--color-text-default);
   }
 }
 
-.segment:active:not(:disabled, [data-disabled], [aria-checked="true"]) {
+.segment:active:not(:disabled, [data-disabled], [aria-checked="true"], [aria-current="page"]) {
   background-color: var(--color-surface-pressed);
 }
 
@@ -116,7 +116,8 @@
    vanished. Raised is white in light and one step lighter than the track in dark. Its edge is the checked control
    color (Deep Harbor in light, light Harbor in dark), the same edge as a pressed Button toggle: border.default was
    the plate's own color in dark, so the selected segment had no edge there. */
-.segment[aria-checked="true"] {
+.segment[aria-checked="true"],
+.segment[aria-current="page"] {
   border-color: var(--color-control-checked-bg);
   background-color: var(--color-surface-raised);
   color: var(--color-text-default);
@@ -132,7 +133,8 @@
 }
 
 /* On the Deep Harbor fill the ring turns to the fill's text color, one ring width inside the edge. */
-.strong .segment[aria-checked="true"]:focus-visible {
+.strong .segment[aria-checked="true"]:focus-visible,
+.strong .segment[aria-current="page"]:focus-visible {
   outline-color: var(--color-control-checked-fg);
   outline-offset: calc(var(--focus-ring-width) * -2);
 }
@@ -144,7 +146,8 @@
 }
 
 /* Strong: the selected segment fills with Deep Harbor (the checked control color). */
-.strong .segment[aria-checked="true"] {
+.strong .segment[aria-checked="true"],
+.segment[aria-current="page"] {
   border-color: var(--color-control-checked-bg);
   background-color: var(--color-control-checked-bg);
   color: var(--color-control-checked-fg);
@@ -190,13 +193,15 @@
 }
 
 /* The selected segment's count takes the stronger tone; on the Deep Harbor fill it inverts. */
-.segment[aria-checked="true"] .count {
+.segment[aria-checked="true"] .count,
+.segment[aria-current="page"] .count {
   border-color: transparent;
   background-color: var(--color-surface-inverse);
   color: var(--color-text-inverse);
 }
 
-.strong .segment[aria-checked="true"] .count {
+.strong .segment[aria-checked="true"] .count,
+.segment[aria-current="page"] .count {
   background-color: var(--color-control-checked-fg);
   color: var(--color-control-checked-bg);
 }
@@ -204,4 +209,13 @@
 .segment:disabled .count,
 .segment[data-disabled] .count {
   color: var(--color-text-disabled);
+}
+
+/* Links: segments are links to views (a nav). No underline; the current one is the page you are on, not a target. */
+.links .segment {
+  text-decoration-line: none;
+}
+
+.links .segment[aria-current="page"] {
+  cursor: default;
 }

@@ -19,8 +19,9 @@
 //     the sessions again every 10 seconds (paused while the tab is hidden).
 //   - The Product and People filters read a row by its product and by the people it shows (lib/building-view
 //     rowProduct, rowPeople); a row with nobody on it stays under Everyone.
-//   - Explorations handed to developers (Done exploring) are rows of the same list too, with an "Exploration" tag: the
-//     product, who said Done exploring and when. Such a row opens the exploration in Studio.
+//   - Explorations handed to developers (Done exploring) are rows of the same list too, in the same pattern as every
+//     row (lib/building-view rowLine, rowWaiting): "Sent 4 days ago · Exploration Dana sent", the status in the tag,
+//     who it waits on under the tag ("Waiting for Sofia's check"). Such a row opens the exploration in Studio.
 //   - How the list is shown is remembered per person (lib/list-view).
 //   - Nothing sent yet: what a build request is, where it comes from, who picks it up.
 //   - GitHub busy for the viewer with nothing kept: one calm notice with when Bridge is back (BusyNotice), never
@@ -107,6 +108,7 @@ import {
   pageRows,
   propLine,
   rowLine,
+  rowWaiting,
   rowPeople,
   rowProduct,
   rowThumb,
@@ -340,8 +342,9 @@ function Rows({
               className={v.stale ? "bb-stale" : undefined}
             />
           );
-        // An exploration handed to developers: the row opens the exploration. No kind tag: every change starts as an
-        // exploration, its line ("Done exploring on Oct 31") already says where it comes from.
+        // An exploration handed to developers: the row opens the exploration. No kind tag, and the same pattern as a
+        // request: when it was sent and where it comes from ("Sent 4 days ago · Exploration Dana sent"), the status in
+        // the tag, who it waits on under the tag.
         if (isExploration(v) && v.exploration.forDevelopers)
           return <SendRow key={v.id} v={v} message={v.exploration.forDevelopers.message} who={<Builders v={v} data={data} />} />;
         if (isExploration(v))
@@ -353,8 +356,9 @@ function Rows({
               title={v.title}
               hint={v.title}
               href={studioHref(v.exploration.href)}
-              line={v.exploration.line}
+              line={rowLine(v, now, data.nameOf)}
               pill={statusTag(v)}
+              statusNote={rowWaiting(v)}
               statusAtEnd
               className={v.stale ? "bb-stale" : undefined}
             />
@@ -376,6 +380,7 @@ function Rows({
             line={rowLine(v, now, data.nameOf)}
             note={auditNoteOf(v, data)}
             pill={statusTag(v)}
+            statusNote={rowWaiting(v)}
             statusAtEnd
             className={v.stale ? "bb-stale" : undefined}
           />

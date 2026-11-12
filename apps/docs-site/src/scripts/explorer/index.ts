@@ -592,7 +592,7 @@ export function initTokenExplorer() {
     const path = row?.dataset.path;
     const t = path ? d.set.byPath.get(path) : undefined;
     if (!row || !path || !t) return;
-    btn.setAttribute('aria-expanded', 'true');
+    // RowMenu sets the button's aria-expanded, and a click on the open menu's button closes it.
     openRowMenu({
       trigger: btn,
       label: `Actions for ${path}`,
@@ -761,8 +761,6 @@ export function initTokenExplorer() {
       void copyText(copy.dataset.copy!, copy);
       return;
     }
-    // The open row menu's own trigger (DS Menu) toggles it: nothing else to do here.
-    if (target.closest('.xp-rowmenu-host')) return;
     const menuBtn = target.closest<HTMLElement>('[data-xp-rowmenu]');
     if (menuBtn) {
       showRowMenu(menuBtn);

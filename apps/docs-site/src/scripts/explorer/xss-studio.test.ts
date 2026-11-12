@@ -3,7 +3,7 @@
 // Token names, descriptions, values, check minimums and component links stay text, never markup or javascript:.
 import { describe, expect, it, vi } from 'vitest';
 import { buildTokenSet, layoutOptions, loadConfig } from '@bridge-ds/core';
-import { dialogHtml, trusted } from '@bridge-ds/react/dom';
+import { drawerHtml, trusted } from '@bridge-ds/react/dom';
 import { buildTokens, modesOf, type Column, type UsageMap } from '../../lib/explorer/model';
 import type { ExplorerData } from './types';
 
@@ -103,8 +103,8 @@ describe('Studio sinks with hostile token files', () => {
   });
 
   it('the review: change cards, contrast list and Used by links', () => {
-    // The review is the DS Dialog (dialogHtml, as TokenEditorKit.astro renders it through ScriptDialog).
-    document.body.innerHTML = `<div data-xe-bar><button data-xe-review>Review</button></div>${dialogHtml({ id: 'xe-review', title: 'Review changes', body: trusted('<div data-xe-sheet-body></div>'), attributes: { 'data-xe-sheet': '' } })}`;
+    // The review is the DS Drawer (drawerHtml, as TokenEditorKit.astro renders it through StaticDrawer).
+    document.body.innerHTML = `<div data-xe-bar><button data-xe-review>Review</button></div>${drawerHtml({ id: 'xe-review', title: 'Review changes', size: 'lg', body: trusted('<div data-xe-sheet-body></div>'), attributes: { 'data-xe-sheet': true } })}`;
     initReview(d)!.open();
     const body = document.querySelector<HTMLElement>('[data-xe-sheet-body]')!;
     expect(body.textContent).toContain(P);

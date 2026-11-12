@@ -1,13 +1,11 @@
-// The Library <-> Studio switch at the end of the top bar (the owner's pill): two equal segments on a segmented-control
-// track (the DS SegmentedControl's tokens), each with its drawn icon (an open book for the Library, pen and notes for
-// Studio) and its word, icon only on a phone; a raised plate sits under the space you are in. One link, not a button or a switch: it loads the other space, carrying the page's
-// item across (lib/space-switch.ts). Rendered statically by the layout (no hydration); scripts/space-switch.ts plays
-// the slide on click, refreshes the target where the query or the team decides it, and the first-visit hint.
-// Styles: styles/space-switch.css.
-import { Avatar, Link } from '@bridge-ds/react';
-import { currentLabel, switchLabel, switchTooltip, type SwitchSpace } from '../lib/space-switch';
-
-export const SPACE_SWITCH_NOW_ID = 'space-switch-now';
+// The Library <-> Studio switch at the end of the top bar: the DS SegmentedControl in link mode, a nav of two
+// segments, each with its drawn icon (an open book for the Library, pen and notes for Studio) and its word (icon only
+// on a phone). The space you are in is the current page (aria-current, the raised plate); the other one is the link
+// that loads it, carrying the page's item across (lib/space-switch.ts). Rendered statically by the layout (no
+// hydration); scripts/space-switch.ts plays the switch on click, refreshes the target where the query or the team
+// decides it, and the first-visit hint. Styles: styles/space-switch.css.
+import { Avatar, SegmentedControl, type SegmentAttributes } from '@bridge-ds/react';
+import { otherSpace, SWITCH_LABEL, switchTooltip, type SwitchSpace } from '../lib/space-switch';
 
 export interface SpaceSwitchProps {
   /** The space this page is in: its word shows on the pill. */
@@ -45,45 +43,33 @@ function BookIcon() {
 }
 
 export default function SpaceSwitch({ space, href, item = null }: SpaceSwitchProps) {
-  return (
-    <Link
-      variant="subtle"
-      className="space-switch"
-      href={href}
-      aria-label={switchLabel(space)}
-      aria-describedby={SPACE_SWITCH_NOW_ID}
-      data-space-switch=""
-      data-switch-space={space}
-      data-mode={space}
-      data-switch-item={item ?? undefined}
-      data-tooltip={switchTooltip(space, item)}
-      data-tooltip-side="bottom"
-    >
-      {/* Two equal segments, each its icon and its word (icon only on a phone); the raised plate sits under the space
-          you are in. Owner, 2026-11-12: an icon for one space and a word for the other read as one button. */}
-      <span className="ss-pill" aria-hidden="true" />
-      <span className="ss-seg ss-seg-library" aria-hidden="true">
-        <span className="ss-icon">
-          <BookIcon />
-        </span>
-        <span className="ss-label">Library</span>
+  const other = otherSpace(space);
+  // The link to the other space: the hooks scripts/space-switch.ts reads, and the tooltip naming the destination.
+  const link: SegmentAttributes = {
+    'data-space-switch': '',
+    'data-switch-space': space,
+    'data-switch-item': item ?? undefined,
+    'data-tooltip': switchTooltip(space, item),
+    'data-tooltip-side': 'bottom',
+  };
+  const segment = (s: SwitchSpace) => ({
+    value: s,
+    label: <span className="ss-label">{s === 'library' ? 'Library' : 'Studio'}</span>,
+    leading: (
+      <span className="ss-icon">
+        {s === 'library' ? <BookIcon /> : <PenIcon />}
+        {/* A signed-in maintainer sees their face here instead of the pen (scripts/maintainer.ts paints it). */}
+        {s === 'studio' && space === 'library' && (
+          <span className="ss-avatar" data-team-avatar="" hidden>
+            <Avatar name="Studio" size="xs" decorative data-team-avatar-img="" />
+          </span>
+        )}
       </span>
-      <span className="ss-seg ss-seg-studio" aria-hidden="true">
-        <span className="ss-icon">
-          <PenIcon />
-          {/* A signed-in maintainer sees their face here instead of the pen (scripts/maintainer.ts paints it). */}
-          {space === 'library' && (
-            <span className="ss-avatar" data-team-avatar="" hidden>
-              <Avatar name="Studio" size="xs" decorative data-team-avatar-img="" />
-            </span>
-          )}
-        </span>
-        <span className="ss-label">Studio</span>
-      </span>
-      <span className="ss-hint" aria-hidden="true" />
-      <span className="sr-only" id={SPACE_SWITCH_NOW_ID}>
-        {currentLabel(space)}
-      </span>
-    </Link>
-  );
+    ),
+    href: s === other ? href : undefined,
+    attributes: s === other ? link : { 'data-switch-current': '' },
+  });
+  // Owner, 2026-11-12: each segment shows its icon and its word; an icon for one space and a word for the other read
+  // as one button.
+  return <SegmentedControl className="space-nav" label={SWITCH_LABEL} value={space} data-mode={space} items={[segment('library'), segment('studio')]} />;
 }

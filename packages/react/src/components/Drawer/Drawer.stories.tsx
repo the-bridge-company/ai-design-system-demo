@@ -14,11 +14,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function TokenDetails({ side, defaultOpen }: { side: DrawerSide; defaultOpen?: boolean }) {
+function TokenDetails({ side, defaultOpen, keepMounted }: { side: DrawerSide; defaultOpen?: boolean; keepMounted?: boolean }) {
   return (
     <Drawer side={side} defaultOpen={defaultOpen}>
       <DrawerTrigger render={<Button variant="secondary" />}>Edit token</DrawerTrigger>
       <DrawerContent
+        keepMounted={keepMounted}
         title="color.signal.default"
         description="Used by focus rings, active tabs and progress."
         footer={
@@ -42,7 +43,10 @@ export const End: Story = { render: (args) => <TokenDetails side={args.side ?? '
 export const Start: Story = { args: { side: 'start' }, render: (args) => <TokenDetails side={args.side ?? 'start'} /> };
 export const Bottom: Story = { args: { side: 'bottom' }, render: (args) => <TokenDetails side={args.side ?? 'bottom'} /> };
 
-export const AllStates: Story = { render: () => <TokenDetails side="end" defaultOpen /> };
+/** Stays in the DOM while closed, so a script can bind its body and footer at load. Opens and closes as usual. */
+export const KeepMounted: Story = { render: () => <TokenDetails side="end" keepMounted /> };
+
+export const AllStates: Story = { render: () => <TokenDetails side="end" defaultOpen keepMounted /> };
 
 const CHANGES = Array.from({ length: 24 }, (_, i) => `color.surface.step-${i + 1}: value moved to the new neutral ramp.`);
 

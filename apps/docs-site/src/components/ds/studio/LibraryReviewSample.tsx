@@ -25,11 +25,12 @@ export function Sample({ spec, side, size, title = '' }: { spec: ThumbSpec; side
     const hex = spec[side];
     if (!hex) return <span className="lr-plate-none">none</span>;
     // The token in place (data colours, not style literals): text on its surface, a filled card, or the main button.
-    const { look, dark } = colorLook(title);
-    const cls = `lr-look lr-look-${look}${big ? ' is-big' : ''}${dark ? ' is-dark' : ''}`;
+    // A dark piece is drawn in the dark theme's own surfaces (raised for popovers and menus), whatever the page theme.
+    const { look, dark, raised } = colorLook(title);
+    const cls = `lr-look lr-look-${look}${big ? ' is-big' : ''}${dark ? ' is-dark' : ''}${raised ? ' is-raised' : ''}`;
     if (look === 'text')
       return (
-        <span className={cls}>
+        <span className={cls} data-theme={dark ? 'dark' : undefined}>
           <span style={{ color: hex }}>{big ? 'Last touch 2 days ago' : 'Aa'}</span>
         </span>
       );

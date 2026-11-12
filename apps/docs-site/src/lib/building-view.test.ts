@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
 import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
-import { ageLabel, buildDetail, componentThumb, explorationBuildRows, previewedComponent, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
+import { ageLabel, buildDetail, componentThumb, explorationBuildRows, previewedComponent, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, rowWaiting, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
 import { buildStateOf, type BuildState } from './building-page';
 import type { DesignTaskRead } from './review-state';
@@ -340,6 +340,20 @@ describe('Being built: explorations handed to developers', () => {
     expect(list[0]!.exploration.line).toContain("The developers' version is ready for your eyes");
   });
 
+  it('gives an exploration row the pattern of every row: relative age and origin, the status in the tag, who it waits on under it', () => {
+    const task = 'https://github.com/acme/shop/issues/44';
+    const copy = { ...pull(44, { name: 'Contact page summary', head: { ref: 'explore/contact-page-summary', sha: 'h9' }, done: { task, doneAt: iso(4) } }), product: 'shop' };
+    const read: DesignTaskRead = { assignees: [], state: 'open', stateReason: null, closedAt: null, devPull: { number: 97, url: 'https://github.com/acme/shop/pull/97', draft: false, check: { state: 'pending', waiting: ['Sofia'], changesBy: null } } };
+    const [row] = explorationBuildRows([copy], { products, now: NOW, nameOf: (l) => (l === 'sofia' ? 'Sofia' : l), task: (u) => (u === task ? read : null) });
+    const origin = { kind: 'exploration' as const, self: true as const, name: '', sentBy: 'Dana' };
+    const withOrigin = { ...row!, origin };
+    const line = rowLine(withOrigin, NOW);
+    expect(line).toBe('Sent 4 days ago\u2004\u2060·\u2004Exploration Dana sent');
+    expect(line).not.toMatch(/Done exploring on|Waiting for/);
+    expect(statusTag(row!).label).toBe('Checking');
+    expect(rowWaiting(row!)).toBe("Waiting for Sofia's check");
+  });
+
   it('waits more than a week: highlighted, and counted in the sentence and the merged list', () => {
     const late = rows([pull(14, { done: { doneAt: iso(9) } })]);
     expect(late[0]).toMatchObject({ status: 'requested', stale: true });
@@ -377,7 +391,9 @@ describe('Being built: explorations handed to developers', () => {
       [22, 'in-review', 'Changes requested by Lee'],
       [23, 'in-review', "Waiting for Dana's review"],
     ]);
-    expect(rowLine(list[0]!, NOW)).toMatch(/Waiting for Florian's review$/);
+    // Who must review sits under the status tag, never on the row's line.
+    expect(rowWaiting(list[0]!)).toBe("Waiting for Florian's review");
+    expect(rowLine(list[0]!, NOW)).not.toMatch(/Waiting for/);
     expect(statusTag(list[0]!)).toEqual({ label: 'Checking', tone: 'neutral' });
     expect(list.filter((r) => buildStateOf(r, NOW) === 'in-review')).toHaveLength(4);
     expect(list.filter((r) => buildStateOf(r, NOW) === 'in-progress')).toHaveLength(0);
@@ -412,7 +428,8 @@ describe('Being built: explorations handed to developers', () => {
     expect(s2.nextRelease).toBe(true);
     expect(rowLine(s2, NOW)).toBe('In the next release');
     const r2 = out.find((v) => v.id === review.id)!;
-    expect(rowLine(r2, NOW)).toMatch(/·\u2004Waiting for Lee's review$/);
+    expect(rowLine(r2, NOW)).not.toMatch(/Waiting for/);
+    expect(rowWaiting(r2)).toBe("Waiting for Lee's review");
     // Nothing read about it: the row keeps its words.
     expect(withLifecycle(views, { pulls: [] })).toEqual(views);
   });

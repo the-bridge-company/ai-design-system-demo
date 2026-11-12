@@ -36,6 +36,7 @@ import {
 import type { MembersData } from '../../../scripts/members';
 import '../../../styles/invites.css';
 import { CountTag } from './CountTag';
+import { castJob } from '../../../lib/demo-cast';
 import { SEP } from '../../../lib/sep';
 
 export interface InviteDialogProps {
@@ -69,7 +70,8 @@ function AccessList({ data, update, notice, onNotice }: { data: MembersData; upd
           const can = allowed(m, { canManage: data.canManage, admins });
           return (
             <li key={m.login} className="inv-access-row">
-              <PersonCell name={m.name} seed={memberSeed(m)} line={memberLine(m)} you={m.you} avatar={m.avatar} />
+              {/* The line under the name is the job on the sample team, as in Settings > Members; the role stays on the right. */}
+              <PersonCell name={m.name} seed={memberSeed(m)} line={castJob(data.repo, m) ?? memberLine(m)} you={m.you} avatar={m.avatar} />
               {can.changeRole ? (
                 <RolePicker label={`Role for ${m.name}`} value={choiceOf(m)} shown={roleText(m)} personal={data.personal} variant="ghost" onChange={(c) => void run(() => act.changeRole(m, c))} />
               ) : (

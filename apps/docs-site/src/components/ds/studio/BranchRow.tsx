@@ -55,9 +55,11 @@ export interface BranchRowProps {
    * side, where a tag right after a short line left half the row empty.
    */
   statusAtEnd?: boolean;
+  /** With `statusAtEnd`: a muted second line under the status tag, who or what the row waits on. */
+  statusNote?: string | null;
 }
 
-export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note, eyebrow, lineLead, statusAtEnd }: BranchRowProps) {
+export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttributes, selected, jira, line, pill, lead, end, className, compact, tags, detail, note, eyebrow, lineLead, statusAtEnd, statusNote }: BranchRowProps) {
   const chip = pill && (
     <Badge tone={TONE[pill.tone]} size="md" className={statusTagClass(TONE[pill.tone], 'sh-row-pill')}>
       {pill.label}
@@ -125,9 +127,10 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             )}
           </span>
           {statusAtEnd && (tags || chip) && (
-            <span className="sh-row-chips sh-row-status-end">
+            <span className={statusNote ? 'sh-row-chips sh-row-status-end has-note' : 'sh-row-chips sh-row-status-end'}>
               {tags}
               {chip}
+              {statusNote && <span className="t-ui t-muted sh-row-status-note">{statusNote}</span>}
             </span>
           )}
           {end}

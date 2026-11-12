@@ -42,4 +42,23 @@ describe('Pagination', () => {
     expect(screen.getByRole('navigation')).toHaveTextContent('Page 4 of 12');
     await expectNoAxeViolations();
   });
+
+  it('names one step with noun: "Piece 3 of 12", Previous piece, Next piece', async () => {
+    const onPageChange = vi.fn();
+    render(<Pagination variant="compact" noun="Piece" aria-label="Pieces, one by one" pageCount={12} defaultPage={3} onPageChange={onPageChange} />);
+    const nav = screen.getByRole('navigation', { name: 'Pieces, one by one' });
+    expect(nav).toHaveTextContent('Piece 3 of 12');
+    expect(nav).not.toHaveTextContent('Page');
+    expect(screen.getByRole('button', { name: 'Previous piece' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Next piece' }));
+    expect(onPageChange).toHaveBeenCalledWith(4);
+    expect(nav).toHaveTextContent('Piece 4 of 12');
+    await expectNoAxeViolations();
+  });
+
+  it('names the numbered buttons with noun in the full variant', () => {
+    render(<Pagination noun="Item" pageCount={5} defaultPage={2} />);
+    expect(screen.getByRole('button', { name: 'Item 2' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Previous item' })).toBeInTheDocument();
+  });
 });

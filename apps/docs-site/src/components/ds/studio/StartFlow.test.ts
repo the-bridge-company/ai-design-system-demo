@@ -152,6 +152,21 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('draws "See it as" with the same DS Button variant as Get started: one button language on the warm banner', async () => {
+    const { container } = render(createElement(DemoBanner, { repo: SAMPLE, cast: { current: 'leo', onPick: () => undefined } }));
+    const start = screen.getByRole('link', { name: 'Get started' });
+    const seeAs = screen.getByRole('button', { name: /^See it as/ });
+    // CSS module class names (scoped in this project): the DS Button's variant class, whatever its hash.
+    const variant = (el: Element) => [...el.classList].filter((c) => /^_?(primary|secondary|ghost|danger)(_|$)/.test(c));
+    expect(variant(start)).toHaveLength(1);
+    expect(variant(start)[0]).toMatch(/secondary/);
+    expect(variant(seeAs)).toEqual(variant(start));
+    // Its own smaller size stays, and the face rides on the button's surface fill.
+    expect([...seeAs.classList].some((c) => /^_?sm(_|$)/.test(c))).toBe(true);
+    expect(seeAs.querySelector('.see-as-face')).not.toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
   it('leads someone signed in to Bridge back to their own team instead', async () => {
     const { container } = render(createElement(DemoBanner, { repo: SAMPLE, back: { href: '/studio/acme/ds/', connect: false } }));
     expect(screen.getByRole('link', { name: 'Back to your workspace' })).toHaveAttribute('href', '/studio/acme/ds/');

@@ -10,6 +10,7 @@ import { explorationWaitsOnViewer } from './design-lead';
 import { loadTeamReviews, teamReviewsNow, viewerReviewIds } from './team-reviews-data';
 import { countsOnExplorations, reviewSecondLine } from '../lib/review-lines';
 import { viewerHats } from '../lib/team-reviews';
+import { settleWithin } from '../lib/settle-within';
 import { statusNote, statusOf, turnReason } from '../lib/explorations-page';
 import { rowAgeFrom } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
@@ -708,6 +709,9 @@ function loadClosed(): Promise<void> {
   return closedRead;
 }
 
+/** The longest the first paint of the list waits for where its explorations stand: a read that hangs never holds it. */
+const STAGE_WAIT_MS = 8000;
+
 /**
  * Loads and paints the Branches list. Returns every open pull request (running explorations and the release pull
  * request included: Explorations and History read them from here).
@@ -718,6 +722,7 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
   let live: { pulls: Pull[]; staleAt?: string | null } | null = null;
   let failure: unknown = null;
   let allOpen: Pull[] = [];
+  let staged: Promise<void> = Promise.resolve();
   listUnread = false;
   unreadLine = null;
   paintRows([], true);
@@ -749,15 +754,20 @@ export async function loadList(): Promise<{ number: number; head: { ref: string 
     exploreRows = [...exploreRows, ...own.filter((p) => isListedExploration({ state: p.state, labels: p.labels as never, draft: p.draft, head: p.head, body: p.body }) || needsReviewRead(p as LifecyclePull)).map(productExploreRow)];
     archivedRows = [...archivedRows, ...own.filter((p) => isArchivedOpen({ state: p.state, labels: p.labels as never })).map(productExploreRow)];
     readExplorationStates(exploreRows);
-    void readExplorationReviews(exploreRows, [...allOpen, ...(own as unknown as LifecyclePullOf[])]);
+    // Where each exploration stands needs its developers' task, its reviews and the team's library reviews: read
+    // before the first paint, so a card never paints in one column and moves to another a second later (Ready to
+    // build, then Shipped once the task is read).
+    reviewsRead = true;
+    staged = settleWithin(Promise.all([readExplorationReviews(exploreRows, [...allOpen, ...(own as unknown as LifecyclePullOf[])]), loadTeamReviews()]), STAGE_WAIT_MS);
   } catch (err) {
     failure = err;
     // The explorations could not be read: never say the team has none, nor count 0.
     listUnread = true;
     unreadLine = unreadListLine(err instanceof RateLimitError ? err.resetAt : null);
   }
-  // The closed list is one read, after the open one; the line it feeds sits at the end of the list.
-  void loadClosed();
+  // The closed list is one read, after the open one; the line it feeds sits at the end of the list. Read before the
+  // first paint too: what shipped lately is a Board column, never one that fills a second later.
+  await Promise.all([staged, settleWithin(loadClosed(), STAGE_WAIT_MS)]);
   const src = listSource(live, snapshot);
 
   if (src.kind === 'unavailable') {

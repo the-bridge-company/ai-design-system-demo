@@ -665,13 +665,17 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
 
   repaint = paint;
   paint();
-  void loadTeamReviews()
+  const teamReviewsRead = loadTeamReviews()
     .then((t) => {
       homeTeam = t;
       paint();
     })
     .catch(() => undefined);
   await Promise.all([
+    // Where each card stands needs the developers' tasks and the team's library reviews: read before the home leaves
+    // its skeleton, so a card never paints in one state and changes a second later.
+    taskRead,
+    teamReviewsRead,
     loadStatuses(queue, (p, st) => {
       statuses.set(p.number, st);
     }).catch(missed),

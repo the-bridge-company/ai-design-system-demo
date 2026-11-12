@@ -13,6 +13,7 @@ import type { TokenReview } from './token-review';
 import { ghAction } from './gh-wording';
 import { branchCount, VOCAB } from './vocabulary';
 import { toneOf } from './status-tag';
+import { KEPT_VERSION } from './kept-version';
 import { eligibleReviewers, entriesFor, hasOwnerApproval, LOOK_AGAIN_STATUS_LABEL, pendingApprovals, requiredApprovals, soloOwnerSentence, type ApprovalRole, type TeamStates } from '@bridge-ds/core';
 
 export type StatusGroup = 'blocked' | 'waiting' | 'ready' | 'neutral';
@@ -663,6 +664,8 @@ export interface CachedPull {
 export interface ListSnapshot {
   at: string;
   pulls: CachedPull[];
+  /** The shape and app build that saved it (lib/kept-version.ts): another build's list is never read. */
+  v?: string;
 }
 
 export const snapshotKey = (repo: string) => `bridge.changes.list:${repo}`;
@@ -672,7 +675,7 @@ export const OPEN_COUNT_KEY = 'bridge.reviews.open';
 export function writeSnapshot(storage: StorageLike | null, repo: string, pulls: CachedPull[], now: Date): void {
   if (!storage) return;
   try {
-    storage.setItem(snapshotKey(repo), JSON.stringify({ at: now.toISOString(), pulls } satisfies ListSnapshot));
+    storage.setItem(snapshotKey(repo), JSON.stringify({ at: now.toISOString(), pulls, v: KEPT_VERSION } satisfies ListSnapshot));
     storage.setItem(OPEN_COUNT_KEY, JSON.stringify({ n: pulls.length, at: now.toISOString() }));
   } catch {
     /* quota or private mode: no fallback next time, nothing breaks now */
@@ -684,7 +687,7 @@ export function readSnapshot(storage: StorageLike | null, repo: string): ListSna
   try {
     const raw = storage.getItem(snapshotKey(repo));
     const s = raw ? (JSON.parse(raw) as ListSnapshot) : null;
-    return s && Array.isArray(s.pulls) && typeof s.at === 'string' ? s : null;
+    return s && Array.isArray(s.pulls) && typeof s.at === 'string' && s.v === KEPT_VERSION ? s : null;
   } catch {
     return null;
   }

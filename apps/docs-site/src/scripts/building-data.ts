@@ -30,6 +30,7 @@ import { knownNames, lookUpNames } from './people';
 import { siteConfig } from './repo-context';
 import { withBuildOrigins } from '../lib/build-origin';
 import { isHosted } from '../lib/team-path';
+import { KEPT_VERSION } from '../lib/kept-version';
 
 export interface BuildData {
   views: (BuildRequestView & LifecycleExtra)[];
@@ -82,8 +83,9 @@ function cached<T>(key: string): T[] | null {
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
-    const v = JSON.parse(raw) as { at: number; data: T[] };
-    return Date.now() - v.at < BUILD_CACHE_MS && Array.isArray(v.data) ? v.data : null;
+    const v = JSON.parse(raw) as { at: number; data: T[]; v?: string };
+    // Kept by another build or in an older shape (lib/kept-version.ts): read again.
+    return v.v === KEPT_VERSION && Date.now() - v.at < BUILD_CACHE_MS && Array.isArray(v.data) ? v.data : null;
   } catch {
     return null;
   }
@@ -91,7 +93,7 @@ function cached<T>(key: string): T[] | null {
 
 function keep(key: string, data: unknown[]) {
   try {
-    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), data }));
+    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), data, v: KEPT_VERSION }));
   } catch {
     /* private mode or quota: one more read next time */
   }

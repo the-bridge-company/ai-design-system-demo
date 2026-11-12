@@ -71,6 +71,7 @@ import { emailMemberFace } from '../lib/people';
 import { isSampleTeam } from '../lib/demo';
 import { castAccess } from '../lib/demo-cast';
 import { SEP } from '../lib/sep';
+import { KEPT_VERSION } from '../lib/kept-version';
 
 export { GitHubError };
 
@@ -790,10 +791,20 @@ export interface Fetched<T> {
   resetAt?: Date | null;
 }
 
+/**
+ * The answer this browser kept for `url`, for a read GitHub refuses now (never before asking it). One kept by another
+ * build or in an older shape (lib/kept-version.ts) is dropped.
+ */
 function cacheGet<T>(url: string): { data: T; at: string } | null {
   try {
     const raw = localStorage.getItem(CACHE_PREFIX + url);
-    return raw ? (JSON.parse(raw) as { data: T; at: string }) : null;
+    if (!raw) return null;
+    const kept = JSON.parse(raw) as { data: T; at: string; v?: string };
+    if (kept?.v !== KEPT_VERSION) {
+      localStorage.removeItem(CACHE_PREFIX + url);
+      return null;
+    }
+    return { data: kept.data, at: kept.at };
   } catch {
     return null;
   }
@@ -801,7 +812,7 @@ function cacheGet<T>(url: string): { data: T; at: string } | null {
 
 function cacheSet(url: string, data: unknown) {
   try {
-    localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ data, at: new Date().toISOString() }));
+    localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ data, at: new Date().toISOString(), v: KEPT_VERSION }));
   } catch {
     /* quota: drop the oldest cache entries and move on */
     try {

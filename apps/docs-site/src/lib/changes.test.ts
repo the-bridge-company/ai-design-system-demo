@@ -1,3 +1,4 @@
+import { KEPT_VERSION } from './kept-version';
 import { describe, expect, it } from 'vitest';
 import {
   filterByTier,
@@ -156,8 +157,13 @@ describe('cached list fallback', () => {
   it('round-trips the last list and its open count', () => {
     const s = memory();
     writeSnapshot(s, 'o/r', [pull], new Date('2026-10-17T08:00:00Z'));
-    expect(readSnapshot(s, 'o/r')).toEqual({ at: '2026-10-17T08:00:00.000Z', pulls: [pull] });
+    expect(readSnapshot(s, 'o/r')).toEqual({ at: '2026-10-17T08:00:00.000Z', pulls: [pull], v: KEPT_VERSION });
     expect(readSnapshot(s, 'other/repo')).toBeNull();
+    // A list saved by another build or before versions is never read.
+    s.data.set('bridge.changes.list:o/r', JSON.stringify({ at: '2026-10-17T08:00:00.000Z', pulls: [pull] }));
+    expect(readSnapshot(s, 'o/r')).toBeNull();
+    s.data.set('bridge.changes.list:o/r', JSON.stringify({ at: '2026-10-17T08:00:00.000Z', pulls: [pull], v: '1:old' }));
+    expect(readSnapshot(s, 'o/r')).toBeNull();
     expect(cachedOpenCount(s)).toBe(1);
   });
 

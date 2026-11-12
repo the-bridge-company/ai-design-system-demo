@@ -98,7 +98,7 @@
 // Concurrent misses of one answer make one GitHub call (single flight, per function), and a function has at most
 // MAX_UPSTREAM_IN_FLIGHT GitHub calls in flight (the others wait their turn).
 // A visitor of a public demo team (the sample team's signed-out visitors, who never write) gets a kept answer past its
-// fresh window at once (SWR_MS), marked swr, while one function checks it with GitHub behind the answer (a Redis lock,
+// fresh window at once (SWR_MS, one minute), marked swr, while one function checks it with GitHub behind the answer (a Redis lock,
 // bridge:read:lock:<key>, so many functions make one call, and Vercel's waitUntil keeps the function up for it).
 // Over the reader's request budget (READ_LIMITS ip, guest), the team's or the reader's GitHub calls, or when GitHub is
 // busy or down, a read answers what is kept (STALE_KEEP_S, marked stale) and never calls GitHub: cached answers cost
@@ -159,8 +159,11 @@ export const STALE_KEEP_S = 24 * 60 * 60;
 /**
  * A visitor's kept answer confirmed less than this ago is answered at once past its fresh window, and checked with
  * GitHub behind the answer (stale-while-revalidate). Visitors never write, so they never wait on a change of their own.
+ * One minute at most: an older kept answer is never a page's first answer while GitHub answers (it showed a list from
+ * minutes before, then the page painted again with the live one). Older, the read waits for GitHub and the kept answer
+ * stands in only when GitHub cannot be asked (STALE_KEEP_S: its limit, 5xx, no answer).
  */
-export const SWR_MS = 10 * 60 * 1000;
+export const SWR_MS = 60 * 1000;
 /** One function checks a kept answer with GitHub behind the answer at a time, across functions (Redis lock, seconds). */
 export const REVALIDATE_LOCK_S = 15;
 /**

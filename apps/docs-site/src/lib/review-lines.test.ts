@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withDecision, withDesignOk, withDoneExploring, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import { asOneStep, countsOnExplorations, hatRowLine, reviewSecondLine, reviewStepsOf, stillWaitsLine, wentStraight, withSampleReviews } from './review-lines';
-import { SAMPLE_REVIEWS, viewerIds, type TeamReviews } from './team-reviews';
+import { SAMPLE_REVIEWS, viewerHats, viewerIds, type TeamReviews } from './team-reviews';
+import { leadHomeRow } from './lead-decisions';
 
 const DANA = 'a399f73add3dbb2d';
 const SOFIA = '0406ec723c59bb8d';
@@ -100,5 +101,25 @@ describe('the sample team', () => {
     expect(withSampleReviews(bare, false)).toBe(bare);
     const own = { ...bare, designReview: { '*': { on: false as const } } };
     expect(withSampleReviews(own, true).designReview).toEqual({ '*': { on: false } });
+  });
+});
+
+describe('an exploration asked before the two reviews (one ask to the lead, its pieces with it)', () => {
+  // Sofia's Order fulfilment timeline on the sample team: asked the lead, new pieces, no library ask on record.
+  const legacy = withLeadAsked(start('sofia', SOFIA, [timeline]), { at: 'a', byName: 'Sofia' });
+
+  it("Dana's Home row names both hats", () => {
+    const hats = viewerHats(legacy, { team: sample, product: 'prints', viewer: viewerIds(null, DANA) });
+    expect(hats).toEqual(['design-review', 'library']);
+    expect(leadHomeRow(legacy, { viewer: null, lead: true, own: false, hats })?.line).toBe("Sofia's screen: your design review and a library decision");
+  });
+
+  it('the Explorations second line names the library decision too', () => {
+    expect(reviewSecondLine(legacy, { team: sample, product: 'prints', viewer: viewerIds(null, SOFIA) })).toBe("Waiting for Dana's design review and library decision on Timeline");
+  });
+
+  it('once the design review answered, nothing is inferred: the exploration as it is', () => {
+    const ok = withDesignOk(legacy, { at: 'b' });
+    expect(viewerHats(ok, { team: sample, product: 'prints', viewer: viewerIds(null, DANA) })).toEqual([]);
   });
 });

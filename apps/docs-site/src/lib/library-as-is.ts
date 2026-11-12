@@ -2,24 +2,15 @@
 // notification, a "New option" or "2 ways" tag, a step on the exploration page) only when at least one way is a value
 // the library does not have yet. When every way is a value the library already has (its default, Compact...), the
 // screens use the library as is: no tag, no queue item, one quiet line on the exploration page ("Leo's screen uses
-// Compact, already in the library. Nothing to decide."). The rule itself is lib/library-baseline usesLibraryAsIs; this
-// applies it to recorded pieces and to conflicts between explorations, read from their records.
+// Compact, already in the library. Nothing to decide."). The rule itself is core's (library-options usesLibraryAsIs,
+// library-impact asIsOption, which Looks right also reads); this applies it to conflicts between explorations, read
+// from their records.
 // Pure: no DOM. Read by lib/library-impact-view.ts, lib/library-review.ts, scripts/library-impact.ts and
 // scripts/library-review-data.ts. Tested in library-as-is.test.ts.
-import { impactItemOf, type ImpactSource, type LibraryConflict, type MissingPiece } from '@bridge-ds/core';
-import { existingOption, usesLibraryAsIs, type LibraryOption } from './library-baseline';
+import { asIsOption, impactItemOf, type ImpactSource, type LibraryConflict, type LibraryOption, type MissingPiece } from '@bridge-ds/core';
 
-/**
- * The library option a recorded piece already is: a change to one part of a library component ("Card padding 12"),
- * nothing else changed, at a value the library has. Null for anything that asks the library for something new (a new
- * component, a token, a size, a second property such as a fill, a value the library lacks or Bridge cannot read).
- */
-export function asIsOption(p: Pick<MissingPiece, 'kind' | 'values'> & Partial<MissingPiece>): LibraryOption | null {
-  if (p.kind !== 'variant' || p.values.length !== 1) return null;
-  const i = impactItemOf(p as MissingPiece);
-  if (!i.of || !i.property || i.property === 'size' || !i.after) return null;
-  return usesLibraryAsIs(i.of, i.property, [i.after]) ? existingOption(i.of, i.property, i.after) : null;
-}
+/** Core's own (library-impact asIsOption), the one Looks right reads too: re-exported for the pages. */
+export { asIsOption };
 
 /** The piece of a source that changes this component part, from its record. */
 function pieceOfPart(s: Pick<ImpactSource, 'record'> | undefined, component: string, property: string): MissingPiece | undefined {

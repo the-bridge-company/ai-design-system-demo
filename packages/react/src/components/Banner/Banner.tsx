@@ -35,12 +35,13 @@ export const Banner = forwardRef<HTMLDivElement, BannerProps>(function Banner(
   ref,
 ) {
   const titleId = `${useId()}-title`;
+  const hasActions = actions != null && actions !== false;
   return (
     <div
       ref={ref}
       role="region"
       aria-labelledby={titleId}
-      className={cx(styles.banner, styles[appearance], sticky === 'top' && styles.stickyTop, sticky === 'below-header' && styles.stickyHeader, className)}
+      className={cx(styles.banner, styles[appearance], hasActions && styles.hasActions, sticky === 'top' && styles.stickyTop, sticky === 'below-header' && styles.stickyHeader, className)}
       {...rest}
     >
       <div className={styles.lead}>
@@ -52,7 +53,7 @@ export const Banner = forwardRef<HTMLDivElement, BannerProps>(function Banner(
           {children != null && children !== false && <div className={styles.description}>{children}</div>}
         </div>
       </div>
-      {actions != null && actions !== false && <div className={styles.actions}>{actions}</div>}
+      {hasActions && <div className={styles.actions}>{actions}</div>}
     </div>
   );
 });

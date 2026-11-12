@@ -80,4 +80,34 @@ describe('Banner', () => {
     expect(screen.getByRole('link', { name: 'How library review works' })).toHaveFocus();
     await expectNoAxeViolations();
   });
+
+  it('anatomy: the icon sits before one text column that holds the title and the detail', async () => {
+    render(
+      <Banner appearance="harbor" icon={Eye} title="Dana decides what the library keeps.">
+        The decision shows here and on your exploration. <Link href="#how">How library review works</Link>
+      </Banner>,
+    );
+    const region = screen.getByRole('region', { name: 'Dana decides what the library keeps.' });
+    const lead = region.querySelector(`.${c('lead')}`)!;
+    const [icon, column] = Array.from(lead.children) as [Element, Element];
+    expect(icon.tagName.toLowerCase()).toBe('svg');
+    expect(icon).toHaveClass(c('icon'));
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(column).toHaveClass(c('content'));
+    // Title and detail are siblings in the text column, so the detail starts under the title, never under the icon.
+    expect(Array.from(column.children).map((el) => el.className)).toEqual([c('title'), c('description')]);
+    expect(column.querySelector(`.${c('description')}`)).toContainElement(screen.getByRole('link', { name: 'How library review works' }));
+    // No actions: the first line is one text line, nothing floats at the far end.
+    expect(region).not.toHaveClass(c('hasActions'));
+    expect(region.querySelector(`.${c('actions')}`)).toBeNull();
+    await expectNoAxeViolations();
+  });
+
+  it('anatomy: actions take the first line, the icon and the title centre on it', () => {
+    render(<Banner icon={Eye} title={TITLE} actions={<Button size="sm" variant="secondary">Back to latest library</Button>}>Publishing stays off.</Banner>);
+    const region = screen.getByRole('region', { name: TITLE });
+    expect(region).toHaveClass(c('hasActions'));
+    expect(region.lastElementChild).toHaveClass(c('actions'));
+    expect(region.firstElementChild).toHaveClass(c('lead'));
+  });
 });

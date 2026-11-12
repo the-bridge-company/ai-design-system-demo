@@ -3,11 +3,16 @@
   --_border: var(--color-surface-strong);
   --_text: var(--color-text-on-solid);
   --_muted: var(--color-text-on-solid);
+  /* The first line: the box the icon, the title's first line and the actions centre on. One text line without
+     actions; the sm control height with actions, so a Button or a Link sits on the title's line, never centred on
+     the whole banner when the detail adds lines. */
+  --_line: var(--typography-ui-line-height);
 
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-content: center;
+  align-items: flex-start;
   gap: var(--space-2) var(--space-3);
   min-width: 0;
   min-height: calc(var(--control-height-md) + var(--space-4));
@@ -45,6 +50,10 @@
   --_muted: var(--color-text-muted);
 }
 
+.hasActions {
+  --_line: var(--control-height-sm);
+}
+
 .stickyTop,
 .stickyHeader {
   position: sticky;
@@ -65,11 +74,14 @@
   align-items: flex-start;
   gap: var(--space-3);
   min-width: 0;
+  min-block-size: var(--_line);
 }
 
+/* The icon is centred on the first line. The title and the detail share the text column next to it (.content), so
+   the detail starts under the title, never under the icon. */
 .icon {
   flex: none;
-  margin-block-start: calc((var(--typography-ui-line-height) - var(--icon-size-md)) / 2);
+  margin-block-start: calc((var(--_line) - var(--icon-size-md)) / 2);
   color: var(--_text);
 }
 
@@ -85,6 +97,11 @@
   margin: 0;
   font-weight: var(--font-weight-semibold);
   overflow-wrap: anywhere;
+}
+
+/* With actions the first line is a control high: the title's first line moves down to its centre. */
+.hasActions .title {
+  padding-block-start: calc((var(--_line) - var(--typography-ui-line-height)) / 2);
 }
 
 /* Bold words inside the title stay at the title's weight: `bolder` from semibold would jump to black (900). */
@@ -105,7 +122,9 @@
   display: flex;
   flex: none;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
+  min-block-size: var(--_line);
   margin-inline-start: auto;
 }
 

@@ -41,9 +41,11 @@
     rotate: 180deg;
   }
 
-  /* Folded: one line. The team name, Details and the one action; the sentence and "See it as" wait behind Details. */
+  /* Folded: one line. The team name, Details and the one action; the sentence and "See it as" wait behind Details.
+     One line only, so it centres in the banner's height (the DS Banner aligns to the first line for wrapping text). */
   .demo-strip > .demo-banner:not([data-open]) {
     flex-wrap: nowrap;
+    align-items: center;
   }
 
   .demo-banner:not([data-open]) .demo-banner-text,

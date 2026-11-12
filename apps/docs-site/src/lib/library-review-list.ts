@@ -88,6 +88,42 @@ export function shownColumns(o: { state: boolean; next: boolean; action: boolean
 }
 
 /**
+ * The List's grid, per chapter card, in three widths (owner, 2026-11-12: one kind of info per column, sensible widths,
+ * the title column takes the rest, the least important column goes first when room runs out):
+ *   wide:   [box] Today › After | Piece | Asked by | From | Who gets it | [State] | [Next] | [action]
+ *   mid:    Who gets it folds away (the chapter's head still says what it reaches; One by one gives the count);
+ *   narrow: Today › After folds away too. On a phone the row stacks (styles/library-review.css).
+ * Asked by is a face and a first name, so a fixed width; it widens only when a row carries a "+N" tag. From keeps
+ * room for an exploration's name on one line and shortens it with an ellipsis only past that.
+ */
+export interface ListGrid {
+  wide: string;
+  mid: string;
+  narrow: string;
+}
+
+export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 'tag' | 'words'; next: boolean; action: boolean }): ListGrid {
+  // Piece and From share the rest evenly; once the thumbnails fold, the piece's name gets the larger share (two lines
+  // at most) and From shortens first.
+  const build = (reach: boolean, thumb: boolean) =>
+    [
+      o.box ? 'var(--size-6)' : null,
+      thumb ? 'var(--size-40)' : null,
+      thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 1.4fr)',
+      o.askedMore ? 'calc(var(--size-20) + var(--size-8))' : 'var(--size-20)',
+      thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 0.6fr)',
+      reach ? 'calc(var(--size-20) + var(--space-2))' : null,
+      // Fixed widths where content varies, so every row lines up with its header row.
+      o.state === 'tag' ? 'var(--size-20)' : o.state === 'words' ? 'var(--size-40)' : null,
+      o.next ? 'minmax(0, 0.5fr)' : null,
+      o.action ? 'var(--size-20)' : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  return { wide: build(true, true), mid: build(false, true), narrow: build(false, false) };
+}
+
+/**
  * A chapter of the List: a family (its icon, name, line and groups in a rail), or one of the lead's own sections
  * (For you to decide, Yours, Published), which has no rail: its rows come from every family.
  */

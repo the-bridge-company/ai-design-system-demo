@@ -25,8 +25,8 @@ import { mapAvailable } from '../../../lib/library-map';
 import { measuredReach, reachCell, reachOf, type Measured, type Reach, type ReachData } from '../../../lib/library-reach';
 import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy, readPiece, viewSearch, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
-import { askedCountLine, askedFaces, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
-import { chapterReach, chaptersOf, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
+import { ASKED_DIRECTLY, askedColumns, askedCountLine, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
+import { chapterReach, chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, checkedKeepLabel, checkedLooks, checkedOfPick, checkedOutcome, checkedPick, compareView, defaultChecked, STAGE_SCALE, TODAY, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
@@ -216,11 +216,6 @@ function Face({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm' }) {
   );
 }
 
-/** The product an exploration belongs to, as its small mark right after the exploration's name (never on the face). */
-function ProductMark({ product }: { mark?: string | null; product: string | null }) {
-  return <ProductIcon product={product} className="lr-asked-mark" />;
-}
-
 /** Up to three faces, overlapping (the DS AvatarGroup); the words next to them say who. */
 function Faces({ names, size = 'sm' }: { names: string[]; size?: 'xs' | 'sm' }) {
   return (
@@ -241,36 +236,31 @@ function FamilyIcon({ name, size = 'md' }: { name: 'grid' | 'diamonds' | 'doc'; 
   );
 }
 
-/** Who asked, in the side list of One by one: one kind of content (a face and the exploration, a person, or people). */
-function AskedLine({ p, mark }: { p: ReviewPiece; mark: MarkOf }) {
-  const f = askedFaces(p);
-  if (f.kind === 'person')
-    return (
-      <>
-        <Face name={f.person} size="xs" />
-        <span className="lr-line-t">{f.person}</span>
-      </>
-    );
-  if (f.kind === 'people')
-    return (
-      <>
-        <Faces names={f.people} size="xs" />
-        <span className="lr-line-t">{f.words}</span>
-      </>
-    );
-  const a = f.kind === 'one' ? f.asker : f.askers[0]!;
-  const more = f.kind === 'many' ? moreTag(f.askers.length - 1) : null;
+/**
+ * Who asked, in the side list of One by one: the List's two columns on one line, the same anatomy on every row (owner,
+ * 2026-11-12). The face and first name, then the exploration ("Sofia · Contact page summary"), or "Asked directly"
+ * when no exploration asked. Only the exploration shortens when the line is narrow (its full name on hover); "+N"
+ * counts the other explorations. No product mark: the product is named on the piece.
+ */
+function AskedLine({ p }: { p: ReviewPiece }) {
+  const c = askedColumns(p);
+  const from = c.from;
   return (
     <>
-      <Face name={faceName(a)} size="xs" />
-      <span className="lr-line-t">{a.name}</span>
-      <ProductMark mark={mark(a.product)} product={a.product} />
-      {more && (
+      <Face name={c.person} size="xs" />
+      <span className="lr-line-who">{c.person}</span>
+      <span className="lr-line-sep" aria-hidden="true">
+        {SEP.trim()}
+      </span>
+      <VisuallyHidden>, </VisuallyHidden>
+      {from.kind === 'direct' ? (
+        <span className="lr-line-t">{ASKED_DIRECTLY}</span>
+      ) : (
         <>
-          <Badge tone="neutral" size="sm" className="lr-more-tag" aria-hidden="true">
-            {more.tag}
-          </Badge>
-          <VisuallyHidden>{`, ${more.label}`}</VisuallyHidden>
+          <span className="lr-line-t" title={from.first.name}>
+            {from.first.name}
+          </span>
+          {from.more > 0 && <MoreTag n={from.more} what="explorations" />}
         </>
       )}
     </>
@@ -897,7 +887,7 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
                           <span className="lr-side-main">
                             <span className="lr-side-title">{p.title}</span>
                             <span className="lr-muted lr-side-sub">
-                              <AskedLine p={p} mark={mark} />
+                              <AskedLine p={p} />
                             </span>
                           </span>
                           {stateMark(p)}
@@ -947,64 +937,79 @@ function AskersList({ list }: { list: AskedBy[] }) {
   );
 }
 
-/**
- * The List's Asked by cell (owner, 2026-11-10, one kind of content per column): the person's face wearing the product's
- * mark, then the exploration's name (a link to it). A lead's own change: the face and the name. A conflict: the faces
- * and "Sofia and Leo". Several explorations: three faces and "+N", which opens every one, grouped by product.
- */
-function AskedCell({ p, mark }: { p: ReviewPiece; mark: MarkOf }) {
-  const f = askedFaces(p);
-  if (f.kind === 'person')
-    return (
-      <span className="lr-asked">
-        <Face name={f.person} />
-        <span className="lr-asked-name">{f.person}</span>
-      </span>
-    );
-  if (f.kind === 'people')
-    return (
-      <span className="lr-asked">
-        <Faces names={f.people} />
-        <span className="lr-asked-name">{f.words}</span>
-      </span>
-    );
-  if (f.kind === 'one') {
-    const a = f.asker;
-    const inner = (
-      <>
-        <Face name={faceName(a)} />
-        {/* The product's mark before the name in the narrow column, so a long name never pushes it away. */}
-        <ProductMark mark={mark(a.product)} product={a.product} />
-        <span className="lr-asked-name">
-          {a.designer && <VisuallyHidden>{`${a.designer}${a.product ? `, ${a.product}` : ''}: `}</VisuallyHidden>}
-          {a.name}
-        </span>
-      </>
-    );
-    return a.href ? (
-      <Link className="lr-asked" href={a.href} variant="subtle">
-        {inner}
-      </Link>
-    ) : (
-      <span className="lr-asked">{inner}</span>
-    );
-  }
+/** "+N" after a name: a compact tag, and the same in words to a screen reader. */
+function MoreTag({ n, what }: { n: number; what: 'explorations' | 'people' }) {
+  const t = moreTag(n, what);
+  const label = what === 'people' ? `${n} more ${n === 1 ? 'person' : 'people'}` : t.label;
   return (
-    <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-asked lr-asked-many" aria-label={f.more ? `${f.faces.map(faceName).join(', ')} and ${moreTag(f.more).label}` : `${f.askers.length} explorations asked for ${p.title}`} />}>
-        <Faces names={f.faces.map(faceName)} />
-        {f.more ? (
-          <Badge tone="neutral" size="sm" className="lr-more-tag">
-            {moreTag(f.more).tag}
-          </Badge>
+    <>
+      <Badge tone="neutral" size="sm" className="lr-more-tag" aria-hidden="true">
+        {t.tag}
+      </Badge>
+      <VisuallyHidden>{`, ${label}`}</VisuallyHidden>
+    </>
+  );
+}
+
+/**
+ * The List's Asked by cell (owner, 2026-11-12, one kind of info per column, the same anatomy on every row): the face
+ * and first name of who asked, then "+N" when more people asked (a conflict's other designer). Never an exploration,
+ * never a product: those are the From column's.
+ */
+function AskedByCell({ p }: { p: ReviewPiece }) {
+  const c = askedColumns(p);
+  return (
+    <span className="lr-asked" title={c.morePeople ? c.people.join(', ') : undefined}>
+      <Face name={c.person} />
+      <span className="lr-asked-name">{c.person}</span>
+      {c.morePeople > 0 && <MoreTag n={c.morePeople} what="people" />}
+    </span>
+  );
+}
+
+/**
+ * The List's From cell: the exploration it came from on one line (its full name on hover when the column is narrow),
+ * its product under it in muted text, then "+N" that opens every exploration grouped by product. A piece no
+ * exploration asked for says "Asked directly", in the same place, in muted text.
+ */
+function FromCell({ p }: { p: ReviewPiece }) {
+  const { from } = askedColumns(p);
+  if (from.kind === 'direct')
+    return (
+      <span className="lr-from">
+        <span className="lr-from-line">
+          <span className="lr-from-name lr-muted">{ASKED_DIRECTLY}</span>
+        </span>
+      </span>
+    );
+  const a = from.first;
+  return (
+    <span className="lr-from">
+      <span className="lr-from-line">
+        {a.href ? (
+          <Link href={a.href} variant="subtle" className="lr-from-name" title={a.name}>
+            {a.name}
+          </Link>
         ) : (
-          <span className="lr-asked-name">{f.words}</span>
+          <span className="lr-from-name" title={a.name}>
+            {a.name}
+          </span>
         )}
-      </PopoverTrigger>
-      <PopoverContent title={`${f.askers.length} explorations asked for it`} align="start" className="lr-askers-pop">
-        <AskersList list={f.askers} />
-      </PopoverContent>
-    </Popover>
+        {from.more > 0 && (
+          <Popover>
+            <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-from-more" aria-label={`${moreTag(from.more).label} asked for ${p.title}`} />}>
+              <Badge tone="neutral" size="sm" className="lr-more-tag">
+                {moreTag(from.more).tag}
+              </Badge>
+            </PopoverTrigger>
+            <PopoverContent title={`${from.all.length} explorations asked for it`} align="start" className="lr-askers-pop">
+              <AskersList list={from.all} />
+            </PopoverContent>
+          </Popover>
+        )}
+      </span>
+      {from.product && <span className="lr-muted lr-from-product">{from.product}</span>}
+    </span>
   );
 }
 
@@ -1016,9 +1021,13 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
  * Components, Docs) with its icon, name, count, one line and what it reaches, then one card where each group's name
  * sits in a left rail beside its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
  * the row grid, in sentence case:
- *   Waiting, lead:  [box] | Today › After | Piece | Asked by | Who gets it | State | Next | action
- *   Decided:        Today › After | Piece | Asked by | Who gets it | State (the result)
- *   Designer:       Today › After | Piece | Asked by | Who gets it | State (what changed, an exception)
+ *   Waiting, lead:  [box] | Today › After | Piece | Asked by | From | Who gets it | State | Next | action
+ *   Decided:        Today › After | Piece | Asked by | From | Who gets it | State (the result)
+ *   Designer:       Today › After | Piece | Asked by | From | Who gets it | State (what changed, an exception)
+ * Asked by is a face and a first name, From the exploration on one line with its product under it ("Asked directly"
+ * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Each card
+ * has its own grid (lib/library-review-list listGrid); when the card runs out of room, Who gets it folds first, then
+ * Today › After (styles/library-review.css).
  * The Piece column says only what the piece is: its name (a link to it in One by one, and a quiet link to its page in
  * the library) and its kind. A state (a conflict's "2 ways", a result) sits in State; a waiting row shows none there,
  * its chapter already says it waits. A column shows only when a row fills it. Checkboxes and the row action (a quiet
@@ -1096,29 +1105,27 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       );
     return null;
   };
-  // A column shows only when a row fills it (no empty State, Next or action column).
-  const cols = shownColumns({
-    state: allRows.some((p) => state(p) !== null),
-    next: mode === 'lead' && allRows.some((p) => nextActor(p, { tech, secondLead }) !== null),
-    action: mode !== 'designer' && allRows.some((p) => action(p) !== null),
-  });
-  const showState = cols.includes('state');
-  const showNext = cols.includes('next');
-  const showAction = cols.includes('action');
-  const template = [
-    boxes ? 'var(--size-6)' : null,
-    'var(--size-40)',
-    'minmax(var(--size-60), 3fr)',
-    'minmax(0, 1.7fr)',
-    'minmax(var(--size-20), 1fr)',
-    // Fixed widths where content varies, so every chapter's grid lines up with its header row.
-    showState ? (allRows.every((p) => !decidedTag(p) && !p.exception && !(p.mine && p.designApproved)) ? 'var(--size-20)' : 'var(--size-40)') : null,
-    showNext ? 'minmax(0, 0.8fr)' : null,
-    showAction ? 'var(--size-20)' : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  const row = (p: ReviewPiece) => {
+  // A column shows only when a row of its card fills it (no empty State, Next or action column): each chapter card has
+  // its own header row, so a State column one chapter needs never leaves an empty one in the others.
+  const colsOf = (rows: readonly ReviewPiece[]) => {
+    const cols = shownColumns({
+      state: rows.some((p) => state(p) !== null),
+      next: mode === 'lead' && rows.some((p) => nextActor(p, { tech, secondLead }) !== null),
+      action: mode !== 'designer' && rows.some((p) => action(p) !== null),
+    });
+    const showState = cols.includes('state');
+    const grid = listGrid({
+      box: boxes,
+      askedMore: rows.some((p) => askedColumns(p).morePeople > 0),
+      state: !showState ? 'none' : rows.every((p) => !decidedTag(p) && !p.exception && !(p.mine && p.designApproved)) ? 'tag' : 'words',
+      next: cols.includes('next'),
+      action: cols.includes('action'),
+    });
+    const style = { ['--lr-cols-wide' as string]: grid.wide, ['--lr-cols-mid' as string]: grid.mid, ['--lr-cols-narrow' as string]: grid.narrow };
+    return { showState, showNext: cols.includes('next'), showAction: cols.includes('action'), style };
+  };
+  type Cols = ReturnType<typeof colsOf>;
+  const row = (p: ReviewPiece, { showState, showNext, showAction }: Cols) => {
     const actor = mode === 'lead' ? nextActor(p, { tech, secondLead }) : null;
     const m = measure(p);
     const c = reachCell(m);
@@ -1164,9 +1171,12 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           <span className="lr-muted lr-row-kind">{p.kind}</span>
         </span>
         <span role="cell" className="lr-row-ask">
-          <AskedCell p={p} mark={mark} />
+          <AskedByCell p={p} />
         </span>
-        <span role="cell" className="lr-row-reach">
+        <span role="cell" className="lr-row-from">
+          <FromCell p={p} />
+        </span>
+        <span role="cell" className="lr-row-reach lr-col-reach">
           <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />
         </span>
         {showState && (
@@ -1192,28 +1202,36 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       </div>
     );
   };
-  const style = { ['--lr-cols-wide' as string]: template };
-  if (bare)
+  if (bare) {
+    const c = colsOf(allRows);
     return (
-      <div className={`lr-list is-${mode} is-bare${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library piece" style={style}>
-        <div role="rowgroup" className="lr-bare">
-          {allRows.map(row)}
+      <div className={`lr-list is-${mode} is-bare${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library piece">
+        <div role="rowgroup" className="lr-bare" style={c.style}>
+          {allRows.map((p) => row(p, c))}
         </div>
       </div>
     );
+  }
   const chapters = chaptersOf(groups);
+  // The group rail of a chapter, when a group has a name to show: a chapter whose one group is its one piece ("Button"
+  // over "Button: loading text...") left an empty Group cell under its header (Malik, 2026-11-12).
+  const railOf = (ch: (typeof chapters)[number]) => {
+    const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
+    return { labels, rail: Boolean(ch.rail) && [...labels.values()].some(Boolean) };
+  };
+  // A list with a rail folds its columns sooner (styles/library-review.css, has-rails): the same columns in every card.
+  const rails = chapters.some((ch) => railOf(ch).rail);
   return (
-    <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces" style={style}>
+    <div className={`lr-list is-${mode}${rails ? ' has-rails' : ''}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
         const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
         const pickable = boxes ? pickableOf(rows) : [];
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
-        // The Group column only when a group has a name to show: a chapter whose one group is its one piece ("Button"
-        // over "Button: loading text...") left an empty Group cell under its header (Malik, 2026-11-12).
-        const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
-        const rail = ch.rail && [...labels.values()].some(Boolean);
+        const { labels, rail } = railOf(ch);
+        const c = colsOf(rows);
+        const { showState, showNext, showAction } = c;
         return (
           // A chapter is a plain wrapper: ARIA has no group of row groups, so its head row (with its h2) and each
           // group's rowgroup sit straight in the table (WCAG 1.3.1).
@@ -1241,7 +1259,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 )}
               </span>
             </div>
-            <div className="lr-chapter-card">
+            <div className="lr-chapter-card" style={c.style}>
               <div role="row" className="lr-chapter-cols">
                 {rail && (
                   <span role="columnheader" className="lr-rail-head">
@@ -1258,7 +1276,10 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 </span>
                 <span role="columnheader">Piece</span>
                 <span role="columnheader">Asked by</span>
-                <span role="columnheader">Who gets it</span>
+                <span role="columnheader">From</span>
+                <span role="columnheader" className="lr-col-reach">
+                  Who gets it
+                </span>
                 {showState && <span role="columnheader">State</span>}
                 {showNext && <span role="columnheader">Next</span>}
                 {showAction && (
@@ -1291,7 +1312,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                         </span>
                       </div>
                     )}
-                    <div className="lr-block">{g.pieces.map(row)}</div>
+                    <div className="lr-block">{g.pieces.map((p) => row(p, c))}</div>
                   </div>
                 );
               })}

@@ -1,7 +1,7 @@
 // The List as chapters: families in order, the most recent group first, columns only when filled, the tally, the
 // product marks and what a chapter reaches.
 import { describe, expect, it } from 'vitest';
-import { sideLabel, tallySentence, chapterReach, chaptersOf, familiesOf, familyOf, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
+import { sideLabel, tallySentence, chapterReach, chaptersOf, familiesOf, familyOf, listGrid, productMarks, railLabel, recencyOf, shownColumns, tallyOf } from './library-review-list';
 import type { PieceGroup, ReviewPiece } from './library-review';
 import { reachOf, type Measured } from './library-reach';
 import { change, conflict, LEAD, leadChange, newComponent, PRODUCTS } from './library-fixtures.test-helpers';
@@ -89,6 +89,22 @@ describe('the List in blocks', () => {
 
   it('hides a column no row fills', () => {
     expect(shownColumns({ state: false, next: false, action: true })).toEqual(['action']);
+  });
+
+  it('gives Asked by and From a column each, and folds Who gets it, then Today › After', () => {
+    const g = listGrid({ box: true, askedMore: false, state: 'none', next: false, action: true });
+    const tracks = (t: string) => t.match(/(?:minmax|calc)\([^()]*(?:\([^()]*\)[^()]*)*\)|var\(--[a-z0-9-]+\)/g) ?? [];
+    // box, Today › After, Piece, Asked by, From, Who gets it, action
+    expect(tracks(g.wide)).toHaveLength(7);
+    expect(tracks(g.mid)).toHaveLength(6);
+    expect(g.mid).not.toContain('var(--space-2)');
+    expect(tracks(g.narrow)).toHaveLength(5);
+    expect(g.narrow).not.toMatch(/^var\(--size-6\) var\(--size-40\)/);
+    // The title column takes the rest; a row with "+N" people widens Asked by, a State column only when one is filled.
+    expect(g.wide).toContain('minmax(var(--size-40), 1fr)');
+    expect(listGrid({ box: false, askedMore: true, state: 'tag', next: false, action: false }).wide).toBe(
+      'var(--size-40) minmax(var(--size-40), 1fr) calc(var(--size-20) + var(--size-8)) minmax(var(--size-40), 1fr) calc(var(--size-20) + var(--space-2)) var(--size-20)',
+    );
   });
 });
 

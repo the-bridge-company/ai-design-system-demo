@@ -9,10 +9,10 @@ const team = { hasLeads: true };
 
 describe('what only a lead writes in a block', () => {
   it('a designer answering, asking or taking it back passes', () => {
-    const asked = body({ leadAskedAt: 'x', decisions: [{ ...yes, kind: 'question' }] });
-    expect(addsLeadWords(asked, body({ leadAskedAt: 'x', decisions: [{ ...yes, kind: 'question' }, { kind: 'answer', at: 'y', round: 1, byName: 'Ann' }] }), team)).toBe(false);
-    expect(addsLeadWords(body({}), body({ leadAskedAt: 'x', leadAskedTo: ['flo'] }), team)).toBe(false);
-    expect(addsLeadWords(body({ doneAt: 'x', leadOkBy: 'flo' }), body({ reopenedAt: 'y' }), team)).toBe(false);
+    const asked = body({ designAskedAt: 'x', decisions: [{ ...yes, kind: 'question' }] });
+    expect(addsLeadWords(asked, body({ designAskedAt: 'x', decisions: [{ ...yes, kind: 'question' }, { kind: 'answer', at: 'y', round: 1, byName: 'Ann' }] }), team)).toBe(false);
+    expect(addsLeadWords(body({}), body({ designAskedAt: 'x', designAskedTo: ['flo'] }), team)).toBe(false);
+    expect(addsLeadWords(body({ doneAt: 'x', designOkBy: 'flo' }), body({ reopenedAt: 'y' }), team)).toBe(false);
   });
   it('a decision of a lead is refused, every kind', () => {
     for (const kind of LEAD_KINDS) expect(addsLeadWords(body({}), body({ decisions: [{ ...yes, kind }] }), team)).toBe(true);
@@ -24,7 +24,7 @@ describe('what only a lead writes in a block', () => {
     expect(addsLeadWords(body({ decisions: [yes] }), body({ decisions: [{ ...yes, by: 'dana' }] }), team)).toBe(true);
   });
   it("a lead's yes is refused", () => {
-    expect(addsLeadWords(body({}), body({ leadOkBy: 'flo' }), team)).toBe(true);
+    expect(addsLeadWords(body({}), body({ designOkBy: 'flo' }), team)).toBe(true);
   });
   it('Done exploring goes through a lead on a team with one', () => {
     expect(addsLeadWords(body({}), body({ doneAt: 'x' }), team)).toBe(true);

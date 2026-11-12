@@ -16,7 +16,7 @@ import { loginKey, personName } from '../lib/people';
 import { isCastLogin, onlySamplePeople } from '../lib/demo-cast';
 import { currentViewer, getToken, ghGet, resolveAccess } from './github-session';
 import { CONTRIB_TOKEN } from '../lib/contribute';
-import { invitesAvailable, listInvites, type ReviewMode } from './invites-api';
+import { invitesAvailable, listInvites, type TeamReviewsSettings } from './invites-api';
 import { knownNames, lookUpNames } from './people';
 import { repoContext, siteConfig } from './repo-context';
 
@@ -38,8 +38,11 @@ export interface MembersData {
   complete: boolean;
   /** This site can send invites (its invites server answers and is set up). */
   invites: boolean;
-  /** Who looks after the design system, for an admin (read with the invites). Unset: not read. */
-  reviewMode?: ReviewMode;
+  /**
+   * The two reviews (Settings > Reviews), for an admin (read with the invites): each product's design review and the
+   * one time note. Unset: not read (everyone else reads them from the team, ReviewsSection).
+   */
+  reviews?: TeamReviewsSettings;
   /**
    * The team's reviewers (its settings) were known when this was read. False on a team whose design system is still
    * being read, or could not be: review roles are missing until it lands, then Members reads again.
@@ -138,7 +141,7 @@ async function loadKeyMembers(key: string): Promise<MembersData> {
   if (canManage && invites) {
     try {
       const r = await listInvites(key);
-      return { ...base, members: emailMembers(r.members, me?.email), pending: r.invites, reviewMode: r.reviewMode };
+      return { ...base, members: emailMembers(r.members, me?.email), pending: r.invites, ...(r.reviews ? { reviews: r.reviews } : {}) };
     } catch {
       /* the names below */
     }
@@ -246,14 +249,14 @@ export async function loadMembers(settled = true): Promise<MembersData> {
   // admin reads the list above instead. An email admin gets the email members with their emails, to act on them.
   let pending: PendingInvite[] = [];
   let personal = false;
-  let reviewMode: ReviewMode | undefined;
+  let reviews: TeamReviewsSettings | null = null;
   const emailAdmin = Boolean(access?.contributor && access.admin);
   if (invites && viewer && ((access?.write && !access.contributor) || emailAdmin)) {
     try {
       const r = await listInvites(repo);
       pending = r.invites;
       personal = r.personal;
-      reviewMode = r.reviewMode;
+      reviews = r.reviews;
       const byEmail = emailMembers(r.members, viewer.email);
       if (emailAdmin) members = members.filter((m) => m.via !== 'email');
       const known = new Set(members.map((m) => m.login.toLowerCase()));
@@ -293,5 +296,5 @@ export async function loadMembers(settled = true): Promise<MembersData> {
   // The sample team names its fictional people only (lib/demo-cast onlySamplePeople), whoever reads it.
   members = onlySamplePeople(repo, members);
   // The team's name once more: its settings have often landed by now ("Acme Product", not "Acme product").
-  return { context, repo, team: teamName(repo), members, pending, people, canManage, personal, complete, invites, ownersKnown: team0.known, ...(reviewMode ? { reviewMode } : {}), ...(emailAdmin && canManage ? { emailAdmin: true } : {}) };
+  return { context, repo, team: teamName(repo), members, pending, people, canManage, personal, complete, invites, ownersKnown: team0.known, ...(reviews ? { reviews } : {}), ...(emailAdmin && canManage ? { emailAdmin: true } : {}) };
 }

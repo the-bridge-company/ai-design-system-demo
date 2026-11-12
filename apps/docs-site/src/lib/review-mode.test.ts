@@ -1,98 +1,60 @@
 import { describe, expect, it, vi } from 'vitest';
-import { askedToReview, decidesOnExplorations, needsReview } from '../../api/_lib/review-mode';
+import { asksAnyReview, asksDesignReview, asksLibrary, decidesOnExplorations, needsReview, type DesignReviewMap } from '../../api/_lib/review-settings';
+import { memberRef } from '../../api/_lib/exploration-member';
 import { addsLeadWords } from '../../api/_lib/lead-gate';
 import { GUARD_COMMENT, guardCaseOf, runLeadGuard, senderDecides } from '../../api/_lib/lead-guard';
-import { goesThroughReview, pmGateStop } from '../scripts/exploration-done';
+import { pmGateStop } from '../scripts/exploration-done';
+import type { ReviewsAsked } from '@bridge-ds/core';
 
-const lead = { role: 'edit' as const, lead: true };
-const designer = { role: 'edit' as const };
-const viewer = { role: 'view' as const };
-const admin = { role: 'admin' as const };
+// Two reviews (docs/specs/two-reviews.md): who is asked what, replacing the one review mode (one | shared |
+// shared-none) with the library decision and each product's design review.
+const who = (email: string, role: 'view' | 'edit' | 'admin', extra: { libraryOwner?: boolean; lead?: boolean } = {}) => ({ email, role, ...extra });
+const owner = who('dana@acme.example', 'admin', { libraryOwner: true });
+const designer = who('leo@acme.example', 'edit');
+const viewer = who('vic@acme.example', 'view');
+const admin = who('sam@acme.example', 'admin');
+const named: DesignReviewMap = { '*': { on: true, reviewers: [memberRef('leo@acme.example')] }, library: { on: false } };
+const anyDesigner: DesignReviewMap = { '*': { on: true, reviewers: 'any-designer' } };
+const off: DesignReviewMap = { '*': { on: false } };
 
-describe('who looks after the design system', () => {
-  it('one person: the design leads are asked; an admin decides and is never asked', () => {
-    expect(askedToReview(lead, 'one')).toBe(true);
-    expect(askedToReview(designer, 'one')).toBe(false);
-    expect(askedToReview(admin, 'one')).toBe(false);
-    expect(decidesOnExplorations(admin, 'one')).toBe(true);
-    expect(decidesOnExplorations(designer, 'one')).toBe(false);
+describe('who is asked which review', () => {
+  it('the library decision: library owners (an older lead too), never a designer for that alone', () => {
+    expect(asksLibrary(owner, off)).toBe(true);
+    expect(asksLibrary(who('old@acme.example', 'edit', { lead: true }), off)).toBe(true);
+    expect(asksLibrary(designer, named)).toBe(false);
   });
-  it('shared with review: every designer is asked, a viewer never', () => {
-    expect(askedToReview(designer, 'shared')).toBe(true);
-    expect(askedToReview(viewer, 'shared')).toBe(false);
-    expect(decidesOnExplorations(viewer, 'shared')).toBe(false);
+  it("the design review: the product's named reviewers, or every designer for Any designer, never a viewer", () => {
+    expect(asksDesignReview(designer, 'crm', named)).toBe(true);
+    expect(asksDesignReview(designer, 'library', named)).toBe(false);
+    expect(asksDesignReview(designer, 'crm', anyDesigner)).toBe(true);
+    expect(asksDesignReview(viewer, 'crm', anyDesigner)).toBe(false);
+    expect(asksDesignReview(designer, 'crm', off)).toBe(false);
   });
-  it('a review exists when someone other than the author is asked, never with "Shared, no review"', () => {
-    expect(needsReview({ mode: 'one', designOwners: 0, members: [designer] })).toBe(false);
-    expect(needsReview({ mode: 'one', designOwners: 0, members: [lead] })).toBe(true);
-    expect(needsReview({ mode: 'one', designOwners: 1, members: [] })).toBe(true);
-    // An admin alone does not make a lead step: they are never asked.
-    expect(needsReview({ mode: 'one', designOwners: 0, members: [admin] })).toBe(false);
-    expect(needsReview({ mode: 'shared', designOwners: 0, members: [designer] })).toBe(true);
-    expect(needsReview({ mode: 'shared-none', designOwners: 3, members: [lead] })).toBe(false);
+  it('an admin may answer either review and is never asked', () => {
+    expect(asksAnyReview(admin, named)).toBe(false);
+    expect(decidesOnExplorations(admin, named)).toBe(true);
+    expect(decidesOnExplorations(designer, off)).toBe(false);
+    expect(decidesOnExplorations(designer, named)).toBe(true);
+  });
+  it('a review exists when someone other than the author is asked one', () => {
+    expect(needsReview({ map: off, designOwners: 0, members: [designer] })).toBe(false);
+    expect(needsReview({ map: off, designOwners: 0, members: [owner] })).toBe(true);
+    expect(needsReview({ map: off, designOwners: 1, members: [] })).toBe(true);
+    expect(needsReview({ map: off, designOwners: 0, members: [admin] })).toBe(false);
+    expect(needsReview({ map: anyDesigner, designOwners: 0, members: [designer] })).toBe(true);
   });
   it("I'll look is a reviewer's word", () => {
     const b = (e: Record<string, unknown>) =>
       `x\n<!-- bridge-exploration ${JSON.stringify({
         name: 'Orders',
-        leadAskedAt: 'a',
+        designAskedAt: 'a',
         ...e,
       })} -->`;
     expect(
-      addsLeadWords(b({}), b({ leadTakenAt: 't', leadTakenByName: 'Ann' }), {
+      addsLeadWords(b({}), b({ designTakenAt: 't', designTakenByName: 'Ann' }), {
         hasLeads: true,
       }),
     ).toBe(true);
-  });
-});
-
-describe('Done exploring in Studio', () => {
-  const base = {
-    viewer: null,
-    author: null,
-    leads: [] as string[],
-    me: 'aaaaaaaaaaaaaaaa',
-    authorRef: 'aaaaaaaaaaaaaaaa',
-  };
-  it('goes to an email lead other than the author', () => {
-    expect(
-      goesThroughReview({
-        ...base,
-        review: {
-          mode: 'one',
-          asked: [{ ref: 'bbbbbbbbbbbbbbbb', name: 'Dino' }],
-        },
-      }),
-    ).toBe(true);
-    expect(
-      goesThroughReview({
-        ...base,
-        review: {
-          mode: 'one',
-          asked: [{ ref: 'aaaaaaaaaaaaaaaa', name: 'Me' }],
-        },
-      }),
-    ).toBe(false);
-  });
-  it('goes to a design owner, as before, and never with "Shared, no review"', () => {
-    expect(
-      goesThroughReview({
-        ...base,
-        viewer: 'ann',
-        author: 'ann',
-        leads: ['flo'],
-        review: { mode: 'one', asked: [] },
-      }),
-    ).toBe(true);
-    expect(
-      goesThroughReview({
-        ...base,
-        viewer: 'ann',
-        author: 'ann',
-        leads: ['flo'],
-        review: { mode: 'shared-none', asked: [{ ref: 'b', name: 'B' }] },
-      }),
-    ).toBe(false);
   });
 });
 
@@ -110,7 +72,7 @@ const edit = (
     body: {
       from: `x\n<!-- bridge-exploration ${JSON.stringify({
         name: 'Orders',
-        leadAskedAt: 'a',
+        designAskedAt: 'a',
         author: 'ann',
         ...e.before,
       })} -->`,
@@ -121,7 +83,7 @@ const edit = (
     user: { login: 'ann' },
     body: `x\n<!-- bridge-exploration ${JSON.stringify({
       name: 'Orders',
-      leadAskedAt: 'a',
+      designAskedAt: 'a',
       author: 'ann',
       ...(e.after ?? {
         decisions: [{ kind: 'looks-right', at: 't', round: 1, by: 'dev' }],
@@ -183,17 +145,23 @@ describe('the lead guard on GitHub edits', () => {
 describe('the PM gate at Done exploring', () => {
   const pms = { shop: { name: 'Dino', ref: 'cccccccccccccccc' } };
   const said = (kind: string) => `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', decisions: [{ kind, at: 't', round: 1, byName: 'Dino' }] })} -->`;
-  it('"Shared, no review" waits for the PM, a product with no PM goes on', () => {
-    const review = { mode: 'shared-none' as const, asked: [], pms };
-    expect(pmGateStop({ review, throughReview: false, product: 'shop', body: 'x' })).toMatch(/Dino says it looks good/);
-    expect(pmGateStop({ review, throughReview: false, product: 'shop', body: said('pm-changes') })).toMatch(/Dino asked for changes/);
-    expect(pmGateStop({ review, throughReview: false, product: 'shop', body: said('pm-ok') })).toBeNull();
-    expect(pmGateStop({ review, throughReview: false, product: 'shop', body: said('pm-call') })).toBeNull();
-    expect(pmGateStop({ review, throughReview: false, product: 'other', body: 'x' })).toBeNull();
+  const noDesign: ReviewsAsked = { design: null, library: null, noDesign: 'off' };
+  const withDesign: ReviewsAsked = { design: { reviewers: [{ id: 'member:dddddddddddddddd', name: 'Dana' }] }, library: null };
+  const libraryOnly: ReviewsAsked = { design: null, library: { owners: [{ id: 'flo', name: 'Flo' }], pieces: ['x'] }, noDesign: 'off' };
+  it('no design review: the PM says it looks good first; a product with no PM goes on', () => {
+    const review = { pms };
+    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: 'x' })).toMatch(/Dino says it looks good/);
+    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-changes') })).toMatch(/Dino asked for changes/);
+    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-ok') })).toBeNull();
+    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-call') })).toBeNull();
+    expect(pmGateStop({ review, asked: noDesign, product: 'other', body: 'x' })).toBeNull();
   });
-  it('the only designer waits for the PM too; a team with a review does not', () => {
-    expect(pmGateStop({ review: { mode: 'one', asked: [], pms }, throughReview: false, product: 'shop', body: 'x' })).not.toBeNull();
-    expect(pmGateStop({ review: { mode: 'one', asked: [], pms }, throughReview: true, product: 'shop', body: 'x' })).toBeNull();
+  it('a library decision alone does not stand for the design review; a design review does', () => {
+    expect(pmGateStop({ review: { pms }, asked: libraryOnly, product: 'shop', body: 'x' })).not.toBeNull();
+    expect(pmGateStop({ review: { pms }, asked: withDesign, product: 'shop', body: 'x' })).toBeNull();
+    // A design review already given in an earlier round stands.
+    const ok = `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', designOkAt: 't' })} -->`;
+    expect(pmGateStop({ review: { pms }, asked: noDesign, product: 'shop', body: ok })).toBeNull();
   });
 });
 
@@ -201,7 +169,7 @@ describe("I'll look on the other reviewers' Home", () => {
   it('leaves their Home, and comes back 2 days later with no decision', async () => {
     const { leadHomeRow, TAKEN_FOR_MS } = await import('./lead-decisions');
     const at = Date.parse('2026-11-07T10:00:00Z');
-    const body = `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', leadAskedAt: '2026-11-07T09:00:00Z', leadAskedByName: 'Ann', leadTakenAt: new Date(at).toISOString(), leadTakenByName: 'Lea' })} -->`;
+    const body = `x\n<!-- bridge-exploration ${JSON.stringify({ name: 'Orders', designAskedAt: '2026-11-07T09:00:00Z', designAskedByName: 'Ann', designTakenAt: new Date(at).toISOString(), designTakenByName: 'Lea' })} -->`;
     const v = { viewer: null, lead: true, own: false, viewerName: 'Dino' };
     expect(leadHomeRow(body, { ...v, now: at + 1000 })).toBeNull();
     expect(leadHomeRow(body, { ...v, viewerName: 'Lea', now: at + 1000 })).not.toBeNull();

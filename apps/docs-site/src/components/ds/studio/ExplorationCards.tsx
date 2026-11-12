@@ -44,6 +44,7 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
                 </Badge>
               )}
             </span>
+            {c.note && <span className="t-ui sh-card-who sh-card-name">{c.note}</span>}
             <span className="t-ui sh-card-who">
               <Who p={c.author} size="xs" />
               <span className="sh-card-name">

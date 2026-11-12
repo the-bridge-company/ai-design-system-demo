@@ -93,7 +93,7 @@ describe('sentByOf', () => {
   it("names the latest Looks right, else the lead's login", () => {
     expect(sentByOf({ decisions: [{ kind: 'looks-right', at: '2026-11-08', round: 1, byName: 'Dana' }] })).toBe('Dana');
     expect(sentByOf({ decisions: [{ kind: 'question', at: '2026-11-08', round: 1, byName: 'Sofia' }] })).toBeNull();
-    expect(sentByOf({ leadOkBy: 'dana-gh' }, (l) => (l === 'dana-gh' ? 'Dana Lee' : l))).toBe('Dana');
+    expect(sentByOf({ designOkBy: 'dana-gh' }, (l) => (l === 'dana-gh' ? 'Dana Lee' : l))).toBe('Dana');
     expect(sentByOf(null)).toBeNull();
   });
 });

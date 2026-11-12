@@ -36,7 +36,7 @@ export function guardCaseOf(event: string, payload: unknown): GuardCase | null {
   // Done exploring is not a lead's word here: whether it needed one is the proxy's and Studio's call.
   if (!addsLeadWords(before, pr.body, { hasLeads: false })) return null;
   const block = explorationBlockOf(before) ?? {};
-  const authors = [...new Set([obj(pr.user).login, block.author, block.leadAskedBy].filter((v): v is string => typeof v === 'string' && v.length > 0).map((v) => v.replace(/^@/, '').toLowerCase()))];
+  const authors = [...new Set([obj(pr.user).login, block.author, block.designAskedBy].filter((v): v is string => typeof v === 'string' && v.length > 0).map((v) => v.replace(/^@/, '').toLowerCase()))];
   return {
     repo: repo.toLowerCase(),
     number: pr.number as number,

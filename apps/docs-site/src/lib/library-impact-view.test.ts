@@ -15,27 +15,45 @@ describe('the section on the exploration page', () => {
     expect(libraryImpactView({ body: start, designer: 'Sofia', lead: 'Dana', approved: false, canDecide: true })).toEqual({ state: 'unchecked', line: 'Bridge has not checked this exploration against the library yet.' });
   });
 
-  it('celebrates nothing to change, with the pieces it uses and no invented numbers (LI1)', () => {
+  it('says "Nothing new for the library", no count, one line listing what the screen uses as it is (LI1, two reviews)', () => {
     const v = libraryImpactView({ body: bodyWith([], [], ['Badge', 'Card']), designer: 'Ann', lead: 'Dana', approved: false, canDecide: true });
     expect(v.state).toBe('nothing');
     if (v.state !== 'nothing') return;
-    expect(v.uses).toEqual(['Badge', 'Card']);
+    expect(v.title).toBe('Nothing new for the library');
+    expect(v.line).toBe("Ann's screen uses Badge and Card, as they are in the library.");
+    // The line lists them: no chips repeating it.
+    expect(v.uses).toEqual([]);
     const words = libraryImpactView({ body: bodyWith([], [], ['SegmentedControl', 'EmptyState']), designer: 'Ann', lead: 'Dana', approved: false, canDecide: false });
-    if (words.state === 'nothing') expect(words.uses).toEqual(['Segmented control', 'Empty state']);
-    expect(v.line).toContain('Ann built it with the pieces the library already has');
-    expect(v.line).not.toMatch(/\d/);
+    if (words.state === 'nothing') expect(words.line).toContain('Segmented control and Empty state');
+    const bare = libraryImpactView({ body: bodyWith([]), designer: 'Ann', lead: 'Dana', approved: false, canDecide: true });
+    if (bare.state !== 'nothing') throw new Error(bare.state);
+    expect(bare.line).toContain('Ann built it with the pieces the library already has');
+    expect(bare.line).not.toMatch(/\d/);
+    // Nobody decides anything: nobody is named.
+    expect(`${v.title} ${v.line} ${bare.line}`).not.toMatch(/Dana|decides/);
   });
 
   it('shows a new component waiting for the lead, with the menu for the lead only (LI2)', () => {
     const v = libraryImpactView({ body: bodyWith([timeline], [], ['Card', 'Timeline']), designer: 'Sofia', lead: 'Dana', approved: false, canDecide: true });
     if (v.state !== 'rows') throw new Error(v.state);
     expect(v.summary).toBe('1 new component. Nothing else changes.');
-    expect(v.rows[0]).toMatchObject({ kind: 'New component', title: 'Timeline', status: { label: 'Needs Dana' }, before: { label: 'Not in the library', empty: true }, after: { label: 'Timeline' } });
+    // Something new has no before: the after side only, "New in this screen", never an empty tile.
+    expect(v.rows[0]).toMatchObject({ kind: 'New component', title: 'Timeline', status: { label: 'Needs Dana' }, before: null, after: { label: 'Timeline', caption: 'New in this screen' } });
+    expect(v.count).toBe('1 new piece');
     expect(v.rows[0]!.menu).toEqual(['approve', 'changes', 'local', 'existing']);
     expect(v.uses).toEqual(['Card']);
     const other = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'Dana', approved: false, canDecide: false });
     if (other.state === 'rows') expect(other.rows[0]!.menu).toEqual([]);
     expect(leadLibraryLine(v, 'Sofia')).toBe('Sending also adds the Timeline to the library.');
+  });
+
+  it('two reviews: the library decision sits on the new piece\'s row, for a library owner only', () => {
+    const owner = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'you', approved: false, canDecide: true, libraryHat: true });
+    if (owner.state !== 'rows') throw new Error(owner.state);
+    expect(owner.rows[0]!.libraryDecision).toEqual({ title: 'Library decision', as: 'You decide as design system owner, apart from the screen', keep: "Keep in Sofia's screen", add: 'Add to the library' });
+    const other = libraryImpactView({ body: bodyWith([timeline]), designer: 'Sofia', lead: 'Dana', approved: false, canDecide: false, libraryHat: false });
+    if (other.state !== 'rows') throw new Error(other.state);
+    expect(other.rows[0]!.libraryDecision).toBeNull();
   });
 
   it('reads Exploring for the lead too while the designer is still exploring: Needs you only once asked', () => {
@@ -102,7 +120,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   it('gives the lead one card: today, each way, both as sizes, and a button that says the outcome', () => {
     const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
     if (v.state !== 'rows') throw new Error(v.state);
-    expect(v.summary).toBe('1 change');
+    expect(v.summary).toBe('1 new piece');
     expect(v.rows[0]).toMatchObject({ kind: 'Change to', title: 'Card', summary: 'Tighter cards on this screen. The library Card has no tighter size yet.', before: null, after: null, menu: [] });
     expect(v.rows[0]!.status).toMatchObject({ key: 'conflict', label: 'Your choice', tone: 'neutral' });
     const c = conflictOf(v);
@@ -171,9 +189,10 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'Dana', canDecide: false, conflicts: two, others: [sofia], reviewHref: href }));
     expect(c.tag).toBe('Dana picks');
     expect(c.noteParts).toEqual([{ text: 'Dana picks in ' }, { text: 'Library review', href }, { text: ', for both screens.' }]);
-    const unknown = conflictOf(libraryImpactView({ ...base, lead: 'the DS lead', canDecide: false, conflicts: two, others: [sofia] }));
-    expect(unknown.tag).toBe('The DS lead picks');
-    expect(unknown.note).toBe('The DS lead picks in Library review, for both screens.');
+    const unknown = conflictOf(libraryImpactView({ ...base, lead: 'the library owners', canDecide: false, conflicts: two, others: [sofia] }));
+    // Nobody named: the library owners pick, never one "DS lead".
+    expect(unknown.tag).toBe('The library owners pick');
+    expect(unknown.note).toBe('The library owners pick in Library review, for both screens.');
   });
 
   it("tells the build check what the library pieces wait for, instead of 'no library piece changed'", () => {
@@ -246,7 +265,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   it("reads Card padding like Card's own options (board v3): the new value to add, the default and Compact already there", () => {
     const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
     if (v.state !== 'rows') throw new Error(v.state);
-    expect(v.count).toBe('1 change');
+    expect(v.count).toBe('1 new piece');
     expect(v.tail).toBe('1 waits for you');
     expect(v.rows[0]!.tag).toEqual({ label: 'New option', tone: 'info' });
     expect(v.rows[0]!.origin).toEqual({ people: ['Leo', 'Sofia'], products: ['Acme CRM'] });

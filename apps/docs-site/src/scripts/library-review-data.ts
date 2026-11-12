@@ -429,7 +429,7 @@ export async function pickWay(p: ReviewPiece, pick: string, myName: string | nul
   const kept = c.ways.find((w) => w.key === pick);
   // The pick of the checked rows (lib/library-review-compare checkedPick): one way, today as it is, or sizes.
   const chosen = kept ? `${kept.designer}'s way (${kept.value})` : pick === 'today' ? `today's ${c.component} as it is` : pick === 'both' ? 'both ways, as two sizes' : `new sizes next to today's`;
-  const note = `${myName ?? 'The design lead'} chose ${chosen} for ${c.component}, where ${c.ways[0]!.designer} and ${c.ways[1]!.designer} changed it differently. This answers both explorations: comment here if you see it otherwise.`;
+  const note = `${myName ?? 'A library owner'} chose ${chosen} for ${c.component}, where ${c.ways[0]!.designer} and ${c.ways[1]!.designer} changed it differently. This answers both explorations: comment here if you see it otherwise.`;
   await chooseLibraryWayOnGitHub(clientFor(p.source.repo), p.source.number, { component: c.component, property: c.property, pick, ...me(), other: { gh: clientFor(at[1]!), number: Number(at[2]) }, note });
   return `${kept ? `Kept ${kept.designer}'s way for ${c.component}` : pick === 'today' ? `Kept today's ${c.component}` : `Kept new sizes for ${c.component}`}. ${c.ways[0]!.designer} and ${c.ways[1]!.designer} are told.`;
 }

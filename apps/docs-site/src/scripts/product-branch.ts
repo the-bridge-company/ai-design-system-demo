@@ -245,7 +245,7 @@ export function pieceActor(x: { r: ExplorationRow; gh: ReturnType<typeof client>
       });
       x.refresh();
       if (res.status === 'suggested') return `${suggestionSentLine(res.link?.number ?? 0)}${res.warnings.length ? ` ${res.warnings.join(' ')}` : ''}`;
-      if (mode === 'suggest') return `Sent to the library as a request for ${row.title}. Your DS lead decides on it.${res.warnings.length ? ` ${res.warnings.join(' ')}` : ''}`;
+      if (mode === 'suggest') return `Sent to the library as a request for ${row.title}. The library owners decide on it.${res.warnings.length ? ` ${res.warnings.join(' ')}` : ''}`;
       const what = res.plan.kind === 'token-change' ? 'token change' : res.plan.kind === 'exploration' ? 'library change' : 'request';
       return `Opened a ${what} for ${row.title}.${res.preview?.status === 'merged' ? ' Your feature uses its preview now.' : ''}${res.warnings.length ? ` ${res.warnings.join(' ')}` : ''}`;
     }

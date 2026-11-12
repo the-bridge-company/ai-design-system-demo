@@ -24,7 +24,7 @@ export function isViewerPm(pm: PmPerson | null | undefined, viewer: { ref?: stri
 
 export const PM_WORDS = {
   title: (pm: string) => `What do you think, ${pm}?`,
-  intro: (designer: string) => `${designer} shares this with you before it goes to the design lead.`,
+  intro: (designer: string) => `${designer} shares this with you before it goes to review.`,
   note: 'Your note',
   noteHint: 'Needed for Needs changes.',
   noteNeeded: 'Say what to change.',
@@ -59,7 +59,7 @@ export function pmHomeRow(body: string | null | undefined, x: { buildReady: bool
   if (e.doneAt) return x.buildReady ? { line: () => 'The build is ready to check', action: 'Check', since: null, optional: false } : null;
   if (pmOpinionOf(body)) return null;
   // Their opinion is optional (they never decide): an invitation on their Home, never a queue that waits on them.
-  return { line: (designer) => `${designer} would like your opinion`, action: 'Look', since: e.leadAskedAt ?? null, optional: true };
+  return { line: (designer) => `${designer} would like your opinion`, action: 'Look', since: e.designAskedAt ?? null, optional: true };
 }
 
 /** A PM word as Bridge keeps it on the exploration (core's Decision). */

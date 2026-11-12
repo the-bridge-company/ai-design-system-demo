@@ -74,7 +74,7 @@ describe('the product manager', () => {
   });
 
   it('says what they think, even with Can view; nobody else says it for them', async () => {
-    const s = setup({ member: memberRef('mia@acme.example'), memberName: 'Mia', leadAskedAt: '2026-11-06T00:00:00Z' });
+    const s = setup({ member: memberRef('mia@acme.example'), memberName: 'Mia', designAskedAt: '2026-11-06T00:00:00Z' });
     const admin = await as(s, 'ann@acme.example', 'Ann', 'admin');
     const pm = await as(s, 'dino@acme.example', 'Dino', 'view');
     const designer = await as(s, 'mia@acme.example', 'Mia', 'edit');

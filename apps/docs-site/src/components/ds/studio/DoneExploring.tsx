@@ -15,8 +15,13 @@ export interface DoneExploringDetail {
   checked: boolean;
   /** Pieces already sent to the library before. */
   sent: number;
-  /** It goes to the design lead first, not to the developers. */
+  /** It goes to a review first (the design review, the library decision or both), not to the developers. */
   viaLead?: boolean;
+  /**
+   * Who it goes to first, in words (lib/done-reviews doneDialogLine): "Dana's design review comes first. ..." Replaces
+   * the dialog's generic sentence about "your lead".
+   */
+  description?: string;
   /** The viewer is a design lead and nobody else is asked: the words say "you", never "your DS lead". */
   youLead?: boolean;
   /** Runs it with the ticked piece ids. Throws with a sentence that says how to fix it. */
@@ -90,7 +95,7 @@ export default function DoneExploring() {
       <DialogContent
         size="sm"
         title={detail ? `Done exploring “${detail.name}”?` : 'Done exploring?'}
-        description={copy?.description}
+        description={detail?.description ?? copy?.description}
         footer={
           <ButtonGroup align="end">
             <DialogClose render={<Button variant="secondary" disabled={busy} />}>Cancel</DialogClose>
@@ -106,7 +111,7 @@ export default function DoneExploring() {
             Bridge is checking what the library is missing.
           </p>
         ) : detail && detail.pieces.length > 0 ? (
-          <CheckboxGroup label={copy?.piecesLabel ?? 'Propose to your DS lead'} description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
+          <CheckboxGroup label={copy?.piecesLabel ?? 'Propose to the library'} description={copy?.piecesLine} value={picked} onValueChange={setPicked} className="ex-done-pieces">
             {detail.pieces.map((p) => (
               <Checkbox key={p.id} value={p.id} label={p.title} description={p.summary} />
             ))}

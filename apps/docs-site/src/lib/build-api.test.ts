@@ -26,7 +26,7 @@ function setup(o: { draft?: boolean; pieces?: string[] } = {}) {
   clearReadMemory();
   const redis = memoryRedis(() => T0);
   const members = memberStore(redis);
-  const block = { name: 'Late tag', startedAt: '2026-11-01T00:00:00Z', doneAt: '2026-11-05T00:00:00Z', member: memberRef('mia@acme.example'), memberName: 'Mia', task: `https://github.com/${CODE}/issues/7`, ...(o.pieces ? { leadPieces: o.pieces } : {}) };
+  const block = { name: 'Late tag', startedAt: '2026-11-01T00:00:00Z', doneAt: '2026-11-05T00:00:00Z', member: memberRef('mia@acme.example'), memberName: 'Mia', task: `https://github.com/${CODE}/issues/7`, ...(o.pieces ? { askedPieces: o.pieces } : {}) };
   const world = { head: 'a'.repeat(40), comments: [] as string[], statuses: [] as { sha: string; state: string; context: string }[], writes: [] as string[], body: '' };
   const deps: ContribDeps = {
     fetch: async (url, init) => {

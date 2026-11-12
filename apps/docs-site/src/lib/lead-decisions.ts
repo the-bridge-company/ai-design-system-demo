@@ -3,7 +3,7 @@
 // decisionsOf, openDecisionOf). Bridge voice: a designer reads it.
 import { stepTag } from './status-ladder';
 import { isNameAuthor, nameOfAuthor } from './author';
-import { decisionsOf, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind } from '@bridge-ds/core';
+import { decisionsOf, homeRowLine, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind, type HatAsk } from '@bridge-ds/core';
 
 export interface DecisionRowView {
   key: string;
@@ -95,6 +95,8 @@ export interface LeadHomeRow {
   action: string;
   /** Who it is about: their login, or their display name when they have none. */
   person: { login: string | null; name: string };
+  /** The hats it asks of the viewer, when the team's two reviews are known: one row names both. */
+  hats?: HatAsk[];
 }
 
 /**
@@ -116,7 +118,7 @@ export function turnSince(body: string | null | undefined): string | null {
   const turn = leadTurnOf(body);
   if (turn === 'lead' && isWaitingForLead(body)) {
     const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
-    return all[all.length - 1]?.at ?? e.leadAskedAt ?? null;
+    return all[all.length - 1]?.at ?? e.designAskedAt ?? null;
   }
   if (turn === 'designer') return openDecisionOf(body)?.at ?? null;
   return null;
@@ -132,26 +134,48 @@ export function rowAgeFrom(x: { body?: string | null; updated: string; yourTurn:
 
 export const TAKEN_FOR_MS = 2 * 24 * 60 * 60 * 1000;
 
-export function leadHomeRow(body: string | null | undefined, v: { viewer: string | null; lead: boolean; own: boolean; names?: Record<string, string>; viewerName?: string | null; now?: number }): LeadHomeRow | null {
+export function leadHomeRow(
+  body: string | null | undefined,
+  v: {
+    viewer: string | null;
+    lead: boolean;
+    own: boolean;
+    names?: Record<string, string>;
+    viewerName?: string | null;
+    now?: number;
+    /**
+     * Two reviews (lib/team-reviews viewerHats), once the team's reviews are read: the hats this exploration asks of the
+     * viewer. They decide the row instead of `lead`: none, no row; the row names them ("Sofia's screen: your design
+     * review and a library decision"). Left out: the old single review.
+     */
+    hats?: readonly HatAsk[] | null;
+  },
+): LeadHomeRow | null {
   const e = parseExplorationBody(body);
   if (!e) return null;
   const same = (a: string | null | undefined, b: string | null | undefined) => Boolean(a && b && a.toLowerCase() === b.toLowerCase());
   const turn = leadTurnOf(body);
   const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
   const last = all[all.length - 1];
-  const designer = { login: e.leadAskedBy ?? e.author ?? null, name: e.leadAskedByName ?? e.memberName ?? e.leadAskedBy ?? e.author ?? 'The designer' };
+  const designer = { login: e.designAskedBy ?? e.author ?? null, name: e.designAskedByName ?? e.memberName ?? e.designAskedBy ?? e.author ?? 'The designer' };
   const shown = v.names?.[designer.login ?? ''] ?? designer.name;
   if (turn === 'lead' && isWaitingForLead(body)) {
-    if (!v.lead || v.own) return null;
+    if (v.own) return null;
+    if (v.hats) {
+      // The hats already say who was asked and who took the design review.
+      if (!v.hats.length) return null;
+      const line = last?.kind === 'answer' || last?.kind === 'asked-someone' ? null : homeRowLine(shown, v.hats);
+      if (line) return { where: 'needs', line, since: turnSince(body), action: 'Review', person: designer, hats: [...v.hats] };
+    } else if (!v.lead) return null;
     // Who was asked by name are GitHub logins: a lead signed in by email has none, and answers all the same.
-    if (v.viewer && e.leadAskedTo?.length && !e.leadAskedTo.some((l) => same(l, v.viewer))) return null;
+    if (!v.hats && v.viewer && e.designAskedTo?.length && !e.designAskedTo.some((l) => same(l, v.viewer))) return null;
     // "I'll look": another reviewer took it, it leaves this one's Home; 2 days later with no decision, it comes back.
-    const takenFresh = Boolean(e.leadTakenAt && (v.now ?? Date.now()) - Date.parse(e.leadTakenAt) < TAKEN_FOR_MS);
-    if (takenFresh && !(same(e.leadTakenBy, v.viewer) || (!e.leadTakenBy && same(e.leadTakenByName, v.viewerName)))) return null;
+    const takenFresh = Boolean(e.designTakenAt && (v.now ?? Date.now()) - Date.parse(e.designTakenAt) < TAKEN_FOR_MS);
+    if (!v.hats && takenFresh && !(same(e.designTakenBy, v.viewer) || (!e.designTakenBy && same(e.designTakenByName, v.viewerName)))) return null;
     const answered = last?.kind === 'answer';
     const before = answered ? [...all].reverse().find((d) => d.kind === 'question' || d.kind === 'changes' || d.kind === 'take-back') : null;
     const line = answered ? `${shown} answered your ${before?.kind === 'question' ? 'question' : 'changes'}` : last?.kind === 'asked-someone' ? `${sayerName(last, v.names)} asks you to look` : `${shown} is done exploring`;
-    return { where: 'needs', line, since: turnSince(body), action: 'Review', person: designer };
+    return { where: 'needs', line, since: turnSince(body), action: 'Review', person: designer, ...(v.hats ? { hats: [...v.hats] } : {}) };
   }
   if (turn === 'designer') {
     const open = openDecisionOf(body)!;

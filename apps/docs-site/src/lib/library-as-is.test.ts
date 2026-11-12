@@ -99,24 +99,21 @@ describe('every way already in the library: nothing to decide', () => {
     expect(isDecision(conflicts[0]!, [sofiaDefault])).toBe(true);
   });
 
-  it('the exploration page reads one quiet line, no tag, waiting for nobody', () => {
-    const v = libraryImpactView({ body: bodyOf([leoPiece]), designer: 'Leo', lead: 'you', approved: false, canDecide: true, conflicts: libraryConflicts(leo, [sofiaDefault]), others: [sofiaDefault], screen: leo.name, product: leo.product });
-    if (v.state !== 'rows') throw new Error(v.state);
-    expect(v.conflicts).toEqual([]);
-    const card = v.rows[0]!;
-    expect(card.tag).toBeNull();
-    expect(card.menu).toEqual([]);
-    expect(card.settled?.map((s) => s.text).join('')).toBe("Leo's screen uses Compact (12 px), already in the library. Nothing to decide.");
-    expect(v.tail).toBeNull();
+  it('the exploration page says "Nothing new for the library", one line, no count, no row, nobody named', () => {
+    const v = libraryImpactView({ body: bodyOf([leoPiece]), designer: 'Leo', lead: 'Dana', approved: false, canDecide: false, conflicts: libraryConflicts(leo, [sofiaDefault]), others: [sofiaDefault], screen: leo.name, product: leo.product });
+    if (v.state !== 'nothing') throw new Error(v.state);
+    expect(v.title).toBe('Nothing new for the library');
+    expect(v.line).toBe("Leo's screen uses Compact (12 px), as it is in the library.");
+    expect(v.line).not.toMatch(/Nothing to decide|Dana/);
   });
 
   it("the other side's new component still waits for the lead, its Card row does not", () => {
     const v = libraryImpactView({ body: bodyOf(sofiaDefault.record.pieces), designer: 'Sofia', lead: 'you', approved: false, canDecide: true, conflicts, others: [leo] });
     if (v.state !== 'rows') throw new Error(v.state);
-    expect(v.rows.map((r) => [r.title, r.tag?.label ?? null])).toEqual([
-      ['Timeline', 'New'],
-      ['Room inside', null],
-    ]);
+    // The piece used as it is folds into the footer line: the count names the new piece only.
+    expect(v.rows.map((r) => [r.title, r.tag?.label ?? null])).toEqual([['Timeline', 'New']]);
+    expect(v.count).toBe('1 new piece');
+    expect(v.uses[0]).toMatch(/\(\d+ px\)$/);
     expect(v.tail).toBe('1 waits for you');
   });
 });

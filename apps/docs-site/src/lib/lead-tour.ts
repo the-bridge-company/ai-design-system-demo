@@ -5,8 +5,8 @@ export type LeadTourAt = 'rows' | 'more' | 'branches';
 
 const LEAD_TOUR: Record<LeadTourAt, { title: string; text: string }> = {
   rows: {
-    title: 'Changes wait for the lead',
-    text: 'Each row is a change a teammate or Claude AI opened. Bridge shows it before and after, so the lead reviews the look, not the code.',
+    title: 'Changes wait for your review',
+    text: 'Each row is a change a teammate or Claude AI opened. Bridge shows it before and after, so you review the look, not the code.',
   },
   more: {
     title: 'The whole queue, one by one',

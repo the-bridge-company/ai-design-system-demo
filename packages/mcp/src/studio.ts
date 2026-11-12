@@ -42,6 +42,7 @@ import {
   type ComponentDocsJson,
   type FigmaReferenceManifest,
 } from '@bridge-ds/core';
+import { reviewRolesOf } from './reviews.js';
 import { branchNumber, productMarks, resolveProduct, RIGHTS, viewerOf } from './branches.js';
 import { appliedNext, changesFor, noSuggestionAccess, suggestionBase } from './suggestions.js';
 import type { BridgeContext } from './context.js';
@@ -212,6 +213,8 @@ export async function getSettings(ctx: BridgeContext) {
       : { on: false, who: [], reason: 'Nobody can merge without the approvals.' },
     protection: protection ? protectionSentence(protection) : 'Not read (no GitHub repo known, or GitHub did not answer).',
     products: products.map((p) => ({ key: p.key, name: p.name, default: p === defaultProduct(products) })),
+    // Settings > Reviews: the two reviews of an exploration (docs/specs/two-reviews.md).
+    reviews: reviewRolesOf(config),
     previews: Object.entries(config.previews?.apps ?? {}).filter(([, t]) => Boolean(t)).map(([app]) => app),
     visualImpact: config.visualImpact?.mode ?? 'auto',
     note: 'Settings change in bridge.config.json through a reviewed branch, or in Studio Settings. Tokens and secrets are never shown.',

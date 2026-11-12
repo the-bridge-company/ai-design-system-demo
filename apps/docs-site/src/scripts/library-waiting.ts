@@ -1,9 +1,10 @@
 // The Library review counts (one source each, lib/waiting-counts), read with the page's own loader and rules
 // (scripts/library-review-data loadLibraryReview, lib/library-review):
-//   - forYou: what waits for the viewer's decision there (waitingForYou), so Home, the nav badge and Library review's
+//   - forYou: the library decisions waiting for the viewer (lib/library-queue libraryQueueCount), so Home, the nav badge and Library review's
 //     "N wait for you" are one number. Remembered for the other pages (scripts/needs-you rememberMine).
 //   - yours: the viewer's own pieces still waiting (yourWaitingPieces), what Asked by: You lists, for Home's sentence.
-import { waitingForYou, yourWaitingPieces } from '../lib/library-review';
+import { yourWaitingPieces } from '../lib/library-review';
+import { libraryQueueCount } from '../lib/library-queue';
 import { rememberMine } from './needs-you';
 
 export interface LibraryCounts {
@@ -19,7 +20,7 @@ export function readLibraryCounts(): Promise<LibraryCounts | null> {
     const { loadLibraryReview } = await import('./library-review-data');
     let last: LibraryCounts | null = null;
     await loadLibraryReview((d) => {
-      if (!d.loading && !d.failed) last = { forYou: waitingForYou(d.pieces, d.viewer), yours: yourWaitingPieces(d.pieces, d.viewer) };
+      if (!d.loading && !d.failed) last = { forYou: libraryQueueCount(d.pieces, d.viewer), yours: yourWaitingPieces(d.pieces, d.viewer) };
     }).catch(() => undefined);
     if (last !== null) rememberMine((last as LibraryCounts).forYou);
     return last;

@@ -178,7 +178,9 @@ Usage:
   bridge explore archive|unarchive|close <name|#pr>
                                       explorations: an explore/<name> branch with a draft pull request
                                       labeled exploration, previews and a snapshot package for a product
-                                      staging branch. Done exploring hands it to developers, never closes it
+                                      staging branch. Done exploring asks the library decision and the
+                                      product's design review (or goes straight to Ready to build), never
+                                      closes it
   bridge branch list|status|comments|ready|draft|review|ask|comment|merge|close|reopen|update|try|combine
                                       branches in review, the same actions as Bridge Studio
                                       (\`bridge branch help\`): what needs me, send for review, review,

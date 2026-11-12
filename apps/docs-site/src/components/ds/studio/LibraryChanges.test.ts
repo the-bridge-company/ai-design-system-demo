@@ -54,7 +54,7 @@ describe('LibraryChanges', () => {
     const { container } = render(createElement(LibraryChanges<Row>, props()));
     expect(screen.getByRole('link', { name: 'Deal pipeline cards' }).getAttribute('href')).toContain('exploration=4&product=crm');
     expect(container.textContent).toContain(`Needed by Deal pipeline cards${SEP}Acme CRM`);
-    expect(container.textContent).toContain(`From the DS lead${SEP}accessibility fix`);
+    expect(container.textContent).toContain(`From the library owners${SEP}accessibility fix`);
     expect([...container.querySelectorAll('.pill')].map((p) => p.textContent)).toEqual(['Needs Dana', 'Needs Dana', 'Being built']);
     expect(container.textContent).not.toMatch(/#\d|acme\//);
     await expectNoAxeViolations(container);
@@ -63,8 +63,8 @@ describe('LibraryChanges', () => {
   it('the filter narrows by origin, with counts, and keeps it in the address', async () => {
     const { container } = render(createElement(LibraryChanges<Row>, props()));
     const filter = screen.getByRole('radiogroup', { name: 'Where the changes come from' });
-    expect(within(filter).getAllByRole('radio').map((r) => r.textContent)).toEqual(['All 3', 'From explorations 2', 'From the DS lead 1']);
-    await userEvent.click(within(filter).getByRole('radio', { name: 'From the DS lead 1' }));
+    expect(within(filter).getAllByRole('radio').map((r) => r.textContent)).toEqual(['All 3', 'From explorations 2', 'From the library owners 1']);
+    await userEvent.click(within(filter).getByRole('radio', { name: 'From the library owners 1' }));
     expect(container.querySelectorAll('[data-row]')).toHaveLength(1);
     expect(location.search).toBe('?origin=lead');
   });

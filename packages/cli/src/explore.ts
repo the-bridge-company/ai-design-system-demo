@@ -19,14 +19,18 @@ Usage:
   bridge explore list [--all] [--archived] [--json]
                      running explorations and the ones with the developers, with the preview links Vercel
                      reports, the install command from the pull request (once the snapshot is built) and the
-                     requests implemented on each (--all: closed ones too; --archived: only archived ones).
+                     requests implemented on each, and for one In review who and why it waits
+                     (--all: closed ones too; --archived: only archived ones).
                      Explorations in a product's own repository are listed too, named product#pr (shop#12)
   bridge explore continue <#pr|product#pr|name> [--no-checkout] [--json]
                      pick one up where it was left ("Continue Bridge exploration #12"): switches this
                      checkout to its branch when nothing is uncommitted, then says where it stands
   bridge explore done <name|#pr|product#pr> [--piece <id> ...] [--dry-run] [--json]
-                     done exploring: where the team names a design lead, it waits for them first; then each --piece (ids from bridge pieces) becomes a request for the DS lead
-                     with the preview link; the exploration label and note go, ready-for-devs comes, and
+                     done exploring: asks the two reviews at once, the library decision when the screen
+                     has something new for the library and the product's design review when it is on;
+                     nothing reaches the developers before both answer in Bridge Studio. With neither,
+                     Ready to build: each --piece (ids from bridge pieces) becomes a library request with
+                     the preview link; the exploration label and note go, ready-for-devs comes, and
                      developers continue on the branch. Never closes, merges or marks it ready
                      (promote is the old name of done)
   bridge explore archive <name|#pr> [--json]
@@ -91,6 +95,8 @@ export async function runExplore(a: RequestArgs, root: string, io: RequestIO = d
       for (const x of r.explorations) {
         io.print(`\n${x.ref} ${x.name}  ${EXPLORATION_STATUS_LABEL[x.status]}  ${x.branch}${x.repo ? ` in ${x.repo}` : ''}  @${x.author}  ${date(x.updatedAt)}`);
         if (x.purpose) io.print(`  ${x.purpose}`);
+        // In review: who and why ("Waiting for dana's design review and the library decision on Timeline").
+        if (x.waitingFor) io.print(`  In review: ${x.waitingFor}`);
         io.print(`  ${x.url}`);
         for (const p of x.previews as { label: string; url: string | null; state?: string }[]) io.print(`  ${p.label}: ${p.url ? `${p.url}${p.state === 'building' ? ' (building)' : p.state === 'failed' ? ' (build failed)' : ''}` : 'link not reported by Vercel yet, see the pull request'}`);
         if (x.install) io.print(x.install.command ? `  Install: ${x.install.command}` : `  Install: ${x.install.note}`);
@@ -107,23 +113,29 @@ export async function runExplore(a: RequestArgs, root: string, io: RequestIO = d
       const ctx = await context(root, io, a, has(a, 'dry-run') ? 'read' : 'write');
       const r = await explorations.doneExploring(ctx, { ref, pieces: a.flags.piece ?? [], dryRun: has(a, 'dry-run'), ...exploreSource(io.env) });
       if (json) return io.print(JSON.stringify(r, null, 2)), 0;
-      if (r.status === 'waiting-for-lead') {
-        io.print(`Sent to your design lead for ${r.ref} (${r.branch}). Nothing reaches the developers until they say it looks right in Bridge Studio.`);
+      // The two reviews asked (or, on a dry run, the ones it would ask): who, and the line Studio shows.
+      if (!('requests' in r)) {
+        const asks = [r.reviews.design ? `design review: ${r.reviews.design.reviewers.map((x) => x.name).join(', ')}` : '', r.reviews.library ? `library decision on ${r.reviews.library.pieces.join(', ')}: ${r.reviews.library.owners.map((x) => x.name).join(', ')}` : ''].filter(Boolean);
+        io.print(`${r.status === 'dry-run' ? 'Dry run: done exploring would ask' : 'In review'} ${r.ref} (${r.branch}). Asked: ${asks.join('; ')}.`);
+        io.print(`${r.waitingFor}. Nothing reaches the developers before ${r.reviews.design && r.reviews.library ? 'both reviews answer' : 'the review answers'} in Bridge Studio.`);
+        if (r.noDesignReview) io.print(`${r.noDesignReview}.`);
         io.print(r.url);
         return 0;
       }
-      const lead = r.status === 'dry-run' ? 'Dry run: done exploring' : r.status === 'already-done' ? 'Already done exploring' : 'Done exploring';
+      const lead = r.status === 'dry-run' ? 'Dry run: done exploring' : r.status === 'already-done' ? 'Already done exploring' : 'Ready to build';
+      // Straight to Ready to build: why no review was needed.
+      if (r.waitingFor && r.status !== 'already-done') io.print(`${r.waitingFor}.`);
       io.print(`${lead} ${r.ref} (${r.branch}${r.repo ? ` in ${r.repo}` : ''}). Nothing closed or merged: the preview stays.${r.requestsIn && r.requests.length ? ` Requests go to ${r.requestsIn}.` : ''}`);
       if (r.labels) io.print(`Labels: +${r.labels.add.join(', +')}, -${r.labels.remove.join(', -')}${r.removeFiles.length ? `. Removes ${r.removeFiles.join(', ')}` : ''}.`);
       for (const q of r.requests) io.print(`${r.status === 'dry-run' ? 'Would request' : 'Requested'}: ${q.title}${q.number ? ` #${q.number} ${q.url}` : ''}`);
       for (const q of r.alreadySent) io.print(`Already sent: ${q.piece} #${q.number}`);
       for (const q of r.notProposed) io.print(`Not proposed: ${q.id} (${q.title})`);
       if (!r.requests.length) {
-        // Say it when nothing goes to the DS lead: no piece picked, or the exploration never checked against the library.
+        // Say it when nothing goes to the library owners: no piece picked, or the exploration never checked against the library.
         const say = r.status === 'dry-run' ? 'No piece would be sent' : 'No piece was sent';
-        if (!r.checked) io.print(`${say} to the DS lead: this exploration was not checked against the library yet. Run bridge pieces ${r.ref} --record to find them, then bridge explore done ${r.ref} --piece <id>.`);
-        else if (r.notProposed.length) io.print(`${say} to the DS lead: none picked. Send one later with bridge explore done ${r.ref} --piece <id>.`);
-        else if (!r.alreadySent.length) io.print(`${say} to the DS lead: the last check found nothing missing from the library.`);
+        if (!r.checked) io.print(`${say} to the library owners: this exploration was not checked against the library yet. Run bridge pieces ${r.ref} --record to find them, then bridge explore done ${r.ref} --piece <id>.`);
+        else if (r.notProposed.length) io.print(`${say} to the library owners: none picked. Send one later with bridge explore done ${r.ref} --piece <id>.`);
+        else if (!r.alreadySent.length) io.print(`${say} to the library owners: the last check found nothing missing from the library.`);
       }
       io.print(`\nFor developers: ${r.forDevelopers.take.join(' && ')}\n${r.forDevelopers.note}`);
       for (const w of r.warnings) io.error(`Warning: ${w}`);

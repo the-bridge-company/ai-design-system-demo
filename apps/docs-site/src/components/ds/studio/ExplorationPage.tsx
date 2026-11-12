@@ -101,6 +101,11 @@ export interface LeadView {
   bar?: LeadBarView | null;
   /** "I'll look", for a reviewer while nobody took it; once taken, who is looking at it. */
   take?: { onTake?: () => Promise<string | void>; line?: string } | null;
+  /**
+   * The design review's hat (two reviews, core HAT_WORDS): "Your turn: design review", "You review the screen as Acme
+   * Prints design lead". Its Looks right answers the screen only; library pieces have their own decision on their row.
+   */
+  hat?: { eyebrow: string; as: string } | null;
   onCancel?: (() => Promise<string | void>) | null;
 }
 
@@ -151,8 +156,8 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
-  /** When the design lead was asked (ISO, the exploration's leadAskedAt): "Dana decides · now, for 3 days". */
-  leadAskedAt?: string | null;
+  /** When the design lead was asked (ISO, the exploration's designAskedAt): "Dana decides · now, for 3 days". */
+  designAskedAt?: string | null;
   /**
    * The owner is a design lead themselves: with no other lead named, the page talks to them ("Then you pick what the
    * library keeps"), never "your design lead"; a lead it waits on is "Another design lead" until named.
@@ -235,6 +240,11 @@ export interface ExplorationPageProps {
   onDone: (focus: HTMLElement | null) => void;
   /** Done exploring asked the design lead and they have not answered yet. */
   lead?: LeadView | null;
+  /**
+   * The two reviews (lib/review-lines), once the team's reviews are read: the status second line ("Waiting for Dana's
+   * design review", or why nothing was reviewed) and, while In review, each review as a current step for the author.
+   */
+  reviews?: { line: string | null; steps: readonly { text: string; when?: string; current?: boolean; lines?: readonly string[] }[] } | null;
   /** The lead's last open word, for the designer to answer (boards L3, L4). */
   designerZone?: DesignerZoneView | null;
   /** The product manager of its product (boards R1, R3): their own zone for them, where they stand for the others. */
@@ -531,7 +541,7 @@ function PmCall({ call, say }: { call: NonNullable<PmView['call']>; say: (s: str
  * after applying the choice on each new library piece), or Needs changes with the words that go back. Ask someone else,
  * Not doing this and Copy link sit in its "...". A comment goes in Activity's box.
  */
-function LeadTurn({ bar, line, decisions = [], heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; /** Every decision of the library section (lib/exploration-layout leadDecisions). */ decisions?: readonly LeadDecision[]; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
+function LeadTurn({ bar, line, hat = null, decisions = [], heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; /** The design review's hat: Looks right answers the screen only. */ hat?: LeadView['hat']; /** Every decision of the library section (lib/exploration-layout leadDecisions). */ decisions?: readonly LeadDecision[]; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
   const { busy, run } = useAct(say);
   const [changes, setChanges] = useState(false);
   const [text, setText] = useState('');
@@ -588,6 +598,29 @@ function LeadTurn({ bar, line, decisions = [], heading, designer, question, appl
       )}
     </>
   );
+  if (hat) {
+    // The design review (two reviews): the screen only, apart from the library decision, which sits on each new
+    // piece's row for whoever decides what the library keeps.
+    const review = changes ? (
+      actions
+    ) : (
+      <>
+        <Button variant="secondary" size="md" disabled={busy !== null} onClick={() => setChanges(true)}>
+          Needs changes
+        </Button>
+        <Button variant="primary" size="md" disabled={busy !== null} loading={busy === 'right'} data-demo-write="say the design looks right" onClick={() => run('right', () => bar.onLooksRight(''))}>
+          Looks right
+        </Button>
+      </>
+    );
+    return (
+      <TurnZone eyebrow={hat.eyebrow} title={heading ?? `Does ${who} screen look right?`} drawing="review" quote={question ? <AskQuote who={designer} verb="asks" text={question} action={<Link href="#xp-compose">Answer</Link>} /> : null} actions={review}>
+        <p>{hat.as}</p>
+        {line && line !== hat.as && <p>{line}</p>}
+        {extra}
+      </TurnZone>
+    );
+  }
   if (bar.blocked) {
     // Every decision on the page counts: "Card padding and Timeline", "2 library pieces wait for your choice", and the
     // line says what each tick does. Without the section's decisions: "Choose Card padding" -> "Which Card padding...".
@@ -1111,7 +1144,8 @@ function ExplorationBody(p: ExplorationPageProps) {
   const notes = p.notes?.notes ?? null;
   const openQuestion = notes?.openQuestions?.find((q) => q.trim()) ?? null;
   const impactRows = p.impact?.view.state === 'rows' ? p.impact.view.rows : [];
-  const staged = stagedPieces(impactRows, Boolean(p.impact?.actions.onPiece));
+  // Two reviews: library pieces are answered on their own rows, never staged into the design review's Looks right.
+  const staged = p.lead?.hat ? [] : stagedPieces(impactRows, Boolean(p.impact?.actions.onPiece));
   // Every decision of the library section, counted once for the lead's steps and line (nothing ticked silently).
   const decisions = leadDecisions({ conflicts: p.impact?.view.state === 'rows' ? p.impact.view.conflicts : [], staged, choices });
   const applyStaged = async () => {
@@ -1158,7 +1192,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       case 'lead-take':
         return <LeadTake lead={p.lead!} say={setSaid} />;
       case 'lead-review':
-        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} decisions={decisions} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
+        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} hat={p.lead!.hat ?? null} decisions={decisions} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
       case 'done':
         return (
           <TurnZone
@@ -1256,10 +1290,12 @@ function ExplorationBody(p: ExplorationPageProps) {
         lead: p.leadName ?? null,
         viewerLeads,
         product,
-        waitedDays: daysSince(p.leadAskedAt, Date.now()),
+        waitedDays: daysSince(p.designAskedAt, Date.now()),
+        reviews: p.reviews?.steps.length && p.reviews.line ? { title: p.reviews.line, steps: p.reviews.steps } : null,
         taken: p.lead?.take?.line ?? null,
         canKeepExploring: Boolean(p.lead?.onCancel),
         shared: sharedChoiceOf(p.me?.name, p.impact?.view.state === 'rows' ? p.impact.view.conflicts : []),
+        newPieces: p.impact?.view.state === 'rows' && p.impact.view.rows.length + p.impact.view.conflicts.length > 0,
         doneNote: p.done?.kind === 'note' ? p.done.text : null,
         steps: handoff?.steps ?? [],
         checkers,
@@ -1424,6 +1460,7 @@ function ExplorationBody(p: ExplorationPageProps) {
             ) : (
               <StatusTag status={handoff ? handoff.status : 'active'} notStarted={notStarted} stage={handoff?.stage ?? (p.lead ? 'waiting-for-lead' : null)} />
             ))}
+          {p.stage !== 'loading' && !p.tag && !p.archived && p.reviews?.line && <span className="xp-muted">{p.reviews.line}</span>}
           <span className="xp-spacer" />
           {showCode && (
             <span className="xp-code-slot">

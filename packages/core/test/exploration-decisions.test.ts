@@ -41,7 +41,7 @@ const asked = async () => {
 describe('a lead answers', () => {
   it('names the leads asked, and the version', async () => {
     const { pull } = await asked();
-    expect(parseExplorationBody(pull.body)).toMatchObject({ leadAskedTo: ['flo'], leadAskedSha: 'c1' });
+    expect(parseExplorationBody(pull.body)).toMatchObject({ designAskedTo: ['flo'], designAskedSha: 'c1' });
   });
   it('a question keeps it waiting, the answer gives it back', async () => {
     const { gh, pull } = await asked();
@@ -66,7 +66,7 @@ describe('a lead answers', () => {
   it('someone else is asked by name', async () => {
     const { gh, pull } = await asked();
     await askOtherLeadOnGitHub(gh, 4, { to: ['dana'], lead: 'flo' });
-    expect(parseExplorationBody(pull.body)?.leadAskedTo).toEqual(['dana']);
+    expect(parseExplorationBody(pull.body)?.designAskedTo).toEqual(['dana']);
     await expect(askOtherLeadOnGitHub(gh, 4, { to: [], lead: 'flo' })).rejects.toThrow('nobody else');
   });
   it('a reviewer who joined by email is asked by name, nobody mentioned on GitHub', async () => {
@@ -90,14 +90,14 @@ describe('a lead answers', () => {
 
 describe('after the hand-off', () => {
   const handed = () =>
-    world((b) => withDoneExploring(b, { branch: 'explore/orders', doneAt: '2026-11-07T10:00:00.000Z', doneSha: 'c1', task: 'https://github.com/acme/dev/issues/7', leadOkBy: 'flo' }));
+    world((b) => withDoneExploring(b, { branch: 'explore/orders', doneAt: '2026-11-07T10:00:00.000Z', doneSha: 'c1', task: 'https://github.com/acme/dev/issues/7', designOkBy: 'flo' }));
   it('take it back: the task leaves with the reason, the yes goes, the designer reads why', async () => {
     const { gh, pull, writes } = handed();
     pull.labels = [{ name: 'ready-for-devs' }];
     await takeBackOnGitHub(gh, 4, { reason: 'The date hides', lead: 'flo' });
     expect(writes.find((w) => w.path === '/repos/acme/dev/issues/7/comments')?.body.body).toContain('The date hides');
     expect(writes.find((w) => w.path === '/repos/acme/dev/issues/7')?.body).toMatchObject({ state: 'closed', state_reason: 'not_planned' });
-    expect(parseExplorationBody(pull.body)?.leadOkBy).toBeUndefined();
+    expect(parseExplorationBody(pull.body)?.designOkBy).toBeUndefined();
     expect(openDecisionOf(pull.body)).toMatchObject({ kind: 'take-back', text: 'The date hides' });
   });
   it('developers started: it stays, a word reaches them on their task', async () => {

@@ -3,6 +3,8 @@
 // Pure: the record, the block and the conflicts in, the view out. Painted by components/ds/studio/LibraryImpact.tsx;
 // read and written by scripts/library-impact.ts. Tested in library-impact-view.test.ts.
 import {
+  HAT_WORDS,
+  libraryImpactTitle,
   agoInSentence,
   componentWords,
   impactItemOf,
@@ -67,6 +69,21 @@ export interface ImpactRowView {
    * just now."). Null while it waits, or when the row says its state another way (its note).
    */
   settled: Said[] | null;
+  /**
+   * The library decision on this piece (two reviews), for a library owner while it waits: "Library decision. You decide
+   * as design system owner, apart from the screen", with the two buttons of Library review. Null for everyone else.
+   */
+  libraryDecision?: LibraryDecisionView | null;
+}
+
+/** The library decision on a piece's row: the hat's words and the two answers (Keep in the screen, Add to the library). */
+export interface LibraryDecisionView {
+  title: string;
+  as: string;
+  /** "Keep in Sofia's screen": verdict local. */
+  keep: string;
+  /** "Add to the library": verdict approved. */
+  add: string;
 }
 
 /** The one tag of a piece: what it is while it waits, its state once answered. */
@@ -242,11 +259,18 @@ export interface LedgerView {
 export type LibraryImpactView =
   | { state: 'loading' }
   | { state: 'unchecked'; line: string }
-  | { state: 'nothing'; line: string; uses: string[] }
+  | {
+      state: 'nothing';
+      /** "Nothing new for the library" (core libraryImpactTitle), never a count. */
+      title: string;
+      /** One line: what the screen uses as it is ("Leo's screen uses Compact (12 px) and Card as they are in the library."). */
+      line: string;
+      uses: string[];
+    }
   | {
       state: 'rows';
       summary: string;
-      /** The header's count ("2 changes") and what it waits for ("2 wait for you", "decided"), said once. */
+      /** The header's count of new pieces only ("1 new piece") and what it waits for ("1 waits for you", "decided"), said once. */
       count: string;
       tail: string | null;
       rows: ImpactRowView[];
@@ -263,9 +287,12 @@ const KIND_WORD: Record<ImpactItem['kind'], string> = { component: 'New componen
 /** The row's kind line: "Change to Stat card" for a change to a component, else what it is. */
 const kindLine = (i: ImpactItem) => (i.kind === 'variant' && i.of ? `${KIND_WORD.variant} ${i.of}` : KIND_WORD[i.kind]);
 
-/** Before and after in words: a new piece has nothing before it, a token and a change compare two values. */
+/** The after side's caption of something new: it has no before, only what this screen brings. */
+export const NEW_IN_SCREEN = 'New in this screen';
+
+/** Before and after in words: a new piece has nothing before it (the after side only), a token and a change compare two values. */
 function sides(i: ImpactItem, designer: string): { before: ImpactSide | null; after: ImpactSide | null } {
-  if (i.kind === 'component' || i.kind === 'pattern') return { before: { label: 'Not in the library', caption: 'Today', empty: true }, after: { label: i.title, caption: 'With this exploration' } };
+  if (i.kind === 'component' || i.kind === 'pattern') return { before: null, after: { label: i.title, caption: NEW_IN_SCREEN } };
   if (i.property === 'size') return { before: { label: i.before ?? 'Default', caption: 'Today' }, after: { label: i.after ?? '', caption: 'Added' } };
   if (i.kind === 'token') return i.before && i.after ? { before: { label: i.before, caption: 'Before' }, after: { label: i.after, caption: 'After' } } : { before: null, after: i.after ? { label: i.after, caption: 'Written by hand' } : null };
   return { before: i.before ? { label: i.before, caption: 'Today' } : null, after: i.after ? { label: i.after, caption: designer } : null };
@@ -274,7 +301,7 @@ function sides(i: ImpactItem, designer: string): { before: ImpactSide | null; af
 /** The lead's word on a piece, as a short line under its summary. */
 function noteOf(d: { verdict: PieceVerdict; text?: string | undefined; use?: string | undefined; byName?: string | undefined; by?: string | undefined } | undefined, names: Record<string, string>): string | null {
   if (!d) return null;
-  const who = d.byName ?? (d.by ? (names[d.by] ?? d.by) : 'The lead');
+  const who = d.byName ?? (d.by ? (names[d.by] ?? d.by) : 'The library owners');
   if (d.verdict === 'changes' && d.text) return `${who}: ${d.text}`;
   if (d.verdict === 'local') return `${who} kept it in this screen. The developers build it inside the product, and the library may take it later.`;
   if (d.verdict === 'existing' && d.use) return `${who} asked to use ${d.use} instead.`;
@@ -291,6 +318,11 @@ export interface ImpactInput {
   approved: boolean;
   /** The lead reads it and may answer each piece (the ⋯ menu) and pick a way where explorations disagree. */
   canDecide: boolean;
+  /**
+   * Two reviews: the viewer decides what the library keeps (a library owner asked on this exploration). Each new piece
+   * that waits shows the library decision on its row (libraryDecision). Left out: the old single review.
+   */
+  libraryHat?: boolean;
   /**
    * Done exploring was said: the pieces wait on the lead ("Needs you", "Needs Dana"). Before that they read Exploring
    * for everyone, the lead included. Left out: asked (Review all lists only explorations that wait on the lead).
@@ -327,7 +359,7 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   const items = impactItems(record);
   // The library's pieces in words ("Segmented control"), the way designers name them.
   const uses = (record.uses ?? []).map(componentWords);
-  if (!items.length) return { state: 'nothing', line: `The best kind of exploration: ${x.designer} built it with the pieces the library already has. Nothing to decide here, and the developers can build it right away.`, uses };
+  if (!items.length) return nothingView(x.designer, [], uses);
   // Only the parts where a way is new to the library are decisions (lib/library-as-is): every way already in the
   // library (Default, Compact) is no conflict, its row reads one quiet line.
   const conflicts = decisionConflicts(
@@ -347,6 +379,8 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     product: x.product ?? '',
     now: x.now ?? new Date(),
   });
+  // The pieces used as the library has them (Compact, the default padding): folded into one line, never a row.
+  const asIsWords: string[] = [];
   const rows: ImpactRowView[] = items.map((i) => {
     const decision = block?.library?.decisions?.find((d) => d.piece === i.id);
     const link = record.links.find((l) => l.piece === i.id);
@@ -354,7 +388,10 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
     const cv = views.find((v) => v.piece === i.id) ?? null;
     const raw = record.pieces.find((p) => p.id === i.id);
     const asIs = !cv && !decision && !link && raw ? asIsOption(raw) : null;
-    if (asIs) return asIsRow(i, asIs, x.designer, x.product);
+    if (asIs) {
+      asIsWords.push(asIsWord(i, asIs));
+      return asIsRow(i, asIs, x.designer, x.product);
+    }
     const status = impactStatus({ item: i, decision, conflict, approved: x.approved, link, released: Boolean(link && x.released?.has(link.number)), lead: x.lead, asked: x.asked ?? true });
     const open = !x.approved && x.canDecide && status.key !== 'conflict';
     const settled = settledLine(i, status, decision, x.designer, names, x.now ?? new Date());
@@ -373,9 +410,17 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
       tag: tagOf(i, status),
       origin: { people: [x.designer], products: x.product ? [x.product] : [] },
       settled,
+      libraryDecision:
+        x.libraryHat && open && status.key === 'needs-lead' && !link
+          ? { title: HAT_WORDS.libraryTurn, as: HAT_WORDS.libraryAs, keep: `Keep in ${possessive(x.designer)} screen`, add: 'Add to the library' }
+          : null,
     };
     return cv ? conflictRow(base, cv, i) : base;
   });
+  // Nothing new: the screen uses the library as it is, one line, no count (two reviews: "Nothing new for the library").
+  const fresh = rows.filter((r) => r.tag !== null);
+  const libraryUses = uses.filter((u) => !items.some((i) => i.of === u || i.title === u));
+  if (!fresh.length && !views.length) return nothingView(x.designer, asIsWords, libraryUses);
   const everywhere = items.some((i) => i.everywhere);
   const products = x.products ?? [];
   const waiting = rows.filter((r) => r.status.key === 'needs-lead' || r.status.key === 'conflict').length;
@@ -384,17 +429,19 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   const done = decisions.length > 0 && decisions.every((r) => SETTLED.has(r.status.key));
   const forWhom = /^you$/i.test(x.lead) ? 'you' : x.lead;
   const tail = waiting && (x.canDecide || (x.asked ?? true)) && !x.approved ? `${waiting} ${waiting === 1 ? 'waits' : 'wait'} for ${x.canDecide ? 'you' : forWhom}` : done ? 'decided' : null;
+  const freshItems = items.filter((i) => fresh.some((r) => r.id === i.id));
   return {
     state: 'rows',
-    count: `${items.length} ${items.length === 1 ? 'change' : 'changes'}`,
+    // New pieces only ("1 new piece"): a piece used as it is folds into the footer's line.
+    count: libraryImpactTitle(fresh.length),
     tail,
     // With ways to choose from, the count only (EB1): the choice says itself once, in its row's tag, and the footer
     // already says what else comes from the library.
-    summary: conflicts.length ? `${items.length} ${items.length === 1 ? 'change' : 'changes'}` : impactSummary(items, []),
-    rows,
+    summary: conflicts.length ? libraryImpactTitle(fresh.length) : impactSummary(freshItems, []),
+    rows: fresh,
     conflicts: views,
-    uses: uses.filter((u) => !items.some((i) => i.of === u || i.title === u)),
-    reach: everywhere ? { line: products.length > 1 ? `Every product on the library gets it, not only this screen: ${products.join(' and ')}. The lead's approval is enough.` : "Every screen on the library gets it, not only this one. The lead's approval is enough." } : null,
+    uses: [...asIsWords, ...libraryUses],
+    reach: everywhere ? { line: products.length > 1 ? `Every product on the library gets it, not only this screen: ${products.join(' and ')}. One library owner's approval is enough.` : "Every screen on the library gets it, not only this one. One library owner's approval is enough." } : null,
   };
 }
 
@@ -441,6 +488,23 @@ function asIsRow(i: ImpactItem, o: LibraryOption, designer: string, product: str
     origin: { people: [designer], products: product ? [product] : [] },
     settled: [{ text: asIsLine(designer, i.of ?? 'The component', i.property ?? '', o) }],
   };
+}
+
+/** A piece used as the library has it, in the footer's words: "Compact (12 px)", "the default Card padding (20 px)". */
+function asIsWord(i: ImpactItem, o: LibraryOption): string {
+  return o.isDefault ? `the default ${i.of ?? 'component'} ${(i.property ?? '').toLowerCase()} (${o.px} px)`.replace(/\s+\(/, ' (') : `${o.name} (${o.px} px)`;
+}
+
+const listWords = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/**
+ * Nothing new for the library: the title says it (no count) and one line lists what the screen uses as it is. Nobody
+ * decides anything, so nobody is named.
+ */
+export function nothingView(designer: string, asIs: readonly string[], uses: readonly string[]): Extract<LibraryImpactView, { state: 'nothing' }> {
+  const all = [...asIs, ...uses];
+  const line = all.length ? `${possessive(designer)} screen uses ${listWords(all)}, as ${all.length === 1 ? 'it is' : 'they are'} in the library.` : `${designer} built it with the pieces the library already has. The developers can build it right away.`;
+  return { state: 'nothing', title: libraryImpactTitle(0), line, uses: all.length ? [] : [...uses] };
 }
 
 /** The states a piece is answered in: its row folds, and the block reads "decided" once every row is. */
@@ -807,7 +871,10 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const others = ways.filter((w) => !w.mine);
   const several = ways.length > 2;
   const lead = x.lead;
-  const leadName = /^you$/i.test(lead) ? null : lead === 'the DS lead' ? 'The DS lead' : lead;
+  // Nobody named: the library owners, the hat that picks (two reviews), never one "lead".
+  const owners = !lead.trim() || /^the library owners$/i.test(lead);
+  const leadName = /^you$/i.test(lead) ? null : owners ? 'The library owners' : lead;
+  const picks = owners || /,| and /.test(lead) ? 'pick' : 'picks';
   const screens = ways.length === 2 ? 'both screens' : `all ${ways.length} screens`;
   const effect = (w: WayView) => w.size.toLowerCase();
   const sameProduct = others.every((w) => w.product === others[0]?.product);
@@ -848,10 +915,10 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
   const noteParts: NotePart[] = decides
     ? [{ text: `Answers ${screens}. ${toldLine}` }]
     : x.designerHere
-      ? [{ text: `Tell ${leadName && leadName !== 'The DS lead' ? leadName : 'the DS lead'} why yours fits this screen. ${leadName ?? 'The DS lead'}'s choice answers ${screens}.` }]
+      ? [{ text: `Tell ${owners || !leadName ? 'the library owners' : leadName} why yours fits this screen. ${owners || !leadName ? "The library owners'" : `${leadName}'s`} choice answers ${screens}.` }]
       : leadElsewhere
         ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}. ${toldLine}` }]
-        : [{ text: `${leadName ?? 'The DS lead'} picks in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
+        : [{ text: `${leadName ?? 'The library owners'} ${picks} in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
   const note = noteParts.map((p) => p.text).join('');
   const pick = group.find((c) => c.pick)?.pick ?? null;
   const rawValue = (key: string) => (key === first.mine.key ? first.mine.value : group.find((c) => c.other.key === key)?.other.value);
@@ -875,7 +942,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     noteParts,
     comment: decides ? (ways.length === 2 ? 'Comment to both' : 'Comment to all') : 'Comment',
     // Who picks, said once: the lead deciding here reads "Your choice", the lead who picks in Library review "Needs you".
-    tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The DS lead'} picks`,
+    tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The library owners'} ${picks}`,
     todayHint: several ? 'Stays the default' : 'In the library now',
     pick,
     decided: pick ? decidedView(pick, ways, component, property, x, told, ledger) : null,
@@ -922,9 +989,9 @@ function decidedView(pick: string, ways: readonly WayView[], component: string, 
   const { mode, keys } = keptKeys(pick, ways);
   const kept = ways.filter((w) => keys.includes(w.key));
   const choice = choiceFor(component, property, x);
-  const who = choice?.byName ?? (choice?.by ? choice.by : 'The DS lead');
+  const who = choice?.byName ?? (choice?.by ? choice.by : 'The library owners');
   const when = choice?.at ? agoInSentence(choice.at, x.now) : '';
-  const by = ` Decided by ${choice?.byName?.split(/\s+/)[0] ?? choice?.by ?? 'the DS lead'}${when ? `, ${when}` : ''}.`;
+  const by = ` Decided by ${choice?.byName?.split(/\s+/)[0] ?? choice?.by ?? 'the library owners'}${when ? `, ${when}` : ''}.`;
   const title =
     mode === 'sizes'
       ? `${component} gets ${kept.length === 1 ? 'a new size' : `${count(kept.length)} new sizes`}`

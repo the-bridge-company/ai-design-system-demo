@@ -427,7 +427,7 @@ export function pieceOfExploration(x: ExplorationPieceInput): ReviewPiece | null
     after: i.after ?? null,
     swatch: (i.before && HEX.test(i.before)) || (i.after && HEX.test(i.after)) ? { before: i.before && HEX.test(i.before) ? i.before : null, after: i.after && HEX.test(i.after) ? i.after : null } : null,
     why: null,
-    exception: d?.verdict === 'changes' ? `${d.byName ?? 'The lead'} asked for changes` : null,
+    exception: d?.verdict === 'changes' ? `${d.byName ?? 'A library owner'} asked for changes` : null,
     at: x.at ?? null,
   };
 }
@@ -759,13 +759,12 @@ export function nextActor(p: ReviewPiece, o: { tech: string | null; secondLead: 
 
 /** The page's summary sentence under the title. */
 export function summaryLine(v: Viewer, lead: string | null): string {
-  return v.reviews ? 'What enters the library. You decide here; the whole team can look.' : `What enters the library. ${lead ?? 'The design lead'} decides here.`;
+  return v.reviews ? 'What enters the library. You decide here; the whole team can look.' : lead ? `What enters the library. ${lead} decides here.` : 'What enters the library. The library owners decide here.';
 }
 
 /** The designer's banner (lr-designer): who decides, and that there is nothing to do meanwhile. */
 export function designerBanner(lead: string | null): { strong: string; rest: string } {
-  const who = lead ?? 'The design lead';
-  return { strong: `${who} reviews library pieces.`, rest: 'You will see the decision here and on your exploration. Nothing to do meanwhile.' };
+  return { strong: lead ? `${lead} decides what the library keeps.` : 'The library owners decide what the library keeps.', rest: 'You will see the decision here and on your exploration. Nothing to do meanwhile.' };
 }
 
 /** "2 of 6 seen": the One by one progress. */
@@ -789,7 +788,7 @@ export function reviewProgress(total: number, seen: number, decided: number): { 
 
 /** The empty state (lr-empty): the decided week in one sentence. */
 export function emptyLine(decided: readonly ReviewPiece[], v: Viewer, lead: string | null): { title: string; sentence: string } {
-  if (!v.reviews) return { title: 'Nothing waits on the library', sentence: decided.length ? `${lead ?? 'The design lead'} decided all your pieces.` : 'Your explorations use what the library already has.' };
+  if (!v.reviews) return { title: 'Nothing waits on the library', sentence: decided.length ? 'Every piece of yours has its library decision.' : 'Your explorations use what the library already has.' };
   if (!decided.length) return { title: 'Nothing waits on the library', sentence: 'When an exploration needs something new, it lands here for you to decide.' };
   const added = decided.filter((p) => p.decided === 'added' || p.decided === 'building' || p.decided === 'shipped' || p.decided === 'published').length;
   const kept = decided.filter((p) => p.decided === 'kept').length;

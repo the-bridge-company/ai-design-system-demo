@@ -269,6 +269,9 @@ describe("a lead's words to the developers", () => {
   const lead = { user: { login: 'flo' }, body: '**Florian** (design lead):\n\nMind the tag', created_at: '2026-11-07T10:00:00Z' };
   it('are not a question, on the lead page or anywhere', () => {
     expect(devQuestionOf({ ...open, comments: [lead] }, { doneAt: '2026-11-07T09:00:00Z', designers: ['ann'] })).toBeNull();
+    // Signed by the design review since the two reviews.
+    const review = { ...lead, body: '**Florian** (design review):\n\nMind the tag' };
+    expect(devQuestionOf({ ...open, comments: [review] }, { doneAt: '2026-11-07T09:00:00Z', designers: ['ann'] })).toBeNull();
   });
   it('and taking it back with a reason is not one either', () => {
     const back = { user: { login: 'flo' }, body: 'The design team took this back to exploring. It comes back here when they say Done exploring again.\n\nKeep the date', created_at: '2026-11-07T10:00:00Z' };

@@ -62,13 +62,18 @@ export interface StatusInput {
   archived?: boolean;
   /** Library pieces it waits for once handed off (lib/library-impact-view waitingForLibraryLine), when known. */
   waitsForLibrary?: boolean;
+  /**
+   * The two reviews' line (lib/review-lines reviewSecondLine), once the team's reviews are read: who and why while In
+   * review ("Waiting for Dana's design review"), or why nothing was reviewed once Ready to build.
+   */
+  reviewsLine?: string | null;
 }
 
 /** The lead said Looks right (the last word of the talk, or the lead who approved recorded in the block). */
 function leadSaidLooksRight(body: string | null | undefined): boolean {
   const e = parseExplorationBody(body ?? null);
   if (!e) return false;
-  if (e.leadOkBy) return true;
+  if (e.designOkBy) return true;
   const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
   return all[all.length - 1]?.kind === 'looks-right';
 }
@@ -119,9 +124,9 @@ export function statusNote(r: StatusInput): string | null {
     const open = openDecisionOf(r.body ?? null);
     if (!r.stage || r.stage === 'exploring' || r.stage === 'waiting-for-lead') {
       if (open?.kind === 'changes' || open?.kind === 'take-back') return 'Changes asked';
-      return null;
+      return r.stage === 'waiting-for-lead' || isWaitingForLead(r.body ?? null) ? (r.reviewsLine ?? null) : null;
     }
-    if (r.stage === 'waiting-for-code') return r.waitsForLibrary ? 'Waiting for the library' : leadSaidLooksRight(r.body) ? 'Looks right' : null;
+    if (r.stage === 'waiting-for-code') return r.waitsForLibrary ? 'Waiting for the library' : leadSaidLooksRight(r.body) ? 'Looks right' : (r.reviewsLine ?? null);
     if (r.stage === 'approved') return 'Looks right, ships next';
     if (r.stage === 'next-release') return 'In the next release';
     return null;

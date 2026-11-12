@@ -81,8 +81,8 @@ describe('explorations in a product repository', () => {
     expect(view).toMatchObject({ pr: 1, ref: 'shop#1', product: 'Shop', library: 'acme/ds' });
 
     const done = (await explorations.doneExploring(ctx, { ref: 'shop#1', pieces: ['badge-overdue-tone'] })) as any;
-    expect(done).toMatchObject({ status: 'done-exploring', ref: 'shop#1', repo: 'acme/shop', requestsIn: 'acme/ds', exploration: 'ready' });
-    // The request is in the design system repository, where the DS lead works, and links back across repositories.
+    expect(done).toMatchObject({ status: 'ready-to-build', ref: 'shop#1', repo: 'acme/shop', requestsIn: 'acme/ds', exploration: 'ready' });
+    // The request is in the design system repository, where the library owners work, and links back across repositories.
     expect(shop.issues).toHaveLength(0);
     expect(ds.issues).toHaveLength(1);
     const req = ds.issues[0]!;
@@ -195,7 +195,7 @@ describe('explorations in a product repository', () => {
     expect(list.explorations[0]).toMatchObject({ ref: 'shop#1', repo: 'acme/shop-design', previews: [{ url: 'https://shop-design-git-explore-invoices-header-acme.vercel.app/' }] });
 
     const done = await explorations.doneExploring(ctx, { ref: `explore/${slug}` });
-    expect(done).toMatchObject({ status: 'done-exploring', ref: 'shop#1', repo: 'acme/shop-design' });
+    expect(done).toMatchObject({ status: 'ready-to-build', ref: 'shop#1', repo: 'acme/shop-design' });
     // The developers get a task in their own repository, with the copy's preview of the branch.
     expect(code.issues).toHaveLength(1);
     expect(code.issues[0]!.labels.map((l: any) => (typeof l === 'string' ? l : l.name))).toContain('from-design');

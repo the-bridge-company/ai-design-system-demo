@@ -25,7 +25,8 @@ export const viewerLeadsLibrary = (a?: RepoAccess | null): boolean => leadsLibra
 
 /**
  * Whether the viewer answers on someone else's exploration (Done exploring, a decision, a talk with the lead): a design
- * lead, or an email member the server says decides (any designer too when the team shares review: api/_lib/review-mode
+ * lead, or an email member the server says decides: asked some review (a library owner, or a design reviewer of some
+ * product, every designer for "Any designer"), or an admin, who is never asked (api/_lib/review-settings
  * decidesOnExplorations). The exploration page and Home's Needs you read it the same way.
  */
 export const viewerDecidesExplorations = (): boolean => currentContributor()?.decides === true || viewerIsDesignLead();
@@ -37,9 +38,9 @@ export const viewerDecidesExplorations = (): boolean => currentContributor()?.de
  */
 export function explorationWaitsOnViewer(p: { body?: string | null; user: { login: string } }): boolean {
   const block = parseExplorationBody(p.body ?? null);
-  if (!block || (block.leadAskedAt === undefined && !block.decisions?.length && !block.leadNote)) return false;
+  if (!block || (block.designAskedAt === undefined && !block.decisions?.length && !block.leadNote)) return false;
   const viewer = currentViewer()?.login ?? null;
-  const asker = block.leadAskedBy ?? p.user.login;
+  const asker = block.designAskedBy ?? p.user.login;
   const same = (a?: string | null, b?: string | null) => Boolean(a && b && a.toLowerCase() === b.toLowerCase());
   const row = leadHomeRow(p.body, {
     viewer,

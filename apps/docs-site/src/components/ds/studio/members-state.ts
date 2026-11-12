@@ -197,7 +197,7 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
       const a = await api();
       await a.setEmailMemberLead(data.repo, m.email ?? m.login, lead);
       update((d) => ({ ...d, members: d.members.map((x) => (x.login === m.login ? { ...x, lead } : x)) }));
-      return { tone: 'success', text: lead ? `${m.name} is now a design lead.` : `${m.name} is no longer a design lead.` };
+      return { tone: 'success', text: lead ? `${m.name} now decides what the library keeps.` : `${m.name} no longer decides what the library keeps.` };
     } catch (err) {
       return failure(err, unavailable);
     }

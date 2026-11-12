@@ -11,6 +11,7 @@ import { MEMBERS_WORDS } from '../lib/invites';
 import { getToken } from './github-session';
 import { isContribAuth } from '../lib/contribute';
 import { ACCOUNT_HEADER } from '../lib/account';
+import type { DesignReviewMap, DesignReviewSetting } from '../lib/team-reviews';
 
 export const INVITES_API = '/api/invites';
 
@@ -90,12 +91,12 @@ export function invitesAvailable(): Promise<boolean> {
  * Pending invites of a team (people with write access may read them), whether the repository is a person's, and the
  * team's email contributors (`members`, rows with `via: 'email'`; lib/invites emailMembers reads them).
  */
-export function listInvites(repo: string): Promise<{ invites: PendingInvite[]; personal: boolean; members: unknown[]; reviewMode: ReviewMode }> {
-  return call<{ invites?: PendingInvite[]; personal?: boolean; members?: unknown[]; reviewMode?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}`).then((r) => ({
+export function listInvites(repo: string): Promise<{ invites: PendingInvite[]; personal: boolean; members: unknown[]; reviews: TeamReviewsSettings | null }> {
+  return call<{ invites?: PendingInvite[]; personal?: boolean; members?: unknown[]; reviews?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}`).then((r) => ({
     invites: Array.isArray(r.invites) ? r.invites : [],
     personal: r.personal === true,
     members: Array.isArray(r.members) ? r.members : [],
-    reviewMode: r.reviewMode === 'shared' || r.reviewMode === 'shared-none' ? r.reviewMode : 'one',
+    reviews: parseReviewsSettings(r.reviews),
   }));
 }
 
@@ -151,14 +152,40 @@ export async function leadExplorationKeeper(repo: string, to: { email?: string; 
   return { ok: true, ...data };
 }
 
-/** An email member made a design lead, or no longer one. */
-/** Who looks after the design system (Settings > Members): one person, shared with review, shared with no review. */
-/** Who looks after the design system: one person, shared with review, shared with no review. */
-export type ReviewMode = 'one' | 'shared' | 'shared-none';
+/**
+ * The two reviews as Settings > Reviews reads them (api/invites GET `reviews`, api/_lib/review-settings.ts): each
+ * product's design review ("*" for every product not listed) and whether the one time note still shows.
+ */
+export interface TeamReviewsSettings {
+  designReview: DesignReviewMap;
+  note: boolean;
+}
 
-export const setReviewMode = (repo: string, mode: ReviewMode) => call<{ ok: boolean; mode: string }>('POST', '', { action: 'set-review-mode', repo, mode });
+/** The `reviews` of an invites answer, cleaned: settings Bridge does not know are dropped. Null when absent. */
+export function parseReviewsSettings(v: unknown): TeamReviewsSettings | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as { designReview?: unknown; note?: unknown };
+  if (!o.designReview || typeof o.designReview !== 'object' || Array.isArray(o.designReview)) return null;
+  const designReview: DesignReviewMap = {};
+  for (const [k, s] of Object.entries(o.designReview as Record<string, unknown>)) {
+    const x = s as { on?: unknown; reviewers?: unknown } | null;
+    if (!x || typeof x !== 'object') continue;
+    if (x.on === false) designReview[k] = { on: false };
+    else if (x.on === true && x.reviewers === 'any-designer') designReview[k] = { on: true, reviewers: 'any-designer' };
+    else if (x.on === true && Array.isArray(x.reviewers)) designReview[k] = { on: true, reviewers: x.reviewers.filter((r): r is string => typeof r === 'string' && r.length > 0) };
+  }
+  return { designReview, note: o.note === true };
+}
 
-export const setEmailMemberLead = (repo: string, email: string, lead: boolean) => call<{ ok: boolean; lead: boolean }>('POST', '', { action: 'set-lead', repo, email, lead });
+/** An email member decides what the library keeps, or no longer does (Settings > Reviews > The library). */
+export const setLibraryOwner = (repo: string, email: string, libraryOwner: boolean) => call<{ ok: boolean; libraryOwner?: boolean }>('POST', '', { action: 'set-library-owner', repo, email, libraryOwner });
+
+/** One product's design review ("*" for every product not listed): off, or on with who reviews. Answers the map. */
+export const setDesignReview = (repo: string, product: string, setting: DesignReviewSetting): Promise<DesignReviewMap | null> =>
+  call<{ ok: boolean; designReview?: unknown }>('POST', '', { action: 'set-design-review', repo, product, setting }).then((r) => parseReviewsSettings({ designReview: r.designReview })?.designReview ?? null);
+
+/** The older name of setLibraryOwner (an email member made design lead), for callers that still say lead. */
+export const setEmailMemberLead = (repo: string, email: string, lead: boolean) => setLibraryOwner(repo, email, lead).then((r) => ({ ok: r.ok, lead: r.libraryOwner ?? lead }));
 
 export const explorationKeeper = (repo: string, to: { email?: string; login?: string; branch: string; number: number; copy?: string }) =>
   call<{ ok: boolean; ref?: string; name?: string }>('POST', '', { action: 'exploration-keeper', repo, ...to });

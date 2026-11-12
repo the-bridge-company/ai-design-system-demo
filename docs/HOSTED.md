@@ -10,7 +10,7 @@ Library read them from GitHub, live or from the team's own snapshot branch. Brid
 per environment, plus a private Vercel Blob store) holds only:
 
 - **People.** Bridge accounts (an email address, the name given, and the GitHub login when one is linked). For each
-  team: its email members (address, name, role, design lead flag, who added them), pending invites and join requests.
+  team: its email members (address, name, role, library owner flag, who added them), who reviews each product's design, pending invites and join requests.
 - **Work done through Bridge.** Which member owns each branch and request Bridge opened for them, so it can name them
   and let only them change it.
 - **Settings.** Each team's Library access setting, its product manager per product, and notification choices
@@ -935,10 +935,10 @@ the cron's run shows under the project's **Cron Jobs**.
 
 ## Notifications
 
-The talk between a designer and their design lead has its own emails, read from the exploration's block when a pull
-request body changes (`leadNoticesOf`), so a write Bridge's app made for an email member counts. The leads are the
+The talk between a designer and their reviewers (the design review and the library decision) has its own emails, read from the exploration's block when a pull
+request body changes (`leadNoticesOf`), so a write Bridge's app made for an email member counts. The reviewers are the
 GitHub logins the block names: each gets the email only if a Bridge account is linked to that login, else GitHub tells
-them. One reminder goes to a lead after 3 days without an answer, at the next daily round.
+them. One reminder goes to a reviewer after 3 days without an answer, at the next daily round.
 
 Designers who joined by email have no GitHub account, so GitHub tells them nothing: what they file goes to GitHub as
 the Bridge app. Bridge emails them about their own work instead (phase 1). Designers signed in with GitHub get

@@ -349,7 +349,7 @@ describe('the seed-demo-explorations action', () => {
     expect(head.author).toMatchObject({ name: 'Sofia' });
     expect(await redis.cmd('GET', branchKey(COPY, 'explore/gift-wrap'))).toBe('sofia@acme.example');
     // Waiting for a lead: the ask is in the block, still an exploration.
-    expect(explorationBlockOf(leo.body)).toMatchObject({ memberName: 'Leo', leadAskedByName: 'Leo' });
+    expect(explorationBlockOf(leo.body)).toMatchObject({ memberName: 'Leo', designAskedByName: 'Leo' });
     expect(leo.labels).toContain('exploration');
     // Done: Dana said it looks right on Ann's, the developers got their task, the block still names Ann.
     expect(explorationBlockOf(ann.body)).toMatchObject({ member: memberRef('ann@acme.example'), memberName: 'Ann' });
@@ -513,7 +513,7 @@ describe('the screen of a seeded exploration', () => {
     expect(fresh.map((x) => `${x.method} ${x.path}`)).toEqual([`PATCH /repos/${COPY}/pulls/10`]);
     expect(fresh[0]!.auth).toBe('Bearer ghs_app');
     expect(w.refs.get('explore/frame-picker')).toBe(head);
-    expect(explorationBlockOf(w.pulls[0].body)).toMatchObject({ screen: '/?workspace=new#/', memberName: 'Leo', leadAskedByName: 'Leo' });
+    expect(explorationBlockOf(w.pulls[0].body)).toMatchObject({ screen: '/?workspace=new#/', memberName: 'Leo', designAskedByName: 'Leo' });
     expect(w.pulls[0].body).toContain('Requested by Leo through Bridge.');
 
     const again = w.writes.length;

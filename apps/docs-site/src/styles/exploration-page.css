@@ -1484,6 +1484,13 @@
   margin-block-end: var(--space-4);
 }
 
+/* Both reviews in the one current step: one line each, stacked. */
+.xp-turn-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
 /* Under a primary that leads to the next step: what comes after it, quiet, at the row's end. */
 .xp-turn-helper {
   flex: 1 1 100%;

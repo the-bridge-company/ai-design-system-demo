@@ -75,7 +75,7 @@ export const LEAD_PIECES_SHOWN = 3;
 /** The graph of the pieces on screen (the filters already applied), in the order the list groups them. */
 export function buildMap(pieces: readonly ReviewPiece[], products: readonly ReachProductInput[], v: Pick<Viewer, 'name'>): MapGraph {
   const sources = new Map<string, MapSource>();
-  const leadPieces = new Map<string, ReviewPiece[]>();
+  const askedPieces = new Map<string, ReviewPiece[]>();
   const nodes: MapPiece[] = [];
   const links: MapLink[] = [];
   const addLink = (l: MapLink) => {
@@ -94,7 +94,7 @@ export function buildMap(pieces: readonly ReviewPiece[], products: readonly Reac
     }
     if (!p.asked) {
       const sid = leadId(p);
-      leadPieces.set(sid, [...(leadPieces.get(sid) ?? []), p]);
+      askedPieces.set(sid, [...(askedPieces.get(sid) ?? []), p]);
       continue;
     }
     const id = `n:${p.key}`;
@@ -107,7 +107,7 @@ export function buildMap(pieces: readonly ReviewPiece[], products: readonly Reac
   }
   // Each lead's own changes: one dashed box per person and kind ("Leo, in Figma"). The pieces themselves sit in the
   // middle; past LEAD_PIECES_SHOWN they fold into one box named by their kind, never by the person again.
-  for (const [sid, list] of leadPieces) {
+  for (const [sid, list] of askedPieces) {
     const first = list[0]!;
     const who = first.mine ? 'You' : (first.by ?? 'A lead');
     const words = kindWords(first.leadReason);

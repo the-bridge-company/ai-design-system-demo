@@ -12,7 +12,7 @@
 import type { ContributeMember } from './contribute';
 import type { RepoAccess } from './access';
 import { isSampleTeam } from './demo';
-import { decidesOnExplorations, askedToReview, type ReviewMode } from '../../api/_lib/review-mode';
+import { ANY_PRODUCT, OWNERS_ANY, SAMPLE_REVIEWS, settingOf, type DesignReviewMap } from './team-reviews';
 
 /** The five people, by the short name the address and the menu use (?as=sofia). */
 export type CastKey = 'dana' | 'sofia' | 'leo' | 'malik' | 'ann';
@@ -87,23 +87,42 @@ export function chooseCast(x: { query?: string | null; stored?: string | null })
  * The member the page reads as on the sample team, from the member the server's visitor session gave (`server`) and
  * the person played. Only a visitor's session is ever replaced (`server.visitor`): a real member of the sample team, or
  * anyone else, stays who they are. An email member reads with their own role, lead flag, review right and reference,
- * by the same rule as the server's (api/_lib/review-mode.ts); the developer, who has no email membership, reads as
+ * by the same rule as the server's (castRights, on the sample team's two reviews: SAMPLE_REVIEWS); the developer, who has no email membership, reads as
  * nobody here (null) and the GitHub side plays him (castGitHub). The person's own session keeps its address and
  * reference, its role and review rights read from the cast too: a store seeded before the cast changed (Ann was a
  * reviewer) never makes the page play someone else. Still a visitor: the banner stays, writes are refused.
  */
-export function playedMember(server: ContributeMember | null, person: CastPerson, mode: ReviewMode = 'one'): ContributeMember | null {
+export function playedMember(server: ContributeMember | null, person: CastPerson, map: DesignReviewMap = SAMPLE_REVIEWS): ContributeMember | null {
   if (!server?.visitor) return server;
   const v = person.via;
   if (v.kind === 'github') return null;
-  const who = { role: v.role, lead: v.lead };
-  const rights = { ...(askedToReview(who, mode) ? { lead: true } : {}), ...(decidesOnExplorations(who, mode) ? { decides: true } : {}) };
+  const rights = castRights(v, map);
   if (v.email === server.email.toLowerCase()) {
-    if (server.role === v.role && Boolean(server.lead) === Boolean(rights.lead) && Boolean(server.decides) === Boolean(rights.decides)) return server;
-    const { lead: _lead, decides: _decides, ...rest } = server;
+    const same = server.role === v.role && Boolean(server.lead) === Boolean(rights.lead) && Boolean(server.decides) === Boolean(rights.decides) && Boolean(server.libraryOwner) === Boolean(rights.libraryOwner) && (server.designReviews ?? []).join() === (rights.designReviews ?? []).join();
+    if (same) return server;
+    const { lead: _lead, decides: _decides, libraryOwner: _owner, designReviews: _reviews, ...rest } = server;
     return { ...rest, role: v.role, ...rights };
   }
   return { email: v.email, name: person.name, role: v.role, ref: v.ref, ...rights, visitor: true };
+}
+
+/**
+ * The review rights of an email person of the cast, by the server's rules (api/_lib/review-settings.ts asksLibrary,
+ * asksDesignReview, asksAnyReview, decidesOnExplorations), restated here on the cast's reference so the page never
+ * loads the server's hashing: `libraryOwner` (the cast's lead), `designReviews` (the products whose design they
+ * review, "*" for every product not listed), `lead` (asked some review), `decides` (asked, or an admin, never asked).
+ */
+export function castRights(v: { role: 'admin' | 'edit'; lead: boolean; ref: string }, map: DesignReviewMap): Pick<ContributeMember, 'lead' | 'decides' | 'libraryOwner' | 'designReviews'> {
+  const designer = v.role === 'edit' || v.role === 'admin';
+  const every = map[OWNERS_ANY];
+  const libraryOwner = v.lead || Boolean(every && every.on && every.reviewers === 'any-designer' && designer);
+  const designReviews = [...Object.keys(map), ANY_PRODUCT].filter((k, i, all) => k !== OWNERS_ANY && all.indexOf(k) === i).filter((k) => {
+    const s = settingOf(map, k);
+    if (!s.on) return false;
+    return s.reviewers === 'any-designer' ? designer : s.reviewers.map((r) => r.trim().toLowerCase()).includes(v.ref);
+  });
+  const lead = libraryOwner || designReviews.length > 0;
+  return { ...(lead ? { lead: true } : {}), ...(lead || v.role === 'admin' ? { decides: true } : {}), ...(libraryOwner ? { libraryOwner: true } : {}), ...(designReviews.length ? { designReviews } : {}) };
 }
 
 /**

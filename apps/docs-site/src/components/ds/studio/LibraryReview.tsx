@@ -19,6 +19,8 @@ import { Who } from './faces';
 import { ProductMark as ProductIcon } from './ProductMark';
 import { namedFace } from '../../../lib/cast-faces';
 import { isNew, Sample, thumbOf } from './LibraryReviewSample';
+import { afterCaption, showsBefore } from '../../../lib/new-piece-preview';
+import { libraryQueueCount, libraryQueueSubtitle, withLocal } from '../../../lib/library-queue';
 import { MapView } from './LibraryMap';
 import { ReachPage } from './LibraryReach';
 import { mapAvailable } from '../../../lib/library-map';
@@ -46,7 +48,6 @@ import {
   keepLabel,
   keyAction,
   nextActor,
-  waitingForYou,
   passes,
   pieceWaitTone,
   reviewParams,
@@ -365,8 +366,8 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
   }, [p.key]);
   const decides = canDecide(p, viewer);
   const spec = thumbOf(p, thumbs);
-  const valued = spec.kind === 'color' || spec.kind === 'space' || spec.kind === 'radius' || spec.kind === 'type' || spec.kind === 'image';
-  const none = <span className="lr-plate-none">none</span>;
+  // Something new has no before: only its after side, "New in this screen" (lib/new-piece-preview).
+  const before = showsBefore(isNew(p), spec);
   const wait = viewer.reviews ? waitLine(p, { lead, tech }) : null;
   const comment = (
     <>
@@ -479,10 +480,12 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
       {(
         <>
           <div className={`lr-plates${p.match ? ' has-match' : ''}`}>
-            <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before} contrast={spec.kind === 'color' ? { hex: spec.before, look: colorLook(p.title).look } : null}>
-              {valued || !isNew(p) ? <Sample spec={spec} side="before" size="card" title={p.title} /> : none}
-            </Plate>
-            <Plate caption={p.match ? 'Asked for' : 'With this change'} value={valueOf(spec, 'after') ?? p.after} contrast={spec.kind === 'color' ? { hex: spec.after, look: colorLook(p.title).look } : null}>
+            {before && (
+              <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before} contrast={spec.kind === 'color' ? { hex: spec.before, look: colorLook(p.title).look } : null}>
+                <Sample spec={spec} side="before" size="card" title={p.title} />
+              </Plate>
+            )}
+            <Plate caption={p.match ? 'Asked for' : afterCaption(isNew(p), spec, 'With this change')} value={valueOf(spec, 'after') ?? p.after} contrast={spec.kind === 'color' ? { hex: spec.after, look: colorLook(p.title).look } : null}>
               <Sample spec={spec} side="after" size="card" title={p.title} />
             </Plate>
             {p.match && (
@@ -1036,11 +1039,18 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   const boxes = mode === 'lead' && !readOnly && pickableOf(allRows).length > 0;
   const pair = (p: ReviewPiece) => {
     const spec = thumbOf(p, thumbs);
-    const none = isNew(p) && !(spec.kind === 'color' || spec.kind === 'space');
+    // Something new has no before: the after side alone, never the word "none" (lib/new-piece-preview).
+    const before = showsBefore(isNew(p), spec);
     return (
       <span role="cell" className="lr-col-thumb lr-pair" aria-hidden="true">
-        <span className={`lr-mini${none ? ' is-none' : ''}`}>{none ? <span className="lr-plate-none">none</span> : <Sample spec={spec} side="before" size="row" title={p.title} />}</span>
-        <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
+        {before && (
+          <>
+            <span className="lr-mini">
+              <Sample spec={spec} side="before" size="row" title={p.title} />
+            </span>
+            <Icon icon={ArrowRight} size="xs" className="lr-arrow" />
+          </>
+        )}
         <span className="lr-mini">
           <Sample spec={spec} side="after" size="row" title={p.title} />
         </span>
@@ -1464,10 +1474,14 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
 
   // The summary under the title: for whoever decides, the count in words once the statuses are read ("12 wait for
   // you: 5 foundations, 5 components and 2 docs."); otherwise who decides here.
+  // Waiting (the default): the library decisions only, said so, one count with the list and the badge (lib/library-queue):
+  // "12 library decisions wait for you, as design system owner." and where design reviews are. Decided: the tally.
   const tallyText = useMemo(() => {
     if (!data || data.loading || data.failed || !data.viewer.reviews) return null;
-    const all = (data.pieces ?? []).map((p) => (local.has(p.key) ? { ...p, state: 'decided' as const, decided: local.get(p.key) ?? 'added', waitsOn: 'nobody' as const } : p));
     const f = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
+    const decidedView = f.status.length === 1 && f.status[0] === 'decided';
+    if (!decidedView) return libraryQueueSubtitle(data.pieces ?? [], data.viewer, local);
+    const all = withLocal(data.pieces ?? [], local);
     return tallySentence(tallyOf(all, all.filter((p) => passes(p, f, data.viewer.name)), data.viewer, f));
   }, [data, local, params]);
   useEffect(() => {
@@ -1477,14 +1491,14 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   }, [data, tallyText?.strong, tallyText?.rest]);
 
   // The nav badge is this page's "wait for you" number, once the statuses are read (the shell shows it to reviewers only).
-  const waitingN = data && !data.loading && !data.failed ? waitingForYou(data.pieces, data.viewer) : null;
+  const waitingN = data && !data.loading && !data.failed ? libraryQueueCount(data.pieces, data.viewer, local) : null;
   useEffect(() => {
     if (waitingN === null) return;
     setReviewCount(waitingN);
     rememberMine(waitingN);
   }, [waitingN]);
 
-  const pieces = useMemo(() => (data?.pieces ?? []).map((p) => (local.has(p.key) ? { ...p, state: 'decided' as const, decided: local.get(p.key) ?? 'added', waitsOn: 'nobody' as const } : p)), [data, local]);
+  const pieces = useMemo(() => withLocal(data?.pieces ?? [], local), [data, local]);
   const filters = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
   const shown = useMemo(() => pieces.filter((p) => passes(p, filters, data?.viewer.name ?? null)), [pieces, filters, data]);
   // A designer reads the list or the map (lr-designer): nothing to decide one by one. The Map falls back to List on a
@@ -1759,7 +1773,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               className="lr-banner"
               title={
                 <span className="lr-banner-title">
-                  <NameFace name={data.lead ?? 'Design lead'} size="xs" />
+                  <NameFace name={data.lead ?? 'Library owners'} size="xs" />
                   {banner.strong}
                 </span>
               }

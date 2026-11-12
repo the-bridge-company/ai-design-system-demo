@@ -356,7 +356,7 @@ test('with a design lead: nothing reaches the developers until they say it looks
 
   await askLeadOnGitHub(gh, 4, { openedBy: 'ann', leads: ['flo'] });
   assert.equal(writes.some((w) => w.path.startsWith('/repos/acme/shop/')), false);
-  assert.equal(parseExplorationBody(pullBody)?.leadAskedBy, 'ann');
+  assert.equal(parseExplorationBody(pullBody)?.designAskedBy, 'ann');
   assert.match(writes.find((w) => w.path.endsWith('/comments'))!.body.body, /@flo/);
 
   await leadChangesOnGitHub(gh, 4, { note: 'Tighter', lead: 'flo' });
@@ -368,11 +368,11 @@ test('with a design lead: nothing reaches the developers until they say it looks
   // The yes and its words stay in the history, and the words reach the developers on their task.
   assert.equal(parseExplorationBody(pullBody)?.decisions?.at(-1)?.kind, 'looks-right');
   assert.match(writes.find((w) => w.path === '/repos/acme/shop/issues/7/comments')!.body.body, /Mind the tag/);
-  assert.deepEqual(r.task, { number: 7, url: 'https://github.com/acme/shop/issues/7', repo: 'acme/shop' });
+  assert.deepEqual(r!.task, { number: 7, url: 'https://github.com/acme/shop/issues/7', repo: 'acme/shop' });
   const after = parseExplorationBody(pullBody);
   assert.equal(after?.doneBy, 'ann');
-  assert.equal(after?.leadOkBy, 'flo');
-  assert.equal(after?.leadAskedAt, undefined);
+  assert.equal(after?.designOkBy, 'flo');
+  assert.equal(after?.designAskedAt, undefined);
 });
 
 test('Back to exploring brings back notes Done exploring removed, from the commit before', async () => {

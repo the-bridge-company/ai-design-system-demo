@@ -7,12 +7,15 @@
 // Without a token the bar's primary connects GitHub. When GitHub cannot be read, the last list this browser saw
 // stays on screen, labelled with its time (lib/changes.ts).
 import { explorationWaitsOnViewer } from './design-lead';
+import { loadTeamReviews, teamReviewsNow, viewerReviewIds } from './team-reviews-data';
+import { countsOnExplorations, reviewSecondLine } from '../lib/review-lines';
+import { viewerHats } from '../lib/team-reviews';
 import { statusNote, statusOf, turnReason } from '../lib/explorations-page';
 import { rowAgeFrom } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -378,7 +381,37 @@ function readContribMine() {
   });
 }
 
+/**
+ * The two reviews' second line of an exploration row (lib/review-lines), once the team's reviews are read: "Waiting for
+ * Dana's design review", or why nothing was reviewed. Null before (the list repaints when they land).
+ */
+function reviewsLineOf(r: Row): string | null {
+  const team = teamReviewsNow();
+  if (!team) return null;
+  return reviewSecondLine(r.body ?? null, { team, product: r.product ?? null, prAuthor: r.user.login, viewer: viewerReviewIds() });
+}
+
+/**
+ * An exploration waits on the viewer here (Waiting on you, the Explorations badge): the old rule (the lead's turn or the
+ * designer's), but a turn that asks only a library decision is Library review's, never counted here (two reviews).
+ */
+function explorationTurn(r: Row): boolean {
+  if (!explorationWaitsOnViewer({ body: r.body, user: r.user })) return false;
+  const team = teamReviewsNow();
+  if (!team || !isWaitingForLead(r.body ?? null)) return true;
+  const hats = viewerHats(r.body ?? null, { team, product: r.product ?? null, prAuthor: r.user.login, viewer: viewerReviewIds() });
+  return countsOnExplorations(hats);
+}
+
+let reviewsRead = false;
+
 function listRow(r: Row): ListRow {
+  if (!reviewsRead) {
+    reviewsRead = true;
+    void loadTeamReviews().then(() => {
+      if (listMount) paintRows(openRows, listLoading);
+    });
+  }
   const lifecycle: Lifecycle | 'exploration' = r.exploration ? 'exploration' : lifecycleOfRow(r);
   // An email contributor reviews nothing: their own branches are the server's list, and only those sent back with
   // changes requested wait on them.
@@ -388,7 +421,7 @@ function listRow(r: Row): ListRow {
   // server's list.
   const turn =
     // An exploration: its review on GitHub waits on the viewer, or it waits on them as its lead (as on Home).
-    (lifecycle === 'exploration' ? Boolean(r.reviewWaits) || explorationWaitsOnViewer({ body: r.body, user: r.user }) : true) &&
+    (lifecycle === 'exploration' ? Boolean(r.reviewWaits) || explorationTurn(r) : true) &&
     (lifecycle === 'exploration' ||
       waitsOnMe(
         { author: own ? (listViewer() ?? r.user.login) : r.user.login, draft: r.draft, labels: r.labels, nature: r.nature, guidance: r.guidance, lifecycle, who: rowWho(r.kind, facts(r)), requested: r.requested, changesRequested: r.changesRequested },
@@ -439,7 +472,7 @@ function listRow(r: Row): ListRow {
     // Where it stands and, when it waits on the viewer, why (lib/explorations-page: designer words only).
     ...(() => {
       // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
-      const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)) };
+      const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)), reviewsLine: r.exploration ? reviewsLineOf(r) : null };
       return { status: statusOf(at), statusNote: statusNote(at) };
     })(),
     turnReason: turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null,

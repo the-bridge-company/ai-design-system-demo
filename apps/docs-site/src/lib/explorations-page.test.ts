@@ -52,6 +52,15 @@ describe('one status per exploration, on the one status ladder', () => {
     expect(statusOf({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight, waitsForLibrary: true })).toBe('in-review');
     expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-code', body: looksRight, waitsForLibrary: true })).toBe('Waiting for the library');
   });
+  it('two reviews: In review says who and why on its second line; changes asked still wins', () => {
+    const line = "Waiting for Dana's design review and the library decision on Timeline";
+    expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-lead', body: asked, reviewsLine: line })).toBe(line);
+    expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-lead', body: asked })).toBeNull();
+    expect(statusNote({ lifecycle: 'exploration', stage: 'exploring', body: changes, reviewsLine: line })).toBe('Changes asked');
+    // Straight to Ready to build: why nothing was reviewed.
+    const none = 'No review needed: nothing new for the library, and Acme CRM has no design review';
+    expect(statusNote({ lifecycle: 'exploration', stage: 'waiting-for-code', body: start, reviewsLine: none })).toBe(none);
+  });
   it('ends as Shipped, Not doing this or Archived', () => {
     expect(statusOf({ lifecycle: 'exploration', stage: 'next-release' })).toBe('shipped');
     expect(statusOf({ lifecycle: 'exploration', stage: 'shipped' })).toBe('shipped');

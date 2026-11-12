@@ -86,7 +86,9 @@ import { demoDialog, isSampleTeam, onBridge, teamDisplayName } from '../../src/l
 import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { isTeamKey } from '../../src/lib/team-path.js';
 import { explorationKeeper } from '../_lib/exploration-keeper.js';
-import { isReviewMode, reviewModeOf, setReviewMode } from '../_lib/review-mode.js';
+import { designReviewsOf, isDesignReviewSetting, isLibraryOwner, reviewsNoteOf, setDesignReview } from '../_lib/review-settings.js';
+// The older single setting, still sent as `reviewMode` (deprecated, two-reviews): read only.
+import { reviewModeOf } from '../_lib/review-mode.js';
 
 export { appJwt } from '../_lib/github-app.js';
 export { resendSender, sameOrigin };
@@ -799,12 +801,14 @@ export interface PublicEmailMember {
   name: string;
   email: string;
   role: EmailRole;
+  /** Decides what the library keeps (`lead` is its older name, still sent for older pages). */
+  libraryOwner?: boolean;
   lead?: boolean;
   addedBy: string;
   at: string;
 }
 
-const publicMember = (m: EmailMember): PublicEmailMember => ({ via: 'email', name: m.name, email: m.email, role: m.role, ...(m.lead ? { lead: true } : {}), addedBy: m.addedBy, at: m.at });
+const publicMember = (m: EmailMember): PublicEmailMember => ({ via: 'email', name: m.name, email: m.email, role: m.role, ...(isLibraryOwner(m) ? { lead: true, libraryOwner: true } : {}), addedBy: m.addedBy, at: m.at });
 
 export const GITHUB_REQUIRED = 'Reviewers approve changes on GitHub, so they need a GitHub account. Invite them again with this role: they join with GitHub.';
 export const GITHUB_PEOPLE = 'This person works with GitHub: change their role while signed in with GitHub as an admin of the repository.';
@@ -1207,18 +1211,32 @@ async function setEmailRole(ctx: Ctx, full: string, body: Record<string, unknown
 async function setEmailLead(ctx: Ctx, full: string, body: Record<string, unknown>): Promise<Response> {
   const email = await emailMemberOf(ctx, full, body.email);
   const m = (await ctx.svc.members!.get(full, email))!;
-  if (body.lead === true && m.role === 'view') throw new HttpError(409, 'view-only', 'Give them Can edit first: a design lead changes things.');
-  const { lead: _was, ...rest } = m;
-  await ctx.svc.members!.put(full, body.lead === true ? { ...rest, lead: true } : rest);
-  return json(200, { ok: true, lead: body.lead === true });
+  // Settings > Reviews > The library: `libraryOwner` (the older action sent `lead`, read the same).
+  const owner = body.libraryOwner === true || body.lead === true;
+  if (owner && m.role === 'view') throw new HttpError(409, 'view-only', 'Give them Can edit first: deciding what the library keeps changes things.');
+  const { lead: _was, libraryOwner: _owner, ...rest } = m;
+  await ctx.svc.members!.put(full, owner ? { ...rest, libraryOwner: true } : rest);
+  return json(200, { ok: true, libraryOwner: owner, lead: owner });
 }
 
-/** Who looks after the design system (api/_lib/review-mode.ts): an admin's setting, kept server side. */
-async function setTeamReviewMode(ctx: Ctx, full: string, body: Record<string, unknown>): Promise<Response> {
-  if (!isReviewMode(body.mode)) throw new HttpError(400, 'bad_request', 'Pick how your team reviews explorations.');
+/**
+ * Settings > Reviews > Design review before developers (api/_lib/review-settings.ts): one product's design review, off
+ * or on with its reviewers (member references or GitHub logins, any one of them answers; "any-designer").
+ */
+async function setTeamDesignReview(ctx: Ctx, full: string, body: Record<string, unknown>): Promise<Response> {
+  if (typeof body.product !== 'string' || !/^(\*|[a-z0-9-]{1,64})$/.test(body.product)) throw new HttpError(400, 'bad_request', 'Say which product.');
+  if (!isDesignReviewSetting(body.setting)) throw new HttpError(400, 'bad_request', 'Turn the design review off, or pick who reviews it.');
   if (!ctx.svc.redis) throw new HttpError(503, 'not_configured', NOT_CONFIGURED);
-  await setReviewMode(ctx.svc.redis, full, body.mode);
-  return json(200, { ok: true, mode: body.mode });
+  const map = await setDesignReview(ctx.svc.redis, full, body.product, body.setting);
+  return json(200, { ok: true, designReview: map });
+}
+
+/** The two reviews as Settings reads them: each product's design review, and the one time note after the migration. */
+async function reviewsFor(ctx: Ctx, full: string): Promise<{ designReview: Record<string, unknown>; note: boolean } | null> {
+  if (!ctx.svc.redis || !ctx.svc.members) return null;
+  const members = ctx.svc.members;
+  const designReview = await designReviewsOf(ctx.svc.redis, full, () => members.list(full));
+  return { designReview, note: await reviewsNoteOf(ctx.svc.redis, full) };
 }
 
 /** What an email admin does on POST: invites, and the roles of email members. GitHub people stay with GitHub admins. */
@@ -1241,8 +1259,10 @@ async function onEmailAdminPost(ctx: Ctx, req: Request, env: InvitesEnv, body: R
       return resendOne(ctx, req, env, ad.full, body.id, me, counter);
     case 'set-lead':
       return setEmailLead(ctx, ad.full, body);
-    case 'set-review-mode':
-      return setTeamReviewMode(ctx, ad.full, body);
+    case 'set-library-owner':
+      return setEmailLead(ctx, ad.full, body);
+    case 'set-design-review':
+      return setTeamDesignReview(ctx, ad.full, body);
     case 'invite-role': {
       const inv = await findInvite(ctx, ad.full, body.id);
       const { role, reviewAs } = parseRole(body.role, body.reviewAs);
@@ -1284,7 +1304,7 @@ async function withLocalAdmins(ctx: Ctx, full: string, members: EmailMember[]): 
   return members.map((m) => (m.role !== 'admin' && admins.has(canonicalEmail(m.email)) ? { ...m, role: 'admin' } : m));
 }
 
-const EMAIL_ADMIN_ACTIONS = new Set(['invite', 'resend', 'invite-role', 'cancel', 'set-role', 'set-lead', 'set-review-mode', 'remove']);
+const EMAIL_ADMIN_ACTIONS = new Set(['invite', 'resend', 'invite-role', 'cancel', 'set-role', 'set-lead', 'set-library-owner', 'set-design-review', 'remove']);
 
 async function onGet(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<Response> {
   const svc = services(env, deps);
@@ -1296,12 +1316,12 @@ async function onGet(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<
     const ad = await emailAdmin(ctx, req, repoArg);
     const list = await pending(ctx, ad.full);
     const members = await withLocalAdmins(ctx, ad.full, await ctx.svc.members!.list(ad.full));
-    return json(200, { invites: list.map(publicInvite), personal: false, members: members.map(publicMember), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, ad.full) : 'one' }, { 'Cache-Control': 'private, no-store' });
+    return json(200, { invites: list.map(publicInvite), personal: false, members: members.map(publicMember), reviews: await reviewsFor(ctx, ad.full), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, ad.full) : 'one' }, { 'Cache-Control': 'private, no-store' });
   }
   const { facts } = await authorize(ctx, req, repoArg, 'push');
   const list = await pending(ctx, facts.full);
   const members = ctx.svc.members ? await withLocalAdmins(ctx, facts.full, await ctx.svc.members.list(facts.full)) : [];
-  return json(200, { invites: list.map(publicInvite), personal: facts.personal, members: members.map(publicMember), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, facts.full) : 'one' });
+  return json(200, { invites: list.map(publicInvite), personal: facts.personal, members: members.map(publicMember), reviews: await reviewsFor(ctx, facts.full), reviewMode: ctx.svc.redis ? await reviewModeOf(ctx.svc.redis, facts.full) : 'one' });
 }
 
 async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<Response> {
@@ -1357,9 +1377,14 @@ async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise
       return setEmailLead(ctx, facts.full, body);
     }
 
-    case 'set-review-mode': {
+    case 'set-library-owner': {
       const { facts } = await authorize(ctx, req, body.repo, 'admin');
-      return setTeamReviewMode(ctx, facts.full, body);
+      return setEmailLead(ctx, facts.full, body);
+    }
+
+    case 'set-design-review': {
+      const { facts } = await authorize(ctx, req, body.repo, 'admin');
+      return setTeamDesignReview(ctx, facts.full, body);
     }
 
     case 'set-role': {

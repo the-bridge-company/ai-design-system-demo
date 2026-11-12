@@ -58,6 +58,19 @@ describe('the email session', () => {
     expect(parseMember({ name: 'Leo' })).toBeNull();
   });
 
+  it('carries the two review hats: library owner and the products whose design they review', () => {
+    expect(parseMember({ email: 'dana@acme.example', name: 'Dana', role: 'admin', lead: true, libraryOwner: true, designReviews: ['*', 'shop', 3, ''] })).toEqual({
+      email: 'dana@acme.example',
+      name: 'Dana',
+      role: 'admin',
+      lead: true,
+      decides: true,
+      libraryOwner: true,
+      designReviews: ['*', 'shop'],
+    });
+    expect(parseMember({ email: 'leo@acme.example', name: 'Leo', libraryOwner: 'yes', designReviews: [] })).toEqual({ email: 'leo@acme.example', name: 'Leo', role: 'edit' });
+  });
+
   it('never writes an em dash', () => {
     const all = JSON.stringify(Object.values(CONTRIBUTE_WORDS).map((v) => (typeof v === 'function' ? (v as (a: string) => string)('x') : v)));
     expect(all).not.toContain(String.fromCharCode(0x2014));

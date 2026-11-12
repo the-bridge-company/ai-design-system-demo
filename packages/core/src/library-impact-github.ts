@@ -4,7 +4,8 @@
 // tools. The rules are in library-impact.ts.
 
 import { findExplorationOnGitHub } from './explorations-github';
-import { parseExplorationBody, withExplorationLibrary } from './explorations';
+import { isInReview, parseExplorationBody, withDecision, withExplorationLibrary, withoutReviewAsks } from './explorations';
+import { settleReviewsOnGitHub, type DoneExploring } from './exploration-done-github';
 import { GitHubError, type GitHubClient } from './github-client';
 import { githubLoginOf } from './github-login';
 import { withLibraryChoice, withoutPieceDecision, withPieceDecision, type LibraryChoice, type PieceVerdict } from './library-impact';
@@ -38,11 +39,12 @@ export interface PieceDecisionInput {
 }
 
 /**
- * The lead answers one piece (its ⋯ menu): approve it alone (its library request is filed at once), ask for changes on
- * it, keep it in this screen only, or use an existing piece instead. The screen's own answer (Looks right) stays to
- * give. A piece of a check that no longer lists it is refused.
+ * A library owner answers one piece (the library decision, two-reviews.ts): Add to the library (its library request is
+ * filed at once), ask for changes on it, keep it in this screen only, or use an existing piece instead. While the
+ * exploration is In review, Ask for changes sends it back to Exploring, and the last answer hands it to the developers
+ * when the design review settled too (`done`). A piece of a check that no longer lists it is refused.
  */
-export async function decidePieceOnGitHub(gh: GitHubClient, ref: string | number, input: PieceDecisionInput): Promise<{ proposed: ProposedPieces | null }> {
+export async function decidePieceOnGitHub(gh: GitHubClient, ref: string | number, input: PieceDecisionInput): Promise<{ proposed: ProposedPieces | null; done: DoneExploring | null }> {
   if (!gh.canWrite) throw new GitHubError(401, 'Answering a library piece needs a GitHub token (pull requests: write).');
   if (input.verdict === 'changes' && !input.text?.trim()) throw new GitHubError(422, 'Say what to change on it.');
   if (input.verdict === 'existing' && !input.use?.trim()) throw new GitHubError(422, 'Say which piece of the library to use.');
@@ -66,8 +68,17 @@ export async function decidePieceOnGitHub(gh: GitHubClient, ref: string | number
       ? await proposePiecesOnGitHub(gh, p.number, { pieces: [input.piece], products: input.products ?? [], previewUrl: input.previewUrl, source: input.source ?? 'studio', ...(by ? { openedBy: by } : {}), ...(input.library ? { library: input.library } : {}) })
       : null;
   const fresh = proposed ? await findExplorationOnGitHub(gh, p.number) : p;
-  await gh.updatePullRequest(p.number, { body: withExplorationLibrary(fresh.body, (l) => withPieceDecision(l, decision)) });
-  return { proposed };
+  const answered = withExplorationLibrary(fresh.body, (l) => withPieceDecision(l, decision));
+  // The library decision while it is In review (two-reviews.ts): Ask for changes sends it back to Exploring (the design
+  // review's yes stays); the last answer, with the design review settled, makes it Ready to build.
+  const waited = isInReview(fresh.body);
+  if (waited && input.verdict === 'changes') {
+    await gh.updatePullRequest(p.number, { body: withDecision(withoutReviewAsks(answered), { kind: 'changes', hat: 'library', at, ...(by ? { by } : {}), ...(input.byName ? { byName: input.byName } : {}), text: input.text!.trim(), sha: fresh.headSha }) });
+    return { proposed, done: null };
+  }
+  await gh.updatePullRequest(p.number, { body: answered });
+  const done = waited && !isInReview(answered) ? await settleReviewsOnGitHub(gh, p.number, { products: input.products ?? [], previewUrl: input.previewUrl, source: input.source ?? 'studio', ...(input.library ? { library: input.library } : {}), date: input.date }).catch(() => null) : null;
+  return { proposed, done };
 }
 
 export interface LibraryWayInput {

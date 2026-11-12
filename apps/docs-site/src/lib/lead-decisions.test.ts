@@ -44,6 +44,13 @@ describe('the tag and the zone', () => {
 });
 
 describe('the Home of a lead and a designer (board L6)', () => {
+  it('two reviews: the row names the hats it asks, one row for both, none without a hat', () => {
+    expect(leadHomeRow(asked, { ...lead, lead: false, hats: ['design-review', 'library'] })).toMatchObject({ where: 'needs', line: "ann's screen: your design review and a library decision", hats: ['design-review', 'library'] });
+    expect(leadHomeRow(asked, { ...lead, hats: ['design-review'] })?.line).toBe("ann's screen: your design review");
+    expect(leadHomeRow(asked, { ...lead, hats: ['library'] })?.line).toBe("ann's screen: a library decision");
+    expect(leadHomeRow(asked, { ...lead, hats: [] })).toBeNull();
+    expect(leadHomeRow(asked, { ...lead, own: true, hats: ['library'] })).toBeNull();
+  });
   it('a lead has it in Needs you only while the next word is theirs', () => {
     expect(leadHomeRow(asked, lead)).toMatchObject({ where: 'needs', line: 'ann is done exploring', action: 'Review' });
     expect(leadHomeRow(asked, { ...lead, lead: false })).toBeNull();

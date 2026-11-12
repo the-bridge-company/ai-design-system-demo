@@ -1,6 +1,7 @@
 // Explorations for Claude and the CLI: start one (`explore/<slug>` + a draft pull request labeled exploration), list
-// them with their previews, snapshot install command and linked requests, say "Done exploring" on one (its pieces to
-// the DS lead as requests, the branch to the developers, nothing closed), archive one, close one. And the
+// them with their previews, snapshot install command and linked requests, say "Done exploring" on one (the two
+// reviews: the library decision and the product's design review, then its pieces to the library owners as requests
+// and the branch to the developers, nothing closed), archive one, close one. And the
 // "target branch" of the write tools: token edits, docs drafts and request briefs aimed at an exploration branch
 // instead of a new pull request to main. The rules and the GitHub calls are @bridge-ds/core's (explorations.ts,
 // explorations-github.ts); this file shapes them for the MCP tools and the CLI.
@@ -9,10 +10,12 @@ import { dirname, join } from 'node:path';
 import {
   archiveExplorationOnGitHub,
   baseBranchOf,
-  askLeadOnGitHub,
+  askReviewsOnGitHub,
+  goesStraightToReady,
+  hatOf,
+  openDecisionOf,
   leadWordsForClaude,
   doneExploringOnGitHub,
-  needsLeadValidation,
   parsePiecesRecord,
   productsOf,
   closeExplorationOnGitHub,
@@ -67,6 +70,11 @@ import {
   type CommitFile,
   type GitHubClient,
   type ProductConfig,
+  type PullRequestSummary,
+  type Reviewer,
+  waitingFor,
+  homeRowLine,
+  isExplorationPull,
   continueLines,
   actorName,
   explorationActivity,
@@ -97,6 +105,7 @@ import { productMarks, resolveProduct, viewerOf } from './branches.js';
 import { addToken, readOnlyPreview, say } from './say.js';
 import { writesThroughBridge } from './whoami.js';
 import { locate, productClient, type Located } from './product-repos.js';
+import { authorIdsOf, keepingPulls, libraryAnswersOf, noReviewOf, pieceTitles, productOfExploration, reviewsToAsk, viewerHatsOf, waitingLineOf } from './reviews.js';
 
 const USE_CASES = new Set<string>(EXPLORATION_USE_CASES.map((u) => u.value));
 
@@ -337,18 +346,27 @@ export async function listExplorations(ctx: BridgeContext, a: { state?: 'open' |
   const { config } = await ctx.config();
   const gh = await requireGitHub(ctx);
   const opts = { state: a.state ?? 'open', archived: a.archived ? ('only' as const) : ('exclude' as const) };
+  // The pull requests the listings read, kept: each exploration's reviews come from its body, no other read.
+  const pulls = new Map<string, PullRequestSummary>();
   // One more read per product with its own repository; one Bridge cannot reach is left out (bridge_list_products says it).
-  const [list, linked, inProducts] = await Promise.all([
-    listExplorationsOnGitHub(gh, settingsOf(config), opts),
+  const [list, linked, inProducts, viewer] = await Promise.all([
+    listExplorationsOnGitHub(keepingPulls(gh, pulls), settingsOf(config), opts),
     requestsByExploration(gh),
-    listProductExplorationsOnGitHub((repo) => productClient(ctx, repo), productsOf(config), gh.fullName, opts),
+    listProductExplorationsOnGitHub((repo) => keepingPulls(productClient(ctx, repo), pulls), productsOf(config), gh.fullName, opts),
+    viewerOf(ctx, gh),
   ]);
-  const productOnes = inProducts.explorations.map((x) => ({ ...x, ref: explorationRefLabel(x), install: null, requests: [] as { number: number; title: string; url: string; state: string }[], note: `In ${x.repo}: the library comes from npm there, and developers run it in their usual environment.` }));
+  // The second line of In review: who and why ("Waiting for peterbono's design review"), null when nothing waits.
+  const waiting = (x: { number: number; repo?: string | undefined; product?: string | undefined; status: string }): string | null => {
+    const pr = pulls.get(`${(x.repo ?? gh.fullName).toLowerCase()}#${x.number}`);
+    if (!pr || x.status !== 'active') return null;
+    return waitingLineOf(config, pr.body, { product: productOfExploration(config, { product: x.product, labels: pr.labels }), prAuthor: pr.author, viewer: viewer ? [viewer] : null });
+  };
+  const productOnes = inProducts.explorations.map((x) => ({ ...x, ref: explorationRefLabel(x), waitingFor: waiting(x), install: null, requests: [] as { number: number; title: string; url: string; state: string }[], note: `In ${x.repo}: the library comes from npm there, and developers run it in their usual environment.` }));
   // Running ones and the ones with the developers (a living prototype): the real preview URLs (Vercel shortens long
   // branch aliases) and the published install command.
   const dsOnes = await Promise.all(
     list.map(async (summary) => {
-      const x = { ...summary, ref: explorationRefLabel(summary) };
+      const x = { ...summary, ref: explorationRefLabel(summary), waitingFor: waiting(summary) };
       const requests = linked.get(x.branch) ?? [];
       if (x.status !== 'active' && x.status !== 'ready' && x.status !== 'building') return { ...x, install: null, requests };
       const t = await explorationTestBuildOnGitHub(gh, { number: x.number, branch: x.branch }, config).catch(() => null);
@@ -358,7 +376,7 @@ export async function listExplorations(ctx: BridgeContext, a: { state?: 'open' |
   );
   // mine: the ones the viewer started (the token's account), and the ones Bridge's app opened for them (a member
   // Bridge writes for: GitHub names the app as the author); none when Bridge cannot tell who that is.
-  const [me, owned] = a.mine ? await Promise.all([viewerOf(ctx, gh), ctx.ownedWork()]) : [null, null];
+  const [me, owned] = a.mine ? [viewer, await ctx.ownedWork()] : [null, null];
   const repoOf = (x: { repo?: string }) => (x.repo ?? gh.fullName).toLowerCase();
   const explorations = [...dsOnes, ...productOnes].filter(
     (x) => !a.mine || (me !== null && x.author.toLowerCase() === me.toLowerCase()) || Boolean(owned?.has(`${repoOf(x as { repo?: string })}#${x.branch}`)),
@@ -382,6 +400,46 @@ export async function listExplorations(ctx: BridgeContext, a: { state?: 'open' |
   };
 }
 
+/**
+ * The explorations In review that ask something of the viewer (bridge_what_needs_me): their design review, their
+ * library decision, or both. One item per exploration: `hats` lists every hat it asks of them (design review first),
+ * `hat` is the first. `dsPulls` are the design system repository's open pull requests, already read; each product
+ * with its own repository costs one read. Empty without a viewer.
+ */
+export async function explorationsAskingMe(ctx: BridgeContext, gh: GitHubClient, config: BridgeConfig, viewer: string | null, dsPulls: readonly PullRequestSummary[]) {
+  if (!viewer) return [];
+  const pulls = new Map<string, PullRequestSummary>();
+  const inProducts = await listProductExplorationsOnGitHub((repo) => keepingPulls(productClient(ctx, repo), pulls), productsOf(config), gh.fullName, { state: 'open', archived: 'exclude' }).catch(() => ({ explorations: [] as { number: number; repo?: string | undefined; product?: string | undefined }[] }));
+  const candidates = [
+    ...dsPulls.filter((p) => isExplorationPull({ state: p.state, labels: p.labels, headRef: p.headRef, body: p.body }) && !isArchivedExploration(p.labels)).map((pr) => ({ pr, repo: undefined as string | undefined, product: undefined as string | undefined })),
+    ...inProducts.explorations.flatMap((x) => {
+      const pr = pulls.get(`${(x.repo ?? '').toLowerCase()}#${x.number}`);
+      return pr ? [{ pr, repo: x.repo, product: x.product }] : [];
+    }),
+  ];
+  return candidates.flatMap(({ pr, repo, product: key }) => {
+    if (explorationStatus({ state: pr.state, labels: pr.labels, headRef: pr.headRef, body: pr.body, headSha: pr.headSha, draft: pr.draft }) !== 'active') return [];
+    const product = productOfExploration(config, { product: key, labels: pr.labels });
+    const hats = viewerHatsOf(config, pr.body, { product, prAuthor: pr.author, viewer });
+    if (!hats.length) return [];
+    const e = parseExplorationBody(pr.body);
+    const author = e?.author ?? pr.author;
+    return [
+      {
+        ref: explorationRefLabel({ number: pr.number, product: key, repo }),
+        name: e?.name ?? pr.title.replace(/^Exploration:\s*/i, ''),
+        product: product.name,
+        author,
+        url: pr.url,
+        hat: hats[0]!,
+        hats,
+        line: homeRowLine(author, hats),
+        waitingFor: waitingLineOf(config, pr.body, { product, prAuthor: pr.author, viewer: [viewer] }),
+      },
+    ];
+  });
+}
+
 const refOf = (ref: string | number) => (typeof ref === 'number' ? ref : /^#?\d+$/.test(ref.trim()) ? Number(ref.trim().replace(/^#/, '')) : toExplorationBranch(ref));
 
 /** The exploration a reference names, in the design system repository or a product's own one (product-repos.ts). */
@@ -390,8 +448,11 @@ async function located(ctx: BridgeContext, ref: string): Promise<Located & { gh:
 }
 
 /**
- * bridge_promote_exploration (kept name) / `bridge explore done` (`promote` is an alias): "Done exploring". The pieces
- * named in `pieces` (ids from bridge_missing_pieces) go to the DS lead as requests with the preview link; the
+ * bridge_promote_exploration (kept name) / `bridge explore done` (`promote` is an alias): "Done exploring". First the
+ * two reviews (docs/specs/two-reviews.md): the library decision when something is new for the library, the product's
+ * design review when it is on; while either waits it is In review (status in-review, waitingFor says who and why).
+ * With neither, straight to Ready to build: the pieces named in `pieces` (ids from bridge_missing_pieces) go to the
+ * library owners as requests with the preview link; the
  * exploration label and note go, `ready-for-devs` comes, and developers take the branch from there. Nothing is closed,
  * merged or marked ready for review, so the preview link stays alive. Without `pieces`, the result lists the pieces
  * still unsent so the person can pick.
@@ -415,13 +476,51 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
     previewUrl = build?.previews.find((v) => v.url && v.state !== 'failed')?.url ?? null;
   }
   const viewer = await viewerOf(ctx, ds);
-  // A design lead validates first (decision 2026-11-06): nothing reaches the developers before they answer in Studio.
-  if (!a.dryRun && needsLeadValidation({ viewer, author: parseExplorationBody(p.body)?.author ?? p.author, leads: config.governance.owners.design })) {
-    const asked = await askLeadOnGitHub(gh, p.number, { pieces: a.pieces ?? [], ...(viewer ? { openedBy: viewer } : {}), leads: config.governance.owners.design.filter((l) => !l.includes('/') && l.replace(/^@/, '').toLowerCase() !== viewer?.toLowerCase()) });
-    return { status: 'waiting-for-lead' as const, number: asked.number, ref: explorationRefLabel({ number: asked.number, product: at.product?.key, repo: at.repo }), url: asked.url, branch: asked.branch, leads: config.governance.owners.design };
+  // The two reviews (docs/specs/two-reviews.md): the library decision when the screen has something new for the
+  // library, the product's design review when it is on and someone other than the author can give it. Both start
+  // together; nothing reaches the developers before both answered in Studio. Only asked while it is being explored:
+  // said again later, it only sends newly picked pieces.
+  const product = productOfExploration(config, { product: at.product ?? null, labels: p.labels });
+  const block = parseExplorationBody(p.body);
+  const authorName = viewer ?? block?.author ?? p.author;
+  const running = explorationStatus({ state: p.state, labels: p.labels, headRef: p.headRef, body: p.body, headSha: p.headSha, draft: p.draft }) === 'active';
+  const asked = running ? reviewsToAsk(config, p.body, { product, author: authorIdsOf(p.body, [viewer, p.author]) }) : null;
+  // The only library owner says Done exploring themselves: the pieces they pass are their library decision (Add to the
+  // library), recorded on the hand-off, as on GitHub (soloOwnerCanApproveBoth). Anyone else asks them.
+  const selfDecides = Boolean(asked?.library && viewer && asked.library.owners.every((o) => o.id === viewer.toLowerCase()));
+  if (asked && selfDecides) asked.library = null;
+  const noDesignReview = asked ? noReviewOf(asked, { product, authorName }) : null;
+  const reviews = asked ? { design: asked.design ? { reviewers: asked.design.reviewers } : null, library: asked.library ? { owners: asked.library.owners, pieces: pieceTitles(p.body, asked.library.pieces) } : null } : null;
+  const ref = explorationRefLabel({ number: p.number, product: at.product?.key, repo: at.repo });
+  if (asked && reviews && !goesStraightToReady(asked)) {
+    const waitingFor = waitingForAsked(reviews, product.name, viewer);
+    if (a.dryRun) return { status: 'dry-run' as const, legacyStatus: 'dry-run' as const, number: p.number, ref, url: p.url, branch: p.headRef, reviews, waitingFor, ...(noDesignReview ? { noDesignReview } : {}), next: `Done exploring would ask ${waitingFor.replace(/^Waiting for /, '')}. Nothing reaches the developers before ${reviews.design && reviews.library ? 'both answer' : 'it is answered'}.` };
+    const r = await askReviewsOnGitHub(gh, p.number, {
+      pieces: a.pieces ?? [],
+      ...(viewer ? { openedBy: viewer } : {}),
+      design: asked.design ? { to: asked.design.reviewers.map((x) => x.id) } : null,
+      library: asked.library ? { to: asked.library.owners.map((x) => x.id) } : null,
+    });
+    const after = await findExplorationOnGitHub(gh, r.number).catch(() => null);
+    const line = (after && waitingLineOf(config, after.body, { product, prAuthor: after.author, viewer: viewer ? [viewer] : null })) || waitingFor;
+    return {
+      status: 'in-review' as const,
+      // Deprecated, kept for 2 releases (docs/AI.md): the status and the field older clients read.
+      legacyStatus: 'waiting-for-lead' as const,
+      leads: config.governance.owners.design,
+      number: r.number,
+      ref: explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo }),
+      ...(at.repo ? { repo: at.repo, product: at.product!.key } : {}),
+      url: r.url,
+      branch: r.branch,
+      reviews: { design: r.design ? reviews.design : null, library: r.library ? { owners: reviews.library?.owners ?? [], pieces: pieceTitles(after?.body ?? p.body, r.library.pieces) } : null },
+      waitingFor: line,
+      ...(noDesignReview ? { noDesignReview } : {}),
+      next: `Tell the designer plainly: ${line}. It is In review, still running: nothing reaches the developers before ${r.design && r.library ? 'both reviews answer' : 'the review answers'} in Studio, and the preview keeps working.`,
+    };
   }
   const r = await doneExploringOnGitHub(gh, p.number, {
-    // In a product's own repository the requests are filed in the design system repository, where the DS lead works.
+    // In a product's own repository the requests are filed in the design system repository, where the library owners work.
     ...(at.repo ? { library: ds.withBranchPrefix(undefined) } : {}),
     pieces: a.pieces ?? [],
     products: productsOf(config),
@@ -434,15 +533,25 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
   const record = parsePiecesRecord(p.body);
   const sent = new Set([...(record?.links ?? []).map((l) => l.piece), ...r.pieces.proposed.map((x) => x.piece)]);
   const unsent = (record?.pieces ?? []).filter((x) => !sent.has(x.id)).map((x) => ({ id: x.id, title: x.title, summary: x.summary }));
-  const status = a.dryRun ? ('dry-run' as const) : r.handedOff ? ('done-exploring' as const) : ('already-done' as const);
+  const status = a.dryRun ? ('dry-run' as const) : r.handedOff ? ('ready-to-build' as const) : ('already-done' as const);
+  // Straight to Ready to build: no review applied (or it was already handed off). The line says why.
+  const readyLine = !asked
+    ? null
+    : selfDecides
+      ? `No review needed: you decide what the library keeps, and ${asked.noDesign === 'author-only' ? `you are ${product.name}'s only design reviewer` : `${product.name} has no design review`}`
+      : (noReviewOf(asked, { product, authorName }) ?? 'No review needed: nothing new for the library, and the design review already said Looks right');
   return {
     status,
+    // Deprecated, kept for 2 releases (docs/AI.md): the status older clients read.
+    legacyStatus: status === 'ready-to-build' ? ('done-exploring' as const) : status,
     number: r.number,
     ref: explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo }),
     ...(at.repo ? { repo: at.repo, product: at.product!.key, requestsIn: ds.fullName } : {}),
     url: r.url,
     branch: r.branch,
     exploration: r.status,
+    reviews: { design: null, library: null },
+    waitingFor: readyLine,
     labels: r.plan ? { add: r.plan.addLabels, remove: r.plan.removeLabels } : null,
     removeFiles: r.plan?.removeFiles ?? [],
     requests: r.pieces.proposed,
@@ -454,7 +563,8 @@ export async function doneExploring(ctx: BridgeContext, a: { ref: string; pieces
     forDevelopers: { take: r.take, note: r.note, ...(r.spec ? { spec: r.spec } : {}) },
     warnings: r.warnings,
     next: [
-      record ? (unsent.length ? `${unsent.length} piece${unsent.length === 1 ? ' was' : 's were'} not sent to the DS lead: pass their ids in pieces to send them later.` : '') : `The exploration was not checked against the library: ${say(ctx, `bridge_missing_pieces { pr: "${explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo })}", record: true }`, `\`bridge pieces ${explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo })} --record\``)} finds the pieces to propose.`,
+      status === 'ready-to-build' && readyLine ? `Ready to build. ${readyLine}.` : '',
+      record ? (unsent.length ? `${unsent.length} piece${unsent.length === 1 ? ' was' : 's were'} not sent to the library owners: pass their ids in pieces to send them later.` : '') : `The exploration was not checked against the library: ${say(ctx, `bridge_missing_pieces { pr: "${explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo })}", record: true }`, `\`bridge pieces ${explorationRefLabel({ number: r.number, product: at.product?.key, repo: at.repo })} --record\``)} finds the pieces to propose.`,
       r.spec ? 'The decisions and edge cases from the notes went to the developers as the design spec.' : '',
       `Developers take it with \`${r.take[0]}\` then \`${r.take[1]}\`, as a starting point. The pull request stays open so the preview keeps working; ${say(ctx, 'bridge_archive_exploration', '`bridge explore archive`')} hides it from the lists later.`,
     ]
@@ -513,7 +623,7 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
   const at = await locate(ctx, a.ref.replace(/^\s*continue\s+bridge\s+exploration\s+/i, '').replace(/\s+".*$/, '').trim(), ds);
   const gh = at.gh;
   const p = await findExplorationOnGitHub(gh, refOf(at.ref));
-  const [files, commits] = await Promise.all([gh.listPullRequestFiles(p.number).then((f) => f.map((x) => x.filename)).catch(() => null), gh.listPullRequestCommits(p.number).catch(() => [])]);
+  const [files, commits, viewerLogin] = await Promise.all([gh.listPullRequestFiles(p.number).then((f) => f.map((x) => x.filename)).catch(() => null), gh.listPullRequestCommits(p.number).catch(() => []), viewerOf(ctx, ds)]);
   // "Where it stands": the handover notes the last person left (decisions, edge cases, open questions, next step).
   const notes = parseExplorationNotes(await gh.getFileText(explorationNotePathOf(files, p.headRef), p.headRef).catch(() => undefined));
   const status = explorationStatus({ state: p.state, labels: p.labels, headRef: p.headRef, body: p.body });
@@ -530,14 +640,20 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
   const ref = explorationRefLabel({ number: p.number, product: at.product?.key, repo: at.repo });
   const checkout = a.checkout === false ? { status: 'not-switched' as const, note: `Not switched. \`git fetch origin ${p.headRef} && git switch ${p.headRef}\`.` } : await switchTo(ctx, repo, p.headRef);
   const record = parsePiecesRecord(p.body);
-  // What the design lead said that waits on the designer: Claude starts from it.
-  const leadWords = leadWordsForClaude(p.body);
+  // What a reviewer said that waits on the designer, by hat: the design review's words, and the library owners' answer
+  // on each piece. Claude starts from them and says which review said what.
+  const open = openDecisionOf(p.body);
+  const words = leadWordsForClaude(p.body);
+  const designReviewWords = words && open && hatOf(open) === 'design' ? words : null;
+  const libraryWords = words && open && hatOf(open) === 'library' ? words : null;
+  const libraryAnswers = libraryAnswersOf(p.body);
+  const waitingFor = stage !== 'handed' ? waitingLineOf(config, p.body, { product, prAuthor: p.author, viewer: viewerLogin ? [viewerLogin] : null }) : null;
   // Where to see it: the product's preview Vercel reported in its repository, else the library's apps.
   const previews = at.product
     ? [await productPreviewOnGitHub(gh, at.product, { number: p.number, branch: p.headRef, sha: p.headSha }).catch(() => null)].filter((x) => x !== null)
     : await branchPreviewUrls(gh, p.number, config, { branch: p.headRef, sha: p.headSha }).catch(() => []);
   const keepWorking = at.repo
-    ? `Keep working on ${p.headRef}, in a checkout of ${at.repo} or through Bridge: build the screens with the library components (bridge_get_component, bridge_search_tokens). ${say(ctx, SAVE_RULE, 'Commit and push your changes there.')} ${CHANGE_MARKER_RULE} What the library lacks goes to the DS lead in ${ds.fullName} with ${say(ctx, `bridge_missing_pieces { pr: "${ref}" }`, `\`bridge pieces ${ref} --record\``)} then Done exploring, never on this branch.`
+    ? `Keep working on ${p.headRef}, in a checkout of ${at.repo} or through Bridge: build the screens with the library components (bridge_get_component, bridge_search_tokens). ${say(ctx, SAVE_RULE, 'Commit and push your changes there.')} ${CHANGE_MARKER_RULE} What the library lacks goes to the library owners in ${ds.fullName} with ${say(ctx, `bridge_missing_pieces { pr: "${ref}" }`, `\`bridge pieces ${ref} --record\``)} then Done exploring, never on this branch.`
     : `Keep working on ${p.headRef}: ${say(ctx, `write tools take "branch": "${p.headRef}"`, `\`bridge propose --branch ${p.headRef}\``)}. Build screens with the library components (bridge_search_tokens, bridge_get_token). ${say(ctx, SAVE_RULE, 'Commit and push your changes there.')} ${CHANGE_MARKER_RULE}`;
   return {
     ref,
@@ -552,7 +668,10 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
     archived,
     stage,
     whereItStands: whereItStands({ name, stage, statusLabel: EXPLORATION_STATUS_LABEL[status], events, files }),
-    ...(leadWords ? { leadWords } : {}),
+    ...(designReviewWords ? { designReviewWords, /** @deprecated Use designReviewWords; removed after 2 releases. */ leadWords: designReviewWords } : {}),
+    ...(libraryWords ? { libraryWords } : {}),
+    ...(libraryAnswers.length ? { libraryAnswers } : {}),
+    waitingFor,
     notes: notesOut(notes),
     activity: events.map((x) => ({ who: actorName(x), what: x.text, when: shortAgo(x.at) })),
     changedFiles: files,
@@ -565,7 +684,9 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
     // Started from a mockup (a Figma frame or a Claude Design page): Claude rebuilds it with the library's pieces only.
     ...(mockup && stage !== 'handed' ? { mockup: { kind: mockup.kind, url: mockup.url, label: mockupLabel(mockup) } } : {}),
     next: [
-      ...(leadWords ? [`Tell the designer first what their lead said, in their words (leadWords), then work on it.`] : []),
+      ...(designReviewWords ? [`Tell the designer first what the design review said, in its words (designReviewWords), then work on it.`] : []),
+      ...(libraryWords || libraryAnswers.length ? [`Say what the library decision said apart from the design review (${libraryWords ? 'libraryWords, ' : ''}libraryAnswers: the answer on each piece and who gave it).`] : []),
+      ...(waitingFor ? [`It is In review: ${waitingFor}.`] : []),
       ...((startPage || mockup) && stage === 'not-started' ? [startBrief({ startPage, mockup }, product.name, e?.purpose || name)!] : []),
       // Studio says "From <mockup>: N pieces the library doesn't have" once both are known: its name and the recorded check.
       ...(mockup && stage !== 'handed' && (!mockupNameOf(e?.mockupName) || !record)
@@ -584,6 +705,11 @@ export async function continueExploration(ctx: BridgeContext, a: { ref: string; 
       stage === 'handed' ? 'It is no longer being explored: say so, and only change it if they ask.' : `${keepWorking} Never open a pull request to main from it.`,
     ].join(' '),
   };
+}
+
+/** "Waiting for peterbono's design review and the library decision on Timeline": what Done exploring just asked. */
+function waitingForAsked(reviews: { design: { reviewers: Reviewer[] } | null; library: { owners: Reviewer[]; pieces: string[] } | null }, product: string, viewer: string | null): string {
+  return waitingFor({ design: reviews.design ? { reviewers: reviews.design.reviewers, product } : null, library: reviews.library ? { owners: reviews.library.owners, pieces: reviews.library.pieces } : null, viewer: viewer ? [viewer] : null }) ?? 'Waiting for the reviews';
 }
 
 /** @deprecated The old name: "Promote to review" became "Done exploring" (doneExploring). */

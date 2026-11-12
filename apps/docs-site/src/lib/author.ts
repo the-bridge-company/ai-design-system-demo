@@ -55,7 +55,7 @@ export function explorationAuthorFor(login: string | null | undefined, body: str
  */
 export function explorerName(body: string | null | undefined, login?: string | null): string | null {
   const block = parseExplorationBody(body);
-  const name = block?.memberName?.trim() || requesterOf(body)?.name?.trim() || block?.leadAskedByName?.trim();
+  const name = block?.memberName?.trim() || requesterOf(body)?.name?.trim() || block?.designAskedByName?.trim();
   if (name) return name;
   return login?.trim() && !isAppLogin(login) ? login.trim() : null;
 }

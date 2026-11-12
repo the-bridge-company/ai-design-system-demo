@@ -107,6 +107,7 @@ export * from './snapshot';
 export * from './requester';
 export * from './activity';
 export * from './status-ladder';
+export * from './two-reviews';
 export * from './build-requests';
 export * from './build-requests-github';
 export * from './figma-file';

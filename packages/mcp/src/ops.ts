@@ -5,7 +5,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { buildAuditReport, compareWithBaseline, DesignSystemIndex, type AuditReport } from '@bridge-ds/core/audit';
 import { auditSnippet } from './audit.js';
 import { cssVarsUsed, getComponent, listComponentNames, listComponents, scaffoldComponent, type ScaffoldInput } from './components.js';
-import { approverEntries, leadsPublishTier1On, soloOwnerOf, soloOwnerSentence, tier1PublishSentence, changesMode, reviewOnGitHub, baseBranchOf, planTokenProposal, writeTokenProposalOnGitHub, suggestTokenProposalOnGitHub, suggestionIssueTitle, type ChangesMode, branchWithJiraKey, parseJiraKey, productsOf, cssModuleClasses, docsPrompt, entryLabel, expandOwners, isGuardedExploration, prefillDocs, protectedBranchesOf, shipPolicy, TeamDirectory, unreadableTeams, whoCanShipSentence, type BridgeConfig, type DocsContrastInput, type GitHubClient } from '@bridge-ds/core';
+import { approverEntries, leadsPublishTier1On, soloOwnerOf, soloOwnerSentence, tier1PublishSentence, changesMode, reviewOnGitHub, baseBranchOf, planTokenProposal, writeTokenProposalOnGitHub, suggestTokenProposalOnGitHub, suggestionIssueTitle, type ChangesMode, branchWithJiraKey, parseJiraKey, productsOf, cssModuleClasses, docsPrompt, entryLabel, expandOwners, isExplorationPull, isGuardedExploration, prefillDocs, protectedBranchesOf, shipPolicy, TeamDirectory, unreadableTeams, whoCanShipSentence, type BridgeConfig, type DocsContrastInput, type GitHubClient } from '@bridge-ds/core';
 import { branchExists, collectAuditFiles, commitToNewLocalBranch, currentBranch, git, loadAllowlist } from '@bridge-ds/core/node';
 import { core, type Combo, type Issue, type PairInput, type TokenEdit, type TokenSet } from './core-adapter.js';
 import { bullets, findSection, toc } from './markdown.js';
@@ -16,6 +16,7 @@ import { appliedNext, changesFor, noSuggestionAccess, suggestionBase } from './s
 import { BridgeContext } from './context.js';
 import { figmaFieldOf, readMap } from './component-map.js';
 import { addToken, readOnlyPreview, say, sourceOf, toolName, toolTag } from './say.js';
+import { productOfExploration, reviewRolesOf, waitingLineOf } from './reviews.js';
 
 const prefixPath = (set: TokenSet, f: string) => set.repoPath(f);
 
@@ -50,6 +51,8 @@ export async function getConfig(ctx: BridgeContext) {
     tokensPerTier: tiers,
     modes: config.axes,
     modeCombinations: set.combos().length,
+    // Settings > Reviews: who decides what the library keeps, and who reviews each product's design before developers.
+    reviews: reviewRolesOf(config),
     config,
   };
 }
@@ -626,12 +629,20 @@ export async function listReviews(ctx: BridgeContext, a: { state?: 'open' | 'clo
       let pulls = await gh.listPullRequests(a.state ?? 'open');
       if (a.onlyBridge) pulls = pulls.filter((p) => p.labels.some((l) => config.governance.labels.includes(l)) || p.headRef.startsWith(config.governance.branchPrefix));
       out.repo = gh.fullName;
-      out.pullRequests = pulls.map((p) => ({ number: p.number, title: p.title, state: p.state, draft: p.draft, author: p.author, head: p.headRef, labels: p.labels, bridge: p.labels.some((l) => config.governance.labels.includes(l)), updatedAt: p.updatedAt, url: p.url }));
+      const viewer = await viewerOf(ctx, gh);
+      // An exploration In review says who and why it waits ("Waiting for peterbono's design review"); null otherwise.
+      out.pullRequests = pulls.map((p) => ({ number: p.number, title: p.title, state: p.state, draft: p.draft, author: p.author, head: p.headRef, labels: p.labels, bridge: p.labels.some((l) => config.governance.labels.includes(l)), updatedAt: p.updatedAt, url: p.url, waitingFor: explorationWaiting(config, p, viewer) }));
     } catch (e) {
       out.pullRequestsError = (e as Error).message;
     }
   } else out.pullRequestsError = 'No GitHub repo known: set "repo" in bridge.config.json or add an origin remote.';
   return out;
+}
+
+/** The second line of an exploration In review (reviews.ts waitingLineOf), or null: not an exploration, or nothing waits. */
+function explorationWaiting(config: BridgeConfig, p: { state: string; draft?: boolean; labels: string[]; headRef: string; headSha?: string; body?: string | undefined; author: string }, viewer: string | null): string | null {
+  if (!isExplorationPull({ state: p.state, labels: p.labels, headRef: p.headRef, body: p.body ?? '' })) return null;
+  return waitingLineOf(config, p.body, { product: productOfExploration(config, { labels: p.labels }), prAuthor: p.author, viewer: viewer ? [viewer] : null });
 }
 
 async function setAt(source: RepoSource, config: TokenSet['config']) {
@@ -675,6 +686,7 @@ export async function getReview(ctx: BridgeContext, a: { pr?: number; branch?: s
       head: pr.headRef,
       base: pr.baseRef,
       ci: checks,
+      waitingFor: explorationWaiting(config, pr, await viewerOf(ctx, gh)),
       approvals: [...latest.entries()].filter(([, s]) => s === 'APPROVED').map(([u]) => u),
       changesRequested: [...latest.entries()].filter(([, s]) => s === 'CHANGES_REQUESTED').map(([u]) => u),
     };

@@ -253,7 +253,7 @@ async function pmCopies(d: NotifyDeps, notices: readonly Notice[]): Promise<Noti
 async function leadOf(d: NotifyDeps, team: string, repo: string, n: number): Promise<string | null> {
   const block = d.explorationBlock ? await d.explorationBlock(repo, n).catch(() => null) : null;
   if (!block) return null;
-  if (typeof block.leadOkBy === 'string' && block.leadOkBy && !block.leadOkBy.includes('@')) return block.leadOkBy;
+  if (typeof block.designOkBy === 'string' && block.designOkBy && !block.designOkBy.includes('@')) return block.designOkBy;
   const yes = (Array.isArray(block.decisions) ? (block.decisions as { kind?: unknown; by?: unknown; byName?: unknown }[]) : []).filter((x) => x?.kind === 'looks-right').pop();
   if (typeof yes?.by === 'string' && yes.by) return yes.by;
   if (typeof yes?.byName !== 'string') return null;

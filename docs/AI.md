@@ -181,8 +181,8 @@ products, settings and Figma coverage, 5 for product branches and the library (s
 | `bridge_get_request` | Read one request with the component's files, the agent rules and a brief to implement it in a pull request that closes it |
 | `bridge_create_request` | File a request as an issue labeled `component-change` (`source: mcp`); needs `GITHUB_TOKEN`; `dryRun` previews it; `exploration` implements it on an exploration branch |
 | `bridge_start_exploration` | Start an exploration: an `explore/<name>` branch and a draft pull request labeled `exploration`, with previews and a snapshot package for a product staging branch, never merged as is (see [Explorations](#explorations)) |
-| `bridge_list_explorations` | List explorations: purpose, status (running, waiting for code, being built, shipped, closed), archived ones on demand, previews, the snapshot install command and the requests implemented on each |
-| `bridge_promote_exploration` | Done exploring (old name kept): the picked pieces become requests for the DS lead, the branch goes to the developers; never closes, merges or marks it ready |
+| `bridge_list_explorations` | List explorations: purpose, status (running, waiting for code, being built, shipped, closed), `waitingFor` (In review: who and why it waits, else null), archived ones on demand, previews, the snapshot install command and the requests implemented on each |
+| `bridge_promote_exploration` | Done exploring (old name kept): asks the two reviews at once, the library decision when something is new for the library and the product's design review when it is on; returns `reviews`, `status` (`in-review` or `ready-to-build`) and `waitingFor`. Once both answered (or with neither) the picked pieces become library requests and the branch goes to the developers; never closes, merges or marks it ready |
 | `bridge_archive_exploration` | Archive or unarchive an exploration: hidden from the lists, its pull request and preview still open |
 | `bridge_close_exploration` | Close an exploration without merging it (removes its preview: prefer archive) |
 | `bridge_missing_pieces` | What a product branch adds that the library lacks (the audit on its diff against main): variants of library components, new components, token values; `record` saves them where Studio shows them |
@@ -201,7 +201,7 @@ products, settings and Figma coverage, 5 for product branches and the library (s
 | `bridge_apply_suggestion` | "Apply Bridge suggestion #42": re-applies it on today's code and re-runs the checks; `dry-run` first, then a new local branch (default), the working tree (`write`) or a `patch`; on a remote repo, the files to write |
 | `bridge_link_suggestion` | Record the pull request that applies a suggestion (it must say `Closes #n`) |
 | `bridge_list_products` | See the products (`products` in `bridge.config.json`) and the one the current folder or repo belongs to |
-| `bridge_what_needs_me` | The review queue as Studio counts it, with the branches where you act now first |
+| `bridge_what_needs_me` | The review queue as Studio counts it, with the branches where you act now first, and the explorations In review that ask you something; each item carries `hat` (`design-review` or `library`), an exploration asking both has `hats` |
 | `bridge_branch_status` | One branch: product, status, approvals, tests, how it stands against main, whether you may merge it, next step |
 | `bridge_list_comments` | The conversation on a branch and its line threads, with the ids to reply to |
 | `bridge_send_for_review` | Send a draft branch for review (its author) |
@@ -216,7 +216,7 @@ products, settings and Figma coverage, 5 for product branches and the library (s
 | `bridge_try_branch` | Try it in a product (the preview Vercel reported) and share it with a product team (install command, message) |
 | `bridge_combine_branches` | Try 2 to 4 token branches together: conflicts to pick, links to open the combination |
 | `bridge_save_docs` | Save a component's usage guidance on a new branch sent for review, or on an open branch |
-| `bridge_get_settings` | Studio settings that are safe to read: roles, who ships, owner override, protection, products |
+| `bridge_get_settings` | Studio settings that are safe to read: roles, who ships, owner override, protection, products, and `reviews` (Settings > Reviews: who decides what the library keeps, who reviews each product's design before developers); `bridge_get_config` returns the same `reviews` |
 | `bridge_figma_coverage` | Which components are in Figma, and whether code images exist for the fidelity check |
 | `bridge_pending_drafts` | Read the change texts a designer asked you to write from the Figma plugin ("Draft with my Claude"): the changes, the starting draft, their notes, the voice rules, the output contract, and the before and after images as image content (see [Change texts from Figma](#change-texts-from-figma)) |
 | `bridge_write_drafts` | Write the titles, summaries and change lines back; the plugin fills them in within seconds for the designer to review |
@@ -620,14 +620,30 @@ Try experimental variables and components in a product staging branch without to
 for a user test, a stakeholder demo, an A/B idea, or a designer exploring from the terminal with Claude Code. An
 exploration is an `explore/<name>` branch with a draft pull request labeled `exploration`: it gets the branch
 previews and a snapshot package (`npm i @bridge-ds/react@<snapshot>`), and it is never merged as is. A person
-promotes it to review or closes it. See [EXPLORATIONS.md](EXPLORATIONS.md).
+says Done exploring: Bridge asks the library decision and the product's design review (see
+[The two reviews](EXPLORATIONS.md#the-two-reviews)), then it is Ready to build. See [EXPLORATIONS.md](EXPLORATIONS.md).
+
+Claude reads the reviews by hat: `bridge_promote_exploration` says which were asked and to whom (`reviews`, `status`,
+`waitingFor`), `bridge_continue_exploration` returns `designReviewWords` (the design review's words that wait on the
+designer) and `libraryAnswers` (the library owners' answer on each piece), and every list item carries `waitingFor`.
+Deprecated, kept for 2 releases then removed:
+
+| Old | New | What clients get meanwhile |
+| --- | --- | --- |
+| `status: "waiting-for-lead"` | `status: "in-review"` | `legacyStatus: "waiting-for-lead"` and `leads` (the design owners) next to the new fields |
+| `status: "done-exploring"` | `status: "ready-to-build"` | `legacyStatus: "done-exploring"` |
+| `leadWords` | `designReviewWords` | both, same value |
+
+`dry-run` and `already-done` keep their names, in `status` and `legacyStatus`. No tool takes an exploration status as
+input, so nothing needs to accept the old values. A client that compares `status` to the old values reads
+`legacyStatus` instead: this is why `@bridge-ds/mcp` takes a major bump for this change.
 
 ```sh
 bridge explore start "Pill buttons" --purpose "Do rounder buttons feel friendlier in checkout?"
 git switch explore/pill-buttons
 bridge propose --branch explore/pill-buttons --title "Pill radius" --set radius.control=999px
 bridge request implement 42 --branch explore/pill-buttons     # the brief: work there, no pull request to main
-bridge explore promote pill-buttons                           # ready for review, tier labels; never merges
+bridge explore done pill-buttons                              # the two reviews, then Ready to build; never merges
 ```
 
 Ask Claude: "Start an exploration for denser tables", "Darken muted text on explore/dense-tables", "Which

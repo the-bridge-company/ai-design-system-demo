@@ -5,7 +5,7 @@ import { Avatar } from '@bridge-ds/react';
 import type { Person } from '../../../lib/home-model';
 import { safeUrl } from '../../../lib/html';
 import { avatarLogin } from '../../../lib/github-photo';
-import { drawingSeed } from '../../../lib/cast-faces';
+import { FACES_EVENT, faceUri } from '../../../scripts/team-faces';
 
 /** A GitHub account's photo address as Studio writes it (github.com/<login>.png): Who checks it for a drawn face. */
 export const githubPhoto = (login: string, size = 48): string => `https://github.com/${encodeURIComponent(login)}.png?size=${size}`;
@@ -21,13 +21,18 @@ let loaded: Draw | null = null;
 export function useFaces(): Draw | null {
   const [draw, setDraw] = useState<Draw | null>(() => loaded);
   useEffect(() => {
-    if (loaded) return;
     let live = true;
-    // Every face of a React island draws through drawingSeed (lib/cast-faces), so one person keeps one drawing.
-    loading ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (loaded = (seed: string) => m.illustratedAvatarUri(drawingSeed(seed))));
-    loading.then((d) => live && setDraw(() => d)).catch(() => {});
+    // A saved face, or the team read, changed: every face draws again (a new function, so React repaints).
+    const again = () => loaded && live && setDraw(() => (seed: string) => loaded!(seed));
+    document.addEventListener(FACES_EVENT, again);
+    // Every face of a React island draws through faceUri (scripts/team-faces), so one person keeps one drawing.
+    if (!loaded) {
+      loading ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (loaded = (seed: string) => faceUri(m, seed)));
+      loading.then((d) => live && setDraw(() => d)).catch(() => {});
+    }
     return () => {
       live = false;
+      document.removeEventListener(FACES_EVENT, again);
     };
   }, []);
   return draw;

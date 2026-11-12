@@ -148,6 +148,7 @@ export function mergedAccount(canonical: string, accounts: readonly { a: Account
   const { displayEmail: _d, ...base } = oldest;
   const aiTools = oldest.aiTools ?? others.find((o) => o.aiTools)?.aiTools;
   const tz = oldest.tz ?? others.find((o) => o.tz)?.tz;
+  const face = oldest.face ?? others.find((o) => o.face)?.face;
   return {
     ...base,
     email: canonical,
@@ -157,6 +158,7 @@ export function mergedAccount(canonical: string, accounts: readonly { a: Account
     version: Math.max(...accounts.map((x) => x.a.version)),
     ...(aiTools ? { aiTools } : {}),
     ...(tz ? { tz } : {}),
+    ...(face ? { face } : {}),
   };
 }
 

@@ -14,7 +14,7 @@
 //   GET  /api/contribute?repo=owner/name&mint=read-pass  { pass, exp, origins } | { pass: null }  for a member: a read
 //                                                        pass for the team's product repositories (api/_lib/read-pass)
 //                                                        and the product origins Studio may hand it to
-//   GET  /api/contribute?repo=owner/name&members=1       { collaborators, members }  who is on the team, for Settings >
+//   GET  /api/contribute?repo=owner/name&members=1       { collaborators, members, faces }  who is on the team, for Settings >
 //                                                        Members of anyone on it: an email contributor (the cookie) or
 //                                                        a GitHub account that can read the repository (Bearer). The
 //                                                        GitHub people come from the app's token (login, avatar,
@@ -140,6 +140,8 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { sessionAccount } from '../_lib/account.js';
 import { demoDialog, isSampleTeam } from '../../src/lib/demo.js';
+import { nameFace } from '../../src/lib/people.js';
+import { facesOf, getTeamFaces } from '../_lib/team-faces.js';
 import { migrateShots, putShot, shotImage, shotMeta, shotsTodo, shotStoreOf, workflowClaims, type ShotsCtx, type ShotStore } from '../_lib/private-shots.js';
 import { productOfImage, putReachImage, putReachSummary, reachImageBytes, reachTodo, readReach, summaryFor } from '../_lib/private-reach.js';
 import { escHtml, mailButton, mailP, mailPage, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
@@ -3493,7 +3495,12 @@ async function membersOf(ctx: Ctx, req: Request, full: string, m: EmailMember | 
     ...(m && sameEmail(p.email, m.email) ? { you: true } : {}),
   }));
   const pms = Object.fromEntries(Object.entries(await pmsOf(ctx.svc.redis, full).catch(() => ({}) as Record<string, ProductPm>)).map(([k, v]) => [k, publicPm(v)]));
-  return json(200, { collaborators, members, pms, reviewMode: mode }, { 'Cache-Control': 'private, no-store' });
+  // The team face map (api/_lib/team-faces.ts): the faces people saved, and who joined first (first claim wins), so
+  // every member's Studio draws the team the same and apart (src/lib/team-faces.ts teamDrawings).
+  const joined = [...people].sort((x, y) => (Date.parse(x.at || '') || 0) - (Date.parse(y.at || '') || 0)).map((p) => nameFace(p.name));
+  const saved = facesOf(await getTeamFaces(ctx.svc.redis, full).catch(() => ({})), new Set(joined));
+  const faces = { saved, order: [...joined, ...collaborators.map((c) => c.login.toLowerCase())] };
+  return json(200, { collaborators, members, pms, reviewMode: mode, faces }, { 'Cache-Control': 'private, no-store' });
 }
 
 /**

@@ -10,6 +10,8 @@ import { GitHubError } from '@bridge-ds/core';
 import { mineIn } from '../lib/branches-page';
 import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
 import { isDemoRepo } from '../lib/demo';
+import { nameFace } from '../lib/people';
+import { parseTeamFaces } from '../lib/team-faces';
 import { castGitHub, playedMember } from '../lib/demo-cast';
 import { castOn } from './demo-cast';
 
@@ -320,7 +322,22 @@ export async function contributeTeam(repo: string, githubToken: string | null = 
           ...(m.lead === true ? { lead: true } : {}),
         }))
     : [];
+  noteTeamFaces(repo, (r as { faces?: unknown }).faces, members, collaborators);
   return { collaborators, members, pms: parsePms((r as { pms?: unknown }).pms), reviewMode: asReviewMode(r.reviewMode) };
+}
+
+/**
+ * The team face map of a members read (`faces`: the saved faces and who joined first), kept for every surface of the
+ * page (scripts/team-faces.ts). Each person by their face seed: an email member by name, a GitHub person by login.
+ */
+function noteTeamFaces(repo: string, raw: unknown, members: readonly { name: string }[], collaborators: readonly TeamCollaborator[]): void {
+  if (!raw || typeof raw !== 'object') return;
+  const f = raw as { saved?: unknown; order?: unknown };
+  const names = new Map<string, string>([...members.map((m) => [nameFace(m.name), m.name] as const), ...collaborators.map((c) => [c.login.toLowerCase(), c.login] as const)]);
+  const order = Array.isArray(f.order) ? f.order.filter((s): s is string => typeof s === 'string').map((s) => s.toLowerCase()) : [];
+  const seeds = [...new Set([...order.filter((s) => names.has(s)), ...names.keys()])];
+  const people = seeds.map((seed) => ({ seed, name: names.get(seed)! }));
+  void import('./team-faces').then((t) => t.rememberTeamFaces(repo, { saved: parseTeamFaces(f.saved), people })).catch(() => {});
 }
 
 /** Who is the product manager of `product`, or nobody: a lead or an admin of the team (checked by the server). */

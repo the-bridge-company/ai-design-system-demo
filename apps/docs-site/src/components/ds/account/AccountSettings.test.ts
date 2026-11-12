@@ -227,6 +227,9 @@ describe('the account menu', () => {
     await userEvent.setup().click(trigger);
     const menu = await screen.findByRole('menu');
     expect(within(menu).getByText('leo@acme.example')).toBeInTheDocument();
+    // Who they are on this team, one quiet line under the email; no face shortcut (it lives in Settings > You).
+    expect(within(menu).getByText('Admin')).toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: /face/i })).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Link GitHub' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Account settings' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();

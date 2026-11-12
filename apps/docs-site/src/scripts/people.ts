@@ -6,7 +6,7 @@ import { avatarHtml, type AvatarSize } from '@bridge-ds/react/dom';
 import { authorLine, isClaudeLogin, isEmailAddress, loginKey, nameFace, loginsToFetch, nameBudget, personName, readNameCache, type NameCache } from '../lib/people';
 import { isNameAuthor, nameOfAuthor } from '../lib/author';
 import { currentViewer, esc, ghGet, hasWorkingToken } from './github-session';
-import { drawingSeed } from '../lib/cast-faces';
+import { faceUri } from './team-faces';
 
 const STORE = 'bridge.people.names.v1';
 
@@ -80,7 +80,7 @@ export function personHtml(login: string, { size = 'xs', agent = false, withName
 }
 
 let illustrator: Promise<(seed: string) => string> | null = null;
-const loadIllustrator = () => (illustrator ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (seed: string) => m.illustratedAvatarUri(drawingSeed(seed))));
+const loadIllustrator = () => (illustrator ??= import('@bridge-ds/react/avatar-illustrated').then((m) => (seed: string) => faceUri(m, seed)));
 
 /**
  * The profile names of these logins, read from GitHub when not known yet (within the name budget), for text written

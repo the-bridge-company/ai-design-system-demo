@@ -6,6 +6,7 @@
 //   - the "On this page" rail of the open tab,
 //   - the Storybook previews (data-sb-preview), which follow the preview brand and density (bridge:scope).
 // And the Components page: a link to #fam-<family> opens that family even if it was collapsed.
+import { showTabsPanel } from '@bridge-ds/react/dom';
 import { COMPONENT_TABS, CP_TAB_PICK, CP_TAB_SHOWN, isComponentTab, LEGACY_ANCHORS, previewUrl, storyInIndex, type ComponentTabId } from '../lib/library/component-page';
 
 /**
@@ -96,8 +97,8 @@ export function initComponentPage(doc: Document = document) {
   // keeps it too (data-cp-tab) for tabs that wake up after it.
   const select = (wanted: string) => {
     const id: ComponentTabId = isComponentTab(wanted) ? wanted : COMPONENT_TABS[0].id;
-    panels.forEach((p) => (p.hidden = p.dataset.panel !== id));
-    const panel = panels.find((p) => p.dataset.panel === id);
+    // The panels are DS TabsPanels outside the Tabs root (ComponentView.tsx): showTabsPanel shows the one picked.
+    const panel = showTabsPanel(doc, id);
     if (panel) paintToc(panel);
     if (page) page.dataset.cpTab = id;
     doc.dispatchEvent(new CustomEvent(CP_TAB_SHOWN, { detail: { id } }));

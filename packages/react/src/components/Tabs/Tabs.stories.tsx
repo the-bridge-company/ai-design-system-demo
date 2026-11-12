@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
+import { showTabsPanel } from '../../dom';
 import { Boxes, GitPullRequest, History, Palette } from 'lucide-react';
 import { Specimen, SpecimenStack, StateGrid } from '../../stories/StateGrid';
 import { Tab, Tabs, TabsList, TabsPanel, type TabsVariant } from './Tabs';
@@ -35,6 +37,33 @@ const Library = (args: Story['args']) => (
 export const Underline: Story = { render: (args) => <Library {...args} /> };
 export const Contained: Story = { args: { variant: 'contained' }, render: (args) => <Library {...args} /> };
 export const Vertical: Story = { args: { orientation: 'vertical' }, render: (args) => <Library {...args} /> };
+
+// The tabs as one island and the panels after it, outside the Tabs root: each panel names its tab (tabId), each tab
+// points at its panel (aria-controls), showTabsPanel shows the one picked.
+const LinkedTabs = () => {
+  const [value, setValue] = useState('usage');
+  return (
+    <div id="linked-tabs">
+      <Tabs
+        value={value}
+        onValueChange={(v) => {
+          setValue(String(v));
+          const scope = document.getElementById('linked-tabs');
+          if (scope) showTabsPanel(scope, String(v));
+        }}
+      >
+        <TabsList aria-label="Button documentation">
+          <Tab value="usage" id="linked-usage-btn" aria-controls="linked-usage">Usage</Tab>
+          <Tab value="code" id="linked-code-btn" aria-controls="linked-code">Code</Tab>
+        </TabsList>
+      </Tabs>
+      <TabsPanel value="usage" id="linked-usage" tabId="linked-usage-btn">When to use a button, and when a link.</TabsPanel>
+      <TabsPanel value="code" id="linked-code" tabId="linked-code-btn" hidden>The props, the playground and the source files.</TabsPanel>
+    </div>
+  );
+};
+
+export const LinkedPanels: Story = { render: () => <LinkedTabs /> };
 
 const VARIANTS: { label: string; value: TabsVariant }[] = [
   { label: 'Underline', value: 'underline' },

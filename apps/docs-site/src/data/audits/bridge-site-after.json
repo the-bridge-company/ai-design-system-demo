@@ -6,10 +6,10 @@
     "version": "0.21.2"
   },
   "label": "Bridge docs site, after",
-  "generatedAt": "2026-11-12T12:17:44.642Z",
+  "generatedAt": "2026-11-12T12:38:21.999Z",
   "target": {
     "path": "apps/docs-site/src",
-    "files": 787,
+    "files": 792,
     "skipped": 0
   },
   "designSystem": {
@@ -32,12 +32,12 @@
   "metrics": {
     "tokenAdoption": 100,
     "componentAdoption": 100,
-    "tokenUsages": 11774,
+    "tokenUsages": 11499,
     "hardcoded": 1,
-    "themeRefs": 1198,
-    "dsComponentInstances": 2432,
-    "uiComponentInstances": 2432,
-    "imitations": 29
+    "themeRefs": 1197,
+    "dsComponentInstances": 2467,
+    "uiComponentInstances": 2467,
+    "imitations": 0
   },
   "byCategory": {
     "color": {
@@ -48,10 +48,10 @@
   },
   "components": {
     "ds": {
-      "Button": 526,
+      "Button": 528,
       "Input": 83,
       "Textarea": 33,
-      "SegmentedControl": 37,
+      "SegmentedControl": 39,
       "Link": 294,
       "Card": 48,
       "CardHeader": 2,
@@ -64,25 +64,25 @@
       "TableBody": 19,
       "TableCell": 80,
       "Alert": 77,
-      "Badge": 144,
+      "Badge": 149,
       "Tabs": 7,
       "TabsList": 7,
-      "Tab": 10,
+      "Tab": 11,
       "Checkbox": 22,
       "Switch": 14,
-      "Tag": 14,
+      "Tag": 17,
       "Progress": 13,
       "Avatar": 33,
       "Kbd": 25,
       "Icon": 120,
-      "IconButton": 39,
-      "Menu": 23,
-      "MenuTrigger": 24,
-      "MenuContent": 23,
+      "IconButton": 40,
+      "Menu": 25,
+      "MenuTrigger": 26,
+      "MenuContent": 25,
       "MenuRadioGroup": 2,
       "MenuRadioItem": 2,
       "MenuGroup": 8,
-      "MenuItem": 54,
+      "MenuItem": 56,
       "MenuSeparator": 13,
       "Popover": 9,
       "PopoverTrigger": 9,
@@ -99,23 +99,23 @@
       "AccordionItem": 27,
       "Tooltip": 20,
       "Drawer": 4,
-      "RadioGroup": 9,
-      "Radio": 13,
+      "RadioGroup": 10,
+      "Radio": 14,
       "Divider": 1,
       "AvatarGroup": 7,
       "EmptyState": 17,
       "Breadcrumb": 8,
       "PageHeader": 1,
+      "TabsPanel": 14,
       "DialogClose": 19,
       "DialogTrigger": 2,
       "TokenValue": 14,
-      "TabsPanel": 6,
       "CheckboxGroup": 2,
       "Field": 1,
       "Skeleton": 32,
-      "SidebarNav": 2,
-      "SidebarNavSection": 4,
-      "SidebarNavItem": 5,
+      "SidebarNav": 3,
+      "SidebarNavSection": 5,
+      "SidebarNavItem": 6,
       "Checklist": 4,
       "ChecklistRow": 4,
       "MenuSubmenu": 1,
@@ -166,91 +166,9 @@
     }
   ],
   "imitations": {
-    "total": 29,
-    "byComponent": {
-      "Tabs": 8,
-      "Menu": 6,
-      "Badge": 4,
-      "Tag": 4,
-      "SegmentedControl": 3,
-      "Button": 2,
-      "Dialog": 1,
-      "Tooltip": 1
-    },
-    "topFixes": [
-      {
-        "suggestion": "Menu",
-        "pattern": "markup built in a string",
-        "count": 6,
-        "files": 2
-      },
-      {
-        "suggestion": "Tabs",
-        "pattern": "role=\"tabpanel\"",
-        "count": 4,
-        "files": 1
-      },
-      {
-        "suggestion": "Tag",
-        "pattern": "style sheet rules that draw it by hand",
-        "count": 4,
-        "files": 1
-      },
-      {
-        "suggestion": "SegmentedControl",
-        "pattern": "markup built in a string",
-        "count": 3,
-        "files": 2
-      },
-      {
-        "suggestion": "Badge",
-        "pattern": "class names on plain elements",
-        "count": 2,
-        "files": 2
-      },
-      {
-        "suggestion": "Badge",
-        "pattern": "style sheet rules that draw it by hand",
-        "count": 2,
-        "files": 1
-      },
-      {
-        "suggestion": "Button",
-        "pattern": "style sheet rules that draw it by hand",
-        "count": 2,
-        "files": 1
-      },
-      {
-        "suggestion": "Tabs",
-        "pattern": "markup built in a string",
-        "count": 2,
-        "files": 1
-      },
-      {
-        "suggestion": "Dialog",
-        "pattern": "role=\"dialog\"",
-        "count": 1,
-        "files": 1
-      },
-      {
-        "suggestion": "Tabs",
-        "pattern": "data attributes that wire it by hand",
-        "count": 1,
-        "files": 1
-      },
-      {
-        "suggestion": "Tabs",
-        "pattern": "style sheet rules that draw it by hand",
-        "count": 1,
-        "files": 1
-      },
-      {
-        "suggestion": "Tooltip",
-        "pattern": "style sheet rules that draw it by hand",
-        "count": 1,
-        "files": 1
-      }
-    ]
+    "total": 0,
+    "byComponent": {},
+    "topFixes": []
   },
   "files": [
     {
@@ -707,44 +625,10 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 21,
+      "dsComponents": 25,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "ignored": [
-        {
-          "line": 233,
-          "column": 13,
-          "kind": "imitation",
-          "what": "div",
-          "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-          "via": "comment"
-        },
-        {
-          "line": 246,
-          "column": 13,
-          "kind": "imitation",
-          "what": "div",
-          "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-          "via": "comment"
-        },
-        {
-          "line": 344,
-          "column": 13,
-          "kind": "imitation",
-          "what": "div",
-          "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-          "via": "comment"
-        },
-        {
-          "line": 474,
-          "column": 13,
-          "kind": "imitation",
-          "what": "div",
-          "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-          "via": "comment"
-        }
-      ]
+      "components": []
     },
     {
       "path": "components/ds/library/views/ElevationView.tsx",
@@ -2463,6 +2347,17 @@
       "components": []
     },
     {
+      "path": "components/explorer/CollectionTree.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 3,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
       "path": "components/explorer/ExplorerData.astro",
       "lang": "astro",
       "tokenUsages": 0,
@@ -2479,20 +2374,43 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 2,
+      "dsComponents": 8,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 26,
-          "column": 11,
-          "rule": "data-attr",
-          "pattern": "data-xe-family-tab attribute",
-          "element": "Tab",
-          "suggestion": "Tabs"
-        }
-      ]
+      "components": []
+    },
+    {
+      "path": "components/explorer/MoreOptionsToggle.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 1,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
+      "path": "components/explorer/RampPicker.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 3,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
+    },
+    {
+      "path": "components/explorer/RowMenu.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 5,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
     },
     {
       "path": "components/explorer/TokenDetailDrawer.astro",
@@ -2514,32 +2432,7 @@
       "dsComponents": 17,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 43,
-          "column": 5,
-          "rule": "class",
-          "pattern": ".xe-bar-count on <span> (a count)",
-          "element": "span",
-          "suggestion": "Badge",
-          "also": [
-            "Tag"
-          ]
-        },
-        {
-          "line": 48,
-          "column": 3,
-          "rule": "role",
-          "pattern": "role=\"dialog\"",
-          "element": "aside",
-          "suggestion": "Dialog",
-          "also": [
-            "Drawer",
-            "Popover"
-          ]
-        }
-      ]
+      "components": []
     },
     {
       "path": "components/explorer/TokenExplorer.astro",
@@ -2547,23 +2440,21 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 20,
+      "dsComponents": 21,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 163,
-          "column": 15,
-          "rule": "class",
-          "pattern": ".xp-count on <span> (a count)",
-          "element": "span",
-          "suggestion": "Badge",
-          "also": [
-            "Tag"
-          ]
-        }
-      ]
+      "components": []
+    },
+    {
+      "path": "components/explorer/TypeFilter.tsx",
+      "lang": "tsx",
+      "tokenUsages": 0,
+      "themeRefs": 0,
+      "hardcoded": 0,
+      "dsComponents": 2,
+      "otherComponents": 0,
+      "findings": [],
+      "components": []
     },
     {
       "path": "components/explorer/XpKeys.astro",
@@ -6724,44 +6615,10 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 0,
+      "dsComponents": 4,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 38,
-          "column": 3,
-          "rule": "role",
-          "pattern": "role=\"tabpanel\"",
-          "element": "div",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 54,
-          "column": 3,
-          "rule": "role",
-          "pattern": "role=\"tabpanel\"",
-          "element": "div",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 58,
-          "column": 3,
-          "rule": "role",
-          "pattern": "role=\"tabpanel\"",
-          "element": "div",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 69,
-          "column": 3,
-          "rule": "role",
-          "pattern": "role=\"tabpanel\"",
-          "element": "div",
-          "suggestion": "Tabs"
-        }
-      ]
+      "components": []
     },
     {
       "path": "pages/team-shell/tokens.astro",
@@ -7198,7 +7055,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 0,
+      "dsComponents": 2,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -7220,7 +7077,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 5,
+      "dsComponents": 7,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -7242,7 +7099,7 @@
       "tokenUsages": 0,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 2,
+      "dsComponents": 3,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -7256,52 +7113,7 @@
       "dsComponents": 0,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 319,
-          "column": 8,
-          "rule": "html-string",
-          "pattern": "aria-pressed toggle in an HTML string",
-          "element": "button",
-          "suggestion": "SegmentedControl",
-          "also": [
-            "RadioGroup"
-          ]
-        },
-        {
-          "line": 601,
-          "column": 8,
-          "rule": "html-string",
-          "pattern": "role=\"menuitem\" in an HTML string",
-          "element": "button",
-          "suggestion": "Menu"
-        },
-        {
-          "line": 602,
-          "column": 8,
-          "rule": "html-string",
-          "pattern": "role=\"menuitem\" in an HTML string",
-          "element": "button",
-          "suggestion": "Menu"
-        },
-        {
-          "line": 603,
-          "column": 8,
-          "rule": "html-string",
-          "pattern": "role=\"menuitem\" in an HTML string",
-          "element": "button",
-          "suggestion": "Menu"
-        },
-        {
-          "line": 604,
-          "column": 38,
-          "rule": "html-string",
-          "pattern": "role=\"menuitem\" in an HTML string",
-          "element": "button",
-          "suggestion": "Menu"
-        }
-      ]
+      "components": []
     },
     {
       "path": "scripts/explorer/inline-edit.ts",
@@ -7313,7 +7125,7 @@
       "otherComponents": 0,
       "findings": [
         {
-          "line": 50,
+          "line": 53,
           "column": 70,
           "category": "color",
           "value": "#000000",
@@ -7328,63 +7140,7 @@
           }
         }
       ],
-      "components": [],
-      "imitations": [
-        {
-          "line": 157,
-          "column": 10,
-          "rule": "html-string",
-          "pattern": "role=\"radio\" in an HTML string",
-          "element": "button",
-          "suggestion": "SegmentedControl",
-          "also": [
-            "RadioGroup"
-          ]
-        },
-        {
-          "line": 158,
-          "column": 10,
-          "rule": "html-string",
-          "pattern": "role=\"radio\" in an HTML string",
-          "element": "button",
-          "suggestion": "SegmentedControl",
-          "also": [
-            "RadioGroup"
-          ]
-        },
-        {
-          "line": 175,
-          "column": 10,
-          "rule": "html-string",
-          "pattern": "class \"xe-tabs\" in an HTML string",
-          "element": "div",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 177,
-          "column": 41,
-          "rule": "html-string",
-          "pattern": "class \"xe-tab-more\" in an HTML string",
-          "element": "button",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 178,
-          "column": 37,
-          "rule": "html-string",
-          "pattern": "role=\"menu\" in an HTML string",
-          "element": "div",
-          "suggestion": "Menu"
-        },
-        {
-          "line": 178,
-          "column": 98,
-          "rule": "html-string",
-          "pattern": "role=\"menuitem\" in an HTML string",
-          "element": "button",
-          "suggestion": "Menu"
-        }
-      ]
+      "components": []
     },
     {
       "path": "scripts/explorer/preview-frames.ts",
@@ -7403,7 +7159,7 @@
       "tokenUsages": 1,
       "themeRefs": 0,
       "hardcoded": 0,
-      "dsComponents": 1,
+      "dsComponents": 2,
       "otherComponents": 0,
       "findings": [],
       "components": []
@@ -8978,7 +8734,7 @@
     {
       "path": "styles/library.css",
       "lang": "css",
-      "tokenUsages": 58,
+      "tokenUsages": 54,
       "themeRefs": 0,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -9186,7 +8942,7 @@
     {
       "path": "styles/settings.css",
       "lang": "css",
-      "tokenUsages": 118,
+      "tokenUsages": 114,
       "themeRefs": 0,
       "hardcoded": 0,
       "dsComponents": 0,
@@ -9433,119 +9189,13 @@
     {
       "path": "styles/token-explorer.css",
       "lang": "css",
-      "tokenUsages": 1212,
-      "themeRefs": 14,
+      "tokenUsages": 945,
+      "themeRefs": 13,
       "hardcoded": 0,
       "dsComponents": 0,
       "otherComponents": 0,
       "findings": [],
-      "components": [],
-      "imitations": [
-        {
-          "line": 79,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-tree-btn drawn by hand (border-radius)",
-          "element": ".xp-tree-btn",
-          "suggestion": "Button",
-          "also": [
-            "IconButton"
-          ]
-        },
-        {
-          "line": 741,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-chip drawn by hand (border, border-radius, background-color)",
-          "element": ".xp-chip",
-          "suggestion": "Tag",
-          "also": [
-            "Badge"
-          ]
-        },
-        {
-          "line": 767,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-chip-flag drawn by hand (border-radius, background-color)",
-          "element": ".xp-chip-flag",
-          "suggestion": "Tag",
-          "also": [
-            "Badge"
-          ]
-        },
-        {
-          "line": 876,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-badge drawn by hand (border-radius)",
-          "element": ".xp-badge",
-          "suggestion": "Badge",
-          "also": [
-            "Tag"
-          ]
-        },
-        {
-          "line": 2193,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xe-tab-more drawn by hand (border-radius)",
-          "element": ".xe-tab-more",
-          "suggestion": "Tabs"
-        },
-        {
-          "line": 2302,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xe-tip drawn by hand (border-radius, background-color)",
-          "element": ".xe-tip",
-          "suggestion": "Tooltip"
-        },
-        {
-          "line": 2543,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xe-more-btn drawn by hand (border-radius)",
-          "element": ".xe-more-btn",
-          "suggestion": "Button",
-          "also": [
-            "IconButton"
-          ]
-        },
-        {
-          "line": 2877,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xe-badge drawn by hand (border-radius)",
-          "element": ".xe-badge",
-          "suggestion": "Badge",
-          "also": [
-            "Tag"
-          ]
-        },
-        {
-          "line": 3436,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-chip-btn drawn by hand (border, border-radius, background-color)",
-          "element": ".xp-chip-btn",
-          "suggestion": "Tag",
-          "also": [
-            "Badge"
-          ]
-        },
-        {
-          "line": 3469,
-          "column": 1,
-          "rule": "css",
-          "pattern": ".xp-chip-filter drawn by hand (border-color, background-color)",
-          "element": ".xp-chip-filter",
-          "suggestion": "Tag",
-          "also": [
-            "Badge"
-          ]
-        }
-      ]
+      "components": []
     },
     {
       "path": "styles/view-change.css",
@@ -9571,8 +9221,8 @@
     }
   ],
   "ignored": {
-    "total": 38,
-    "comment": 38,
+    "total": 34,
+    "comment": 34,
     "allowlist": 0,
     "items": [
       {
@@ -9609,42 +9259,6 @@
         "kind": "imitation",
         "what": "button",
         "reason": "the whole token row (swatches, name, light and dark values) is one target that selects it; the DS has no row button and Button would truncate it to one label",
-        "via": "comment"
-      },
-      {
-        "file": "components/ds/library/views/ComponentView.tsx",
-        "line": 233,
-        "column": 13,
-        "kind": "imitation",
-        "what": "div",
-        "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-        "via": "comment"
-      },
-      {
-        "file": "components/ds/library/views/ComponentView.tsx",
-        "line": 246,
-        "column": 13,
-        "kind": "imitation",
-        "what": "div",
-        "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-        "via": "comment"
-      },
-      {
-        "file": "components/ds/library/views/ComponentView.tsx",
-        "line": 344,
-        "column": 13,
-        "kind": "imitation",
-        "what": "div",
-        "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
-        "via": "comment"
-      },
-      {
-        "file": "components/ds/library/views/ComponentView.tsx",
-        "line": 474,
-        "column": 13,
-        "kind": "imitation",
-        "what": "div",
-        "reason": "a static panel of the DS Tabs in ComponentTabs.tsx (the island); a TabsPanel must render inside the Tabs root, and these panels stay server-rendered so the page reads without JavaScript (Tier 2 request: a static TabsPanel for islands)",
         "via": "comment"
       },
       {

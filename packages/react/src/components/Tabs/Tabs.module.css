@@ -222,6 +222,12 @@
   line-height: var(--typography-ui-line-height);
 }
 
+/* A linked panel (TabsPanel outside its Tabs root) holds sections of the page itself, so it keeps the page's text. */
+.linked {
+  font-size: inherit;
+  line-height: inherit;
+}
+
 .panel:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);

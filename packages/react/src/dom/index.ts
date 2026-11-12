@@ -22,6 +22,7 @@ export { segmentedControlHtml, bindSegmentedControls, selectSegment, type Segmen
 export { switchHtml, bindSwitches, setSwitchChecked, type SwitchHtmlOptions } from './switch';
 export { dialogHtml, bindDialogs, openDialog, closeDialog, isDialogOpen, dialogReturnValue, type DialogHtmlOptions, type OpenDialogOptions } from './dialog';
 export { drawerHtml, type DrawerHtmlOptions } from './drawer';
+export { showTabsPanel } from './tabs';
 export { copyText } from '../utils/copy';
 export type { BadgeTone, BadgeAppearance, BadgeSize } from '../components/Badge';
 export type { ButtonVariant, ButtonSize } from '../components/Button';

@@ -1,6 +1,7 @@
 // Team Settings: shows one group at a time (lib/settings-sections.ts). The DS Tabs on top (SettingsTabs.tsx) pick the
 // group and keep it in the address (#set-group-tools), so Back and a shared link land on the same group. An older
 // anchor (#roles, #figma) opens its group and scrolls to the band once its island has drawn it.
+import { showTabsPanel } from '@bridge-ds/react/dom';
 import { DEFAULT_SETTINGS_GROUP, groupForHash, groupId, hashNamesBand, type SettingsGroupKey } from '../lib/settings-sections';
 
 export interface SettingsSections {
@@ -11,15 +12,16 @@ export interface SettingsSections {
 }
 
 /**
- * Wires the group panels ([data-set-group]) to the address. `onShow` hears every group shown, from a tab or from the
- * address, so the tabs mark the same one. Shows the group the address names right away.
+ * Wires the group panels (DS TabsPanels outside the Tabs root, [data-set-group]) to the address: showTabsPanel shows the
+ * one picked. `onShow` hears every group shown, from a tab or from the address, so the tabs mark the same one. Shows the
+ * group the address names right away.
  */
 export function initSettingsSections(onShow: (key: SettingsGroupKey) => void = () => {}, root: ParentNode = document): SettingsSections {
-  const groups = [...root.querySelectorAll<HTMLElement>('[data-set-group]')];
+  const groups = root.querySelectorAll<HTMLElement>('[data-set-group]');
   let waiting: number | null = null;
 
   const show = (key: SettingsGroupKey) => {
-    for (const g of groups) g.hidden = g.dataset.setGroup !== key;
+    showTabsPanel(root, key);
     onShow(key);
   };
 

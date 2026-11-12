@@ -12,7 +12,8 @@
 // everyone whatever the team read gives (AppearanceSetting.tsx).
 // Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
 // The bands sit in four groups, one shown at a time under the DS Tabs (SettingsTabs.tsx, lib/settings-sections.ts,
-// scripts/settings-sections.ts), each group its tab's panel: Team (name, members, products, library access, danger
+// scripts/settings-sections.ts), each group its tab's DS TabsPanel, linked from outside the Tabs root (tabId) since
+// each holds islands of its own: Team (name, members, products, library access, danger
 // zone), Reviews (review rules, how changes reach your code, safety), Tools (Claude, Figma), You (appearance, AI tools). Every old anchor opens its group.
 import '../../../styles/settings.css';
 import TeamShell from '../../../components/TeamShell.astro';
@@ -28,6 +29,7 @@ import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
+import { TabsPanel } from '@bridge-ds/react';
 import SettingsTabs from '../../../components/ds/studio/SettingsTabs';
 import { groupId, tabId } from '../../../lib/settings-sections';
 ---
@@ -35,7 +37,7 @@ import { groupId, tabId } from '../../../lib/settings-sections';
 <TeamShell route="settings/" title="Settings" scene="settings" summary="Your team, its people, and how changes reach your code." what="settings and roles" description="Your team: its name, its people, how changes reach your code and who checks them.">
   <SettingsTabs client:load />
 
-  <div class="set-group" id={groupId('team')} data-set-group="team" role="tabpanel" aria-labelledby={tabId('team')} tabindex="0">
+  <TabsPanel className="set-group" value="team" id={groupId('team')} tabId={tabId('team')} data-set-group="team">
     <section class="ts-band" id="general" aria-labelledby="ts-general">
       <h2 id="ts-general" class="ts-h">{TEAM_NAME_WORDS.generalTitle}</h2>
       <p class="ts-intro">{TEAM_NAME_WORDS.generalIntro}</p>
@@ -49,13 +51,13 @@ import { groupId, tabId } from '../../../lib/settings-sections';
       <LibraryAccessSection client:only="react" />
     </section>
     <DeleteTeamBand client:only="react" />
-  </div>
+  </TabsPanel>
 
-  <div class="set-group" id={groupId('reviews')} data-set-group="reviews" role="tabpanel" aria-labelledby={tabId('reviews')} tabindex="0">
+  <TabsPanel className="set-group" value="reviews" id={groupId('reviews')} tabId={tabId('reviews')} data-set-group="reviews">
     <TeamSettings client:load />
-  </div>
+  </TabsPanel>
 
-  <div class="set-group" id={groupId('tools')} data-set-group="tools" role="tabpanel" aria-labelledby={tabId('tools')} tabindex="0">
+  <TabsPanel className="set-group" value="tools" id={groupId('tools')} tabId={tabId('tools')} data-set-group="tools">
     <section class="ts-band" id="team-claude" aria-labelledby="set-claude">
       <ClaudeConnector client:only="react" />
     </section>
@@ -64,9 +66,9 @@ import { groupId, tabId } from '../../../lib/settings-sections';
       <p class="ts-intro">{FIGMA_FILE_WORDS.bandIntro}</p>
       <FigmaFileSetting client:only="react" />
     </section>
-  </div>
+  </TabsPanel>
 
-  <div class="set-group" id={groupId('you')} data-set-group="you" role="tabpanel" aria-labelledby={tabId('you')} tabindex="0">
+  <TabsPanel className="set-group" value="you" id={groupId('you')} tabId={tabId('you')} data-set-group="you">
     <section class="ts-band" id="appearance" aria-labelledby="ts-appearance">
       <h2 id="ts-appearance" class="ts-h">Appearance</h2>
       <p class="ts-intro">How Bridge looks for you, only in this browser. It changes nothing for your team.</p>
@@ -77,5 +79,5 @@ import { groupId, tabId } from '../../../lib/settings-sections';
       <p class="ts-intro">The AI you build with. An admin also sets the team default.</p>
       <AiToolsSetting client:only="react" />
     </section>
-  </div>
+  </TabsPanel>
 </TeamShell>

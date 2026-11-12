@@ -486,19 +486,9 @@ html:has(.set-page, .ts-band) {
   white-space: pre;
 }
 
-/* Team Settings: each group is the panel of its DS tab (SettingsTabs.tsx), one shown at a time. Focusable like a DS
-   TabsPanel, with the same ring. */
+/* Team Settings: each group is the DS TabsPanel of its tab (SettingsTabs.tsx), one shown at a time; the panel brings
+   its focus ring and hides when not picked. Here only the layout of its bands. */
 .set-group {
   display: grid;
   gap: var(--space-8);
-  border-radius: var(--radius-container);
-}
-
-.set-group:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.set-group[hidden] {
-  display: none;
 }

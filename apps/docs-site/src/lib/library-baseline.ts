@@ -42,3 +42,29 @@ export function libraryToday(component: string, property: string): number | null
 export function baselineOf(component: string, property: string, recorded: number | null = null, measured: number | null = null): number | null {
   return libraryToday(component, property) ?? recorded ?? measured;
 }
+
+/** A way's value in pixels ("12", "12px", 12); null for anything else (a colour, a token name, nothing). */
+const pxOf = (v: string | number | null | undefined): number | null => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const m = /^\s*(-?\d+(?:\.\d+)?)\s*(?:px)?\s*$/.exec(v ?? '');
+  return m ? Number(m[1]) : null;
+};
+
+/** The option the library already has at a value of a component part (the default included), or null. */
+export function existingOption(component: string, property: string, value: string | number | null | undefined): LibraryOption | null {
+  const px = pxOf(value);
+  if (px === null) return null;
+  return knownLibraryOptions(component, property)?.find((o) => o.px === px) ?? null;
+}
+
+/**
+ * The one rule for what reaches the lead (owner, 2026-11-12): a component part becomes a decision (a Library review
+ * item, a nav count, a notification, a "New option" or "2 ways" tag, a step on the exploration page) only when at
+ * least one way is a value the library does not have yet. When every way is a value the library already has (its
+ * default, Compact...), the screens use the library as is: nothing to decide. A part Bridge does not know, or a value
+ * it cannot read, is a decision: never hidden on a guess.
+ */
+export function usesLibraryAsIs(component: string, property: string, values: readonly (string | number | null | undefined)[]): boolean {
+  return values.length > 0 && values.every((v) => existingOption(component, property, v) !== null);
+}
+

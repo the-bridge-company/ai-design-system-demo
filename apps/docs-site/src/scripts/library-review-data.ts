@@ -36,6 +36,7 @@ import { siteConfig } from './repo-context';
 import { loadStatuses } from './pr-status';
 import { productClient, productPulls } from './product-repos';
 import { impactSourceOf } from './library-impact';
+import { asIsOption, decisionConflicts } from '../lib/library-as-is';
 import { viewerRole } from './needs-you';
 import { viewerDecidesExplorations } from './design-lead';
 import { deciderNames } from '../lib/design-lead';
@@ -270,6 +271,8 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
       for (const item of impactItems(record)) {
         const raw = record.pieces.find((x) => x.id === item.id);
         const decision = block?.library?.decisions?.find((d) => d.piece === item.id) ?? null;
+        // A change at a value the library already has (Compact) uses the library as is: not a decision, no item.
+        if (!decision && raw && asIsOption(raw)) continue;
         const piece = pieceOfExploration({
           repo: p.repo,
           number: p.number,
@@ -287,8 +290,12 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
         });
         if (piece) xpPieces.push(piece);
       }
-      const conflicts: LibraryConflict[] = libraryConflicts(
-        s,
+      // Only the parts where a way is new to the library are decisions (lib/library-as-is).
+      const conflicts: LibraryConflict[] = decisionConflicts(
+        libraryConflicts(
+          s,
+          sources.map((x) => x.s),
+        ),
         sources.map((x) => x.s),
       );
       for (const c of conflicts) {

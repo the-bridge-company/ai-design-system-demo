@@ -35,9 +35,14 @@ export const leadChange = (n: number, title: string) => change({ number: n, titl
 export const newComponent = () =>
   pieceOfExploration({ repo: 'acme/crm-design', number: 7, name: 'Contact page summary', product: 'Acme CRM', productKey: 'crm', href: '?exploration=7&product=crm', designer: 'Sofia', item: { id: 'profile-header', kind: 'component', title: 'ProfileHeader' }, decision: null, nearest: null, asked: true, mine: false })!;
 
-export const conflict = () =>
+/**
+ * The sample team's Card padding conflict: Sofia's screen asks for 24 px (roomier, space.6), Leo's for 12 px (the
+ * library's Compact), the library's Card is 20 px today. `sofia` sets another value for Sofia's way: '20' is today's,
+ * the "same as today" path a real team can hit.
+ */
+export const conflict = (sofia = '24') =>
   pieceOfConflict(
-    { component: 'Card', property: 'padding', piece: 'card-padding', mine: { key: 'acme/crm-design#7', designer: 'Sofia', value: '20' }, other: { key: 'acme/crm-design#1', name: 'Deal pipeline cards', product: 'Acme CRM', designer: 'Leo', value: '12' }, pick: null },
+    { component: 'Card', property: 'padding', piece: 'card-padding', mine: { key: 'acme/crm-design#7', designer: 'Sofia', value: sofia }, other: { key: 'acme/crm-design#1', name: 'Deal pipeline cards', product: 'Acme CRM', designer: 'Leo', value: '12' }, pick: null },
     { name: 'Contact page summary', product: 'Acme CRM', href: null, productKey: 'crm' },
     'Dana',
     { otherPiece: 'card-room', today: '16' },

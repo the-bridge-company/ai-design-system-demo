@@ -1,8 +1,8 @@
 // One by one, a conflict (owner, 2026-11-10, direction D2 "compare stage"): two or more explorations change the same
 // part of the same component differently. Above, one compare stage: Overlay by default for room inside (the chosen
-// way's component drawn for real at 150%, the other ways' content boxes outlined and labelled "Today and Sofia: 20 px",
-// "Leo: 12 px (Compact)"), or the ways Side by side. Below, one radio list: a colour key, the person, the value and its word
-// ("20 px roomier") and where it is used; today first as the reference; then "Both, as two sizes". One footer: who is
+// way's component drawn for real at 150%, the other ways' content boxes outlined and labelled "Sofia: 24 px",
+// "Today: 20 px", "Leo: 12 px (Compact)"), or the ways Side by side. Below, one radio list: a colour key, the person, the value and its word
+// ("24 px roomier") and where it is used; today first as the reference; then "Both, as two sizes". One footer: who is
 // told, "Comment to both", and one primary that names the outcome ("Keep Sofia's way"). Words are the exploration
 // page's own (lib/library-impact-view.ts: roomier, tighter, keep both as sizes).
 // Pure: no DOM. Read by components/ds/studio/LibraryReview.tsx (Detail). Tested in library-review-compare.test.ts.
@@ -263,13 +263,6 @@ export function checkedPick(view: Rows, checked: readonly string[]): string | nu
 const NUMBER_WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six'];
 const listOf = (xs: readonly (string | number)[]) => (xs.length < 2 ? `${xs[0] ?? ''}` : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
-/** The values a sizes pick leaves in the library, today's included, smallest first. */
-function sizesOf(pick: string, view: Rows): number[] {
-  const keys = checkedOfPick(pick, view);
-  const values = [...view.ways.filter((w) => keys.includes(w.key)).map((w) => w.value), view.today.value];
-  return [...new Set(values.filter((v): v is number => v !== null))].sort((a, b) => a - b);
-}
-
 /**
  * The ways a sizes pick adds next to today's value, when every one of them is an option the library already has
  * (Leo's 12 px is Card's Compact): the pick adds nothing to the library, those screens use the option. Null otherwise.
@@ -289,11 +282,34 @@ const usesLine = (adds: readonly CompareOption[]) => {
   return `${listOf(owners)} ${owners.length === 1 ? 'screen uses' : 'screens use'} ${listOf(options)}`;
 };
 
+/** The values the checked rows keep, today's included when a checked row is today or equals it, smallest first. */
+function keptValues(view: Rows, checked: readonly string[]): number[] {
+  const values = rowsOf(view)
+    .filter((o) => checked.includes(o.key))
+    .map((o) => o.value);
+  return [...new Set(values.filter((v): v is number => v !== null))].sort((a, b) => a - b);
+}
+
+/** "Sofia's screen uses 24 px and Leo's screen uses Compact (12 px)": each kept way next to today's, grouped by look. */
+const screensLine = (adds: readonly CompareOption[]) => {
+  const groups: { owners: string[]; look: string }[] = [];
+  for (const w of adds) {
+    const look = w.libraryOption ? `${w.libraryOption} (${w.value} px)` : `${w.value} px`;
+    const owner = `${w.who ?? 'This'}'s`;
+    const at = groups.find((g) => g.look === look);
+    if (at) {
+      if (!at.owners.includes(owner)) at.owners.push(owner);
+    } else groups.push({ owners: [owner], look });
+  }
+  return listOf(groups.map((g) => `${listOf(g.owners)} ${g.owners.length === 1 ? 'screen uses' : 'screens use'} ${g.look}`));
+};
+
 /**
- * The decision line under the rows, from the checked rows: "Keep Leo's way: 12 px everywhere", "Keep 12 and 20 px as
- * two sizes, today's 20 stays the default", "Keep today's Card: 20 px everywhere". A value the library already has
- * as an option says so instead of a new size: "Nothing new in the library: Leo's screen uses Compact (12 px), today's
- * 20 stays the default". Null with nothing checked.
+ * The decision line under the rows, from the checked rows: "Keep Sofia's way: 24 px everywhere", "Keep two sizes:
+ * today's 20 stays the default, Sofia's screen uses 24 px", "Keep today's Card: 20 px everywhere". A value the library
+ * already has as an option says so instead of a new size: "Nothing new in the library: Leo's screen uses Compact
+ * (12 px), today's 20 stays the default". Without today's value: "Keep 12 and 24 px as two sizes". Null with nothing
+ * checked.
  */
 export function checkedOutcome(view: Rows & Pick<CompareView, 'component'>, checked: readonly string[]): string | null {
   const pick = checkedPick(view, checked);
@@ -307,8 +323,12 @@ export function checkedOutcome(view: Rows & Pick<CompareView, 'component'>, chec
   }
   const existing = existingOnly(pick, view);
   if (existing) return `Nothing new in the library: ${usesLine(existing)}${t === null ? '' : `, today's ${t} stays the default`}`;
-  const values = sizesOf(pick, view);
-  return `Keep ${listOf(values)} px as ${NUMBER_WORDS[values.length] ?? values.length} sizes${t === null ? '' : `, today's ${t} stays the default`}`;
+  const values = keptValues(view, checked);
+  const n = NUMBER_WORDS[values.length] ?? values.length;
+  if (t === null) return `Keep ${listOf(values)} px as ${n} sizes`;
+  const keys = checkedOfPick(pick, view);
+  const adds = view.ways.filter((w) => keys.includes(w.key) && w.value !== null && w.value !== t);
+  return `Keep ${n} sizes: today's ${t} stays the default, ${screensLine(adds)}`;
 }
 
 /**
@@ -327,11 +347,11 @@ export function checkedKeepLabel(view: Rows & Pick<CompareView, 'component'>, ch
     const opts = [...new Set(existing.map((w) => w.libraryOption!))];
     return `Keep today's ${view.component}, ${listOf(who)} ${who.length === 1 ? 'uses' : 'use'} ${listOf(opts)}`;
   }
-  const n = sizesOf(pick, view).length;
+  const n = keptValues(view, checked).length;
   return n === 2 ? 'Keep both as sizes' : `Keep ${n} sizes`;
 }
 
-/** The words of a recorded pick, for the note both designers read: "Leo's way (12 px)", "today's Card", "12 and 20 px as two sizes". */
+/** The words of a recorded pick, for the note both designers read: "Leo's way (12 px)", "today's Card", "two sizes: today's 20 stays the default, ...". */
 export function pickWords(pick: string, view: Rows & Pick<CompareView, 'component'>): string {
   if (pick === TODAY) return `today's ${view.component}`;
   const one = view.ways.find((w) => w.key === pick);

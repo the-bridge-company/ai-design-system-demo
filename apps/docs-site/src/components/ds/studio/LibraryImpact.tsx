@@ -268,9 +268,11 @@ function PieceHead({ row, name, headingLevel, menu = null }: { row: ImpactRowVie
         <Icon icon={siteIcon('diamonds')} size="sm" />
       </span>
       <H className="li-pname">{name}</H>
-      <Badge tone={row.tag.tone} size="md" className={statusTagClass(row.tag.tone)}>
-        {row.tag.label}
-      </Badge>
+      {row.tag && (
+        <Badge tone={row.tag.tone} size="md" className={statusTagClass(row.tag.tone)}>
+          {row.tag.label}
+        </Badge>
+      )}
       {(people.length > 0 || products.length > 0) && (
         <span className="li-origin">
           {people.length > 0 && (

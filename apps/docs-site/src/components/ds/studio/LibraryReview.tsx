@@ -650,7 +650,7 @@ function Stage({ view, mode, checked, component }: { view: CompareView; mode: 'o
   const label = (l: (typeof looks)[number]) => (
     <>
       <span className={`lr-key is-hue-${l.hue}`} aria-hidden="true" />
-      {/* Whose look, then its value, said once each ("Today and Sofia 20 px", "Leo 12 px (Compact)"). */}
+      {/* Whose look, then its value, said once each ("Sofia 24 px", "Today 20 px", "Leo 12 px (Compact)"). */}
       <span>
         {l.who} <strong>{l.value} px</strong>
         {l.option && <span className="lr-stage-option"> ({l.option})</span>}

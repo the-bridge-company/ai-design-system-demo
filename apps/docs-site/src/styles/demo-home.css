@@ -5,8 +5,17 @@
 /* --- The banner: a full-width strip under the app header, on every Studio page and the team Library ------------ */
 
 .demo-strip > .demo-banner {
+  /* The strip's action ends on the top bar's end edge (styles/site.css .topbar padding), right under the Library <->
+     Studio switch, instead of 8px from the screen edge. */
+  padding-inline-end: var(--space-5);
   border-inline: 0;
   border-radius: 0;
+}
+
+@media (max-width: 960px) {
+  .demo-strip > .demo-banner {
+    padding-inline-end: var(--space-3);
+  }
 }
 
 .demo-banner-text {
@@ -89,6 +98,9 @@
 /* The anchor: a line across the bottom of what the step points at, no height of its own. */
 .dh-tour-anchor {
   display: block;
+  /* A short mark, not the whole width: the popover's arrow points at its middle, so it lands by the first column of
+     what the step talks about (the row thumbnails), not at an arbitrary spot clamped to the popover's far corner. */
+  inline-size: var(--size-12);
   height: 0;
   /* Takes no room: cancels the gap the zone puts before it. */
   margin-block-start: calc(var(--space-5) * -1);

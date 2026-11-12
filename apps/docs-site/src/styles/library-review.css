@@ -327,11 +327,17 @@ a.lr-ask {
   gap: var(--space-4);
 }
 
+/* The family and the kind over the title: UI size (the 12px caption read as a footnote under a 30px title), one
+   space-1 from the title, and a real gap around the separator dot. */
 .lr-eyebrow {
-  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-1-5);
+  margin: 0 0 var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--typography-caption-size);
-  line-height: var(--typography-caption-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 .lr-detail-title {
@@ -1972,6 +1978,25 @@ a.lr-reach-card:focus-visible {
 
 .lr-title-line .lr-detail-title {
   margin: 0;
+}
+
+/* The title and its page link only: the title wraps beside the link, the link never drops under it on a line alone. */
+.lr-title-line.is-solo {
+  flex-wrap: nowrap;
+}
+
+.lr-title-line.is-solo > .lr-detail-title {
+  min-width: 0;
+}
+
+/* The page link beside the title: a 32px target with a 20px icon, the size steps that go with a 30px title, set on the
+   title's first line (its line box is the target's lane), so a title on two lines keeps the icon by its first line
+   instead of at the block's middle. */
+.lr-page-link.is-title {
+  align-self: flex-start;
+  min-width: var(--size-8);
+  min-height: var(--size-8);
+  margin-block: calc((var(--typography-h2-line-height) - var(--size-8)) / 2);
 }
 
 .lr-compare {

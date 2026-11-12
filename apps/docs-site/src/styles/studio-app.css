@@ -44,6 +44,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-4);
+  /* The height of the action it may hold: a page with a primary action and one without put the title on the same
+     line, so moving between sections never nudges the title (it moved by 3px). */
+  min-height: var(--control-height-md);
 }
 
 /* The title with a control that acts on it (the product page's Rename): one line, whatever the width. */

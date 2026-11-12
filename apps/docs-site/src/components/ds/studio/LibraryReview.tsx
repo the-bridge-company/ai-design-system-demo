@@ -228,12 +228,14 @@ function AskedLine({ p, mark }: { p: ReviewPiece; mark: MarkOf }) {
 }
 
 /** The quiet link from a piece to its page in the library (its component on Components, its kind on Tokens). */
-function LibraryPageLink({ p }: { p: ReviewPiece }) {
+/** The quiet link to the piece's library page. `title`: beside the h2 of the detail, where the icon matches the title's
+ * size (20px on a 32px target) instead of the list rows' 16px. */
+function LibraryPageLink({ p, title = false }: { p: ReviewPiece; title?: boolean }) {
   const page = libraryPageOf(p);
   if (!page) return null;
   return (
-    <Link href={studioHref(page.path)} variant="subtle" className="lr-page-link" title={`Open ${page.label}`}>
-      <Icon icon={BookOpen} size="sm" />
+    <Link href={studioHref(page.path)} variant="subtle" className={title ? 'lr-page-link is-title' : 'lr-page-link'} title={`Open ${page.label}`}>
+      <Icon icon={BookOpen} size={title ? 'md' : 'sm'} />
       <VisuallyHidden>Open {page.label}</VisuallyHidden>
     </Link>
   );
@@ -338,17 +340,26 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
         tag={(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
       />
     );
-  const eyebrow = `${p.category === p.title ? 'Components' : p.category} · ${p.kind.toLowerCase()}`;
+  // Two parts and a separator the CSS spaces (.lr-eyebrow-sep): typed " · " left 2px each side of a 1px dot.
+  const eyebrow = (
+    <>
+      <span>{p.category === p.title ? 'Components' : p.category}</span>
+      <span className="lr-eyebrow-sep" aria-hidden="true">
+        ·
+      </span>
+      <span>{p.kind.toLowerCase()}</span>
+    </>
+  );
   return (
     <article className="lr-detail" aria-labelledby="lr-detail-title">
       <div className="lr-detail-head">
         <div>
           <p className="lr-eyebrow">{eyebrow}</p>
-          <div className="lr-title-line">
+          <div className="lr-title-line is-solo">
             <h2 className="lr-detail-title" id="lr-detail-title">
               {p.title}
             </h2>
-            <LibraryPageLink p={p} />
+            <LibraryPageLink p={p} title />
           </div>
         </div>
       </div>
@@ -617,7 +628,7 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
             </Badge>
           )}
           {tag}
-          <LibraryPageLink p={p} />
+          <LibraryPageLink p={p} title />
         </div>
         {view.overlay && (
           <SegmentedControl

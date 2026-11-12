@@ -8,8 +8,9 @@
 // On the sample team a visitor also gets "See it as" (SeeItAs.tsx): the same Studio as any of its five people.
 // The action is secondary weight: the page keeps its own primary (Review all on the demo home). A DS Banner, neutral,
 // with the board's warm tint (styles/demo-home.css). Mounted by scripts/demo-gate.ts into the layout's [data-demo-strip].
-import { Info } from 'lucide-react';
-import { Banner } from '@bridge-ds/react';
+import { useId, useState } from 'react';
+import { ChevronDown, Info } from 'lucide-react';
+import { Banner, Button } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { DEMO_WORDS, demoBanner } from '../../../lib/demo';
 import { SIGNIN_PAGE } from '../../../lib/account';
@@ -33,6 +34,11 @@ export interface DemoBannerProps {
 
 export function DemoBanner({ repo, back, onConnect, cast }: DemoBannerProps) {
   const words = demoBanner(repo);
+  // On a phone the banner is one line (the team name, Details, the action): the sentence and "See it as" open under
+  // it on demand, so the strip stops taking the first screen (styles/demo-home.css). Wider screens show it all and
+  // never draw the Details button.
+  const [open, setOpen] = useState(false);
+  const detailId = useId();
   const action = !back ? (
     <ButtonLink variant="secondary" href={SIGNIN_PAGE} data-demo-start="">
       {DEMO_WORDS.getStarted}
@@ -51,9 +57,16 @@ export function DemoBanner({ repo, back, onConnect, cast }: DemoBannerProps) {
       appearance="neutral"
       icon={Info}
       className="demo-banner demo-banner-sample"
+      data-open={open ? '' : undefined}
       title={
         <>
-          <b>{words.title}</b> <span className="demo-banner-text">{words.text}</span>
+          <b>{words.title}</b>{' '}
+          <span className="demo-banner-text" id={detailId}>
+            {words.text}
+          </span>
+          <Button variant="ghost" size="sm" iconEnd={ChevronDown} className="demo-banner-more" aria-expanded={open} aria-controls={detailId} onClick={() => setOpen((o) => !o)}>
+            {DEMO_WORDS.bannerDetails}
+          </Button>
         </>
       }
       actions={

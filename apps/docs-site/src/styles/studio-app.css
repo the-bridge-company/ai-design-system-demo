@@ -434,12 +434,9 @@
   }
 }
 
-/* Settings sits at the foot of the rail, above the account. */
+/* Settings ends the nav, one group gap (the space before Products and Design system) under Design system: it no longer
+   floats alone at the rail's foot with an empty column above it. The account keeps the foot (.rail-foot margin-top
+   auto). */
 .rail .rail-settings {
-  margin-block-start: auto;
   padding-block-start: var(--space-5);
-}
-
-.rail-settings + .rail-foot {
-  margin-block-start: var(--space-3);
 }

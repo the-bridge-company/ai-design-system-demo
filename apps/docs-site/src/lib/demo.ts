@@ -77,6 +77,8 @@ export const DEMO_WORDS = {
   /** The one banner of the sample team, on every Studio and Library page (board D1). */
   bannerTitle: `${SAMPLE_TEAM}.`,
   bannerText: 'This is a sample team: your edits stay in this browser and nothing is sent.',
+  /** On a phone the banner folds to one line: this button opens the sentence (and "See it as") under it. */
+  bannerDetails: 'Details',
   /** The one call to action of the sample team: the email sign-in (lib/account.ts SIGNIN_PAGE), never GitHub. */
   getStarted: 'Get started',
   /** The same banner on Bridge's own design system, for a guest: its data is real, so it is not called sample data. */

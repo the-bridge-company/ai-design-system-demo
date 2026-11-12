@@ -3,7 +3,7 @@
 // opens that team at its next step), and the demo banner for a visitor with a workspace (board EmptyA2).
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
@@ -137,7 +137,13 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
     expect(within(banner).getByText('Acme Design.')).toBeInTheDocument();
     expect(within(banner).getByText('This is a sample team: your edits stay in this browser and nothing is sent.')).toBeInTheDocument();
     expect(screen.getAllByRole('link')).toHaveLength(1);
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    // The one button is the phone's Details disclosure (hidden by CSS on wider screens): it folds the sentence, never an action.
+    const details = screen.getByRole('button', { name: 'Details' });
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(details).toHaveAttribute('aria-expanded', 'false');
+    expect(details).toHaveAttribute('aria-controls', within(banner).getByText(/This is a sample team/).id);
+    details.click();
+    await waitFor(() => expect(details).toHaveAttribute('aria-expanded', 'true'));
     const start = screen.getByRole('link', { name: 'Get started' });
     expect(start).toHaveAttribute('href', '/signin/');
     // Secondary weight: the page keeps its own primary (Review all on the demo home).

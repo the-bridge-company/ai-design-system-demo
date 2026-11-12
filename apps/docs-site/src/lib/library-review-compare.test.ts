@@ -91,12 +91,21 @@ describe('the compare view of a conflict', () => {
     // A real team's case the demo never hits: Sofia's 20 is today's.
     const same = compareView(conflict('20'), 'Every screen')!;
 
-    it('starts with today and the way that differs most from it', () => {
+    it('starts with today and the way new to the library, the one that differs most from today', () => {
       expect(defaultChecked(v)).toEqual([TODAY, sofia]);
-      expect(defaultChecked(demo)).toEqual([TODAY, leo]);
-      expect(checkedLooks(demo, defaultChecked(demo)).map((l) => l.label)).toEqual(['Today: 20 px', 'Leo: 12 px (Compact)']);
+      // The demo: Sofia's 24 is new, Leo's 12 is the library's Compact. The new proposal shows first, even though Leo's
+      // value is further from today, and the outcome says what would change, never "Nothing new in the library".
+      expect(defaultChecked(demo)).toEqual([TODAY, demo.ways[0]!.key]);
+      expect(checkedLooks(demo, defaultChecked(demo)).map((l) => l.label)).toEqual(['Today: 20 px', 'Sofia: 24 px']);
+      expect(checkedOutcome(demo, defaultChecked(demo))).toBe("Keep two sizes: today's 20 stays the default, Sofia's screen uses 24 px");
+      // No new way (Sofia's is today's): the way the library already has, so there is still something to look at.
       expect(defaultChecked(same)).toEqual([TODAY, leo]);
       expect(checkedLooks(same, defaultChecked(same)).map((l) => l.label)).toEqual(['Today and Sofia: 20 px', 'Leo: 12 px (Compact)']);
+    });
+
+    it('checks one way per value: two ways with the same new value give one checked row', () => {
+      const twins = { ...demo, ways: [demo.ways[0]!, { ...demo.ways[0]!, key: 'twin', who: 'Ann', name: "Ann's way" }, demo.ways[1]!] };
+      expect(defaultChecked(twins)).toEqual([TODAY, demo.ways[0]!.key]);
     });
 
     it('nothing checked: nothing to decide', () => {

@@ -215,7 +215,7 @@ describe('the account', () => {
 });
 
 describe('the account menu', () => {
-  it('names the person and their role on this team, with Link GitHub, Account settings and Sign out', async () => {
+  it('names the person and their role on this team, with Account settings and Sign out, never a GitHub prompt', async () => {
     const { container } = render(createElement(AccountMenu));
         const trigger = await screen.findByRole('button', { name: 'Leo, Admin, account menu' });
     expect(within(trigger).getByText('Admin')).toBeInTheDocument();
@@ -230,7 +230,9 @@ describe('the account menu', () => {
     // Who they are on this team, one quiet line under the email; no face shortcut (it lives in Settings > You).
     expect(within(menu).getByText('Admin')).toBeInTheDocument();
     expect(within(menu).queryByRole('menuitem', { name: /face/i })).toBeNull();
-    expect(within(menu).getByRole('menuitem', { name: 'Link GitHub' })).toBeInTheDocument();
+    // Linking GitHub lives in Account settings and in the actions that need it, not in this menu.
+    expect(within(menu).queryByRole('menuitem', { name: 'Link GitHub' })).not.toBeInTheDocument();
+    expect(within(menu).queryByText('GitHub not linked')).not.toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Account settings' })).toBeInTheDocument();
     expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();
   });

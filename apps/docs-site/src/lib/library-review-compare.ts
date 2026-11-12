@@ -203,14 +203,21 @@ type Rows = Pick<CompareView, 'today' | 'ways'>;
 const rowsOf = (view: Rows) => [view.today, ...view.ways];
 
 /**
- * What the stage starts with: today and the way that differs most from it, so the first look is the real choice. A way
- * equal to today adds nothing to look at. Without today's value, the first way.
+ * What the stage starts with: today and the real proposal, so the first look and the outcome show what would change
+ * (owner, 2026-11-12). A way new to the library (neither today's value nor an option the library already has) comes
+ * first, the one that differs most from today; a way the library already has ("Leo: 12 px (Compact)") only when no way
+ * is new. A way equal to today adds nothing to look at. One way per value, never two with the same look. Without
+ * today's value, the first way.
  */
 export function defaultChecked(view: Rows): string[] {
   const t = view.today.value;
   const differ = view.ways.filter((w) => w.value === null || t === null || w.value !== t);
   if (!differ.length) return [view.today.key];
-  const far = t === null ? differ[0]! : differ.reduce((a, b) => (Math.abs((b.value ?? t) - t) > Math.abs((a.value ?? t) - t) ? b : a));
+  if (t === null) return [view.today.key, differ[0]!.key];
+  const fresh = differ.filter((w) => !w.libraryOption);
+  const pool = fresh.length ? fresh : differ;
+  // The first way wins a tie, so ways with the same value give one row.
+  const far = pool.reduce((a, b) => (Math.abs((b.value ?? t) - t) > Math.abs((a.value ?? t) - t) ? b : a));
   return [view.today.key, far.key];
 }
 

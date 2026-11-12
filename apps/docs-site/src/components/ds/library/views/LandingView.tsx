@@ -89,7 +89,7 @@ export default function LandingView({ data }: { data: LibraryData }) {
                   <span className="t-body hm-change" title={e.title}>
                     {e.headline}
                   </span>
-                  <span className="t-ui t-muted hm-date">{e.date}</span>
+                  <span className="t-meta t-muted hm-date">{e.date}</span>
                 </li>
               ))}
             </ul>

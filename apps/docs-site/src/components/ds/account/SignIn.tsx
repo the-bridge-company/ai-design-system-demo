@@ -583,7 +583,7 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
               <Avatar name={already.name} src={face ?? already.avatar ?? undefined} size="lg" decorative />
               <span className="acc-who-text">
                 <span className="acc-who-name">{already.name}</span>
-                {already.detail && <span className="t-ui t-muted">{already.detail}</span>}
+                {already.detail && <span className="t-meta t-muted">{already.detail}</span>}
               </span>
             </div>
             <Button variant="primary" size="lg" className="acc-wide" onClick={() => (me ? go({ account: me, created: false, next: '' }, false) : leave(already.href))}>

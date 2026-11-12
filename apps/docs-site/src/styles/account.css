@@ -436,6 +436,12 @@
   overflow-wrap: anywhere;
 }
 
+/* Setting help under the setting label is a description: ui, not meta (the email under the name stays meta). */
+.acc-set-sub.is-help {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
 .acc-set-form {
   display: flex;
   flex-wrap: wrap;

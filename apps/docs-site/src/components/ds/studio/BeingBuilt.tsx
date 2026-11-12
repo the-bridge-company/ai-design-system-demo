@@ -522,7 +522,7 @@ function Detail({
                         return src
                           ? [
                               <figure key={`${k}-${i}`} className="bb-figure">
-                                <figcaption className="t-ui t-muted">
+                                <figcaption className="t-meta t-muted">
                                   {k}
                                 </figcaption>
                                 <Link
@@ -567,7 +567,7 @@ function Detail({
                 design and what changed are on the change.
               </p>
             )}
-            <p className="t-ui t-muted bb-meta">
+            <p className="t-meta t-muted bb-meta">
               {originOfRow(v)
                 ? `${buildOriginLine(originOfRow(v)!)}. Sent on ${shortDate(v.createdAt)}.`
                 : v.requestedBy

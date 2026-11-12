@@ -78,16 +78,16 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             <span className="sh-row-text">
               <Link href={href} variant="subtle" className="t-body sh-row-title" title={hint ?? (line ? `${title} · ${line}` : title)} data-card-primary onClick={onClick} aria-current={selected ? 'true' : undefined} {...linkAttributes}>
                 <span className="sh-strong">{title}</span>
-                {jira && <span className="t-ui t-muted sh-mono"> {jira}</span>}
+                {jira && <span className="t-meta t-muted sh-mono"> {jira}</span>}
                 {line && (
-                  <span className="t-ui t-muted sh-row-meta">
+                  <span className="t-meta t-muted sh-row-meta">
                     {/* Its own span: on a phone the line goes under the title and the dot goes. */}
                     <span className="sh-row-sep">{SEP}</span>
                     {line}
                   </span>
                 )}
               </Link>
-              {detail && <span className="t-ui t-muted sh-row-detail">{detail}</span>}
+              {detail && <span className="t-meta t-muted sh-row-detail">{detail}</span>}
             </span>
             {(tags || chip) && (
               <span className="sh-row-chips">
@@ -117,9 +117,9 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             </Link>
             {(jira || line || (!statusAtEnd && (pill || tags)) || note) && (
               <span className="sh-row-sub">
-                {jira && <span className="t-ui t-muted sh-mono sh-row-jira">{jira}</span>}
+                {jira && <span className="t-meta t-muted sh-mono sh-row-jira">{jira}</span>}
                 {lineLead}
-                {line && <span className="t-ui t-muted sh-row-line">{line}</span>}
+                {line && <span className="t-meta t-muted sh-row-line">{line}</span>}
                 {note}
                 {!statusAtEnd && tags}
                 {!statusAtEnd && chip}
@@ -130,7 +130,7 @@ export function BranchRow({ thumb, who, title, hint, href, onClick, linkAttribut
             <span className={statusNote ? 'sh-row-chips sh-row-status-end has-note' : 'sh-row-chips sh-row-status-end'}>
               {tags}
               {chip}
-              {statusNote && <span className="t-ui t-muted sh-row-status-note">{statusNote}</span>}
+              {statusNote && <span className="t-meta t-muted sh-row-status-note">{statusNote}</span>}
             </span>
           )}
           {end}

@@ -40,11 +40,12 @@
   color: var(--color-text-muted);
 }
 
-/* typography.meta: the secondary line under a name or title (who, when, how many, a short description). Muted UI
-   text is that line by definition, so `t-ui t-muted` reads in meta too: 13/18 under 14/500, one step at a time.
-   A paragraph that explains (the tour's text) stays UI. */
+/* typography.meta: row-level metadata only (who and when, ages, bylines, a count's companion in a dense row or card,
+   captions under thumbnails): 13/18 under a 14/500 name, one step at a time. `t-meta t-muted` sets it.
+   A line that introduces a section, card or page (a description, setting help, an empty-state sentence, a header
+   summary, banner detail) is `t-ui t-muted`: 14/20 in the muted color, never 13. */
 .t-meta,
-.t-ui.t-muted:not(.dh-tour-text) {
+.t-meta.t-muted {
   font-size: var(--typography-meta-size);
   line-height: var(--typography-meta-line-height);
 }

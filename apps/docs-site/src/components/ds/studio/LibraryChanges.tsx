@@ -86,7 +86,7 @@ const setParam = (search: string) => {
  */
 export function AuditNote({ origin }: { origin: AuditOrigin }) {
   return (
-    <span className="t-ui t-muted bl-origin">
+    <span className="t-meta t-muted bl-origin">
       <Icon icon={ShieldCheck} size="xs" aria-hidden="true" />
       <span>
         {origin.href ? (
@@ -106,7 +106,7 @@ export function OriginNote({ origin }: { origin: LibraryOrigin }) {
   if (origin.kind === 'audit') return <AuditNote origin={origin} />;
   if (origin.kind === 'exploration') {
     return (
-      <span className="t-ui t-muted bl-origin">
+      <span className="t-meta t-muted bl-origin">
         <Icon icon={Monitor} size="xs" aria-hidden="true" />
         <span>
           Needed by{' '}
@@ -125,7 +125,7 @@ export function OriginNote({ origin }: { origin: LibraryOrigin }) {
     );
   }
   return (
-    <span className="t-ui t-muted bl-origin">
+    <span className="t-meta t-muted bl-origin">
       <Icon icon={Library} size="xs" aria-hidden="true" />
       <span>{originLine(origin)}</span>
     </span>

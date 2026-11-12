@@ -99,7 +99,7 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
             </Link>
           </span>
           <span className="sh-card-foot">
-            <span className="t-ui t-muted sh-card-product">{f.line}</span>
+            <span className="t-meta t-muted sh-card-product">{f.line}</span>
             {people.length > 0 && <span className="sr-only">Explored by {people.join(', ')}.</span>}
           </span>
         </div>

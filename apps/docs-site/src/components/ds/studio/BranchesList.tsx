@@ -370,7 +370,7 @@ export function BranchesList(p: BranchesListProps) {
       person={x.person}
       product={opts.product ? productName(x.product) : null}
       pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
-      note={shippedSaid(x) ? <span className="t-ui t-muted">{shippedOn(x.shippedAt!)}</span> : auditNote(x)}
+      note={shippedSaid(x) ? <span className="t-meta t-muted">{shippedOn(x.shippedAt!)}</span> : auditNote(x)}
     />
   );
   const asList = (xs: Item[], turn = false) => (view === 'grid' ? <ul className="sh-cards">{xs.map((x) => card(x, { turn, pill: !turn }))}</ul> : <ul className="sh-rows">{xs.map((x) => row(x, turn))}</ul>);

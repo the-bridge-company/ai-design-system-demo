@@ -74,7 +74,7 @@ function TourFoot({ n, total, onNext, onFinish, primaryRef }: { n: number; total
   return (
     <div className="dh-tour-foot">
       {/* A tour of one step has no "1 of 1". */}
-      <span className="t-ui t-muted">{total > 1 ? `${n} of ${total}` : ''}</span>
+      <span className="t-meta t-muted">{total > 1 ? `${n} of ${total}` : ''}</span>
       <span className="dh-tour-actions">
         {!last && (
           <Button variant="ghost" size="sm" onClick={onFinish}>

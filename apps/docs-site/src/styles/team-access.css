@@ -394,8 +394,8 @@
 .ts-intro {
   margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* A band's title and its one sentence, the action on the whole band on the same line (Members' .mem-head). */

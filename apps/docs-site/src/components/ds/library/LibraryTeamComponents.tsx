@@ -25,7 +25,7 @@ import { playgroundSpec } from '../../../lib/library/components';
 import { componentBySlug, componentSlugFromPath, mainStory, previewScopes } from '../../../lib/library/component-page';
 import { httpsStorybook } from '../../../lib/team-components';
 import { libraryHref } from '../../../lib/library-shells';
-import { teamDisplayName } from '../../../lib/demo';
+import { libraryTeamName } from '../../../lib/recent-teams';
 import { loadTeamSnapshot, resetTeamData, teamLead, type TeamData } from '../../../scripts/team-data';
 import '../../../styles/component.css';
 import '../../../styles/library.css';
@@ -168,7 +168,7 @@ export default function LibraryTeamComponents({ page }: { page: LibraryComponent
           <LibraryZone
             title={COMPONENTS_PAGE.title}
             art={COMPONENTS_PAGE.art}
-            lead={`The components of ${team ? teamDisplayName(`${team.owner}/${team.repo}`) : 'this design system'}, by family, with their usage guidance.`}
+            lead={`The components of ${(team && libraryTeamName(`${team.owner}/${team.repo}`)) || 'this design system'}, by family, with their usage guidance.`}
           />
         )
       }

@@ -8,7 +8,7 @@ import type { VersionMenuProps } from '../VersionMenu';
 import type { TeamData } from '../../../scripts/team-data';
 import { libraryHref } from '../../../lib/library-shells';
 import { studioHref, studioHrefAt, teamHref } from '../../../lib/team-path';
-import { teamDisplayName } from '../../../lib/demo';
+import { libraryTeamName } from '../../../lib/recent-teams';
 
 export interface LibraryTeam {
   owner: string;
@@ -136,9 +136,17 @@ export function studioLink(data: Pick<LibraryData, 'team'>, route: string): stri
   return data.team ? studioHrefAt(teamHref(data.team.owner, data.team.repo, null), route) : studioHref(route);
 }
 
-/** The name the design system goes by: Bridge for the site's own Library, else the team's (lib/demo.ts). */
-export function systemName(data: Pick<LibraryData, 'team' | 'model'>): string {
-  return data.team ? teamDisplayName(`${data.team.owner}/${data.team.repo}`, data.model.site) : 'Bridge';
+/**
+ * The name the design system goes by: Bridge for the site's own Library, else the team's (lib/recent-teams
+ * libraryTeamName), else `unknown`: a team without a name reads as "this design system", never its repository in words.
+ */
+export function systemName(data: Pick<LibraryData, 'team' | 'model'>, unknown = 'this design system'): string {
+  return data.team ? (libraryTeamName(`${data.team.owner}/${data.team.repo}`, data.model.site) ?? unknown) : 'Bridge';
+}
+
+/** The team's own name only (null when it has none): for a title that reads "The <name> design system". */
+export function ownSystemName(data: Pick<LibraryData, 'team' | 'model'>): string | null {
+  return data.team ? libraryTeamName(`${data.team.owner}/${data.team.repo}`, data.model.site) : 'Bridge';
 }
 
 /** What a team's Library view reads: its model and team, and whether the reader may open its Studio to edit. */

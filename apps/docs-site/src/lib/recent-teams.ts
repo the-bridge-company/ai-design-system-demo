@@ -151,13 +151,16 @@ export function knownTeamName(team: string, store: RecentStore | null = browserS
 }
 
 /**
- * The name a team goes by when it is known before its settings are read (the sample team's fixture, Bridge's own
- * name, a name this browser or the account keeps), else null: a page then shows a skeleton, never the repository in
- * words that its real name replaces a second later.
+ * The name a team's Library shows (hero, tab title, sentences): the sample team's fixture, the settings' `name` once
+ * read (`site`), a name this browser or the account keeps, Bridge's own name; else null. Never words built from the
+ * repository ("Bridge demo ds", "Primitives"): a page shows a skeleton while it reads and a plain phrase after.
  */
-export function knownNameBeforeRead(team: string, store: RecentStore | null = browserStore()): string | null {
+export function libraryTeamName(team: string, site?: { name?: unknown } | null, store: RecentStore | null = browserStore()): string | null {
+  if (isSampleTeam(team)) return SAMPLE_TEAM;
+  const own = typeof site?.name === 'string' ? site.name.trim().replace(/\s+/g, ' ') : '';
+  if (own) return own;
   const known = knownTeamName(team, store);
-  if (known) return teamDisplayName(team, { name: known });
+  if (known) return known;
   return isDemoRepo(team) ? teamDisplayName(team) : null;
 }
 

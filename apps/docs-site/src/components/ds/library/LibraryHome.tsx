@@ -14,7 +14,7 @@ import { SNAPSHOT_TEMPLATE_URL } from '../../../lib/team-load';
 import { loadTeamLlms, type TeamData } from '../../../scripts/team-data';
 import { libraryFileUrl } from '../../../scripts/library-access-api';
 import '../../../styles/home.css';
-import { knownNameBeforeRead } from '../../../lib/recent-teams';
+import { libraryTeamName } from '../../../lib/recent-teams';
 
 /** Whether the team published an llms.txt (with its snapshot), once known. */
 function useHasLlms(): boolean | null {
@@ -71,10 +71,10 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
 
 /**
  * The hero's title while the Library reads: "The Acme Design design system" when the team's name is known before its
- * settings (lib/recent-teams knownNameBeforeRead), else the name as a skeleton, never the repository in words.
+ * settings (lib/recent-teams libraryTeamName), else the name as a skeleton, never the repository in words.
  */
 function HeroName({ team }: { team: { owner: string; repo: string } | null }) {
-  const name = team ? knownNameBeforeRead(`${team.owner}/${team.repo}`) : null;
+  const name = team ? libraryTeamName(`${team.owner}/${team.repo}`) : null;
   if (name) return <>{`The ${name} design system`}</>;
   return (
     <>

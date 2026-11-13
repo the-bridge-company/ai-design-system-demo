@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:54:33.762Z",
-  "durationMs": 224088,
+  "createdAt": "2026-11-13T02:05:45.349Z",
+  "durationMs": 243212,
   "base": {
     "ref": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45",
     "sha": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45"
   },
   "head": {
-    "ref": "781d21a8a80ad637f825dbe26a72e7e1599004ac",
-    "sha": "781d21a8a80ad637f825dbe26a72e7e1599004ac"
+    "ref": "870b0fbf66581aa4d338ace408a5e78cee41549c",
+    "sha": "870b0fbf66581aa4d338ace408a5e78cee41549c"
   },
   "options": {
     "only": [
@@ -90,6 +90,7 @@
       "apps/docs-site/src/lib/review-mode.test.ts",
       "apps/docs-site/src/lib/status-ladder.test.ts",
       "apps/docs-site/src/lib/status-tag.ts",
+      "apps/docs-site/src/lib/team-docs-ai.test.ts",
       "apps/docs-site/src/lib/team-facts.ts",
       "apps/docs-site/src/lib/wait-line.test.ts",
       "apps/docs-site/src/lib/wait-line.ts",
@@ -315,12 +316,12 @@
   },
   "summary": {
     "shots": 128,
-    "changed": 1,
-    "unchanged": 127,
+    "changed": 0,
+    "unchanged": 128,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 12.52
+    "maxPercent": 0
   },
   "shots": [
     {
@@ -2418,18 +2419,11 @@
       "storyId": "data-display-checklist--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 127587,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 1018880,
-      "percent": 12.52,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 672,
-          "width": 736,
-          "height": 323
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -2440,12 +2434,7 @@
           "height": 995
         }
       },
-      "images": {
-        "before": "before/story__data-display-checklist--all-states__ocean-dark.png",
-        "after": "after/story__data-display-checklist--all-states__ocean-dark.png",
-        "diff": "diff/story__data-display-checklist--all-states__ocean-dark.png",
-        "composite": "composite/story__data-display-checklist--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__data-display-codeblock--all-states__ocean-dark",

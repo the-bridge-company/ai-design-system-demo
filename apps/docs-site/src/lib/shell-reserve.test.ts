@@ -10,7 +10,6 @@ const site = read('../styles/site.css');
 const studio = read('../styles/studio-app.css');
 const team = read('../styles/team-access.css');
 const gate = read('../scripts/demo-gate.ts');
-const banner = read('../../../../packages/react/src/components/Banner/Banner.module.css');
 const rule = (css: string, selector: string) => {
   const at = css.indexOf(`${selector} {`);
   expect(at, selector).toBeGreaterThan(-1);
@@ -25,30 +24,15 @@ describe('reserved space (batch A)', () => {
     expect(layout.indexOf('data-page-fill')).toBeLessThan(layout.indexOf('<div class="page-end">'));
   });
 
-  it("A7: the sample team's banner strip holds one banner line from first paint", () => {
+  it("A7: the sample team's banner is in the page as built, shown from first paint on the sample team only", () => {
     expect(layout).toContain("if (sample) document.documentElement.setAttribute('data-sample-team', '')");
-    // The banner's height: a md button inside the Banner's block padding (space-2 each side) and its two hairlines.
-    expect(rule(site, ':root[data-sample-team] .demo-strip[hidden]:not([data-settled])')).toMatch(/min-height: calc\(var\(--control-height-md\) \+ 2 \* var\(--space-2\) \+ 2 \* var\(--border-width-default\)\)/);
-    // The demo banner always has actions: the Banner's block padding with actions is space-2.
-    expect(rule(banner, '.hasActions')).toMatch(/padding: var\(--space-2\) var\(--space-2\) var\(--space-2\) var\(--space-4\)/);
-  });
-
-  it("A7: the reserve resolves to the banner's computed height at comfortable density (62px)", () => {
-    const tokens = read('../../../../packages/tokens/dist/tokens.css');
-    // The first definition of each custom property is the default (:root, comfortable density).
-    const first = new Map<string, string>();
-    for (const m of tokens.matchAll(/(--[\w-]+):\s*([^;]+);/g)) if (!first.has(m[1]!)) first.set(m[1]!, m[2]!.trim());
-    const px = (v: string): number => {
-      const ref = /^var\((--[\w-]+)\)$/.exec(v);
-      if (ref) return px(first.get(ref[1]!)!);
-      const n = /^(\d+(?:\.\d+)?)px$/.exec(v);
-      if (!n) throw new Error(`not a px value: ${v}`);
-      return Number(n[1]);
-    };
-    const reserve = px('var(--control-height-md)') + 2 * px('var(--space-2)') + 2 * px('var(--border-width-default)');
-    expect(reserve).toBe(62);
-    // The banner's own floor is lower, so its md button sets its height: the reserve is that height.
-    expect(px('var(--control-height-md)') + px('var(--space-4)')).toBeLessThan(reserve);
+    // The real banner (its own height at every width), not a box guessed to match it.
+    expect(layout).toMatch(/<div class="demo-strip" data-demo-strip hidden>\s*<DemoBanner repo=\{SAMPLE_REPO\} back=\{null\} \/>\s*<\/div>/);
+    const strip = rule(site, ':root[data-sample-team] .demo-strip[hidden]:not([data-settled])');
+    expect(strip).toMatch(/display: block;/);
+    expect(strip).not.toMatch(/min-height/);
+    // Let go only when the live banner never came (the built one stays until it does).
+    expect(read('../scripts/shell.ts')).toContain("if (strip.hidden) strip.dataset.settled = '';");
   });
 
   it('A7: the strip is never shown empty: the banner is rendered (flushSync) before the strip unhides', () => {
@@ -73,10 +57,29 @@ describe('reserved space (batch A)', () => {
     expect(rule(studio, '.rail-section a')).toMatch(/min-height: var\(--size-9\)/);
   });
 
-  it("Team Home: the design system read's progress is out of flow, so the home growing above never moves it", () => {
+  it("Team Home: the design system read says itself to screen readers only, no box under the home that comes and goes", () => {
     const pages = read('../styles/team-pages.css');
-    expect(rule(pages, '.sh-team-ds:has(> .lp, > .lp-wait)')).toMatch(/position: fixed;/);
-    expect(read('../pages/team-shell/index.astro')).toMatch(/<div data-team-ds class="sh-team-ds">\s*<div class="lp-wait"/);
+    expect(rule(pages, '.sh-team-ds')).not.toMatch(/margin/);
+    expect(rule(pages, '.sh-team-ds:has(.tp-error)')).toMatch(/margin-block-start: var\(--space-6\)/);
+    expect(read('../pages/team-shell/index.astro')).toMatch(/<div data-team-ds class="sh-team-ds">\s*<p class="sr-only" role="status">Reading this team's design system<\/p>/);
+    const home = read('../scripts/team-home.ts');
+    expect(home).toContain('paintDs(createElement(TeamLoadStatus');
+    expect(home).not.toContain('TeamLoadProgress');
+  });
+
+  it('Sample team rail: no Connect GitHub before the played person paints, and its two product rows reserved', () => {
+    const quiet = ':root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"])';
+    expect(rule(studio, `${quiet} .gh-acct-connect`)).toMatch(/display: none/);
+    expect(rule(studio, `${quiet} .gh-acct-menu`)).toMatch(/visibility: hidden/);
+    expect(rule(studio, ':root[data-sample-team] .rail-products[data-pending] .rail-skel:nth-child(n + 3)')).toMatch(/display: none/);
+  });
+
+  it('Team Settings: General and Members are painted by the build in their final shape until their islands mount', () => {
+    const page = read('../pages/team-shell/settings/index.astro');
+    expect(page).toMatch(/<TeamNameSetting client:only="react">[\s\S]*?<TeamNameSkeleton slot="fallback" \/>/);
+    expect(page).toMatch(/<MembersSection client:only="react">[\s\S]*?<MembersSkeleton slot="fallback" rows=\{SAMPLE_MEMBER_ROWS\} fallback \/>/);
+    // Any other team keeps MEMBER_ROWS_DEFAULT (3) rows of the build's five.
+    expect(read('../styles/invites.css')).toContain(':root:not([data-sample-team]) .mem-skel[data-fallback] .mem-skel-row:nth-child(n + 4)');
   });
 
   it('A11: Invite collaborators reads like every other item of the team menu', () => {

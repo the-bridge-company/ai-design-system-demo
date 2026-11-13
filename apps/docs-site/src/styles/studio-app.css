@@ -226,6 +226,22 @@
   visibility: hidden;
 }
 
+/* The sample team: its visitor always plays one of its people (lib/demo-cast.ts), so the block never offers to connect
+   there. Until the session paints that person, the account row holds its place unseen (the trigger's height, the face's
+   room), never "Connect GitHub" first and the row a moment later. */
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-connect {
+  display: none;
+}
+
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-menu {
+  display: block;
+  visibility: hidden;
+}
+
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-who-static {
+  min-height: var(--size-12);
+}
+
 .gh-acct-connect {
   display: grid;
   gap: var(--space-1-5);
@@ -453,6 +469,11 @@
   min-height: var(--size-9);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+}
+
+/* The sample team reserves its own two product rows from first paint (ProductsNav SAMPLE_PRODUCT_ROWS). */
+:root[data-sample-team] .rail-products[data-pending] .rail-skel:nth-child(n + 3) {
+  display: none;
 }
 
 /* A skeleton row while a team's products are read (ProductsNav pendingRows): the same box as a row above, so the

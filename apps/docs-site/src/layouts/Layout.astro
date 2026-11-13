@@ -26,6 +26,7 @@ import type { IconName } from '../brand/icons';
 import { PRIVACY_PAGE } from '../lib/account';
 import { siteRepo, siteRepoJson } from '../lib/config';
 import { SAMPLE_REPO, showcaseRedirect } from '../lib/demo';
+import { DemoBanner } from '../components/ds/studio/DemoBanner';
 import TeamChip from '../components/ds/studio/TeamChip';
 import ResumeAction from '../components/ds/studio/ResumeAction';
 import ProductsNav, { navProducts } from '../components/ds/studio/ProductsNav';
@@ -272,7 +273,13 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     </header>
     {/* The demo, for a visitor who cannot change it: the demo banner (scripts/demo-gate.ts mounts
         components/ds/studio/DemoBanner.tsx here once the session knows who is visiting), Studio and a team Library. */}
-    {((isStudio && !noRepo) || library) && <div class="demo-strip" data-demo-strip hidden />}
+    {((isStudio && !noRepo) || library) && (
+      // The sample team's banner as built (no See it as yet): styles/site.css shows it from first paint on the sample
+      // team only; scripts/demo-gate.ts renders the live one in its place.
+      <div class="demo-strip" data-demo-strip hidden>
+        <DemoBanner repo={SAMPLE_REPO} back={null} />
+      </div>
+    )}
 
     {bare ? (
       <main id="main" tabindex="-1" class="bare-main">

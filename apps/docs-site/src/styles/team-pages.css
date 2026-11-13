@@ -53,37 +53,18 @@
   display: none;
 }
 
-/* Team Home: the design system read (progress, or why it failed) under the home, in the page width. */
+/* Team Home: why the design system read failed, under the home, in the page width. While it reads it holds only a
+   screen reader sentence: no margin, no box, so nothing under the home moves when it goes. */
 .sh-team-ds {
   max-width: var(--studio-page-max);
+}
+
+.sh-team-ds:has(.tp-error) {
   margin-block-start: var(--space-6);
 }
 
 .sh-team-ds:empty {
   display: none;
-}
-
-/* While the read is in progress the progress floats at the foot of the screen, out of flow: the home above it paints
-   and grows after first paint, and an in-flow card under it would move with every change (layout shift). A failure
-   (TeamLoadError) stays in the page. */
-.sh-team-ds:has(> .lp, > .lp-wait) {
-  position: fixed;
-  inset-block-end: var(--space-6);
-  inset-inline-end: var(--space-6);
-  z-index: var(--layer-toast);
-  width: min(var(--size-120), calc(100% - 2 * var(--space-4)));
-  margin: 0;
-}
-
-.sh-team-ds > .lp {
-  box-shadow: var(--elevation-overlay);
-}
-
-@media (max-width: 640px) {
-  .sh-team-ds:has(> .lp, > .lp-wait) {
-    inset-inline: var(--space-4);
-    width: auto;
-  }
 }
 
 /* Team Tokens: the explorer stays out of the page until the team's tokens are in (its grid display would show it). */

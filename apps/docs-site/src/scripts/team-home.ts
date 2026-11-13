@@ -21,7 +21,7 @@ import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-d
 import { paintStudioHome, type HealthLine, type HomeComponent, type JoinHandlers, type StudioHomeProps } from '../components/ds/studio/StudioHome';
 import { JOINED_KEY, joinedNote } from '../lib/entry';
 import { joinHandlers } from './join-handlers';
-import { TeamLoadError, TeamLoadProgress, TeamSourceNote } from '../components/ds/studio/TeamState';
+import { TeamLoadError, TeamLoadStatus, TeamSourceNote } from '../components/ds/studio/TeamState';
 import { HOME_CLEAR_LINE } from '../lib/quality-view';
 import { greeting, homeState } from '../lib/home-model';
 import { isBuilderHome } from '../lib/home-explorations';
@@ -33,6 +33,9 @@ import { libraryHref } from '../lib/library-shells';
 import { teamFailure } from '../lib/team-load';
 import { contrastFailures, teamGuidance } from '../lib/team-facts';
 
+
+/** What a screen reader hears while the team's design system is read (pages/team-shell/index.astro says it first). */
+export const TEAM_READ_STATUS = "Reading this team's design system";
 
 /** Can view: an email member who reads only (the home offers no exploration). */
 const viewOnly = () => currentContributor()?.role === 'view';
@@ -230,8 +233,9 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
   }
 
   function start() {
-    // How far the read has gone, under the home (a Refresh keeps the home and its facts on screen instead).
-    if (!stat) paintDs(createElement(TeamLoadProgress, { label: "Reading this team's design system" }));
+    // The home shows its own skeleton while the team is read: under it, one sentence for screen readers only, never a
+    // card that comes and goes (a Refresh keeps the home and its facts on screen instead).
+    if (!stat) paintDs(createElement(TeamLoadStatus, { label: TEAM_READ_STATUS }));
     paint();
     loadTeamData().then(
       (loaded) => {

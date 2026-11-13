@@ -303,11 +303,11 @@ function initRailFit() {
   // The demo banner mounts (and wraps) after first paint.
   const strip = document.querySelector<HTMLElement>('[data-demo-strip]');
   if (strip && typeof ResizeObserver === 'function') new ResizeObserver(queue).observe(strip);
-  // The sample team's strip holds the banner's place from first paint (styles/site.css); a page where no banner came
-  // after a while gives the place back.
+  // The sample team's strip shows the built banner from first paint (styles/site.css); a page where the live banner
+  // never came after a while lets it go.
   if (strip && document.documentElement.hasAttribute('data-sample-team'))
     window.setTimeout(() => {
-      if (strip.hidden && !strip.childElementCount) strip.dataset.settled = '';
+      if (strip.hidden) strip.dataset.settled = '';
     }, SAMPLE_STRIP_WAIT_MS);
   fit();
 }

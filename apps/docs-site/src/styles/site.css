@@ -677,16 +677,12 @@ main > h1:first-child {
   margin-top: 0;
 }
 
-/* The sample team's banner strip (Layout.astro [data-demo-strip], painted by scripts/demo-gate.ts after load): from
-   first paint it holds the banner's exact height, so nothing under it moves when the banner comes (A7). The banner is
-   one line on every width (phones fold it): its tallest item, a md button, inside the Banner's block padding and its
-   hairlines. scripts/demo-gate.ts shows the strip only once the banner is in it; scripts/shell.ts lets go of the
-   place (data-settled) if no banner came. */
+/* The sample team's banner strip (Layout.astro [data-demo-strip]): the build renders the sample team's banner into it,
+   shown from first paint on the sample team only (data-sample-team, set before paint), so the page under it starts
+   where it stays. scripts/demo-gate.ts then renders the live banner in its place (See it as, the visitor's action);
+   scripts/shell.ts lets go of it (data-settled) if no banner came. */
 :root[data-sample-team] .demo-strip[hidden]:not([data-settled]) {
   display: block;
-  min-height: calc(var(--control-height-md) + 2 * var(--space-2) + 2 * var(--border-width-default));
-  border-block: var(--border-width-default) solid var(--color-border-default);
-  background-color: var(--color-bg-subtle);
 }
 
 /* A team's Library (Layout.astro, library shells): its content arrives after first paint, so the content box holds

@@ -43,7 +43,9 @@ describe('initTeamHome', () => {
     await act(async () => initTeamHome(home, null, ds));
     expect(home.textContent).toMatch(/Sam/);
     expect(s.loadHome).toHaveBeenCalled();
-    expect(ds.querySelector('[aria-busy="true"]')).not.toBeNull();
+    // While it reads, the part under the home says so to screen readers only: nothing on screen comes and goes.
+    expect(ds.querySelector('[role="status"]')!.textContent).toBe("Reading this team's design system");
+    expect(ds.querySelector('.lp, [aria-busy="true"]')).toBeNull();
   });
 
   it('keeps the home on screen and shows the failure under it when the read fails', async () => {

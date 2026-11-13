@@ -13,6 +13,7 @@ import { PRODUCT_ICON } from './ProductMark';
 import { Skeleton, SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref, productKeyFromPath } from '../../../lib/product-page';
+import { isSampleTeam } from '../../../lib/demo';
 import { isHosted, STUDIO_ROOT, studioBase, studioHref } from '../../../lib/team-path';
 import { navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, type ProductSignals } from '../../../lib/nav-products';
 import { siteIcon } from '../../../brand/site-icons';
@@ -40,6 +41,12 @@ const holds = (href: string, path: string) => path === href || (href !== STUDIO_
  * team, else this many. The group paints at once in its place, so Design system under it never moves when the names come.
  */
 export const PRODUCTS_PENDING_ROWS = 3;
+
+/**
+ * The sample team's products in the nav (its bridge.config.json: Acme Prints and Acme CRM, the library left out): its
+ * group reserves exactly these rows on a first visit (styles/studio-app.css hides the others before React runs).
+ */
+export const SAMPLE_PRODUCT_ROWS = 2;
 
 /** Where this browser keeps how many rows a team's Products group showed (its next first paint reserves as many). */
 export const productRowsKey = (team: string) => `bridge.nav.product-rows:${team.toLowerCase()}`;
@@ -156,6 +163,7 @@ export default function ProductsNav({ products, current = null, path = '', pages
       setSignals(readSignals(t, storage()));
       const kept = t ? Number(storage()?.getItem(productRowsKey(t)) ?? NaN) : NaN;
       if (Number.isInteger(kept) && kept >= 0) setPendingRows(kept);
+      else if (isSampleTeam(t)) setPendingRows(SAMPLE_PRODUCT_ROWS);
     });
     if (products) {
       // The build's products, with one this tab just added (it lists itself once the site is built again).

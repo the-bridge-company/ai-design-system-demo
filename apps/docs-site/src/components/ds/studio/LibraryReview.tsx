@@ -32,7 +32,7 @@ import { studioHref } from '../../../lib/team-path';
 import { askedColumns, directWords, askedCountLine, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
 import { AGENT_NAME } from '../../../lib/people';
 import { CLAUDE, waitPill } from '../../../lib/home-model';
-import { chapterReach, chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
+import { chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, checkedKeepLabel, checkedLooks, checkedOfPick, checkedOutcome, checkedPick, compareView, defaultChecked, STAGE_SCALE, TODAY, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
@@ -1230,7 +1230,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
-        const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
         const pickable = boxes ? pickableOf(rows) : [];
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
@@ -1251,17 +1250,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                   </span>
                   {ch.note && <span className="lr-chapter-note">{ch.note}</span>}
                 </span>
-              </span>
-              <span role="cell" className="lr-chapter-reach">
-                {cr.names ? (
-                  <>
-                    <span>Reaches</span>
-                    <ProductIcon product={cr.products.map((x) => x.name).join(', ')} />
-                    <span className="lr-chapter-names">{cr.names}</span>
-                  </>
-                ) : (
-                  'Not on a screen yet'
-                )}
               </span>
             </div>
             <div className="lr-chapter-card" style={c.style}>

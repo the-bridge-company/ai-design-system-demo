@@ -241,8 +241,8 @@ function AskedLine({ p }: { p: ReviewPiece }) {
 }
 
 /** The quiet link from a piece to its page in the library (its component on Components, its kind on Tokens). */
-/** The quiet link to the piece's library page. `title`: beside the h2 of the detail, where the icon matches the title's
- * size (20px on a 32px target) instead of the list rows' 16px. */
+/** The quiet link to the piece's library page, beside the h2 of the detail only (owner, 2026-11-13): in the List the
+ * row's title already opens the detail, so a second icon per row was noise. */
 function LibraryPageLink({ p, title = false }: { p: ReviewPiece; title?: boolean }) {
   const page = libraryPageOf(p);
   if (!page) return null;
@@ -1168,7 +1168,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             ) : (
               <span className="lr-row-title">{p.title}</span>
             )}
-            <LibraryPageLink p={p} />
           </span>
           <span className="lr-muted lr-row-kind">{p.kind}</span>
         </span>

@@ -733,14 +733,17 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       else if (owner) lines.push(reminderLine({ who: leadName, waitedDays: x.waitedDays ?? null, askedAt: x.askedAt ?? null }));
       else lines.push(leadName ? `Nothing reaches the developers before ${leadName} sends it.` : 'Nothing reaches the developers before the reviews are in.');
       const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
-      // Short title, who it waits for (C1); the step says what they do.
-      return { eyebrow: TURN_WORDS.nothing, title: leadName && !x.viewerLeads ? `Waiting for ${leadName}` : hatStep, steps, lines, action };
+      // Short title, who it waits for (C1); the step says what they do. Nobody named: the review it waits for, never the
+      // step's own words again (say it once).
+      const title = x.viewerLeads ? 'Waiting for you' : leadName ? `Waiting for ${leadName}` : x.newPieces ? 'Waiting for the library owners' : 'Waiting for the design review';
+      return { eyebrow: TURN_WORDS.nothing, title, steps, lines, action };
     }
     case 'check': {
       const people = (x.checkers ?? []).filter((c) => c.said !== 'not-needed');
       const waiting = people.filter((c) => c.said === 'waiting').map((c) => (c.you ? 'You' : c.name));
       const one = waiting.length === 1 && waiting[0] !== 'You';
-      const title = waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'} the build` : 'The build is being checked';
+      // Who it waits for in the title, what they do in the step (say it once).
+      const title = waiting.length ? `Waiting for ${andList(waiting.map((w) => (w === 'You' ? 'you' : w)))}` : 'The build is being checked';
       const lines = people.filter((c) => c.said !== 'waiting').map((c) => `${c.you ? 'You' : c.name} ${c.said === 'looks-right' ? 'said it looks right' : 'asked for changes'}.`);
       lines.push(`It goes live in ${product} once it looks right.`);
       return { eyebrow: TURN_WORDS.nothing, title, steps: [{ text: waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'}` : 'The build is checked', current: true }, { text: liveStep(product) }], lines, action: null };
@@ -749,10 +752,13 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
     case 'building': {
       const steps = handoffStepsOf(x.steps ?? [], { owner, author: x.author, product, builder: x.builder ?? null });
       const now = (x.steps ?? []).find((s) => s.current);
-      const title = steps[0]?.text ?? buildStep(product, x.builder);
-      // The viewer was asked to review it (a library exploration): theirs, with the way to compare.
+      // The viewer was asked to review it (a library exploration): theirs, with the way to compare. The title asks, the
+      // step says who does it.
       if (now?.title === 'Review' && now.detail === YOUR_REVIEW)
-        return { eyebrow: TURN_WORDS.yourTurn, title, steps, lines: [], action: now.link ? { kind: 'link', label: now.link.label, href: now.link.href } : null };
+        return { eyebrow: TURN_WORDS.yourTurn, title: 'Does their version look right?', steps, lines: [], action: now.link ? { kind: 'link', label: now.link.label, href: now.link.href } : null };
+      // Say it once: the title says whose hands it is in ("With the Acme CRM developers", "With Malik", "With Sofia"),
+      // the current step what they do ("Acme CRM developers build it"), never the same sentence twice.
+      const title = now?.title === 'Review' ? (owner ? 'With you' : `With ${x.author}`) : x.builder ? `With ${x.builder}` : `With the ${product} developers`;
       const lines = now?.detail && !x.send ? [now.detail.replace(/([^.?!])$/, '$1.')] : [];
       if (dev) lines.push(TURN_WORDS.devCode);
       return { eyebrow: dev ? TURN_WORDS.forDevelopers : TURN_WORDS.nothing, title, steps, lines, action: x.send ? { kind: 'send' } : null };
@@ -775,7 +781,8 @@ export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | n
   if (x.said)
     return {
       eyebrow: TURN_WORDS.nothing,
-      title: asked ? decides : `${x.author} is exploring`,
+      // Who it waits for, never the current step's own words (say it once).
+      title: asked ? (leadName ? `Waiting for ${leadName}` : 'Waiting for the design review') : `${x.author} is exploring`,
       steps: asked
         ? [{ text: decides, current: true }, { text: buildStep(product) }, last]
         : [{ text: `${x.author} explores`, current: true }, { text: decides }, { text: buildStep(product) }, last],

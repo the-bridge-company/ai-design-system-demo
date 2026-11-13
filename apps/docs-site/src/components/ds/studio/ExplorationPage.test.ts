@@ -442,7 +442,7 @@ describe('ExplorationPage, after Done exploring (Ready to build, Being built, Sh
     expect(screen.getByRole('link', { name: /Open the preview/ }).getAttribute('href')).toBe('https://orders-git-explore.vercel.app/?bridge=611');
     expect(screen.queryByRole('link', { name: /Continue in Claude/ })).toBeNull();
     // Where it is, once, in the block: the step happening now as its title, the steps still to come, what that step means.
-    const block = screen.getByRole('region', { name: 'Admin demo developers build it' });
+    const block = screen.getByRole('region', { name: 'With the Admin demo developers' });
     expect(within(block).getByText('Nothing to do for now')).toBeTruthy();
     expect(within(block).getByText('In their task list. You see here when one picks it up.')).toBeTruthy();
     const next = within(block).getAllByRole('listitem').map((li) => li.textContent);
@@ -550,7 +550,7 @@ describe('ExplorationPage, after Done exploring (Ready to build, Being built, Sh
         steps[3]!,
       ],
     });
-    const block = screen.getByRole('region', { name: 'You review it' });
+    const block = screen.getByRole('region', { name: 'Does their version look right?' });
     expect(within(block).getByText('Your turn')).toBeTruthy();
     const row = within(block).getAllByRole('listitem')[0]!;
     expect(row.getAttribute('aria-current')).toBe('step');
@@ -686,7 +686,7 @@ describe('ExplorationPage, after Done exploring (Ready to build, Being built, Sh
       const writeText = vi.fn(async () => undefined);
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       const { container } = handed({ steps: elsewhere, forDevelopers: { message } });
-      const step = screen.getByRole('region', { name: 'Admin demo developers build it' });
+      const step = screen.getByRole('region', { name: 'With the Admin demo developers' });
       expect(step.textContent).toContain('Their developers work elsewhere: send them the message.');
       // Proximity: the action sits in the block of the step it acts on, right under its words, and it is quiet (a link).
       const button = within(step).getByRole('button', { name: 'Copy for your developers' });
@@ -1107,7 +1107,7 @@ describe('the product manager once the lead is asked: optional', () => {
   });
   it('once said: nothing to do, their word stays changeable', () => {
     paint({ stage: 'exploring', role: 'designer', leadName: 'Dana', done: null, lead: { line: 'Waiting for Dana.' }, pm: { mine: true, name: 'Ann', said: true, title: '', intro: '', line: 'You said it looks good, today.', onSay: async () => undefined } });
-    const zone = screen.getByRole('region', { name: 'Dana reviews the design' });
+    const zone = screen.getByRole('region', { name: 'Waiting for Dana' });
     expect(within(zone).getByText('You said it looks good, today.')).toBeTruthy();
     expect(within(zone).getByRole('button', { name: 'Change your view' }).className).not.toMatch(/primary/);
   });

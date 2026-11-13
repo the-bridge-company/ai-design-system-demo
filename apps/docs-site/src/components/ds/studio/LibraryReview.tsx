@@ -412,46 +412,52 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
           </div>
         </div>
       </div>
-      <p className="lr-detail-ask">
-        {askers.length > 1 ? (
-          <>
-            <AvatarGroup aria-label="Who asked" size="xs" max={FACES_SHOWN}>
-              {askers.map((a) => (
-                <NameFace key={a.key} name={faceName(a)} size="xs" decorative={false} />
-              ))}
-            </AvatarGroup>
-            <span>{askedCountLine(askers.length)}</span>
-            <Button variant="link" aria-expanded={showAskers} onClick={() => setShowAskers((o) => !o)}>
-              {showAskers ? 'Hide them' : 'Show them'}
-            </Button>
-          </>
-        ) : (
-          <>
-            {!p.asked && p.by && !p.mine ? (
-              <span className="lr-detail-who">
-                <NameFace name={p.by} size="sm" />
-                <span className="lr-muted">{p.source.kind === 'docs' ? guidanceByLine(p.by) : `From ${p.by}`}</span>
-              </span>
-            ) : (
-              <AskedChip p={p} />
-            )}
-            {p.asked?.designer && (
-              <span className="lr-detail-who">
-                <NameFace name={p.asked.designer} size="sm" />
-                <span className="lr-muted">{p.mine ? 'You asked for it' : `${p.asked.designer} asked for it`}</span>
-              </span>
-            )}
-          </>
-        )}
-        {/* Waiting or decided, the same tag as Home's row: how long it has waited, or what was decided. */}
-        <StateTag p={p} viewerReviews={viewer.reviews} />
-        {/* Guidance changes no screen: no Who gets it. */}
-        {p.source.kind !== 'docs' && (
-          <span className="lr-detail-reach">
-            <span className="lr-muted">Who gets it</span> <ReachLink p={p} cell={measured.cell} onReach={onReach} />
-          </span>
-        )}
-      </p>
+      {/* Two lines (owner, 2026-11-13): where it comes from (who, then their exploration), then where it stands (its
+          state tag, then who gets it). One fact per place; "From Sofia" rather than "Sofia asked for it". */}
+      <div className="lr-detail-meta">
+        <p className="lr-detail-ask">
+          {askers.length > 1 ? (
+            <>
+              <AvatarGroup aria-label="Who asked" size="xs" max={FACES_SHOWN}>
+                {askers.map((a) => (
+                  <NameFace key={a.key} name={faceName(a)} size="xs" decorative={false} />
+                ))}
+              </AvatarGroup>
+              <span>{askedCountLine(askers.length)}</span>
+              <Button variant="link" aria-expanded={showAskers} onClick={() => setShowAskers((o) => !o)}>
+                {showAskers ? 'Hide them' : 'Show them'}
+              </Button>
+            </>
+          ) : (
+            <>
+              {p.asked?.designer && (
+                <span className="lr-detail-who">
+                  <NameFace name={p.asked.designer} size="sm" />
+                  <span className="lr-muted">{p.mine ? 'From you' : `From ${p.asked.designer}`}</span>
+                </span>
+              )}
+              {!p.asked && p.by && !p.mine ? (
+                <span className="lr-detail-who">
+                  <NameFace name={p.by} size="sm" />
+                  <span className="lr-muted">{p.source.kind === 'docs' ? guidanceByLine(p.by) : `From ${p.by}`}</span>
+                </span>
+              ) : (
+                <AskedChip p={p} />
+              )}
+            </>
+          )}
+        </p>
+        <p className="lr-detail-ask">
+          {/* Waiting or decided, the same tag as Home's row: how long it has waited, or what was decided. */}
+          <StateTag p={p} viewerReviews={viewer.reviews} />
+          {/* Guidance changes no screen: no Who gets it. */}
+          {p.source.kind !== 'docs' && (
+            <span className="lr-detail-reach">
+              <span className="lr-muted">Who gets it</span> <ReachLink p={p} cell={measured.cell} onReach={onReach} />
+            </span>
+          )}
+        </p>
+      </div>
       {askers.length > 1 && showAskers && <AskersList list={askers} />}
       {(
         <>

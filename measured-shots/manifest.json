@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-13T02:15:12.804Z",
+  "createdAt": "2026-11-13T02:52:17.604Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -2731,7 +2731,7 @@
           "height": 32,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md"
           }
         },
@@ -2741,7 +2741,7 @@
           "height": 32,
           "story": "data-display-avatar--image",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md",
             "src": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23c7ced8%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2226%22%20r%3D%2212%22%20fill%3D%22%23636d79%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2242%22%20width%3D%2240%22%20height%3D%2222%22%20rx%3D%2211%22%20fill%3D%22%23636d79%22%2F%3E%3C%2Fsvg%3E"
           }
@@ -2763,9 +2763,9 @@
           "height": 40,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "lg",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated"
           }
         },
@@ -2786,7 +2786,7 @@
           "height": 32,
           "story": "data-display-avatar--group",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md"
           }
         },
@@ -2796,7 +2796,7 @@
           "height": 20,
           "story": "data-display-avatar--all-states",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md"
           }
         },
@@ -2806,7 +2806,7 @@
           "height": 20,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "xs",
             "fallback": "initials",
             "kind": "person"
@@ -2830,9 +2830,9 @@
           "height": 20,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "xs",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "person"
           }
@@ -2843,9 +2843,9 @@
           "height": 20,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "xs",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "agent"
           }
@@ -2856,7 +2856,7 @@
           "height": 24,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "sm",
             "fallback": "initials",
             "kind": "person"
@@ -2880,9 +2880,9 @@
           "height": 24,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "sm",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "person"
           }
@@ -2893,9 +2893,9 @@
           "height": 24,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "sm",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "agent"
           }
@@ -2906,7 +2906,7 @@
           "height": 32,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md",
             "fallback": "initials",
             "kind": "person"
@@ -2918,7 +2918,7 @@
           "height": 32,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md",
             "fallback": "initials",
             "kind": "agent"
@@ -2930,7 +2930,7 @@
           "height": 32,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md",
             "fallback": "illustrated",
             "kind": "person"
@@ -2942,7 +2942,7 @@
           "height": 32,
           "story": "data-display-avatar--initials",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "md",
             "fallback": "illustrated",
             "kind": "agent"
@@ -2954,9 +2954,9 @@
           "height": 40,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "lg",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "initials",
             "kind": "person"
           }
@@ -2979,9 +2979,9 @@
           "height": 40,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "lg",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "person"
           }
@@ -2992,9 +2992,9 @@
           "height": 40,
           "story": "data-display-avatar--illustrated",
           "props": {
-            "name": "Florian Gouloubi",
+            "name": "Ana Lima",
             "size": "lg",
-            "seed": "peterbono",
+            "seed": "ana-lima",
             "fallback": "illustrated",
             "kind": "agent"
           }
@@ -6687,6 +6687,20 @@
             "hint": "Dot-separated path, lowercase.",
             "disabled": false
           }
+        },
+        "Size=sm, State=Hover": {
+          "file": "forms-input-default__size-sm__state-hover.png",
+          "width": 360,
+          "height": 32,
+          "story": "forms-input--default",
+          "props": {
+            "size": "sm",
+            "label": "Token name",
+            "placeholder": "color.action.primary.bg",
+            "hint": "Dot-separated path, lowercase.",
+            "disabled": false
+          },
+          "state": "hover"
         },
         "story=forms-input--default, size=sm, state=active": {
           "file": "forms-input-default__size-sm__state-active.png",

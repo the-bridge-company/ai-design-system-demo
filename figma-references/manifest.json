@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:36:23.976Z",
-  "sha": "4a54bc93e05957fed8aaeba32dbff2f47e295124",
+  "createdAt": "2026-11-13T01:46:00.040Z",
+  "sha": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -765,7 +765,7 @@
       }
     },
     "Checkbox": {
-      "specHash": "a529c126",
+      "specHash": "9bdd74aa",
       "variants": {
         "Checked=false, State=Default": {
           "file": "checkbox/checked-false__state-default.png",
@@ -815,7 +815,7 @@
       }
     },
     "CheckboxGroup": {
-      "specHash": "0ece3e54",
+      "specHash": "13c8793c",
       "variants": {
         "Orientation=vertical, State=Default": {
           "file": "checkboxgroup/orientation-vertical__state-default.png",
@@ -975,22 +975,22 @@
       }
     },
     "Dialog/Popup": {
-      "specHash": "8cc03ba4",
+      "specHash": "4c31cfe0",
       "variants": {
         "Size=sm": {
           "file": "dialog-popup/size-sm.png",
           "width": 384,
-          "height": 148
+          "height": 150
         },
         "Size=md": {
           "file": "dialog-popup/size-md.png",
           "width": 560,
-          "height": 148
+          "height": 150
         },
         "Size=lg": {
           "file": "dialog-popup/size-lg.png",
           "width": 720,
-          "height": 148
+          "height": 150
         }
       }
     },
@@ -1065,7 +1065,7 @@
       }
     },
     "Field": {
-      "specHash": "23318747",
+      "specHash": "5421330b",
       "variants": {
         "State=Default": {
           "file": "field/state-default.png",
@@ -1928,7 +1928,7 @@
       }
     },
     "RadioGroup": {
-      "specHash": "eee703ab",
+      "specHash": "1dcaa473",
       "variants": {
         "Appearance=list, Orientation=vertical, State=Default": {
           "file": "radiogroup/appearance-list__orientation-vertical__state-default.png",
@@ -2323,7 +2323,7 @@
       }
     },
     "Switch": {
-      "specHash": "a20616da",
+      "specHash": "9ccb19c2",
       "variants": {
         "Checked=false, Label placement=end, Size=sm, State=Default": {
           "file": "switch/checked-false__label-placement-end__size-sm__state-default.png",

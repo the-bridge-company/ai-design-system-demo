@@ -43,11 +43,11 @@ describe('SeeItAs menu inset', () => {
       const r = rule(css, selector);
       expect(r, selector).not.toMatch(/(^|\s)(margin|padding|border-radius)[a-z-]*:/m);
     }
-    expect(css).not.toMatch(/see-as-item[^{]*\{[^}]*margin[^}]*-/);
+    expect(css).not.toMatch(/\.see-as-item[^{]*\{[^}]*margin[a-z-]*:\s*-/);
   });
 
   it('the DS Menu holds the inset: popup padding, item radius concentric with it', () => {
-    expect(rule(menuCss, '.popup')).toMatch(/padding: var\(--space-1\);/);
-    expect(rule(menuCss, '.item')).toMatch(/border-radius: calc\(var\(--popup-radius\) - var\(--space-1\)\);/);
+    expect(rule(menuCss, '.popup')).toMatch(/padding: var\(--space-2\);/);
+    expect(rule(menuCss, '.item')).toMatch(/border-radius: calc\(var\(--popup-radius\) - var\(--space-2\)\);/);
   });
 });

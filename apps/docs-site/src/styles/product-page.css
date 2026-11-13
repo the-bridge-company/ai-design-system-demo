@@ -64,20 +64,12 @@
   line-height: var(--typography-body-line-height);
 }
 
-/* The groups flow side by side, each as wide as its cards (--pp-n, set on the group): a group of 1 or 2 cards no longer
-   sits alone in a row of four columns. 24px between groups, 16px between the cards of a group (proximity). A group with
-   more cards than a row holds takes the whole row and its cards wrap on the auto-fill grid. */
+/* The groups stack, the one in progress first (Exploring, then In review, then Shipped: lib/product-page productGroups),
+   so the page reads top down. Every group's cards sit on the same auto-fill grid, so a card is as wide in every group
+   and the cards line up from group to group, a group of one card included. */
 .pp-groups {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-8) var(--space-6);
-}
-
-.pp-groups > .pp-group {
-  flex: 0 1 calc(var(--pp-n) * var(--size-60) + (var(--pp-n) - 1) * var(--space-4));
-  min-width: 0;
-  max-width: 100%;
+  display: grid;
+  gap: var(--space-8);
 }
 
 .pp-groups .sh-cards {
@@ -225,10 +217,6 @@
 }
 
 @media (max-width: 640px) {
-  .pp-groups > .pp-group {
-    flex-basis: 100%;
-  }
-
   /* The drawing above the words, the actions fill the width (a lone main action fills its bar). */
   .pp-previews {
     flex-direction: column;

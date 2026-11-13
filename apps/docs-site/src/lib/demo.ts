@@ -104,6 +104,8 @@ export const DEMO_WORDS = {
   sampleLooksRight: 'On the sample team it stays in this browser.',
   /** Start an exploration on the sample team: it starts in this browser, nothing is sent. */
   sampleStartTitle: 'Started in this browser',
+  /** Add a product on the sample team: it is added in this browser (SAMPLE_IN_BROWSER), nothing is sent. */
+  sampleProduct: 'On the sample team it stays in this browser.',
 
   /** The account menu's way to the sample team, for a signed-in member (never between real teams in the team menu). */
   tryIt: `Try it · ${SAMPLE_TEAM}`,
@@ -188,6 +190,7 @@ const START = 'Start an exploration gives you a safe place to try an idea with C
 const INVITE = 'Invite emails the people you add, so they join your team in Bridge with the role you pick.';
 const SET_PM = 'The product manager is the person who says an exploration is right for the product before developers build it.';
 const LIBRARY_UPDATE = 'Bring the latest in: this product gets everything the library gained since, every change your team approved.';
+const ADD_PRODUCT = 'Add a product brings a product your team designs for into Bridge, so designers can explore it with your library.';
 const HAND_OVER = 'Handing it over gives this exploration to someone else on the team, who picks it up from where it is.';
 
 const ACTION_LINES: Readonly<Record<string, string>> = {
@@ -248,6 +251,8 @@ const ACTION_LINES: Readonly<Record<string, string>> = {
   'set lead': 'A lead reviews the explorations of your team before developers build them.',
   'set review mode': 'This decides who reviews explorations on your team: one lead, or any designer.',
   'rename team': 'Renaming the team changes its name everywhere your people see it.',
+  'add a product': ADD_PRODUCT,
+  'add products': ADD_PRODUCT,
 };
 
 /** The sample-team dialog's line for an action nobody named: still what a real team gets. */
@@ -282,11 +287,12 @@ export const sampleStartLines = (name: string, where: string): { line: string; n
 
 /**
  * The sample team's actions that run in this browser instead of opening the sample-team dialog: the banner says edits
- * stay in this browser, so the two a visitor tries first do (Start an exploration as a designer, Looks right as Dana).
- * Nothing is sent: the start is kept here for the visit and Looks right is painted from a copy kept here
- * (lib/demo-in-browser.ts). Every other write needs a real repository and keeps the dialog (scripts/demo-gate.ts).
+ * stay in this browser, so the ones a visitor tries first do (Start an exploration as a designer, Looks right as Dana,
+ * Add a product as Dana). Nothing is sent: the start and the product are kept here for the visit and Looks right is
+ * painted from a copy kept here (lib/demo-in-browser.ts). Every other write needs a real repository and keeps the
+ * dialog (scripts/demo-gate.ts).
  */
-export const SAMPLE_IN_BROWSER: readonly string[] = ['start explorations', 'start an exploration', 'start exploration', 'say the design looks right'];
+export const SAMPLE_IN_BROWSER: readonly string[] = ['start explorations', 'start an exploration', 'start exploration', 'say the design looks right', 'add a product', 'add products'];
 
 /** True when `action` (a [data-demo-write] mark) runs in this browser on `repo`: the sample team only. */
 export const runsInBrowser = (repo: string | null | undefined, action: string | null | undefined): boolean => isSampleTeam(repo) && Boolean(action) && SAMPLE_IN_BROWSER.includes(actionKey(action!));

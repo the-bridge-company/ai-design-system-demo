@@ -59,6 +59,12 @@ export const ADD_PRODUCT_WORDS = {
   checkAgain: 'Check again',
 } as const;
 
+/**
+ * "Its code is on GitHub" on the sample team: Bridge reads no account there, so it points to the two other cards, named
+ * as the cards say them.
+ */
+export const sampleFoundLine = `On the sample team, Bridge does not look for code on an account. Try ${ADD_PRODUCT_WORDS.address} or ${ADD_PRODUCT_WORDS.fresh}.`;
+
 /** The line that says the new product arrived (announced, then the form waits with it picked). */
 export const foundLine = (name: string) => `${name} is here. Add it when you're ready.`;
 
@@ -509,6 +515,15 @@ export function canAddProduct(
   if (access.admin || access.repoAdmin) return true;
   const login = x.login?.trim().toLowerCase();
   return Boolean(access.write && login && teamLeadsOf(x.config).includes(login));
+}
+
+/**
+ * On the sample team, who may add a product: the person played in "See it as" (lib/demo-cast.ts) when they run the
+ * team, an admin or its lead (Dana), as on a real team; never a designer, the developer (no email membership: null) or
+ * the product manager. It runs in this browser (lib/demo.ts SAMPLE_IN_BROWSER): nothing is sent.
+ */
+export function canAddSampleProduct(member: { role?: string | null; lead?: boolean | null } | null | undefined): boolean {
+  return Boolean(member && (member.role === 'admin' || member.lead === true));
 }
 
 // A product just added (straight to the team's settings, lib/product-add-api.ts): the page knows it before GitHub's

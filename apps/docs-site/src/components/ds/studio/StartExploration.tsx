@@ -3,9 +3,11 @@
 //   - Where: a product, or, for a lead (lib/design-lead), the library itself (a token, a component or its guidance). A change
 //     to the library is an exploration whose target is the library. A designer of the team only sees products, and
 //     with one product no Where at all. Preselected from ?product= (key, name, or "library"), else the only
-//     product, else the library when the team lists no product. For whoever may add a product (an admin with GitHub,
-//     never the sample team: AddProduct's useCanAddProduct), a last "Add a product" after a separator, a plus in the
-//     link color: it opens the Add a product dialog of Settings (AddProduct.tsx), then brings the person back here.
+//     product, else the library when the team lists no product. For whoever may add a product (an admin with GitHub;
+//     on the sample team the person played when they run it, Dana: AddProduct's useCanAddProduct), a last "Add a
+//     product" after a separator, a plus in the link color: it opens the Add a product dialog of Settings
+//     (AddProduct.tsx), then brings the person back here, the new product picked once added (on the sample team it
+//     is added in this browser).
 //   - What it is, in one sentence, and a Jira ticket on demand (only with JIRA_IN_BRIDGE). The primary follows the person's AI tool
 //     (AiToolPanel.tsx, lib/ai-tools.ts): "Start with Claude AI" for Claude, "Start in Copilot" for GitHub Copilot
 //     in VS Code. It starts the exploration the way the CLI and MCP server do (the core exploration start with the
@@ -941,6 +943,14 @@ export default function StartExploration({ components, appearance = 'menu', prod
             if (!o) setOpen(true);
           }}
           onSent={() => setAdded(true)}
+          onAdded={(key) => {
+            // Added (in this browser on the sample team): back here with it picked, what they typed kept. The page
+            // knows it at once (repo-context addedHere).
+            const all = pageProducts();
+            setProducts(all);
+            pickedByHand.current = true;
+            setTarget(startTargets(all, { library: lead }).find((t) => !t.library && t.product.key === key)?.value ?? target);
+          }}
         />
       )}
     </>

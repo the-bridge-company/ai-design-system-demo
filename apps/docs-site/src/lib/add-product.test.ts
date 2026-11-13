@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { productProblems, type ProductConfig } from '@bridge-ds/core';
 import { ADDRESS_PRODUCT_WORDS } from './new-product';
+import { castPerson, playedMember, SAMPLE_CAST } from './demo-cast';
 import {
+  canAddSampleProduct,
   ACCESS_MAX_MS,
   ACCESS_MESSAGE,
   accessStep,
@@ -395,5 +397,15 @@ describe('a product just added shows at once', () => {
     expect(parseAdded(kept, now)).toEqual([{ entry: NEW, at: now - 1000 }]);
     for (const bad of [null, '', 'x', '{}', '[1]']) expect(parseAdded(bad, now)).toEqual([]);
     expect(addedKey('Acme/DS')).toBe(addedKey('acme/ds'));
+  });
+});
+
+describe('canAddSampleProduct: who adds a product on the sample team (in this browser)', () => {
+  it('the person who runs the team (Dana, admin and lead); never a designer, the product manager or the developer', () => {
+    const visitor = { email: 'dana@acme.example', name: 'Dana', role: 'admin' as const, ref: 'a399f73add3dbb2d', visitor: true };
+    const can = Object.fromEntries(SAMPLE_CAST.map((p) => [p.key, canAddSampleProduct(playedMember(visitor, castPerson(p.key)!))]));
+    expect(can).toEqual({ dana: true, sofia: false, leo: false, malik: false, ann: false });
+    expect(canAddSampleProduct(null)).toBe(false);
+    expect(canAddSampleProduct({ role: 'view' })).toBe(false);
   });
 });

@@ -4,12 +4,18 @@
 // open it.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import StartExploration, { startFromAddress, startLines } from './StartExploration';
+import ProductsNav from './ProductsNav';
 import * as session from '../../../scripts/github-session';
+import * as addProduct from '../../../scripts/add-product';
+import { noteAddedProduct } from '../../../scripts/repo-context';
+import { castPerson, playedMember } from '../../../lib/demo-cast';
+import { DEMO_WORDS } from '../../../lib/demo';
+import { sampleProducts } from '../../../lib/demo-in-browser';
 import bridgeConfig from '../../../../../../bridge.config.json';
 
 // The products this repository ships with. Admins and leads add others from Studio straight to bridge.config.json on
@@ -22,6 +28,7 @@ const viewer = vi.hoisted(() => ({ access: { state: 'writer', write: true, admin
 // them from one file overlap (a component still loading from the test before, the next test's own), and the real
 // onAccess never answers, so Where never came. A spied module is one object for every import.
 vi.mock('../../../scripts/github-session', { spy: true });
+vi.mock('../../../scripts/add-product', { spy: true });
 beforeEach(() => {
   vi.mocked(session.onAccess).mockImplementation((fn) => {
     if (viewer.access) fn(viewer.access as unknown as session.RepoAccess);
@@ -337,10 +344,50 @@ describe('Where: Add a product, for the people who may add one', () => {
     }
   });
 
-  it("a lead who is not an admin, a designer and the sample team's visitor (an email admin) never see it", async () => {
+  it('a real team: added from Where, the person comes back to Start with the new product picked', async () => {
+    viewer.access = admin;
+    sessionStorage.clear();
+    const done = embed({ owner: 'acme', repo: 'ds' });
+    // The add API stubbed: Bridge found Atlas on GitHub and adds it to the team's settings (noteAddedProduct, as
+    // scripts/add-product addToTeam does), nothing else is asked.
+    vi.mocked(addProduct.readProductAccess).mockResolvedValue({ repos: [{ full: 'acme/atlas', name: 'atlas', defaultBranch: 'main' }], installation: null, account: 'acme', accountId: 1, seen: 1 });
+    vi.mocked(addProduct.readOwnership).mockResolvedValue(true);
+    vi.mocked(addProduct.detectPreviews).mockResolvedValue(null);
+    vi.mocked(addProduct.addToTeam).mockImplementation(async (entry) => {
+      noteAddedProduct(entry);
+      return { kind: 'added', key: entry.key };
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...location, assign, href: location.href, search: '', pathname: '/studio/' });
+    try {
+      const user = userEvent.setup();
+      render(createElement(StartExploration, { components }));
+      await openWhere(user);
+      await user.click(await screen.findByRole('option', { name: 'Add a product' }));
+      await user.click(await screen.findByRole('button', { name: /^Its code is on GitHub/ }));
+      await user.click(await screen.findByRole('button', { name: 'Add Atlas' }));
+      // Add reads the previews first, then adds (two awaits): wait for it, never assume it ran within the click.
+      await waitFor(() => expect(vi.mocked(addProduct.addToTeam)).toHaveBeenCalledTimes(1));
+      // Back to Start an exploration with Atlas picked; its page did not open, no "Sent for review".
+      expect(await screen.findByText('What do you want to explore?')).toBeTruthy();
+      expect((await screen.findByRole('combobox', { name: 'Where' })).textContent).toContain('Atlas');
+      expect(assign).not.toHaveBeenCalled();
+      expect(screen.queryByText(/Sent for review/)).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.mocked(addProduct.readProductAccess).mockRestore();
+      vi.mocked(addProduct.readOwnership).mockRestore();
+      vi.mocked(addProduct.detectPreviews).mockRestore();
+      vi.mocked(addProduct.addToTeam).mockRestore();
+      sessionStorage.clear();
+      done();
+    }
+  });
+
+  it("a lead who is not an admin and an email admin of a real team never see it", async () => {
     const cases: { access: Record<string, unknown>; site: Record<string, unknown> }[] = [
       { access: { state: 'writer', write: true, admin: false, contributor: false }, site: { owner: 'acme', repo: 'ds' } },
-      { access: { ...admin, contributor: true }, site: { owner: 'acme-design-demo', repo: 'bridge-demo-ds' } },
+      { access: { ...admin, contributor: true }, site: { owner: 'acme', repo: 'ds' } },
     ];
     for (const c of cases) {
       viewer.access = c.access;
@@ -354,6 +401,89 @@ describe('Where: Add a product, for the people who may add one', () => {
       } finally {
         unmount();
         done();
+      }
+    }
+  });
+});
+
+// The sample team (lib/demo.ts SAMPLE_IN_BROWSER): whoever runs it in "See it as" (Dana) adds a product in this
+// browser, the same dialog, nothing sent; it shows in the side nav and comes back picked in Where.
+const VISITOR = { email: 'dana@acme.example', name: 'Dana', role: 'admin' as const, ref: 'a399f73add3dbb2d', visitor: true };
+
+describe('Where: Add a product on the sample team, in this browser', () => {
+  const SAMPLE_PRODUCTS = [
+    { key: 'crm', name: 'Acme CRM', repo: 'acme-design-demo/acme-crm' },
+    { key: 'prints', name: 'Acme Prints', repo: 'acme-design-demo/acme-prints' },
+    { key: 'library', name: 'Library', default: true },
+  ];
+  let done = () => undefined as void;
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    viewer.access = { state: 'admin', write: true, admin: true, contributor: true };
+    vi.mocked(session.currentContributor).mockReturnValue(playedMember(VISITOR, castPerson('dana')!));
+    const el = document.createElement('script');
+    el.id = 'bridge-repo';
+    el.type = 'application/json';
+    el.textContent = JSON.stringify({ owner: 'acme-design-demo', repo: 'bridge-demo-ds', products: SAMPLE_PRODUCTS });
+    document.body.append(el);
+    done = () => el.remove();
+  });
+  afterEach(() => {
+    done();
+    vi.mocked(session.currentContributor).mockRestore();
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('Dana adds a new product: nothing is sent, it comes back picked in Where and shows in the side nav', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 200 }));
+    const user = userEvent.setup();
+    render(createElement(StartExploration, { components }));
+    await user.click(screen.getByRole('button', { name: 'Start an exploration' }));
+    await user.click(await screen.findByRole('combobox', { name: 'Where' }));
+    await user.click(await screen.findByRole('option', { name: 'Add a product' }));
+    expect(await screen.findByRole('dialog', { name: 'Add a product' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: "It's a new product" }));
+    // Said once, before anything is added: on the sample team it stays in this browser. No designers' copy to make.
+    expect(await screen.findByText(DEMO_WORDS.sampleProduct)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Atlas');
+    await user.click(screen.getByRole('button', { name: 'Create product' }));
+
+    // Back to Start an exploration, the new product picked.
+    expect(await screen.findByText('What do you want to explore?')).toBeTruthy();
+    expect((await screen.findByRole('combobox', { name: 'Where' })).textContent).toContain('Atlas');
+    expect(sampleProducts(localStorage)).toEqual([{ key: 'atlas', name: 'Atlas', framework: 'react' }]);
+    // Nothing went to the network that writes: no POST, PUT, PATCH or DELETE.
+    const writes = fetchSpy.mock.calls.filter(([, init]) => (init?.method ?? 'GET').toUpperCase() !== 'GET');
+    expect(writes).toEqual([]);
+
+    // The side nav reads it with the team's products.
+    render(createElement('nav', { 'aria-label': 'Studio navigation' }, createElement(ProductsNav, {})));
+    expect(await screen.findByRole('link', { name: 'Atlas' })).toBeTruthy();
+  });
+
+  it('Sofia and Leo (designers), Ann (product manager) and Malik (developer) do not see Add a product there', async () => {
+    const cases = [
+      { as: 'sofia', access: { state: 'writer', write: true, admin: false, contributor: true } },
+      { as: 'leo', access: { state: 'writer', write: true, admin: false, contributor: true } },
+      { as: 'ann', access: { state: 'writer', write: true, admin: false, contributor: true } },
+      // The developer has no email membership: the GitHub side plays him, with write access and no admin.
+      { as: 'malik', access: { state: 'writer', write: true, admin: false, reach: true } },
+    ] as const;
+    for (const c of cases) {
+      vi.mocked(session.currentContributor).mockReturnValue(playedMember(VISITOR, castPerson(c.as)!));
+      viewer.access = { ...c.access };
+      const user = userEvent.setup();
+      const { unmount } = render(createElement(StartExploration, { components }));
+      try {
+        await user.click(screen.getByRole('button', { name: 'Start an exploration' }));
+        await user.click(await screen.findByRole('combobox', { name: 'Where' }));
+        expect((await screen.findAllByRole('option')).length).toBeGreaterThan(0);
+        expect(screen.queryByRole('option', { name: 'Add a product' }), c.as).toBeNull();
+      } finally {
+        unmount();
       }
     }
   });

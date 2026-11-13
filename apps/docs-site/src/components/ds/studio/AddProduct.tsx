@@ -29,6 +29,18 @@
 // show Bridge where it is and GitHub sends them the request, with "Copy a message for the owners". GitHub closed with
 // nothing new: "Request sent to the owners", remembered in this browser per team (localStorage), so the dialog opens
 // on it again; coming back to the window reads the list, and the approved product is announced.
+//
+// The sample team (lib/demo.ts SAMPLE_IN_BROWSER): the same dialog for whoever runs the team in "See it as" (Dana, an
+// admin and its lead: lib/add-product.ts canAddSampleProduct), never a designer, the developer or the product manager.
+// Add runs in this browser: nothing is sent, the product is kept for the visit (lib/demo-in-browser.ts
+// keepSampleProduct) and shows in the side nav, on its page and in Start an exploration's Where list. Bridge reads no
+// account there: "Only its address" is the recommended card, and "Its code is on GitHub" says so in one line and
+// points to the two other cards by their names (sampleFoundLine); "Only its address" and
+// "It's a new product" make no code and no designers' copy (no checkbox), and the form says once that it stays in this
+// browser (DEMO_WORDS.sampleProduct).
+//
+// Opened from Start an exploration (`onAdded`), on any team: once added, the dialog closes and Start comes back with
+// the new product picked in Where, instead of opening its page; from Settings, its page opens.
 import { forwardRef, useEffect, useId, useReducer, useRef, useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import { Badge, Button, ButtonGroup, Checkbox, Dialog, DialogClose, DialogContent, Spinner } from '@bridge-ds/react';
@@ -37,6 +49,7 @@ import { accessSettingsUrl, askOwnersMessage, requestAccessUrl, type AppInstalla
 import { githubBusy } from '../../../lib/github-busy';
 import { noteCopySetup } from '../../../lib/design-copy';
 import { productHref } from '../../../lib/product-page';
+import { DEMO_WORDS, isSampleTeam } from '../../../lib/demo';
 import type { ProductConfig } from '@bridge-ds/core';
 import { BusyNotice } from './BusyNotice';
 import { Drawing } from './Drawing';
@@ -49,6 +62,7 @@ import {
   ADD_PRODUCT_WORDS as W,
   accessStep,
   canAddProduct,
+  canAddSampleProduct,
   foundLine,
   isAccessMessage,
   mergeRepos,
@@ -61,6 +75,7 @@ import {
   pendingKey,
   popupFeatures,
   requestSentLine,
+  sampleFoundLine,
   productKeyFor,
   productNameFor,
   waitedTooLong,
@@ -76,7 +91,8 @@ let pageTeam: string | null = null;
 
 /**
  * Whether this viewer may add a product: an admin or a lead of the team signed in with GitHub (lib/add-product.ts
- * canAddProduct). Bridge checks it again before it writes anything.
+ * canAddProduct). Bridge checks it again before it writes anything. On the sample team: the person played when they run
+ * the team (canAddSampleProduct, Dana), and adding runs in this browser.
  */
 export function useCanAddProduct(): boolean {
   const [can, setCan] = useState(false);
@@ -90,12 +106,16 @@ export function useCanAddProduct(): boolean {
         if (!live) return;
         const r = repoContext();
         pageTeam = `${r.owner}/${r.repo}`;
+        // The sample team: who the page plays (an email member by "See it as"), never a GitHub sign-in.
+        if (isSampleTeam(pageTeam)) return setCan(canAddSampleProduct(session.currentContributor()));
         setCan(canAddProduct(last, { login: session.currentViewer()?.login ?? null, config: siteConfig() }));
       };
       session.onAccess((a) => {
         last = a;
         paint();
       });
+      // The sample team's person is known before any access read (kept in this browser), so it paints at once.
+      if (isSampleTeam(`${repoContext().owner}/${repoContext().repo}`)) paint();
       // A lead is known once the team's settings are read.
       document.addEventListener('bridge:team-model', paint);
       unhook = () => document.removeEventListener('bridge:team-model', paint);
@@ -122,6 +142,12 @@ export interface AddProductProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   /**
+   * Opened from elsewhere (Start an exploration): called with the new product's key once it is added (to the team, or
+   * in this browser on the sample team), instead of opening its page, so the opener picks it. Sent for review instead:
+   * `onSent`, as before.
+   */
+  onAdded?: (key: string) => void;
+  /**
    * Back from GitHub (a sign-in, or Install on GitHub; components/ds/studio/ResumeAction.tsx): the step the person was
    * on, with what they typed and one line on top ("Back from GitHub. Create Atlas now?"). Nothing is sent before they
    * click.
@@ -143,16 +169,22 @@ export const setOpenPage = (fn: (href: string) => void) => {
   openPage = fn;
 };
 
-export default function AddProduct({ products: given, variant = 'secondary', onSent, open: openProp, onOpenChange, resume = null }: AddProductProps) {
+export default function AddProduct({ products: given, variant = 'secondary', onSent, open: openProp, onOpenChange, onAdded, resume = null }: AddProductProps) {
   const can = useCanAddProduct();
+  // The sample team: adding runs in this browser, nothing is sent (pageTeam is known once `can` is).
+  const sample = can && isSampleTeam(pageTeam);
   const controlled = openProp !== undefined;
   const [read, setRead] = useState<ProductConfig[]>([]);
   useEffect(() => {
     if (given) return;
     let live = true;
-    void import('../../../scripts/repo-context').then(({ siteConfig }) => live && setRead((siteConfig() as { products?: ProductConfig[] }).products ?? []));
+    // Read again when the team's settings change (a product added here a moment ago among them).
+    const reread = () => void import('../../../scripts/repo-context').then(({ siteConfig }) => live && setRead((siteConfig() as { products?: ProductConfig[] }).products ?? []));
+    reread();
+    document.addEventListener('bridge:team-model', reread);
     return () => {
       live = false;
+      document.removeEventListener('bridge:team-model', reread);
     };
   }, [given]);
   const products = given ?? read;
@@ -212,6 +244,16 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
   const [request, setRequest] = useState<PendingRequest | null>(null);
   const { copied, said, copy: copyText } = useCopy(3000);
 
+  // Each opening after the first starts from the question (closed here or by its opener, Start an exploration), set
+  // before it paints; never while it closes (see setOpen).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setMode('choice');
+      setReview(null);
+    }
+  }
   const setOpen = (o: boolean) => {
     if (!o) {
       // Closed here: nothing to reopen after GitHub.
@@ -219,11 +261,11 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       go({ type: 'cancel' });
       setFound(null);
       setError(null);
-      setMode('choice');
-      if (review) {
-        setReview(null);
-        if (!controlled) setSent(true);
-      }
+      // The step stays as it is while the dialog closes: swapping it now (a form step is its own component) remounts
+      // the popup mid-exit, Base UI never finishes closing and its see-through backdrop stays over the page. The next
+      // opening starts from the question (below).
+      // Sent for review: Settings says so in place of its button; the review step itself stays while it closes.
+      if (review && !controlled) setSent(true);
       // GitHub did not answer this time: the next opening asks again instead of keeping the empty list.
       if (unread) {
         setUnread(false);
@@ -264,12 +306,17 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
   };
   useEffect(() => {
     if (!open || repos) return;
+    // The sample team: Bridge reads no account there (nothing to list, nothing asked of GitHub).
+    if (sample) {
+      setRepos([]);
+      return;
+    }
     let live = true;
     void load(() => live);
     return () => {
       live = false;
     };
-  }, [open, repos, products]);
+  }, [open, repos, products, sample]);
   // Try again after GitHub did not answer: the same read as on opening.
   const [retrying, setRetrying] = useState(false);
   const retry = async () => {
@@ -424,8 +471,6 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
   const focusedFor = useRef<string | null>(null);
   useEffect(() => {
     if (!open) {
-      // Closed by its opener too (Start an exploration): the next opening starts from the question again.
-      if (focusedFor.current !== null) setMode('choice');
       focusedFor.current = null;
       return;
     }
@@ -438,9 +483,15 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
     focusedFor.current = at;
     // On opening, the dialog puts the focus on its first card itself.
     if (first && at === 'choice') return;
+    const target = () => (at === 'choice' ? cardRefs.current.get(chose.current) : !found && !resumedRepo ? ((repos?.length ? addRefs.current.get(repos[0]!.full) : null) ?? findPrimary.current) : null);
     requestAnimationFrame(() => {
-      if (at === 'choice') cardRefs.current.get(chose.current)?.focus();
-      else if (!found && !resumedRepo) ((repos?.length ? addRefs.current.get(repos[0]!.full) : null) ?? findPrimary.current)?.focus();
+      target()?.focus();
+      // The button that was focused (Back) left the page: the dialog's focus trap moves the focus to the popup itself
+      // a moment later. Taken back from there, never from something the person focused since.
+      setTimeout(() => {
+        const el = target();
+        if (el && document.activeElement !== el && document.activeElement?.getAttribute('role') === 'dialog') el.focus();
+      }, 60);
     });
   }, [open, mode, repos === null]);
   // A product announced: its Add takes the focus.
@@ -473,6 +524,7 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
    * review instead: the dialog says so. Refused or not done: the reason on its row.
    */
   const addEntry = async (entry: ProductConfig): Promise<boolean> => {
+    if (sample) return addSample(entry);
     setBusy(true);
     setAdding(entry.repo ?? null);
     setError(null);
@@ -485,14 +537,17 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       if (out.kind === 'added' || out.kind === 'review') {
         disarmPendingAction();
         forgetPending();
-        onSent?.();
+        // Added for an opener that picks it (Start an exploration): onAdded below, never "Sent for review".
+        if (out.kind === 'review' || !onAdded) onSent?.();
       }
       if (out.kind === 'added') {
         // The designers' copy was chosen here, once for the team: its page makes it in the background with this
         // sign-in, and designers never see a step for it.
         if (entry.design && pageTeam) noteCopySetup(typeof sessionStorage === 'undefined' ? null : sessionStorage, pageTeam, out.key, Date.now());
         setOpen(false);
-        openPage(productHref(out.key));
+        // Opened from Start an exploration: back there with it picked (the page knows it at once: noteAddedProduct).
+        if (onAdded) onAdded(out.key);
+        else openPage(productHref(out.key));
         return true;
       }
       if (out.kind === 'review') {
@@ -509,6 +564,30 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       setBusy(false);
       setAdding(null);
     }
+  };
+
+  /**
+   * The sample team: added in this browser for the visit, nothing sent (no code, no designers' copy, no previews). The
+   * side nav and every reader of the team's settings list it at once; then its page opens, or the opener picks it.
+   */
+  const addSample = async (entry: ProductConfig): Promise<boolean> => {
+    const { keepSampleProduct } = await import('../../../lib/demo-in-browser');
+    let store: Storage | null = null;
+    try {
+      store = localStorage;
+    } catch {
+      store = null;
+    }
+    const kept = store ? keepSampleProduct(store, { key: entry.key, name: entry.name, ...(entry.address ? { address: entry.address } : {}) }) : { key: entry.key };
+    const [owner, repo] = (pageTeam ?? '/').split('/');
+    document.dispatchEvent(new CustomEvent('bridge:team-model', { detail: { owner, repo } }));
+    setOpen(false);
+    if (onAdded) onAdded(kept.key);
+    else {
+      onSent?.();
+      openPage(productHref(kept.key));
+    }
+    return true;
   };
 
   const addRepo = async (r: ProductRepoChoice) => {
@@ -653,8 +732,9 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
         <div className="addp-choices">
           {(
             [
-              { mode: 'found', art: 'components', title: W.github, help: W.githubHelp, recommended: true },
-              { mode: 'address', art: 'address', title: W.address, help: W.addressHelp, recommended: false },
+              // The sample team reads no account: its GitHub card is not the way to try it, Only its address is.
+              { mode: 'found', art: 'components', title: W.github, help: W.githubHelp, recommended: !sample },
+              { mode: 'address', art: 'address', title: W.address, help: W.addressHelp, recommended: sample },
               { mode: 'new', art: 'fix', title: W.fresh, help: W.freshHelp, recommended: false },
             ] as const
           ).map((c) => (
@@ -690,6 +770,7 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
         products={products}
         library={pageTeam}
         account={target?.account ?? null}
+        sample={sample}
         busy={busy}
         setBusy={setBusy}
         copy={copy}
@@ -705,6 +786,16 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
           setMode('found');
         }}
       />
+    );
+  } else if (sample) {
+    // A on the sample team: Bridge reads no account there. One drawing, one line that points to the two other cards.
+    content = (
+      <DialogContent title={W.github} hideClose footer={<ButtonGroup align="end">{back}</ButtonGroup>}>
+        <div className="addp-wait addp-none">
+          <Drawing name="components" width={96} className="addp-wait-art" />
+          <p className="addp-wait-line addp-wait-text">{sampleFoundLine}</p>
+        </div>
+      </DialogContent>
     );
   } else {
     // A: the products Bridge found, one row each with its own Add. None found: one drawing, one line, and the way to

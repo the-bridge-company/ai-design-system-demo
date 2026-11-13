@@ -54,6 +54,8 @@ describe('demoActionLine: what an action does on a real team, in the sample-team
     expect(demoActionLine(['set-pm'])).toMatch(/^The product manager/);
     expect(demoActionLine(['library-update'])).toMatch(/^Bring the latest in/);
     expect(demoActionLine(['edit the roles'])).toMatch(/^Roles decide/);
+    expect(demoActionLine(['Add a product'])).toMatch(/^Add a product brings a product/);
+    expect(demoActionLine(['add products'])).toBe(demoActionLine(['Add a product']));
   });
 
   it('the first name it knows wins (the mark, then the newest click); none known: the line for any action', () => {

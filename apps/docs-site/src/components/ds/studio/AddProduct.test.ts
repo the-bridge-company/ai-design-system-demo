@@ -11,12 +11,14 @@
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, nothingYetLine, ownersOnlyLine, pendingKey, requestSentLine, type ProductRepoChoice } from '../../../lib/add-product';
+import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, sampleFoundLine, nothingYetLine, ownersOnlyLine, pendingKey, requestSentLine, type ProductRepoChoice } from '../../../lib/add-product';
 import { ADDRESS_PRODUCT_WORDS as D, NEW_PRODUCT_WORDS as N } from '../../../lib/new-product';
 import { copySetupFresh, copySetupKey } from '../../../lib/design-copy';
 import AddProduct, { setOpenPage } from './AddProduct';
+import { DEMO_WORDS } from '../../../lib/demo';
+import { sampleProducts } from '../../../lib/demo-in-browser';
 
 const gh = vi.hoisted(() => ({
   access: { repos: [] as ProductRepoChoice[], installation: { id: 42, account: { login: 'acme', type: 'Organization' } } as unknown, account: 'acme', accountId: 77 as number | null, seen: 0 },
@@ -29,10 +31,18 @@ const gh = vi.hoisted(() => ({
   // How long the ownership read takes (ms): the owners' line must never show up after the step.
   ownerDelay: 0,
   opened: [] as string[],
+  // The page's team, and the member the page plays there (the sample team's "See it as").
+  team: { owner: 'acme', repo: 'ds' },
+  member: null as unknown,
 }));
 
-vi.mock('../../../scripts/github-session', () => ({ onAccess: (fn: (a: unknown) => void) => fn({ admin: true }), readRepo: () => ({ owner: 'acme', repo: 'ds' }), currentViewer: () => ({ login: 'dana' }) }));
-vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds' }), siteConfig: () => ({ products: [] }) }));
+vi.mock('../../../scripts/github-session', () => ({
+  onAccess: (fn: (a: unknown) => void) => fn(gh.team.owner === 'acme' ? { admin: true } : { admin: true, contributor: true }),
+  readRepo: () => gh.team,
+  currentViewer: () => ({ login: 'dana' }),
+  currentContributor: () => gh.member,
+}));
+vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => gh.team, siteConfig: () => ({ products: [] }) }));
 vi.mock('../../../scripts/add-product', () => ({
   readProductAccess: async () => {
     if (gh.readFails) throw Object.assign(new Error('GitHub rate limit reached'), { status: 429, resetAt: null });
@@ -72,6 +82,8 @@ beforeEach(() => {
   gh.owner = null;
   gh.ownerDelay = 0;
   gh.opened = [];
+  gh.team = { owner: 'acme', repo: 'ds' };
+  gh.member = null;
   setOpenPage((href) => gh.opened.push(href));
   localStorage.clear();
   sessionStorage.clear();
@@ -466,4 +478,103 @@ describe('Add a product: someone who can only request access', () => {
     expect(await screen.findByText(foundLine('Art print shop'))).toBeInTheDocument();
     expect(localStorage.getItem(KEY)).toBeNull();
   });
+});
+
+// The sample team (lib/demo.ts SAMPLE_IN_BROWSER): the same dialog for whoever runs it in "See it as" (Dana), adding
+// runs in this browser and nothing is sent; a designer never sees it.
+describe('Add a product on the sample team', () => {
+  const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, visitor: true };
+  const SOFIA = { email: 'sofia@acme.example', name: 'Sofia', role: 'edit', ref: '0406ec723c59bb8d', visitor: true };
+  let fetchSpy: MockInstance<typeof fetch>;
+  beforeEach(() => {
+    gh.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    gh.member = DANA;
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 200 }));
+  });
+  const writes = () => fetchSpy.mock.calls.filter(([, init]) => (init?.method ?? 'GET').toUpperCase() !== 'GET');
+
+  it('Dana gets Add a product in Settings; Its code is on GitHub says Bridge looks for nothing there, and reads nothing', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    fireEvent.click(await githubCard());
+    expect(await screen.findByText(sampleFoundLine)).toBeInTheDocument();
+    expect(sampleFoundLine).toContain(`Try ${W.address} or ${W.fresh}.`);
+    // Nothing asked of GitHub, no way to it from here: Back only.
+    expect(screen.queryByRole('button', { name: W.findOnGitHub })).toBeNull();
+    expect(screen.getByRole('button', { name: W.back })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    await expectNoAxeViolations(document.body);
+  });
+
+  it('recommends Only its address, not the GitHub card; Back from the GitHub step puts the focus on that card again', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    expect(await screen.findByRole('button', { name: `${W.address} ${W.recommended}` })).toBeInTheDocument();
+    const github = screen.getByRole('button', { name: W.github });
+    fireEvent.click(github);
+    fireEvent.click(await screen.findByRole('button', { name: W.back }));
+    const again = await screen.findByRole('button', { name: W.github });
+    await waitFor(() => expect(document.activeElement).toBe(again));
+  });
+
+  it('Only its address: added in this browser, its page opens, nothing sent and nothing added on GitHub', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${W.address}`) }));
+    expect(await screen.findByText(DEMO_WORDS.sampleProduct)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
+    fireEvent.change(screen.getByRole('textbox', { name: D.address }), { target: { value: 'atlas.example.com' } });
+    const added = vi.fn();
+    document.addEventListener('bridge:team-model', added);
+    fireEvent.click(screen.getByRole('button', { name: D.add }));
+    await waitFor(() => expect(gh.opened).toEqual(['/studio/products/atlas/']));
+    document.removeEventListener('bridge:team-model', added);
+    expect(sampleProducts(localStorage)).toEqual([{ key: 'atlas', name: 'Atlas', address: 'https://atlas.example.com', framework: 'react' }]);
+    expect(added).toHaveBeenCalled();
+    expect(gh.add).not.toHaveBeenCalled();
+    expect(writes()).toEqual([]);
+  });
+
+  it('opened from Start an exploration: hands back the new key instead of opening its page', async () => {
+    const onAdded = vi.fn();
+    const onOpenChange = vi.fn();
+    render(createElement(AddProduct, { products: [], open: true, onOpenChange, onAdded }));
+    fireEvent.click(await screen.findByRole('button', { name: W.fresh }));
+    fireEvent.change(await screen.findByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
+    fireEvent.click(screen.getByRole('button', { name: N.create }));
+    await waitFor(() => expect(onAdded).toHaveBeenCalledWith('atlas'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(gh.opened).toEqual([]);
+    expect(writes()).toEqual([]);
+  });
+
+  it('Sofia, a designer, gets no Add a product', async () => {
+    gh.member = SOFIA;
+    render(createElement(AddProduct, { products: [{ key: 'crm', name: 'Acme CRM' }] }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.queryByRole('button', { name: W.open })).toBeNull();
+  });
+});
+
+// Closing from a form step (It's a new product, Only its address): the dialog finishes closing, its backdrop gone, so
+// the page under it takes clicks again. The step stays as it was while the dialog closes (swapping it then left Base
+// UI's exit unfinished: a see-through backdrop over the page), and the next opening starts from the question.
+describe('Add a product closes cleanly from every step', () => {
+  const backdrops = () => document.querySelectorAll('[class*="backdrop"]').length;
+  for (const card of [W.fresh, W.address] as const) {
+    it(`Escape from "${card}" unmounts the popup and the backdrop; the next opening asks the question again`, async () => {
+      render(createElement(AddProduct, { products: [] }));
+      fireEvent.click(await screen.findByRole('button', { name: W.open }));
+      fireEvent.click(await screen.findByRole('button', { name: card }));
+      const name = await screen.findByRole('textbox', { name: N.name });
+      expect(backdrops()).toBeGreaterThan(0);
+      fireEvent.keyDown(name, { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await waitFor(() => expect(backdrops()).toBe(0));
+      fireEvent.click(screen.getByRole('button', { name: W.open }));
+      expect(await screen.findByText(W.question)).toBeInTheDocument();
+    });
+  }
 });

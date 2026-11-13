@@ -763,6 +763,8 @@ export default function ProductPage({
   const [canRename, setCanRename] = useState(false);
   /** An admin of a real team: may connect the product to a host (the previews step), with the library's code. */
   const [hosting, setHosting] = useState<{ library: string | null } | null>(null);
+  /** The sample team's products added in this browser: no previews step (nothing was made to connect). */
+  const [inBrowser, setInBrowser] = useState<string[]>([]);
   /** The team's previews settings (bridge.config.json `previews`): the library's host, and products' own previews. */
   const [teamPreviews, setTeamPreviews] = useState<PreviewsLike | null>(builtPreviews);
   const [sent, setSent] = useState(false);
@@ -866,11 +868,22 @@ export default function ProductPage({
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [{ onAccess }, { repoContext }, { canRenameProduct }] = await Promise.all([
+      const [{ onAccess }, { repoContext }, { canRenameProduct }, { isSampleTeam }, { sampleProducts }] = await Promise.all([
         import('../../../scripts/github-session'),
         import('../../../scripts/repo-context'),
         import('../../../lib/product-name'),
+        import('../../../lib/demo'),
+        import('../../../lib/demo-in-browser'),
       ]);
+      // A product added in this browser on the sample team (lib/demo-in-browser.ts): nothing exists to connect.
+      const here = repoContext();
+      if (isSampleTeam(`${here.owner}/${here.repo}`)) {
+        try {
+          setInBrowser(sampleProducts(localStorage).map((p) => p.key));
+        } catch {
+          /* storage blocked: none kept here */
+        }
+      }
       // On a team shell and on the team's own Studio alike (the config pull request goes to the team's repository).
       onAccess((a) => {
         if (!live) return;
@@ -1022,7 +1035,7 @@ export default function ProductPage({
     : null;
   // Only once the product is read: the step names the host its team's other products already use.
   const previews =
-    hosting && data?.product && !data.loading && showsPreviewsStep({ admin: true, product: data.product, previews: teamPreviews })
+    hosting && data?.product && !data.loading && !inBrowser.includes(data.product.key) && showsPreviewsStep({ admin: true, product: data.product, previews: teamPreviews })
       ? previewsStep(data.product, data.products, teamPreviews, hosting.library)
       : null;
   return (

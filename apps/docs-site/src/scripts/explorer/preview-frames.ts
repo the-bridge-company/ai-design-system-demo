@@ -46,8 +46,13 @@ export function fitFrames(root: ParentNode, opts: { max?: number } = {}) {
   for (const frame of root.querySelectorAll<HTMLElement>('.xe-frame, [data-fit-frame]')) {
     const inner = frame.querySelector<HTMLElement>(':scope > .xe-fit, :scope > [data-fit]');
     if (!inner) continue;
-    const pad = parseFloat(getComputedStyle(frame).paddingLeft) || 0;
-    const scale = fitScale({ width: inner.offsetWidth, height: inner.offsetHeight }, { width: frame.clientWidth, height: frame.clientHeight }, { max: opts.max ?? 1.25, pad });
+    // The inset on each axis from the frame's own padding (a thumb is inset 12px at its sides, 4px above and below).
+    const cs = getComputedStyle(frame);
+    const padX = parseFloat(cs.paddingLeft) || 0;
+    const padY = parseFloat(cs.paddingTop) || 0;
+    // A frame may allow more growth than the list's cap (data-fit-max: an icon alone, so it reads at about 20px).
+    const own = Number(frame.dataset.fitMax);
+    const scale = fitScale({ width: inner.offsetWidth, height: inner.offsetHeight }, { width: frame.clientWidth - padX * 2, height: frame.clientHeight - padY * 2 }, { max: Number.isFinite(own) && own > 0 ? own : (opts.max ?? 1.25) });
     inner.style.setProperty('--xe-scale', String(scale));
   }
 }

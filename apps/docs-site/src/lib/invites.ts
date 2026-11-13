@@ -419,6 +419,8 @@ export const MEMBERS_WORDS = {
   accessHead: 'Access',
   /** An admin signed in by email reads it above GitHub members (the invites server's GITHUB_PEOPLE, in a list's words). */
   githubPeople: 'People who joined with GitHub: an admin changes their access there.',
+  /** On the row of a GitHub member an email admin cannot change here (D7): "Can edit · set on GitHub". */
+  setOnGitHub: 'set on GitHub',
   /** A team with no repository yet: Reviewer waits (the invites server's REVIEWER_NEEDS_REPO). */
   limitReached: "You reached today's invite limit. Try again tomorrow.",
 } as const;

@@ -34,6 +34,7 @@ import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
 import { TabsPanel } from '@bridge-ds/react';
 import SettingsTabs from '../../../components/ds/studio/SettingsTabs';
+import ReviewsTab from '../../../components/ds/studio/ReviewsTab';
 import { groupId, tabId } from '../../../lib/settings-sections';
 ---
 
@@ -50,7 +51,7 @@ import { groupId, tabId } from '../../../lib/settings-sections';
       </TeamNameSetting>
     </section>
     <section class="ts-band" id="team" aria-labelledby="set-members">
-      <MembersSection client:only="react">
+      <MembersSection client:only="react" withReviews={false}>
         {/* The members band in its final shape, one row per person (the sample team's five), until the island reads. */}
         <MembersSkeleton slot="fallback" rows={SAMPLE_MEMBER_ROWS} fallback />
       </MembersSection>
@@ -63,6 +64,7 @@ import { groupId, tabId } from '../../../lib/settings-sections';
   </TabsPanel>
 
   <TabsPanel className="set-group" value="reviews" id={groupId('reviews')} tabId={tabId('reviews')} data-set-group="reviews">
+    <ReviewsTab client:only="react" />
     <TeamSettings client:load />
   </TabsPanel>
 

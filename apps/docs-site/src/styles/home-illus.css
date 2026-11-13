@@ -3023,26 +3023,28 @@
 }
 
 .hp-ldec-b1 {
-  transform: translate(0,calc(var(--_u) * -18)) scale(0.96);
+  transform: translate(0,calc(var(--_u) * -24)) scale(0.96);
   opacity: 0.9;
 }
 
 .hp-ldec-b2 {
-  transform: translate(0,calc(var(--_u) * -36)) scale(0.92);
+  transform: translate(0,calc(var(--_u) * -48)) scale(0.92);
   opacity: 0.75;
 }
 
 .hp-ldec-join {
-  transform: translate(0,calc(var(--_u) * -54)) scale(0.88);
+  transform: translate(0,calc(var(--_u) * -72)) scale(0.88);
   opacity: 0.6;
   animation: hp-ldecJoin calc(var(--motion-duration-moderate) * 45) var(--motion-easing-standard) infinite both;
 }
 
 .hp-ldec-bl {
-  height: calc(var(--_u) * 19);
-  padding: 0 calc(var(--_u) * 24);
+  /* Each waiting card shows a 24u strip above the next (D16): its label 6u under the card's top edge, never touching it. */
+  box-sizing: border-box;
+  height: calc(var(--_u) * 24);
+  padding: calc(var(--_u) * 6) calc(var(--_u) * 24) 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: calc(var(--_u) * 8);
   /* 14px, not 12: the waiting cards are scaled down (0.88 to 0.96), so 12px rendered at 10.6px. */
   font-size: var(--font-size-200);
@@ -3357,13 +3359,13 @@
   0%,
   6% {
     opacity: 0;
-    transform: translate(0,calc(var(--_u) * -84)) scale(0.84);
+    transform: translate(0,calc(var(--_u) * -102)) scale(0.84);
   }
 
   18%,
   100% {
     opacity: 0.6;
-    transform: translate(0,calc(var(--_u) * -54)) scale(0.88);
+    transform: translate(0,calc(var(--_u) * -72)) scale(0.88);
   }
 }
 
@@ -3397,7 +3399,7 @@
   }
 
   .hp-ldec-bl {
-    padding: 0 calc(var(--_u) * 18);
+    padding-inline: calc(var(--_u) * 18);
   }
 
 }

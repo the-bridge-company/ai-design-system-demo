@@ -184,17 +184,41 @@
   min-width: 0;
 }
 
+/* The thumb (D9): 40px tall with 8px above and below it in the row, never touching the row lines; its sample scaled
+   to fit inside a 12px inset at the sides (4px above and below), never cut at the frame's edge. */
+.cm-table .cm-name {
+  padding-block: var(--space-2);
+}
+
 .cm-thumb {
   position: relative;
   flex: none;
   width: calc(var(--size-20) + var(--size-10));
-  height: var(--size-12);
-  padding: var(--space-1);
+  height: var(--size-10);
+  padding: var(--space-1) var(--space-3);
   overflow: hidden;
   border-radius: var(--radius-inset);
   box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
   background-color: var(--color-bg-default);
   pointer-events: none;
+}
+
+/* A thumb that draws nothing (the screen-reader-only helper) says what it is, as a label. */
+.cm-thumb-note {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  white-space: nowrap;
+}
+
+/* "In Figma: No" with its note under it, row meta. */
+.cm-figma-note {
+  display: block;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .cm-thumb-fit {

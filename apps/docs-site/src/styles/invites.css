@@ -118,11 +118,15 @@
 }
 
 /* Reviews (ReviewsSection): its own region under the members, one width with them. */
+/* Who reviews: the full width of every Settings section (D6), its sentences kept to a readable measure inside. */
 .mem-review {
   display: grid;
   gap: var(--space-3);
-  max-width: 70ch;
   margin-top: var(--space-8);
+}
+
+.mem-review .set-intro {
+  max-width: 70ch;
 }
 
 /* The members band's fallback painted by the build (SettingsSkeletons.tsx MembersSkeleton): the sample team's five rows,

@@ -96,9 +96,18 @@ describe('reserved space (batch A)', () => {
   it('Team Settings: General and Members are painted by the build in their final shape until their islands mount', () => {
     const page = read('../pages/team-shell/settings/index.astro');
     expect(page).toMatch(/<TeamNameSetting client:only="react">[\s\S]*?<TeamNameSkeleton slot="fallback" \/>/);
-    expect(page).toMatch(/<MembersSection client:only="react">[\s\S]*?<MembersSkeleton slot="fallback" rows=\{SAMPLE_MEMBER_ROWS\} fallback \/>/);
+    expect(page).toMatch(/<MembersSection client:only="react" withReviews=\{false\}>[\s\S]*?<MembersSkeleton slot="fallback" rows=\{SAMPLE_MEMBER_ROWS\} fallback \/>/);
     // Any other team keeps MEMBER_ROWS_DEFAULT (3) rows of the build's five.
     expect(read('../styles/invites.css')).toContain(':root:not([data-sample-team]) .mem-skel[data-fallback] .mem-skel-row:nth-child(n + 4)');
+  });
+
+  it('Team Settings: who reviews lives in the Reviews tab only (D6), never under the members in the Team tab', () => {
+    const page = read('../pages/team-shell/settings/index.astro');
+    const reviews = page.slice(page.indexOf('value="reviews"'), page.indexOf('value="tools"'));
+    expect(reviews).toContain('<ReviewsTab client:only="react" />');
+    expect(page.slice(page.indexOf('value="team"'), page.indexOf('value="reviews"'))).toContain('withReviews={false}');
+    // One width for every section: no measure on the section itself, only on its sentences.
+    expect(rule(read('../styles/invites.css'), '.mem-review')).not.toMatch(/max-width/);
   });
 
   it('A11: Invite collaborators reads like every other item of the team menu', () => {

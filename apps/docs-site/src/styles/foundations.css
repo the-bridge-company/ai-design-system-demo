@@ -7,9 +7,11 @@
 
 /* Color ramps: one continuous strip per hue, like a paint card. */
 
+/* A ramp's steps share the card's width (D5): every step whole, the 950 never cut to a sliver at the edge. On a phone
+   (below) the strip keeps its minimum step width and scrolls. */
 .ramp-strip {
   display: grid;
-  grid-auto-columns: minmax(calc(var(--size-20) - var(--space-1)), 1fr);
+  grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   margin-bottom: var(--space-6);
   overflow-x: auto;
@@ -49,10 +51,12 @@
   padding: var(--space-2) var(--space-2) var(--space-2);
 }
 
-/* The hex is a DS link Button (copies the CSS variable): code reads in Plex Mono. */
+/* The hex is a DS link Button (copies the CSS variable): code reads in Plex Mono, at the code value size (12px) so
+   "#dce3eb" fits a step 8px inside its edges. */
 .ramp-meta .ramp-copy {
   justify-self: start;
   font-family: var(--font-family-mono);
+  font-size: var(--typography-caption-size);
 }
 
 .ramp-meta .ramp-copy[data-copied] {
@@ -1033,6 +1037,10 @@
 /* Narrow: rows wrap, the specimens stack (auto-fit above) */
 
 @media (max-width: 720px) {
+  .ramp-strip {
+    grid-auto-columns: minmax(calc(var(--size-20) - var(--space-1)), 1fr);
+  }
+
   .fd-row,
   .fd-list.is-space .fd-row,
   .fd-list.is-size .fd-row {

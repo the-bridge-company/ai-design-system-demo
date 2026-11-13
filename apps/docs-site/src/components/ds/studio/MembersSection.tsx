@@ -110,7 +110,16 @@ function MemberRow({ m, data, admins, act, onNotice }: { m: Member; data: Member
             {can.changeRole ? (
               <RolePicker label={`Role for ${m.name}`} value={choiceOf(m)} shown={roleText(m)} personal={data.personal} emailOnly={email || noRepo(data)} {...(leadItem ? { lead: { on: Boolean(m.lead), onChange: (on: boolean, then?: RoleChoice) => void run(() => leadTo(on, then)) } } : {})} disabled={busy} size="sm" onChange={(c) => void run(() => act.changeRole(m, c))} />
             ) : (
-              <span className="mem-role-text">{roleText(m)}</span>
+              // A GitHub member an email admin cannot change here: the reason on their own row (D7), said once.
+              <span className="mem-role-text">
+                {roleText(m)}
+                {data.emailAdmin && m.via !== 'email' && !m.you && (
+                  <span className="mem-role-why">
+                    {SEP}
+                    {MEMBERS_WORDS.setOnGitHub}
+                  </span>
+                )}
+              </span>
             )}
             {menu ? (
               <Menu>
@@ -200,7 +209,11 @@ function PendingRow({ p, data, act, onNotice }: { p: PendingInvite; data: Member
   );
 }
 
-export default function MembersSection() {
+/**
+ * `withReviews`: who reviews (ReviewsSection) under the members, on the self-hosted Settings page that has no tabs. A
+ * team's Settings has a Reviews tab, where it lives instead (ReviewsTab.tsx): never in both places.
+ */
+export default function MembersSection({ withReviews = true }: { withReviews?: boolean } = {}) {
   const { load, update, reload } = useMembers();
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -276,7 +289,6 @@ export default function MembersSection() {
 <CountTag n={count} />
           </h2>
           <p className="mem-intro">{data.canManage ? MEMBERS_WORDS.membersIntro(data.team) : MEMBERS_WORDS.membersIntroReader(data.team)}</p>
-          {data.emailAdmin && members.some((m) => m.via !== 'email') && <p className="mem-intro">{MEMBERS_WORDS.githubPeople}</p>}
           {data.canManage && data.context === 'real' && <DiscoveryLine repo={data.repo} discovery={entry.discovery} github={entry.github} onChange={entry.setDiscovery} />}
         </div>
         {data.canManage && (
@@ -308,7 +320,7 @@ export default function MembersSection() {
       </Table>
       <NoticeLine notice={notice} />
       {data.canManage && data.context === 'real' && copies && <p className="mem-intro mem-note">{MEMBERS_WORDS.designersThroughBridge}</p>}
-      {data.context === 'real' && !data.signedOut && <ReviewsSection repo={data.repo} canEdit={data.canManage} members={data.members} reviews={data.reviews ?? null} />}
+      {withReviews && data.context === 'real' && !data.signedOut && <ReviewsSection repo={data.repo} canEdit={data.canManage} members={data.members} reviews={data.reviews ?? null} />}
       {data.canManage && <InviteDialog open={inviting} onOpenChange={setInviting} shared={{ data, update }} />}
     </div>
   );

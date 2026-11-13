@@ -92,7 +92,7 @@ export default function ColorView({ data }: { data: LibraryData }) {
                       <Button variant="link" size="sm" className="ramp-copy" data-copy={`var(${p.cssVar})`} aria-label={`${p.hex}, copy CSS variable var(${p.cssVar})`} title={`Copy var(${p.cssVar})`}>
                         {p.hex}
                       </Button>
-                      <span className="ramp-n">{n > 0 ? `${n} semantic` : 'Unused'}</span>
+                      <span className="ramp-n">{n > 0 ? `${n}\u00a0semantic` : 'Unused'}</span>
                     </span>
                   </div>
                 );

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:14:40.902Z",
-  "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
+  "createdAt": "2026-11-13T01:36:23.976Z",
+  "sha": "4a54bc93e05957fed8aaeba32dbff2f47e295124",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -2028,7 +2028,7 @@
       }
     },
     "SegmentedControl": {
-      "specHash": "ba711ef1",
+      "specHash": "c6903061",
       "variants": {
         "Appearance=default, Size=sm, State=Default": {
           "file": "segmentedcontrol/appearance-default__size-sm__state-default.png",
@@ -2473,7 +2473,7 @@
       }
     },
     "Tabs": {
-      "specHash": "35e7eeef",
+      "specHash": "9869d9e7",
       "variants": {
         "Orientation=horizontal, Size=sm, State=Default, Variant=underline": {
           "file": "tabs/orientation-horizontal__size-sm__state-default__variant-underline.png",

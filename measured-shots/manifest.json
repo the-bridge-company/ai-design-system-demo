@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-13T01:41:49.447Z",
+  "createdAt": "2026-11-13T02:15:12.804Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -6058,8 +6058,8 @@
         },
         "story=forms-checkbox--with-description": {
           "file": "forms-checkbox-with-description.png",
-          "width": 431.84,
-          "height": 44,
+          "width": 463.22,
+          "height": 46,
           "story": "forms-checkbox--with-description",
           "props": {
             "invalid": false,
@@ -6205,7 +6205,7 @@
         "Orientation=vertical, State=Default": {
           "file": "forms-checkboxgroup-default.png",
           "width": 400,
-          "height": 150,
+          "height": 154,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "vertical",
@@ -6218,7 +6218,7 @@
         "Orientation=vertical, State=Hover": {
           "file": "forms-checkboxgroup-default__orientation-vertical__state-hover.png",
           "width": 400,
-          "height": 150,
+          "height": 154,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "vertical",
@@ -6232,7 +6232,7 @@
         "story=forms-checkboxgroup--default, orientation=vertical, state=active": {
           "file": "forms-checkboxgroup-default__orientation-vertical__state-active.png",
           "width": 400,
-          "height": 150,
+          "height": 154,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "vertical",
@@ -6246,7 +6246,7 @@
         "Orientation=vertical, State=Disabled": {
           "file": "forms-checkboxgroup-default__orientation-vertical__disabled-true.png",
           "width": 400,
-          "height": 150,
+          "height": 154,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "vertical",
@@ -6260,7 +6260,7 @@
         "Orientation=horizontal, State=Default": {
           "file": "forms-checkboxgroup-default__orientation-horizontal.png",
           "width": 400,
-          "height": 118,
+          "height": 122,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "horizontal",
@@ -6273,7 +6273,7 @@
         "Orientation=horizontal, State=Hover": {
           "file": "forms-checkboxgroup-default__orientation-horizontal__state-hover.png",
           "width": 400,
-          "height": 118,
+          "height": 122,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "horizontal",
@@ -6287,7 +6287,7 @@
         "story=forms-checkboxgroup--default, orientation=horizontal, state=active": {
           "file": "forms-checkboxgroup-default__orientation-horizontal__state-active.png",
           "width": 400,
-          "height": 118,
+          "height": 122,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "horizontal",
@@ -6301,7 +6301,7 @@
         "Orientation=horizontal, State=Disabled": {
           "file": "forms-checkboxgroup-default__orientation-horizontal__disabled-true.png",
           "width": 400,
-          "height": 118,
+          "height": 122,
           "story": "forms-checkboxgroup--default",
           "props": {
             "orientation": "horizontal",
@@ -6563,7 +6563,7 @@
         "State=Default": {
           "file": "forms-field-default.png",
           "width": 360,
-          "height": 90,
+          "height": 92,
           "story": "forms-field--default",
           "props": {
             "required": false,
@@ -6575,7 +6575,7 @@
         "State=Disabled": {
           "file": "forms-field-disabled.png",
           "width": 360,
-          "height": 90,
+          "height": 92,
           "story": "forms-field--disabled",
           "props": {
             "required": false,
@@ -6588,7 +6588,7 @@
         "State=Hover": {
           "file": "forms-field-default__state-hover.png",
           "width": 360,
-          "height": 90,
+          "height": 92,
           "story": "forms-field--default",
           "props": {
             "required": false,
@@ -6601,7 +6601,7 @@
         "story=forms-field--default, , state=active": {
           "file": "forms-field-default__state-active.png",
           "width": 360,
-          "height": 90,
+          "height": 92,
           "story": "forms-field--default",
           "props": {
             "required": false,
@@ -6618,7 +6618,7 @@
         "State=Default": {
           "file": "forms-form-default.png",
           "width": 400,
-          "height": 546,
+          "height": 550,
           "story": "forms-form--default",
           "props": {
             "validationMode": "onSubmit",
@@ -6628,7 +6628,7 @@
         "State=Hover": {
           "file": "forms-form-default__state-hover.png",
           "width": 400,
-          "height": 546,
+          "height": 550,
           "story": "forms-form--default",
           "props": {
             "validationMode": "onSubmit",
@@ -6639,7 +6639,7 @@
         "State=Pressed": {
           "file": "forms-form-default__state-active.png",
           "width": 400,
-          "height": 546,
+          "height": 550,
           "story": "forms-form--default",
           "props": {
             "validationMode": "onSubmit",
@@ -6650,7 +6650,7 @@
         "story=forms-form--default, disabled=true": {
           "file": "forms-form-default__disabled-true.png",
           "width": 400,
-          "height": 546,
+          "height": 550,
           "story": "forms-form--default",
           "props": {
             "validationMode": "onSubmit",
@@ -6687,20 +6687,6 @@
             "hint": "Dot-separated path, lowercase.",
             "disabled": false
           }
-        },
-        "Size=sm, State=Hover": {
-          "file": "forms-input-default__size-sm__state-hover.png",
-          "width": 360,
-          "height": 32,
-          "story": "forms-input--default",
-          "props": {
-            "size": "sm",
-            "label": "Token name",
-            "placeholder": "color.action.primary.bg",
-            "hint": "Dot-separated path, lowercase.",
-            "disabled": false
-          },
-          "state": "hover"
         },
         "story=forms-input--default, size=sm, state=active": {
           "file": "forms-input-default__size-sm__state-active.png",
@@ -7744,8 +7730,8 @@
         },
         "story=forms-switch--with-description": {
           "file": "forms-switch-with-description.png",
-          "width": 361.23,
-          "height": 44,
+          "width": 385.33,
+          "height": 46,
           "story": "forms-switch--with-description",
           "props": {
             "labelPlacement": "end",
@@ -7757,7 +7743,7 @@
         "story=forms-switch--settings-row": {
           "file": "forms-switch-settings-row.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -7984,7 +7970,7 @@
         "Label placement=start, Size=sm, Checked=false, State=Default": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-false.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -7997,7 +7983,7 @@
         "Label placement=start, Size=sm, Checked=false, State=Hover": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-false__state-hover.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8011,7 +7997,7 @@
         "story=forms-switch--settings-row, labelPlacement=start, size=sm, checked=false, state=active": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-false__state-active.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8025,7 +8011,7 @@
         "Label placement=start, Size=sm, Checked=false, State=Disabled": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-false__disabled-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8039,7 +8025,7 @@
         "Label placement=start, Size=sm, Checked=true, State=Default": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8052,7 +8038,7 @@
         "Label placement=start, Size=sm, Checked=true, State=Hover": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-true__state-hover.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8066,7 +8052,7 @@
         "story=forms-switch--settings-row, labelPlacement=start, size=sm, checked=true, state=active": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-true__state-active.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8080,7 +8066,7 @@
         "Label placement=start, Size=sm, Checked=true, State=Disabled": {
           "file": "forms-switch-settings-row__labelplacement-start__size-sm__checked-true__disabled-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8094,7 +8080,7 @@
         "Label placement=start, Size=md, Checked=false, State=Default": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-false.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8107,7 +8093,7 @@
         "Label placement=start, Size=md, Checked=false, State=Hover": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-false__state-hover.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8121,7 +8107,7 @@
         "story=forms-switch--settings-row, labelPlacement=start, size=md, checked=false, state=active": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-false__state-active.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8135,7 +8121,7 @@
         "Label placement=start, Size=md, Checked=false, State=Disabled": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-false__disabled-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8149,7 +8135,7 @@
         "Label placement=start, Size=md, Checked=true, State=Default": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8162,7 +8148,7 @@
         "Label placement=start, Size=md, Checked=true, State=Hover": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-true__state-hover.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8176,7 +8162,7 @@
         "story=forms-switch--settings-row, labelPlacement=start, size=md, checked=true, state=active": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-true__state-active.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -8190,7 +8176,7 @@
         "Label placement=start, Size=md, Checked=true, State=Disabled": {
           "file": "forms-switch-settings-row__labelplacement-start__size-md__checked-true__disabled-true.png",
           "width": 400,
-          "height": 44,
+          "height": 46,
           "story": "forms-switch--settings-row",
           "props": {
             "labelPlacement": "start",
@@ -10264,7 +10250,7 @@
         "story=overlays-dialog--default": {
           "file": "overlays-dialog-default.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--default",
           "props": {
             "disablePointerDismissal": false
@@ -10291,7 +10277,7 @@
         "story=overlays-dialog--all-states": {
           "file": "overlays-dialog-all-states.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--all-states",
           "props": {
             "disablePointerDismissal": false
@@ -10300,7 +10286,7 @@
         "story=overlays-dialog--default, , state=hover": {
           "file": "overlays-dialog-default__state-hover.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--default",
           "props": {
             "disablePointerDismissal": false
@@ -10310,7 +10296,7 @@
         "story=overlays-dialog--default, , state=active": {
           "file": "overlays-dialog-default__state-active.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--default",
           "props": {
             "disablePointerDismissal": false
@@ -10320,7 +10306,7 @@
         "story=overlays-dialog--default, disabled=true": {
           "file": "overlays-dialog-default__disabled-true.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--default",
           "props": {
             "disablePointerDismissal": false,
@@ -10334,7 +10320,7 @@
         "Size=md": {
           "file": "overlays-dialog-default.png",
           "width": 560,
-          "height": 265,
+          "height": 267,
           "story": "overlays-dialog--default",
           "props": {
             "disablePointerDismissal": false,
@@ -11489,6 +11475,16 @@
             "columns": 3,
             "gap": "6",
             "disabled": true
+          }
+        },
+        "story=layout-grid--default, gap=8": {
+          "file": "layout-grid-default__gap-8.png",
+          "width": 112,
+          "height": 82,
+          "story": "layout-grid--default",
+          "props": {
+            "columns": 3,
+            "gap": "8"
           }
         },
         "story=layout-grid--default, gap=8, state=hover": {

@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T22:17:12.970Z",
-  "durationMs": 167183,
+  "createdAt": "2026-11-13T00:54:58.286Z",
+  "durationMs": 176627,
   "base": {
-    "ref": "e84c2175b9254352e2cea2b67343cde1d3c79365",
-    "sha": "746c8bac94bd3e013e5cd726485a741d3a1d09c3"
+    "ref": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
+    "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178"
   },
   "head": {
-    "ref": "cdbbfc3a497809207e908c7c1afab5d9868b1f44",
-    "sha": "cdbbfc3a497809207e908c7c1afab5d9868b1f44"
+    "ref": "1570a41e982c3953ed368dd6f3dcc31af9272e52",
+    "sha": "1570a41e982c3953ed368dd6f3dcc31af9272e52"
   },
   "options": {
     "only": [
@@ -57,6 +57,7 @@
       "apps/docs-site/src/scripts/demo-gate.test.ts",
       "apps/docs-site/src/scripts/demo-gate.ts",
       "apps/docs-site/src/scripts/exploration-page.ts",
+      "apps/docs-site/src/scripts/github-session.ts",
       "apps/docs-site/src/scripts/team-data.ts",
       "apps/docs-site/src/scripts/team-reviews-data.ts",
       "packages/core/src/teams.ts",
@@ -114,12 +115,12 @@
   },
   "summary": {
     "shots": 60,
-    "changed": 13,
-    "unchanged": 47,
+    "changed": 12,
+    "unchanged": 48,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 3.96
+    "maxPercent": 7.79
   },
   "shots": [
     {
@@ -1077,18 +1078,11 @@
       "storyId": "data-display-avatar--image",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 678,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 0.08,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 720,
-          "width": 48,
-          "height": 32
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -1099,12 +1093,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__data-display-avatar--image__ocean-dark.png",
-        "after": "after/story__data-display-avatar--image__ocean-dark.png",
-        "diff": "diff/story__data-display-avatar--image__ocean-dark.png",
-        "composite": "composite/story__data-display-avatar--image__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__data-display-avatar--broken-image__ocean-dark",
@@ -1138,15 +1127,21 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 24854,
+      "changedPixels": 63472,
       "totalPixels": 815104,
-      "percent": 3.05,
+      "percent": 7.79,
       "boxes": [
         {
           "x": 32,
           "y": 240,
           "width": 880,
           "height": 192
+        },
+        {
+          "x": 32,
+          "y": 720,
+          "width": 880,
+          "height": 76
         }
       ],
       "size": {

@@ -35,6 +35,7 @@ import {
   waitingSentence,
   waitingSince,
   waitSaidOnce,
+  pillSaidOnce,
   waitPill,
   HINT_SNOOZE_MS,
   type ChangeFacts,
@@ -422,5 +423,17 @@ describe('a wait said once', () => {
     const late = waitPill('2026-11-01T10:00:00Z', Date.parse('2026-11-12T12:00:00Z'));
     expect(late.tone).toBe('warning');
     expect(waitSaidOnce('Waiting for your library decision', late.label)).toBe('11 days');
+  });
+});
+
+describe('a wait with no start time, next to a "Waiting for" line', () => {
+  it('shows no tag at all (the line says it); elsewhere the bare tag stays, a known wait reads "5 days"', () => {
+    const bare = { label: 'Waiting', tone: 'neutral' as const };
+    expect(pillSaidOnce('Waiting for your library decision on Timeline', bare)).toBeNull();
+    expect(pillSaidOnce('Sofia sent it for review', bare)).toBe(bare);
+    expect(pillSaidOnce('Waiting for your review', { label: 'Waiting 5 days', tone: 'warning' as const })).toEqual({ label: '5 days', tone: 'warning' });
+    expect(pillSaidOnce('Waiting for your review', null)).toBeNull();
+    const other = { label: 'Changes requested', tone: 'neutral' as const };
+    expect(pillSaidOnce('Waiting for your review', other)).toBe(other);
   });
 });

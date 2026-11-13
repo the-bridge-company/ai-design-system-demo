@@ -8,7 +8,7 @@ import { Button, Icon, useToast } from '@bridge-ds/react';
 import { Who } from './faces';
 import { BranchRow } from './BranchRow';
 import ButtonLink from '../ButtonLink';
-import { rowAction, waitSaidOnce, type NeedRow } from '../../../lib/home-model';
+import { pillSaidOnce, rowAction, type NeedRow } from '../../../lib/home-model';
 import { ENTRY_WORDS } from '../../../lib/entry';
 import { useExplorationShots } from './ListCard';
 // The row styles (sh-rows, sh-join), also on pages that are not a home (Settings > Members).
@@ -122,7 +122,7 @@ export function NeedRowItem({ row, selected, onSelect, action, compact, join }: 
       onClick={click}
       selected={selected}
       line={row.line}
-      pill={row.pill ? { ...row.pill, label: waitSaidOnce(row.line, row.pill.label) } : null}
+      pill={pillSaidOnce(row.line, row.pill)}
       compact={compact}
       detail={row.detail}
       end={

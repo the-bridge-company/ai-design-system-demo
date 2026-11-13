@@ -53,13 +53,11 @@ import {
   IN_PROGRESS,
   IN_PROGRESS_LABEL,
   isFiltered,
-  multiTriggerLabel,
   passes,
   STATE_LABEL,
   STATE_TONE,
   STATES,
   statusOf,
-  statusTriggerLabel,
   YOU,
   type ExplorationFilters,
   type ExplorationState,
@@ -430,7 +428,8 @@ export function BranchesList(p: BranchesListProps) {
   const groups = productKeys
     .map((k) => ({ key: k, label: productName(k), rows: kept.filter((x) => x.product === k) }))
     .filter((g) => g.rows.length > 0);
-  const boardStatus = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)) ? [...IN_PROGRESS, 'shipped' as const] : filters.status;
+  const inProgressDefault = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s));
+  const boardStatus = inProgressDefault ? [...IN_PROGRESS, 'shipped' as const] : filters.status;
   // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there.
   const columns = boardColumns([...waiting, ...kept], boardStatus);
   const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
@@ -473,30 +472,16 @@ export function BranchesList(p: BranchesListProps) {
     <div className="bl ex">
       <div className="bl-bar">
         <span className="bl-narrow">
+          {/* In progress (the first six statuses) is the empty pick, said as the value, never an option. */}
           <MultiFilter
             label="Status"
-            shown={statusTriggerLabel(filters.status)}
+            all={IN_PROGRESS_LABEL}
             options={statusOptions}
-            picked={filters.status}
+            picked={inProgressDefault ? [] : filters.status}
             onPick={(v) => pick({ ...filters, status: v.length ? STATES.filter((s) => v.includes(s)) : [...IN_PROGRESS] })}
-            reset={{ label: IN_PROGRESS_LABEL, active: filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)), onReset: () => pick({ ...filters, status: [...IN_PROGRESS] }) }}
           />
-          <MultiFilter
-            label="Product"
-            shown={multiTriggerLabel(filters.product, productName, 'All products')}
-            options={productOptions}
-            picked={filters.product}
-            onPick={(v) => pick({ ...filters, product: v })}
-            reset={{ label: 'All products', active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
-          />
-          <MultiFilter
-            label="Person"
-            shown={multiTriggerLabel(filters.people, personLabel, 'Everyone')}
-            options={personOptions}
-            picked={filters.people}
-            onPick={(v) => pick({ ...filters, people: v })}
-            reset={{ label: 'Everyone', active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
-          />
+          <MultiFilter label="Product" all="All products" options={productOptions} picked={filters.product} onPick={(v) => pick({ ...filters, product: v })} />
+          <MultiFilter label="Person" all="Everyone" options={personOptions} picked={filters.people} onPick={(v) => pick({ ...filters, people: v })} />
         </span>
         <p className="t-ui t-muted bl-summary" aria-live="polite">
           {!blind && countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}

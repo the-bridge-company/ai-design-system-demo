@@ -12,13 +12,11 @@ import {
   IN_PROGRESS,
   isFiltered,
   legacyTarget,
-  multiTriggerLabel,
   passes,
   splitWaiting,
   STATE_LABEL,
   statusOf,
   statusNote,
-  statusTriggerLabel,
   turnReason,
   YOU,
 } from './explorations-page';
@@ -127,11 +125,6 @@ describe('filters and the address', () => {
     expect(passes(row, { ...DEFAULT_FILTERS, people: [YOU] })).toBe(false);
   });
   it('says what the triggers hold and what matched nothing', () => {
-    expect(statusTriggerLabel(IN_PROGRESS)).toBe('In progress');
-    expect(statusTriggerLabel(['shipped'])).toBe('Shipped');
-    expect(statusTriggerLabel(['shipped', 'archived'])).toBe('2 statuses');
-    expect(multiTriggerLabel([], (v) => v, 'Everyone')).toBe('Everyone');
-    expect(multiTriggerLabel(['Leo', 'Ann'], (v) => v, 'Everyone')).toBe('Leo +1');
     const names = { person: (k: string) => ({ leo: 'Leo' })[k] ?? k, product: (k: string) => ({ crm: 'Acme CRM' })[k] ?? k };
     expect(emptyFilterLine({ status: ['in-review'], product: ['crm'], people: ['leo'] }, names)).toBe('Nothing in review by Leo in Acme CRM yet.');
     expect(emptyFilterLine({ ...DEFAULT_FILTERS, people: [YOU] }, names)).toBe('Nothing in progress by you yet.');

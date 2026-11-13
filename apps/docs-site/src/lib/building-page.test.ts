@@ -9,7 +9,6 @@ import {
   buildFiltersFromAddress,
   buildStateOf,
   buildStateTag,
-  buildStatusTriggerLabel,
   DEFAULT_BUILD_FILTERS,
   emptyBuildLine,
   isBuildFiltered,
@@ -59,7 +58,6 @@ describe('Being built: the filters', () => {
   it('opens on Not shipped yet, everyone, every product', () => {
     expect(buildFiltersFromAddress('')).toEqual(DEFAULT_BUILD_FILTERS);
     expect(DEFAULT_BUILD_FILTERS.status).toEqual(['waiting', 'in-progress', 'in-review']);
-    expect(buildStatusTriggerLabel(NOT_SHIPPED)).toBe('Not shipped yet');
     expect(isBuildFiltered(DEFAULT_BUILD_FILTERS)).toBe(false);
     expect(addressWithBuildFilters('', DEFAULT_BUILD_FILTERS)).toBe('');
   });
@@ -81,9 +79,6 @@ describe('Being built: the filters', () => {
   });
 
   it('names the trigger and the count like Explorations', () => {
-    expect(buildStatusTriggerLabel(['shipped'])).toBe('Shipped');
-    expect(buildStatusTriggerLabel(['waiting', 'in-progress', 'in-review', 'shipped'])).toBe('All statuses');
-    expect(buildStatusTriggerLabel(['waiting', 'shipped'])).toBe('2 statuses');
     expect(buildCountLine(8, 8)).toBe('8 changes.');
     expect(buildCountLine(1, 1)).toBe('1 change.');
     expect(buildCountLine(3, 10)).toBe('3 of 10 changes.');

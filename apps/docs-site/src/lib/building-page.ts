@@ -166,13 +166,8 @@ export interface BuildFilterRow {
 export const passesBuild = (x: BuildFilterRow, f: BuildFilters): boolean =>
   f.status.includes(x.state) && (!f.product.length || f.product.includes(x.product)) && (!f.people.length || x.people.some((p) => f.people.includes(p)));
 
-/** The Status filter's trigger: "Not shipped yet", one status by name, "All statuses", or "2 statuses". */
-export function buildStatusTriggerLabel(status: readonly BuildState[], offered: readonly BuildState[] = BUILD_STATES.slice(0, 4)): string {
-  if (isDefaultStatus(status)) return NOT_SHIPPED_LABEL;
-  if (status.length === 1) return BUILD_STATE_LABEL[status[0]!];
-  if (offered.every((s) => status.includes(s))) return 'All statuses';
-  return `${status.length} statuses`;
-}
+// What the Status trigger reads lives in lib/filter-summary: "Not shipped yet" when nothing is ticked, else
+// "Being built +1".
 
 /** "8 changes." / "3 of 10 changes." */
 export function buildCountLine(shown: number, total: number): string {

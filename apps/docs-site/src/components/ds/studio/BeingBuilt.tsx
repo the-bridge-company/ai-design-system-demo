@@ -69,7 +69,6 @@ import { githubBusy, type GitHubBusy } from "../../../lib/github-busy";
 import { Drawing } from "./Drawing";
 import { Who } from "./faces";
 import { YOU } from "../../../lib/branches-page";
-import { multiTriggerLabel } from "../../../lib/explorations-page";
 import { buildOriginLine, originOfRow } from "../../../lib/build-origin";
 import {
   addressWithBuildFilters,
@@ -82,7 +81,6 @@ import {
   buildCountLine,
   buildFiltersFromAddress,
   buildStateOf,
-  buildStatusTriggerLabel,
   DEFAULT_BUILD_FILTERS,
   emptyBuildLine,
   isBuildFiltered,
@@ -832,29 +830,21 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
         )}
         <div className="bl-bar">
           <span className="bl-narrow">
+            {/* Not shipped yet is the empty pick, said as the value, never an option among its own statuses. */}
             <MultiFilter
               label="Status"
-              shown={buildStatusTriggerLabel(filters.status, offered)}
+              all={NOT_SHIPPED_LABEL}
               options={statusOptions}
-              picked={filters.status}
+              picked={isDefaultStatus(filters.status) ? [] : filters.status}
               onPick={(v) => pick({ ...filters, status: v.length ? BUILD_STATES.filter((s) => v.includes(s)) : [...NOT_SHIPPED] })}
-              reset={{ label: NOT_SHIPPED_LABEL, active: isDefaultStatus(filters.status), onReset: () => pick({ ...filters, status: [...NOT_SHIPPED] }) }}
             />
-            <MultiFilter
-              label="Product"
-              shown={multiTriggerLabel(filters.product, productName, "All products")}
-              options={productOptions}
-              picked={filters.product}
-              onPick={(v) => pick({ ...filters, product: v })}
-              reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
-            />
+            <MultiFilter label="Product" all="All products" options={productOptions} picked={filters.product} onPick={(v) => pick({ ...filters, product: v })} />
             <MultiFilter
               label="Person"
-              shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
+              all="Everyone"
               options={personOptions}
               picked={filters.people}
               onPick={(v) => pick({ ...filters, people: v })}
-              reset={{ label: "Everyone", active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
             />
           </span>
           <p className="t-ui t-muted bl-summary" aria-live="polite">

@@ -116,11 +116,18 @@ describe('Explorations', () => {
     const items = within(menu).getAllByRole('option');
     // Counts include what waits on you (Exploration 1 is pinned, and still counts as In review).
     expect(within(menu).getByRole('option', { name: /^In review/ }).textContent).toMatch(/1$/);
-    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['In progress', 'Exploring', 'In review', 'Ready to build', 'Being built', 'Checking', 'Shipped', 'Not doing this', 'Archived']);
-    await user.click(within(menu).getByRole('option', { name: /^Exploring/ }));
-    expect(new URLSearchParams(location.search).get('status')).toBe('in-review,ready-to-build,being-built,checking');
+    // In progress is the empty pick, said as the value, never an option; a status with nothing in it is not listed.
+    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['Exploring', 'In review', 'Checking']);
+    expect(items.every((i) => i.getAttribute('aria-selected') === 'false')).toBe(true);
+    await user.click(within(menu).getByRole('option', { name: /^Checking/ }));
+    expect(new URLSearchParams(location.search).get('status')).toBe('checking');
+    expect(screen.getByRole('combobox', { name: 'Status: Checking' })).toBeTruthy();
     expect(screen.queryByText('Exploration 2')).toBeNull();
     expect(screen.getByText('Exploration 3')).toBeTruthy();
+    // Several statuses combine, the list staying open; the trigger leads with the first.
+    await user.click(within(menu).getByRole('option', { name: /^Exploring/ }));
+    expect(new URLSearchParams(location.search).get('status')).toBe('exploring,checking');
+    expect(screen.getByRole('combobox', { name: 'Status: Exploring +1' })).toBeTruthy();
   });
 
   it('says what matched nothing, with Clear filters', async () => {

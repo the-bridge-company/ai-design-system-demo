@@ -243,20 +243,7 @@ export interface FilterRow {
 export const passes = (x: FilterRow, f: ExplorationFilters): boolean =>
   f.status.includes(x.status) && (!f.product.length || f.product.includes(x.product)) && (!f.people.length || x.people.some((p) => f.people.includes(p)));
 
-/** The Status filter's trigger: "In progress", one status by name, or "3 statuses". */
-export function statusTriggerLabel(status: readonly ExplorationState[]): string {
-  if (sameSet(status, IN_PROGRESS)) return IN_PROGRESS_LABEL;
-  if (status.length === 1) return STATE_LABEL[status[0]!];
-  if (status.length === STATES.length) return 'Any status';
-  return `${status.length} statuses`;
-}
-
-/** A multi filter's trigger: its "all" word, one name, or "<first> and N more". */
-export function multiTriggerLabel(picked: readonly string[], labelOf: (v: string) => string, all: string): string {
-  if (!picked.length) return all;
-  if (picked.length === 1) return labelOf(picked[0]!);
-  return `${labelOf(picked[0]!)} +${picked.length - 1}`;
-}
+// What a filter's trigger reads lives in lib/filter-summary (the one rule of every Studio filter).
 
 /** "Nothing waiting for lead by Leo in Acme CRM yet." The line when the filters leave nothing. */
 export function emptyFilterLine(f: ExplorationFilters, names: { person: (k: string) => string; product: (k: string) => string }): string {

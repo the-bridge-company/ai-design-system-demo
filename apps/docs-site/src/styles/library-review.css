@@ -39,6 +39,24 @@ html:has(.lr) {
   gap: var(--space-2) var(--space-3);
 }
 
+/* Phone: one row of filters at one height that scrolls sideways (never the page), as Explorations' bar. */
+@media (max-width: 760px) {
+  .lr-bar-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .lr-bar-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lr-bar-row > * {
+    flex: none;
+  }
+}
+
 .lr-none {
   margin: 0;
   color: var(--color-text-muted);

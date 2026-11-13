@@ -89,11 +89,21 @@ describe('Library review, for assistive tech', () => {
     await userEvent.keyboard('{ArrowDown}');
     const list = await screen.findByRole('listbox');
     expect(list).toHaveAttribute('aria-multiselectable', 'true');
-    expect(within(list).getByRole('option', { name: 'Waiting' })).toHaveAttribute('aria-selected', 'true');
-    await userEvent.click(within(list).getByRole('option', { name: 'Decided' }));
-    await waitFor(() => expect(new URLSearchParams(location.search).get('status')).toBe('waiting,decided'));
+    // Each option with its count tag; a status with nothing in it (Decided, here) is not listed.
+    const options = within(list).getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual(['Waiting3']);
+    expect(options[0]).toHaveAttribute('aria-selected', 'true');
     await userEvent.keyboard('{Escape}');
-    expect(screen.getByRole('combobox', { name: 'Status: 2 statuses' })).toBeInTheDocument();
+    // Products combine: the list stays open while they are ticked, the trigger leads with the first then "+N".
+    await userEvent.click(screen.getByRole('combobox', { name: 'Product: All products' }));
+    const products = within(await screen.findByRole('listbox')).getAllByRole('option');
+    expect(products.length).toBeGreaterThan(1);
+    const label = (o: HTMLElement) => (o.textContent ?? '').replace(/\d+$/, '');
+    await userEvent.click(products[0]!);
+    await userEvent.click(products[1]!);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByRole('combobox', { name: `Product: ${label(products[0]!)} +1` })).toBeInTheDocument());
     await expectNoAxeViolations();
   });
 });

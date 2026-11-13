@@ -227,7 +227,7 @@ describe('filters', () => {
     expect(choices.asked.slice(1).every((c) => c.value.startsWith('person:'))).toBe(true);
     const leo = all.find((p) => peopleOf(p).length);
     if (leo) expect(all.filter((p) => passes(p, { status: [], asked: [personKey(peopleOf(leo)[0]!)], product: [] }))).toContain(leo);
-    expect(filterValue('asked', ['person:a', 'person:b'], choices.asked)).toBe('2 people');
+    expect(filterValue('asked', ['you', choices.asked[1]!.value], choices.asked)).toBe('You +1');
     expect(filterValue('status', ['waiting'], [{ value: 'waiting', label: 'Waiting' }])).toBe('Waiting');
   });
   it('"Asked by: You" lists only what the viewer asked for: a change Malik builds for Sofia is Sofia\'s', () => {

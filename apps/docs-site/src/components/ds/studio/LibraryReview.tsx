@@ -92,18 +92,12 @@ interface Pending {
   line: string;
 }
 
-/** A filter: Studio's one filter pattern (ListFilters MultiFilter), "Status Waiting", several values at once. */
-function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; onChange: (v: string[]) => void }) {
-  return (
-    <MultiFilter
-      label={name}
-      shown={filterValue(kind, picked, choices)}
-      options={choices}
-      picked={picked}
-      onPick={onChange}
-      reset={kind === 'status' ? undefined : { label: kind === 'asked' ? 'Anyone' : 'All products', active: !picked.length, onReset: () => onChange([]) }}
-    />
-  );
+/**
+ * A filter: Studio's one filter pattern (ListFilters MultiFilter), "Status Waiting", several values at once, each
+ * option with its count over what the other filters keep.
+ */
+function FilterMenu({ name, kind, picked, choices, count, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; count: (value: string) => number; onChange: (v: string[]) => void }) {
+  return <MultiFilter label={name} all={filterValue(kind, [], choices)} options={choices.map((c) => ({ ...c, count: count(c.value) }))} picked={picked} onPick={onChange} />;
 }
 
 /** The exploration that asked, as a chip that opens it. */
@@ -1544,7 +1538,9 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const marks = useMemo(() => productMarks([...products.map((x) => x.name), ...pieces.flatMap((p) => [...askersOf(p).map((a) => a.product ?? ''), ...(p.conflict?.ways.map((w) => w.product) ?? [])])]), [products, pieces]);
   const mark: MarkOf = (name) => (name ? (marks.get(name) ?? null) : null);
   const choices = useMemo(() => filterChoices(pieces, data?.viewer.name ?? null), [pieces, data?.viewer.name]);
-  const cur = ordered.find((p) => p.key === current) ?? ordered[0] ?? null;
+  // A filter option's count: the pieces it would show with the other filters as they are (as Explorations counts).
+  const countWith = (f: ReviewFilters) => pieces.filter((p) => passes(p, f, data?.viewer.name ?? null)).length;
+  const cur =ordered.find((p) => p.key === current) ?? ordered[0] ?? null;
 
   useEffect(() => {
     if (cur) setSeen((s) => (s.has(cur.key) ? s : new Set([...s, cur.key])));
@@ -1745,9 +1741,9 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
       ) : (
         <>
           <div className="lr-bar-row">
-            <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
-            <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} onChange={(a) => update({ ...filters, asked: a })} />
-            <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} onChange={(pr) => update({ ...filters, product: pr })} />
+            <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} count={(s) => countWith({ ...filters, status: [s as ReviewFilters['status'][number]] })} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
+            <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} count={(a) => countWith({ ...filters, asked: [a] })} onChange={(a) => update({ ...filters, asked: a })} />
+            <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} count={(pr) => countWith({ ...filters, product: [pr] })} onChange={(pr) => update({ ...filters, product: pr })} />
             {filtered && (
               <Button variant="link" className="lr-clear" onClick={() => update({ status: ['waiting'], asked: v.reviews ? [] : [YOU], product: [] })}>
                 {v.reviews ? 'Clear filters' : 'Show everyone'}

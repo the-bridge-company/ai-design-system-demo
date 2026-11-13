@@ -17,6 +17,7 @@
 // Tested in library-review.test.ts.
 import { calendarDays } from '@bridge-ds/core';
 import { waitTone } from './status-tag';
+import { filterSummary } from './filter-summary';
 import {
   componentOf,
   inferLeadReason,
@@ -649,11 +650,9 @@ export function filterChoices(pieces: readonly ReviewPiece[], viewerName: string
   };
 }
 
-/** What a filter button reads after its name: "Waiting", "Anyone", "You", "2 products". */
+/** What a filter reads after its name: its all word ("Any", "Anyone", "All products"), "You", or "Leo +1". */
 export function filterValue(kind: 'status' | 'asked' | 'product', picked: readonly string[], choices: readonly FilterChoice[]): string {
-  if (!picked.length) return kind === 'status' ? 'Any' : kind === 'asked' ? 'Anyone' : 'All products';
-  if (picked.length === 1) return choices.find((c) => c.value === picked[0])?.label ?? picked[0]!;
-  return `${picked.length} ${kind === 'status' ? 'statuses' : kind === 'asked' ? 'people' : 'products'}`;
+  return filterSummary(choices, picked, kind === 'status' ? 'Any' : kind === 'asked' ? 'Anyone' : 'All products');
 }
 
 export const STATUS_CHOICES: FilterChoice[] = [

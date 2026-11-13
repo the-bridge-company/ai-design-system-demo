@@ -3,6 +3,7 @@
 // Everything shown comes from the Storybook's own index: titles, story names, docs pages, tags. Nothing is guessed.
 import { calendarDays, type StorybookComponent, type StorybookErrorCode, type StorybookIndex } from '@bridge-ds/core';
 import { studioHref } from './team-path';
+import { inFamilies } from './filter-summary';
 
 /** Whether the Storybook lets Bridge show a story in a frame: read by /api/storybook, unknown on a direct read. */
 export type FrameVerdict = 'allowed' | 'blocked' | 'unknown';
@@ -35,9 +36,9 @@ export function storybookFamilies(rows: StorybookRow[]): { name: string; n: numb
 }
 
 /** Rows matching a search (name or title, any case) and a family ('' = all). */
-export function filterStorybookRows(rows: StorybookRow[], query: string, family: string): StorybookRow[] {
+export function filterStorybookRows(rows: StorybookRow[], query: string, family: string | readonly string[]): StorybookRow[] {
   const q = query.trim().toLowerCase();
-  return rows.filter((r) => (!family || (r.family || TOP_LEVEL) === family) && (!q || r.title.toLowerCase().includes(q)));
+  return rows.filter((r) => inFamilies(r.family || TOP_LEVEL, family) && (!q || r.title.toLowerCase().includes(q)));
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;

@@ -1,7 +1,7 @@
 /* The filters row of a list (components/ds/studio/ListFilters.tsx: Explorations, Being built), left-aligned above
    the list: the filters (DS Select with an inline label, each hugging its content), then the count, then how the list
-   is shown. It pulls closer to the tabs than the list gap, so it reads as theirs. On a phone the filters wrap to a
-   second line rather than cut their words, and the count wraps under them. */
+   is shown. It pulls closer to the tabs than the list gap, so it reads as theirs. On a phone the filters are one row
+   that scrolls sideways, and the count wraps under them. */
 .bl-bar {
   display: flex;
   flex-wrap: wrap;
@@ -17,6 +17,25 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   max-inline-size: 100%;
+}
+
+/* Phone: one row of filters at one height that scrolls sideways (never the page), not ragged wrapped rows. */
+@media (max-width: 760px) {
+  .bl-bar > .bl-narrow {
+    flex-wrap: nowrap;
+    inline-size: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .bl-narrow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bl-narrow > * {
+    flex: none;
+  }
 }
 
 .bl-summary {

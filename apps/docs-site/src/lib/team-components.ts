@@ -4,6 +4,7 @@ import { figmaCell, storybookIframeUrl, storybookManagerUrl, type RepoModel, typ
 import type { ComponentListRow } from '../components/ds/studio/ComponentsList';
 import { productUsage, type ProductAudit } from './components-studio';
 import { safeUrl } from './html';
+import { inFamilies } from './filter-summary';
 import { embedStoryUrl } from './story-frame';
 
 export type TeamGuidance = 'ok' | 'review' | 'missing';
@@ -77,9 +78,9 @@ export function componentsHead(components: number, families: number): string {
 }
 
 /** Rows matching a search (name, family, summary) and a family ('' is every family). */
-export function filterTeamRows<T extends Pick<TeamComponentRow, 'name' | 'family' | 'summary'>>(rows: T[], query: string, family: string): T[] {
+export function filterTeamRows<T extends Pick<TeamComponentRow, 'name' | 'family' | 'summary'>>(rows: T[], query: string, family: string | readonly string[]): T[] {
   const q = query.trim().toLowerCase();
-  return rows.filter((r) => (!family || r.family === family) && (!q || r.name.toLowerCase().includes(q) || r.family.toLowerCase().includes(q) || (r.summary ?? '').toLowerCase().includes(q)));
+  return rows.filter((r) => inFamilies(r.family, family) && (!q || r.name.toLowerCase().includes(q) || r.family.toLowerCase().includes(q) || (r.summary ?? '').toLowerCase().includes(q)));
 }
 
 /** The badges of a row: only what waits for someone or is not stable. */

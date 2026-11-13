@@ -2,7 +2,7 @@
 // it, in three columns linked by curves (lib/library-map buildMap). The map is only a way in (owner, 2026-11-13): under it
 // sits the List itself (LibraryReview ListView, the same rows, checkboxes, hover controls and decisions, from the same
 // state), every piece while no box is picked. Clicking a box narrows that List ("Showing what <exploration> asks for ·
-// 3 of 14 · Show all 14", said once; one piece picked keeps the count, its row names it). The picked box is in the
+// 3 of 14 · Show all 14", said once; one piece picked says "Showing 1 of 14 · Show all 14", its row names it). The picked box is in the
 // address (?focus=), so a link opens it. A conflict is two links into one piece, its box tagged "2 ways" (the DS tag).
 // The curves are measured from the boxes once laid out, so they follow any width and any number of boxes.
 // Styles: styles/library-review.css (lr-map-*).
@@ -152,19 +152,24 @@ export function MapView({ pieces, products, viewer, list, onNarrow }: { pieces: 
       </section>
       {/* Under the map: the List, every piece, or what a picked box narrows to under one line. */}
       {listed.kind === 'some' && focus ? (
-        <section className="lr-map-list" aria-label={listed.named ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : `${shown.length} of ${pieces.length}`}>
+        <section className="lr-map-list" aria-label={listed.named ? `${focus.line.before}${focus.line.strong}${focus.line.after}` : `Showing ${shown.length} of ${pieces.length}`}>
           <div className="lr-map-focus" role="status">
             <p className="lr-map-focus-text">
-              {listed.named && (
+              {listed.named ? (
                 <>
                   {focus.line.before}
                   <strong>{focus.line.strong}</strong>
                   {focus.line.after}
+                  <Badge tone="neutral" size="sm" className="lr-map-focus-count">
+                    {shown.length} of {pieces.length}
+                  </Badge>
+                </>
+              ) : (
+                // One piece: its row names it, the line says how much of the list shows, as a sentence.
+                <>
+                  Showing <strong>{shown.length} of {pieces.length}</strong>
                 </>
               )}
-              <Badge tone="neutral" size="sm" className={listed.named ? 'lr-map-focus-count' : undefined}>
-                {shown.length} of {pieces.length}
-              </Badge>
             </p>
             <Button variant="link" onClick={showAll}>
               Show all {pieces.length}

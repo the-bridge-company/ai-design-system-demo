@@ -195,7 +195,7 @@ export const mapAvailable = (o: { narrow: boolean; pieces: number }): boolean =>
 /**
  * The list under the map (owner, 2026-11-13): the List itself. Nothing picked shows every piece, as the List does; a box
  * picked shows the List's rows of what it narrows to, under one line ("Showing what <exploration> asks for · 3 of 14 ·
- * Show all 14"). One piece picked keeps the count and Show all but not its name: its row says it (`named: false`).
+ * Show all 14"). One piece picked says "Showing 1 of 14 · Show all 14": its row names it (`named: false`).
  */
 export type MapList = { kind: 'all' } | { kind: 'some'; keys: Set<string>; named: boolean };
 

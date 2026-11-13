@@ -80,11 +80,11 @@ describe('the List under the map', () => {
     expect(location.search).not.toContain('focus=');
   });
 
-  it('one piece picked: its own List row with the count, its name said once by the row', async () => {
+  it('one piece picked: its own List row under "Showing 1 of 3", its name said once by the row', async () => {
     await open('map');
     fireEvent.click(screen.getByRole('button', { name: /^ProfileHeader/ }));
     const status = screen.getByRole('status');
-    expect(status).toHaveTextContent(/^1 of 3Show all 3$/);
+    expect(status).toHaveTextContent(/^Showing 1 of 3Show all 3$/);
     const table = screen.getByRole('table', { name: 'Library pieces' });
     expect(titles(table)).toEqual(['ProfileHeader']);
     expect(within(table).getByRole('checkbox', { name: 'Select ProfileHeader' })).toBeInTheDocument();

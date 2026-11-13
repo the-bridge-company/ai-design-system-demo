@@ -12,6 +12,8 @@
 // everyone whatever the team read gives (AppearanceSetting.tsx). Your face (FaceSetting.tsx): the person's drawn face,
 // kept apart from their teammates', for a signed-in account or the person played on the sample team.
 // Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
+// Every band mounts and reads after first paint: a group shows once its bands have settled (scripts/settings-settle.ts),
+// under a skeleton until then, so the bands never move each other in view.
 // The bands sit in four groups, one shown at a time under the DS Tabs (SettingsTabs.tsx, lib/settings-sections.ts,
 // scripts/settings-sections.ts), each group its tab's DS TabsPanel, linked from outside the Tabs root (tabId) since
 // each holds islands of its own: Team (name, members, products, library access, danger
@@ -31,7 +33,7 @@ import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
-import { TabsPanel } from '@bridge-ds/react';
+import { Skeleton, TabsPanel } from '@bridge-ds/react';
 import SettingsTabs from '../../../components/ds/studio/SettingsTabs';
 import { groupId, tabId } from '../../../lib/settings-sections';
 ---
@@ -39,7 +41,16 @@ import { groupId, tabId } from '../../../lib/settings-sections';
 <TeamShell route="settings/" title="Settings" scene="settings" summary="Your team, its people, and how changes reach your code." what="settings and roles" description="Your team: its name, its people, how changes reach your code and who checks them.">
   <SettingsTabs client:load />
 
+  {/* Without JavaScript nothing settles: every band shows as it is. */}
+  <noscript><style is:inline>.ts .set-group > * { visibility: visible !important; } .ts .set-group > .set-wait { display: none !important; }</style></noscript>
+
   <TabsPanel className="set-group" value="team" id={groupId('team')} tabId={tabId('team')} data-set-group="team">
+    {/* Until the group's bands have settled (scripts/settings-settle.ts): one band's shape, out of flow, so nothing in view moves. */}
+    <div class="set-wait" aria-hidden="true">
+      <Skeleton width="16ch" />
+      <Skeleton width="40ch" />
+      <Skeleton variant="rect" height="var(--size-20)" />
+    </div>
     <section class="ts-band" id="general" aria-labelledby="ts-general">
       <h2 id="ts-general" class="ts-h">{TEAM_NAME_WORDS.generalTitle}</h2>
       <p class="ts-intro">{TEAM_NAME_WORDS.generalIntro}</p>
@@ -56,10 +67,22 @@ import { groupId, tabId } from '../../../lib/settings-sections';
   </TabsPanel>
 
   <TabsPanel className="set-group" value="reviews" id={groupId('reviews')} tabId={tabId('reviews')} data-set-group="reviews">
+    {/* Until the group's bands have settled (scripts/settings-settle.ts): one band's shape, out of flow, so nothing in view moves. */}
+    <div class="set-wait" aria-hidden="true">
+      <Skeleton width="16ch" />
+      <Skeleton width="40ch" />
+      <Skeleton variant="rect" height="var(--size-20)" />
+    </div>
     <TeamSettings client:load />
   </TabsPanel>
 
   <TabsPanel className="set-group" value="tools" id={groupId('tools')} tabId={tabId('tools')} data-set-group="tools">
+    {/* Until the group's bands have settled (scripts/settings-settle.ts): one band's shape, out of flow, so nothing in view moves. */}
+    <div class="set-wait" aria-hidden="true">
+      <Skeleton width="16ch" />
+      <Skeleton width="40ch" />
+      <Skeleton variant="rect" height="var(--size-20)" />
+    </div>
     <section class="ts-band" id="team-claude" aria-labelledby="set-claude">
       <ClaudeConnector client:only="react" />
     </section>
@@ -71,6 +94,12 @@ import { groupId, tabId } from '../../../lib/settings-sections';
   </TabsPanel>
 
   <TabsPanel className="set-group" value="you" id={groupId('you')} tabId={tabId('you')} data-set-group="you">
+    {/* Until the group's bands have settled (scripts/settings-settle.ts): one band's shape, out of flow, so nothing in view moves. */}
+    <div class="set-wait" aria-hidden="true">
+      <Skeleton width="16ch" />
+      <Skeleton width="40ch" />
+      <Skeleton variant="rect" height="var(--size-20)" />
+    </div>
     <FaceSetting client:only="react" />
     <section class="ts-band" id="appearance" aria-labelledby="ts-appearance">
       <h2 id="ts-appearance" class="ts-h">Appearance</h2>
@@ -83,4 +112,8 @@ import { groupId, tabId } from '../../../lib/settings-sections';
       <AiToolsSetting client:only="react" />
     </section>
   </TabsPanel>
+  <script>
+    import { settleSettingsGroups } from '../../../scripts/settings-settle';
+    settleSettingsGroups();
+  </script>
 </TeamShell>

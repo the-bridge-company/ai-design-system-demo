@@ -493,6 +493,30 @@ html:has(.set-page, .ts-band) {
   gap: var(--space-8);
 }
 
+/* Team Settings (pages/team-shell/settings): a group's bands mount and read after first paint, each moving the ones
+   under it. Until they have settled (scripts/settings-settle.ts, data-settled) the group keeps its place invisible and
+   a skeleton out of flow stands in, so nothing in view moves; then it shows at once. */
+.ts .set-group:not([data-settled]) {
+  position: relative;
+}
+
+.ts .set-group:not([data-settled]) > :not(.set-wait) {
+  visibility: hidden;
+}
+
+.set-wait {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: grid;
+  gap: var(--space-3);
+  max-width: var(--size-120);
+}
+
+.set-group[data-settled] > .set-wait {
+  display: none;
+}
+
 /* Settings > You, Your face (components/ds/studio/FaceSetting.tsx). Collapsed: the label block, the 40px face and
    Change share one line. Open: the row stacks and uses the card's full width (no empty label column). */
 .set-row.yf-row {

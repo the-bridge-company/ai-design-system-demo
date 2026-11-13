@@ -33,6 +33,24 @@ describe('reserved space (batch A)', () => {
     expect(rule(banner, '.hasActions')).toMatch(/padding: var\(--space-2\) var\(--space-2\) var\(--space-2\) var\(--space-4\)/);
   });
 
+  it("A7: the reserve resolves to the banner's computed height at comfortable density (62px)", () => {
+    const tokens = read('../../../../packages/tokens/dist/tokens.css');
+    // The first definition of each custom property is the default (:root, comfortable density).
+    const first = new Map<string, string>();
+    for (const m of tokens.matchAll(/(--[\w-]+):\s*([^;]+);/g)) if (!first.has(m[1]!)) first.set(m[1]!, m[2]!.trim());
+    const px = (v: string): number => {
+      const ref = /^var\((--[\w-]+)\)$/.exec(v);
+      if (ref) return px(first.get(ref[1]!)!);
+      const n = /^(\d+(?:\.\d+)?)px$/.exec(v);
+      if (!n) throw new Error(`not a px value: ${v}`);
+      return Number(n[1]);
+    };
+    const reserve = px('var(--control-height-md)') + 2 * px('var(--space-2)') + 2 * px('var(--border-width-default)');
+    expect(reserve).toBe(62);
+    // The banner's own floor is lower, so its md button sets its height: the reserve is that height.
+    expect(px('var(--control-height-md)') + px('var(--space-4)')).toBeLessThan(reserve);
+  });
+
   it('A7: the strip is never shown empty: the banner is rendered (flushSync) before the strip unhides', () => {
     const paint = gate.slice(gate.indexOf('return (on: boolean, visiting?: boolean) => {'));
     expect(paint.indexOf('if (!on) slot.hidden = true;')).toBeGreaterThan(-1);
@@ -53,6 +71,12 @@ describe('reserved space (batch A)', () => {
   it('A2: a skeleton row of the rail is the box of a rail row', () => {
     expect(rule(studio, '.rail-section .rail-skel')).toMatch(/min-height: var\(--size-9\)/);
     expect(rule(studio, '.rail-section a')).toMatch(/min-height: var\(--size-9\)/);
+  });
+
+  it("Team Home: the design system read's progress is out of flow, so the home growing above never moves it", () => {
+    const pages = read('../styles/team-pages.css');
+    expect(rule(pages, '.sh-team-ds:has(> .lp, > .lp-wait)')).toMatch(/position: fixed;/);
+    expect(read('../pages/team-shell/index.astro')).toMatch(/<div data-team-ds class="sh-team-ds">\s*<div class="lp-wait"/);
   });
 
   it('A11: Invite collaborators reads like every other item of the team menu', () => {

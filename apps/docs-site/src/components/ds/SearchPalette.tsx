@@ -1,19 +1,41 @@
 // The Cmd+K search palette: the DS Combobox in inline mode (the list always open under the field), inside the DS
 // Dialog `palette` that scripts/shell.ts opens. Each time it opens, the shell sends PALETTE_OPEN_EVENT on the dialog:
-// the query clears, the index loads once (Bridge's /search-index.json, or a team's Library from the model its page
-// already read) and the field takes focus. Enter or a click opens the highlighted result.
+// the query clears, the index loads once and the field takes focus. Enter or a click opens the highlighted result.
+//   - Bridge's Library: /search-index.json. A team's Library: its pages, components and tokens, from the model its
+//     page already read.
+//   - A Studio (a team's, or Bridge's own): what the page holds at once (components, tokens, products, Studio's pages),
+//     then what Studio's pages read from GitHub (explorations, Library review pieces, build requests) while a loading
+//     row says so (scripts/studio-search.ts). Results are grouped by kind (lib/studio-search STUDIO_KIND_ORDER).
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Combobox, Icon, Kbd, type ComboboxOption } from '@bridge-ds/react';
 import { isDialogOpen } from '@bridge-ds/react/dom';
-import { Search } from 'lucide-react';
+import { Search, type LucideIcon } from 'lucide-react';
 import { siteIcon } from '../../brand/site-icons';
-import { PALETTE_OPEN_EVENT, rankResults } from '../../lib/palette-search';
-import type { SearchItem } from '../../lib/search';
+import { PALETTE_OPEN_EVENT, rankGrouped, rankResults } from '../../lib/palette-search';
+import type { SearchItem, SearchKind } from '../../lib/search';
+import { GROUP_LABEL, STUDIO_KIND_ORDER } from '../../lib/studio-search';
+import { PRODUCT_ICON } from './studio/ProductMark';
 
-const KIND_LABEL = { page: 'Page', component: 'Component', token: 'Token' } as const;
-const KIND_ICON = { page: 'doc', component: 'diamonds', token: 'grid' } as const;
+const KIND_LABEL: Record<SearchKind, string> = { page: 'Page', component: 'Component', token: 'Token', exploration: 'Exploration', piece: 'Library piece', request: 'Build request', product: 'Product' };
+/** The same glyph as the side nav entry each kind lives under. */
+const KIND_ICON: Record<SearchKind, LucideIcon> = {
+  page: siteIcon('doc'),
+  component: siteIcon('diamonds'),
+  token: siteIcon('grid'),
+  exploration: siteIcon('branch'),
+  piece: siteIcon('review'),
+  request: siteIcon('wrench'),
+  product: PRODUCT_ICON,
+};
+
+const isStudio = () => document.documentElement.dataset.space === 'studio' && !document.documentElement.hasAttribute('data-no-repo');
+
+let studioModule: Promise<typeof import('../../scripts/studio-search')> | null = null;
+/** Studio's reads (scripts/studio-search.ts), loaded once. */
+const studioSearch = () => (studioModule ??= import('../../scripts/studio-search'));
 
 let index: Promise<SearchItem[]> | null = null;
+let live: Promise<void> | null = null;
 
 /** The search index, read once per page. */
 function loadSearchIndex(): Promise<SearchItem[]> {
@@ -26,18 +48,10 @@ function loadSearchIndex(): Promise<SearchItem[]> {
         const team = await loadTeamData();
         return librarySearchIndex(team.model, team.owner, team.repo);
       }
-      const studio = document.documentElement.dataset.space === 'studio';
-      if (studio && document.documentElement.hasAttribute('data-hosted')) {
-        // A team's Studio searches the team: its components and tokens, opened in Studio, never Bridge's docs (A8).
-        const [{ loadTeamData }, { studioSearchIndex }, { studioHref }] = await Promise.all([import('../../scripts/team-data'), import('../../lib/library/search-index'), import('../../lib/team-path')]);
-        return studioSearchIndex((await loadTeamData()).model, studioHref);
-      }
+      // A Studio searches its own team (A8): never Bridge's documentation pages.
+      if (isStudio()) return await (await studioSearch()).loadStudioLocal();
       const r = await fetch('/search-index.json');
-      const all = (await r.json()) as SearchItem[];
-      if (!studio) return all;
-      // Bridge's own Studio: its components and tokens, without the documentation pages.
-      const { studioOnly } = await import('../../lib/library/search-index');
-      return studioOnly(all);
+      return (await r.json()) as SearchItem[];
     } catch {
       return [];
     }
@@ -45,8 +59,40 @@ function loadSearchIndex(): Promise<SearchItem[]> {
   return index;
 }
 
+/** What a Studio has read from GitHub for the search so far, and whether it is done (once per page). */
+let liveItems: SearchItem[] = [];
+let liveDone = false;
+const liveListeners = new Set<(items: SearchItem[], done: boolean) => void>();
+const tellLive = () => liveListeners.forEach((f) => f(liveItems, liveDone));
+
+/**
+ * Starts Studio's GitHub reads once per page (nothing elsewhere) and follows them: `onChange` gets every result known
+ * so far, each time a kind lands or its words get more precise, and whether the reads are done. Returns the unsubscribe.
+ */
+function followLiveIndex(onChange: (items: SearchItem[], done: boolean) => void): () => void {
+  liveListeners.add(onChange);
+  if (!live && !isStudio()) {
+    live = Promise.resolve();
+    liveDone = true;
+  }
+  live ??= studioSearch()
+    .then((m) =>
+      m.loadStudioLive((items) => {
+        liveItems = items;
+        tellLive();
+      }),
+    )
+    .catch(() => undefined)
+    .then(() => {
+      liveDone = true;
+      tellLive();
+    });
+  onChange(liveItems, liveDone);
+  return () => liveListeners.delete(onChange);
+}
+
 /** One result as a Combobox option: the kind glyph (or a color token's own color), the title, its line, its kind. */
-function toOption(item: SearchItem, i: number): ComboboxOption {
+function toOption(item: SearchItem, i: number, grouped: boolean): ComboboxOption {
   return {
     value: `${i}:${item.href}`,
     label: item.title,
@@ -55,44 +101,71 @@ function toOption(item: SearchItem, i: number): ComboboxOption {
       <span className="palette-kind kind-token has-swatch" style={{ '--sw': item.swatch } as CSSProperties} />
     ) : (
       <span className={`palette-kind kind-${item.kind}`}>
-        <Icon icon={siteIcon(KIND_ICON[item.kind])} size="sm" />
+        <Icon icon={KIND_ICON[item.kind]} size="sm" />
       </span>
     ),
-    suffix: KIND_LABEL[item.kind],
+    // Grouped, the group's heading names the kind once; the row does not say it again.
+    ...(grouped ? { group: GROUP_LABEL[item.kind] } : { suffix: KIND_LABEL[item.kind] }),
   };
 }
 
-/** Studio searches the team's design system only; the Library its pages too. */
-const placeholderFor = (space: string | undefined) => (space === 'studio' ? 'Search tokens and components, or paste a hex' : 'Search tokens, components, pages, or paste a hex');
+/** What the footer says while a Studio reads explorations, reviews and build requests. */
+export const READING = 'Reading explorations and reviews';
+export const READING_MORE = 'reading more';
+
+/** Studio names its main kinds (as its header button does, layouts/Layout.astro); the Library its pages too. */
+export const placeholderFor = (space: string | undefined) => (space === 'studio' ? 'Search explorations, components, tokens' : 'Search tokens, components, pages, or paste a hex');
 
 export default function SearchPalette() {
   const [query, setQuery] = useState('');
   const [placeholder, setPlaceholder] = useState(placeholderFor(undefined));
   useEffect(() => setPlaceholder(placeholderFor(document.documentElement.dataset.space)), []);
   const [data, setData] = useState<SearchItem[] | null>(null);
+  const [extra, setExtra] = useState<SearchItem[]>([]);
+  const [liveRead, setLiveRead] = useState(false);
+  const [grouped, setGrouped] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const results = useMemo(() => (data ? rankResults(query, data) : []), [query, data]);
-  const options = useMemo(() => results.map(toOption), [results]);
+  // What GitHub answers comes first in Studio's order (explorations lead), the page's own after it.
+  const all = useMemo(() => (data ? [...extra, ...data] : null), [data, extra]);
+  const results = useMemo(() => (all ? (grouped ? rankGrouped(query, all, STUDIO_KIND_ORDER) : rankResults(query, all)) : []), [query, all, grouped]);
+  const options = useMemo(() => results.map((r, i) => toOption(r, i, grouped)), [results, grouped]);
 
   useEffect(() => {
     const dialog = document.getElementById('palette');
     if (!dialog) return;
+    let unfollow: (() => void) | undefined;
     const onOpen = () => {
       setQuery('');
+      setGrouped(isStudio());
       void loadSearchIndex().then(setData);
+      unfollow?.();
+      // Shown once, when every read is in: the late groups land together, with their final words, so rows never
+      // move twice (gate #1164).
+      unfollow = followLiveIndex((items, done) => {
+        if (!done) return;
+        setExtra(items);
+        setLiveRead(true);
+      });
       requestAnimationFrame(() => input.current?.focus());
     };
     dialog.addEventListener(PALETTE_OPEN_EVENT, onOpen);
     // Opened before this island woke up (a fast Cmd+K): catch up.
     if (isDialogOpen(dialog)) onOpen();
-    return () => dialog.removeEventListener(PALETTE_OPEN_EVENT, onOpen);
+    return () => {
+      dialog.removeEventListener(PALETTE_OPEN_EVENT, onOpen);
+      unfollow?.();
+    };
   }, []);
 
-  // The count in the dialog's footer (a polite live region there).
+  // The count in the dialog's footer (a polite live region there). While a Studio still reads its team's work, the
+  // footer says so: outside the list, so the list never moves when the reads end.
+  const reading = grouped && data !== null && !liveRead;
   useEffect(() => {
     const count = document.getElementById('palette-count');
-    if (count) count.textContent = query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : '';
-  }, [query, results.length]);
+    if (!count) return;
+    const n = query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : '';
+    count.textContent = reading ? (n ? `${n}, ${READING_MORE}` : READING) : n;
+  }, [query, results.length, reading]);
 
   const open = (value: string | string[] | null) => {
     const item = typeof value === 'string' ? results[Number(value.split(':')[0])] : undefined;
@@ -116,7 +189,7 @@ export default function SearchPalette() {
       onValueChange={open}
       loading={data === null}
       loadingMessage="Loading the search index"
-      emptyMessage={query.trim() ? `Nothing matches "${query.trim()}". Try a token path like color.action, or a hex.` : 'Type to search.'}
+      emptyMessage={reading && query.trim() ? `Nothing yet for "${query.trim()}". ${READING}.` : query.trim() ? `Nothing matches "${query.trim()}". ${grouped ? 'Try an exploration, a component or a token path like color.action.' : 'Try a token path like color.action, or a hex.'}` : 'Type to search.'}
       prefix={<Icon icon={Search} size="sm" />}
       suffix={<Kbd keys="Esc" size="sm" />}
     />

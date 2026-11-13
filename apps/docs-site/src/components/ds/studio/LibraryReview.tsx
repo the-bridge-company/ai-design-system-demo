@@ -32,7 +32,7 @@ import { studioHref } from '../../../lib/team-path';
 import { askedColumns, directWords, askedCountLine, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
 import { AGENT_NAME } from '../../../lib/people';
 import { CLAUDE, waitPill } from '../../../lib/home-model';
-import { chapterReach, chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
+import { chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, checkedKeepLabel, checkedLooks, checkedOfPick, checkedOutcome, checkedPick, compareView, defaultChecked, STAGE_SCALE, TODAY, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
 import {
@@ -241,8 +241,8 @@ function AskedLine({ p }: { p: ReviewPiece }) {
 }
 
 /** The quiet link from a piece to its page in the library (its component on Components, its kind on Tokens). */
-/** The quiet link to the piece's library page. `title`: beside the h2 of the detail, where the icon matches the title's
- * size (20px on a 32px target) instead of the list rows' 16px. */
+/** The quiet link to the piece's library page, beside the h2 of the detail only (owner, 2026-11-13): in the List the
+ * row's title already opens the detail, so a second icon per row was noise. */
 function LibraryPageLink({ p, title = false }: { p: ReviewPiece; title?: boolean }) {
   const page = libraryPageOf(p);
   if (!page) return null;
@@ -1168,7 +1168,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             ) : (
               <span className="lr-row-title">{p.title}</span>
             )}
-            <LibraryPageLink p={p} />
           </span>
           <span className="lr-muted lr-row-kind">{p.kind}</span>
         </span>
@@ -1231,7 +1230,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
-        const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
         const pickable = boxes ? pickableOf(rows) : [];
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
@@ -1252,17 +1250,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                   </span>
                   {ch.note && <span className="lr-chapter-note">{ch.note}</span>}
                 </span>
-              </span>
-              <span role="cell" className="lr-chapter-reach">
-                {cr.names ? (
-                  <>
-                    <span>Reaches</span>
-                    <ProductIcon product={cr.products.map((x) => x.name).join(', ')} />
-                    <span className="lr-chapter-names">{cr.names}</span>
-                  </>
-                ) : (
-                  'Not on a screen yet'
-                )}
               </span>
             </div>
             <div className="lr-chapter-card" style={c.style}>

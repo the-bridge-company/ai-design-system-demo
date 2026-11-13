@@ -1,7 +1,7 @@
 {
   "pr": 1162,
-  "sha": "dbedc661cbec98b35444dc3ef7cf4d5bf2d90d3f",
-  "baseSha": "523231606e1812f7c97bb1b7c482eb92e89bcdef",
+  "sha": "9567d3bc6b1f2da7ba43f6d8f59bbdbcb6836f50",
+  "baseSha": "a4df8159a2c39d2beb6b04f5e04e42577210efa2",
   "failed": false,
   "failures": [],
   "warnings": 0,
@@ -21,7 +21,7 @@
       "fullHeight": 962,
       "png": "home-desktop-light.png",
       "axe": [],
-      "ms": 12872,
+      "ms": 11787,
       "webp": "home-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -41,7 +41,7 @@
       "fullHeight": 962,
       "png": "home-desktop-dark.png",
       "axe": [],
-      "ms": 13196,
+      "ms": 11728,
       "webp": "home-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -62,7 +62,7 @@
       "fullHeight": 906,
       "png": "home-mobile-light.png",
       "axe": [],
-      "ms": 11481,
+      "ms": 15325,
       "webp": "home-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -83,7 +83,7 @@
       "fullHeight": 906,
       "png": "home-mobile-dark.png",
       "axe": [],
-      "ms": 9885,
+      "ms": 10521,
       "webp": "home-mobile-dark.webp",
       "diff": {
         "ratio": 0,
@@ -103,7 +103,7 @@
       "fullHeight": 962,
       "png": "product-desktop-light.png",
       "axe": [],
-      "ms": 10478,
+      "ms": 10422,
       "webp": "product-desktop-light.webp",
       "diff": {
         "ratio": 0,
@@ -123,7 +123,7 @@
       "fullHeight": 962,
       "png": "product-desktop-dark.png",
       "axe": [],
-      "ms": 10832,
+      "ms": 9952,
       "webp": "product-desktop-dark.webp",
       "diff": {
         "ratio": 0,
@@ -144,7 +144,7 @@
       "fullHeight": 906,
       "png": "product-mobile-light.png",
       "axe": [],
-      "ms": 9572,
+      "ms": 10301,
       "webp": "product-mobile-light.webp",
       "diff": {
         "ratio": 0,
@@ -165,7 +165,7 @@
       "fullHeight": 906,
       "png": "product-mobile-dark.png",
       "axe": [],
-      "ms": 9670,
+      "ms": 9720,
       "webp": "product-mobile-dark.webp",
       "diff": {
         "ratio": 0,

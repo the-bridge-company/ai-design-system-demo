@@ -44,7 +44,7 @@ export default function AccessibilityView({ data }: { data: LibraryData }) {
         return { key: c.key, ratio: r.ratio.toFixed(2), status: s, label: statusLabel(s, p.min), title: `${c.label}: ${rowTitle(p, r)}` };
       }),
     }));
-  const name = systemName(data);
+  const name = systemName(data, 'This design system');
   const file = contrastFile(model);
   return (
     <>

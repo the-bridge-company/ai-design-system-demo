@@ -10,7 +10,7 @@ import { libraryIsPublic } from '@bridge-ds/core';
 import { LIBRARY_SHELL_ROOT, libraryFromPath, libraryHref } from '../lib/library-shells';
 import { RESERVED_PATHS_URL, STUDIO_ROOT, teamHref, type ReservedPaths } from '../lib/team-path';
 import { llmsTxtUrl } from '../lib/library/published';
-import { teamDisplayName } from '../lib/demo';
+import { libraryTeamName } from '../lib/recent-teams';
 import { loadTeamData, loadTeamLlms, whenLibraryOpen } from './team-data';
 import { libraryFileUrl } from './library-access-api';
 import { refreshSpaceSwitch } from './space-switch';
@@ -53,9 +53,13 @@ export function pointLibraryLinks(team: { owner: string; repo: string }, reserve
   paintTeamName(team, null, root);
 }
 
-/** The name the team goes by (lib/demo.ts teamDisplayName) in the account menu and the tab title, never owner/repo. */
+/**
+ * The name the team goes by (lib/recent-teams libraryTeamName) in the account menu and the tab title, never owner/repo
+ * nor the repository in words: until it is known the title stays "Library | Bridge" as built.
+ */
 export function paintTeamName(team: { owner: string; repo: string }, site: { name?: string } | null, root: ParentNode = document) {
-  const shown = teamDisplayName(`${team.owner}/${team.repo}`, site);
+  const shown = libraryTeamName(`${team.owner}/${team.repo}`, site);
+  if (!shown) return;
   for (const el of root.querySelectorAll<HTMLElement>('[data-team-display]')) el.textContent = shown;
   if (typeof document !== 'undefined' && root === document) document.title = document.title.replace(/\| [^|]+$/, `| ${shown}`);
 }

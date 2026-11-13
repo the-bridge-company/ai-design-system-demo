@@ -16,7 +16,7 @@ import { GitHubMark } from '../studio/brand-icons';
 import { Drawing } from '../studio/Drawing';
 import { emailDomainIn, GATE_WORDS, libraryGate, signInToken, wrongDomainWords, type AccessAnswer } from '../../../lib/library-access';
 import { teamHref } from '../../../lib/team-path';
-import { teamDisplayName } from '../../../lib/demo';
+import { libraryTeamName } from '../../../lib/recent-teams';
 import '../../../styles/library-access.css';
 
 export type GateState =
@@ -76,7 +76,7 @@ function Zone({ repo, title, children }: { repo: string; title: string; children
   return (
     <section className="zone lgt" aria-labelledby="lgt-title">
       <div className="lgt-copy">
-        <p className="ltm-eyebrow">{teamDisplayName(repo)}</p>
+        <p className="ltm-eyebrow">{libraryTeamName(repo) ?? 'Design system library'}</p>
         <h1 id="lgt-title" className="t-display lgt-title">
           {title}
         </h1>

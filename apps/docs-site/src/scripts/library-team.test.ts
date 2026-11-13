@@ -2,7 +2,7 @@
 // A team's Library shell: noindex unless the team opts in on a public repository, and the build-time links follow the
 // team in the address.
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyIndexing, markNoindex, pointLibraryLinks } from './library-team';
+import { applyIndexing, markNoindex, paintTeamName, pointLibraryLinks } from './library-team';
 
 const robots = () => document.head.querySelectorAll('meta[name="robots"]');
 
@@ -54,5 +54,34 @@ describe('pointLibraryLinks', () => {
     pointLibraryLinks({ owner: 'acme', repo: 'ds' }, { firsts: [], pairs: [] });
     expect(href('studio')).toBe('/studio/acme/ds/');
     expect(href('home')).toBe('/library/acme/ds/');
+  });
+});
+
+describe('the team name in a Library (never the repository in words)', () => {
+  afterEach(() => {
+    document.title = '';
+    document.body.innerHTML = '';
+    localStorage.clear();
+  });
+
+  it('keeps "Library | Bridge" and the built words until the name is known, for any team', () => {
+    document.title = 'Library | Bridge';
+    document.body.innerHTML = '<span data-team-display>Bridge</span>';
+    paintTeamName({ owner: 'primer', repo: 'primitives' }, null);
+    expect(document.title).toBe('Library | Bridge');
+    expect(document.body.textContent).toBe('Bridge');
+    // Settings read without a name: still nothing built from "primitives".
+    paintTeamName({ owner: 'primer', repo: 'primitives' }, {});
+    expect(document.title).toBe('Library | Bridge');
+    // A name from the settings: that one.
+    paintTeamName({ owner: 'primer', repo: 'primitives' }, { name: 'Primer' });
+    expect(document.title).toBe('Library | Primer');
+  });
+
+  it('names the sample team Acme Design at once, whatever this browser kept', () => {
+    localStorage.setItem('bridge.teamNames', JSON.stringify({ 'acme-design-demo/bridge-demo-ds': 'Bridge demo ds' }));
+    document.title = 'Library | Bridge';
+    paintTeamName({ owner: 'acme-design-demo', repo: 'bridge-demo-ds' }, null);
+    expect(document.title).toBe('Library | Acme Design');
   });
 });

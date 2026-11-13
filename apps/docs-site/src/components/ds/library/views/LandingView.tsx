@@ -10,7 +10,7 @@ import type { IllustrationName } from '../../../../brand/illustrations';
 import { libraryHome } from '../../../../lib/library/home';
 import { loadComponents } from '../../../../lib/library/components';
 import { tokenRows } from '../../../../lib/library/tokens';
-import { pageHref, systemName, type LibraryData } from '../library-data';
+import { ownSystemName, pageHref, type LibraryData } from '../library-data';
 import { EXPORT_ZIP } from '../../../../lib/library/confluence/render';
 
 export default function LandingView({ data }: { data: LibraryData }) {
@@ -30,7 +30,7 @@ export default function LandingView({ data }: { data: LibraryData }) {
         <div className="hm-hero-copy">
           {data.team && <p className="ltm-eyebrow">Design system library</p>}
           <h1 id="hero-title" className="t-display">
-            {data.team ? `The ${systemName(data)} design system` : 'Your design system, one source of truth.'}
+            {data.team ? (ownSystemName(data) ? `The ${ownSystemName(data)} design system` : 'Design system') : 'Your design system, one source of truth.'}
           </h1>
           <p className="t-body">
             {data.team ? (

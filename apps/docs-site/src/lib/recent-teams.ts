@@ -4,7 +4,7 @@
 // Covered by recent-teams.test.ts with an in-memory storage.
 
 import type { RepoAccessState } from '@bridge-ds/core';
-import { teamDisplayName } from './demo';
+import { isDemoRepo, isSampleTeam, SAMPLE_TEAM, teamDisplayName } from './demo';
 import { canonicalRepo } from './team-path';
 import { forgetsTeam, noteName, parseRecentTeams, parseTeamNames, pushRecentTeam, RECENT_TEAMS_KEY, remembersTeam, removeRecentTeam, TEAM_NAMES_KEY, TEAM_ROLES_KEY } from './access-view';
 
@@ -146,6 +146,20 @@ export function forgetTeamEverywhere(team: string, store: RecentStore | null = b
 export function knownTeamName(team: string, store: RecentStore | null = browserStore()): string | null {
   const k = canonicalRepo(team).toLowerCase();
   return loadMap(TEAM_NAMES_KEY, store)[k] ?? loadMap(ACCOUNT_TEAM_NAMES_KEY, store)[k] ?? null;
+}
+
+/**
+ * The name a team's Library shows (hero, tab title, sentences): the sample team's fixture, the settings' `name` once
+ * read (`site`), a name this browser or the account keeps, Bridge's own name; else null. Never words built from the
+ * repository ("Bridge demo ds", "Primitives"): a page shows a skeleton while it reads and a plain phrase after.
+ */
+export function libraryTeamName(team: string, site?: { name?: unknown } | null, store: RecentStore | null = browserStore()): string | null {
+  if (isSampleTeam(team)) return SAMPLE_TEAM;
+  const own = typeof site?.name === 'string' ? site.name.trim().replace(/\s+/g, ' ') : '';
+  if (own) return own;
+  const known = knownTeamName(team, store);
+  if (known) return known;
+  return isDemoRepo(team) ? teamDisplayName(team) : null;
 }
 
 /**

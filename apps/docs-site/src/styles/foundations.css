@@ -52,8 +52,8 @@
 }
 
 /* The hex is a DS link Button (copies the CSS variable): code reads in Plex Mono, at the code value size (12px) so
-   "#dce3eb" fits a step 8px inside its edges. */
-.ramp-meta .ramp-copy {
+   "#dce3eb" fits a step 8px inside its edges. Three classes so it wins over the DS link Button's own size. */
+.ramp-strip .ramp-meta .ramp-copy {
   justify-self: start;
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);

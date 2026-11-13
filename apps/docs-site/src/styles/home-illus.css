@@ -3023,16 +3023,19 @@
 }
 
 .hp-ldec-b1 {
+  --_s: 0.96;
   transform: translate(0,calc(var(--_u) * -24)) scale(0.96);
   opacity: 0.9;
 }
 
 .hp-ldec-b2 {
+  --_s: 0.92;
   transform: translate(0,calc(var(--_u) * -48)) scale(0.92);
   opacity: 0.75;
 }
 
 .hp-ldec-join {
+  --_s: 0.88;
   transform: translate(0,calc(var(--_u) * -72)) scale(0.88);
   opacity: 0.6;
   animation: hp-ldecJoin calc(var(--motion-duration-moderate) * 45) var(--motion-easing-standard) infinite both;
@@ -3040,11 +3043,14 @@
 
 .hp-ldec-bl {
   /* Each waiting card shows a 24u strip above the next (D16): its label 6u under the card's top edge, never touching it. */
+  /* The content box is one 16u text line under a 6u inset: every label's text starts 6u down, whatever sits before it
+     (a face, the agent mark, an initial), each centered on that line. */
   box-sizing: border-box;
-  height: calc(var(--_u) * 24);
-  padding: calc(var(--_u) * 6) calc(var(--_u) * 24) 0;
+  /* Divided by the card's own scale (--_s), so the inset reads 6u on screen on every card, the nearest and the furthest. */
+  height: calc(var(--_u) * 16 + var(--_u) * 6 / var(--_s, 1));
+  padding: calc(var(--_u) * 6 / var(--_s, 1)) calc(var(--_u) * 24) 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: calc(var(--_u) * 8);
   /* 14px, not 12: the waiting cards are scaled down (0.88 to 0.96), so 12px rendered at 10.6px. */
   font-size: var(--font-size-200);

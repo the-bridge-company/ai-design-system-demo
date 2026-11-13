@@ -147,7 +147,8 @@ function PillarViz({ viz }: { viz: NonNullable<Pillar['viz']> }) {
   // One bar, not a dot per component (D8): 53 dots wrapped and left one orphan on its own line.
   return (
     <div className="ql-viz">
-      <Progress value={viz.reviewed} max={viz.total} size="sm" tone="signal" className="ql-meter" aria-label={`${viz.reviewed} reviewed, ${viz.drafted} drafted, ${left} missing`} />
+      {/* The figure above and the key under it say it: the bar is a picture, hidden from screen readers. */}
+      <Progress value={viz.reviewed} max={viz.total} size="sm" tone="signal" className="ql-meter" aria-hidden="true" />
       {viz.reviewed < viz.total ? (
         <span className="ql-dots-key">
           {viz.drafted ? <span className="is-draft">{viz.drafted} drafted</span> : null}

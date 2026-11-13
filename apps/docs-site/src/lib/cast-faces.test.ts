@@ -57,7 +57,7 @@ describe('Dana and Ann drawn apart (D15)', () => {
     const { lookAlikesOf } = await import('./team-faces');
     const dana = faceRecipe(drawingSeed(CAST_FACE_SEEDS.dana)).hair;
     const ann = faceRecipe(drawingSeed(CAST_FACE_SEEDS.ann)).hair;
-    expect(drawingSeed(CAST_FACE_SEEDS.ann)).toBe('ann-3');
+    expect(drawingSeed(CAST_FACE_SEEDS.ann)).toBe('ann-11');
     expect(ann).not.toBe(dana);
     expect(lookAlikesOf(dana).has(ann)).toBe(false);
     // Only the drawing moves: her face seed (and every lookup by it) stays the cast's.

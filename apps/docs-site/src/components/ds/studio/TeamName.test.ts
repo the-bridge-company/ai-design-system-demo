@@ -118,9 +118,20 @@ describe('Settings > General', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('names a team without a name after its repository, and says so', async () => {
+  it('names a team without a name after its repository, and says so once its settings and the access are known', async () => {
+    // The team's settings are read (no `name` in them) and the session says who reads: the note is a fact by then.
+    page.site = { version: 1 } as { name?: string };
+    page.access = { admin: false };
     render(createElement(TeamNameSetting));
     expect(await screen.findByText('Design system')).toBeInTheDocument();
-    expect(screen.getByText('Not set yet, Bridge uses the repository name.')).toBeInTheDocument();
+    expect(await screen.findByText('Not set yet, Bridge uses the repository name.')).toBeInTheDocument();
+  });
+
+  it('says nothing about the name before the settings are read: a skeleton line, never "Not set yet" too early', async () => {
+    page.access = { admin: false };
+    const { container } = render(createElement(TeamNameSetting));
+    expect(await screen.findByText('Design system')).toBeInTheDocument();
+    expect(screen.queryByText('Not set yet, Bridge uses the repository name.')).toBeNull();
+    expect(container.querySelector('.set-row-value .set-row-help[aria-hidden="true"]')).not.toBeNull();
   });
 });

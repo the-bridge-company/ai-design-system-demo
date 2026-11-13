@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:24:06.285Z",
-  "durationMs": 244705,
+  "createdAt": "2026-11-13T01:36:31.603Z",
+  "durationMs": 218793,
   "base": {
-    "ref": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
-    "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06"
+    "ref": "9d24729f40c4d6a88ab21be4ae59af397ae102ad",
+    "sha": "9d24729f40c4d6a88ab21be4ae59af397ae102ad"
   },
   "head": {
-    "ref": "1e335c7e6c43dd92335f76b74005f18a9f280ee7",
-    "sha": "1e335c7e6c43dd92335f76b74005f18a9f280ee7"
+    "ref": "0a1027c6486401672ab5bbcb6ff2d82e7e578fd6",
+    "sha": "0a1027c6486401672ab5bbcb6ff2d82e7e578fd6"
   },
   "options": {
     "only": [
@@ -35,6 +35,7 @@
       ".changeset/batch-b-gate-fixes.md",
       ".changeset/batch-b-gate-round3.md",
       ".changeset/batch-b-gate-round4.md",
+      ".changeset/batch-b-gate-round5.md",
       ".changeset/batch-b-guidance-review.md",
       ".changeset/batch-b-lists.md",
       "apps/docs-site/api/contribute/index.ts",
@@ -73,6 +74,8 @@
       "apps/docs-site/src/lib/library-impact-view.ts",
       "apps/docs-site/src/lib/library-reach.ts",
       "apps/docs-site/src/lib/library-review-compare.test.ts",
+      "apps/docs-site/src/lib/library-review-list.test.ts",
+      "apps/docs-site/src/lib/library-review-list.ts",
       "apps/docs-site/src/lib/library-review.test.ts",
       "apps/docs-site/src/lib/library-review.ts",
       "apps/docs-site/src/lib/overview-board.test.ts",
@@ -312,12 +315,12 @@
   },
   "summary": {
     "shots": 128,
-    "changed": 0,
-    "unchanged": 128,
+    "changed": 1,
+    "unchanged": 127,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 0
+    "maxPercent": 12.52
   },
   "shots": [
     {
@@ -2415,11 +2418,18 @@
       "storyId": "data-display-checklist--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 127587,
       "totalPixels": 1018880,
-      "percent": 0,
-      "boxes": [],
+      "percent": 12.52,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 672,
+          "width": 736,
+          "height": 323
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -2430,7 +2440,12 @@
           "height": 995
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__data-display-checklist--all-states__ocean-dark.png",
+        "after": "after/story__data-display-checklist--all-states__ocean-dark.png",
+        "diff": "diff/story__data-display-checklist--all-states__ocean-dark.png",
+        "composite": "composite/story__data-display-checklist--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__data-display-codeblock--all-states__ocean-dark",

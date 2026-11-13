@@ -707,11 +707,11 @@ export function ProductPageView({
           )}
         </section>
       ) : (
-        // The groups flow side by side, each as wide as its cards: "Exploring" with 2, "Waiting for lead" with 1 and
-        // "In review" with 1 share one row instead of three rows of a four-column grid holding 1 or 2 cards.
+        // The groups stack, the one in progress first (owner, 2026-11-13): Exploring, then In review, then Shipped, each
+        // on the same card grid. A card's tag says only what its group heading does not (say it once).
         <div className="pp-groups">
           {productGroups(cards).map((g) => (
-            <section className="sh-section pp-group" key={g.key} aria-labelledby={`pp-${g.key}`} data-state-group={g.key} style={{ '--pp-n': g.cards.length } as CSSProperties}>
+            <section className="sh-section pp-group" key={g.key} aria-labelledby={`pp-${g.key}`} data-state-group={g.key}>
               <header className="sh-section-head">
                 {/* The group heading of Changes (label and its count tag): the same kind of list reads the same. */}
                 <h2 id={`pp-${g.key}`} className="pp-h2">
@@ -720,7 +720,7 @@ export function ProductPageView({
               </header>
               <ul className="sh-cards">
                 {g.cards.map((c) => (
-                  <ExplorationCardItem key={c.key ?? c.number} c={c} showProduct={false} />
+                  <ExplorationCardItem key={c.key ?? c.number} c={c} showProduct={false} saidBy={g.label} />
                 ))}
               </ul>
             </section>

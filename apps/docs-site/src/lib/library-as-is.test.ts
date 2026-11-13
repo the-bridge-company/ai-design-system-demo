@@ -103,7 +103,7 @@ describe('every way already in the library: nothing to decide', () => {
     const v = libraryImpactView({ body: bodyOf([leoPiece]), designer: 'Leo', lead: 'Dana', approved: false, canDecide: false, conflicts: libraryConflicts(leo, [sofiaDefault]), others: [sofiaDefault], screen: leo.name, product: leo.product });
     if (v.state !== 'nothing') throw new Error(v.state);
     expect(v.title).toBe('Nothing new for the library');
-    expect(v.line).toBe("Leo's screen uses Compact (12 px), as it is in the library.");
+    expect(v.line).toBe("Leo's screen uses Card padding: Compact (12 px), as it is in the library.");
     expect(v.line).not.toMatch(/Nothing to decide|Dana/);
   });
 

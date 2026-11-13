@@ -7,6 +7,7 @@
 // at its end naming who reads it). Right column: the turn block (the one Harbor zone, always there: "Your turn" when
 // the viewer acts now, else what happens now and the steps still to come, waitBlockOf), then the handover notes.
 import { SEP_SPLIT } from './sep';
+import { REMINDED_AFTER_DAYS } from './status-tag';
 
 /** Who reads the page, as its rules see them. */
 export type PageRole = 'owner' | 'designer' | 'lead' | 'developer' | 'pm' | 'viewer';
@@ -149,6 +150,12 @@ export interface TimelineItem {
   /** Their words, quoted under the line (a decision's reason, a developer's note). */
   quote: string | null;
 }
+
+/**
+ * An actor that is a team rather than a person: a commit signed with a team's name ("Acme design team", "Design
+ * team"), not a GitHub account Bridge can name. Activity shows it with the team's initials, never a person's face.
+ */
+export const isTeamActor = (who: Pick<TimelineItem['who'], 'name' | 'agent'>): boolean => !who.agent && /\bteam$/i.test(who.name.trim());
 
 /** The handover notes' commits: seeded by Bridge, saved from the page or by Claude (core explorations-github). */
 const NOTES_COMMIT = /^(note|update|updated) where it stands[.!]?$/i;
@@ -486,8 +493,10 @@ export interface WaitInput {
   /** The viewer is that lead (or a lead exploring with nobody else to ask). */
   viewerLeads: boolean;
   product: string;
-  /** Whole days since the lead was asked (from the exploration's designAskedAt); null when unknown. */
+  /** Calendar days since the lead was asked (from the exploration's designAskedAt); null when unknown. */
   waitedDays?: number | null;
+  /** When the lead was asked (ISO): the day of Bridge's reminder, said once it has gone out. */
+  askedAt?: string | null;
   /**
    * The two reviews it waits on (lib/review-lines), once the team's reviews are read: the title is the second line
    * ("Waiting for Dana's design review and the library decision on Timeline"), each review one current step.
@@ -548,12 +557,38 @@ export function designStepText(x: { lead: string | null; viewerLeads: boolean })
   return who ? `${who} reviews the design` : 'The design reviewer checks it';
 }
 
-/** "now, for 3 days" from the whole days since the lead was asked; "now" when unknown. */
-export function waitedWhen(days: number | null | undefined): string {
-  if (days === null || days === undefined || !Number.isFinite(days) || days < 0) return 'now';
-  if (days < 1) return 'now, since today';
-  if (days < 2) return 'now, since yesterday';
-  return `now, for ${Math.floor(days)} days`;
+/**
+ * Bridge's reminder in the turn block (gate leftover b): before it goes out, the rule; from the day it has gone out
+ * (REMINDED_AFTER_DAYS, the same constant that turns every waiting tag amber), the day it went, so the card and the
+ * amber tag never disagree. `who` is the person waited on ("Dana"), else the reviewers.
+ */
+export function reminderLine(x: { who: string | null; waitedDays?: number | null; askedAt?: string | null }): string {
+  const who = x.who ?? 'the reviewers';
+  const days = x.waitedDays;
+  const asked = x.askedAt ? Date.parse(x.askedAt) : NaN;
+  if (typeof days === 'number' && Number.isFinite(days) && days >= REMINDED_AFTER_DAYS && Number.isFinite(asked)) {
+    const on = new Date(asked);
+    on.setDate(on.getDate() + REMINDED_AFTER_DAYS);
+    const day = on.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `Bridge reminded ${who} on ${day}, and tells you as soon as there is an answer.`;
+  }
+  return `Bridge reminds ${who} once if there is no answer within ${REMINDED_AFTER_DAYS} days, and tells you as soon as there is one.`;
+}
+
+/**
+ * The short title of the author's card while In review (owner, batch C, C1): who it waits for, said once ("Waiting for
+ * Dana"); what each of them does is the current step. From the review steps' subjects: "You" never waits on itself.
+ */
+export function waitingForTitle(steps: readonly TurnStep[]): string {
+  const names: string[] = [];
+  for (const s of steps) {
+    for (const line of s.lines?.length ? s.lines : [s.text]) {
+      const m = /^(The library owners|The [\w ]*design reviewers|You|\S+)\s/.exec(line);
+      const who = m?.[1] ? (m[1].startsWith('The ') ? `the ${m[1].slice(4)}`.replace(/the [\w ]*design reviewers/, 'the design reviewers') : m[1]) : null;
+      if (who && who !== 'You' && !names.includes(who)) names.push(who);
+    }
+  }
+  return names.length ? `Waiting for ${andList(names)}` : 'Waiting for the reviews';
 }
 
 /** Whole days between the lead's ask (ISO) and now; null when unknown. */
@@ -573,18 +608,27 @@ export interface ChoiceLike {
   pick: string | null;
   decided: unknown;
   ways: readonly { designer: string; mine: boolean; screen: string; product: string }[];
+  /**
+   * The options the library already has (ConflictView ledger.have), with who can use one as it is: a person listed
+   * there keeps their screen whatever the pick, so the choice does not set it.
+   */
+  ledger?: { have: readonly { designers: readonly string[] }[] } | null;
 }
 
 /**
  * A library choice still open on this page that also sets the viewer's own screen: a component part this exploration
- * and one of the viewer's own change differently (the library block's conflict, its other way theirs). Read from the
- * library block's data, never assumed.
+ * and one of the viewer's own change differently (the library block's conflict, its other way theirs), and their way
+ * is new to the library (a way the library already has stays whatever the pick). Read from the library block's data,
+ * never assumed.
  */
 export function sharedChoiceOf(me: string | null | undefined, conflicts: readonly ChoiceLike[]): SharedChoice | null {
   const who = me?.trim().toLowerCase();
   if (!who) return null;
   for (const c of conflicts) {
     if (c.decided || c.pick) continue;
+    // Their way is an option the library already has (Leo's Compact): any pick leaves their screen as it is, so the
+    // choice is not theirs to watch (computed from the ledger, never assumed).
+    if (c.ledger?.have.some((o) => o.designers.some((d) => d.trim().toLowerCase() === who))) continue;
     const theirs = c.ways.find((w) => !w.mine && w.designer.trim().toLowerCase() === who);
     if (theirs) return { component: c.component, property: c.property, screen: theirs.screen, product: theirs.product };
   }
@@ -614,7 +658,8 @@ function handoffStepsOf(steps: readonly HandoffStepLike[], x: { owner: boolean; 
             : s.title === 'Shipped'
               ? liveStep(x.product)
               : s.title;
-      return { text, ...(s.current ? { current: true, when: 'now' } : {}) };
+      // The filled marker says it is current: no "now" next to it (C3).
+      return { text, ...(s.current ? { current: true } : {}) };
     });
 }
 
@@ -649,7 +694,7 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       return { eyebrow: TURN_WORDS.nothing, title: 'The developers did not build it', steps: [], lines: [x.declinedLine ?? 'Developers closed it without building it.'], action: null };
     case 'exploring': {
       const steps: TurnStep[] = [
-        { text: owner ? 'You explore' : `${x.author} explores`, when: 'now', current: true },
+        { text: owner ? 'You explore' : `${x.author} explores`, current: true },
         { text: hatStep },
         { text: buildStep(product) },
         { text: liveStep(product) },
@@ -663,17 +708,19 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
     case 'waiting-for-lead': {
       // Two reviews (docs/specs/two-reviews.md): each hat its own step, both now, the second line as the title.
       if (x.reviews?.steps.length) {
-        const steps: TurnStep[] = [...x.reviews.steps.map((s) => ({ ...s, current: true })), { text: buildStep(product) }, { text: checkStep(owner, x.author) }, { text: liveStep(product) }];
+        // The title says who (C1), the current step what they do, in one line with no "now" (C3).
+        const title = waitingForTitle(x.reviews.steps);
+        const steps: TurnStep[] = [...x.reviews.steps.map((s) => ({ text: s.text, current: true })), { text: buildStep(product) }, { text: checkStep(owner, x.author) }, { text: liveStep(product) }];
         const lines: string[] = [];
         if (x.taken) lines.push(x.taken);
         if (dev) lines.push('You get a task in your repository once the reviews are in.');
-        else if (owner) lines.push('Bridge reminds them once after 2 days without an answer, and tells you as soon as there is one.');
+        else if (owner) lines.push(reminderLine({ who: title.startsWith('Waiting for the ') ? null : title.replace(/^Waiting for /, ''), waitedDays: x.waitedDays ?? null, askedAt: x.askedAt ?? null }));
         else lines.push('Nothing reaches the developers before the reviews are in.');
         const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
-        return { eyebrow: TURN_WORDS.nothing, title: x.reviews.title, steps, lines, action };
+        return { eyebrow: TURN_WORDS.nothing, title, steps, lines, action };
       }
       const steps: TurnStep[] = [
-        { text: x.newPieces ? leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true) : designStepText({ lead: x.lead, viewerLeads: x.viewerLeads }), when: waitedWhen(x.waitedDays), current: true },
+        { text: x.newPieces ? leadStepText({ lead: x.lead, viewerLeads: x.viewerLeads }, true) : designStepText({ lead: x.lead, viewerLeads: x.viewerLeads }), current: true },
         { text: buildStep(product) },
         { text: checkStep(owner, x.author) },
         { text: liveStep(product) },
@@ -682,11 +729,12 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       if (x.taken) lines.push(x.taken);
       if (dev) lines.push(leadName ? `You get a task in your repository once ${leadName} sends it.` : 'You get a task in your repository once the reviews are in.');
       else if (shared) lines.push(`${sharedChoiceLine(shared, x.lead)} Bridge tells you what ${leadName ? `${leadName} picks` : 'the library owners pick'}.`);
-      // The reminder is Bridge's rule (api/_lib/notify.ts REMIND_MS): said as the rule, never as something that happened.
-      else if (owner) lines.push(`Bridge reminds ${leadName ?? 'the reviewers'} once after 2 days without an answer, and tells you as soon as there is one.`);
+      // The reminder (api/_lib/notify.ts REMIND_MS): the rule until it has gone out, then the day it went (reminderLine).
+      else if (owner) lines.push(reminderLine({ who: leadName, waitedDays: x.waitedDays ?? null, askedAt: x.askedAt ?? null }));
       else lines.push(leadName ? `Nothing reaches the developers before ${leadName} sends it.` : 'Nothing reaches the developers before the reviews are in.');
       const action: TurnBlockAction = owner && x.canKeepExploring ? { kind: 'keep-exploring', label: TURN_WORDS.keepExploring } : see;
-      return { eyebrow: TURN_WORDS.nothing, title: hatStep, steps, lines, action };
+      // Short title, who it waits for (C1); the step says what they do.
+      return { eyebrow: TURN_WORDS.nothing, title: leadName && !x.viewerLeads ? `Waiting for ${leadName}` : hatStep, steps, lines, action };
     }
     case 'check': {
       const people = (x.checkers ?? []).filter((c) => c.said !== 'not-needed');
@@ -695,7 +743,7 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       const title = waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'} the build` : 'The build is being checked';
       const lines = people.filter((c) => c.said !== 'waiting').map((c) => `${c.you ? 'You' : c.name} ${c.said === 'looks-right' ? 'said it looks right' : 'asked for changes'}.`);
       lines.push(`It goes live in ${product} once it looks right.`);
-      return { eyebrow: TURN_WORDS.nothing, title, steps: [{ text: waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'}` : 'The build is checked', when: 'now', current: true }, { text: liveStep(product) }], lines, action: null };
+      return { eyebrow: TURN_WORDS.nothing, title, steps: [{ text: waiting.length ? `${andList(waiting)} ${one ? 'checks' : 'check'}` : 'The build is checked', current: true }, { text: liveStep(product) }], lines, action: null };
     }
     case 'ready':
     case 'building': {
@@ -729,8 +777,8 @@ export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | n
       eyebrow: TURN_WORDS.nothing,
       title: asked ? decides : `${x.author} is exploring`,
       steps: asked
-        ? [{ text: decides, when: 'now', current: true }, { text: buildStep(product) }, last]
-        : [{ text: `${x.author} explores`, when: 'now', current: true }, { text: decides }, { text: buildStep(product) }, last],
+        ? [{ text: decides, current: true }, { text: buildStep(product) }, last]
+        : [{ text: `${x.author} explores`, current: true }, { text: decides }, { text: buildStep(product) }, last],
       lines: [x.line],
       action: { kind: 'change-view', label: TURN_WORDS.changeView },
     };
@@ -738,8 +786,8 @@ export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | n
     eyebrow: asked ? TURN_WORDS.optional : TURN_WORDS.yourTurn,
     title: 'Your view, before the design review',
     steps: asked
-      ? [{ text: 'You give your view', when: 'optional, now', current: true }, { text: decides }, { text: buildStep(product) }, last]
-      : [{ text: 'You give your view', when: 'now', current: true }, { text: `${x.author} says Done exploring` }, { text: decides }, { text: buildStep(product) }],
+      ? [{ text: 'You give your view', current: true }, { text: decides }, { text: buildStep(product) }, last]
+      : [{ text: 'You give your view', current: true }, { text: `${x.author} says Done exploring` }, { text: decides }, { text: buildStep(product) }],
     lines: [asked ? (leadName ? `${leadName} can review without it. If you give it, ${leadName} reads it first.` : 'The design reviewer can review without it. If you give it, they read it first.') : `${x.author} shares it with you before it goes to review.`],
     action: null,
   };

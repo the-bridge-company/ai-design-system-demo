@@ -8,7 +8,7 @@
 // exploration start form (scripts/explorations.ts, against the team's repository, following its "changes" mode).
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { TeamLoadError, TeamLoadProgress } from '../components/ds/studio/TeamState';
+import { TeamLoadError, TeamPageSkeleton } from '../components/ds/studio/TeamState';
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
 import { TEAM_VIEW_TITLE, teamBranchesRoute } from '../lib/team-branches';
 import { legacyTarget } from '../lib/explorations-page';
@@ -26,7 +26,7 @@ export async function initTeamBranches(): Promise<void> {
   const main = $('cg-main');
   if (!state || !main) return;
   let stateRoot: Root | null = createRoot(state);
-  stateRoot.render(createElement(TeamLoadProgress, { label: "Reading this team's explorations" }));
+  stateRoot.render(createElement(TeamPageSkeleton, { label: "Reading this team's explorations" }));
 
   let data: TeamData;
   try {

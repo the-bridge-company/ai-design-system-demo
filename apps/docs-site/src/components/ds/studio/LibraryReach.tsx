@@ -181,27 +181,27 @@ export function ReachPage({ p, measured, viewer, busy, onBack, backHref, onAct, 
         <div className="lr-decide lr-reach-decide">
           <div className="lr-actions">
             {p.conflict ? (
-              <Button variant="primary" size="lg" onClick={onCompare}>
+              <Button variant="primary" onClick={onCompare}>
                 Compare the two ways
               </Button>
             ) : (
               <>
                 {p.match ? (
                   <>
-                    <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct({ kind: 'existing' })} data-demo-write="decide library pieces">
+                    <Button variant="primary" disabled={busy} onClick={() => onAct({ kind: 'existing' })} data-demo-write="decide library pieces">
                       Use {p.match.label}
                     </Button>
-                    <Button variant="secondary" size="lg" disabled={busy} onClick={() => onAct({ kind: 'add' })} data-demo-write="decide library pieces">
+                    <Button variant="secondary" disabled={busy} onClick={() => onAct({ kind: 'add' })} data-demo-write="decide library pieces">
                       Add as a new {tokenGroup(p.category)?.word ?? 'piece'}
                     </Button>
                   </>
                 ) : (
-                  <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct({ kind: 'add' })} data-demo-write="decide library pieces">
+                  <Button variant="primary" disabled={busy} onClick={() => onAct({ kind: 'add' })} data-demo-write="decide library pieces">
                     Add to the library
                   </Button>
                 )}
                 {p.asked && (
-                  <Button variant="secondary" size="lg" disabled={busy} onClick={() => onAct({ kind: 'keep' })} data-demo-write="decide library pieces">
+                  <Button variant="secondary" disabled={busy} onClick={() => onAct({ kind: 'keep' })} data-demo-write="decide library pieces">
                     {keepLabel(p)}
                   </Button>
                 )}

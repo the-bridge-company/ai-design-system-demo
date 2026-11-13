@@ -2,7 +2,7 @@
 // far with a check, the current one with its bar under it. The bar is the DS Progress: determinate from real file
 // counts, indeterminate when the total is unknown, its value said in words to screen readers. The step itself is
 // announced once per step in a polite live region (never per file).
-// Presentational only: TeamState.tsx TeamLoadProgress feeds it a team page's load, StorybookComponents the quick start.
+// Presentational only: StorybookComponents feeds it the quick start (team pages show their own skeleton: TeamState TeamPageSkeleton).
 import { CircleCheck, CircleDot } from 'lucide-react';
 import { Icon, Progress, Skeleton, VisuallyHidden } from '@bridge-ds/react';
 import '../../../styles/load-progress.css';

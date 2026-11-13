@@ -20,12 +20,18 @@ export interface WhereItStandsView {
   onSave?: ((update: NotesUpdate) => Promise<string | void>) | null;
 }
 
-export function WhereItStands({ view, say, title, rail = false }: { view: WhereItStandsView; say: (s: string) => void; /** "Your handover notes", "Sofia's handover notes": the page's rail names whose notes they are. */ title?: string; /** In the page's right column: a quiet heading and a link-sized Edit. */ rail?: boolean }) {
+export function WhereItStands({ view, say, title, rail = false, handedOff = false }: { view: WhereItStandsView; say: (s: string) => void; /** "Your handover notes", "Sofia's handover notes": the page's rail names whose notes they are. */ title?: string; /** In the page's right column: a quiet heading and a link-sized Edit. */ rail?: boolean; /**
+   * Past the reviews (Ready to build and on): the next step written while exploring ("Waiting for Dana to look at it")
+   * is history, and the turn block already says where it is (with the developers). The notes keep their context,
+   * decisions and edge cases, never a stale next step.
+   */ handedOff?: boolean }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const detailsId = useId();
   const n = view.notes;
   const canEdit = Boolean(view.onSave);
+  // Handed off with nothing but a next step: the turn block says it all, no empty notes section.
+  if (handedOff && n && !editing && !notesEmpty(n) && !notesHaveDetails(n)) return null;
   return (
     <section className={rail ? 'xp-notes xp-rail-sec' : 'xp-notes'} aria-labelledby="xp-notes-h">
       <div className="xp-notes-head">
@@ -62,10 +68,12 @@ export function WhereItStands({ view, say, title, rail = false }: { view: WhereI
         </div>
       ) : (
         <>
-          <div className="xp-notes-next">
-            <h3 className="xp-h3">{W.next}</h3>
-            <p className={n.nextStep ? 'xp-notes-text' : 'xp-muted'}>{n.nextStep || W.noNext}</p>
-          </div>
+          {!handedOff && (
+            <div className="xp-notes-next">
+              <h3 className="xp-h3">{W.next}</h3>
+              <p className={n.nextStep ? 'xp-notes-text' : 'xp-muted'}>{n.nextStep || W.noNext}</p>
+            </div>
+          )}
           {notesHaveDetails(n) && (
             <div className="xp-notes-sum">
               <span className="xp-muted">{notesCountLine(n) || W.context}</span>

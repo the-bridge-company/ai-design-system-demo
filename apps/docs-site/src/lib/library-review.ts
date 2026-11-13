@@ -156,8 +156,8 @@ export interface ReviewPiece {
 }
 
 /**
- * The tone of a piece that waits (its ways to pick, Waiting): grey, amber only once it has waited past LATE_DAYS
- * since it last moved (lib/status-tag waitTone). The one rule; no tag is amber because it waits.
+ * The tone of a piece that waits (its ways to pick, Waiting): grey, amber from the reminder's day since it last
+ * moved (lib/status-tag waitTone, REMINDED_AFTER_DAYS). The one rule; no tag is amber because it waits.
  */
 export const pieceWaitTone = (p: Pick<ReviewPiece, 'at'>, now: number = Date.now()): 'neutral' | 'warning' => waitTone(p.at ? calendarDays(p.at, new Date(now)) : null);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
-import { decidedParts, keepLabel, KEEP_TODAY, keptKeys, leadBuildLine, leadLibraryLine, ledgerLabel, ledgerPick, libraryImpactView, libraryOptions, lookOf, looksRightBlock, namesLine, pickNames, pickOf, proposeNames, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
+import { decidedParts, keepLabel, KEEP_TODAY, keptKeys, leadBuildLine, leadLibraryLine, ledgerLabel, ledgerPick, libraryImpactView, libraryOptions, lookOf, looksRightBlock, namesLine, nothingView, pickNames, pickOf, proposeNames, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen. The library has nothing like it yet.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 const compact: MissingPiece = { id: 'statcard-size-compact', kind: 'variant', title: 'StatCard: compact size', summary: 'A compact size for StatCard.', name: 'compact', component: 'StatCard', aspect: 'size', values: [{ category: 'size', property: 'size', value: 'compact' }], where: [], change: { before: 'default', after: 'compact' } };
@@ -102,7 +102,9 @@ describe('the section on the exploration page', () => {
 describe('several ways for one component part (EB1 to EB4)', () => {
   const restyleOf = (id: string, values: MissingPiece['values']): MissingPiece => ({ id, kind: 'variant', title: 'Card: restyle', summary: 'Card restyled from outside the library.', name: 'card', component: 'Card', values, where: [], restyle: { selector: '.x' } });
   const pad = (v: string, px: string) => ({ category: 'spacing', property: 'padding', value: v, resolved: px });
-  const leoPiece = restyleOf('card-deal', [pad('var(--space-3)', '12px')]);
+  // Leo's way is a value the library does not have (8 px): his own page has a decision. A way the library already has
+  // (Compact, 12 px) asks nothing on its own page (gate leftover a, the last test of this block).
+  const leoPiece = restyleOf('card-deal', [pad('var(--space-2)', '8px')]);
   const leoBody = bodyWith([leoPiece]);
   const src = (n: number, name: string, designer: string, piece: MissingPiece) => ({ key: explorationKeyOf('acme/crm-design', n), name, product: 'Acme CRM', designer, record: { checkedAt: 'x', pieces: [piece], links: [] } });
   const leo = src(1, 'Deal pipeline cards', 'Leo', leoPiece);
@@ -151,8 +153,8 @@ describe('several ways for one component part (EB1 to EB4)', () => {
 
   it("compares every way to the library's own Card padding (20 px), whatever the check recorded as before", () => {
     // The check of the product screen recorded 16 before; the baseline is still the library's 20 (lib/library-baseline).
-    const before = restyleOf('card-deal', [{ ...pad('var(--space-3)', '12px') }]);
-    const recorded = { ...before, change: { before: '16px', after: '12px' } } as MissingPiece;
+    const before = restyleOf('card-deal', [{ ...pad('var(--space-2)', '8px') }]);
+    const recorded = { ...before, change: { before: '16px', after: '8px' } } as MissingPiece;
     const c = conflictOf(libraryImpactView({ ...base, body: bodyWith([recorded]), lead: 'you', canDecide: true, conflicts: two, others: [sofia] }));
     expect(c.ledger.have.find((r) => r.isDefault)?.value).toBe('20 px');
   });
@@ -212,7 +214,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(c.ways[2]!.look).toEqual({ padding: 20, gap: 10, radius: null, borderless: true, filled: true, shadowless: false });
     // Each plate draws its way's own values: tighter and roomier differ from each other, room and spacing alike.
     expect(c.ways.map((w) => [w.look.padding, w.look.gap])).toEqual([
-      [12, 6],
+      [8, 4],
       [24, 12],
       [20, 10],
     ]);
@@ -265,12 +267,14 @@ describe('several ways for one component part (EB1 to EB4)', () => {
   });
 
   it("reads Card padding like Card's own options (board v3): the new value to add, the default and Compact already there", () => {
-    const v = libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: two, others: [sofia] });
+    // Sofia's page: her Comfortable is new; Leo's Compact sits with the options the library already has.
+    const leoCompact = src(1, 'Deal pipeline cards', 'Leo', restyleOf('card-deal', [pad('var(--space-3)', '12px')]));
+    const v = libraryImpactView({ body: bodyWith([sofia.record.pieces[0]!]), designer: 'Sofia', screen: 'Contact page summary', product: 'Acme CRM', approved: false, now: base.now, lead: 'you', canDecide: true, conflicts: libraryConflicts(sofia, [leoCompact]), others: [leoCompact] });
     if (v.state !== 'rows') throw new Error(v.state);
     expect(v.count).toBe('1 new piece');
     expect(v.tail).toBe('1 waits for you');
     expect(v.rows[0]!.tag).toEqual({ label: 'New option', tone: 'info' });
-    expect(v.rows[0]!.origin).toEqual({ people: ['Leo', 'Sofia'], products: ['Acme CRM'] });
+    expect(v.rows[0]!.origin).toEqual({ people: ['Sofia', 'Leo'], products: ['Acme CRM'] });
     const L = conflictOf(v).ledger;
     expect(L.property).toBe('Padding');
     expect(L.fresh.map((r) => [r.name, r.value, r.delta, r.line])).toEqual([['Comfortable', '24 px', '+4 px', "Sofia's way ⁠· Contact page summary ⁠· Acme CRM"]]);
@@ -278,6 +282,26 @@ describe('several ways for one component part (EB1 to EB4)', () => {
       ['Default', '20 px', null, true, 'Every screen gets it today. It stays the default.'],
       ['Compact', '12 px', '−8 px', false, "Leo's screen can use Compact as it is ⁠· Deal pipeline cards ⁠· Acme CRM"],
     ]);
+  });
+
+  it('shows no library decision on a screen that uses a library piece as it is, though another screen asks a new option for it (gate leftover a)', () => {
+    // Leo's page: his Compact is already in the library; Sofia's Comfortable is decided on her page and in Library review.
+    const leoCompact = src(1, 'Deal pipeline cards', 'Leo', restyleOf('card-deal', [pad('var(--space-3)', '12px')]));
+    const v = libraryImpactView({ ...base, body: bodyWith([leoCompact.record.pieces[0]!]), lead: 'Dana', canDecide: true, conflicts: libraryConflicts(leoCompact, [sofia]), others: [sofia] });
+    expect(v.state).toBe('nothing');
+    if (v.state !== 'nothing') return;
+    expect(v.line).toBe("Leo's screen uses Card padding: Compact (12 px), as it is in the library.");
+    expect(JSON.stringify(v)).not.toMatch(/Add to the library|Comfortable/);
+  });
+
+  it('says it once in one shape: the options used as they are make the line, the components the chips under it', () => {
+    const v = nothingView('Leo', ['Card padding: Compact (12 px)'], ['Number field', 'Badge']);
+    expect(v.line).toBe("Leo's screen uses Card padding: Compact (12 px), as it is in the library.");
+    expect(v.uses).toEqual(['Number field', 'Badge']);
+    // Components only: they make the line, no chips repeating them.
+    const parts = nothingView('Ann', [], ['Badge', 'Card']);
+    expect(parts.line).toBe("Ann's screen uses Badge and Card, as they are in the library.");
+    expect(parts.uses).toEqual([]);
   });
 
   it('continues the option series for new values and says the outcome on the button', () => {

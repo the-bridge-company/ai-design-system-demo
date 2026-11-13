@@ -8,7 +8,7 @@ import { PRODUCT_STATES } from './product-page';
 import { DECIDED_LABEL } from './library-review';
 import { decisionTag } from './lead-decisions';
 import { BUILD_WORDS } from './build-check-view';
-import { waitTone } from './status-tag';
+import { REMINDED_AFTER_DAYS, waitTone } from './status-tag';
 
 const LADDER_WORDS = new Set([...LADDER.map((s) => STEP_LABEL[s]), STEP_LABEL['not-doing'], STEP_LABEL.archived]);
 
@@ -51,15 +51,20 @@ describe('one status ladder on every surface', () => {
 });
 
 describe('warning only when late', () => {
-  it('a wait is grey until it passes LATE_DAYS, then amber', () => {
+  it('a review wait is grey for days 0 to 2 and amber from the reminder (day 3); a build wait past LATE_DAYS', () => {
     expect(LATE_DAYS).toBe(7);
-    for (const s of ['in-review', 'ready-to-build', 'checking'] as const) {
+    expect(REMINDED_AFTER_DAYS).toBe(3);
+    expect(stepTone('in-review')).toBe('neutral');
+    expect(stepTone('in-review', 2)).toBe('neutral');
+    expect(stepTone('in-review', 3)).toBe('warning');
+    for (const s of ['ready-to-build', 'checking'] as const) {
       expect(stepTone(s)).toBe('neutral');
       expect(stepTone(s, 4)).toBe('neutral');
       expect(stepTone(s, 8)).toBe('warning');
     }
     expect(waitTone(2)).toBe('neutral');
-    expect(waitTone(9)).toBe('warning');
+    expect(waitTone(3)).toBe('warning');
+    expect(waitTone(22)).toBe('warning');
     expect(waitTone(null)).toBe('neutral');
   });
 

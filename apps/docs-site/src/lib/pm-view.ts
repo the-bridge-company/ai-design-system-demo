@@ -27,12 +27,14 @@ export const PM_WORDS = {
   title: (pm: string) => `What do you think, ${pm}?`,
   intro: (designer: string) => `${designer} shares this with you before it goes to review.`,
   note: 'Your note',
-  noteHint: 'Needed when you ask for changes.',
-  noteNeeded: 'Say what to change.',
+  // The hint says what the note is for; once Needs changes is pressed without one, the field asks for it (C12).
+  noteHint: 'Say what to change.',
+  noteNeeded: 'Write what to change first.',
   looksGood: 'Looks right',
   changes: 'Needs changes',
   heading: 'Product manager',
-  agreedInCall: (pm: string) => `${pm} agreed in a call`,
+  // A verb on the designer's button (C16): an action, not a past fact.
+  agreedInCall: (pm: string) => `Mark that ${pm} agreed`,
   sentOk: 'Sent: it looks right to you.',
   sentChanges: 'Sent to the designer, with your note.',
   sentCall: (pm: string) => `Noted. ${pm} gets a line and can correct it.`,

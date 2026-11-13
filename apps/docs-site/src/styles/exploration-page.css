@@ -80,12 +80,19 @@
   display: flex;
 }
 
+/* The owner's face on the first line of the meta (C16): when the line wraps (a phone), the avatar stays centred on
+   the first text line, never on the middle of the two. The 20px avatar is centred in the 24px line box. */
 .xp-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   font-size: var(--typography-body-size);
   line-height: var(--typography-body-line-height);
+}
+
+.xp-meta > :first-child {
+  flex: none;
+  margin-block-start: calc((var(--typography-body-line-height) - var(--size-5)) / 2);
 }
 
 /* Archived: one quiet line under the title row, with Unarchive beside it. */
@@ -1406,28 +1413,28 @@
   text-align: center;
 }
 
-/* Your turn: the one Harbor zone. Eyebrow and question tight together as one heading (4px apart), the drawing at the
-   top of their row; everything else on one left edge; an open question as an avatar quote with a thin rule; the
+/* Your turn: the one Harbor zone. Eyebrow and question tight together as one heading (4px apart), the drawing as a
+   strip above them (C2); everything else on one left edge; an open question as an avatar quote with a thin rule; the
    buttons last, on one row. The zone lives in the side column (about 330px of text), so the question takes the card
-   heading size (h3, 21px) in the display face: one or two lines, where h2 (30px) beside a 92px drawing wrapped to
-   three ("Dana decides / what the / library keeps"). */
+   heading size (h3, 21px) in the display face, over the full width: one or two lines. */
 .xp-turn {
   display: grid;
   row-gap: var(--space-4);
   padding: var(--space-6);
 }
 
+/* The drawing as a strip above the heading, on the card's text edge (C2), the heading under it over the full width. */
 .xp-turn-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
 }
 
 .xp-turn-head-text {
   display: grid;
-  flex: 1;
   gap: var(--space-1);
   min-width: 0;
+  justify-self: stretch;
 }
 
 .xp-turn-head-text > * {
@@ -1450,12 +1457,11 @@
   text-wrap: pretty;
 }
 
-/* The drawing at 80px, its top on the eyebrow's top: wide enough to read, narrow enough to leave the question about
-   250px (two lines at most). */
+/* The drawing 80px tall, cropped to its scene (TurnZone TURN_ART_CROP), its width from the scene, never wider than
+   the card's text. */
 .xp-turn-art {
-  flex: none;
-  width: var(--size-20);
-  height: auto;
+  max-width: 100%;
+  height: var(--size-20);
 }
 
 .xp-turn-body {
@@ -1479,6 +1485,12 @@
   gap: var(--space-2);
 }
 
+/* The actions fill the card's text column (Fitts; batch C, C4): a lone one the whole bar, two share it, and when a
+   long label wraps them onto two rows each fills its row, never a ragged pair floating at the end. */
+.xp-turn .xp-turn-acts > * {
+  flex: 1 1 auto;
+}
+
 /* The turn block's steps: the DS Stepper (vertical "What happens next", horizontal 1 of 2 for the lead). */
 .xp-turn-steps {
   margin-block-end: var(--space-4);
@@ -1492,6 +1504,7 @@
 }
 
 /* Under a primary that leads to the next step: what comes after it, quiet, at the row's end. */
+.xp-turn .xp-turn-acts > .xp-turn-helper,
 .xp-turn-helper {
   flex: 1 1 100%;
   margin: 0;

@@ -6,11 +6,11 @@
 // Rules and words: lib/exploration-layout.ts. Styles: styles/exploration-page.css (xp-st-*, xp-turn*, xp-tl*, xp-code*).
 import { useState, type ReactNode } from 'react';
 import { Check, Code2, ExternalLink, GitBranch } from 'lucide-react';
-import { Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel, Tag } from '@bridge-ds/react';
+import { Avatar, Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel, Tag } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { IllustrationName } from '../../../brand/illustrations';
-import { CODE_WORDS, earlierLine, foldTimeline, SCREEN_WORDS, type TimelineItem, type TurnStep } from '../../../lib/exploration-layout';
+import { CODE_WORDS, earlierLine, foldTimeline, isTeamActor, SCREEN_WORDS, type TimelineItem, type TurnStep } from '../../../lib/exploration-layout';
 import type { PageFace } from '../../../lib/exploration-page';
 
 const faceProps = (p: PageFace) => ({ login: p.login, name: p.name, agent: p.agent, avatar: p.avatar });
@@ -116,21 +116,41 @@ export function ScreenStage({ name, nameHidden = false, about = null, sub, singl
 // The Your turn zone
 
 /**
- * The one Harbor zone, only when the viewer acts now: eyebrow and the question as title, tight together as one heading,
- * with the Field Guide drawing at the top of their row (its top on the eyebrow's), the context, an open question as an
- * avatar quote, then the buttons last on one row.
+ * Each Field Guide drawing cropped to its ink (the drawing's bounding box with half its stroke, measured with getBBox
+ * in Chrome), so at the strip's 80px every drawing's ink is 80px tall and starts exactly on the card's text edge: the
+ * wide scene and the square drawings carry the same weight. "x y w h" in the drawing's own units
+ * (brand/illustrations.ts, read only).
+ */
+const TURN_ART_CROP: Partial<Record<IllustrationName, string>> = {
+  review: '8.7 100.62 219.2 80.68',
+  guide: '12.8 12.9 92.4 86.6',
+  paint: '6.9 18.7 106.3 88.5',
+  fix: '8.9 8.9 102.2 92.53',
+  components: '9.2 50.7 101.6 54.1',
+};
+
+/** The strip's height in px (var(--size-20)): every drawing is drawn at this height, its width from its crop. */
+const TURN_ART_H = 80;
+
+/**
+ * The one Harbor zone, only when the viewer acts now: the Field Guide drawing as a strip on the card's text edge above
+ * the eyebrow (batch C, C2: composed with the card, never squeezed in a corner beside the title), then the eyebrow and
+ * the question as title, tight together as one heading over the full width, the context, an open question as an
+ * avatar quote, then the buttons last on one row (a lone one fills it).
  */
 export function TurnZone({ eyebrow, title, drawing, children, quote, actions, id = 'xp-turn-h' }: { eyebrow: string; title: string; drawing: IllustrationName; children?: ReactNode; quote?: ReactNode; actions?: ReactNode; id?: string }) {
+  const crop = TURN_ART_CROP[drawing];
+  const [, , cw, ch] = (crop ?? '0 0 1 1').split(' ').map(Number) as [number, number, number, number];
   return (
     <section className="xp-turn zone" aria-labelledby={id}>
       <div className="xp-turn-head">
+        <Drawing name={drawing} crop={crop} width={crop ? Math.round((TURN_ART_H * cw) / ch) : TURN_ART_H} className="xp-turn-art" />
         <div className="xp-turn-head-text">
           <p className="xp-turn-eyebrow">{eyebrow}</p>
           <h2 className="xp-turn-q" id={id}>
             {title}
           </h2>
         </div>
-        <Drawing name={drawing} width={80} className="xp-turn-art" />
       </div>
       {children && <div className="xp-turn-body">{children}</div>}
       {quote && <div className="xp-turn-quote">{quote}</div>}
@@ -216,6 +236,9 @@ export function Timeline({ items, earlierBy, composer, unread = false }: { items
                 <span className="xp-tl-dot" aria-hidden="true">
                   <Icon icon={Check} size="xs" />
                 </span>
+              ) : isTeamActor(r.who) ? (
+                // A team, not a person (a commit signed "Acme design team"): its initials, never a drawn face (C14).
+                <Avatar name={r.who.name} size="xs" decorative />
               ) : (
                 <Who p={r.who} size="xs" />
               )}

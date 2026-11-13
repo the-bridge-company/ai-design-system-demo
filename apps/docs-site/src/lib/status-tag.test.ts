@@ -28,8 +28,10 @@ describe('one meaning per tone', () => {
     expect(MEANING_TONE).toEqual({ 'in-progress': 'info', waiting: 'neutral', late: 'warning', done: 'success', blocked: 'danger', over: 'neutral' });
     expect(toneOf('waiting')).toBe('neutral');
     expect(toneOf('late')).toBe('warning');
-    expect(waitTone(7)).toBe('neutral');
-    expect(waitTone(8)).toBe('warning');
+    // One rule with the reminder (REMINDED_AFTER_DAYS): grey days 0 to 2, amber from day 3, no third tone.
+    expect(waitTone(2)).toBe('neutral');
+    expect(waitTone(3)).toBe('warning');
+    expect(waitTone(22)).toBe('warning');
   });
   it('blue is work moving, grey a calm wait or over, green is done', () => {
     expect(LIFECYCLE_TONE.exploring).toBe(toneOf('in-progress'));

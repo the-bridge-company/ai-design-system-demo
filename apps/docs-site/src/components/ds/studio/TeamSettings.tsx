@@ -16,7 +16,7 @@
 // Repo strings reach the page as React text only.
 import { Card, CardBody } from '@bridge-ds/react';
 import { overrideHolders, overrideReasonMin, parseOwnerEntry, type Owners } from '@bridge-ds/core';
-import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
+import { TeamLoadError, TeamPageSkeleton, useTeamData } from './TeamState';
 import { AdminOnlyNote, Code, DevFold } from './SettingsParts';
 import { useTeamPeople } from './members-state';
 import { roleRows, VISUAL_MODE_HELP, VISUAL_MODE_LABEL } from '../../../lib/roles-view';
@@ -80,7 +80,7 @@ const entries = (xs: string[]) => (xs.length ? xs.map((x) => (x.includes('/') ? 
 export default function TeamSettings() {
   const { load, retry } = useTeamData();
   const people = useTeamPeople();
-  if (load.status === 'loading') return <TeamLoadProgress label="Reading the settings of this design system" />;
+  if (load.status === 'loading') return <TeamPageSkeleton label="Reading the settings of this design system" rows={5} />;
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   const { model, owner, repo } = load.data;
   const site = model.site;

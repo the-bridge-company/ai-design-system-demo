@@ -89,7 +89,7 @@ export const reviewStepsOf = (body: string | null | undefined, x: LineContext, w
  * Both reviews as the one current step of the DS Stepper, which marks a single step current (a second current step
  * would read "to come"). The step shows one line per review ("Dana reviews the design", "Dana decides on Timeline for
  * the library"), and its text joins them for anything that reads one sentence ("Dana reviews the design and decides on
- * Timeline for the library", "Dana reviews the design, the library owners decide on Timeline"). One review stays as it
+ * Timeline", "Dana reviews the design, the library owners decide on Timeline"). One review stays as it
  * is: one line.
  */
 export function asOneStep(steps: readonly ReviewStep[]): ReviewStep[] {
@@ -97,7 +97,9 @@ export function asOneStep(steps: readonly ReviewStep[]): ReviewStep[] {
   const [a, b] = steps as [ReviewStep, ReviewStep];
   const subject = (t: string) => (/^(The library owners|The [\w ]+design reviewers|You|\S+)\s/.exec(t)?.[1] ?? '');
   const sa = subject(a.text);
-  const text = sa && sa === subject(b.text) ? `${a.text} and ${b.text.slice(sa.length + 1)}` : `${a.text}, ${b.text.replace(/^The /, 'the ')}`;
+  // One person holding both hats: one line naming them once, "Dana reviews the design and decides on Card padding and
+  // Timeline" (owner, batch C, C3); the library is the step's context, said in the card's title and the library block.
+  const text = sa && sa === subject(b.text) ? `${a.text} and ${b.text.slice(sa.length + 1).replace(/ for the library$/, '')}` : `${a.text}, ${b.text.replace(/^The /, 'the ')}`;
   return [{ text, when: a.when, current: true, lines: [a.text, b.text] }];
 }
 

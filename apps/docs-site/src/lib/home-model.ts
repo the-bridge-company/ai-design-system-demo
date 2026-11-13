@@ -192,8 +192,8 @@ export function pillSaidOnce<P extends { label: string }>(line: string | null | 
 }
 
 /**
- * The tag of a wait: "Waiting 4 days", grey, amber only once late (lib/status-tag waitTone: more than a week, core
- * LATE_DAYS). Every Needs you row's wait wears this one tag.
+ * The tag of a wait: "Waiting 4 days", grey, amber from the reminder's day (lib/status-tag waitTone,
+ * REMINDED_AFTER_DAYS). Every Needs you row's wait wears this one tag.
  */
 export const waitPill = (iso: string, now: number, label: (iso: string, now: number) => string = waitingLabel): { label: string; tone: 'neutral' | 'warning' } => ({
   label: label(iso, now),

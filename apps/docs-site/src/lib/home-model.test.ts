@@ -145,7 +145,7 @@ describe('rows', () => {
   it('a review asked of the viewer on an exploration: "Review <name>", opening the exploration page, one status tag', () => {
     const { title: _title, task: _task, ...base } = facts({});
     const r = explorationReviewNeed({ ...base, number: 12, name: 'Denser tables', href: '/studio/explorations/?exploration=12' }, NOW);
-    expect(r).toMatchObject({ key: 'exploration-review-12', kind: 'review', title: 'Review Denser tables', href: '/studio/explorations/?exploration=12', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'neutral' } });
+    expect(r).toMatchObject({ key: 'exploration-review-12', kind: 'review', title: 'Review Denser tables', href: '/studio/explorations/?exploration=12', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' } });
     expect(explorationReviewNeed({ ...base, number: 12, product: 'shop', name: 'Checkout', href: '/studio/explorations/?exploration=12&product=shop' }, NOW).key).toBe('exploration-review-shop#12');
     // More than 3 waiting: the rows fold into "N more" and Review all leads (splitNeeds).
     const many = [1, 2, 3, 4].map((n) => explorationReviewNeed({ ...base, number: n, name: `X${n}`, href: `?exploration=${n}` }, NOW));
@@ -155,7 +155,7 @@ describe('rows', () => {
 
   it('a review: who asks, how long it waits', () => {
     const r = changeNeed(facts({}), NOW);
-    expect(r).toMatchObject({ kind: 'review', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'neutral' }, href: '/studio/explorations/?pr=1' });
+    expect(r).toMatchObject({ kind: 'review', line: 'Ann asks for your review', waitsOnYou: true, pill: { label: 'Waiting 4 days', tone: 'warning' }, href: '/studio/explorations/?pr=1' });
     // Amber only once late (core LATE_DAYS): never because it waits at all.
     expect(changeNeed(facts({ since: daysAgo(8) }), NOW).pill).toEqual({ label: 'Waiting 8 days', tone: 'warning' });
     expect(changeNeed(facts({ task: 'ship' }), NOW).line).toBe('Ann waits for you to add it to the library');

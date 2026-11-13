@@ -4,7 +4,7 @@
 // announced once per step in a polite live region (never per file).
 // Presentational only: TeamState.tsx TeamLoadProgress feeds it a team page's load, StorybookComponents the quick start.
 import { CircleCheck, CircleDot } from 'lucide-react';
-import { Icon, Progress, VisuallyHidden } from '@bridge-ds/react';
+import { Icon, Progress, Skeleton, VisuallyHidden } from '@bridge-ds/react';
 import '../../../styles/load-progress.css';
 import type { LoadProgressView } from '../../../lib/load-progress';
 
@@ -12,6 +12,17 @@ export function LoadProgress({ view, label }: { view: LoadProgressView; label: s
   return (
     <section className="lp" aria-label={label} aria-busy={!view.done} data-done={view.done ? '' : undefined}>
       <VisuallyHidden aria-live="polite">{view.status}</VisuallyHidden>
+      {view.steps.length === 0 ? (
+        // Before the first step: the shape of one step (a dot, a label line, the bar), no words (A5). The step's own
+        // height, so the first real step takes its place without a jump.
+        <div className="lp-skeleton" aria-hidden="true">
+          <Skeleton variant="circle" width="var(--size-4)" height="var(--size-4)" />
+          <span className="lp-body">
+            <Skeleton width="22ch" />
+            <Skeleton variant="rect" height="var(--size-1)" />
+          </span>
+        </div>
+      ) : (
       <ol className="lp-steps">
         {view.steps.map((s) => (
           <li key={s.label} className="lp-step" data-state={s.state} aria-current={s.state === 'current' ? 'step' : undefined}>
@@ -36,6 +47,7 @@ export function LoadProgress({ view, label }: { view: LoadProgressView; label: s
           </li>
         ))}
       </ol>
+      )}
     </section>
   );
 }

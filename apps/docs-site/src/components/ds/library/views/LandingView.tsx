@@ -9,14 +9,14 @@ import { Drawing } from '../../studio/Drawing';
 import type { IllustrationName } from '../../../../brand/illustrations';
 import { libraryHome } from '../../../../lib/library/home';
 import { loadComponents } from '../../../../lib/library/components';
-import { tokenRows } from '../../../../lib/library/tokens';
 import { pageHref, systemName, type LibraryData } from '../library-data';
 import { EXPORT_ZIP } from '../../../../lib/library/confluence/render';
 
 export default function LandingView({ data }: { data: LibraryData }) {
   const { model, extras } = data;
   // Counts on the topic cards come from the same data as the pages they open.
-  const semantic = tokenRows(model).all.filter((t) => t.tier === 'semantic').length;
+  // One source with the lead and Quality (lib/library/home semantic, D12).
+  const semantic = libraryHome(model).semantic;
   const componentCount = model.components ? loadComponents(model).length : 0;
   const topics: { art: IllustrationName; title: string; text: string; route: string }[] = [
     { art: 'foundations', title: 'Foundations', text: 'Color, type, spacing and the accessibility rules underneath.', route: 'foundations/color/' },

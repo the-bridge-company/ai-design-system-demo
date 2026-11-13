@@ -58,13 +58,8 @@
   flex: none;
 }
 
-/* What to do here: inviting collaborators is the main action, in the link color; creating another team is rarer and
+/* What to do here: Invite collaborators reads like every other item (ink, A11); creating another team is rarer and
    reads quieter. */
-.tc-menu .tc-invite {
-  color: var(--color-text-link);
-  font-weight: var(--font-weight-medium);
-}
-
 .tc-menu .tc-create {
   color: var(--color-text-muted);
 }

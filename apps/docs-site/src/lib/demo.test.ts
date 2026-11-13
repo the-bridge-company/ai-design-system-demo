@@ -75,7 +75,7 @@ describe('demoActionLine: what an action does on a real team, in the sample-team
 describe('teamDisplayName', () => {
   it('a team without a name goes by its repository name in words, never owner/repo', () => {
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo')).toBe('Bridge DS');
-    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Bridge demo ds');
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Acme Design');
     expect(teamDisplayName('acme/design-system')).toBe('Design system');
   });
 

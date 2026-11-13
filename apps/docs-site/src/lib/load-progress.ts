@@ -65,9 +65,9 @@ const SNAPSHOT = { current: 'Using the saved snapshot', done: 'Used the saved sn
 /** The team load as the progress view shows it. */
 export function teamProgressView(p: TeamProgress): LoadProgressView {
   const steps: ProgressStepView[] = [];
-  if (p.step === 'head') {
-    return { status: FIND.current, detail: null, value: null, max: 1, valueText: null, steps: [{ label: FIND.current, state: 'current' }], done: false };
-  }
+  // Finding the design system: no steps yet, the view is a text-free skeleton (A5); the status is said once, to screen
+  // readers only, never painted next to a step that repeats it.
+  if (p.step === 'head') return { status: FIND.current, detail: null, value: null, max: 1, valueText: null, steps: [], done: false };
   steps.push({ label: FIND.done, state: 'done' });
   const total = p.files?.filesTotal ?? 0;
   const readLabel = (done: boolean) => (total ? `${done ? 'Read' : 'Reading'} ${plural(total, 'file')}` : done ? 'Read your files' : 'Reading your files');

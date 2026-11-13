@@ -144,5 +144,8 @@ export const countsInBadge = (t: WaitTask | null | undefined): boolean => isRevi
  */
 export const reviewBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} ${n === 1 ? 'piece waits' : 'pieces wait'} for your decision` : '');
 
+/** What a screen reader hears after "Being built" for its nav badge: ", 1 build request to pick up", or nothing at 0. */
+export const buildingBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} build ${n === 1 ? 'request' : 'requests'} to pick up` : '');
+
 /** What a screen reader hears after "Explorations" for its nav badge: ", 2 waiting on you", or nothing at 0. */
 export const explorationsBadgeLabel = (n: number | null | undefined): string => (n && n > 0 ? `, ${n} waiting on you` : '');

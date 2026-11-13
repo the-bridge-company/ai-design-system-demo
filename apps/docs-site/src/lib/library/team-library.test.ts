@@ -30,7 +30,7 @@ describe('home', () => {
     expect(home.components).toBe(repoModel.components!.list.length);
     expect(home.tokens).toBe(repoModel.tokens.rows.all.length);
     expect(home.documented).toBe(repoModel.components!.list.filter((c) => c.docs).length);
-    expect(home.lead).toMatch(/^\d+ components and \d+ tokens, in light and dark\.$/);
+    expect(home.lead).toBe(`${home.components} components and ${repoModel.tokens.rows.semantic.length} semantic tokens, in light and dark.`);
     expect(libraryHome({ ...repoModel, components: null, tokens: { ...repoModel.tokens, rows: { ...repoModel.tokens.rows, all: [], semantic: [] } } }).lead).toMatch(/^No tokens or components/);
   });
 });

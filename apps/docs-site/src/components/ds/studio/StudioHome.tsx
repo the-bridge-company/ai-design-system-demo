@@ -420,7 +420,12 @@ function usePickUp(on: boolean): number | null {
     if (!on) return;
     let live = true;
     loadBuildData()
-      .then((d) => live && setN(waitingToBePickedUp(openBuildRequests(pageRows<BuildRequestView>(d, Date.now())))))
+      .then((d) => {
+        const n = waitingToBePickedUp(openBuildRequests(pageRows<BuildRequestView>(d, Date.now())));
+        // The Being built badge says this number on every page (scripts/waiting-counts, A6).
+        void import('../../../scripts/waiting-counts').then((m) => m.rememberBuildWaiting(n)).catch(() => undefined);
+        if (live) setN(n);
+      })
       .catch(() => {});
     return () => {
       live = false;

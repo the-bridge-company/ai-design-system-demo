@@ -54,6 +54,8 @@ export const teamDisplayName = (repo: string, config?: { name?: unknown } | null
   if (own) return own;
   if (isTeamKey(repo)) return 'Your team';
   if (isDemoRepo(repo) && !isSampleTeam(repo)) return OWN_TEAM;
+  // The sample team's name is a fixture: known before its settings are read, so it never paints "Bridge demo ds" first.
+  if (isSampleTeam(repo)) return SAMPLE_TEAM;
   return humanizeRepo(repo);
 };
 

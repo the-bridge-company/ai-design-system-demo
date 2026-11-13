@@ -35,6 +35,33 @@ export function rememberedWaitingExplorations(): WaitingExploration[] | null {
   }
 }
 
+const BUILD_KEY = 'bridge.waiting.building';
+/** Told on `document` when the remembered build count changes: the Being built badge follows. */
+export const BUILDING_EVENT = 'bridge:waiting-building';
+
+/**
+ * Remembers the build requests nobody picked up yet that a developer's Home counted (lib/waiting-counts
+ * waitingToBePickedUp), per team and viewer: the Being built badge says the same number on every page (A6).
+ */
+export function rememberBuildWaiting(n: number): void {
+  try {
+    localStorage.setItem(BUILD_KEY, JSON.stringify({ team: team(), viewer: viewer(), n, at: new Date().toISOString() }));
+  } catch {
+    /* private mode: the badge waits for the next Home */
+  }
+  if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent(BUILDING_EVENT, { detail: n }));
+}
+
+/** The last build count this browser saw for this team and viewer, or null. */
+export function rememberedBuildWaiting(): number | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(BUILD_KEY) || 'null') as { team?: unknown; viewer?: unknown; n?: unknown } | null;
+    return v && v.team === team() && v.viewer === viewer() && typeof v.n === 'number' ? v.n : null;
+  } catch {
+    return null;
+  }
+}
+
 let reading: Promise<number | null> | null = null;
 
 /** Reads again what waits on the viewer, after an answer that changed it (the sample team's Looks right). */

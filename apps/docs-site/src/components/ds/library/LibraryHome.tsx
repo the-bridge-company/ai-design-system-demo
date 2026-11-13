@@ -14,7 +14,7 @@ import { SNAPSHOT_TEMPLATE_URL } from '../../../lib/team-load';
 import { loadTeamLlms, type TeamData } from '../../../scripts/team-data';
 import { libraryFileUrl } from '../../../scripts/library-access-api';
 import '../../../styles/home.css';
-import { teamDisplayName } from '../../../lib/demo';
+import { teamNameFor } from '../../../lib/recent-teams';
 
 /** Whether the team published an llms.txt (with its snapshot), once known. */
 function useHasLlms(): boolean | null {
@@ -34,9 +34,10 @@ function Agents({ data }: { data: TeamData }) {
   if (has === null) return null;
   return (
     <section className="ltm-agents fg-card" aria-labelledby="ltm-agents-title">
-      <Icon icon={Bot} size="md" className="ltm-agents-icon" />
       <div className="ltm-agents-text">
+        {/* The robot sits in its title's line box: centered on the first line, whatever the text wraps to (D14). */}
         <h2 id="ltm-agents-title" className="ltm-agents-title">
+          <Icon icon={Bot} size="md" className="ltm-agents-icon" />
           For AI agents
         </h2>
         <p className="ltm-muted">
@@ -81,7 +82,7 @@ export default function LibraryHome() {
             <div className="hm-hero-copy">
               <p className="ltm-eyebrow">Design system library</p>
               <h1 id="hero-title" className="t-display">
-                {team ? `The ${teamDisplayName(`${team.owner}/${team.repo}`)} design system` : 'Design system'}
+                {team ? `The ${teamNameFor(`${team.owner}/${team.repo}`, null)} design system` : 'Design system'}
               </h1>
               <p className="t-body">Tokens, components and how to use them, published from the code.</p>
             </div>

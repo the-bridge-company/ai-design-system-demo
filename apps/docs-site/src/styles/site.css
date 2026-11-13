@@ -9,6 +9,8 @@
 }
 
 html {
+  /* The scroll lock of a modal removes the scrollbar: its gutter stays, so the header never shifts (A9). */
+  scrollbar-gutter: stable;
   background-color: var(--color-bg-default);
   color: var(--color-text-default);
   font-family: var(--typography-body-family);
@@ -675,6 +677,26 @@ main > h1:first-child {
   margin-top: 0;
 }
 
+/* The sample team's banner strip (Layout.astro [data-demo-strip], painted by scripts/demo-gate.ts after load): from
+   first paint it holds one folded banner line (the Banner's own min height and its hairlines), so nothing under it
+   moves when the banner comes (A7). scripts/shell.ts lets go of it (data-settled) if no banner came. */
+:root[data-sample-team] .demo-strip[hidden]:not([data-settled]) {
+  display: block;
+  min-height: calc(var(--control-height-md) + var(--space-4));
+  border-block: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+}
+
+/* A team's Library (Layout.astro, library shells): its content arrives after first paint, so the content box holds
+   one screen under the header (less main's top padding) and the footer starts below the fold: nothing in view moves. */
+.page-fill {
+  min-height: calc(100svh - var(--layout-header-height) - var(--space-8));
+}
+
+.page-fill > h1:first-child {
+  margin-top: 0;
+}
+
 /* Page end: one quiet meta line (updated date; View source for maintainers, a popover of the source files), then
    the site footer on the content column: wordmark and license on the start side, three labelled links on the end. */
 .page-end {
@@ -1109,6 +1131,14 @@ tr:target {
 
 .palette-box {
   display: grid;
+}
+
+/* The palette keeps one top edge while results come and go (A8): anchored under the header, never re-centered as the
+   list grows or shrinks. */
+.palette-dialog {
+  align-self: flex-start;
+  margin-block-start: min(10vh, var(--space-20));
+  max-height: calc(100% - min(10vh, var(--space-20)));
 }
 
 .palette-results [role="listbox"] {

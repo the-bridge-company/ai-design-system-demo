@@ -1011,14 +1011,13 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
  * the library) and its kind. A state (a conflict's "2 ways", a result) sits in State; a waiting row shows none there,
  * its chapter already says it waits. A column shows only when a row fills it. Checkboxes and the row action (a quiet
  * Decide) show on row hover or keyboard focus, and stay once something is selected; always on touch screens.
- * `bare`: one piece's row alone (the Map's single-piece focus), no chapter, no rail, no column header.
+ * The Map draws this same List under it, narrowed to the box picked (components/ds/studio/LibraryMap).
  */
-function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected, onSelect, onAsk, onOpen, reach, measure, onReach, mark, readOnly = false, bare = false }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; decided: boolean; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void; onOpen: (p: ReviewPiece) => void; reach: (p: ReviewPiece) => Reach; measure: (p: ReviewPiece) => Measured; onReach: (p: ReviewPiece) => void; mark: MarkOf; readOnly?: boolean; bare?: boolean }) {
+function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected, onSelect, onAsk, onOpen, reach, measure, onReach, mark }: { groups: ReturnType<typeof joinSmallGroups>; thumbs: Map<string, ThumbSpec>; viewer: ReviewData['viewer']; tech: string | null; secondLead: string | null; decided: boolean; selected: Set<string>; onSelect: (keys: string[], on: boolean) => void; onAsk: (p: ReviewPiece) => void; onOpen: (p: ReviewPiece) => void; reach: (p: ReviewPiece) => Reach; measure: (p: ReviewPiece) => Measured; onReach: (p: ReviewPiece) => void; mark: MarkOf }) {
   const mode = !viewer.reviews ? 'designer' : decided ? 'decided' : 'lead';
-  // The Map's list is read only: no checkbox, no decision (lr-map).
-  const pickableOf = (list: readonly ReviewPiece[]) => (readOnly ? [] : list.filter((p) => batchable(p, viewer)));
+  const pickableOf = (list: readonly ReviewPiece[]) => list.filter((p) => batchable(p, viewer));
   const allRows = groups.flatMap((g) => g.pieces);
-  const boxes = mode === 'lead' && !readOnly && pickableOf(allRows).length > 0;
+  const boxes = mode === 'lead' && pickableOf(allRows).length > 0;
   const pair = (p: ReviewPiece) => {
     const spec = thumbOf(p, thumbs);
     // Something new has no before: the after side alone, never the word "none" (lib/new-piece-preview).
@@ -1080,7 +1079,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     return null;
   };
   const action = (p: ReviewPiece) => {
-    if (readOnly) return null;
     if (canDecide(p, viewer))
       return (
         <Button variant="secondary" size="sm" className="lr-row-act" onClick={() => onOpen(p)} aria-label={`${p.conflict ? 'Compare' : 'Decide'} ${p.title}`}>
@@ -1209,16 +1207,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       </div>
     );
   };
-  if (bare) {
-    const c = colsOf(allRows);
-    return (
-      <div className={`lr-list is-${mode} is-bare${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library piece">
-        <div role="rowgroup" className="lr-bare" style={c.style}>
-          {allRows.map((p) => row(p, c))}
-        </div>
-      </div>
-    );
-  }
   const chapters = chaptersOf(groups);
   // The group rail of a chapter, when a group has a name to show: a chapter whose one group is its one piece ("Button"
   // over "Button: loading text...") left an empty Group cell under its header (Malik, 2026-11-12).
@@ -1228,7 +1216,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   };
   const listCols = colsOf(allRows);
   return (
-    <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
+    <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
         const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
@@ -1717,6 +1705,10 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const empty = emptyLine(decidedAll, v, data.lead);
   const sel = pieces.filter((p) => selected.has(p.key));
   const faces = { sample: onSampleTeam(), you: v.name };
+  // The List, the same rows, selection and decisions in the List view and under the Map (one source of truth).
+  const listView = (g: typeof groups) => (
+    <ListView groups={g} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={openPiece} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} reach={reach} measure={measure} onReach={openReach} mark={mark} />
+  );
 
   return (
     <FaceNames.Provider value={faces}>
@@ -1806,21 +1798,14 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               detail={<Detail key={cur.key} p={cur} thumbs={data.thumbs} viewer={v} lead={data.lead} tech={data.tech} onAct={act} busy={busy} measured={measure(cur)} onReach={openReach} mark={mark} onComment={(p, t) => (demo() ? Promise.resolve(openDemo()) : comment(p, t).then(setNotice, (e: Error) => setNotice(e.message)))} />}
             />
           ) : view === 'map' ? (
-            <MapView
-              pieces={ordered}
-              products={products}
-              viewer={v}
-              list={(subset, single) => (
-                <ListView readOnly bare={single} groups={joinSmallGroups(groupPieces(subset, v))} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={openPiece} onAsk={() => undefined} selected={new Set()} onSelect={() => undefined} reach={reach} measure={measure} onReach={openReach} mark={mark} />
-              )}
-            />
+            <MapView pieces={ordered} products={products} viewer={v} list={(subset) => listView(subset ? joinSmallGroups(groupPieces(subset, v)) : groups)} onNarrow={() => setSelected(new Set())} />
           ) : (
-            <ListView groups={groups} thumbs={data.thumbs} viewer={v} tech={data.tech} secondLead={data.secondLead} decided={filters.status.length === 1 && filters.status[0] === 'decided'} onOpen={openPiece} onAsk={(p) => (demo() ? openDemo() : void ask(p).then(setNotice, (e: Error) => setNotice(e.message)))} selected={selected} onSelect={(keys, on) => setSelected((s) => { const c = new Set(s); for (const k of keys) on ? c.add(k) : c.delete(k); return c; })} reach={reach} measure={measure} onReach={openReach} mark={mark} />
+            listView(groups)
           )}
         </>
       )}
       <DecisionToasts pending={pending} notice={notice} onUndo={undo} onCloseNotice={() => setNotice(null)} />
-      {view === 'list' && sel.length > 0 && <SelectionBar pieces={sel} busy={busy} onKeep={() => batch('keep')} onAdd={() => batch('add')} onClear={() => setSelected(new Set())} />}
+      {(view === 'list' || view === 'map') && sel.length > 0 && <SelectionBar pieces={sel} busy={busy} onKeep={() => batch('keep')} onAdd={() => batch('add')} onClear={() => setSelected(new Set())} />}
     </div>
     </FaceNames.Provider>
   );

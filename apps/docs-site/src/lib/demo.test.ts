@@ -75,7 +75,7 @@ describe('demoActionLine: what an action does on a real team, in the sample-team
 describe('teamDisplayName', () => {
   it('a team without a name goes by its repository name in words, never owner/repo', () => {
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo')).toBe('Bridge DS');
-    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Bridge demo ds');
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Acme Design');
     expect(teamDisplayName('acme/design-system')).toBe('Design system');
   });
 
@@ -98,6 +98,14 @@ describe('teamDisplayName', () => {
     const root = JSON.parse(readFileSync(new URL('../../../../bridge.config.json', import.meta.url), 'utf8')) as { name?: string };
     expect(root.name).toBe(OWN_TEAM);
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo', root)).toBe('Bridge DS');
+  });
+
+  it("names the sample team Acme Design whatever name comes with it (kept, served or read from a snapshot)", () => {
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Acme Design');
+    expect(teamDisplayName('Acme-Design-Demo/Bridge-Demo-DS', { name: 'Bridge demo ds' })).toBe('Acme Design');
+    expect(teamDisplayName('peterbono/bridge-demo-ds', { name: 'bridge-demo-ds' })).toBe('Acme Design');
+    // Any other team keeps its own name first.
+    expect(teamDisplayName('acme/ds', { name: 'Acme Studio' })).toBe('Acme Studio');
   });
 
   it('puts a repository name in words', () => {

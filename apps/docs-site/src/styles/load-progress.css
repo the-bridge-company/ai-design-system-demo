@@ -35,6 +35,14 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* Before the first step (lib/load-progress head): one step's shape, no words. */
+.lp-skeleton {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
 /* The icon sits on the first line of its label. */
 .lp-icon {
   margin-block-start: calc((var(--typography-ui-line-height) * var(--typography-ui-size) - var(--size-4)) / 2);

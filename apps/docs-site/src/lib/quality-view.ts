@@ -67,7 +67,7 @@ export function healthGaps(input: { products?: readonly ProductShare[] | undefin
   const low = (input.products ?? []).filter((p): p is { name: string; pct: number } => p.pct !== null && p.pct < LOW_ADOPTION_PCT).sort((a, b) => a.pct - b.pct);
   for (const p of low) out.push({ kind: 'adoption', text: `${p.name} takes ${Math.round(p.pct)}% of its components from the library` });
   const t = input.tokens?.tokens;
-  if (t && t.total > 0 && t.unused / t.total > UNUSED_TOKENS_SHARE) out.push({ kind: 'tokens', text: `${t.unused} of ${t.total} tokens are not in use` });
+  if (t && t.total > 0 && t.unused / t.total > UNUSED_TOKENS_SHARE) out.push({ kind: 'tokens', text: `${t.unused} of ${t.total} semantic tokens are not in use` });
   return out;
 }
 
@@ -351,12 +351,13 @@ export const pctLabel = (v: number | null) => (v === null ? 'n/a' : `${Math.roun
 
 /**
  * The calm token note, each kind counted against its own total so the number matches the list it opens:
- * "14 of 119 tokens and 86 of 267 primitives are not in use yet", or that every token is in use.
+ * "14 of 119 semantic tokens and 86 of 267 primitives are not in use yet", or that every token is in use. "Semantic
+ * tokens" is the Library's word for the same 119 (D12).
  */
 export function unusedLine(u: TokenUsageCount): string {
   if (!unusedCount(u)) return 'Every token is in use';
   const part = (n: number, total: number, one: string, many: string) => (total ? `${n} of ${total} ${total === 1 ? one : many}` : `${n} ${n === 1 ? one : many}`);
-  const parts = [u.tokens.unused ? part(u.tokens.unused, u.tokens.total, 'token', 'tokens') : '', u.primitives.unused ? part(u.primitives.unused, u.primitives.total, 'primitive', 'primitives') : ''].filter(Boolean);
+  const parts = [u.tokens.unused ? part(u.tokens.unused, u.tokens.total, 'semantic token', 'semantic tokens') : '', u.primitives.unused ? part(u.primitives.unused, u.primitives.total, 'primitive', 'primitives') : ''].filter(Boolean);
   return `${parts.join(' and ')} ${unusedCount(u) === 1 ? 'is' : 'are'} not in use yet`;
 }
 

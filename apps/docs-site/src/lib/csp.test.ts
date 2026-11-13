@@ -1,5 +1,7 @@
 // The Content-Security-Policy in vercel.json is the one in lib/csp.ts, and the report endpoint logs what it should.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CSP_DIRECTIVES, INLINE_SCRIPT_HASHES, cspHeader, inlineScripts } from './csp';
@@ -43,6 +45,25 @@ describe('Content-Security-Policy', () => {
     expect(a).toBe(REDIRECT_SCRIPT_BODY);
     expect(b).toBe(REDIRECT_SCRIPT_BODY);
     expect(INLINE_SCRIPT_HASHES).toContain(`sha256-${createHash('sha256').update(REDIRECT_SCRIPT_BODY).digest('base64')}`);
+  });
+
+  it('every static inline script in the source (Layout.astro pre-paint first) has its hash in csp.ts and vercel.json', () => {
+    // Astro emits an is:inline body as written, so its hash is known before the build: a change to a pre-paint script
+    // without its new hash fails here, not only at the end of `astro build` (bridge-csp-hashes in astro.config.mjs).
+    const src = fileURLToPath(new URL('..', import.meta.url));
+    const walk = (d: string): string[] => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : f.endsWith('.astro') ? [join(d, f)] : []));
+    const policy = header('Content-Security-Policy') ?? '';
+    const seen: string[] = [];
+    for (const file of walk(src)) {
+      for (const m of readFileSync(file, 'utf8').matchAll(/<script is:inline>([\s\S]*?)<\/script>/g)) {
+        const hash = `sha256-${createHash('sha256').update(m[1]!).digest('base64')}`;
+        seen.push(file.slice(src.length));
+        expect(INLINE_SCRIPT_HASHES, `${file.slice(src.length)}: add '${hash}' to csp.ts and vercel.json`).toContain(hash);
+        expect(policy, `${file.slice(src.length)}: vercel.json misses '${hash}'`).toContain(`'${hash}'`);
+      }
+    }
+    // The pre-paint script of every page (theme, sample team, signed-in marks) is one of them.
+    expect(seen).toContain('layouts/Layout.astro');
   });
 
   it('inlineScripts skips external scripts and JSON data blocks', () => {

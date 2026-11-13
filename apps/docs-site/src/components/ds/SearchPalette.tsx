@@ -26,8 +26,18 @@ function loadSearchIndex(): Promise<SearchItem[]> {
         const team = await loadTeamData();
         return librarySearchIndex(team.model, team.owner, team.repo);
       }
+      const studio = document.documentElement.dataset.space === 'studio';
+      if (studio && document.documentElement.hasAttribute('data-hosted')) {
+        // A team's Studio searches the team: its components and tokens, opened in Studio, never Bridge's docs (A8).
+        const [{ loadTeamData }, { studioSearchIndex }, { studioHref }] = await Promise.all([import('../../scripts/team-data'), import('../../lib/library/search-index'), import('../../lib/team-path')]);
+        return studioSearchIndex((await loadTeamData()).model, studioHref);
+      }
       const r = await fetch('/search-index.json');
-      return (await r.json()) as SearchItem[];
+      const all = (await r.json()) as SearchItem[];
+      if (!studio) return all;
+      // Bridge's own Studio: its components and tokens, without the documentation pages.
+      const { studioOnly } = await import('../../lib/library/search-index');
+      return studioOnly(all);
     } catch {
       return [];
     }
@@ -52,8 +62,13 @@ function toOption(item: SearchItem, i: number): ComboboxOption {
   };
 }
 
+/** Studio searches the team's design system only; the Library its pages too. */
+const placeholderFor = (space: string | undefined) => (space === 'studio' ? 'Search tokens and components, or paste a hex' : 'Search tokens, components, pages, or paste a hex');
+
 export default function SearchPalette() {
   const [query, setQuery] = useState('');
+  const [placeholder, setPlaceholder] = useState(placeholderFor(undefined));
+  useEffect(() => setPlaceholder(placeholderFor(document.documentElement.dataset.space)), []);
   const [data, setData] = useState<SearchItem[] | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const results = useMemo(() => (data ? rankResults(query, data) : []), [query, data]);
@@ -91,7 +106,7 @@ export default function SearchPalette() {
       className="palette-results"
       size="lg"
       aria-label="Search"
-      placeholder="Search tokens, components, pages, or paste a hex"
+      placeholder={placeholder}
       spellCheck={false}
       options={options}
       filter={null}

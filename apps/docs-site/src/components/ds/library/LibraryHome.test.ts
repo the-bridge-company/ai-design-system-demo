@@ -12,7 +12,7 @@ vi.mock('../../../scripts/team-data', () => ({ teamOfPage: () => page.team, load
 vi.mock('./LibraryGate', () => ({ default: () => null, emailFallback: () => null, useLibraryGate: () => ({ step: 'open', answer: null }) }));
 vi.mock('../studio/TeamState', () => ({
   useTeamData: () => ({ load: { status: 'loading' }, retry: () => undefined }),
-  TeamLoadProgress: ({ label }: { label: string }) => createElement('p', { role: 'status' }, label),
+  TeamLoadStatus: ({ label }: { label: string }) => createElement('p', { role: 'status' }, label),
   TeamSourceNote: () => null,
 }));
 

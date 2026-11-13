@@ -34,9 +34,10 @@ function Agents({ data }: { data: TeamData }) {
   if (has === null) return null;
   return (
     <section className="ltm-agents fg-card" aria-labelledby="ltm-agents-title">
-      <Icon icon={Bot} size="md" className="ltm-agents-icon" />
       <div className="ltm-agents-text">
+        {/* The robot sits in its title's line box: centered on the first line, whatever the text wraps to (D14). */}
         <h2 id="ltm-agents-title" className="ltm-agents-title">
+          <Icon icon={Bot} size="md" className="ltm-agents-icon" />
           For AI agents
         </h2>
         <p className="ltm-muted">

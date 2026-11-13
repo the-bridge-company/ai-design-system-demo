@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CloudOff, FileWarning, LogIn, RefreshCw, SearchX, Timer } from 'lucide-react';
 import { signInHref } from '../../../lib/account';
-import { Button, EmptyState, IconButton, Link } from '@bridge-ds/react';
+import { Button, EmptyState, IconButton, Link, VisuallyHidden } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { loadTeamData, onTeamProgress, resetTeamData, teamOfPage, type TeamData } from '../../../scripts/team-data';
 import { LoadProgress } from './LoadProgress';
@@ -127,6 +127,18 @@ function TeamFailureState({ failure, onRetry, compact }: { failure: TeamFailure;
         </>
       }
     />
+  );
+}
+
+/**
+ * The team read under a page that already shows its own skeleton (Team Home): one plain sentence for screen readers,
+ * nothing on screen, so nothing appears, grows or goes away under the page while it reads.
+ */
+export function TeamLoadStatus({ label }: { label: string }) {
+  return (
+    <VisuallyHidden role="status" aria-live="polite">
+      {label}
+    </VisuallyHidden>
   );
 }
 

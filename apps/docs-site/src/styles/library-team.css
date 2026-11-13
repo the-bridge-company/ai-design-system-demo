@@ -92,6 +92,9 @@
 }
 
 .ltm-agents-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: var(--typography-body-size);
   font-weight: var(--typography-h3-weight);

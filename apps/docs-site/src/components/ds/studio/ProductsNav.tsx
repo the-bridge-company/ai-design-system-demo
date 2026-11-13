@@ -10,9 +10,10 @@
 import { useEffect, useState } from 'react';
 import { PanelsTopLeft } from 'lucide-react';
 import { PRODUCT_ICON } from './ProductMark';
-import { SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
+import { Skeleton, SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref, productKeyFromPath } from '../../../lib/product-page';
+import { isSampleTeam } from '../../../lib/demo';
 import { isHosted, STUDIO_ROOT, studioBase, studioHref } from '../../../lib/team-path';
 import { navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, type ProductSignals } from '../../../lib/nav-products';
 import { siteIcon } from '../../../brand/site-icons';
@@ -35,6 +36,24 @@ export const ALL_PRODUCTS_PATH = `${STUDIO_ROOT}products/`;
 /** Whether the nav entry for `href` holds the page at `path` (itself, or a page under it). */
 const holds = (href: string, path: string) => path === href || (href !== STUDIO_ROOT && path.startsWith(href));
 
+/**
+ * Rows the Products group holds before a team shell has read its settings (A2): the count this browser saw last for the
+ * team, else this many. The group paints at once in its place, so Design system under it never moves when the names come.
+ */
+export const PRODUCTS_PENDING_ROWS = 3;
+
+/**
+ * The sample team's products in the nav (its bridge.config.json: Acme Prints and Acme CRM, the library left out): its
+ * group reserves exactly these rows on a first visit (styles/studio-app.css hides the others before React runs).
+ */
+export const SAMPLE_PRODUCT_ROWS = 2;
+
+/** Where this browser keeps how many rows a team's Products group showed (its next first paint reserves as many). */
+export const productRowsKey = (team: string) => `bridge.nav.product-rows:${team.toLowerCase()}`;
+
+/** The rows the group draws: the products shown, plus All products when there are more. */
+export const productRowCount = (rows: { shown: readonly unknown[]; all: boolean }) => rows.shown.length + (rows.all ? 1 : 0);
+
 export interface ProductsNavViewProps {
   products: NavProduct[];
   /** The product open on screen (its key), else null. */
@@ -44,9 +63,11 @@ export interface ProductsNavViewProps {
   /** Components, Tokens, Quality: the Design system group's pages before Explorations. */
   pages?: NavPage[];
   signals?: ProductSignals;
+  /** The team's products are not read yet: the group holds this many skeleton rows (0 draws no group). */
+  pendingRows?: number;
 }
 
-export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS }: ProductsNavViewProps) {
+export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS, pendingRows = 0 }: ProductsNavViewProps) {
   const rows = navProductRows(products, signals, current);
   const allHere = path === ALL_PRODUCTS_PATH;
   // The collapsed rail draws two letters per product instead of the folder (styles/site.css, data-initials).
@@ -54,7 +75,19 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
   const names = rows.shown.filter((p) => !p.library).map((p) => p.name);
   return (
     <>
-      {rows.shown.length > 0 && (
+      {pendingRows > 0 && (
+        // Reading the team's settings: the group in its place, one quiet row per product it showed last time. The rows
+        // are the nav rows' height (.rail-skel), so the names replace them without moving anything under them.
+        <SidebarNavSection title="Products" className="rail-section rail-products" data-products-nav="" data-pending="" aria-busy="true">
+          {Array.from({ length: pendingRows }, (_, i) => (
+            <li key={i} className="rail-skel" aria-hidden="true">
+              <Skeleton variant="rect" width="var(--icon-size-md)" height="var(--icon-size-md)" />
+              <Skeleton width={i % 2 ? '8ch' : '11ch'} />
+            </li>
+          ))}
+        </SidebarNavSection>
+      )}
+      {pendingRows === 0 && rows.shown.length > 0 && (
         <SidebarNavSection title="Products" className="rail-section rail-products" data-products-nav="">
           {rows.shown.map((p) => (
             <SidebarNavItem key={p.key} href={productHref(p.key)} icon={PRODUCT_ICON} active={current === p.key} data-keep-branch="" data-initials={productInitials(p.name, names)}>
@@ -113,6 +146,10 @@ export default function ProductsNav({ products, current = null, path = '', pages
   const [here, setHere] = useState<string | null>(current);
   const [at, setAt] = useState(path);
   const [signals, setSignals] = useState<ProductSignals>(NO_SIGNALS);
+  // A team shell before its settings are read: skeleton rows in the group's place (A2).
+  const [pending, setPending] = useState(!products);
+  const [pendingRows, setPendingRows] = useState(PRODUCTS_PENDING_ROWS);
+  const [team, setTeam] = useState<string | null>(null);
   // Once mounted, the links point at the team in the address (studioHref) and the order reads this browser.
   const [, setMounted] = useState(false);
   useEffect(() => {
@@ -120,7 +157,14 @@ export default function ProductsNav({ products, current = null, path = '', pages
     setHere(productKeyFromPath(location.pathname));
     setAt(studioPathHere());
     let live = true;
-    void teamHere().then((team) => live && setSignals(readSignals(team, storage())));
+    void teamHere().then((t) => {
+      if (!live) return;
+      setTeam(t);
+      setSignals(readSignals(t, storage()));
+      const kept = t ? Number(storage()?.getItem(productRowsKey(t)) ?? NaN) : NaN;
+      if (Number.isInteger(kept) && kept >= 0) setPendingRows(kept);
+      else if (isSampleTeam(t)) setPendingRows(SAMPLE_PRODUCT_ROWS);
+    });
     if (products) {
       // The build's products, with one this tab just added (it lists itself once the site is built again).
       void import('../../../scripts/repo-context').then(({ addedHere }) => {
@@ -137,7 +181,10 @@ export default function ProductsNav({ products, current = null, path = '', pages
       void import('../../../scripts/repo-context').then(({ siteConfig }) => {
         const site = siteConfig() as { products?: ProductConfig[] };
         // Nothing read yet: wait for the team's settings rather than list the defaults.
-        if (live && Object.keys(site).length) setList(navProducts(productsOf(site)));
+        if (live && Object.keys(site).length) {
+          setList(navProducts(productsOf(site)));
+          setPending(false);
+        }
       });
     read();
     document.addEventListener('bridge:team-model', read);
@@ -146,5 +193,14 @@ export default function ProductsNav({ products, current = null, path = '', pages
       document.removeEventListener('bridge:team-model', read);
     };
   }, [products]);
-  return <ProductsNavView products={list} current={here} path={at} pages={pages} signals={signals} />;
+  // Remember how many rows the group drew for this team: the next first paint reserves exactly that.
+  useEffect(() => {
+    if (pending || !team) return;
+    try {
+      storage()?.setItem(productRowsKey(team), String(productRowCount(navProductRows(list, signals, here))));
+    } catch {
+      /* storage blocked: the next page reserves the default */
+    }
+  }, [pending, team, list, signals, here]);
+  return <ProductsNavView products={list} current={here} path={at} pages={pages} signals={signals} pendingRows={pending ? pendingRows : 0} />;
 }

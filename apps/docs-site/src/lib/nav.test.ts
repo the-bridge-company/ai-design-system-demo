@@ -113,9 +113,11 @@ describe('navigation shape', () => {
     expect(found.at(-1)).toMatchObject({ href: '/tokens/', label: 'All tokens', apart: true });
   });
 
-  it('shows two counts in the Studio nav: Waiting on you on Explorations, the lead pieces on Library review', () => {
+  it('shows a count only where the viewer must act: Waiting on you on Explorations, the lead pieces on Library review, the build requests a developer picks up on Being built', () => {
     const counted = navFor('studio').filter((e) => e.badge);
-    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Explorations', 'explorations'], ['Library review', 'reviews']]);
+    // Being built's count is the one a developer's Home counts to pick up (scripts/waiting-counts rememberBuildWaiting,
+    // read only from a builder's Home): nobody else ever gets a number there.
+    expect(counted.map((e) => [e.label, e.badge])).toEqual([['Explorations', 'explorations'], ['Library review', 'reviews'], ['Being built', 'building']]);
   });
 });
 

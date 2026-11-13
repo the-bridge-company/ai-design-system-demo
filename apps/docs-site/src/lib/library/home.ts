@@ -8,7 +8,10 @@ export interface LibraryHome {
   /** Components with written guidance (a docs.json). */
   documented: number;
   themes: string[];
-  /** "24 components and 180 tokens, in light and dark." */
+  /**
+   * "24 components and 119 semantic tokens, in light and dark." The semantic count is the one every page says (the All
+   * tokens card, the All tokens page, Quality's "of 119 semantic tokens"): the set designers pick from (D12).
+   */
   lead: string;
 }
 
@@ -20,9 +23,10 @@ export function libraryHome(model: Pick<RepoModel, 'tokens' | 'components'>): Li
   const comps = model.components?.list ?? [];
   const tokens = rows.all.length;
   const documented = comps.filter((c) => c.docs).length;
-  const parts = [comps.length ? plural(comps.length, 'component') : null, tokens ? plural(tokens, 'token') : null].filter((x): x is string => !!x);
+  const semantic = rows.semantic.length;
+  const parts = [comps.length ? plural(comps.length, 'component') : null, semantic ? plural(semantic, 'semantic token') : tokens ? plural(tokens, 'token') : null].filter((x): x is string => !!x);
   const lead = parts.length ? `${list(parts)}${rows.themes.length > 1 ? `, in ${list(rows.themes)}` : ''}.` : 'No tokens or components were found yet.';
-  return { tokens, semantic: rows.semantic.length, components: comps.length, documented, themes: rows.themes, lead };
+  return { tokens, semantic, components: comps.length, documented, themes: rows.themes, lead };
 }
 
 /**

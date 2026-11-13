@@ -144,6 +144,8 @@ export function forgetTeamEverywhere(team: string, store: RecentStore | null = b
 
 /** The name this browser already knows for `team`:the one its page last read, else the account's (server-kept). */
 export function knownTeamName(team: string, store: RecentStore | null = browserStore()): string | null {
+  // The sample team's name is a fixture (lib/demo.ts): never a name kept from somewhere else ("Bridge demo ds").
+  if (isSampleTeam(team)) return SAMPLE_TEAM;
   const k = canonicalRepo(team).toLowerCase();
   return loadMap(TEAM_NAMES_KEY, store)[k] ?? loadMap(ACCOUNT_TEAM_NAMES_KEY, store)[k] ?? null;
 }

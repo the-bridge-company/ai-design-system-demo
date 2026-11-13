@@ -424,9 +424,11 @@ function usePickUp(on: boolean): { n: number; href: string } | null {
     let live = true;
     loadBuildData()
       .then((d) => {
-        if (!live) return;
         const open = openBuildRequests(pageRows<BuildRequestView>(d, Date.now()));
         const n = waitingToBePickedUp(open);
+        // The Being built badge says this number on every page (scripts/waiting-counts, A6), even if Home left.
+        void import('../../../scripts/waiting-counts').then((m) => m.rememberBuildWaiting(n)).catch(() => undefined);
+        if (!live) return;
         // One request waits: the button opens it, where Pick it up is; several: Being built on what waits.
         const only = n === 1 ? open.find((v) => v.status === 'requested') : undefined;
         setGot({ n, href: only ? studioHref(`building/${detailQuery(only)}`) : pickUpHref() });

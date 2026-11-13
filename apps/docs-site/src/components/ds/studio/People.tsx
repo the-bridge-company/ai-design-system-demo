@@ -39,7 +39,7 @@ export function People({ names, size = 'sm', text, facesOnly = false, face = dra
     </AvatarGroup>
   );
   return (
-    <span className={['people', `is-${size}`, className].filter(Boolean).join(' ')} title={list.length > 3 ? list.join(', ') : undefined}>
+    <span className={['people', `is-${size}`, list.length === 1 && 'is-one', className].filter(Boolean).join(' ')} title={list.length > 3 ? list.join(', ') : list.length === 1 ? words : undefined}>
       {group}
       {!facesOnly && <span className="people-names">{text ?? words}</span>}
     </span>

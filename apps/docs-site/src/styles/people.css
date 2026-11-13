@@ -21,3 +21,11 @@
 .people-names {
   min-width: 0;
 }
+
+/* One person is one name on one line ("Claude AI" never breaks after Claude): it shortens with an ellipsis when the
+   cell is too narrow, the whole name in the title. Only a group of names wraps under itself. */
+.people.is-one .people-names {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

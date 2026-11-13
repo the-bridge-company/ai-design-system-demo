@@ -998,15 +998,15 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
 /**
  * The list as chapters (lr-list, direction C; lr-yours, lr-decided, lr-designer): one chapter per family (Foundations,
  * Components, Docs) with its icon, name, count, one line and what it reaches, then one card where each group's name
- * sits in a left rail beside its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
+ * sits on top of its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
  * the row grid, in sentence case:
  *   Waiting, lead:  [box] | Today › After | Piece | Asked by | From | Who gets it | State | Next | action
  *   Decided:        Today › After | Piece | Asked by | From | Who gets it | State (the result)
  *   Designer:       Today › After | Piece | Asked by | From | Who gets it | State (what changed, an exception)
  * Asked by is a face and a first name, From the exploration on one line with its product under it ("Asked directly"
- * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Each card
- * has its own grid (lib/library-review-list listGrid); when the card runs out of room, Who gets it folds first, then
- * Today › After (styles/library-review.css).
+ * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Every card
+ * shares one grid, from every row of the list (lib/library-review-list listGrid); when the list runs out of room, Who
+ * gets it folds first, then Today › After, then the rows stack (styles/library-review.css).
  * The Piece column says only what the piece is: its name (a link to it in One by one, and a quiet link to its page in
  * the library) and its kind. A state (a conflict's "2 ways", a result) sits in State; a waiting row shows none there,
  * its chapter already says it waits. A column shows only when a row fills it. Checkboxes and the row action (a quiet
@@ -1117,10 +1117,17 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       action: cols.includes('action'),
     });
     const style = { ['--lr-cols-wide' as string]: grid.wide, ['--lr-cols-mid' as string]: grid.mid, ['--lr-cols-narrow' as string]: grid.narrow };
-    return { showState, showNext: cols.includes('next'), showAction: cols.includes('action'), style };
+    return { showState, showNext: cols.includes('next'), showAction: cols.includes('action'), style, slotState: false, slotNext: false, slotAction: false };
   };
   type Cols = ReturnType<typeof colsOf>;
-  const row = (p: ReviewPiece, { showState, showNext, showAction }: Cols) => {
+  // Every chapter card lines up on one grid (owner, 2026-11-13: the same column starts from card to card, so the eye
+  // reads down the page): the widths come from every row of the list, and a column a card has no use for keeps its
+  // room as an empty slot, with no header word, instead of letting the next columns slide left.
+  const sharedCols = (rows: readonly ReviewPiece[], all: Cols): Cols => {
+    const own = colsOf(rows);
+    return { ...own, style: all.style, slotState: all.showState, slotNext: all.showNext, slotAction: all.showAction };
+  };
+  const row = (p: ReviewPiece, { showState, showNext, showAction, slotState, slotNext, slotAction }: Cols) => {
     const actor = mode === 'lead' ? nextActor(p, { tech, secondLead }) : null;
     const m = measure(p);
     const c = reachCell(m);
@@ -1174,10 +1181,12 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         <span role="cell" className="lr-row-reach lr-col-reach">
           {p.source.kind !== 'docs' && <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />}
         </span>
-        {showState && (
+        {showState ? (
           <span role="cell" className="lr-row-state">
             {state(p)}
           </span>
+        ) : (
+          slotState && <span role="cell" className="lr-row-state" />
         )}
         {showNext && (
           <span role="cell" className="lr-row-next">
@@ -1189,10 +1198,13 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             )}
           </span>
         )}
-        {showAction && (
+        {!showNext && slotNext && <span role="cell" className="lr-row-next" />}
+        {showAction ? (
           <span role="cell" className="lr-col-end lr-row-end lr-hover-ctl">
             {action(p)}
           </span>
+        ) : (
+          slotAction && <span role="cell" className="lr-col-end lr-row-end" />
         )}
       </div>
     );
@@ -1214,10 +1226,9 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
     return { labels, rail: Boolean(ch.rail) && [...labels.values()].some(Boolean) };
   };
-  // A list with a rail folds its columns sooner (styles/library-review.css, has-rails): the same columns in every card.
-  const rails = chapters.some((ch) => railOf(ch).rail);
+  const listCols = colsOf(allRows);
   return (
-    <div className={`lr-list is-${mode}${rails ? ' has-rails' : ''}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
+    <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
         const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
@@ -1225,8 +1236,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         const allOn = pickable.length > 0 && pickable.every((p) => selected.has(p.key));
         const someOn = pickable.some((p) => selected.has(p.key));
         const { labels, rail } = railOf(ch);
-        const c = colsOf(rows);
-        const { showState, showNext, showAction } = c;
+        const c = sharedCols(rows, listCols);
+        const { showState, showNext, showAction, slotState, slotNext, slotAction } = c;
         return (
           // A chapter is a plain wrapper: ARIA has no group of row groups, so its head row (with its h2) and each
           // group's rowgroup sit straight in the table (WCAG 1.3.1).
@@ -1256,11 +1267,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             </div>
             <div className="lr-chapter-card" style={c.style}>
               <div role="row" className="lr-chapter-cols">
-                {rail && (
-                  <span role="columnheader" className="lr-rail-head">
-                    Group
-                  </span>
-                )}
                 {boxes && (
                   <span role="columnheader" className="lr-col-box lr-hover-ctl">
                     {pickable.length > 0 && <Checkbox label={<VisuallyHidden>{`Select every piece of ${ch.label} you can decide`}</VisuallyHidden>} checked={allOn} indeterminate={!allOn && someOn} onCheckedChange={(on) => onSelect(pickable.map((p) => p.key), on)} />}
@@ -1275,12 +1281,18 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 <span role="columnheader" className="lr-col-reach">
                   Who gets it
                 </span>
-                {showState && <span role="columnheader">State</span>}
-                {showNext && <span role="columnheader">Next</span>}
-                {showAction && (
+                {showState ? <span role="columnheader">State</span> : slotState && <span role="columnheader"><VisuallyHidden>State</VisuallyHidden></span>}
+                {showNext ? <span role="columnheader">Next</span> : slotNext && <span role="columnheader"><VisuallyHidden>Next</VisuallyHidden></span>}
+                {showAction ? (
                   <span role="columnheader" className="lr-col-end">
                     <VisuallyHidden>Action</VisuallyHidden>
                   </span>
+                ) : (
+                  slotAction && (
+                    <span role="columnheader" className="lr-col-end">
+                      <VisuallyHidden>Action</VisuallyHidden>
+                    </span>
+                  )
                 )}
               </div>
               {ch.groups.map((g) => {

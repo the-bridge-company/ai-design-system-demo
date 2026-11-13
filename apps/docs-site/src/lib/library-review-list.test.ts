@@ -100,6 +100,8 @@ describe('the List in blocks', () => {
     expect(g.mid).not.toContain('var(--space-2)');
     expect(tracks(g.narrow)).toHaveLength(5);
     expect(g.narrow).not.toMatch(/^var\(--size-6\) var\(--size-40\)/);
+    // Piece and From keep an even share once the thumbnails fold, so From's exploration stays on one line.
+    expect(g.narrow).toBe('var(--size-6) minmax(var(--size-40), 1fr) var(--size-20) minmax(var(--size-40), 1fr) var(--size-20)');
     // The title column takes the rest; a row naming several people widens Asked by, a State column only when one is filled.
     expect(g.wide).toContain('minmax(var(--size-40), 1fr)');
     expect(listGrid({ box: false, askedMore: true, state: 'tag', next: false, action: false }).wide).toBe(

@@ -104,15 +104,15 @@ export interface ListGrid {
 }
 
 export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 'tag' | 'words'; next: boolean; action: boolean }): ListGrid {
-  // Piece and From share the rest evenly; once the thumbnails fold, the piece's name gets the larger share (two lines
-  // at most) and From shortens first.
+  // Piece and From share the rest evenly at every width (owner, 2026-11-13: Piece on at most two lines, From's
+  // exploration on one line): when the room runs out, a column folds (styles/library-review.css), never a word.
   const build = (reach: boolean, thumb: boolean) =>
     [
       o.box ? 'var(--size-6)' : null,
       thumb ? 'var(--size-40)' : null,
-      thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 1.4fr)',
+      'minmax(var(--size-40), 1fr)',
       o.askedMore ? 'var(--size-40)' : 'var(--size-20)',
-      thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 0.6fr)',
+      'minmax(var(--size-40), 1fr)',
       reach ? 'calc(var(--size-20) + var(--space-2))' : null,
       // Fixed widths where content varies, so every row lines up with its header row.
       // A tag column fits the longest age tag whole ("Waiting 22 days"): a tag never shrinks below its words.

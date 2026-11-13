@@ -9,7 +9,8 @@
   min-width: max(var(--size-60), var(--anchor-width));
   max-width: min(var(--size-80), var(--available-width));
   max-height: var(--available-height);
-  padding: var(--space-1);
+  /* The inset every DS popup list shares: 8px between the popup edge and its items. */
+  padding: var(--space-2);
   border: var(--border-width-default) solid var(--popup-border);
   border-radius: var(--popup-radius);
   background-color: var(--popup-bg);
@@ -44,8 +45,9 @@
   gap: var(--space-2);
   min-height: var(--menu-item-height);
   padding: 0 var(--space-2);
-  /* Concentric with the popup: its radius minus the popup padding, so the highlight follows the menu's corners. */
-  border-radius: calc(var(--popup-radius) - var(--space-1));
+  /* Concentric with the popup: its radius minus the popup inset, so the highlight follows the menu's corners (Bridge
+     20 - 8 = 12, the control radius; Ocean 16 - 8 = 8). */
+  border-radius: calc(var(--popup-radius) - var(--space-2));
   color: var(--menu-item-text);
   cursor: default;
   outline: none;
@@ -145,9 +147,10 @@
   letter-spacing: var(--font-tracking-wide);
 }
 
+/* Runs to the popup's edges, with the inset's own gap above and below it. */
 .separator {
   height: var(--border-width-default);
-  margin: var(--space-1) calc(var(--space-1) * -1);
+  margin: var(--space-2) calc(var(--space-2) * -1);
   border: 0;
   background-color: var(--menu-separator);
 }

@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T07:03:23.652Z",
-  "durationMs": 185596,
+  "createdAt": "2026-11-13T07:13:03.899Z",
+  "durationMs": 160033,
   "base": {
     "ref": "523231606e1812f7c97bb1b7c482eb92e89bcdef",
     "sha": "523231606e1812f7c97bb1b7c482eb92e89bcdef"
   },
   "head": {
-    "ref": "5254d95f6c05ae42604b4e948fcfadd7a303856f",
-    "sha": "5254d95f6c05ae42604b4e948fcfadd7a303856f"
+    "ref": "9b80fdb1def96e8215288788459f8135fb16bc94",
+    "sha": "9b80fdb1def96e8215288788459f8135fb16bc94"
   },
   "options": {
     "only": [
@@ -33,6 +33,7 @@
     "vars": [],
     "files": [
       ".changeset/quiet-count-badge.md",
+      "packages/react/component-specs.json",
       "packages/react/src/components/Badge/Badge.docs.json",
       "packages/react/src/components/Badge/Badge.module.css"
     ],
@@ -99,8 +100,8 @@
   },
   "summary": {
     "shots": 60,
-    "changed": 4,
-    "unchanged": 56,
+    "changed": 5,
+    "unchanged": 55,
     "added": 0,
     "removed": 0,
     "errors": 0,
@@ -882,11 +883,18 @@
       "storyId": "data-display-badge--subtle",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 309,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 0.04,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 704,
+          "width": 96,
+          "height": 48
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -897,7 +905,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__data-display-badge--subtle__ocean-dark.png",
+        "after": "after/story__data-display-badge--subtle__ocean-dark.png",
+        "diff": "diff/story__data-display-badge--subtle__ocean-dark.png",
+        "composite": "composite/story__data-display-badge--subtle__ocean-dark.png"
+      }
     },
     {
       "key": "story__data-display-badge--solid__ocean-dark",

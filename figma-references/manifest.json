@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T02:03:21.996Z",
-  "sha": "16f29b88fb7184bde8a1377378ccae60d7059744",
+  "createdAt": "2026-11-13T02:26:37.761Z",
+  "sha": "f3b26f4bef687aaa2480008f7acdeefcca1a46d7",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -382,7 +382,7 @@
       }
     },
     "Button": {
-      "specHash": "3d435c8e",
+      "specHash": "0fe92790",
       "variants": {
         "Size=sm, State=Default, Variant=primary": {
           "file": "button/size-sm__state-default__variant-primary.png",

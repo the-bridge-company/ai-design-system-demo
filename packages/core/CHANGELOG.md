@@ -1,5 +1,37 @@
 # @bridge-ds/core
 
+## 0.36.0
+
+### Minor Changes
+
+- b65f98b: `bridge audit` finds component imitations: hand-made versions of a pattern a design system component covers, often built out of DS parts so a count of DS versus non-DS elements called them adoption. It flags `role="tab"`, `"tablist"`, `"tabpanel"`, `"radiogroup"`, `"dialog"`, `"menu"`, `"combobox"` and the like outside the DS component that renders them (a DS Link with `role="tab"` included), data attributes that wire a tab by hand (`data-set-tab`), `aria-pressed` toggle groups, count spans instead of the count Badge, a button class on a link, style sheet rules that name a tab, chip, pill, badge, button, switch, dialog or toast and draw its border, background or radius by hand, interactive markup built in strings (`<button role="tab">` in a template literal), and separators typed between elements. The patterns come from the DS component inventory: a pattern is checked only when the DS exports its component, every other component covers its own kebab name, and the DS component sources are never checked. A class set only on the DS component it names is an override, not an imitation. Each finding names the file, line, pattern and the DS component to use. An imitation is not adoption: the element leaves the component adoption counts. The report gains `metrics.imitations`, an `imitations` summary with top fixes, `files[].imitations`, and the delta against a baseline; the CLI and the Markdown summary print them; `bridge-audit-ignore-next-line: reason` comments and the allowlist cover imitations too. `bridge_audit` returns the same.
+- 1fb3e59: One source for every number and status word in Studio. Core adds the status ladder (`status-ladder.ts`: Exploring,
+  In review, Ready to build, Being built, Checking, Shipped; Not doing this and Archived off the ladder) with
+  `LATE_DAYS`, the one threshold behind every amber tag, and build request summaries speak its words. Studio maps every
+  surface to the ladder (who it waits on is the second line, never a status), keeps tags grey until a wait is late,
+  compares a component part against the library's own value everywhere (Card padding is 20 px, Leo's 12 px is the
+  library's Compact), counts "waiting" from when an exploration was sent for review, defines each count once (See all,
+  Library card, Leo's and Malik's Home, Asked by: You), counts every decision in the exploration stepper, and computes
+  the Quality verdict from the numbers it shows (adoption per product, unused tokens by kind against their totals).
+- 35e5ca0: Two reviews: the library decision (governance.owners.design, for every product) and the design review (products[].designReview, a list of reviewers per product, off per product) replace the one review that waited on the design lead. New `two-reviews.ts` (reviewsFor, waitingFor, noReviewLine, designReviewOf, migrateReviews), `askReviewsOnGitHub` and `designApproveOnGitHub`; block fields `lead*` become `design*` (old names still read), decisions carry their `hat`. `askLeadOnGitHub`, `leadApproveOnGitHub` and `isWaitingForLead` stay as deprecated aliases for 2 releases.
+
+### Patch Changes
+
+- 06282ec: An app type scale. Page titles drop from 44 to 30px (`typography.h1`), section titles from 30 to 24px (`typography.h2`), card and dialog titles from 21 to 16px semibold (`typography.h3`), body keeps 16px on a 24px line. New: `typography.meta` (13/18, the secondary line under a name or title), with the primitives `font.size.150` (13px), `font.leading.18` and `font.leading.24`. Components set their text on the role line heights (20px for UI text, 18 for meta, 16 for captions) instead of 1.2, 1.35 and 1.5 ratios that landed off the 4px grid, descriptions and errors under fields read in meta (13px) instead of 12px with wide tracking, and a bold word inside a Banner title no longer jumps to black (900). In Bridge, the current nav entry keeps the medium weight of the others (color and plate say where you are), the "See it as" menu sets names in medium over a 13px muted line, and text that sets no line height inherits 1.5 of its size instead of 24px.
+- 7ec2e45: Looks right no longer files a library request for a piece that uses the library as is: a change to one part of a library component at a value the library already has (a Card at 12 px is Compact) has nothing to build. The library's known options and the rule (`usesLibraryAsIs`, `asIsOption`) now live in core, so Looks right and Studio's pages read one source.
+- f3b26f4: A library piece's padding is named "padding", not "room inside". In Studio:
+
+  - A list row or card that waits says only who it waits on ("Waiting for Dana").
+  - A component change shows its icon under its preview until the preview paints.
+  - The Library card counts In review from Library review and keeps a short line.
+  - Claude AI's guidance drafts show the agent mark, the draft's words and their age.
+  - Library review keeps its layout while it reads.
+
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- 16f29b8: Sample team: no personal data, and the first two actions run in the browser. Settings > Reviews names only the cast (never the GitHub owners of the repository hosting it) and says the review rights in plain words ("Checks the look", "Checks the code", "Adds it to the library") instead of config keys. Example names in the Color specimen, the token editor preview, Card and Avatar docs read as people of the cast or generic people. The component page's Code tab no longer prints the raw Storybook address and says "Open in Storybook" instead of "Workbench". Start an exploration and Looks right work in the browser on the sample team; Looks right moves the exploration on as the real approval does (Ready to build, or the library decision while a new piece waits), and every read of the visit agrees. A component page shows one Figma status: never "Not linked to Figma yet" beside "Figma is ahead", and the hint only to a lead.
+- 9ae871c: An answer to the library's Ask for changes, written in the same millisecond as that ask for changes (fast automation), now asks the library decision again. Before, the piece's "changes" answer was compared with a strict "before the ask", so an equal timestamp left the exploration out of In review with nothing waiting on anyone.
+- 9aecdee: The repository snapshot carries only what the model reads: story files as their title and story exports, stylesheets without comments (the served model is unchanged). It keeps the newest 15 releases instead of 60; older notes stay in the CHANGELOG.md files. The CLI snapshot drops from 1.30 MB to 1.09 MB and the repo snapshot from about 0.99 MB to about 0.82 MB.
+
 ## 0.35.0
 
 ### Minor Changes

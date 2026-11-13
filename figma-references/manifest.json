@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T18:54:17.601Z",
-  "sha": "414350e2b09631116eecc7683aad8dd83e2a367f",
+  "createdAt": "2026-11-13T00:47:41.497Z",
+  "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -965,12 +965,12 @@
       }
     },
     "Combobox/Popup": {
-      "specHash": "c9127c85",
+      "specHash": "ff78f172",
       "variants": {
         "Default": {
           "file": "combobox-popup/default.png",
           "width": 244,
-          "height": 138
+          "height": 146
         }
       }
     },
@@ -1510,7 +1510,7 @@
       }
     },
     "Menu/Popup": {
-      "specHash": "15075559",
+      "specHash": "52937923",
       "variants": {
         "Default": {
           "skipped": "drawn open from no code example: nothing to open in code"
@@ -1518,7 +1518,7 @@
       }
     },
     "MenuItem": {
-      "specHash": "760b172f",
+      "specHash": "b5732e9f",
       "variants": {
         "State=Default, Tone=default": {
           "file": "menuitem/state-default__tone-default.png",
@@ -1543,7 +1543,7 @@
       }
     },
     "MenuCheckboxItem": {
-      "specHash": "92138637",
+      "specHash": "1f268b21",
       "variants": {
         "Checked=false, State=Default": {
           "file": "menucheckboxitem/checked-false__state-default.png",
@@ -1568,7 +1568,7 @@
       }
     },
     "MenuRadioGroup": {
-      "specHash": "12803dc7",
+      "specHash": "ed47da4d",
       "variants": {
         "State=Default": {
           "file": "menuradiogroup/state-default.png",
@@ -1583,7 +1583,7 @@
       }
     },
     "MenuRadioItem": {
-      "specHash": "0d2cd901",
+      "specHash": "970241cd",
       "variants": {
         "Checked=false, State=Default": {
           "file": "menuradioitem/checked-false__state-default.png",
@@ -1608,7 +1608,7 @@
       }
     },
     "MenuGroup": {
-      "specHash": "ef7fac42",
+      "specHash": "35850be5",
       "variants": {
         "Default": {
           "file": "menugroup/default.png",
@@ -1618,7 +1618,7 @@
       }
     },
     "MenuSeparator": {
-      "specHash": "e733115b",
+      "specHash": "35c1d9cb",
       "variants": {
         "Default": {
           "file": "menuseparator/default.png",
@@ -1628,7 +1628,7 @@
       }
     },
     "MenuSubmenu": {
-      "specHash": "0f9b6b8e",
+      "specHash": "e4155cc2",
       "variants": {
         "State=Default": {
           "file": "menusubmenu/state-default.png",
@@ -2163,12 +2163,12 @@
       }
     },
     "Select/Popup": {
-      "specHash": "cad30341",
+      "specHash": "5787c15a",
       "variants": {
         "Default": {
           "file": "select-popup/default.png",
-          "width": 85,
-          "height": 118
+          "width": 89,
+          "height": 126
         }
       }
     },

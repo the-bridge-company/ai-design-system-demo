@@ -5,7 +5,8 @@
 //   what changes          the pieces (past 3, a lead's changes of one kind fold into one box: "4 docs drafts");
 //   who gets it           the products (lib/library-reach).
 // A conflict is two links into one piece, drawn amber. Clicking a box narrows the list under the map ("Showing what
-// <exploration> asks for · 3 of 14 · Show all"). Read only: nobody decides from the map.
+// <exploration> asks for · 3 of 14 · Show all"). The list under the map is the List itself (owner, 2026-11-13): the
+// same rows, checkboxes and decisions; the map only picks which pieces it shows.
 // Pure: no DOM, no fetch. Drawn by components/ds/studio/LibraryReview.tsx (MapView). Tested in library-map.test.ts.
 import { reachOf, type ReachProductInput } from './library-reach';
 import type { ReviewPiece, Viewer } from './library-review';
@@ -149,6 +150,8 @@ export interface MapFocus {
   lit: Set<string>;
   /** "Showing what Contact page summary asks for". */
   line: { before: string; strong: string; after: string };
+  /** One piece box picked (not a folded one): its row already names it, so the line under the map does not. */
+  piece: boolean;
 }
 
 const linkId = (l: MapLink) => `${l.from}>${l.to}`;
@@ -183,25 +186,21 @@ export function focusOf(g: MapGraph, id: string): MapFocus | null {
         ? { before: 'Showing ', strong: source.label, after: '' }
         : { before: 'Showing what ', strong: source.label, after: ' asks for' }
       : { before: 'Showing what ', strong: product!.label, after: ' gets' };
-  return { keys, lit, line };
+  return { keys, lit, line, piece: Boolean(node && !node.folded) };
 }
 
 /** The Map is offered only where it can be read: wide enough, and with something to draw. */
 export const mapAvailable = (o: { narrow: boolean; pieces: number }): boolean => !o.narrow && o.pieces > 0;
 
 /**
- * The list under the map (owner, 2026-11-10): nothing picked shows the hint; a box picked shows what it narrows to,
- * with "Show all N"; one piece picked is that piece's own compact row (no chapter, no rail, no column header: the
- * piece is said once); "Show all" shows the whole list, in the same view.
+ * The list under the map (owner, 2026-11-13): the List itself. Nothing picked shows every piece, as the List does; a box
+ * picked shows the List's rows of what it narrows to, under one line ("Showing what <exploration> asks for · 3 of 14 ·
+ * Show all 14"). One piece picked says "Showing 1 of 14 · Show all 14": its row names it (`named: false`).
  */
-export type MapList = { kind: 'hint' } | { kind: 'all' } | { kind: 'some'; keys: Set<string> } | { kind: 'one'; key: string };
+export type MapList = { kind: 'all' } | { kind: 'some'; keys: Set<string>; named: boolean };
 
-export function mapListOf(focus: Pick<MapFocus, 'keys'> | null, all: boolean): MapList {
-  if (focus) {
-    const keys = [...focus.keys];
-    return keys.length === 1 ? { kind: 'one', key: keys[0]! } : { kind: 'some', keys: focus.keys };
-  }
-  return all ? { kind: 'all' } : { kind: 'hint' };
+export function mapListOf(focus: Pick<MapFocus, 'keys' | 'piece'> | null): MapList {
+  return focus ? { kind: 'some', keys: focus.keys, named: !focus.piece } : { kind: 'all' };
 }
 
 /** The box a map address picks (?focus=<box id>), or null. */

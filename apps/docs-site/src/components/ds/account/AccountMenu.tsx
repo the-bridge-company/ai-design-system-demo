@@ -8,7 +8,7 @@
 // without accounts: the GitHub block keeps working as before.
 import { useEffect, useState } from 'react';
 import { Compass, LogOut, Settings } from 'lucide-react';
-import { Avatar, Button, Icon, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
 import { ChevronsUpDown } from 'lucide-react';
 import { ACCOUNT_WORDS as W, accountName, roleWord, signedOutHref, type Account } from '../../../lib/account';
 import { ownerAvatarUrl } from '../../../lib/access-view';
@@ -148,11 +148,24 @@ export default function AccountMenu({ compact = false }: AccountMenuProps) {
         </MenuTrigger>
       )}
       <MenuContent align={compact ? 'end' : 'start'} side={compact ? 'bottom' : 'top'}>
+        {/* Who is signed in, as an account menu reads in the tools people know (GitHub, Figma): the face, the name with
+            the role as a tag on its line, the email under it, the GitHub account last. */}
         <div className="acc-menu-head">
-          <span className="acc-menu-name">{name}</span>
-          <span className="acc-menu-line">{account.email}</span>
-          {role && <span className="acc-menu-line">{role}</span>}
-          {account.github && <span className="acc-menu-line">{W.githubLinked(account.github.login)}</span>}
+          <Avatar name={name} src={face} size="md" decorative />
+          <span className="acc-menu-head-text">
+            <span className="acc-menu-head-line">
+              <span className="acc-menu-name">{name}</span>
+              {role && (
+                <Badge tone="neutral" size="sm">
+                  {role}
+                </Badge>
+              )}
+            </span>
+            <span className="acc-menu-line" title={account.email}>
+              {account.email}
+            </span>
+            {account.github && <span className="acc-menu-line">{W.githubLinked(account.github.login)}</span>}
+          </span>
         </div>
         <MenuSeparator />
         <MenuItem icon={Settings} onClick={() => setOpen(true)}>

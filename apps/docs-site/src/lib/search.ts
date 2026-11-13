@@ -5,8 +5,11 @@ import { loadTokens } from './tokens';
 import { studioHref } from './team-path';
 import { JIRA_IN_BRIDGE } from './studio-flags';
 
+/** What a result is. Studio adds its explorations, Library review pieces, build requests and products (lib/studio-search). */
+export type SearchKind = 'page' | 'component' | 'token' | 'exploration' | 'piece' | 'request' | 'product';
+
 export interface SearchItem {
-  kind: 'page' | 'component' | 'token';
+  kind: SearchKind;
   title: string;
   href: string;
   /** Secondary line: description, value or layer. */

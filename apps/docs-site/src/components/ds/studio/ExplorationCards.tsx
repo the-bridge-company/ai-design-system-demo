@@ -19,7 +19,7 @@ import { Drawing } from './Drawing';
 /** The corner of a library exploration's screen: it belongs to no product. */
 const LIBRARY = 'Library';
 
-export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationCard; showProduct?: boolean }) {
+export function ExplorationCardItem({ c, showProduct = true, saidBy = null }: { c: ExplorationCard; showProduct?: boolean; /** The heading the card sits under ("Exploring"): a tag that only repeats it is left out (say it once). */ saidBy?: string | null }) {
   // When it last moved, the same age and words as its row on Explorations (core agoInSentence of updated_at: "yesterday"
   // after the name, lower case, on every surface), never the capture's.
   const age = c.updated ? agoInSentence(c.updated) || null : null;
@@ -39,7 +39,7 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
               product page it goes without saying and is left out. */}
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
-              {c.state && (
+              {c.state && c.state.toLowerCase() !== saidBy?.toLowerCase() && (
                 <Badge tone={c.tone ?? 'neutral'} dot={statusTagDot(c.tone ?? 'neutral')} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
                   {c.state}
                 </Badge>

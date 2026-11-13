@@ -3,7 +3,7 @@
 // decisionsOf, openDecisionOf). Bridge voice: a designer reads it.
 import { stepTag } from './status-ladder';
 import { isNameAuthor, nameOfAuthor } from './author';
-import { waitingLabel } from './home-model';
+import { waitSaidOnce, waitingLabel } from './home-model';
 import { decisionsOf, homeRowLine, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind, type HatAsk } from '@bridge-ds/core';
 
 export interface DecisionRowView {
@@ -140,8 +140,9 @@ export function rowAgeFrom(x: { body?: string | null; updated: string; yourTurn:
  * asks of them, a library decision included) says since when, with Home's own tag: "Waiting 5 days" (turnSince, never
  * the last change). Any other row says when it last changed ("yesterday", `ago`).
  */
-export function rowTime(x: { body?: string | null; updated: string; waitsOnViewer: boolean; now: number }, ago: (iso: string) => string): string {
-  return x.waitsOnViewer ? waitingLabel(rowAgeFrom({ body: x.body, updated: x.updated, yourTurn: true }), x.now) : ago(x.updated);
+export function rowTime(x: { body?: string | null; updated: string; waitsOnViewer: boolean; now: number; line?: string | null }, ago: (iso: string) => string): string {
+  // Next to a "Waiting for ..." note, "waiting" is said once: "5 days" (lib/home-model waitSaidOnce).
+  return x.waitsOnViewer ? waitSaidOnce(x.line, waitingLabel(rowAgeFrom({ body: x.body, updated: x.updated, yourTurn: true }), x.now)) : ago(x.updated);
 }
 
 export const TAKEN_FOR_MS = 2 * 24 * 60 * 60 * 1000;

@@ -126,5 +126,8 @@ describe('one clock for "waiting"', () => {
     const ago = (iso: string) => `changed ${iso.slice(0, 10)}`;
     expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: true, now }, ago)).toBe('Waiting 5 days');
     expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: false, now }, ago)).toBe('changed 2026-11-11');
+    // Next to a "Waiting for ..." note, waiting is said once.
+    expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: true, now, line: 'Waiting for your library decision on Timeline' }, ago)).toBe('5 days');
+    expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: true, now, line: 'Sofia sent it for review' }, ago)).toBe('Waiting 5 days');
   });
 });

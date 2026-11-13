@@ -439,6 +439,10 @@ function listRow(r: Row): ListRow {
         { login: listViewer(), role: contributor ? 'contributor' : viewerRole() },
       ));
   const isAgent = Boolean(r.agent) || agentMade({ body: r.body ?? null, labels: r.labels ?? null });
+  // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
+  const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)), reviewsLine: r.exploration ? reviewsLineOf(r) : null };
+  const note = statusNote(at);
+  const reason = turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null;
   return {
     number: r.number,
     // An exploration reads its typed name, as on Home and its product page (lib/pr-title explorationTitle).
@@ -452,7 +456,8 @@ function listRow(r: Row): ListRow {
     opens: r.exploration ? 'exploration' : 'pr',
     // An exploration says when it last moved, after who: "Sofia · 2 h ago"; one that waits on the viewer (its turn, or
     // any review it asks of them), since it was sent to them with Home's own tag: "Waiting 5 days" (lib/lead-decisions rowTime).
-    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now() }, shortAgo) || null : null,
+    // Said once: next to a "Waiting for ..." note the time reads "5 days" (the line the row shows: why on its turn, else the note).
+    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now(), line: turn ? reason : note }, shortAgo) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,
@@ -481,12 +486,9 @@ function listRow(r: Row): ListRow {
         }),
     requester: requesterOf(r.body),
     // Where it stands and, when it waits on the viewer, why (lib/explorations-page: designer words only).
-    ...(() => {
-      // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
-      const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)), reviewsLine: r.exploration ? reviewsLineOf(r) : null };
-      return { status: statusOf(at), statusNote: statusNote(at) };
-    })(),
-    turnReason: turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null,
+    status: statusOf(at),
+    statusNote: note,
+    turnReason: reason,
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
     ...(r.reviewLine ? { reviewLine: r.reviewLine } : {}),

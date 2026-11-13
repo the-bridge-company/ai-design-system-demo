@@ -34,6 +34,8 @@ import {
   waitingLabel,
   waitingSentence,
   waitingSince,
+  waitSaidOnce,
+  waitPill,
   HINT_SNOOZE_MS,
   type ChangeFacts,
   type NeedRow,
@@ -404,5 +406,21 @@ describe('guidanceExcerpt', () => {
     const long = guidanceExcerpt({ summary: 'word '.repeat(100) }, 40)!;
     expect(long.length).toBeLessThanOrEqual(41);
     expect(long.endsWith('…')).toBe(true);
+  });
+});
+
+describe('a wait said once', () => {
+  it('next to a "Waiting for ..." line, the tag reads "5 days" with the wait\'s tone; any other line keeps "Waiting 5 days"', () => {
+    expect(waitSaidOnce('Waiting for your library decision on Timeline', 'Waiting 5 days')).toBe('5 days');
+    expect(waitSaidOnce('waiting for your review', 'Waiting 1 day')).toBe('1 day');
+    expect(waitSaidOnce('Waiting for your review', 'New today')).toBe('today');
+    expect(waitSaidOnce('Sofia sent it for review', 'Waiting 5 days')).toBe('Waiting 5 days');
+    expect(waitSaidOnce(null, 'Waiting 5 days')).toBe('Waiting 5 days');
+    // Not a wait's tag: as it is.
+    expect(waitSaidOnce('Waiting for your review', 'Changes requested')).toBe('Changes requested');
+    // The tone is the wait's own (amber once late), whatever the words.
+    const late = waitPill('2026-11-01T10:00:00Z', Date.parse('2026-11-12T12:00:00Z'));
+    expect(late.tone).toBe('warning');
+    expect(waitSaidOnce('Waiting for your library decision', late.label)).toBe('11 days');
   });
 });

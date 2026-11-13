@@ -166,7 +166,10 @@ describe("the sample team's flows: Looks right never skips Dana's library decisi
     // The Explorations list row ("Waiting for your library decision") says the same as Home, not Sofia's last change.
     const asked = parseExplorationBody(p.body)!.designAskedAt!;
     const fiveDaysOn = Date.parse(asked) + 5 * 24 * 60 * 60 * 1000;
-    expect(rowTime({ body: a.body, updated: new Date(fiveDaysOn - 24 * 60 * 60 * 1000).toISOString(), waitsOnViewer: true, now: fiveDaysOn }, () => 'yesterday')).toBe('Waiting 5 days');
+    const line = waitingLineOf(a.body, { team, product: 'prints', viewer: viewerIds(null, DANA) });
+    expect(line).toMatch(/^Waiting for your library decision/);
+    // Said once: "Sofia · Waiting for your library decision on ... · 5 days".
+    expect(rowTime({ body: a.body, updated: new Date(fiveDaysOn - 24 * 60 * 60 * 1000).toISOString(), waitsOnViewer: true, now: fiveDaysOn, line }, () => 'yesterday')).toBe('5 days');
   });
 
   it('the Explorations list reads the same kept copy as the page and Being built, from any read of the product', () => {

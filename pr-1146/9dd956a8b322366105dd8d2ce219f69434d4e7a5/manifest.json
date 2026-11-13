@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T00:54:58.286Z",
-  "durationMs": 176627,
+  "createdAt": "2026-11-13T01:20:37.545Z",
+  "durationMs": 169989,
   "base": {
-    "ref": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
-    "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178"
+    "ref": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
+    "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06"
   },
   "head": {
-    "ref": "1570a41e982c3953ed368dd6f3dcc31af9272e52",
-    "sha": "1570a41e982c3953ed368dd6f3dcc31af9272e52"
+    "ref": "9dd956a8b322366105dd8d2ce219f69434d4e7a5",
+    "sha": "9dd956a8b322366105dd8d2ce219f69434d4e7a5"
   },
   "options": {
     "only": [
@@ -46,6 +46,7 @@
       "apps/docs-site/src/components/ds/studio/TeamSettings.tsx",
       "apps/docs-site/src/components/foundations/Specimens.tsx",
       "apps/docs-site/src/layouts/Layout.astro",
+      "apps/docs-site/src/lib/demo-in-browser.flows.json",
       "apps/docs-site/src/lib/demo-in-browser.test.ts",
       "apps/docs-site/src/lib/demo-in-browser.ts",
       "apps/docs-site/src/lib/demo.ts",
@@ -54,12 +55,15 @@
       "apps/docs-site/src/lib/reviews-settings.ts",
       "apps/docs-site/src/lib/team-reviews.test.ts",
       "apps/docs-site/src/lib/team-reviews.ts",
+      "apps/docs-site/src/scripts/changes.ts",
       "apps/docs-site/src/scripts/demo-gate.test.ts",
       "apps/docs-site/src/scripts/demo-gate.ts",
       "apps/docs-site/src/scripts/exploration-page.ts",
       "apps/docs-site/src/scripts/github-session.ts",
+      "apps/docs-site/src/scripts/team-branches.ts",
       "apps/docs-site/src/scripts/team-data.ts",
       "apps/docs-site/src/scripts/team-reviews-data.ts",
+      "apps/docs-site/src/scripts/waiting-counts.ts",
       "packages/core/src/teams.ts",
       "packages/react/src/components/Avatar/Avatar.docs.json",
       "packages/react/src/components/Avatar/Avatar.stories.tsx",
@@ -120,7 +124,7 @@
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 7.79
+    "maxPercent": 3.96
   },
   "shots": [
     {
@@ -1127,21 +1131,15 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 63472,
+      "changedPixels": 24854,
       "totalPixels": 815104,
-      "percent": 7.79,
+      "percent": 3.05,
       "boxes": [
         {
           "x": 32,
           "y": 240,
           "width": 880,
           "height": 192
-        },
-        {
-          "x": 32,
-          "y": 720,
-          "width": 880,
-          "height": 76
         }
       ],
       "size": {

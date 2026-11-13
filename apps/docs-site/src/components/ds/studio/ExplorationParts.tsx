@@ -116,16 +116,17 @@ export function ScreenStage({ name, nameHidden = false, about = null, sub, singl
 // The Your turn zone
 
 /**
- * Each Field Guide drawing in one crop window, centred on its content: the same 236x92 units for every drawing, so at
- * the strip's 80px every one is drawn at the same scale (same stroke weight, same figure size) in the same 205x80 box,
- * the square ones centred in it like the wide scene. "x y w h" in the drawing's own units (brand/illustrations.ts).
+ * Each Field Guide drawing cropped to its ink (the drawing's bounding box with half its stroke, measured with getBBox
+ * in Chrome), so at the strip's 80px every drawing's ink is 80px tall and starts exactly on the card's text edge: the
+ * wide scene and the square drawings carry the same weight. "x y w h" in the drawing's own units
+ * (brand/illustrations.ts, read only).
  */
 const TURN_ART_CROP: Partial<Record<IllustrationName, string>> = {
-  review: '0.5 96 236 92',
-  guide: '-59 10 236 92',
-  paint: '-58 17 236 92',
-  fix: '-58 9.5 236 92',
-  components: '-58 32 236 92',
+  review: '8.7 100.62 219.2 80.68',
+  guide: '12.8 12.9 92.4 86.6',
+  paint: '6.9 18.7 106.3 88.5',
+  fix: '8.9 8.9 102.2 92.53',
+  components: '9.2 50.7 101.6 54.1',
 };
 
 /** The strip's height in px (var(--size-20)): every drawing is drawn at this height, its width from its crop. */

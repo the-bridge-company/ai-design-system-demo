@@ -29,6 +29,18 @@ const paint = (view: WhereItStandsView, say = vi.fn()) => ({ say, ...render(crea
 afterEach(cleanup);
 
 describe('Where it stands', () => {
+  it('once handed off, never a stale next step: the notes keep their counts and details, the next step written while exploring goes', () => {
+    const stale = { ...NOTES, nextStep: 'Waiting for Dana to look at it. Nothing goes to the developers before she answers.' };
+    render(createElement(WhereItStands, { view: { notes: stale }, say: vi.fn(), handedOff: true }));
+    expect(screen.queryByText(/Waiting for Dana/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: NOTES_WORDS.next })).toBeNull();
+    expect(screen.getByText('2 decisions \u2060· 2 of 3 edge cases covered \u2060· 1 open question')).toBeTruthy();
+    cleanup();
+    // Nothing else noted: no notes section at all (the turn block says where it is).
+    const { container } = render(createElement(WhereItStands, { view: { notes: { ...EMPTY, nextStep: 'Waiting for Dana.' } }, say: vi.fn(), handedOff: true }));
+    expect(container.textContent).toBe('');
+  });
+
   it('shows the next step and the counts, the details on Show details', async () => {
     const { container } = paint({ notes: NOTES });
     expect(screen.getByRole('heading', { name: 'Where it stands' })).toBeTruthy();

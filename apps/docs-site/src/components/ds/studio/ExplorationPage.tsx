@@ -1590,7 +1590,7 @@ function ExplorationBody(p: ExplorationPageProps) {
             {block && <div className="xp-b-turn">{block}</div>}
             <div className="xp-b-rail">
             {/* At Check the build, the ledger holds the handover notes as a checklist: never twice. */}
-            {p.notes && (!handoff || p.notes.notes) && !ledger && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail />}
+            {p.notes && (!handoff || p.notes.notes) && !ledger && <WhereItStands view={p.notes} say={setSaid} title={notesTitle} rail handedOff={stage === 'ready' || stage === 'building' || stage === 'check' || stage === 'shipped'} />}
           </div>
           </div>
         </div>

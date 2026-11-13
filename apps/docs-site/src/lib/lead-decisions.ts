@@ -3,6 +3,7 @@
 // decisionsOf, openDecisionOf). Bridge voice: a designer reads it.
 import { stepTag } from './status-ladder';
 import { isNameAuthor, nameOfAuthor } from './author';
+import { waitSaidOnce, waitingLabel } from './home-model';
 import { decisionsOf, homeRowLine, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind, type HatAsk } from '@bridge-ds/core';
 
 export interface DecisionRowView {
@@ -29,7 +30,7 @@ const VERB: Record<DecisionKind, string> = {
   'asked-someone': 'asked someone else to review',
   handed: 'handed it over',
   archived: 'archived it',
-  'pm-ok': 'said it looks good',
+  'pm-ok': 'said it looks right',
   'pm-changes': 'asked for changes',
   'pm-call': 'agreed in a call',
 };
@@ -117,8 +118,10 @@ export function turnSince(body: string | null | undefined): string | null {
   if (!e) return null;
   const turn = leadTurnOf(body);
   if (turn === 'lead' && isWaitingForLead(body)) {
-    const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
-    return all[all.length - 1]?.at ?? e.designAskedAt ?? null;
+    // A Looks right never starts a wait: what still waits after the design review's yes (the library decision) waits
+    // since it was asked, so a hand-over inside the same item never reads "New today".
+    const all = decisionsOf(e).filter((d) => !isPmKind(d.kind) && d.kind !== 'looks-right');
+    return all[all.length - 1]?.at ?? e.library?.askedAt ?? e.designAskedAt ?? null;
   }
   if (turn === 'designer') return openDecisionOf(body)?.at ?? null;
   return null;
@@ -130,6 +133,16 @@ export function turnSince(body: string | null | undefined): string | null {
  */
 export function rowAgeFrom(x: { body?: string | null; updated: string; yourTurn: boolean }): string {
   return (x.yourTurn ? turnSince(x.body) : null) ?? x.updated;
+}
+
+/**
+ * The time on a listed exploration's line. A row that waits on the viewer (its turn on Explorations, or a review it
+ * asks of them, a library decision included) says since when, with Home's own tag: "Waiting 5 days" (turnSince, never
+ * the last change). Any other row says when it last changed ("yesterday", `ago`).
+ */
+export function rowTime(x: { body?: string | null; updated: string; waitsOnViewer: boolean; now: number; line?: string | null }, ago: (iso: string) => string): string {
+  // Next to a "Waiting for ..." note, "waiting" is said once: "5 days" (lib/home-model waitSaidOnce).
+  return x.waitsOnViewer ? waitSaidOnce(x.line, waitingLabel(rowAgeFrom({ body: x.body, updated: x.updated, yourTurn: true }), x.now)) : ago(x.updated);
 }
 
 export const TAKEN_FOR_MS = 2 * 24 * 60 * 60 * 1000;

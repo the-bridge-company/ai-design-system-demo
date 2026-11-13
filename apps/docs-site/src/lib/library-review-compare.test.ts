@@ -16,7 +16,7 @@ describe('the compare view of a conflict', () => {
     // The check recorded 16 (the product screen before), the library's Card padding is 20: the library wins.
     // The demo is a real three-way choice: today 20, Sofia 24 (roomier, new), Leo 12 (the library's Compact).
     const v = compareView(conflict(), 'Every screen')!;
-    expect(v.part).toBe('Room inside');
+    expect(v.part).toBe('Padding');
     expect(v.overlay).toBe(true);
     expect([v.today.valueText, v.today.words, v.today.where]).toEqual(['20 px', 'in the library', { text: 'Every screen' }]);
     expect(v.ways.map((w) => [w.name, w.valueText, w.words, w.hue, w.sameAsToday])).toEqual([
@@ -25,7 +25,7 @@ describe('the compare view of a conflict', () => {
     ]);
     expect(v.ways[1]!.where).toEqual({ exploration: 'Deal pipeline cards', product: 'Acme CRM', href: null });
     expect([v.both?.name, v.both?.valueText, v.both?.words]).toEqual(['Both, as two sizes', '12 and 24 px', "today's 20 stays the default"]);
-    expect(v.told).toBe('Sofia and Leo are told.');
+    expect(v.told).toBe('Sofia and Leo will be notified.');
   });
 
   it("agrees with the exploration page's ledger: one default value for the same part", () => {

@@ -10,6 +10,7 @@
 //
 // Pure: no DOM, no fetch. Unit tested in review-lines.test.ts.
 import { decisionsOf, homeRowLine, isPmKind, noReviewLine, parseExplorationBody, possessive, piecesWords, type HatAsk, type ReviewViewer, type WaitingDesign, type WaitingLibrary } from '@bridge-ds/core';
+import { isCastLogin } from './demo-cast';
 import { ANY_PRODUCT, memberId, reviewsToAsk, SAMPLE_REVIEWS, waitingLineOf, waitingReviews, type DesignReviewMap, type TeamReviews } from './team-reviews';
 
 /** Where an exploration is said: the team's reviews, its product (key and name) and who opened its pull request. */
@@ -122,9 +123,11 @@ export function stillWaitsLine(pieces: readonly string[], owners: readonly { nam
  */
 export function withSampleReviews(t: TeamReviews, sample: boolean): TeamReviews {
   if (!sample) return t;
+  // Only the cast: never the GitHub owners of the repository hosting the sample team (lib/team-reviews reviewGithubOwners).
+  const cast = t.members.filter((m) => !m.login || m.ref || isCastLogin(m.login));
   const designReview: DesignReviewMap = t.designReview && Object.keys(t.designReview).length ? t.designReview : SAMPLE_REVIEWS;
   const dana = (SAMPLE_REVIEWS[ANY_PRODUCT] as { reviewers: string[] }).reviewers[0]!;
-  const owned = t.members.some((m) => m.libraryOwner);
-  const members = owned ? t.members : t.members.map((m) => (m.ref === dana ? { ...m, libraryOwner: true } : m));
-  return { ...t, designReview, members };
+  const owned = cast.some((m) => m.libraryOwner);
+  const members = owned ? cast : cast.map((m) => (m.ref === dana ? { ...m, libraryOwner: true } : m));
+  return { ...t, githubOwners: [], designReview, members };
 }

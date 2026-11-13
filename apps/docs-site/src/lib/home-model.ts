@@ -11,6 +11,7 @@
 //
 // Every value comes from GitHub (pull requests, their timeline and reviews) or from the repo at build time (usage
 // guidance, contrast, adoption, the changelog). Nothing here is guessed.
+import { peopleNames } from './people-line';
 import type { ThumbSpec } from './branch-thumb';
 import { agoInSentence, calendarDays, isDocsProposalBranch, PUBLISH_ROUTE_COPY, requesterOf } from '@bridge-ds/core';
 import { STATUS_WORDS, VOCAB } from './vocabulary';
@@ -19,6 +20,7 @@ import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { studioHref } from './team-path';
 import { questionLine } from './review-state';
 import { waitTone } from './status-tag';
+import { guidanceByLine, guidanceTitle } from './library-review';
 
 /** Rows of the Needs you list before the grouped row. */
 export const NEEDS_SHOWN = 3;
@@ -97,16 +99,14 @@ export function uniquePeople(people: (Person | null | undefined)[]): Person[] {
 
 /**
  * Who waits on the viewer, in one sentence: "Ann is waiting on you.", "Ann and Dana are waiting on you.",
- * "Ann, Dana, Claude AI and 6 others are waiting on you." Empty without anyone.
+ * "Ann, Dana and 7 others are waiting on you." Empty without anyone.
  */
 export function waitingSentence(people: Pick<Person, 'name'>[]): { names: string; rest: string } | null {
   const n = people.length;
   if (!n) return null;
+  // The one rule for a group of people (lib/people-line): every name up to three, then two and "N others".
   const names = people.map((p) => p.name);
-  if (n === 1) return { names: names[0]!, rest: ' is waiting on you.' };
-  if (n <= AVATARS_SHOWN) return { names: `${names.slice(0, -1).join(', ')} and ${names[n - 1]}`, rest: ' are waiting on you.' };
-  const others = n - AVATARS_SHOWN;
-  return { names: `${names.slice(0, AVATARS_SHOWN).join(', ')} and ${others} ${others === 1 ? 'other' : 'others'}`, rest: ' are waiting on you.' };
+  return { names: peopleNames(names), rest: n === 1 ? ' is waiting on you.' : ' are waiting on you.' };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -166,6 +166,29 @@ export const daysSince = (iso: string, now: number) => calendarDays(iso, new Dat
 export function waitingLabel(iso: string, now: number): string {
   const d = daysSince(iso, now);
   return d === 0 ? 'New today' : `Waiting ${d} ${d === 1 ? 'day' : 'days'}`;
+}
+
+/**
+ * Say "waiting" once: next to a line that already starts with "Waiting for" ("Waiting for your library decision on
+ * Timeline"), the wait's tag reads "5 days" ("today" for New today); its tone stays the wait's (amber once late).
+ * Any other line keeps the tag as it is ("Waiting 5 days").
+ */
+export function waitSaidOnce(line: string | null | undefined, label: string): string {
+  if (!/^waiting for\b/i.test((line ?? '').trim())) return label;
+  if (label === 'New today') return 'today';
+  const m = /^Waiting (.+)$/.exec(label);
+  return m ? m[1]! : label;
+}
+
+/**
+ * A row's tag with its wait said once (waitSaidOnce). No start time known (the tag is a bare "Waiting") next to a line
+ * that already starts with "Waiting for": no tag at all, the line says it.
+ */
+export function pillSaidOnce<P extends { label: string }>(line: string | null | undefined, pill: P | null | undefined): P | null {
+  if (!pill) return null;
+  if (/^waiting for\b/i.test((line ?? '').trim()) && pill.label.trim().toLowerCase() === 'waiting') return null;
+  const label = waitSaidOnce(line, pill.label);
+  return label === pill.label ? pill : { ...pill, label };
 }
 
 /**
@@ -479,7 +502,10 @@ export interface GuidanceDraft {
   name: string;
   slug?: string;
   href: string;
+  /** When it was flagged for review (scripts/guidance-drafts guidanceSince), null until read. */
   since: string | null;
+  /** Its docs.json, repo-relative: where its age is read from. */
+  path?: string | null;
   /** The first lines of the draft (guidanceExcerpt), for the review queue. */
   excerpt?: string | null;
 }
@@ -522,7 +548,8 @@ export function guidanceChangeOf(
  * for review, it is in review like any other change.
  */
 export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChange | null = null): NeedRow {
-  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: `${g.name} usage guidance`, person: CLAUDE, thumb: { kind: 'text' as const }, ...(g.excerpt ? { excerpt: g.excerpt } : {}) };
+  // The same title as its Library review piece (lib/library-review pieceOfGuidance): one source, one name.
+  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: guidanceTitle(g.name), person: CLAUDE, thumb: { kind: 'text' as const }, ...(g.excerpt ? { excerpt: g.excerpt } : {}) };
   if (change) {
     return {
       ...base,
@@ -538,7 +565,7 @@ export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChan
   return {
     ...base,
     href: g.href,
-    line: `${CLAUDE.name} drafted it from the code`,
+    line: guidanceByLine(CLAUDE.name),
     since: g.since,
     waitsOnYou: true,
     // Its status tag like every row that waits on the viewer, even when Bridge cannot say since when.

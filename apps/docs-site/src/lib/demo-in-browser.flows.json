@@ -1,0 +1,26 @@
+{
+  "deal": {
+    "number": 1,
+    "repo": "acme-design-demo/acme-crm-design",
+    "head": {
+      "ref": "explore/deal-pipeline-cards",
+      "sha": "752ca9abe1e1b21288b7090fc1b267c12ef4798c"
+    },
+    "labels": [
+      "exploration"
+    ],
+    "body": "<!-- bridge-exploration {\"name\":\"Deal pipeline cards\",\"purpose\":\"Each deal card shows its value, how long it has waited in its stage, the next step and who owns it.\",\"slug\":\"deal-pipeline-cards\",\"useCase\":\"user-test\",\"startedAt\":\"2026-11-08T21:55:01.406Z\",\"source\":\"studio\",\"screen\":\"/#/deals\",\"member\":\"af419771c6f4d96f\",\"memberName\":\"Leo\",\"leadAskedAt\":\"2026-11-08T21:55:13.923Z\",\"leadAskedByName\":\"Leo\",\"leadAskedSha\":\"321996ee9b7bdffd18abf1abd560df5a99837635\"} -->\n\n<!-- bridge-pieces {\"checkedAt\":\"2026-11-09T12:25:00.034Z\",\"headSha\":\"7f56e1ad7f6069646d4327a41f4988ebdec60635\",\"pieces\":[{\"id\":\"card-deal-restyle\",\"kind\":\"variant\",\"title\":\"Card: deal restyle\",\"summary\":\"Card restyled from outside the library, tokens only (padding var(--space-3)). The library Card has no such variant yet.\",\"name\":\"deal\",\"component\":\"Card\",\"aspect\":\"size\",\"values\":[{\"category\":\"spacing\",\"property\":\"padding\",\"value\":\"var(--space-3)\",\"resolved\":\"12px\"}],\"where\":[{\"file\":\"src/components/atomic-crm/deals/deals.css\",\"line\":56}],\"restyle\":{\"selector\":\".acme-deal-card\"}}],\"fixes\":0,\"uses\":[\"Card\",\"NumberField\",\"Badge\",\"Tooltip\",\"Icon\",\"Avatar\"],\"links\":[]} -->"
+  },
+  "order": {
+    "number": 1,
+    "repo": "acme-design-demo/acme-prints-design",
+    "head": {
+      "ref": "explore/order-fulfillment-timeline",
+      "sha": "6706e7f0057435ddd334544e08200279e0be5a40"
+    },
+    "labels": [
+      "exploration"
+    ],
+    "body": "<!-- bridge-exploration {\"name\":\"Order fulfilment timeline\",\"purpose\":\"Each order shows where it stands, from paid to delivered, and the next action sits on the step where it happens.\",\"slug\":\"order-fulfillment-timeline\",\"useCase\":\"user-test\",\"startedAt\":\"2026-11-08T21:53:51.171Z\",\"source\":\"studio\",\"screen\":\"/#/orders/65\",\"member\":\"0406ec723c59bb8d\",\"memberName\":\"Sofia\",\"leadAskedAt\":\"2026-11-08T21:54:05.243Z\",\"leadAskedByName\":\"Sofia\",\"leadAskedSha\":\"74a51df23bf55dd6d1d74c170d99645d120c74f0\"} -->\n\n<!-- bridge-pieces {\"checkedAt\":\"2026-11-12T12:00:19.026Z\",\"headSha\":\"6706e7f0057435ddd334544e08200279e0be5a40\",\"pieces\":[{\"id\":\"card-timeline-restyle\",\"kind\":\"variant\",\"title\":\"Card: timeline restyle\",\"summary\":\"Card restyled from outside the library, tokens only (padding var(--space-6)). The library Card has no such variant yet.\",\"name\":\"timeline\",\"component\":\"Card\",\"aspect\":\"size\",\"values\":[{\"category\":\"spacing\",\"property\":\"padding\",\"value\":\"var(--space-6)\",\"resolved\":\"24px\"}],\"where\":[{\"file\":\"src/resources/orders/timeline.module.css\",\"line\":2}],\"restyle\":{\"selector\":\".timelineCard\"}},{\"id\":\"component-timeline\",\"kind\":\"component\",\"title\":\"New component: Timeline\",\"summary\":\"Built in this screen. The library has nothing like it yet.\",\"name\":\"Timeline\",\"component\":\"Timeline\",\"values\":[],\"where\":[{\"file\":\"src/resources/orders/FulfillmentTimeline.tsx\",\"line\":91}]}],\"fixes\":0,\"uses\":[\"Card\",\"Badge\",\"Icon\",\"Button\",\"Table\",\"Skeleton\",\"Divider\",\"Link\"],\"links\":[]} -->"
+  }
+}

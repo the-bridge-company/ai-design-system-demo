@@ -4,7 +4,7 @@
 // on a phone moves with the DS Pagination.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LibraryReviewView, type LibraryReviewProps } from './LibraryReview';
 import { change, conflict, LEAD, newComponent } from '../../../lib/library-fixtures.test-helpers';
@@ -71,9 +71,13 @@ describe('Library review feedback, with DS components', () => {
   it('tells a designer who decides in a DS Banner, with the way to how review works', async () => {
     history.replaceState(null, '', '/?view=list');
     render(createElement(LibraryReviewView, props(async () => 'x', true)));
-    const banner = await screen.findByRole('region', { name: /Dana decides what the library keeps/ });
-    expect(banner).toHaveTextContent('Nothing to do meanwhile.');
-    expect(screen.getByRole('link', { name: 'How library review works' })).toHaveAttribute('href', '/how-review-works/');
+    const banner = await screen.findByRole('region', { name: 'Dana decides what the library keeps.' });
+    // Said once: who decides, where the decision shows, then the link closes the text (no face drawing, no filler).
+    expect(banner).toHaveTextContent(/^Dana decides what the library keeps\.The decision shows here and on your exploration\. How library review works$/);
+    expect(banner).not.toHaveTextContent('Nothing to do meanwhile');
+    expect(banner).not.toHaveTextContent('You will see the decision');
+    expect(within(banner).getByRole('link', { name: 'How library review works' })).toHaveAttribute('href', '/how-review-works/');
+    expect(banner.querySelectorAll('svg')).toHaveLength(1);
   });
 
   it('moves through the pieces with the DS Pagination (compact) in One by one', async () => {

@@ -100,10 +100,11 @@ describe('the List in blocks', () => {
     expect(g.mid).not.toContain('var(--space-2)');
     expect(tracks(g.narrow)).toHaveLength(5);
     expect(g.narrow).not.toMatch(/^var\(--size-6\) var\(--size-40\)/);
-    // The title column takes the rest; a row with "+N" people widens Asked by, a State column only when one is filled.
+    // The title column takes the rest; a row naming several people widens Asked by, a State column only when one is filled.
     expect(g.wide).toContain('minmax(var(--size-40), 1fr)');
     expect(listGrid({ box: false, askedMore: true, state: 'tag', next: false, action: false }).wide).toBe(
-      'var(--size-40) minmax(var(--size-40), 1fr) calc(var(--size-20) + var(--size-8)) minmax(var(--size-40), 1fr) calc(var(--size-20) + var(--space-2)) var(--size-20)',
+      // A tag column fits "Waiting 22 days" whole.
+      'var(--size-40) minmax(var(--size-40), 1fr) var(--size-40) minmax(var(--size-40), 1fr) calc(var(--size-20) + var(--space-2)) calc(var(--size-20) + var(--size-12))',
     );
   });
 });

@@ -131,7 +131,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(c.question).toBe('Which way does Card take?');
     expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes Card roomier.");
     expect(c.context[0]!.face).toBe('Sofia');
-    expect(c.note).toBe('Answers both screens. Leo and Sofia are told.');
+    expect(c.note).toBe('Answers both screens. Leo and Sofia will be notified.');
     expect(c.comment).toBe('Comment to both');
     expect(c.todayHint).toBe('In the library now');
     expect(keepLabel('one', [c.ways[0]!.key], c.ways)).toBe("Keep Leo's way");
@@ -180,7 +180,8 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     expect(v.rows[0]!.status.label).toBe('Needs you');
     expect(c.question).toBe('Card, two ways');
     expect(c.context.map((s) => s.text).join('')).toBe("Sofia's Contact page summary (Acme CRM) makes it roomier; this screen makes it tighter.");
-    expect(c.noteParts).toEqual([{ text: 'Pick in Library review', href }, { text: ': it answers both screens. Leo and Sofia are told.' }]);
+    expect(c.noteParts).toEqual([{ text: 'Pick in Library review', href }, { text: ': it answers both screens.' }]);
+    expect(c.notified).toEqual({ text: 'Leo and Sofia will be notified.', people: ['Leo', 'Sofia'] });
     expect(c.note).not.toMatch(/your choice|exploration's page/i);
   });
 
@@ -216,7 +217,7 @@ describe('several ways for one component part (EB1 to EB4)', () => {
       [20, 10],
     ]);
     expect(c.context.map((s) => s.text).join('')).toBe("Two more screens change Card: Sofia's Contact page summary makes it roomier, Ann's Activity feed filters makes it filled, no border. All in Acme CRM.");
-    expect(c.note).toBe('Answers all 3 screens. Leo, Sofia and Ann are told.');
+    expect(c.note).toBe('Answers all 3 screens. Leo, Sofia and Ann will be notified.');
     expect(c.todayHint).toBe('Stays the default');
     const kept = [c.ways[0]!.key, c.ways[1]!.key];
     expect(keepLabel('sizes', kept, c.ways)).toBe('Keep 2 sizes: Tighter and Roomier');
@@ -237,11 +238,11 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const c = conflictOf(libraryImpactView({ ...base, lead: 'you', canDecide: true, conflicts: libraryConflicts(leo, many), others: many }));
     expect(c.ways).toHaveLength(11);
     expect(c.context.map((s) => s.text).join('')).toMatch(/^Ten more screens change Card: P0's Screen 0 makes it .*, P1's Screen 1 makes it .* and 8 more\. All in Acme CRM\.$/);
-    expect(c.note).toBe('Answers all 11 screens. Everyone who asked is told.');
+    expect(c.note).toBe('Answers all 11 screens. Leo, P0 and 9 others will be notified.');
     expect(namesLine(['Leo', 'Sofia', 'Ann', 'Max', 'Kim'])).toBe('Leo, Sofia and 3 others');
   });
 
-  it('once decided: two lines, the plates kept, this screen ringed, who chose and who is told', () => {
+  it('once decided: two lines, the plates kept, this screen ringed, who chose and who will be notified', () => {
     const pick = 'both';
     const body = withExplorationLibrary(leoBody, (l) => withLibraryChoice(l, { component: 'Card', property: 'padding', pick, at: '2026-11-10T10:00:00Z', byName: 'Dana' }));
     const settled = libraryConflicts({ ...leo, library: parseExplorationBody(body)?.library ?? null }, [sofia]);
@@ -251,7 +252,8 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     const d = v.conflicts[0]!.decided!;
     expect(d.title).toBe('Card gets two new sizes');
     expect(d.by).toBe('Dana, just now');
-    expect(d.told).toBe('Leo and Sofia are told');
+    expect(d.told).toBe('Leo and Sofia will be notified.');
+    expect(d.people).toEqual(['Leo', 'Sofia']);
     expect(d.plates.map((p) => [p.label, p.sub, p.chip])).toEqual([
       ['Today', 'Stays the default', null],
       ['Tighter', null, 'This screen'],

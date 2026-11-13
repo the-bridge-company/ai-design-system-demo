@@ -111,7 +111,7 @@ export default function EditorPreview({ previews = [] }: { previews?: { name: st
         <Progress value={60} label="Checks" />
       </div>
       <div data-sample="Avatar">
-        <Avatar name="Florian Gouloubi" />
+        <Avatar name="Ana Lima" />
       </div>
       <div data-sample="Kbd">
         <Kbd keys="Enter" />

@@ -21,7 +21,8 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('../../../scripts/invites-api', () => api);
 vi.mock('../../../scripts/repo-context', () => ({ siteConfig: () => ({ products: [{ key: 'crm', name: 'Acme CRM' }] }) }));
-vi.mock('../../../scripts/teams', () => ({ siteApprovers: () => ({ design: [], tech: [] }) }));
+const owners = vi.hoisted(() => ({ design: [] as string[] }));
+vi.mock('../../../scripts/teams', () => ({ siteApprovers: () => ({ design: owners.design, tech: [] }) }));
 vi.mock('../../../scripts/github-session', () => ({ currentContributor: () => ({ ref: LEO }), getToken: () => null }));
 vi.mock('../../../scripts/contribute-session', () => ({
   teamReview: async () => ({
@@ -40,7 +41,10 @@ const members: Member[] = [
 ];
 const reviews = { designReview: { '*': { on: true as const, reviewers: [DANA] }, library: { on: false as const } }, note: true };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  owners.design = [];
+});
 
 describe('Settings > Reviews', () => {
   it('an admin reads both reviews summary first, with the one time note', async () => {
@@ -115,5 +119,19 @@ describe('Settings > Reviews', () => {
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByText(/Reviews now have two parts/)).toBeNull();
     await expectNoAxeViolations(container);
+  });
+
+  it('the sample team names only its cast: never the GitHub owner of the repository hosting it, never a config key', async () => {
+    owners.design = ['peterbono'];
+    render(createElement(ReviewsSection, { repo: 'acme-design-demo/bridge-demo-ds', canEdit: true, members, reviews }));
+    expect(await screen.findByText('Dana decides what the library keeps')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/peterbono|bridge\.config|governance/i);
+  });
+
+  it('a real team keeps its GitHub design owners, in plain words', async () => {
+    owners.design = ['lee'];
+    render(createElement(ReviewsSection, { repo: 'acme/ds', canEdit: true, members, reviews }));
+    expect(await screen.findByText('Dana and lee decide what the library keeps')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/bridge\.config|governance/i);
   });
 });

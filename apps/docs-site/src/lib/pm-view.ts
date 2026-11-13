@@ -22,17 +22,18 @@ export function isViewerPm(pm: PmPerson | null | undefined, viewer: { ref?: stri
   return Boolean(viewer.login && viewer.login.toLowerCase() === pm.login.toLowerCase());
 }
 
+/** The PM's words: the lead's verb set (Review, Looks right, Needs changes), one set for every reviewer. */
 export const PM_WORDS = {
   title: (pm: string) => `What do you think, ${pm}?`,
   intro: (designer: string) => `${designer} shares this with you before it goes to review.`,
   note: 'Your note',
-  noteHint: 'Needed for Needs changes.',
+  noteHint: 'Needed when you ask for changes.',
   noteNeeded: 'Say what to change.',
-  looksGood: 'Looks good',
+  looksGood: 'Looks right',
   changes: 'Needs changes',
   heading: 'Product manager',
   agreedInCall: (pm: string) => `${pm} agreed in a call`,
-  sentOk: 'Sent: it looks good to you.',
+  sentOk: 'Sent: it looks right to you.',
   sentChanges: 'Sent to the designer, with your note.',
   sentCall: (pm: string) => `Noted. ${pm} gets a line and can correct it.`,
 } as const;
@@ -44,7 +45,7 @@ export function pmStatusLine(said: PmSaid | null, x: { pm: string; when: string;
   const who = x.mine ? 'You' : x.pm;
   if (!said) return x.mine ? 'You have not said what you think yet.' : `${x.pm} has not seen it yet.`;
   const at = x.when ? `, ${x.when}` : '';
-  if (said.kind === 'pm-ok') return `${who} said it looks good${at}.`;
+  if (said.kind === 'pm-ok') return `${who} said it looks right${at}.`;
   if (said.kind === 'pm-changes') return `${who} asked for changes${at}.`;
   return `${said.byName ?? 'The designer'} said ${x.mine ? 'you' : x.pm} agreed in a call${at}.`;
 }
@@ -59,7 +60,7 @@ export function pmHomeRow(body: string | null | undefined, x: { buildReady: bool
   if (e.doneAt) return x.buildReady ? { line: () => 'The build is ready to check', action: 'Check', since: null, optional: false } : null;
   if (pmOpinionOf(body)) return null;
   // Their opinion is optional (they never decide): an invitation on their Home, never a queue that waits on them.
-  return { line: (designer) => `${designer} would like your opinion`, action: 'Look', since: e.designAskedAt ?? null, optional: true };
+  return { line: (designer) => `${designer} would like your opinion`, action: 'Review', since: e.designAskedAt ?? null, optional: true };
 }
 
 /** A PM word as Bridge keeps it on the exploration (core's Decision). */

@@ -150,7 +150,7 @@ describe('the PM gate at Done exploring', () => {
   const libraryOnly: ReviewsAsked = { design: null, library: { owners: [{ id: 'flo', name: 'Flo' }], pieces: ['x'] }, noDesign: 'off' };
   it('no design review: the PM says it looks good first; a product with no PM goes on', () => {
     const review = { pms };
-    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: 'x' })).toMatch(/Dino says it looks good/);
+    expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: 'x' })).toMatch(/Dino says it looks right/);
     expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-changes') })).toMatch(/Dino asked for changes/);
     expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-ok') })).toBeNull();
     expect(pmGateStop({ review, asked: noDesign, product: 'shop', body: said('pm-call') })).toBeNull();

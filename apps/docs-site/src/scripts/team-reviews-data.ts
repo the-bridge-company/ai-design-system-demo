@@ -9,7 +9,7 @@ import { siteConfig } from './repo-context';
 import { siteApprovers } from './teams';
 import { knownNames } from './people';
 import { isSampleTeam } from '../lib/demo';
-import { viewerIds, type ReviewMember, type TeamReviews } from '../lib/team-reviews';
+import { reviewGithubOwners, viewerIds, type ReviewMember, type TeamReviews } from '../lib/team-reviews';
 import { withSampleReviews } from '../lib/review-lines';
 
 let reading: Promise<TeamReviews> | null = null;
@@ -35,7 +35,8 @@ function githubOwners(): string[] {
 export function loadTeamReviews(): Promise<TeamReviews> {
   reading ??= (async () => {
     const { owner, repo } = readRepo();
-    const owners = githubOwners();
+    // The sample team names only its cast: never the account hosting its repository.
+    const owners = reviewGithubOwners(`${owner}/${repo}`, githubOwners());
     const names = knownNames();
     // GitHub people by the name this browser knows ("Dana"), never a bare login when a name is known.
     const github: ReviewMember[] = owners.filter((l) => !l.includes('/')).map((l) => ({ login: l, name: names[l.toLowerCase()]?.name?.split(/\s+/)[0] ?? l }));

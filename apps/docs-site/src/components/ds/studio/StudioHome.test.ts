@@ -440,7 +440,8 @@ describe('StudioHome, quiet team Home (recent)', () => {
   it('leads a developer with what they build: Being built on them, never an exploration to start', async () => {
     const branches: BranchCard[] = [{ ...branch, stage: 'draft' }, { ...branch, number: 43, stage: 'ready' }];
     const { container } = render(createElement(StudioHome, quiet({ contributor: true, lead: false, builder: true, branches, explorations: [exploration(7, { own: false })], greeting: 'Good afternoon, Malik.' })));
-    expect(screen.getByRole('heading', { level: 1, name: 'What are you building today?' })).toBeTruthy();
+    // One hero anatomy for every role: the greeting is the headline, the sentence under it.
+    expect(screen.getByRole('heading', { level: 1, name: 'Good afternoon, Malik.' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Start an exploration' })).toBeNull();
     expect(screen.getByRole('link', { name: 'See what you are building' }).getAttribute('href')).toMatch(/building\/\?people=you$/);
     // The sentence's first clause is its one link: Being built on the viewer, at that status; the next clause is words.
@@ -455,9 +456,10 @@ describe('StudioHome, quiet team Home (recent)', () => {
     localStorage.setItem('bridge.home.lead-tour', 'done');
     const waiting = exploration(7, { title: 'Dashboard: orders waiting to ship', productKey: 'admin-app', product: 'Art print shop', stage: 'with-devs', state: 'Ready to build', lifecycle: 'waiting-for-code', preview: { kind: 'screen', src: null } });
     const { container } = render(createElement(StudioHome, quiet({ explorations: [waiting] })));
-    expect(screen.getByRole('heading', { level: 1, name: 'What do you want to explore?' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Good evening, Florian.' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Start an exploration' })).toHaveLength(1);
-    expect(container.querySelector('.sh-zone')!.textContent).toContain('Good evening, Florian. Nothing needs you. 1 of your explorations is ready to build.');
+    expect(container.querySelector('.sh-zone h1')!.textContent).toBe('Good evening, Florian.');
+    expect(container.querySelector('.sh-zone .sh-head-text > p')!.textContent).toBe('Nothing needs you. 1 of your explorations is ready to build.');
     // The clause opens Changes on the viewer's own explorations ready to build.
     expect(screen.getByRole('link', { name: '1 of your explorations is ready to build' }).getAttribute('href')).toMatch(/explorations\/\?status=with-developers&people=you$/);
     // Nothing needs the viewer: the zone is one window onto the harbor (water only on a phone), with the one primary
@@ -505,7 +507,7 @@ describe('StudioHome, quiet team Home (recent)', () => {
 
   it('keeps "you have nothing in progress" only when nothing at all is open, and no Recent explorations then', () => {
     const { container } = render(createElement(StudioHome, quiet({ explorations: [] })));
-    expect(container.querySelector('.sh-zone')!.textContent).toContain('Good evening, Florian. Nothing needs you, and you have nothing in progress.');
+    expect(container.querySelector('.sh-zone .sh-head-text > p')!.textContent).toBe('Nothing needs you, and you have nothing in progress.');
     expect(container.querySelector('[aria-labelledby="sh-explorations"]')).toBeNull();
   });
 });

@@ -156,12 +156,12 @@ const conflict = () =>
 describe('a conflict', () => {
   it('is one piece with two ways, each said against today', () => {
     const c = conflict();
-    expect(c.conflict?.ways.map((w) => w.line)).toEqual(['More room inside than today.', 'Tighter than today.']);
+    expect(c.conflict?.ways.map((w) => w.line)).toEqual(['More padding than today.', 'Tighter than today.']);
     expect(c.conflict?.ways[1]?.piece).toBe('card-room');
     expect(batchable(c, LEAD)).toBe(false);
     expect(canDecide(c, LEAD)).toBe(true);
-    expect(wayLine('padding', '24', null)).toBe('A different room inside than today.');
-    expect(wayLine('padding', '20', null, { designer: 'Leo', value: '12' })).toBe("More room inside than Leo's way.");
+    expect(wayLine('padding', '24', null)).toBe('A different padding than today.');
+    expect(wayLine('padding', '20', null, { designer: 'Leo', value: '12' })).toBe("More padding than Leo's way.");
   });
 
   it('opens with today’s context when Bridge knows it', () => {

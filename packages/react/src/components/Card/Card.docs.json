@@ -23,7 +23,7 @@
       "text": "The footer is for the decision; secondary actions step down to ghost.",
       "example": { "c": "Box", "children": [ { "c": "Card", "children": [
         { "c": "CardHeader", "children": ["Owners"] },
-        { "c": "CardBody", "children": ["Design: Florian G. Tech: platform team."] },
+        { "c": "CardBody", "children": ["Design: Dana. Tech: platform team."] },
         { "c": "CardFooter", "children": [ { "c": "Button", "p": { "size": "sm", "variant": "secondary" }, "children": ["Edit owners"] } ] }
       ] } ] }
     }

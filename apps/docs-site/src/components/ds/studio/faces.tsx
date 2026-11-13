@@ -6,6 +6,7 @@ import type { Person } from '../../../lib/home-model';
 import { safeUrl } from '../../../lib/html';
 import { avatarLogin } from '../../../lib/github-photo';
 import { FACES_EVENT, faceUri } from '../../../scripts/team-faces';
+import { isCastLogin } from '../../../lib/demo-cast';
 
 /** A GitHub account's photo address as Studio writes it (github.com/<login>.png): Who checks it for a drawn face. */
 export const githubPhoto = (login: string, size = 48): string => `https://github.com/${encodeURIComponent(login)}.png?size=${size}`;
@@ -64,7 +65,8 @@ function useDrawnFace(photo: string | null | undefined, who?: string | null): bo
  */
 export function Who({ p, size = 'md', decorative = true, className }: { p: Face; size?: 'xs' | 'sm' | 'md'; decorative?: boolean; className?: string; /** For AvatarGroup's "+N" names. */ name?: string }) {
   const draw = useFaces();
-  const photo = safeUrl(p.avatar ?? p.avatarUrl) || undefined;
+  // A sample person's GitHub account (the developer, acme-malik) is drawn, never his GitHub picture (lib/demo-cast).
+  const photo = isCastLogin(p.login) ? undefined : safeUrl(p.avatar ?? p.avatarUrl) || undefined;
   const drawn = useDrawnFace(p.agent ? null : photo, p.login);
   if (p.agent) return <Avatar kind="agent" brand="claude" name={p.name} size={size} decorative={decorative} className={className} />;
   // A GitHub account without a photo of its own shows the drawn face, never GitHub's generated pattern.

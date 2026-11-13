@@ -57,6 +57,7 @@ import {
 } from "@bridge-ds/core";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
+import ButtonLink from "../ButtonLink";
 import { CountTag } from "./CountTag";
 import { ListGroup } from "./ListGroup";
 import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
@@ -69,7 +70,7 @@ import { githubBusy, type GitHubBusy } from "../../../lib/github-busy";
 import { Drawing } from "./Drawing";
 import { Who } from "./faces";
 import { YOU } from "../../../lib/branches-page";
-import { buildOriginLine, originOfRow } from "../../../lib/build-origin";
+import { buildOriginLine, buildOriginShort, originOfRow } from "../../../lib/build-origin";
 import {
   addressWithBuildFilters,
   BUILD_BOARD_CAP,
@@ -130,6 +131,14 @@ import {
 import { statusTagClass } from '../../../lib/status-tag';
 import { statedOrigin } from '../../../lib/library-origin';
 import { AuditNote } from './LibraryChanges';
+import { SEP } from '../../../lib/sep';
+import { shortWaitLine } from '../../../lib/wait-line';
+
+/**
+ * A row's line with who it waits on after it ("Sent 2 days ago · Waiting for Sofia's check"): one row anatomy for every
+ * row (the tag alone at the end, no second line under it), so a waiting row is never taller than the others.
+ */
+const withWaiting = (line: string | null, waiting: string | null): string | null => (line && waiting ? `${line}${SEP}${waiting}` : (line ?? waiting));
 import '../../../styles/explorations-board.css';
 
 const TONE = {
@@ -145,6 +154,12 @@ const avatar = (login: string) =>
 const personFor = (login: string, data: BuildData) =>
   isNameAuthor(login) ? person(nameFace(nameOfAuthor(login)), nameOfAuthor(login), null) : person(login, data.nameOf(login), avatar(login));
 const external = { target: "_blank", rel: "noopener noreferrer" } as const;
+/** Picking up a build request: on its row, then in its detail, where the developer assigns themselves on GitHub. */
+export const PICK_UP_WORDS = {
+  row: "Pick up",
+  detail: "Pick it up on GitHub",
+  how: "Assign yourself on GitHub: the request then reads Being built, with your face on it.",
+} as const;
 const POLL_MS = 10_000;
 type Row = (BuildRequestView | FixRow | ExplorationBuildRow) & LifecycleExtra;
 const isFix = (v: Row): v is FixRow => "fix" in v;
@@ -234,7 +249,7 @@ function buildCard(x: Item, c: CardContext) {
   const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
   // Where it comes from, never who asked (lib/build-origin): an adoption report's origin is its note, with the link.
   const o = originOfRow(v);
-  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), origin: o && o.kind !== 'audit' ? buildOriginLine(o) : null, movedAt: movedAtOf(v), now: c.now });
+  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), origin: o && o.kind !== 'audit' ? buildOriginShort(o) : null, movedAt: movedAtOf(v), now: c.now });
   const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline: line.who, when: line.when };
   if (isFix(v)) return <ListCard key={v.id} {...common} thumb={componentThumb(v.component, c.previewed)} title={v.component} href={studioHref(v.fix.href)} />;
   if (isExploration(v))
@@ -354,9 +369,8 @@ function Rows({
               title={v.title}
               hint={v.title}
               href={studioHref(v.exploration.href)}
-              line={rowLine(v, now, data.nameOf)}
+              line={withWaiting(rowLine(v, now, data.nameOf), shortWaitLine(rowWaiting(v)))}
               pill={statusTag(v)}
-              statusNote={rowWaiting(v)}
               statusAtEnd
               className={v.stale ? "bb-stale" : undefined}
             />
@@ -367,6 +381,13 @@ function Rows({
           e.preventDefault();
           onOpen(v);
         };
+        // Nobody picked it up yet: Pick up on the row's own line (it opens the request, where the developer takes it).
+        const pickUp =
+          v.kind === "issue" && v.status === "requested" ? (
+            <Button size="sm" className="ex-review" onClick={() => onOpen(v)} aria-label={`Pick up ${viewTitle(v)}`}>
+              {PICK_UP_WORDS.row}
+            </Button>
+          ) : undefined;
         return (
           <BranchRow
             key={v.id}
@@ -375,10 +396,10 @@ function Rows({
             title={viewTitle(v)}
             href={href}
             onClick={click}
-            line={rowLine(v, now, data.nameOf)}
+            end={pickUp}
+            line={withWaiting(rowLine(v, now, data.nameOf), shortWaitLine(rowWaiting(v)))}
             note={auditNoteOf(v, data)}
             pill={statusTag(v)}
-            statusNote={rowWaiting(v)}
             statusAtEnd
             className={v.stale ? "bb-stale" : undefined}
           />
@@ -494,6 +515,14 @@ function Detail({
           </Badge>{" "}
           {v.sentence}
         </p>
+        {v.kind === "issue" && v.status === "requested" && safeUrl(v.url) && (
+          <p className="t-ui t-muted bb-pickup">
+            <ButtonLink variant="primary" href={safeUrl(v.url)} {...external}>
+              {PICK_UP_WORDS.detail}
+            </ButtonLink>{" "}
+            {PICK_UP_WORDS.how}
+          </p>
+        )}
       </header>
 
       <div className="bb-body">
@@ -813,9 +842,8 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
     ...[...personNames.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => ({ value: k, label: n, count: countBy({ ...filters, people: [k] }) })),
   ];
 
-  // The Board shows Shipped too while the Status filter is on its default, as Explorations' Board does.
-  const boardItems = view === "board" ? items.filter((x) => passesBuild(x, { ...filters, status: isDefaultStatus(filters.status) ? [...NOT_SHIPPED, "shipped"] : filters.status })) : kept;
-  const shownCount = boardItems.length;
+  // List, Grid and Board show the same rows: the Board's columns are the filter's statuses, nothing more.
+  const shownCount = kept.length;
   // List and Grid: one group per product, in Explorations' order, the ladder's order inside (lib/building-page).
   const groups = buildGroups(kept, products);
   return (
@@ -870,7 +898,7 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
             )}
           </p>
         ) : view === "board" ? (
-          <Board items={boardItems} status={filters.status} data={data} products={products} onOpen={go} previewed={previewed} now={now} />
+          <Board items={kept} status={filters.status} data={data} products={products} onOpen={go} previewed={previewed} now={now} />
         ) : view === "grid" ? (
           <Cards groups={groups} data={data} products={products} onOpen={go} previewed={previewed} now={now} />
         ) : (

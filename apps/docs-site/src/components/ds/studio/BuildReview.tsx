@@ -13,6 +13,7 @@ import { Check, ChevronLeft, ChevronRight, ExternalLink, Laptop, MessageSquare, 
 import { Badge, Button, Icon, IconButton, Link, SegmentedControl, Textarea } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { Who } from './faces';
+import { People } from './People';
 import { Drawing } from './Drawing';
 import { studioHref } from '../../../lib/team-path';
 import {
@@ -254,14 +255,13 @@ function Review({ d, team, target, back, onData }: { d: ReviewRead; team: string
       )}
       <span className="brv-grow" />
       {!narrow && (
-        <span className="brv-faces">
-          {d.rows
-            .filter((r) => r.required)
-            .map((r) => {
-              const name = r.byName ?? (r.role === 'designer' ? designer : r.role === 'pm' ? (d.pm ?? 'Product manager') : 'Design lead');
-              return <Who key={r.role} p={{ login: name, name }} size="sm" decorative={false} />;
-            })}
-        </span>
+        <People
+          facesOnly
+          size="sm"
+          className="brv-faces"
+          face={(name, size) => <Who p={{ login: name, name }} name={name} size={size} />}
+          names={d.rows.filter((r) => r.required).map((r) => r.byName ?? (r.role === 'designer' ? designer : r.role === 'pm' ? (d.pm ?? 'Product manager') : 'Design lead'))}
+        />
       )}
     </header>
   );

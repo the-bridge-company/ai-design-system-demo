@@ -107,14 +107,14 @@ describe('Being built: the Board', () => {
     { id: 4, state: 'shipped' as const },
   ];
 
-  it('has one column per status, Shipped added to the default, empty ones kept small', () => {
+  it('has one column per status the filter keeps, nothing added to the default (List, Grid and Board agree)', () => {
     const cols = buildBoardColumns(rows, NOT_SHIPPED);
     expect(cols.map((c) => [c.label, c.rows.length])).toEqual([
       ['Ready to build', 1],
       ['Being built', 0],
       ['Checking', 2],
-      ['Shipped, last 30 days', 1],
     ]);
+    expect(buildBoardColumns(rows, [...NOT_SHIPPED, 'shipped']).map((c) => c.label).at(-1)).toBe('Shipped (30 days)');
   });
 
   it('shows only the statuses the filter keeps otherwise', () => {

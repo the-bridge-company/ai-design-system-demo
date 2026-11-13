@@ -15,6 +15,7 @@
 //     (/studio/library-review/); old addresses that opened them here go there (legacyTarget).
 import { decisionsOf, isPmKind, isWaitingForLead, openDecisionOf, parseExplorationBody } from '@bridge-ds/core';
 import type { LifecycleStage } from './review-state';
+import { shortWaitLine } from './wait-line';
 import { isOpenStep, STATUS_STEPS, STEP_LABEL, stepOfStage, stepTone, type StatusStep } from './status-ladder';
 
 /** Where a row stands: a step of the one status ladder (lib/status-ladder), or stopped work. */
@@ -36,7 +37,7 @@ export const IN_PROGRESS_LABEL = 'In progress';
 /** The Board: one column per open step, then what shipped lately. Archived and Not doing this: filter only. */
 export const BOARD_COLUMNS: readonly { key: ExplorationState; label: string; holds: readonly ExplorationState[] }[] = [
   ...IN_PROGRESS.map((s) => ({ key: s, label: STATE_LABEL[s], holds: [s] })),
-  { key: 'shipped', label: 'Shipped, last 30 days', holds: ['shipped'] },
+  { key: 'shipped', label: 'Shipped (30 days)', holds: ['shipped'] },
 ];
 
 /** Cards per Board column before "Show all N". */
@@ -124,9 +125,9 @@ export function statusNote(r: StatusInput): string | null {
     const open = openDecisionOf(r.body ?? null);
     if (!r.stage || r.stage === 'exploring' || r.stage === 'waiting-for-lead') {
       if (open?.kind === 'changes' || open?.kind === 'take-back') return 'Changes asked';
-      return r.stage === 'waiting-for-lead' || isWaitingForLead(r.body ?? null) ? (r.reviewsLine ?? null) : null;
+      return r.stage === 'waiting-for-lead' || isWaitingForLead(r.body ?? null) ? shortWaitLine(r.reviewsLine) : null;
     }
-    if (r.stage === 'waiting-for-code') return r.waitsForLibrary ? 'Waiting for the library' : leadSaidLooksRight(r.body) ? 'Looks right' : (r.reviewsLine ?? null);
+    if (r.stage === 'waiting-for-code') return r.waitsForLibrary ? 'Waiting for the library' : leadSaidLooksRight(r.body) ? 'Looks right' : shortWaitLine(r.reviewsLine);
     if (r.stage === 'approved') return 'Looks right, ships next';
     if (r.stage === 'next-release') return 'In the next release';
     return null;

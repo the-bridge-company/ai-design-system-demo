@@ -96,6 +96,15 @@
   gap: var(--space-2);
 }
 
+/* A request nobody picked up: the one primary action, Pick it up on GitHub, and how, on one line. */
+.bb-pickup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
 .bb-section {
   display: grid;
   gap: var(--space-3);
@@ -357,3 +366,4 @@
 .sh-waiting-rows li + li {
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
+

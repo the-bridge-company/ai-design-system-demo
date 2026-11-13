@@ -15,8 +15,8 @@ import PropsPlayground from '../../PropsPlayground';
 import ComponentFilter from './ComponentFilter';
 import ComponentsView, { COMPONENTS_PAGE, componentFamilies } from './views/ComponentsView';
 import ComponentView from './views/ComponentView';
-import { FigmaAhead } from './FigmaAhead';
-import { FigmaLink, figmaLinkFor } from './FigmaLink';
+import { FigmaStatus } from './FigmaStatus';
+import { figmaLinkFor } from './FigmaLink';
 import TeamEditMode from './TeamEditMode';
 import { buildViewsFor } from '../../../scripts/building-data';
 import { LibraryPage, LibrarySourceNote, LibraryZone, usePageTeam } from './LibraryState';
@@ -131,8 +131,7 @@ function Ready({ page, data, refreshing }: { page: LibraryComponentsPage; data: 
         component={c}
         heroTools={scopes.brands.length > 1 || scopes.densities.length > 1 ? <ScopeMenu brands={scopes.brands} densities={scopes.densities} /> : undefined}
           playground={spec && story && storybook ? <PropsPlayground spec={spec} storybook={storybook} storyId={story.id} brands={scopes.brands} densities={scopes.densities} /> : undefined}
-          ahead={<FigmaAhead component={c.name} href={studioLink(view, 'building/')} load={() => buildViewsFor(`${data.owner}/${data.repo}`, data.client)} />}
-          figma={<FigmaLink {...figmaLinkFor(data.model, c.name)} settingsHref={studioLink(view, 'settings/#figma')} canFix={teamLead(data)} />}
+          figma={<FigmaStatus component={c.name} buildingHref={studioLink(view, 'building/')} load={() => buildViewsFor(`${data.owner}/${data.repo}`, data.client)} {...figmaLinkFor(data.model, c.name)} settingsHref={studioLink(view, 'settings/#figma')} canFix={teamLead(data)} />}
         />
       </div>
       {/* Edit mode (?edit=1): a reader who can write to the team edits its usage guidance in place, as on Bridge's own pages. */}

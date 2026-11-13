@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../test/axe';
 import { SegmentedControl, type SegmentedControlItem } from './SegmentedControl';
+import styles from './SegmentedControl.module.css';
 
 const items: SegmentedControlItem[] = [
   { value: 'light', label: 'Light' },
@@ -137,6 +138,13 @@ describe('SegmentedControl', () => {
       expect(html).toContain('aria-current="page"');
       expect(html).not.toContain('href="/studio/"');
       expect(html).toContain('aria-disabled="true"');
+    });
+
+    it('wears the default plate unless the control is strong (only the space switch)', () => {
+      const plain = renderToStaticMarkup(<SegmentedControl label="Space" items={spaces} value="library" />);
+      expect(plain).not.toContain(styles.strong);
+      const strong = renderToStaticMarkup(<SegmentedControl label="Space" appearance="strong" items={spaces} value="library" />);
+      expect(strong).toContain(styles.strong);
     });
   });
 });

@@ -119,14 +119,14 @@
     "inlineLabel": "Inline label (secondary text)",
     "affix": "Prefix icon",
     "chevron": "Chevron, turns when open",
-    "popup": "Popup surface (popup.* tokens)",
+    "popup": "Popup surface (popup.* tokens), an 8px inset (space.2) around the options",
     "list": "Scrollable list",
-    "item": "Option",
+    "item": "Option, corners concentric with the popup (popup.radius minus the inset)",
     "itemText": "Option label",
     "badge": "Badge slot after the label, on items and in the trigger",
     "itemDescription": "Option description",
     "indicator": "Check mark on the selected option",
     "groupLabel": "Group heading",
-    "separator": "Divider between groups"
+    "separator": "Divider between groups, runs to the popup edge with the inset's 8px gap above and below"
   }
 }

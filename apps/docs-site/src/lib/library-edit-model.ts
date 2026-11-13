@@ -204,7 +204,7 @@ export function toReview(s: EditState): ReviewItem[] {
   const out: ReviewItem[] = [];
   for (const x of SECTIONS) {
     const st = sectionState(s, x.id);
-    if (st === 'drafted') out.push({ id: x.id, label: x.label, done: false, words: s.updated.includes(x.id) ? 'Updated by Claude' : 'Drafted by Claude', ...(s.updated.includes(x.id) ? { updated: true } : {}) });
+    if (st === 'drafted') out.push({ id: x.id, label: x.label, done: false, words: s.updated.includes(x.id) ? 'Updated by Claude AI' : 'Drafted by Claude AI', ...(s.updated.includes(x.id) ? { updated: true } : {}) });
     else if (st === 'outdated') out.push({ id: x.id, label: x.label, done: false, words: 'Outdated' });
   }
   return out;

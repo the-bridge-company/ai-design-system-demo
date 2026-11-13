@@ -43,6 +43,12 @@ export function statusTagClass(tone: string | null | undefined, extra?: string):
 }
 
 /**
+ * The dot of a status tag: in progress only (someone works on it), on every surface, list rows and cards alike. One
+ * anatomy: the tone says the meaning, the dot says it moves. Done, waiting and over never carry one.
+ */
+export const statusTagDot = (tone: string | null | undefined): boolean => tone === MEANING_TONE['in-progress'];
+
+/**
  * The tone of a wait, from how long it has waited (days, when known): grey, amber once late (core isLate, more than
  * LATE_DAYS). The one place a status picks the warning colour.
  */

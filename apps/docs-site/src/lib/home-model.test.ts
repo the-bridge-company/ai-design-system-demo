@@ -34,6 +34,9 @@ import {
   waitingLabel,
   waitingSentence,
   waitingSince,
+  waitSaidOnce,
+  pillSaidOnce,
+  waitPill,
   HINT_SNOOZE_MS,
   type ChangeFacts,
   type NeedRow,
@@ -102,8 +105,8 @@ describe('people', () => {
     expect(waitingSentence([ann])).toEqual({ names: 'Ann', rest: ' is waiting on you.' });
     expect(waitingSentence([ann, dana])).toEqual({ names: 'Ann and Dana', rest: ' are waiting on you.' });
     expect(waitingSentence([ann, dana, CLAUDE])?.names).toBe('Ann, Dana and Claude AI');
-    expect(waitingSentence([ann, dana, CLAUDE, person('x', 'Xi')])?.names).toBe('Ann, Dana, Claude AI and 1 other');
-    expect(waitingSentence([ann, dana, CLAUDE, ...['a', 'b', 'c', 'd', 'e', 'f'].map((l) => person(l))])?.names).toBe('Ann, Dana, Claude AI and 6 others');
+    expect(waitingSentence([ann, dana, CLAUDE, person('x', 'Xi')])?.names).toBe('Ann, Dana and 2 others');
+    expect(waitingSentence([ann, dana, CLAUDE, ...['a', 'b', 'c', 'd', 'e', 'f'].map((l) => person(l))])?.names).toBe('Ann, Dana and 7 others');
   });
 });
 
@@ -404,5 +407,33 @@ describe('guidanceExcerpt', () => {
     const long = guidanceExcerpt({ summary: 'word '.repeat(100) }, 40)!;
     expect(long.length).toBeLessThanOrEqual(41);
     expect(long.endsWith('…')).toBe(true);
+  });
+});
+
+describe('a wait said once', () => {
+  it('next to a "Waiting for ..." line, the tag reads "5 days" with the wait\'s tone; any other line keeps "Waiting 5 days"', () => {
+    expect(waitSaidOnce('Waiting for your library decision on Timeline', 'Waiting 5 days')).toBe('5 days');
+    expect(waitSaidOnce('waiting for your review', 'Waiting 1 day')).toBe('1 day');
+    expect(waitSaidOnce('Waiting for your review', 'New today')).toBe('today');
+    expect(waitSaidOnce('Sofia sent it for review', 'Waiting 5 days')).toBe('Waiting 5 days');
+    expect(waitSaidOnce(null, 'Waiting 5 days')).toBe('Waiting 5 days');
+    // Not a wait's tag: as it is.
+    expect(waitSaidOnce('Waiting for your review', 'Changes requested')).toBe('Changes requested');
+    // The tone is the wait's own (amber once late), whatever the words.
+    const late = waitPill('2026-11-01T10:00:00Z', Date.parse('2026-11-12T12:00:00Z'));
+    expect(late.tone).toBe('warning');
+    expect(waitSaidOnce('Waiting for your library decision', late.label)).toBe('11 days');
+  });
+});
+
+describe('a wait with no start time, next to a "Waiting for" line', () => {
+  it('shows no tag at all (the line says it); elsewhere the bare tag stays, a known wait reads "5 days"', () => {
+    const bare = { label: 'Waiting', tone: 'neutral' as const };
+    expect(pillSaidOnce('Waiting for your library decision on Timeline', bare)).toBeNull();
+    expect(pillSaidOnce('Sofia sent it for review', bare)).toBe(bare);
+    expect(pillSaidOnce('Waiting for your review', { label: 'Waiting 5 days', tone: 'warning' as const })).toEqual({ label: '5 days', tone: 'warning' });
+    expect(pillSaidOnce('Waiting for your review', null)).toBeNull();
+    const other = { label: 'Changes requested', tone: 'neutral' as const };
+    expect(pillSaidOnce('Waiting for your review', other)).toBe(other);
   });
 });

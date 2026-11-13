@@ -209,7 +209,8 @@
   box-sizing: border-box;
   min-width: var(--anchor-width);
   max-width: var(--available-width);
-  padding: var(--space-1);
+  /* The inset every DS popup list shares: 8px between the popup edge and its items. */
+  padding: var(--space-2);
   border: var(--border-width-default) solid var(--popup-border);
   border-radius: var(--popup-radius);
   background-color: var(--popup-bg);
@@ -248,7 +249,7 @@
   gap: var(--space-2);
   min-height: var(--menu-item-height);
   padding: var(--space-1) var(--space-2);
-  border-radius: calc(var(--popup-radius) - var(--space-1)); /* concentric with the popup, as Menu items */
+  border-radius: calc(var(--popup-radius) - var(--space-2)); /* concentric with the popup, as Menu items */
   color: var(--color-text-default);
   line-height: var(--typography-ui-line-height);
   cursor: default;
@@ -313,9 +314,10 @@
   cursor: default;
 }
 
+/* Runs to the popup's edges, with the inset's own gap above and below it. */
 .separator {
   height: var(--border-width-default);
-  margin: var(--space-1) calc(var(--space-1) * -1);
+  margin: var(--space-2) calc(var(--space-2) * -1);
   background-color: var(--color-border-default);
 }
 

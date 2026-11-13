@@ -5,11 +5,12 @@
 //     sample team "This is a sample team." with the same "Get started", never a GitHub sign-in out of context.
 // Someone who can write to the demo (its owner) keeps the normal Studio.
 //
-// Which actions: any element marked [data-demo-write="<what it does>"] ("create branches", "approve changes"), and
+// Which actions: on the sample team, every write but the few that run in this browser (lib/demo.ts SAMPLE_IN_BROWSER:
+// Start an exploration, Looks right), any element marked [data-demo-write="<what it does>"] ("create branches", "approve changes"), and
 // the actions the session gates while signed out ([data-gh-gate="<verb phrase>"]). One capture listener on the
 // document, wired once by the shared GitHub session (scripts/github-session.ts initGitHubConnect), so it runs before
 // the page's own handlers and before the session opens its sign-in dialog. The React parts load on first use.
-import { demoActionLine, exploresDemo, isOwnTeam, isSampleTeam } from '../lib/demo';
+import { demoActionLine, exploresDemo, isOwnTeam, isSampleTeam, runsInBrowser } from '../lib/demo';
 import { repoContext } from './repo-context';
 import { castOn, playCast } from './demo-cast';
 
@@ -199,6 +200,8 @@ export function bindDemoGate(d: DemoGateDeps) {
       noteClick(target);
       const el = target?.closest<HTMLElement>('[data-demo-write], [data-gh-gate]');
       if (!el || !exploringDemo()) return;
+      // On the sample team, Start an exploration and Looks right run in this browser (lib/demo.ts SAMPLE_IN_BROWSER).
+      if (runsInBrowser(deps?.repo(), el.dataset.demoWrite ?? el.dataset.ghGate)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       target?.closest('details')?.removeAttribute('open');

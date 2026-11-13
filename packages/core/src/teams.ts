@@ -64,7 +64,7 @@ export function ownerEntryProblems(raw: unknown): string[] {
     }
     v.forEach((x, i) => {
       if (typeof x !== 'string' || !parseOwnerEntry(x))
-        out.push(`"governance.owners.${k}[${i}]" (${JSON.stringify(x)}) is not a GitHub login or team. Write a person as "peterbono" or "@peterbono", a team as "@org/team-slug".`);
+        out.push(`"governance.owners.${k}[${i}]" (${JSON.stringify(x)}) is not a GitHub login or team. Write a person as "octocat" or "@octocat", a team as "@org/team-slug".`);
     });
   }
   return out;

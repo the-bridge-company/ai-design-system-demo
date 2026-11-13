@@ -109,8 +109,11 @@ async function editRight(team: { owner: string; repo: string }, client: GitHubCl
  */
 export function teamLead(data: Pick<TeamData, 'canEdit' | 'owner' | 'repo'>): boolean {
   if (!data.canEdit) return false;
-  const member = contributorFor(`${data.owner}/${data.repo}`);
-  return !member || isDesignLead({ access: null, member });
+  const repo = `${data.owner}/${data.repo}`;
+  const member = contributorFor(repo);
+  // The sample team leads through its cast only (Dana): the developer it plays (no email membership) is not a lead.
+  if (!member) return !isSampleTeam(repo);
+  return isDesignLead({ access: null, member });
 }
 
 /** A client for the team, with the visitor's token when it works. */

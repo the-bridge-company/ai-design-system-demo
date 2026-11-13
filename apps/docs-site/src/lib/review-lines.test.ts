@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withDecision, withDesignOk, withDoneExploring, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
+import { libraryOwners } from './team-reviews';
 import { asOneStep, countsOnExplorations, hatRowLine, reviewSecondLine, reviewStepsOf, stillWaitsLine, wentStraight, withSampleReviews } from './review-lines';
 import { SAMPLE_REVIEWS, viewerHats, viewerIds, type TeamReviews } from './team-reviews';
 import { leadHomeRow } from './lead-decisions';
@@ -101,6 +102,15 @@ describe('the sample team', () => {
     expect(withSampleReviews(bare, false)).toBe(bare);
     const own = { ...bare, designReview: { '*': { on: false as const } } };
     expect(withSampleReviews(own, true).designReview).toEqual({ '*': { on: false } });
+  });
+
+  it('names only its cast: the GitHub owners of the repository hosting it never join (D1)', () => {
+    const merged: TeamReviews = { ...sample, githubOwners: ['peterbono'], members: [...sample.members, { name: 'peterbono', login: 'peterbono' }, { name: 'Malik', login: 'acme-malik' }] };
+    const t = withSampleReviews(merged, true);
+    expect(t.githubOwners).toEqual([]);
+    expect(t.members.map((m) => m.name)).not.toContain('peterbono');
+    expect(t.members.map((m) => m.name)).toContain('Malik');
+    expect(libraryOwners(t).map((r) => r.name)).toEqual(['Dana']);
   });
 });
 

@@ -12,6 +12,7 @@ import { TeamLoadError, TeamLoadProgress } from '../components/ds/studio/TeamSta
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
 import { TEAM_VIEW_TITLE, teamBranchesRoute } from '../lib/team-branches';
 import { legacyTarget } from '../lib/explorations-page';
+import { SAMPLE_ANSWERED_EVENT } from '../lib/demo-in-browser';
 import { teamFailure } from '../lib/team-load';
 import type { PullLike } from '../lib/requests-view';
 import type { ExplorationPullLike } from '../lib/explorations-view';
@@ -66,6 +67,8 @@ export async function initTeamBranches(): Promise<void> {
   const sgHost = $('sg-detail');
   const header = document.querySelector<HTMLElement>('[data-team-shell] > .st-head');
   let listLoaded: ReturnType<typeof reviews.loadList> | null = null;
+  // An answer given in this browser on the sample team (Looks right): the list reads again when shown.
+  document.addEventListener(SAMPLE_ANSWERED_EVENT, () => (listLoaded = null));
 
   type MainView = keyof typeof TEAM_VIEW_TITLE;
   const panels: Record<MainView, HTMLElement | null> = { list: $('cg-review'), requests: $('cg-requests'), explorations: $('cg-explore') };

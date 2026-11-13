@@ -54,7 +54,11 @@ import {
 import { installUrl } from '../../../lib/access-view';
 import { afterCopyFirst, COPY_WORDS, startCopyLine, type CopyAccess } from '../../../lib/design-copy';
 import { CopyAccessStep } from './CopyAccessStep';
-import { siteConfig } from '../../../scripts/repo-context';
+import { repoContext, siteConfig } from '../../../scripts/repo-context';
+import { DEMO_WORDS, isSampleTeam, sampleStartLines } from '../../../lib/demo';
+import { keepSampleStart, type SampleStart } from '../../../lib/demo-in-browser';
+import { SIGNIN_PAGE } from '../../../lib/account';
+import ButtonLink from '../ButtonLink';
 import { JIRA_IN_BRIDGE } from '../../../lib/studio-flags';
 import { useCopy } from './TeamLink';
 import { CONNECT_FIRST, connectFirst, copilotSetup, connectorUrl, TERMINAL_SETUP_LINE, TERMINAL_SETUP_LINE_COPY, terminalSetup } from '../../../lib/claude-connector';
@@ -95,7 +99,7 @@ export interface StartChangeLook {
   hidden: boolean;
 }
 
-type Step = 'start' | 'report' | 'done';
+type Step = 'start' | 'report' | 'done' | 'sample';
 
 /** The Where list's last option: not a place to start, the way to add one (never a target). */
 export const ADD_PRODUCT_OPTION = '__bridge-add-product';
@@ -253,6 +257,8 @@ export default function StartExploration({ components, appearance = 'menu', prod
     setPageError(null);
   }, [target]);
   const { copied, said, copy } = useCopy(3000);
+  // The sample team: the start runs in this browser (lib/demo.ts SAMPLE_IN_BROWSER), nothing is sent.
+  const [sampleStart, setSampleStart] = useState<SampleStart | null>(null);
   const [done, setDone] = useState<{ prompt: string; app: string; href: string; name: string; where: string; from: string | null; setup: ToolSetup } | null>(null);
   const [claudeLink, setClaudeLink] = useState<ClaudeLink>('unknown');
   const [toolSaid, setToolSaid] = useState('');
@@ -310,6 +316,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
     setError(null);
     setBlocked(null);
     setDone(null);
+    setSampleStart(null);
     setAdded(false);
     setResumeNote(null);
     setCopyAccess(null);
@@ -443,6 +450,12 @@ export default function StartExploration({ components, appearance = 'menu', prod
     }
     const startPage = from.page;
     const t = picked!;
+    const here = repoContext();
+    if (isSampleTeam(`${here.owner}/${here.repo}`)) {
+      setSampleStart(keepSampleStart(localStorage, { name: featureName(sentence), where: t.library ? VOCAB.main : t.product.name, sentence }));
+      setStep('sample');
+      return;
+    }
     const session = await import('../../../scripts/github-session');
     if (!session.hasWorkingToken()) {
       const { ghAction } = await import('../../../lib/gh-wording');
@@ -808,6 +821,27 @@ export default function StartExploration({ components, appearance = 'menu', prod
         Continue
       </Button>,
     );
+  } else if (step === 'sample') {
+    // The sample team: started in this browser. What Claude AI does with it on a real team, then the sample team's
+    // one call to action (Get started), the same as its banner and dialog.
+    const words = sampleStartLines(sampleStart?.name ?? '', sampleStart?.where ?? '');
+    title = DEMO_WORDS.sampleStartTitle;
+    body = (
+      <div className="sc-form">
+        <p className="t-body sc-line" role="status">
+          {words.line}
+        </p>
+        <p className="t-body sc-line">{words.next}</p>
+      </div>
+    );
+    foot = footer(
+      <Button variant="link" onClick={() => onOpenChange(false)}>
+        {DEMO_WORDS.keepExploring}
+      </Button>,
+      <ButtonLink variant="primary" size="lg" href={SIGNIN_PAGE} data-demo-start="">
+        {DEMO_WORDS.getStarted}
+      </ButtonLink>,
+    );
   } else {
     const lines = startLines(done?.prompt ?? '', done?.app);
     const panel = <ToolPanel tools={tools.view.tools} tab={tools.tab} setTab={tools.setTab} chosen={tools.view.chosen} lines={lines} setup={done?.setup ?? {}} onCopy={clip} say={setToolSaid} />;
@@ -816,7 +850,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
       <div className="sc-form">
         <p className="t-body sc-line">
           <b>{done?.name}</b> is a new exploration in {done?.where}
-          {done?.from ? `, starting from ${done.from}` : ''}. {first ? CONNECT_FIRST.readyIntro : toolSaid || (tools.tab === 'copilot' ? 'Paste this in Copilot Chat in VS Code, in Agent mode.' : tools.tab === 'claude-code' ? 'Run this in your terminal.' : 'Continue it in Claude.')}
+          {done?.from ? `, starting from ${done.from}` : ''}. {first ? CONNECT_FIRST.readyIntro : toolSaid || (tools.tab === 'copilot' ? 'Paste this in Copilot Chat in VS Code, in Agent mode.' : tools.tab === 'claude-code' ? 'Run this in your terminal.' : 'Continue it in Claude AI.')}
         </p>
         {first ? (
           <ConnectFirst address={connectorUrl(location.origin)} onCopy={clip}>

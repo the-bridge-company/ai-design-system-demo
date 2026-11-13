@@ -1,7 +1,7 @@
 {
   "summary": "A person, a team or Claude, shown as a photo with an initials or illustrated fallback. AvatarGroup stacks several and collapses the rest into a +N counter.",
   "preview": { "c": "Row", "children": [
-    { "c": "Avatar", "p": { "name": "Florian Gouloubi" } },
+    { "c": "Avatar", "p": { "name": "Ana Lima" } },
     { "c": "Avatar", "p": { "name": "Ana Lima", "seed": "analima", "fallback": "illustrated", "size": "lg" } },
     { "c": "Avatar", "p": { "kind": "agent", "brand": "claude", "size": "lg" } }
   ] },

@@ -7,7 +7,8 @@ import '../../../../../../packages/react/src/test/setup';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FigmaLink, figmaLinkFor } from './FigmaLink';
+import { FigmaLink, figmaLineKind, figmaLinkFor } from './FigmaLink';
+import { FigmaStatus } from './FigmaStatus';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 
 let token: string | null = 'gho_aaaaaaaaaaaaADMIN1';
@@ -113,5 +114,40 @@ describe('a lead of a team (Library and Studio Components)', () => {
     expect(teamLead({ ...team, canEdit: true })).toBe(true);
     member = { role: 'edit' };
     expect(teamLead({ ...team, canEdit: true })).toBe(false);
+  });
+
+  it('on the sample team, only its cast lead: the developer it plays (no email membership) reads no maintainer hint', async () => {
+    const { teamLead } = await import('../../../scripts/team-data');
+    const sample = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    expect(teamLead({ ...sample, canEdit: true })).toBe(false);
+    member = { role: 'admin' };
+    expect(teamLead({ ...sample, canEdit: true })).toBe(true);
+    member = { role: 'edit' };
+    expect(teamLead({ ...sample, canEdit: true })).toBe(false);
+  });
+});
+
+describe('the one Figma status of a component page (D4)', () => {
+  it('never says "not linked" while changes sent from Figma are being built, nor before they are read', () => {
+    expect(figmaLineKind({ link: LINK, canFix: false, ahead: 'Figma is ahead: 1 change being built (Malik).' })).toBe('linked');
+    expect(figmaLineKind({ link: null, canFix: true, ahead: 'Figma is ahead: 1 change being built (Malik).' })).toBe('none');
+    expect(figmaLineKind({ link: null, canFix: true, ahead: undefined })).toBe('none');
+    expect(figmaLineKind({ link: null, canFix: true, ahead: null })).toBe('missing');
+    expect(figmaLineKind({ link: null, canFix: false, ahead: null })).toBe('none');
+  });
+
+  it('shows "Figma is ahead" alone to a lead while the component is not mapped yet, the hint once nothing is built', async () => {
+    const building = async () => ({ views: [{ component: 'Button', status: 'in-progress', builders: ['acme-malik'] }] as never[], nameOf: () => 'Malik' });
+    const { unmount } = render(createElement(FigmaStatus, { ...base, component: 'Button', buildingHref: '/b/', load: building, link: null, fileSet: false, canFix: true }));
+    await flush();
+    expect(line()).toBeNull();
+    expect(document.querySelector('.cp-ahead')?.textContent).toContain('Figma is ahead: 1 change being built (Malik).');
+    unmount();
+    const none = async () => ({ views: [], nameOf: (l: string) => l });
+    render(createElement(FigmaStatus, { ...base, component: 'Button', buildingHref: '/b/', load: none, link: null, fileSet: false, canFix: true }));
+    await flush();
+    expect(document.querySelectorAll('.cp-figma')).toHaveLength(1);
+    expect(line()?.textContent).toContain(FIGMA_FILE_WORDS.notLinked);
+    expect(document.querySelector('.cp-ahead')).toBeNull();
   });
 });

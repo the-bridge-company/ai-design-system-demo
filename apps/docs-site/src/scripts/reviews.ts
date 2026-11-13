@@ -12,7 +12,7 @@ import { countsOnExplorations, reviewSecondLine } from '../lib/review-lines';
 import { viewerHats } from '../lib/team-reviews';
 import { settleWithin } from '../lib/settle-within';
 import { statusNote, statusOf, turnReason } from '../lib/explorations-page';
-import { rowAgeFrom } from '../lib/lead-decisions';
+import { rowTime } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
@@ -393,6 +393,16 @@ function reviewsLineOf(r: Row): string | null {
 }
 
 /**
+ * A review of this exploration waits on the viewer, whichever hat (a library decision included, which Explorations
+ * itself leaves to Library review): its line then says since when, with Home's tag ("Waiting 5 days").
+ */
+function asksViewer(r: Row): boolean {
+  const team = teamReviewsNow();
+  if (!team || !isWaitingForLead(r.body ?? null)) return false;
+  return viewerHats(r.body ?? null, { team, product: r.product ?? null, prAuthor: r.user.login, viewer: viewerReviewIds() }).length > 0;
+}
+
+/**
  * An exploration waits on the viewer here (Waiting on you, the Explorations badge): the old rule (the lead's turn or the
  * designer's), but a turn that asks only a library decision is Library review's, never counted here (two reviews).
  */
@@ -429,6 +439,10 @@ function listRow(r: Row): ListRow {
         { login: listViewer(), role: contributor ? 'contributor' : viewerRole() },
       ));
   const isAgent = Boolean(r.agent) || agentMade({ body: r.body ?? null, labels: r.labels ?? null });
+  // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
+  const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)), reviewsLine: r.exploration ? reviewsLineOf(r) : null };
+  const note = statusNote(at);
+  const reason = turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null;
   return {
     number: r.number,
     // An exploration reads its typed name, as on Home and its product page (lib/pr-title explorationTitle).
@@ -440,9 +454,11 @@ function listRow(r: Row): ListRow {
     author: (r.exploration ? explorationAuthorFor(r.user.login, r.body ?? null) : authorFor(r.user.login, r.body ?? null)) ?? r.user.login,
     agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
-    // An exploration says when it last moved, after who: "Florian · 2 h ago"; one that waits on the viewer, since it
-    // was sent to them (lib/lead-decisions rowAgeFrom, the clock of Home's "Waiting 4 days").
-    ago: r.exploration && r.updated_at ? agoInSentence(rowAgeFrom({ body: r.body ?? null, updated: r.updated_at, yourTurn: turn })) || null : null,
+    // An exploration says when it last moved, after who: "Sofia · 2 h ago" (agoInSentence, the one formatter of every
+    // row and card); one that waits on the viewer (its turn, or any review it asks of them), since it was sent to them
+    // with Home's own tag: "Waiting 5 days" (lib/lead-decisions rowTime). Said once: next to a "Waiting for ..." note the
+    // time reads "5 days" (the line the row shows: why on its turn, else the note).
+    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now(), line: turn ? reason : note }, agoInSentence) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,
@@ -471,12 +487,9 @@ function listRow(r: Row): ListRow {
         }),
     requester: requesterOf(r.body),
     // Where it stands and, when it waits on the viewer, why (lib/explorations-page: designer words only).
-    ...(() => {
-      // One status on the ladder, and the second line it does not say (lib/explorations-page statusNote).
-      const at = { lifecycle, stage: r.stage ?? null, body: r.body ?? null, statusKind: r.kind ?? null, merged_at: r.merged_at ?? null, shippedAt: r.shippedAt ?? null, archived: r.exploration ? isArchivedExploration(r.labels as never) : false, waitsForLibrary: Boolean(r.body && waitingForLibraryLine(r.body, () => false)), reviewsLine: r.exploration ? reviewsLineOf(r) : null };
-      return { status: statusOf(at), statusNote: statusNote(at) };
-    })(),
-    turnReason: turn ? turnReason({ body: r.body ?? null, designer: requesterOf(r.body)?.name ?? nameOf(r.user.login), reviewWaits: Boolean(r.reviewWaits), nameOf, component: parseFigmaOrigin(r.body)?.component ?? null }) : null,
+    status: statusOf(at),
+    statusNote: note,
+    turnReason: reason,
     ...(r.stage ? { stage: r.stage } : {}),
     ...(r.shippedAt ? { shippedAt: r.shippedAt } : {}),
     ...(r.reviewLine ? { reviewLine: r.reviewLine } : {}),

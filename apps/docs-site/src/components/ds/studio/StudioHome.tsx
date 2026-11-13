@@ -25,8 +25,8 @@ import StartExploration from './StartExploration';
 import { BuildLine } from './BuildLine';
 import { loadBuildData } from '../../../scripts/building-data';
 import ButtonLink from '../ButtonLink';
+import { peopleFacesMax } from '../../../lib/people-line';
 import {
-  AVATARS_SHOWN,
   contributorTourSteps,
   moreNeedsAction,
   contributorTour,
@@ -59,7 +59,7 @@ import { NeedList, type JoinHandlers } from './NeedRows';
 
 
 /**
- * "Ann, Dana, Claude AI and 6 others are waiting on you." with their avatars and the oldest wait; for a product
+ * "Ann, Dana and 7 others are waiting on you." with their avatars and the oldest wait; for a product
  * manager whose opinion is only asked, "Sofia and Leo would like your opinion." and no age (home-model waitingSummary).
  */
 function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
@@ -70,7 +70,7 @@ function Waiting({ needs, now }: { needs: NeedRow[]; now: number }) {
   return (
     <div className="t-body sh-waitline">
       {people.length > 0 && (
-        <AvatarGroup aria-label={s.group} max={AVATARS_SHOWN} size="md" className="sh-stack">
+        <AvatarGroup aria-label={s.group} max={peopleFacesMax(people.length)} size="md" className="sh-stack">
           {people.map((p) => (
             <Who key={p.agent ? '#agent' : p.login} p={p} name={p.name} decorative={false} />
           ))}

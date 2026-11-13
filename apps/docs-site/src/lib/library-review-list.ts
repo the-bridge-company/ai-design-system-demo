@@ -93,7 +93,8 @@ export function shownColumns(o: { state: boolean; next: boolean; action: boolean
  *   wide:   [box] Today › After | Piece | Asked by | From | Who gets it | [State] | [Next] | [action]
  *   mid:    Who gets it folds away (the chapter's head still says what it reaches; One by one gives the count);
  *   narrow: Today › After folds away too. On a phone the row stacks (styles/library-review.css).
- * Asked by is a face and a first name, so a fixed width; it widens only when a row carries a "+N" tag. From keeps
+ * Asked by is a face and a first name, so a fixed width; it widens when a row names several people (People.tsx:
+ * every face and name up to three, the names wrapping on two lines rather than a "+1"). From keeps
  * room for an exploration's name on one line and shortens it with an ellipsis only past that.
  */
 export interface ListGrid {
@@ -110,7 +111,7 @@ export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 
       o.box ? 'var(--size-6)' : null,
       thumb ? 'var(--size-40)' : null,
       thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 1.4fr)',
-      o.askedMore ? 'calc(var(--size-20) + var(--size-8))' : 'var(--size-20)',
+      o.askedMore ? 'var(--size-40)' : 'var(--size-20)',
       thumb ? 'minmax(var(--size-40), 1fr)' : 'minmax(var(--size-40), 0.6fr)',
       reach ? 'calc(var(--size-20) + var(--space-2))' : null,
       // Fixed widths where content varies, so every row lines up with its header row.

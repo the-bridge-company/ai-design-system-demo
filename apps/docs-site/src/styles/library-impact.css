@@ -319,10 +319,18 @@
   gap: var(--space-3);
 }
 
-/* Who is told sits on the buttons' line, wrapping beside them before it drops under them. */
+/* What the choice answers, then who will be notified (the shared People line, faces first), on the buttons' line,
+   wrapping beside them before it drops under them. */
 .li-act-note {
+  display: grid;
   flex: 1 1 calc(var(--space-12) * 4);
+  gap: var(--space-2);
+  justify-items: start;
   min-width: 0;
+}
+
+.li-act-note > p {
+  margin: 0;
 }
 
 .li-btns {

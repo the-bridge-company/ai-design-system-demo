@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Eye } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
@@ -79,5 +79,61 @@ describe('Banner', () => {
     await userEvent.tab();
     expect(screen.getByRole('link', { name: 'How library review works' })).toHaveFocus();
     await expectNoAxeViolations();
+  });
+
+  it('anatomy: icon, title, detail in reading order; the detail indented past the icon, no actions box', async () => {
+    render(
+      <Banner appearance="harbor" icon={Eye} title="Dana decides what the library keeps.">
+        The decision shows here and on your exploration. <Link href="#how">How library review works</Link>
+      </Banner>,
+    );
+    const region = screen.getByRole('region', { name: 'Dana decides what the library keeps.' });
+    const [icon, title, detail] = Array.from(region.children) as [Element, Element, Element];
+    expect(region.children).toHaveLength(3);
+    expect(icon.tagName.toLowerCase()).toBe('svg');
+    expect(icon).toHaveClass(c('icon'));
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(title).toHaveClass(c('title'));
+    expect(detail).toHaveClass(c('description'));
+    expect(detail).toContainElement(screen.getByRole('link', { name: 'How library review works' }));
+    // .hasIcon indents the detail past the icon (one text column); no actions: same padding on every side.
+    expect(region).toHaveClass(c('hasIcon'));
+    expect(region).not.toHaveClass(c('hasActions'));
+    expect(region.querySelector(`.${c('actions')}`)).toBeNull();
+    await expectNoAxeViolations();
+  });
+
+  it('anatomy with actions: icon, title and actions on the first line, the detail after them, actions last in Tab order', async () => {
+    render(
+      <Banner
+        appearance="neutral"
+        icon={Eye}
+        title="Sample team: Bridge Demo."
+        actions={
+          <>
+            <Button size="md" variant="secondary">See it as</Button>
+            <Button size="md">Get started</Button>
+          </>
+        }
+      >
+        Explore freely; nothing you do here is saved.
+      </Banner>,
+    );
+    const region = screen.getByRole('region', { name: 'Sample team: Bridge Demo.' });
+    // .banner centres the first line's items together (any control height); .hasActions gives the toolbar padding.
+    expect(region).toHaveClass(c('banner'), c('hasIcon'), c('hasActions'));
+    expect(Array.from(region.children).map((el) => el.getAttribute('class'))).toEqual([
+      expect.stringContaining(c('icon')),
+      c('title'),
+      c('description'),
+      c('actions'),
+    ]);
+    expect(within(region.lastElementChild as HTMLElement).getAllByRole('button')).toHaveLength(2);
+    await expectNoAxeViolations();
+  });
+
+  it('without an icon the detail is not indented', () => {
+    render(<Banner title={TITLE}>Publishing stays off.</Banner>);
+    expect(screen.getByRole('region', { name: TITLE })).not.toHaveClass(c('hasIcon'));
   });
 });

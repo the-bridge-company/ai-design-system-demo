@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Compass, Eye, PencilRuler } from 'lucide-react';
+import { Compass, Eye, Info, PencilRuler } from 'lucide-react';
 import { Specimen, SpecimenStack } from '../../stories/StateGrid';
 import { Button } from '../Button';
 import { Link } from '../Link';
@@ -59,10 +59,13 @@ export const Neutral: Story = {
 export const Harbor: Story = {
   args: {
     appearance: 'harbor',
-    icon: Compass,
-    title: 'Ana Ruiz decides what joins the library.',
-    children: 'Leave a comment on any piece; your lead sees it before deciding.',
-    actions: <Link href="#">How library review works</Link>,
+    icon: Info,
+    title: 'Ana Ruiz decides what the library keeps.',
+    children: (
+      <>
+        The decision shows here and on your exploration. <Link href="#">How library review works</Link>
+      </>
+    ),
   },
 };
 export const TitleOnly: Story = { args: { icon: Eye } };

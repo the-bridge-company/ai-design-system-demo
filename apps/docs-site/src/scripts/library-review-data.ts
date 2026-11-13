@@ -10,6 +10,7 @@
 // (scripts/reviews approveBranch, core commentOnGitHub), so a decision here is the decision there. On the sample team
 // every write is refused before it leaves (the buttons carry data-demo-write, scripts/demo-gate).
 // The rules are pure in lib/library-review.ts.
+import { notifiedLine } from '../lib/people-line';
 import {
   commentOnGitHub,
   decidePieceOnGitHub,
@@ -389,7 +390,7 @@ export async function decide(p: ReviewPiece, d: Decision): Promise<string> {
       if (!at || !w.piece) continue;
       await decidePieceOnGitHub(clientFor(at[1]!), Number(at[2]), { piece: w.piece, verdict: 'local', ...me(), products });
     }
-    return `Kept ${p.title} in both screens. ${ways.map((w) => w.designer).join(' and ')} are told.`;
+    return `Kept ${p.title} in both screens. ${notifiedLine(ways.map((w) => w.designer))}`;
   }
   if (p.source.kind === 'change') {
     if (d === 'add') {
@@ -431,7 +432,7 @@ export async function pickWay(p: ReviewPiece, pick: string, myName: string | nul
   const chosen = kept ? `${kept.designer}'s way (${kept.value})` : pick === 'today' ? `today's ${c.component} as it is` : pick === 'both' ? 'both ways, as two sizes' : `new sizes next to today's`;
   const note = `${myName ?? 'A library owner'} chose ${chosen} for ${c.component}, where ${c.ways[0]!.designer} and ${c.ways[1]!.designer} changed it differently. This answers both explorations: comment here if you see it otherwise.`;
   await chooseLibraryWayOnGitHub(clientFor(p.source.repo), p.source.number, { component: c.component, property: c.property, pick, ...me(), other: { gh: clientFor(at[1]!), number: Number(at[2]) }, note });
-  return `${kept ? `Kept ${kept.designer}'s way for ${c.component}` : pick === 'today' ? `Kept today's ${c.component}` : `Kept new sizes for ${c.component}`}. ${c.ways[0]!.designer} and ${c.ways[1]!.designer} are told.`;
+  return `${kept ? `Kept ${kept.designer}'s way for ${c.component}` : pick === 'today' ? `Kept today's ${c.component}` : `Kept new sizes for ${c.component}`}. ${notifiedLine(c.ways.map((w) => w.designer))}`;
 }
 
 /** A comment on the piece: on the library change, or on the exploration that asked for it (its designer reads it). */

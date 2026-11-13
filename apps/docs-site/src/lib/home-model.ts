@@ -11,6 +11,7 @@
 //
 // Every value comes from GitHub (pull requests, their timeline and reviews) or from the repo at build time (usage
 // guidance, contrast, adoption, the changelog). Nothing here is guessed.
+import { peopleNames } from './people-line';
 import type { ThumbSpec } from './branch-thumb';
 import { agoInSentence, calendarDays, isDocsProposalBranch, PUBLISH_ROUTE_COPY, requesterOf } from '@bridge-ds/core';
 import { STATUS_WORDS, VOCAB } from './vocabulary';
@@ -97,16 +98,14 @@ export function uniquePeople(people: (Person | null | undefined)[]): Person[] {
 
 /**
  * Who waits on the viewer, in one sentence: "Ann is waiting on you.", "Ann and Dana are waiting on you.",
- * "Ann, Dana, Claude AI and 6 others are waiting on you." Empty without anyone.
+ * "Ann, Dana and 7 others are waiting on you." Empty without anyone.
  */
 export function waitingSentence(people: Pick<Person, 'name'>[]): { names: string; rest: string } | null {
   const n = people.length;
   if (!n) return null;
+  // The one rule for a group of people (lib/people-line): every name up to three, then two and "N others".
   const names = people.map((p) => p.name);
-  if (n === 1) return { names: names[0]!, rest: ' is waiting on you.' };
-  if (n <= AVATARS_SHOWN) return { names: `${names.slice(0, -1).join(', ')} and ${names[n - 1]}`, rest: ' are waiting on you.' };
-  const others = n - AVATARS_SHOWN;
-  return { names: `${names.slice(0, AVATARS_SHOWN).join(', ')} and ${others} ${others === 1 ? 'other' : 'others'}`, rest: ' are waiting on you.' };
+  return { names: peopleNames(names), rest: n === 1 ? ' is waiting on you.' : ' are waiting on you.' };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

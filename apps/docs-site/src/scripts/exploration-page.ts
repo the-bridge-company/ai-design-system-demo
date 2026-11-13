@@ -9,6 +9,7 @@
 // reviews once the developers started), and the library part. A product exploration never checked against the
 // library is checked here, once, by the server (api/mcp ?view=pieces runs the adoption audit with the
 // viewer's GitHub sign-in and records it); without a way to run it, one quiet "Check in Claude".
+import { notifiedLine } from '../lib/people-line';
 import { chooseLibraryWayOnGitHub, decidePieceOnGitHub, findExplorationOnGitHub, parsePiecesRecord, replyOnPieceOnGitHub, withExplorationLibrary, withLibraryChoice, type ImpactSource, type LibraryConflict } from '@bridge-ds/core';
 import { ALREADY_ANSWERED, pmOpinionOf, answerLeadOnGitHub, archiveExplorationOnGitHub, askOtherLeadOnGitHub, branchPreviewUrl, cancelLeadAskOnGitHub, decisionsOf, designApproveOnGitHub, handOverOnGitHub, HAT_WORDS, isDesignReviewWaiting, isWaitingForLead, leadTurnOf, leadChangesOnGitHub, leadQuestionOnGitHub, notDoingOnGitHub, takeLeadOnGitHub, openDecisionOf, startExplorationOnGitHub, takeBackOnGitHub, tellDevelopersOnGitHub, EXPLORATION_PREFIX, figmaLines, explorationNote, explorationNotePathOf, explorationSlugFromBranch, mergeExplorationNotes, type GitHubClient, parseExplorationNotes, type ExplorationNotes, type NotesUpdate, explorationStage, liveAddressOf, startPageOf, explorationMockupOf, mockupShownName, mockupPiecesLine, renameExplorationOnGitHub, reopenExplorationOnGitHub, parseExplorationBody, explorationScreenFrom, explorationScreenOf, setExplorationScreenOnGitHub, SCREEN_PROBLEM, requesterOf, startedWhen, type BranchCommitLike, type ChangesMode, type ProductConfig } from '@bridge-ds/core';
 import { notesFromRead } from '../lib/exploration-notes-view';
@@ -1398,7 +1399,7 @@ async function paintLibraryImpact(
               await x.gh.createIssueComment(p.number, note).catch(() => undefined);
             }),
           );
-          const line = `${what} ${told} ${cv.ways.length === 1 ? 'is' : 'are'} told.`;
+          const line = `${what} ${notifiedLine(cv.ways.map((w) => w.designer))}`;
           o.reopen(line);
           return line;
         },

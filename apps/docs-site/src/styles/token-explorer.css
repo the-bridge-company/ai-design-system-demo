@@ -3218,9 +3218,17 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
    that ends in an ellipsis, the full path on hover (title). On a phone the name has the whole row and wraps at its
    dots (grid.ts adds the break points). */
 .xp[data-surface="app"] .xp-name-main {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* grid.ts renders the name twice: one line without break points (desktop), and one with a break point after each
+   dot (phone). Only one is displayed; the other is display: none, so it is read once. */
+.xp[data-surface="app"] .xp-name-wrap {
+  display: none;
 }
 
 @media (max-width: 640px) {
@@ -3228,6 +3236,14 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
+  }
+
+  .xp[data-surface="app"] .xp-name-line {
+    display: none;
+  }
+
+  .xp[data-surface="app"] .xp-name-wrap {
+    display: inline;
   }
 }
 

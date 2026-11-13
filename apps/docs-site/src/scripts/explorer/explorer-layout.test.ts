@@ -207,6 +207,40 @@ describe('Name column', () => {
     expect(mediaRule('(max-width: 640px)', '.xp[data-surface="app"] .xp-name-main')).toMatchObject({ 'white-space': 'normal' });
   });
 
+  it('every Studio name cell: the full path as title, one line without break points on a desktop, a dot-wrapped copy only on a phone', async () => {
+    const { renderGrid } = await import('./grid');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const visible = tokens.filter((t) => t.path.startsWith('color.') || t.path.startsWith('motion.'));
+    const s = { mode: 'read', flat: true, selection: { lens: 'collections', tier: 'all' }, collapsed: new Set(), showCode: false, showDescription: false, syntax: 'css', selected: visible[0]!.path } as never;
+    renderGrid(host, d, { visible, columns: [col] } as never, s, { sync: true });
+    const names = [...host.querySelectorAll<HTMLElement>('.xp-td.is-name .xp-name-main')];
+    expect(names.length).toBe(visible.length);
+    for (const [i, n] of names.entries()) {
+      expect(n.title, visible[i]!.path).toBe(visible[i]!.path);
+      const line = n.querySelector('.xp-name-line')!;
+      expect(line.textContent).toBe(visible[i]!.path);
+      expect(line.querySelector('wbr')).toBeNull();
+      expect(n.querySelector('.xp-name-wrap')?.innerHTML).toBe(visible[i]!.path.replace(/\./g, '.<wbr>'));
+    }
+    host.remove();
+  });
+
+  it('no rule outside the phone breakpoint lets a Studio name wrap, in any row state (selected, hovered, row menu shown)', () => {
+    const outsidePhone = css.replace(/@media \(max-width: 640px\) \{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+    for (const m of outsidePhone.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!/xp-name(-main|-line)?\b|is-name/.test(m[1]!)) continue;
+      expect(m[2], m[1]!.trim()).not.toMatch(/white-space:\s*(normal|pre-wrap|break-spaces)/);
+    }
+    expect(rule('.xp[data-surface="app"] .xp-name-main')).toMatchObject({ 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
+    expect(rule('.xp[data-surface="app"] .xp-name-wrap')).toMatchObject({ display: 'none' });
+    expect(mediaRule('(max-width: 640px)', '.xp[data-surface="app"] .xp-name-line')).toMatchObject({ display: 'none' });
+    expect(mediaRule('(max-width: 640px)', '.xp[data-surface="app"] .xp-name-wrap')).toMatchObject({ display: 'inline' });
+    // The row menu keeps its room in every state (shown by opacity, never by display), so the name never narrows.
+    expect(rule('.xp-rowmenu')).toMatchObject({ flex: 'none', opacity: '0' });
+    expect(css).not.toMatch(/\.xp-rowmenu[^{]*\{[^}]*display:/);
+  });
+
   it('the table is as wide as its column minimums, so a narrow page scrolls it sideways instead of squeezing names and values', async () => {
     const src = readFileSync(join(__dirname, 'grid.ts'), 'utf8');
     expect(src).toMatch(/--xp-minw', `\$\{nameMin\(s\) \+ modeMin\(s\)/);

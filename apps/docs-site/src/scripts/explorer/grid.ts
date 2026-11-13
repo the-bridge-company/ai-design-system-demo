@@ -79,10 +79,15 @@ function rowHtml(d: ExplorerData, t: XToken, view: View, s: ExplorerState, secti
     : studio
       ? ''
       : copyButton(codeSyntax(t.path, t.tier, s.syntax), `${SYNTAX_LABEL[s.syntax]} ${codeSyntax(t.path, t.tier, s.syntax)}`);
-  // One line with the full path on hover everywhere on a desktop: the name column keeps room for a typical name
-  // (nameMin) and the table scrolls sideways rather than squeezing it. On a phone, where a Studio name has the whole
-  // row, a long name wraps at its dots (these break points), never mid-segment.
-  const shownName = studio ? esc(rel).replace(/\./g, '.<wbr>') : esc(rel);
+  // One line with the full path on hover on a desktop, in every row state (selected, hovered, menu shown): the name
+  // column keeps room for a typical name (nameMin), beyond it an ellipsis, and the table scrolls sideways rather
+  // than squeezing it. On a phone, where a Studio name has the whole row, a long name wraps at its dots, never
+  // mid-segment. Two renderings, one shown per breakpoint (token-explorer.css), because a break point (<wbr>) can
+  // still break a nowrap line in some browsers: the desktop one has none at all. The hidden one is display: none,
+  // so assistive technology reads the name once.
+  const shownName = studio
+    ? `<span class="xp-name-line">${esc(rel)}</span><span class="xp-name-wrap">${esc(rel).replace(/\./g, '.<wbr>')}</span>`
+    : esc(rel);
   const name = `<div role="rowheader" class="xp-td is-name" aria-colindex="1" tabindex="-1" data-col="0"><span class="xp-name"><span class="xp-name-main mono" title="${esc(t.path)}">${shownName}</span>${changed}${unused}</span>${nameEnd}</div>`;
   const edited = editable ? editedModes(t.path) : new Set<string>();
   const cells = view.columns

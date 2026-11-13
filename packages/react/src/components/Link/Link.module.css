@@ -11,10 +11,11 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
+/* Hover keeps the 1px stroke: the color says it (the link's ink, or the underline taking the text's color on a subtle
+   or standalone link). A 2px underline read as a heavy bar under the words, thicker than the letters' own stems. */
 @media (hover: hover) {
   .link:hover {
     color: var(--color-text-link-hover);
-    text-decoration-thickness: var(--border-width-2);
   }
 }
 

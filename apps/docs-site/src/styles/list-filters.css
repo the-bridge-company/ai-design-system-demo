@@ -32,20 +32,25 @@
 
 @media (max-width: 760px) {
   .bl-scroll {
+    /* Positioned: an absolutely placed descendant (a visually hidden label part) scrolls and clips with the row
+       instead of escaping it and widening the page. */
+    position: relative;
     display: flex;
     flex-wrap: nowrap;
-    inline-size: 100%;
     min-inline-size: 0;
-    max-inline-size: 100%;
     contain: inline-size;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-padding-inline: var(--_fade);
     scrollbar-width: none;
 
-    /* Room for the focus ring, which the scroll box would clip. */
-    padding-block: var(--space-1);
-    margin-block: calc(-1 * var(--space-1));
+    /* Room for the focus ring (width + offset = --space-1) on every side, which the scroll box would clip; the
+       negative margins keep the filters on the page's edges. */
+    box-sizing: border-box;
+    inline-size: calc(100% + 2 * var(--space-1));
+    max-inline-size: none;
+    padding: var(--space-1);
+    margin: calc(-1 * var(--space-1));
   }
 
   .bl-scroll::-webkit-scrollbar {

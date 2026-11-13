@@ -15,6 +15,7 @@ const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const listCss = strip(readFileSync(join(STYLES, 'list-filters.css'), 'utf8'));
 const reviewCss = strip(readFileSync(join(STYLES, 'library-review.css'), 'utf8'));
 const phone = listCss.slice(listCss.indexOf('@media (max-width: 760px)'));
+const selectCss = strip(readFileSync(join(__dirname, '../../../../../../packages/react/src/components/Select/Select.module.css'), 'utf8'));
 
 /** The declarations of the first rule whose selector is exactly `selector` in `css`. */
 function rule(css: string, selector: string): string {
@@ -32,6 +33,23 @@ describe('filters row: scrolls inside itself on a phone, never the page', () => 
     expect(row).toMatch(/flex-wrap:\s*nowrap/);
     expect(row).toMatch(/contain:\s*inline-size/);
     expect(rule(phone, '.bl-scroll > *')).toMatch(/flex:\s*none/);
+  });
+
+  it('keeps absolutely placed parts inside the row: the row and every trigger are positioned', () => {
+    // A visually hidden ": " in each trigger is absolute; unpositioned, it escaped the scroller and widened the page
+    // to 482px at 390px.
+    expect(rule(phone, '.bl-scroll')).toMatch(/position:\s*relative/);
+    expect(rule(selectCss, '.trigger')).toMatch(/position:\s*relative/);
+  });
+
+  it('gives a filter the DS focus ring, with room for it inside the scrolling row', () => {
+    const focus = rule(selectCss, '.hug:focus-visible');
+    expect(focus).toMatch(/outline:\s*var\(--focus-ring-width\) solid var\(--focus-ring-color\)/);
+    expect(focus).toMatch(/outline-offset:\s*var\(--focus-ring-offset\)/);
+    expect(focus).toMatch(/box-shadow:\s*none/);
+    const row = rule(phone, '.bl-scroll');
+    expect(row).toMatch(/padding:\s*var\(--space-1\)/);
+    expect(row).toMatch(/margin:\s*calc\(-1 \* var\(--space-1\)\)/);
   });
 
   it('its flex and grid ancestors can shrink below their content', () => {

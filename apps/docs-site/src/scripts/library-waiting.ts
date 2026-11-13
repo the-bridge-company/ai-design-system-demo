@@ -10,6 +10,8 @@ import { rememberMine } from './needs-you';
 export interface LibraryCounts {
   forYou: number;
   yours: number;
+  /** Every piece still waiting for a decision: Library review's own count ("0 of 13 decided"), the Library card's. */
+  waiting: number;
 }
 
 let reading: Promise<LibraryCounts | null> | null = null;
@@ -20,7 +22,7 @@ export function readLibraryCounts(): Promise<LibraryCounts | null> {
     const { loadLibraryReview } = await import('./library-review-data');
     let last: LibraryCounts | null = null;
     await loadLibraryReview((d) => {
-      if (!d.loading && !d.failed) last = { forYou: libraryQueueCount(d.pieces, d.viewer), yours: yourWaitingPieces(d.pieces, d.viewer) };
+      if (!d.loading && !d.failed) last = { forYou: libraryQueueCount(d.pieces, d.viewer), yours: yourWaitingPieces(d.pieces, d.viewer), waiting: d.pieces.filter((p) => p.state === 'waiting').length };
     }).catch(() => undefined);
     if (last !== null) rememberMine((last as LibraryCounts).forYou);
     return last;

@@ -90,7 +90,7 @@ describe('the rows in plain words', () => {
     expect(impactItemOf(timeline)).toMatchObject({ kind: 'component', title: 'Timeline' });
     expect(impactItemOf(compact)).toMatchObject({ kind: 'variant', of: 'Stat card', title: 'New size: Compact', before: 'Default', after: 'Compact' });
     expect(impactItemOf(inset)).toMatchObject({ kind: 'token', title: 'Padding inside cards', before: '16', after: '12', token: 'layout.inset', everywhere: true });
-    expect(impactItemOf(cardRestyle('var(--space-3)', '12px'))).toMatchObject({ kind: 'variant', of: 'Card', title: 'Room inside', after: '12', property: 'padding', summary: 'Room inside of Card set to 12 in this screen. The library Card has no such option yet.' });
+    expect(impactItemOf(cardRestyle('var(--space-3)', '12px'))).toMatchObject({ kind: 'variant', of: 'Card', title: 'Padding', after: '12', property: 'padding', summary: 'Padding of Card set to 12 in this screen. The library Card has no such option yet.' });
     expect(impactItemOf(compact).summary).toBe('A compact size for Stat card. The current size stays the default.');
     expect(impactItemOf({ ...timeline, id: 'pattern-drag', pattern: true, component: 'Drag cards between columns' }).kind).toBe('pattern');
   });

@@ -28,7 +28,9 @@ import { mapAvailable } from '../../../lib/library-map';
 import { measuredReach, reachCell, reachOf, type Measured, type Reach, type ReachData } from '../../../lib/library-reach';
 import { hasLegacy, itemTarget, landing, libraryPageOf, pieceSearch, readLegacy, readPiece, viewSearch, withoutLegacy } from '../../../lib/library-review-links';
 import { studioHref } from '../../../lib/team-path';
-import { ASKED_DIRECTLY, askedColumns, askedCountLine, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
+import { askedColumns, directWords, askedCountLine, askersOf, faceName, FACES_SHOWN, groupAskers, moreTag, waysTag } from '../../../lib/library-askers';
+import { AGENT_NAME } from '../../../lib/people';
+import { CLAUDE, waitPill } from '../../../lib/home-model';
 import { chapterReach, chaptersOf, listGrid, productMarks, railLabel, shownColumns, sideLabel, tallyOf, tallySentence } from '../../../lib/library-review-list';
 import { BOTH, checkedKeepLabel, checkedLooks, checkedOfPick, checkedOutcome, checkedPick, compareView, defaultChecked, STAGE_SCALE, TODAY, type CompareOption, type CompareView } from '../../../lib/library-review-compare';
 import { withManyAskers } from '../../../lib/library-review-fixtures';
@@ -50,6 +52,7 @@ import {
   keyAction,
   nextActor,
   passes,
+  guidanceByLine,
   pieceWaitTone,
   reviewParams,
   reviewProgress,
@@ -147,7 +150,7 @@ const eyebrowParts = (p: ReviewPiece): string[] => {
 };
 
 function AskedChip({ p }: { p: ReviewPiece }) {
-  if (!p.asked) return <span className="lr-ask is-lead">{p.mine ? 'From you' : p.by ? `From ${p.by}` : 'From a lead'}</span>;
+  if (!p.asked) return <span className="lr-ask is-lead">{p.mine ? 'From you' : p.source.kind === 'docs' && p.by ? guidanceByLine(p.by) : p.by ? `From ${p.by}` : 'From a lead'}</span>;
   const words = (
     <>
       {p.asked.name}
@@ -183,9 +186,11 @@ function StateTag({ p, viewerReviews }: { p: ReviewPiece; viewerReviews: boolean
       </Badge>
     );
   if (!viewerReviews) return null;
+  // The same tag as Home's row (home-model waitPill): how long it has waited, amber once late, one rule for both.
+  const w = p.at ? waitPill(p.at, Date.now()) : { label: 'Waiting', tone: pieceWaitTone(p) };
   return (
-    <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
-      Waiting
+    <Badge tone={w.tone} size="md" className={statusTagClass(w.tone)}>
+      {w.label}
     </Badge>
   );
 }
@@ -206,6 +211,8 @@ const FaceNames = createContext<{ sample: boolean; you: string | null }>({ sampl
 function NameFace({ name, size = 'sm', decorative = true }: { name: string; size?: 'xs' | 'sm'; decorative?: boolean }) {
   const ctx = useContext(FaceNames);
   const who = name === 'You' && ctx.you ? ctx.you : name;
+  // Claude AI is the agent everywhere (its mark), never a drawn human face.
+  if (who === AGENT_NAME) return <Who p={{ ...CLAUDE, name: AGENT_NAME }} size={size} decorative={decorative} name={name} />;
   return <Who p={namedFace(who, { sample: ctx.sample })} size={size} decorative={decorative} name={name} />;
 }
 
@@ -239,24 +246,15 @@ function FamilyIcon({ name, size = 'md' }: { name: 'grid' | 'diamonds' | 'doc'; 
 function AskedLine({ p }: { p: ReviewPiece }) {
   const c = askedColumns(p);
   const from = c.from;
+  // The narrow side list says who only (owner gate 2026-11-13: "Claude AI · Fro..." read as broken); where it comes
+  // from is in the detail beside it, and said to screen readers here.
+  const origin = from.kind === 'direct' ? directWords(p) : `${from.first.name}${from.more > 0 ? ` and ${from.more} more` : ''}`;
   return (
     <>
       <Face name={c.person} size="xs" />
       <span className="lr-line-who">{c.person}</span>
-      <span className="lr-line-sep" aria-hidden="true">
-        {SEP.trim()}
-      </span>
-      <VisuallyHidden>, </VisuallyHidden>
-      {from.kind === 'direct' ? (
-        <span className="lr-line-t">{ASKED_DIRECTLY}</span>
-      ) : (
-        <>
-          <span className="lr-line-t" title={from.first.name}>
-            {from.first.name}
-          </span>
-          {from.more > 0 && <MoreTag n={from.more} what="explorations" />}
-        </>
-      )}
+      {c.morePeople > 0 && <MoreTag n={c.morePeople} what="people" />}
+      <VisuallyHidden>, {origin}</VisuallyHidden>
     </>
   );
 }
@@ -403,7 +401,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
         commenting={commenting}
         onCommentOpen={() => setCommenting(true)}
         commentBox={commentBox}
-        tag={(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
+        tag={<StateTag p={p} viewerReviews={viewer.reviews} />}
       />
     );
   // Two parts and a separator the CSS spaces (.lr-eyebrow-sep): typed " · " left 2px each side of a 1px dot.
@@ -451,7 +449,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
             {!p.asked && p.by && !p.mine ? (
               <span className="lr-detail-who">
                 <NameFace name={p.by} size="sm" />
-                <span className="lr-muted">From {p.by}</span>
+                <span className="lr-muted">{p.source.kind === 'docs' ? guidanceByLine(p.by) : `From ${p.by}`}</span>
               </span>
             ) : (
               <AskedChip p={p} />
@@ -464,14 +462,26 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
             )}
           </>
         )}
-        {(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
-        <span className="lr-detail-reach">
-          <span className="lr-muted">Who gets it</span> <ReachLink p={p} cell={measured.cell} onReach={onReach} />
-        </span>
+        {/* Waiting or decided, the same tag as Home's row: how long it has waited, or what was decided. */}
+        <StateTag p={p} viewerReviews={viewer.reviews} />
+        {/* Guidance changes no screen: no Who gets it. */}
+        {p.source.kind !== 'docs' && (
+          <span className="lr-detail-reach">
+            <span className="lr-muted">Who gets it</span> <ReachLink p={p} cell={measured.cell} onReach={onReach} />
+          </span>
+        )}
       </p>
       {askers.length > 1 && showAskers && <AskersList list={askers} />}
       {(
         <>
+          {p.source.kind === 'docs' ? (
+            // A guidance draft changes no screen: its own words, never a "New in this screen" plate.
+            <figure className="lr-doc">
+              <figcaption className="lr-muted">The draft</figcaption>
+              <blockquote className="lr-doc-text">{p.docText || 'Open the draft to read it.'}</blockquote>
+              <Link href={p.source.href}>Open the draft</Link>
+            </figure>
+          ) : (
           <div className={`lr-plates${p.match ? ' has-match' : ''}`}>
             {before && (
               <Plate caption="Today" value={valueOf(spec, 'before') ?? p.before} contrast={spec.kind === 'color' ? { hex: spec.before, look: colorLook(p.title).look } : null}>
@@ -487,6 +497,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
               </Plate>
             )}
           </div>
+          )}
           {p.match && (
             <p className="lr-match">
               <span className="lr-match-tag">Match found</span>
@@ -828,6 +839,18 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
     if (d) return <span className="lr-muted lr-side-flag">{d.label}</span>;
     return null;
   };
+  // How long it has waited: the same tag as the detail, the List and its Home row (home-model waitPill).
+  const ageTag = (p: ReviewPiece) => {
+    if (p.state !== 'waiting' || !p.at || (p.conflict && !p.conflict.pick)) return null;
+    const w = waitPill(p.at, Date.now());
+    return (
+      <span className="lr-side-age">
+        <Badge tone={w.tone} size="sm" className={statusTagClass(w.tone, 'lr-age')}>
+          {w.label}
+        </Badge>
+      </span>
+    );
+  };
   return (
     <div className="lr-one">
       <div className="lr-compact">
@@ -872,6 +895,8 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
                             <span className="lr-muted lr-side-sub">
                               <AskedLine p={p} />
                             </span>
+                            {/* How long it has waited, on its own line under who: the full width of the text column. */}
+                            {ageTag(p)}
                           </span>
                           {stateMark(p)}
                         </button>
@@ -955,7 +980,7 @@ function FromCell({ p }: { p: ReviewPiece }) {
     return (
       <span className="lr-from">
         <span className="lr-from-line">
-          <span className="lr-from-name lr-muted">{ASKED_DIRECTLY}</span>
+          <span className="lr-from-name lr-muted">{directWords(p)}</span>
         </span>
       </span>
     );
@@ -1037,7 +1062,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       </span>
     );
   };
-  // The State column: a conflict's ways, a result, the viewer's own approval, an exception. A waiting row: nothing.
+  // The State column: a conflict's ways, a result, the viewer's own approval, an exception; a waiting row, how long it
+  // has waited, the same tag as its Home row (home-model waitPill, amber once late).
   const state = (p: ReviewPiece) => {
     const d = decidedTag(p);
     if (d)
@@ -1066,6 +1092,14 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           {p.exception}
         </Badge>
       );
+    if (p.state === 'waiting' && p.at && mode === 'lead') {
+      const w = waitPill(p.at, Date.now());
+      return (
+        <Badge tone={w.tone} size="md" className={statusTagClass(w.tone, 'lr-age')}>
+          {w.label}
+        </Badge>
+      );
+    }
     return null;
   };
   const action = (p: ReviewPiece) => {
@@ -1161,7 +1195,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           <FromCell p={p} />
         </span>
         <span role="cell" className="lr-row-reach lr-col-reach">
-          <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />
+          {p.source.kind !== 'docs' && <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />}
         </span>
         {showState && (
           <span role="cell" className="lr-row-state">
@@ -1666,12 +1700,20 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
     };
   }, [Boolean(reachPiece)]);
 
-  if (!data || !params)
+  // While read: the page's own frame (the filter bar's row, a designer's banner, the list), so nothing jumps when the
+  // pieces arrive (a phone measured a 0.3 layout shift when the bar and the groups pushed the list down).
+  if (!data || !params) {
+    const designer = typeof window !== 'undefined' && !readViewer().reviews;
     return (
       <div className="lr" aria-busy="true" data-review-count-owner="">
+        <div className="lr-bar-row" aria-hidden="true">
+          <Skeleton variant="rect" className="lr-skel-bar" />
+        </div>
+        {designer && <Skeleton variant="rect" className="lr-skel-banner" />}
         <Skeleton variant="rect" className="lr-skel" />
       </div>
     );
+  }
 
   const v = data.viewer;
   const waitingAll = pieces.filter((p) => p.state === 'waiting');
@@ -1752,7 +1794,8 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
               {banner.rest} <Link href={links.howItWorks}>How library review works</Link>
             </Banner>
           )}
-          {data.loading && !shown.length ? (
+          {/* Until every read is in, the list holds its place: groups never land one by one above what is shown. */}
+          {data.loading ? (
             <Skeleton variant="rect" className="lr-skel" />
           ) : !shown.length ? (
             <p className="lr-none">

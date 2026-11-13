@@ -226,11 +226,11 @@ export async function draftDocs(input: {
     onStatus?.('Claude is drafting');
     const body = await viaApiKey(prompt, signal);
     const result = resultFromReply(task, body);
-    onStatus?.('Drafted by Claude. Review it before you propose it.');
+    onStatus?.('Drafted by Claude AI. Review it before you propose it.');
     return result;
   }
   const r = await viaMyClaude({ slug, name: input.name || ctx.name, path: ctx.files.docs, task, prompt }, signal, onStatus);
   const result = resultFromExchange(task, r);
-  onStatus?.('Drafted by Claude. Review it before you propose it.');
+  onStatus?.('Drafted by Claude AI. Review it before you propose it.');
   return result;
 }

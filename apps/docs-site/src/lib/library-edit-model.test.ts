@@ -100,8 +100,8 @@ describe('Claude drafts', () => {
     expect(pendingSections(drafted)).toEqual(['whenNotToUse', 'doDont']);
     expect(sectionState(drafted, 'doDont')).toBe('drafted');
     expect(toReview(drafted).map((r) => [r.id, r.done, r.words])).toEqual([
-      ['whenNotToUse', false, 'Drafted by Claude'],
-      ['doDont', false, 'Drafted by Claude'],
+      ['whenNotToUse', false, 'Drafted by Claude AI'],
+      ['doDont', false, 'Drafted by Claude AI'],
     ]);
   });
 
@@ -143,7 +143,7 @@ describe('Claude drafts', () => {
 
   it('labels a rewrite of written text as updated, and a checked section as still accurate', () => {
     const s = applyDraft({ ...initEdit(base), outdated: ['accessibility', 'whenToUse'] }, { accessibility: ['New.'] }, ['accessibility', 'whenToUse']);
-    expect(toReview(s)).toEqual([{ id: 'accessibility', label: 'Accessibility', done: false, words: 'Updated by Claude', updated: true }]);
+    expect(toReview(s)).toEqual([{ id: 'accessibility', label: 'Accessibility', done: false, words: 'Updated by Claude AI', updated: true }]);
     expect(s.accurate).toEqual(['whenToUse']);
     expect(sectionState(s, 'whenToUse')).toBe('filled');
   });

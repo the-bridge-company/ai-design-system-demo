@@ -415,7 +415,7 @@ describe('a design lead signed in by email (the member record says so, never the
     const done = () => s.w.pulls[n]!.body.replace(/"slug":"orders"/, '"slug":"orders","doneAt":"2026-11-07T12:00:00Z"');
     const r = await ann.call('PATCH', `${C}/pulls/${n}`, { body: done() });
     expect(r.status).toBe(403);
-    expect((await r.json()) as { error: string; message: string }).toMatchObject({ error: 'pm-first', message: expect.stringContaining('Dino says it looks good') });
+    expect((await r.json()) as { error: string; message: string }).toMatchObject({ error: 'pm-first', message: expect.stringContaining('Dino says it looks right') });
     expect((await ann.call('POST', `${C}/issues/${n}/labels`, { labels: ['ready-for-devs'] })).status).toBe(403);
     // The PM said Looks good: it goes.
     s.w.pulls[n]!.body = s.w.pulls[n]!.body.replace(/"slug":"orders"/, `"slug":"orders","decisions":${JSON.stringify([{ kind: 'pm-ok', at: 't', round: 1, by: 'dino' }])}`);

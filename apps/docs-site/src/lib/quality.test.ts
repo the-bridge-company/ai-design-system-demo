@@ -61,7 +61,7 @@ describe('quality findings', () => {
     const m = qualityModel({ contrast: pass, components: comps, issues: [], editHref: edit });
     const [icon, vh] = m.findings;
     expect(icon).toMatchObject({ status: { label: 'Missing guidance', group: 'neutral' }, action: { label: 'Add guidance', href: edit('icon') } });
-    expect(vh).toMatchObject({ status: { label: 'Draft by Claude, needs review', group: 'waiting' }, action: { label: 'Review', href: edit('visually-hidden') } });
+    expect(vh).toMatchObject({ status: { label: 'Draft by Claude AI, needs review', group: 'waiting' }, action: { label: 'Review', href: edit('visually-hidden') } });
   });
 });
 

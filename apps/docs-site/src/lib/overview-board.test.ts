@@ -170,7 +170,7 @@ describe('library health', () => {
     expect(f.map((x) => [x.value, x.label, x.detail, x.split, x.href])).toEqual([
       ['0 failing', 'contrast checks', '296 checked in 2 brands, light and dark.', null, '/studio/quality/'],
       ['94.5%', 'of components come from Bridge', 'Up from 7.6% before Bridge, across 2 products.', 'Admin demo 90.2%, Bridge itself 100%.', '/studio/quality/#ql-adoption'],
-      ['46 of 48', 'components have reviewed guidance', '2 drafted by Claude to review.', null, '/studio/quality/#ql-findings'],
+      ['46 of 48', 'components have reviewed guidance', '2 drafted by Claude AI to review.', null, '/studio/quality/#ql-findings'],
     ]);
   });
 

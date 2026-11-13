@@ -97,8 +97,8 @@ export const DEMO_WORDS = {
   /** The sample-team dialog's note: what happens on a real team. */
   sampleNote: 'With your own team, Bridge reads your design system and sends nothing until you ask.',
   keepExploring: 'Keep exploring',
-  /** Looks right on the sample team: it runs in this browser (SAMPLE_IN_BROWSER), nothing is sent. */
-  sampleLooksRight: 'You said it looks right. On the sample team it stays in this browser.',
+  /** After Looks right on the sample team (it runs in this browser, SAMPLE_IN_BROWSER): nothing is sent. */
+  sampleLooksRight: 'On the sample team it stays in this browser.',
   /** Start an exploration on the sample team: it starts in this browser, nothing is sent. */
   sampleStartTitle: 'Started in this browser',
 

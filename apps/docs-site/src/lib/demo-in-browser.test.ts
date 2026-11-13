@@ -1,9 +1,12 @@
-// The sample team's actions that run in this browser (C6): Looks right paints from a copy kept here, Start an
-// exploration is kept here; both under keys swapDemoDrafts drops once the visitor leaves the sample team.
+// The sample team's actions that run in this browser (C6). Looks right moves the exploration on exactly as the real
+// approval (core designApproveOnGitHub, two-reviews) would: Ready to build when nothing waits on the library, else In
+// review on the library decision (Dana's own, when she holds both hats). Every read of the sample team's pull requests
+// answers with that copy until the visitor leaves. Start an exploration is kept for the visit.
 import { describe, expect, it } from 'vitest';
-import { decisionsOf, explorationPrBody, isDesignReviewWaiting, parseExplorationBody, withLeadAsked } from '@bridge-ds/core';
-import { keepSampleAnswer, keepSampleStart, sampleBodyOf, sampleLooksRightBody, sampleStarts } from './demo-in-browser';
+import { decisionsOf, EXPLORATION_LABEL, EXPLORATION_READY_LABEL, explorationPrBody, explorationStatus, isInReview, parseExplorationBody, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
+import { keepSampleAnswer, keepSampleStart, sampleLooksRight, sampleRead, sampleStarts } from './demo-in-browser';
 import { DEMO_VISIT_KEY, runsInBrowser, sampleStartLines, swapDemoDrafts } from './demo';
+import { SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
 
 function memory() {
   const m = new Map<string, string>();
@@ -18,29 +21,83 @@ function memory() {
   };
 }
 
-const asked = withLeadAsked(explorationPrBody({ name: 'Timeline', purpose: '', slug: 'timeline', author: 'sofia' }, { owner: 'acme-design-demo', repo: 'bridge-demo-ds', packages: [], apps: {} }), { at: '2026-11-12T10:00:00.000Z', byName: 'Sofia' });
+const REPO = 'acme-design-demo/bridge-demo-ds';
+const DANA = 'a399f73add3dbb2d';
+const SOFIA = '0406ec723c59bb8d';
+const LEO = 'af419771c6f4d96f';
+const team: TeamReviews = {
+  designReview: SAMPLE_REVIEWS,
+  members: [
+    { name: 'Dana', ref: DANA, role: 'admin', libraryOwner: true },
+    { name: 'Sofia', ref: SOFIA, role: 'edit' },
+    { name: 'Leo', ref: LEO, role: 'edit' },
+  ],
+  githubOwners: [],
+  products: [
+    { key: 'prints', name: 'Acme Prints' },
+    { key: 'crm', name: 'Acme CRM' },
+  ],
+};
+const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'New.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
+const started = (member: string, pieces: MissingPiece[]) =>
+  withPiecesRecord(explorationPrBody({ name: 'X', purpose: '', slug: 'x', author: 'sofia' }, { owner: 'acme-design-demo', repo: 'bridge-demo-ds', packages: [], apps: {} }).replace('"slug":"x"', `"slug":"x","member":"${member}"`), { checkedAt: 't', pieces, links: [] });
+const pull = (body: string, number = 7) => ({ number, state: 'open', draft: true, body, labels: [{ name: EXPLORATION_LABEL }], head: { ref: 'explore/x', sha: 'abc' } });
+const statusOf = (p: { body: string; labels: string[] }) => explorationStatus({ state: 'open', draft: true, body: p.body, labels: p.labels, headRef: 'explore/x', headSha: 'abc' });
+const AT = new Date('2026-11-12T11:00:00Z');
+const ASKED_AT = '2026-11-12T10:00:00.000Z';
 
-describe('Looks right on the sample team', () => {
-  it('answers the design review in the description, said by Dana, as designApproveOnGitHub would', () => {
-    const next = sampleLooksRightBody(asked, { byName: 'Dana', at: new Date('2026-11-12T11:00:00Z') })!;
-    const e = parseExplorationBody(next);
-    expect(isDesignReviewWaiting(parseExplorationBody(asked))).toBe(true);
-    expect(isDesignReviewWaiting(e)).toBe(false);
-    expect(decisionsOf(e!).at(-1)).toMatchObject({ kind: 'looks-right', hat: 'design', byName: 'Dana' });
-    // Nothing waits any more: nothing to answer.
-    expect(sampleLooksRightBody(next, { byName: 'Dana' })).toBeNull();
+describe('Looks right on the sample team, as the real approval', () => {
+  it("Leo's screen, nothing new for the library: Ready to build at once, labels swapped, off Dana's queue", () => {
+    const asked = withLeadAsked(started(LEO, []), { at: ASKED_AT, byName: 'Leo' });
+    expect(viewerHats(asked, { team, product: 'crm', viewer: viewerIds(null, DANA) })).toEqual(['design-review']);
+    const a = sampleLooksRight(pull(asked), { byName: 'Dana', at: AT })!;
+    expect(a.ready).toBe(true);
+    expect(a.labels).toEqual([EXPLORATION_READY_LABEL]);
+    expect(statusOf(a)).toBe('ready');
+    expect(isInReview(a.body)).toBe(false);
+    expect(parseExplorationBody(a.body)?.doneAt).toBe(AT.toISOString());
+    expect(decisionsOf(parseExplorationBody(a.body)!).at(-1)).toMatchObject({ kind: 'looks-right', hat: 'design', byName: 'Dana' });
+    // Home and the rail badge read the hats: none asks Dana any more, nothing waits.
+    expect(viewerHats(a.body, { team, product: 'crm', viewer: viewerIds(null, DANA) })).toEqual([]);
+    expect(waitingLineOf(a.body, { team, product: 'crm' })).toBeNull();
+    // Answered: nothing to say twice.
+    expect(sampleLooksRight(pull(a.body), { byName: 'Dana' })).toBeNull();
   });
 
-  it('paints from the copy kept for the visit, dropped once the visitor leaves the sample team', () => {
+  it("Sofia's Timeline, a new piece: still In review, now on Dana's library decision (she holds both hats)", () => {
+    const asked = withLibraryAsked(withLeadAsked(started(SOFIA, [timeline]), { at: ASKED_AT, byName: 'Sofia' }), { at: ASKED_AT });
+    expect(viewerHats(asked, { team, product: 'prints', viewer: viewerIds(null, DANA) })).toEqual(['design-review', 'library']);
+    const a = sampleLooksRight(pull(asked), { byName: 'Dana', at: AT })!;
+    expect(a.ready).toBe(false);
+    expect(a.libraryPending).toEqual(['component-timeline']);
+    expect(a.labels).toEqual([EXPLORATION_LABEL]);
+    expect(isInReview(a.body)).toBe(true);
+    expect(statusOf(a)).toBe('active');
+    expect(viewerHats(a.body, { team, product: 'prints', viewer: viewerIds(null, DANA) })).toEqual(['library']);
+    expect(waitingLineOf(a.body, { team, product: 'prints' })).toBe("Waiting for Dana's library decision on Timeline");
+  });
+
+  it('every read of the sample team answers with the copy kept for the visit, dropped once the visitor leaves', () => {
     const store = memory();
-    expect(sampleBodyOf(store, 7, asked)).toBe(asked);
+    const asked = withLeadAsked(started(LEO, []), { at: ASKED_AT, byName: 'Leo' });
+    const read = [pull(asked), pull(asked, 8)];
+    expect(sampleRead(store, `/repos/${REPO}/pulls?state=open&per_page=100`, read)).toBe(read);
     swapDemoDrafts(store, true);
-    keepSampleAnswer(store, 7, 'answered');
-    expect(sampleBodyOf(store, 7, asked)).toBe('answered');
-    expect(sampleBodyOf(store, 8, asked)).toBe(asked);
+    const a = sampleLooksRight(pull(asked), { byName: 'Dana', at: AT })!;
+    keepSampleAnswer(store, REPO, 7, a);
+    const list = sampleRead(store, `https://api.github.com/repos/${REPO}/pulls?state=open&per_page=100`, read);
+    expect(list[0]).toMatchObject({ number: 7, body: a.body, labels: [{ name: EXPLORATION_READY_LABEL }] });
+    expect(list[1]).toBe(read[1]);
+    expect(sampleRead(store, `/repos/${REPO}/pulls/7`, pull(asked)).body).toBe(a.body);
+    expect(sampleRead(store, `/repos/${REPO}/pulls/8`, pull(asked, 8)).body).toBe(asked);
+    // Another repository, or another kind of read, is never touched.
+    expect(sampleRead(store, '/repos/acme/ds/pulls/7', pull(asked)).body).toBe(asked);
+    expect(sampleRead(store, `/repos/${REPO}/issues/7`, pull(asked)).body).toBe(asked);
+    // The read itself is never changed in place.
+    expect(read[0]!.body).toBe(asked);
     swapDemoDrafts(store, false);
     expect(store.getItem(DEMO_VISIT_KEY)).toBeNull();
-    expect(sampleBodyOf(store, 7, asked)).toBe(asked);
+    expect(sampleRead(store, `/repos/${REPO}/pulls/7`, pull(asked)).body).toBe(asked);
   });
 });
 
@@ -50,7 +107,6 @@ describe('Start an exploration on the sample team', () => {
     keepSampleStart(store, { name: 'Dark checkout', where: 'Acme Prints', sentence: 'dark checkout' }, new Date('2026-11-12T10:00:00Z'));
     keepSampleStart(store, { name: 'Bigger cards', where: 'Acme CRM', sentence: 'bigger cards' }, new Date('2026-11-12T11:00:00Z'));
     expect(sampleStarts(store).map((s) => s.name)).toEqual(['Bigger cards', 'Dark checkout']);
-    swapDemoDrafts(store, false);
     const words = sampleStartLines('Bigger cards', 'Acme CRM');
     expect(words.line).toBe('Bigger cards is a new exploration in Acme CRM. On the sample team it stays in this browser.');
     expect(words.next).toContain('Claude AI');
@@ -60,13 +116,12 @@ describe('Start an exploration on the sample team', () => {
 
 describe('which actions run in this browser', () => {
   it('Start an exploration and Looks right on the sample team only; every other write keeps the dialog', () => {
-    const sample = 'acme-design-demo/bridge-demo-ds';
-    expect(runsInBrowser(sample, 'start explorations')).toBe(true);
-    expect(runsInBrowser(sample, 'Start an exploration')).toBe(true);
-    expect(runsInBrowser(sample, 'say the design looks right')).toBe(true);
-    expect(runsInBrowser(sample, 'send to Figma')).toBe(false);
-    expect(runsInBrowser(sample, 'invite')).toBe(false);
-    expect(runsInBrowser(sample, null)).toBe(false);
+    expect(runsInBrowser(REPO, 'start explorations')).toBe(true);
+    expect(runsInBrowser(REPO, 'Start an exploration')).toBe(true);
+    expect(runsInBrowser(REPO, 'say the design looks right')).toBe(true);
+    expect(runsInBrowser(REPO, 'send to Figma')).toBe(false);
+    expect(runsInBrowser(REPO, 'invite')).toBe(false);
+    expect(runsInBrowser(REPO, null)).toBe(false);
     // Bridge's own design system is real: its writes never run in the browser.
     expect(runsInBrowser('the-bridge-company/ai-design-system-demo', 'start explorations')).toBe(false);
     expect(runsInBrowser('acme/ds', 'say the design looks right')).toBe(false);

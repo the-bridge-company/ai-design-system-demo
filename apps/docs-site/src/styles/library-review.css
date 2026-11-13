@@ -695,7 +695,8 @@ a.lr-ask {
 }
 
 .lr-chapter.has-rail .lr-chapter-cols {
-  grid-template-columns: calc(var(--lr-rail) - var(--space-5)) var(--lr-grid);
+  /* The rail less the header's own padding, plus the rows' rule: the header's columns start where the rows' do. */
+  grid-template-columns: calc(var(--lr-rail) - var(--space-5) + var(--border-width-default)) var(--lr-grid);
 }
 
 .lr-list-group {
@@ -1017,11 +1018,14 @@ a.lr-ask {
 }
 
 /* --- List columns fold by the room of the list (wider than a phone) ----------------------------------------------
-   One rule for every chapter, so the cards show the same columns: Who gets it folds first (the Map and One by one still
-   say it), then Today › After. A list with a group rail (has-rails) gives its rows a rail's width less, so it folds
-   sooner. The widths keep Piece on at most two lines and From's exploration on one line, uncut. */
+   One rule for every chapter, so the cards show the same columns at the same x, down the page: Who gets it folds first
+   (the Map and One by one still say it), then Today › After. The widths keep Piece on at most two lines and From's
+   exploration on one line, uncut; past that the columns fold rather than squeeze a word.
+   A list with a group rail (has-rails): every card keeps the rail's room, an empty one in a card with no rail, so
+   their columns start at the same x; the rows get a rail's width less, so they fold sooner. Below that, the rail goes
+   on top of its rows, then the rows stack as on a phone. */
 @media (min-width: 761px) {
-  @container lr-list (max-width: 1120px) {
+  @container lr-list (max-width: 1199.98px) {
     .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-mid);
     }
@@ -1031,17 +1035,7 @@ a.lr-ask {
     }
   }
 
-  @container lr-list (max-width: 1280px) {
-    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
-      --lr-grid: var(--lr-cols-mid);
-    }
-
-    .lr-list.has-rails .lr-col-reach {
-      display: none;
-    }
-  }
-
-  @container lr-list (max-width: 940px) {
+  @container lr-list (max-width: 1079.98px) {
     .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-narrow);
     }
@@ -1051,12 +1045,148 @@ a.lr-ask {
     }
   }
 
-  @container lr-list (max-width: 1000px) {
+  /* The rail's room in a card with no rail: its header and rows start where a railed card's do. */
+  @container lr-list (min-width: 1040px) {
+    .lr-list.has-rails .lr-chapter:not(.has-rail) .lr-chapter-cols {
+      padding-inline-start: calc(var(--lr-rail) + var(--border-width-default) + var(--space-4));
+    }
+
+    .lr-list.has-rails .lr-chapter:not(.has-rail) .lr-block {
+      margin-inline-start: calc(var(--lr-rail) + var(--border-width-default));
+    }
+
+    .lr-list.has-rails .lr-chapter:not(.has-rail) .lr-row {
+      padding-inline-start: var(--space-4);
+    }
+  }
+
+  @container lr-list (max-width: 1339.98px) {
+    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
+      --lr-grid: var(--lr-cols-mid);
+    }
+
+    .lr-list.has-rails .lr-col-reach {
+      display: none;
+    }
+  }
+
+  @container lr-list (max-width: 1199.98px) {
     .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-narrow);
     }
 
     .lr-list.has-rails .lr-col-thumb {
+      display: none;
+    }
+  }
+
+  /* The rail on top of its rows: no Group column, the rows on the card's own padding like every other card. */
+  @container lr-list (min-width: 920px) and (max-width: 1039.98px) {
+    .lr-list.has-rails .lr-chapter.has-rail .lr-chapter-cols {
+      grid-template-columns: var(--lr-grid);
+    }
+
+    .lr-list.has-rails .lr-rail-head {
+      display: none;
+    }
+
+    .lr-list.has-rails .lr-chapter.has-rail .lr-list-group {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lr-list.has-rails .lr-group-row {
+      position: static;
+      padding-block: var(--space-3) 0;
+    }
+
+    .lr-list.has-rails .lr-group-row:not(:has(.lr-group-name)) {
+      display: none;
+    }
+
+    .lr-list.has-rails .lr-chapter.has-rail .lr-block {
+      border-inline-start: 0;
+    }
+
+    .lr-list.has-rails .lr-chapter.has-rail .lr-row {
+      padding-inline-start: var(--space-5);
+    }
+  }
+
+  /* Too narrow for the columns: the rows stack as on a phone (the same rules as the Phones section below). */
+  @container lr-list (max-width: 919.98px) {
+    .lr-chapter-cols {
+      display: none;
+    }
+
+    .lr-chapter.has-rail .lr-list-group {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lr-group-row {
+      position: static;
+      padding-block: var(--space-3) 0;
+    }
+
+    .lr-group-row:not(:has(.lr-group-name)) {
+      display: none;
+    }
+
+    .lr-chapter.has-rail .lr-block {
+      border-inline-start: 0;
+    }
+
+    .lr-list :is(.lr-chapter-card, .lr-bare) .lr-row {
+      --lr-grid: minmax(0, 1fr) auto;
+    }
+
+    .lr-list.is-lead :is(.lr-chapter-card, .lr-bare) .lr-row {
+      --lr-grid: var(--size-6) minmax(0, 1fr) auto;
+    }
+
+    .lr-list .lr-row,
+    .lr-list .lr-group-row,
+    .lr-list .lr-chapter.has-rail .lr-row {
+      padding-inline: var(--space-4);
+    }
+
+    .lr-list .lr-row :is(.lr-col-thumb, .lr-col-reach) {
+      display: none;
+    }
+
+    .lr-row-ask,
+    .lr-row-from,
+    .lr-row-state,
+    .lr-row-next {
+      grid-column: 1 / -1;
+    }
+
+    .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-state, .lr-row-next) {
+      grid-column: 2 / -1;
+    }
+
+    .lr-row-from .lr-from {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+    }
+
+    .lr-row .lr-col-box,
+    .lr-row-piece {
+      grid-row: 1;
+    }
+
+    .lr-row-piece {
+      min-height: 0;
+    }
+
+    .lr-row-end {
+      grid-row: 1;
+      grid-column: -2;
+    }
+
+    .lr-row-state:empty,
+    .lr-row-next:empty,
+    .lr-row-ask:empty {
       display: none;
     }
   }

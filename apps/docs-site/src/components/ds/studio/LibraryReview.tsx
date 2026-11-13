@@ -1004,9 +1004,10 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
  *   Decided:        Today › After | Piece | Asked by | From | Who gets it | State (the result)
  *   Designer:       Today › After | Piece | Asked by | From | Who gets it | State (what changed, an exception)
  * Asked by is a face and a first name, From the exploration on one line with its product under it ("Asked directly"
- * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Each card
- * has its own grid (lib/library-review-list listGrid); when the card runs out of room, Who gets it folds first, then
- * Today › After (styles/library-review.css).
+ * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Every card
+ * shares one grid, from every row of the list (lib/library-review-list listGrid); when the list runs out of room, Who
+ * gets it folds first, then Today › After, then a rail goes on top of its rows, then the rows stack
+ * (styles/library-review.css).
  * The Piece column says only what the piece is: its name (a link to it in One by one, and a quiet link to its page in
  * the library) and its kind. A state (a conflict's "2 ways", a result) sits in State; a waiting row shows none there,
  * its chapter already says it waits. A column shows only when a row fills it. Checkboxes and the row action (a quiet
@@ -1226,7 +1227,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
     return { labels, rail: Boolean(ch.rail) && [...labels.values()].some(Boolean) };
   };
-  // A list with a rail folds its columns sooner (styles/library-review.css, has-rails): the same columns in every card.
+  // A list with a rail keeps the rail's room in every card, an empty one where a card has no rail, and folds its columns
+  // sooner (styles/library-review.css, has-rails): the same columns at the same x in every card.
   const rails = chapters.some((ch) => railOf(ch).rail);
   const listCols = colsOf(allRows);
   return (

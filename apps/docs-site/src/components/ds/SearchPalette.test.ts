@@ -10,7 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../packages/react/src/test/axe';
 import { PALETTE_OPEN_EVENT, rankResults } from '../../lib/palette-search';
 import type { SearchItem } from '../../lib/search';
-import SearchPalette from './SearchPalette';
+import SearchPalette, { placeholderFor } from './SearchPalette';
+
 
 const INDEX: SearchItem[] = [
   { kind: 'page', title: 'Color', href: '/foundations/color', meta: 'Palette, roles and contrast' },
@@ -72,6 +73,11 @@ describe('SearchPalette', () => {
     expect(count.textContent).toBe('2 results');
     await userEvent.keyboard('{Enter}');
     expect(assigned).toBe('/components/button');
+  });
+
+  it('names the main kinds of a Studio in its placeholder', () => {
+    expect(placeholderFor('studio')).toBe('Search explorations, components, tokens');
+    expect(placeholderFor(undefined)).toBe('Search tokens, components, pages, or paste a hex');
   });
 
   it('says what to try when nothing matches', async () => {

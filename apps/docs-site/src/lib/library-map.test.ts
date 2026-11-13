@@ -74,13 +74,17 @@ describe('a click on a box', () => {
 });
 
 describe('the list under the map', () => {
-  it('shows the hint, what a box narrows to, one piece’s own row, or every piece after Show all', () => {
+  it('shows every piece with no box picked, what a box narrows to, and names a single piece only by its row', () => {
     const g = buildMap(pieces(), PRODUCTS, LEAD);
-    expect(mapListOf(null, false)).toEqual({ kind: 'hint' });
-    // Show all: the whole list, no box picked (it used to clear the box and show nothing at all).
-    expect(mapListOf(null, true)).toEqual({ kind: 'all' });
-    expect(mapListOf(focusOf(g, g.pieces[1]!.id), false)).toEqual({ kind: 'one', key: g.pieces[1]!.keys[0] });
-    expect(mapListOf(focusOf(g, 'd:crm'), false).kind).toBe('some');
+    // No pick: the whole List, as the List view shows it (no hint, no compact row).
+    expect(mapListOf(null)).toEqual({ kind: 'all' });
+    const one = focusOf(g, g.pieces[1]!.id)!;
+    expect(mapListOf(one)).toEqual({ kind: 'some', keys: new Set([g.pieces[1]!.keys[0]]), named: false });
+    expect(mapListOf(focusOf(g, 'd:crm'))).toMatchObject({ kind: 'some', named: true });
+    // A folded box of a lead's changes is not a single piece: the line names it.
+    const many = buildMap([leadChange(30, 'A'), leadChange(31, 'B'), leadChange(32, 'C'), leadChange(33, 'D')], PRODUCTS, LEAD);
+    const folded = many.pieces.find((n) => n.folded)!;
+    expect(mapListOf(focusOf(many, folded.id))).toMatchObject({ kind: 'some', named: true });
   });
 
   it('keeps the picked box in the address, and takes it off on Show all', () => {

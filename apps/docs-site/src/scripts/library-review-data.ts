@@ -169,7 +169,8 @@ async function leadNames(me: string | null): Promise<{ lead: string | null; tech
 const designerOf = (s: ImpactSource) => firstName(s.designer);
 
 /** Reads everything the page shows, painting as it goes. */
-export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise<void> {
+/** `pictures: false` stops once the pieces are read, without their before and after (the header search, scripts/studio-search). */
+export async function loadLibraryReview(paint: (d: ReviewData) => void, opts: { pictures?: boolean } = {}): Promise<void> {
   // A team address: the team's settings (products, owners, governance) are read first, as every team page does.
   const { teamOfPage, loadTeamData } = await import('./team-data');
   if (teamOfPage()) await loadTeamData().catch(() => null);
@@ -354,6 +355,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
   data.loading = false;
   build();
   emit();
+  if (opts.pictures === false) return;
   // Before and after of each library change, read after the list (the home's own read and cache), and the preview
   // capture of each exploration that asked for a piece (Who gets it): the same capture as its card and its page.
   const { thumbOf } = await import('./home-data');

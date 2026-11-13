@@ -643,22 +643,6 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-/* "Reaches [P][C] Acme Prints, Acme CRM": the marks overlap like faces. */
-.lr-chapter-reach {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.lr-chapter-names {
-  color: var(--color-text-default);
-  font-weight: var(--font-weight-medium);
-}
-
 /* "+3": a compact tag, as tall as the marks and faces beside it. */
 .lr-more-tag {
   flex: none;
@@ -865,17 +849,6 @@ a.lr-ask {
   max-width: var(--size-60);
 }
 
-/* One piece alone (the Map's single-piece focus): its row, said once, in a plain card. */
-.lr-list.is-bare {
-  gap: 0;
-}
-
-.lr-bare {
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-surface-default);
-}
-
 /* --- Asked by and From: one kind of info per column, the same anatomy on every row --------------------------------
    Asked by: a face and a first name, on one center line. From: the exploration on one line (an ellipsis only when the
    card is narrow, its full name on hover), its product under it in muted text, or "Asked directly". */
@@ -1033,11 +1006,11 @@ a.lr-ask {
       display: none;
     }
 
-    .lr-list :is(.lr-chapter-card, .lr-bare) .lr-row {
+    .lr-list .lr-chapter-card .lr-row {
       --lr-grid: minmax(0, 1fr) auto;
     }
 
-    .lr-list.is-lead :is(.lr-chapter-card, .lr-bare) .lr-row {
+    .lr-list.is-lead .lr-chapter-card .lr-row {
       --lr-grid: var(--size-6) minmax(0, 1fr) auto;
     }
 
@@ -1132,10 +1105,6 @@ a.lr-ask {
   .lr-fam-icon {
     width: var(--size-10);
     height: var(--size-10);
-  }
-
-  .lr-chapter-reach {
-    flex-basis: 100%;
   }
 
   .lr-chapter-cols {
@@ -1627,7 +1596,7 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-/* The list the map narrows: a banner says what it shows, once, then the same blocks as List. */
+/* The List the map narrows: one line says what it shows, then the List itself. */
 .lr-map-list {
   display: grid;
   gap: var(--space-4);
@@ -2078,12 +2047,6 @@ a.lr-reach-card:focus-visible {
   font-weight: var(--font-weight-medium);
 }
 
-.lr-map-hint {
-  margin: 0;
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
 /* --- One by one, a conflict: the compare stage and one radio list (direction D2) ---------------------------------- */
 
 /* The title, its one tag and the quiet link to its library page, on one line. */
@@ -2473,22 +2436,6 @@ a.lr-reach-card:focus-visible {
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
-}
-
-/* The Map's one piece: its row, then "Show all" on its end. */
-.lr-map-one {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.lr-map-one > .lr-list {
-  flex: 1;
-  min-width: 0;
-}
-
-.lr-map-all {
-  flex: none;
 }
 
 @media (max-width: 760px) {

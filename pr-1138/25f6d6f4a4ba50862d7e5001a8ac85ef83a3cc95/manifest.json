@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T00:50:04.798Z",
-  "durationMs": 146296,
+  "createdAt": "2026-11-13T01:08:08.626Z",
+  "durationMs": 184462,
   "base": {
     "ref": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
     "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178"
   },
   "head": {
-    "ref": "7abc974604dea70bf955e2f1be7d29d05a8df6e2",
-    "sha": "7abc974604dea70bf955e2f1be7d29d05a8df6e2"
+    "ref": "25f6d6f4a4ba50862d7e5001a8ac85ef83a3cc95",
+    "sha": "25f6d6f4a4ba50862d7e5001a8ac85ef83a3cc95"
   },
   "options": {
     "only": [
@@ -70,12 +70,12 @@
   },
   "summary": {
     "shots": 40,
-    "changed": 13,
-    "unchanged": 27,
+    "changed": 12,
+    "unchanged": 28,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 37.68
+    "maxPercent": 29.3
   },
   "shots": [
     {
@@ -494,9 +494,9 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 372743,
+      "changedPixels": 289831,
       "totalPixels": 989184,
-      "percent": 37.68,
+      "percent": 29.3,
       "boxes": [
         {
           "x": 0,
@@ -529,18 +529,11 @@
       "storyId": "feedback-banner--preview",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 54856,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 6.73,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 704,
-          "width": 960,
-          "height": 80
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -551,12 +544,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__feedback-banner--preview__ocean-dark.png",
-        "after": "after/story__feedback-banner--preview__ocean-dark.png",
-        "diff": "diff/story__feedback-banner--preview__ocean-dark.png",
-        "composite": "composite/story__feedback-banner--preview__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__feedback-banner--with-detail__ocean-dark",

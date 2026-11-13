@@ -34,7 +34,8 @@
 // admin and its lead: lib/add-product.ts canAddSampleProduct), never a designer, the developer or the product manager.
 // Add runs in this browser: nothing is sent, the product is kept for the visit (lib/demo-in-browser.ts
 // keepSampleProduct) and shows in the side nav, on its page and in Start an exploration's Where list. Bridge reads no
-// account there: "Its code is on GitHub" says so in one line and points to the two other cards; "Only its address" and
+// account there: "Only its address" is the recommended card, and "Its code is on GitHub" says so in one line and
+// points to the two other cards by their names (sampleFoundLine); "Only its address" and
 // "It's a new product" make no code and no designers' copy (no checkbox), and the form says once that it stays in this
 // browser (DEMO_WORDS.sampleProduct).
 //
@@ -74,6 +75,7 @@ import {
   pendingKey,
   popupFeatures,
   requestSentLine,
+  sampleFoundLine,
   productKeyFor,
   productNameFor,
   waitedTooLong,
@@ -242,6 +244,16 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
   const [request, setRequest] = useState<PendingRequest | null>(null);
   const { copied, said, copy: copyText } = useCopy(3000);
 
+  // Each opening after the first starts from the question (closed here or by its opener, Start an exploration), set
+  // before it paints; never while it closes (see setOpen).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setMode('choice');
+      setReview(null);
+    }
+  }
   const setOpen = (o: boolean) => {
     if (!o) {
       // Closed here: nothing to reopen after GitHub.
@@ -249,11 +261,11 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       go({ type: 'cancel' });
       setFound(null);
       setError(null);
-      setMode('choice');
-      if (review) {
-        setReview(null);
-        if (!controlled) setSent(true);
-      }
+      // The step stays as it is while the dialog closes: swapping it now (a form step is its own component) remounts
+      // the popup mid-exit, Base UI never finishes closing and its see-through backdrop stays over the page. The next
+      // opening starts from the question (below).
+      // Sent for review: Settings says so in place of its button; the review step itself stays while it closes.
+      if (review && !controlled) setSent(true);
       // GitHub did not answer this time: the next opening asks again instead of keeping the empty list.
       if (unread) {
         setUnread(false);
@@ -459,8 +471,6 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
   const focusedFor = useRef<string | null>(null);
   useEffect(() => {
     if (!open) {
-      // Closed by its opener too (Start an exploration): the next opening starts from the question again.
-      if (focusedFor.current !== null) setMode('choice');
       focusedFor.current = null;
       return;
     }
@@ -716,8 +726,9 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
         <div className="addp-choices">
           {(
             [
-              { mode: 'found', art: 'components', title: W.github, help: W.githubHelp, recommended: true },
-              { mode: 'address', art: 'address', title: W.address, help: W.addressHelp, recommended: false },
+              // The sample team reads no account: its GitHub card is not the way to try it, Only its address is.
+              { mode: 'found', art: 'components', title: W.github, help: W.githubHelp, recommended: !sample },
+              { mode: 'address', art: 'address', title: W.address, help: W.addressHelp, recommended: sample },
               { mode: 'new', art: 'fix', title: W.fresh, help: W.freshHelp, recommended: false },
             ] as const
           ).map((c) => (
@@ -776,7 +787,7 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       <DialogContent title={W.github} hideClose footer={<ButtonGroup align="end">{back}</ButtonGroup>}>
         <div className="addp-wait addp-none">
           <Drawing name="components" width={96} className="addp-wait-art" />
-          <p className="addp-wait-line addp-wait-text">{DEMO_WORDS.sampleProductFound}</p>
+          <p className="addp-wait-line addp-wait-text">{sampleFoundLine}</p>
         </div>
       </DialogContent>
     );

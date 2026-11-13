@@ -13,7 +13,7 @@ import { createElement } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, nothingYetLine, ownersOnlyLine, pendingKey, requestSentLine, type ProductRepoChoice } from '../../../lib/add-product';
+import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, sampleFoundLine, nothingYetLine, ownersOnlyLine, pendingKey, requestSentLine, type ProductRepoChoice } from '../../../lib/add-product';
 import { ADDRESS_PRODUCT_WORDS as D, NEW_PRODUCT_WORDS as N } from '../../../lib/new-product';
 import { copySetupFresh, copySetupKey } from '../../../lib/design-copy';
 import AddProduct, { setOpenPage } from './AddProduct';
@@ -497,7 +497,8 @@ describe('Add a product on the sample team', () => {
     render(createElement(AddProduct, { products: [] }));
     fireEvent.click(await screen.findByRole('button', { name: W.open }));
     fireEvent.click(await githubCard());
-    expect(await screen.findByText(DEMO_WORDS.sampleProductFound)).toBeInTheDocument();
+    expect(await screen.findByText(sampleFoundLine)).toBeInTheDocument();
+    expect(sampleFoundLine).toContain(`Try ${W.address} or ${W.fresh}.`);
     // Nothing asked of GitHub, no way to it from here: Back only.
     expect(screen.queryByRole('button', { name: W.findOnGitHub })).toBeNull();
     expect(screen.getByRole('button', { name: W.back })).toBeInTheDocument();
@@ -505,10 +506,21 @@ describe('Add a product on the sample team', () => {
     await expectNoAxeViolations(document.body);
   });
 
+  it('recommends Only its address, not the GitHub card; Back from the GitHub step puts the focus on that card again', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    expect(await screen.findByRole('button', { name: `${W.address} ${W.recommended}` })).toBeInTheDocument();
+    const github = screen.getByRole('button', { name: W.github });
+    fireEvent.click(github);
+    fireEvent.click(await screen.findByRole('button', { name: W.back }));
+    const again = await screen.findByRole('button', { name: W.github });
+    await waitFor(() => expect(document.activeElement).toBe(again));
+  });
+
   it('Only its address: added in this browser, its page opens, nothing sent and nothing added on GitHub', async () => {
     render(createElement(AddProduct, { products: [] }));
     fireEvent.click(await screen.findByRole('button', { name: W.open }));
-    fireEvent.click(await screen.findByRole('button', { name: W.address }));
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${W.address}`) }));
     expect(await screen.findByText(DEMO_WORDS.sampleProduct)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
     fireEvent.change(screen.getByRole('textbox', { name: D.address }), { target: { value: 'atlas.example.com' } });
@@ -544,4 +556,25 @@ describe('Add a product on the sample team', () => {
     });
     expect(screen.queryByRole('button', { name: W.open })).toBeNull();
   });
+});
+
+// Closing from a form step (It's a new product, Only its address): the dialog finishes closing, its backdrop gone, so
+// the page under it takes clicks again. The step stays as it was while the dialog closes (swapping it then left Base
+// UI's exit unfinished: a see-through backdrop over the page), and the next opening starts from the question.
+describe('Add a product closes cleanly from every step', () => {
+  const backdrops = () => document.querySelectorAll('[class*="backdrop"]').length;
+  for (const card of [W.fresh, W.address] as const) {
+    it(`Escape from "${card}" unmounts the popup and the backdrop; the next opening asks the question again`, async () => {
+      render(createElement(AddProduct, { products: [] }));
+      fireEvent.click(await screen.findByRole('button', { name: W.open }));
+      fireEvent.click(await screen.findByRole('button', { name: card }));
+      const name = await screen.findByRole('textbox', { name: N.name });
+      expect(backdrops()).toBeGreaterThan(0);
+      fireEvent.keyDown(name, { key: 'Escape' });
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await waitFor(() => expect(backdrops()).toBe(0));
+      fireEvent.click(screen.getByRole('button', { name: W.open }));
+      expect(await screen.findByText(W.question)).toBeInTheDocument();
+    });
+  }
 });

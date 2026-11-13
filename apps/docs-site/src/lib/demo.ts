@@ -106,8 +106,6 @@ export const DEMO_WORDS = {
   sampleStartTitle: 'Started in this browser',
   /** Add a product on the sample team: it is added in this browser (SAMPLE_IN_BROWSER), nothing is sent. */
   sampleProduct: 'On the sample team it stays in this browser.',
-  /** "Its code is on GitHub" on the sample team: Bridge reads no account there, so it says what a real team gets. */
-  sampleProductFound: "On the sample team, Bridge does not look for code on an account. Try Only its address or It's a new product here.",
 
   /** The account menu's way to the sample team, for a signed-in member (never between real teams in the team menu). */
   tryIt: `Try it · ${SAMPLE_TEAM}`,

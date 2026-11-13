@@ -59,6 +59,12 @@ export const ADD_PRODUCT_WORDS = {
   checkAgain: 'Check again',
 } as const;
 
+/**
+ * "Its code is on GitHub" on the sample team: Bridge reads no account there, so it points to the two other cards, named
+ * as the cards say them.
+ */
+export const sampleFoundLine = `On the sample team, Bridge does not look for code on an account. Try ${ADD_PRODUCT_WORDS.address} or ${ADD_PRODUCT_WORDS.fresh}.`;
+
 /** The line that says the new product arrived (announced, then the form waits with it picked). */
 export const foundLine = (name: string) => `${name} is here. Add it when you're ready.`;
 

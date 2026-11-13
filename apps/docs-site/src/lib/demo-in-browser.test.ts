@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { decisionsOf, EXPLORATION_LABEL, EXPLORATION_READY_LABEL, explorationPrBody, explorationStatus, isInReview, parseExplorationBody, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import { keepSampleAnswer, keepSampleProduct, keepSampleStart, sampleLooksRight, sampleProducts, sampleRead, sampleStarts } from './demo-in-browser';
+import { sampleFoundLine } from './add-product';
 import { DEMO_VISIT_KEY, DEMO_WORDS, runsInBrowser, sampleStartLines, swapDemoDrafts } from './demo';
 import { SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
 import { rowTime, turnSince } from './lead-decisions';
@@ -139,7 +140,7 @@ describe('Add a product on the sample team: kept for the visit', () => {
     expect(sampleProducts(store)).toEqual([{ key: 'fine', name: 'Fine' }]);
     store.setItem('bridge.acme-design-demo/bridge-demo-ds.draft.products', '{oops');
     expect(sampleProducts(store)).toEqual([]);
-    for (const line of [DEMO_WORDS.sampleProduct, DEMO_WORDS.sampleProductFound]) {
+    for (const line of [DEMO_WORDS.sampleProduct, sampleFoundLine]) {
       expect(line).not.toMatch(/\u2014|repo|fork|pull request|branch/i);
       expect(line).toMatch(/^[A-Z].*\.$/);
     }

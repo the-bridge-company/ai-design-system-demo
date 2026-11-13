@@ -998,7 +998,7 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
 /**
  * The list as chapters (lr-list, direction C; lr-yours, lr-decided, lr-designer): one chapter per family (Foundations,
  * Components, Docs) with its icon, name, count, one line and what it reaches, then one card where each group's name
- * sits in a left rail beside its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
+ * sits on top of its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
  * the row grid, in sentence case:
  *   Waiting, lead:  [box] | Today › After | Piece | Asked by | From | Who gets it | State | Next | action
  *   Decided:        Today › After | Piece | Asked by | From | Who gets it | State (the result)
@@ -1006,8 +1006,7 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
  * Asked by is a face and a first name, From the exploration on one line with its product under it ("Asked directly"
  * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Every card
  * shares one grid, from every row of the list (lib/library-review-list listGrid); when the list runs out of room, Who
- * gets it folds first, then Today › After, then a rail goes on top of its rows, then the rows stack
- * (styles/library-review.css).
+ * gets it folds first, then Today › After, then the rows stack (styles/library-review.css).
  * The Piece column says only what the piece is: its name (a link to it in One by one, and a quiet link to its page in
  * the library) and its kind. A state (a conflict's "2 ways", a result) sits in State; a waiting row shows none there,
  * its chapter already says it waits. A column shows only when a row fills it. Checkboxes and the row action (a quiet
@@ -1227,12 +1226,9 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     const labels = new Map(ch.groups.map((g) => [g.key, ch.rail ? sideLabel(railLabel(g, ch), g.pieces) : null]));
     return { labels, rail: Boolean(ch.rail) && [...labels.values()].some(Boolean) };
   };
-  // A list with a rail keeps the rail's room in every card, an empty one where a card has no rail, and folds its columns
-  // sooner (styles/library-review.css, has-rails): the same columns at the same x in every card.
-  const rails = chapters.some((ch) => railOf(ch).rail);
   const listCols = colsOf(allRows);
   return (
-    <div className={`lr-list is-${mode}${rails ? ' has-rails' : ''}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
+    <div className={`lr-list is-${mode}${selected.size ? ' has-selection' : ''}${readOnly ? ' is-read' : ''}`} role="table" aria-label="Library pieces">
       {chapters.map((ch) => {
         const rows = ch.groups.flatMap((g) => g.pieces);
         const cr = chapterReach(rows.map((p) => ({ reach: reach(p), measured: measure(p) })));
@@ -1271,11 +1267,6 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
             </div>
             <div className="lr-chapter-card" style={c.style}>
               <div role="row" className="lr-chapter-cols">
-                {rail && (
-                  <span role="columnheader" className="lr-rail-head">
-                    Group
-                  </span>
-                )}
                 {boxes && (
                   <span role="columnheader" className="lr-col-box lr-hover-ctl">
                     {pickable.length > 0 && <Checkbox label={<VisuallyHidden>{`Select every piece of ${ch.label} you can decide`}</VisuallyHidden>} checked={allOn} indeterminate={!allOn && someOn} onCheckedChange={(on) => onSelect(pickable.map((p) => p.key), on)} />}

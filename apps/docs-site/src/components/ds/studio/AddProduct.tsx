@@ -483,9 +483,15 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
     focusedFor.current = at;
     // On opening, the dialog puts the focus on its first card itself.
     if (first && at === 'choice') return;
+    const target = () => (at === 'choice' ? cardRefs.current.get(chose.current) : !found && !resumedRepo ? ((repos?.length ? addRefs.current.get(repos[0]!.full) : null) ?? findPrimary.current) : null);
     requestAnimationFrame(() => {
-      if (at === 'choice') cardRefs.current.get(chose.current)?.focus();
-      else if (!found && !resumedRepo) ((repos?.length ? addRefs.current.get(repos[0]!.full) : null) ?? findPrimary.current)?.focus();
+      target()?.focus();
+      // The button that was focused (Back) left the page: the dialog's focus trap moves the focus to the popup itself
+      // a moment later. Taken back from there, never from something the person focused since.
+      setTimeout(() => {
+        const el = target();
+        if (el && document.activeElement !== el && document.activeElement?.getAttribute('role') === 'dialog') el.focus();
+      }, 60);
     });
   }, [open, mode, repos === null]);
   // A product announced: its Add takes the focus.

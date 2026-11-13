@@ -136,7 +136,15 @@ export function studioCellHtml(d: ExplorerData, path: string, col: Column, edite
   // label, not "width.22px" (WCAG 2.5.3).
   // A long value (a cubic-bezier next to its alias) ends in an ellipsis in a narrow column: the whole text on hover.
   const whole = (type === 'cubicBezier' && !v.error ? [v.alias ? main : '', v.line] : [main, end]).filter(Boolean).join(' ');
-  return `<span class="xp-field${v.error ? ' is-error' : ''}"${v.override ? ' data-override=""' : ''}${whole ? ` title="${esc(whole)}"` : ''}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span><span class="xp-field-chev" aria-hidden="true">${icon('chevronDown', 16)}</span></span>`;
+  const attrs = `${v.override ? ' data-override=""' : ''}${whole ? ` title="${esc(whole)}"` : ''}`;
+  const chev = `<span class="xp-field-chev" aria-hidden="true">${icon('chevronDown', 16)}</span>`;
+  if (type === 'cubicBezier' && !v.error) {
+    // An easing stacks: the token name on the first line, its four numbers under it on their own line (they wrap at a
+    // comma rather than end in an ellipsis), beside the curve. One space between the two in the text (WCAG 2.5.3).
+    const text = `<span class="xp-field-main mono">${esc(main)}</span>${dot}${end ? ` <span class="xp-field-end mono">${esc(end)}</span>` : ''}`;
+    return `<span class="xp-field is-stack"${attrs}>${lead}<span class="xp-field-text">${text}</span>${chev}</span>`;
+  }
+  return `<span class="xp-field${v.error ? ' is-error' : ''}"${attrs}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span>${chev}</span>`;
 }
 
 /** "0.16, 1, 0.3, 1" for a cubic-bezier value, '' for anything else. */

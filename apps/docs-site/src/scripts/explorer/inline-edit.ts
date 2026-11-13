@@ -196,7 +196,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     const changed = JSON.stringify(state.value) !== JSON.stringify(start);
     // "was": the same dot as the one on the original step of the ramp (RampPicker), so the two read as one mark.
     const wasText = `<span class="xe-was"><span class="xe-was-dot" aria-hidden="true"></span>was ${esc(valueText(t.type, start))}</span>`;
-    const sub = isColor ? `${esc(hex ?? '')}${changed ? `${SEP}${wasText}` : ''}` : changed ? wasText : '';
+    // Every type reads the same way: the name, then its resolved value (hex, 16px, cubic-bezier(...)) and the "was" mark.
+    const resolved = isColor ? (hex ?? '') : target ? cellValue(d.head, target, col.ctx).line : '';
+    const sub = [resolved ? esc(resolved) : '', changed ? wasText : ''].filter(Boolean).join(SEP);
     const picker = fam
       ? // The tabs and More (DS Tabs and Menu) and the ramp are drawn into their slots after this markup.
         `<div class="xe-families"><div data-xe-tabs-slot></div></div>

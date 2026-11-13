@@ -2030,10 +2030,40 @@
   }
 }
 
-/* Steps of a dimension or duration: a scrolling list, the picked one in view. */
+/* Steps of a dimension, duration or easing: a scrolling list, the picked one in view. The edge that hides more steps
+   fades (data-fade, set by RampPicker.tsx), so a step cut by the edge reads as "more", never as a broken row. */
 .xe-steps {
+  position: relative;
   max-height: var(--size-40);
   overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.xe-steps[data-fade="end"] {
+  mask-image: linear-gradient(to bottom, currentcolor calc(100% - var(--space-8)), transparent);
+}
+
+.xe-steps[data-fade="start"] {
+  mask-image: linear-gradient(to top, currentcolor calc(100% - var(--space-8)), transparent);
+}
+
+.xe-steps[data-fade="both"] {
+  mask-image: linear-gradient(to bottom, transparent, currentcolor var(--space-8), currentcolor calc(100% - var(--space-8)), transparent);
+}
+
+/* A step's name, then the "was" mark of the original value (the dot and the word, as in the pick row). */
+.xe-step-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.xe-step-name .xe-was {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
 }
 
 .xe-status {
@@ -2959,17 +2989,37 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   min-width: 0;
 }
 
-/* The type filter (DS SegmentedControl) never widens the row and never clips a type: when the types do not fit, the
-   segments wrap onto a second line instead of scrolling behind the edge fade (a scrolled "All 119" read as a bare
-   "119"). Each segment keeps its label and its count together. */
+/* The type filter (DS SegmentedControl) never clips a type. On a desktop it keeps one row at the control height: it
+   takes its whole width and the search field gives way first (the search shrinks, the types do not). On a phone,
+   where the types have their own full line, they wrap onto a second row instead of scrolling behind the edge fade (a
+   scrolled "All 119" read as a bare "119"). Each segment keeps its label and its count together. */
 .xp-types {
   min-width: 0;
   max-width: 100%;
 }
 
-.xp-types [data-segment-track] {
-  flex-wrap: wrap;
-  overflow-x: visible;
+@media (min-width: 861px) {
+  .xp[data-surface="app"] .xp-chips {
+    flex: none;
+  }
+
+  .xp[data-surface="app"] .xp-search {
+    flex: 1 1 0;
+    min-width: var(--size-40);
+  }
+
+  /* The details panel narrows the table on a laptop: there the types may give way too (the DS control scrolls its
+     segments with an edge fade) rather than push the toolbar past the table. */
+  .xp[data-surface="app"].has-detail .xp-chips {
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .xp-types [data-segment-track] {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 }
 
 .xp-options {
@@ -3167,6 +3217,44 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   .xp[data-surface="app"].has-detail .xp-field-end {
     display: none;
   }
+
+  /* An easing's numbers have their own line: they stay. */
+  .xp[data-surface="app"].has-detail .xp-field.is-stack .xp-field-end {
+    display: block;
+  }
+}
+
+/* An easing stacks its name and its four numbers (scripts/explorer/cells.ts): the pill grows to two lines, the
+   numbers wrap at a comma in a narrow column instead of ending in an ellipsis. */
+.xp-field.is-stack {
+  height: auto;
+  min-height: var(--size-8);
+  padding-block: var(--space-1);
+}
+
+.xp-field-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.xp-field.is-stack .xp-field-main {
+  flex: 0 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.xp[data-surface="app"] .xp-field.is-stack .xp-field-end {
+  display: block;
+  flex: 1 0 100%;
+  margin-left: 0;
+  overflow: visible;
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  white-space: normal;
 }
 
 /* Options: collections and usage under Advanced, collapsed until one of them filters the table. */

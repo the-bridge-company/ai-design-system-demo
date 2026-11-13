@@ -129,11 +129,47 @@ describe('Value previews', () => {
     expect(literal.querySelector('.xp-field-main')?.textContent).toBe('0.16, 1, 0.3, 1');
     expect(literal.title).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
   });
+
+  it('an easing stacks: its numbers on their own line under the name, wrapping rather than ellipsized, one space between', () => {
+    const field = mount(studioCellHtml(d, 'motion.easing.emphasized', col, false)).querySelector<HTMLElement>('.xp-field')!;
+    expect(field.classList.contains('is-stack')).toBe(true);
+    const text = field.querySelector('.xp-field-text')!;
+    expect(text.querySelector('.xp-field-main + .xp-field-end')).not.toBeNull();
+    expect(text.textContent).toBe('easing.standard 0.16, 1, 0.3, 1');
+    expect(field.textContent).not.toMatch(/\s{2}/);
+    expect(rule('.xp[data-surface="app"] .xp-field.is-stack .xp-field-end')).toMatchObject({ flex: '1 0 100%', 'white-space': 'normal', overflow: 'visible' });
+    expect(rule('.xp-field.is-stack')).toMatchObject({ height: 'auto', 'min-height': 'var(--size-8)' });
+  });
 });
 
 describe('Type filter', () => {
-  it('wraps its types instead of scrolling them behind the edge fade: no type label is ever clipped', () => {
-    expect(rule('.xp-types [data-segment-track]')).toMatchObject({ 'flex-wrap': 'wrap', 'overflow-x': 'visible' });
+  it('desktop: one row, the search gives way first; phone: the types wrap instead of scrolling behind the edge fade', () => {
+    const block = (q: string) => css.slice(css.indexOf(q));
+    expect(block('@media (min-width: 861px) {\n  .xp[data-surface="app"] .xp-chips')).toMatch(/^@media \(min-width: 861px\) \{\s*\.xp\[data-surface="app"\] \.xp-chips \{\s*flex: none;\s*\}\s*\.xp\[data-surface="app"\] \.xp-search \{\s*flex: 1 1 0;/);
+    expect(css).toMatch(/@media \(max-width: 640px\) \{\s*\.xp-types \[data-segment-track\] \{\s*flex-wrap: wrap;\s*overflow-x: visible;/);
+    // Never wrapping on a desktop.
+    expect(() => rule('.xp-types [data-segment-track]')).toThrow();
+  });
+});
+
+describe('Step list of the cell editor (sizes, durations, easings)', () => {
+  it('marks the original value with the "was" dot and word (not ", was" glued to the value), the picked step checked', async () => {
+    const { mountRampPicker } = await import('../../components/explorer/RampPicker');
+    const slot = document.createElement('div');
+    document.body.append(slot);
+    const ramp = mountRampPicker();
+    const steps = ['standard', 'linear', 'emphasized'].map((s) => ({ path: `motion.easing.${s}`, label: `easing.${s}`, step: s, value: 'cubic-bezier(0, 0, 1, 1)' }));
+    ramp.render(slot, { kind: 'steps', label: 'Easing', steps, value: 'motion.easing.linear', original: 'motion.easing.standard', onPick: () => {} });
+    const host = document.querySelector('.xe-ramp-host')!;
+    const radios = [...host.querySelectorAll<HTMLElement>('[role="radio"]')];
+    expect(radios).toHaveLength(3);
+    expect(radios[1]!.getAttribute('aria-checked')).toBe('true');
+    expect(host.querySelectorAll('[data-xe-was]')).toHaveLength(1);
+    expect(radios[0]!.closest('label')!.querySelector('[data-xe-was] .xe-was-dot')).not.toBeNull();
+    expect(host.textContent).not.toMatch(/, was/);
+    expect(rule('.xe-steps[data-fade="end"]')['mask-image']).toMatch(/linear-gradient/);
+    ramp.unmount();
+    host.remove();
   });
 });
 

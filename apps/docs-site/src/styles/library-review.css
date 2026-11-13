@@ -56,14 +56,6 @@ html:has(.lr) {
   color: var(--color-text-muted);
 }
 
-/* --- The designer's banner (DS Banner, neutral): the lead's face on the title's line ------------------------------ */
-
-.lr-banner-title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 /* --- The exploration chip: the exploration and its product, one click to its page ---------------------------------- */
 
 .lr-ask {

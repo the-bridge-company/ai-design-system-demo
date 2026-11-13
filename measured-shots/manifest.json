@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-12T19:20:24.410Z",
+  "createdAt": "2026-11-13T01:14:32.859Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -5554,7 +5554,7 @@
       "variants": {
         "Checked=false, State=Default": {
           "file": "figma-variants-menucheckboxitem-unchecked.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--unchecked",
           "props": {
@@ -5565,7 +5565,7 @@
         },
         "Checked=true, State=Default": {
           "file": "figma-variants-menucheckboxitem-checked.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--checked",
           "props": {
@@ -5576,7 +5576,7 @@
         },
         "Checked=false, State=Disabled": {
           "file": "figma-variants-menucheckboxitem-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--disabled",
           "props": {
@@ -5587,7 +5587,7 @@
         },
         "Checked=true, State=Disabled": {
           "file": "figma-variants-menucheckboxitem-checked-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--checked-disabled",
           "props": {
@@ -5598,7 +5598,7 @@
         },
         "story=figma-variants-menucheckboxitem--unchecked, checked=false, state=hover": {
           "file": "figma-variants-menucheckboxitem-unchecked__checked-false__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--unchecked",
           "props": {
@@ -5610,7 +5610,7 @@
         },
         "story=figma-variants-menucheckboxitem--unchecked, checked=false, state=active": {
           "file": "figma-variants-menucheckboxitem-unchecked__checked-false__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--unchecked",
           "props": {
@@ -5622,7 +5622,7 @@
         },
         "story=figma-variants-menucheckboxitem--checked, checked=true, state=hover": {
           "file": "figma-variants-menucheckboxitem-checked__checked-true__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--checked",
           "props": {
@@ -5634,7 +5634,7 @@
         },
         "story=figma-variants-menucheckboxitem--checked, checked=true, state=active": {
           "file": "figma-variants-menucheckboxitem-checked__checked-true__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menucheckboxitem--checked",
           "props": {
@@ -5650,7 +5650,7 @@
       "variants": {
         "Tone=default, State=Default": {
           "file": "figma-variants-menuitem-default.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--default",
           "props": {
@@ -5661,7 +5661,7 @@
         },
         "Tone=danger, State=Default": {
           "file": "figma-variants-menuitem-danger.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--danger",
           "props": {
@@ -5672,7 +5672,7 @@
         },
         "Tone=default, State=Disabled": {
           "file": "figma-variants-menuitem-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--disabled",
           "props": {
@@ -5683,7 +5683,7 @@
         },
         "Tone=danger, State=Disabled": {
           "file": "figma-variants-menuitem-danger-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--danger-disabled",
           "props": {
@@ -5694,7 +5694,7 @@
         },
         "story=figma-variants-menuitem--default, tone=default, state=hover": {
           "file": "figma-variants-menuitem-default__tone-default__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--default",
           "props": {
@@ -5706,7 +5706,7 @@
         },
         "story=figma-variants-menuitem--default, tone=default, state=active": {
           "file": "figma-variants-menuitem-default__tone-default__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--default",
           "props": {
@@ -5718,7 +5718,7 @@
         },
         "story=figma-variants-menuitem--danger, tone=danger, state=hover": {
           "file": "figma-variants-menuitem-danger__tone-danger__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--danger",
           "props": {
@@ -5730,7 +5730,7 @@
         },
         "story=figma-variants-menuitem--danger, tone=danger, state=active": {
           "file": "figma-variants-menuitem-danger__tone-danger__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuitem--danger",
           "props": {
@@ -5746,7 +5746,7 @@
       "variants": {
         "Checked=false, State=Default": {
           "file": "figma-variants-menuradioitem-unchecked.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--unchecked",
           "props": {
@@ -5757,7 +5757,7 @@
         },
         "Checked=true, State=Default": {
           "file": "figma-variants-menuradioitem-checked.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--checked",
           "props": {
@@ -5768,7 +5768,7 @@
         },
         "Checked=false, State=Disabled": {
           "file": "figma-variants-menuradioitem-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--disabled",
           "props": {
@@ -5779,7 +5779,7 @@
         },
         "story=figma-variants-menuradioitem--unchecked, checked=false, state=hover": {
           "file": "figma-variants-menuradioitem-unchecked__checked-false__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--unchecked",
           "props": {
@@ -5791,7 +5791,7 @@
         },
         "story=figma-variants-menuradioitem--unchecked, checked=false, state=active": {
           "file": "figma-variants-menuradioitem-unchecked__checked-false__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--unchecked",
           "props": {
@@ -5803,7 +5803,7 @@
         },
         "story=figma-variants-menuradioitem--checked, checked=true, state=hover": {
           "file": "figma-variants-menuradioitem-checked__checked-true__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--checked",
           "props": {
@@ -5815,7 +5815,7 @@
         },
         "story=figma-variants-menuradioitem--checked, checked=true, state=active": {
           "file": "figma-variants-menuradioitem-checked__checked-true__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--checked",
           "props": {
@@ -5827,7 +5827,7 @@
         },
         "Checked=true, State=Disabled": {
           "file": "figma-variants-menuradioitem-checked__checked-true__disabled-true.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menuradioitem--checked",
           "props": {
@@ -5842,7 +5842,7 @@
       "variants": {
         "State=Default": {
           "file": "figma-variants-menusubmenu-default.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menusubmenu--default",
           "props": {
@@ -5852,7 +5852,7 @@
         },
         "State=Disabled": {
           "file": "figma-variants-menusubmenu-disabled.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menusubmenu--disabled",
           "props": {
@@ -5862,7 +5862,7 @@
         },
         "story=figma-variants-menusubmenu--default, , state=hover": {
           "file": "figma-variants-menusubmenu-default__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menusubmenu--default",
           "props": {
@@ -5873,7 +5873,7 @@
         },
         "story=figma-variants-menusubmenu--default, , state=active": {
           "file": "figma-variants-menusubmenu-default__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 36,
           "story": "figma-variants-menusubmenu--default",
           "props": {
@@ -6542,7 +6542,7 @@
         "story=forms-combobox--default": {
           "file": "forms-combobox-default__part-combobox-popup.png",
           "width": 360,
-          "height": 394,
+          "height": 402,
           "story": "forms-combobox--default",
           "props": {
             "multiple": false,
@@ -7639,7 +7639,7 @@
         "story=forms-select--default": {
           "file": "forms-select-default__part-select-popup.png",
           "width": 320,
-          "height": 164,
+          "height": 172,
           "story": "forms-select--default",
           "props": {
             "placeholder": "No theme",
@@ -10577,7 +10577,7 @@
         "story=overlays-menu--actions": {
           "file": "overlays-menu-actions.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10586,7 +10586,7 @@
         "story=overlays-menu--row-overflow": {
           "file": "overlays-menu-row-overflow.png",
           "width": 240,
-          "height": 127,
+          "height": 143,
           "story": "overlays-menu--row-overflow",
           "props": {
             "loopFocus": true
@@ -10595,7 +10595,7 @@
         "story=overlays-menu--anchored": {
           "file": "overlays-menu-anchored.png",
           "width": 240,
-          "height": 82,
+          "height": 90,
           "story": "overlays-menu--anchored",
           "props": {
             "loopFocus": true
@@ -10604,7 +10604,7 @@
         "story=overlays-menu--checkable-items": {
           "file": "overlays-menu-checkable-items.png",
           "width": 240,
-          "height": 287,
+          "height": 303,
           "story": "overlays-menu--checkable-items",
           "props": {
             "loopFocus": true
@@ -10613,7 +10613,7 @@
         "story=overlays-menu--all-states": {
           "file": "overlays-menu-all-states.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--all-states",
           "props": {
             "loopFocus": true
@@ -10622,7 +10622,7 @@
         "story=overlays-menu--all-states-anchored": {
           "file": "overlays-menu-all-states-anchored.png",
           "width": 240,
-          "height": 82,
+          "height": 90,
           "story": "overlays-menu--all-states-anchored",
           "props": {
             "loopFocus": true
@@ -10631,7 +10631,7 @@
         "story=overlays-menu--all-states-checkable": {
           "file": "overlays-menu-all-states-checkable.png",
           "width": 240,
-          "height": 287,
+          "height": 303,
           "story": "overlays-menu--all-states-checkable",
           "props": {
             "loopFocus": true
@@ -10640,7 +10640,7 @@
         "story=overlays-menu--actions, , state=hover": {
           "file": "overlays-menu-actions__state-hover.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10650,7 +10650,7 @@
         "story=overlays-menu--actions, , state=active": {
           "file": "overlays-menu-actions__state-active.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10660,7 +10660,7 @@
         "story=overlays-menu--actions, disabled=true": {
           "file": "overlays-menu-actions__disabled-true.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true,
@@ -10673,7 +10673,7 @@
       "variants": {
         "State=Default": {
           "file": "overlays-menu-checkable-items__part-menuradiogroup.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10682,7 +10682,7 @@
         },
         "story=overlays-menu--checkable-items, state=hover": {
           "file": "overlays-menu-checkable-items__part-menuradiogroup__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10692,7 +10692,7 @@
         },
         "story=overlays-menu--checkable-items, state=active": {
           "file": "overlays-menu-checkable-items__part-menuradiogroup__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10706,7 +10706,7 @@
       "variants": {
         "story=overlays-menu--checkable-items": {
           "file": "overlays-menu-checkable-items__part-menugroup.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10715,7 +10715,7 @@
         },
         "story=overlays-menu--checkable-items, state=hover": {
           "file": "overlays-menu-checkable-items__part-menugroup__state-hover.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10725,7 +10725,7 @@
         },
         "story=overlays-menu--checkable-items, state=active": {
           "file": "overlays-menu-checkable-items__part-menugroup__state-active.png",
-          "width": 230,
+          "width": 222,
           "height": 134,
           "story": "overlays-menu--checkable-items",
           "props": {
@@ -10773,7 +10773,7 @@
         "story=overlays-menu--actions": {
           "file": "overlays-menu-actions.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10782,7 +10782,7 @@
         "story=overlays-menu--row-overflow": {
           "file": "overlays-menu-row-overflow.png",
           "width": 240,
-          "height": 127,
+          "height": 143,
           "story": "overlays-menu--row-overflow",
           "props": {
             "loopFocus": true
@@ -10791,7 +10791,7 @@
         "story=overlays-menu--anchored": {
           "file": "overlays-menu-anchored.png",
           "width": 240,
-          "height": 82,
+          "height": 90,
           "story": "overlays-menu--anchored",
           "props": {
             "loopFocus": true
@@ -10800,7 +10800,7 @@
         "story=overlays-menu--checkable-items": {
           "file": "overlays-menu-checkable-items.png",
           "width": 240,
-          "height": 287,
+          "height": 303,
           "story": "overlays-menu--checkable-items",
           "props": {
             "loopFocus": true
@@ -10809,7 +10809,7 @@
         "story=overlays-menu--all-states": {
           "file": "overlays-menu-all-states.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--all-states",
           "props": {
             "loopFocus": true
@@ -10818,7 +10818,7 @@
         "story=overlays-menu--all-states-anchored": {
           "file": "overlays-menu-all-states-anchored.png",
           "width": 240,
-          "height": 82,
+          "height": 90,
           "story": "overlays-menu--all-states-anchored",
           "props": {
             "loopFocus": true
@@ -10827,7 +10827,7 @@
         "story=overlays-menu--all-states-checkable": {
           "file": "overlays-menu-all-states-checkable.png",
           "width": 240,
-          "height": 287,
+          "height": 303,
           "story": "overlays-menu--all-states-checkable",
           "props": {
             "loopFocus": true
@@ -10836,7 +10836,7 @@
         "story=overlays-menu--actions, , state=hover": {
           "file": "overlays-menu-actions__state-hover.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10846,7 +10846,7 @@
         "story=overlays-menu--actions, , state=active": {
           "file": "overlays-menu-actions__state-active.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true
@@ -10856,7 +10856,7 @@
         "story=overlays-menu--actions, disabled=true": {
           "file": "overlays-menu-actions__disabled-true.png",
           "width": 240,
-          "height": 199,
+          "height": 215,
           "story": "overlays-menu--actions",
           "props": {
             "loopFocus": true,

@@ -29,7 +29,7 @@ describe('the demo dialog says what the action does', () => {
   it.each([
     ['send to Figma', 'Send to Figma'],
     ['keep an exploration', 'Done exploring'],
-    ['start an exploration', 'Start an exploration'],
+    ['send a build request', 'Send a build request'],
     ['comment on changes', 'Comment'],
   ])('%s', async (mark, label) => {
     const btn = document.createElement('button');
@@ -43,6 +43,24 @@ describe('the demo dialog says what the action does', () => {
     expect(text).toContain(DEMO_WORDS.dialogLead);
     expect(screen.getByRole('link', { name: DEMO_WORDS.getStarted })).toBeTruthy();
     await closeDialog();
+    btn.remove();
+  });
+
+  it.each([
+    ['start explorations', 'Start an exploration'],
+    ['start an exploration', 'Start an exploration'],
+    ['say the design looks right', 'Looks right'],
+  ])('%s runs in this browser on the sample team: no dialog, the page handles the click', async (mark, label) => {
+    const btn = document.createElement('button');
+    btn.dataset.demoWrite = mark;
+    btn.textContent = label;
+    let ran = false;
+    btn.addEventListener('click', () => (ran = true));
+    document.body.append(btn);
+    await userEvent.click(btn);
+    expect(ran).toBe(true);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('dialog')).toBeNull();
     btn.remove();
   });
 

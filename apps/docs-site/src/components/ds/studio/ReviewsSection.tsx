@@ -18,7 +18,7 @@ import { designReviewOf, type ProductConfig } from '@bridge-ds/core';
 import { NoticeLine } from './MemberParts';
 import type { Notice } from './members-state';
 import type { Member } from '../../../lib/invites';
-import { ANY_PRODUCT, type DesignReviewMap, type DesignReviewSetting } from '../../../lib/team-reviews';
+import { ANY_PRODUCT, reviewGithubOwners, type DesignReviewMap, type DesignReviewSetting } from '../../../lib/team-reviews';
 import { ANY_DESIGNER, LIBRARY_KEY, REVIEWS_WORDS as W, designReviewLine, leavesNoOwner, libraryOwnersLine, memberRefOf, reviewRows, reviewerValues, settingFromValues, turnedOn, type ReviewRow } from '../../../lib/reviews-settings';
 import { setDesignReview, setLibraryOwner, type TeamReviewsSettings } from '../../../scripts/invites-api';
 import { siteConfig } from '../../../scripts/repo-context';
@@ -41,7 +41,8 @@ interface View {
 }
 
 const norm = (s: string) => s.trim().replace(/^@/, '').toLowerCase();
-const githubOwnerLogins = (): string[] => [...new Set((siteApprovers().design ?? []).map(norm).filter((l) => l && !l.includes('/')))];
+/** The GitHub design owners of the team's config: none on the sample team, which names only its cast. */
+const githubOwnerLogins = (repo: string): string[] => reviewGithubOwners(repo, siteApprovers().design ?? []);
 
 /** An admin's view: the email members of Settings > Members, by reference (hashed here, as the server does). */
 function useAdminView(members: readonly Member[], reviews: TeamReviewsSettings | null | undefined): View | null {
@@ -112,7 +113,7 @@ export default function ReviewsSection({ repo, canEdit, members, reviews }: { re
 
 function Body({ repo, canEdit, readOnly, view }: { repo: string; canEdit: boolean; readOnly: boolean; view: View }) {
   const products: ProductConfig[] = useMemo(() => (Array.isArray(siteConfig().products) ? (siteConfig().products as ProductConfig[]) : []), []);
-  const githubOwners = useMemo(githubOwnerLogins, []);
+  const githubOwners = useMemo(() => githubOwnerLogins(repo), [repo]);
   const [map, setMap] = useState<DesignReviewMap | null>(view.map);
   const [owners, setOwners] = useState<Set<string>>(() => new Set(view.people.filter((p) => p.libraryOwner && p.email).map((p) => p.email!)));
   const [note, setNote] = useState(view.note);

@@ -37,6 +37,12 @@ export function rememberedWaitingExplorations(): WaitingExploration[] | null {
 
 let reading: Promise<number | null> | null = null;
 
+/** Reads again what waits on the viewer, after an answer that changed it (the sample team's Looks right). */
+export function recountWaitingExplorations(): Promise<number | null> {
+  reading = null;
+  return countWaitingExplorations();
+}
+
 /**
  * Reads what waits on the viewer once per page, with Home's own loader and rule (scripts/home-data loadHome,
  * lib/waiting-counts waitingCounts), for a page opened before Home or Explorations remembered anything this visit

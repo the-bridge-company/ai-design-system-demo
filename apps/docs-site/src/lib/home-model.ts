@@ -168,6 +168,29 @@ export function waitingLabel(iso: string, now: number): string {
 }
 
 /**
+ * Say "waiting" once: next to a line that already starts with "Waiting for" ("Waiting for your library decision on
+ * Timeline"), the wait's tag reads "5 days" ("today" for New today); its tone stays the wait's (amber once late).
+ * Any other line keeps the tag as it is ("Waiting 5 days").
+ */
+export function waitSaidOnce(line: string | null | undefined, label: string): string {
+  if (!/^waiting for\b/i.test((line ?? '').trim())) return label;
+  if (label === 'New today') return 'today';
+  const m = /^Waiting (.+)$/.exec(label);
+  return m ? m[1]! : label;
+}
+
+/**
+ * A row's tag with its wait said once (waitSaidOnce). No start time known (the tag is a bare "Waiting") next to a line
+ * that already starts with "Waiting for": no tag at all, the line says it.
+ */
+export function pillSaidOnce<P extends { label: string }>(line: string | null | undefined, pill: P | null | undefined): P | null {
+  if (!pill) return null;
+  if (/^waiting for\b/i.test((line ?? '').trim()) && pill.label.trim().toLowerCase() === 'waiting') return null;
+  const label = waitSaidOnce(line, pill.label);
+  return label === pill.label ? pill : { ...pill, label };
+}
+
+/**
  * The tag of a wait: "Waiting 4 days", grey, amber only once late (lib/status-tag waitTone: more than a week, core
  * LATE_DAYS). Every Needs you row's wait wears this one tag.
  */

@@ -79,7 +79,7 @@ import { BUILD_WORDS, buildRows, withLibraryWait, type BuildCheckView } from '..
 import type { PmView } from '../components/ds/studio/LeadDecisions';
 import { bringLatestIntoExploration, copyRepos, explorationBehind } from './design-copy';
 import { claudeCodeUrl, COPY_WORDS } from '../lib/design-copy';
-import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, studioClient } from './github-session';
+import { currentAccess, currentContributor, currentViewer, designerRoute, ghGet, hasWorkingToken, noteWrite, studioClient } from './github-session';
 import { viewerDecidesExplorations, viewerIsDesignLead } from './design-lead';
 import { deciderNames, reviewAsk } from '../lib/design-lead';
 import { changesModeOnPage } from './changes-mode';
@@ -103,6 +103,8 @@ import { explorationState } from '../lib/exploration-state';
 import { askerRole, declineNoteOf, devQuestionOf, taskDeclined, taskStage, taskStatus, devVersionUrl, type DesignAnswer } from '../lib/review-state';
 import { answerDevPull, forgetQuestion, readDesignTask, readDevPull, replyOnTask, taskRef } from './design-task';
 import { installReadPass } from './read-pass';
+import { DEMO_WORDS, isSampleTeam } from '../lib/demo';
+import { keepSampleAnswer, pullRepo, sampleLooksRight, SAMPLE_ANSWERED_EVENT } from '../lib/demo-in-browser';
 import { conflictsWithOthers, impactSourceOf, releasedSet } from './library-impact';
 import { decidedParts, leadBuildLine, leadLibraryLine, libraryImpactView, looksRightBlock, namesLine, VERDICT_OF, type PieceAction } from '../lib/library-impact-view';
 import type { LibraryImpactActions } from '../components/ds/studio/LibraryImpact';
@@ -319,6 +321,25 @@ function leadViewOf(
       line: open ? leadWaitLine(open, viewer ?? '', who, knownNamesOf([open.by ?? ''])) : hat ? hat.as : "Nothing reaches the developers before you send it.",
       bar: {
         onLooksRight: async (note) => {
+          // The sample team: the yes runs in this browser (lib/demo.ts SAMPLE_IN_BROWSER). The description as it
+          // reads after it is kept for the visit and the page paints from it; nothing is sent.
+          // It moves on exactly as the real approval would (lib/demo-in-browser sampleLooksRight): Ready to build, or the
+          // library decision when a new piece waits; every read of it on this visit returns that copy.
+          if (isSampleTeam(`${CFG.owner}/${CFG.repo}`)) {
+            const next = sampleLooksRight(pull, { byName: emailLead?.name ?? leadName ?? 'You', note });
+            if (!next) {
+              o.reopen(ALREADY_ANSWERED);
+              return ALREADY_ANSWERED;
+            }
+            keepSampleAnswer(localStorage, pullRepo(pull) ?? o.gh.fullName, r.number, next);
+            // Every list read before it reads again (Explorations, the rail badge), as after a real write.
+            noteWrite();
+            document.dispatchEvent(new CustomEvent(SAMPLE_ANSWERED_EVENT));
+            void import('./waiting-counts').then((m) => m.recountWaitingExplorations()).catch(() => undefined);
+            const line = `${next.ready ? LEAD_OK_LINE : stillWaitsLine(libraryWait?.pieces.length ? libraryWait.pieces : next.libraryPending, libraryWait?.owners ?? [])} ${DEMO_WORDS.sampleLooksRight}`;
+            o.reopen(line);
+            return line;
+          }
           let pending: string[] = [];
           const said = await answered(async () => {
             const r2 = await designApproveOnGitHub(o.gh, r.number, { products: o.products, previewUrl: o.previewUrl, ...me, ...(note ? { note } : {}), ...(o.library ? { library: o.library() } : {}), source: 'studio' });

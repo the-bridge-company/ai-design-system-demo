@@ -1,6 +1,6 @@
 // Library > Components > one component, for any repo model: the same tabs on Bridge's own page (pages/components/
 // [slug].astro, rendered at build time) and on a team's Library (LibraryTeamComponents.tsx, in the browser). Usage
-// (docs.json), Tokens (anatomy and motion), Code (props, playground, workbench) and Changelog (release notes that name
+// (docs.json), Tokens (anatomy and motion), Code (props, playground, every state in Storybook) and Changelog (release notes that name
 // it). Previews come from the design system's own Storybook (decision D2), in light and dark. The page script
 // (scripts/component-page.ts) shows the panels, the preview switch and the "On this page" rail through data attributes.
 //
@@ -172,7 +172,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               {manager && (
                 <li data-sb-needs-story="">
                   <ButtonLink variant="secondary" size="sm" href={manager} iconStart={BookOpen}>
-                    Workbench
+                    Open in Storybook
                   </ButtonLink>
                 </li>
               )}
@@ -431,10 +431,9 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
               </section>
 
               <section aria-labelledby="live">
-                <h2 id="live">Workbench</h2>
+                <h2 id="live">Every state</h2>
                 <p>
-                  For contributors: every state with the accessibility panel, in the component workbench (Storybook). The stories double as visual test fixtures; the guidance on this page is the
-                  user documentation
+                  Every state of {c.name}, with its accessibility checks, is in Storybook. The guidance on this page is the one to follow
                   {manager && (
                     <>
                       {' '}
@@ -446,16 +445,8 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
                 {story && storybook && (
                   <details className="stories">
                     <summary>Embed Storybook stories here ({c.stories.length})</summary>
-                    <p className="small muted">
-                      Loads from <code>{storybook}</code>
-                      {own && (
-                        <>
-                          {' '}
-                          (set <code>STORYBOOK_URL</code> at build time)
-                        </>
-                      )}
-                      . If Storybook is not running, the frames stay empty.
-                    </p>
+                    {/* Never the raw address: the link above opens it. */}
+                    <p className="small muted">Loads from the team's Storybook. If it is not running, the frames stay empty.</p>
                     {c.stories.map((s) => (
                       <div key={s.id}>
                         <h4>{s.name}</h4>

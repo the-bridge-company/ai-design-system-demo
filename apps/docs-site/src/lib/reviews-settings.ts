@@ -24,7 +24,7 @@ export const REVIEWS_WORDS = {
   libraryRole: HAT_WORDS.libraryRole,
   libraryOwners: 'Library owners',
   libraryHelp: 'Asked when a screen has something new for the library. Never their own screen.',
-  githubOwnersNote: 'Design owners on GitHub decide too. They come from bridge.config.json (governance.owners.design): change them there.',
+  githubOwnersNote: 'Design owners on GitHub decide too. A developer changes them in the design system\'s settings file.',
   changeOwners: 'Change who decides',
   keepOneOwner: 'Keep at least one person who decides what the library keeps.',
   designTitle: 'Design review before developers',

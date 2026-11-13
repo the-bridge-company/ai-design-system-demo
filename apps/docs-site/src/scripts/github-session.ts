@@ -68,7 +68,8 @@ import { ROLE_WORDS } from '../lib/invites';
 import { contributeFetch, contributeInfo, contributeTeam, contributorFor, contributorKey, onContributeChange, playedGitHub, publicTeamRead, signOutEmail, takeContributeHash, verifyEmailSignIn } from './contribute-session';
 import { busyText } from '../lib/team-load';
 import { emailMemberFace } from '../lib/people';
-import { isSampleTeam } from '../lib/demo';
+import { DEMO_VISIT_KEY, isSampleTeam } from '../lib/demo';
+import { sampleRead } from '../lib/demo-in-browser';
 import { castAccess } from '../lib/demo-cast';
 import { SEP } from '../lib/sep';
 import { KEPT_VERSION } from '../lib/kept-version';
@@ -901,9 +902,25 @@ export function ghGet<T>(path: string, opts: { accept?: string; raw?: boolean; f
   const key = `${url}|${opts.accept ?? ''}|${opts.raw ? 'raw' : ''}|${hasWorkingToken() ? 'auth' : 'anon'}|${wroteAt ?? 0}|${opts.fresh ? 'fresh' : ''}`;
   const pending = inflight.get(key);
   if (pending) return pending as Promise<Fetched<T>>;
-  const p = ghGetOnce<T>(url, path, `${url}|${opts.accept ?? ''}`, opts).finally(() => inflight.delete(key));
+  const p = ghGetOnce<T>(url, path, `${url}|${opts.accept ?? ''}`, opts)
+    .then((f) => withSampleAnswers(url, f))
+    .finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
+}
+
+/**
+ * On a visit of the sample team, its pull requests read as the answers given in this browser left them (Looks right,
+ * lib/demo-in-browser sampleRead): the exploration page, the lists, Home and the rail badge agree. Nothing kept: as read.
+ */
+function withSampleAnswers<T>(url: string, f: Fetched<T>): Fetched<T> {
+  try {
+    if (localStorage.getItem(DEMO_VISIT_KEY) !== '1') return f;
+    const data = sampleRead(localStorage, url, f.data);
+    return data === f.data ? f : { ...f, data };
+  } catch {
+    return f;
+  }
 }
 
 /** owner, repo, ref and path (still URL-encoded) of a raw.githubusercontent.com file address, else null. */

@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildTokenSet, layoutOptions, loadConfig } from '@bridge-ds/core';
 import { buildTokens, modesOf, type Column, type UsageMap } from '../../lib/explorer/model';
-import { preview, studioCellHtml } from './cells';
+import { cellLabel, preview, studioCellHtml } from './cells';
 import type { ExplorerData } from './types';
 
 const css = readFileSync(join(__dirname, '../../styles/token-explorer.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -40,7 +40,7 @@ const set = buildTokenSet(
       color: { bg: { default: { $type: 'color', $value: '{palette.neutral.100}' }, subtle: { $type: 'color', $value: '{palette.neutral.300}' } }, surface: { default: { $type: 'color', $value: '{palette.neutral.100}' } } },
       shadow: { raised: { $type: 'shadow', $value: { color: '#00000033', offsetX: { value: 0, unit: 'px' }, offsetY: { value: 2, unit: 'px' }, blur: { value: 4, unit: 'px' }, spread: { value: 0, unit: 'px' } } } },
       motion: {
-        easing: { standard: { $type: 'cubicBezier', $value: [0.2, 0, 0, 1] } },
+        easing: { standard: { $type: 'cubicBezier', $value: [0.16, 1, 0.3, 1] }, emphasized: { $type: 'cubicBezier', $value: '{motion.easing.standard}' } },
         duration: { fast: { $type: 'duration', $value: { value: 150, unit: 'ms' } }, slow: { $type: 'duration', $value: { value: 900, unit: 'ms' } } },
       },
       radius: { control: { $type: 'dimension', $value: { value: 6, unit: 'px' } } },
@@ -109,12 +109,31 @@ describe('Value previews', () => {
     expect(rule('.xp[data-mode="edit"] .xp-field-chev')).toMatchObject({ display: 'block', visibility: 'hidden' });
   });
 
-  it('a long value ends in an ellipsis inside its pill, with the whole text on the title, never clipped', () => {
+  it('the token name always shows whole; only the resolved value gives way (ellipsis), with the whole text on the title', () => {
     expect(rule('.xp-field')).toMatchObject({ 'min-width': '0', overflow: 'hidden' });
-    for (const sel of ['.xp-field-main', '.xp-field-end'])
-      expect(rule(sel), sel).toMatchObject({ 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
-    const field = mount(studioCellHtml(d, 'motion.easing.standard', col, false)).querySelector<HTMLElement>('.xp-field')!;
-    expect(field.title).toMatch(/cubic-bezier\(0\.2, 0, 0, 1\)|0\.2/);
+    // The alias never shrinks (flex: none); it ellipsizes only past the whole pill width.
+    expect(rule('.xp-field-main')).toMatchObject({ flex: 'none', 'max-width': '100%', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
+    // The resolved value is the one that shrinks.
+    expect(rule('.xp-field-end')).toMatchObject({ flex: '0 1 auto', 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
+  });
+
+  it('an easing reads as its curve and its four numbers, not cubic-bezier(...) cut in two; title and label keep it whole', () => {
+    const aliased = mount(studioCellHtml(d, 'motion.easing.emphasized', col, false)).querySelector<HTMLElement>('.xp-field')!;
+    expect(aliased.querySelector('.xp-thumb.is-curve svg')).not.toBeNull();
+    expect(aliased.querySelector('.xp-field-main')?.textContent).toBe('easing.standard');
+    expect(aliased.querySelector('.xp-field-end')?.textContent).toBe('0.16, 1, 0.3, 1');
+    expect(aliased.title).toBe('easing.standard cubic-bezier(0.16, 1, 0.3, 1)');
+    // Voice control finds the cell by what it shows: the label starts with the visible text.
+    expect(cellLabel(d, 'motion.easing.emphasized', col, true)).toMatch(/^easing\.standard 0\.16, 1, 0\.3, 1, Value/);
+    const literal = mount(studioCellHtml(d, 'motion.easing.standard', col, false)).querySelector<HTMLElement>('.xp-field')!;
+    expect(literal.querySelector('.xp-field-main')?.textContent).toBe('0.16, 1, 0.3, 1');
+    expect(literal.title).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
+  });
+});
+
+describe('Type filter', () => {
+  it('wraps its types instead of scrolling them behind the edge fade: no type label is ever clipped', () => {
+    expect(rule('.xp-types [data-segment-track]')).toMatchObject({ 'flex-wrap': 'wrap', 'overflow-x': 'visible' });
   });
 });
 

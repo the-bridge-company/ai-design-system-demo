@@ -126,14 +126,22 @@ export function studioCellHtml(d: ExplorerData, path: string, col: Column, edite
       ? `<span class="xp-ms${v.hex ? '' : ' is-broken'}${colorAlpha(v.resolved) < 0.9995 ? ' has-alpha' : ''}" aria-hidden="true"><i style="background-color:${cssValue(v.css)}"></i></span>`
       : // Every Studio cell keeps the preview's slot (empty for a type without one): the values start on one column.
         preview(d, type, path, v, col) || '<span class="xp-thumb is-sm is-empty" aria-hidden="true"></span>';
-  const main = v.alias ? swatchLabel(v.alias) : v.line || cssText(type, v.raw);
-  const end = v.error ? 'Unresolved' : type === 'color' ? (v.hex ?? v.css) : v.alias ? v.line : '';
+  // An easing is drawn by its curve (the preview): its value reads as the four numbers, not cubic-bezier(...) cut in two.
+  const line = type === 'cubicBezier' ? shortBezier(v.resolved) || v.line : v.line;
+  // The alias (the token name) always shows whole; the resolved value is secondary and gives way first (ellipsis).
+  const main = v.alias ? swatchLabel(v.alias) : line || cssText(type, v.raw);
+  const end = v.error ? 'Unresolved' : type === 'color' ? (v.hex ?? v.css) : v.alias ? line : '';
   const dot = edited ? '<span class="xp-edot" aria-hidden="true"></span><span class="sr-only">, edited in your draft</span>' : '';
   // A space between the two values (a flex row does not draw it): the cell's visible text reads "width.2 2px" like its
   // label, not "width.22px" (WCAG 2.5.3).
   // A long value (a cubic-bezier next to its alias) ends in an ellipsis in a narrow column: the whole text on hover.
-  const whole = [main, end].filter(Boolean).join(' ');
+  const whole = (type === 'cubicBezier' && !v.error ? [v.alias ? main : '', v.line] : [main, end]).filter(Boolean).join(' ');
   return `<span class="xp-field${v.error ? ' is-error' : ''}"${v.override ? ' data-override=""' : ''}${whole ? ` title="${esc(whole)}"` : ''}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span><span class="xp-field-chev" aria-hidden="true">${icon('chevronDown', 16)}</span></span>`;
+}
+
+/** "0.16, 1, 0.3, 1" for a cubic-bezier value, '' for anything else. */
+export function shortBezier(resolved: unknown): string {
+  return Array.isArray(resolved) && resolved.length === 4 && resolved.every((n) => typeof n === 'number') ? resolved.join(', ') : '';
 }
 
 /** Accessible text of a cell for screen readers (the visual chip and line are aria-hidden duplicates otherwise). */
@@ -142,8 +150,9 @@ export function cellLabel(d: ExplorerData, path: string, col: Column, studio = f
   const type = d.set.byPath.get(path)?.type ?? '';
   // The visible text first, in the order the cell shows it (voice control finds the cell by what it shows), then the
   // column and the full alias path.
+  const line = studio && type === 'cubicBezier' ? shortBezier(v.resolved) || v.line : v.line;
   const shown = studio
-    ? [v.alias ? swatchLabel(v.alias) : v.line || cssText(type, v.raw), v.error ? 'Unresolved' : type === 'color' ? (v.hex ?? v.css) : v.alias ? v.line : '']
+    ? [v.alias ? swatchLabel(v.alias) : line || cssText(type, v.raw), v.error ? 'Unresolved' : type === 'color' ? (v.hex ?? v.css) : v.alias ? line : '']
     : [v.alias ? aliasLabel(v.alias) : v.line || cssText(type, v.raw), v.alias || v.error ? v.line : ''];
   const visible = shown.filter(Boolean).join(' ');
   return `${visible || (v.error ? 'Unresolved' : '')}, ${col.label}${v.alias ? `, points to ${v.alias}` : ''}`;

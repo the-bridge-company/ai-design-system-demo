@@ -1683,10 +1683,13 @@
   line-height: var(--typography-ui-line-height);
 }
 
-/* Both values shrink and end in an ellipsis when the column is narrow (cubic-bezier(0.16, 1, 0.3, 1) next to its
-   alias): never clipped by the pill. The whole text is on the cell's title and in its accessible name. */
+/* The token name (main) always shows whole; only the resolved value on the end side gives way, with an ellipsis, when
+   the column is narrow. An easing shows its curve and its four numbers, not cubic-bezier(...) cut in two. The whole
+   text is on the field's title and in the cell's accessible name. (A name wider than the whole column still ends in
+   an ellipsis rather than spilling out of the pill.) */
 .xp-field-main {
-  flex: 0 1 auto;
+  flex: none;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   font-size: var(--typography-ui-size);
@@ -2956,10 +2959,17 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   min-width: 0;
 }
 
-/* The type filter (DS SegmentedControl) scrolls inside the row on a phone instead of widening it. */
+/* The type filter (DS SegmentedControl) never widens the row and never clips a type: when the types do not fit, the
+   segments wrap onto a second line instead of scrolling behind the edge fade (a scrolled "All 119" read as a bare
+   "119"). Each segment keeps its label and its count together. */
 .xp-types {
   min-width: 0;
   max-width: 100%;
+}
+
+.xp-types [data-segment-track] {
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
 .xp-options {

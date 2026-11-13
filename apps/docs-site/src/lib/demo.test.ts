@@ -100,6 +100,14 @@ describe('teamDisplayName', () => {
     expect(teamDisplayName('the-bridge-company/ai-design-system-demo', root)).toBe('Bridge DS');
   });
 
+  it("names the sample team Acme Design whatever name comes with it (kept, served or read from a snapshot)", () => {
+    expect(teamDisplayName('acme-design-demo/bridge-demo-ds')).toBe('Acme Design');
+    expect(teamDisplayName('Acme-Design-Demo/Bridge-Demo-DS', { name: 'Bridge demo ds' })).toBe('Acme Design');
+    expect(teamDisplayName('peterbono/bridge-demo-ds', { name: 'bridge-demo-ds' })).toBe('Acme Design');
+    // Any other team keeps its own name first.
+    expect(teamDisplayName('acme/ds', { name: 'Acme Studio' })).toBe('Acme Studio');
+  });
+
   it('puts a repository name in words', () => {
     expect(humanizeRepo('the-bridge-company/ai-design-system-demo')).toBe('Ai design system demo');
     expect(humanizeRepo('acme_ui.kit')).toBe('Acme ui kit');

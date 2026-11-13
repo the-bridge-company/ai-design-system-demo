@@ -50,12 +50,13 @@ export const humanizeRepo = (repo: string): string => {
  * ("Design system", never "acme/design-system").
  */
 export const teamDisplayName = (repo: string, config?: { name?: unknown } | null): string => {
+  // The sample team's name is a fixture, first: whatever else names it (a name kept in this browser or by the account,
+  // a snapshot read before its settings), it never paints "Bridge demo ds".
+  if (isSampleTeam(repo)) return SAMPLE_TEAM;
   const own = typeof config?.name === 'string' ? config.name.trim().replace(/\s+/g, ' ') : '';
   if (own) return own;
   if (isTeamKey(repo)) return 'Your team';
-  if (isDemoRepo(repo) && !isSampleTeam(repo)) return OWN_TEAM;
-  // The sample team's name is a fixture: known before its settings are read, so it never paints "Bridge demo ds" first.
-  if (isSampleTeam(repo)) return SAMPLE_TEAM;
+  if (isDemoRepo(repo)) return OWN_TEAM;
   return humanizeRepo(repo);
 };
 

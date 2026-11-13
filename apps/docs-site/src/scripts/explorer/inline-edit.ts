@@ -442,7 +442,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   cell.dataset.open = '';
   cell.setAttribute('aria-expanded', 'true');
   position(pop, cell, container);
-  // The editor just took its final width (the whole ramp): draw the family tabs again so the raised plate sits under
+  // The editor just took its final width (the whole ramp): draw the family tabs again so the underline sits under
   // the picked family's tab as laid out now.
   requestAnimationFrame(() => {
     if (current?.pop === pop) familyTabsRoot.remeasure();

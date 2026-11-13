@@ -1,5 +1,5 @@
-// The token cell editor's palette families (scripts/explorer/inline-edit.ts): the DS Tabs, contained variant at the
-// small size, so they look and behave like every DS tab list (raised plate, arrow keys, Home and End, tablist and tab
+// The token cell editor's palette families (scripts/explorer/inline-edit.ts): the DS Tabs, underline (the one look of
+// Tabs: a family is a section of the palette), small size, so they look and behave like every DS tab list (signal underline, arrow keys, Home and End, tablist and tab
 // roles). Arrow keys pick the family as they move, as before: the ramp under the tabs follows at once. The editor
 // itself is vanilla and redraws on every pick, so it mounts this island once (mountFamilyTabs) and moves its node back
 // into each redraw. "More" stays beside the list: it opens the DS Menu of the other families, it is not a tab.
@@ -26,10 +26,10 @@ export interface FamilyTabsProps {
 export function FamilyTabs({ tabs, more = [], value, onPick, measure = 0 }: FamilyTabsProps) {
   return (
     <>
-      {/* Keyed on the picked family: the raised plate (the DS Tabs indicator) is measured afresh under the family of
+      {/* Keyed on the picked family: the underline (the DS Tabs indicator) is measured afresh under the family of
           the current value every time it changes, never left under a tab picked earlier or measured before the editor
           took its final width. The editor puts focus back on the picked tab after each redraw. */}
-      <Tabs key={`${value}-${measure}`} variant="contained" size="sm" value={value} onValueChange={(v) => typeof v === 'number' && v !== value && onPick(v)} className="xe-family-tabs">
+      <Tabs key={`${value}-${measure}`} size="sm" value={value} onValueChange={(v) => typeof v === 'number' && v !== value && onPick(v)} className="xe-family-tabs">
         <TabsList aria-label="Families" activateOnFocus>
           {tabs.map((t) => (
             <Tab key={t.value} value={t.value} data-xe-fam={t.value}>

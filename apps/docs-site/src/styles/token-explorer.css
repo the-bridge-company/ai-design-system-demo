@@ -1934,7 +1934,7 @@
   font-family: var(--font-family-sans);
 }
 
-/* The family tabs: the DS Tabs, contained and small (components/explorer/FamilyTabs.tsx), with More beside them as a
+/* The family tabs: the DS Tabs, underline and small (components/explorer/FamilyTabs.tsx), with More beside them as a
    quiet button at the same height and type (it opens a menu, it is not a tab). */
 .xe-families {
   display: flex;

@@ -72,6 +72,9 @@ describe('Token editor family tabs', () => {
     const pop = open();
     const list = pop.querySelector('[role="tablist"]')!;
     expect(list.getAttribute('aria-label')).toBe('Families');
+    // Tabs switch sections (DESIGN-LANGUAGE section 7): the underline Tabs, never the deprecated contained look.
+    expect(list.className).toMatch(/underline/);
+    expect(list.className).not.toMatch(/contained/);
     expect(tabs(pop).map((t) => t.textContent)).toEqual(['Neutral', 'Primary', 'Accent']);
     expect(tabs(pop)[0]!.getAttribute('aria-selected')).toBe('true');
     expect(list.contains(pop.querySelector('[data-xe-family-menu]'))).toBe(false);

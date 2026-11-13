@@ -508,10 +508,10 @@
   border-color: transparent;
 }
 
-/* Shadow: a small card raised over the column's canvas, inset so its shadow has room to show. */
+/* Shadow: a small card raised over the column's subtle background, inset so its shadow has room to show. */
 .xp-thumb.is-shadow .xp-card {
-  width: 50%;
-  height: 50%;
+  width: 60%;
+  height: 60%;
 }
 
 /* Duration: a bar to scale (capped at 500ms, scripts/explorer/cells.ts). */
@@ -1673,6 +1673,7 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  overflow: hidden;
   height: var(--size-8);
   padding: 0 var(--space-2);
   border: var(--border-width-default) solid transparent;
@@ -1682,7 +1683,11 @@
   line-height: var(--typography-ui-line-height);
 }
 
+/* Both values shrink and end in an ellipsis when the column is narrow (cubic-bezier(0.16, 1, 0.3, 1) next to its
+   alias): never clipped by the pill. The whole text is on the cell's title and in its accessible name. */
 .xp-field-main {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
@@ -1691,8 +1696,12 @@
 }
 
 .xp-field-end {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   margin-left: auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
@@ -2514,12 +2523,23 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   padding: 0 var(--space-5) var(--space-5);
 }
 
+/* The description wraps (never cut mid-word on one line): up to three lines beside the table, whole on a phone
+   sheet where there is no hover to read the rest. */
 .xp-d-line {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
   color: var(--color-text-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+@media (max-width: 640px) {
+  .xp-d-line {
+    display: block;
+    -webkit-line-clamp: none;
+  }
 }
 
 .xp-d-body.is-studio .xp-d-vals {

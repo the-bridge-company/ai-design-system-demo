@@ -11,6 +11,7 @@ import { copyButton, cssValue, esc, icon, inkOn } from './util';
 
 const CANVAS = 'color.bg.default';
 const SURFACE = 'color.surface.default';
+const SUBTLE = 'color.bg.subtle';
 
 /** Hex of a color token resolved in a column's context (for stage backgrounds). */
 function hexIn(d: ExplorerData, path: string, col: Column): string | undefined {
@@ -48,9 +49,11 @@ export function preview(d: ExplorerData, type: string, path: string, v: CellValu
       return `<span class="${cls}" style="background-color:${bg}" aria-hidden="true"><span class="xp-sw${checker}"><i style="background-color:${css}"></i></span></span>`;
     }
     case 'shadow': {
-      // A card of the column's own surface on the column's canvas: a dark theme shadow shows on a dark card.
+      // A card of the column's own surface raised over the column's subtle background (a white card on a white
+      // canvas hid a light shadow at 24px): the shadow reads in light, and a dark theme shadow shows on a dark card.
       const card = cssValue(hexIn(d, SURFACE, col) ?? 'transparent');
-      return `<span class="${cls} is-shadow" style="background-color:${bg}" aria-hidden="true"><span class="xp-card" style="background-color:${card};box-shadow:${css}"></span></span>`;
+      const backdrop = cssValue(hexIn(d, SUBTLE, col) ?? stageBg(d, col));
+      return `<span class="${cls} is-shadow" style="background-color:${backdrop}" aria-hidden="true"><span class="xp-card" style="background-color:${card};box-shadow:${css}"></span></span>`;
     }
     case 'cubicBezier': {
       const p = bezierPath(v.resolved, 20);
@@ -128,7 +131,9 @@ export function studioCellHtml(d: ExplorerData, path: string, col: Column, edite
   const dot = edited ? '<span class="xp-edot" aria-hidden="true"></span><span class="sr-only">, edited in your draft</span>' : '';
   // A space between the two values (a flex row does not draw it): the cell's visible text reads "width.2 2px" like its
   // label, not "width.22px" (WCAG 2.5.3).
-  return `<span class="xp-field${v.error ? ' is-error' : ''}"${v.override ? ' data-override=""' : ''}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span><span class="xp-field-chev" aria-hidden="true">${icon('chevronDown', 16)}</span></span>`;
+  // A long value (a cubic-bezier next to its alias) ends in an ellipsis in a narrow column: the whole text on hover.
+  const whole = [main, end].filter(Boolean).join(' ');
+  return `<span class="xp-field${v.error ? ' is-error' : ''}"${v.override ? ' data-override=""' : ''}${whole ? ` title="${esc(whole)}"` : ''}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span><span class="xp-field-chev" aria-hidden="true">${icon('chevronDown', 16)}</span></span>`;
 }
 
 /** Accessible text of a cell for screen readers (the visual chip and line are aria-hidden duplicates otherwise). */

@@ -36,8 +36,8 @@ const ramp = (hexes: string[]) =>
 const set = buildTokenSet(
   {
     'primitives/all.tokens.json': JSON.stringify({
-      palette: { neutral: ramp(['#ffffff', '#111111']) },
-      color: { bg: { default: { $type: 'color', $value: '{palette.neutral.100}' } }, surface: { default: { $type: 'color', $value: '{palette.neutral.100}' } } },
+      palette: { neutral: ramp(['#ffffff', '#111111', '#eeeeee']) },
+      color: { bg: { default: { $type: 'color', $value: '{palette.neutral.100}' }, subtle: { $type: 'color', $value: '{palette.neutral.300}' } }, surface: { default: { $type: 'color', $value: '{palette.neutral.100}' } } },
       shadow: { raised: { $type: 'shadow', $value: { color: '#00000033', offsetX: { value: 0, unit: 'px' }, offsetY: { value: 2, unit: 'px' }, blur: { value: 4, unit: 'px' }, spread: { value: 0, unit: 'px' } } } },
       motion: {
         easing: { standard: { $type: 'cubicBezier', $value: [0.2, 0, 0, 1] } },
@@ -100,11 +100,30 @@ describe('Value previews', () => {
     expect(bar(0)).toBe('8%');
     const shadow = mount(studioCellHtml(d, 'shadow.raised', col, false)).querySelector<HTMLElement>('.xp-thumb.is-shadow .xp-card')!;
     expect(shadow.style.boxShadow).not.toBe('');
-    expect(shadow.style.backgroundColor).not.toBe('');
+    // The column's surface card on the column's subtle background: never white on white.
+    expect(shadow.style.backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(shadow.parentElement!.style.backgroundColor).toBe('rgb(238, 238, 238)');
   });
 
   it('the chevron keeps its room at rest, so the end value does not move on hover', () => {
     expect(rule('.xp[data-mode="edit"] .xp-field-chev')).toMatchObject({ display: 'block', visibility: 'hidden' });
+  });
+
+  it('a long value ends in an ellipsis inside its pill, with the whole text on the title, never clipped', () => {
+    expect(rule('.xp-field')).toMatchObject({ 'min-width': '0', overflow: 'hidden' });
+    for (const sel of ['.xp-field-main', '.xp-field-end'])
+      expect(rule(sel), sel).toMatchObject({ 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
+    const field = mount(studioCellHtml(d, 'motion.easing.standard', col, false)).querySelector<HTMLElement>('.xp-field')!;
+    expect(field.title).toMatch(/cubic-bezier\(0\.2, 0, 0, 1\)|0\.2/);
+  });
+});
+
+describe('Token details', () => {
+  it('the description wraps (up to three lines, whole on a phone), never one line cut mid-word', () => {
+    const r = rule('.xp-d-line');
+    expect(r['white-space']).toBeUndefined();
+    expect(r['-webkit-line-clamp']).toBe('3');
+    expect(css).toMatch(/@media \(max-width: 640px\) \{\s*\.xp-d-line \{\s*display: block;\s*-webkit-line-clamp: none;/);
   });
 });
 

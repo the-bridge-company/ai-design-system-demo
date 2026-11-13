@@ -1,7 +1,7 @@
 // Many explorations asking for one piece: one line in the List, grouped in the popover, counted in One by one and
 // folded on the Map.
 import { describe, expect, it } from 'vitest';
-import { ASKED_DIRECTLY, askedCell, askedColumns, askedCountLine, askedFaces, askedSubline, askersOf, firstName, foldColumn, groupAskers, moreTag, peopleWords, waysTag } from './library-askers';
+import { ASKED_DIRECTLY, askedCell, askedColumns, askedCountLine, askedFaces, askedSubline, askersOf, firstName, foldColumn, groupAskers, moreTag, namesLine, peopleWords, waysTag } from './library-askers';
 import { manyAskers, withManyAskers } from './library-review-fixtures';
 import { change, conflict, newComponent } from './library-fixtures.test-helpers';
 
@@ -17,8 +17,18 @@ describe('who asked, as faces', () => {
   });
 
   it('says more as a compact tag, and in words to a screen reader', () => {
-    expect(moreTag(3)).toEqual({ tag: '+3', label: '3 more explorations' });
-    expect(moreTag(1, 'products')).toEqual({ tag: '+1', label: '1 more product' });
+    expect(moreTag(3)).toEqual({ tag: '+3 explorations', label: '3 more explorations' });
+    expect(moreTag(1)).toEqual({ tag: '+1 exploration', label: '1 more exploration' });
+    expect(moreTag(1, 'products')).toEqual({ tag: '+1 product', label: '1 more product' });
+    expect(moreTag(2, 'people')).toEqual({ tag: '+2', label: '2 more people' });
+  });
+
+  it('names products in a line, then the first and how many more', () => {
+    expect(namesLine([])).toBeNull();
+    expect(namesLine(['Acme Prints'])).toBe('Acme Prints');
+    expect(namesLine(['Acme Prints', 'Acme CRM'])).toBe('Acme Prints, Acme CRM');
+    expect(namesLine(['Acme Prints', 'Acme CRM', 'Acme Pay'])).toBe('Acme Prints and 2 more');
+    expect(namesLine(['Acme Prints', 'Acme CRM', 'Acme Pay'], 3)).toBe('Acme Prints, Acme CRM, Acme Pay');
     expect(peopleWords(['Sofia', 'Leo', 'Ann', 'Maya'])).toBe('Sofia, Leo and 2 others');
   });
 });
@@ -36,10 +46,10 @@ describe('who asked, as two columns (Asked by, From)', () => {
     expect(c).toMatchObject({ person: 'Sofia', people: ['Sofia', 'Leo'], morePeople: 1, from: { kind: 'exploration', more: 1 } });
   });
 
-  it('says the product once, or how many products when explorations span several', () => {
+  it('says the product once, or the products by name when explorations span several', () => {
     const [a, ...rest] = manyAskers();
     const c = askedColumns({ ...change(), asked: a!, also: rest, conflict: null });
-    expect(c.from).toMatchObject({ kind: 'exploration', more: 11, product: '2 products' });
+    expect(c.from).toMatchObject({ kind: 'exploration', more: 11, product: 'Acme CRM, Acme Prints' });
     expect(askedColumns(newComponent()).from).toMatchObject({ product: newComponent().asked!.product });
     expect(firstName('Sofia Ramos')).toBe('Sofia');
   });

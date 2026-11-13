@@ -1,6 +1,6 @@
 // Many explorations asking for one piece (owner, 2026-11-09, worst case 10+): Library review never wraps a row onto
 // several lines of tags, never draws a tag per way. The rules:
-//   - List: the most recent exploration as a tag, then a quiet "+N more" that opens every one, grouped by product;
+//   - List: the most recent exploration as a tag, then "+N explorations" that opens every one, grouped by product;
 //   - One by one, its side list: "Contact page summary and 11 more"; the detail: "Asked by 12 explorations" with the
 //     first 3 faces, then the full list on demand;
 //   - a conflict says its number of ways ("3 ways");
@@ -106,8 +106,21 @@ export function askedFaces(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' | 
   return { kind: 'many', askers: list, faces: list.slice(0, FACES_SHOWN), more, words: more ? `+${more}` : `${list.length} explorations` };
 }
 
-/** A compact "+N" tag (owner, 2026-11-10: never "+N more" text) and what it says to a screen reader. */
-export const moreTag = (n: number, what = 'explorations'): { tag: string; label: string } => ({ tag: `+${n}`, label: `${n} more ${n === 1 ? what.replace(/s$/, '') : what}` });
+/**
+ * A compact overflow tag that says what it counts (owner, 2026-11-12: "+1" alone is ambiguous): "+1 exploration",
+ * "+3 products"; never "+N more" text (owner, 2026-11-10). People stay "+N" next to a face. The label is what a
+ * screen reader hears.
+ */
+export const moreTag = (n: number, what = 'explorations'): { tag: string; label: string } => {
+  const noun = n === 1 ? what.replace(/s$/, '') : what;
+  return { tag: what === 'people' ? `+${n}` : `+${n} ${noun}`, label: `${n} more ${noun}` };
+};
+
+/** Names in a line: "Acme Prints, Acme CRM" up to `max`, then "Acme Prints and 2 more"; null for none. */
+export function namesLine(names: readonly string[], max = 2): string | null {
+  if (!names.length) return null;
+  return names.length <= max ? names.join(', ') : `${names[0]} and ${names.length - 1} more`;
+}
 
 /** The face of an asker: the designer, else the exploration (an exploration Bridge knows no designer for). */
 export const faceName = (a: Pick<AskedBy, 'designer' | 'name'>): string => a.designer ?? a.name;
@@ -135,10 +148,9 @@ export interface AskedColumns {
   from: AskedFrom;
 }
 
-/** The line under the exploration: its product, or "2 products" when the explorations span several. */
+/** The line under the exploration: the products it comes from by name ("Acme Prints, Acme CRM", or "and 2 more"). */
 function productLine(list: readonly AskedBy[]): string | null {
-  const names = [...new Set(list.map((a) => a.product).filter((x): x is string => Boolean(x)))];
-  return names.length <= 1 ? (names[0] ?? null) : `${names.length} products`;
+  return namesLine([...new Set(list.map((a) => a.product).filter((x): x is string => Boolean(x)))]);
 }
 
 export function askedColumns(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' | 'mine' | 'by'>): AskedColumns {

@@ -4,7 +4,7 @@
 // open it.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
@@ -366,7 +366,8 @@ describe('Where: Add a product, for the people who may add one', () => {
       await user.click(await screen.findByRole('option', { name: 'Add a product' }));
       await user.click(await screen.findByRole('button', { name: /^Its code is on GitHub/ }));
       await user.click(await screen.findByRole('button', { name: 'Add Atlas' }));
-      expect(vi.mocked(addProduct.addToTeam)).toHaveBeenCalledTimes(1);
+      // Add reads the previews first, then adds (two awaits): wait for it, never assume it ran within the click.
+      await waitFor(() => expect(vi.mocked(addProduct.addToTeam)).toHaveBeenCalledTimes(1));
       // Back to Start an exploration with Atlas picked; its page did not open, no "Sent for review".
       expect(await screen.findByText('What do you want to explore?')).toBeTruthy();
       expect((await screen.findByRole('combobox', { name: 'Where' })).textContent).toContain('Atlas');

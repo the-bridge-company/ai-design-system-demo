@@ -63,10 +63,19 @@
   color: var(--color-feedback-success-text);
 }
 
+.ramp-meta {
+  min-width: 0;
+}
+
+/* The usage count under the hex: a label (12px), inside the step's 8px inset like the hex, wrapping between words onto
+   a second line ("2 / semantic") in a narrow step, never cut mid-word nor past the strip (D5). */
 .ramp-n {
+  min-width: 0;
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .ramp-n.is-unused {

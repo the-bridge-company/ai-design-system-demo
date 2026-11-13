@@ -4743,7 +4743,7 @@
     },
     {
       "name": "Button",
-      "hash": "3d435c8e",
+      "hash": "0fe92790",
       "source": [
         "packages/react/src/components/Button/Button.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -7027,7 +7027,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "space.1-5"
+              "itemSpacing": "space.1-5",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7068,7 +7069,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "space.1-5"
+              "itemSpacing": "space.1-5",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7109,7 +7111,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "space.1-5"
+              "itemSpacing": "space.1-5",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7150,7 +7153,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "space.1-5"
+              "itemSpacing": "space.1-5",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7191,7 +7195,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7232,7 +7237,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7273,7 +7279,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7314,7 +7321,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7355,7 +7363,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7396,7 +7405,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7437,7 +7447,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",
@@ -7478,7 +7489,8 @@
               "paddingRight": 0,
               "paddingBottom": "space.0-5",
               "paddingLeft": 0,
-              "itemSpacing": "control.gap"
+              "itemSpacing": "control.gap",
+              "minHeight": "size.6"
             },
             "icon-start": {
               "width": "icon.size.sm",

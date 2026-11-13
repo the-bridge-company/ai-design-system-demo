@@ -325,7 +325,7 @@ export function homeExplorations<P extends ExplorationPull>(pulls: P[], opts: Ho
         updated: p.updated_at,
         preview: previewOf(opts.preview?.(p), { product: product ?? 'Library', screen: changedScreenOf(files?.(p), { library: !product }), seed: keyOf(p) }),
         own: isOwnExploration(p, opts.viewer, opts.viewerRef),
-        ...(opts.note && !archived ? { note: opts.note(p) } : {}),
+        ...(opts.note && !archived ? { note: cardNote(opts.note(p)) } : {}),
       };
     })
     .sort((a, b) => ORDER[a.stage] - ORDER[b.stage] || b.updated.localeCompare(a.updated) || b.number - a.number);
@@ -420,6 +420,16 @@ export function ownOpenWork(cards: readonly Pick<ExplorationCard, 'lifecycle' | 
   }
   for (const b of branches) w.changes[b.stage === 'waiting' ? 'code' : b.stage === 'draft' ? 'building' : 'review'] += 1;
   return OPEN_STAGES.some((s) => w.explorations[s] || w.changes[s]) ? w : null;
+}
+
+/**
+ * A card's second line, short enough for a card (the row keeps the whole line): who it waits on, without the pieces
+ * ("Waiting for Dana's design review and the library decision on Timeline" reads "Waiting for Dana's design review and
+ * the library decision"). The card shows it whole, wrapping if it must, never cut mid-sentence.
+ */
+export function cardNote(note: string | null | undefined): string | null {
+  if (!note) return null;
+  return /^Waiting for /.test(note) ? note.replace(/ on [^,]+$/, '') : note;
 }
 
 /** A piece of the quiet sentence: words, or a count that opens where those things are. */

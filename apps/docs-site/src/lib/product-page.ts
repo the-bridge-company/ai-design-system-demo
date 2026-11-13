@@ -157,12 +157,50 @@ export interface ProductFolder {
   library: boolean;
 }
 
+/** The steps with developers (Ready to build, Being built, Checking): Being built's rows are their one count source. */
+export const WITH_DEVELOPERS: readonly ProductStateKey[] = ['waiting', 'building', 'review'];
+const isWithDevelopers = (k: ProductStateKey | null | undefined): boolean => Boolean(k) && WITH_DEVELOPERS.includes(k!);
+
+/** A Being built status (lib/building-page BuildState) as a folder counts it; null for what is not in progress there. */
+const BUILD_FOLDER_STATE: Record<string, ProductStateKey | null> = { waiting: 'waiting', 'in-progress': 'building', 'in-review': 'review' };
+
+/**
+ * The steps with developers of each product, from the rows Being built lists (their state, lib/building-page
+ * buildStateOf, and their product, lib/building-view rowProduct): the Home's folders count these, so the Library card,
+ * the Home's build line and Being built say the same numbers.
+ */
+export function buildStatesByProduct(rows: readonly { state: string | null; product: string }[]): Record<string, ProductStateKey[]> {
+  const out: Record<string, ProductStateKey[]> = {};
+  for (const r of rows) {
+    const k = r.state ? BUILD_FOLDER_STATE[r.state] : null;
+    if (k) (out[r.product] ??= []).push(k);
+  }
+  return out;
+}
+
 /**
  * The Home's product folders: one per configured product, in the configured order, each with the screens of its
  * latest explorations and what is in progress. A product without any exploration keeps its folder (it is a real app).
  */
-export function productFolders(products: readonly ProductConfig[], cards: readonly ExplorationCard[], shots = FOLDER_SHOTS, more: Readonly<Record<string, readonly ProductStateKey[]>> = {}, unsure = false): ProductFolder[] {
+export function productFolders(
+  products: readonly ProductConfig[],
+  cards: readonly ExplorationCard[],
+  shots = FOLDER_SHOTS,
+  more: Readonly<Record<string, readonly ProductStateKey[]>> = {},
+  unsure = false,
+  build?: Readonly<Record<string, readonly ProductStateKey[]>> | null,
+): ProductFolder[] {
   const library = products.length ? defaultProduct(products).key.toLowerCase() : null;
+  // With Being built's rows (`build`, buildStatesByProduct), the steps with developers are counted from them only: the
+  // folder says what Being built and the Home's build line say. Until they are read (null), only the explorations' own
+  // steps count (each exploration handed to developers is one of those rows); the library's own changes never do.
+  const withBuild = Boolean(build);
+  const counted = (cs: readonly ExplorationCard[]) => (withBuild ? cs.filter((c) => !isWithDevelopers(stateOfCard(c))) : cs);
+  const moreOf = (k: string): ProductStateKey[] => {
+    const own = more[k] ?? [];
+    if (build === undefined) return [...own];
+    return [...own.filter((s) => !isWithDevelopers(s)), ...(build?.[k] ?? [])];
+  };
   return products.map((p) => {
     const mine = cards.filter((c) => cardProductKey(c, products) === p.key.toLowerCase());
     const latest = [...mine].sort((a, b) => b.updated.localeCompare(a.updated));
@@ -173,8 +211,8 @@ export function productFolders(products: readonly ProductConfig[], cards: readon
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
       // The Library card counts changes to the library, whoever reviews them: it names them, so "11 changes in review"
       // never reads as the Library review badge (pieces waiting for the viewer's decision, lib/waiting-counts).
-      line: folderLine(mine, SEP, more[p.key.toLowerCase()] ?? [], p.key.toLowerCase() === library ? LIBRARY_NOUN : null, unsure),
-      total: mine.length + (more[p.key.toLowerCase()]?.length ?? 0),
+      line: folderLine(counted(mine), SEP, moreOf(p.key.toLowerCase()), p.key.toLowerCase() === library ? LIBRARY_NOUN : null, unsure),
+      total: counted(mine).length + moreOf(p.key.toLowerCase()).length,
       library: p.key.toLowerCase() === library,
     };
   });

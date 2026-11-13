@@ -36,7 +36,7 @@ export const IN_PROGRESS_LABEL = 'In progress';
 /** The Board: one column per open step, then what shipped lately. Archived and Not doing this: filter only. */
 export const BOARD_COLUMNS: readonly { key: ExplorationState; label: string; holds: readonly ExplorationState[] }[] = [
   ...IN_PROGRESS.map((s) => ({ key: s, label: STATE_LABEL[s], holds: [s] })),
-  { key: 'shipped', label: 'Shipped, last 30 days', holds: ['shipped'] },
+  { key: 'shipped', label: 'Shipped (30 days)', holds: ['shipped'] },
 ];
 
 /** Cards per Board column before "Show all N". */

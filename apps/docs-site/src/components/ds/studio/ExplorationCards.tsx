@@ -8,20 +8,21 @@
 //     its own), a Field Guide drawing holds the mosaic's place.
 import { Badge, Card, Link } from '@bridge-ds/react';
 import { Who } from './faces';
-import { shortAgo } from '@bridge-ds/core';
+import { agoInSentence } from '@bridge-ds/core';
 import { BranchThumb } from './BranchThumb';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
-import { statusTagClass } from '../../../lib/status-tag';
+import { statusTagClass, statusTagDot } from '../../../lib/status-tag';
 import { Drawing } from './Drawing';
 
 /** The corner of a library exploration's screen: it belongs to no product. */
 const LIBRARY = 'Library';
 
 export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationCard; showProduct?: boolean }) {
-  // When it last moved, the same age as its row on Explorations (core shortAgo of updated_at), never the capture's.
-  const age = c.updated ? shortAgo(c.updated) || null : null;
+  // When it last moved, the same age and words as its row on Explorations (core agoInSentence of updated_at: "yesterday"
+  // after the name, lower case, on every surface), never the capture's.
+  const age = c.updated ? agoInSentence(c.updated) || null : null;
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card">
@@ -39,16 +40,16 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {c.state && (
-                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
+                <Badge tone={c.tone ?? 'neutral'} dot={statusTagDot(c.tone ?? 'neutral')} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
                   {c.state}
                 </Badge>
               )}
             </span>
-            {c.note && <span className="t-ui sh-card-who sh-card-name">{c.note}</span>}
+            {c.note && <span className="t-ui sh-card-who sh-card-wait">{c.note}</span>}
             <span className="t-ui sh-card-who">
               <Who p={c.author} size="xs" />
               <span className="sh-card-name">
-                {c.author.name}
+                <span className="sh-card-by">{c.author.name}</span>
                 {age ? <span className="sh-card-product">{SEP}{age}</span> : null}
               </span>
             </span>
@@ -99,7 +100,14 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
             </Link>
           </span>
           <span className="sh-card-foot">
-            <span className="t-meta t-muted sh-card-product">{f.line}</span>
+            <span className="t-meta t-muted sh-card-product pf-line">
+              {f.line.split(SEP).map((part, i, all) => (
+                <span key={i}>
+                  {part}
+                  {i < all.length - 1 ? SEP : ''}
+                </span>
+              ))}
+            </span>
             {people.length > 0 && <span className="sr-only">Explored by {people.join(', ')}.</span>}
           </span>
         </div>

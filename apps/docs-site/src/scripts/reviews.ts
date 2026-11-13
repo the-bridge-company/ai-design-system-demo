@@ -16,7 +16,7 @@ import { rowAgeFrom } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -442,7 +442,7 @@ function listRow(r: Row): ListRow {
     opens: r.exploration ? 'exploration' : 'pr',
     // An exploration says when it last moved, after who: "Florian · 2 h ago"; one that waits on the viewer, since it
     // was sent to them (lib/lead-decisions rowAgeFrom, the clock of Home's "Waiting 4 days").
-    ago: r.exploration && r.updated_at ? shortAgo(rowAgeFrom({ body: r.body ?? null, updated: r.updated_at, yourTurn: turn })) || null : null,
+    ago: r.exploration && r.updated_at ? agoInSentence(rowAgeFrom({ body: r.body ?? null, updated: r.updated_at, yourTurn: turn })) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,

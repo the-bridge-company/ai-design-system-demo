@@ -141,7 +141,7 @@ describe('Explorations', () => {
     expect(screen.queryByText('Exploration 2')).toBeNull();
   });
 
-  it('shows the Board: one column per status, the column naming the status, Shipped of the last 30 days', async () => {
+  it('shows the Board: one column per status the filter keeps, the column naming the status', async () => {
     const user = userEvent.setup();
     const many = Array.from({ length: 12 }, (_, i) => xp(100 + i, 'leo'));
     const { container } = render(createElement(BranchesList, props({ rows: [...props().rows, ...many] })));
@@ -149,10 +149,11 @@ describe('Explorations', () => {
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
     // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
     // The column's count sits in the nav's pill when some of it waits on you; no "your turn" words.
-    expect(cols).toEqual(['Exploring 13', 'In review 1', 'Ready to build 0', 'Being built 0', 'Checking 1', 'Shipped, last 30 days 0']);
+    // The filter's statuses only (In progress): no Shipped column the List would not show.
+    expect(cols).toEqual(['Exploring 13', 'In review 1', 'Ready to build 0', 'Being built 0', 'Checking 1']);
     expect(container.querySelector('.ex-col-num')!.getAttribute('aria-label')).toBe('1, 1 for you');
-    // An empty column folds to its heading and count.
-    expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Ready to build 0', 'Being built 0', 'Shipped, last 30 days 0']);
+    // An empty column is marked (it keeps the same width as the others: styles/explorations-board.css).
+    expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Ready to build 0', 'Being built 0']);
     expect(container.querySelector('.ex-waiting')).toBeNull();
     const lead = container.querySelectorAll('.ex-col')[1]!;
     // The card is tinted (ex-turn) and does not repeat "sent it for review" above its name.

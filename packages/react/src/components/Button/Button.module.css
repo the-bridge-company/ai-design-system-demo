@@ -91,14 +91,14 @@
 }
 
 /* Link: reads as a text link inside a sentence, keeps button semantics (an action here, not navigation). It takes
-   the font of the surrounding text; the target stays at least 24px tall through its line box and padding. */
+   the font of the surrounding text; the target never drops under 24px tall (WCAG 2.5.8), whatever the line box. */
 .button.link {
   --_text: var(--color-text-link);
   --_height: auto;
   --_px: 0;
 
   min-width: 0;
-  min-height: 0;
+  min-height: var(--size-6);
   padding-block: var(--space-0-5);
   border: 0;
   border-radius: var(--radius-inset);

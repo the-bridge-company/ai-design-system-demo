@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductConfig } from '@bridge-ds/core';
-import { archivedHref, archivedLine, emptyProductLine, folderLine, libraryChangeState, productFacts, productFolders, productGroups, productHref, productKeyFromPath, productSummary, stateOfCard } from './product-page';
+import { archivedHref, buildStatesByProduct, archivedLine, emptyProductLine, folderLine, libraryChangeState, productFacts, productFolders, productGroups, productHref, productKeyFromPath, productSummary, stateOfCard } from './product-page';
 import { explorationProductKey, homeExplorations, type ExplorationCard } from './home-explorations';
 import { person } from './home-model';
 
@@ -157,5 +157,24 @@ describe('product facts', () => {
       expect(line.endsWith('.')).toBe(true);
     }
     expect(emptyProductLine(products[0]!, false)).toContain('Product admin');
+  });
+});
+
+describe("the Library folder's with-developer steps: one count source (Being built's rows)", () => {
+  const products = [{ key: 'library', name: 'Library', default: true }] as ProductConfig[];
+  it('counts Ready to build, Being built and Checking from the rows, never from the library changes', () => {
+    const build = buildStatesByProduct([
+      { state: 'in-progress', product: 'library' },
+      { state: 'in-review', product: 'library' },
+      { state: 'waiting', product: 'library' },
+      { state: 'shipped', product: 'library' },
+    ]);
+    expect(build).toEqual({ library: ['building', 'review', 'waiting'] });
+    // Eleven library changes filed as Checking and three as Being built no longer add to the rows' counts.
+    const more = { library: [...Array(11).fill('review'), ...Array(3).fill('building'), 'lead'] as never[] };
+    const [f] = productFolders(products, [], 3, more, false, build);
+    expect(f!.line).not.toMatch(/11|3 /);
+    expect(f!.line).toContain('1 change being built');
+    expect(f!.line).toContain('1 change being checked');
   });
 });

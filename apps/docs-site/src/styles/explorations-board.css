@@ -2,11 +2,12 @@
    status, read only) and the first-run empty state. The Board scrolls sideways inside its own region, never the page. */
 
 /* What waits on the viewer (direction A, 2026-11-09): one pale tray holds it in List and Grid, plain cards inside; on
-   the Board the card body takes the same pale tint. No stripe, no "Your turn" line. */
+   the Board the card body takes the same pale tint. No stripe, no "Your turn" line. The tray is a zone (color.bg.zone),
+   never the signal tint: signal colours mark a state, not a region. */
 .ex-waiting {
   padding: var(--space-4);
   border-radius: var(--radius-container);
-  background-color: var(--color-signal-subtle);
+  background-color: var(--color-bg-zone);
 }
 
 .ex-waiting > .bl-h2 {
@@ -19,7 +20,7 @@
 
 .ex-board .ex-turn > .sh-card {
   border-color: var(--color-border-emphasis);
-  background-color: var(--color-signal-subtle);
+  background-color: var(--color-bg-zone);
 }
 
 .ex-col-num {
@@ -133,8 +134,10 @@
   background-color: var(--color-bg-subtle);
 }
 
+/* The heading stays on one line ("Shipped (30 days)" and its count): the columns share one width. */
 .ex-col-h {
   margin: 0;
+  white-space: nowrap;
   font-family: var(--font-family-sans);
   font-size: var(--font-size-200);
   font-weight: var(--font-weight-semibold);
@@ -150,17 +153,11 @@
   list-style: none;
 }
 
-/* An empty column folds to its heading and count: the filled ones keep the room. */
-.ex-col.is-empty {
-  flex: 0 0 auto;
-  min-inline-size: 0;
-  max-inline-size: var(--size-40);
-}
-
-/* On a phone a filled column keeps a card's width; the Board scrolls sideways inside its region. After .ex-col, so
-   it wins over the column's own minimum. */
+/* Every column has the same width, empty or not (an empty one never shrinks to its heading): the statuses line up
+   from one view to the next. On a phone a column keeps a card's width; the Board scrolls sideways inside its region.
+   After .ex-col, so it wins over the column's own minimum. */
 @media (max-width: 640px) {
-  .ex-col:not(.is-empty) {
+  .ex-col {
     min-inline-size: var(--size-60);
   }
 }

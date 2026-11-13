@@ -78,3 +78,18 @@ describe('library links', () => {
     expect(studioLink(team, 'tokens/?focus=color')).toBe('/studio/~/acme/ds/tokens/?focus=color');
   });
 });
+
+describe('Color ramps: the usage note (count and word, one line)', () => {
+  it('every count keeps its word in one label ("3 uses"), the whole sentence as its title, never a bare number in the text', () => {
+    const notes = [...draw(ColorView, own).querySelectorAll<HTMLElement>('.ramp-strip .ramp-n')].filter((n) => n.children.length === 2);
+    expect(notes.length).toBeGreaterThan(0);
+    for (const n of notes) {
+      const [count, word] = [...n.children] as HTMLElement[];
+      const k = Number(count!.textContent);
+      expect(Number.isInteger(k) && k > 0).toBe(true);
+      expect(word!.className).toBe('ramp-n-word');
+      expect(n.textContent).toBe(`${k}\u00a0${k === 1 ? 'use' : 'uses'}`);
+      expect(n.title).toBe(`Used by ${k} semantic ${k === 1 ? 'token' : 'tokens'}`);
+    }
+  });
+});

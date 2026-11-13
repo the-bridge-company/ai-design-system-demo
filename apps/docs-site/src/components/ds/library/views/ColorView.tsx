@@ -92,7 +92,20 @@ export default function ColorView({ data }: { data: LibraryData }) {
                       <Button variant="link" size="sm" className="ramp-copy" data-copy={`var(${p.cssVar})`} aria-label={`${p.hex}, copy CSS variable var(${p.cssVar})`} title={`Copy var(${p.cssVar})`}>
                         {p.hex}
                       </Button>
-                      <span className="ramp-n">{n > 0 ? `${n}\u00a0semantic` : 'Unused'}</span>
+                      {n > 0 ? (
+                        // The count and its word as two pieces of one line (styles/foundations.css .ramp-n): when the
+                        // step is too narrow for both, the word drops to a hidden second line and the count stays alone,
+                        // the full words in the title and still read by screen readers. Decided by the layout, never by
+                        // how many digits the count has.
+                        // "3 uses" (the semantic tokens that use this step) fits an 11-step ramp's step where "3 semantic"
+                        // did not; the title says the whole sentence.
+                        <span className="ramp-n" title={`Used by ${n} semantic ${n === 1 ? 'token' : 'tokens'}`}>
+                          <span>{n}</span>
+                          <span className="ramp-n-word">{n === 1 ? '\u00a0use' : '\u00a0uses'}</span>
+                        </span>
+                      ) : (
+                        <span className="ramp-n">Unused</span>
+                      )}
                     </span>
                   </div>
                 );

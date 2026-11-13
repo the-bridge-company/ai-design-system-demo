@@ -638,22 +638,6 @@ a.lr-ask {
   line-height: var(--typography-ui-line-height);
 }
 
-/* "Reaches [P][C] Acme Prints, Acme CRM": the marks overlap like faces. */
-.lr-chapter-reach {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.lr-chapter-names {
-  color: var(--color-text-default);
-  font-weight: var(--font-weight-medium);
-}
-
 /* "+3": a compact tag, as tall as the marks and faces beside it. */
 .lr-more-tag {
   flex: none;
@@ -1116,10 +1100,6 @@ a.lr-ask {
   .lr-fam-icon {
     width: var(--size-10);
     height: var(--size-10);
-  }
-
-  .lr-chapter-reach {
-    flex-basis: 100%;
   }
 
   .lr-chapter-cols {
@@ -1914,13 +1894,11 @@ a.lr-reach-card:focus-visible {
    all shows only while a selection exists. On touch screens they always show. */
 @media (hover: hover) {
   .lr-list:not(.has-selection) .lr-hover-ctl > *,
-  .lr-list .lr-row-end.lr-hover-ctl > *,
-  .lr-list .lr-row .lr-page-link {
+  .lr-list .lr-row-end.lr-hover-ctl > * {
     opacity: 0;
   }
 
   .lr-list .lr-row:is(:hover, :focus-within) .lr-hover-ctl > *,
-  .lr-list .lr-row:is(:hover, :focus-within) .lr-page-link,
   .lr-list .lr-group-row:is(:hover, :focus-within) .lr-hover-ctl > *,
   .lr-list .lr-chapter-cols .lr-hover-ctl:focus-within > *,
   .lr-list.has-selection .lr-row .lr-col-box > *,

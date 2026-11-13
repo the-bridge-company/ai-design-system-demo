@@ -382,7 +382,7 @@ function shippedLine(detail: string): string {
  */
 function WaitTurn({ b, extra, action }: { b: TurnBlock; extra?: ReactNode; action?: ReactNode }) {
   return (
-    <TurnZone eyebrow={b.eyebrow} title={b.title} drawing="review" actions={action ?? undefined}>
+    <TurnZone eyebrow={b.eyebrow} title={b.title} drawing="paint" actions={action ?? undefined}>
       <TurnSteps steps={b.steps} />
       {b.lines.map((l) => (
         <p key={l}>{l}</p>

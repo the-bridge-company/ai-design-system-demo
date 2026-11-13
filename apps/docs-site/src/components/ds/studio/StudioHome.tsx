@@ -45,8 +45,9 @@ import { explorationsFor, libraryChangesLine, ownOpenWork, PARTIAL_LINE, pickUpH
 import { studioHref } from '../../../lib/team-path';
 import { inProgressCount, waitingToBePickedUp } from '../../../lib/waiting-counts';
 import { openBuildRequests, type BuildRequestView } from '@bridge-ds/core';
-import { pageRows } from '../../../lib/building-view';
-import { productFolders, type ProductStateKey } from '../../../lib/product-page';
+import { detailQuery, pageRows, rowProduct, type LifecycleExtra } from '../../../lib/building-view';
+import { buildStateOf } from '../../../lib/building-page';
+import { buildStatesByProduct, productFolders, type ProductStateKey } from '../../../lib/product-page';
 import { siteConfig } from '../../../scripts/repo-context';
 import { defaultProduct, productsOf, type ProductConfig } from '@bridge-ds/core';
 import { leadTour, leadTourSteps, type LeadTourAt } from '../../../lib/lead-tour';
@@ -388,6 +389,8 @@ export interface StudioHomeProps {
    * the quiet sentence says this number, the one Library review lists under Asked by: You.
    */
   libraryPieces?: number | null;
+  /** Library review's waiting pieces: the Library card's In review, the same number as the queue and its rail. */
+  libraryInReview?: number | null;
 }
 
 /** Where a tour step can point: the lead's (lib/lead-tour LeadTourAt) and the contributor's ("start", the ways to start). */
@@ -414,19 +417,26 @@ const seeAllWords = (n: number) => (n > 0 ? `See all ${n}` : 'See all');
  * On a developer's Home, the build requests nobody picked up yet (lib/waiting-counts waitingToBePickedUp), the same rows as
  * the Being built line (BuildLine, lib/building-view pageRows): null while read or unreadable.
  */
-function usePickUp(on: boolean): number | null {
-  const [n, setN] = useState<number | null>(null);
+function usePickUp(on: boolean): { n: number; href: string } | null {
+  const [got, setGot] = useState<{ n: number; href: string } | null>(null);
   useEffect(() => {
     if (!on) return;
     let live = true;
     loadBuildData()
-      .then((d) => live && setN(waitingToBePickedUp(openBuildRequests(pageRows<BuildRequestView>(d, Date.now())))))
+      .then((d) => {
+        if (!live) return;
+        const open = openBuildRequests(pageRows<BuildRequestView>(d, Date.now()));
+        const n = waitingToBePickedUp(open);
+        // One request waits: the button opens it, where Pick it up is; several: Being built on what waits.
+        const only = n === 1 ? open.find((v) => v.status === 'requested') : undefined;
+        setGot({ n, href: only ? studioHref(`building/${detailQuery(only)}`) : pickUpHref() });
+      })
       .catch(() => {});
     return () => {
       live = false;
     };
   }, [on]);
-  return on ? n : null;
+  return on ? got : null;
 }
 
 /** The quiet sentence (lib/home-explorations quietParts): its counts open Changes on the viewer's own work at that stage. */
@@ -457,10 +467,42 @@ function JoinedNote({ text }: { text: string }) {
   );
 }
 
-/** The products' folders, the library's own changes counted on the Library folder as Changes lists them. */
-function homeFolders(p: StudioHomeProps) {
+type BuildStates = Record<string, ProductStateKey[]> | null;
+
+/**
+ * The steps with developers of each product, read from Being built's own rows (lib/building-view pageRows, the rows of
+ * the Home's build line): null while read or unreadable.
+ */
+function useBuildStates(products: readonly ProductConfig[]): BuildStates {
+  const [states, setStates] = useState<BuildStates>(null);
+  const keys = products.map((p) => p.key).join(',');
+  useEffect(() => {
+    let live = true;
+    loadBuildData()
+      .then((d) => {
+        if (!live) return;
+        const now = Date.now();
+        setStates(buildStatesByProduct(pageRows<BuildRequestView>(d, now).map((v) => ({ state: buildStateOf(v, now), product: rowProduct(v as LifecycleExtra, products) }))));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys]);
+  return states;
+}
+
+/**
+ * The products' folders. One count source per step: Exploring and In review from the explorations and the library's
+ * own changes (a library change sent for review is In review, never Checking), Ready to build, Being built and Checking
+ * from Being built's rows only (useBuildStates), so the Library card says what the build line and Being built say.
+ */
+function homeFolders(p: StudioHomeProps, build: BuildStates) {
   const products = p.products ?? pageProducts();
-  return productFolders(products, p.explorations, undefined, { [defaultProduct(products).key.toLowerCase()]: p.libraryWork ?? [] }, Boolean(p.partial || p.failed));
+  const library = (p.libraryWork ?? []).map((k): ProductStateKey => (k === 'review' ? 'lead' : k));
+  const libKey = defaultProduct(products).key.toLowerCase();
+  return productFolders(products, p.explorations, undefined, { [libKey]: library }, Boolean(p.partial || p.failed), build, typeof p.libraryInReview === 'number' ? { [libKey]: p.libraryInReview } : {});
 }
 
 export function StudioHome(p: StudioHomeProps) {
@@ -482,7 +524,9 @@ function HomeBody(p: StudioHomeProps) {
   const changeRows = p.needs.some(isChange);
   const split = splitNeeds(p.needs);
   const byRole = explorationsFor(p.explorations, Boolean(p.contributor));
-  const pickUp = usePickUp(Boolean(p.builder) && p.state === 'empty');
+  const pickUpRead = usePickUp(Boolean(p.builder) && p.state === 'empty');
+  const pickUp = pickUpRead ? pickUpRead.n : null;
+  const buildStates = useBuildStates(p.products ?? pageProducts());
   const leadSteps = leadTourSteps({ rows: split.shown.some(isChange), more: changeRows && Boolean(split.more), branches: byRole.cards.length > 0 });
   const lead = useTour<LeadTourAt>(LEAD_TOUR_KEY, leadSteps, (at) => leadTour(at), Boolean(p.lead) && !p.contributor && p.state === 'busy' && leadSteps.length > 0);
   const tour: HomeTour | undefined = p.contributor
@@ -535,16 +579,18 @@ function HomeBody(p: StudioHomeProps) {
           <div className="sh-window">
             <QuietScene scene="harbor" layout="window" />
             <div className="sh-head-text">
-              <p className="t-body">
-                {p.greeting} <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed || p.partial), { pieces: p.libraryPieces ?? null, pickUp, pickUpButton: Boolean(p.builder && pickUp) })} />
-              </p>
-              <h1 id="sh-hello" className="sh-hello">
-                {p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?'}
+              {/* One hero anatomy for every role (the busy Home's): the greeting as the headline, then one sentence, then
+                  the one action. */}
+              <h1 id="sh-hello" className="sh-hello" aria-label={p.greeting ? undefined : 'Home'}>
+                {p.greeting || (p.builder ? BUILDER_WORDS.title : p.viewOnly ? 'What do you want to look at?' : 'What do you want to explore?')}
               </h1>
+              <p className="t-body">
+                <QuietLine parts={quietParts(p.recent ? ownOpenWork(p.explorations, p.branches) : null, Boolean(p.failed || p.partial), { pieces: p.libraryPieces ?? null, pickUp, pickUpButton: Boolean(p.builder && pickUp) })} />
+              </p>
               {p.builder ? (
                 <span className="sh-start">
                   {/* Build requests wait: the button picks one up, the sentence's count says how many (said once). */}
-                  <ButtonLink variant="primary" href={pickUp ? pickUpHref() : studioHref(BUILDER_WORDS.path)}>
+                  <ButtonLink variant="primary" href={pickUp && pickUpRead ? pickUpRead.href : studioHref(BUILDER_WORDS.path)}>
                     {pickUp ? BUILDER_WORDS.pickUp : BUILDER_WORDS.button}
                   </ButtonLink>
                 </span>
@@ -570,7 +616,7 @@ function HomeBody(p: StudioHomeProps) {
           <>
             <RecentExplorations cards={byRole.cards} title={byRole.title} seeAll={byRole.seeAll} />
             {/* The products, like project folders in Figma, counted on all the team's explorations. */}
-            <ProductFolders folders={homeFolders(p)} />
+            <ProductFolders folders={homeFolders(p, buildStates)} />
           </>
         )}
       </div>
@@ -629,7 +675,7 @@ function HomeBody(p: StudioHomeProps) {
       )}
       {/* The products, like project folders in Figma: each opens its page, with the explorations made in it. */}
       {/* The folders count what was read: without the team's reads (failed), they would count nothing. */}
-      {!loading && !p.failed && <ProductFolders folders={homeFolders(p)} />}
+      {!loading && !p.failed && <ProductFolders folders={homeFolders(p, buildStates)} />}
     </div>
   );
 }

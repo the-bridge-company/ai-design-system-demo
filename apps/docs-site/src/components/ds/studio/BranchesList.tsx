@@ -287,8 +287,8 @@ export function BranchesList(p: BranchesListProps) {
   const clear = () => pick({ ...DEFAULT_FILTERS, status: [...DEFAULT_FILTERS.status] });
   const filtered = isFiltered(filters);
 
-  // Shipped needs the closed list: read once the filter or the Board shows it.
-  const wantsShipped = filters.status.includes('shipped') || view === 'board';
+  // Shipped needs the closed list: read once the filter shows it (every view, the Board too, reads the same filter).
+  const wantsShipped = filters.status.includes('shipped');
   const readClosed = p.readClosed;
   useEffect(() => {
     if (wantsShipped && p.closed === null) readClosed();
@@ -368,6 +368,8 @@ export function BranchesList(p: BranchesListProps) {
       href={hrefOf(x.r)}
       linkAttributes={linkOf(x.r)}
       person={x.person}
+      // The same "when" as the row (List, Grid and Board read one clock: scripts/reviews ago), never the capture's.
+      when={x.status === 'shipped' && x.shippedAt ? null : (x.r.ago ?? null)}
       product={opts.product ? productName(x.product) : null}
       pill={opts.pill === false || shippedSaid(x) ? null : pillOf(x.status)}
       note={shippedSaid(x) ? <span className="t-meta t-muted">{shippedOn(x.shippedAt!)}</span> : auditNote(x)}
@@ -430,9 +432,9 @@ export function BranchesList(p: BranchesListProps) {
   const groups = productKeys
     .map((k) => ({ key: k, label: productName(k), rows: kept.filter((x) => x.product === k) }))
     .filter((g) => g.rows.length > 0);
-  const boardStatus = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)) ? [...IN_PROGRESS, 'shipped' as const] : filters.status;
-  // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there.
-  const columns = boardColumns([...waiting, ...kept], boardStatus);
+  // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there. Its
+  // columns are the filter's statuses, nothing more: List, Grid and Board count the same rows.
+  const columns = boardColumns([...waiting, ...kept], filters.status);
   const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
   // GitHub could not be read and nothing was saved: no count of 0, no "Nothing in progress", one quiet line instead.
   const blind = Boolean(p.unread) && openItems.length === 0 && !waiting.length;

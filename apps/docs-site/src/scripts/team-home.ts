@@ -13,6 +13,8 @@ import { readLibraryCounts } from './library-waiting';
 let libraryCounted = false;
 /** The viewer's own pieces still waiting in Library review (lib/waiting-counts), once read: Home's sentence says it. */
 let libraryPieces: number | null = null;
+/** Library review's waiting pieces, the Library card's In review (scripts/library-waiting). */
+let libraryWaiting: number | null = null;
 import { rememberWaitingExplorations } from './waiting-counts';
 import { waitingCounts } from '../lib/waiting-counts';
 import { viewerIsDesignLead } from './design-lead';
@@ -32,6 +34,7 @@ import { studioHref } from '../lib/team-path';
 import { libraryHref } from '../lib/library-shells';
 import { teamFailure } from '../lib/team-load';
 import { contrastFailures, teamGuidance } from '../lib/team-facts';
+import { guidanceSince } from './guidance-drafts';
 
 
 /** Can view: an email member who reads only (the home offers no exploration). */
@@ -148,6 +151,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         explorations: d?.explorations ?? [],
         libraryWork: d?.libraryWork ?? [],
         libraryPieces,
+        libraryInReview: libraryWaiting,
         waitingOnOthers: d?.waitingOnOthers ?? [],
         // Actionable only: the library's health and the Being built line speak to the lead, who acts on them. A
         // designer or a PM cannot, and a developer's hero sentence and button already say what waits for them.
@@ -195,6 +199,7 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
               if (!c) return;
               setReviewCount(c.forYou);
               libraryPieces = c.yours;
+              libraryWaiting = c.waiting;
               paint();
             });
           }
@@ -242,6 +247,15 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         // The home takes the facts in (contrast, guidance drafts).
         if (repaintHome) repaintHome();
         else paint();
+        // Each guidance draft's age, the same read as Library review's Docs pieces (scripts/guidance-drafts).
+        const read = stat;
+        if (read.guidance.length)
+          void guidanceSince(`${loaded.owner}/${loaded.repo}`, read.guidance).then((guidance) => {
+            if (stat !== read) return;
+            stat = { ...read, guidance };
+            if (repaintHome) repaintHome();
+            else paint();
+          });
       },
       (err: unknown) => {
         const team = teamOfPage();

@@ -60,7 +60,7 @@ describe('what the PM says', () => {
 
   it('reads in words', () => {
     expect(pmStatusLine(null, { pm: 'Dino', when: '' })).toBe('Dino has not seen it yet.');
-    expect(pmStatusLine({ kind: 'pm-ok' }, { pm: 'Dino', when: 'yesterday' })).toBe('Dino said it looks good, yesterday.');
+    expect(pmStatusLine({ kind: 'pm-ok' }, { pm: 'Dino', when: 'yesterday' })).toBe('Dino said it looks right, yesterday.');
     expect(pmStatusLine({ kind: 'pm-changes' }, { pm: 'Dino', when: 'today', mine: true })).toBe('You asked for changes, today.');
     expect(pmStatusLine({ kind: 'pm-call', byName: 'Goulou' }, { pm: 'Dino', when: 'today' })).toBe('Goulou said Dino agreed in a call, today.');
     const call = withPmWord(body(), { kind: 'pm-call', at: '2026-11-03T00:00:00Z', byName: 'Goulou', to: ['Dino'] })!;

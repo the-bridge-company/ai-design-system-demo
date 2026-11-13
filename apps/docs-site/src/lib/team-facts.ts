@@ -17,8 +17,13 @@ export function contrastFailures(model: Pick<RepoModel, 'contrast'>): number {
 }
 
 /** Drafted guidance waiting for review: each row opens the draft on GitHub (the docs editor is the demo Library's). */
-export function teamGuidance(data: { owner: string; repo: string; sha: string; model: Pick<RepoModel, 'components'> }): { name: string; slug: string; href: string; since: string | null; excerpt: string | null }[] {
+/**
+ * The one source of usage guidance drafts waiting for review (docs.json needsReview on main): Home's rows
+ * (home-model guidanceNeed) and Library review's Docs pieces (lib/library-review pieceOfGuidance) both read this list,
+ * with their age from the same read (scripts/guidance-drafts guidanceSince).
+ */
+export function teamGuidance(data: { owner: string; repo: string; sha: string; model: Pick<RepoModel, 'components'> }): { name: string; slug: string; href: string; since: string | null; excerpt: string | null; path: string | null }[] {
   return (data.model.components?.list ?? [])
     .filter((c) => c.docs?.needsReview)
-    .map((c) => ({ name: c.name, slug: c.slug, href: `${libraryHref(data.owner, data.repo, `components/${encodeURIComponent(c.slug.toLowerCase())}/`)}?edit=1`, since: null, excerpt: guidanceExcerpt(c.docs) }));
+    .map((c) => ({ name: c.name, slug: c.slug, href: `${libraryHref(data.owner, data.repo, `components/${encodeURIComponent(c.slug.toLowerCase())}/`)}?edit=1`, since: null, excerpt: guidanceExcerpt(c.docs), path: c.files?.docs ?? null }));
 }

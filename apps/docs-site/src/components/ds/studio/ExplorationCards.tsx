@@ -8,20 +8,21 @@
 //     its own), a Field Guide drawing holds the mosaic's place.
 import { Badge, Card, Link } from '@bridge-ds/react';
 import { Who } from './faces';
-import { shortAgo } from '@bridge-ds/core';
+import { agoInSentence } from '@bridge-ds/core';
 import { BranchThumb } from './BranchThumb';
 import type { ExplorationCard } from '../../../lib/home-explorations';
 import { SEP } from '../../../lib/home-model';
 import type { ProductFolder } from '../../../lib/product-page';
-import { statusTagClass } from '../../../lib/status-tag';
+import { statusTagClass, statusTagDot } from '../../../lib/status-tag';
 import { Drawing } from './Drawing';
 
 /** The corner of a library exploration's screen: it belongs to no product. */
 const LIBRARY = 'Library';
 
 export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationCard; showProduct?: boolean }) {
-  // When it last moved, the same age as its row on Explorations (core shortAgo of updated_at), never the capture's.
-  const age = c.updated ? shortAgo(c.updated) || null : null;
+  // When it last moved, the same age and words as its row on Explorations (core agoInSentence of updated_at: "yesterday"
+  // after the name, lower case, on every surface), never the capture's.
+  const age = c.updated ? agoInSentence(c.updated) || null : null;
   return (
     <li className="sh-card-item">
       <Card interactive padding="none" className="sh-card">
@@ -39,16 +40,16 @@ export function ExplorationCardItem({ c, showProduct = true }: { c: ExplorationC
           <span className="sh-card-foot">
             <span className="sh-card-tagline">
               {c.state && (
-                <Badge tone={c.tone ?? 'neutral'} dot={c.dot ?? false} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
+                <Badge tone={c.tone ?? 'neutral'} dot={statusTagDot(c.tone ?? 'neutral')} size="sm" className={statusTagClass(c.tone ?? 'neutral', 'sh-card-tag')}>
                   {c.state}
                 </Badge>
               )}
             </span>
-            {c.note && <span className="t-ui sh-card-who sh-card-name">{c.note}</span>}
+            {c.note && <span className="t-ui sh-card-who sh-card-wait">{c.note}</span>}
             <span className="t-ui sh-card-who">
               <Who p={c.author} size="xs" />
               <span className="sh-card-name">
-                {c.author.name}
+                <span className="sh-card-by">{c.author.name}</span>
                 {age ? <span className="sh-card-product">{SEP}{age}</span> : null}
               </span>
             </span>
@@ -83,7 +84,7 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
           <span className="pf-mosaic" data-panes={f.shots.length} aria-hidden="true">
             {f.shots.map((s, i) => (
               <span key={s.key} className={`pf-pane pf-pane-${i}`}>
-                <BranchThumb spec={s.spec} size="card" />
+                <BranchThumb spec={s.spec} size="card" eager />
                 {/* Who explores this screen, on its top-left corner: the same face as on their cards and in Members. */}
                 <span className="pf-pane-who" title={s.who.name}>
                   <Who p={s.who} size="xs" />
@@ -94,12 +95,21 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
         )}
         <div className="sh-card-body">
           <span className="sh-card-head">
-            <Link href={f.href} variant="subtle" className="t-body sh-card-title" data-card-primary>
+            <Link href={f.href} variant="subtle" className="t-body sh-card-title" title={f.name} data-card-primary>
               <span className="sh-strong">{f.name}</span>
             </Link>
           </span>
           <span className="sh-card-foot">
-            <span className="t-meta t-muted sh-card-product">{f.line}</span>
+            <span className="t-meta t-muted sh-card-product pf-line">
+              {/* Each clause whole, its dot leading it: a clause that does not fit drops out of the one line (CSS), so a
+                  dot never ends a line. The whole line is in the card's accessible text. */}
+              {f.line.split(SEP).map((part, i) => (
+                <span key={i}>
+                  {i > 0 ? SEP : ''}
+                  {part}
+                </span>
+              ))}
+            </span>
             {people.length > 0 && <span className="sr-only">Explored by {people.join(', ')}.</span>}
           </span>
         </div>

@@ -45,7 +45,7 @@ export const BUILD_BOARD_COLUMNS: readonly { key: BuildState; label: string }[] 
   { key: 'waiting', label: BUILD_STATE_LABEL.waiting },
   { key: 'in-progress', label: BUILD_STATE_LABEL['in-progress'] },
   { key: 'in-review', label: BUILD_STATE_LABEL['in-review'] },
-  { key: 'shipped', label: `Shipped, last ${SHIPPED_DAYS} days` },
+  { key: 'shipped', label: `Shipped (${SHIPPED_DAYS} days)` },
   { key: 'not-planned', label: BUILD_STATE_LABEL['not-planned'] },
 ];
 
@@ -199,12 +199,11 @@ export interface BuildColumn<R> {
 }
 
 /**
- * The Board's columns over the rows the filters keep, one per status the filter keeps. With the default (Not shipped
- * yet) the Board adds Shipped, as Explorations' Board adds it to In progress.
+ * The Board's columns over the rows the filters keep, one per status the filter keeps and nothing more: List, Grid and
+ * Board show the same rows for the same filters (Not shipped yet has no Shipped column).
  */
 export function buildBoardColumns<R extends { state: BuildState }>(rows: readonly R[], status: readonly BuildState[]): BuildColumn<R>[] {
-  const shown = isDefaultStatus(status) ? [...NOT_SHIPPED, 'shipped' as const] : status;
-  return BUILD_BOARD_COLUMNS.filter((c) => shown.includes(c.key)).map((c) => ({ key: c.key, label: c.label, rows: rows.filter((r) => r.state === c.key) }));
+  return BUILD_BOARD_COLUMNS.filter((c) => status.includes(c.key)).map((c) => ({ key: c.key, label: c.label, rows: rows.filter((r) => r.state === c.key) }));
 }
 
 // ---------------------------------------------------------------------------------------------------------------

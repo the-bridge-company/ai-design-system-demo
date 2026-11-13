@@ -15,9 +15,11 @@ import { HEALTH_SECTION } from '../../../lib/library-health';
 import { gainLine, pctLabel as formatPct, productTrend, runDate, unusedCount, unusedLine, type AdoptionRun, type TokenUsageCount, type AdoptionView, type Pillar, type Verdict } from '../../../lib/quality-view';
 import { safeUrl } from '../../../lib/html';
 import type { StatusGroup } from '../../../lib/changes';
-import { statusTagClass } from '../../../lib/status-tag';
+import { MEANING_TONE, statusTagClass } from '../../../lib/status-tag';
 
-const TONE: Record<StatusGroup, 'danger' | 'warning' | 'success' | 'neutral'> = { blocked: 'danger', waiting: 'warning', ready: 'success', neutral: 'neutral' };
+// The one state-to-tone map (lib/status-tag MEANING_TONE): a wait is grey on Quality too, as on Components and every
+// list ("Draft by Claude AI, needs review" was ochre here and grey there); only a late wait turns amber.
+const TONE: Record<StatusGroup, 'danger' | 'warning' | 'success' | 'neutral'> = { blocked: MEANING_TONE.blocked, waiting: MEANING_TONE.waiting, ready: MEANING_TONE.done, neutral: MEANING_TONE.over };
 
 /** Links that leave Bridge (GitHub) open in a new tab; Studio links stay. */
 const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank', rel: 'noopener noreferrer' } : {});

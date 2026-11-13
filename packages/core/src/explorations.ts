@@ -1065,7 +1065,7 @@ export function isDesignReviewWaiting(e: Exploration | null | undefined): boolea
 /**
  * The new pieces the library owners still have to answer (two-reviews.ts): asked, not handed off, and a new piece (not
  * one the library already has as it is, not sent already) with no answer since they were asked. A "changes" answer
- * given before this ask is asked again. Without the library check, the pieces the designer ticked stand in.
+ * given before this ask (or in the same millisecond) is asked again. Without the library check, the pieces the designer ticked stand in.
  */
 export function libraryPendingOf(e: Exploration | null | undefined, record: PiecesRecord | null | undefined): string[] {
   const asked = e?.library?.askedAt;
@@ -1076,7 +1076,9 @@ export function libraryPendingOf(e: Exploration | null | undefined, record: Piec
   return ids.filter((id) => {
     if (sent.has(id)) return false;
     const d = answered.get(id);
-    return !d || (d.verdict === 'changes' && d.at < asked);
+    // At or before the ask: a "changes" answer always takes the ask away (back to Exploring), so a standing ask with the
+    // same timestamp was made after it (an answer in the same millisecond, by fast automation).
+    return !d || (d.verdict === 'changes' && d.at <= asked);
   });
 }
 

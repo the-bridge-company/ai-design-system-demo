@@ -14,7 +14,7 @@ import type { ThumbSpec } from '../../../lib/branch-thumb';
 import type { Person, PillTone } from '../../../lib/home-model';
 import { SEP } from '../../../lib/sep';
 import { LIST_VIEW_EVENT, LIST_VIEW_WORDS, readListView, rememberListView, type ListView, type ListViewChange } from '../../../lib/list-view';
-import { statusTagClass } from '../../../lib/status-tag';
+import { statusTagClass, statusTagDot } from '../../../lib/status-tag';
 
 /**
  * The view a page is read in: List until this person picks the grid. Read after the first paint (the server renders
@@ -110,7 +110,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
             <span className="sh-card-tagline">
               {tags}
               {pill && (
-                <Badge tone={TONE[pill.tone]} size="sm" className={statusTagClass(TONE[pill.tone], 'sh-card-tag')}>
+                <Badge tone={TONE[pill.tone]} size="sm" dot={statusTagDot(TONE[pill.tone])} className={statusTagClass(TONE[pill.tone], 'sh-card-tag')}>
                   {pill.label}
                 </Badge>
               )}
@@ -118,7 +118,7 @@ export function ListCard({ thumb, title, href, linkAttributes, onClick, person, 
             <span className="t-ui sh-card-who">
               <Who p={person} size="xs" />
               <span className="sh-card-name">
-                {byline || person.name}
+                <span className="sh-card-by">{byline || person.name}</span>
                 {age ? (
                   <span className="sh-card-product">
                     {SEP}

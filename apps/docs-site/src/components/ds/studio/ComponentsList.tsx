@@ -37,7 +37,7 @@ export interface ComponentListRow {
 export function exceptions(r: Pick<ComponentListRow, 'guidance' | 'status'>): { label: string; tone: BadgeTone; short?: string; agent?: boolean }[] {
   const out: { label: string; tone: BadgeTone; short?: string; agent?: boolean }[] = [];
   if (r.guidance === 'missing') out.push({ label: 'Missing guidance', tone: 'neutral', short: 'No guidance' });
-  if (r.guidance === 'review') out.push({ label: 'Draft by Claude, needs review', tone: 'neutral', short: 'Needs review', agent: true });
+  if (r.guidance === 'review') out.push({ label: 'Draft by Claude AI, needs review', tone: 'neutral', short: 'Needs review', agent: true });
   if (r.status === 'beta') out.push({ label: 'Beta', tone: 'neutral' });
   if (r.status === 'deprecated') out.push({ label: 'Deprecated', tone: 'neutral' });
   return out;

@@ -29,7 +29,11 @@ import {
 // The piece
 
 /** Where a piece lives: a library change (its number in the design system repository) or an exploration's piece. */
-export type PieceSource = { kind: 'change'; repo: string; number: number } | { kind: 'piece'; repo: string; number: number; piece: string };
+export type PieceSource =
+  | { kind: 'change'; repo: string; number: number }
+  | { kind: 'piece'; repo: string; number: number; piece: string }
+  /** A usage guidance draft on main (docs.json needsReview, lib/team-facts teamGuidance): no change yet. */
+  | { kind: 'docs'; repo: string; component: string; slug: string | null; path: string | null; href: string };
 
 /** Where a piece stands, for the Status filter. */
 export type PieceState = 'waiting' | 'decided';
@@ -77,7 +81,8 @@ export interface ConflictWay {
   line: string;
 }
 
-const PART_WORDS: Record<string, string> = { padding: 'room inside', 'border-radius': 'corners', gap: 'space between items', 'box-shadow': 'shadow', 'background-color': 'fill', 'font-size': 'text size' };
+// The words designers use for a part (owner review 2026-11-13: "Card padding", never "room inside").
+const PART_WORDS: Record<string, string> = { padding: 'padding', 'border-radius': 'corners', gap: 'space between items', 'box-shadow': 'shadow', 'background-color': 'fill', 'font-size': 'text size' };
 
 /**
  * One way of a conflict in words: compared to today when the check knows today's value, else to the other way.
@@ -90,7 +95,7 @@ export function wayLine(property: string, value: string, today: string | null, o
   const prop = property.toLowerCase();
   if (ref && Number.isFinite(a)) {
     const more = a > ref.n;
-    if (prop.startsWith('padding') || prop === 'gap') return `${more ? 'More room inside' : 'Tighter'} than ${ref.words}.`;
+    if (prop.startsWith('padding') || prop === 'gap') return `${more ? 'More padding' : 'Tighter'} than ${ref.words}.`;
     if (prop === 'border-radius') return `${more ? 'Rounder corners' : 'Squarer corners'} than ${ref.words}.`;
     if (prop === 'font-size') return `${more ? 'Bigger text' : 'Smaller text'} than ${ref.words}.`;
   }
@@ -145,6 +150,8 @@ export interface ReviewPiece {
   exception: string | null;
   /** When it last moved (ISO), when known: the List orders its blocks by the most recent. */
   at?: string | null;
+  /** A guidance draft's own words (its summary, then when to use it): what the detail shows instead of plates. */
+  docText?: string | null;
 }
 
 /**
@@ -212,6 +219,8 @@ export function designerWords(title: string): string {
   t = t.replace(new RegExp(path.source, 'gi'), (m) => tokenPathWords(m));
   // A prop that announces something: what the person reads, not the prop's name.
   t = t.replace(/\bloadingLabel announces the action while it runs\b/, 'loading text says what is happening');
+  // The agent has one name everywhere: "drafted by Claude" (an older change's title) reads "drafted by Claude AI".
+  t = t.replace(/\bby Claude\b(?! AI)/g, 'by Claude AI');
   t = t.replace(/\b([a-z]+)([A-Z][a-zA-Z]*)\b/g, (_m, a: string, b: string) => `${a} ${b.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}`);
   return t.replace(/\s+/g, ' ').trim();
 }
@@ -344,6 +353,65 @@ export function pieceOfChange(c: ChangeInput, products: Parameters<typeof librar
     at: c.at ?? null,
   };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// A usage guidance draft on main as a piece of the queue
+
+/** A guidance draft as Home and Library review both read it (lib/team-facts teamGuidance, home-model GuidanceDraft). */
+export interface GuidanceDraftInput {
+  name: string;
+  slug?: string | null;
+  href: string;
+  /** When the draft was flagged for review: the commit that last touched its docs.json (scripts/guidance-drafts). */
+  since: string | null;
+  excerpt?: string | null;
+  /** Its docs.json, repo-relative. */
+  path?: string | null;
+}
+
+/** Who drafts usage guidance from the code (lib/people AGENT_NAME): the Home row's person too. */
+export const GUIDANCE_BY = 'Claude AI';
+
+/**
+ * A usage guidance draft flagged "needs review" on main as a Docs piece (owner decision 2026-11-13): a library decision
+ * like a docs change, with the same row, an age (when it was flagged) and the same decide actions. Its title is the
+ * Home row's ("VisuallyHidden usage guidance", home-model guidanceNeed), so the two say one thing from one source.
+ */
+export function pieceOfGuidance(g: GuidanceDraftInput, repo: string): ReviewPiece {
+  return {
+    key: `d:${repo.toLowerCase()}:${(g.slug ?? g.name).toLowerCase()}`,
+    title: guidanceTitle(g.name),
+    kind: 'Docs',
+    category: 'Docs',
+    source: { kind: 'docs', repo, component: g.name, slug: g.slug ?? null, path: g.path ?? null, href: g.href },
+    asked: null,
+    by: GUIDANCE_BY,
+    leadReason: 'docs',
+    mine: false,
+    tier: 1,
+    state: 'waiting',
+    decided: null,
+    decidedLabel: null,
+    waitsOn: 'you',
+    designApproved: false,
+    match: null,
+    conflict: null,
+    // The same anatomy as a docs change's piece (Slider, Tabs): no before and after plates; the draft opens from its row.
+    before: null,
+    after: null,
+    swatch: null,
+    why: null,
+    exception: null,
+    at: g.since,
+    docText: g.excerpt ?? null,
+  };
+}
+
+/** "Claude AI drafted it from the code": who a guidance draft comes from, on Home's row and in Library review. */
+export const guidanceByLine = (by: string): string => `${by} drafted it from the code`;
+
+/** "VisuallyHidden usage guidance": a draft's name on Home and in Library review. */
+export const guidanceTitle = (name: string): string => `${name} usage guidance`;
 
 // ---------------------------------------------------------------------------------------------------------------
 // An exploration's recorded piece as a piece of the queue

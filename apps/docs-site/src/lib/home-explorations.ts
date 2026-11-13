@@ -9,6 +9,7 @@
 // Each card shows the explored screen (a capture, never a generic icon when one exists), the title, the product, who
 // explores it and where it stands in designer words: "Exploring", "2 new pieces found", "In review", "Kept in the
 // library". Pure: no DOM, no fetch. Unit tested in home-explorations.test.ts.
+import { shortWaitLine } from './wait-line';
 import { defaultProduct, EXPLORATION_ARCHIVED_LABEL, explorationStateLabel, explorationStatus, findProduct, isArchivedExploration, isExplorationPull, isHandedOff, parseExplorationBody, parsePiecesRecord, PRODUCT_LABEL_PREFIX, requesterOf, type ProductConfig } from '@bridge-ds/core';
 import { explorationTitle } from './pr-title';
 import { studioHref } from './team-path';
@@ -325,7 +326,7 @@ export function homeExplorations<P extends ExplorationPull>(pulls: P[], opts: Ho
         updated: p.updated_at,
         preview: previewOf(opts.preview?.(p), { product: product ?? 'Library', screen: changedScreenOf(files?.(p), { library: !product }), seed: keyOf(p) }),
         own: isOwnExploration(p, opts.viewer, opts.viewerRef),
-        ...(opts.note && !archived ? { note: opts.note(p) } : {}),
+        ...(opts.note && !archived ? { note: cardNote(opts.note(p)) } : {}),
       };
     })
     .sort((a, b) => ORDER[a.stage] - ORDER[b.stage] || b.updated.localeCompare(a.updated) || b.number - a.number);
@@ -420,6 +421,14 @@ export function ownOpenWork(cards: readonly Pick<ExplorationCard, 'lifecycle' | 
   }
   for (const b of branches) w.changes[b.stage === 'waiting' ? 'code' : b.stage === 'draft' ? 'building' : 'review'] += 1;
   return OPEN_STAGES.some((s) => w.explorations[s] || w.changes[s]) ? w : null;
+}
+
+/**
+ * A card's second line, as short as a list row's (lib/wait-line shortWaitLine): "Waiting for Dana". The exploration
+ * page keeps the whole sentence. The card shows it whole, never cut mid-sentence.
+ */
+export function cardNote(note: string | null | undefined): string | null {
+  return shortWaitLine(note);
 }
 
 /** A piece of the quiet sentence: words, or a count that opens where those things are. */

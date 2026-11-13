@@ -113,6 +113,23 @@ describe('two reviews on GitHub', () => {
     expect(handedOff()).toBe(true);
   });
 
+  it('library Ask for changes answered in the same millisecond: the library decision is asked again', async () => {
+    // Fast automation (an agent answering at once) can write the changes and the new ask with one timestamp.
+    const { gh, state, handedOff } = setup();
+    const now = new Date('2026-11-13T10:00:00.000Z');
+    await askReviewsOnGitHub(gh, 4, { openedBy: 'sofia', design: { to: ['dana'] }, library: { to: ['flo'] }, date: now });
+    await designApproveOnGitHub(gh, 4, { products: [SHOP], lead: 'dana', date: now });
+    await decidePieceOnGitHub(gh, 4, { piece: 'component-timeline', verdict: 'changes', text: 'Use the Stepper', by: 'flo', products: [SHOP], date: now });
+    expect(isInReview(state.body)).toBe(false);
+    await answerLeadOnGitHub(gh, 4, { text: 'Done', by: 'sofia', date: now });
+    const e = parseExplorationBody(state.body)!;
+    expect(e.library?.askedAt).toBe(e.library?.decisions?.[0]?.at);
+    expect(isInReview(state.body)).toBe(true);
+    const done = await decidePieceOnGitHub(gh, 4, { piece: 'component-timeline', verdict: 'local', by: 'flo', products: [SHOP], date: now });
+    expect(done.done).not.toBeNull();
+    expect(handedOff()).toBe(true);
+  });
+
   it('design Needs changes: back to Exploring, library answers already given stay', async () => {
     const { gh, state } = setup();
     await askReviewsOnGitHub(gh, 4, { openedBy: 'sofia', design: { to: ['dana'] }, library: { to: ['flo'] } });

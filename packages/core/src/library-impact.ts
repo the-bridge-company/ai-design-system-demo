@@ -201,9 +201,9 @@ export function valueWords(value: string, resolved?: string | undefined): string
 
 /** The part of a component a CSS property changes, in plain words. */
 const PROPERTY_WORDS: Record<string, string> = {
-  padding: 'Room inside',
-  'padding-block': 'Room inside',
-  'padding-inline': 'Room inside',
+  padding: 'Padding',
+  'padding-block': 'Padding',
+  'padding-inline': 'Padding',
   gap: 'Space between items',
   'border-radius': 'Corners',
   'font-size': 'Text size',

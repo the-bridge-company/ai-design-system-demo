@@ -84,7 +84,7 @@ import { AskQuote, CodeButton, Composer, ScreenStage, Timeline, TurnSteps, TurnZ
 import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type LeadDecision, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
 import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
-import { statusTagClass } from '../../../lib/status-tag';
+import { statusTagClass, statusTagDot } from '../../../lib/status-tag';
 import { SEP, SEP_SPLIT } from '../../../lib/sep';
 import { usePageTitle } from '../../../lib/page-title';
 
@@ -783,7 +783,7 @@ function SaidToast({ said }: { said: string | undefined }) {
 function StatusTag({ status, notStarted, stage }: { status: string; notStarted?: boolean; stage?: LifecycleStage | null }) {
   const t = explorationTag(status, { ...(notStarted ? { notStarted } : {}), stage: stage ?? null });
   return (
-    <Badge tone={t.tone} size="md" dot={t.dot} className={statusTagClass(t.tone)}>
+    <Badge tone={t.tone} size="md" dot={statusTagDot(t.tone)} className={statusTagClass(t.tone)}>
       {t.label}
     </Badge>
   );

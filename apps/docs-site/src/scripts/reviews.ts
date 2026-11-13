@@ -16,7 +16,7 @@ import { rowTime } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, shortAgo, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -454,10 +454,11 @@ function listRow(r: Row): ListRow {
     author: (r.exploration ? explorationAuthorFor(r.user.login, r.body ?? null) : authorFor(r.user.login, r.body ?? null)) ?? r.user.login,
     agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
-    // An exploration says when it last moved, after who: "Sofia · 2 h ago"; one that waits on the viewer (its turn, or
-    // any review it asks of them), since it was sent to them with Home's own tag: "Waiting 5 days" (lib/lead-decisions rowTime).
-    // Said once: next to a "Waiting for ..." note the time reads "5 days" (the line the row shows: why on its turn, else the note).
-    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now(), line: turn ? reason : note }, shortAgo) || null : null,
+    // An exploration says when it last moved, after who: "Sofia · 2 h ago" (agoInSentence, the one formatter of every
+    // row and card); one that waits on the viewer (its turn, or any review it asks of them), since it was sent to them
+    // with Home's own tag: "Waiting 5 days" (lib/lead-decisions rowTime). Said once: next to a "Waiting for ..." note the
+    // time reads "5 days" (the line the row shows: why on its turn, else the note).
+    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now(), line: turn ? reason : note }, agoInSentence) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,

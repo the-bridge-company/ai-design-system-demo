@@ -4,6 +4,7 @@
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { LibraryReviewView, type LibraryReviewProps } from './LibraryReview';
@@ -74,6 +75,35 @@ describe('Library review, for assistive tech', () => {
       expect(l - prev).toBeLessThanOrEqual(1);
       prev = l;
     }
+    await expectNoAxeViolations();
+  });
+
+  it("filters with Studio's one filter pattern: DS Selects named by their inline label and value, ticked by keyboard", async () => {
+    history.replaceState(null, '', '/?view=list');
+    page();
+    await screen.findByRole('table', { name: 'Library pieces' });
+    const status = screen.getByRole('combobox', { name: 'Status: Waiting' });
+    expect(screen.getByRole('combobox', { name: 'Asked by: Anyone' })).toHaveClass('bl-filter');
+    expect(screen.getByRole('combobox', { name: 'Product: All products' })).toHaveClass('bl-filter');
+    status.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    const list = await screen.findByRole('listbox');
+    expect(list).toHaveAttribute('aria-multiselectable', 'true');
+    // Each option with its count tag; a status with nothing in it (Decided, here) is not listed.
+    const options = within(list).getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual(['Waiting3']);
+    expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    await userEvent.keyboard('{Escape}');
+    // Products combine: the list stays open while they are ticked, the trigger leads with the first then "+N".
+    await userEvent.click(screen.getByRole('combobox', { name: 'Product: All products' }));
+    const products = within(await screen.findByRole('listbox')).getAllByRole('option');
+    expect(products.length).toBeGreaterThan(1);
+    const label = (o: HTMLElement) => (o.textContent ?? '').replace(/\d+$/, '');
+    await userEvent.click(products[0]!);
+    await userEvent.click(products[1]!);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByRole('combobox', { name: `Product: ${label(products[0]!)} +1` })).toBeInTheDocument());
     await expectNoAxeViolations();
   });
 });

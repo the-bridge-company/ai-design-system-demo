@@ -28,6 +28,7 @@ import {
 } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { Drawing } from './Drawing';
+import { MultiFilter } from './ListFilters';
 import { LoadProgress } from './LoadProgress';
 import { storybookProgressView } from '../../../lib/load-progress';
 import { StorybookField, toWorkspace } from './StorybookField';
@@ -201,7 +202,7 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
   const [ws, setWs] = useState<Workspace>(() => (typeof window === 'undefined' ? { storybook: null } : readWorkspace()));
   const [load, setLoad] = useState<Load>({ state: 'idle' });
   const [query, setQuery] = useState('');
-  const [family, setFamily] = useState('all');
+  const [family, setFamily] = useState<string[]>([]);
   const [open, setOpen] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [prefill, setPrefill] = useState('');
@@ -250,7 +251,7 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
 
   const rows = useMemo(() => (load.state === 'ready' ? storybookRows(load.sb.index) : []), [load]);
   const families = useMemo(() => storybookFamilies(rows), [rows]);
-  const shown = filterStorybookRows(rows, query, family === 'all' ? '' : family);
+  const shown = filterStorybookRows(rows, query, family);
   const component = load.state === 'ready' && open ? (load.sb.index.components.find((c) => c.title === open) ?? null) : null;
   const host = url ? storybookHost(url) : null;
 
@@ -347,18 +348,11 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
       <div className="cm-tools" role="search">
         <Input className="cm-search" size="md" type="search" placeholder="Filter components" aria-label="Filter components" prefix={<Icon icon={Search} size="sm" />} autoComplete="off" value={query} onValueChange={setQuery} />
         {families.length > 1 && (
-          <Select
-            label="Family"
-            hideLabel
-            size="md"
-            value={family}
-            onValueChange={(v) => setFamily(v ?? 'all')}
-            options={[{ value: 'all', label: `All families (${rows.length})` }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
-          />
+          <MultiFilter label="Family" all="All" options={families.map((f) => ({ value: f.name, label: f.name, count: f.n }))} picked={family} onPick={setFamily} />
         )}
       </div>
       <p className="cm-count" role="status" aria-live="polite">
-        {query || family !== 'all' ? `${shown.length} of ${rows.length} components` : ''}
+        {query || family.length ? `${shown.length} of ${rows.length} components` : ''}
       </p>
       {shown.length ? (
         <List rows={shown} onOpen={setOpen} />
@@ -371,7 +365,7 @@ export default function StorybookComponents({ suggestion }: StorybookComponentsP
               variant="secondary"
               onClick={() => {
                 setQuery('');
-                setFamily('all');
+                setFamily([]);
               }}
             >
               Show every component

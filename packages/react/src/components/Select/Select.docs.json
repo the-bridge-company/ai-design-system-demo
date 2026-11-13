@@ -1,5 +1,5 @@
 {
-  "summary": "Picks one value from a short, known list in a popup. The trigger looks like an Input so forms read as one family; the list supports groups, descriptions, badges and disabled options.",
+  "summary": "Picks one value, or several with multiple, from a short, known list in a popup. The trigger looks like an Input so forms read as one family; the list supports groups, descriptions, badges and disabled options. In a filter bar, an inline label names it inside the trigger.",
   "preview": { "c": "Stack", "children": [
     { "c": "Select", "p": { "label": "Theme", "placeholder": "No theme", "defaultValue": "dark", "options": [
       { "value": "system", "label": "System" },
@@ -10,16 +10,31 @@
   "whenToUse": [
     "One choice from about 4 to 10 known options: a theme, a brand, a token group, a role.",
     "The options are long words or labels that would crowd a RadioGroup.",
-    "Space is tight: in a dense toolbar, a menu or a settings row (size sm). In a page's filter bar, size md, like the search field beside it.",
-    "Each option carries a short fact worth seeing before the pick, like a status or a count: put a Badge in badge. It shows on the item and in the trigger once selected."
+    "Space is tight: in a dense toolbar, a menu or a settings row (size sm). In a page's filter bar, size md, like the search field and the view switch beside it, with an inline label.",
+    "Each option carries a short fact worth seeing before the pick, like a status or a count: put a Badge in badge. It shows on the item and in the trigger once selected.",
+    "A filter bar: inlineLabel names the filter inside the trigger (\"Status Waiting\", \"Product All products\") and the trigger hugs its content. With multiple, several values at once; displayValue sums them up (\"In progress\", \"Leo +1\")."
   ],
   "whenNotToUse": [
     "Two or three options that should all stay visible: use RadioGroup, or an attached ButtonGroup for a view switch.",
     "Long or unknown lists (people, repositories, 20+ tokens): use Combobox so users can type to filter.",
-    "Several values at once: use Combobox with multiple, or a CheckboxGroup.",
+    "Several values in a form: use Combobox with multiple, or a CheckboxGroup. In a filter bar, a multiple Select with an inline label is fine.",
     "Actions (Duplicate, Delete): use Menu. A Select changes a value, it does not run commands."
   ],
   "dos": [
+    {
+      "title": "Name a filter inside its trigger",
+      "text": "In a filter bar, inlineLabel puts the filter's name in secondary text before its value, so the bar reads as a sentence and every filter hugs its content. Every filter of a bar uses this form, at the size of the controls beside it.",
+      "example": { "c": "Inline", "children": [
+        { "c": "Select", "p": { "inlineLabel": "Status", "defaultValue": "waiting", "options": [
+          { "value": "waiting", "label": "Waiting" },
+          { "value": "decided", "label": "Decided" }
+        ] } },
+        { "c": "Select", "p": { "inlineLabel": "Product", "defaultValue": "all", "options": [
+          { "value": "all", "label": "All products" },
+          { "value": "crm", "label": "Acme CRM" }
+        ] } }
+      ] }
+    },
     {
       "title": "A status next to the label with badge",
       "text": "A Badge in the option's badge slot says the status at a glance, in the list and in the trigger. The description stays for a second line of detail, like who made it.",
@@ -70,12 +85,22 @@
       "example": { "c": "Stack", "children": [
         { "c": "Select", "p": { "label": "Theme", "placeholder": "Click to select", "options": [ { "value": "light", "label": "Light" } ] } }
       ] }
+    },
+    {
+      "title": "Filters of one bar in different forms",
+      "text": "A bar where one filter shows only its value at a fixed width and the next shows a name and a value reads as two systems. Give every filter of the bar an inlineLabel and let each hug its content.",
+      "example": { "c": "Inline", "children": [
+        { "c": "Select", "p": { "label": "Product", "hideLabel": true, "defaultValue": "all", "options": [ { "value": "all", "label": "All products" } ] } },
+        { "c": "Select", "p": { "inlineLabel": "Person", "defaultValue": "everyone", "options": [ { "value": "everyone", "label": "Everyone" } ] } }
+      ] }
     }
   ],
   "accessibility": [
     "Base UI Select: the trigger is a combobox button with aria-expanded; the popup is a listbox with options marked aria-selected and aria-disabled.",
     "Keyboard: Enter, Space or Arrow keys open it; arrows move; typing jumps to a matching option; Enter selects; Escape closes and returns focus to the trigger.",
     "The Field label names the trigger; hint and error are linked through aria-describedby, and an error sets aria-invalid.",
+    "With inlineLabel and no Field label, the inline label and the value name the trigger together (\"Product: All products\"), and the name follows each pick.",
+    "With multiple, the listbox is aria-multiselectable; Enter or Space ticks an option and the list stays open until Escape or a click outside.",
     "The selected option shows a check mark and a medium weight, not color alone.",
     "The trigger edge uses color.border.strong (3:1 against surfaces) and the signal focus ring on keyboard focus.",
     "The popup is portaled and re-applies the theme, brand and density of its trigger."
@@ -84,11 +109,14 @@
     "Label is a noun in sentence case: \"Theme\", \"Brand\", \"Reviewer role\".",
     "Options are short, parallel nouns, sentence case, no trailing punctuation.",
     "Group headings are one or two words and never repeat the label.",
-    "Placeholders describe the empty value (\"No theme\"), not the action."
+    "Placeholders describe the empty value (\"No theme\"), not the action.",
+    "An inline label is one or two plain words naming what is filtered: \"Status\", \"Product\", \"Person\", \"Asked by\". The value says the current pick in full: \"All products\", \"Everyone\"."
   ],
   "anatomy": {
     "trigger": "Trigger box (same edge and focus as Input)",
     "value": "Selected value or placeholder",
+    "labelled": "Inline label and value, side by side",
+    "inlineLabel": "Inline label (secondary text)",
     "affix": "Prefix icon",
     "chevron": "Chevron, turns when open",
     "popup": "Popup surface (popup.* tokens), an 8px inset (space.2) around the options",

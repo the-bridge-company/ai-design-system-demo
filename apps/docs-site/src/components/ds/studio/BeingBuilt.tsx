@@ -2,7 +2,7 @@
 // each one stands, read from GitHub only (scripts/building-data.ts, rules in lib/building-view.ts and @bridge-ds/core).
 //   - One sentence first (the Harbor zone), then Explorations' filters row (lib/building-page, decisions 2026-11-11):
 //     Status (Waiting to be picked up, In progress, In review, Shipped in the last 30 days; default Not shipped yet),
-//     Product and People, the same checkbox menus (ListFilters MultiFilter), the count, then List, Grid or Board
+//     Product and Person, the same filters (ListFilters MultiFilter), the count, then List, Grid or Board
 //     (ListCard ViewSwitch). The address keeps them (?status=, ?product=, ?people=). List and Grid group by product as
 //     Explorations does (ListGroup: the product's title and count tag, the library's work under Library), the ladder's
 //     order inside a group (Ready to build, Being built, Checking). One row per build request: the shared BranchRow,
@@ -61,7 +61,7 @@ import ButtonLink from "../ButtonLink";
 import { CountTag } from "./CountTag";
 import { ListGroup } from "./ListGroup";
 import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
-import { MultiFilter } from "./ListFilters";
+import { FilterRow, MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
 import { useCopy } from "./TeamLink";
 import { DEV_MESSAGE_WORDS } from "../../../lib/developers-message";
@@ -70,7 +70,6 @@ import { githubBusy, type GitHubBusy } from "../../../lib/github-busy";
 import { Drawing } from "./Drawing";
 import { Who } from "./faces";
 import { YOU } from "../../../lib/branches-page";
-import { multiTriggerLabel } from "../../../lib/explorations-page";
 import { buildOriginLine, buildOriginShort, originOfRow } from "../../../lib/build-origin";
 import {
   addressWithBuildFilters,
@@ -83,7 +82,6 @@ import {
   buildCountLine,
   buildFiltersFromAddress,
   buildStateOf,
-  buildStatusTriggerLabel,
   DEFAULT_BUILD_FILTERS,
   emptyBuildLine,
   isBuildFiltered,
@@ -859,32 +857,24 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
           </div>
         )}
         <div className="bl-bar">
-          <span className="bl-narrow">
+          <FilterRow as="span" className="bl-narrow">
+            {/* Not shipped yet is the empty pick, said as the value, never an option among its own statuses. */}
             <MultiFilter
               label="Status"
-              shown={buildStatusTriggerLabel(filters.status, offered)}
+              all={NOT_SHIPPED_LABEL}
               options={statusOptions}
-              picked={filters.status}
+              picked={isDefaultStatus(filters.status) ? [] : filters.status}
               onPick={(v) => pick({ ...filters, status: v.length ? BUILD_STATES.filter((s) => v.includes(s)) : [...NOT_SHIPPED] })}
-              reset={{ label: NOT_SHIPPED_LABEL, active: isDefaultStatus(filters.status), onReset: () => pick({ ...filters, status: [...NOT_SHIPPED] }) }}
             />
+            <MultiFilter label="Product" all="All products" options={productOptions} picked={filters.product} onPick={(v) => pick({ ...filters, product: v })} />
             <MultiFilter
-              label="Product"
-              shown={multiTriggerLabel(filters.product, productName, "All products")}
-              options={productOptions}
-              picked={filters.product}
-              onPick={(v) => pick({ ...filters, product: v })}
-              reset={{ label: "All products", active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
-            />
-            <MultiFilter
-              label="People"
-              shown={multiTriggerLabel(filters.people, personLabel, "Everyone")}
+              label="Person"
+              all="Everyone"
               options={personOptions}
               picked={filters.people}
               onPick={(v) => pick({ ...filters, people: v })}
-              reset={{ label: "Everyone", active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
             />
-          </span>
+          </FilterRow>
           <p className="t-ui t-muted bl-summary" aria-live="polite">
             {buildCountLine(shownCount, filtered ? items.length : shownCount)}
             {filtered && shownCount > 0 && (

@@ -1,127 +1,113 @@
-// The quieter row under the tabs of a list (Changes, Being built): two small DS Selects, the product (All products,
-// then each product) and the person (Everyone, You, then each person by name), then the count of what is listed and
-// Clear filters, and at the end how the list is shown (`end`, the ViewSwitch of ListCard). The rules are
-// lib/branches-page (activeFilters, filterChoices, inFilters), the address ?product= and ?people=; each page says
-// what its rows are and keeps the filters with its own tabs.
-import type { ReactNode } from 'react';
-import { Badge, Button, Icon, Menu, MenuCheckboxItem, MenuContent, MenuSeparator, MenuTrigger, Select } from '@bridge-ds/react';
-import { ChevronDown } from 'lucide-react';
-import { ALL_PRODUCTS, type filterChoices, type ListFilters } from '../../../lib/branches-page';
-import { EVERYONE } from '../../../lib/review-categories';
+// Studio's one filter pattern (owner, 2026-11-12): every filter of a bar is a DS Select with an inline label, the name
+// in secondary text then the value ("Status Waiting", "Product All products", "Person Everyone"), hugging its content,
+// at the md control height of the search field and the view switch beside it. People, products, families and statuses
+// combine, so every filter takes several values (the list stays open while options are ticked). Nothing ticked is the
+// filter's "all" word, never an option; an option's count is the count tag; an option with nothing in it is not
+// listed; the trigger reads the first ticked option then "+N" (rules: lib/filter-summary). Used by Explorations, Being
+// built and Library review; styles/list-filters.css lays the row out (one scrolling row on a phone).
+import { useEffect, useRef, type ReactNode } from 'react';
+import { Select } from '@bridge-ds/react';
+import { filterSummary, listedOptions, type FilterOption } from '../../../lib/filter-summary';
+import { CountTag } from './CountTag';
 import '../../../styles/list-filters.css';
 
-/** The empty line when the filters leave nothing, before Clear filters. */
-export const NO_FILTER_MATCH = 'Nothing here matches these filters.';
+export type MultiOption = FilterOption;
 
-export function ClearFilters({ onPick }: { onPick: (f: ListFilters) => void }) {
+/** Marks which edges of a scrolling filter row hide filters (`data-overflow`: start, end, both), so the CSS fades them. */
+export function markRowOverflow(row: HTMLElement) {
+  const max = row.scrollWidth - row.clientWidth;
+  const start = row.scrollLeft > 1;
+  const end = max - row.scrollLeft > 1;
+  const value = start && end ? 'both' : start ? 'start' : end ? 'end' : null;
+  if (value) row.setAttribute('data-overflow', value);
+  else row.removeAttribute('data-overflow');
+}
+
+/**
+ * Scrolls a row sideways so `target` (a filter that took focus) sits fully inside it, clear of the faded edges
+ * (`fade` px each side). Only the row's scrollLeft moves: never the page, never vertically.
+ */
+export function revealInRow(row: HTMLElement, target: HTMLElement, fade: number) {
+  if (row.scrollWidth <= row.clientWidth) return;
+  const box = row.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  const start = t.left - box.left + row.scrollLeft;
+  const end = t.right - box.left + row.scrollLeft;
+  if (start - fade < row.scrollLeft) row.scrollLeft = Math.max(0, start - fade);
+  else if (end + fade > row.scrollLeft + row.clientWidth) row.scrollLeft = Math.min(row.scrollWidth - row.clientWidth, end + fade - row.clientWidth);
+}
+
+/** The fade width the stylesheet gives the row (--_fade), in px. */
+const fadeOf = (row: HTMLElement) => {
+  const probe = getComputedStyle(row).scrollPaddingInlineStart;
+  const n = parseFloat(probe);
+  return Number.isFinite(n) ? n : 0;
+};
+
+export interface FilterRowProps {
+  /** The page's own class for the row ("bl-narrow", "lr-bar-row"); the scroll and the fade come from "bl-scroll". */
+  className: string;
+  as?: 'div' | 'span';
+  children: ReactNode;
+}
+
+/**
+ * The filters of a bar, one row. On a phone it scrolls sideways inside itself (never the page) and fades the edge that
+ * hides a filter, so a cut filter reads as "more this way" (styles/list-filters.css .bl-scroll).
+ */
+export function FilterRow({ className, as: Tag = 'div', children }: FilterRowProps) {
+  const ref = useRef<HTMLElement | null>(null);
+  // Every render: a picked value changes a trigger's width, and so whether the row overflows.
+  useEffect(() => {
+    if (ref.current) markRowOverflow(ref.current);
+  });
+  useEffect(() => {
+    const row = ref.current;
+    if (!row) return;
+    const mark = () => markRowOverflow(row);
+    // Tab onto a filter under the fade (or past the edge): bring it fully into the row, clear of the fade.
+    const reveal = (e: FocusEvent) => {
+      const target = e.target instanceof HTMLElement ? (e.target.closest<HTMLElement>('.bl-filter') ?? e.target) : null;
+      if (target && target !== row) revealInRow(row, target, fadeOf(row));
+    };
+    row.addEventListener('scroll', mark, { passive: true });
+    row.addEventListener('focusin', reveal);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark);
+    observer?.observe(row);
+    return () => {
+      row.removeEventListener('scroll', mark);
+      row.removeEventListener('focusin', reveal);
+      observer?.disconnect();
+    };
+  }, []);
   return (
-    <Button variant="link" onClick={() => onPick({ product: null, by: null })}>
-      Clear filters
-    </Button>
+    <Tag ref={ref as never} className={`bl-scroll ${className}`}>
+      {children}
+    </Tag>
   );
-}
-
-const count = (n: number) => (
-  <Badge tone="neutral" size="sm">
-    {n}
-  </Badge>
-);
-
-export interface ListFiltersBarProps {
-  active: ListFilters;
-  choices: ReturnType<typeof filterChoices>;
-  onPick: (f: ListFilters) => void;
-  /** The count of what is listed ("3 changes."). */
-  summary: string;
-  /** Offer Clear filters after the count; with nothing left, the empty line under the bar offers it instead. */
-  clear: boolean;
-  /** At the end of the row, away from what narrows the list: how it is shown (ListCard ViewSwitch). */
-  end?: ReactNode;
-}
-
-export function ListFiltersBar({ active, choices, onPick, summary, clear, end }: ListFiltersBarProps) {
-  return (
-    <div className="bl-bar">
-      <span className="bl-narrow">
-        <Select
-          label="Product"
-          hideLabel
-          size="sm"
-          value={active.product ?? ALL_PRODUCTS}
-          onValueChange={(v) => onPick({ ...active, product: !v || v === ALL_PRODUCTS ? null : v })}
-          options={choices.products.map((o) => ({ value: o.value, label: o.label, badge: count(o.count) }))}
-        />
-        <Select
-          label="People"
-          hideLabel
-          size="sm"
-          value={active.by ?? EVERYONE}
-          onValueChange={(v) => onPick({ ...active, by: !v || v === EVERYONE ? null : v })}
-          options={choices.people.map((d) => ({ value: d.value, label: d.label, badge: count(d.count), disabled: d.count === 0 && d.value !== (active.by ?? EVERYONE) }))}
-        />
-      </span>
-      <p className="t-ui t-muted bl-summary" aria-live="polite">
-        {summary}
-        {clear && (
-          <>
-            {' '}
-            <ClearFilters onPick={onPick} />
-          </>
-        )}
-      </p>
-      {end}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// Checkbox filters (Explorations): the small Select's look, a list of checkboxes behind it (DS Menu checkbox items),
-// several picked at once. The menu stays open while boxes are ticked; "reset" (Everyone, In progress) goes first.
-
-export interface MultiOption {
-  value: string;
-  label: string;
-  count?: number;
 }
 
 export interface MultiFilterProps {
-  /** The accessible name: "Status", "Product", "People". */
+  /** The inline label, the filter's name: "Status", "Product", "Person". */
   label: string;
-  /** What the trigger reads ("In progress", "Leo +1"). */
-  shown: string;
+  /** What the trigger reads when nothing is ticked: "Everyone", "All products", "Not shipped yet". */
+  all: string;
   options: readonly MultiOption[];
+  /** The ticked values; empty means the "all" word. */
   picked: readonly string[];
   onPick: (values: string[]) => void;
-  /** The first item that resets the filter ("Everyone", "In progress", "All products"), checked while it holds. */
-  reset?: { label: string; active: boolean; onReset: () => void };
 }
 
-export function MultiFilter({ label, shown, options, picked, onPick, reset }: MultiFilterProps) {
-  const toggle = (v: string, on: boolean) => onPick(on ? [...picked.filter((x) => x !== v), v] : picked.filter((x) => x !== v));
+export function MultiFilter({ label, all, options, picked, onPick }: MultiFilterProps) {
   return (
-    <Menu>
-      <MenuTrigger className="bl-multi" aria-label={`${label}: ${shown}`}>
-        <span className="bl-multi-value">{shown}</span>
-        <Icon icon={ChevronDown} size="sm" className="bl-multi-chevron" />
-      </MenuTrigger>
-      <MenuContent aria-label={label} className="bl-multi-menu">
-        {reset && (
-          <>
-            <MenuCheckboxItem checked={reset.active} onCheckedChange={() => reset.onReset()}>
-              {reset.label}
-            </MenuCheckboxItem>
-            <MenuSeparator />
-          </>
-        )}
-        {options.map((o) => (
-          <MenuCheckboxItem key={o.value} checked={picked.includes(o.value)} onCheckedChange={(on) => toggle(o.value, on)}>
-            <span className="bl-multi-item">
-              <span>{o.label}</span>
-              {o.count !== undefined && count(o.count)}
-            </span>
-          </MenuCheckboxItem>
-        ))}
-      </MenuContent>
-    </Menu>
+    <Select
+      multiple
+      inlineLabel={label}
+      displayValue={filterSummary(options, picked, all)}
+      className="bl-filter"
+      options={listedOptions(options, picked).map((o) => ({ value: o.value, label: o.label, badge: o.count === undefined ? undefined : <CountTag n={o.count} /> }))}
+      values={picked}
+      onValuesChange={onPick}
+    />
   );
 }

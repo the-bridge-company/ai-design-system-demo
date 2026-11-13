@@ -1,8 +1,10 @@
-/* Trigger: same box as Input (input.* component tokens). */
+/* Trigger: same box as Input (input.* component tokens). Positioned, so its visually hidden parts stay inside it: in a
+   row that scrolls sideways they would otherwise escape the scroller and widen the page. */
 .trigger {
   --_height: var(--control-height-md);
   --_px: var(--control-padding-x-md);
 
+  position: relative;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -140,6 +142,53 @@
   display: inline-flex;
   flex: none;
   align-items: center;
+}
+
+/* Inline label (filter bars): the name in secondary text, the value in default text, the trigger hugging both. Never
+   narrower than a comfortable target; in a row too narrow it shrinks and the value truncates. */
+.hug {
+  display: inline-flex;
+  width: auto;
+  min-width: var(--size-20);
+  max-width: 100%;
+}
+
+.labelled {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.inlineLabel {
+  flex: none;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.hug .value {
+  flex: 0 1 auto;
+}
+
+/* A filter is a control in a bar, not a form field: keyboard focus is the DS focus ring (outline, offset), as on
+   Button and the view switch beside it. */
+.hug:focus-visible {
+  border-color: var(--input-border);
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: none;
+}
+
+/* A size container ignores its content's width: a hugging trigger would shrink its value to nothing. The trigger
+   hugs, so the badge always has room and stays. */
+.hug .valueWithBadge {
+  container-type: normal;
+}
+
+/* A summary given by displayValue ("Everyone") is a value, not a placeholder: default text. */
+.valueShown[data-placeholder] {
+  color: var(--input-text);
 }
 
 .affix {

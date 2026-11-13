@@ -6,6 +6,8 @@
 
 .lr {
   display: grid;
+  /* One column that never grows past the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   max-width: var(--studio-page-max);
   min-width: 0;
@@ -46,27 +48,18 @@ html:has(.lr) {
   flex: none;
 }
 
-/* --- Filters: a button per filter, its name quiet and its value strong, opening checkboxes ---------------------- */
+/* --- Filters: Studio's one filter pattern (DS Select, inline label, several values; ListFilters MultiFilter) ------ */
 
 .lr-bar-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
+  min-inline-size: 0;
 }
 
-/* A DS secondary Button: its name quiet, its value strong (the Select look of the validated board). */
-.lr-filter {
-  font-weight: var(--font-weight-regular);
-}
+/* Phone: one row that scrolls inside itself with a fade, never the page (list-filters.css .bl-scroll). */
 
-.lr-filter .lr-filter-name {
-  color: var(--color-text-muted);
-}
-
-.lr-filter .lr-filter-value {
-  font-weight: var(--font-weight-medium);
-}
 .lr-none {
   margin: 0;
   color: var(--color-text-muted);

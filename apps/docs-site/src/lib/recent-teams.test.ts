@@ -1,7 +1,7 @@
 // The team chip's recent teams in storage: cleaned on read, remembered only after a real read, removable.
 import { describe, expect, it } from 'vitest';
 import { RECENT_TEAMS_KEY, TEAM_NAMES_KEY, TEAM_ROLES_KEY } from './access-view';
-import { ACCOUNT_TEAM_NAMES_KEY, forgetRecentTeam, forgetTeamEverywhere, knownTeamName, loadRecentTeams, noteAccountTeamNames, noteTeamAccess, teamNameFor, type RecentStore } from './recent-teams';
+import { ACCOUNT_TEAM_NAMES_KEY, forgetRecentTeam, forgetTeamEverywhere, knownTeamName, loadRecentTeams, noteAccountTeamNames, noteTeamAccess, libraryTeamName, teamNameFor, type RecentStore } from './recent-teams';
 
 function memory(initial?: unknown): RecentStore & { data: Map<string, string> } {
   const data = new Map<string, string>();
@@ -92,6 +92,17 @@ describe('recent teams in storage', () => {
 });
 
 describe('names known before a team page reads its settings', () => {
+  it('a Library names a team only by a name it has, never its repository in words', () => {
+    const store = memory();
+    expect(libraryTeamName('primer/primitives', null, store)).toBeNull();
+    expect(libraryTeamName('primer/primitives', {}, store)).toBeNull();
+    expect(libraryTeamName('primer/primitives', { name: ' Primer ' }, store)).toBe('Primer');
+    expect(libraryTeamName('acme-design-demo/bridge-demo-ds', { name: 'Bridge demo ds' }, store)).toBe('Acme Design');
+    expect(libraryTeamName('the-bridge-company/ai-design-system-demo', null, store)).toBe('Bridge DS');
+    store.data.set('bridge.teamNames', JSON.stringify({ 'primer/primitives': 'Primer' }));
+    expect(libraryTeamName('primer/primitives', null, store)).toBe('Primer');
+  });
+
   it("names the sample team by its fixture, never a name kept elsewhere (the Library hero said 'Bridge demo ds')", () => {
     const store = memory();
     store.data.set('bridge.teamNames', JSON.stringify({ 'acme-design-demo/bridge-demo-ds': 'Bridge demo ds' }));

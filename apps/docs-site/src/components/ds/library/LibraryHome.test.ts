@@ -38,6 +38,7 @@ describe('LibraryHome while it reads', () => {
     page.team = { owner: 'globex', repo: 'tokens-kit' };
     const h1 = await hero();
     expect(h1.textContent).not.toMatch(/Tokens kit/i);
+    expect(h1.textContent).toBe('Design system');
     expect(h1.querySelector('[aria-hidden="true"]')).not.toBeNull();
     page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
   });

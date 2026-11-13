@@ -35,24 +35,22 @@ export const Banner = forwardRef<HTMLDivElement, BannerProps>(function Banner(
   ref,
 ) {
   const titleId = `${useId()}-title`;
+  const hasActions = actions != null && actions !== false;
+  const hasDetail = children != null && children !== false;
   return (
     <div
       ref={ref}
       role="region"
       aria-labelledby={titleId}
-      className={cx(styles.banner, styles[appearance], sticky === 'top' && styles.stickyTop, sticky === 'below-header' && styles.stickyHeader, className)}
+      className={cx(styles.banner, styles[appearance], icon && styles.hasIcon, hasActions && styles.hasActions, sticky === 'top' && styles.stickyTop, sticky === 'below-header' && styles.stickyHeader, className)}
       {...rest}
     >
-      <div className={styles.lead}>
-        {icon && <Icon icon={icon} size="md" className={styles.icon} />}
-        <div className={styles.content}>
-          <p id={titleId} className={styles.title}>
-            {title}
-          </p>
-          {children != null && children !== false && <div className={styles.description}>{children}</div>}
-        </div>
-      </div>
-      {actions != null && actions !== false && <div className={styles.actions}>{actions}</div>}
+      {icon && <Icon icon={icon} size="md" className={styles.icon} />}
+      <p id={titleId} className={styles.title}>
+        {title}
+      </p>
+      {hasDetail && <div className={styles.description}>{children}</div>}
+      {hasActions && <div className={styles.actions}>{actions}</div>}
     </div>
   );
 });

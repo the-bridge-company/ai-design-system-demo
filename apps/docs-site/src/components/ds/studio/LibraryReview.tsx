@@ -11,7 +11,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis, Info } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -1768,18 +1768,8 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
             )}
           </div>
           {!v.reviews && (
-            <Banner
-              appearance="harbor"
-              className="lr-banner"
-              title={
-                <span className="lr-banner-title">
-                  <NameFace name={data.lead ?? 'Library owners'} size="xs" />
-                  {banner.strong}
-                </span>
-              }
-              actions={<Link href={links.howItWorks}>How library review works</Link>}
-            >
-              {banner.rest}
+            <Banner appearance="harbor" icon={Info} title={banner.strong}>
+              {banner.rest} <Link href={links.howItWorks}>How library review works</Link>
             </Banner>
           )}
           {data.loading && !shown.length ? (

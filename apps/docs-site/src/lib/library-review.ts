@@ -762,9 +762,10 @@ export function summaryLine(v: Viewer, lead: string | null): string {
   return v.reviews ? 'What enters the library. You decide here; the whole team can look.' : lead ? `What enters the library. ${lead} decides here.` : 'What enters the library. The library owners decide here.';
 }
 
-/** The designer's banner (lr-designer): who decides, and that there is nothing to do meanwhile. */
+/** The designer's note (a harbor DS Banner): who decides, and where the decision shows. Said once; the link to how
+ *  review works closes the text. The decision is neutral ("The decision"), the lead's name may be anyone's. */
 export function designerBanner(lead: string | null): { strong: string; rest: string } {
-  return { strong: lead ? `${lead} decides what the library keeps.` : 'The library owners decide what the library keeps.', rest: 'You will see the decision here and on your exploration. Nothing to do meanwhile.' };
+  return { strong: lead ? `${lead} decides what the library keeps.` : 'The library owners decide what the library keeps.', rest: 'The decision shows here and on your exploration.' };
 }
 
 /** "2 of 6 seen": the One by one progress. */

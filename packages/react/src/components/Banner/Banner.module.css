@@ -4,14 +4,18 @@
   --_text: var(--color-text-on-solid);
   --_muted: var(--color-text-on-solid);
 
+  /* One flex row that wraps. The first line: the icon, the title and the actions, centred together on the tallest of
+     them, so the title sits level with its controls whatever their height. The detail takes its own line under the
+     title (order), indented past the icon. A single-line banner stays centred in its min height (align-content). */
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
+  align-content: center;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--space-0-5) var(--space-3);
   min-width: 0;
   min-height: calc(var(--control-height-md) + var(--space-4));
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  padding: var(--space-4);
   border: var(--border-width-default) solid var(--_border);
   border-radius: var(--radius-container);
   background-color: var(--_bg);
@@ -45,6 +49,12 @@
   --_muted: var(--color-text-muted);
 }
 
+/* With actions the controls come close to the edges, like a toolbar; the text keeps its inset at the start. Without,
+   the text has the same inset on every side. */
+.hasActions {
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+}
+
 .stickyTop,
 .stickyHeader {
   position: sticky;
@@ -59,29 +69,15 @@
   top: var(--layout-header-height);
 }
 
-.lead {
-  display: flex;
-  flex: 1 1 var(--size-60);
-  align-items: flex-start;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
+/* The icon is centred on the first line. */
 .icon {
   flex: none;
-  margin-block-start: calc((var(--typography-ui-line-height) - var(--icon-size-md)) / 2);
   color: var(--_text);
 }
 
-.content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--space-0-5);
-  min-width: 0;
-}
-
 .title {
+  flex: 1 1 var(--size-60);
+  min-width: 0;
   margin: 0;
   font-weight: var(--font-weight-semibold);
   overflow-wrap: anywhere;
@@ -92,7 +88,10 @@
   font-weight: inherit;
 }
 
+/* The detail: its own line after the first (order), in the title's column: indented past the icon, never under it. */
 .description {
+  flex: 1 1 100%;
+  order: 1;
   color: var(--_muted);
   overflow-wrap: anywhere;
 }
@@ -101,21 +100,29 @@
   margin: 0;
 }
 
+.hasIcon .description {
+  padding-inline-start: calc(var(--icon-size-md) + var(--space-3));
+}
+
 .actions {
   display: flex;
   flex: none;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
   margin-inline-start: auto;
 }
 
+/* Phones: the actions go under the text (after the detail) and fill the row. */
 @media (max-width: 640px) {
-  .banner {
+  .hasActions {
     padding-inline-end: var(--space-3);
   }
 
   .actions {
     flex: 1 1 100%;
+    order: 2;
+    margin-block-start: var(--space-2);
   }
 
   .actions > * {

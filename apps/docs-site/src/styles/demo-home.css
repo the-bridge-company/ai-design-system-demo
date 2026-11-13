@@ -55,6 +55,11 @@
   .demo-banner:not([data-open]) > :last-child > * {
     flex: none;
   }
+
+  /* Folded, the one action stays on the title's line: no step down from the text (DS Banner phones layout). */
+  .demo-banner:not([data-open]) > :last-child {
+    margin-block-start: 0;
+  }
 }
 
 /* The demo banner (boards D1, EmptyA2): the board's warm tint, from the warning tones so its

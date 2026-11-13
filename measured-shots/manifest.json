@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-13T01:14:32.859Z",
+  "createdAt": "2026-11-13T01:41:49.447Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -3989,7 +3989,7 @@
         "Appearance=strong": {
           "file": "feedback-banner-preview.png",
           "width": 400,
-          "height": 98,
+          "height": 92,
           "story": "feedback-banner--preview",
           "props": {
             "appearance": "strong",
@@ -3999,7 +3999,7 @@
         "Appearance=neutral": {
           "file": "feedback-banner-neutral.png",
           "width": 400,
-          "height": 100,
+          "height": 94,
           "story": "feedback-banner--neutral",
           "props": {
             "appearance": "neutral",
@@ -4010,12 +4010,11 @@
         "Appearance=harbor": {
           "file": "feedback-banner-harbor.png",
           "width": 400,
-          "height": 108,
+          "height": 96,
           "story": "feedback-banner--harbor",
           "props": {
             "appearance": "harbor",
-            "title": "Ana Ruiz decides what joins the library.",
-            "children": "Leave a comment on any piece; your lead sees it before deciding."
+            "title": "Ana Ruiz decides what the library keeps."
           }
         }
       }
@@ -11490,16 +11489,6 @@
             "columns": 3,
             "gap": "6",
             "disabled": true
-          }
-        },
-        "story=layout-grid--default, gap=8": {
-          "file": "layout-grid-default__gap-8.png",
-          "width": 112,
-          "height": 82,
-          "story": "layout-grid--default",
-          "props": {
-            "columns": 3,
-            "gap": "8"
           }
         },
         "story=layout-grid--default, gap=8, state=hover": {

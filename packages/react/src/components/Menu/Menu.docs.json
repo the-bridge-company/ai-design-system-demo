@@ -106,8 +106,8 @@
   ],
   "anatomy": {
     "positioner": "Positioning layer (layer.popover, above a Dialog)",
-    "popup": "Surface (popup.*)",
-    "item": "Item (menu.item.*, height from menu.item-height density token)",
+    "popup": "Surface (popup.*), an 8px inset (space.2) around the items",
+    "item": "Item (menu.item.*, height from menu.item-height density token, corners concentric with the popup: popup.radius minus the inset)",
     "leading": "Icon or indicator slot",
     "label": "Label",
     "shortcut": "Shortcut hint",
@@ -118,6 +118,6 @@
     "danger": "Danger tone",
     "group": "Group",
     "groupLabel": "Group label",
-    "separator": "Separator"
+    "separator": "Separator, runs to the popup edge with the inset's 8px gap above and below"
   }
 }

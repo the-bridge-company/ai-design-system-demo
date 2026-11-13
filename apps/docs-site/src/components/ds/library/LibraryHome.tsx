@@ -3,7 +3,7 @@
 // (the team's llms.txt) and where the page was read from.
 import { useEffect, useState } from 'react';
 import { Bot, ExternalLink } from 'lucide-react';
-import { Icon } from '@bridge-ds/react';
+import { Icon, Skeleton, VisuallyHidden } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { Drawing } from '../studio/Drawing';
 import { LibraryPage, LibrarySourceNote, usePageTeam } from './LibraryState';
@@ -14,7 +14,7 @@ import { SNAPSHOT_TEMPLATE_URL } from '../../../lib/team-load';
 import { loadTeamLlms, type TeamData } from '../../../scripts/team-data';
 import { libraryFileUrl } from '../../../scripts/library-access-api';
 import '../../../styles/home.css';
-import { teamDisplayName } from '../../../lib/demo';
+import { knownNameBeforeRead } from '../../../lib/recent-teams';
 
 /** Whether the team published an llms.txt (with its snapshot), once known. */
 function useHasLlms(): boolean | null {
@@ -34,9 +34,10 @@ function Agents({ data }: { data: TeamData }) {
   if (has === null) return null;
   return (
     <section className="ltm-agents fg-card" aria-labelledby="ltm-agents-title">
-      <Icon icon={Bot} size="md" className="ltm-agents-icon" />
       <div className="ltm-agents-text">
+        {/* The robot sits in its title's line box: centered on the first line, whatever the text wraps to (D14). */}
         <h2 id="ltm-agents-title" className="ltm-agents-title">
+          <Icon icon={Bot} size="md" className="ltm-agents-icon" />
           For AI agents
         </h2>
         <p className="ltm-muted">
@@ -68,6 +69,21 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
   );
 }
 
+/**
+ * The hero's title while the Library reads: "The Acme Design design system" when the team's name is known before its
+ * settings (lib/recent-teams knownNameBeforeRead), else the name as a skeleton, never the repository in words.
+ */
+function HeroName({ team }: { team: { owner: string; repo: string } | null }) {
+  const name = team ? knownNameBeforeRead(`${team.owner}/${team.repo}`) : null;
+  if (name) return <>{`The ${name} design system`}</>;
+  return (
+    <>
+      <VisuallyHidden>Design system</VisuallyHidden>
+      <Skeleton width="12ch" />
+    </>
+  );
+}
+
 export default function LibraryHome() {
   const team = usePageTeam();
   return (
@@ -81,7 +97,7 @@ export default function LibraryHome() {
             <div className="hm-hero-copy">
               <p className="ltm-eyebrow">Design system library</p>
               <h1 id="hero-title" className="t-display">
-                {team ? `The ${teamDisplayName(`${team.owner}/${team.repo}`)} design system` : 'Design system'}
+                <HeroName team={team} />
               </h1>
               <p className="t-body">Tokens, components and how to use them, published from the code.</p>
             </div>

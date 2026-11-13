@@ -53,9 +53,13 @@
   display: none;
 }
 
-/* Team Home: the design system read (progress, or why it failed) under the home, in the page width. */
+/* Team Home: why the design system read failed, under the home, in the page width. While it reads it holds only a
+   screen reader sentence: no margin, no box, so nothing under the home moves when it goes. */
 .sh-team-ds {
   max-width: var(--studio-page-max);
+}
+
+.sh-team-ds:has(.tp-error) {
   margin-block-start: var(--space-6);
 }
 

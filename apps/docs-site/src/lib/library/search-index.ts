@@ -38,13 +38,12 @@ function tokenHits(model: Pick<RepoModel, 'tokens'>): TokenHit[] {
   return [...roles, ...prims].sort((a, b) => rank(a.tier) - rank(b.tier));
 }
 
-export function librarySearchIndex(model: Pick<RepoModel, 'tokens' | 'components'>, owner: string, repo: string): SearchItem[] {
-  const href = (route: string) => libraryHref(owner, repo, route);
-  const pages: SearchItem[] = libraryTeamPages().map((e) => ({ kind: 'page', title: e.label, href: href(e.route), meta: e.meta, keys: 'library' }));
+/** The team's components and tokens as search results, each linked by `component` and `token`. */
+function designSystemItems(model: Pick<RepoModel, 'tokens' | 'components'>, link: { component: (slug: string) => string; token: (path: string) => string }): SearchItem[] {
   const components: SearchItem[] = teamComponentRows(model).map((c) => ({
     kind: 'component',
     title: c.name,
-    href: href(`components/${encodeURIComponent(c.slug)}/`),
+    href: link.component(c.slug),
     meta: c.summary ?? c.family,
     keys: `${c.slug} ${c.family}`,
   }));
@@ -54,11 +53,29 @@ export function librarySearchIndex(model: Pick<RepoModel, 'tokens' | 'components
     return {
       kind: 'token',
       title: r.path,
-      href: href(`tokens/?t=${encodeURIComponent(r.path)}`),
+      href: link.token(r.path),
       meta: `${TIER_LABEL[r.tier]}, ${values.join(' / ')}`,
       keys: `${r.cssVar} ${values.join(' ')}`,
       ...(sw ? { swatch: sw } : {}),
     };
   });
-  return [...pages, ...components, ...tokens];
+  return [...components, ...tokens];
 }
+
+export function librarySearchIndex(model: Pick<RepoModel, 'tokens' | 'components'>, owner: string, repo: string): SearchItem[] {
+  const href = (route: string) => libraryHref(owner, repo, route);
+  const pages: SearchItem[] = libraryTeamPages().map((e) => ({ kind: 'page', title: e.label, href: href(e.route), meta: e.meta, keys: 'library' }));
+  return [...pages, ...designSystemItems(model, { component: (slug) => href(`components/${encodeURIComponent(slug)}/`), token: (path) => href(`tokens/?t=${encodeURIComponent(path)}`) })];
+}
+
+/**
+ * The header search of a team's Studio (A8): the team's own components and tokens, opened in Studio (the component's
+ * drawer on Components, the token's drawer on Tokens), never Bridge's documentation pages. `studio` turns a Studio path
+ * into the team's address (lib/team-path studioHref).
+ */
+export function studioSearchIndex(model: Pick<RepoModel, 'tokens' | 'components'>, studio: (path: string) => string): SearchItem[] {
+  return designSystemItems(model, { component: (slug) => studio(`components/?c=${encodeURIComponent(slug)}`), token: (path) => studio(`tokens/?t=${encodeURIComponent(path)}`) });
+}
+
+/** Bridge's own search index, kept to what a Studio searches: components and tokens, no documentation pages. */
+export const studioOnly = (items: readonly SearchItem[]): SearchItem[] => items.filter((i) => i.kind !== 'page');

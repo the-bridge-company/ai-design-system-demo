@@ -48,6 +48,19 @@
   white-space: nowrap;
 }
 
+/* A badge still being read is the box of the DS Badge it becomes (size sm), so the name above it never moves. */
+.tc-badge[data-pending] {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-5);
+}
+
+/* The sample team's visitor plays a person whose role the account row says: no badge on the chip (TeamChip.tsx
+   playsSample), the server-rendered pending one included, so the name sits where it stays from first paint. */
+:root[data-sample-team] .rail-chip .tc-badge[data-pending] {
+  display: none;
+}
+
 /* The chip menu floats clearly above the nav under it: the modal step of the elevation ramp and a small gap. */
 .tc-menu {
   --popup-shadow: var(--elevation-modal);
@@ -58,13 +71,8 @@
   flex: none;
 }
 
-/* What to do here: inviting collaborators is the main action, in the link color; creating another team is rarer and
+/* What to do here: Invite collaborators reads like every other item (ink, A11); creating another team is rarer and
    reads quieter. */
-.tc-menu .tc-invite {
-  color: var(--color-text-link);
-  font-weight: var(--font-weight-medium);
-}
-
 .tc-menu .tc-create {
   color: var(--color-text-muted);
 }
@@ -162,8 +170,16 @@
   background-color: var(--color-surface-selected);
 }
 
-.tc-team > :first-child {
-  width: auto;
+/* One text column for the whole menu: every item's leading slot (the DS MenuItem's first child) is the width of a team's
+   mark (Avatar xs, size-5), the 16px icons centred in it, so a team's name and "Invite collaborators" start on one edge.
+   The demo's mark takes the avatar's size here. */
+.tc-menu [role="menuitem"] > :first-child {
+  width: var(--size-5);
+}
+
+.tc-menu .tc-mark {
+  width: var(--size-5);
+  height: var(--size-5);
 }
 
 /* --- Access gate -------------------------------------------------------------------------------------------- */

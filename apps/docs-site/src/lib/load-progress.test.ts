@@ -8,7 +8,8 @@ describe('teamProgressView', () => {
   it('starts indeterminate while it finds the default branch head', () => {
     const v = teamProgressView(TEAM_PROGRESS_START);
     expect(v).toMatchObject({ status: 'Finding your design system', value: null, done: false });
-    expect(v.steps).toEqual([{ label: 'Finding your design system', state: 'current' }]);
+    // No steps yet: a text-free skeleton, the status said once for screen readers.
+    expect(v.steps).toEqual([]);
   });
 
   it('fills the bar from real counts and names the phase in hand', () => {

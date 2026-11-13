@@ -26,6 +26,7 @@ import type { IconName } from '../brand/icons';
 import { PRIVACY_PAGE } from '../lib/account';
 import { siteRepo, siteRepoJson } from '../lib/config';
 import { SAMPLE_REPO, showcaseRedirect } from '../lib/demo';
+import { DemoBanner } from '../components/ds/studio/DemoBanner';
 import TeamChip from '../components/ds/studio/TeamChip';
 import ResumeAction from '../components/ds/studio/ResumeAction';
 import ProductsNav, { navProducts } from '../components/ds/studio/ProductsNav';
@@ -221,6 +222,9 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
           // Any last check paints at once, even for a renewed token: scripts/maintainer.ts checks it again.
           // The sample team (lib/demo.ts SAMPLE_REPO) reads as its visitor for everyone: no GitHub sign-in there.
           var sample = /^\/(studio|library)\/(~\/)?acme-design-demo\/bridge-demo-ds(\/|$)/i.test(location.pathname);
+          // The sample team always shows its banner (scripts/demo-gate.ts paints it after load): its strip holds the
+          // banner's height from first paint, so the page under it never moves when it comes (A7).
+          if (sample) document.documentElement.setAttribute('data-sample-team', '');
           if (tk && m && !sample) {
             document.documentElement.setAttribute('data-signed-in', '');
             if (m.write) document.documentElement.setAttribute('data-maintainer', '');
@@ -269,7 +273,13 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     </header>
     {/* The demo, for a visitor who cannot change it: the demo banner (scripts/demo-gate.ts mounts
         components/ds/studio/DemoBanner.tsx here once the session knows who is visiting), Studio and a team Library. */}
-    {((isStudio && !noRepo) || library) && <div class="demo-strip" data-demo-strip hidden />}
+    {((isStudio && !noRepo) || library) && (
+      // The sample team's banner as built (no See it as yet): styles/site.css shows it from first paint on the sample
+      // team only; scripts/demo-gate.ts renders the live one in its place.
+      <div class="demo-strip" data-demo-strip hidden>
+        <DemoBanner repo={SAMPLE_REPO} back={null} />
+      </div>
+    )}
 
     {bare ? (
       <main id="main" tabindex="-1" class="bare-main">
@@ -367,10 +377,14 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                 <GitHubAccount workspace={workspace} />
               </>
             ) : (
+              <>
+              {/* Signed in with a Bridge account: the same account row as the Studio rail (A12); nothing otherwise. */}
+              <AccountMenu client:only="react" />
               <div class="rail-team">
                 <p>{library ? 'Maintaining this design system? Edit its tokens and review changes.' : 'Maintaining Bridge? Edit tokens and review changes.'}</p>
                 <ButtonLink variant="secondary" href={STUDIO_HOME}>Open Studio</ButtonLink>
               </div>
+              </>
             )
           }
         </div>
@@ -392,7 +406,26 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
           )
         }
         {
-          showToc ? (
+          // A team's Library reads its content in the browser: the content box holds at least one screen (less the
+          // header and main's top padding), so the footer under it starts below the fold and never moves into view
+          // as the content arrives (A3). Bridge's own Library is built with its content: no box.
+          library ? (
+            <div class="page-fill" data-page-fill>
+              {showToc ? (
+                <div class="page-grid">
+                  <div class="page-body">
+                    <slot />
+                  </div>
+                  <aside class="page-toc" aria-label="On this page" data-auto-toc hidden>
+                    <p class="page-toc-title">On this page</p>
+                    <ul></ul>
+                  </aside>
+                </div>
+              ) : (
+                <slot />
+              )}
+            </div>
+          ) : showToc ? (
             <div class="page-grid">
               <div class="page-body">
                 <slot />
@@ -465,7 +498,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     </div>
     )}
 
-    <ScriptDialog id="palette" title="Search" size="lg" closeLabel="Close search">
+    <ScriptDialog id="palette" title="Search" size="lg" closeLabel="Close search" class="palette-dialog">
       <div class="palette-box" role="search">
         <SearchPalette client:idle />
       </div>

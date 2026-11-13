@@ -69,7 +69,8 @@ describe('TeamChip recent teams', () => {
   it('cleans placeholders out of the list and does not remember the team before its access is known', async () => {
     localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['owner/design', 'globex/tokens', 'owner/repo']));
     const { menu } = await openMenu();
-    expect(within(menu).getByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
+    // The recent teams come from an effect that loads modules: on a cold first test it can land after the menu opens.
+    expect(await within(menu).findByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
     expect(within(menu).queryByText('Design')).toBeNull();
     expect(stored()).toEqual(['globex/tokens']);
   });
@@ -122,6 +123,42 @@ describe('TeamChip recent teams', () => {
 });
 
 describe('TeamChip names the team', () => {
+  it("A1: the sample team reads Acme Design from the first paint, never its repository in words", async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    await waitFor(() => expect(container.querySelector('.tc-name')!.textContent).toBe('Acme Design'));
+    expect(container.textContent).not.toMatch(/Bridge demo ds/i);
+  });
+
+  it('A1: a team not known in this browser waits under a fixed-width skeleton until its settings name it', async () => {
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    await waitFor(() => expect(page.listeners.length).toBeGreaterThan(0));
+    const pending = container.querySelector<HTMLElement>('.tc-name[data-pending]')!;
+    expect(pending).not.toBeNull();
+    // No words painted (the repository in words would flip to the real name a second later), only for screen readers.
+    expect(pending.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    expect(container.querySelector('.tc-name:not([data-pending])')).toBeNull();
+    page.site = { name: 'Acme Studio' };
+    act(() => document.dispatchEvent(new CustomEvent('bridge:team-model')));
+    await waitFor(() => expect(container.querySelector('.tc-name')!.textContent).toBe('Acme Studio'));
+  });
+
+  it("A1: the sample team's visitor sees the name alone, no badge that comes and goes (the account row says the role)", async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.pending = true;
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    expect(await screen.findByRole('button', { name: 'Acme Design, team menu' })).toBeInTheDocument();
+    expect(container.querySelector('.tc-badge')).toBeNull();
+  });
+
+  it("A1: once the session answered, the sample team's chip still shows no badge (never a Guest that came late)", async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    expect(await screen.findByRole('button', { name: 'Acme Design, team menu' })).toBeInTheDocument();
+    expect(container.querySelector('.tc-badge')).toBeNull();
+    expect(screen.queryByText('Guest')).toBeNull();
+  });
+
   it('while the session has not answered, says Checking, never Guest', async () => {
     page.pending = true;
     page.site = { name: 'Acme Studio' };

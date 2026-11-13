@@ -71,7 +71,7 @@ describe('qualityVerdict', () => {
 
   it('reads unused tokens against the tokens designers pick from, never the primitives', () => {
     const many = { tokens: { total: 119, unused: 40 }, primitives: { total: 267, unused: 200 } };
-    expect(healthGaps({ tokens: many })).toEqual([{ kind: 'tokens', text: '40 of 119 tokens are not in use' }]);
+    expect(healthGaps({ tokens: many })).toEqual([{ kind: 'tokens', text: '40 of 119 semantic tokens are not in use' }]);
     const v = qualityVerdict({ contrastFail: 0, findings: [pass], tokens: many });
     expect(v).toMatchObject({ mood: 'haze', title: 'Nothing blocks the library', action: { label: 'See unused tokens', href: '#ql-tokens' } });
     const few = { tokens: { total: 119, unused: 14 }, primitives: { total: 267, unused: 86 } };
@@ -189,11 +189,11 @@ describe('product words', () => {
   it('says unused tokens calmly', () => {
     // Each kind against its own total, so "See unused tokens" opens a list with the same first number.
     const u = (t: number, tu: number, p: number, pu: number) => ({ tokens: { total: t, unused: tu }, primitives: { total: p, unused: pu } });
-    expect(unusedLine(u(119, 14, 267, 86))).toBe('14 of 119 tokens and 86 of 267 primitives are not in use yet');
+    expect(unusedLine(u(119, 14, 267, 86))).toBe('14 of 119 semantic tokens and 86 of 267 primitives are not in use yet');
     expect(unusedCount(u(119, 14, 267, 86))).toBe(100);
-    expect(unusedLine(u(119, 1, 267, 0))).toBe('1 of 119 tokens is not in use yet');
+    expect(unusedLine(u(119, 1, 267, 0))).toBe('1 of 119 semantic tokens is not in use yet');
     expect(unusedLine(u(119, 0, 267, 3))).toBe('3 of 267 primitives are not in use yet');
-    expect(unusedLine(u(0, 2, 0, 0))).toBe('2 tokens are not in use yet');
+    expect(unusedLine(u(0, 2, 0, 0))).toBe('2 semantic tokens are not in use yet');
     expect(unusedLine(u(119, 0, 267, 0))).toBe('Every token is in use');
   });
 });

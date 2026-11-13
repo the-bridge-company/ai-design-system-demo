@@ -8,7 +8,7 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import type { ProductConfig } from '@bridge-ds/core';
-import { navProducts, ProductsNavView, type NavPage } from './ProductsNav';
+import { navProducts, PRODUCTS_PENDING_ROWS, productRowCount, productRowsKey, ProductsNavView, type NavPage } from './ProductsNav';
 
 const PAGES: NavPage[] = [
   { href: '/studio/components/', label: 'Components', icon: 'diamonds' },
@@ -68,5 +68,29 @@ describe('ProductsNavView', () => {
     expect(within(group('Products')).getAllByRole('link')).toHaveLength(6);
     render(createElement(ProductsNavView, { products: navProducts(many), current: null, path: '/studio/products/', pages: PAGES }));
     expect(screen.getAllByRole('link', { name: 'All products, 15' }).at(-1)!.getAttribute('aria-current')).toBe('page');
+  });
+});
+
+describe('ProductsNavView before the team is read (A2)', () => {
+  it('holds the Products group in place with skeleton rows of a nav row, so Design system never moves', () => {
+    const { container } = nav({ products: [], current: null, path: '/studio/', pages: PAGES, pendingRows: 3 });
+    const products = container.querySelector<HTMLElement>('[data-products-nav]')!;
+    expect(products.hasAttribute('data-pending')).toBe(true);
+    expect(products.getAttribute('aria-busy')).toBe('true');
+    // Each skeleton row is the nav row's box (.rail-skel: min-height size-9, as .rail-section a), with no words.
+    const rows = products.querySelectorAll('li.rail-skel');
+    expect(rows).toHaveLength(3);
+    rows.forEach((r) => expect(r.textContent).toBe(''));
+    // Products sits above Design system from the first paint.
+    const groups = [...container.querySelectorAll('.rail-section')].map((g) => g.className);
+    expect(groups[0]).toMatch(/rail-products/);
+    expect(groups[1]).toMatch(/rail-design-system/);
+  });
+
+  it('remembers the rows it drew, so the next first paint reserves exactly as many', () => {
+    expect(productRowCount({ shown: [1, 2, 3, 4, 5], all: true })).toBe(6);
+    expect(productRowCount({ shown: [1, 2], all: false })).toBe(2);
+    expect(productRowsKey('Acme/DS')).toBe('bridge.nav.product-rows:acme/ds');
+    expect(PRODUCTS_PENDING_ROWS).toBeGreaterThan(0);
   });
 });

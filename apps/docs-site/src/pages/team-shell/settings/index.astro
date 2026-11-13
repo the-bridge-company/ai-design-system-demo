@@ -27,6 +27,7 @@ import AppearanceSetting from '../../../components/ds/studio/AppearanceSetting';
 import AiToolsSetting from '../../../components/ds/studio/AiToolsSetting';
 import FaceSetting from '../../../components/ds/studio/FaceSetting';
 import TeamNameSetting from '../../../components/ds/studio/TeamNameSetting';
+import { MembersSkeleton, SAMPLE_MEMBER_ROWS, TeamNameSkeleton } from '../../../components/ds/studio/SettingsSkeletons';
 import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
@@ -43,10 +44,16 @@ import { groupId, tabId } from '../../../lib/settings-sections';
     <section class="ts-band" id="general" aria-labelledby="ts-general">
       <h2 id="ts-general" class="ts-h">{TEAM_NAME_WORDS.generalTitle}</h2>
       <p class="ts-intro">{TEAM_NAME_WORDS.generalIntro}</p>
-      <TeamNameSetting client:only="react" />
+      <TeamNameSetting client:only="react">
+        {/* Painted by the build until the island mounts: the row in its final shape (SettingsSkeletons.tsx). */}
+        <TeamNameSkeleton slot="fallback" />
+      </TeamNameSetting>
     </section>
     <section class="ts-band" id="team" aria-labelledby="set-members">
-      <MembersSection client:only="react" />
+      <MembersSection client:only="react">
+        {/* The members band in its final shape, one row per person (the sample team's five), until the island reads. */}
+        <MembersSkeleton slot="fallback" rows={SAMPLE_MEMBER_ROWS} fallback />
+      </MembersSection>
     </section>
     <TeamProducts client:only="react" />
     <section class="ts-band" id="library-access" aria-labelledby="set-library-access">

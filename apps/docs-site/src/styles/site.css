@@ -1129,6 +1129,13 @@ tr:target {
 
 .palette-box {
   display: grid;
+  /* One column that never grows past the dialog: a long result title ellipsizes instead of widening the field and
+     the list beyond the palette's edge (390px, gate #1164). */
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.palette-results {
+  min-width: 0;
 }
 
 /* The palette keeps one top edge while results come and go (A8): anchored under the header, never re-centered as the
@@ -1141,6 +1148,19 @@ tr:target {
 
 .palette-results [role="listbox"] {
   min-height: min(var(--size-80), 40vh);
+  /* The scrollbar's room is kept whether the list scrolls or not, so rows never shift sideways as results come. */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* A result's title and its line stay on one line each and end with an ellipsis when long. */
+.palette-results [role="option"] > span:nth-child(2) {
+  min-width: 0;
+}
+
+.palette-results [role="option"] > span:nth-child(2) > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* A token's name is code: Plex Mono, like every token name on the site. */

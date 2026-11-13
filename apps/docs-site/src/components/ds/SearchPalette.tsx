@@ -109,6 +109,10 @@ function toOption(item: SearchItem, i: number, grouped: boolean): ComboboxOption
   };
 }
 
+/** What the footer says while a Studio reads explorations, reviews and build requests. */
+export const READING = 'Reading explorations and reviews';
+export const READING_MORE = 'reading more';
+
 /** Studio names its main kinds (as its header button does, layouts/Layout.astro); the Library its pages too. */
 export const placeholderFor = (space: string | undefined) => (space === 'studio' ? 'Search explorations, components, tokens' : 'Search tokens, components, pages, or paste a hex');
 
@@ -135,9 +139,12 @@ export default function SearchPalette() {
       setGrouped(isStudio());
       void loadSearchIndex().then(setData);
       unfollow?.();
+      // Shown once, when every read is in: the late groups land together, with their final words, so rows never
+      // move twice (gate #1164).
       unfollow = followLiveIndex((items, done) => {
+        if (!done) return;
         setExtra(items);
-        setLiveRead(done);
+        setLiveRead(true);
       });
       requestAnimationFrame(() => input.current?.focus());
     };
@@ -150,11 +157,15 @@ export default function SearchPalette() {
     };
   }, []);
 
-  // The count in the dialog's footer (a polite live region there).
+  // The count in the dialog's footer (a polite live region there). While a Studio still reads its team's work, the
+  // footer says so: outside the list, so the list never moves when the reads end.
+  const reading = grouped && data !== null && !liveRead;
   useEffect(() => {
     const count = document.getElementById('palette-count');
-    if (count) count.textContent = query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : '';
-  }, [query, results.length]);
+    if (!count) return;
+    const n = query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : '';
+    count.textContent = reading ? (n ? `${n}, ${READING_MORE}` : READING) : n;
+  }, [query, results.length, reading]);
 
   const open = (value: string | string[] | null) => {
     const item = typeof value === 'string' ? results[Number(value.split(':')[0])] : undefined;
@@ -176,9 +187,9 @@ export default function SearchPalette() {
       inputValue={query}
       onInputValueChange={setQuery}
       onValueChange={open}
-      loading={data === null || !liveRead}
-      loadingMessage={data === null ? 'Loading the search index' : 'Reading explorations, reviews and build requests'}
-      emptyMessage={query.trim() ? `Nothing matches "${query.trim()}". ${grouped ? 'Try an exploration, a component or a token path like color.action.' : 'Try a token path like color.action, or a hex.'}` : 'Type to search.'}
+      loading={data === null}
+      loadingMessage="Loading the search index"
+      emptyMessage={reading && query.trim() ? `Nothing yet for "${query.trim()}". ${READING}.` : query.trim() ? `Nothing matches "${query.trim()}". ${grouped ? 'Try an exploration, a component or a token path like color.action.' : 'Try a token path like color.action, or a hex.'}` : 'Type to search.'}
       prefix={<Icon icon={Search} size="sm" />}
       suffix={<Kbd keys="Esc" size="sm" />}
     />

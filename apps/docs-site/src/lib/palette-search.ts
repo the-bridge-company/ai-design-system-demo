@@ -43,6 +43,25 @@ export function rankResults(query: string, all: readonly SearchItem[]): SearchIt
     .map((x) => x.item);
 }
 
+const words = (text: string) => text.toLowerCase().split(/[^a-z0-9#]+/).filter(Boolean);
+
+/**
+ * A close match, for kinds whose fuzzy matches are noise (tokens and pages, gate #1164): the query as one run of
+ * characters ("color.action", "#0b3a", "settings"), or each of its words starting a word of the text ("acme crm",
+ * "rev rules"). Never letters scattered across a long path.
+ */
+export function closeMatch(query: string, text: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  if (text.toLowerCase().includes(q)) return true;
+  const have = words(text);
+  const want = words(q);
+  return want.length > 0 && want.every((w) => have.some((h) => h.startsWith(w)));
+}
+
+/** Kinds matched closely (closeMatch); the others keep the fuzzy match, which forgives a typo in a name. */
+const CLOSE_KINDS: ReadonlySet<SearchItem['kind']> = new Set(['token', 'page']);
+
 /** How many results of a kind a grouped list shows: with no query, a few of each; else enough to scan. */
 export const GROUP_FIRST = 4;
 export const GROUP_MAX = 8;
@@ -58,7 +77,10 @@ export function rankGrouped(query: string, all: readonly SearchItem[], order: re
     return i < 0 ? order.length : i;
   };
   const scored = q
-    ? all.map((item) => ({ item, s: Math.max(fuzzy(q, item.title), fuzzy(q, item.keys ?? '') - 40) })).filter((x) => x.s >= 0)
+    ? all
+        .filter((item) => !CLOSE_KINDS.has(item.kind) || closeMatch(q, item.title) || closeMatch(q, item.keys ?? ''))
+        .map((item) => ({ item, s: Math.max(fuzzy(q, item.title), fuzzy(q, item.keys ?? '') - 40) }))
+        .filter((x) => x.s >= 0)
     : all.filter((x) => x.kind !== 'token').map((item) => ({ item, s: 0 }));
   const sorted = scored.map((x, i) => ({ ...x, i })).sort((a, b) => rank(a.item.kind) - rank(b.item.kind) || b.s - a.s || a.i - b.i);
   const cap = q ? GROUP_MAX : GROUP_FIRST;

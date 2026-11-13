@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BuildRequestView, ProductConfig } from '@bridge-ds/core';
 import { explorationItems, explorationStatusWord, explorationPersonName, SETTINGS_SEARCH_BANDS, GROUP_LABEL, pieceItems, pieceStateWords, productItems, requestItems, STUDIO_KIND_ORDER, STUDIO_SEARCH_PAGES, studioPageItems } from './studio-search';
-import { rankGrouped, GROUP_FIRST } from './palette-search';
+import { closeMatch, rankGrouped, GROUP_FIRST } from './palette-search';
 import { studioNav } from './nav';
 import { readFileSync } from 'node:fs';
 import { explorationState } from './exploration-state';
@@ -219,5 +219,26 @@ describe('rankGrouped', () => {
     expect(r.filter((i) => i.kind === 'exploration')).toHaveLength(GROUP_FIRST);
     expect(r.map((i) => i.kind)).not.toContain('token');
     expect(Object.keys(GROUP_LABEL)).toHaveLength(STUDIO_KIND_ORDER.length);
+  });
+});
+
+describe('closeMatch (tokens and pages)', () => {
+  it('keeps token paths, hex and word starts, never scattered letters', () => {
+    expect(closeMatch('color.action', 'color.action.primary.bg')).toBe(true);
+    expect(closeMatch('#0b3a', '--color-action-primary-bg #0B3A5B')).toBe(true);
+    expect(closeMatch('rev rules', 'Review rules')).toBe(true);
+    expect(closeMatch('acme crm', 'font.family.mono')).toBe(false);
+    expect(closeMatch('avatar', 'font.family.sans')).toBe(false);
+    expect(closeMatch('sofia', 'build requests component change requests figma push developers in progress shipped')).toBe(false);
+  });
+
+  it('drops noisy tokens and pages but keeps fuzzy names for the rest', () => {
+    const all: SearchItem[] = [
+      { kind: 'token', title: 'font.family.mono', href: '/t1', keys: '--font-family-mono IBM Plex Mono' },
+      { kind: 'page', title: 'Being built', href: '/p', keys: 'build requests developers shipped' },
+      { kind: 'exploration', title: 'Acme CRM contacts', href: '/x' },
+    ];
+    expect(rankGrouped('acme crm', all, STUDIO_KIND_ORDER).map((i) => i.href)).toEqual(['/x']);
+    expect(rankGrouped('mono', all, STUDIO_KIND_ORDER).map((i) => i.href)).toEqual(['/t1']);
   });
 });

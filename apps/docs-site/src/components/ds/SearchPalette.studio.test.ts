@@ -41,7 +41,7 @@ describe('SearchPalette in a Studio', () => {
     delete document.documentElement.dataset.space;
   });
 
-  it('lists what the page holds at once, says it reads the rest, then groups explorations first', async () => {
+  it('lists what the page holds at once, says in the footer it reads the rest, then adds the late groups once', async () => {
     const dialog = document.createElement('div');
     dialog.id = 'palette';
     document.body.append(dialog);
@@ -55,17 +55,20 @@ describe('SearchPalette in a Studio', () => {
     const input = screen.getByRole('combobox', { name: 'Search' });
     expect(input).toHaveAttribute('placeholder', 'Search explorations, components, tokens');
     await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
-    expect(screen.getByText('Reading explorations, reviews and build requests')).toBeInTheDocument();
+    // The reading line sits in the footer, never in the list: the list does not move when it goes.
+    await waitFor(() => expect(count.textContent).toBe('Reading explorations and reviews'));
+    expect(dialog.querySelector('[role="listbox"]')?.textContent).not.toContain('Reading');
     await act(async () => {
-      // First the explorations without their status (the reviews are read next), then with it.
+      // A first paint (no status yet): the list waits for the reads to end, and adds them once.
       live.paint([{ kind: 'exploration', title: 'Avatar sizes', href: '/studio/t/r/explorations/?exploration=3', meta: 'Sofia' } satisfies SearchItem]);
     });
-    expect(screen.getByText('Reading explorations, reviews and build requests')).toBeInTheDocument();
+    expect(screen.getAllByRole('option')).toHaveLength(2);
     await act(async () => {
       live.paint([{ kind: 'exploration', title: 'Avatar sizes', href: '/studio/t/r/explorations/?exploration=3', meta: 'In review · Sofia' } satisfies SearchItem]);
       live.finish();
     });
-    await waitFor(() => expect(screen.queryByText('Reading explorations, reviews and build requests')).not.toBeInTheDocument(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(3));
+    expect(count.textContent).toBe('');
     await userEvent.type(input, 'avatar');
     await waitFor(() => expect(count.textContent).toBe('3 results'));
     await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([expect.stringContaining('Avatar sizes'), expect.stringContaining('Avatar'), expect.stringContaining('color.avatar.bg')]));

@@ -95,7 +95,7 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
         )}
         <div className="sh-card-body">
           <span className="sh-card-head">
-            <Link href={f.href} variant="subtle" className="t-body sh-card-title" data-card-primary>
+            <Link href={f.href} variant="subtle" className="t-body sh-card-title" title={f.name} data-card-primary>
               <span className="sh-strong">{f.name}</span>
             </Link>
           </span>

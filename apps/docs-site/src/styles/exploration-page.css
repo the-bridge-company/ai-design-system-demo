@@ -1413,28 +1413,28 @@
   text-align: center;
 }
 
-/* Your turn: the one Harbor zone. Eyebrow and question tight together as one heading (4px apart), the drawing as a
-   strip above them (C2); everything else on one left edge; an open question as an avatar quote with a thin rule; the
+/* Your turn: the one Harbor zone. Eyebrow and question tight together as one heading (4px apart), the drawing at the
+   top of their row; everything else on one left edge; an open question as an avatar quote with a thin rule; the
    buttons last, on one row. The zone lives in the side column (about 330px of text), so the question takes the card
-   heading size (h3, 21px) in the display face, over the full width: one or two lines. */
+   heading size (h3, 21px) in the display face: one or two lines, where h2 (30px) beside a 92px drawing wrapped to
+   three ("Dana decides / what the / library keeps"). */
 .xp-turn {
   display: grid;
   row-gap: var(--space-4);
   padding: var(--space-6);
 }
 
-/* The drawing as a strip above the heading, on the card's text edge (C2), the heading under it over the full width. */
 .xp-turn-head {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-3);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
 }
 
 .xp-turn-head-text {
   display: grid;
+  flex: 1;
   gap: var(--space-1);
   min-width: 0;
-  justify-self: stretch;
 }
 
 .xp-turn-head-text > * {
@@ -1457,11 +1457,12 @@
   text-wrap: pretty;
 }
 
-/* The drawing 80px tall, cropped to its scene (TurnZone TURN_ART_CROP), its width from the scene, never wider than
-   the card's text. */
+/* The drawing at 80px, its top on the eyebrow's top: wide enough to read, narrow enough to leave the question about
+   250px (two lines at most). */
 .xp-turn-art {
-  max-width: 100%;
-  height: var(--size-20);
+  flex: none;
+  width: var(--size-20);
+  height: auto;
 }
 
 .xp-turn-body {

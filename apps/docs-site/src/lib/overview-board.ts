@@ -360,7 +360,7 @@ export function healthFigures(input: HealthInput): HealthFigure[] {
     });
   }
   const left: string[] = [];
-  if (guidance.drafted) left.push(`${guidance.drafted} drafted by Claude to review`);
+  if (guidance.drafted) left.push(`${guidance.drafted} drafted by Claude AI to review`);
   if (guidance.missing) left.push(`${guidance.missing} not written yet`);
   out.push({
     id: 'guidance',

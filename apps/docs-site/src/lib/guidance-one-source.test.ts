@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { teamGuidance } from './team-facts';
 import { guidanceNeed } from './home-model';
-import { pieceOfGuidance, passes, yourWaitingPieces } from './library-review';
+import { designerWords, pieceOfGuidance, passes, yourWaitingPieces } from './library-review';
 import { libraryQueueCount } from './library-queue';
 
 const model = {
@@ -53,5 +53,10 @@ describe('usage guidance drafts: one source for Home and Library review', () => 
     // It counts in the lead's queue (the badge and Home's Library review number), never in a designer's own pieces.
     expect(libraryQueueCount([piece], { reviews: true, name: 'Dana', leadsPublishTier1: true })).toBe(1);
     expect(yourWaitingPieces([piece], { name: 'Leo' })).toBe(0);
+  });
+
+  it('names the agent Claude AI, even in an older change title', () => {
+    expect(designerWords('Slider: usage guidance drafted by Claude')).toBe('Slider: usage guidance drafted by Claude AI');
+    expect(designerWords('Slider: usage guidance drafted by Claude AI')).toBe('Slider: usage guidance drafted by Claude AI');
   });
 });

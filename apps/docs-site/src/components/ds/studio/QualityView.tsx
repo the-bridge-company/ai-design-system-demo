@@ -18,7 +18,7 @@ import type { StatusGroup } from '../../../lib/changes';
 import { MEANING_TONE, statusTagClass } from '../../../lib/status-tag';
 
 // The one state-to-tone map (lib/status-tag MEANING_TONE): a wait is grey on Quality too, as on Components and every
-// list ("Draft by Claude, needs review" was ochre here and grey there); only a late wait turns amber.
+// list ("Draft by Claude AI, needs review" was ochre here and grey there); only a late wait turns amber.
 const TONE: Record<StatusGroup, 'danger' | 'warning' | 'success' | 'neutral'> = { blocked: MEANING_TONE.blocked, waiting: MEANING_TONE.waiting, ready: MEANING_TONE.done, neutral: MEANING_TONE.over };
 
 /** Links that leave Bridge (GitHub) open in a new tab; Studio links stay. */

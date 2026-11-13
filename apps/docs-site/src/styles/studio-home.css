@@ -515,8 +515,7 @@
   border-radius: 0;
 }
 
-/* Title on up to two lines, then an ellipsis (the whole title on hover and in the link's name, owner decision
-   2026-11-12: one line cut "Toast: an undo action after d..." mid-meaning). Then the footer, the state tag and who has
+/* The whole title (never cut mid-word). Then the footer, the state tag and who has
    it and when, pushed to the card's bottom: cards of a row share one height (the grid stretches them), so their tags
    and names line up whether a title takes one line or two. */
 .sh-card-body {
@@ -527,18 +526,15 @@
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
-/* Scoped under the card's head so the DS Link's own display never wins: a title wraps to two lines, then an ellipsis. */
+/* The whole title, wrapping on as many lines as it needs (owner gate 2026-11-13: never cut mid-word, "for profile
+   an..."). Scoped under the card's head so the DS Link's own display and nowrap never win. */
 .sh-card-head > .sh-card-title {
-  display: -webkit-box;
+  display: block;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
   line-height: var(--typography-h3-line-height);
   overflow-wrap: break-word;
   white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
 }
 
 /* The footer: the tag, then the person and when on one line, at the bottom of the card. */

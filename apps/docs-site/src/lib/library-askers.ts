@@ -155,8 +155,8 @@ export function askedColumns(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' 
 /** The From column's words for a piece no exploration asked for (a lead's own change). */
 export const ASKED_DIRECTLY = 'Asked directly';
 
-/** What a usage guidance draft says where others say who asked: Home's row says the same (home-model guidanceNeed). */
-export const DRAFTED_FROM_CODE = 'Drafted it from the code';
+/** Where a usage guidance draft comes from, short enough for the queue's line ("Claude AI · From the code"). */
+export const DRAFTED_FROM_CODE = 'From the code';
 
 /** The From words of a piece no exploration asked for: Claude AI's guidance draft says where it comes from. */
 export const directWords = (p: Pick<ReviewPiece, 'source'>): string => (p.source.kind === 'docs' ? DRAFTED_FROM_CODE : ASKED_DIRECTLY);

@@ -219,6 +219,8 @@ export function designerWords(title: string): string {
   t = t.replace(new RegExp(path.source, 'gi'), (m) => tokenPathWords(m));
   // A prop that announces something: what the person reads, not the prop's name.
   t = t.replace(/\bloadingLabel announces the action while it runs\b/, 'loading text says what is happening');
+  // The agent has one name everywhere: "drafted by Claude" (an older change's title) reads "drafted by Claude AI".
+  t = t.replace(/\bby Claude\b(?! AI)/g, 'by Claude AI');
   t = t.replace(/\b([a-z]+)([A-Z][a-zA-Z]*)\b/g, (_m, a: string, b: string) => `${a} ${b.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}`);
   return t.replace(/\s+/g, ' ').trim();
 }

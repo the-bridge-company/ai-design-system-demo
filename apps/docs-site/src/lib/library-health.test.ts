@@ -30,7 +30,7 @@ describe('healthFigures', () => {
     expect(healthy().map((x) => [x.value, x.label, x.detail, x.href])).toEqual([
       ['0 failing', 'contrast checks', '296 checked in 2 brands, light and dark.', '#ql-contrast'],
       ['94.5%', 'of components come from the design system', 'Up from 7.6% before Bridge, across 2 products.', '#ql-adoption'],
-      ['46 of 48', 'components have reviewed guidance', '1 drafted by Claude to review, 1 not written yet.', '#ql-guidance'],
+      ['46 of 48', 'components have reviewed guidance', '1 drafted by Claude AI to review, 1 not written yet.', '#ql-guidance'],
     ]);
   });
 
@@ -38,7 +38,7 @@ describe('healthFigures', () => {
     expect(healthy().map((x) => x.sentence)).toEqual([
       'All 296 contrast checks pass in 2 brands, light and dark.',
       '94.5% of components in 2 products come from the design system, up from 7.6% before Bridge.',
-      '46 of 48 components have reviewed usage guidance: 1 drafted by Claude to review, 1 not written yet.',
+      '46 of 48 components have reviewed usage guidance: 1 drafted by Claude AI to review, 1 not written yet.',
     ]);
   });
 
@@ -71,7 +71,7 @@ describe('qualityShareText', () => {
         '',
         '- All 296 contrast checks pass in 2 brands, light and dark.',
         '- 94.5% of components in 2 products come from the design system, up from 7.6% before Bridge.',
-        '- 46 of 48 components have reviewed usage guidance: 1 drafted by Claude to review, 1 not written yet.',
+        '- 46 of 48 components have reviewed usage guidance: 1 drafted by Claude AI to review, 1 not written yet.',
         '',
         'Details: https://bridge.example/studio/quality/',
       ].join('\n'),

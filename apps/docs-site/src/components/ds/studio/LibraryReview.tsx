@@ -410,7 +410,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
         commenting={commenting}
         onCommentOpen={() => setCommenting(true)}
         commentBox={commentBox}
-        tag={(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
+        tag={<StateTag p={p} viewerReviews={viewer.reviews} />}
       />
     );
   // Two parts and a separator the CSS spaces (.lr-eyebrow-sep): typed " · " left 2px each side of a 1px dot.
@@ -471,7 +471,8 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
             )}
           </>
         )}
-        {(p.state === 'decided' || !decides) && <StateTag p={p} viewerReviews={viewer.reviews} />}
+        {/* Waiting or decided, the same tag as Home's row: how long it has waited, or what was decided. */}
+        <StateTag p={p} viewerReviews={viewer.reviews} />
         {/* Guidance changes no screen: no Who gets it. */}
         {p.source.kind !== 'docs' && (
           <span className="lr-detail-reach">
@@ -1056,7 +1057,8 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       </span>
     );
   };
-  // The State column: a conflict's ways, a result, the viewer's own approval, an exception. A waiting row: nothing.
+  // The State column: a conflict's ways, a result, the viewer's own approval, an exception; a waiting row, how long it
+  // has waited, the same tag as its Home row (home-model waitPill, amber once late).
   const state = (p: ReviewPiece) => {
     const d = decidedTag(p);
     if (d)
@@ -1085,6 +1087,14 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
           {p.exception}
         </Badge>
       );
+    if (p.state === 'waiting' && p.at && mode === 'lead') {
+      const w = waitPill(p.at, Date.now());
+      return (
+        <Badge tone={w.tone} size="md" className={statusTagClass(w.tone)}>
+          {w.label}
+        </Badge>
+      );
+    }
     return null;
   };
   const action = (p: ReviewPiece) => {

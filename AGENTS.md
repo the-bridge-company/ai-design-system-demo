@@ -60,6 +60,10 @@ Check each item on a real screenshot before opening the PR, and say in the PR ho
   column on wide screens.
 - Bridge brand (docs/DESIGN-LANGUAGE.md): Fraunces display, Instrument Sans, Plex Mono for tokens and code, one
   Harbor zone per screen, Deep Harbor the only strong color, the Field Guide drawings, the Bridge voice.
+- Tab-like controls (docs/DESIGN-LANGUAGE.md, section 7): Tabs (underline) switch the sections or panels of one
+  page or object; SegmentedControl switches a view or a filter of the same content. Selected = Tabs ink text plus
+  underline, SegmentedControl raised plate; never an outline on the selection, the focus ring is `:focus-visible`
+  only. `appearance="strong"` only on the space switch. No third look, no custom tab-like CSS.
 - When users already know a pattern from their tools (Figma library publish and review updates, GitHub reviews),
   mirror it.
 

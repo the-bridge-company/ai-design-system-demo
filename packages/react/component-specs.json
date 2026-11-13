@@ -29323,7 +29323,7 @@
           "defaultValue": "comfortable"
         }
       },
-      "hash": "ba711ef1",
+      "hash": "c6903061",
       "source": [
         "packages/react/src/components/SegmentedControl/SegmentedControl.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -29458,7 +29458,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29519,7 +29519,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29580,7 +29580,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29945,7 +29945,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30004,7 +30004,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30063,7 +30063,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -36517,7 +36517,7 @@
           }
         ]
       },
-      "hash": "35e7eeef",
+      "hash": "9869d9e7",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -37715,8 +37715,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37831,8 +37833,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37947,8 +37951,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38090,8 +38096,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38233,8 +38241,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38349,8 +38359,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38465,8 +38477,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38608,8 +38622,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",

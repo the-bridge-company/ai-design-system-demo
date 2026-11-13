@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-13T02:52:17.604Z",
+  "createdAt": "2026-11-13T03:37:41.017Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -7477,6 +7477,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "md",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7490,6 +7491,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "sm",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7503,6 +7505,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "sm",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7517,6 +7520,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "sm",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7531,6 +7535,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "sm",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": true
@@ -7544,6 +7549,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "md",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7558,6 +7564,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "md",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7572,6 +7579,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "md",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": true
@@ -7585,6 +7593,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "lg",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7598,6 +7607,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "lg",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7612,6 +7622,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "lg",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false
@@ -7626,6 +7637,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "lg",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": true
@@ -7643,6 +7655,7 @@
           "props": {
             "placeholder": "No theme",
             "size": "md",
+            "multiple": false,
             "label": "Theme",
             "hint": "Applies to the preview only.",
             "disabled": false

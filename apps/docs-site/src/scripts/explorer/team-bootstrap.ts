@@ -8,7 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Braces } from 'lucide-react';
 import { EmptyState, Link } from '@bridge-ds/react';
 import { buildTokenSet, layoutOptions, loadConfig } from '@bridge-ds/core';
-import { TeamLoadError, TeamLoadProgress, TeamSourceNote } from '../../components/ds/studio/TeamState';
+import { TeamLoadError, TeamPageSkeleton, TeamSourceNote } from '../../components/ds/studio/TeamState';
 import { loadTeamData, resetTeamData, teamOfPage } from '../team-data';
 import { HOSTED_DOCS_URL, teamFailure } from '../../lib/team-load';
 import { teamDisplayName } from '../../lib/demo';
@@ -55,7 +55,7 @@ export async function bootstrapTeamExplorer(start: () => void): Promise<void> {
   };
   // How far the read has gone, until the tokens are in (or it fails).
   stateRoot ??= createRoot(state);
-  stateRoot.render(createElement(TeamLoadProgress, { label: "Reading the team's tokens" }));
+  stateRoot.render(createElement(TeamPageSkeleton, { label: "Reading the team's tokens" }));
 
   let data: Awaited<ReturnType<typeof loadTeamData>>;
   try {

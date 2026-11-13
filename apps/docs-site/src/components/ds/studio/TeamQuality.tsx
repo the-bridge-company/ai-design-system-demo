@@ -9,7 +9,7 @@ import type { SnapshotAudit } from '@bridge-ds/core';
 import { QualityShare } from './QualityShare';
 import { QualityView } from './QualityView';
 import { HeaderActions } from './StudioHead';
-import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
+import { TeamLoadError, TeamPageSkeleton, TeamSourceNote, useTeamData } from './TeamState';
 import { loadTeamSnapshot } from '../../../scripts/team-data';
 import { currentViewer, initGitHubConnect, signedInWithGitHub } from '../../../scripts/github-session';
 import { viewerRoles } from '../../../lib/suggestions-view';
@@ -158,7 +158,7 @@ export default function TeamQuality() {
     };
   }, [sha]);
 
-  if (load.status === 'loading') return <TeamLoadProgress label="Reading the quality of this design system" />;
+  if (load.status === 'loading') return <TeamPageSkeleton label="Reading the quality of this design system" rows={5} />;
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   const { data, refreshing } = load;
   const developer = viewerRoles(viewer, data.model.config.governance.owners).includes('tech');

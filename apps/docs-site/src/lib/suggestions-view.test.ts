@@ -127,7 +127,7 @@ describe('who it waits on', () => {
 
   it('builds the row Home and the queue show', () => {
     const row = suggestionNeed({ number: 42, title: 'Darker default background', createdAt: '2026-10-18T09:00:00Z' }, person('ann', 'Ann Leroy'), Date.parse('2026-10-21T09:00:00Z'));
-    expect(row).toMatchObject({ key: 'suggestion-42', kind: 'review', href: '/studio/library-review/?suggestion=42', line: 'Ann suggests a change', waitsOnYou: true, pill: { label: 'Waiting 3 days', tone: 'neutral' } });
+    expect(row).toMatchObject({ key: 'suggestion-42', kind: 'review', href: '/studio/library-review/?suggestion=42', line: 'Ann suggests a change', waitsOnYou: true, pill: { label: 'Waiting 3 days', tone: 'warning' } });
     expect(row.number).toBeUndefined();
   });
 

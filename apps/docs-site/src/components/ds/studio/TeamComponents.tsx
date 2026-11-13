@@ -11,7 +11,7 @@ import { Ellipsis, ExternalLink, Layers } from 'lucide-react';
 import { Badge, Button, ButtonGroup, CodeBlock, Drawer, DrawerContent, EmptyState, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Tooltip } from '@bridge-ds/react';
 import { MultiFilter } from './ListFilters';
 import ButtonLink from '../ButtonLink';
-import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
+import { TeamLoadError, TeamPageSkeleton, TeamSourceNote, useTeamData } from './TeamState';
 import TokenSpecimens from './TokenSpecimens';
 import ComponentsList from './ComponentsList';
 import ClientExample from './ClientExample';
@@ -380,7 +380,7 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
 
 export default function TeamComponents() {
   const { load, retry } = useTeamData();
-  if (load.status === 'loading') return <TeamLoadProgress label="Reading the components" />;
+  if (load.status === 'loading') return <TeamPageSkeleton label="Reading the components" rows={8} />;
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   return <Ready data={load.data} refreshing={load.refreshing} onRefresh={retry} />;
 }

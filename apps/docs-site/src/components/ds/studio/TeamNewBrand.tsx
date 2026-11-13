@@ -5,7 +5,7 @@
 import { Braces, FileCog } from 'lucide-react';
 import { EmptyState, Link } from '@bridge-ds/react';
 import NewBrandFlow from './NewBrandFlow';
-import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
+import { TeamLoadError, TeamPageSkeleton, TeamSourceNote, useTeamData } from './TeamState';
 import { teamBrandInput, teamDraftScope } from '../../../lib/team-new-brand';
 import { HOSTED_DOCS_URL } from '../../../lib/team-load';
 import { teamDisplayName } from '../../../lib/demo';
@@ -17,7 +17,7 @@ export interface TeamNewBrandProps {
 
 export default function TeamNewBrand({ signIn = false }: TeamNewBrandProps) {
   const { load, retry } = useTeamData();
-  if (load.status === 'loading') return <TeamLoadProgress label="Reading this team's brands" />;
+  if (load.status === 'loading') return <TeamPageSkeleton label="Reading this team's brands" rows={4} />;
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   const { data, refreshing } = load;
   const input = teamBrandInput(data.model);

@@ -82,3 +82,11 @@
 .ts > .st-head[hidden] {
   display: none;
 }
+
+/* A team page while it reads (TeamState TeamPageSkeleton): the page's own skeleton, a summary line then its rows, no
+   progress card. */
+.tp-skeleton-rows {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-2);
+}

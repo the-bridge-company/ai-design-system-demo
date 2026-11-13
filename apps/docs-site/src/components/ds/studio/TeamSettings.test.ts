@@ -24,7 +24,7 @@ vi.mock('./TeamState', () => ({
     retry: () => {},
   }),
   TeamLoadError: () => null,
-  TeamLoadProgress: () => null,
+  TeamPageSkeleton: () => null,
 }));
 vi.mock('./members-state', () => ({
   useTeamPeople: () => ({ members: [{ login: 'sam', name: 'Sam Rivera', role: 'admin', reviews: ['design', 'tech'] }] }),

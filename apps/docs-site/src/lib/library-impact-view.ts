@@ -370,10 +370,17 @@ export function libraryImpactView(x: ImpactInput): LibraryImpactView {
   if (!items.length) return nothingView(x.designer, [], uses);
   // Only the parts where a way is new to the library are decisions (lib/library-as-is): every way already in the
   // library (Default, Compact) is no conflict, its row reads one quiet line.
+  // A part where this screen's own way is one the library already has (Leo's Compact) asks the library nothing here
+  // (gate leftover a): another screen's new option for it (Sofia's Comfortable) is decided on that screen and in
+  // Library review, never on this page. Its row folds into the quiet "uses" line like any piece used as it is.
+  const ownAsIs = (c: LibraryConflict) => {
+    const own = record.pieces.find((p) => p.id === c.piece);
+    return Boolean(own && asIsOption(own));
+  };
   const conflicts = decisionConflicts(
     (x.conflicts ?? []).filter((c) => items.some((i) => i.id === c.piece)),
     [...(x.others ?? []), ...(x.conflicts ?? []).map((c) => ({ key: c.mine.key, record }))],
-  );
+  ).filter((c) => !ownAsIs(c));
   const names = x.names ?? {};
   const views = conflictViews(conflicts, {
     pieces: record.pieces,
@@ -498,9 +505,14 @@ function asIsRow(i: ImpactItem, o: LibraryOption, designer: string, product: str
   };
 }
 
-/** A piece used as the library has it, in the footer's words: "Compact (12 px)", "the default Card padding (20 px)". */
+/**
+ * A piece used as the library has it, in the footer's words, naming the part: "Card padding: Compact (12 px)", "the
+ * default Card padding (20 px)".
+ */
 function asIsWord(i: ImpactItem, o: LibraryOption): string {
-  return o.isDefault ? `the default ${i.of ?? 'component'} ${(i.property ?? '').toLowerCase()} (${o.px} px)`.replace(/\s+\(/, ' (') : `${o.name} (${o.px} px)`;
+  if (o.isDefault) return `the default ${i.of ?? 'component'} ${(i.property ?? '').toLowerCase()} (${o.px} px)`.replace(/\s+\(/, ' (');
+  const part = [i.of, (i.property ?? '').toLowerCase()].filter(Boolean).join(' ');
+  return part ? `${part}: ${o.name} (${o.px} px)` : `${o.name} (${o.px} px)`;
 }
 
 const listWords = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);

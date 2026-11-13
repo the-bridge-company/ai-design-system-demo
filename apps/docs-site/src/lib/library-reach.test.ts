@@ -52,9 +52,9 @@ describe('who gets a piece', () => {
     expect(originSentence(conflict(), 'Dana').before).toBe('Asked two ways: Sofia in Contact page summary, Leo in Deal pipeline cards.');
   });
 
-  it('shows 4 screens per product, then Show all N', () => {
-    expect(shownScreens([1, 2, 3, 4, 5, 6], false)).toEqual({ shown: [1, 2, 3, 4], more: 'Show all 6' });
-    expect(shownScreens([1, 2, 3, 4, 5, 6], true).more).toBeNull();
+  it('shows 6 screens per product (full rows of 3, 2 or 1), then Show all N', () => {
+    expect(shownScreens([1, 2, 3, 4, 5, 6, 7, 8], false)).toEqual({ shown: [1, 2, 3, 4, 5, 6], more: 'Show all 8' });
+    expect(shownScreens([1, 2, 3, 4, 5, 6, 7, 8], true).more).toBeNull();
     expect(listWords(['A', 'B', 'C'])).toBe('A, B and C');
   });
 });

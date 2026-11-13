@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, daysSince, handOverTitle, leadStepText, designStepText, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, timelineOf, pmBlockOf, sharedChoiceOf, waitBlockOf, waitedWhen, writeToLine, zoneOf, type WaitInput, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
+import { aboutLine, canSayDone, codeShown, groupedText, quietChange, screenNameOfRoute, DEV_EXPLORING_LINE, devLineOf, foldTimeline, daysSince, handOverTitle, leadStepText, designStepText, NOTES_LINE, notesContext, ownerLine, pageRoleOf, pageStageOf, repeatsTitle, sameScreen, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, timelineOf, pmBlockOf, sharedChoiceOf, reminderLine, waitBlockOf, waitingForTitle, writeToLine, zoneOf, type WaitInput, type PageRole, type PageStage, type ZoneFlags } from './exploration-layout';
 
 const none: ZoneFlags = { archived: false, notDoing: false, answersLead: false, leadBar: false, leadTake: false, pmMine: false, canDone: false, declinedBack: false, question: false, checkSay: false, theirVersion: false };
 
@@ -232,26 +232,40 @@ describe('the screen stage names the screen, then what the exploration does', ()
 
 describe('the turn block while nothing waits on the viewer (direction B)', () => {
   const base: WaitInput = { stage: 'waiting-for-lead', role: 'owner', author: 'Sofia', lead: 'Dana', viewerLeads: false, product: 'Acme Prints' };
-  it('says how long the lead has waited from the real ask, never an invented number', () => {
-    expect(waitedWhen(null)).toBe('now');
-    expect(waitedWhen(0)).toBe('now, since today');
-    expect(waitedWhen(1)).toBe('now, since yesterday');
-    expect(waitedWhen(3)).toBe('now, for 3 days');
+  it('the reminder: the rule until it has gone out, then the day it went, on the same day the tags turn amber', () => {
+    // REMINDED_AFTER_DAYS (status-tag) is 3: days 0 to 2 the rule, from day 3 the day it went.
+    expect(reminderLine({ who: 'Dana', waitedDays: 2, askedAt: '2026-11-08T10:00:00Z' })).toBe('Bridge reminds Dana once if there is no answer within 3 days, and tells you as soon as there is one.');
+    expect(reminderLine({ who: 'Dana', waitedDays: 3, askedAt: '2026-11-08T10:00:00Z' })).toBe('Bridge reminded Dana on Nov 11, and tells you as soon as there is an answer.');
+    expect(reminderLine({ who: null, waitedDays: null })).toBe('Bridge reminds the reviewers once if there is no answer within 3 days, and tells you as soon as there is one.');
+    // Never "reminded" without the day it was asked: the rule stays.
+    expect(reminderLine({ who: 'Dana', waitedDays: 9, askedAt: null })).toMatch(/^Bridge reminds Dana once/);
     const now = Date.parse('2026-11-11T12:00:00Z');
     expect(daysSince('2026-11-08T10:00:00Z', now)).toBe(3);
     expect(daysSince(null, now)).toBeNull();
     expect(daysSince('not a date', now)).toBeNull();
   });
-  it('two reviews, the designer: the second line as the title, each review a current step, no "the design lead"', () => {
+  it('two reviews, the designer: a short title naming who (C1), the reviews one line each with no "now" (C3), no "the design lead"', () => {
     const b = waitBlockOf({
       ...base,
       canKeepExploring: true,
-      reviews: { title: "Waiting for Dana's design review and library decision on Timeline", steps: [{ text: 'Dana reviews the design', when: 'now' }, { text: 'Dana decides on Timeline for the library', when: 'now' }] },
+      reviews: { title: "Waiting for Dana's design review and library decision on Timeline", steps: [{ text: 'Dana reviews the design and decides on Timeline', when: 'now', lines: ['Dana reviews the design', 'Dana decides on Timeline for the library'] }] },
     })!;
-    expect(b.title).toBe("Waiting for Dana's design review and library decision on Timeline");
+    expect(b.title).toBe('Waiting for Dana');
+    expect(b.steps[0]).toEqual({ text: 'Dana reviews the design and decides on Timeline', current: true });
+    expect(b.steps[1]).toEqual({ text: 'Acme Prints developers build it' });
+    expect(waitingForTitle([{ text: 'Dana reviews the design, the library owners decide on Timeline', lines: ['Dana reviews the design', 'The library owners decide on Timeline'] }])).toBe('Waiting for Dana and the library owners');
+    expect(waitingForTitle([{ text: 'The Acme Prints design reviewers review it' }])).toBe('Waiting for the design reviewers');
+  });
+  it('two reviews, two steps given apart: still one title, each its own current line', () => {
+    const b = waitBlockOf({
+      ...base,
+      canKeepExploring: true,
+      reviews: { title: 'x', steps: [{ text: 'Dana reviews the design', when: 'now' }, { text: 'Dana decides on Timeline for the library', when: 'now' }] },
+    })!;
+    expect(b.title).toBe('Waiting for Dana');
     expect(b.steps.slice(0, 2)).toEqual([
-      { text: 'Dana reviews the design', when: 'now', current: true },
-      { text: 'Dana decides on Timeline for the library', when: 'now', current: true },
+      { text: 'Dana reviews the design', current: true },
+      { text: 'Dana decides on Timeline for the library', current: true },
     ]);
     expect(b.steps[2]).toEqual({ text: 'Acme Prints developers build it' });
     expect(JSON.stringify(b)).not.toMatch(/what the library keeps|design lead/);
@@ -260,15 +274,16 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   it('waiting for the lead, the designer: the lead step now, the steps to come, the reminder rule, Keep exploring', () => {
     const b = waitBlockOf({ ...base, waitedDays: 3, canKeepExploring: true, newPieces: true })!;
     expect(b.eyebrow).toBe('Nothing to do for now');
-    expect(b.title).toBe('Dana decides what the library keeps');
+    expect(b.title).toBe('Waiting for Dana');
     expect(b.steps).toEqual([
-      { text: 'Dana decides', when: 'now, for 3 days', current: true },
+      { text: 'Dana decides', current: true },
       { text: 'Acme Prints developers build it' },
       { text: 'You check their version' },
       { text: 'Live in Acme Prints' },
     ]);
-    // Bridge's rule, said as a rule: never "Bridge reminded her" without the reminder having happened.
-    expect(b.lines).toEqual(['Bridge reminds Dana once after 2 days without an answer, and tells you as soon as there is one.']);
+    // Day 3 without the day it was asked: still the rule, never "reminded" without knowing when.
+    expect(b.lines).toEqual(['Bridge reminds Dana once if there is no answer within 3 days, and tells you as soon as there is one.']);
+    expect(waitBlockOf({ ...base, waitedDays: 3, askedAt: '2026-11-08T10:00:00Z' })!.lines).toEqual(['Bridge reminded Dana on Nov 11, and tells you as soon as there is an answer.']);
     expect(b.action).toEqual({ kind: 'keep-exploring', label: 'Keep exploring' });
   });
   it('waiting for the lead, another designer whose screen the same choice sets: says so, See the choice', () => {
@@ -306,12 +321,13 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
     const design = waitBlockOf({ ...base, lead: null, role: 'designer' })!;
     expect(design.title).toBe('The design reviewer checks it');
     expect(JSON.stringify(design)).not.toMatch(/library keeps|design lead/);
-    expect(waitBlockOf({ ...base })!.title).toBe('Dana reviews the design');
+    expect(waitBlockOf({ ...base })!.title).toBe('Waiting for Dana');
+    expect(waitBlockOf({ ...base })!.steps[0]!.text).toBe('Dana reviews the design');
   });
   it('exploring, someone else: who explores now, who decides next', () => {
     const b = waitBlockOf({ ...base, stage: 'exploring', role: 'designer' })!;
     expect(b.title).toBe('Sofia is exploring');
-    expect(b.steps[0]).toEqual({ text: 'Sofia explores', when: 'now', current: true });
+    expect(b.steps[0]).toEqual({ text: 'Sofia explores', current: true });
     // Nothing new for the library yet: the next step is the design review, never "decides what the library keeps".
     expect(b.steps[1]!.text).toBe('Dana reviews the design');
     expect(JSON.stringify(b)).not.toMatch(/library keeps/);
@@ -336,7 +352,7 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
     ];
     const b = waitBlockOf({ ...base, stage: 'ready', steps })!;
     expect(b.title).toBe('Acme Prints developers build it');
-    expect(b.steps).toEqual([{ text: 'Acme Prints developers build it', current: true, when: 'now' }, { text: 'You check their version' }, { text: 'Live in Acme Prints' }]);
+    expect(b.steps).toEqual([{ text: 'Acme Prints developers build it', current: true }, { text: 'You check their version' }, { text: 'Live in Acme Prints' }]);
     expect(b.lines).toEqual(['In their task list. You see here when one picks it up.']);
     const building = waitBlockOf({ ...base, stage: 'building', role: 'designer', builder: 'Malik', steps })!;
     expect(building.title).toBe('Malik builds it');
@@ -349,7 +365,7 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   it('check the build, someone not checking: who checks now and what the others said', () => {
     const b = waitBlockOf({ ...base, stage: 'check', role: 'designer', checkers: [{ name: 'Sofia', you: false, said: 'waiting' }, { name: 'Dana', you: false, said: 'looks-right' }, { name: 'Ann', you: false, said: 'not-needed' }] })!;
     expect(b.title).toBe('Sofia checks the build');
-    expect(b.steps).toEqual([{ text: 'Sofia checks', when: 'now', current: true }, { text: 'Live in Acme Prints' }]);
+    expect(b.steps).toEqual([{ text: 'Sofia checks', current: true }, { text: 'Live in Acme Prints' }]);
     expect(b.lines).toEqual(['Dana said it looks right.', 'It goes live in Acme Prints once it looks right.']);
   });
   it('declined, archived, not started and shipped', () => {
@@ -378,7 +394,8 @@ describe('the product manager in the turn block', () => {
     expect(b.eyebrow).toBe('Optional for you');
     expect(b.title).toBe('Your view, before the design review');
     expect(b.steps.map((s) => s.text)).toEqual(['You give your view', 'Dana reviews the design', 'Acme Prints developers build it', 'Sofia checks, then it goes live']);
-    expect(b.steps[0]).toMatchObject({ when: 'optional, now', current: true });
+    // The eyebrow says it is optional: the step says it once, with no "now" (C3).
+    expect(b.steps[0]).toEqual({ text: 'You give your view', current: true });
     expect(b.lines).toEqual(['Dana can review without it. If you give it, Dana reads it first.']);
     expect(JSON.stringify(b)).not.toMatch(/library keeps/);
   });

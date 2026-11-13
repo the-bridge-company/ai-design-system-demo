@@ -2,19 +2,18 @@
 //   useTeamData()     the team of this page (scripts/team-data.ts), with retry and refresh
 //   TeamSourceNote    one line under the title: the commit it was read at, where from, and Refresh
 //   TeamLoadError     a calm full-width state that says what went wrong and the one way out (Try again)
-//   TeamLoadProgress  how far the read has gone (LoadProgress), once it is not instant
+//   TeamPageSkeleton  the page's own skeleton while it reads, and one sentence for screen readers (TeamLoadStatus)
 // Repo content never reaches HTML here: React text nodes only.
 import { useCallback, useEffect, useState } from 'react';
 import { CloudOff, FileWarning, LogIn, RefreshCw, SearchX, Timer } from 'lucide-react';
 import { signInHref } from '../../../lib/account';
-import { Button, EmptyState, IconButton, Link, VisuallyHidden } from '@bridge-ds/react';
+import { Button, EmptyState, IconButton, Link, Skeleton, VisuallyHidden } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
-import { loadTeamData, onTeamProgress, resetTeamData, teamOfPage, type TeamData } from '../../../scripts/team-data';
-import { LoadProgress } from './LoadProgress';
-import { TEAM_PROGRESS_START, teamProgressView, type TeamProgress } from '../../../lib/load-progress';
+import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from '../../../scripts/team-data';
 import { commitUrl, SNAPSHOT_TEMPLATE_URL, sourceLine, teamFailure, type TeamFailure } from '../../../lib/team-load';
 import { signedInWithGitHub } from '../../../scripts/github-session';
 import { BusyNotice, useBusyRetry } from './BusyNotice';
+import '../../../styles/team-pages.css';
 
 /** Whether the viewer signed in with GitHub, kept in step with sign-in and sign-out on this page. */
 function useGitHubSignIn(): boolean {
@@ -142,19 +141,21 @@ export function TeamLoadStatus({ label }: { label: string }) {
   );
 }
 
-/** A read that settles within this is never shown (a cache hit costs two quick calls): no flash of progress. */
-const SHOW_AFTER_MS = 300;
-
-/** The team load of this page as a LoadProgress, once it is not instant. Until then, a quiet busy region. */
-export function TeamLoadProgress({ label }: { label: string }) {
-  const [p, setP] = useState<TeamProgress>(TEAM_PROGRESS_START);
-  const [waited, setWaited] = useState(false);
-  useEffect(() => onTeamProgress(setP), []);
-  useEffect(() => {
-    const t = setTimeout(() => setWaited(true), SHOW_AFTER_MS);
-    return () => clearTimeout(t);
-  }, []);
-  const shown = p.via !== null || (waited && p.step !== 'cache');
-  if (!shown) return <div className="lp-wait" aria-busy="true" aria-label={label} />;
-  return <LoadProgress view={teamProgressView(p)} label={label} />;
+/**
+ * A team page while it reads its design system (batch C leftover c): the page's own skeleton (a summary line, then the
+ * rows the page lists) and one sentence for screen readers, as on Studio Home. Never a progress card with its steps
+ * ("Found your design system", "Ready") over a page that still shows skeletons.
+ */
+export function TeamPageSkeleton({ label, rows = 6 }: { label: string; rows?: number }) {
+  return (
+    <div className="tp-skeleton" aria-busy="true">
+      <TeamLoadStatus label={label} />
+      <div className="tp-skeleton-rows" aria-hidden="true">
+        <Skeleton width="48ch" />
+        {Array.from({ length: rows }, (_, i) => (
+          <Skeleton key={i} variant="rect" height="var(--size-14)" />
+        ))}
+      </div>
+    </div>
+  );
 }

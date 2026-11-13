@@ -135,8 +135,8 @@ export function originSentence(p: ReviewPiece, viewerName: string | null): { bef
   return { before: `Asked by ${self ? 'you' : who} in `, link: { label: p.asked.name, href: p.asked.href }, after: `${p.asked.product ? `, ${p.asked.product}` : ''}.${what}` };
 }
 
-/** How many screen cards a product shows before "Show all N". */
-export const REACH_SHOWN = 4;
+/** How many screen cards a product shows before "Show all N": six fill 3, 2 or 1 columns (styles .lr-reach-grid). */
+export const REACH_SHOWN = 6;
 
 /** The cards a product shows, and the "Show all N" it needs. */
 export function shownScreens<T>(screens: readonly T[], open: boolean, max = REACH_SHOWN): { shown: T[]; more: string | null } {

@@ -2,8 +2,8 @@
 // it, in three columns linked by curves (lib/library-map buildMap). Clicking a box narrows the list under the map
 // ("Showing what <exploration> asks for · 3 of 14 · Show all 14"); one piece picked is that piece's own compact row,
 // said once (no chapter, no rail, no column header), with "Show all 14" on its end; "Show all" shows the whole list
-// under the map. The picked box is in the address (?focus=), so a link opens it. A conflict is two amber links into
-// one piece. Read only: the list under it has no checkboxes and no decision. The curves are measured from the boxes once laid out, so
+// under the map. The picked box is in the address (?focus=), so a link opens it. A conflict is two links into one
+// piece, its box tagged "2 ways" (the DS tag). Read only: the list under it has no checkboxes and no decision. The curves are measured from the boxes once laid out, so
 // they follow any width and any number of boxes. Styles: styles/library-review.css (lr-map-*).
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Badge, Button } from '@bridge-ds/react';
@@ -26,7 +26,16 @@ function MapBox({ id, label, sub, kind, pressed, lit, quiet, conflict, dashed, o
     // bridge-audit-ignore-next-line: a map box is one toggle target holding a name and a line under it; the DS has no toggle card and Button would cut it to one label
     <button type="button" className={cls} aria-pressed={pressed} ref={(el) => refOf(id, el)} onClick={() => onPick(id)}>
       {kind === 'product' ? <ProductChip name={label} /> : <span className="lr-map-label">{label}</span>}
-      {sub && <span className="lr-map-sub">{sub}</span>}
+      {/* A conflict's "2 ways" is the DS tag, the same as in the list (C9), never an amber box. */}
+      {sub && (conflict ? (
+        <span className="lr-map-sub">
+          <Badge tone="neutral" size="sm">
+            {sub}
+          </Badge>
+        </span>
+      ) : (
+        <span className="lr-map-sub">{sub}</span>
+      ))}
     </button>
   );
 }

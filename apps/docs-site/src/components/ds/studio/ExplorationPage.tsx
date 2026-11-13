@@ -68,7 +68,7 @@ import { COPY_WORDS } from '../../../lib/design-copy';
 import { clipQuote, DECLINED_LINE, explorationTag, questionWords, type ActivityRow, type DoneAction, type HandoffStatus, type HandoffStep, type LibraryPieces, type PageFace, type SentPiece } from '../../../lib/exploration-page';
 import { studioHref } from '../../../lib/team-path';
 import { ARCHIVED_LINE } from '../../../lib/explorations-view';
-import { EXPLORATION_STAGE_LABEL, startedWhen } from '@bridge-ds/core';
+import { calendarDays, EXPLORATION_STAGE_LABEL, startedWhen } from '@bridge-ds/core';
 import { plateDrawing } from '../../../lib/branch-thumb';
 import { capturedLine } from '../../../lib/preview-shots';
 import { CONNECT_FIRST, connectFirst, TERMINAL_SETUP_LINE } from '../../../lib/claude-connector';
@@ -81,7 +81,7 @@ import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, ScreenStage, Timeline, TurnSteps, TurnZone } from './ExplorationParts';
-import { aboutLine, canSayDone, codeShown, daysSince, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type LeadDecision, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
+import { aboutLine, canSayDone, codeShown, screenNameOfRoute, handOverTitle, notesContext, ownerLine, pageStageOf, pmBlockOf, repeatsTitle, sameScreen, SCREEN_WORDS, stagedPieces, leadDecisions, leadTurnWords, sendTickLine, sharedChoiceOf, timelineOf, TURN_WORDS, waitBlockOf, writeToLine, zoneOf, type CheckPerson, type LeadDecision, type PageRole, type TurnBlock } from '../../../lib/exploration-layout';
 import { PM_WORDS } from '../../../lib/pm-view';
 import type { DecisionRowView } from '../../../lib/lead-decisions';
 import { statusTagClass, statusTagDot } from '../../../lib/status-tag';
@@ -156,7 +156,7 @@ export interface ExplorationPageProps {
   role?: PageRole;
   /** The design lead who decides next, by name: "Ready to hand it to Dana?", "Then Dana picks what the library keeps". */
   leadName?: string | null;
-  /** When the design lead was asked (ISO, the exploration's designAskedAt): "Dana decides · now, for 3 days". */
+  /** When the design lead was asked (ISO, the exploration's designAskedAt): the day of Bridge's reminder in the card. */
   designAskedAt?: string | null;
   /**
    * The owner is a design lead themselves: with no other lead named, the page talks to them ("Then you pick what the
@@ -431,7 +431,8 @@ function PmTurn({ v, b, say }: { v: PmView; b: TurnBlock; say: (s: string) => vo
       <Textarea
         ref={note}
         label={PM_WORDS.note}
-        hint={PM_WORDS.noteHint}
+        // Said once: the hint until the note is missing, then the error in its place (C12).
+        hint={needNote && !text.trim() ? undefined : PM_WORDS.noteHint}
         error={needNote && !text.trim() ? PM_WORDS.noteNeeded : undefined}
         rows={3}
         value={text}
@@ -1290,7 +1291,9 @@ function ExplorationBody(p: ExplorationPageProps) {
         lead: p.leadName ?? null,
         viewerLeads,
         product,
-        waitedDays: daysSince(p.designAskedAt, Date.now()),
+        // Calendar days, as every waiting tag counts them (status-tag isReminded): the card's reminder and the tags agree.
+        waitedDays: p.designAskedAt && Number.isFinite(Date.parse(p.designAskedAt)) ? calendarDays(p.designAskedAt, new Date()) : null,
+        askedAt: p.designAskedAt ?? null,
         reviews: p.reviews?.steps.length && p.reviews.line ? { title: p.reviews.line, steps: p.reviews.steps } : null,
         taken: p.lead?.take?.line ?? null,
         canKeepExploring: Boolean(p.lead?.onCancel),
@@ -1460,7 +1463,6 @@ function ExplorationBody(p: ExplorationPageProps) {
             ) : (
               <StatusTag status={handoff ? handoff.status : 'active'} notStarted={notStarted} stage={handoff?.stage ?? (p.lead ? 'waiting-for-lead' : null)} />
             ))}
-          {p.stage !== 'loading' && !p.tag && !p.archived && p.reviews?.line && <span className="xp-muted">{p.reviews.line}</span>}
           <span className="xp-spacer" />
           {showCode && (
             <span className="xp-code-slot">
@@ -1569,7 +1571,9 @@ function ExplorationBody(p: ExplorationPageProps) {
                   view={p.impact.view}
                   actions={p.impact.actions}
                   say={setSaid}
-                  quiet={Boolean(block)}
+                  // One primary per view (C13): while the design review's Looks right is the turn block's primary, the
+                  // library choice waits as a secondary.
+                  quiet={zone === 'lead-review' && (Boolean(p.lead?.hat) || !p.lead?.bar?.blocked)}
                   onPage
                   screen={{ capture: p.thumb ?? null, designer: p.author.name, name: p.title, href: '#xp-screen' }}
                   {...(staged.length && zone === 'lead-review' ? { newPieces: { capture: p.thumb, designer: p.author.name, choices, onChoice: (id: string, c: 'approve' | 'local') => setChoices((x) => ({ ...x, [id]: c })) } } : {})}

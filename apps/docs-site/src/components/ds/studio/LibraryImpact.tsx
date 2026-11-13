@@ -63,6 +63,7 @@ export function LibraryImpact({
   headingLevel = 2,
   newPieces = null,
   screen = null,
+  quiet = false,
 }: {
   view: LibraryImpactView;
   actions?: LibraryImpactActions;
@@ -70,7 +71,10 @@ export function LibraryImpact({
   headingLevel?: 2 | 3;
   newPieces?: NewPieceChoices | null;
   screen?: ImpactScreen | null;
-  /** Kept for callers: the ledger's button names the outcome whatever the page's zone says. */
+  /**
+   * The page's turn block already holds the one primary (the design review's Looks right): the ledger's button stays
+   * secondary until that is answered (batch C, C13), its words still naming the outcome.
+   */
   quiet?: boolean;
   onPage?: boolean;
 }) {
@@ -134,7 +138,7 @@ export function LibraryImpact({
       <ul className="li-rows">
         {view.rows.map((r) => (
           <li key={r.id} className="li-item">
-            <Piece row={r} conflict={view.conflicts.find((c) => c.piece === r.id) ?? null} actions={actions} say={say} headingLevel={headingLevel} newPieces={newPieces} screen={screen} />
+            <Piece row={r} conflict={view.conflicts.find((c) => c.piece === r.id) ?? null} actions={actions} say={say} headingLevel={headingLevel} newPieces={newPieces} screen={screen} quiet={quiet} />
           </li>
         ))}
       </ul>
@@ -157,7 +161,7 @@ export function LibraryImpact({
 }
 
 /** One piece: its header line, then what is decided on it, or the sentence it folded into. */
-function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }: { row: ImpactRowView; conflict: ConflictView | null; actions: LibraryImpactActions; say: (s: string) => void; headingLevel: 2 | 3; newPieces: NewPieceChoices | null; screen: ImpactScreen | null }) {
+function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen, quiet }: { row: ImpactRowView; conflict: ConflictView | null; actions: LibraryImpactActions; say: (s: string) => void; headingLevel: 2 | 3; newPieces: NewPieceChoices | null; screen: ImpactScreen | null; quiet: boolean }) {
   const [changing, setChanging] = useState(false);
   const [busy, setBusy] = useState(false);
   const isNew = /^new (component|pattern)/i.test(row.kind);
@@ -198,7 +202,7 @@ function Piece({ row, conflict, actions, say, headingLevel, newPieces, screen }:
       </>
     );
   } else if (conflict) {
-    body = <Ledger c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} />;
+    body = <Ledger c={conflict} onChoose={actions.onChoose ?? null} onComment={actions.onComment ?? null} say={say} quiet={quiet} />;
   } else if (isNew) {
     // Two reviews: the library decision on its row replaces the tick staged into the design review's Looks right.
     const decision = Boolean(row.libraryDecision);
@@ -458,7 +462,7 @@ function OptLine({ r }: { r: OptionRow }) {
  * new value, ticked for the lead, with the name Bridge proposes and Rename. "Already in the library": the default and
  * the options a screen can use as they are. One footer: who is told, Comment, and the button that names the outcome.
  */
-function Ledger({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void }) {
+function Ledger({ c, onChoose, onComment, say, quiet = false }: { c: ConflictView; onChoose: LibraryImpactActions['onChoose'] | null; onComment: LibraryImpactActions['onComment'] | null; say: (s: string) => void; quiet?: boolean }) {
   const L = c.ledger;
   const decides = c.decides && Boolean(onChoose);
   const [ticked, setTicked] = useState<boolean[]>(() => L.fresh.map(() => true));
@@ -599,7 +603,7 @@ function Ledger({ c, onChoose, onComment, say }: { c: ConflictView; onChoose: Li
               </Button>
             )}
             {decides && (
-              <Button variant="primary" size="md" loading={busy} onClick={choose} data-demo-write="choose a way for a component">
+              <Button variant={quiet ? 'secondary' : 'primary'} size="md" loading={busy} onClick={choose} data-demo-write="choose a way for a component">
                 {label}
               </Button>
             )}

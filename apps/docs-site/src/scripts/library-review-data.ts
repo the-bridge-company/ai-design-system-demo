@@ -43,6 +43,7 @@ import { viewerDecidesExplorations } from './design-lead';
 import { deciderNames } from '../lib/design-lead';
 import { siteApprovers, loadTeams } from './teams';
 import { knownNames } from './people';
+import { castPersonOfLogin } from '../lib/demo-cast';
 import { isHomeExploration } from '../lib/home-explorations';
 import { needsReviewRead } from '../lib/review-state';
 import { explorationHref } from '../lib/explorations-view';
@@ -221,7 +222,9 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
     if (req?.login ? same(req.login, v?.login) : req?.name ? same(firstName(req.name), viewer.name) : same(p.user.login, v?.login)) return true;
     return false;
   };
-  const byOf = (p: Pull) => firstName(requesterOf(p.body)?.name) ?? firstName(knownNames()[p.user.login.toLowerCase()]?.name) ?? null;
+  // Who asked, by name (C9): the "Requested by" line, a name Bridge knows for the login, or the sample person whose
+  // GitHub account opened it (the developer, acme-malik: "Malik"), never "A lead" when the person is known.
+  const byOf = (p: Pull) => firstName(requesterOf(p.body)?.name) ?? firstName(knownNames()[p.user.login.toLowerCase()]?.name) ?? castPersonOfLogin(p.user.login)?.name ?? null;
   // Who explored each open exploration (lib/author explorerName, read from the exploration itself): a change it needs
   // names that person, never whoever asked for the change. Filled once the explorations are read.
   const designers = new Map<string, string>();

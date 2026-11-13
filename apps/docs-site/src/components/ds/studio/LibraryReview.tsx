@@ -123,11 +123,11 @@ function Sep() {
   );
 }
 
-/** The detail's eyebrow, said once: "Colors · new color", "Docs" (never "Docs · docs"). */
+/** The detail's eyebrow, said once: "Colors · New color", "Docs" (never "Docs · Docs"). */
 const eyebrowParts = (p: ReviewPiece): string[] => {
   const what = p.category === p.title ? 'Components' : p.category;
-  const kind = p.kind.toLowerCase();
-  return what.toLowerCase() === kind ? [what] : [what, kind];
+  // The kind as the List's column says it ("Color fix"), one label source and sentence case (C17).
+  return what.toLowerCase() === p.kind.toLowerCase() ? [what] : [what, p.kind];
 };
 
 function AskedChip({ p }: { p: ReviewPiece }) {
@@ -344,7 +344,7 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
   const comment = (
     <>
       {!commenting ? (
-        <Button variant="ghost" size="lg" onClick={() => setCommenting(true)}>
+        <Button variant="ghost" onClick={() => setCommenting(true)}>
           {p.conflict ? 'Comment to both' : 'Comment'}
         </Button>
       ) : null}
@@ -361,11 +361,11 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
         });
       }}
     >
-      <Input label="Comment" hideLabel size="lg" placeholder={p.asked?.designer ? `Write to ${p.asked.designer}` : 'Add a comment'} value={text} onValueChange={setText} autoFocus />
-      <Button type="submit" variant="secondary" size="lg" disabled={!text.trim()} data-demo-write="comment on library pieces">
+      <Input label="Comment" hideLabel placeholder={p.asked?.designer ? `Write to ${p.asked.designer}` : 'Add a comment'} value={text} onValueChange={setText} autoFocus />
+      <Button type="submit" variant="secondary" disabled={!text.trim()} data-demo-write="comment on library pieces">
         Send
       </Button>
-      <Button variant="ghost" size="lg" onClick={() => setCommenting(false)}>
+      <Button variant="ghost" onClick={() => setCommenting(false)}>
         Cancel
       </Button>
     </form>
@@ -491,20 +491,20 @@ function Detail({ p, thumbs, viewer, lead, tech, onAct, onComment, busy, measure
               <div className="lr-actions">
                 {p.match ? (
                   <>
-                    <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'existing' })} data-demo-write="decide library pieces">
+                    <Button variant="primary" disabled={busy} onClick={() => onAct(p, { kind: 'existing' })} data-demo-write="decide library pieces">
                       Use {p.match.label}
                     </Button>
-                    <Button variant="secondary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'add' })} data-demo-write="decide library pieces">
+                    <Button variant="secondary" disabled={busy} onClick={() => onAct(p, { kind: 'add' })} data-demo-write="decide library pieces">
                       Add as a new {tokenGroup(p.category)?.word ?? 'piece'}
                     </Button>
                   </>
                 ) : (
-                  <Button variant="primary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'add' })} data-demo-write="decide library pieces">
+                  <Button variant="primary" disabled={busy} onClick={() => onAct(p, { kind: 'add' })} data-demo-write="decide library pieces">
                     Add to the library
                   </Button>
                 )}
                 {p.asked && (
-                  <Button variant="secondary" size="lg" disabled={busy} onClick={() => onAct(p, { kind: 'keep' })} data-demo-write="decide library pieces">
+                  <Button variant="secondary" disabled={busy} onClick={() => onAct(p, { kind: 'keep' })} data-demo-write="decide library pieces">
                     {keepLabel(p)}
                   </Button>
                 )}
@@ -574,7 +574,7 @@ function Specimen({ component, value, bodyRef }: { component: string; value: num
   return (
     <Card className="lr-specimen">
       <CardBody ref={bodyRef} className="lr-specimen-in" style={value === null ? undefined : { padding: `${value}px` }}>
-        <strong className="lr-specimen-title">{component} title on two lines</strong>
+        <strong className="lr-specimen-title">{component} title</strong>
         <span className="lr-specimen-mid">
           <strong>$7.5K</strong>
           <Avatar name="Ada Lovelace" size="sm" decorative />
@@ -699,11 +699,7 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
           <h2 className="lr-detail-title" id="lr-detail-title">
             {p.title}
           </h2>
-          {!c.pick && (
-            <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
-              {waysTag(c.ways.length)}
-            </Badge>
-          )}
+          {/* One tag (say it once): the piece's state tag, "2 ways" while open (StateTag), never a second copy. */}
           {tag}
           <LibraryPageLink p={p} title />
         </div>
@@ -744,12 +740,12 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
         {(!commenting || open) && (
           <span className="lr-compare-acts">
             {!commenting && (
-              <Button variant="secondary" size="lg" onClick={onCommentOpen}>
+              <Button variant="secondary" onClick={onCommentOpen}>
                 {view.people.length === 2 ? 'Comment to both' : view.people.length > 2 ? 'Comment to all' : 'Comment'}
               </Button>
             )}
             {open && (
-              <Button variant="primary" size="lg" disabled={busy || pick === null} onClick={() => pick && onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
+              <Button variant="primary" disabled={busy || pick === null} onClick={() => pick && onAct(p, { kind: 'pick', way: pick })} data-demo-write="decide library pieces">
                 {checkedKeepLabel(view, checked)}
               </Button>
             )}

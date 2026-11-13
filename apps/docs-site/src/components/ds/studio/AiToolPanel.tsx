@@ -53,9 +53,10 @@ function tabLabel(t: AiTool): ReactNode {
 }
 
 /** The button's words for one tool. */
+// One product name for Claude, as every author line says it ("Claude AI"; batch C, C16).
 export const ACTION_LABEL: Record<AiTool, string> = {
-  'claude-app': 'Continue in Claude',
-  'claude-code': 'Continue in Claude',
+  'claude-app': 'Continue in Claude AI',
+  'claude-code': 'Continue in Claude AI',
   copilot: 'Copy for Copilot',
 };
 

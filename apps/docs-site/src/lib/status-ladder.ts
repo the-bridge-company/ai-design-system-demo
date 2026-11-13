@@ -4,6 +4,7 @@
 // and shows that step's word and tone. Who the work waits on is the second line (waitLine), never the tag.
 // Pure: no DOM, no fetch. Unit tested in status-ladder.test.ts.
 import { isLate, STEP_LABEL, type StatusStep } from '@bridge-ds/core';
+import { isReminded } from './status-tag';
 import type { LifecycleStage } from './review-state';
 
 export { LADDER, STATUS_STEPS, STEP_LABEL, STEP_COUNT_WORDS, stepCount, stepRank, isOpenStep, stepOfBuildStatus, LATE_DAYS, isLate, type LadderStep, type StatusStep } from '@bridge-ds/core';
@@ -56,7 +57,10 @@ export function stepTone(step: StatusStep, waitedDays?: number | null): StepTone
       return 'info';
     case 'shipped':
       return 'success';
+    // A review waits on someone Bridge reminds: amber from the reminder's day (status-tag isReminded), as every
+    // waiting tag. The developers' waits keep the week (core LATE_DAYS).
     case 'in-review':
+      return isReminded(waitedDays) ? 'warning' : 'neutral';
     case 'ready-to-build':
     case 'checking':
       return isLate(waitedDays) ? 'warning' : 'neutral';

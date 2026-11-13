@@ -158,12 +158,13 @@ a.lr-ask {
   gap: var(--space-2);
   margin: 0;
   padding: var(--space-6) var(--space-4) var(--space-1);
-  font-family: var(--typography-display-family);
-  font-size: var(--font-size-400);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--font-leading-28);
-  /* An h2 for the outline that keeps the look it had as an h3: no h2 tracking. */
-  letter-spacing: normal;
+  /* An h2 for the outline with the h3 look (batch C, C8): in a panel under 400px the display face is too loud, so
+     the family reads as an Instrument Sans 16/600 heading over its groups. */
+  font-family: var(--typography-h3-family);
+  font-size: var(--typography-h3-size);
+  font-weight: var(--typography-h3-weight);
+  line-height: var(--typography-h3-line-height);
+  letter-spacing: var(--typography-h3-tracking);
 }
 
 .lr-side-head + .lr-side-chapter .lr-side-fam {
@@ -1481,10 +1482,6 @@ a.lr-ask {
   stroke: var(--color-action-primary-bg);
 }
 
-/* A conflict: two amber links into one piece, lit or not. */
-.lr-map-link.is-conflict {
-  stroke: var(--color-feedback-warning-border);
-}
 
 .lr-map-col {
   position: relative;
@@ -1500,8 +1497,6 @@ a.lr-ask {
   font-size: var(--typography-caption-size);
   font-weight: var(--font-weight-semibold);
   line-height: var(--typography-caption-line-height);
-  letter-spacing: var(--font-tracking-wide);
-  text-transform: uppercase;
 }
 
 .lr-map-stack {
@@ -1547,13 +1542,6 @@ a.lr-ask {
   border-style: dashed;
 }
 
-.lr-map-box.is-conflict {
-  border-color: var(--color-feedback-warning-border);
-}
-
-.lr-map-box.is-conflict .lr-map-sub {
-  color: var(--color-feedback-warning-text);
-}
 
 .lr-map-box.is-lit {
   border-color: var(--color-border-emphasis);
@@ -1724,9 +1712,11 @@ a.lr-ask {
   margin-inline-start: auto;
 }
 
+/* Three columns at most, and a product shows six cards (lib/library-reach REACH_SHOWN): 3, 2 or 1 columns all fill
+   their rows, never one lone card on the last row (C11). */
 .lr-reach-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--size-64)), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(max(min(100%, var(--size-64)), calc((100% - 2 * var(--space-4)) / 3)), 1fr));
   gap: var(--space-4);
 }
 
@@ -1964,8 +1954,6 @@ a.lr-reach-card:focus-visible {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--font-tracking-wide);
-  text-transform: uppercase;
 }
 
 .lr-askers-list {
@@ -2329,7 +2317,7 @@ a.lr-reach-card:focus-visible {
   width: 100%;
   min-height: var(--size-14);
   padding: var(--space-3) var(--space-4);
-  border: var(--border-width-2) solid transparent;
+  border: var(--border-width-default) solid transparent;
   border-radius: var(--radius-container);
 }
 
@@ -2349,8 +2337,10 @@ a.lr-reach-card:focus-visible {
   }
 }
 
+/* A checked row: the checkbox says it, the row only a quiet selected fill and a 1px line (C10), never a heavy blue box
+   per row when several are checked. */
 .lr-opts .lr-opt:has([data-checked]) {
-  border-color: var(--color-action-primary-bg);
+  border-color: var(--color-border-default);
   background-color: var(--color-surface-selected);
 }
 

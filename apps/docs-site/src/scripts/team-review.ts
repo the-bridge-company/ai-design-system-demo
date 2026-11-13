@@ -6,7 +6,7 @@
 // contrast pairs (#bridge-contrast) and the repository (#bridge-branches). Then the same queue starts.
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { TeamLoadError, TeamLoadProgress } from '../components/ds/studio/TeamState';
+import { TeamLoadError, TeamPageSkeleton } from '../components/ds/studio/TeamState';
 import { loadTeamData, resetTeamData, teamOfPage, type TeamData } from './team-data';
 import { teamFailure } from '../lib/team-load';
 import { teamReviewBlocks } from '../lib/team-review';
@@ -16,7 +16,7 @@ export async function initTeamReview(): Promise<void> {
   const page = document.querySelector<HTMLElement>('[data-review-queue]');
   if (!state || !page) return;
   const stateRoot = createRoot(state);
-  stateRoot.render(createElement(TeamLoadProgress, { label: "Reading this team's reviews" }));
+  stateRoot.render(createElement(TeamPageSkeleton, { label: "Reading this team's reviews" }));
 
   let data: TeamData;
   try {

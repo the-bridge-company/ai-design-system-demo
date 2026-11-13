@@ -14,7 +14,7 @@ import { composeRequestIssue, parseRequestIssue, REQUEST_LABEL, requestOriginOf,
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
 import { StudioHead } from './StudioHead';
-import { TeamLoadError, TeamLoadProgress, useTeamData } from './TeamState';
+import { TeamLoadError, TeamPageSkeleton, useTeamData } from './TeamState';
 import { firstRunLine, groupRequest, sentWords, pieceWord, restLine, ignoreReasonProblems, measuredLines, reportModel, type GapCard, type PieceRow, type ReportModel, type ScoreCard, type ScreenPicture, type CropPicture, type ValueRow } from '../../../lib/adoption-report';
 import { shotsFileUrl } from '../../../lib/preview-shots';
 import { bridgeDataUrl } from '../../../lib/library/published';
@@ -955,7 +955,7 @@ export default function TeamAdoptionReport() {
       <Icon icon={ChevronLeft} size="sm" /> Quality
     </Link>
   );
-  if (load.status === 'loading') return <TeamLoadProgress label="Reading the adoption report" />;
+  if (load.status === 'loading') return <TeamPageSkeleton label="Reading the adoption report" rows={5} />;
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   const data = load.data;
   const product = data.model.config.products?.find((p) => p.key === key);
@@ -994,7 +994,7 @@ export default function TeamAdoptionReport() {
           <Ready data={data} loaded={loaded} />
         </ToastProvider>
       ) : (
-        <TeamLoadProgress label="Reading the adoption report" />
+        <TeamPageSkeleton label="Reading the adoption report" rows={5} />
       )}
     </>
   );

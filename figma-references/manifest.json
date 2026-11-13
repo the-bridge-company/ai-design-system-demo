@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T00:47:41.497Z",
-  "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
+  "createdAt": "2026-11-13T01:14:40.902Z",
+  "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -347,22 +347,22 @@
       }
     },
     "Banner": {
-      "specHash": "dd15480f",
+      "specHash": "c1ea9e69",
       "variants": {
         "Appearance=strong": {
           "file": "banner/appearance-strong.png",
           "width": 320,
-          "height": 60
+          "height": 76
         },
         "Appearance=neutral": {
           "file": "banner/appearance-neutral.png",
           "width": 320,
-          "height": 60
+          "height": 76
         },
         "Appearance=harbor": {
           "file": "banner/appearance-harbor.png",
           "width": 320,
-          "height": 60
+          "height": 76
         }
       }
     },

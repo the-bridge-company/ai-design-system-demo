@@ -6,8 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { decisionsOf, EXPLORATION_LABEL, EXPLORATION_READY_LABEL, explorationPrBody, explorationStatus, isInReview, parseExplorationBody, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
-import { keepSampleAnswer, keepSampleStart, sampleLooksRight, sampleRead, sampleStarts } from './demo-in-browser';
-import { DEMO_VISIT_KEY, runsInBrowser, sampleStartLines, swapDemoDrafts } from './demo';
+import { keepSampleAnswer, keepSampleProduct, keepSampleStart, sampleLooksRight, sampleProducts, sampleRead, sampleStarts } from './demo-in-browser';
+import { DEMO_VISIT_KEY, DEMO_WORDS, runsInBrowser, sampleStartLines, swapDemoDrafts } from './demo';
 import { SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
 import { rowTime, turnSince } from './lead-decisions';
 
@@ -117,17 +117,49 @@ describe('Start an exploration on the sample team', () => {
   });
 });
 
+describe('Add a product on the sample team: kept for the visit', () => {
+  it('keeps the entry a page needs (key, name, address), replaces the same key, and drops it when the visit ends', () => {
+    const store = memory();
+    swapDemoDrafts(store, true);
+    keepSampleProduct(store, { key: 'atlas', name: 'Atlas' });
+    keepSampleProduct(store, { key: 'kiosk', name: 'Kiosk', address: 'https://kiosk.example.com' });
+    keepSampleProduct(store, { key: 'atlas', name: 'Atlas app' });
+    expect(sampleProducts(store)).toEqual([
+      { key: 'kiosk', name: 'Kiosk', address: 'https://kiosk.example.com', framework: 'react' },
+      { key: 'atlas', name: 'Atlas app', framework: 'react' },
+    ]);
+    // Leaving the sample team drops it with the other sample drafts: nothing outlives the visit.
+    expect(swapDemoDrafts(store, false)).toBe('left');
+    expect(sampleProducts(store)).toEqual([]);
+  });
+
+  it('ignores a broken or foreign copy, and says once that it stays in this browser, in the Bridge voice', () => {
+    const store = memory();
+    store.setItem('bridge.acme-design-demo/bridge-demo-ds.draft.products', '[{"key":"../x","name":"X"},{"key":"ok","name":" "},"nope",{"key":"fine","name":"Fine"}]');
+    expect(sampleProducts(store)).toEqual([{ key: 'fine', name: 'Fine' }]);
+    store.setItem('bridge.acme-design-demo/bridge-demo-ds.draft.products', '{oops');
+    expect(sampleProducts(store)).toEqual([]);
+    for (const line of [DEMO_WORDS.sampleProduct, DEMO_WORDS.sampleProductFound]) {
+      expect(line).not.toMatch(/\u2014|repo|fork|pull request|branch/i);
+      expect(line).toMatch(/^[A-Z].*\.$/);
+    }
+  });
+});
+
 describe('which actions run in this browser', () => {
   it('Start an exploration and Looks right on the sample team only; every other write keeps the dialog', () => {
     expect(runsInBrowser(REPO, 'start explorations')).toBe(true);
     expect(runsInBrowser(REPO, 'Start an exploration')).toBe(true);
     expect(runsInBrowser(REPO, 'say the design looks right')).toBe(true);
+    expect(runsInBrowser(REPO, 'Add a product')).toBe(true);
+    expect(runsInBrowser(REPO, 'add products')).toBe(true);
     expect(runsInBrowser(REPO, 'send to Figma')).toBe(false);
     expect(runsInBrowser(REPO, 'invite')).toBe(false);
     expect(runsInBrowser(REPO, null)).toBe(false);
     // Bridge's own design system is real: its writes never run in the browser.
     expect(runsInBrowser('the-bridge-company/ai-design-system-demo', 'start explorations')).toBe(false);
     expect(runsInBrowser('acme/ds', 'say the design looks right')).toBe(false);
+    expect(runsInBrowser('acme/ds', 'add a product')).toBe(false);
   });
 });
 

@@ -511,6 +511,15 @@ export function canAddProduct(
   return Boolean(access.write && login && teamLeadsOf(x.config).includes(login));
 }
 
+/**
+ * On the sample team, who may add a product: the person played in "See it as" (lib/demo-cast.ts) when they run the
+ * team, an admin or its lead (Dana), as on a real team; never a designer, the developer (no email membership: null) or
+ * the product manager. It runs in this browser (lib/demo.ts SAMPLE_IN_BROWSER): nothing is sent.
+ */
+export function canAddSampleProduct(member: { role?: string | null; lead?: boolean | null } | null | undefined): boolean {
+  return Boolean(member && (member.role === 'admin' || member.lead === true));
+}
+
 // A product just added (straight to the team's settings, lib/product-add-api.ts): the page knows it before GitHub's
 // answers catch up (a browser's copy of the settings, Bridge's read cache), so the side nav and its page show it at
 // once. Kept per team in this tab (sessionStorage, scripts/repo-context.ts), until the settings read list it or

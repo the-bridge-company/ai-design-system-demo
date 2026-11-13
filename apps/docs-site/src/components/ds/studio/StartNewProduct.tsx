@@ -8,11 +8,14 @@
 // Both start the code from the product starter with the viewer's own GitHub sign-in (scripts/new-product.ts), link it
 // to the library, then hand the entry to the dialog (`onAdd`), which adds it to the team and opens its page. Back
 // returns to the first question. Words and rules: lib/new-product.ts. The dialog owns opening, closing and the busy lock.
+// The sample team (`sample`): nothing is started on GitHub and no designers' copy is offered; the entry goes straight
+// to the dialog, which keeps it in this browser, and the form says so once (DEMO_WORDS.sampleProduct).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button, ButtonGroup, Checkbox, DialogContent, Input, Spinner, VisuallyHidden } from '@bridge-ds/react';
 import { productAddressOf, type ProductConfig } from '@bridge-ds/core';
 import { useCopy } from './TeamLink';
+import { DEMO_WORDS } from '../../../lib/demo';
 import { ADD_PRODUCT_WORDS as A, newProductEntry, productKeyFor, type ProductRepoChoice } from '../../../lib/add-product';
 import { cleanProductName } from '../../../lib/product-name';
 import { ADDRESS_PRODUCT_WORDS as D, NEW_PRODUCT_WORDS as W, addressProblem, isNameProblem, newProductOwner, newProductProblem, refusalLine, slugFor, startRefusal } from '../../../lib/new-product';
@@ -40,9 +43,11 @@ export interface StartNewProductProps {
   kind?: 'new' | 'address';
   /** Back to Add a product's first question. */
   onBack: () => void;
+  /** The sample team: added in this browser by the dialog, no code started, no copy (lib/demo.ts SAMPLE_IN_BROWSER). */
+  sample?: boolean;
 }
 
-export default function StartNewProduct({ products, library, account, busy, setBusy, copy: copyOn, onCopyChange, aside, onAdd, resume = null, kind = 'new', onBack }: StartNewProductProps) {
+export default function StartNewProduct({ products, library, account, busy, setBusy, copy: copyOn, onCopyChange, aside, onAdd, resume = null, kind = 'new', onBack, sample = false }: StartNewProductProps) {
   const kept = resume?.values ?? null;
   const fromAddress = kind === 'address';
   const [address, setAddress] = useState(typeof kept?.address === 'string' ? kept.address : '');
@@ -90,6 +95,16 @@ export default function StartNewProduct({ products, library, account, busy, setB
     setBusy(true);
     setError(null);
     setNote(null);
+    if (sample) {
+      // Nothing started on GitHub: only the entry a page needs, kept in this browser by the dialog.
+      const key = productKeyFor(slug, products.map((p) => p.key));
+      try {
+        await onAdd({ key, name: clean, ...(live ? { address: live } : {}), framework: 'react' }, { full: '', name: slug, defaultBranch: 'main' });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     // Kept if the person has to sign in again first: this form reopens with the same values (scripts/pending-action).
     const pending = await import('../../../scripts/pending-action');
     pending.armPendingAction('new-product', { name: clean, owner, copy: copyOn && !live, ...(live ? { address: live } : {}) });
@@ -174,14 +189,14 @@ export default function StartNewProduct({ products, library, account, busy, setB
           />
         )}
         {/* An address product has no developers' code: its only code is the design team's own, so no copy. */}
-        {!fromAddress && <Checkbox label={A.copy} description={A.copyHelp} checked={copyOn} onCheckedChange={onCopyChange} disabled={busy} />}
+        {!fromAddress && !sample && <Checkbox label={A.copy} description={A.copyHelp} checked={copyOn} onCheckedChange={onCopyChange} disabled={busy} />}
         <div role="status" aria-live="polite" className="addp-status">
           {busy ? (
             <>
               <Spinner size="xs" /> {adding ? A.adding(clean) : fromAddress ? D.creating(clean) : W.creating(clean)}
             </>
           ) : (
-            note
+            (note ?? (sample ? DEMO_WORDS.sampleProduct : null))
           )}
         </div>
         {error && (

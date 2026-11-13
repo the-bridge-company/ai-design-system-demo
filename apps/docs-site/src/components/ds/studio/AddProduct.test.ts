@@ -17,6 +17,8 @@ import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, noth
 import { ADDRESS_PRODUCT_WORDS as D, NEW_PRODUCT_WORDS as N } from '../../../lib/new-product';
 import { copySetupFresh, copySetupKey } from '../../../lib/design-copy';
 import AddProduct, { setOpenPage } from './AddProduct';
+import { DEMO_WORDS } from '../../../lib/demo';
+import { sampleProducts } from '../../../lib/demo-in-browser';
 
 const gh = vi.hoisted(() => ({
   access: { repos: [] as ProductRepoChoice[], installation: { id: 42, account: { login: 'acme', type: 'Organization' } } as unknown, account: 'acme', accountId: 77 as number | null, seen: 0 },
@@ -29,10 +31,18 @@ const gh = vi.hoisted(() => ({
   // How long the ownership read takes (ms): the owners' line must never show up after the step.
   ownerDelay: 0,
   opened: [] as string[],
+  // The page's team, and the member the page plays there (the sample team's "See it as").
+  team: { owner: 'acme', repo: 'ds' },
+  member: null as unknown,
 }));
 
-vi.mock('../../../scripts/github-session', () => ({ onAccess: (fn: (a: unknown) => void) => fn({ admin: true }), readRepo: () => ({ owner: 'acme', repo: 'ds' }), currentViewer: () => ({ login: 'dana' }) }));
-vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => ({ owner: 'acme', repo: 'ds' }), siteConfig: () => ({ products: [] }) }));
+vi.mock('../../../scripts/github-session', () => ({
+  onAccess: (fn: (a: unknown) => void) => fn(gh.team.owner === 'acme' ? { admin: true } : { admin: true, contributor: true }),
+  readRepo: () => gh.team,
+  currentViewer: () => ({ login: 'dana' }),
+  currentContributor: () => gh.member,
+}));
+vi.mock('../../../scripts/repo-context', () => ({ repoContext: () => gh.team, siteConfig: () => ({ products: [] }) }));
 vi.mock('../../../scripts/add-product', () => ({
   readProductAccess: async () => {
     if (gh.readFails) throw Object.assign(new Error('GitHub rate limit reached'), { status: 429, resetAt: null });
@@ -72,6 +82,8 @@ beforeEach(() => {
   gh.owner = null;
   gh.ownerDelay = 0;
   gh.opened = [];
+  gh.team = { owner: 'acme', repo: 'ds' };
+  gh.member = null;
   setOpenPage((href) => gh.opened.push(href));
   localStorage.clear();
   sessionStorage.clear();
@@ -465,5 +477,71 @@ describe('Add a product: someone who can only request access', () => {
     show();
     expect(await screen.findByText(foundLine('Art print shop'))).toBeInTheDocument();
     expect(localStorage.getItem(KEY)).toBeNull();
+  });
+});
+
+// The sample team (lib/demo.ts SAMPLE_IN_BROWSER): the same dialog for whoever runs it in "See it as" (Dana), adding
+// runs in this browser and nothing is sent; a designer never sees it.
+describe('Add a product on the sample team', () => {
+  const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, visitor: true };
+  const SOFIA = { email: 'sofia@acme.example', name: 'Sofia', role: 'edit', ref: '0406ec723c59bb8d', visitor: true };
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    gh.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    gh.member = DANA;
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 200 }));
+  });
+  const writes = () => fetchSpy.mock.calls.filter(([, init]) => ((init as RequestInit | undefined)?.method ?? 'GET').toUpperCase() !== 'GET');
+
+  it('Dana gets Add a product in Settings; Its code is on GitHub says Bridge looks for nothing there, and reads nothing', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    fireEvent.click(await githubCard());
+    expect(await screen.findByText(DEMO_WORDS.sampleProductFound)).toBeInTheDocument();
+    // Nothing asked of GitHub, no way to it from here: Back only.
+    expect(screen.queryByRole('button', { name: W.findOnGitHub })).toBeNull();
+    expect(screen.getByRole('button', { name: W.back })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    await expectNoAxeViolations(document.body);
+  });
+
+  it('Only its address: added in this browser, its page opens, nothing sent and nothing added on GitHub', async () => {
+    render(createElement(AddProduct, { products: [] }));
+    fireEvent.click(await screen.findByRole('button', { name: W.open }));
+    fireEvent.click(await screen.findByRole('button', { name: W.address }));
+    expect(await screen.findByText(DEMO_WORDS.sampleProduct)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
+    fireEvent.change(screen.getByRole('textbox', { name: D.address }), { target: { value: 'atlas.example.com' } });
+    const added = vi.fn();
+    document.addEventListener('bridge:team-model', added);
+    fireEvent.click(screen.getByRole('button', { name: D.add }));
+    await waitFor(() => expect(gh.opened).toEqual(['/studio/products/atlas/']));
+    document.removeEventListener('bridge:team-model', added);
+    expect(sampleProducts(localStorage)).toEqual([{ key: 'atlas', name: 'Atlas', address: 'https://atlas.example.com', framework: 'react' }]);
+    expect(added).toHaveBeenCalled();
+    expect(gh.add).not.toHaveBeenCalled();
+    expect(writes()).toEqual([]);
+  });
+
+  it('opened from Start an exploration: hands back the new key instead of opening its page', async () => {
+    const onSampleAdded = vi.fn();
+    const onOpenChange = vi.fn();
+    render(createElement(AddProduct, { products: [], open: true, onOpenChange, onSampleAdded }));
+    fireEvent.click(await screen.findByRole('button', { name: W.fresh }));
+    fireEvent.change(await screen.findByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
+    fireEvent.click(screen.getByRole('button', { name: N.create }));
+    await waitFor(() => expect(onSampleAdded).toHaveBeenCalledWith('atlas'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(gh.opened).toEqual([]);
+    expect(writes()).toEqual([]);
+  });
+
+  it('Sofia, a designer, gets no Add a product', async () => {
+    gh.member = SOFIA;
+    render(createElement(AddProduct, { products: [{ key: 'crm', name: 'Acme CRM' }] }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.queryByRole('button', { name: W.open })).toBeNull();
   });
 });

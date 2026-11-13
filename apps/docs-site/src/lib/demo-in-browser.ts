@@ -11,6 +11,7 @@
 //                          the sample team's pull requests (scripts/github-session ghGet) is answered with that copy,
 //                          so the page, the lists, Home and the rail badge agree.
 //   Start an exploration   the name, where and sentence, so the visit remembers what was started.
+//   Add a product          the entry a page needs (key, name, address), so the side nav, its page and Where list it.
 import {
   EXPLORATION_LABEL,
   EXPLORATION_READY_LABEL,
@@ -165,6 +166,51 @@ export function keepSampleStart(store: KeptStore, start: Omit<SampleStart, 'at'>
     store.setItem(startsKey, JSON.stringify([kept, ...sampleStarts(store)].slice(0, 20)));
   } catch {
     /* storage full or blocked */
+  }
+  return kept;
+}
+
+// Add a product on the sample team (lib/demo.ts SAMPLE_IN_BROWSER): the entry the dialog made, kept for the visit
+// under the same kind of key as the starts (dropped by swapDemoDrafts when the visitor leaves the sample team). The
+// side nav, the product's page and Start an exploration's Where list read it with the team's settings
+// (scripts/repo-context.ts addedHere).
+
+/** A product added in this browser on the sample team: the settings entry, nothing on any account. */
+export interface SampleProduct {
+  key: string;
+  name: string;
+  address?: string;
+  framework?: string;
+}
+
+const productsKey = `bridge.${SAMPLE_REPO}.draft.products`;
+
+const isSampleProduct = (x: unknown): x is SampleProduct => {
+  if (!x || typeof x !== 'object') return false;
+  const p = x as Partial<SampleProduct>;
+  return typeof p.key === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(p.key) && typeof p.name === 'string' && p.name.trim() !== '' && (p.address === undefined || typeof p.address === 'string');
+};
+
+/** The products added in this browser on the sample team, in the order they were added. */
+export function sampleProducts(store: KeptStore): SampleProduct[] {
+  try {
+    const list = JSON.parse(store.getItem(productsKey) ?? '[]') as unknown;
+    return Array.isArray(list) ? list.filter(isSampleProduct).map((p) => ({ key: p.key, name: p.name, ...(p.address ? { address: p.address } : {}), ...(p.framework ? { framework: p.framework } : {}) })) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Keeps one more product for the visit (at most 20), replacing one with the same key. Only what a page needs to show
+ * it: its key, its name, and its address when it was added from one. No code, no copy, no previews: nothing was made.
+ */
+export function keepSampleProduct(store: KeptStore, entry: SampleProduct): SampleProduct {
+  const kept: SampleProduct = { key: entry.key, name: entry.name, ...(entry.address ? { address: entry.address } : {}), framework: entry.framework ?? 'react' };
+  try {
+    store.setItem(productsKey, JSON.stringify([...sampleProducts(store).filter((p) => p.key !== kept.key), kept].slice(-20)));
+  } catch {
+    /* storage full or blocked: the page still opens on it this time */
   }
   return kept;
 }

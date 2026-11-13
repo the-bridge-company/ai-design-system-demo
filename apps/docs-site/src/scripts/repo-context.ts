@@ -29,6 +29,7 @@ import { blobCacheFor, getCachedModel, getLatestCachedModel, putCachedModel } fr
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { isHosted, repoFromPath } from '../lib/team-path';
 import { isSampleTeam } from '../lib/demo';
+import { sampleProducts } from '../lib/demo-in-browser';
 import { keptEnvelope, keptValue } from '../lib/kept-version';
 import type { TeamLoadEvent } from '../lib/load-progress';
 
@@ -172,13 +173,26 @@ function keepSite(owner: string, repo: string, site: SiteRepo): void {
   }
 }
 
-/** The products this tab just added (lib/add-product.ts AddedProduct), for the page's team. */
+/**
+ * The products this tab just added (lib/add-product.ts AddedProduct), for the page's team. On the sample team, also
+ * the ones added in this browser for the visit (lib/demo-in-browser.ts sampleProducts): nothing was sent, so the
+ * settings never list them and they stay until the visitor leaves the sample team.
+ */
 export function addedHere(): AddedProduct[] {
   const r = repoContext();
+  const team = `${r.owner}/${r.repo}`;
+  let added: AddedProduct[] = [];
   try {
-    return typeof sessionStorage === 'undefined' ? [] : parseAdded(sessionStorage.getItem(addedKey(`${r.owner}/${r.repo}`)), Date.now());
+    added = typeof sessionStorage === 'undefined' ? [] : parseAdded(sessionStorage.getItem(addedKey(team)), Date.now());
   } catch {
-    return [];
+    added = [];
+  }
+  if (!isSampleTeam(team)) return added;
+  try {
+    const now = Date.now();
+    return typeof localStorage === 'undefined' ? added : [...added, ...sampleProducts(localStorage).map((entry) => ({ entry, at: now }))];
+  } catch {
+    return added;
   }
 }
 

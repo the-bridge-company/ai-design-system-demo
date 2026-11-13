@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T03:12:03.510Z",
-  "sha": "dcfa668f120a8bdaf9194188fd4dd147f0002bca",
+  "createdAt": "2026-11-13T07:19:56.999Z",
+  "sha": "e03015efe99fb84d022292f874f03d28920fcd58",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -192,7 +192,7 @@
       }
     },
     "Badge": {
-      "specHash": "b82c8d8b",
+      "specHash": "22fed627",
       "variants": {
         "Appearance=subtle, Size=sm, Tone=neutral": {
           "file": "badge/appearance-subtle__size-sm__tone-neutral.png",

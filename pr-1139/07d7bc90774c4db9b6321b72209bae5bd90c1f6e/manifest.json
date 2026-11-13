@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T02:36:47.435Z",
-  "durationMs": 164060,
+  "createdAt": "2026-11-13T02:54:15.390Z",
+  "durationMs": 182125,
   "base": {
     "ref": "9ae871cfeb3f6c4b6734cf9bed52820a4a09bb5a",
     "sha": "9ae871cfeb3f6c4b6734cf9bed52820a4a09bb5a"
   },
   "head": {
-    "ref": "6b81a8bd46535b3f7179d58b6e66f8370b12b7f1",
-    "sha": "6b81a8bd46535b3f7179d58b6e66f8370b12b7f1"
+    "ref": "07d7bc90774c4db9b6321b72209bae5bd90c1f6e",
+    "sha": "07d7bc90774c4db9b6321b72209bae5bd90c1f6e"
   },
   "options": {
     "only": [
@@ -93,12 +93,12 @@
   },
   "summary": {
     "shots": 40,
-    "changed": 5,
-    "unchanged": 35,
+    "changed": 4,
+    "unchanged": 36,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 11.99
+    "maxPercent": 14.56
   },
   "shots": [
     {
@@ -433,9 +433,9 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 107665,
+      "changedPixels": 130928,
       "totalPixels": 899072,
-      "percent": 11.98,
+      "percent": 14.56,
       "boxes": [
         {
           "x": 0,
@@ -468,18 +468,11 @@
       "storyId": "forms-select--default",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 9508,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 1.17,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 720,
-          "width": 336,
-          "height": 76
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -490,12 +483,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__forms-select--default__ocean-dark.png",
-        "after": "after/story__forms-select--default__ocean-dark.png",
-        "diff": "diff/story__forms-select--default__ocean-dark.png",
-        "composite": "composite/story__forms-select--default__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__forms-select--with-value__ocean-dark",

@@ -102,8 +102,8 @@ describe('people', () => {
     expect(waitingSentence([ann])).toEqual({ names: 'Ann', rest: ' is waiting on you.' });
     expect(waitingSentence([ann, dana])).toEqual({ names: 'Ann and Dana', rest: ' are waiting on you.' });
     expect(waitingSentence([ann, dana, CLAUDE])?.names).toBe('Ann, Dana and Claude AI');
-    expect(waitingSentence([ann, dana, CLAUDE, person('x', 'Xi')])?.names).toBe('Ann, Dana, Claude AI and 1 other');
-    expect(waitingSentence([ann, dana, CLAUDE, ...['a', 'b', 'c', 'd', 'e', 'f'].map((l) => person(l))])?.names).toBe('Ann, Dana, Claude AI and 6 others');
+    expect(waitingSentence([ann, dana, CLAUDE, person('x', 'Xi')])?.names).toBe('Ann, Dana and 2 others');
+    expect(waitingSentence([ann, dana, CLAUDE, ...['a', 'b', 'c', 'd', 'e', 'f'].map((l) => person(l))])?.names).toBe('Ann, Dana and 7 others');
   });
 });
 

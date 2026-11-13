@@ -26,6 +26,7 @@ import {
   type PieceVerdict,
 } from '@bridge-ds/core';
 import { SEP } from './sep';
+import { notifiedLine } from './people-line';
 import { baselineOf, knownLibraryOptions, type LibraryOption } from './library-baseline';
 import { asIsLine, asIsOption, decisionConflicts } from './library-as-is';
 
@@ -167,8 +168,10 @@ export interface DecidedView {
   parts: Said[];
   /** "Dana, just now". */
   by: string;
-  /** "Leo and Sofia are told". */
+  /** "Leo and Sofia will be notified." (lib/people-line notifiedLine), drawn with their faces (People.tsx). */
   told: string;
+  /** Who is notified, in that order. */
+  people: string[];
   plates: DecidedPlate[];
 }
 
@@ -201,13 +204,18 @@ export interface ConflictView {
   /** "Which way does Card take?", "Sofia's screen makes Card roomier". */
   question: string;
   context: Said[];
-  /** Beside the actions: "Answers both screens. Leo and Sofia are told." */
+  /** Beside the actions: "Answers both screens. Leo and Sofia will be notified." */
   note: string;
   /**
    * The same sentence in runs, one of them a link when the choice is made elsewhere: "Dana picks in [Library review],
    * for both screens." or "[Pick in Library review]: it answers both screens."
    */
   noteParts: NotePart[];
+  /**
+   * Who the choice notifies, said after noteParts with their faces (People.tsx), the same line as Library review's
+   * footer: "Leo and Sofia will be notified." Null when the reader does not make the choice.
+   */
+  notified: { text: string; people: string[] } | null;
   /** "Comment to both", "Comment to all", "Comment". */
   comment: string;
   /** The row's one tag while open: "Your choice", "Dana picks". */
@@ -909,17 +917,17 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
       ? [...listed, ...tail]
       : [{ text: `${other.designer}'s `, face: other.designer }, { text: other.screen, strong: true }, { text: `${other.product ? ` (${other.product})` : ''} makes it ${effect(other)}` }, ...mineSaid];
   }
-  const told = `${namesLine(ways.map((w) => w.designer))} ${ways.length === 1 ? 'is' : 'are'} told`;
-  const toldLine = ways.length > 3 ? 'Everyone who asked is told.' : `${told}.`;
+  const told = notifiedLine(ways.map((w) => w.designer));
   const where = x.reviewHref;
   const noteParts: NotePart[] = decides
-    ? [{ text: `Answers ${screens}. ${toldLine}` }]
+    ? [{ text: `Answers ${screens}.` }]
     : x.designerHere
       ? [{ text: `Tell ${owners || !leadName ? 'the library owners' : leadName} why yours fits this screen. ${owners || !leadName ? "The library owners'" : `${leadName}'s`} choice answers ${screens}.` }]
       : leadElsewhere
-        ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}. ${toldLine}` }]
+        ? [where ? { text: 'Pick in Library review', href: where } : { text: 'Pick in Library review' }, { text: `: it answers ${screens}.` }]
         : [{ text: `${leadName ?? 'The library owners'} ${picks} in ` }, where ? { text: 'Library review', href: where } : { text: 'Library review' }, { text: `, for ${screens}.` }];
-  const note = noteParts.map((p) => p.text).join('');
+  const notified = decides || leadElsewhere ? { text: told, people: [...new Set(ways.map((w) => w.designer))] } : null;
+  const note = [noteParts.map((p) => p.text).join(''), notified?.text].filter(Boolean).join(' ');
   const pick = group.find((c) => c.pick)?.pick ?? null;
   const rawValue = (key: string) => (key === first.mine.key ? first.mine.value : group.find((c) => c.other.key === key)?.other.value);
   const sized = /^padding|gap|radius|width|height|size/i.test(property);
@@ -940,6 +948,7 @@ function conflictView(group: readonly LibraryConflict[], x: ConflictContext): Co
     context,
     note,
     noteParts,
+    notified,
     comment: decides ? (ways.length === 2 ? 'Comment to both' : 'Comment to all') : 'Comment',
     // Who picks, said once: the lead deciding here reads "Your choice", the lead who picks in Library review "Needs you".
     tag: decides ? 'Your choice' : leadElsewhere ? 'Needs you' : `${leadName ?? 'The library owners'} ${picks}`,
@@ -1003,6 +1012,7 @@ function decidedView(pick: string, ways: readonly WayView[], component: string, 
     parts: decidedParts(pick, ways, component, ledger, by),
     by: when ? `${who}, ${when}` : who,
     told,
+    people: [...new Set(ways.map((w) => w.designer))],
     plates: [
       { key: 'today', label: 'Today', sub: mode === 'sizes' ? 'Stays the default' : 'Before', chip: null, today: true, look: null },
       ...kept.map((w) => ({ key: w.key, label: w.size, sub: w.mine ? null : w.screen, chip: w.mine ? 'This screen' : null, today: false, look: w.look })),

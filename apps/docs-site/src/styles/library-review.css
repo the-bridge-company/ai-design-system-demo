@@ -851,21 +851,8 @@ a.lr-ask {
   min-width: 0;
 }
 
-.lr-asked {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  max-width: 100%;
-  min-width: 0;
-  color: var(--color-text-default);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  white-space: nowrap;
-}
-
-.lr-asked-name {
-  min-width: 0;
-}
+/* Asked by is the shared People line (styles/people.css, .lr-asked on it): every face and name up to three people;
+   the names wrap on two lines in the cell rather than hide anyone behind "+1". */
 
 .lr-from {
   display: grid;
@@ -929,9 +916,6 @@ a.lr-ask {
 }
 
 
-.lr-faces {
-  flex: none;
-}
 
 /* --- Tally: what waits, at the end of the filters row ------------------------------------------------------------- */
 
@@ -2416,14 +2400,16 @@ a.lr-reach-card:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* Who will be notified, a real sentence beside the actions it follows: the shared People line (styles/people.css,
+   ui 14/20 in the default ink, sm faces centred on it). The waiting line in its place reads the same size. */
 .lr-compare-told {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  min-width: 0;
   margin-inline-end: auto;
-  color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The Map's one piece: its row, then "Show all" on its end. */

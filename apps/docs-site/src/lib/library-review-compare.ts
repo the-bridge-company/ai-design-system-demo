@@ -9,6 +9,7 @@
 import { wayWords, type WayLook } from './library-impact-view';
 import { baselineOf, knownLibraryOptions } from './library-baseline';
 import { peopleWords } from './library-askers';
+import { notifiedLine } from './people-line';
 import type { ReviewPiece } from './library-review';
 
 /** The pick that keeps every way, each as its own size (core chooseLibraryWayOnGitHub, lib/library-impact-view keptKeys). */
@@ -54,7 +55,7 @@ export interface CompareView {
   ways: CompareOption[];
   /** "Both, as two sizes" (every way kept as its own size), when every way's value is known. */
   both: CompareOption | null;
-  /** "Sofia and Leo are told." */
+  /** "Sofia and Leo will be notified." (lib/people-line notifiedLine) */
   told: string;
   people: string[];
 }
@@ -139,7 +140,7 @@ export function compareView(p: Pick<ReviewPiece, 'conflict' | 'kind' | 'asked'>,
     today: { key: 'today', who: null, name: 'Today', value: today, valueText: today === null ? null : `${today} px`, words: 'in the library', where: { text: todayWhere }, hue: 0, sameAsToday: false, libraryOption: null },
     ways,
     both,
-    told: `${peopleWords(people)} ${people.length === 1 ? 'is' : 'are'} told.`,
+    told: notifiedLine(people),
     people,
   };
 }

@@ -29,6 +29,7 @@ const BLOCK = `
 afterEach(() => {
   cleanup();
   document.body.innerHTML = '';
+  document.documentElement.removeAttribute('data-sample-team');
 });
 
 describe('GitHubAccountMenu', () => {
@@ -62,5 +63,15 @@ describe('GitHubAccountMenu', () => {
     await user.click(await screen.findByRole('button', { name: /account menu/ }));
     const menu = await screen.findByRole('menu');
     expect(within(menu).getByRole('menuitem', { name: 'Reconnect GitHub' }).hasAttribute('data-gh-open')).toBe(true);
+  });
+
+  it('never offers Reconnect GitHub on the sample team: its visitor plays someone, nothing to reconnect', async () => {
+    document.body.innerHTML = BLOCK;
+    document.documentElement.setAttribute('data-sample-team', '');
+    const user = userEvent.setup();
+    render(createElement(GitHubAccountMenu, { signIn: false }), { container: document.getElementById('island')! });
+    await user.click(await screen.findByRole('button', { name: /account menu/ }));
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Settings', 'Sign out']);
   });
 });

@@ -263,7 +263,11 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     accountTeamRole: !workspace && hosted && name ? (account?.teams.find((t) => sameRepo(t.repo, name))?.role ?? null) : null,
     ...blockRole,
   });
-  const showBadge = chipShowsBadge(badge.label, rowRole);
+  // The sample team's visitor plays one of its people, whose role the account row says: the chip shows the team's name
+  // alone from first paint (styles/team-access.css keeps the server's pending badge out there too), never a "Checking"
+  // or "Guest" that comes and goes and moves the name (A1).
+  const playsSample = !workspace && !account && isSampleTeam(name);
+  const showBadge = !playsSample && chipShowsBadge(badge.label, rowRole);
   const offerTeams = launcher || hosted;
   // "Your teams": the teams the signed-in person belongs to (their role known in this browser), the one you are on first
   // with a check and your role. The browser workspace shows only while you are in it or have no team of your own; from

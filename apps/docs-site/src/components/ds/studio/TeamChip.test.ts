@@ -143,6 +143,22 @@ describe('TeamChip names the team', () => {
     await waitFor(() => expect(container.querySelector('.tc-name')!.textContent).toBe('Acme Studio'));
   });
 
+  it("A1: the sample team's visitor sees the name alone, no badge that comes and goes (the account row says the role)", async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.pending = true;
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    expect(await screen.findByRole('button', { name: 'Acme Design, team menu' })).toBeInTheDocument();
+    expect(container.querySelector('.tc-badge')).toBeNull();
+  });
+
+  it("A1: once the session answered, the sample team's chip still shows no badge (never a Guest that came late)", async () => {
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    const { container } = render(createElement(TeamChip, { launcher: true }));
+    expect(await screen.findByRole('button', { name: 'Acme Design, team menu' })).toBeInTheDocument();
+    expect(container.querySelector('.tc-badge')).toBeNull();
+    expect(screen.queryByText('Guest')).toBeNull();
+  });
+
   it('while the session has not answered, says Checking, never Guest', async () => {
     page.pending = true;
     page.site = { name: 'Acme Studio' };

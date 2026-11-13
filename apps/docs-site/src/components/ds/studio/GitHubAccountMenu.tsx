@@ -12,7 +12,7 @@ import { Button, Icon, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger }
 import { studioHref } from '../../../lib/team-path';
 
 export interface GitHubAccountMenuProps {
-  /** The site signs in with the Bridge sign-in screen: no "Reconnect GitHub" (a pasted token) item. */
+  /** The site signs in with the Bridge sign-in screen: no "Reconnect GitHub" (a pasted token) item, nor on the sample team. */
   signIn: boolean;
 }
 
@@ -57,6 +57,9 @@ export default function GitHubAccountMenu({ signIn }: GitHubAccountMenuProps) {
     o.observe(block, { attributes: true, attributeFilter: ['data-contributor'] });
     return () => o.disconnect();
   }, [block]);
+  // The sample team (Layout.astro sets data-sample-team before first paint): its visitor plays one of its people, who
+  // has no GitHub token of theirs to reconnect.
+  const [sample] = useState(() => document.documentElement.hasAttribute('data-sample-team'));
   const who = useHeld(block, '[data-gh-who-src]');
   const head = useHeld(block, '[data-gh-head-src]');
   const forget = useHeld(block, '[data-gh-forget-src]');
@@ -73,7 +76,7 @@ export default function GitHubAccountMenu({ signIn }: GitHubAccountMenuProps) {
           <MenuContent align="start" side="top" className="gh-acct-pop" data-contributor={contributor ? '' : undefined}>
             <div ref={head} className="gh-acct-head" />
             <MenuSeparator />
-            {!signIn && (
+            {!signIn && !sample && (
               <MenuItem icon={Pencil} data-gh-open="" data-gh-token-only="">
                 Reconnect GitHub
               </MenuItem>

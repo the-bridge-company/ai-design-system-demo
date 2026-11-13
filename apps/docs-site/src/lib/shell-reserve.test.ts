@@ -9,6 +9,8 @@ const layout = read('../layouts/Layout.astro');
 const site = read('../styles/site.css');
 const studio = read('../styles/studio-app.css');
 const team = read('../styles/team-access.css');
+const gate = read('../scripts/demo-gate.ts');
+const banner = read('../../../../packages/react/src/components/Banner/Banner.module.css');
 const rule = (css: string, selector: string) => {
   const at = css.indexOf(`${selector} {`);
   expect(at, selector).toBeGreaterThan(-1);
@@ -25,7 +27,18 @@ describe('reserved space (batch A)', () => {
 
   it("A7: the sample team's banner strip holds one banner line from first paint", () => {
     expect(layout).toContain("if (sample) document.documentElement.setAttribute('data-sample-team', '')");
-    expect(rule(site, ':root[data-sample-team] .demo-strip[hidden]:not([data-settled])')).toMatch(/min-height: calc\(var\(--control-height-md\) \+ var\(--space-4\)\)/);
+    // The banner's height: a md button inside the Banner's block padding (space-2 each side) and its two hairlines.
+    expect(rule(site, ':root[data-sample-team] .demo-strip[hidden]:not([data-settled])')).toMatch(/min-height: calc\(var\(--control-height-md\) \+ 2 \* var\(--space-2\) \+ 2 \* var\(--border-width-default\)\)/);
+    // The demo banner always has actions: the Banner's block padding with actions is space-2.
+    expect(rule(banner, '.hasActions')).toMatch(/padding: var\(--space-2\) var\(--space-2\) var\(--space-2\) var\(--space-4\)/);
+  });
+
+  it('A7: the strip is never shown empty: the banner is rendered (flushSync) before the strip unhides', () => {
+    const paint = gate.slice(gate.indexOf('return (on: boolean, visiting?: boolean) => {'));
+    expect(paint.indexOf('if (!on) slot.hidden = true;')).toBeGreaterThan(-1);
+    expect(paint.indexOf('flushSync(() => root.render(')).toBeGreaterThan(paint.indexOf('if (!on) slot.hidden = true;'));
+    expect(paint.indexOf('if (on) slot.hidden = false;')).toBeGreaterThan(paint.indexOf('flushSync(() => root.render('));
+    expect(paint).not.toMatch(/slot\.hidden = !on/);
   });
 
   it('A8: the search palette keeps one top edge while results change', () => {
@@ -44,6 +57,15 @@ describe('reserved space (batch A)', () => {
 
   it('A11: Invite collaborators reads like every other item of the team menu', () => {
     expect(team).not.toMatch(/\.tc-invite\s*\{/);
+  });
+
+  it("A11: every item of the team menu starts its text on one edge: one leading slot, a team mark's width", () => {
+    // The DS Menu's leading slot is an icon wide (icon-size-sm); a team's mark is an Avatar xs (size-5). One width for all.
+    expect(rule(team, '.tc-menu [role="menuitem"] > :first-child')).toMatch(/width: var\(--size-5\)/);
+    expect(rule(team, '.tc-menu .tc-mark')).toMatch(/width: var\(--size-5\);\s*height: var\(--size-5\)/);
+    // No item widens its own slot to its content (the 4px step between a team row and the others).
+    expect(team).not.toMatch(/\.tc-team > :first-child\s*\{\s*width: auto/);
+    expect(read('../../../../packages/react/src/components/Avatar/Avatar.module.css')).toMatch(/\.xs \{\s*--_size: var\(--size-5\)/);
   });
 
   it('A12: the Library rail offers the account row to someone signed in', () => {

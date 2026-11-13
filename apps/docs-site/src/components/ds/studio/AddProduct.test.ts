@@ -11,7 +11,7 @@
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { ACCESS_MESSAGE, ACCESS_TICK_MS, ADD_PRODUCT_WORDS as W, foundLine, nothingYetLine, ownersOnlyLine, pendingKey, requestSentLine, type ProductRepoChoice } from '../../../lib/add-product';
 import { ADDRESS_PRODUCT_WORDS as D, NEW_PRODUCT_WORDS as N } from '../../../lib/new-product';
@@ -485,13 +485,13 @@ describe('Add a product: someone who can only request access', () => {
 describe('Add a product on the sample team', () => {
   const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, visitor: true };
   const SOFIA = { email: 'sofia@acme.example', name: 'Sofia', role: 'edit', ref: '0406ec723c59bb8d', visitor: true };
-  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  let fetchSpy: MockInstance<typeof fetch>;
   beforeEach(() => {
     gh.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
     gh.member = DANA;
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 200 }));
   });
-  const writes = () => fetchSpy.mock.calls.filter(([, init]) => ((init as RequestInit | undefined)?.method ?? 'GET').toUpperCase() !== 'GET');
+  const writes = () => fetchSpy.mock.calls.filter(([, init]) => (init?.method ?? 'GET').toUpperCase() !== 'GET');
 
   it('Dana gets Add a product in Settings; Its code is on GitHub says Bridge looks for nothing there, and reads nothing', async () => {
     render(createElement(AddProduct, { products: [] }));

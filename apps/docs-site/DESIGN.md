@@ -81,7 +81,7 @@ Library
 
 Studio (header and nav on a soft ground, white canvas)
 +--------------------------------------------------------------------------------+
-| [Bridge | Studio]     [ Search tokens, components, changes ]     ◐ | Library ↗ |
+| [Bridge | Studio]     [ Search explorations, components, tokens ]     ◐ | Library ↗ |
 +-----------+--------------------------------------------------------------------+
 | Overview  |                                                                    |
 | Tokens    |                                                                    |

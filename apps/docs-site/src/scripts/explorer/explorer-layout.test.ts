@@ -167,7 +167,7 @@ function mediaRule(query: string, selector: string): Record<string, string> {
 describe('Studio toolbar (type filter)', () => {
   it('desktop (861px and up): one row inside its container; the search grows but never under size 40, the types give way and scroll, Options stays', () => {
     const q = '(min-width: 861px)';
-    expect(mediaRule(q, '.xp[data-surface="app"] .xp-search')).toMatchObject({ flex: '1 0 var(--size-40)', 'min-width': 'var(--size-40)' });
+    expect(mediaRule(q, '.xp[data-surface="app"] .xp-search')).toMatchObject({ flex: '1 0 calc(var(--size-40) + var(--size-12))', 'min-width': 'calc(var(--size-40) + var(--size-12))' });
     // The types keep their natural width when it fits, and shrink (their DS track scrolls with the edge fade) when not.
     expect(mediaRule(q, '.xp[data-surface="app"] .xp-chips')).toMatchObject({ flex: '0 1 auto', 'min-width': '0' });
     expect(mediaRule(q, '.xp[data-surface="app"] .xp-options')).toMatchObject({ flex: 'none' });
@@ -192,6 +192,26 @@ describe('Hex values', () => {
     expect(gridTemplate({ columns: [col, col] } as never, { mode: 'edit', flat: false, showCode: false, showDescription: false } as never)).toContain('minmax(17rem, 1fr) minmax(17rem, 1fr)');
     expect(rule('.xp-field.is-color .xp-field-end')).toMatchObject({ flex: 'none' });
     expect(mount(studioCellHtml(d, 'color.bg.default', col, true)).querySelector('.xp-field.is-color .xp-field-end')?.textContent).toBe('#ffffff');
+    // The details panel open never hides the hex any more: the table scrolls sideways instead.
+    expect(css).not.toMatch(/has-detail \.xp-field-end\s*\{\s*display: none/);
+  });
+});
+
+describe('Name column', () => {
+  it('keeps a typical name on one line: a min width, ellipsis and the full path on hover beyond it; wraps at dots only on a phone', async () => {
+    const { nameMin, gridTemplate } = await import('./grid');
+    expect(nameMin({ mode: 'edit', flat: false })).toBeGreaterThanOrEqual(15);
+    expect(nameMin({ mode: 'read', flat: true })).toBeGreaterThanOrEqual(15);
+    expect(gridTemplate({ columns: [col, col] } as never, { mode: 'edit', flat: false, showCode: false, showDescription: false } as never)).toMatch(/^minmax\(15rem, 1\.6fr\) /);
+    expect(rule('.xp[data-surface="app"] .xp-name-main')).toMatchObject({ overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' });
+    expect(mediaRule('(max-width: 640px)', '.xp[data-surface="app"] .xp-name-main')).toMatchObject({ 'white-space': 'normal' });
+  });
+
+  it('the table is as wide as its column minimums, so a narrow page scrolls it sideways instead of squeezing names and values', async () => {
+    const src = readFileSync(join(__dirname, 'grid.ts'), 'utf8');
+    expect(src).toMatch(/--xp-minw', `\$\{nameMin\(s\) \+ modeMin\(s\)/);
+    expect(src).toMatch(/class="xp-name-main mono" title="\$\{esc\(t\.path\)\}"/);
+    expect(rule('.xp-grid')['min-width']).toBe('var(--xp-minw, 100%)');
   });
 });
 
@@ -250,9 +270,10 @@ describe('Cell editor spacing', () => {
     for (const sel of ['.xe-title', '.xe-pick', '.xe-ramp-host']) expect(rule(sel).padding, sel).toBe('var(--space-3) var(--xe-pad) 0');
     for (const sel of ['.xe-families', '.xe-status', '.xe-more', '.xe-pop-pv']) expect(rule(sel).margin, sel).toBe('var(--space-3) var(--xe-pad) 0');
     expect(rule('.xe-family-host').gap).toBe('var(--space-2)');
-    // The underline tabs' grey baseline runs on under "More" (the same line as the DS Tabs baseline).
-    expect(rule('.xe-family-host')).toMatchObject({ position: 'relative', 'align-items': 'flex-end' });
-    expect(rule('.xe-family-host::before')).toMatchObject({ position: 'absolute', inset: 'auto 0 0', height: 'var(--border-width-default)', 'background-color': 'var(--color-border-default)' });
+      // One grey baseline on the whole tab row (the same line as the DS Tabs baseline), under the tabs and More alike.
+    expect(rule('.xe-families')).toMatchObject({ position: 'relative', 'align-items': 'flex-end' });
+    expect(rule('.xe-family-host')['align-items']).toBe('flex-end');
+    expect(rule('.xe-families::before')).toMatchObject({ position: 'absolute', inset: 'auto 0 0', height: 'var(--border-width-default)', 'background-color': 'var(--color-border-default)' });
     // Ramp tiles: a 32px swatch, the step number at the caption size (12px).
     expect(rule('.xe-tile-sw')).toMatchObject({ width: 'var(--size-8)', height: 'var(--size-8)' });
     expect(rule('.xe-tile-step')['font-size']).toBe('var(--typography-caption-size)');

@@ -1941,33 +1941,34 @@
 }
 
 /* The family tabs: the DS Tabs, underline and small (components/explorer/FamilyTabs.tsx), with More beside them as a
-   quiet button at the same height and type (it opens a menu, it is not a tab). */
+   quiet button at the same height and type (it opens a menu, it is not a tab). The row shares one grey baseline:
+   drawn on the row itself (the same line as the DS Tabs underline baseline: border-width-default, border-default),
+   across its whole width, so it runs on under "More" and the overflow trigger reads as part of the tab row. Every
+   item sits on the row's bottom edge (flex-end), so the tab list's own baseline lies on this one. Drawn first
+   (::before), so the tabs' signal indicator paints over it. */
 .xe-families {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--space-1);
   min-width: 0;
   margin: var(--space-3) var(--xe-pad) 0;
 }
 
-/* The tabs and More: the DS gap between the tabs' track and the button, never glued to it. */
-.xe-family-host {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-/* The tab list's grey baseline runs on under "More": the overflow trigger reads as part of the tab row, not a
-   detached button. Same line as the DS Tabs underline baseline (border-width-default, border-default); drawn first
-   (::before), so the tabs' signal indicator paints over it. */
-.xe-family-host::before {
+.xe-families::before {
   content: "";
   position: absolute;
   inset: auto 0 0;
   height: var(--border-width-default);
   background-color: var(--color-border-default);
+}
+
+/* The tabs and More: the DS gap between the tabs' track and the button, never glued to it. */
+.xe-family-host {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .xe-family-tabs {
@@ -3022,10 +3023,12 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
     min-width: 0;
   }
 
-  /* Grows into the free width, never shrinks under its basis (size 40): the types give way instead. */
+  /* Grows into the free width and never shrinks under its basis: the types give way instead. The basis is the box
+     (size 40 + size 12, 208px), so the text area inside it, after the padding and the search glyph, keeps about
+     150px: "Filter 119 tokens" reads whole. (At size 40 the box held its 160px but its text area was only 102px.) */
   .xp[data-surface="app"] .xp-search {
-    flex: 1 0 var(--size-40);
-    min-width: var(--size-40);
+    flex: 1 0 calc(var(--size-40) + var(--size-12));
+    min-width: calc(var(--size-40) + var(--size-12));
   }
 
   .xp[data-surface="app"] .xp-options {
@@ -3210,12 +3213,22 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   padding: var(--space-2);
 }
 
-/* Studio Tokens list, designer pass. Names wrap at their dots (grid.ts adds the break points) when the table narrows,
-   so the whole name stays readable with the details panel open and on phones; a row grows instead of truncating. */
+/* Studio Tokens list. On a desktop a name stays on one line: the name column keeps room for a typical name
+   (grid.ts nameMin) and the table scrolls sideways when the details panel narrows the page; only a name longer than
+   that ends in an ellipsis, the full path on hover (title). On a phone the name has the whole row and wraps at its
+   dots (grid.ts adds the break points). */
 .xp[data-surface="app"] .xp-name-main {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .xp[data-surface="app"] .xp-name-main {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
 }
 
 .xp[data-surface="app"] .xp-td.is-name {
@@ -3231,19 +3244,6 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 .xp[data-surface="app"] .xp-field-end {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
-}
-
-/* With the details panel open on a laptop screen, the hex steps back (the panel shows it for the selected token, and
-   every cell keeps it on hover) so names and palette steps stay whole. */
-@media (max-width: 1599px) {
-  .xp[data-surface="app"].has-detail .xp-field-end {
-    display: none;
-  }
-
-  /* An easing's numbers have their own line: they stay. */
-  .xp[data-surface="app"].has-detail .xp-field.is-stack .xp-field-end {
-    display: block;
-  }
 }
 
 /* An easing stacks its name and its four numbers (scripts/explorer/cells.ts): the pill grows to two lines, the

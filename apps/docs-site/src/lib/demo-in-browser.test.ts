@@ -1,7 +1,9 @@
 // The sample team's actions that run in this browser (C6). Looks right moves the exploration on exactly as the real
 // approval (core designApproveOnGitHub, two-reviews) would: Ready to build when nothing waits on the library, else In
 // review on the library decision (Dana's own, when she holds both hats). Every read of the sample team's pull requests
-// answers with that copy until the visitor leaves. Start an exploration is kept for the visit.
+// answers with that copy until the visitor leaves. Start an exploration is kept for the visit. The sample team's own
+// flows (demo-in-browser.flows.json, as its repositories hold them) are replayed too.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { decisionsOf, EXPLORATION_LABEL, EXPLORATION_READY_LABEL, explorationPrBody, explorationStatus, isInReview, parseExplorationBody, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import { keepSampleAnswer, keepSampleStart, sampleLooksRight, sampleRead, sampleStarts } from './demo-in-browser';
@@ -125,5 +127,56 @@ describe('which actions run in this browser', () => {
     // Bridge's own design system is real: its writes never run in the browser.
     expect(runsInBrowser('the-bridge-company/ai-design-system-demo', 'start explorations')).toBe(false);
     expect(runsInBrowser('acme/ds', 'say the design looks right')).toBe(false);
+  });
+});
+
+// The sample team's own explorations as its repositories hold them (asked before the two reviews: one ask to the lead,
+// no library ask on record), so these tests follow the flows a visitor clicks through.
+type Flow = { number: number; repo: string; head: { ref: string; sha: string }; labels: string[]; body: string };
+const FLOWS = JSON.parse(readFileSync(new URL('./demo-in-browser.flows.json', import.meta.url), 'utf8')) as Record<'deal' | 'order', Flow>;
+const flowPull = (f: Flow) => ({ number: f.number, state: 'open', draft: true, body: f.body, labels: f.labels.map((name) => ({ name })), head: f.head, base: { repo: { full_name: f.repo } } });
+
+describe("the sample team's flows: Looks right never skips Dana's library decision", () => {
+  it('Deal pipeline cards: its Card restyle uses the library as is (Card at 12px is Compact), so no library decision waits in any list and Looks right hands it off', () => {
+    const p = flowPull(FLOWS.deal);
+    // Every list reads it the same before the answer: only Dana's design review waits.
+    expect(viewerHats(p.body, { team, product: 'crm', viewer: viewerIds(null, DANA) })).toEqual(['design-review']);
+    expect(waitingLineOf(p.body, { team, product: 'crm' })).toBe("Waiting for Dana's design review");
+    const a = sampleLooksRight(p, { byName: 'Dana', at: AT })!;
+    expect(a.ready).toBe(true);
+    expect(explorationStatus({ state: 'open', draft: true, body: a.body, labels: a.labels, headRef: FLOWS.deal.head.ref, headSha: FLOWS.deal.head.sha })).toBe('ready');
+    // Still no library piece decided by it.
+    expect(parseExplorationBody(a.body)?.library?.decisions ?? []).toEqual([]);
+  });
+
+  it('Order fulfilment timeline: both pieces stay undecided; Looks right decides no library piece', () => {
+    const p = flowPull(FLOWS.order);
+    const a = sampleLooksRight(p, { byName: 'Dana', at: AT })!;
+    expect(a.ready).toBe(false);
+    expect(a.libraryPending).toEqual(['card-timeline-restyle', 'component-timeline']);
+    const e = parseExplorationBody(a.body)!;
+    expect(e.library?.decisions ?? []).toEqual([]);
+    expect(e.library?.askedAt).toBe(parseExplorationBody(p.body)?.designAskedAt);
+    expect(decisionsOf(e).filter((d) => d.at === AT.toISOString())).toEqual([expect.objectContaining({ kind: 'looks-right', hat: 'design', byName: 'Dana' })]);
+    expect(viewerHats(a.body, { team, product: 'prints', viewer: viewerIds(null, DANA) })).toEqual(['library']);
+    expect(waitingLineOf(a.body, { team, product: 'prints' })).toContain('Timeline');
+  });
+
+  it('the Explorations list reads the same kept copy as the page and Being built, from any read of the product', () => {
+    const store = memory();
+    swapDemoDrafts(store, true);
+    const p = flowPull(FLOWS.order);
+    const a = sampleLooksRight(p, { byName: 'Dana', at: AT })!;
+    keepSampleAnswer(store, FLOWS.order.repo, p.number, a);
+    // The product's own list read (product-repos readProductPulls), the single read, any case.
+    const list = sampleRead(store, `/repos/${FLOWS.order.repo}/pulls?state=open&per_page=100`, [p]);
+    expect(list[0]!.body).toBe(a.body);
+    expect(sampleRead(store, `/repos/${FLOWS.order.repo}/pulls/${p.number}`, p).body).toBe(a.body);
+    expect(sampleRead(store, `/repos/ACME-DESIGN-DEMO/acme-prints-design/pulls/${p.number}`, p).body).toBe(a.body);
+    // Same number in another repository (Deal pipeline cards is #1 too): untouched.
+    const deal = flowPull(FLOWS.deal);
+    expect(sampleRead(store, `/repos/${FLOWS.deal.repo}/pulls?state=open&per_page=100`, [deal])[0]!.body).toBe(deal.body);
+    // Every reader agrees: the row still waits on Dana, for her library decision only (Waiting on you, the badge).
+    expect(viewerHats(list[0]!.body, { team, product: 'prints', viewer: viewerIds(null, DANA) })).toEqual(['library']);
   });
 });

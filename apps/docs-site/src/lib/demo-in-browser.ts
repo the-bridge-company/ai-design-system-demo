@@ -3,11 +3,13 @@
 // "draft"), so nothing outlives the visit and nothing reaches a real team. Pure over a Storage-like store, covered by
 // demo-in-browser.test.ts.
 //   Looks right            the pull request as the real approval leaves it (core designApproveOnGitHub, two-reviews):
-//                          the design review's yes in the description; then, when no new piece waits on the library,
-//                          the hand-off settleReviewsOnGitHub runs (Done exploring in the description, `exploration`
-//                          label off, `ready-for-devs` on): Ready to build. While a piece waits, it stays In review on
-//                          the library decision. Every read of the sample team's pull requests (scripts/github-session
-//                          ghGet) is answered with that copy, so the page, the lists, Home and the rail badge agree.
+//                          the design review's yes in the description, and nothing else: it never decides a library
+//                          piece. While any new piece is undecided (read as the exploration page reads it, legacy asks
+//                          included: lib/team-reviews legacyLibraryAsk), it stays In review on the library decision.
+//                          Only when nothing waits does the hand-off settleReviewsOnGitHub runs (Done exploring in the
+//                          description, `exploration` label off, `ready-for-devs` on): Ready to build. Every read of
+//                          the sample team's pull requests (scripts/github-session ghGet) is answered with that copy,
+//                          so the page, the lists, Home and the rail badge agree.
 //   Start an exploration   the name, where and sentence, so the visit remembers what was started.
 import {
   EXPLORATION_LABEL,
@@ -20,8 +22,10 @@ import {
   withDecision,
   withDesignOk,
   withDoneExploring,
+  withLibraryAsked,
 } from '@bridge-ds/core';
 import { SAMPLE_REPO } from './demo';
+import { legacyLibraryAsk } from './team-reviews';
 
 /** The part of Storage these helpers use. */
 export interface KeptStore {
@@ -35,6 +39,16 @@ export interface SamplePull {
   body?: string | null | undefined;
   labels?: ({ name?: string } | string)[] | undefined;
   head?: { ref?: string; sha?: string } | undefined;
+  /** The repository it lives in, as GitHub says it (product pulls are also tagged with `repo`). */
+  base?: { ref?: string; repo?: { full_name?: string } | null } | null | undefined;
+  repo?: string | undefined;
+  html_url?: string | undefined;
+}
+
+/** The repository a pull request lives in ("owner/repo"), from the pull request itself; null when it does not say. */
+export function pullRepo(p: SamplePull): string | null {
+  const own = p.base?.repo?.full_name ?? (typeof p.repo === 'string' ? p.repo : null) ?? /github\.com\/([^/]+\/[^/]+)\/pull\//.exec(p.html_url ?? '')?.[1] ?? null;
+  return own ? own.toLowerCase() : null;
 }
 
 /** What Looks right left: the description and labels, and where the exploration stands now. */
@@ -59,8 +73,13 @@ export function sampleLooksRight(pull: SamplePull, x: { byName: string; at?: Dat
   const e = parseExplorationBody(pull.body);
   if (!isDesignReviewWaiting(e)) return null;
   const at = (x.at ?? new Date()).toISOString();
-  const pending = libraryPendingOf(e, parsePiecesRecord(pull.body));
-  const said = withDecision(withDesignOk(pull.body, { at }), { kind: 'looks-right', hat: 'design', at, byName: x.byName, ...(x.note?.trim() ? { text: x.note.trim() } : {}), ...(pull.head?.sha ? { sha: pull.head.sha } : {}) });
+  // The library ask as the exploration page reads it: an exploration asked before the two reviews (one ask to the
+  // lead, no library ask on record) has its new pieces waiting on the library decision too.
+  const pending = libraryPendingOf(legacyLibraryAsk(e), parsePiecesRecord(pull.body));
+  let said = withDecision(withDesignOk(pull.body, { at }), { kind: 'looks-right', hat: 'design', at, byName: x.byName, ...(x.note?.trim() ? { text: x.note.trim() } : {}), ...(pull.head?.sha ? { sha: pull.head.sha } : {}) });
+  // That legacy ask written down, at the time it was made: once the design review answered, every reader (core
+  // isInReview, the lists, Home) still sees the library decision waiting.
+  if (pending.length && !e!.library?.askedAt) said = withLibraryAsked(said, { at: e!.designAskedAt!, ...(e!.designAskedBy ? { by: e!.designAskedBy } : {}), ...(e!.designAskedByName ? { byName: e!.designAskedByName } : {}) });
   const labels = labelNames(pull.labels);
   if (pending.length || isInReview(said)) return { body: said, labels, ready: false, libraryPending: pending };
   const asked = parseExplorationBody(said);
@@ -68,6 +87,9 @@ export function sampleLooksRight(pull: SamplePull, x: { byName: string; at?: Dat
   const body = withDoneExploring(said, { branch, doneAt: at, ...(asked?.designAskedBy ? { doneBy: asked.designAskedBy } : {}), ...(pull.head?.sha ? { doneSha: pull.head.sha } : {}) });
   return { body, labels: [...labels.filter((l) => l !== EXPLORATION_LABEL), ...(labels.includes(EXPLORATION_READY_LABEL) ? [] : [EXPLORATION_READY_LABEL])], ready: true, libraryPending: [] };
 }
+
+/** Told on `document` after an answer given in this browser: lists read before it read again. */
+export const SAMPLE_ANSWERED_EVENT = 'bridge:sample-answered';
 
 const answerPrefix = `bridge.${SAMPLE_REPO}.draft.answer.`;
 const answerKey = (repo: string, number: number) => `${answerPrefix}${repo.toLowerCase()}#${number}`;
@@ -93,7 +115,8 @@ function keptAnswer(store: KeptStore, repo: string, number: number): Pick<Sample
 /** A pull request read from `repo`, with the answer given in this browser when there is one. Never mutates `pull`. */
 export function withSampleAnswer<P extends SamplePull>(store: KeptStore, repo: string, pull: P): P {
   if (!pull || typeof pull.number !== 'number') return pull;
-  const kept = keptAnswer(store, repo, pull.number);
+  // The pull request's own repository first: a product's exploration read from anywhere matches its answer.
+  const kept = keptAnswer(store, pullRepo(pull) ?? repo, pull.number);
   if (!kept) return pull;
   const shape = (pull.labels ?? []).some((l) => typeof l === 'string');
   return { ...pull, body: kept.body, labels: kept.labels.map((name) => (shape ? name : { name })) };

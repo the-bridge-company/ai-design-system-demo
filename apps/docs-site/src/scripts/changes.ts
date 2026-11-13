@@ -20,11 +20,14 @@ import { initGitHubConnect } from './github-session';
 import { REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
 import { studioHref } from '../lib/team-path';
 import { legacyTarget } from '../lib/explorations-page';
+import { SAMPLE_ANSWERED_EVENT } from '../lib/demo-in-browser';
 
 type View = 'review' | 'requests' | 'explorations';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let listLoaded: Promise<{ number: number; head: { ref: string } }[]> | null = null;
+// An answer given in this browser on the sample team (Looks right): the list reads again when shown.
+if (typeof document !== 'undefined') document.addEventListener(SAMPLE_ANSWERED_EVENT, () => (listLoaded = null));
 const VIEW_QUERY: Record<View, string> = { review: '', requests: '?view=requests', explorations: '?view=explorations' };
 
 /** The open pull requests In review already read (with their bodies), so Requests links them at no request. */

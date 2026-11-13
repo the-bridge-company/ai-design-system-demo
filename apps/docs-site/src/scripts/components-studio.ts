@@ -17,8 +17,10 @@ import { loadRequestRows } from './requests';
 import { selectSegment } from './shell';
 import { initViewOnComponents } from './view-components';
 import { onSelectPick, setSelect } from '../lib/select-bridge';
+import { inFamilies } from '../lib/filter-summary';
 
-// The family menu: a DS Select island (components/ds/BridgedSelect, id cm-fam), each family with its count as a Badge.
+// The family filter: a DS Select island (components/ds/BridgedSelect filter, id cm-fam), several families at once
+// (comma separated, ?family=a,b), each with its count tag.
 const FAMILY_SELECT = 'cm-fam';
 
 // One size for the list thumbnails: a lone control shows a little smaller than life, like its neighbors scaled to fit.
@@ -72,7 +74,7 @@ export function initComponentsStudio() {
   function apply() {
     const text = (q?.value ?? '').trim().toLowerCase();
     for (const r of rows) {
-      const hit = (!family || r.dataset.family === family) && (!onlyGuidance || r.dataset.guidance !== 'ok') && (!text || (r.dataset.name ?? '').includes(text));
+      const hit = inFamilies(r.dataset.family ?? '', family ? family.split(',') : []) && (!onlyGuidance || r.dataset.guidance !== 'ok') && (!text || (r.dataset.name ?? '').includes(text));
       r.hidden = !hit;
     }
     for (const b of bodies) b.hidden = !b.querySelector('[data-cm-row]:not([hidden])');

@@ -8,7 +8,8 @@
 // Repo content is React text only; links built from repo data go through lib/html.ts safeUrl.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Ellipsis, ExternalLink, Layers } from 'lucide-react';
-import { Badge, Button, ButtonGroup, CodeBlock, Drawer, DrawerContent, EmptyState, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Select, Tooltip } from '@bridge-ds/react';
+import { Badge, Button, ButtonGroup, CodeBlock, Drawer, DrawerContent, EmptyState, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Tooltip } from '@bridge-ds/react';
+import { MultiFilter } from './ListFilters';
 import ButtonLink from '../ButtonLink';
 import { TeamLoadError, TeamLoadProgress, TeamSourceNote, useTeamData } from './TeamState';
 import TokenSpecimens from './TokenSpecimens';
@@ -254,7 +255,7 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
   useEffect(() => setPageSummary(summary), [summary]);
   const specimens = useMemo(() => tokenSpecimens(data.model), [data.model]);
   const [query, setQuery] = useState('');
-  const [family, setFamily] = useState('');
+  const [family, setFamily] = useState<string[]>([]);
   const [open, setOpen] = useState<TeamComponentRow | null>(null);
   // From a home's "Ask for a component change" (?intent=, and ?c=<slug> when it names one): the drawer opens on that
   // component with the step on that choice; without a component, one line says to pick one. Read once, then the
@@ -332,13 +333,7 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
           {!storybook && <TokenSpecimens set={specimens} />}
           <div className="tcm-tools" role="search">
             <Input label="Search components" hideLabel placeholder="Search by name or family" value={query} onValueChange={setQuery} className="tcm-search" />
-            <Select
-              label="Family"
-              hideLabel
-              value={family || ALL}
-              onValueChange={(v) => setFamily(!v || v === ALL ? '' : v)}
-              options={[{ value: ALL, label: 'All families' }, ...families.map((f) => ({ value: f.name, label: `${f.name} (${f.n})` }))]}
-            />
+            <MultiFilter label="Family" all="All" options={families.map((f) => ({ value: f.name, label: f.name, count: f.n }))} picked={family} onPick={setFamily} />
           </div>
           <p className="tcm-muted" role="status" aria-live="polite">
             {/* Said once: the lead already says how many there are; this line speaks only once a filter narrows the list. */}
@@ -351,7 +346,7 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
                 variant="link"
                 onClick={() => {
                   setQuery('');
-                  setFamily('');
+                  setFamily([]);
                 }}
               >
                 Show every component
@@ -382,8 +377,6 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
   );
 }
 
-/** The family menu's "every family" choice (an empty value reads as no choice in the DS Select). */
-const ALL = '__all__';
 
 export default function TeamComponents() {
   const { load, retry } = useTeamData();

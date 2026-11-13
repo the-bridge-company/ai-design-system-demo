@@ -94,15 +94,6 @@
     flex: 1 1 0;
     white-space: normal;
   }
-
-  /* The three filters wrap to a second row rather than cut their words. */
-  .ex .bl-bar > .bl-narrow {
-    flex-wrap: wrap;
-  }
-
-  .ex .bl-narrow > * {
-    flex: 1 1 calc(var(--size-40) - var(--space-4));
-  }
 }
 
 .ex-board {

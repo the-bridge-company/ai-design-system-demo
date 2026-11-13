@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -96,5 +97,84 @@ describe('Select', () => {
     expect(trigger).toHaveTextContent('New radius');
     expect(trigger).toHaveTextContent('Ready');
     await expectNoAxeViolations();
+  });
+
+  it('reads an inline label and its value as one name, and hugs its content', async () => {
+    render(<Select inlineLabel="Product" options={[{ value: 'all', label: 'All products' }, { value: 'crm', label: 'Acme CRM' }]} value="all" />);
+    const trigger = screen.getByRole('combobox', { name: 'Product: All products' });
+    expect(trigger).toHaveClass('trigger', 'md', 'hug');
+    const name = trigger.querySelector('.inlineLabel');
+    expect(name).toHaveTextContent('Product');
+    expect(trigger.querySelector('.labelled .value')).toHaveTextContent('All products');
+    await expectNoAxeViolations();
+  });
+
+  it('keeps the plain trigger full width without an inline label', () => {
+    render(<Select label="Theme" options={THEMES} />);
+    const trigger = screen.getByRole('combobox', { name: 'Theme' });
+    expect(trigger).not.toHaveClass('hug');
+    expect(trigger.querySelector('.inlineLabel')).toBeNull();
+  });
+
+  it('picks several values with the keyboard, the list staying open, and summarises them', async () => {
+    const PEOPLE: SelectOption[] = [
+      { value: 'leo', label: 'Leo' },
+      { value: 'sam', label: 'Sam' },
+      { value: 'dana', label: 'Dana' },
+    ];
+    const onValuesChange = vi.fn();
+    function Harness() {
+      const [picked, setPicked] = useState<string[]>([]);
+      return (
+        <Select
+          multiple
+          inlineLabel="Person"
+          placeholder="Everyone"
+          options={PEOPLE}
+          values={picked}
+          onValuesChange={(v) => {
+            onValuesChange(v);
+            setPicked(v);
+          }}
+        />
+      );
+    }
+    render(<Harness />);
+    const trigger = screen.getByRole('combobox', { name: 'Person: Everyone' });
+    await userEvent.tab();
+    expect(trigger).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    const listbox = await screen.findByRole('listbox');
+    expect(listbox).toHaveAttribute('aria-multiselectable', 'true');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Leo' })).toHaveAttribute('data-highlighted'));
+    await userEvent.keyboard('{Enter}');
+    expect(onValuesChange).toHaveBeenLastCalledWith(['leo']);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Sam' })).toHaveAttribute('data-highlighted'));
+    await userEvent.keyboard('{Enter}');
+    expect(onValuesChange).toHaveBeenLastCalledWith(['leo', 'sam']);
+    expect(screen.getByRole('option', { name: 'Leo' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'Sam' })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(trigger).toHaveTextContent('Leo +1'));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAccessibleName('Person: Leo +1');
+    await expectNoAxeViolations();
+  });
+
+  it('reads displayValue instead of the picked labels', () => {
+    render(
+      <Select
+        multiple
+        inlineLabel="Status"
+        displayValue="In progress"
+        options={[{ value: 'draft', label: 'Draft' }, { value: 'review', label: 'In review' }]}
+        values={['draft', 'review']}
+      />,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Status: In progress' });
+    expect(trigger.querySelector('.value')).toHaveClass('valueShown');
   });
 });

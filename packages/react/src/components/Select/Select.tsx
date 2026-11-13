@@ -1,10 +1,11 @@
-import { forwardRef, Fragment, useMemo, type ButtonHTMLAttributes, type ReactNode, type RefObject } from 'react';
+import { forwardRef, Fragment, useId, useMemo, type ButtonHTMLAttributes, type ReactNode, type RefObject } from 'react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 import { cx } from '../../utils/cx';
 import { useScopeAttributes } from '../../theme';
 import { Field, useFieldContext } from '../Field';
 import { Icon } from '../Icon';
+import { VisuallyHidden } from '../VisuallyHidden';
 import styles from './Select.module.css';
 
 export type SelectSize = 'sm' | 'md' | 'lg';
@@ -53,6 +54,23 @@ export interface SelectProps
   size?: SelectSize;
   /** Content before the value, usually an Icon. */
   prefix?: ReactNode;
+  /**
+   * A short name inside the trigger, before the value, in secondary text: "Status Waiting", "Product All products".
+   * For filter bars: the trigger then hugs its content (never under a small minimum) and is named by the label and the
+   * value together, so no Field `label` is needed.
+   */
+  inlineLabel?: string;
+  /**
+   * What the trigger reads instead of the selected option's label: a summary such as "In progress" or "Leo +1".
+   * Mostly with `multiple`. Without it, a multiple Select reads the first picked label then "+N".
+   */
+  displayValue?: string;
+  /** Several values at once: the list stays open while options are ticked. Use `values` and `onValuesChange`. */
+  multiple?: boolean;
+  /** Selected values (controlled), with `multiple`. */
+  values?: readonly string[];
+  /** Called with every selected value when the user ticks or unticks an option, with `multiple`. */
+  onValuesChange?: (values: string[]) => void;
   /** Popup open state (controlled). */
   open?: boolean;
   /** Open on first render (uncontrolled). */
@@ -97,6 +115,11 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
     name,
     size = 'md',
     prefix,
+    inlineLabel,
+    displayValue,
+    multiple = false,
+    values,
+    onValuesChange,
     open,
     defaultOpen,
     onOpenChange,
@@ -113,12 +136,54 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
   const hasBadges = options.some((o) => o.badge != null);
   const groups = useMemo(() => groupOptions(options), [options]);
 
+  // With an inline label and no Field label, the label and the value name the trigger together ("Product: All
+  // products"): a combobox does not take its name from its content.
+  const inlineId = useId();
+  const named = inlineLabel != null && label === undefined && rest['aria-label'] == null && rest['aria-labelledby'] == null;
+  const valueId = named ? `${inlineId}-value` : undefined;
+  const labelOf = (v: string) => byValue.get(v)?.label ?? v;
+  // What the trigger reads for a multiple pick: the summary given, else the first label then "+N".
+  const multipleText = (picked: readonly string[]) => {
+    if (displayValue != null) return displayValue;
+    if (!picked.length) return placeholder;
+    return picked.length === 1 ? labelOf(picked[0]!) : `${labelOf(picked[0]!)} +${picked.length - 1}`;
+  };
+
+  const valueNode = multiple ? (
+    <BaseSelect.Value id={valueId} className={cx(styles.value, displayValue != null && styles.valueShown)} placeholder={placeholder}>
+      {(v: string[] | null) => multipleText(v ?? [])}
+    </BaseSelect.Value>
+  ) : hasBadges ? (
+    <BaseSelect.Value id={valueId} className={cx(styles.value, styles.valueWithBadge, displayValue != null && styles.valueShown)} placeholder={placeholder}>
+      {(v: string | null) => {
+        const o = v == null ? undefined : byValue.get(v);
+        if (!o) return displayValue ?? (v == null ? placeholder : v);
+        return (
+          <>
+            <span className={styles.valueText}>{displayValue ?? o.label}</span>
+            {o.badge != null && <span className={styles.badge}>{o.badge}</span>}
+          </>
+        );
+      }}
+    </BaseSelect.Value>
+  ) : displayValue != null ? (
+    <BaseSelect.Value id={valueId} className={cx(styles.value, styles.valueShown)} placeholder={placeholder}>
+      {() => displayValue}
+    </BaseSelect.Value>
+  ) : (
+    <BaseSelect.Value id={valueId} className={styles.value} placeholder={placeholder} />
+  );
+
+  // A multiple Select keeps an array value; a single one a string (or null).
+  const rootValue = multiple
+    ? { value: values === undefined ? undefined : [...values], onValueChange: onValuesChange ? (next: unknown) => onValuesChange([...((next as string[] | null) ?? [])]) : undefined }
+    : { value, defaultValue, onValueChange: onValueChange ? (next: unknown) => onValueChange((next as string | null) ?? null) : undefined };
+
   const select = (
     <BaseSelect.Root
       items={items}
-      value={value}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange ? (next) => onValueChange((next as string | null) ?? null) : undefined}
+      multiple={multiple}
+      {...rootValue}
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange ? (next) => onOpenChange(next) : undefined}
@@ -128,26 +193,22 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
     >
       <BaseSelect.Trigger
         ref={ref}
-        className={cx(styles.trigger, styles[size], className)}
+        className={cx(styles.trigger, styles[size], inlineLabel != null && styles.hug, className)}
         aria-invalid={field.invalid || (error ? true : undefined)}
+        aria-labelledby={named ? `${inlineId}-label ${valueId}` : undefined}
         {...rest}
       >
         {prefix != null && <span className={styles.affix}>{prefix}</span>}
-        {hasBadges ? (
-          <BaseSelect.Value className={cx(styles.value, styles.valueWithBadge)} placeholder={placeholder}>
-            {(v: string | null) => {
-              const o = v == null ? undefined : byValue.get(v);
-              if (!o) return v == null ? placeholder : v;
-              return (
-                <>
-                  <span className={styles.valueText}>{o.label}</span>
-                  {o.badge != null && <span className={styles.badge}>{o.badge}</span>}
-                </>
-              );
-            }}
-          </BaseSelect.Value>
+        {inlineLabel != null ? (
+          <span className={styles.labelled}>
+            <span id={named ? `${inlineId}-label` : undefined} className={styles.inlineLabel}>
+              {inlineLabel}
+              <VisuallyHidden>: </VisuallyHidden>
+            </span>
+            {valueNode}
+          </span>
         ) : (
-          <BaseSelect.Value className={styles.value} placeholder={placeholder} />
+          valueNode
         )}
         <BaseSelect.Icon className={styles.chevron}>
           <Icon icon={ChevronDown} size="sm" />

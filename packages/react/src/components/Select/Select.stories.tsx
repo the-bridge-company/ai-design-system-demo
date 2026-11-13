@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Palette } from 'lucide-react';
 import { Specimen, SpecimenStack, StateGrid } from '../../stories/StateGrid';
@@ -67,6 +68,41 @@ export const Open: Story = {
   args: { label: 'Token', options: TOKEN_GROUPS, defaultValue: 'color.border.strong', defaultOpen: true, hint: undefined },
 };
 
+const PRODUCTS: SelectOption[] = [
+  { value: 'all', label: 'All products', badge: <Badge tone="neutral" size="sm">9</Badge> },
+  { value: 'crm', label: 'Acme CRM', badge: <Badge tone="neutral" size="sm">5</Badge> },
+  { value: 'pay', label: 'Acme Pay', badge: <Badge tone="neutral" size="sm">4</Badge> },
+];
+const PEOPLE: SelectOption[] = [
+  { value: 'everyone', label: 'Everyone' },
+  { value: 'you', label: 'You' },
+  { value: 'leo', label: 'Leo' },
+  { value: 'sam', label: 'Sam' },
+];
+
+function FilterBarDemo() {
+  const [people, setPeople] = useState<string[]>(['everyone']);
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 280 }}>
+      <Select inlineLabel="Product" options={PRODUCTS} defaultValue="all" />
+      <Select
+        multiple
+        inlineLabel="Person"
+        options={PEOPLE}
+        values={people}
+        displayValue={people.includes('everyone') ? 'Everyone' : undefined}
+        onValuesChange={(next) => {
+          const added = next.filter((v) => !people.includes(v));
+          setPeople(added.includes('everyone') || !next.length ? ['everyone'] : next.filter((v) => v !== 'everyone'));
+        }}
+      />
+    </div>
+  );
+}
+
+/** The filter bar pattern: an inline label in secondary text, the value, the trigger hugging both. Person is multiple. */
+export const FilterBar: Story = { render: () => <FilterBarDemo /> };
+
 export const AllStates: Story = {
   render: () => (
     <SpecimenStack>
@@ -97,6 +133,13 @@ export const AllStates: Story = {
           <Select label="Small" size="sm" options={THEMES} defaultValue="light" />
           <Select label="Medium" options={THEMES} defaultValue="light" />
           <Select label="Large" size="lg" options={THEMES} defaultValue="light" />
+        </div>
+      </Specimen>
+      <Specimen label="Inline label (filter bars)">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Select inlineLabel="Status" options={[{ value: 'waiting', label: 'Waiting' }, { value: 'decided', label: 'Decided' }]} defaultValue="waiting" />
+          <Select inlineLabel="Product" options={PRODUCTS} defaultValue="all" />
+          <Select multiple inlineLabel="Person" options={PEOPLE} values={['leo', 'sam']} />
         </div>
       </Specimen>
       <Specimen label="Prefix icon">

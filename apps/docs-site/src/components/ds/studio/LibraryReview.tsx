@@ -4,14 +4,15 @@
 // radio list) and List (chapters per family, a group rail, one row per piece, a checkbox per row and per group, and
 // the bottom bar that says what the selection touches before acting), then the Map. Directions C, D2 and E
 // (owner, 2026-11-10): lib/library-review-list.ts (chapters, tally, marks), lib/library-review-compare.ts.
-// Filters are checkbox lists (Status, Asked by, Product); no tabs. A designer opens on her own pieces, reads who decides
+// Filters are Studio's one filter pattern (Status, Asked by, Product: ListFilters MultiFilter); no tabs. A designer opens on her own pieces, reads who decides
 // in one banner and sees no buttons; her rows show only what changed (an exception). Decisions are the exploration's
 // own (scripts/library-review-data.ts): deciding here or on the exploration page is the same decision. Undo stays
 // a few seconds before a decision is sent. Rules: lib/library-review.ts. Styles: styles/library-review.css.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis, Info } from 'lucide-react';
+import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
+import { ArrowRight, BookOpen, ChevronRight, Ellipsis, Info } from 'lucide-react';
+import { FilterRow, MultiFilter } from './ListFilters';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -95,32 +96,12 @@ interface Pending {
   line: string;
 }
 
-/** A filter: a button that reads "Status  Waiting", opening a list of checkboxes. */
-function FilterMenu({ name, kind, picked, choices, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; onChange: (v: string[]) => void }) {
-  const value = filterValue(kind, picked, choices);
-  return (
-    <Menu>
-      <MenuTrigger
-        render={
-          <Button variant="secondary" size="md" className="lr-filter" iconEnd={ChevronDown} aria-label={`${name}: ${value}`}>
-            <span className="lr-filter-name">{name}</span> <span className="lr-filter-value">{value}</span>
-          </Button>
-        }
-      />
-      <MenuContent align="start">
-        {kind !== 'status' && (
-          <MenuCheckboxItem checked={!picked.length} onCheckedChange={() => onChange([])}>
-            {kind === 'asked' ? 'Anyone' : 'All products'}
-          </MenuCheckboxItem>
-        )}
-        {choices.map((c) => (
-          <MenuCheckboxItem key={c.value} checked={picked.includes(c.value)} onCheckedChange={(on) => onChange(on ? [...picked, c.value] : picked.filter((x) => x !== c.value))}>
-            {c.label}
-          </MenuCheckboxItem>
-        ))}
-      </MenuContent>
-    </Menu>
-  );
+/**
+ * A filter: Studio's one filter pattern (ListFilters MultiFilter), "Status Waiting", several values at once, each
+ * option with its count over what the other filters keep.
+ */
+function FilterMenu({ name, kind, picked, choices, count, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; count: (value: string) => number; onChange: (v: string[]) => void }) {
+  return <MultiFilter label={name} all={filterValue(kind, [], choices)} options={choices.map((c) => ({ ...c, count: count(c.value) }))} picked={picked} onPick={onChange} />;
 }
 
 /** The exploration that asked, as a chip that opens it. */
@@ -1571,7 +1552,9 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const marks = useMemo(() => productMarks([...products.map((x) => x.name), ...pieces.flatMap((p) => [...askersOf(p).map((a) => a.product ?? ''), ...(p.conflict?.ways.map((w) => w.product) ?? [])])]), [products, pieces]);
   const mark: MarkOf = (name) => (name ? (marks.get(name) ?? null) : null);
   const choices = useMemo(() => filterChoices(pieces, data?.viewer.name ?? null), [pieces, data?.viewer.name]);
-  const cur = ordered.find((p) => p.key === current) ?? ordered[0] ?? null;
+  // A filter option's count: the pieces it would show with the other filters as they are (as Explorations counts).
+  const countWith = (f: ReviewFilters) => pieces.filter((p) => passes(p, f, data?.viewer.name ?? null)).length;
+  const cur =ordered.find((p) => p.key === current) ?? ordered[0] ?? null;
 
   useEffect(() => {
     if (cur) setSeen((s) => (s.has(cur.key) ? s : new Set([...s, cur.key])));
@@ -1779,16 +1762,16 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
         </section>
       ) : (
         <>
-          <div className="lr-bar-row">
-            <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
-            <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} onChange={(a) => update({ ...filters, asked: a })} />
-            <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} onChange={(pr) => update({ ...filters, product: pr })} />
+          <FilterRow className="lr-bar-row">
+            <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} count={(s) => countWith({ ...filters, status: [s as ReviewFilters['status'][number]] })} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
+            <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} count={(a) => countWith({ ...filters, asked: [a] })} onChange={(a) => update({ ...filters, asked: a })} />
+            <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} count={(pr) => countWith({ ...filters, product: [pr] })} onChange={(pr) => update({ ...filters, product: pr })} />
             {filtered && (
               <Button variant="link" className="lr-clear" onClick={() => update({ status: ['waiting'], asked: v.reviews ? [] : [YOU], product: [] })}>
                 {v.reviews ? 'Clear filters' : 'Show everyone'}
               </Button>
             )}
-          </div>
+          </FilterRow>
           {!v.reviews && (
             <Banner appearance="harbor" icon={Info} title={banner.strong}>
               {banner.rest} <Link href={links.howItWorks}>How library review works</Link>

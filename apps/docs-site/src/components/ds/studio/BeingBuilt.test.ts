@@ -27,11 +27,11 @@ function fixture() {
 
 beforeEach(() => history.replaceState(null, '', '/studio/building/'));
 
-/** Ticks or unticks one box of a filter menu ("Status", "Product", "People"), then closes it. */
+/** Ticks or unticks one option of a filter ("Status", "Product", "Person"), then closes it. */
 async function tick(filter: RegExp, item: RegExp) {
-  await userEvent.click(screen.getByRole('button', { name: filter }));
-  const menu = await screen.findByRole('menu');
-  await userEvent.click(within(menu).getByRole('menuitemcheckbox', { name: item }));
+  await userEvent.click(screen.getByRole('combobox', { name: filter }));
+  const menu = await screen.findByRole('listbox');
+  await userEvent.click(within(menu).getByRole('option', { name: item }));
   await userEvent.keyboard('{Escape}');
 }
 
@@ -41,7 +41,7 @@ describe('Being built', () => {
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Tabs: put a count after the label')).toBeTruthy();
     expect(screen.queryByRole('tab')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Status: Not shipped yet' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Status: Not shipped yet' })).toBeTruthy();
     // One word per status: the tag says the filter's word, never "Requested".
     expect(container.textContent).not.toContain('Requested');
     expect(screen.getAllByText('Ready to build').length).toBeGreaterThan(0);
@@ -60,16 +60,19 @@ describe('Being built', () => {
     data = fixture();
     const { container } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
-    await userEvent.click(screen.getByRole('button', { name: 'Status: Not shipped yet' }));
-    const menu = await screen.findByRole('menu');
-    const items = within(menu).getAllByRole('menuitemcheckbox');
-    expect(items.map((i) => i.textContent)).toEqual(['Not shipped yet', 'Ready to build2', 'Being built2', 'Checking1', 'Shipped1']);
-    expect(items.map((i) => i.getAttribute('aria-checked'))).toEqual(['true', 'true', 'true', 'true', 'false']);
-    await userEvent.click(within(menu).getByRole('menuitemcheckbox', { name: /^Shipped/ }));
-    expect(new URLSearchParams(location.search).get('status')).toBe('waiting,in-progress,in-review,shipped');
-    expect(screen.getByRole('button', { name: 'Status: All statuses' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('combobox', { name: 'Status: Not shipped yet' }));
+    const menu = await screen.findByRole('listbox');
+    const items = within(menu).getAllByRole('option');
+    // Not shipped yet is the empty pick, said as the value: never an option among its own statuses, nothing ticked.
+    expect(items.map((i) => i.textContent)).toEqual(['Ready to build2', 'Being built2', 'Checking1', 'Shipped1']);
+    expect(items.map((i) => i.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false', 'false']);
+    await userEvent.click(within(menu).getByRole('option', { name: /^Checking/ }));
+    // The list stays open while options are ticked: several statuses combine.
+    await userEvent.click(within(menu).getByRole('option', { name: /^Shipped/ }));
+    expect(new URLSearchParams(location.search).get('status')).toBe('in-review,shipped');
+    expect(screen.getByRole('combobox', { name: 'Status: Checking +1' })).toBeTruthy();
     expect(screen.getByText('Avatar: add an xs size')).toBeTruthy();
-    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(6);
+    expect(container.querySelectorAll('.sh-row-item')).toHaveLength(2);
     await userEvent.keyboard('{Escape}');
     await expectNoAxeViolations(container);
   });
@@ -105,8 +108,7 @@ describe('Being built', () => {
     expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
     await expectNoAxeViolations(container);
     // Filtered to In review: one column.
-    await tick(/^Status:/, /^Ready to build/);
-    await tick(/^Status:/, /^Being built/);
+    await tick(/^Status:/, /^Checking/);
     expect([...container.querySelectorAll('.ex-col-h')].map((h) => h.textContent)).toEqual(['Checking 1']);
     localStorage.clear();
   });
@@ -115,8 +117,7 @@ describe('Being built', () => {
     data = fixture();
     render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
-    await tick(/^Status:/, /^Ready to build/);
-    await tick(/^Status:/, /^Being built/);
+    await tick(/^Status:/, /^Checking/);
     expect(screen.queryByText('Tabs: put a count after the label')).toBeNull();
     await userEvent.click(screen.getByText('Badge: add an info tone'));
     expect(location.search).toBe('?request=33&status=in-review');
@@ -128,16 +129,18 @@ describe('Being built', () => {
     expect(document.body.textContent).not.toMatch(/jira|DS-128/i);
   });
 
-  it("has Explorations' Product and People checkbox menus after Status, with the count", async () => {
+  it("has Explorations' Product and Person filters after Status, with the count", async () => {
     data = { ...fixture(), viewer: 'dana' };
     const { container } = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
-    expect(container.querySelectorAll('.bl-bar [role="combobox"]').length).toBe(0);
-    expect([...container.querySelectorAll('.bl-bar .bl-multi')].map((b) => b.getAttribute('aria-label'))).toEqual(['Status: Not shipped yet', 'Product: All products', 'People: Everyone']);
+    // Studio's one filter pattern: DS Selects with an inline label, hugging their content, at the md control height.
+    const filters = [...container.querySelectorAll<HTMLElement>('.bl-bar [role="combobox"]')];
+    expect(filters).toEqual(['Status: Not shipped yet', 'Product: All products', 'Person: Everyone'].map((name) => screen.getByRole('combobox', { name })));
+    for (const f of filters) expect(f.classList).toContain('bl-filter');
     expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
-    await tick(/^People:/, /^Malik/);
+    await tick(/^Person:/, /^Malik/);
     expect(location.search).toBe('?people=malik-haddad');
-    expect(screen.getByRole('button', { name: 'People: Malik' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Person: Malik' })).toBeTruthy();
     expect(container.querySelector('.bl-bar')!.textContent).toContain('2 of 6 changes.');
     // A row with nobody on it left with the filter, and comes back under Everyone.
     expect(screen.queryByText('Tabs: put a count after the label')).toBeNull();
@@ -217,7 +220,7 @@ describe('Being built', () => {
     history.replaceState(null, '', '/studio/building/?status=all');
     const { container } = render(createElement(BeingBuilt));
     expect(await screen.findByText('Button')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Status: All statuses' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Status: Ready to build +3' })).toBeTruthy();
     expect(container.querySelectorAll('.sh-row-item')).toHaveLength(7);
     expect(container.textContent).toContain("Claude's fix from Figma, asked by Florian");
     expect(container.textContent).not.toContain('peterbono');
@@ -231,9 +234,11 @@ describe('Being built', () => {
     await tick(/^Status:/, /^Ready to build/);
     await tick(/^Status:/, /^Being built/);
     await tick(/^Status:/, /^Checking/);
-    expect(screen.getByRole('button', { name: 'Status: Shipped' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Status: Shipped' })).toBeTruthy();
     expect(screen.getByText('Button')).toBeTruthy();
-    await tick(/^Status:/, /^Not shipped yet/);
+    // Unticking the last one comes back to the empty pick, Not shipped yet.
+    await tick(/^Status:/, /^Shipped/);
+    expect(screen.getByRole('combobox', { name: 'Status: Not shipped yet' })).toBeTruthy();
     expect(screen.queryByText('Button')).toBeNull();
     await expectNoAxeViolations(container);
   });
@@ -266,15 +271,15 @@ describe('Being built', () => {
     expect(thumb.getAttribute('data-label')).toBe('Tag');
     expect([...thumb.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual(['https://example.com/tag-before.png', 'https://example.com/tag-after.png']);
     expect(row.querySelector('a')!.getAttribute('title')).toBe('Tag: test: rounder tag corners');
-    expect(container.querySelector('.bl-bar')!.textContent).toContain('6 of 7 changes.');
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('1 of 7 changes.');
     unmount();
     history.replaceState(null, '', '/studio/building/');
     data = withTag(8);
     const again = render(createElement(BeingBuilt));
     await screen.findByText('Tabs: put a count after the label');
     expect(screen.queryByText('Tag: test: rounder tag corners')).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
-    expect(within(await screen.findByRole('menu')).queryByRole('menuitemcheckbox', { name: /^Not doing this/ })).toBeNull();
+    await userEvent.click(screen.getByRole('combobox', { name: /^Status:/ }));
+    expect(within(await screen.findByRole('listbox')).queryByRole('option', { name: /^Not doing this/ })).toBeNull();
     await userEvent.keyboard('{Escape}');
     expect(again.container.querySelectorAll('.sh-row-item')).toHaveLength(5);
     expect(container.textContent).not.toContain('Tag: test');
@@ -365,13 +370,14 @@ describe('Being built', () => {
     const billing = screen.getByText('Billing screen').closest('li')!;
     expect(billing.querySelector('.sh-row-status-note')).toBeNull();
     expect(billing.querySelector('.sh-row-line')!.textContent).toContain('Waiting for a reviewer');
-    await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
-    const menu = await screen.findByRole('menu');
-    expect(within(menu).getAllByRole('menuitemcheckbox').map((i) => i.textContent)).toEqual(['Not shipped yet', 'Ready to build3', 'Being built2', 'Checking2', 'Shipped2']);
+    // The Status filter is the one filter pattern: a combobox whose listbox lists the statuses with their counts, Not
+    // shipped yet being its empty pick (the trigger's value), never an option.
+    await userEvent.click(screen.getByRole('combobox', { name: /^Status:/ }));
+    const menu = await screen.findByRole('listbox');
+    expect(within(menu).getAllByRole('option').map((i) => i.textContent)).toEqual(['Ready to build3', 'Being built2', 'Checking2', 'Shipped2']);
     await userEvent.keyboard('{Escape}');
     // Only In review.
-    await tick(/^Status:/, /^Ready to build/);
-    await tick(/^Status:/, /^Being built/);
+    await tick(/^Status:/, /^Checking/);
     expect(screen.queryByText('Explore new design pr being built')).toBeNull();
     expect(screen.getByText('Billing screen')).toBeTruthy();
     // Shipped, the last 30 days.
@@ -410,11 +416,10 @@ describe('Being built', () => {
     const nameOf = (l: string) => l;
     const ready: RestPull = { number: 611, title: 'Exploration: x', html_url: 'https://github.com/acme/ds/pull/611', state: 'open', draft: true, created_at: at, updated_at: at, labels: ['ready-for-devs'], head: { ref: 'explore/x', sha: 'h1' }, body: `<!-- bridge-exploration ${JSON.stringify({ name: 'Admin filters', purpose: '', doneAt: at, doneSha: 'h1' })} -->` };
     data = { views: [], bodies: new Map(), stale: false, nameOf, jiraBase: null, explorations: explorationBuildRows([ready], { products: DEFAULT_PRODUCTS, now: NOW, nameOf }) };
+    // A status with nothing in it is not offered: an old address is how the filter lands on one.
+    history.replaceState(null, '', '/studio/building/?status=in-progress');
     render(createElement(BeingBuilt));
-    await screen.findByText('Admin filters');
-    await tick(/^Status:/, /^Ready to build/);
-    await tick(/^Status:/, /^Checking/);
-    expect(screen.getByRole('button', { name: 'Status: Being built' })).toBeTruthy();
+    expect(await screen.findByRole('combobox', { name: 'Status: Being built' })).toBeTruthy();
     expect(screen.getByText(/Nothing being built right now\./)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByText('Admin filters')).toBeTruthy();

@@ -1,7 +1,7 @@
 // Explorations (/studio/explorations/, the old Changes): every exploration of the team, the rules and words in
 // lib/explorations-page (owner decisions 2026-11-09, phase 2 of the redesign).
-//   - One filters row, left-aligned: three checkbox dropdowns in the small Select's look (ListFilters MultiFilter):
-//     Status (default In progress, the first six statuses), Product, People (Everyone resets), then the count and
+//   - One filters row, left-aligned: three DS Selects with an inline label, several values each (ListFilters MultiFilter):
+//     Status (default In progress, the first six statuses), Product, Person (Everyone resets), then the count and
 //     Clear filters; at its end how the list is shown: List, Grid or Board (ListCard ViewSwitch). The address keeps
 //     them (?status=, ?product=, ?people=); old ?state=, ?status=, ?tier= and History links map to Status.
 //   - Waiting on you, pinned first whatever the filters, with its count: each row says "Your turn · <reason>". Its rows
@@ -22,7 +22,7 @@ import { BranchRow } from './BranchRow';
 import { CountTag } from './CountTag';
 import { ListGroup } from './ListGroup';
 import { Who } from './faces';
-import { MultiFilter } from './ListFilters';
+import { FilterRow, MultiFilter } from './ListFilters';
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from './ListCard';
 import { Drawing } from './Drawing';
 import StartExploration from './StartExploration';
@@ -53,13 +53,11 @@ import {
   IN_PROGRESS,
   IN_PROGRESS_LABEL,
   isFiltered,
-  multiTriggerLabel,
   passes,
   STATE_LABEL,
   STATE_TONE,
   STATES,
   statusOf,
-  statusTriggerLabel,
   YOU,
   type ExplorationFilters,
   type ExplorationState,
@@ -432,6 +430,8 @@ export function BranchesList(p: BranchesListProps) {
   const groups = productKeys
     .map((k) => ({ key: k, label: productName(k), rows: kept.filter((x) => x.product === k) }))
     .filter((g) => g.rows.length > 0);
+  // In progress (the first six statuses) is the Status filter's empty pick: said as its value, never ticked options.
+  const inProgressDefault = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s));
   // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there. Its
   // columns are the filter's statuses, nothing more: List, Grid and Board count the same rows.
   const columns = boardColumns([...waiting, ...kept], filters.status);
@@ -474,32 +474,18 @@ export function BranchesList(p: BranchesListProps) {
   return (
     <div className="bl ex">
       <div className="bl-bar">
-        <span className="bl-narrow">
+        <FilterRow as="span" className="bl-narrow">
+          {/* In progress (the first six statuses) is the empty pick, said as the value, never an option. */}
           <MultiFilter
             label="Status"
-            shown={statusTriggerLabel(filters.status)}
+            all={IN_PROGRESS_LABEL}
             options={statusOptions}
-            picked={filters.status}
+            picked={inProgressDefault ? [] : filters.status}
             onPick={(v) => pick({ ...filters, status: v.length ? STATES.filter((s) => v.includes(s)) : [...IN_PROGRESS] })}
-            reset={{ label: IN_PROGRESS_LABEL, active: filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s)), onReset: () => pick({ ...filters, status: [...IN_PROGRESS] }) }}
           />
-          <MultiFilter
-            label="Product"
-            shown={multiTriggerLabel(filters.product, productName, 'All products')}
-            options={productOptions}
-            picked={filters.product}
-            onPick={(v) => pick({ ...filters, product: v })}
-            reset={{ label: 'All products', active: !filters.product.length, onReset: () => pick({ ...filters, product: [] }) }}
-          />
-          <MultiFilter
-            label="People"
-            shown={multiTriggerLabel(filters.people, personLabel, 'Everyone')}
-            options={personOptions}
-            picked={filters.people}
-            onPick={(v) => pick({ ...filters, people: v })}
-            reset={{ label: 'Everyone', active: !filters.people.length, onReset: () => pick({ ...filters, people: [] }) }}
-          />
-        </span>
+          <MultiFilter label="Product" all="All products" options={productOptions} picked={filters.product} onPick={(v) => pick({ ...filters, product: v })} />
+          <MultiFilter label="Person" all="Everyone" options={personOptions} picked={filters.people} onPick={(v) => pick({ ...filters, people: v })} />
+        </FilterRow>
         <p className="t-ui t-muted bl-summary" aria-live="polite">
           {!blind && countLine(shownCount, filtered ? waiting.length + listed.length : shownCount)}
           {filtered && !blind && (

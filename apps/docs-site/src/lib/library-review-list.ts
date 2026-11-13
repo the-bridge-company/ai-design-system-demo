@@ -7,7 +7,7 @@
 // to decide, Yours, Published) keep their order, each its own chapter without a rail. The tally at the end of the
 // filters row says how many pieces wait, split by family. The same chapters in Decided and in the designer's view.
 // Pure: no DOM. Read by components/ds/studio/LibraryReview.tsx (ListView, OneByOne). Tested in library-review-list.test.ts.
-import { askersOf } from './library-askers';
+import { askersOf, namesLine } from './library-askers';
 import { canDecide, type PieceGroup, type ReviewFilters, type ReviewPiece, type Viewer } from './library-review';
 import type { Measured, Reach } from './library-reach';
 
@@ -233,7 +233,7 @@ export function chapterReach(rows: readonly { reach: Reach; measured: Pick<Measu
     } else if (m.status === 'measuring' && !r.stays && (r.everywhere || r.screens > 0)) for (const p of r.products) add(p);
   }
   if (!products.length) return { products, shown: [], more: 0, names: null };
-  return { products, shown: products.slice(0, max), more: Math.max(products.length - max, 0), names: products.length <= 3 ? products.map((p) => p.name).join(', ') : `${products.length} products` };
+  return { products, shown: products.slice(0, max), more: Math.max(products.length - max, 0), names: namesLine(products.map((p) => p.name), 3) };
 }
 
 /**

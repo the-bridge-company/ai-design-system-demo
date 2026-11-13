@@ -57,7 +57,7 @@ describe('the List as chapters', () => {
     expect(chapterReach([{ reach: r, measured: measured('stays') }])).toMatchObject({ names: null, shown: [] });
     const eight = Array.from({ length: 8 }, (_, i) => ({ key: `p${i}`, name: `Acme ${i}`, screens: 1 }));
     const big = chapterReach([{ reach: r, measured: measured('measured', eight) }]);
-    expect([big.shown.length, big.more, big.names]).toEqual([5, 3, '8 products']);
+    expect([big.shown.length, big.more, big.names]).toEqual([5, 3, 'Acme 0 and 7 more']);
   });
 });
 

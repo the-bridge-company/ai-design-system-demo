@@ -920,7 +920,7 @@ function AskersList({ list }: { list: AskedBy[] }) {
   );
 }
 
-/** "+N" after a name: a compact tag, and the same in words to a screen reader. */
+/** "+N explorations" after a name ("+N" after a person): a compact tag, and the same in words to a screen reader. */
 function MoreTag({ n, what }: { n: number; what: 'explorations' | 'people' }) {
   const t = moreTag(n, what);
   const label = what === 'people' ? `${n} more ${n === 1 ? 'person' : 'people'}` : t.label;
@@ -946,7 +946,7 @@ function AskedByCell({ p }: { p: ReviewPiece }) {
 
 /**
  * The List's From cell: the exploration it came from on one line (its full name on hover when the column is narrow),
- * its product under it in muted text, then "+N" that opens every exploration grouped by product. A piece no
+ * its products by name under it in muted text, then "+N explorations" that opens every exploration grouped by product. A piece no
  * exploration asked for says "Asked directly", in the same place, in muted text.
  */
 function FromCell({ p }: { p: ReviewPiece }) {

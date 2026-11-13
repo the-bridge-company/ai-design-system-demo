@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:34:55.204Z",
-  "durationMs": 212887,
+  "createdAt": "2026-11-13T01:51:53.169Z",
+  "durationMs": 177539,
   "base": {
-    "ref": "9d24729f40c4d6a88ab21be4ae59af397ae102ad",
-    "sha": "9d24729f40c4d6a88ab21be4ae59af397ae102ad"
+    "ref": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45",
+    "sha": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45"
   },
   "head": {
-    "ref": "13224d2a3f955c621a499a13e5119a18b3f18f3e",
-    "sha": "13224d2a3f955c621a499a13e5119a18b3f18f3e"
+    "ref": "da1e815a23c578439aaad0758c741ab5e33d08a5",
+    "sha": "da1e815a23c578439aaad0758c741ab5e33d08a5"
   },
   "options": {
     "only": [
@@ -40,6 +40,7 @@
       "apps/docs-site/src/components/ds/library/FigmaStatus.tsx",
       "apps/docs-site/src/components/ds/library/LibraryTeamComponents.tsx",
       "apps/docs-site/src/components/ds/library/views/ComponentView.tsx",
+      "apps/docs-site/src/components/ds/studio/NeedRows.tsx",
       "apps/docs-site/src/components/ds/studio/ReviewsSection.test.ts",
       "apps/docs-site/src/components/ds/studio/ReviewsSection.tsx",
       "apps/docs-site/src/components/ds/studio/StartExploration.tsx",
@@ -50,6 +51,8 @@
       "apps/docs-site/src/lib/demo-in-browser.test.ts",
       "apps/docs-site/src/lib/demo-in-browser.ts",
       "apps/docs-site/src/lib/demo.ts",
+      "apps/docs-site/src/lib/home-model.test.ts",
+      "apps/docs-site/src/lib/home-model.ts",
       "apps/docs-site/src/lib/lead-decisions.test.ts",
       "apps/docs-site/src/lib/lead-decisions.ts",
       "apps/docs-site/src/lib/review-lines.test.ts",
@@ -62,6 +65,7 @@
       "apps/docs-site/src/scripts/demo-gate.ts",
       "apps/docs-site/src/scripts/exploration-page.ts",
       "apps/docs-site/src/scripts/github-session.ts",
+      "apps/docs-site/src/scripts/reviews.ts",
       "apps/docs-site/src/scripts/team-branches.ts",
       "apps/docs-site/src/scripts/team-data.ts",
       "apps/docs-site/src/scripts/team-reviews-data.ts",
@@ -121,8 +125,8 @@
   },
   "summary": {
     "shots": 60,
-    "changed": 13,
-    "unchanged": 47,
+    "changed": 12,
+    "unchanged": 48,
     "added": 0,
     "removed": 0,
     "errors": 0,
@@ -1108,18 +1112,11 @@
       "storyId": "data-display-avatar--broken-image",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 732,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 0.09,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 720,
-          "width": 48,
-          "height": 32
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -1130,12 +1127,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__data-display-avatar--broken-image__ocean-dark.png",
-        "after": "after/story__data-display-avatar--broken-image__ocean-dark.png",
-        "diff": "diff/story__data-display-avatar--broken-image__ocean-dark.png",
-        "composite": "composite/story__data-display-avatar--broken-image__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__data-display-card--all-states__ocean-dark",

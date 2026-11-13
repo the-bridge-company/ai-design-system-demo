@@ -145,7 +145,10 @@ describe('Value previews', () => {
 describe('Type filter', () => {
   it('desktop: one row, the search gives way first; phone: the types wrap instead of scrolling behind the edge fade', () => {
     const block = (q: string) => css.slice(css.indexOf(q));
-    expect(block('@media (min-width: 861px) {\n  .xp[data-surface="app"] .xp-chips')).toMatch(/^@media \(min-width: 861px\) \{\s*\.xp\[data-surface="app"\] \.xp-chips \{\s*flex: none;\s*\}\s*\.xp\[data-surface="app"\] \.xp-search \{\s*flex: 1 1 0;/);
+    // The search takes all the free width (no spacer), the types keep their natural width.
+    expect(block('@media (min-width: 861px) {\n  .xp[data-surface="app"] .xp-chips')).toMatch(
+      /^@media \(min-width: 861px\) \{\s*\.xp\[data-surface="app"\] \.xp-chips \{\s*flex: none;\s*\}\s*\.xp\[data-surface="app"\] \.xp-search \{\s*flex: 1 1 auto;\s*min-width: var\(--size-40\);\s*\}\s*\.xp\[data-surface="app"\] \.xp-tools \.xp-grow \{\s*display: none;/,
+    );
     expect(css).toMatch(/@media \(max-width: 640px\) \{\s*\.xp-types \[data-segment-track\] \{\s*flex-wrap: wrap;\s*overflow-x: visible;/);
     // Never wrapping on a desktop.
     expect(() => rule('.xp-types [data-segment-track]')).toThrow();
@@ -167,6 +170,9 @@ describe('Step list of the cell editor (sizes, durations, easings)', () => {
     expect(host.querySelectorAll('[data-xe-was]')).toHaveLength(1);
     expect(radios[0]!.closest('label')!.querySelector('[data-xe-was] .xe-was-dot')).not.toBeNull();
     expect(host.textContent).not.toMatch(/, was/);
+    // The values use the mono face of the pick row.
+    expect(host.querySelectorAll('.mono')).toHaveLength(6);
+    expect([...host.querySelectorAll('.mono')].filter((m) => m.textContent === 'cubic-bezier(0, 0, 1, 1)')).toHaveLength(3);
     expect(rule('.xe-steps[data-fade="end"]')['mask-image']).toMatch(/linear-gradient/);
     ramp.unmount();
     host.remove();

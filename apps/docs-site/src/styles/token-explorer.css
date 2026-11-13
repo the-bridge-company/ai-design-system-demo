@@ -3003,9 +3003,14 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
     flex: none;
   }
 
+  /* The search takes all the free width (no spacer splits it), the types keep their natural width, Options ends the row. */
   .xp[data-surface="app"] .xp-search {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-width: var(--size-40);
+  }
+
+  .xp[data-surface="app"] .xp-tools .xp-grow {
+    display: none;
   }
 
   /* The details panel narrows the table on a laptop: there the types may give way too (the DS control scrolls its

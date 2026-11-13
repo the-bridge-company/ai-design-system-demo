@@ -115,7 +115,8 @@ function StepList({ label, steps, value, original, onPick }: { label: string; st
               )}
             </span>
           }
-          description={s.value}
+          /* The value in the same mono face as the pick row above (16px, cubic-bezier(...)). */
+          description={s.value ? <span className="mono">{s.value}</span> : undefined}
         />
       ))}
     </RadioGroup>

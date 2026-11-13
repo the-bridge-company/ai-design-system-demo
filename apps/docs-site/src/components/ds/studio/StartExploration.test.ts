@@ -11,6 +11,8 @@ import { expectNoAxeViolations } from '../../../../../../packages/react/src/test
 import StartExploration, { startFromAddress, startLines } from './StartExploration';
 import ProductsNav from './ProductsNav';
 import * as session from '../../../scripts/github-session';
+import * as addProduct from '../../../scripts/add-product';
+import { noteAddedProduct } from '../../../scripts/repo-context';
 import { castPerson, playedMember } from '../../../lib/demo-cast';
 import { DEMO_WORDS } from '../../../lib/demo';
 import { sampleProducts } from '../../../lib/demo-in-browser';
@@ -26,6 +28,7 @@ const viewer = vi.hoisted(() => ({ access: { state: 'writer', write: true, admin
 // them from one file overlap (a component still loading from the test before, the next test's own), and the real
 // onAccess never answers, so Where never came. A spied module is one object for every import.
 vi.mock('../../../scripts/github-session', { spy: true });
+vi.mock('../../../scripts/add-product', { spy: true });
 beforeEach(() => {
   vi.mocked(session.onAccess).mockImplementation((fn) => {
     if (viewer.access) fn(viewer.access as unknown as session.RepoAccess);
@@ -337,6 +340,45 @@ describe('Where: Add a product, for the people who may add one', () => {
       // Not a place to start: the exploration's own dialog stepped aside, nothing was picked.
       expect(screen.queryByText('What do you want to explore?')).toBeNull();
     } finally {
+      done();
+    }
+  });
+
+  it('a real team: added from Where, the person comes back to Start with the new product picked', async () => {
+    viewer.access = admin;
+    sessionStorage.clear();
+    const done = embed({ owner: 'acme', repo: 'ds' });
+    // The add API stubbed: Bridge found Atlas on GitHub and adds it to the team's settings (noteAddedProduct, as
+    // scripts/add-product addToTeam does), nothing else is asked.
+    vi.mocked(addProduct.readProductAccess).mockResolvedValue({ repos: [{ full: 'acme/atlas', name: 'atlas', defaultBranch: 'main' }], installation: null, account: 'acme', accountId: 1, seen: 1 });
+    vi.mocked(addProduct.readOwnership).mockResolvedValue(true);
+    vi.mocked(addProduct.detectPreviews).mockResolvedValue(null);
+    vi.mocked(addProduct.addToTeam).mockImplementation(async (entry) => {
+      noteAddedProduct(entry);
+      return { kind: 'added', key: entry.key };
+    });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...location, assign, href: location.href, search: '', pathname: '/studio/' });
+    try {
+      const user = userEvent.setup();
+      render(createElement(StartExploration, { components }));
+      await openWhere(user);
+      await user.click(await screen.findByRole('option', { name: 'Add a product' }));
+      await user.click(await screen.findByRole('button', { name: /^Its code is on GitHub/ }));
+      await user.click(await screen.findByRole('button', { name: 'Add Atlas' }));
+      expect(vi.mocked(addProduct.addToTeam)).toHaveBeenCalledTimes(1);
+      // Back to Start an exploration with Atlas picked; its page did not open, no "Sent for review".
+      expect(await screen.findByText('What do you want to explore?')).toBeTruthy();
+      expect((await screen.findByRole('combobox', { name: 'Where' })).textContent).toContain('Atlas');
+      expect(assign).not.toHaveBeenCalled();
+      expect(screen.queryByText(/Sent for review/)).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.mocked(addProduct.readProductAccess).mockRestore();
+      vi.mocked(addProduct.readOwnership).mockRestore();
+      vi.mocked(addProduct.detectPreviews).mockRestore();
+      vi.mocked(addProduct.addToTeam).mockRestore();
+      sessionStorage.clear();
       done();
     }
   });

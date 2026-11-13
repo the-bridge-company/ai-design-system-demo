@@ -36,7 +36,10 @@
 // keepSampleProduct) and shows in the side nav, on its page and in Start an exploration's Where list. Bridge reads no
 // account there: "Its code is on GitHub" says so in one line and points to the two other cards; "Only its address" and
 // "It's a new product" make no code and no designers' copy (no checkbox), and the form says once that it stays in this
-// browser (DEMO_WORDS.sampleProduct). Opened from Start an exploration, it goes back there with the new product picked.
+// browser (DEMO_WORDS.sampleProduct).
+//
+// Opened from Start an exploration (`onAdded`), on any team: once added, the dialog closes and Start comes back with
+// the new product picked in Where, instead of opening its page; from Settings, its page opens.
 import { forwardRef, useEffect, useId, useReducer, useRef, useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import { Badge, Button, ButtonGroup, Checkbox, Dialog, DialogClose, DialogContent, Spinner } from '@bridge-ds/react';
@@ -137,10 +140,11 @@ export interface AddProductProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   /**
-   * The sample team only, opened from elsewhere (Start an exploration): called with the new product's key once it is
-   * added in this browser, instead of opening its page, so the opener picks it.
+   * Opened from elsewhere (Start an exploration): called with the new product's key once it is added (to the team, or
+   * in this browser on the sample team), instead of opening its page, so the opener picks it. Sent for review instead:
+   * `onSent`, as before.
    */
-  onSampleAdded?: (key: string) => void;
+  onAdded?: (key: string) => void;
   /**
    * Back from GitHub (a sign-in, or Install on GitHub; components/ds/studio/ResumeAction.tsx): the step the person was
    * on, with what they typed and one line on top ("Back from GitHub. Create Atlas now?"). Nothing is sent before they
@@ -163,7 +167,7 @@ export const setOpenPage = (fn: (href: string) => void) => {
   openPage = fn;
 };
 
-export default function AddProduct({ products: given, variant = 'secondary', onSent, open: openProp, onOpenChange, onSampleAdded, resume = null }: AddProductProps) {
+export default function AddProduct({ products: given, variant = 'secondary', onSent, open: openProp, onOpenChange, onAdded, resume = null }: AddProductProps) {
   const can = useCanAddProduct();
   // The sample team: adding runs in this browser, nothing is sent (pageTeam is known once `can` is).
   const sample = can && isSampleTeam(pageTeam);
@@ -517,14 +521,17 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
       if (out.kind === 'added' || out.kind === 'review') {
         disarmPendingAction();
         forgetPending();
-        onSent?.();
+        // Added for an opener that picks it (Start an exploration): onAdded below, never "Sent for review".
+        if (out.kind === 'review' || !onAdded) onSent?.();
       }
       if (out.kind === 'added') {
         // The designers' copy was chosen here, once for the team: its page makes it in the background with this
         // sign-in, and designers never see a step for it.
         if (entry.design && pageTeam) noteCopySetup(typeof sessionStorage === 'undefined' ? null : sessionStorage, pageTeam, out.key, Date.now());
         setOpen(false);
-        openPage(productHref(out.key));
+        // Opened from Start an exploration: back there with it picked (the page knows it at once: noteAddedProduct).
+        if (onAdded) onAdded(out.key);
+        else openPage(productHref(out.key));
         return true;
       }
       if (out.kind === 'review') {
@@ -559,7 +566,7 @@ export default function AddProduct({ products: given, variant = 'secondary', onS
     const [owner, repo] = (pageTeam ?? '/').split('/');
     document.dispatchEvent(new CustomEvent('bridge:team-model', { detail: { owner, repo } }));
     setOpen(false);
-    if (onSampleAdded) onSampleAdded(kept.key);
+    if (onAdded) onAdded(kept.key);
     else {
       onSent?.();
       openPage(productHref(kept.key));

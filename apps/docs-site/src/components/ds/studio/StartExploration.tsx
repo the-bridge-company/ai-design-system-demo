@@ -6,8 +6,8 @@
 //     product, else the library when the team lists no product. For whoever may add a product (an admin with GitHub;
 //     on the sample team the person played when they run it, Dana: AddProduct's useCanAddProduct), a last "Add a
 //     product" after a separator, a plus in the link color: it opens the Add a product dialog of Settings
-//     (AddProduct.tsx), then brings the person back here. On the sample team it is added in this browser and comes
-//     back picked in Where.
+//     (AddProduct.tsx), then brings the person back here, the new product picked once added (on the sample team it
+//     is added in this browser).
 //   - What it is, in one sentence, and a Jira ticket on demand (only with JIRA_IN_BRIDGE). The primary follows the person's AI tool
 //     (AiToolPanel.tsx, lib/ai-tools.ts): "Start with Claude AI" for Claude, "Start in Copilot" for GitHub Copilot
 //     in VS Code. It starts the exploration the way the CLI and MCP server do (the core exploration start with the
@@ -943,8 +943,9 @@ export default function StartExploration({ components, appearance = 'menu', prod
             if (!o) setOpen(true);
           }}
           onSent={() => setAdded(true)}
-          onSampleAdded={(key) => {
-            // Added in this browser (the sample team): back here with it picked, what they typed kept.
+          onAdded={(key) => {
+            // Added (in this browser on the sample team): back here with it picked, what they typed kept. The page
+            // knows it at once (repo-context addedHere).
             const all = pageProducts();
             setProducts(all);
             pickedByHand.current = true;

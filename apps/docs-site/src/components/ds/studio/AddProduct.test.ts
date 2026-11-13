@@ -524,13 +524,13 @@ describe('Add a product on the sample team', () => {
   });
 
   it('opened from Start an exploration: hands back the new key instead of opening its page', async () => {
-    const onSampleAdded = vi.fn();
+    const onAdded = vi.fn();
     const onOpenChange = vi.fn();
-    render(createElement(AddProduct, { products: [], open: true, onOpenChange, onSampleAdded }));
+    render(createElement(AddProduct, { products: [], open: true, onOpenChange, onAdded }));
     fireEvent.click(await screen.findByRole('button', { name: W.fresh }));
     fireEvent.change(await screen.findByRole('textbox', { name: N.name }), { target: { value: 'Atlas' } });
     fireEvent.click(screen.getByRole('button', { name: N.create }));
-    await waitFor(() => expect(onSampleAdded).toHaveBeenCalledWith('atlas'));
+    await waitFor(() => expect(onAdded).toHaveBeenCalledWith('atlas'));
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(gh.opened).toEqual([]);
     expect(writes()).toEqual([]);

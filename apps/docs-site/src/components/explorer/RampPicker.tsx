@@ -1,11 +1,13 @@
 // The token cell editor's ramp (scripts/explorer/inline-edit.ts): the steps of the picked family, one of them the
-// pending value. Colors are a DS SegmentedControl of swatches (the step's name and hex are its accessible name and its
-// DS tooltip, side bottom: the step names stay readable without a tick row); other types (space, radius, duration) are a DS RadioGroup, one row per step with its value. Both are
-// Base UI radio groups: arrow keys move and pick, as before. Like the family tabs, the editor mounts this island once
+// pending value. Colors are a DS RadioGroup of tiles (appearance="tile"): each step a 32px swatch with its step number
+// under it (50 ... 950), the picked one in the DS checked ring, and the value the token had when the editor opened
+// marked "was" (a dot on its swatch, and its name says so). No grey track: the ramp reads as the palette it is. Other
+// types (space, radius, duration) are a DS RadioGroup list, one row per step with its value. Both are Base UI radio
+// groups: arrow keys move and pick, as before. Like the family tabs, the editor mounts this island once
 // (mountRampPicker) and moves its node into each redraw.
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { Radio, RadioGroup, SegmentedControl, VisuallyHidden } from '@bridge-ds/react';
+import { Radio, RadioGroup, VisuallyHidden } from '@bridge-ds/react';
 
 export interface RampStep {
   /** Token path: the value picked is `{path}`. */
@@ -27,34 +29,51 @@ export interface RampPickerProps {
   steps: RampStep[];
   /** Path of the picked step, or '' when the value is not one of them (a raw value). */
   value: string;
+  /** Path of the value the token had when the editor opened (the "was" mark), or '' when it was not a step. */
+  original?: string;
   onPick: (path: string) => void;
 }
 
-export function RampPicker({ kind, label, steps, value, onPick }: RampPickerProps) {
+export function RampPicker({ kind, label, steps, value, original = '', onPick }: RampPickerProps) {
   const pick = (v: string) => v && v !== value && onPick(v);
   if (kind === 'steps') {
     return (
       <RadioGroup label={label} hideLabel value={value} onValueChange={pick} className="xe-steps">
         {steps.map((s) => (
-          <Radio key={s.path} value={s.path} label={<span className="mono">{s.step}</span>} description={s.value} />
+          <Radio
+            key={s.path}
+            value={s.path}
+            label={<span className="mono">{s.step}</span>}
+            description={s.path === original ? `${s.value ?? ''}, was` : s.value}
+          />
         ))}
       </RadioGroup>
     );
   }
   return (
-    <SegmentedControl
-      label={label}
-      size="sm"
-      className="xe-ramp"
-      value={value}
-      onValueChange={pick}
-      items={steps.map((s) => ({
-        value: s.path,
-        label: <VisuallyHidden>{`${s.label}, ${s.hex ?? ''}`}</VisuallyHidden>,
-        leading: <span className="xe-swatch" style={{ backgroundColor: s.hex ?? 'transparent' }} />,
-        attributes: { 'data-xe-pick': s.path, 'data-tooltip': `${s.label} · ${s.hex ?? ''}`, 'data-tooltip-side': 'bottom' },
-      }))}
-    />
+    <RadioGroup label={label} hideLabel appearance="tile" value={value} onValueChange={pick} className="xe-ramp">
+      {steps.map((s) => {
+        const was = s.path === original;
+        return (
+          <Radio
+            key={s.path}
+            value={s.path}
+            className={was ? 'xe-tile is-was' : 'xe-tile'}
+            label={
+              <span className="xe-tile-body" data-tooltip={`${s.label} · ${s.hex ?? ''}`} data-tooltip-side="bottom">
+                <span className="xe-tile-sw" style={{ backgroundColor: s.hex ?? 'transparent' }} aria-hidden="true">
+                  {was && <span className="xe-tile-was" data-xe-was="" />}
+                </span>
+                <span className="xe-tile-step mono" aria-hidden="true">
+                  {s.step}
+                </span>
+                <VisuallyHidden>{`${s.label}, ${s.hex ?? ''}${was ? ', was' : ''}`}</VisuallyHidden>
+              </span>
+            }
+          />
+        );
+      })}
+    </RadioGroup>
   );
 }
 

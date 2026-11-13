@@ -9,6 +9,7 @@ import { buildTokenSet, layoutOptions, loadConfig } from '@bridge-ds/core';
 import { expectNoAxeViolations } from '../../../../../packages/react/src/test/axe';
 import { buildTokens, modesOf, type Column, type UsageMap } from '../../lib/explorer/model';
 import type { ExplorerData } from './types';
+import { SEP } from '../../lib/sep';
 
 const ramp = (hexes: string[]) =>
   Object.fromEntries(hexes.map((hex, i) => [String((i + 1) * 100), { $type: 'color', $value: { colorSpace: 'srgb', components: [0, 0, 0], hex } }]));
@@ -35,11 +36,13 @@ const ctx = { brand: modes.brands[0] ?? 'bridge', theme: modes.themes[0] ?? 'lig
 const col: Column = { key: 'value', label: 'Value', ctx };
 const d: ExplorerData = { set, head: set, tokens, byPath: new Map(tokens.map((t) => [t.path, t])), usage, pairs: [], results: [], before: [], modes };
 
+// The value the edited token has when the editor opens (a test may move it to another family).
+const editor = vi.hoisted(() => ({ start: '{palette.neutral.300}' }));
 vi.mock('../token-editor', () => ({
   aliasOptions: () => options,
   applyValues: () => {},
   draftDescription: () => '',
-  draftValue: () => '{palette.neutral.300}',
+  draftValue: () => editor.start,
   editDescription: () => {},
   pendingOverrides: () => ({}),
   previewContrast: () => [],
@@ -57,7 +60,11 @@ function open() {
   openInlineEditor({ container, cell, d, path: P, col, columns: [col] });
   return document.querySelector<HTMLElement>('.xe-pop')!;
 }
-const ramp_ = (pop: HTMLElement) => pop.querySelector('[role="radiogroup"]')?.getAttribute('aria-label');
+const ramp_ = (pop: HTMLElement) => {
+  const group = pop.querySelector('.xe-ramp-host [role="radiogroup"]');
+  const id = group?.getAttribute('aria-labelledby');
+  return id ? document.getElementById(id)?.textContent : null;
+};
 const tabs = (pop: HTMLElement) => [...pop.querySelectorAll<HTMLElement>('[role="tab"]')];
 
 describe('Token editor family tabs', () => {
@@ -113,27 +120,72 @@ describe('Token editor family tabs', () => {
     expect(document.querySelector('.xe-pop')).toBeNull();
   });
 
-  it('the ramp is the DS SegmentedControl: arrow keys pick the next swatch, focus stays on it, More options is a DS Button', async () => {
+  it('the ramp is DS RadioGroup tiles: a swatch and its step number each, the picked one checked, "was" marked; arrow keys pick, focus stays', async () => {
     const user = userEvent.setup();
     const pop = open();
     await new Promise((r) => setTimeout(r, 80));
-    const swatches = () => [...pop.querySelectorAll<HTMLElement>('[data-segmented-control] [role="radio"]')];
-    expect(swatches().map((s) => s.getAttribute('data-xe-pick'))).toEqual(['palette.neutral.100', 'palette.neutral.200', 'palette.neutral.300']);
-    const picked = swatches().find((s) => s.getAttribute('aria-checked') === 'true')!;
-    expect(picked).toHaveAccessibleName('neutral.300, #404040');
-    expect(picked.getAttribute('data-tooltip')).toBe('neutral.300 · #404040');
-    await user.click(picked);
+    // No hand-made track and no SegmentedControl: the DS RadioGroup, tile appearance.
+    expect(pop.querySelector('[data-segmented-control]')).toBeNull();
+    const tiles = () => [...pop.querySelectorAll<HTMLElement>('.xe-ramp .xe-tile')];
+    const radios = () => [...pop.querySelectorAll<HTMLElement>('.xe-ramp [role="radio"]')];
+    expect(tiles()).toHaveLength(3);
+    expect(tiles().map((t) => t.querySelector('.xe-tile-step')?.textContent)).toEqual(['100', '200', '300']);
+    for (const t of tiles()) expect(t.querySelector('.xe-tile-sw')).not.toBeNull();
+    const checked = () => radios().find((s) => s.getAttribute('aria-checked') === 'true')!;
+    expect(checked()).toHaveAccessibleName('neutral.300, #404040, was');
+    // The "was" dot sits on the original step only.
+    expect(pop.querySelectorAll('[data-xe-was]')).toHaveLength(1);
+    expect(tiles()[2]!.classList.contains('is-was')).toBe(true);
+    await user.click(checked());
     await user.keyboard('{ArrowLeft}');
     expect(pop.querySelector('.xe-pick-name')?.textContent).toBe('neutral.200');
-    expect(document.activeElement?.getAttribute('data-xe-pick')).toBe('palette.neutral.200');
+    expect(checked()).toHaveAccessibleName('neutral.200, #a3a3a3');
+    expect(document.activeElement).toBe(checked());
+    // 300 stays marked as the value it was, and the pick row says so with the same dot.
+    expect(tiles()[2]!.querySelector('[data-xe-was]')).not.toBeNull();
+    expect(pop.querySelector('.xe-pick-sub .xe-was')?.textContent).toBe('was neutral.300');
+    expect(pop.querySelector('.xe-pick-sub .xe-was-dot')).not.toBeNull();
+    // Still focused after the editor's delayed redraw (contrast).
     await new Promise((r) => setTimeout(r, 80));
-    expect(document.activeElement?.getAttribute('data-xe-pick')).toBe('palette.neutral.200');
+    expect(document.activeElement).toBe(checked());
+    await user.keyboard('{ArrowRight}');
+    expect(pop.querySelector('.xe-pick-name')?.textContent).toBe('neutral.300');
     const more = pop.querySelector<HTMLElement>('[data-xe-more]')!;
     expect(more.getAttribute('aria-expanded')).toBe('false');
     await user.click(more);
     expect(pop.querySelector<HTMLElement>('[data-xe-more]')!.getAttribute('aria-expanded')).toBe('true');
     expect(pop.querySelector<HTMLElement>('.xe-more')!.hidden).toBe(false);
     await expectNoAxeViolations(pop);
+    closeInlineEditor(false);
+  });
+
+  it('opens on the family of the current value, even one behind More; the title separates the mode with the shared separator', async () => {
+    editor.start = '{palette.warning.200}';
+    try {
+      const pop = open();
+      await new Promise((r) => setTimeout(r, 80));
+      const selected = tabs(pop).find((t) => t.getAttribute('aria-selected') === 'true');
+      expect(selected?.textContent).toBe('Warning');
+      expect(ramp_(pop)).toBe('Warning');
+      expect(pop.querySelector('.xe-ramp [role="radio"][aria-checked="true"]')).toHaveAccessibleName('warning.200, #eab308, was');
+      expect(pop.querySelector('.xe-mode')?.textContent).toBe(`${SEP}Value`);
+      closeInlineEditor(false);
+    } finally {
+      editor.start = '{palette.neutral.300}';
+    }
+  });
+
+  it('a step picked after browsing another family keeps the tab on that family', async () => {
+    const user = userEvent.setup();
+    const pop = open();
+    await new Promise((r) => setTimeout(r, 80));
+    await user.click(tabs(pop)[1]!);
+    expect(ramp_(pop)).toBe('Primary');
+    await user.click(pop.querySelector<HTMLElement>('.xe-ramp [role="radio"]')!);
+    expect(pop.querySelector('.xe-pick-name')?.textContent).toBe('primary.100');
+    expect(tabs(pop).find((t) => t.getAttribute('aria-selected') === 'true')?.textContent).toBe('Primary');
+    // No step of this family was the original value: no "was" dot here.
+    expect(pop.querySelector('[data-xe-was]')).toBeNull();
     closeInlineEditor(false);
   });
 });

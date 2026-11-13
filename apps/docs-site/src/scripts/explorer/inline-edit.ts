@@ -1,6 +1,6 @@
 // The Studio cell editor: ONE popover anchored to the value cell (a bottom sheet on phones). It decides from the
 // swatches: palette families as tabs (the DS Tabs, components/explorer/FamilyTabs.tsx, with the DS Menu for the
-// others), one ramp with the current step selected (a DS SegmentedControl of swatches, components/explorer/RampPicker.tsx), one contrast line for the pending value,
+// others), one ramp with the current step selected (DS RadioGroup tiles with step numbers and the "was" mark, components/explorer/RampPicker.tsx), one contrast line for the pending value,
 // and More options (raw value, the other mode, the description) on demand. Nothing changes until Apply, which adds
 // the edit to the local draft (scripts/token-editor.ts: same draft, guardrails and pull request as before). Under the
 // contrast line, a mini preview of the real components that use the token, light and dark, repaints on every pick.
@@ -19,6 +19,7 @@ import { cssValue, esc, icon } from './util';
 import { mountFamilyTabs } from '../../components/explorer/FamilyTabs';
 import { mountRampPicker } from '../../components/explorer/RampPicker';
 import { mountMoreOptionsToggle } from '../../components/explorer/MoreOptionsToggle';
+import { SEP } from '../../lib/sep';
 
 interface Open {
   pop: HTMLElement;
@@ -26,6 +27,9 @@ interface Open {
   dispose: () => void;
 }
 let current: Open | null = null;
+
+/** The picked step of the ramp (a DS RadioGroup): where focus goes back after a redraw. */
+const PICKED_STEP = '.xe-ramp-host [role="radio"][aria-checked="true"]';
 
 export const inlineEditorOpen = () => current !== null;
 
@@ -66,6 +70,24 @@ function valueText(type: string, value: unknown): string {
   return cssText(type, value) || 'Raw value';
 }
 
+/**
+ * Width the editor needs to show the whole color ramp on one line (every tile, its gaps and the host's own side
+ * padding, the editor's inner padding), measured from the tiles: every step at a glance, no wrap to reach 950. 0 when
+ * there is no tile ramp. On a narrow page the tiles wrap instead.
+ */
+export function rampWidth(pop: HTMLElement): number {
+  const tiles = [...pop.querySelectorAll<HTMLElement>('.xe-ramp .xe-tile')];
+  const host = pop.querySelector<HTMLElement>('.xe-ramp-host');
+  if (!tiles.length || !host) return 0;
+  const group = tiles[0]!.parentElement!;
+  const gap = parseFloat(getComputedStyle(group).columnGap) || 0;
+  const hs = getComputedStyle(host);
+  const pad = (parseFloat(hs.paddingLeft) || 0) + (parseFloat(hs.paddingRight) || 0);
+  const sum = tiles.reduce((n, t) => n + t.getBoundingClientRect().width, 0);
+  // Plus the editor's border (1px each side) so the last tile never wraps on a rounding error.
+  return sum + gap * (tiles.length - 1) + pad + 2;
+}
+
 function position(pop: HTMLElement, cell: HTMLElement, container: HTMLElement) {
   if (window.matchMedia('(max-width: 640px)').matches) {
     pop.classList.add('is-sheet');
@@ -73,11 +95,7 @@ function position(pop: HTMLElement, cell: HTMLElement, container: HTMLElement) {
   }
   const c = container.getBoundingClientRect();
   const r = cell.getBoundingClientRect();
-  // Wide enough for the whole ramp (the DS SegmentedControl of swatches) when the page has the room: every step at
-  // a glance, no sideways scroll to reach 950. Its side padding is the editor's (space 4, twice).
-  const track = pop.querySelector<HTMLElement>('.xe-ramp [data-segment-track]');
-  const ramp = track ? track.scrollWidth + 2 * parseFloat(getComputedStyle(pop).getPropertyValue('--space-4') || '16') + 4 : 0;
-  const width = Math.min(Math.max(360, Math.ceil(ramp)), c.width - 16);
+  const width = Math.min(Math.max(360, Math.ceil(rampWidth(pop))), c.width - 16);
   pop.style.width = `${width}px`;
   const left = Math.max(8, Math.min(r.left - c.left, c.width - width - 8));
   pop.style.left = `${left}px`;
@@ -114,12 +132,16 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   const start = draftValue(path, mode);
   const startOther = other ? draftValue(path, other.mode) : undefined;
   const startDesc = draftDescription(path);
+  const startTarget = isAlias(start) ? aliasTarget(start) : undefined;
+  /** The family of a value: the tab the editor shows for it (null for a raw value or a target outside the ramps). */
+  const familyOf = (value: unknown) => locateSwatch(families, isAlias(value) ? aliasTarget(value) : undefined)?.family ?? null;
   const state = {
     value: start,
     otherValue: startOther,
     otherOn: false,
     desc: startDesc,
-    family: Math.max(0, locateSwatch(families, isAlias(start) ? aliasTarget(start) : undefined)?.family ?? 0),
+    // The family tab shown is the family of the current value (neutral.0 opens on Neutral), never the first tab by default.
+    family: familyOf(start) ?? 0,
     moreOpen: false,
     showPairs: false,
   };
@@ -145,7 +167,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   pop.dataset.theme = document.documentElement.dataset.theme ?? 'light';
   // The family tabs are a React island (DS Tabs): one root for this editor, moved into every redraw.
   const familyTabsRoot = mountFamilyTabs();
-  // The ramp too (DS SegmentedControl of swatches, or a DS RadioGroup of steps for other types).
+  // The ramp too (DS RadioGroup: swatch tiles for colors, a list of steps for other types).
   const rampRoot = mountRampPicker();
   // And More options (a DS Button that shows the raw value, the other mode and the description).
   const moreRoot = mountMoreOptionsToggle();
@@ -172,7 +194,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     const tabs = familyTabs(families, state.family);
     const hex = isColor ? (target ? cellValue(d.head, target, col.ctx).hex : colorOf(state.value)) : undefined;
     const changed = JSON.stringify(state.value) !== JSON.stringify(start);
-    const sub = isColor ? `${esc(hex ?? '')}${changed ? ` <span class="xe-was">· was ${esc(valueText(t.type, start))}</span>` : ''}` : changed ? `<span class="xe-was">was ${esc(valueText(t.type, start))}</span>` : '';
+    // "was": the same dot as the one on the original step of the ramp (RampPicker), so the two read as one mark.
+    const wasText = `<span class="xe-was"><span class="xe-was-dot" aria-hidden="true"></span>was ${esc(valueText(t.type, start))}</span>`;
+    const sub = isColor ? `${esc(hex ?? '')}${changed ? `${SEP}${wasText}` : ''}` : changed ? wasText : '';
     const picker = fam
       ? // The tabs and More (DS Tabs and Menu) and the ramp are drawn into their slots after this markup.
         `<div class="xe-families"><div data-xe-tabs-slot></div></div>
@@ -209,7 +233,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
         <label class="xe-label" for="${id}-desc">Description</label><textarea id="${id}-desc" class="xe-input" rows="2" data-xe-desc>${esc(state.desc)}</textarea>
       </div>`;
     pop.innerHTML = `
-      <p class="xe-title" id="${id}-title"><span class="mono">${esc(path)}</span> <span class="xe-mode">· ${esc(col.label)}</span></p>
+      <p class="xe-title" id="${id}-title"><span class="mono">${esc(path)}</span><span class="xe-mode">${SEP}${esc(col.label)}</span></p>
       <div class="xe-pick">${isColor ? `<span class="xe-big" style="background-color:${cssValue(hex ?? 'transparent')}" aria-hidden="true"></span>` : ''}<span><span class="xe-pick-name mono">${esc(valueText(t.type, state.value))}</span><span class="xe-pick-sub mono">${sub}</span></span></div>
       ${picker}
       ${status}
@@ -233,6 +257,7 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
         label: fam.label,
         steps: fam.swatches.map((x) => ({ path: x.path, label: x.label, step: x.step, ...(x.hex ? { hex: x.hex } : {}), ...(x.value ? { value: x.value } : {}) })),
         value: fam.swatches.some((x) => x.path === target) ? target! : '',
+        original: startTarget ?? '',
         onPick: pickStep,
       });
       moreRoot.render(pop.querySelector('[data-xe-more-slot]'), { open: state.moreOpen, controls: `${id}-more` });
@@ -272,10 +297,9 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
     }, 40);
   };
   const selectorOf = (el: HTMLElement) => {
-    if (el.dataset.xePick) return `[data-xe-pick="${CSS.escape(el.dataset.xePick)}"]`;
     if (el.dataset.xeFam) return `[data-xe-fam="${el.dataset.xeFam}"]`;
-    // A step of the ramp of another type (DS RadioGroup): the picked one.
-    if (el.getAttribute('role') === 'radio') return '.xe-ramp-host [role="radio"][aria-checked="true"]';
+    // A step of the ramp (DS RadioGroup, tiles or list): the picked one.
+    if (el.getAttribute('role') === 'radio') return PICKED_STEP;
     for (const a of ['data-xe-hex', 'data-xe-num', 'data-xe-json', 'data-xe-other', 'data-xe-desc', 'data-xe-more', 'data-xe-pairs', 'data-xe-apply', 'data-xe-cancel', 'data-xe-other-on', 'data-xe-color'])
       if (el.hasAttribute(a)) return `[${a}]`;
     return null;
@@ -289,7 +313,8 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   // A step picked in the ramp (click or arrow keys): the pending value, focus stays on the step.
   function pickStep(p: string) {
     state.value = `{${p}}`;
-    refresh(isColor ? `[data-xe-pick="${CSS.escape(p)}"]` : '.xe-ramp-host [role="radio"][aria-checked="true"]');
+    state.family = familyOf(state.value) ?? state.family;
+    refresh(PICKED_STEP);
   }
 
   const apply = () => {
@@ -415,6 +440,11 @@ export function openInlineEditor(opts: { container: HTMLElement; cell: HTMLEleme
   cell.dataset.open = '';
   cell.setAttribute('aria-expanded', 'true');
   position(pop, cell, container);
+  // The editor just took its final width (the whole ramp): draw the family tabs again so the raised plate sits under
+  // the picked family's tab as laid out now.
+  requestAnimationFrame(() => {
+    if (current?.pop === pop) familyTabsRoot.remeasure();
+  });
   current = {
     pop,
     cell,

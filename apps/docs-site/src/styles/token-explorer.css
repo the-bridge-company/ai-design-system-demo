@@ -10,8 +10,10 @@
   position: relative;
   display: grid;
   grid-template-columns: var(--xp-left) minmax(0, 1fr);
-  height: calc(100dvh - var(--layout-header-height) - var(--size-8));
-  min-height: calc(var(--size-140) + var(--space-4));
+  /* The frame hugs its rows (a filtered list of 3 shadows is a short card, not a screen of empty table) up to the
+     viewport; past that the row track (minmax(0, 1fr) under a max-height) shrinks and the table scrolls inside. */
+  grid-template-rows: minmax(0, 1fr);
+  max-height: calc(100dvh - var(--layout-header-height) - var(--size-8));
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);
@@ -479,33 +481,72 @@
   min-width: 0;
 }
 
-.xp-stage {
+/* A value's preview: one fixed box, its picture centred and clipped inside it. It never stretches with the row and never
+   spills out of the cell or the Studio edit pill (box-sizing: border-box, flex: none, overflow: hidden). */
+.xp-thumb {
+  position: relative;
+  box-sizing: border-box;
   display: grid;
   flex: none;
   place-items: center;
   width: var(--size-10);
   height: var(--size-8);
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-control);
 }
 
-.xp-stage.is-lg {
+.xp-thumb > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.xp-thumb.is-empty {
+  border-color: transparent;
+}
+
+/* Shadow: a small card raised over the column's canvas, inset so its shadow has room to show. */
+.xp-thumb.is-shadow .xp-card {
+  width: 50%;
+  height: 50%;
+}
+
+/* Duration: a bar to scale (capped at 500ms, scripts/explorer/cells.ts). */
+.xp-dur {
+  display: block;
+  width: 70%;
+  height: var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-border-default);
+}
+
+.xp-dur i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--color-text-muted);
+}
+
+.xp-thumb.is-lg {
   width: var(--size-14);
   height: calc(var(--size-10) + var(--space-1));
 }
 
-.xp-stage.is-plain {
+.xp-thumb.is-plain {
   background-color: var(--color-bg-subtle);
   color: var(--color-text-default);
 }
 
-.xp-stage.is-broken {
+.xp-thumb.is-broken {
   border-style: dashed;
   border-color: var(--color-feedback-danger-text);
 }
 
-.xp-stage.is-aa {
+.xp-thumb.is-aa {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
   font-weight: var(--font-weight-semibold);
@@ -540,32 +581,32 @@
 }
 
 .xp-corner {
-  width: var(--size-5);
-  height: var(--size-5);
+  width: 60%;
+  height: 60%;
   border-top: var(--border-width-strong) solid var(--color-text-default);
   border-left: var(--border-width-strong) solid var(--color-text-default);
-  transform: translate(var(--space-0-5), var(--space-0-5));
+  transform: translate(20%, 20%);
 }
 
 .xp-stroke {
-  width: var(--size-6);
+  width: 60%;
   border-top: 0 solid var(--color-text-default);
 }
 
-.xp-stage.is-type {
+.xp-thumb.is-type {
   font-size: var(--typography-ui-size);
   line-height: var(--font-line-height-none);
 }
 
-.xp-stage.is-leading {
+.xp-thumb.is-leading {
   align-content: center;
   gap: 0;
   padding: 0 var(--space-1-5);
 }
 
-.xp-stage.is-leading i {
+.xp-thumb.is-leading i {
   display: block;
-  width: var(--size-6);
+  width: 70%;
   height: var(--space-2);
   border-top: var(--border-width-strong) solid var(--color-text-muted);
 }
@@ -580,22 +621,6 @@
   stroke: var(--color-text-default);
   stroke-linecap: round;
   stroke-width: 1.75;
-}
-
-.xp-stage.is-track {
-  position: relative;
-  justify-items: start;
-  padding: 0 var(--space-1);
-}
-
-.xp-stage.is-track::before {
-  content: "";
-  position: absolute;
-  right: var(--space-1-5);
-  left: var(--space-1-5);
-  height: var(--space-0-5);
-  border-radius: var(--radius-inset);
-  background-color: var(--color-border-emphasis);
 }
 
 .xp-dot {
@@ -1226,8 +1251,7 @@
 
 @media (max-width: 640px) {
   .xp {
-    height: auto;
-    min-height: 0;
+    max-height: none;
     overflow: visible;
     border-radius: var(--radius-control);
   }
@@ -1277,7 +1301,7 @@
     padding-left: var(--space-1);
   }
 
-  .xp-stage {
+  .xp-thumb {
     width: var(--size-8);
     height: var(--size-7);
   }
@@ -1334,8 +1358,7 @@
 .xp[data-surface="app"] {
   --xp-left: calc(var(--size-60) - var(--size-8));
   grid-template-rows: auto minmax(0, 1fr);
-  height: calc(100dvh - var(--layout-header-height));
-  min-height: var(--size-120);
+  max-height: calc(100dvh - var(--layout-header-height));
   margin: calc(var(--space-5) * -1) calc(var(--space-7) * -1) 0;
   border: 0;
   border-radius: 0;
@@ -1515,31 +1538,28 @@
   gap: var(--space-2);
 }
 
-.xp[data-surface="app"] .xp-grid .xp-stage {
-  width: var(--size-7);
+/* Studio rows: every preview is one DS size (24px, like the color swatch .xp-ms), inside the 32px pill of a 40px row,
+   so it never touches the row lines; the values after it start on one column. */
+.xp[data-surface="app"] .xp-grid .xp-thumb,
+.xp[data-surface="app"] .xp-grid .xp-ms {
+  width: var(--size-6);
   height: var(--size-6);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-inset);
 }
 
-.xp[data-surface="app"] .xp-grid .xp-stage:has(> .xp-sw),
-.xp[data-surface="app"] .xp-grid .xp-stage.is-aa {
-  width: var(--size-5);
-  height: var(--size-5);
-}
-
-.xp[data-surface="app"] .xp-grid .xp-stage > .xp-sw {
+.xp[data-surface="app"] .xp-grid .xp-thumb > .xp-sw {
   width: 100%;
   height: 100%;
   border-radius: 0;
   box-shadow: none;
 }
 
-.xp[data-surface="app"] .xp-grid .xp-stage.is-aa {
+.xp[data-surface="app"] .xp-grid .xp-thumb.is-aa {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
 }
 
-.xp[data-surface="app"] .xp-grid .xp-stage.is-type {
+.xp[data-surface="app"] .xp-grid .xp-thumb.is-type {
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
 }
@@ -1612,7 +1632,7 @@
 
 @media (max-width: 640px) {
   .xp[data-surface="app"] {
-    height: auto;
+    max-height: none;
     margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 0;
   }
 
@@ -1729,9 +1749,10 @@
   background-color: var(--color-text-signal);
 }
 
-.xp[data-mode="edit"] .xp-grid .xp-stage {
-  width: var(--size-5);
-  height: var(--size-5);
+/* The chevron keeps its room at rest (hidden, not removed): the value on the end side stays on its column on hover. */
+.xp[data-mode="edit"] .xp-field-chev {
+  display: block;
+  visibility: hidden;
 }
 
 @media (hover: hover) {
@@ -1741,7 +1762,7 @@
   }
 
   .xp[data-mode="edit"] .xp-td.is-mode:hover .xp-field-chev {
-    display: block;
+    visibility: visible;
   }
 }
 
@@ -1758,7 +1779,7 @@
 
 .xp[data-mode="edit"] .xp-td.is-mode:focus-visible .xp-field-chev,
 .xp[data-mode="edit"] .xp-td.is-mode[data-open] .xp-field-chev {
-  display: block;
+  visibility: visible;
   color: var(--color-text-signal);
 }
 
@@ -1803,6 +1824,9 @@
 
 .xe-pop {
   --xe-arrow: var(--space-6);
+  /* One inner side padding for every part of the editor (title, pick row, tabs, ramp, contrast note, preview, More
+     options), the footer's: everything lines up on one edge. */
+  --xe-pad: var(--space-4);
   position: absolute;
   z-index: var(--layer-popover);
   width: calc(var(--size-80) + var(--size-10));
@@ -1853,7 +1877,7 @@
 
 .xe-title {
   margin: 0;
-  padding: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3) var(--xe-pad) 0;
   font-weight: var(--font-weight-semibold);
   overflow-wrap: anywhere;
 }
@@ -1868,7 +1892,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3) var(--xe-pad) 0;
 }
 
 .xe-big {
@@ -1905,11 +1929,14 @@
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
-  margin: var(--space-3) var(--space-4) 0;
+  margin: var(--space-3) var(--xe-pad) 0;
 }
 
+/* The tabs and More: the DS gap between the tabs' track and the button, never glued to it. */
 .xe-family-host {
   display: flex;
+  align-items: center;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -1917,18 +1944,72 @@
   min-width: 0;
 }
 
-/* The ramp: a DS SegmentedControl of swatches (colors) or a DS RadioGroup of steps (other types),
-   components/explorer/RampPicker.tsx. */
+/* The ramp (components/explorer/RampPicker.tsx): colors are a DS RadioGroup of tiles, each a 32px swatch with its
+   step number under it, the picked one in the DS checked ring (RadioGroup tile), the value the token had marked
+   "was"; no grey track. Other types are a DS RadioGroup list of steps. */
 .xe-ramp-host {
-  padding: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3) var(--xe-pad) 0;
 }
 
-.xe-swatch {
+.xe-ramp-host .xe-ramp [role="radiogroup"] {
+  gap: var(--space-1);
+}
+
+/* A tile hugs its swatch (the DS tile is sized for pictures; a ramp step is a small swatch and a number). */
+.xe-ramp-host .xe-ramp .xe-tile {
+  inline-size: auto;
+  padding: var(--space-1);
+}
+
+.xe-tile-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.xe-tile-sw {
+  position: relative;
   display: block;
-  width: var(--size-5);
-  height: var(--size-5);
+  width: var(--size-8);
+  height: var(--size-8);
   border-radius: var(--radius-inset);
   box-shadow: inset 0 0 0 var(--border-width-default) var(--color-border-default);
+}
+
+.xe-tile-step {
+  color: var(--color-text-muted);
+  font-size: var(--typography-caption-size);
+  line-height: var(--typography-caption-line-height);
+  font-variant-numeric: tabular-nums;
+}
+
+.xe-ramp-host .xe-tile:has([data-checked]) .xe-tile-step {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* "was": the value the token had when the editor opened. The same dot leads "was neutral.0" in the pick row. */
+.xe-tile-was,
+.xe-was-dot {
+  display: block;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-default);
+  box-shadow: 0 0 0 var(--border-width-strong) var(--color-surface-raised);
+}
+
+.xe-tile-was {
+  position: absolute;
+  top: calc(var(--space-1) * -1);
+  right: calc(var(--space-1) * -1);
+}
+
+.xe-was-dot {
+  display: inline-block;
+  margin-inline-end: var(--space-1);
+  vertical-align: middle;
 }
 
 @media (max-width: 640px) {
@@ -1947,7 +2028,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  margin: var(--space-3) var(--space-4) 0;
+  margin: var(--space-3) var(--xe-pad) 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background-color: var(--color-bg-subtle);
@@ -1994,7 +2075,7 @@
 .xe-pairs {
   display: grid;
   gap: var(--space-1);
-  margin: var(--space-2) var(--space-4) 0;
+  margin: var(--space-2) var(--xe-pad) 0;
   padding: 0;
   list-style: none;
 }
@@ -2013,7 +2094,7 @@
 .xe-more {
   display: grid;
   gap: var(--space-1-5);
-  margin: var(--space-3) var(--space-4) 0;
+  margin: var(--space-3) var(--xe-pad) 0;
 }
 
 .xe-more[hidden] {
@@ -2083,7 +2164,7 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--xe-pad);
   border-top: var(--border-width-default) solid var(--color-border-default);
 }
 
@@ -2802,7 +2883,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 .xp[data-surface="app"].has-detail {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  height: calc(100dvh - var(--layout-header-height) - var(--space-5));
+  max-height: calc(100dvh - var(--layout-header-height) - var(--space-5));
   margin: 0;
   overflow: visible;
   background-color: transparent;
@@ -2943,8 +3024,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
      to the last token instead of stopping at one screen height. */
   .xp[data-surface="app"],
   .xp[data-surface="app"].has-detail {
-    height: auto;
-    min-height: 0;
+    max-height: none;
     margin: 0;
   }
 
@@ -3003,7 +3083,7 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 .xe-pop-pv {
   display: grid;
   gap: var(--space-1-5);
-  margin: var(--space-3) var(--space-4) 0;
+  margin: var(--space-3) var(--xe-pad) 0;
 }
 
 .xe-pop-pv-label {

@@ -26,9 +26,18 @@ function stageBg(d: ExplorerData, col: Column, path?: string): string {
   return hexIn(d, CANVAS, col) ?? hexIn(d, SURFACE, col) ?? 'transparent';
 }
 
-/** The preview square of a cell. */
+/** Longest duration the duration bar draws to scale: anything longer fills the bar. */
+const DURATION_CAP_MS = 500;
+
+/**
+ * The preview square of a cell: one fixed box (`xp-thumb`, the DS size 6 in Studio rows) with its picture centred and
+ * clipped inside it, so it never grows with the row or spills out of the edit pill. Colors on the column's own
+ * background, a shadow on a small card of the column's surface (visible in light and dark), an easing curve drawn from
+ * its bezier, a duration as a bar to scale. (Not `xp-stage`: the exploration page owns that class, and its padded
+ * stage leaked into these cells whenever both stylesheets were on the page.)
+ */
 export function preview(d: ExplorerData, type: string, path: string, v: CellValue, col: Column, size: 'sm' | 'lg' = 'sm'): string {
-  const cls = `xp-stage is-${size}`;
+  const cls = `xp-thumb is-${size}`;
   if (v.resolved === undefined) return `<span class="${cls} is-broken" aria-hidden="true"></span>`;
   const bg = cssValue(stageBg(d, col, type === 'color' && isForeground(path) ? path : undefined));
   const css = cssValue(v.css);
@@ -38,15 +47,19 @@ export function preview(d: ExplorerData, type: string, path: string, v: CellValu
       const checker = colorAlpha(v.resolved) < 0.9995 ? ' has-alpha' : '';
       return `<span class="${cls}" style="background-color:${bg}" aria-hidden="true"><span class="xp-sw${checker}"><i style="background-color:${css}"></i></span></span>`;
     }
-    case 'shadow':
-      return `<span class="${cls}" style="background-color:${bg}" aria-hidden="true"><span class="xp-card" style="box-shadow:${css}"></span></span>`;
+    case 'shadow': {
+      // A card of the column's own surface on the column's canvas: a dark theme shadow shows on a dark card.
+      const card = cssValue(hexIn(d, SURFACE, col) ?? 'transparent');
+      return `<span class="${cls} is-shadow" style="background-color:${bg}" aria-hidden="true"><span class="xp-card" style="background-color:${card};box-shadow:${css}"></span></span>`;
+    }
     case 'cubicBezier': {
       const p = bezierPath(v.resolved, 20);
-      return `<span class="${cls} is-plain" aria-hidden="true">${p ? `<svg viewBox="-2 -2 24 24" width="24" height="24"><path d="M0 20 L20 0" class="xp-curve-ref" fill="none"/><path d="${p}" class="xp-curve" fill="none"/></svg>` : ''}</span>`;
+      return `<span class="${cls} is-plain is-curve" aria-hidden="true">${p ? `<svg viewBox="-2 -2 24 24" width="24" height="24"><path d="M0 20 L20 0" class="xp-curve-ref" fill="none"/><path d="${p}" class="xp-curve" fill="none"/></svg>` : ''}</span>`;
     }
     case 'duration': {
       const ms = numericValue(v.resolved) ?? 0;
-      return `<span class="${cls} is-plain is-track" aria-hidden="true"><i class="xp-dot" style="animation-duration:${Math.max(ms, 1)}ms"></i></span>`;
+      const pct = Math.round(Math.max(8, Math.min(100, (ms / DURATION_CAP_MS) * 100)));
+      return `<span class="${cls} is-plain is-duration" aria-hidden="true"><span class="xp-dur"><i style="width:${pct}%"></i></span></span>`;
     }
     case 'fontFamily':
       return `<span class="${cls} is-plain is-type" style="font-family:${css}" aria-hidden="true">Ag</span>`;
@@ -108,7 +121,8 @@ export function studioCellHtml(d: ExplorerData, path: string, col: Column, edite
   const lead =
     type === 'color'
       ? `<span class="xp-ms${v.hex ? '' : ' is-broken'}${colorAlpha(v.resolved) < 0.9995 ? ' has-alpha' : ''}" aria-hidden="true"><i style="background-color:${cssValue(v.css)}"></i></span>`
-      : preview(d, type, path, v, col);
+      : // Every Studio cell keeps the preview's slot (empty for a type without one): the values start on one column.
+        preview(d, type, path, v, col) || '<span class="xp-thumb is-sm is-empty" aria-hidden="true"></span>';
   const main = v.alias ? swatchLabel(v.alias) : v.line || cssText(type, v.raw);
   const end = v.error ? 'Unresolved' : type === 'color' ? (v.hex ?? v.css) : v.alias ? v.line : '';
   const dot = edited ? '<span class="xp-edot" aria-hidden="true"></span><span class="sr-only">, edited in your draft</span>' : '';

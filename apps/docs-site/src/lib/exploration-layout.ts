@@ -703,7 +703,8 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
       const next = dev ? DEV_EXPLORING_LINE : x.viewerLeads ? `It reaches you when ${says} Done exploring.` : `It goes to ${leadName ?? 'review'} when ${says} Done exploring.`;
       const lines = [owner && x.doneNote ? x.doneNote : next];
       if (shared) lines.push(`This screen's ${shared.component} ${shared.property.toLowerCase()} also sets your ${shared.screen} in ${shared.product}.`);
-      return { eyebrow: TURN_WORDS.nothing, title: owner ? 'You are exploring' : `${x.author} is exploring`, steps, lines, action: see };
+      // Who has it, never the step's own words again ("Leo is exploring" over "Leo explores" said it twice).
+      return { eyebrow: TURN_WORDS.nothing, title: owner ? 'With you' : `With ${x.author}`, steps, lines, action: see };
     }
     case 'waiting-for-lead': {
       // Two reviews (docs/specs/two-reviews.md): each hat its own step, both now, the second line as the title.
@@ -758,8 +759,11 @@ export function waitBlockOf(x: WaitInput): TurnBlock | null {
         return { eyebrow: TURN_WORDS.yourTurn, title: 'Does their version look right?', steps, lines: [], action: now.link ? { kind: 'link', label: now.link.label, href: now.link.href } : null };
       // Say it once: the title says whose hands it is in ("With the Acme CRM developers", "With Malik", "With Sofia"),
       // the current step what they do ("Acme CRM developers build it"), never the same sentence twice.
-      const title = now?.title === 'Review' ? (owner ? 'With you' : `With ${x.author}`) : x.builder ? `With ${x.builder}` : `With the ${product} developers`;
-      const lines = now?.detail && !x.send ? [now.detail.replace(/([^.?!])$/, '$1.')] : [];
+      const title = now?.title === 'Review' ? (owner ? 'With you' : `Waiting for ${x.author}`) : x.builder ? `With ${x.builder}` : `With the ${product} developers`;
+      // The step's detail speaks to who acts on it ("ready for your eyes" is the checker's): while someone else checks,
+      // the others read what it waits for instead (a fact only to who can act on it).
+      const othersCheck = now?.title === 'Review' && !owner;
+      const lines = othersCheck ? [`It goes live in ${product} once ${x.author} says it looks right.`] : now?.detail && !x.send ? [now.detail.replace(/([^.?!])$/, '$1.')] : [];
       if (dev) lines.push(TURN_WORDS.devCode);
       return { eyebrow: dev ? TURN_WORDS.forDevelopers : TURN_WORDS.nothing, title, steps, lines, action: x.send ? { kind: 'send' } : null };
     }
@@ -782,7 +786,7 @@ export function pmBlockOf(x: { stage: PageStage; said: boolean; lead: string | n
     return {
       eyebrow: TURN_WORDS.nothing,
       // Who it waits for, never the current step's own words (say it once).
-      title: asked ? (leadName ? `Waiting for ${leadName}` : 'Waiting for the design review') : `${x.author} is exploring`,
+      title: asked ? (leadName ? `Waiting for ${leadName}` : 'Waiting for the design review') : `With ${x.author}`,
       steps: asked
         ? [{ text: decides, current: true }, { text: buildStep(product) }, last]
         : [{ text: `${x.author} explores`, current: true }, { text: decides }, { text: buildStep(product) }, last],

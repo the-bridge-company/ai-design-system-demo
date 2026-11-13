@@ -331,7 +331,7 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   });
   it('exploring, someone else: who explores now, who decides next', () => {
     const b = waitBlockOf({ ...base, stage: 'exploring', role: 'designer' })!;
-    expect(b.title).toBe('Sofia is exploring');
+    expect(b.title).toBe('With Sofia');
     expect(b.steps[0]).toEqual({ text: 'Sofia explores', current: true });
     // Nothing new for the library yet: the next step is the design review, never "decides what the library keeps".
     expect(b.steps[1]!.text).toBe('Dana reviews the design');
@@ -345,7 +345,7 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   });
   it('exploring, the owner who cannot say Done exploring here: the line that says why', () => {
     const b = waitBlockOf({ ...base, stage: 'exploring', doneNote: 'Sofia keeps it.' })!;
-    expect(b.title).toBe('You are exploring');
+    expect(b.title).toBe('With you');
     expect(b.lines).toEqual(['Sofia keeps it.']);
   });
   it('handed to the developers: the current hand-off step and what comes after, in words', () => {
@@ -385,6 +385,21 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
     const checkers = [{ name: 'Sofia', you: false, said: 'waiting' as const }];
     const stages: WaitInput['stage'][] = ['exploring', 'waiting-for-lead', 'ready', 'building', 'check'];
     const roles: WaitInput['role'][] = ['owner', 'designer', 'lead', 'developer', 'pm', 'viewer'];
+    // Same meaning, not only the same prefix: subject and verb stems ("Leo is exploring" ~ "Leo explores").
+    const stems = (t: string) => t.toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter((w) => w && !['is', 'are', 'the', 'a'].includes(w)).map((w) => w.replace(/(ing|es|s|e)$/, ''));
+    const repeats = (title: string, step: string) => {
+      const w = stems(step);
+      // The subject: a name, "you", or a group ("the library owners", "the Acme CRM developers"); the verb follows it.
+      const end = w.findIndex((x) => ['owner', 'reviewer', 'developer'].includes(x));
+      const at = end >= 0 ? end : 0;
+      const verb = w[at + 1];
+      const t = stems(title);
+      return Boolean(verb && t.includes(w[at]!) && t.includes(verb));
+    };
+    expect(repeats('Waiting for the library owners', 'The library owners decide')).toBe(false);
+    expect(repeats('Leo is exploring', 'Leo explores')).toBe(true);
+    expect(repeats('Sofia checks the build', 'Sofia checks')).toBe(true);
+    expect(repeats('With Leo', 'Leo explores')).toBe(false);
     const said = (t: string) => t.trim().toLowerCase();
     let checked = 0;
     for (const stage of stages)
@@ -397,13 +412,13 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
                 const now = b.steps.find((st) => st.current);
                 if (!now) continue;
                 checked++;
-                expect(said(b.title).startsWith(said(now.text)), `${stage}/${role}: "${b.title}" repeats "${now.text}"`).toBe(false);
+                expect(said(b.title).startsWith(said(now.text)) || repeats(b.title, now.text), `${stage}/${role}: "${b.title}" repeats "${now.text}"`).toBe(false);
               }
     for (const pmSaid of [true, false])
       for (const stage of ['exploring', 'waiting-for-lead'] as const) {
         const b = pmBlockOf({ stage, said: pmSaid, lead: 'Dana', author: 'Sofia', product: 'Acme Prints', line: 'x' });
         const now = b.steps.find((st) => st.current)!;
-        expect(said(b.title).startsWith(said(now.text))).toBe(false);
+        expect(said(b.title).startsWith(said(now.text)) || repeats(b.title, now.text), `pm ${stage} ${pmSaid}: "${b.title}"`).toBe(false);
       }
     expect(checked).toBeGreaterThan(100);
   });

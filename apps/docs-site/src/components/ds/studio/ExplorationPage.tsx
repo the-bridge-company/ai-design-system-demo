@@ -1140,7 +1140,8 @@ function ExplorationBody(p: ExplorationPageProps) {
     declinedBack: Boolean(p.onReopen),
     question: waitsOnAnswer(handoff),
     checkSay: Boolean(handoff?.check?.onSay),
-    theirVersion: reviewsVersion(handoff) && Boolean(handoff?.onAnswer),
+    // Only the designer who checks the developers' version (the exploration's owner) is asked; everyone else waits on them.
+    theirVersion: reviewsVersion(handoff) && Boolean(handoff?.onAnswer) && role === 'owner',
   });
   const notes = p.notes?.notes ?? null;
   const openQuestion = notes?.openQuestions?.find((q) => q.trim()) ?? null;

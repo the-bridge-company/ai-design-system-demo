@@ -361,7 +361,7 @@ describe('ExplorationPage, exploring (X2)', () => {
 
   it('the reviewer reading someone else\'s exploration: nothing to do yet, their review in the steps, no library decision with nothing new', () => {
     paint({ ...exploring, role: 'lead', leadName: 'Dana' });
-    const zone = screen.getByRole('region', { name: 'Florian is exploring' });
+    const zone = screen.getByRole('region', { name: 'With Florian' });
     expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
     const steps = within(zone).getByRole('list', { name: 'What happens next' });
     expect(within(steps).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1Florian explores', '2You review the design, to come', '3Admin demo developers build it, to come', '4Live in Admin demo, to come']);
@@ -391,7 +391,7 @@ describe('ExplorationPage, exploring (X2)', () => {
     paint({ ...exploring, done: null });
     // Not their turn: the one block says nothing waits on them and what happens now, the screen still opens.
     expect(document.querySelectorAll('.zone')).toHaveLength(1);
-    const zone = screen.getByRole('region', { name: 'Florian is exploring' });
+    const zone = screen.getByRole('region', { name: 'With Florian' });
     expect(within(zone).getByText('Nothing to do for now')).toBeTruthy();
     expect(within(zone).queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /done exploring/i })).toBeNull();
@@ -406,7 +406,7 @@ describe('ExplorationPage, exploring (X2)', () => {
   });
   it('the owner who cannot say Done exploring here reads why, in the block', () => {
     paint({ ...exploring, role: 'owner', done: { kind: 'note', text: 'In Acme Prints itself, its developers say when it is done.' } });
-    expect(within(screen.getByRole('region', { name: 'You are exploring' })).getByText('In Acme Prints itself, its developers say when it is done.')).toBeTruthy();
+    expect(within(screen.getByRole('region', { name: 'With you' })).getByText('In Acme Prints itself, its developers say when it is done.')).toBeTruthy();
   });
 
   it('has no axe violations', async () => {
@@ -538,6 +538,28 @@ describe('ExplorationPage, after Done exploring (Ready to build, Being built, Sh
     expect([...grid.children].map((c) => c.className)).toEqual(['xp-b-left', 'xp-b-right']);
     expect([...grid.querySelector('.xp-b-left')!.children].map((c) => c.className)).toEqual(['xp-b-screen', 'xp-b-main']);
     expect(grid.querySelector('.xp-b-main .xp-activity')).toBeTruthy();
+  });
+
+  it("their version: only the designer who checks it is asked; everyone else waits for them (gate 14)", () => {
+    const version = {
+      status: 'building' as const,
+      steps: [
+        steps[0]!,
+        { status: 'done' as const, title: 'Built', detail: 'By Sam' },
+        { status: 'waiting' as const, title: 'Review', detail: 'Their version is ready', current: true, link: { label: 'Open their version', href: 'https://dev.example.com' } },
+        steps[3]!,
+      ],
+      onAnswer: async () => undefined,
+    };
+    handed(version, { role: 'owner' });
+    expect(screen.getByRole('region', { name: 'Does their version look right?' })).toBeTruthy();
+    cleanup();
+    for (const role of ['lead', 'developer', 'designer', 'pm'] as const) {
+      handed(version, { role });
+      expect(screen.queryByRole('region', { name: 'Does their version look right?' }), role).toBeNull();
+      expect(screen.getByRole('region', { name: 'Waiting for Florian' }), role).toBeTruthy();
+      cleanup();
+    }
   });
 
   it('the viewer asked to review: the block says it is theirs, with the link to compare', () => {

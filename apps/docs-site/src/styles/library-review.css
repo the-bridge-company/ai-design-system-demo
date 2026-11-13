@@ -561,12 +561,12 @@ a.lr-ask {
 /* --- List: chapters with a group rail (direction C) ----------------------------------------------------------------
    A family is a chapter: its icon in an outlined circle, its name in Fraunces with its count, one plain line, and on
    its end the products it reaches, named once. Then one card: the column header (sentence case, on the row grid), and
-   each group's name in a sticky rail on the start side of its rows. */
+   each group's name on top of its rows, so every card spends its whole width on the same columns (owner, 2026-11-13:
+   the columns start at the same x from card to card). */
 
 .lr-list {
   /* The columns a phone's stacked rows fill (below); wider screens use each card's own grid (--lr-grid). */
   --lr-cols: minmax(0, 1fr) auto;
-  --lr-rail: var(--size-40);
 
   /* The container its rows measure: the columns fold by the room of the whole list (see below). */
   container: lr-list / inline-size;
@@ -678,10 +678,6 @@ a.lr-ask {
   border-block-end: var(--border-width-default) solid var(--color-border-default);
 }
 
-.lr-chapter.has-rail .lr-chapter-cols {
-  grid-template-columns: calc(var(--lr-rail) - var(--space-5)) var(--lr-grid);
-}
-
 .lr-list-group {
   display: grid;
   min-width: 0;
@@ -691,26 +687,19 @@ a.lr-ask {
   border-block-start: var(--border-width-default) solid var(--color-border-default);
 }
 
-.lr-chapter.has-rail .lr-list-group {
-  grid-template-columns: var(--lr-rail) minmax(0, 1fr);
-}
-
-/* The rail: the group's name and count, staying in view while its rows scroll. */
+/* The group's name and count on top of its rows: its checkbox in the rows' box column, its name where their first
+   column starts. A group with no name to show (the one Docs group) leaves no empty line. */
 .lr-group-row {
-  position: sticky;
-  top: calc(var(--layout-header-height) + var(--space-2));
   display: flex;
   align-items: center;
   align-self: start;
-  gap: var(--space-2);
+  gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-4) var(--space-3) var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-5) 0;
 }
 
-/* The group's checkbox after its name, so the names line up on the rail's start. */
-.lr-group-row > .lr-col-box {
-  order: 1;
-  margin-inline-start: auto;
+.lr-group-row:not(:has(.lr-group-name)) {
+  display: none;
 }
 
 .lr-group-label {
@@ -745,14 +734,6 @@ a.lr-ask {
 
 .lr-block {
   min-width: 0;
-}
-
-.lr-chapter.has-rail .lr-block {
-  border-inline-start: var(--border-width-default) solid var(--color-border-subtle);
-}
-
-.lr-chapter.has-rail .lr-row {
-  padding-inline-start: var(--space-4);
 }
 
 .lr-row + .lr-row {
@@ -1001,46 +982,83 @@ a.lr-ask {
 }
 
 /* --- List columns fold by the room of the list (wider than a phone) ----------------------------------------------
-   One rule for every chapter, so the cards show the same columns: Who gets it folds first (the Map and One by one still
-   say it), then Today › After. A list with a group rail (has-rails) gives its rows a rail's width less, so it folds
-   sooner. The widths keep Piece on at most two lines and From's exploration on one line, uncut. */
+   One rule for every chapter, so the cards show the same columns at the same x, down the page: Who gets it folds first
+   (the Map and One by one still say it), then Today › After. The widths keep Piece on at most two lines and From's
+   exploration on one line, uncut; when even the narrow columns would squeeze a word, the rows stack as on a phone. */
 @media (min-width: 761px) {
-  @container lr-list (max-width: 1120px) {
-    .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
+  @container lr-list (max-width: 1119.98px) {
+    .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-mid);
     }
 
-    .lr-list:not(.has-rails) .lr-col-reach {
+    .lr-list .lr-col-reach {
       display: none;
     }
   }
 
-  @container lr-list (max-width: 1280px) {
-    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
-      --lr-grid: var(--lr-cols-mid);
-    }
-
-    .lr-list.has-rails .lr-col-reach {
-      display: none;
-    }
-  }
-
-  @container lr-list (max-width: 940px) {
-    .lr-list:not(.has-rails) :is(.lr-chapter-cols, .lr-row) {
+  @container lr-list (max-width: 1009.98px) {
+    .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-narrow);
     }
 
-    .lr-list:not(.has-rails) .lr-col-thumb {
+    .lr-list .lr-col-thumb {
       display: none;
     }
   }
 
-  @container lr-list (max-width: 1000px) {
-    .lr-list.has-rails :is(.lr-chapter-cols, .lr-row) {
-      --lr-grid: var(--lr-cols-narrow);
+  /* Too narrow for the columns: the rows stack as on a phone (the same rules as the Phones section below). */
+  @container lr-list (max-width: 879.98px) {
+    .lr-chapter-cols {
+      display: none;
     }
 
-    .lr-list.has-rails .lr-col-thumb {
+    .lr-list :is(.lr-chapter-card, .lr-bare) .lr-row {
+      --lr-grid: minmax(0, 1fr) auto;
+    }
+
+    .lr-list.is-lead :is(.lr-chapter-card, .lr-bare) .lr-row {
+      --lr-grid: var(--size-6) minmax(0, 1fr) auto;
+    }
+
+    .lr-list .lr-row,
+    .lr-list .lr-group-row {
+      padding-inline: var(--space-4);
+    }
+
+    .lr-row-ask,
+    .lr-row-from,
+    .lr-row-state,
+    .lr-row-next {
+      grid-column: 1 / -1;
+    }
+
+    .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-state, .lr-row-next) {
+      grid-column: 2 / -1;
+    }
+
+    .lr-row-from .lr-from {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+    }
+
+    .lr-row .lr-col-box,
+    .lr-row-piece {
+      grid-row: 1;
+    }
+
+    .lr-row-piece {
+      min-height: 0;
+    }
+
+    .lr-row-end {
+      grid-row: 1;
+      grid-column: -2;
+    }
+
+    .lr-row-state:empty,
+    .lr-row-next:empty,
+    .lr-row-ask:empty {
       display: none;
     }
   }
@@ -1105,7 +1123,14 @@ a.lr-ask {
 
   .lr-group-row {
     position: static;
+    gap: var(--space-2);
     padding-block: var(--space-3) 0;
+  }
+
+  /* The group's checkbox after its name on a phone, on the row's end. */
+  .lr-group-row > .lr-col-box {
+    order: 1;
+    margin-inline-start: auto;
   }
 
   /* A rail with no name (the one Docs group) leaves no empty line on a phone. */

@@ -206,9 +206,10 @@ Rules:
 - **Meta is for rows, descriptions are UI.** `meta` (13/18) is only row-level metadata: ages, bylines
   ("Sofia · 2 days ago"), paths, a count's companion inside a dense row or card, a column label, a caption under a
   thumbnail. A line that introduces something (the description under a section, chapter, card or page title, a page
-  intro under the h1, setting help under a setting label, an empty-state sentence, a "Reaches …" summary in a header,
-  banner detail text) is `ui` (14/20) in `color.text.muted`, never 13. In Bridge, `t-meta t-muted` sets row meta and
-  `t-ui t-muted` sets a description.
+  intro under the h1, setting help under a setting label, a form field's description (Field, Checkbox, Switch and
+  group descriptions), an empty-state sentence, a "Reaches …" summary in a header, banner detail text) is `ui` (14/20)
+  in `color.text.muted`, never 13. Item descriptions inside a menu or option list and field errors stay `meta`. In
+  Bridge, `t-meta t-muted` sets row meta and `t-ui t-muted` sets a description.
 - **Measure at most 65ch** for reading text.
 - **One step at a time.** A name over its secondary line changes size by one step (14 over 13) and weight by one
   step (500 over 400) and color (default over muted), never 600 over 400 at 12.

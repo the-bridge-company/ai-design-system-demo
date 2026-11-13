@@ -117,8 +117,10 @@ export function turnSince(body: string | null | undefined): string | null {
   if (!e) return null;
   const turn = leadTurnOf(body);
   if (turn === 'lead' && isWaitingForLead(body)) {
-    const all = decisionsOf(e).filter((d) => !isPmKind(d.kind));
-    return all[all.length - 1]?.at ?? e.designAskedAt ?? null;
+    // A Looks right never starts a wait: what still waits after the design review's yes (the library decision) waits
+    // since it was asked, so a hand-over inside the same item never reads "New today".
+    const all = decisionsOf(e).filter((d) => !isPmKind(d.kind) && d.kind !== 'looks-right');
+    return all[all.length - 1]?.at ?? e.library?.askedAt ?? e.designAskedAt ?? null;
   }
   if (turn === 'designer') return openDecisionOf(body)?.at ?? null;
   return null;

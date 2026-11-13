@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { explorationPrBody, withDecision, withDoneExploring, withLeadAsked, withLeadAskedTo, withoutLeadAsked } from '@bridge-ds/core';
+import { explorationPrBody, withDecision, withDesignOk, withDoneExploring, withLeadAsked, withLeadAskedTo, withLibraryAsked, withoutLeadAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import { decisionRows, decisionTag, designerZoneTitle, leadHomeRow, leadWaitLine, nextName, rowAgeFrom, sayerName, turnSince } from './lead-decisions';
+import { waitingLabel } from './home-model';
+
+const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'New.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 
 const start = explorationPrBody({ name: 'Late tag', purpose: 'p', slug: 'late-tag', author: 'ann' }, { owner: 'o', repo: 'r', packages: [], apps: {} });
 const asked = withLeadAsked(start, { at: '2026-11-07T10:00:00.000Z', by: 'ann' });
@@ -108,5 +111,12 @@ describe('one clock for "waiting"', () => {
     const a = withDecision(q, { kind: 'answer', at: '2026-11-09T09:00:00.000Z', by: 'ann', text: 'Orders' });
     expect(turnSince(a)).toBe('2026-11-09T09:00:00.000Z');
     expect(leadHomeRow(a, lead)?.since).toBe('2026-11-09T09:00:00.000Z');
+  });
+  it("keeps counting the library decision from its ask after the design review's Looks right (never New today)", () => {
+    const both = withLibraryAsked(withLeadAsked(withPiecesRecord(start, { checkedAt: 't', pieces: [timeline], links: [] }), { at: '2026-11-07T10:00:00.000Z', byName: 'Sofia' }), { at: '2026-11-07T10:00:00.000Z' });
+    expect(turnSince(both)).toBe('2026-11-07T10:00:00.000Z');
+    const yes = withDecision(withDesignOk(both, { at: '2026-11-12T11:00:00.000Z' }), { kind: 'looks-right', hat: 'design', at: '2026-11-12T11:00:00.000Z', byName: 'Dana' });
+    expect(turnSince(yes)).toBe('2026-11-07T10:00:00.000Z');
+    expect(waitingLabel(turnSince(yes)!, Date.parse('2026-11-12T12:00:00.000Z'))).toBe('Waiting 5 days');
   });
 });

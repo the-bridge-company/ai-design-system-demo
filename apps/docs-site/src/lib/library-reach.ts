@@ -258,7 +258,8 @@ export function measuredReach(p: ReviewPiece, reach: Reach, data: ReachData | nu
   if (!reach.products.length) return { ...base, status: 'none', headline: reach.sentence, cell: 'No product' };
   const named = new Map(reach.products.map((x) => [x.key.toLowerCase(), x.name]));
   const nameOf = (key: string, fallback: string) => named.get(key.toLowerCase()) ?? fallback;
-  const change = p.source.kind === 'change' && data ? (data.changes.find((c) => c.repo.toLowerCase() === p.source.repo.toLowerCase() && c.pr === p.source.number) ?? null) : null;
+  const src = p.source;
+  const change = src.kind === 'change' && data ? (data.changes.find((c) => c.repo.toLowerCase() === src.repo.toLowerCase() && c.pr === src.number) ?? null) : null;
   const isNew = NEW_KIND.test(p.kind) || p.kind === 'Docs' || change?.state === 'new';
   const valueChange = !isNew && Boolean(tokenGroup(p.title) ?? tokenGroup(p.category)) && change?.state !== 'unmeasured';
 

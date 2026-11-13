@@ -29,7 +29,11 @@ import {
 // The piece
 
 /** Where a piece lives: a library change (its number in the design system repository) or an exploration's piece. */
-export type PieceSource = { kind: 'change'; repo: string; number: number } | { kind: 'piece'; repo: string; number: number; piece: string };
+export type PieceSource =
+  | { kind: 'change'; repo: string; number: number }
+  | { kind: 'piece'; repo: string; number: number; piece: string }
+  /** A usage guidance draft on main (docs.json needsReview, lib/team-facts teamGuidance): no change yet. */
+  | { kind: 'docs'; repo: string; component: string; slug: string | null; path: string | null; href: string };
 
 /** Where a piece stands, for the Status filter. */
 export type PieceState = 'waiting' | 'decided';
@@ -344,6 +348,61 @@ export function pieceOfChange(c: ChangeInput, products: Parameters<typeof librar
     at: c.at ?? null,
   };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// A usage guidance draft on main as a piece of the queue
+
+/** A guidance draft as Home and Library review both read it (lib/team-facts teamGuidance, home-model GuidanceDraft). */
+export interface GuidanceDraftInput {
+  name: string;
+  slug?: string | null;
+  href: string;
+  /** When the draft was flagged for review: the commit that last touched its docs.json (scripts/guidance-drafts). */
+  since: string | null;
+  excerpt?: string | null;
+  /** Its docs.json, repo-relative. */
+  path?: string | null;
+}
+
+/** Who drafts usage guidance from the code (lib/people AGENT_NAME): the Home row's person too. */
+export const GUIDANCE_BY = 'Claude AI';
+
+/**
+ * A usage guidance draft flagged "needs review" on main as a Docs piece (owner decision 2026-11-13): a library decision
+ * like a docs change, with the same row, an age (when it was flagged) and the same decide actions. Its title is the
+ * Home row's ("VisuallyHidden usage guidance", home-model guidanceNeed), so the two say one thing from one source.
+ */
+export function pieceOfGuidance(g: GuidanceDraftInput, repo: string): ReviewPiece {
+  return {
+    key: `d:${repo.toLowerCase()}:${(g.slug ?? g.name).toLowerCase()}`,
+    title: guidanceTitle(g.name),
+    kind: 'Docs',
+    category: 'Docs',
+    source: { kind: 'docs', repo, component: g.name, slug: g.slug ?? null, path: g.path ?? null, href: g.href },
+    asked: null,
+    by: GUIDANCE_BY,
+    leadReason: 'docs',
+    mine: false,
+    tier: 1,
+    state: 'waiting',
+    decided: null,
+    decidedLabel: null,
+    waitsOn: 'you',
+    designApproved: false,
+    match: null,
+    conflict: null,
+    // The same anatomy as a docs change's piece (Slider, Tabs): no before and after plates; the draft opens from its row.
+    before: null,
+    after: null,
+    swatch: null,
+    why: null,
+    exception: null,
+    at: g.since,
+  };
+}
+
+/** "VisuallyHidden usage guidance": a draft's name on Home and in Library review. */
+export const guidanceTitle = (name: string): string => `${name} usage guidance`;
 
 // ---------------------------------------------------------------------------------------------------------------
 // An exploration's recorded piece as a piece of the queue

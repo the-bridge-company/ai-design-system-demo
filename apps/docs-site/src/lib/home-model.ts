@@ -20,6 +20,7 @@ import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { studioHref } from './team-path';
 import { questionLine } from './review-state';
 import { waitTone } from './status-tag';
+import { guidanceTitle } from './library-review';
 
 /** Rows of the Needs you list before the grouped row. */
 export const NEEDS_SHOWN = 3;
@@ -478,7 +479,10 @@ export interface GuidanceDraft {
   name: string;
   slug?: string;
   href: string;
+  /** When it was flagged for review (scripts/guidance-drafts guidanceSince), null until read. */
   since: string | null;
+  /** Its docs.json, repo-relative: where its age is read from. */
+  path?: string | null;
   /** The first lines of the draft (guidanceExcerpt), for the review queue. */
   excerpt?: string | null;
 }
@@ -521,7 +525,8 @@ export function guidanceChangeOf(
  * for review, it is in review like any other change.
  */
 export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChange | null = null): NeedRow {
-  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: `${g.name} usage guidance`, person: CLAUDE, thumb: { kind: 'text' as const }, ...(g.excerpt ? { excerpt: g.excerpt } : {}) };
+  // The same title as its Library review piece (lib/library-review pieceOfGuidance): one source, one name.
+  const base = { key: `guidance-${g.name}`, kind: 'guidance' as const, title: guidanceTitle(g.name), person: CLAUDE, thumb: { kind: 'text' as const }, ...(g.excerpt ? { excerpt: g.excerpt } : {}) };
   if (change) {
     return {
       ...base,

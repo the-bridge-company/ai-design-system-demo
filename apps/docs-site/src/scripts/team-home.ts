@@ -32,6 +32,7 @@ import { studioHref } from '../lib/team-path';
 import { libraryHref } from '../lib/library-shells';
 import { teamFailure } from '../lib/team-load';
 import { contrastFailures, teamGuidance } from '../lib/team-facts';
+import { guidanceSince } from './guidance-drafts';
 
 
 /** Can view: an email member who reads only (the home offers no exploration). */
@@ -242,6 +243,15 @@ export function initTeamHome(el: HTMLElement, sourceEl: HTMLElement | null, dsEl
         // The home takes the facts in (contrast, guidance drafts).
         if (repaintHome) repaintHome();
         else paint();
+        // Each guidance draft's age, the same read as Library review's Docs pieces (scripts/guidance-drafts).
+        const read = stat;
+        if (read.guidance.length)
+          void guidanceSince(`${loaded.owner}/${loaded.repo}`, read.guidance).then((guidance) => {
+            if (stat !== read) return;
+            stat = { ...read, guidance };
+            if (repaintHome) repaintHome();
+            else paint();
+          });
       },
       (err: unknown) => {
         const team = teamOfPage();

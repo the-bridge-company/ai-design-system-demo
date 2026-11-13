@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:36:31.603Z",
-  "durationMs": 218793,
+  "createdAt": "2026-11-13T01:54:33.762Z",
+  "durationMs": 224088,
   "base": {
-    "ref": "9d24729f40c4d6a88ab21be4ae59af397ae102ad",
-    "sha": "9d24729f40c4d6a88ab21be4ae59af397ae102ad"
+    "ref": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45",
+    "sha": "1742f8ccf8c564b3fbb79be411b38d9e82b97e45"
   },
   "head": {
-    "ref": "0a1027c6486401672ab5bbcb6ff2d82e7e578fd6",
-    "sha": "0a1027c6486401672ab5bbcb6ff2d82e7e578fd6"
+    "ref": "781d21a8a80ad637f825dbe26a72e7e1599004ac",
+    "sha": "781d21a8a80ad637f825dbe26a72e7e1599004ac"
   },
   "options": {
     "only": [
@@ -692,17 +692,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 847872,
+      "totalPixels": 851968,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 828
+          "height": 832
         },
         "after": {
           "width": 1024,
-          "height": 828
+          "height": 832
         }
       },
       "images": {}
@@ -1316,17 +1316,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 847872,
+      "totalPixels": 851968,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 828
+          "height": 832
         },
         "after": {
           "width": 1024,
-          "height": 828
+          "height": 832
         }
       },
       "images": {}
@@ -1940,17 +1940,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 847872,
+      "totalPixels": 851968,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 828
+          "height": 832
         },
         "after": {
           "width": 1024,
-          "height": 828
+          "height": 832
         }
       },
       "images": {}
@@ -2576,17 +2576,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 847872,
+      "totalPixels": 851968,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 828
+          "height": 832
         },
         "after": {
           "width": 1024,
-          "height": 828
+          "height": 832
         }
       },
       "images": {}

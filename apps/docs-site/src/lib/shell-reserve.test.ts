@@ -67,6 +67,12 @@ describe('reserved space (batch A)', () => {
     expect(home).not.toContain('TeamLoadProgress');
   });
 
+  it("A team Library reads with its header and one screen reader sentence, never a progress card", () => {
+    const state = read('../components/ds/library/LibraryState.tsx');
+    expect(state).not.toContain('TeamLoadProgress');
+    expect(state.match(/<TeamLoadStatus label=\{/g)).toHaveLength(2);
+  });
+
   it('Sample team rail: no Connect GitHub before the played person paints, and its two product rows reserved', () => {
     const quiet = ':root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"])';
     expect(rule(studio, `${quiet} .gh-acct-connect`)).toMatch(/display: none/);

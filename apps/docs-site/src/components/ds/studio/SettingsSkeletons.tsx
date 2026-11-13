@@ -70,8 +70,8 @@ export function MembersSkeleton({ rows, fallback = false }: { rows: number; fall
 
 
 /**
- * General, the team's name, before the team is read: the row's label and help as they stay, the name a skeleton line
- * where it comes (TeamNameSetting.tsx draws the same row with an empty name first).
+ * General, the team's name, before the team is read: the row's label and help as they stay (true for every team),
+ * the name and the note under it skeleton lines where they come (TeamNameSetting.tsx draws the same row until it knows).
  */
 export function TeamNameSkeleton() {
   return (
@@ -86,6 +86,11 @@ export function TeamNameSkeleton() {
             <div className="set-row-value">
               <p className="set-who">
                 <Skeleton width="14ch" />
+              </p>
+              {/* The note under the name ("Not set yet...", "Saved in your design system's files...") is not known
+                  yet: a quiet line in its place, never a sentence that may not be true. */}
+              <p className="set-row-help">
+                <Skeleton width="30ch" />
               </p>
             </div>
           </div>

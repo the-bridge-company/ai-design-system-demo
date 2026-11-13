@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:16:24.867Z",
-  "durationMs": 198045,
+  "createdAt": "2026-11-13T01:24:06.285Z",
+  "durationMs": 244705,
   "base": {
-    "ref": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178",
-    "sha": "6e56c93e7faf9de34ca14da35e6a9376c1bd3178"
+    "ref": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
+    "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06"
   },
   "head": {
-    "ref": "72bf8b7253b04e7580e2da7d27acd0fa039299f9",
-    "sha": "72bf8b7253b04e7580e2da7d27acd0fa039299f9"
+    "ref": "1e335c7e6c43dd92335f76b74005f18a9f280ee7",
+    "sha": "1e335c7e6c43dd92335f76b74005f18a9f280ee7"
   },
   "options": {
     "only": [
@@ -34,6 +34,7 @@
     "files": [
       ".changeset/batch-b-gate-fixes.md",
       ".changeset/batch-b-gate-round3.md",
+      ".changeset/batch-b-gate-round4.md",
       ".changeset/batch-b-guidance-review.md",
       ".changeset/batch-b-lists.md",
       "apps/docs-site/api/contribute/index.ts",
@@ -47,6 +48,7 @@
       "apps/docs-site/src/components/ds/studio/ExplorationCards.tsx",
       "apps/docs-site/src/components/ds/studio/ExplorationPage.tsx",
       "apps/docs-site/src/components/ds/studio/LibraryReview.tsx",
+      "apps/docs-site/src/components/ds/studio/LibraryReviewSample.tsx",
       "apps/docs-site/src/components/ds/studio/ListCard.tsx",
       "apps/docs-site/src/components/ds/studio/QualityView.tsx",
       "apps/docs-site/src/components/ds/studio/StudioHome.test.ts",
@@ -471,17 +473,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 958464,
+      "totalPixels": 989184,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 936
+          "height": 966
         },
         "after": {
           "width": 1024,
-          "height": 936
+          "height": 966
         }
       },
       "images": {}
@@ -1095,17 +1097,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 958464,
+      "totalPixels": 989184,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 936
+          "height": 966
         },
         "after": {
           "width": 1024,
-          "height": 936
+          "height": 966
         }
       },
       "images": {}
@@ -1719,17 +1721,17 @@
       "theme": "light",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 958464,
+      "totalPixels": 989184,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 936
+          "height": 966
         },
         "after": {
           "width": 1024,
-          "height": 936
+          "height": 966
         }
       },
       "images": {}
@@ -2343,17 +2345,17 @@
       "theme": "dark",
       "status": "unchanged",
       "changedPixels": 0,
-      "totalPixels": 958464,
+      "totalPixels": 989184,
       "percent": 0,
       "boxes": [],
       "size": {
         "before": {
           "width": 1024,
-          "height": 936
+          "height": 966
         },
         "after": {
           "width": 1024,
-          "height": 936
+          "height": 966
         }
       },
       "images": {}

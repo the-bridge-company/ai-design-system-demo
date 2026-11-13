@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-12T19:10:45.515Z",
-  "durationMs": 186477,
+  "createdAt": "2026-11-13T00:44:06.398Z",
+  "durationMs": 184440,
   "base": {
-    "ref": "414350e2b09631116eecc7683aad8dd83e2a367f",
-    "sha": "414350e2b09631116eecc7683aad8dd83e2a367f"
+    "ref": "e84c2175b9254352e2cea2b67343cde1d3c79365",
+    "sha": "e84c2175b9254352e2cea2b67343cde1d3c79365"
   },
   "head": {
-    "ref": "46f5b219399cd2b12d3e10842e58e2247a4f0af5",
-    "sha": "46f5b219399cd2b12d3e10842e58e2247a4f0af5"
+    "ref": "bcb16ae9c9c12963b69873680dbf125d567e18fb",
+    "sha": "bcb16ae9c9c12963b69873680dbf125d567e18fb"
   },
   "options": {
     "only": [
@@ -44,7 +44,18 @@
       "apps/docs-site/src/components/ds/studio/ListFilters.tsx",
       "apps/docs-site/src/components/ds/studio/StorybookComponents.tsx",
       "apps/docs-site/src/components/ds/studio/TeamComponents.tsx",
+      "apps/docs-site/src/lib/building-page.test.ts",
+      "apps/docs-site/src/lib/building-page.ts",
+      "apps/docs-site/src/lib/explorations-page.test.ts",
+      "apps/docs-site/src/lib/explorations-page.ts",
+      "apps/docs-site/src/lib/filter-summary.test.ts",
+      "apps/docs-site/src/lib/filter-summary.ts",
+      "apps/docs-site/src/lib/library-review.test.ts",
+      "apps/docs-site/src/lib/library-review.ts",
+      "apps/docs-site/src/lib/storybook-view.ts",
+      "apps/docs-site/src/lib/team-components.ts",
       "apps/docs-site/src/pages/studio/components/index.astro",
+      "apps/docs-site/src/scripts/components-studio.ts",
       "apps/docs-site/src/styles/components-studio.css",
       "apps/docs-site/src/styles/explorations-board.css",
       "apps/docs-site/src/styles/library-review.css",

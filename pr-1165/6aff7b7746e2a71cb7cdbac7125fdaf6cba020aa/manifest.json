@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T07:37:41.220Z",
-  "durationMs": 187349,
+  "createdAt": "2026-11-13T08:11:40.612Z",
+  "durationMs": 199301,
   "base": {
-    "ref": "f7015d62b8a6904969d8a5e7e6ebe3c2f29da19c",
-    "sha": "f7015d62b8a6904969d8a5e7e6ebe3c2f29da19c"
+    "ref": "f3ae1c5887f06323b13e263a2aad4fa3d4f694af",
+    "sha": "f3ae1c5887f06323b13e263a2aad4fa3d4f694af"
   },
   "head": {
-    "ref": "e01e1f1eab356a8108997c2062e9d3ebba86cbd5",
-    "sha": "e01e1f1eab356a8108997c2062e9d3ebba86cbd5"
+    "ref": "6aff7b7746e2a71cb7cdbac7125fdaf6cba020aa",
+    "sha": "6aff7b7746e2a71cb7cdbac7125fdaf6cba020aa"
   },
   "options": {
     "only": [
@@ -103,7 +103,7 @@
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 0.03
+    "maxPercent": 0.24
   },
   "shots": [
     {
@@ -852,9 +852,9 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 196,
+      "changedPixels": 1966,
       "totalPixels": 815104,
-      "percent": 0.02,
+      "percent": 0.24,
       "boxes": [
         {
           "x": 208,
@@ -867,6 +867,18 @@
           "y": 160,
           "width": 80,
           "height": 16
+        },
+        {
+          "x": 128,
+          "y": 720,
+          "width": 256,
+          "height": 76
+        },
+        {
+          "x": 32,
+          "y": 752,
+          "width": 64,
+          "height": 44
         }
       ],
       "size": {

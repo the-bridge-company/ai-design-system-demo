@@ -12,10 +12,15 @@ import { PALETTE_OPEN_EVENT } from '../../lib/palette-search';
 import type { SearchItem } from '../../lib/search';
 import SearchPalette from './SearchPalette';
 
+// The GitHub reads, held: `paint` shows what is read so far, `finish` ends them.
 const live = vi.hoisted(() => {
-  let release: (items: unknown[]) => void = () => undefined;
-  const read = new Promise<unknown[]>((r) => (release = r));
-  return { read, release: (items: unknown[]) => release(items) };
+  let paint: (items: unknown[]) => void = () => undefined;
+  let finish: () => void = () => undefined;
+  const read = (p: (items: unknown[]) => void) => {
+    paint = p;
+    return new Promise<void>((r) => (finish = r));
+  };
+  return { read, paint: (items: unknown[]) => paint(items), finish: () => finish() };
 });
 vi.mock('../../scripts/studio-search', () => ({
   loadStudioLocal: async () => [
@@ -23,9 +28,8 @@ vi.mock('../../scripts/studio-search', () => ({
     { kind: 'token', title: 'color.avatar.bg', href: '/studio/t/r/tokens/?t=color.avatar.bg' },
     { kind: 'page', title: 'Settings', href: '/studio/t/r/settings/' },
   ],
-  loadStudioLive: () => live.read,
+  loadStudioLive: (paint: (items: unknown[]) => void) => live.read(paint),
 }));
-const releaseLive = (items: SearchItem[]) => live.release(items);
 
 describe('SearchPalette in a Studio', () => {
   beforeEach(() => {
@@ -53,7 +57,13 @@ describe('SearchPalette in a Studio', () => {
     await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
     expect(screen.getByText('Reading explorations, reviews and build requests')).toBeInTheDocument();
     await act(async () => {
-      releaseLive([{ kind: 'exploration', title: 'Avatar sizes', href: '/studio/t/r/explorations/?exploration=3', meta: 'In review · Sofia' }]);
+      // First the explorations without their status (the reviews are read next), then with it.
+      live.paint([{ kind: 'exploration', title: 'Avatar sizes', href: '/studio/t/r/explorations/?exploration=3', meta: 'Sofia' } satisfies SearchItem]);
+    });
+    expect(screen.getByText('Reading explorations, reviews and build requests')).toBeInTheDocument();
+    await act(async () => {
+      live.paint([{ kind: 'exploration', title: 'Avatar sizes', href: '/studio/t/r/explorations/?exploration=3', meta: 'In review · Sofia' } satisfies SearchItem]);
+      live.finish();
     });
     await waitFor(() => expect(screen.queryByText('Reading explorations, reviews and build requests')).not.toBeInTheDocument(), { timeout: 4000 });
     await userEvent.type(input, 'avatar');

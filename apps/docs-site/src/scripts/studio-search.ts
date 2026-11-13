@@ -7,7 +7,8 @@
 //     its own: a read the viewer cannot make simply adds nothing, and a piece only reaches who acts on it.
 // The words of each result come from lib/studio-search.ts (pure).
 import type { SearchItem } from '../lib/search';
-import { explorationItems, pieceItems, productItems, requestItems, studioPageItems } from '../lib/studio-search';
+import { explorationItems, explorationSearchKey, listedExplorations, pieceItems, productItems, requestItems, studioPageItems } from '../lib/studio-search';
+import { needsReviewRead } from '../lib/review-state';
 import { studioHref } from '../lib/team-path';
 import { productHref } from '../lib/product-page';
 import type { ExplorationPullLike } from '../lib/explorations-view';
@@ -33,38 +34,44 @@ export async function loadStudioLocal(): Promise<SearchItem[]> {
     designSystem = studioOnly((await r.json()) as SearchItem[]);
   }
   const { configuredProducts } = await import('./product-repos');
-  return [...productItems(configuredProducts(), productHref), ...designSystem, ...studioPageItems(studioHref)];
+  return [...productItems(configuredProducts(), productHref), ...designSystem, ...studioPageItems(studioHref, { team: hosted() })];
 }
 
-/** The explorations of the Explorations list, as it reads them. */
-async function explorations(): Promise<SearchItem[]> {
-  const [{ ghGet, readRepo }, { productPulls, configuredProducts }, { designTaskStages, taskUrlOf }, { siteApprovers }, { displayName }] = await Promise.all([
+/**
+ * The explorations of the Explorations list, as it reads them: painted from the open pull requests first; then again
+ * once the developers' tasks and the reviews the list reads (the same cached reads) are in, with their status word.
+ */
+async function explorations(paint: (items: SearchItem[]) => void): Promise<void> {
+  const [{ ghGet, readRepo }, { productPulls, configuredProducts }, { designTaskStages }, { siteApprovers }, { knownNames }, { readReviews }] = await Promise.all([
     import('./github-session'),
     import('./product-repos'),
     import('./design-task'),
     import('./teams'),
     import('./people'),
+    import('./review-reads'),
   ]);
   const { owner, repo } = readRepo();
   const open = (await ghGet<ExplorationPullLike[]>(`/repos/${owner}/${repo}/pulls?state=open&per_page=100`)).data;
   const inProducts = (await productPulls().catch(() => [])) as unknown as ExplorationPullLike[];
-  const stages = await designTaskStages(inProducts).catch(() => new Map<string, LifecycleStage>());
+  const pulls = [...open, ...inProducts];
   let approvers: readonly string[] = [];
   try {
     approvers = siteApprovers().design;
   } catch {
-    // No roles read: an exploration in review reads from its pull request alone.
+    // No roles read: the list reads none either.
   }
-  return explorationItems([...open, ...inProducts], {
-    products: configuredProducts(),
-    studio: studioHref,
-    nameOf: (l) => displayName(l),
-    approvers,
-    taskStage: (p) => {
-      const u = taskUrlOf(p.body);
-      return u ? (stages.get(u) ?? null) : null;
-    },
-  });
+  const names = knownNames();
+  const base = { products: configuredProducts(), studio: studioHref, approvers, profileName: (login: string) => names[login]?.name ?? null };
+  paint(explorationItems(pulls, base));
+  const listed = listedExplorations(pulls);
+  const toRead = listed.filter((p) => needsReviewRead(p));
+  const [tasks, reviews] = await Promise.all([
+    designTaskStages(listed).catch(() => new Map<string, LifecycleStage>()),
+    toRead.length
+      ? readReviews(toRead.map((p) => ({ key: explorationSearchKey(p), repo: p.repo ?? `${owner}/${repo}`, number: p.number, version: p.updated_at ?? p.head.sha }))).catch(() => new Map())
+      : Promise.resolve(new Map()),
+  ]);
+  paint(explorationItems(pulls, { ...base, tasks, reviews }));
 }
 
 /** The pieces waiting in Library review that the viewer acts on; nothing for a viewer Bridge does not know. */
@@ -85,9 +92,21 @@ async function requests(): Promise<SearchItem[]> {
   return requestItems(d.views, { studio: studioHref, now: Date.now(), nameOf: d.nameOf });
 }
 
-/** The kinds read from GitHub, each on its own: one that cannot be read adds nothing, never fails the others. */
-export async function loadStudioLive(): Promise<SearchItem[]> {
+/**
+ * The kinds read from GitHub, each on its own: one that cannot be read adds nothing, never fails the others. `paint`
+ * gets every result known so far, each time a kind lands or its words get more precise.
+ */
+export async function loadStudioLive(paint: (items: SearchItem[]) => void): Promise<void> {
   await teamRead().catch(() => null);
-  const parts = await Promise.all([explorations(), pieces(), requests()].map((p) => p.catch(() => [] as SearchItem[])));
-  return parts.flat();
+  const parts: { explorations: SearchItem[]; pieces: SearchItem[]; requests: SearchItem[] } = { explorations: [], pieces: [], requests: [] };
+  const put = (k: keyof typeof parts) => (items: SearchItem[]) => {
+    parts[k] = items;
+    paint([...parts.explorations, ...parts.pieces, ...parts.requests]);
+  };
+  await Promise.all([
+    explorations(put('explorations')).catch(() => undefined),
+    pieces().then(put('pieces'), () => undefined),
+    requests().then(put('requests'), () => undefined),
+  ]);
+  paint([...parts.explorations, ...parts.pieces, ...parts.requests]);
 }

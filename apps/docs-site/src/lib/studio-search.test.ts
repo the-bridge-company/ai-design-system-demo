@@ -3,9 +3,13 @@
 // grouped ranking (lib/palette-search rankGrouped).
 import { describe, expect, it } from 'vitest';
 import type { BuildRequestView, ProductConfig } from '@bridge-ds/core';
-import { explorationItems, GROUP_LABEL, pieceItems, pieceStateWords, productItems, requestItems, STUDIO_KIND_ORDER, STUDIO_SEARCH_PAGES, studioPageItems } from './studio-search';
+import { explorationItems, explorationStatusWord, explorationPersonName, SETTINGS_SEARCH_BANDS, GROUP_LABEL, pieceItems, pieceStateWords, productItems, requestItems, STUDIO_KIND_ORDER, STUDIO_SEARCH_PAGES, studioPageItems } from './studio-search';
 import { rankGrouped, GROUP_FIRST } from './palette-search';
 import { studioNav } from './nav';
+import { readFileSync } from 'node:fs';
+import { explorationState } from './exploration-state';
+import { STATE_LABEL, statusOf } from './explorations-page';
+import { needsReviewRead } from './review-state';
 import type { ExplorationPullLike } from './explorations-view';
 import type { ReviewPiece, Viewer } from './library-review';
 import type { SearchItem } from './search';
@@ -40,20 +44,47 @@ describe('explorationItems', () => {
   const inShop = pull(4, { product: 'account', repo: 'acme/account', body: block('Checkout steps', { author: 'dana' }), updated_at: '2026-11-10T10:00:00Z' });
 
   it('lists the open explorations in the list words, newest first, archived and plain changes left out', () => {
-    const items = explorationItems([profile, archived, plain, inShop, profile], { products, studio, nameOf: (l) => (l === 'dana' ? 'Dana' : l) });
+    const items = explorationItems([profile, archived, plain, inShop, profile], { products, studio, profileName: (l) => (l === 'dana' ? 'Dana Kim' : null) });
     expect(items.map((i) => i.title)).toEqual(['Profile page', 'Checkout steps']);
     expect(items[0]).toMatchObject({ kind: 'exploration', href: studio('explorations/?exploration=36') });
-    expect(parts(items[0]!.meta)).toEqual(['Exploring', 'Sofia Reyes', 'Account']);
+    expect(parts(items[0]!.meta)).toEqual(['Exploring', 'Sofia', 'Account']);
     expect(items[1]!.href).toBe(studio('explorations/?exploration=4&product=account'));
-    expect(items[1]!.meta).toMatch(/Dana/);
+    expect(parts(items[1]!.meta)).toEqual(['Exploring', 'Dana', 'Account']);
   });
 
-  it('matches on the product and the person, never names an app account', () => {
-    const [x] = explorationItems([pull(5, { body: block('Nav') })], { products, studio });
-    expect(x!.meta).toBe('Exploring');
+  it('names people by first name as the list does, Claude AI for an app account nobody asked through', () => {
+    expect(explorationPersonName(profile)).toBe('Sofia');
+    expect(explorationPersonName(pull(5, { body: block('Nav') }))).toBe('Claude AI');
     const [y] = explorationItems([profile], { products, studio });
-    expect(y!.keys).toContain('Sofia Reyes');
+    expect(y!.keys).toContain('Sofia');
     expect(y!.keys).toContain('Account');
+  });
+
+  // Handed to the developers, no longer a draft, a reviewer asked: the list reads its reviews before its status.
+  const handed = pull(40, {
+    draft: false,
+    labels: [{ name: 'ready-for-devs' }],
+    body: block('Tabs', { doneAt: '2026-11-10T10:00:00Z' }),
+    ...({ requested_reviewers: [{ login: 'dana' }] } as object),
+  });
+  const listWord = (p: ExplorationPullLike, reviews: { state: string; user: { login: string } }[] | null) =>
+    STATE_LABEL[statusOf({ lifecycle: 'exploration', stage: explorationState({ pull: p, task: null, approvers: ['dana'], reviews: reviews as never }), body: p.body ?? null, archived: false, waitsForLibrary: false })];
+
+  it("says no status while the reviews the list reads are not in, then the list's own word", () => {
+    expect(needsReviewRead(handed)).toBe(true);
+    expect(explorationStatusWord(handed, { approvers: ['dana'], tasks: new Map(), reviews: null })).toBeNull();
+    const [row] = explorationItems([handed], { products, studio, approvers: ['dana'] });
+    expect(parts(row!.meta)).not.toContain(listWord(handed, null));
+    for (const reviews of [[], [{ state: 'APPROVED', user: { login: 'dana' } }], [{ state: 'CHANGES_REQUESTED', user: { login: 'dana' } }]]) {
+      const read = new Map([['40', reviews as never]]);
+      expect(explorationStatusWord(handed, { approvers: ['dana'], tasks: new Map(), reviews: read })).toBe(listWord(handed, reviews));
+    }
+  });
+
+  it("says no status while an exploration's developers' task is not read", () => {
+    const withTask = pull(41, { draft: false, labels: [{ name: 'ready-for-devs' }], body: block('Card', { doneAt: '2026-11-10T10:00:00Z', task: 'https://github.com/acme/app/issues/3' }) });
+    expect(explorationStatusWord(withTask, { tasks: null, reviews: new Map() })).toBeNull();
+    expect(explorationStatusWord(withTask, { tasks: new Map([['https://github.com/acme/app/issues/3', 'being-built']]), reviews: new Map() })).toBe(STATE_LABEL[statusOf({ lifecycle: 'exploration', stage: 'being-built', body: withTask.body ?? null })]);
   });
 });
 
@@ -147,9 +178,21 @@ describe('products and pages', () => {
   it("keeps Studio's pages in step with the rail, and finds them by their former names", () => {
     const rail = studioNav().map((e) => e.label);
     for (const label of rail) expect(STUDIO_SEARCH_PAGES.map((p) => p.label)).toContain(label);
-    const items = studioPageItems(studio);
-    expect(items.find((i) => i.title === 'Members')!.href).toBe(studio('settings/#members'));
+    const items = studioPageItems(studio, { team: true });
+    expect(items.find((i) => i.title === 'Members')!.href).toBe(studio('settings/#team'));
+    expect(studioPageItems(studio, { team: false }).find((i) => i.title === 'Figma and Claude')!.href).toBe(studio('settings/#tools'));
     expect(rankGrouped('history', items, STUDIO_KIND_ORDER)[0]!.title).toBe('Explorations');
+  });
+
+  it("lists a Settings band only at an anchor that Studio's Settings page has", () => {
+    const read = (f: string) => readFileSync(new URL(f, import.meta.url), 'utf8');
+    const team = read('../pages/team-shell/settings/index.astro') + read('../components/ds/studio/TeamSettings.tsx');
+    const own = read('../pages/studio/settings/index.astro');
+    const has = (src: string, id: string) => src.includes(`id="${id}"`);
+    for (const b of SETTINGS_SEARCH_BANDS) {
+      if (b.anchor.team) expect(has(team, b.anchor.team), `${b.label} in a team's Settings`).toBe(true);
+      if (b.anchor.own) expect(has(own, b.anchor.own), `${b.label} in Bridge's own Settings`).toBe(true);
+    }
   });
 
   it('says no em dash', () => {

@@ -8,18 +8,20 @@
 //     Tokens, Pages (STUDIO_KIND_ORDER, lib/palette-search rankGrouped).
 //   - Each viewer finds only what Studio already shows them: no new read for a role, nothing a role cannot open.
 //   - Archived explorations stay out, as they stay out of the Explorations list (its Archived filter finds them).
-import { isArchivedExploration, type ProductConfig } from '@bridge-ds/core';
+import { isArchivedExploration, parseExplorationBody, requesterOf, type ProductConfig } from '@bridge-ds/core';
 import type { SearchItem, SearchKind } from './search';
 import { explorationHref, isListedExploration, type ExplorationPullLike } from './explorations-view';
-import { needsReviewRead, type LifecycleStage } from './review-state';
+import { needsReviewRead, type LifecycleStage, type PullReviewLike } from './review-state';
 import { explorationState } from './exploration-state';
 import { STATE_LABEL, statusOf } from './explorations-page';
 import { explorationProduct } from './home-explorations';
 import { explorationTitle } from './pr-title';
-import { explorationAuthorFor, isAppLogin, isNameAuthor, nameOfAuthor } from './author';
+import { explorationAuthorFor } from './author';
+import { agentMade } from './work-nature';
+import { waitingForLibraryLine } from './library-impact-view';
 import { askedByViewer, decidedTag, type ReviewPiece, type Viewer } from './library-review';
 import { waysTag } from './library-askers';
-import { waitingLabel } from './home-model';
+import { authorPerson, CLAUDE, person, requesterPerson, waitingLabel } from './home-model';
 import { buildStateOf, NOT_SHIPPED } from './building-page';
 import { detailQuery, rowLine, statusTag, viewTitle, type LifecycleExtra } from './building-view';
 import type { BuildRequestView } from '@bridge-ds/core';
@@ -68,13 +70,27 @@ export const STUDIO_SEARCH_PAGES: readonly StudioSearchPage[] = [
   { route: 'tokens/', label: 'Tokens', meta: 'Edit tokens into a draft, with live preview and guardrails', keys: 'variables colors token lookup hex' },
   { route: 'quality/', label: 'Quality', meta: 'Contrast gate, token validation, docs completeness and adoption, most severe first', keys: 'checks contrast gate token validation adoption audit docs completeness guidance' },
   { route: 'settings/', label: 'Settings', meta: 'GitHub connection, the repository this workspace reads, and who approves what', keys: 'settings github connection repository governance' },
-  { route: 'settings/#members', label: 'Members', meta: 'Who is in the team, and how they joined', keys: 'people invite team join' },
-  { route: 'settings/#roles', label: 'Roles and approvals', meta: 'Who reviews what, and how many approvals a change needs', keys: 'roles owners approvals governance risk tiers reviewers leads' },
-  { route: 'settings/#figma', label: 'Figma and Claude', meta: 'The Figma plugin and the Claude tools of the team', keys: 'figma plugin mcp claude tools integrations' },
 ];
 
-export function studioPageItems(studio: StudioHref): SearchItem[] {
-  return STUDIO_SEARCH_PAGES.map((p) => ({ kind: 'page', title: p.label, href: studio(p.route), meta: p.meta, keys: p.keys }));
+/**
+ * The Settings bands people look for by name, at the anchor each Studio's Settings page really has: a team's
+ * (pages/team-shell/settings, its bands in TeamSettings.tsx) or Bridge's own (pages/studio/settings). A band one of them
+ * lacks is not listed there; studio-search.test.ts reads both pages to keep the anchors true.
+ */
+export const SETTINGS_SEARCH_BANDS: readonly (Omit<StudioSearchPage, 'route'> & { anchor: { team: string | null; own: string | null } })[] = [
+  { label: 'Members', meta: 'Who is in the team, and how they joined', keys: 'people invite team join', anchor: { team: 'team', own: 'team' } },
+  { label: 'Review rules', meta: 'Who checks a change before it reaches the library', keys: 'roles owners approvals governance risk tiers reviewers leads', anchor: { team: 'roles', own: 'roles' } },
+  { label: 'Figma and Claude', meta: 'Work on the library from Figma or from your own Claude', keys: 'figma plugin mcp claude tools integrations', anchor: { team: 'figma', own: 'tools' } },
+];
+
+/** Studio's pages and the Settings bands this Studio has (`team`: a team's Studio, else Bridge's own). */
+export function studioPageItems(studio: StudioHref, where: { team: boolean }): SearchItem[] {
+  const pages = STUDIO_SEARCH_PAGES.map((p) => ({ kind: 'page' as const, title: p.label, href: studio(p.route), meta: p.meta, keys: p.keys }));
+  const bands = SETTINGS_SEARCH_BANDS.flatMap((b) => {
+    const anchor = where.team ? b.anchor.team : b.anchor.own;
+    return anchor ? [{ kind: 'page' as const, title: b.label, href: studio(`settings/#${anchor}`), meta: b.meta, keys: b.keys }] : [];
+  });
+  return [...pages, ...bands];
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -93,44 +109,82 @@ export function productItems(products: readonly ProductConfig[], productHref: (k
 export interface ExplorationSearchOptions {
   products: readonly ProductConfig[];
   studio: StudioHref;
-  /** A login in people's words (scripts/people displayName); a name stays as it is. */
-  nameOf?: (login: string) => string;
-  /** Where a handed-off design copy exploration stands from its developers' task, when read (scripts/design-task). */
-  taskStage?: (p: ExplorationPullLike) => LifecycleStage | null | undefined;
-  /** The design approvers, so an exploration in review reads as the Explorations list reads it. */
+  /** A login's profile name, when this browser knows it (scripts/people knownNames): the person reads its first name. */
+  profileName?: (login: string) => string | null | undefined;
+  /** The design approvers (scripts/teams siteApprovers), as the Explorations list passes them. */
   approvers?: readonly string[];
+  /**
+   * The developers' tasks, once read (scripts/design-task designTaskStages, keyed by task URL); null while not read.
+   * An exploration with a task says no status until they are.
+   */
+  tasks?: ReadonlyMap<string, LifecycleStage> | null;
+  /**
+   * The reviews of the explorations the list reads them for (lib/review-state needsReviewRead), keyed as the list keys
+   * them ("12", "shop#12"), once read (scripts/review-reads readReviews); null while not read. Such an exploration says
+   * no status until they are.
+   */
+  reviews?: ReadonlyMap<string, readonly PullReviewLike[]> | null;
 }
 
-const keyOf = (p: Pick<ExplorationPullLike, 'number' | 'product'>) => (p.product ? `${p.product}#${p.number}` : String(p.number));
+/** The key the Explorations list keeps an exploration by: "12", or "shop#12" in a product's own repository. */
+export const explorationSearchKey = (p: Pick<ExplorationPullLike, 'number' | 'product'>) => (p.product ? `${p.product}#${p.number}` : String(p.number));
+
+const taskUrlOf = (body: string | null | undefined): string | null => parseExplorationBody(body ?? null)?.task ?? null;
+
+/** The explorations the Explorations list shows: open, not archived, the ones handed back for review included. */
+export function listedExplorations<P extends ExplorationPullLike>(pulls: readonly P[]): P[] {
+  const seen = new Set<string>();
+  return pulls.filter((p) => {
+    if (p.state !== 'open' || seen.has(explorationSearchKey(p))) return false;
+    seen.add(explorationSearchKey(p));
+    if (isArchivedExploration(p.labels)) return false;
+    return isListedExploration(p) || needsReviewRead(p);
+  });
+}
 
 /**
- * The explorations the Explorations list shows (open, not archived, the ones handed back for review included), from
- * the open pull requests of the design system and of each product repository. Title: its name; line: its status and
- * who explores it, then its product ("In review · Sofia · Checkout"). Newest activity first.
+ * An exploration's status word as the Explorations list says it (scripts/reviews.ts listRow: lib/exploration-state
+ * explorationState, then lib/explorations-page statusOf), from the same inputs: its task and its reviews. Null while an
+ * input it needs is not read yet, so a row never says another word than the list.
+ */
+export function explorationStatusWord(p: ExplorationPullLike, o: Pick<ExplorationSearchOptions, 'approvers' | 'tasks' | 'reviews'>): string | null {
+  const url = taskUrlOf(p.body);
+  if (url && !o.tasks) return null;
+  if (needsReviewRead(p) && !o.reviews) return null;
+  const stage = explorationState({ pull: p, task: url ? (o.tasks?.get(url) ?? null) : null, approvers: o.approvers ?? [], reviews: o.reviews?.get(explorationSearchKey(p)) ?? null });
+  const body = p.body ?? null;
+  return STATE_LABEL[statusOf({ lifecycle: 'exploration', stage, body, archived: false, waitsForLibrary: Boolean(body && waitingForLibraryLine(body, () => false)) })];
+}
+
+/**
+ * Who explores it, by first name, as the Explorations list shows the person (components/ds/studio/BranchesList
+ * personOf): the "Requested by" person, else Claude AI for an agent's work, else the exploration's author.
+ */
+export function explorationPersonName(p: Pick<ExplorationPullLike, 'user' | 'body' | 'labels'>, profileName: (login: string) => string | null | undefined = () => null): string | null {
+  const resolve = (login: string) => person(login, profileName(login.replace(/^@/, '').toLowerCase()) ?? null);
+  const body = p.body ?? null;
+  const requester = requesterOf(body);
+  const author = explorationAuthorFor(p.user?.login ?? null, body) ?? p.user?.login ?? null;
+  const agent = agentMade({ body, labels: p.labels as never });
+  const pp = (requester && requesterPerson(requester, resolve)) ?? (agent ? CLAUDE : author ? authorPerson(author, resolve) : null);
+  return pp?.name?.trim() || null;
+}
+
+/**
+ * The explorations as results, newest activity first. Title: its name; line: its status (when known), who explores it
+ * and its product ("In review · Sofia · Acme CRM").
  */
 export function explorationItems(pulls: readonly ExplorationPullLike[], o: ExplorationSearchOptions): SearchItem[] {
-  const nameOf = o.nameOf ?? ((l: string) => l);
-  const seen = new Set<string>();
-  return pulls
-    .filter((p) => {
-      if (p.state !== 'open' || seen.has(keyOf(p))) return false;
-      seen.add(keyOf(p));
-      if (isArchivedExploration(p.labels)) return false;
-      return isListedExploration(p) || needsReviewRead(p);
-    })
+  return listedExplorations(pulls)
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at) || b.number - a.number)
     .map((p) => {
-      const stage = explorationState({ pull: p, task: o.taskStage?.(p) ?? null, approvers: o.approvers ?? [] });
-      const state = STATE_LABEL[statusOf({ lifecycle: 'exploration', stage, body: p.body ?? null })];
-      // Who explores it, as the Explorations list names them (lib/author explorationAuthorFor); an app account names nobody.
-      const who = explorationAuthorFor(p.user?.login ?? null, p.body);
-      const person = !who || isAppLogin(who) ? null : isNameAuthor(who) ? nameOfAuthor(who) : nameOf(who);
+      const person = explorationPersonName(p, o.profileName);
       const product = explorationProduct(p, o.products);
       return {
         kind: 'exploration' as const,
         title: explorationTitle(p),
         href: o.studio(`explorations/${explorationHref({ number: p.number, product: p.product })}`),
-        meta: joinSep([state, person, product]),
+        meta: joinSep([explorationStatusWord(p, o), person, product]),
         keys: [person, product, p.product].filter(Boolean).join(' '),
       };
     });

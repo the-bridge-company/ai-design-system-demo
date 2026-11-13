@@ -35,7 +35,7 @@ let studioModule: Promise<typeof import('../../scripts/studio-search')> | null =
 const studioSearch = () => (studioModule ??= import('../../scripts/studio-search'));
 
 let index: Promise<SearchItem[]> | null = null;
-let live: Promise<SearchItem[]> | null = null;
+let live: Promise<void> | null = null;
 
 /** The search index, read once per page. */
 function loadSearchIndex(): Promise<SearchItem[]> {
@@ -59,15 +59,36 @@ function loadSearchIndex(): Promise<SearchItem[]> {
   return index;
 }
 
-/** What a Studio reads from GitHub for the search, once per page; nothing elsewhere. */
-function loadLiveIndex(): Promise<SearchItem[]> {
-  live ??= isStudio()
-    ? studioSearch().then(
-        (m) => m.loadStudioLive(),
-        () => [],
-      )
-    : Promise.resolve([]);
-  return live;
+/** What a Studio has read from GitHub for the search so far, and whether it is done (once per page). */
+let liveItems: SearchItem[] = [];
+let liveDone = false;
+const liveListeners = new Set<(items: SearchItem[], done: boolean) => void>();
+const tellLive = () => liveListeners.forEach((f) => f(liveItems, liveDone));
+
+/**
+ * Starts Studio's GitHub reads once per page (nothing elsewhere) and follows them: `onChange` gets every result known
+ * so far, each time a kind lands or its words get more precise, and whether the reads are done. Returns the unsubscribe.
+ */
+function followLiveIndex(onChange: (items: SearchItem[], done: boolean) => void): () => void {
+  liveListeners.add(onChange);
+  if (!live && !isStudio()) {
+    live = Promise.resolve();
+    liveDone = true;
+  }
+  live ??= studioSearch()
+    .then((m) =>
+      m.loadStudioLive((items) => {
+        liveItems = items;
+        tellLive();
+      }),
+    )
+    .catch(() => undefined)
+    .then(() => {
+      liveDone = true;
+      tellLive();
+    });
+  onChange(liveItems, liveDone);
+  return () => liveListeners.delete(onChange);
 }
 
 /** One result as a Combobox option: the kind glyph (or a color token's own color), the title, its line, its kind. */
@@ -96,28 +117,37 @@ export default function SearchPalette() {
   const [placeholder, setPlaceholder] = useState(placeholderFor(undefined));
   useEffect(() => setPlaceholder(placeholderFor(document.documentElement.dataset.space)), []);
   const [data, setData] = useState<SearchItem[] | null>(null);
-  const [extra, setExtra] = useState<SearchItem[] | null>(null);
+  const [extra, setExtra] = useState<SearchItem[]>([]);
+  const [liveRead, setLiveRead] = useState(false);
   const [grouped, setGrouped] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   // What GitHub answers comes first in Studio's order (explorations lead), the page's own after it.
-  const all = useMemo(() => (data ? [...(extra ?? []), ...data] : null), [data, extra]);
+  const all = useMemo(() => (data ? [...extra, ...data] : null), [data, extra]);
   const results = useMemo(() => (all ? (grouped ? rankGrouped(query, all, STUDIO_KIND_ORDER) : rankResults(query, all)) : []), [query, all, grouped]);
   const options = useMemo(() => results.map((r, i) => toOption(r, i, grouped)), [results, grouped]);
 
   useEffect(() => {
     const dialog = document.getElementById('palette');
     if (!dialog) return;
+    let unfollow: (() => void) | undefined;
     const onOpen = () => {
       setQuery('');
       setGrouped(isStudio());
       void loadSearchIndex().then(setData);
-      void loadLiveIndex().then(setExtra);
+      unfollow?.();
+      unfollow = followLiveIndex((items, done) => {
+        setExtra(items);
+        setLiveRead(done);
+      });
       requestAnimationFrame(() => input.current?.focus());
     };
     dialog.addEventListener(PALETTE_OPEN_EVENT, onOpen);
     // Opened before this island woke up (a fast Cmd+K): catch up.
     if (isDialogOpen(dialog)) onOpen();
-    return () => dialog.removeEventListener(PALETTE_OPEN_EVENT, onOpen);
+    return () => {
+      dialog.removeEventListener(PALETTE_OPEN_EVENT, onOpen);
+      unfollow?.();
+    };
   }, []);
 
   // The count in the dialog's footer (a polite live region there).
@@ -146,7 +176,7 @@ export default function SearchPalette() {
       inputValue={query}
       onInputValueChange={setQuery}
       onValueChange={open}
-      loading={data === null || extra === null}
+      loading={data === null || !liveRead}
       loadingMessage={data === null ? 'Loading the search index' : 'Reading explorations, reviews and build requests'}
       emptyMessage={query.trim() ? `Nothing matches "${query.trim()}". ${grouped ? 'Try an exploration, a component or a token path like color.action.' : 'Try a token path like color.action, or a hex.'}` : 'Type to search.'}
       prefix={<Icon icon={Search} size="sm" />}

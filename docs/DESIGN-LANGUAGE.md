@@ -206,9 +206,10 @@ Rules:
 - **Meta is for rows, descriptions are UI.** `meta` (13/18) is only row-level metadata: ages, bylines
   ("Sofia · 2 days ago"), paths, a count's companion inside a dense row or card, a column label, a caption under a
   thumbnail. A line that introduces something (the description under a section, chapter, card or page title, a page
-  intro under the h1, setting help under a setting label, an empty-state sentence, a "Reaches …" summary in a header,
-  banner detail text) is `ui` (14/20) in `color.text.muted`, never 13. In Bridge, `t-meta t-muted` sets row meta and
-  `t-ui t-muted` sets a description.
+  intro under the h1, setting help under a setting label, a form field's description (Field, Checkbox, Switch and
+  group descriptions), an empty-state sentence, a "Reaches …" summary in a header, banner detail text) is `ui` (14/20)
+  in `color.text.muted`, never 13. Item descriptions inside a menu or option list and field errors stay `meta`. In
+  Bridge, `t-meta t-muted` sets row meta and `t-ui t-muted` sets a description.
 - **Measure at most 65ch** for reading text.
 - **One step at a time.** A name over its secondary line changes size by one step (14 over 13) and weight by one
   step (500 over 400) and color (default over muted), never 600 over 400 at 12.
@@ -312,6 +313,27 @@ z-index scale: `z.sticky` 100, `z.dropdown` 1000, `z.overlay` 1100, `z.modal` 12
 
 **Focus:** a 2px `focus.ring.color` outline (Deep Harbor in light, `harbor.400` in dark) offset by 2px,
 shown on `:focus-visible` only. Inputs move the ring inside (`offset 0` plus border color) so it hugs the field.
+Selection never borrows the focus look: a selected item is never outlined in Deep Harbor or in `focus.ring.color`,
+so a ring always means "the keyboard is here".
+
+### Tab-like controls: one logic, two looks
+
+A row of choices where one is selected is either Tabs or a SegmentedControl, never a third look and never
+custom tab-like CSS (the imitation audit flags it).
+
+| | Tabs (underline) | SegmentedControl |
+| --- | --- | --- |
+| Switches | the SECTIONS or PANELS of one page or object | a VIEW or a FILTER of the same content |
+| Examples | Settings (Team, Reviews, Tools, You); component page (Usage, Tokens, Code, Changelog); color families in the token editor | List, Grid or Board; the token type filter; Light or Dark; compare Side by side or Overlay; the expression picker |
+| Selected | ink text plus the signal underline indicator | raised plate on the subtle track: `surface.raised`, `border.emphasis` hairline, `elevation.raised`, ink text |
+| Unselected | muted text, no box | muted text on the track |
+| Never on selection | a box, a fill, an outline | a Deep Harbor or focus-colored outline |
+| Counts | the `count` slot, same tag selected or not | the item's `count`, same tag selected or not |
+| Focus | ring on `:focus-visible` only, inside the tab a step off its edge | ring on `:focus-visible` only, inside the segment a step off its edge |
+
+- SegmentedControl link mode (segments with `href`) wears the same plate on the current page.
+- `appearance="strong"` (the Deep Harbor fill) is for one control only: the global Library and Studio space switch.
+- Tabs `variant="contained"` is deprecated: underline Tabs for sections, SegmentedControl for a view or a filter.
 
 Breakpoints (`breakpoint.sm/md/lg/xl` = 640/768/1024/1280) are exported to CSS and TS for JS logic; CSS media
 queries must use the same literal values (CSS variables cannot be used in media queries).

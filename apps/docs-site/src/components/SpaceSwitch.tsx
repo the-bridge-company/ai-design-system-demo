@@ -1,6 +1,7 @@
 // The Library <-> Studio switch at the end of the top bar: the DS SegmentedControl in link mode, a nav of two
 // segments, each with its drawn icon (an open book for the Library, pen and notes for Studio) and its word (icon only
-// on a phone). The space you are in is the current page (aria-current, the raised plate); the other one is the link
+// on a phone). The space you are in is the current page (aria-current); the switch is the one strong SegmentedControl
+// of the site (appearance="strong", the Deep Harbor fill, docs/DESIGN-LANGUAGE.md); the other one is the link
 // that loads it, carrying the page's item across (lib/space-switch.ts). Rendered statically by the layout (no
 // hydration); scripts/space-switch.ts plays the switch on click, refreshes the target where the query or the team
 // decides it, and the first-visit hint. Styles: styles/space-switch.css.
@@ -64,5 +65,5 @@ export default function SpaceSwitch({ space, href, item = null }: SpaceSwitchPro
   // Owner, 2026-11-12: each segment shows its icon and its word; an icon for one space and a word for the other read
   // as one button. The switch is navigation between two places: the same two icons for everyone, never the signed-in
   // person's photo or a sample persona's face (that belongs in the account row).
-  return <SegmentedControl className="space-nav" label={SWITCH_LABEL} value={space} data-mode={space} items={[segment('library'), segment('studio')]} />;
+  return <SegmentedControl className="space-nav" appearance="strong" label={SWITCH_LABEL} value={space} data-mode={space} items={[segment('library'), segment('studio')]} />;
 }

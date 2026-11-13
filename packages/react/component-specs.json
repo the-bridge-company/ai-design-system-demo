@@ -8511,7 +8511,7 @@
     },
     {
       "name": "Checkbox",
-      "hash": "a529c126",
+      "hash": "9bdd74aa",
       "source": [
         "packages/react/src/components/Checkbox/Checkbox.tsx",
         "packages/react/src/components/Checkbox/Checkbox.module.css",
@@ -8690,8 +8690,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -8754,8 +8754,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -8818,8 +8818,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -8882,8 +8882,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -8944,8 +8944,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -9006,8 +9006,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -9068,8 +9068,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -9130,8 +9130,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -9192,8 +9192,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "slots": {
@@ -9454,7 +9454,7 @@
           }
         ]
       },
-      "hash": "0ece3e54",
+      "hash": "13c8793c",
       "source": [
         "packages/react/src/components/CheckboxGroup/CheckboxGroup.tsx",
         "packages/react/src/components/Checkbox/Checkbox.module.css",
@@ -9789,8 +9789,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -9938,8 +9938,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -10087,8 +10087,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -10236,8 +10236,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -10394,8 +10394,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -10552,8 +10552,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -13440,7 +13440,7 @@
           }
         ]
       },
-      "hash": "8cc03ba4",
+      "hash": "4c31cfe0",
       "source": [
         "packages/react/src/components/Dialog/Dialog.tsx",
         "packages/react/src/components/Button/Button.module.css",
@@ -13775,8 +13775,8 @@
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -13906,8 +13906,8 @@
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -14037,8 +14037,8 @@
             "text-2": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15400,7 +15400,7 @@
           }
         ]
       },
-      "hash": "23318747",
+      "hash": "5421330b",
       "source": [
         "packages/react/src/components/Field/Field.tsx",
         "packages/react/src/components/Field/Field.module.css",
@@ -15552,8 +15552,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15603,8 +15603,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg",
@@ -15654,8 +15654,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "control": {
               "fill": "input.bg-disabled",
@@ -26491,7 +26491,7 @@
           }
         ]
       },
-      "hash": "eee703ab",
+      "hash": "1dcaa473",
       "source": [
         "packages/react/src/components/RadioGroup/RadioGroup.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -26791,8 +26791,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -26927,8 +26927,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -27063,8 +27063,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.1"
@@ -27199,8 +27199,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -27381,8 +27381,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -27565,8 +27565,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -27747,8 +27747,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -27892,8 +27892,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -28037,8 +28037,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.6",
@@ -28182,8 +28182,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -28364,8 +28364,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -28548,8 +28548,8 @@
             "description-text": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             },
             "group": {
               "itemSpacing": "space.2",
@@ -29335,7 +29335,7 @@
           "defaultValue": "comfortable"
         }
       },
-      "hash": "ba711ef1",
+      "hash": "c6903061",
       "source": [
         "packages/react/src/components/SegmentedControl/SegmentedControl.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -29470,7 +29470,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29531,7 +29531,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29592,7 +29592,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29957,7 +29957,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30016,7 +30016,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30075,7 +30075,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -34157,7 +34157,7 @@
     },
     {
       "name": "Switch",
-      "hash": "a20616da",
+      "hash": "9ccb19c2",
       "source": [
         "packages/react/src/components/Switch/Switch.tsx",
         "packages/react/src/components/Switch/Switch.module.css"
@@ -34328,8 +34328,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34375,8 +34375,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34422,8 +34422,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34469,8 +34469,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34523,8 +34523,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34577,8 +34577,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34631,8 +34631,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34678,8 +34678,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34725,8 +34725,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           }
         },
@@ -34772,8 +34772,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34826,8 +34826,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34880,8 +34880,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34934,8 +34934,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -34989,8 +34989,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35044,8 +35044,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35099,8 +35099,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35159,8 +35159,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35219,8 +35219,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35279,8 +35279,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35334,8 +35334,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35389,8 +35389,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35444,8 +35444,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35504,8 +35504,8 @@
             "description": {
               "textFill": "color.text.muted",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -35564,8 +35564,8 @@
             "description": {
               "textFill": "color.text.disabled",
               "fontFamily": "font.family.sans",
-              "fontSize": "typography.meta.size",
-              "lineHeight": "typography.meta.line-height"
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
             }
           },
           "layout": {
@@ -36529,7 +36529,7 @@
           }
         ]
       },
-      "hash": "35e7eeef",
+      "hash": "9869d9e7",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -37727,8 +37727,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37843,8 +37845,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37959,8 +37963,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38102,8 +38108,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38245,8 +38253,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38361,8 +38371,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38477,8 +38489,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38620,8 +38634,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",

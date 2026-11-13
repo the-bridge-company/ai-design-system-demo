@@ -1,5 +1,5 @@
 {
-  "summary": "Switches between views of the same object without leaving the page: the tokens, components and reviews of one library. The selected tab is marked with the signal underline.",
+  "summary": "Switches between the sections of one page or object without leaving it: the Team, Reviews, Tools and You groups of Settings, the Usage, Tokens, Code and Changelog of a component. The selected tab is ink text over the signal underline; the others are muted text.",
   "preview": { "c": "Tabs", "p": { "defaultValue": "tokens" }, "children": [
     { "c": "TabsList", "p": { "aria-label": "Library views" }, "children": [
       { "c": "Tab", "p": { "value": "tokens" }, "children": ["Tokens"] },
@@ -11,8 +11,8 @@
     { "c": "TabsPanel", "p": { "value": "reviews" }, "children": ["3 pull requests wait for review."] }
   ] },
   "whenToUse": [
-    "Two to seven peer views of the same context, where users switch back and forth.",
-    "underline for page and card sections; contained for a compact switch inside a toolbar (Light or Dark preview).",
+    "Two to seven sections or panels of one page or object, each with different content, where users switch back and forth: Settings (Team, Reviews, Tools, You), a component page (Usage, Tokens, Code, Changelog), the color families of the token editor.",
+    "The underline look, always. The contained variant is deprecated: it looked like a SegmentedControl, a third look for the same idea. A compact switch of a view or a filter is a SegmentedControl.",
     "count to show how many items wait in a view, like open reviews.",
     "Vertical orientation for settings pages with many sections next to their content.",
     "tabId on a TabsPanel rendered outside its Tabs root, when the tabs are one island and the panels are not (a static page, panels holding islands of their own): show the picked one with showTabsPanel from @bridge-ds/react/dom."
@@ -20,7 +20,9 @@
   "whenNotToUse": [
     "Steps of a sequence the user must complete in order: use a stepper or a form with sections.",
     "Navigation between pages with their own URL: use SidebarNav or links styled as tabs, not Tabs (which do not change the URL).",
-    "Changing a setting or filter value: use RadioGroup or an attached ButtonGroup."
+    "Switching a view or a filter of the same content (List, Grid or Board; the token type filter; Light or Dark; Side by side or Overlay; an expression picker): use SegmentedControl.",
+    "Changing a setting saved with a form: use RadioGroup.",
+    "A tab-like row built with your own CSS: never. A tab list is these Tabs, a view switch is a SegmentedControl, nothing in between."
   ],
   "dos": [
     {
@@ -36,7 +38,7 @@
     },
     {
       "title": "Counts sit in a count tag",
-      "text": "Pass count, never a number typed into the label: it renders as a small neutral tag after the label, centered on it, and the selected tab's tag takes the stronger tone.",
+      "text": "Pass count, never a number typed into the label: it renders as a small neutral tag after the label, centered on it, and looks the same on every tab, selected or not: only the label's ink follows the selection.",
       "example": { "c": "Tabs", "p": { "defaultValue": "exploring" }, "children": [
         { "c": "TabsList", "p": { "aria-label": "Explorations" }, "children": [
           { "c": "Tab", "p": { "value": "exploring", "count": 4 }, "children": ["Exploring"] },
@@ -63,7 +65,8 @@
     "One tab stop for the whole list. Arrow keys move between tabs (Up and Down when vertical), Home and End jump, focus wraps by default.",
     "By default arrows move focus and Enter or Space selects; set activateOnFocus when panels are cheap to render.",
     "Give the TabsList an aria-label (or labelledby) so the tablist has a name.",
-    "The selected tab has a visible signal underline plus stronger text: never color alone.",
+    "The selected tab has the signal underline plus ink text (the others are muted): never color alone, and never a box or an outline, which would read as focus.",
+    "The focus ring shows on keyboard focus only (:focus-visible), inside the tab a step off its edge; a click draws no ring.",
     "Disabled tabs are announced as disabled and cannot be selected.",
     "A TabsPanel outside its root is still a labelled tabpanel in the tab order: give it tabId (the Tab's id) and give that Tab aria-controls (the panel's id). Panels start shown, so a page without JavaScript reads them all."
   ],
@@ -79,9 +82,9 @@
     "icon": "Leading icon",
     "label": "Label",
     "count": "Count",
-    "indicator": "Selection indicator (signal underline or raised plate)",
+    "indicator": "Selection indicator (the signal underline)",
     "underline": "Underline variant",
-    "contained": "Contained variant",
+    "contained": "Contained variant (deprecated: use underline Tabs for sections, SegmentedControl for a view or a filter)",
     "panel": "Panel",
     "linked": "Linked panel, outside the Tabs root (keeps the page's text size)"
   }

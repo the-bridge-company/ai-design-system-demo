@@ -522,9 +522,11 @@ const listWords = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `
  * decides anything, so nobody is named.
  */
 export function nothingView(designer: string, asIs: readonly string[], uses: readonly string[]): Extract<LibraryImpactView, { state: 'nothing' }> {
-  const all = [...asIs, ...uses];
-  const line = all.length ? `${possessive(designer)} screen uses ${listWords(all)}, as ${all.length === 1 ? 'it is' : 'they are'} in the library.` : `${designer} built it with the pieces the library already has. The developers can build it right away.`;
-  return { state: 'nothing', title: libraryImpactTitle(0), line, uses: all.length ? [] : [...uses] };
+  // One shape per sentence (say it once): the options it uses as they are ("Card padding: Compact (12 px)") make the
+  // line, the components it uses stay the chips under it. Only components: they make the line, no chips.
+  const said = asIs.length ? asIs : uses;
+  const line = said.length ? `${possessive(designer)} screen uses ${listWords(said)}, as ${said.length === 1 ? 'it is' : 'they are'} in the library.` : `${designer} built it with the pieces the library already has. The developers can build it right away.`;
+  return { state: 'nothing', title: libraryImpactTitle(0), line, uses: asIs.length ? [...uses] : said.length ? [] : [...uses] };
 }
 
 /** The states a piece is answered in: its row folds, and the block reads "decided" once every row is. */

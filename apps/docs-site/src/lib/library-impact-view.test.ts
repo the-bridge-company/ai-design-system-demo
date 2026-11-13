@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withLibraryNeeds, withPieceDecision, withPiecesRecord, type MissingPiece, type PiecesRecord } from '@bridge-ds/core';
-import { decidedParts, keepLabel, KEEP_TODAY, keptKeys, leadBuildLine, leadLibraryLine, ledgerLabel, ledgerPick, libraryImpactView, libraryOptions, lookOf, looksRightBlock, namesLine, pickNames, pickOf, proposeNames, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
+import { decidedParts, keepLabel, KEEP_TODAY, keptKeys, leadBuildLine, leadLibraryLine, ledgerLabel, ledgerPick, libraryImpactView, libraryOptions, lookOf, looksRightBlock, namesLine, nothingView, pickNames, pickOf, proposeNames, waitingForLibraryLine, wayWords, type ConflictView } from './library-impact-view';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen. The library has nothing like it yet.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
 const compact: MissingPiece = { id: 'statcard-size-compact', kind: 'variant', title: 'StatCard: compact size', summary: 'A compact size for StatCard.', name: 'compact', component: 'StatCard', aspect: 'size', values: [{ category: 'size', property: 'size', value: 'compact' }], where: [], change: { before: 'default', after: 'compact' } };
@@ -292,6 +292,16 @@ describe('several ways for one component part (EB1 to EB4)', () => {
     if (v.state !== 'nothing') return;
     expect(v.line).toBe("Leo's screen uses Card padding: Compact (12 px), as it is in the library.");
     expect(JSON.stringify(v)).not.toMatch(/Add to the library|Comfortable/);
+  });
+
+  it('says it once in one shape: the options used as they are make the line, the components the chips under it', () => {
+    const v = nothingView('Leo', ['Card padding: Compact (12 px)'], ['Number field', 'Badge']);
+    expect(v.line).toBe("Leo's screen uses Card padding: Compact (12 px), as it is in the library.");
+    expect(v.uses).toEqual(['Number field', 'Badge']);
+    // Components only: they make the line, no chips repeating them.
+    const parts = nothingView('Ann', [], ['Badge', 'Card']);
+    expect(parts.line).toBe("Ann's screen uses Badge and Card, as they are in the library.");
+    expect(parts.uses).toEqual([]);
   });
 
   it('continues the option series for new values and says the outcome on the button', () => {

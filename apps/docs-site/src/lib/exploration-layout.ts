@@ -608,18 +608,27 @@ export interface ChoiceLike {
   pick: string | null;
   decided: unknown;
   ways: readonly { designer: string; mine: boolean; screen: string; product: string }[];
+  /**
+   * The options the library already has (ConflictView ledger.have), with who can use one as it is: a person listed
+   * there keeps their screen whatever the pick, so the choice does not set it.
+   */
+  ledger?: { have: readonly { designers: readonly string[] }[] } | null;
 }
 
 /**
  * A library choice still open on this page that also sets the viewer's own screen: a component part this exploration
- * and one of the viewer's own change differently (the library block's conflict, its other way theirs). Read from the
- * library block's data, never assumed.
+ * and one of the viewer's own change differently (the library block's conflict, its other way theirs), and their way
+ * is new to the library (a way the library already has stays whatever the pick). Read from the library block's data,
+ * never assumed.
  */
 export function sharedChoiceOf(me: string | null | undefined, conflicts: readonly ChoiceLike[]): SharedChoice | null {
   const who = me?.trim().toLowerCase();
   if (!who) return null;
   for (const c of conflicts) {
     if (c.decided || c.pick) continue;
+    // Their way is an option the library already has (Leo's Compact): any pick leaves their screen as it is, so the
+    // choice is not theirs to watch (computed from the ledger, never assumed).
+    if (c.ledger?.have.some((o) => o.designers.some((d) => d.trim().toLowerCase() === who))) continue;
     const theirs = c.ways.find((w) => !w.mine && w.designer.trim().toLowerCase() === who);
     if (theirs) return { component: c.component, property: c.property, screen: theirs.screen, product: theirs.product };
   }

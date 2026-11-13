@@ -116,15 +116,16 @@ export function ScreenStage({ name, nameHidden = false, about = null, sub, singl
 // The Your turn zone
 
 /**
- * Each Field Guide drawing cropped to its scene (no empty sky), so the strip above the eyebrow holds the drawing, not
- * its margins: "x y w h" in the drawing's own units (brand/illustrations.ts, read only).
+ * Each Field Guide drawing in one crop window, centred on its content: the same 236x92 units for every drawing, so at
+ * the strip's 80px every one is drawn at the same scale (same stroke weight, same figure size) in the same 205x80 box,
+ * the square ones centred in it like the wide scene. "x y w h" in the drawing's own units (brand/illustrations.ts).
  */
 const TURN_ART_CROP: Partial<Record<IllustrationName, string>> = {
-  review: '4 98 226 88',
-  guide: '8 8 104 96',
-  paint: '4 14 112 96',
-  fix: '4 4 112 100',
-  components: '4 46 112 62',
+  review: '0.5 96 236 92',
+  guide: '-59 10 236 92',
+  paint: '-58 17 236 92',
+  fix: '-58 9.5 236 92',
+  components: '-58 32 236 92',
 };
 
 /** The strip's height in px (var(--size-20)): every drawing is drawn at this height, its width from its crop. */

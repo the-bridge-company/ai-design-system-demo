@@ -301,6 +301,10 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
     expect(sharedChoiceOf('Ann', [c])).toBeNull();
     expect(sharedChoiceOf('Leo', [{ ...c, pick: 'b#2' }])).toBeNull();
     expect(sharedChoiceOf(null, [c])).toBeNull();
+    // Leo's way is an option the library already has (Compact): Dana's pick leaves his screen as it is, nothing shared.
+    expect(sharedChoiceOf('Leo', [{ ...c, ledger: { have: [{ designers: [] }, { designers: ['Leo'] }] } }])).toBeNull();
+    // His way new to the library (not in the have rows): shared.
+    expect(sharedChoiceOf('Leo', [{ ...c, ledger: { have: [{ designers: [] }] } }])).not.toBeNull();
   });
   it('waiting for the lead, a designer it does not touch: nothing to press', () => {
     const b = waitBlockOf({ ...base, role: 'designer' })!;

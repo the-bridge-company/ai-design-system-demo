@@ -846,6 +846,15 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
     if (p.match && p.state === 'waiting') return <span className="lr-side-flag">Match found</span>;
     const d = decidedTag(p);
     if (d) return <span className="lr-muted lr-side-flag">{d.label}</span>;
+    // How long it has waited: the same tag as the detail, the List and its Home row (home-model waitPill).
+    if (p.state === 'waiting' && p.at) {
+      const w = waitPill(p.at, Date.now());
+      return (
+        <Badge tone={w.tone} size="sm" className={statusTagClass(w.tone, 'lr-side-age')}>
+          {w.label}
+        </Badge>
+      );
+    }
     return null;
   };
   return (

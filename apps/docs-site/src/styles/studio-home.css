@@ -414,11 +414,13 @@
   color: var(--color-text-default);
 }
 
-/* The folder's line: each clause ("3 changes in review") stays whole; a long line wraps between clauses, never inside
-   one. */
+/* The folder's line: one line. Each clause ("13 changes in review") stays whole with its dot in front; a clause that
+   does not fit wraps to a second line, which the one-line box hides, so the line never ends on a dot. */
 .pf-line {
   display: flex;
   flex-wrap: wrap;
+  overflow: hidden;
+  max-block-size: var(--typography-meta-line-height);
 }
 
 .pf-line > span {

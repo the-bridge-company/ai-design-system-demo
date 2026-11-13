@@ -302,18 +302,22 @@ a.lr-ask {
 /* The sub line: one kind of content (a face and the exploration, a person, or people). */
 .lr-side-sub {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   min-width: 0;
   font-size: var(--typography-meta-size);
   line-height: var(--typography-meta-line-height);
 }
 
+/* The exploration's name wraps to a second line, then an ellipsis: never a one-line cut mid-word ("Order fu..."). */
 .lr-line-t {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* The first name and the dot never shorten: only the exploration does. */
@@ -331,6 +335,11 @@ a.lr-ask {
 .lr-side-flag {
   flex: none;
   color: var(--color-text-link);
+}
+
+/* The age tag at the row's end: whole, the piece's name and meta wrap beside it. */
+.lr-side-age {
+  flex: none;
 }
 
 .lr-side-flag.lr-muted {
@@ -901,14 +910,17 @@ a.lr-ask {
 }
 
 .lr-from-name {
+  display: -webkit-box;
   min-width: 0;
   overflow: hidden;
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
   text-decoration-line: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .lr-from-name.lr-muted {

@@ -101,10 +101,12 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
           </span>
           <span className="sh-card-foot">
             <span className="t-meta t-muted sh-card-product pf-line">
-              {f.line.split(SEP).map((part, i, all) => (
+              {/* Each clause whole, its dot leading it: a clause that does not fit drops out of the one line (CSS), so a
+                  dot never ends a line. The whole line is in the card's accessible text. */}
+              {f.line.split(SEP).map((part, i) => (
                 <span key={i}>
+                  {i > 0 ? SEP : ''}
                   {part}
-                  {i < all.length - 1 ? SEP : ''}
                 </span>
               ))}
             </span>

@@ -23,6 +23,27 @@ export function markRowOverflow(row: HTMLElement) {
   else row.removeAttribute('data-overflow');
 }
 
+/**
+ * Scrolls a row sideways so `target` (a filter that took focus) sits fully inside it, clear of the faded edges
+ * (`fade` px each side). Only the row's scrollLeft moves: never the page, never vertically.
+ */
+export function revealInRow(row: HTMLElement, target: HTMLElement, fade: number) {
+  if (row.scrollWidth <= row.clientWidth) return;
+  const box = row.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  const start = t.left - box.left + row.scrollLeft;
+  const end = t.right - box.left + row.scrollLeft;
+  if (start - fade < row.scrollLeft) row.scrollLeft = Math.max(0, start - fade);
+  else if (end + fade > row.scrollLeft + row.clientWidth) row.scrollLeft = Math.min(row.scrollWidth - row.clientWidth, end + fade - row.clientWidth);
+}
+
+/** The fade width the stylesheet gives the row (--_fade), in px. */
+const fadeOf = (row: HTMLElement) => {
+  const probe = getComputedStyle(row).scrollPaddingInlineStart;
+  const n = parseFloat(probe);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export interface FilterRowProps {
   /** The page's own class for the row ("bl-narrow", "lr-bar-row"); the scroll and the fade come from "bl-scroll". */
   className: string;
@@ -44,11 +65,18 @@ export function FilterRow({ className, as: Tag = 'div', children }: FilterRowPro
     const row = ref.current;
     if (!row) return;
     const mark = () => markRowOverflow(row);
+    // Tab onto a filter under the fade (or past the edge): bring it fully into the row, clear of the fade.
+    const reveal = (e: FocusEvent) => {
+      const target = e.target instanceof HTMLElement ? (e.target.closest<HTMLElement>('.bl-filter') ?? e.target) : null;
+      if (target && target !== row) revealInRow(row, target, fadeOf(row));
+    };
     row.addEventListener('scroll', mark, { passive: true });
+    row.addEventListener('focusin', reveal);
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark);
     observer?.observe(row);
     return () => {
       row.removeEventListener('scroll', mark);
+      row.removeEventListener('focusin', reveal);
       observer?.disconnect();
     };
   }, []);

@@ -7,8 +7,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createElement } from 'react';
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { FilterRow, markRowOverflow } from './ListFilters';
+import { describe, expect, it, vi } from 'vitest';
+import { FilterRow, markRowOverflow, revealInRow } from './ListFilters';
 
 const STYLES = join(__dirname, '../../../styles');
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -32,6 +32,7 @@ describe('filters row: scrolls inside itself on a phone, never the page', () => 
     expect(row).toMatch(/min-inline-size:\s*0/);
     expect(row).toMatch(/flex-wrap:\s*nowrap/);
     expect(row).toMatch(/contain:\s*inline-size/);
+    expect(row).toMatch(/scroll-padding-inline:\s*var\(--_fade\)/);
     expect(rule(phone, '.bl-scroll > *')).toMatch(/flex:\s*none/);
   });
 
@@ -99,5 +100,49 @@ describe('FilterRow', () => {
     sized(row, 300, 358, 0);
     markRowOverflow(row);
     expect(row.hasAttribute('data-overflow')).toBe(false);
+  });
+
+  // Rects as laid out at 390px: the row shows 366px from x=12; a filter's rect moves left as the row scrolls.
+  const laidOut = (row: HTMLElement, el: HTMLElement, left: number, width: number) => {
+    sized(row, 629, 366, row.scrollLeft);
+    row.getBoundingClientRect = () => ({ left: 12, right: 378, top: 0, bottom: 44, width: 366, height: 44, x: 12, y: 0, toJSON: () => ({}) });
+    el.getBoundingClientRect = () => ({ left: 12 + left - row.scrollLeft, right: 12 + left + width - row.scrollLeft, top: 4, bottom: 40, width, height: 36, x: 0, y: 0, toJSON: () => ({}) });
+  };
+
+  it('brings a filter that takes focus under the fade fully into the row, clear of the fade, row only', () => {
+    const row = document.createElement('div');
+    const product = document.createElement('button');
+    row.append(product);
+    // Product from 196 to 409 in the row's content: 43px past the visible edge.
+    laidOut(row, product, 196, 213);
+    const scrollTo = vi.spyOn(window, 'scrollTo');
+    revealInRow(row, product, 32);
+    expect(row.scrollLeft).toBe(196 + 213 + 32 - 366);
+    expect(scrollTo).not.toHaveBeenCalled();
+    // Back to the first filter: the row scrolls back to its start.
+    const status = document.createElement('button');
+    row.prepend(status);
+    laidOut(row, status, 4, 180);
+    revealInRow(row, status, 32);
+    expect(row.scrollLeft).toBe(0);
+    scrollTo.mockRestore();
+  });
+
+  it('leaves the row alone when the focused filter is already clear of the fade', () => {
+    const row = document.createElement('div');
+    const status = document.createElement('button');
+    row.append(status);
+    laidOut(row, status, 40, 150);
+    revealInRow(row, status, 32);
+    expect(row.scrollLeft).toBe(0);
+  });
+
+  it('reveals on focus: Tab onto a filter inside the row scrolls the row', () => {
+    const { container } = render(createElement(FilterRow, { className: 'bl-narrow', children: [createElement('button', { key: 'a', className: 'bl-filter' }, 'Status'), createElement('button', { key: 'b', className: 'bl-filter' }, 'Product')] }));
+    const row = container.firstElementChild as HTMLElement;
+    const product = row.querySelectorAll('button')[1] as HTMLElement;
+    laidOut(row, product, 196, 213);
+    product.focus();
+    expect(row.scrollLeft).toBeGreaterThanOrEqual(196 + 213 - 366);
   });
 });

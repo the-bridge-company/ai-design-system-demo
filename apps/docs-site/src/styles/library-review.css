@@ -1925,13 +1925,11 @@ a.lr-reach-card:focus-visible {
    all shows only while a selection exists. On touch screens they always show. */
 @media (hover: hover) {
   .lr-list:not(.has-selection) .lr-hover-ctl > *,
-  .lr-list .lr-row-end.lr-hover-ctl > *,
-  .lr-list .lr-row .lr-page-link {
+  .lr-list .lr-row-end.lr-hover-ctl > * {
     opacity: 0;
   }
 
   .lr-list .lr-row:is(:hover, :focus-within) .lr-hover-ctl > *,
-  .lr-list .lr-row:is(:hover, :focus-within) .lr-page-link,
   .lr-list .lr-group-row:is(:hover, :focus-within) .lr-hover-ctl > *,
   .lr-list .lr-chapter-cols .lr-hover-ctl:focus-within > *,
   .lr-list.has-selection .lr-row .lr-col-box > *,

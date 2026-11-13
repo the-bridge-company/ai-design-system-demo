@@ -67,15 +67,23 @@
   min-width: 0;
 }
 
-/* The usage count under the hex: a label (12px), inside the step's 8px inset like the hex, wrapping between words onto
-   a second line ("2 / semantic") in a narrow step, never cut mid-word nor past the strip (D5). */
+/* The usage count under the hex: a label (12px) inside the step's 8px inset like the hex, one line high. The count and
+   its word are two flex items: when both do not fit the step's text width, the word wraps to a second line that the
+   one-line height clips, so the count shows alone ("12"), never "12" over "semantic" nor past the strip. The clipped
+   word stays in the text screen readers read; the title has the full words. */
 .ramp-n {
+  display: flex;
+  flex-wrap: wrap;
   min-width: 0;
+  height: var(--typography-caption-line-height);
+  overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
-  overflow-wrap: normal;
-  word-break: normal;
+}
+
+.ramp-n > span {
+  white-space: nowrap;
 }
 
 .ramp-n.is-unused {

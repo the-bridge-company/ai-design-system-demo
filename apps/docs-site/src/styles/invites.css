@@ -125,6 +125,12 @@
   margin-top: var(--space-8);
 }
 
+/* The members band's fallback painted by the build (SettingsSkeletons.tsx MembersSkeleton): the sample team's five rows,
+   MEMBER_ROWS_DEFAULT (3) on any other team, until the island draws the count this browser knows. */
+:root:not([data-sample-team]) .mem-skel[data-fallback] .mem-skel-row:nth-child(n + 4) {
+  display: none;
+}
+
 .mem-loading {
   display: grid;
   gap: var(--space-3);

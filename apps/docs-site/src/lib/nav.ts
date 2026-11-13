@@ -45,7 +45,7 @@ export interface NavEntry {
   /** Group entry: its pages, shown when the group is expanded. */
   children?: NavItem[];
   /** Live count filled in the browser: open pull requests waiting for a review. The one number the nav shows. */
-  badge?: 'reviews' | 'explorations';
+  badge?: 'reviews' | 'explorations' | 'building';
   /** Page entry that can show the library as an open change (see NavItem). */
   branchAware?: boolean;
   /**
@@ -136,7 +136,7 @@ export function studioNav(): NavEntry[] {
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
     { href: STUDIO_EXPLORATIONS_HREF, label: 'Explorations', icon: 'branch', badge: 'explorations', meta: 'Every exploration, what waits on you first, from exploring to shipped' },
     { href: STUDIO_LIBRARY_REVIEW_HREF, label: 'Library review', icon: 'review', badge: 'reviews', meta: 'What enters the library: every piece an exploration asks for, decided one by one or as a list' },
-    { href: STUDIO_BUILDING_HREF, label: 'Being built', icon: 'wrench', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release' },
+    { href: STUDIO_BUILDING_HREF, label: 'Being built', icon: 'wrench', badge: 'building', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release' },
     { href: '/studio/components/', label: 'Components', icon: 'diamonds', branchAware: true, place: 'design-system', meta: 'Status, tokens, code and Figma links per component' },
     { href: '/studio/tokens/', label: 'Tokens', icon: 'grid', branchAware: true, place: 'design-system', meta: 'Edit tokens into a draft, with live preview and guardrails' },
     { href: STUDIO_QUALITY_HREF, label: 'Quality', icon: 'shield', branchAware: true, place: 'design-system', meta: 'Contrast gate, token validation, docs completeness and adoption, most severe first' },

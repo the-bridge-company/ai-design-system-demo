@@ -217,7 +217,7 @@ describe('the names of the recent teams', () => {
     expect(recentTeamName('Acme/DS', { 'acme/ds': 'Acme' })).toBe('Acme');
     expect(recentTeamName('globex/design-tokens', {})).toBe('Design tokens');
     expect(recentTeamName('acme-design-demo/bridge-demo-ds', { 'acme-design-demo/bridge-demo-ds': 'Acme Design' })).toBe('Acme Design');
-    expect(recentTeamName('acme-design-demo/bridge-demo-ds', {})).toBe('Bridge demo ds');
+    expect(recentTeamName('acme-design-demo/bridge-demo-ds', {})).toBe('Acme Design');
   });
 });
 

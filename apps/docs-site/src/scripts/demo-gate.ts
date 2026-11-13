@@ -139,9 +139,10 @@ async function paintStrip(show: boolean, repo: string, visitor?: boolean) {
   if (!slot) return;
   if (!show && !banner) return;
   banner ??= (async () => {
-    const [{ createElement }, { createRoot }, { DemoBanner }, { connectDesignSystem }] = await Promise.all([
+    const [{ createElement }, { createRoot }, { flushSync }, { DemoBanner }, { connectDesignSystem }] = await Promise.all([
       import('react'),
       import('react-dom/client'),
+      import('react-dom'),
       import('../components/ds/studio/DemoBanner'),
       import('./start-connect'),
     ]);
@@ -149,7 +150,9 @@ async function paintStrip(show: boolean, repo: string, visitor?: boolean) {
     // Read once per page from this browser and the account (no GitHub call).
     const back = await bannerBack(repo);
     return (on: boolean, visiting?: boolean) => {
-      slot.hidden = !on;
+      // Hidden first when it goes, shown only once the banner is in it when it comes: the strip is never shown empty
+      // for a frame (the sample team's reserve, styles/site.css, holds while it is hidden), so nothing under it moves.
+      if (!on) slot.hidden = true;
       // A built "Connect GitHub to..." button says what it does instead on the sample team ([data-demo-label]).
       if (on && isSampleTeam(repo))
         document.querySelectorAll<HTMLElement>('[data-demo-write][data-demo-label]').forEach((el) => {
@@ -159,7 +162,8 @@ async function paintStrip(show: boolean, repo: string, visitor?: boolean) {
       // "See it as" (lib/demo-cast.ts): a visitor of the sample team plays any of its people; a member stays themselves.
       const person = on && (visiting ?? deps?.visitor?.()) ? castOn(repo) : null;
       const cast = person ? { current: person.key, onPick: playCast } : null;
-      root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem, cast }) : null);
+      flushSync(() => root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem, cast }) : null));
+      if (on) slot.hidden = false;
     };
   })();
   (await banner)(show, visitor);

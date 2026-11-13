@@ -226,6 +226,22 @@
   visibility: hidden;
 }
 
+/* The sample team: its visitor always plays one of its people (lib/demo-cast.ts), so the block never offers to connect
+   there. Until the session paints that person, the account row holds its place unseen (the trigger's height, the face's
+   room), never "Connect GitHub" first and the row a moment later. */
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-connect {
+  display: none;
+}
+
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-menu {
+  display: block;
+  visibility: hidden;
+}
+
+:root[data-sample-team] .gh-acct:not([data-state="connected"], [data-state="rejected"]) .gh-acct-who-static {
+  min-height: var(--size-12);
+}
+
 .gh-acct-connect {
   display: grid;
   gap: var(--space-1-5);
@@ -351,20 +367,20 @@
 /* An email contributor's account menu: their name as the title, the full email on its own line (wrapped, never cut),
    and no GitHub or repository rows. */
 .gh-acct-menu-email {
-  margin: 0 var(--space-2) var(--space-2);
+  margin: 0;
   color: var(--color-text-muted);
   font-size: var(--typography-meta-size);
   line-height: var(--typography-meta-line-height);
   overflow-wrap: anywhere;
 }
 
-.gh-acct[data-contributor] [data-gh-github-only] {
+:is(.gh-acct, .gh-acct-pop)[data-contributor] [data-gh-github-only] {
   display: none;
 }
 
 /* An email contributor's menu reads name, email, then their access as one quiet line on the same left edge: no
    "Access" label column (it was the only fact left, so the label added nothing and pushed the value right). */
-.gh-acct[data-contributor] .gh-facts {
+:is(.gh-acct, .gh-acct-pop)[data-contributor] .gh-facts {
   display: block;
   margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
@@ -372,12 +388,64 @@
   line-height: var(--typography-meta-line-height);
 }
 
-.gh-acct[data-contributor] .gh-facts dt {
+:is(.gh-acct, .gh-acct-pop)[data-contributor] .gh-facts dt {
   display: none;
 }
 
-.gh-acct[data-contributor] .gh-acct-menu-email {
+:is(.gh-acct, .gh-acct-pop)[data-contributor] .gh-acct-menu-email {
   margin-block-end: 0;
+}
+
+/* The account row as the DS Menu (components/ds/studio/GitHubAccountMenu.tsx, A10): a full-width ghost Button with the
+   face, the name and the team or role, like the Bridge account row (styles/account.css .acc-menu-trigger). Until the
+   island wakes up the same row shows as plain markup (.gh-acct-who-static), then empties into the trigger. */
+.gh-acct-menu .gh-acct-who {
+  justify-content: flex-start;
+  height: auto;
+  min-height: var(--size-12);
+  padding-inline: var(--space-2);
+  text-align: start;
+}
+
+.gh-acct-menu .gh-acct-who > span:not([aria-hidden]),
+.gh-acct-who-slot {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.gh-acct-who-static {
+  cursor: default;
+}
+
+.gh-acct-who-static:empty {
+  display: none;
+}
+
+/* The open menu's head: the name, the email and the access on one left edge (the Bridge account menu's head). */
+.gh-acct-head {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.gh-acct-head-name {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.gh-acct-head .gh-facts {
+  margin: 0;
+}
+
+.gh-acct-help {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 /* The side nav's two groups, Products and Design system (components/ds/studio/ProductsNav.tsx, DS SidebarNav parts):
@@ -401,6 +469,22 @@
   min-height: var(--size-9);
   font-size: var(--typography-ui-size);
   line-height: var(--typography-ui-line-height);
+}
+
+/* The sample team reserves its own two product rows from first paint (ProductsNav SAMPLE_PRODUCT_ROWS). */
+:root[data-sample-team] .rail-products[data-pending] .rail-skel:nth-child(n + 3) {
+  display: none;
+}
+
+/* A skeleton row while a team's products are read (ProductsNav pendingRows): the same box as a row above, so the
+   names take its place and nothing under the group moves. */
+.rail-section .rail-skel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-9);
+  padding: 0 var(--space-3);
 }
 
 .rail-section a svg {

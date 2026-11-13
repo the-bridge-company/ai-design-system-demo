@@ -8,7 +8,7 @@ import { signInHref } from '../../../lib/account';
 import { Button, EmptyState, IconButton, Link } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { Drawing } from '../studio/Drawing';
-import { TeamLoadProgress, TeamSourceNote, useTeamData } from '../studio/TeamState';
+import { TeamLoadStatus, TeamSourceNote, useTeamData } from '../studio/TeamState';
 import { commitUrl, SNAPSHOT_TEMPLATE_URL, type TeamFailure } from '../../../lib/team-load';
 import { publishedLine } from '../../../lib/library/published';
 import { teamHref } from '../../../lib/team-path';
@@ -124,9 +124,10 @@ export function LibraryLoadError({ failure, onRetry }: { failure: TeamFailure; o
 export function LibraryPage(props: { label: string; header: (data: TeamData | null) => ReactNode; ready: (data: TeamData, refresh: { refreshing: boolean; onRefresh: () => void }) => ReactNode }) {
   const team = usePageTeam();
   const gate = useLibraryGate(team);
+  // Checking who may read: one sentence for screen readers, no card that comes and goes (as on Studio Home).
   if (gate.step === 'checking') return (
     <div className="ltm">
-      <TeamLoadProgress label={props.label} />
+      <TeamLoadStatus label={props.label} />
     </div>
   );
   if (gate.step !== 'open') return team ? (
@@ -156,7 +157,9 @@ function LibraryRead({
   return (
     <div className="ltm">
       {header(load.status === 'ready' ? load.data : null)}
-      {load.status === 'loading' && <TeamLoadProgress label={label} />}
+      {/* While it reads, the header holds the page (the team's name) and screen readers hear one sentence: never a
+          progress card with its steps under it. */}
+      {load.status === 'loading' && <TeamLoadStatus label={label} />}
       {load.status === 'error' && <LibraryLoadError failure={load.failure} onRetry={retry} />}
       {load.status === 'ready' && ready(load.data, { refreshing: load.refreshing, onRefresh: retry })}
     </div>

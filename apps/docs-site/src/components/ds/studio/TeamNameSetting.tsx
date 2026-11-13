@@ -6,11 +6,14 @@
 // The name comes from the team's settings once read (scripts/repo-context.ts siteConfig, repainted on
 // bridge:team-model); before that, and when the file has none, Bridge's name for it (lib/demo.ts teamDisplayName).
 import { useEffect, useState } from 'react';
-import { Button, Card, CardBody, Input, Link } from '@bridge-ds/react';
+import { Button, Card, CardBody, Input, Link, Skeleton } from '@bridge-ds/react';
 import { teamDisplayName } from '../../../lib/demo';
 import { TEAM_NAME_WORDS, teamNameProblem } from '../../../lib/team-name';
 import { studioHref } from '../../../lib/team-path';
 import { AdminOnlyNote } from './SettingsParts';
+
+/** How long the note under the name waits for the session before it says what it knows. */
+const NOTE_WAIT_MS = 2500;
 
 export interface TeamNameSettingProps {
   /** Branch prefix and protected branches from bridge.config.json, for the pull request (self-hosted page). */
@@ -22,10 +25,12 @@ interface Facts {
   repo: string;
   /** `name` as the file says it; null when absent. */
   set: string | null;
+  /** The team's settings were read (a team shell reads them after first paint): until then `set` says nothing. */
+  read: boolean;
 }
 
 function readFacts(r: { owner: string; repo: string }, c: { name?: string }): Facts {
-  return { repo: `${r.owner}/${r.repo}`, set: c.name?.trim() || null };
+  return { repo: `${r.owner}/${r.repo}`, set: c.name?.trim() || null, read: Object.keys(c).length > 0 };
 }
 
 export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameSettingProps) {
@@ -37,6 +42,13 @@ export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameS
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ number: number; name: string } | null>(null);
+  // Who reads is known (the session answered with an access), or it took too long to wait for: the note under the
+  // name ("Not set yet...", "Saved in your design system's files...") states a fact only from then on.
+  const [accessKnown, setAccessKnown] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setAccessKnown(true), NOTE_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -52,6 +64,7 @@ export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameS
     void import('../../../scripts/github-session').then(({ onAccess }) => {
       onAccess((a) => {
         if (!live) return;
+        if (a) setAccessKnown(true);
         setAdmin(Boolean(a?.admin || a?.repoAdmin));
         setEmailAdmin(Boolean(a?.contributor && a.admin));
       });
@@ -133,8 +146,17 @@ export default function TeamNameSetting({ prefix, protectedBranches }: TeamNameS
             ) : (
               <div className="set-row-value">
                 <p className="set-who">{shown || ' '}</p>
-                {facts && !facts.set && <p className="set-row-help">{TEAM_NAME_WORDS.notSet}</p>}
-                {facts && (emailAdmin ? <p className="set-row-help">{TEAM_NAME_WORDS.githubOnly}</p> : facts.set && <AdminOnlyNote fallback />)}
+                {facts?.read && accessKnown ? (
+                  <>
+                    {!facts.set && <p className="set-row-help">{TEAM_NAME_WORDS.notSet}</p>}
+                    {emailAdmin ? <p className="set-row-help">{TEAM_NAME_WORDS.githubOnly}</p> : facts.set && <AdminOnlyNote fallback />}
+                  </>
+                ) : (
+                  // Not known yet whether the name is set or who reads: one quiet line where the note comes, no words.
+                  <p className="set-row-help" aria-hidden="true">
+                    <Skeleton width="30ch" />
+                  </p>
+                )}
               </div>
             )}
           </div>

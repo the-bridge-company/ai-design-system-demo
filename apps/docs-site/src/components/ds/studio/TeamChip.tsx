@@ -20,7 +20,7 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Check, ChevronsUpDown, LogIn, Plus, UserPlus, X } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
-import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger, Skeleton, VisuallyHidden } from '@bridge-ds/react';
 import type { RepoAccessState } from '@bridge-ds/core';
 import { accountRowSaysRole, busyBadge, chipIdentity, chipShowsBadge, isDemoTeam, memberRole, ownerAvatarUrl, recentTeamName, roleBadge } from '../../../lib/access-view';
 import { forgetRecentTeam, knownTeamName, loadRecentTeams, loadTeamNames, loadTeamRoles, noteTeamAccess, noteTeamName, noteTeamRole } from '../../../lib/recent-teams';
@@ -51,6 +51,9 @@ export interface TeamChipProps {
   /** The browser workspace (no repository): the chip names the workspace. */
   workspace?: boolean;
 }
+
+/** How long the chip waits for a team's settings before it names the team by its repository in words. */
+const NAME_WAIT_MS = 3000;
 
 const others = (list: readonly string[], team: string | null) => list.filter((t) => t.toLowerCase() !== (team ?? '').toLowerCase());
 
@@ -115,6 +118,13 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   // Without a Bridge account, the GitHub block at the foot of the nav says the role of an email member, and of the
   // sample team's developer a visitor plays (scripts/github-session.ts): the chip then leaves it out (say it once).
   const [blockRole, setBlockRole] = useState({ emailMember: false, castDeveloper: false });
+  // A team whose name is neither known in this browser nor read yet waits under a fixed-width skeleton, never the
+  // repository in words first and its real name a second later (A1). A read that never answers shows the words after a while.
+  const [nameWaitOver, setNameWaitOver] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setNameWaitOver(true), NAME_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   // A team shell names its team from the address at once, before the session and its scripts load (a cold first visit
   // can take seconds): never "Your team" while the address already says which.
@@ -241,6 +251,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     : // The settings' name, else the account's name for this team, else the one this browser knows (the server keeps
       // it), before and after the settings are read: settings without a `name` never flip it to the repository in words.
       chipIdentity(name, { demo: isDemoTeam(name, hosted), state: shownAccess, signedIn: roleSignedIn, name: cfg.name ?? (name ? (accountTeamName(name) ?? knownTeamName(name)) : null) });
+  // The name painted: known (the build, a fixture like the sample team, this browser's cache, the account) or read.
+  const knownName = Boolean(built) || isSampleTeam(name) || isDemoTeam(name, hosted) || (name ? Boolean(accountTeamName(name) ?? knownTeamName(name)) : false);
+  const namePending = !workspace && (!name || (!cfg.read && !knownName && !nameWaitOver));
   const shownBadge = ((!sessionKnown && !account) || (account && !ghSignedIn && !linkedKnown)) && chip.kind !== 'workspace' ? { label: 'Checking', tone: 'neutral' as const } : chip.kind === 'team' ? roleBadge(shownAccess, roleSignedIn, reviewer) : chip.badge;
   const badge = accessBusy && sessionKnown && !access && shownBadge.label === 'Checking' ? busyBadge(name ? roles[name.toLowerCase()] : null) : shownBadge;
   // Say it once: the account row at the foot of the nav already names the person's role on this team (AccountMenu.tsx,
@@ -250,7 +263,11 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     accountTeamRole: !workspace && hosted && name ? (account?.teams.find((t) => sameRepo(t.repo, name))?.role ?? null) : null,
     ...blockRole,
   });
-  const showBadge = chipShowsBadge(badge.label, rowRole);
+  // The sample team's visitor plays one of its people, whose role the account row says: the chip shows the team's name
+  // alone from first paint (styles/team-access.css keeps the server's pending badge out there too), never a "Checking"
+  // or "Guest" that comes and goes and moves the name (A1).
+  const playsSample = !workspace && !account && isSampleTeam(name);
+  const showBadge = !playsSample && chipShowsBadge(badge.label, rowRole);
   const offerTeams = launcher || hosted;
   // "Your teams": the teams the signed-in person belongs to (their role known in this browser), the one you are on first
   // with a check and your role. The browser workspace shows only while you are in it or have no team of your own; from
@@ -421,15 +438,31 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
           <span className="tc-text">
             {/* Named by what it shows (WCAG 2.5.3: voice control finds it by its visible text): the team's name and the
                 badge when it shows, never its repository, then a hidden "team menu". The avatar is decorative, out of the name. */}
-            <span className="tc-name" title={chip.title}>
-              {chip.name}
-            </span>
+            {namePending ? (
+              // Same line box as the name: the skeleton keeps the chip's height and width, its words come in place.
+              <span className="tc-name" data-pending="">
+                <VisuallyHidden>Your team</VisuallyHidden>
+                <Skeleton width="12ch" />
+              </span>
+            ) : (
+              <span className="tc-name" title={chip.title}>
+                {chip.name}
+              </span>
+            )}
             {showBadge && (
               <>
                 <VisuallyHidden>,</VisuallyHidden>{' '}
-                <Badge size="sm" tone={badge.tone} dot className="tc-badge">
-                  {badge.label}
-                </Badge>
+                {badge.label === 'Checking' ? (
+                  // Still asking GitHub: a quiet placeholder the size of a badge, the word for screen readers only.
+                  <span className="tc-badge" data-pending="">
+                    <VisuallyHidden>{badge.label}</VisuallyHidden>
+                    <Skeleton width="8ch" />
+                  </span>
+                ) : (
+                  <Badge size="sm" tone={badge.tone} dot className="tc-badge">
+                    {badge.label}
+                  </Badge>
+                )}
               </>
             )}
             <VisuallyHidden>, team menu</VisuallyHidden>

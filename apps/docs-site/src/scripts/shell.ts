@@ -10,8 +10,8 @@ import { pointLinksAtTeam } from './team-links';
 import { initVanillaControls } from './vanilla-controls';
 import { initViewChange } from './view-change';
 import { followThemePref } from '../lib/theme-pref';
-import { explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
-import { rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
+import { buildingBadgeLabel, explorationsBadgeLabel, reviewBadgeLabel } from '../lib/waiting-on';
+import { BUILDING_EVENT, rememberedBuildWaiting, rememberedWaitingExplorations, WAITING_EVENT } from './waiting-counts';
 import { navGroupOpen, readNavGroup, writeNavGroup } from '../lib/nav-groups';
 import { PALETTE_OPEN_EVENT } from '../lib/palette-search';
 
@@ -303,6 +303,12 @@ function initRailFit() {
   // The demo banner mounts (and wraps) after first paint.
   const strip = document.querySelector<HTMLElement>('[data-demo-strip]');
   if (strip && typeof ResizeObserver === 'function') new ResizeObserver(queue).observe(strip);
+  // The sample team's strip shows the built banner from first paint (styles/site.css); a page where the live banner
+  // never came after a while lets it go.
+  if (strip && document.documentElement.hasAttribute('data-sample-team'))
+    window.setTimeout(() => {
+      if (strip.hidden) strip.dataset.settled = '';
+    }, SAMPLE_STRIP_WAIT_MS);
   fit();
 }
 
@@ -449,6 +455,9 @@ export function initToc() {
 
 const DRAFT_KEY = 'bridge.draft.v1';
 
+/** How long the sample team's banner strip holds its place before giving it back when no banner came. */
+const SAMPLE_STRIP_WAIT_MS = 6000;
+
 /** Draft edits kept in this browser by the token editor. */
 export function draftCount(): number {
   try {
@@ -478,7 +487,12 @@ function reviewsHere(): boolean {
 /** The Explorations badge: the explorations that wait on the viewer (Waiting on you), hidden at 0 (scripts/waiting-counts). */
 export const setExplorationsCount = (n: number | null) => setCount('explorations', n);
 
-function setCount(kind: 'drafts' | 'reviews' | 'explorations', n: number | null) {
+type CountKind = 'drafts' | 'reviews' | 'explorations' | 'building';
+/** The last number each badge was given: the reviews badge paints again once the viewer's review right is known. */
+const lastCount = new Map<CountKind, number | null>();
+
+function setCount(kind: CountKind, n: number | null) {
+  lastCount.set(kind, n);
   // The nav shows two numbers, one source each (lib/waiting-counts): on Explorations what waits on the viewer there,
   // on Library review the changes that wait on the viewer's decision (for whoever holds the review right). Hidden at 0.
   // A link reads "Library review, 17 pieces wait for your decision", never the clause alone.
@@ -488,7 +502,7 @@ function setCount(kind: 'drafts' | 'reviews' | 'explorations', n: number | null)
     const v = el.querySelector('[data-nav-count-value]');
     if (v) v.textContent = n ? String(n) : '';
     const said = el.querySelector('[data-nav-count-label]');
-    if (said) said.textContent = kind === 'explorations' ? explorationsBadgeLabel(n) : reviewBadgeLabel(n);
+    if (said) said.textContent = kind === 'explorations' ? explorationsBadgeLabel(n) : kind === 'building' ? buildingBadgeLabel(n) : reviewBadgeLabel(n);
   });
   // The Drafts counter in the Studio header always shows its number, zero included.
   if (kind === 'drafts')
@@ -541,6 +555,18 @@ function initStudio() {
       void import('./waiting-counts').then((m) => m.countWaitingExplorations()).catch(() => undefined);
     });
   document.addEventListener(WAITING_EVENT, paintWaiting);
+  // Being built: the build requests a developer's Home counted to pick up, the same number on every page (A6).
+  const paintBuilding = () => setCount('building', rememberedBuildWaiting());
+  initGitHubConnect(paintBuilding);
+  document.addEventListener(BUILDING_EVENT, paintBuilding);
+  // The review right is known only once the team's settings are read (a team shell reads them after first paint): the
+  // Library review badge paints again then, so it shows on every page, not only on Home, which sets it late (A6). The
+  // remembered sets are read again too: who the viewer is may settle after the first paint.
+  document.addEventListener('bridge:team-model', () => {
+    if (lastCount.has('reviews')) setCount('reviews', lastCount.get('reviews') ?? null);
+    paintWaiting();
+    paintBuilding();
+  });
   // Paint the last known count at once, so the nav does not jump while GitHub answers (or when it cannot).
   setCount('reviews', getToken() ? rememberedMine() : null);
   // The Overview reads the same statuses for its Needs you list and sets the badge itself.

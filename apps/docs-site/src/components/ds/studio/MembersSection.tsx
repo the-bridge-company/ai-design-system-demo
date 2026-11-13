@@ -14,7 +14,7 @@
 // in the list at once (withJoined, BR-19), and a read after the row leaves confirms it.
 import { useEffect, useState } from 'react';
 import { Link2Off, MoreHorizontal, UserPlus } from 'lucide-react';
-import { Alert, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
+import { Alert, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import RolePicker from './RolePicker';
 import { NoticeLine, PersonCell } from './MemberParts';
 import InviteDialog from './InviteDialog';
@@ -29,9 +29,25 @@ import type { MembersData } from '../../../scripts/members';
 import type { JoinRequest } from '../../../lib/entry';
 import { repoContext } from '../../../scripts/repo-context';
 import { castJob } from '../../../lib/demo-cast';
+import { MEMBER_ROWS_DEFAULT, MembersSkeleton, SAMPLE_MEMBER_ROWS } from './SettingsSkeletons';
+import { isSampleTeam } from '../../../lib/demo';
 import '../../../styles/invites.css';
 import { CountTag } from './CountTag';
 import { SEP } from '../../../lib/sep';
+
+/** Where this browser keeps how many rows a team's members list showed: its next first paint reserves as many. */
+export const memberRowsKey = (team: string) => `bridge.settings.member-rows:${team.toLowerCase()}`;
+
+/** How many member rows to reserve for `team`: the count this browser saw last, else the sample team's cast, else 3. */
+export function memberRowsFor(team: string | null): number {
+  try {
+    const kept = team ? Number(localStorage.getItem(memberRowsKey(team)) ?? NaN) : NaN;
+    if (Number.isInteger(kept) && kept >= 0) return kept;
+  } catch {
+    /* storage blocked */
+  }
+  return isSampleTeam(team) ? SAMPLE_MEMBER_ROWS : MEMBER_ROWS_DEFAULT;
+}
 
 /** This page's team and its context, known before anything is read: the join requests start with it. */
 function pageTeam(): { repo: string; context: MembersData['context'] } {
@@ -42,6 +58,15 @@ function pageTeam(): { repo: string; context: MembersData['context'] } {
   const repo = `${ctx.owner}/${ctx.repo}`;
   const withoutRepo = document.documentElement.hasAttribute('data-no-repo');
   return { repo, context: membersContext(withoutRepo ? null : repo, withoutRepo) };
+}
+
+/** Keeps how many rows the members list drew for `team` (the next first paint reserves as many). */
+function rememberMemberRows(team: string, n: number) {
+  try {
+    localStorage.setItem(memberRowsKey(team), String(n));
+  } catch {
+    /* storage blocked: the next page reserves the default */
+  }
 }
 
 /** The person who just joined, in the list at once (BR-19): Can edit, by email; the next read confirms them. */
@@ -204,10 +229,7 @@ export default function MembersSection() {
     return (
       <>
         {early}
-        <div className="mem-loading" role="status" aria-busy="true" aria-label="Reading who is in this team">
-          <Skeleton height="var(--size-10)" />
-          <Skeleton height="var(--size-40)" />
-        </div>
+        <MembersSkeleton rows={memberRowsFor(page.repo)} />
       </>
     );
   if (load.status === 'error') return <Alert tone="danger">{load.message}</Alert>;
@@ -228,6 +250,7 @@ export default function MembersSection() {
       </div>
     );
 
+  rememberMemberRows(data.repo, data.members.length + data.pending.length);
   const act = memberActions(data, update);
   const members = sortMembers(data.members);
   const admins = adminCount(data.members);

@@ -75,7 +75,8 @@ describe('grouping by where explorations stand', () => {
   it("counts the library's own changes on the Library folder, filed as Changes files them", () => {
     const more = (['review', 'building', 'code', null] as const).map(libraryChangeState).filter((k) => k !== null);
     expect(more).toEqual(['review', 'building', 'waiting']);
-    expect(folderLine([card(1)], '\u2004\u2060·\u2004', more)).toBe('1 exploring\u2004\u2060·\u20041 ready to build\u2004\u2060·\u20041 being built\u2004\u2060·\u20041 being checked');
+    // One short line: the first step, then the rest as one count.
+    expect(folderLine([card(1)], '\u2004\u2060·\u2004', more)).toBe('1 exploring\u2004\u2060·\u20043 more in progress');
     const lib = { key: 'library', name: 'Library', default: true } as ProductConfig;
     expect(productFolders([lib], [], undefined, { library: ['review', 'review'] })[0]).toMatchObject({ line: '2 changes being checked', total: 2 });
   });
@@ -173,8 +174,10 @@ describe("the Library folder's with-developer steps: one count source (Being bui
     // Eleven library changes filed as Checking and three as Being built no longer add to the rows' counts.
     const more = { library: [...Array(11).fill('review'), ...Array(3).fill('building'), 'lead'] as never[] };
     const [f] = productFolders(products, [], 3, more, false, build);
-    expect(f!.line).not.toMatch(/11|3 /);
-    expect(f!.line).toContain('1 change being built');
-    expect(f!.line).toContain('1 change being checked');
+    // One short line: the library changes' 11 and 3 are gone, the rows' three steps fold into "3 more in progress".
+    expect(f!.line).toBe('1 change in review\u2004\u2060·\u20043 more in progress');
+    // With Library review's count, In review is that count.
+    const [g] = productFolders(products, [], 3, more, false, build, { library: 13 });
+    expect(g!.line).toBe('13 changes in review\u2004\u2060·\u20043 more in progress');
   });
 });

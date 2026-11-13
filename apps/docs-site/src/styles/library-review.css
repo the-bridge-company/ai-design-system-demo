@@ -21,6 +21,22 @@ html:has(.lr) {
   min-height: var(--size-80);
 }
 
+/* The filter bar's place while the page reads: one control row (the bar wraps to two on a phone: two rows there). */
+.lr-skel-bar {
+  inline-size: 100%;
+  min-height: var(--control-height-md);
+}
+
+.lr-skel-banner {
+  min-height: var(--size-20);
+}
+
+@media (max-width: 640px) {
+  .lr-skel-bar {
+    min-height: calc(2 * var(--control-height-md) + var(--space-2));
+  }
+}
+
 .lr-muted {
   color: var(--color-text-muted);
 }
@@ -445,6 +461,23 @@ a.lr-ask {
   font-family: var(--font-family-mono);
   font-size: var(--typography-caption-size);
   line-height: var(--typography-caption-line-height);
+}
+
+/* A guidance draft (a Docs piece from main): its own words in a quiet quote, then Open the draft. */
+.lr-doc {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.lr-doc-text {
+  max-inline-size: var(--size-160);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--border-width-strong) solid var(--color-border-default);
+  color: var(--color-text-default);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
 }
 
 .lr-match {

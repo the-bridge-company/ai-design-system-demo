@@ -71,7 +71,7 @@ import { Drawing } from "./Drawing";
 import { Who } from "./faces";
 import { YOU } from "../../../lib/branches-page";
 import { multiTriggerLabel } from "../../../lib/explorations-page";
-import { buildOriginLine, originOfRow } from "../../../lib/build-origin";
+import { buildOriginLine, buildOriginShort, originOfRow } from "../../../lib/build-origin";
 import {
   addressWithBuildFilters,
   BUILD_BOARD_CAP,
@@ -134,6 +134,7 @@ import { statusTagClass } from '../../../lib/status-tag';
 import { statedOrigin } from '../../../lib/library-origin';
 import { AuditNote } from './LibraryChanges';
 import { SEP } from '../../../lib/sep';
+import { shortWaitLine } from '../../../lib/wait-line';
 
 /**
  * A row's line with who it waits on after it ("Sent 2 days ago · Waiting for Sofia's check"): one row anatomy for every
@@ -250,7 +251,7 @@ function buildCard(x: Item, c: CardContext) {
   const product = c.showProduct ? (c.products.find((p) => p.key.toLowerCase() === x.product)?.name ?? null) : null;
   // Where it comes from, never who asked (lib/build-origin): an adoption report's origin is its note, with the link.
   const o = originOfRow(v);
-  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), origin: o && o.kind !== 'audit' ? buildOriginLine(o) : null, movedAt: movedAtOf(v), now: c.now });
+  const line = cardLine({ builders: v.builders.map((l) => (isNameAuthor(l) ? nameOfAuthor(l) : c.data.nameOf(l))), origin: o && o.kind !== 'audit' ? buildOriginShort(o) : null, movedAt: movedAtOf(v), now: c.now });
   const common = { person: cardPerson(v, c.data), product, pill: c.pill ? statusTag(v) : null, byline: line.who, when: line.when };
   if (isFix(v)) return <ListCard key={v.id} {...common} thumb={componentThumb(v.component, c.previewed)} title={v.component} href={studioHref(v.fix.href)} />;
   if (isExploration(v))
@@ -370,7 +371,7 @@ function Rows({
               title={v.title}
               hint={v.title}
               href={studioHref(v.exploration.href)}
-              line={withWaiting(rowLine(v, now, data.nameOf), rowWaiting(v))}
+              line={withWaiting(rowLine(v, now, data.nameOf), shortWaitLine(rowWaiting(v)))}
               pill={statusTag(v)}
               statusAtEnd
               className={v.stale ? "bb-stale" : undefined}
@@ -398,7 +399,7 @@ function Rows({
             href={href}
             onClick={click}
             end={pickUp}
-            line={withWaiting(rowLine(v, now, data.nameOf), rowWaiting(v))}
+            line={withWaiting(rowLine(v, now, data.nameOf), shortWaitLine(rowWaiting(v)))}
             note={auditNoteOf(v, data)}
             pill={statusTag(v)}
             statusAtEnd

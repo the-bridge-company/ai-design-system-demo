@@ -20,7 +20,7 @@ import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
 import { studioHref } from './team-path';
 import { questionLine } from './review-state';
 import { waitTone } from './status-tag';
-import { guidanceTitle } from './library-review';
+import { guidanceByLine, guidanceTitle } from './library-review';
 
 /** Rows of the Needs you list before the grouped row. */
 export const NEEDS_SHOWN = 3;
@@ -542,7 +542,7 @@ export function guidanceNeed(g: GuidanceDraft, now: number, change: GuidanceChan
   return {
     ...base,
     href: g.href,
-    line: `${CLAUDE.name} drafted it from the code`,
+    line: guidanceByLine(CLAUDE.name),
     since: g.since,
     waitsOnYou: true,
     // Its status tag like every row that waits on the viewer, even when Bridge cannot say since when.

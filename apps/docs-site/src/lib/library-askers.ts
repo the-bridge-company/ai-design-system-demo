@@ -9,6 +9,7 @@
 // library-askers.test.ts.
 import type { AskedBy, ReviewPiece } from './library-review';
 import { peopleNames } from './people-line';
+import { AGENT_NAME } from './people';
 
 /** Every exploration that asked for a piece, the most recent first (one without a date keeps its place, last). */
 export function askersOf(p: Pick<ReviewPiece, 'asked' | 'also'>): AskedBy[] {
@@ -113,7 +114,7 @@ export const moreTag = (n: number, what = 'explorations'): { tag: string; label:
 export const faceName = (a: Pick<AskedBy, 'designer' | 'name'>): string => a.designer ?? a.name;
 
 /** A person's first name ("Sofia Ramos" -> "Sofia"), as the Asked by column shows it. */
-export const firstName = (name: string): string => name.trim().split(/\s+/)[0] || name;
+export const firstName = (name: string): string => (name.trim() === AGENT_NAME ? AGENT_NAME : name.trim().split(/\s+/)[0] || name);
 
 /** Where a piece came from, as the From column reads it: an exploration (and how many more), or asked directly. */
 export type AskedFrom = { kind: 'direct' } | { kind: 'exploration'; first: AskedBy; more: number; all: AskedBy[]; product: string | null };
@@ -153,3 +154,9 @@ export function askedColumns(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' 
 
 /** The From column's words for a piece no exploration asked for (a lead's own change). */
 export const ASKED_DIRECTLY = 'Asked directly';
+
+/** What a usage guidance draft says where others say who asked: Home's row says the same (home-model guidanceNeed). */
+export const DRAFTED_FROM_CODE = 'Drafted it from the code';
+
+/** The From words of a piece no exploration asked for: Claude AI's guidance draft says where it comes from. */
+export const directWords = (p: Pick<ReviewPiece, 'source'>): string => (p.source.kind === 'docs' ? DRAFTED_FROM_CODE : ASKED_DIRECTLY);

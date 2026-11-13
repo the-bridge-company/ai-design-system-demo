@@ -527,7 +527,8 @@
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
-.sh-card-title {
+/* Scoped under the card's head so the DS Link's own display never wins: a title wraps to two lines, then an ellipsis. */
+.sh-card-head > .sh-card-title {
   display: -webkit-box;
   flex: 1 1 auto;
   min-width: 0;

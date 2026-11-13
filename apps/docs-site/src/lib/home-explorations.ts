@@ -9,6 +9,7 @@
 // Each card shows the explored screen (a capture, never a generic icon when one exists), the title, the product, who
 // explores it and where it stands in designer words: "Exploring", "2 new pieces found", "In review", "Kept in the
 // library". Pure: no DOM, no fetch. Unit tested in home-explorations.test.ts.
+import { shortWaitLine } from './wait-line';
 import { defaultProduct, EXPLORATION_ARCHIVED_LABEL, explorationStateLabel, explorationStatus, findProduct, isArchivedExploration, isExplorationPull, isHandedOff, parseExplorationBody, parsePiecesRecord, PRODUCT_LABEL_PREFIX, requesterOf, type ProductConfig } from '@bridge-ds/core';
 import { explorationTitle } from './pr-title';
 import { studioHref } from './team-path';
@@ -423,13 +424,11 @@ export function ownOpenWork(cards: readonly Pick<ExplorationCard, 'lifecycle' | 
 }
 
 /**
- * A card's second line, short enough for a card (the row keeps the whole line): who it waits on, without the pieces
- * ("Waiting for Dana's design review and the library decision on Timeline" reads "Waiting for Dana's design review and
- * the library decision"). The card shows it whole, wrapping if it must, never cut mid-sentence.
+ * A card's second line, as short as a list row's (lib/wait-line shortWaitLine): "Waiting for Dana". The exploration
+ * page keeps the whole sentence. The card shows it whole, never cut mid-sentence.
  */
 export function cardNote(note: string | null | undefined): string | null {
-  if (!note) return null;
-  return /^Waiting for /.test(note) ? note.replace(/ on [^,]+$/, '') : note;
+  return shortWaitLine(note);
 }
 
 /** A piece of the quiet sentence: words, or a count that opens where those things are. */

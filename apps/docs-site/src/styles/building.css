@@ -367,9 +367,3 @@
   border-block-start: var(--border-width-1) solid var(--color-border-default);
 }
 
-/* Grid and Board cards without a screen (a component preview still queued, or the change icon): a compact neutral
-   band instead of a 140px empty grey box. A real capture keeps the card full screen height. */
-.bb-cards .bt--card:is(.bt--icon, .bt--component),
-.bb-board .bt--card:is(.bt--icon, .bt--component) {
-  height: var(--size-20);
-}

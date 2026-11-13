@@ -105,6 +105,9 @@ function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: 
   return PRODUCT_STATES.filter((s) => s.open && n[s.key] > 0).map((s) => named(s.count(n[s.key]), n[s.key]));
 }
 
+/** At most this many clauses on a folder card's line. */
+const FOLDER_PARTS = 2;
+
 /**
  * A folder card's line: "2 exploring · 1 ready to build", "3 shipped", or "Nothing in progress". `more`: the
  * states of the product's work that is not an exploration card, the library's own changes (libraryChangeState), so
@@ -112,6 +115,15 @@ function inProgress(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], more: 
  */
 export function folderLine(cards: readonly Pick<ExplorationCard, 'lifecycle'>[], sep = SEP, more: readonly ProductStateKey[] = [], noun: readonly [string, string] | null = null, unsure = false): string {
   const parts = inProgress(cards, more, noun);
+  // One short line on a card: the first step, then the rest as one count ("13 changes in review · 3 more in
+  // progress"); the product page lists every step.
+  if (parts.length > FOLDER_PARTS) {
+    const n = productCounts(cards, more);
+    const rest = PRODUCT_STATES.filter((s) => s.open && n[s.key] > 0)
+      .slice(FOLDER_PARTS - 1)
+      .reduce((a, s) => a + n[s.key], 0);
+    return [...parts.slice(0, FOLDER_PARTS - 1), `${rest} more in progress`].join(sep);
+  }
   if (parts.length) return parts.join(sep);
   const shipped = productCounts(cards, more).shipped;
   if (shipped) return `${shipped} shipped`;
@@ -189,17 +201,22 @@ export function productFolders(
   more: Readonly<Record<string, readonly ProductStateKey[]>> = {},
   unsure = false,
   build?: Readonly<Record<string, readonly ProductStateKey[]>> | null,
+  /** A product's In review count from its own queue (the Library: Library review's waiting pieces), when read. */
+  inReview: Readonly<Record<string, number>> = {},
 ): ProductFolder[] {
   const library = products.length ? defaultProduct(products).key.toLowerCase() : null;
   // With Being built's rows (`build`, buildStatesByProduct), the steps with developers are counted from them only: the
   // folder says what Being built and the Home's build line say. Until they are read (null), only the explorations' own
   // steps count (each exploration handed to developers is one of those rows); the library's own changes never do.
   const withBuild = Boolean(build);
-  const counted = (cs: readonly ExplorationCard[]) => (withBuild ? cs.filter((c) => !isWithDevelopers(stateOfCard(c))) : cs);
+  // With its queue's count (`inReview`), a product's In review is that count, the number its queue and rail say.
+  const queued = (k: string) => typeof inReview[k] === 'number';
+  const counted = (cs: readonly ExplorationCard[], k: string) => cs.filter((c) => !(withBuild && isWithDevelopers(stateOfCard(c))) && !(queued(k) && stateOfCard(c) === 'lead'));
   const moreOf = (k: string): ProductStateKey[] => {
-    const own = more[k] ?? [];
-    if (build === undefined) return [...own];
-    return [...own.filter((s) => !isWithDevelopers(s)), ...(build?.[k] ?? [])];
+    let own: ProductStateKey[] = [...(more[k] ?? [])];
+    if (build !== undefined) own = [...own.filter((s) => !isWithDevelopers(s)), ...(build?.[k] ?? [])];
+    if (queued(k)) own = [...own.filter((s) => s !== 'lead'), ...Array.from({ length: inReview[k]! }, () => 'lead' as const)];
+    return own;
   };
   return products.map((p) => {
     const mine = cards.filter((c) => cardProductKey(c, products) === p.key.toLowerCase());
@@ -211,8 +228,8 @@ export function productFolders(
       shots: latest.slice(0, shots).map((c) => ({ key: c.key ?? String(c.number), spec: c.preview, who: c.author })),
       // The Library card counts changes to the library, whoever reviews them: it names them, so "11 changes in review"
       // never reads as the Library review badge (pieces waiting for the viewer's decision, lib/waiting-counts).
-      line: folderLine(counted(mine), SEP, moreOf(p.key.toLowerCase()), p.key.toLowerCase() === library ? LIBRARY_NOUN : null, unsure),
-      total: counted(mine).length + moreOf(p.key.toLowerCase()).length,
+      line: folderLine(counted(mine, p.key.toLowerCase()), SEP, moreOf(p.key.toLowerCase()), p.key.toLowerCase() === library ? LIBRARY_NOUN : null, unsure),
+      total: counted(mine, p.key.toLowerCase()).length + moreOf(p.key.toLowerCase()).length,
       library: p.key.toLowerCase() === library,
     };
   });

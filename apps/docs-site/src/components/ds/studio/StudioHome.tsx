@@ -389,6 +389,8 @@ export interface StudioHomeProps {
    * the quiet sentence says this number, the one Library review lists under Asked by: You.
    */
   libraryPieces?: number | null;
+  /** Library review's waiting pieces: the Library card's In review, the same number as the queue and its rail. */
+  libraryInReview?: number | null;
 }
 
 /** Where a tour step can point: the lead's (lib/lead-tour LeadTourAt) and the contributor's ("start", the ways to start). */
@@ -499,7 +501,8 @@ function useBuildStates(products: readonly ProductConfig[]): BuildStates {
 function homeFolders(p: StudioHomeProps, build: BuildStates) {
   const products = p.products ?? pageProducts();
   const library = (p.libraryWork ?? []).map((k): ProductStateKey => (k === 'review' ? 'lead' : k));
-  return productFolders(products, p.explorations, undefined, { [defaultProduct(products).key.toLowerCase()]: library }, Boolean(p.partial || p.failed), build);
+  const libKey = defaultProduct(products).key.toLowerCase();
+  return productFolders(products, p.explorations, undefined, { [libKey]: library }, Boolean(p.partial || p.failed), build, typeof p.libraryInReview === 'number' ? { [libKey]: p.libraryInReview } : {});
 }
 
 export function StudioHome(p: StudioHomeProps) {

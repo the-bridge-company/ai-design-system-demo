@@ -50,11 +50,10 @@
   display: none;
 }
 
+/* The name takes the ellipsis (.sh-card-by), never the age: no cut over the whole line ("2 days a..."). */
 .ex-turn .sh-card-who {
   overflow: hidden;
   min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 @media (hover: hover) {
@@ -192,4 +191,12 @@
   justify-content: center;
   gap: var(--space-3);
   margin-block-start: var(--space-2);
+}
+
+/* Being built (BeingBuilt.tsx imports this file on every route): Grid and Board cards without a screen (a component
+   preview, its icon under it until it paints, or the change icon) take a compact neutral band instead of a 140px box.
+   A real capture keeps the card's full screen height. */
+.bb-cards .bt--card:is(.bt--icon, .bt--component),
+.bb-board .bt--card:is(.bt--icon, .bt--component) {
+  height: var(--size-20);
 }

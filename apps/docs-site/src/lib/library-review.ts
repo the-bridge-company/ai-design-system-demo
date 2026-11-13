@@ -81,7 +81,8 @@ export interface ConflictWay {
   line: string;
 }
 
-const PART_WORDS: Record<string, string> = { padding: 'room inside', 'border-radius': 'corners', gap: 'space between items', 'box-shadow': 'shadow', 'background-color': 'fill', 'font-size': 'text size' };
+// The words designers use for a part (owner review 2026-11-13: "Card padding", never "room inside").
+const PART_WORDS: Record<string, string> = { padding: 'padding', 'border-radius': 'corners', gap: 'space between items', 'box-shadow': 'shadow', 'background-color': 'fill', 'font-size': 'text size' };
 
 /**
  * One way of a conflict in words: compared to today when the check knows today's value, else to the other way.
@@ -94,7 +95,7 @@ export function wayLine(property: string, value: string, today: string | null, o
   const prop = property.toLowerCase();
   if (ref && Number.isFinite(a)) {
     const more = a > ref.n;
-    if (prop.startsWith('padding') || prop === 'gap') return `${more ? 'More room inside' : 'Tighter'} than ${ref.words}.`;
+    if (prop.startsWith('padding') || prop === 'gap') return `${more ? 'More padding' : 'Tighter'} than ${ref.words}.`;
     if (prop === 'border-radius') return `${more ? 'Rounder corners' : 'Squarer corners'} than ${ref.words}.`;
     if (prop === 'font-size') return `${more ? 'Bigger text' : 'Smaller text'} than ${ref.words}.`;
   }
@@ -149,6 +150,8 @@ export interface ReviewPiece {
   exception: string | null;
   /** When it last moved (ISO), when known: the List orders its blocks by the most recent. */
   at?: string | null;
+  /** A guidance draft's own words (its summary, then when to use it): what the detail shows instead of plates. */
+  docText?: string | null;
 }
 
 /**
@@ -398,8 +401,12 @@ export function pieceOfGuidance(g: GuidanceDraftInput, repo: string): ReviewPiec
     why: null,
     exception: null,
     at: g.since,
+    docText: g.excerpt ?? null,
   };
 }
+
+/** "Claude AI drafted it from the code": who a guidance draft comes from, on Home's row and in Library review. */
+export const guidanceByLine = (by: string): string => `${by} drafted it from the code`;
 
 /** "VisuallyHidden usage guidance": a draft's name on Home and in Library review. */
 export const guidanceTitle = (name: string): string => `${name} usage guidance`;

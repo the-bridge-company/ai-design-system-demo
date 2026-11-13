@@ -84,7 +84,7 @@ export function ProductFolderCard({ f }: { f: ProductFolder }) {
           <span className="pf-mosaic" data-panes={f.shots.length} aria-hidden="true">
             {f.shots.map((s, i) => (
               <span key={s.key} className={`pf-pane pf-pane-${i}`}>
-                <BranchThumb spec={s.spec} size="card" />
+                <BranchThumb spec={s.spec} size="card" eager />
                 {/* Who explores this screen, on its top-left corner: the same face as on their cards and in Members. */}
                 <span className="pf-pane-who" title={s.who.name}>
                   <Who p={s.who} size="xs" />

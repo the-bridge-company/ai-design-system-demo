@@ -103,12 +103,12 @@ function ScreenPlate({ spec, size, chip }: { spec: Extract<ThumbSpec, { kind: 's
  * A captured screen (lib/preview-shots): its top, where the page starts, with "Captured 2 h ago" on a card. An image
  * that does not load (removed, offline) gives the plate back in the same box: nothing moves.
  */
-function ScreenShot({ spec, size, chip }: { spec: Extract<ThumbSpec, { kind: 'screen' }> & { src: string }; size: ThumbSize; chip?: string | null }) {
+function ScreenShot({ spec, size, chip, eager }: { spec: Extract<ThumbSpec, { kind: 'screen' }> & { src: string }; size: ThumbSize; chip?: string | null; eager?: boolean }) {
   const [failed, setFailed] = useState<string | null>(null);
   if (failed === spec.src) return <ScreenPlate spec={spec} size={size} {...(chip === undefined ? {} : { chip })} />;
   return (
     <>
-      <img className="bt-img bt-screen" src={spec.src} alt="" loading="lazy" decoding="async" onError={() => setFailed(spec.src)} />
+      <img className="bt-img bt-screen" src={spec.src} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(spec.src)} />
       {size === 'card' && chip === undefined && spec.capturedAt && <span className="bt-captured">{capturedLine(spec.capturedAt, Date.now())}</span>}
     </>
   );
@@ -122,10 +122,17 @@ function ComponentThumb({ spec, size }: { spec: Extract<ThumbSpec, { kind: 'comp
   const previews = useComponentPreviews();
   const c = previews?.components.get(spec.name);
   if (!previews || !c || !stageSource(c, previews.storybook, previews.Example)) return <Icon icon={ICONS.component} size={size === 'row' ? 'sm' : 'lg'} />;
-  return <ComponentStage c={c} storybook={previews.storybook} Example={previews.Example} as="span" className="bt-stage" frameClassName="bt-frame" queued fit />;
+  // The icon sits under the preview: while the preview is queued or loading, or when it paints nothing, the tile shows
+  // the component's icon, never an empty box. A painted preview covers it.
+  return (
+    <>
+      <Icon icon={ICONS.component} size={size === 'row' ? 'sm' : 'lg'} />
+      <ComponentStage c={c} storybook={previews.storybook} Example={previews.Example} as="span" className="bt-stage" frameClassName="bt-frame" queued fit />
+    </>
+  );
 }
 
-function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode {
+function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null, eager?: boolean): ReactNode {
   const room = ROOM[size];
   switch (spec.kind) {
     case 'color':
@@ -152,7 +159,7 @@ function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null): ReactNode
     case 'screen':
       // One screen, not a before/after: an exploration is a new screen. Its top shows, where the page starts.
       return spec.src ? (
-        <ScreenShot spec={{ ...spec, src: spec.src }} size={size} {...(chip === undefined ? {} : { chip })} />
+        <ScreenShot spec={{ ...spec, src: spec.src }} size={size} {...(eager ? { eager } : {})} {...(chip === undefined ? {} : { chip })} />
       ) : (
         <ScreenPlate spec={spec} size={size} {...(chip === undefined ? {} : { chip })} />
       );
@@ -173,11 +180,11 @@ const label = (spec: ThumbSpec) => (spec.kind === 'image' || spec.kind === 'icon
  * product reads at a glance; null leaves the corner empty (a list of one product). Either way the capture's age goes
  * to the card's footer (captureAgeOf). Left out, the corner keeps "Captured 2 h ago" (a product folder's tiles).
  */
-export function BranchThumb({ spec, size, chip }: { spec: ThumbSpec; size: 'row' | 'card'; chip?: string | null }) {
+export function BranchThumb({ spec, size, chip, eager }: { spec: ThumbSpec; size: 'row' | 'card'; chip?: string | null; /** Load the capture at once (a product folder's few tiles: a lazy one stayed blank on phones). */ eager?: boolean }) {
   const corner = size === 'card' ? chip : undefined;
   return (
     <span className={`bt bt--${size} bt--${spec.kind}${spec.kind === 'screen' && spec.src ? ' is-shot' : ''}`} aria-hidden="true" data-label={label(spec)}>
-      {body(spec, size, corner)}
+      {body(spec, size, corner, eager)}
       {corner && <span className="bt-captured bt-chip">{corner}</span>}
     </span>
   );

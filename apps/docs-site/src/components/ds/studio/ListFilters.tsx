@@ -5,12 +5,59 @@
 // filter's "all" word, never an option; an option's count is the count tag; an option with nothing in it is not
 // listed; the trigger reads the first ticked option then "+N" (rules: lib/filter-summary). Used by Explorations, Being
 // built and Library review; styles/list-filters.css lays the row out (one scrolling row on a phone).
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Select } from '@bridge-ds/react';
 import { filterSummary, listedOptions, type FilterOption } from '../../../lib/filter-summary';
 import { CountTag } from './CountTag';
 import '../../../styles/list-filters.css';
 
 export type MultiOption = FilterOption;
+
+/** Marks which edges of a scrolling filter row hide filters (`data-overflow`: start, end, both), so the CSS fades them. */
+export function markRowOverflow(row: HTMLElement) {
+  const max = row.scrollWidth - row.clientWidth;
+  const start = row.scrollLeft > 1;
+  const end = max - row.scrollLeft > 1;
+  const value = start && end ? 'both' : start ? 'start' : end ? 'end' : null;
+  if (value) row.setAttribute('data-overflow', value);
+  else row.removeAttribute('data-overflow');
+}
+
+export interface FilterRowProps {
+  /** The page's own class for the row ("bl-narrow", "lr-bar-row"); the scroll and the fade come from "bl-scroll". */
+  className: string;
+  as?: 'div' | 'span';
+  children: ReactNode;
+}
+
+/**
+ * The filters of a bar, one row. On a phone it scrolls sideways inside itself (never the page) and fades the edge that
+ * hides a filter, so a cut filter reads as "more this way" (styles/list-filters.css .bl-scroll).
+ */
+export function FilterRow({ className, as: Tag = 'div', children }: FilterRowProps) {
+  const ref = useRef<HTMLElement | null>(null);
+  // Every render: a picked value changes a trigger's width, and so whether the row overflows.
+  useEffect(() => {
+    if (ref.current) markRowOverflow(ref.current);
+  });
+  useEffect(() => {
+    const row = ref.current;
+    if (!row) return;
+    const mark = () => markRowOverflow(row);
+    row.addEventListener('scroll', mark, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark);
+    observer?.observe(row);
+    return () => {
+      row.removeEventListener('scroll', mark);
+      observer?.disconnect();
+    };
+  }, []);
+  return (
+    <Tag ref={ref as never} className={`bl-scroll ${className}`}>
+      {children}
+    </Tag>
+  );
+}
 
 export interface MultiFilterProps {
   /** The inline label, the filter's name: "Status", "Product", "Person". */

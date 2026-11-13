@@ -1,7 +1,7 @@
 /* The filters row of a list (components/ds/studio/ListFilters.tsx: Explorations, Being built), left-aligned above
    the list: the filters (DS Select with an inline label, each hugging its content), then the count, then how the list
    is shown. It pulls closer to the tabs than the list gap, so it reads as theirs. On a phone the filters are one row
-   that scrolls sideways, and the count wraps under them. */
+   that scrolls sideways inside itself (.bl-scroll), and the count wraps under them. */
 .bl-bar {
   display: flex;
   flex-wrap: wrap;
@@ -16,26 +16,62 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  min-inline-size: 0;
   max-inline-size: 100%;
 }
 
-/* Phone: one row of filters at one height that scrolls sideways (never the page), not ragged wrapped rows. */
+/* The filters row itself (ListFilters FilterRow, also Library review's .lr-bar-row). On a phone: one row at one height
+   that scrolls sideways inside itself, never the page. `contain: inline-size` keeps its content from widening the
+   ancestors (a grid or flex track sized to content would otherwise grow past 390px and scroll the page). Each filter
+   keeps its full width (no "Proc..." cut mid-word); the edge that hides one fades (data-overflow, set by FilterRow). */
+.bl-scroll {
+  --_fade: var(--space-8);
+
+  min-inline-size: 0;
+}
+
 @media (max-width: 760px) {
-  .bl-bar > .bl-narrow {
+  .bl-scroll {
+    display: flex;
     flex-wrap: nowrap;
     inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    contain: inline-size;
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    scroll-padding-inline: var(--_fade);
     scrollbar-width: none;
+
+    /* Room for the focus ring, which the scroll box would clip. */
+    padding-block: var(--space-1);
+    margin-block: calc(-1 * var(--space-1));
   }
 
-  .bl-narrow::-webkit-scrollbar {
+  .bl-scroll::-webkit-scrollbar {
     display: none;
   }
 
-  .bl-narrow > * {
+  .bl-scroll > * {
     flex: none;
   }
+
+  .bl-scroll .bl-filter {
+    max-inline-size: none;
+  }
+}
+
+/* The mask only uses the gradient's alpha: currentcolor is any opaque color. */
+.bl-scroll[data-overflow="end"] {
+  mask-image: linear-gradient(to right, currentcolor calc(100% - var(--_fade)), transparent);
+}
+
+.bl-scroll[data-overflow="start"] {
+  mask-image: linear-gradient(to left, currentcolor calc(100% - var(--_fade)), transparent);
+}
+
+.bl-scroll[data-overflow="both"] {
+  mask-image: linear-gradient(to right, transparent, currentcolor var(--_fade), currentcolor calc(100% - var(--_fade)), transparent);
 }
 
 .bl-summary {

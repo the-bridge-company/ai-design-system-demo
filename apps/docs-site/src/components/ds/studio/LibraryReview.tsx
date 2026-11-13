@@ -12,7 +12,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
 import { ArrowRight, BookOpen, ChevronRight, Ellipsis } from 'lucide-react';
-import { MultiFilter } from './ListFilters';
+import { FilterRow, MultiFilter } from './ListFilters';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
@@ -1740,7 +1740,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
         </section>
       ) : (
         <>
-          <div className="lr-bar-row">
+          <FilterRow className="lr-bar-row">
             <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} count={(s) => countWith({ ...filters, status: [s as ReviewFilters['status'][number]] })} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
             <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} count={(a) => countWith({ ...filters, asked: [a] })} onChange={(a) => update({ ...filters, asked: a })} />
             <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} count={(pr) => countWith({ ...filters, product: [pr] })} onChange={(pr) => update({ ...filters, product: pr })} />
@@ -1749,7 +1749,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
                 {v.reviews ? 'Clear filters' : 'Show everyone'}
               </Button>
             )}
-          </div>
+          </FilterRow>
           {!v.reviews && (
             <Banner
               appearance="harbor"

@@ -6,6 +6,8 @@
 
 .lr {
   display: grid;
+  /* One column that never grows past the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   max-width: var(--studio-page-max);
   min-width: 0;
@@ -37,25 +39,10 @@ html:has(.lr) {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
+  min-inline-size: 0;
 }
 
-/* Phone: one row of filters at one height that scrolls sideways (never the page), as Explorations' bar. */
-@media (max-width: 760px) {
-  .lr-bar-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .lr-bar-row::-webkit-scrollbar {
-    display: none;
-  }
-
-  .lr-bar-row > * {
-    flex: none;
-  }
-}
+/* Phone: one row that scrolls inside itself with a fade, never the page (list-filters.css .bl-scroll). */
 
 .lr-none {
   margin: 0;

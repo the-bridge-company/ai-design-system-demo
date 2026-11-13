@@ -60,7 +60,7 @@ import { BranchRow } from "./BranchRow";
 import { CountTag } from "./CountTag";
 import { ListGroup } from "./ListGroup";
 import { ComponentPreviewsProvider, previewedNames, useComponentPreviewsOf, type SitePreviewList } from "./ComponentPreviews";
-import { MultiFilter } from "./ListFilters";
+import { FilterRow, MultiFilter } from "./ListFilters";
 import { ListCard, useExplorationShots, useListView, ViewSwitch } from "./ListCard";
 import { useCopy } from "./TeamLink";
 import { DEV_MESSAGE_WORDS } from "../../../lib/developers-message";
@@ -829,7 +829,7 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
           </div>
         )}
         <div className="bl-bar">
-          <span className="bl-narrow">
+          <FilterRow as="span" className="bl-narrow">
             {/* Not shipped yet is the empty pick, said as the value, never an option among its own statuses. */}
             <MultiFilter
               label="Status"
@@ -846,7 +846,7 @@ export default function BeingBuilt({ library }: { library?: SitePreviewList } = 
               picked={filters.people}
               onPick={(v) => pick({ ...filters, people: v })}
             />
-          </span>
+          </FilterRow>
           <p className="t-ui t-muted bl-summary" aria-live="polite">
             {buildCountLine(shownCount, filtered ? items.length : shownCount)}
             {filtered && shownCount > 0 && (

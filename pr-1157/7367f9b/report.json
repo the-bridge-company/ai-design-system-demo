@@ -1,0 +1,178 @@
+{
+  "pr": 1157,
+  "sha": "7367f9b90460719db6dc6f6233ee9cbb6e6d67a2",
+  "baseSha": "645fab4ae93deea77012453054ee642c205a8c7a",
+  "failed": false,
+  "failures": [],
+  "warnings": 0,
+  "screens": [
+    "library",
+    "library-component"
+  ],
+  "variants": [
+    {
+      "screen": "library",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 1203,
+      "fullHeight": 1203,
+      "png": "library-desktop-light.png",
+      "axe": [],
+      "ms": 11280,
+      "webp": "library-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 1203,
+      "fullHeight": 1203,
+      "png": "library-desktop-dark.png",
+      "axe": [],
+      "ms": 10337,
+      "webp": "library-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1858,
+      "fullHeight": 1858,
+      "png": "library-mobile-light.png",
+      "axe": [],
+      "ms": 10187,
+      "webp": "library-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1858,
+      "fullHeight": 1858,
+      "png": "library-mobile-dark.png",
+      "axe": [],
+      "ms": 10704,
+      "webp": "library-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3451,
+      "png": "library-component-desktop-light.png",
+      "axe": [],
+      "ms": 13033,
+      "webp": "library-component-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 3451,
+      "png": "library-component-desktop-dark.png",
+      "axe": [],
+      "ms": 13164,
+      "webp": "library-component-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 5187,
+      "png": "library-component-mobile-light.png",
+      "axe": [],
+      "ms": 11075,
+      "webp": "library-component-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "library-component",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 5187,
+      "png": "library-component-mobile-dark.png",
+      "axe": [],
+      "ms": 11031,
+      "webp": "library-component-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    }
+  ]
+}

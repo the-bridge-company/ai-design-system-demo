@@ -14,21 +14,22 @@ import type { ExplorerData } from './types';
 const css = readFileSync(join(__dirname, '../../styles/token-explorer.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const exploration = readFileSync(join(__dirname, '../../styles/exploration-page.css'), 'utf8');
 
-/** Declarations of the top-level rule whose selector list is exactly `selector` (outside media queries). */
+/**
+ * Declarations of the top-level rules whose selector list is exactly `selector` (outside media queries), merged in
+ * source order as the cascade does (a later rule's declaration wins).
+ */
 function rule(selector: string): Record<string, string> {
   const top = css.replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
   const re = /([^{}]+)\{([^{}]*)\}/g;
+  let found = false;
+  const out: Record<string, string> = {};
   for (const m of top.matchAll(re)) {
     if (m[1]!.trim().replace(/\s+/g, ' ') !== selector) continue;
-    return Object.fromEntries(
-      m[2]!
-        .split(';')
-        .map((d: string) => d.trim())
-        .filter(Boolean)
-        .map((d: string) => [d.slice(0, d.indexOf(':')).trim(), d.slice(d.indexOf(':') + 1).trim()]),
-    );
+    found = true;
+    for (const d of m[2]!.split(';').map((x: string) => x.trim()).filter(Boolean)) out[d.slice(0, d.indexOf(':')).trim()] = d.slice(d.indexOf(':') + 1).trim();
   }
-  throw new Error(`no rule ${selector}`);
+  if (!found) throw new Error(`no rule ${selector}`);
+  return out;
 }
 
 const ramp = (hexes: string[]) =>
@@ -142,16 +143,55 @@ describe('Value previews', () => {
   });
 });
 
-describe('Type filter', () => {
-  it('desktop: one row, the search gives way first; phone: the types wrap instead of scrolling behind the edge fade', () => {
-    const block = (q: string) => css.slice(css.indexOf(q));
-    // The search takes all the free width (no spacer), the types keep their natural width.
-    expect(block('@media (min-width: 861px) {\n  .xp[data-surface="app"] .xp-chips')).toMatch(
-      /^@media \(min-width: 861px\) \{\s*\.xp\[data-surface="app"\] \.xp-chips \{\s*flex: none;\s*\}\s*\.xp\[data-surface="app"\] \.xp-search \{\s*flex: 1 1 auto;\s*min-width: var\(--size-40\);\s*\}\s*\.xp\[data-surface="app"\] \.xp-tools \.xp-grow \{\s*display: none;/,
-    );
-    expect(css).toMatch(/@media \(max-width: 640px\) \{\s*\.xp-types \[data-segment-track\] \{\s*flex-wrap: wrap;\s*overflow-x: visible;/);
-    // Never wrapping on a desktop.
+/** Declarations of `selector` inside every `@media <query>` block (later blocks win, as in the cascade). */
+function mediaRule(query: string, selector: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const head = `@media ${query} {`;
+  for (let i = css.indexOf(head); i !== -1; i = css.indexOf(head, i + 1)) {
+    let depth = 0;
+    let j = i + head.length - 1;
+    do {
+      if (css[j] === '{') depth++;
+      else if (css[j] === '}') depth--;
+      j++;
+    } while (depth > 0 && j < css.length);
+    const inner = css.slice(i + head.length, j - 1);
+    for (const m of inner.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (m[1]!.trim().replace(/\s+/g, ' ') !== selector) continue;
+      for (const d of m[2]!.split(';').map((x: string) => x.trim()).filter(Boolean)) out[d.slice(0, d.indexOf(':')).trim()] = d.slice(d.indexOf(':') + 1).trim();
+    }
+  }
+  return out;
+}
+
+describe('Studio toolbar (type filter)', () => {
+  it('desktop (861px and up): one row inside its container; the search grows but never under size 40, the types give way and scroll, Options stays', () => {
+    const q = '(min-width: 861px)';
+    expect(mediaRule(q, '.xp[data-surface="app"] .xp-search')).toMatchObject({ flex: '1 0 var(--size-40)', 'min-width': 'var(--size-40)' });
+    // The types keep their natural width when it fits, and shrink (their DS track scrolls with the edge fade) when not.
+    expect(mediaRule(q, '.xp[data-surface="app"] .xp-chips')).toMatchObject({ flex: '0 1 auto', 'min-width': '0' });
+    expect(mediaRule(q, '.xp[data-surface="app"] .xp-options')).toMatchObject({ flex: 'none' });
+    expect(mediaRule(q, '.xp[data-surface="app"] .xp-tools .xp-grow')).toMatchObject({ display: 'none' });
+    expect(rule('.xp-types')).toMatchObject({ 'min-width': '0', 'max-width': '100%' });
+    expect(rule('.xp[data-surface="app"] .xp-tools')['min-width']).toBe('0');
+  });
+
+  it('phone: the types wrap onto a second row; never on a desktop', () => {
+    expect(mediaRule('(max-width: 640px)', '.xp-types [data-segment-track]')).toMatchObject({ 'flex-wrap': 'wrap', 'overflow-x': 'visible' });
     expect(() => rule('.xp-types [data-segment-track]')).toThrow();
+    expect(mediaRule('(min-width: 861px)', '.xp-types [data-segment-track]')).toEqual({});
+  });
+});
+
+describe('Hex values', () => {
+  it('are never cut: the hex keeps its width and the mode column keeps room for preview, palette name, hex and chevron', async () => {
+    const { modeMin, gridTemplate } = await import('./grid');
+    // 24px preview + "categorical.950" (15 mono chars at 14px) + "#rrggbb" + chevron, gaps and padding: about 16.5rem.
+    expect(modeMin({ mode: 'edit', flat: false })).toBeGreaterThanOrEqual(17);
+    expect(modeMin({ mode: 'read', flat: true })).toBeGreaterThanOrEqual(16);
+    expect(gridTemplate({ columns: [col, col] } as never, { mode: 'edit', flat: false, showCode: false, showDescription: false } as never)).toContain('minmax(17rem, 1fr) minmax(17rem, 1fr)');
+    expect(rule('.xp-field.is-color .xp-field-end')).toMatchObject({ flex: 'none' });
+    expect(mount(studioCellHtml(d, 'color.bg.default', col, true)).querySelector('.xp-field.is-color .xp-field-end')?.textContent).toBe('#ffffff');
   });
 });
 
@@ -210,6 +250,9 @@ describe('Cell editor spacing', () => {
     for (const sel of ['.xe-title', '.xe-pick', '.xe-ramp-host']) expect(rule(sel).padding, sel).toBe('var(--space-3) var(--xe-pad) 0');
     for (const sel of ['.xe-families', '.xe-status', '.xe-more', '.xe-pop-pv']) expect(rule(sel).margin, sel).toBe('var(--space-3) var(--xe-pad) 0');
     expect(rule('.xe-family-host').gap).toBe('var(--space-2)');
+    // The underline tabs' grey baseline runs on under "More" (the same line as the DS Tabs baseline).
+    expect(rule('.xe-family-host')).toMatchObject({ position: 'relative', 'align-items': 'flex-end' });
+    expect(rule('.xe-family-host::before')).toMatchObject({ position: 'absolute', inset: 'auto 0 0', height: 'var(--border-width-default)', 'background-color': 'var(--color-border-default)' });
     // Ramp tiles: a 32px swatch, the step number at the caption size (12px).
     expect(rule('.xe-tile-sw')).toMatchObject({ width: 'var(--size-8)', height: 'var(--size-8)' });
     expect(rule('.xe-tile-step')['font-size']).toBe('var(--typography-caption-size)');

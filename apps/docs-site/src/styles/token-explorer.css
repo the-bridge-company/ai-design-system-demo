@@ -1710,6 +1710,12 @@
   line-height: var(--typography-caption-line-height);
 }
 
+/* A hex is never cut: the mode column keeps room for the swatch, a palette name and a full #rrggbb
+   (scripts/explorer/grid.ts modeMin), and the hex itself never shrinks. */
+.xp-field.is-color .xp-field-end {
+  flex: none;
+}
+
 .xp-field.is-error .xp-field-end {
   color: var(--color-feedback-danger-text);
 }
@@ -1946,10 +1952,22 @@
 
 /* The tabs and More: the DS gap between the tabs' track and the button, never glued to it. */
 .xe-family-host {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--space-2);
   min-width: 0;
+}
+
+/* The tab list's grey baseline runs on under "More": the overflow trigger reads as part of the tab row, not a
+   detached button. Same line as the DS Tabs underline baseline (border-width-default, border-default); drawn first
+   (::before), so the tabs' signal indicator paints over it. */
+.xe-family-host::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--border-width-default);
+  background-color: var(--color-border-default);
 }
 
 .xe-family-tabs {
@@ -2989,10 +3007,10 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
   min-width: 0;
 }
 
-/* The type filter (DS SegmentedControl) never clips a type. On a desktop it keeps one row at the control height: it
-   takes its whole width and the search field gives way first (the search shrinks, the types do not). On a phone,
-   where the types have their own full line, they wrap onto a second row instead of scrolling behind the edge fade (a
-   scrolled "All 119" read as a bare "119"). Each segment keeps its label and its count together. */
+/* The type filter (DS SegmentedControl). On a desktop the toolbar is one row that never exceeds its container: the
+   search takes all the free width but never goes under size 40, the types keep their natural width when it fits,
+   and when it does not they scroll inside their group with the DS edge fade; Options always stays in view at the
+   end. On a phone, where the types have their own full line, they wrap onto a second row instead. */
 .xp-types {
   min-width: 0;
   max-width: 100%;
@@ -3000,23 +3018,22 @@ body:has([data-xe-bar]:not([hidden])) .xp[data-surface="app"] .xp-grid {
 
 @media (min-width: 861px) {
   .xp[data-surface="app"] .xp-chips {
-    flex: none;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
-  /* The search takes all the free width (no spacer splits it), the types keep their natural width, Options ends the row. */
+  /* Grows into the free width, never shrinks under its basis (size 40): the types give way instead. */
   .xp[data-surface="app"] .xp-search {
-    flex: 1 1 auto;
+    flex: 1 0 var(--size-40);
     min-width: var(--size-40);
+  }
+
+  .xp[data-surface="app"] .xp-options {
+    flex: none;
   }
 
   .xp[data-surface="app"] .xp-tools .xp-grow {
     display: none;
-  }
-
-  /* The details panel narrows the table on a laptop: there the types may give way too (the DS control scrolls its
-     segments with an edge fade) rather than push the toolbar past the table. */
-  .xp[data-surface="app"].has-detail .xp-chips {
-    flex: 0 1 auto;
   }
 }
 

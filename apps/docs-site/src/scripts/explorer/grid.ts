@@ -13,8 +13,13 @@ import { copyButton, esc, icon } from './util';
 
 export const ROW_HEIGHT = 56;
 
-/** Minimum width of a mode column in rem: Studio cells carry the alias, the value and a chevron. */
-const modeMin = (s: ExplorerState) => (s.mode === 'edit' || s.flat ? 12 : 10.5);
+/**
+ * Minimum width of a mode column in rem. Studio edit cells carry the 24px preview, the alias (a palette name such as
+ * "categorical.950", 15 mono characters), a full 7-character hex and the chevron, with their gaps and the pill's
+ * padding: 17rem keeps all of them whole (16rem in read-only Studio rows, no chevron); a narrower table scrolls
+ * sideways instead of cutting "#ff…".
+ */
+export const modeMin = (s: Pick<ExplorerState, 'mode' | 'flat'>) => (s.mode === 'edit' ? 17 : s.flat ? 16 : 10.5);
 
 /** CSS grid-template-columns for the current columns. */
 export function gridTemplate(view: View, s: ExplorerState): string {

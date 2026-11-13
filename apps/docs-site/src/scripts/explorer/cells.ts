@@ -144,7 +144,7 @@ export function studioCellHtml(d: ExplorerData, path: string, col: Column, edite
     const text = `<span class="xp-field-main mono">${esc(main)}</span>${dot}${end ? ` <span class="xp-field-end mono">${esc(end)}</span>` : ''}`;
     return `<span class="xp-field is-stack"${attrs}>${lead}<span class="xp-field-text">${text}</span>${chev}</span>`;
   }
-  return `<span class="xp-field${v.error ? ' is-error' : ''}"${attrs}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span>${chev}</span>`;
+  return `<span class="xp-field${type === 'color' && !v.error ? ' is-color' : ''}${v.error ? ' is-error' : ''}"${attrs}>${lead}<span class="xp-field-main mono">${esc(main)}</span>${dot} <span class="xp-field-end mono">${esc(end)}</span>${chev}</span>`;
 }
 
 /** "0.16, 1, 0.3, 1" for a cubic-bezier value, '' for anything else. */

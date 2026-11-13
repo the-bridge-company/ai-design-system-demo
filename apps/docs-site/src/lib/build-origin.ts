@@ -103,6 +103,17 @@ export function buildOriginLine(o: BuildOrigin): string {
 }
 
 /**
+ * The short words of an origin, for a card's person line where room is tight (Grid, Board): "Dana approved",
+ * "Dana sent it", "Approved in Figma". The list row keeps buildOriginLine.
+ */
+export function buildOriginShort(o: BuildOrigin): string {
+  if (o.kind === 'exploration') return o.self ? (o.sentBy ? `${o.sentBy} sent it` : 'Sent to developers') : `From ${o.name}`;
+  if (o.kind === 'audit') return auditOriginLine(o);
+  if (o.via === 'figma') return 'Approved in Figma';
+  return o.approvedBy ? `${o.approvedBy} approved` : 'The lead approved';
+}
+
+/**
  * The rows Being built may list, each with its origin; a row with none is left out (the rule above). Applied once where
  * the rows are read (scripts/building-data), so the page, the home line and every count read the same rows.
  */

@@ -53,6 +53,7 @@ import {
   pieceOfChange,
   pieceOfConflict,
   pieceOfExploration,
+  pieceOfGuidance,
   type ReviewPiece,
   type Viewer,
 } from '../lib/library-review';
@@ -60,6 +61,8 @@ import type { ThumbSpec } from '../lib/branch-thumb';
 import { askingScreens, type ReachProductInput } from '../lib/library-reach';
 import { previewOf } from '../lib/home-explorations';
 import { shotThumb } from '../lib/preview-shots';
+import { guidanceChangeOf } from '../lib/home-model';
+import { loadGuidanceDrafts } from './guidance-drafts';
 
 interface Pull {
   number: number;
@@ -320,10 +323,19 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
     conflictPieces = [...seenConflicts.values()];
   })().catch(() => undefined);
 
+  // Usage guidance drafted on main and flagged for review: Docs pieces, from the list and the age Home's rows read
+  // (scripts/guidance-drafts). A draft someone already sent is its open change's piece instead, never twice.
+  let guidancePieces: ReviewPiece[] = [];
+  const guidanceRead = loadGuidanceDrafts()
+    .then((drafts) => {
+      guidancePieces = drafts.filter((g) => !guidanceChangeOf(g, open)).map((g) => pieceOfGuidance(g, ds));
+    })
+    .catch(() => undefined);
+
   let closed: Pull[] = [];
   const build = () => {
     const changeList = [...changes.map((p) => changePiece(p)), ...library(closed.map((p) => ({ ...p, state: 'open' }))).map((p) => changePiece(p, true))];
-    data.pieces = mergePieces(changeList, explorationPieces, conflictPieces, linked);
+    data.pieces = [...mergePieces(changeList, explorationPieces, conflictPieces, linked), ...guidancePieces];
   };
   build();
   emit();
@@ -332,6 +344,7 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void): Promise
       statuses.set(p.number, st?.kind ?? null);
     }).then(() => (build(), emit())),
     explorationsRead.then(() => (build(), emit())),
+    guidanceRead.then(() => (build(), emit())),
     closedRead.then((c) => ((closed = c), build(), emit())),
     namesRead.then(() => emit()),
   ]);
@@ -392,6 +405,7 @@ export async function decide(p: ReviewPiece, d: Decision): Promise<string> {
     }
     return `Kept ${p.title} in both screens. ${notifiedLine(ways.map((w) => w.designer))}`;
   }
+  if (p.source.kind === 'docs') return acceptGuidance(p.source, p.title, d);
   if (p.source.kind === 'change') {
     if (d === 'add') {
       const { approveBranch } = await import('./reviews');
@@ -420,6 +434,26 @@ export async function decide(p: ReviewPiece, d: Decision): Promise<string> {
   return d === 'add' ? `Added ${p.title} to the library.` : d === 'keep' ? `Kept ${p.title} in its screen.` : `${p.asked?.designer ?? 'The designer'} is asked to use ${p.match?.label ?? 'the existing piece'} instead.`;
 }
 
+/**
+ * Adds a usage guidance draft to the library: its docs.json with the draft accepted (needsReview false, core
+ * acceptDocsText), sent as the Tier 1 docs change the editor sends, published by Bridge once the checks pass (the
+ * lead's Tier 1 publish). When Bridge cannot publish it, the change waits in review like any other Docs change.
+ */
+async function acceptGuidance(s: Extract<ReviewPiece['source'], { kind: 'docs' }>, title: string, d: Decision): Promise<string> {
+  if (d !== 'add') throw new Error(`Open ${title} to change it.`);
+  if (!s.path) throw new Error(`Bridge cannot find the file of ${title}. Open it to accept it there.`);
+  const { owner, repo, defaultBranch } = readRepo();
+  const text = (await ghGet<string>(`/repos/${owner}/${repo}/contents/${s.path}?ref=${encodeURIComponent(defaultBranch)}`, { accept: 'application/vnd.github.raw', raw: true, fresh: true })).data;
+  const [{ acceptDocsText }, docsCommit] = await Promise.all([import('@bridge-ds/core'), import('./docs-commit')]);
+  const after = acceptDocsText(text);
+  const edit = { kind: 'docs' as const, id: Math.random().toString(36).slice(2, 10), path: s.path, component: s.component, slug: s.slug ?? s.component.toLowerCase(), before: text, after };
+  const sent = await docsCommit.proposeDocs([edit], `docs(${(s.slug ?? s.component).toLowerCase()}): accept the Claude usage guidance`, '', null, undefined, { publish: true });
+  if (sent.kind === 'suggestion') return `Sent ${title} as a suggestion.`;
+  const [{ askBridgeToShip }, session] = await Promise.all([import('../lib/values-ship'), import('./github-session')]);
+  const answer = await askBridgeToShip(`${owner}/${repo}`, sent.number, { bearer: session.signedInWithGitHub() ? session.getToken() : null }, undefined, 'tier1');
+  return answer?.armed ? `Added ${title} to the library. It publishes once the checks pass.` : `Sent ${title} for review.`;
+}
+
 /** Picks one way of a conflict (or both): the exploration page's own choice, kept on both explorations. */
 export async function pickWay(p: ReviewPiece, pick: string, myName: string | null): Promise<string> {
   const c = p.conflict;
@@ -439,6 +473,7 @@ export async function pickWay(p: ReviewPiece, pick: string, myName: string | nul
 export async function commentOn(p: ReviewPiece, text: string): Promise<string> {
   const words = text.trim();
   if (!words) throw new Error('Write a comment first.');
+  if (p.source.kind === 'docs') throw new Error(`${p.title} has no change to comment on yet. Open it to edit the draft.`);
   await commentOnGitHub(clientFor(p.source.repo), p.source.number, words);
   return p.asked?.designer ? `Comment sent. ${p.asked.designer} sees it on ${p.asked.name}.` : 'Comment sent.';
 }

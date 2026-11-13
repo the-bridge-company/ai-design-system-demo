@@ -51,7 +51,8 @@ describe('Being built', () => {
     expect(container.querySelectorAll('section.bl-group > h2.bl-h2 .count-tag').length).toBeGreaterThan(0);
     expect(screen.queryByText('Avatar: add an xs size')).toBeNull();
     expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
-    expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
+    // One row button only: Pick up, on a request nobody picked up yet.
+    expect([...container.querySelectorAll('.sh-row-item button')].every((b) => b.textContent === 'Pick up')).toBe(true);
     await expectNoAxeViolations(container);
   });
 
@@ -92,15 +93,16 @@ describe('Being built', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Board' }));
     const board = screen.getByRole('region', { name: 'Board, one column per status' });
     const heads = [...board.querySelectorAll('.ex-col-h')].map((h) => h.textContent);
-    expect(heads).toEqual(['Ready to build 2', 'Being built 2', 'Checking 1', 'Shipped, last 30 days 1']);
-    expect(board.querySelectorAll('.sh-card-item')).toHaveLength(6);
+    // The filter's statuses only (Not shipped yet): the Board counts what List and Grid count.
+    expect(heads).toEqual(['Ready to build 2', 'Being built 2', 'Checking 1']);
+    expect(board.querySelectorAll('.sh-card-item')).toHaveLength(5);
     expect(board.querySelectorAll('.sh-card-tag')).toHaveLength(0);
     // Explorations' person line on every card: who has it now, then when it last moved, never "Asked by".
     const names = [...board.querySelectorAll('.sh-card-name')].map((n) => n.textContent ?? '');
     expect(names.some((n) => n.startsWith('Dana'))).toBe(true);
     expect(names.every((n) => /·/.test(n))).toBe(true);
     expect(board.textContent).not.toMatch(/Asked by|Shipped by|builds it/);
-    expect(container.querySelector('.bl-bar')!.textContent).toContain('6 changes.');
+    expect(container.querySelector('.bl-bar')!.textContent).toContain('5 changes.');
     await expectNoAxeViolations(container);
     // Filtered to In review: one column.
     await tick(/^Status:/, /^Ready to build/);
@@ -223,7 +225,8 @@ describe('Being built', () => {
     expect(container.textContent).not.toContain("Claude's fixes\n");
     expect(container.querySelector('a[href="/studio/explorations/?pr=598"]')).toBeTruthy();
     expect(container.innerHTML).not.toContain('github.com/peterbono');
-    expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
+    // One row button only: Pick up, on a request nobody picked up yet.
+    expect([...container.querySelectorAll('.sh-row-item button')].every((b) => b.textContent === 'Pick up')).toBe(true);
     // Shipped: the fix stays; Not shipped yet: it leaves.
     await tick(/^Status:/, /^Ready to build/);
     await tick(/^Status:/, /^Being built/);
@@ -358,7 +361,10 @@ describe('Being built', () => {
     }
     expect(container.textContent).not.toMatch(/—/);
     // Marked ready for review by the developers: In review, with who must review under its tag.
-    expect(screen.getByText('Billing screen').closest('li')!.querySelector('.sh-row-status-note')!.textContent).toBe('Waiting for a reviewer');
+    // Who it waits on ends the row's line: one row anatomy, no second line under the tag.
+    const billing = screen.getByText('Billing screen').closest('li')!;
+    expect(billing.querySelector('.sh-row-status-note')).toBeNull();
+    expect(billing.querySelector('.sh-row-line')!.textContent).toContain('Waiting for a reviewer');
     await userEvent.click(screen.getByRole('button', { name: /^Status:/ }));
     const menu = await screen.findByRole('menu');
     expect(within(menu).getAllByRole('menuitemcheckbox').map((i) => i.textContent)).toEqual(['Not shipped yet', 'Ready to build3', 'Being built2', 'Checking2', 'Shipped2']);
@@ -371,7 +377,8 @@ describe('Being built', () => {
     // Shipped, the last 30 days.
     await tick(/^Status:/, /^Shipped/);
     expect(screen.getByText('Wishlist')).toBeTruthy();
-    expect(container.querySelectorAll('.sh-row-item button')).toHaveLength(0);
+    // One row button only: Pick up, on a request nobody picked up yet.
+    expect([...container.querySelectorAll('.sh-row-item button')].every((b) => b.textContent === 'Pick up')).toBe(true);
     await expectNoAxeViolations(container);
   });
 

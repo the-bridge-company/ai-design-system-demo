@@ -634,7 +634,7 @@ export function wayWords(looks: readonly WayLook[], today: number | null): { siz
     if (l.filled) words.push('filled');
     if (l.borderless) words.push('no border');
     if (l.shadowless) words.push('no shadow');
-    if (!words.length) words.push(l.padding !== null ? `room inside ${l.padding}` : 'another look');
+    if (!words.length) words.push(l.padding !== null ? `padding ${l.padding}` : 'another look');
     return { size: cap(words.join(', ')), thanToday: thanToday && words.length === 1 };
   });
 }

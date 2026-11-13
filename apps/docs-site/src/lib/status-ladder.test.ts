@@ -38,7 +38,7 @@ describe('one status ladder on every surface', () => {
   it('uses only ladder words for tags, filters, groups and Board columns', () => {
     for (const w of [...Object.values(STATE_LABEL), ...Object.values(BUILD_STATE_LABEL), ...PRODUCT_STATES.map((s) => s.label), DECIDED_LABEL.building]) expect(LADDER_WORDS.has(w)).toBe(true);
     expect(IN_PROGRESS.map((s) => STATE_LABEL[s])).toEqual(['Exploring', 'In review', 'Ready to build', 'Being built', 'Checking']);
-    expect(BOARD_COLUMNS.map((c) => c.label)).toEqual(['Exploring', 'In review', 'Ready to build', 'Being built', 'Checking', 'Shipped, last 30 days']);
+    expect(BOARD_COLUMNS.map((c) => c.label)).toEqual(['Exploring', 'In review', 'Ready to build', 'Being built', 'Checking', 'Shipped (30 days)']);
   });
 
   it('says who it waits on as a second line, never as the tag', () => {

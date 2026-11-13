@@ -107,7 +107,7 @@ export function qualityModel(input: QualityInput): QualityModel {
             severity: 'warn' as const,
             title: `${c.name} guidance is a draft`,
             detail: 'Drafted from its code. A reviewer accepts it or edits it.',
-            status: { label: 'Draft by Claude, needs review', group: 'waiting' as const },
+            status: { label: 'Draft by Claude AI, needs review', group: 'waiting' as const },
             action: { label: 'Review', href: input.editHref(c.slug) },
           },
     );

@@ -30,7 +30,7 @@ const VERB: Record<DecisionKind, string> = {
   'asked-someone': 'asked someone else to review',
   handed: 'handed it over',
   archived: 'archived it',
-  'pm-ok': 'said it looks good',
+  'pm-ok': 'said it looks right',
   'pm-changes': 'asked for changes',
   'pm-call': 'agreed in a call',
 };

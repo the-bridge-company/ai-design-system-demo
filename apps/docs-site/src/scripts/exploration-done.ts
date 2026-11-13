@@ -31,7 +31,7 @@ export function pmGateStop(x: { review: Pick<TeamReview, 'pms'>; asked: ReviewsA
   if (!pm) return null;
   const said = pmOpinionOf(x.body)?.kind;
   if (said === 'pm-ok' || said === 'pm-call') return null;
-  return said === 'pm-changes' ? `${pm.name} asked for changes. Answer them first: nothing goes to the developers before ${pm.name} says it looks good.` : `Share it with ${pm.name} first: nothing goes to the developers before ${pm.name} says it looks good.`;
+  return said === 'pm-changes' ? `${pm.name} asked for changes. Answer them first: nothing goes to the developers before ${pm.name} says it looks right.` : `Share it with ${pm.name} first: nothing goes to the developers before ${pm.name} says it looks right.`;
 }
 
 export function askDoneExploring(

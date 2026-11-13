@@ -1,5 +1,5 @@
 // Studio Changes, a pull request's "Docs" section: the docs.json files it changes, which of them hold prose Claude
-// drafted and nobody reviewed yet ("Draft by Claude, needs review", with Accept and Edit). Pure, tested in
+// drafted and nobody reviewed yet ("Draft by Claude AI, needs review", with Accept and Edit). Pure, tested in
 // pr-docs.test.ts; scripts/reviews/docs-section.ts reads the files and wires the buttons.
 import type { StatusTone } from './changes';
 
@@ -47,7 +47,7 @@ export function prDocRows(entries: { path: string; text: string | null }[]): PrD
 
 /** Badge of a row: grey while a draft waits for review (a calm wait, lib/status-tag), green once reviewed. */
 export const PR_DOC_PILL: Record<PrDocState, { label: string; tone: StatusTone }> = {
-  review: { label: 'Draft by Claude, needs review', tone: 'neutral' },
+  review: { label: 'Draft by Claude AI, needs review', tone: 'neutral' },
   reviewed: { label: 'Reviewed', tone: 'success' },
   written: { label: 'Written by a person', tone: 'neutral' },
   unreadable: { label: 'Could not read', tone: 'neutral' },

@@ -2788,7 +2788,7 @@ export function pmGateStop(body: unknown, pm: { name: string } | null): string |
   const all = explorationBlockOf(body)?.decisions;
   const last = Array.isArray(all) ? [...all].reverse().find((d) => typeof d?.kind === 'string' && (d.kind as string).startsWith('pm-')) : null;
   if (last?.kind === 'pm-ok' || last?.kind === 'pm-call') return null;
-  return last?.kind === 'pm-changes' ? `${pm.name} asked for changes. Answer them first: nothing goes to the developers before ${pm.name} says it looks good.` : `Share it with ${pm.name} first: nothing goes to the developers before ${pm.name} says it looks good.`;
+  return last?.kind === 'pm-changes' ? `${pm.name} asked for changes. Answer them first: nothing goes to the developers before ${pm.name} says it looks right.` : `Share it with ${pm.name} first: nothing goes to the developers before ${pm.name} says it looks right.`;
 }
 
 async function checkPmGate(ctx: Ctx, c: Call, body: unknown, r: { decides: boolean; needs: boolean }): Promise<void> {

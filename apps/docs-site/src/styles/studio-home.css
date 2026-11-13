@@ -396,10 +396,11 @@
 }
 
 /* Who explores the screen: a small face on its top-left corner, ringed with the surface so it reads on any capture. */
+/* Inset by more than its ring (space-2 > the strong border), so the ring never meets the tile's clipped edge. */
 .pf-pane-who {
   position: absolute;
-  inset-block-start: var(--space-1-5);
-  inset-inline-start: var(--space-1-5);
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
   display: flex;
   border-radius: var(--radius-pill);
   outline: var(--border-width-strong) solid var(--color-surface-default);
@@ -411,6 +412,28 @@
   inset-block-end: var(--space-1-5);
   inset-inline: var(--space-1-5) auto;
   color: var(--color-text-default);
+}
+
+/* The folder's line: one line. Each clause ("13 changes in review") stays whole with its dot in front; a clause that
+   does not fit wraps to a second line, which the one-line box hides, so the line never ends on a dot. */
+.pf-line {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  max-block-size: var(--typography-meta-line-height);
+}
+
+.pf-line > span {
+  white-space: nowrap;
+}
+
+/* A phone stacks the folders in one column: the mosaic keeps a screen's proportions instead of a short, very wide strip
+   that showed only the white top of a capture (the Acme CRM folder read blank). */
+@media (max-width: 640px) {
+  .pf-mosaic {
+    height: auto;
+    aspect-ratio: 16 / 10;
+  }
 }
 
 /* No screen yet (the library, a product nothing explored): the Field Guide drawing on the subtle surface, the same
@@ -506,7 +529,9 @@
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
-.sh-card-title {
+/* Scoped under the card's head so the DS Link's own display never wins: a title wraps to two lines, then an ellipsis
+   (owner decision 2026-11-12); the whole title is in the link's title and accessible name. */
+.sh-card-head > .sh-card-title {
   display: -webkit-box;
   flex: 1 1 auto;
   min-width: 0;
@@ -536,11 +561,29 @@
   max-width: 100%;
 }
 
+/* Who, then when: the name may take an ellipsis when the card is narrow, the age never does ("2 days a..." cut the
+   meaning): it keeps its whole words at the end of the line. */
 .sh-card-name {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.sh-card-by {
   overflow: hidden;
   min-width: 0;
   text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.sh-card-name > .sh-card-product {
+  flex: none;
+}
+
+/* Who a card waits on (lib/home-explorations cardNote): short words, whole, wrapping if they must, never an ellipsis
+   mid-sentence. */
+.sh-card-wait {
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .sh-card-who {

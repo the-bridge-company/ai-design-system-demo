@@ -10,7 +10,9 @@ export const thumbOf = (p: ReviewPiece, thumbs: Map<string, ThumbSpec>): ThumbSp
   const t = thumbs.get(p.key);
   if (t) return t;
   if (p.swatch) return { kind: 'color', token: '', before: p.swatch.before, after: p.swatch.after };
-  return { kind: 'icon', icon: p.kind === 'Docs' ? 'guidance' : tokenGroup(p.category) ? 'token' : 'component' };
+  // Docs: the lines-of-text preview every docs change shows (lib/branch-thumb), a guidance draft on main included.
+  if (p.kind === 'Docs') return { kind: 'text' };
+  return { kind: 'icon', icon: tokenGroup(p.category) ? 'token' : 'component' };
 };
 
 /** The before side is empty for something new. */

@@ -13,14 +13,26 @@ import { copyButton, esc, icon } from './util';
 
 export const ROW_HEIGHT = 56;
 
-/** Minimum width of a mode column in rem: Studio cells carry the alias, the value and a chevron. */
-const modeMin = (s: ExplorerState) => (s.mode === 'edit' || s.flat ? 12 : 10.5);
+/**
+ * Minimum width of a mode column in rem. Studio edit cells carry the 24px preview, the alias (a palette name such as
+ * "categorical.950", 15 mono characters), a full 7-character hex and the chevron, with their gaps and the pill's
+ * padding: 17rem keeps all of them whole (16rem in read-only Studio rows, no chevron); a narrower table scrolls
+ * sideways instead of cutting "#ff…".
+ */
+export const modeMin = (s: Pick<ExplorerState, 'mode' | 'flat'>) => (s.mode === 'edit' ? 17 : s.flat ? 16 : 10.5);
+
+/**
+ * Minimum width of the name column in rem. Studio keeps a typical name on one line (about 22 mono characters, such
+ * as "color.feedback.danger" or "color.bg.zone", with the row menu): beyond that the name ends in an ellipsis with
+ * the full path on hover, and when the details panel narrows the page the table scrolls sideways instead.
+ */
+export const nameMin = (s: Pick<ExplorerState, 'mode' | 'flat'>) => (s.mode === 'edit' || s.flat ? 15 : 9.5);
 
 /** CSS grid-template-columns for the current columns. */
 export function gridTemplate(view: View, s: ExplorerState): string {
   const modes = view.columns.map(() => `minmax(${modeMin(s)}rem, 1fr)`).join(' ');
-  // Studio gives the name the larger share: names stay on one line next to the details panel at laptop widths.
-  const name = s.mode === 'edit' || s.flat ? 'minmax(9.5rem, 1.6fr)' : 'minmax(9.5rem, 1.1fr)';
+  // Studio gives the name the larger share.
+  const name = s.mode === 'edit' || s.flat ? `minmax(${nameMin(s)}rem, 1.6fr)` : `minmax(${nameMin(s)}rem, 1.1fr)`;
   return [name, modes, s.showCode ? 'minmax(13rem, 0.9fr)' : '', s.showDescription ? 'minmax(16rem, 1.2fr)' : ''].filter(Boolean).join(' ');
 }
 
@@ -67,10 +79,16 @@ function rowHtml(d: ExplorerData, t: XToken, view: View, s: ExplorerState, secti
     : studio
       ? ''
       : copyButton(codeSyntax(t.path, t.tier, s.syntax), `${SYNTAX_LABEL[s.syntax]} ${codeSyntax(t.path, t.tier, s.syntax)}`);
-  // Studio: a long name wraps at its dots (never mid-segment) instead of hiding behind an ellipsis when the details
-  // panel narrows the table. The Library keeps one line with the full name on hover.
-  const shownName = studio ? esc(rel).replace(/\./g, '.<wbr>') : esc(rel);
-  const name = `<div role="rowheader" class="xp-td is-name" aria-colindex="1" tabindex="-1" data-col="0"><span class="xp-name"><span class="xp-name-main mono"${studio ? '' : ` title="${esc(t.path)}"`}>${shownName}</span>${changed}${unused}</span>${nameEnd}</div>`;
+  // One line with the full path on hover on a desktop, in every row state (selected, hovered, menu shown): the name
+  // column keeps room for a typical name (nameMin), beyond it an ellipsis, and the table scrolls sideways rather
+  // than squeezing it. On a phone, where a Studio name has the whole row, a long name wraps at its dots, never
+  // mid-segment. Two renderings, one shown per breakpoint (token-explorer.css), because a break point (<wbr>) can
+  // still break a nowrap line in some browsers: the desktop one has none at all. The hidden one is display: none,
+  // so assistive technology reads the name once.
+  const shownName = studio
+    ? `<span class="xp-name-line">${esc(rel)}</span><span class="xp-name-wrap">${esc(rel).replace(/\./g, '.<wbr>')}</span>`
+    : esc(rel);
+  const name = `<div role="rowheader" class="xp-td is-name" aria-colindex="1" tabindex="-1" data-col="0"><span class="xp-name"><span class="xp-name-main mono" title="${esc(t.path)}">${shownName}</span>${changed}${unused}</span>${nameEnd}</div>`;
   const edited = editable ? editedModes(t.path) : new Set<string>();
   const cells = view.columns
     .map(
@@ -140,7 +158,7 @@ export function renderGrid(host: HTMLElement, d: ExplorerData, view: View, s: Ex
   host.style.setProperty('--xp-n', String(view.columns.length));
   // More than two value columns (every brand and theme): a phone stacks them, one labeled line each (token-explorer.css).
   host.toggleAttribute('data-many', view.columns.length > 2);
-  host.style.setProperty('--xp-minw', `${9.5 + modeMin(s) * view.columns.length + (s.showCode ? 13 : 0) + (s.showDescription ? 16 : 0)}rem`);
+  host.style.setProperty('--xp-minw', `${nameMin(s) + modeMin(s) * view.columns.length + (s.showCode ? 13 : 0) + (s.showDescription ? 16 : 0)}rem`);
   host.setAttribute('aria-colcount', String(colCount(view, s)));
   host.setAttribute('aria-rowcount', String(1 + (s.flat ? 0 : sections.length) + view.visible.length));
   host.setAttribute('aria-readonly', String(s.mode !== 'edit'));

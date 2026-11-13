@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-13T01:20:37.545Z",
-  "durationMs": 169989,
+  "createdAt": "2026-11-13T01:34:55.204Z",
+  "durationMs": 212887,
   "base": {
-    "ref": "2c4a094695cf1707f7ffa7375bd620b9aca01f06",
-    "sha": "2c4a094695cf1707f7ffa7375bd620b9aca01f06"
+    "ref": "9d24729f40c4d6a88ab21be4ae59af397ae102ad",
+    "sha": "9d24729f40c4d6a88ab21be4ae59af397ae102ad"
   },
   "head": {
-    "ref": "9dd956a8b322366105dd8d2ce219f69434d4e7a5",
-    "sha": "9dd956a8b322366105dd8d2ce219f69434d4e7a5"
+    "ref": "13224d2a3f955c621a499a13e5119a18b3f18f3e",
+    "sha": "13224d2a3f955c621a499a13e5119a18b3f18f3e"
   },
   "options": {
     "only": [
@@ -50,6 +50,8 @@
       "apps/docs-site/src/lib/demo-in-browser.test.ts",
       "apps/docs-site/src/lib/demo-in-browser.ts",
       "apps/docs-site/src/lib/demo.ts",
+      "apps/docs-site/src/lib/lead-decisions.test.ts",
+      "apps/docs-site/src/lib/lead-decisions.ts",
       "apps/docs-site/src/lib/review-lines.test.ts",
       "apps/docs-site/src/lib/review-lines.ts",
       "apps/docs-site/src/lib/reviews-settings.ts",
@@ -119,8 +121,8 @@
   },
   "summary": {
     "shots": 60,
-    "changed": 12,
-    "unchanged": 48,
+    "changed": 13,
+    "unchanged": 47,
     "added": 0,
     "removed": 0,
     "errors": 0,
@@ -1106,11 +1108,18 @@
       "storyId": "data-display-avatar--broken-image",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 732,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 0.09,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 720,
+          "width": 48,
+          "height": 32
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -1121,7 +1130,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__data-display-avatar--broken-image__ocean-dark.png",
+        "after": "after/story__data-display-avatar--broken-image__ocean-dark.png",
+        "diff": "diff/story__data-display-avatar--broken-image__ocean-dark.png",
+        "composite": "composite/story__data-display-avatar--broken-image__ocean-dark.png"
+      }
     },
     {
       "key": "story__data-display-card--all-states__ocean-dark",

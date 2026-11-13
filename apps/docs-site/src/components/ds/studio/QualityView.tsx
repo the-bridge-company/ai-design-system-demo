@@ -68,7 +68,14 @@ function FindingRow({ f }: { f: Finding }) {
         <Badge tone={TONE[f.status.group]} className={statusTagClass(TONE[f.status.group], "ql-badge")}>
           {f.status.label}
         </Badge>
-        {f.action ? <Go href={f.action.href} label={f.action.label} title={f.title} /> : <span />}
+        {/* The row's action is the same DS Button as Home's rows (D8), never a text link on one surface and a button on another. */}
+        {f.action ? (
+          <ButtonLink variant="secondary" size="sm" className="ql-act" href={safeUrl(f.action.href, '#')} aria-label={`${f.action.label}: ${f.title}`} {...external(safeUrl(f.action.href, '#'))}>
+            {f.action.label}
+          </ButtonLink>
+        ) : (
+          <span />
+        )}
       </div>
     </li>
   );
@@ -137,13 +144,11 @@ function PillarViz({ viz }: { viz: NonNullable<Pillar['viz']> }) {
       </ul>
     );
   const left = viz.total - viz.reviewed - viz.drafted;
+  // One bar, not a dot per component (D8): 53 dots wrapped and left one orphan on its own line.
   return (
     <div className="ql-viz">
-      <span className="ql-dots" role="img" aria-label={`${viz.reviewed} reviewed, ${viz.drafted} drafted, ${left} missing`}>
-        {Array.from({ length: viz.total }, (_, i) => (
-          <span key={i} className={i < viz.reviewed ? 'is-ok' : i < viz.reviewed + viz.drafted ? 'is-draft' : undefined} />
-        ))}
-      </span>
+      {/* The figure above and the key under it say it: the bar is a picture, hidden from screen readers. */}
+      <Progress value={viz.reviewed} max={viz.total} size="sm" tone="signal" className="ql-meter" aria-hidden="true" />
       {viz.reviewed < viz.total ? (
         <span className="ql-dots-key">
           {viz.drafted ? <span className="is-draft">{viz.drafted} drafted</span> : null}
@@ -332,7 +337,8 @@ function GuidanceSection({ guidance }: { guidance: QualityViewProps['guidance'] 
       <h2 id={HEALTH_SECTION.guidance} className="ql-h">
         Documentation
       </h2>
-      <p className="ql-muted ql-lead">{guidance.lead}</p>
+      {/* The card above says the count ("52 of 53"): the section lists what is left, the sentence only when nothing is. */}
+      {guidance.findings.length === 0 && <p className="ql-muted ql-lead">{guidance.lead}</p>}
       {guidance.findings.length > 0 && (
         <ul className="fg-card ql-list">
           {guidance.findings.map((f) => (

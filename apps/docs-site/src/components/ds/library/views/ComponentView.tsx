@@ -183,6 +183,9 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
         {figma}
         {ahead}
 
+        {/* The tabs first (D13, owner 2026-11-13): on the first screen, above the preview, never 900px down under it. */}
+        {tabs ?? <ComponentTabs name={c.name} changelogCount={notes.length} />}
+
         {story && storybook && <StoryMissing name={c.name} code={exampleCode(c.name, spec?.children)} />}
         {story && storybook && (
           <section className="hero-stage" data-view="split" aria-label={`${c.name} preview`} data-sb-needs-story="">
@@ -225,7 +228,6 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
           </Alert>
         )}
 
-        {tabs ?? <ComponentTabs name={c.name} changelogCount={notes.length} />}
 
         <div className="cp-layout">
           <div className="cp-body">

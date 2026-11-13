@@ -659,3 +659,10 @@ a.ql-next {
 .ql-steps .mono {
   overflow-wrap: anywhere;
 }
+
+/* A bar that is only a picture (aria-hidden: its figure is written next to it) drops the Base UI progressbar's hidden
+   "x" glyph, so the card's text never reads "x" (D8). Screen readers skip the bar already. */
+.ql-viz [role="progressbar"][aria-hidden="true"] > [role="presentation"],
+.ql-metric [role="progressbar"][aria-hidden="true"] > [role="presentation"] {
+  display: none;
+}

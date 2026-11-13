@@ -50,3 +50,17 @@ describe('cast faces', () => {
     expect(namedFace('Priya Shah')).toEqual({ login: '~priya-shah', name: 'Priya Shah', avatar: null });
   });
 });
+
+describe('Dana and Ann drawn apart (D15)', () => {
+  it("Ann is drawn from a seed whose hair is neither Dana's nor a look-alike of it", async () => {
+    const { faceRecipe } = await import('@bridge-ds/react/avatar-illustrated');
+    const { lookAlikesOf } = await import('./team-faces');
+    const dana = faceRecipe(drawingSeed(CAST_FACE_SEEDS.dana)).hair;
+    const ann = faceRecipe(drawingSeed(CAST_FACE_SEEDS.ann)).hair;
+    expect(drawingSeed(CAST_FACE_SEEDS.ann)).toBe('ann-11');
+    expect(ann).not.toBe(dana);
+    expect(lookAlikesOf(dana).has(ann)).toBe(false);
+    // Only the drawing moves: her face seed (and every lookup by it) stays the cast's.
+    expect(CAST_FACE_SEEDS.ann).toBe('~ann');
+  });
+});

@@ -3023,24 +3023,32 @@
 }
 
 .hp-ldec-b1 {
-  transform: translate(0,calc(var(--_u) * -18)) scale(0.96);
+  --_s: 0.96;
+  transform: translate(0,calc(var(--_u) * -24)) scale(0.96);
   opacity: 0.9;
 }
 
 .hp-ldec-b2 {
-  transform: translate(0,calc(var(--_u) * -36)) scale(0.92);
+  --_s: 0.92;
+  transform: translate(0,calc(var(--_u) * -48)) scale(0.92);
   opacity: 0.75;
 }
 
 .hp-ldec-join {
-  transform: translate(0,calc(var(--_u) * -54)) scale(0.88);
+  --_s: 0.88;
+  transform: translate(0,calc(var(--_u) * -72)) scale(0.88);
   opacity: 0.6;
   animation: hp-ldecJoin calc(var(--motion-duration-moderate) * 45) var(--motion-easing-standard) infinite both;
 }
 
 .hp-ldec-bl {
-  height: calc(var(--_u) * 19);
-  padding: 0 calc(var(--_u) * 24);
+  /* Each waiting card shows a 24u strip above the next (D16): its label 6u under the card's top edge, never touching it. */
+  /* The content box is one 16u text line under a 6u inset: every label's text starts 6u down, whatever sits before it
+     (a face, the agent mark, an initial), each centered on that line. */
+  box-sizing: border-box;
+  /* Divided by the card's own scale (--_s), so the inset reads 6u on screen on every card, the nearest and the furthest. */
+  height: calc(var(--_u) * 16 + var(--_u) * 6 / var(--_s, 1));
+  padding: calc(var(--_u) * 6 / var(--_s, 1)) calc(var(--_u) * 24) 0;
   display: flex;
   align-items: center;
   gap: calc(var(--_u) * 8);
@@ -3357,13 +3365,13 @@
   0%,
   6% {
     opacity: 0;
-    transform: translate(0,calc(var(--_u) * -84)) scale(0.84);
+    transform: translate(0,calc(var(--_u) * -102)) scale(0.84);
   }
 
   18%,
   100% {
     opacity: 0.6;
-    transform: translate(0,calc(var(--_u) * -54)) scale(0.88);
+    transform: translate(0,calc(var(--_u) * -72)) scale(0.88);
   }
 }
 
@@ -3397,7 +3405,7 @@
   }
 
   .hp-ldec-bl {
-    padding: 0 calc(var(--_u) * 18);
+    padding-inline: calc(var(--_u) * 18);
   }
 
 }

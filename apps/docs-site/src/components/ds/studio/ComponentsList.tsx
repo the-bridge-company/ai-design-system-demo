@@ -46,6 +46,23 @@ export function exceptions(r: Pick<ComponentListRow, 'guidance' | 'status'>): { 
 /** Thumbnails show; they never take focus or clicks (React 18 has no typed `inert` prop). */
 const INERT = { inert: '' } as Record<string, string>;
 
+/**
+ * The "In Figma" cell in two words (batch D, D9): Yes or No, never a third value in the column. A layout helper (no
+ * drawing, core figmaCell "Auto layout") reads No, with "Use auto layout" as its quiet note; other states keep theirs.
+ */
+export function figmaWords(f: { label: string; title?: string } | undefined): { label: string; note: string | null; title?: string } | undefined {
+  if (!f) return undefined;
+  if (f.label === 'Auto layout') return { label: 'No', note: 'Use auto layout', ...(f.title ? { title: f.title } : {}) };
+  return { label: f.label, note: null, ...(f.title ? { title: f.title } : {}) };
+}
+
+/**
+ * A thumbnail that would read as nothing at list size (D9): the screen-reader-only helper draws no pixels, so its thumb
+ * says what it is; an icon alone grows to 20px instead of a near-invisible glyph.
+ */
+const SR_ONLY = new Set(['visuallyhidden', 'visually-hidden']);
+const ICON_ONLY = new Set(['icon']);
+
 const words = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
 export interface ComponentsListProps {
@@ -124,8 +141,10 @@ export default function ComponentsList({ rows, products, Thumb, onOpen, openSlug
               >
                 <TableCell role="rowheader" className="cm-name">
                   <span className="cm-name-in">
-                    <span className="cm-thumb" data-fit-frame="" aria-hidden="true" {...INERT}>
-                      {r.preview && (
+                    <span className="cm-thumb" data-fit-frame="" data-fit-max={ICON_ONLY.has(r.slug) ? '1.7' : undefined} aria-hidden="true" {...INERT}>
+                      {SR_ONLY.has(r.slug) ? (
+                        <span className="cm-thumb-note">Screen-reader only</span>
+                      ) : r.preview && (
                         <span className="cm-thumb-fit" data-fit="">
                           <Thumb node={thumbnailNode(r.preview)!} />
                         </span>
@@ -163,8 +182,9 @@ export default function ComponentsList({ rows, products, Thumb, onOpen, openSlug
                 <TableCell className="cm-col-dev cm-muted">{words(r.examples, 'example')}</TableCell>
                 <TableCell className="cm-col-dev cm-muted">{words(r.tokensTotal, 'token')}</TableCell>
                 {withFigma && (
-                  <TableCell className="cm-col-dev cm-muted" title={r.figma?.title}>
-                    {r.figma?.label}
+                  <TableCell className="cm-col-dev cm-muted" title={figmaWords(r.figma)?.title}>
+                    {figmaWords(r.figma)?.label}
+                    {figmaWords(r.figma)?.note && <span className="cm-figma-note">{figmaWords(r.figma)!.note}</span>}
                   </TableCell>
                 )}
               </TableRow>

@@ -1,5 +1,21 @@
 # @bridge-ds/cli
 
+## 0.22.0
+
+### Minor Changes
+
+- b65f98b: `bridge audit` finds component imitations: hand-made versions of a pattern a design system component covers, often built out of DS parts so a count of DS versus non-DS elements called them adoption. It flags `role="tab"`, `"tablist"`, `"tabpanel"`, `"radiogroup"`, `"dialog"`, `"menu"`, `"combobox"` and the like outside the DS component that renders them (a DS Link with `role="tab"` included), data attributes that wire a tab by hand (`data-set-tab`), `aria-pressed` toggle groups, count spans instead of the count Badge, a button class on a link, style sheet rules that name a tab, chip, pill, badge, button, switch, dialog or toast and draw its border, background or radius by hand, interactive markup built in strings (`<button role="tab">` in a template literal), and separators typed between elements. The patterns come from the DS component inventory: a pattern is checked only when the DS exports its component, every other component covers its own kebab name, and the DS component sources are never checked. A class set only on the DS component it names is an override, not an imitation. Each finding names the file, line, pattern and the DS component to use. An imitation is not adoption: the element leaves the component adoption counts. The report gains `metrics.imitations`, an `imitations` summary with top fixes, `files[].imitations`, and the delta against a baseline; the CLI and the Markdown summary print them; `bridge-audit-ignore-next-line: reason` comments and the allowlist cover imitations too. `bridge_audit` returns the same.
+- c31c0b2: `bridge audit --no-regress` now also fails when component imitations go up since the baseline (skipped while the baseline was written before imitation detection). Banner gets `appearance="harbor"`: the light Harbor zone (`color.bg.zone`) for a designer note or a Field Guide moment. The docs site's Library review designer note uses it again, and the docs site audit baseline records the current imitation count.
+- 35e5ca0: `bridge explore done` says which reviews were asked and to whom, or why it went straight to Ready to build; `bridge explore list` prints the In review line (who and why it waits).
+
+### Patch Changes
+
+- Updated dependencies [b65f98b]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [35e5ca0]
+  - @bridge-ds/mcp@1.0.0
+  - @bridge-ds/visual@0.3.30
+
 ## 0.21.2
 
 ### Patch Changes

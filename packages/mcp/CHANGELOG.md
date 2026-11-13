@@ -1,5 +1,30 @@
 # @bridge-ds/mcp
 
+## 1.0.0
+
+### Major Changes
+
+- 35e5ca0: `bridge_promote_exploration` asks the two reviews and returns `reviews`, `status` (`in-review` or `ready-to-build`, replacing `waiting-for-lead` and `done-exploring`) and `waitingFor`. `bridge_continue_exploration` returns `designReviewWords` and the library answer per piece (`leadWords` stays as a deprecated alias for 2 releases); list tools carry `waitingFor`, `bridge_what_needs_me` names each item's `hat`, and `bridge_get_settings` / `bridge_get_config` name both roles.
+
+  Major because `bridge_promote_exploration`'s `status` values changed: a client comparing `status` to `waiting-for-lead` or `done-exploring` breaks. For 2 releases the result also carries `legacyStatus` with the old value (and `leads` with the design owners on `in-review`), so such a client switches to `legacyStatus` without other changes. No tool takes an exploration status as input.
+
+### Patch Changes
+
+- b65f98b: `bridge audit` finds component imitations: hand-made versions of a pattern a design system component covers, often built out of DS parts so a count of DS versus non-DS elements called them adoption. It flags `role="tab"`, `"tablist"`, `"tabpanel"`, `"radiogroup"`, `"dialog"`, `"menu"`, `"combobox"` and the like outside the DS component that renders them (a DS Link with `role="tab"` included), data attributes that wire a tab by hand (`data-set-tab`), `aria-pressed` toggle groups, count spans instead of the count Badge, a button class on a link, style sheet rules that name a tab, chip, pill, badge, button, switch, dialog or toast and draw its border, background or radius by hand, interactive markup built in strings (`<button role="tab">` in a template literal), and separators typed between elements. The patterns come from the DS component inventory: a pattern is checked only when the DS exports its component, every other component covers its own kebab name, and the DS component sources are never checked. A class set only on the DS component it names is an override, not an imitation. Each finding names the file, line, pattern and the DS component to use. An imitation is not adoption: the element leaves the component adoption counts. The report gains `metrics.imitations`, an `imitations` summary with top fixes, `files[].imitations`, and the delta against a baseline; the CLI and the Markdown summary print them; `bridge-audit-ignore-next-line: reason` comments and the allowlist cover imitations too. `bridge_audit` returns the same.
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- Updated dependencies [06282ec]
+- Updated dependencies [7ec2e45]
+- Updated dependencies [b65f98b]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [1fb3e59]
+- Updated dependencies [16f29b8]
+- Updated dependencies [9ae871c]
+- Updated dependencies [9aecdee]
+- Updated dependencies [35e5ca0]
+  - @bridge-ds/core@0.36.0
+  - @bridge-ds/visual@0.3.30
+
 ## 0.17.0
 
 ### Minor Changes

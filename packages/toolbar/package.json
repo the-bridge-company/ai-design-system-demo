@@ -1,6 +1,6 @@
 {
   "name": "@bridge-ds/toolbar",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "type": "module",
   "description": "The Bridge toolbar for a product built with the Bridge design system: opened from Bridge Studio with ?bridge=<change>, it flips the real product between before and after and shows what changed.",
   "license": "MIT",
@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
-    "@bridge-ds/core": "^0.35.0",
+    "@bridge-ds/core": "^0.36.0",
     "lucide-react": "1.58.0"
   },
   "peerDependencies": {
@@ -58,7 +58,7 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
-    "@bridge-ds/react": "^1.8.6",
-    "@bridge-ds/tokens": "^1.8.5"
+    "@bridge-ds/react": "^1.9.0",
+    "@bridge-ds/tokens": "^1.9.0"
   }
 }

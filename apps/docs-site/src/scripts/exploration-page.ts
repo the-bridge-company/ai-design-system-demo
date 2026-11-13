@@ -417,11 +417,36 @@ async function paintPm(
   const mine = isViewerPm(pm, o.viewer);
   if (!mine && !o.designer && !o.lead) return;
   const designerName = parseExplorationBody(o.body)?.memberName ?? o.names[o.r.author] ?? o.r.author;
-  const word = (kind: 'pm-ok' | 'pm-changes' | 'pm-call', text?: string) => sayPmWord(team, { product: o.product, copy: o.copy, number: o.r.number, kind, ...(text ? { text } : {}) }, token);
+  // The sample team: the PM's word runs in this browser (as Looks right does, lib/demo SAMPLE_IN_BROWSER): kept for the
+  // visit (pmSaidHere) and the card moves on from it; nothing is sent.
+  const sample = isSampleTeam(team);
+  const word = (kind: 'pm-ok' | 'pm-changes' | 'pm-call', text?: string) => (sample ? Promise.resolve() : sayPmWord(team, { product: o.product, copy: o.copy, number: o.r.number, kind, ...(text ? { text } : {}) }, token));
+  const sampleTail = (line: string) => (sample ? `${line} ${DEMO_WORDS.sampleLooksRight}` : line);
   // The zone is painted from what was said, and painted again at once from the viewer's own answer: the status line
   // follows the click, not the next read.
   const saidKey = `${o.copy}#${o.r.number}`;
-  const remember = (said: NonNullable<ReturnType<typeof pmOpinionOf>>): NonNullable<ReturnType<typeof pmOpinionOf>> => (pmSaidHere.set(saidKey, said), said);
+  // On the sample team the word is kept for the visit in this browser too (sessionStorage), so a reload keeps it.
+  const sampleKey = `bridge.sample.pm-word:${team.toLowerCase()}:${saidKey.toLowerCase()}`;
+  const remember = (said: NonNullable<ReturnType<typeof pmOpinionOf>>): NonNullable<ReturnType<typeof pmOpinionOf>> => {
+    pmSaidHere.set(saidKey, said);
+    if (sample)
+      try {
+        sessionStorage.setItem(sampleKey, JSON.stringify(said));
+      } catch {
+        /* storage blocked: it lasts until the page reloads */
+      }
+    return said;
+  };
+  const keptHere = (): ReturnType<typeof pmSaidHere.get> => {
+    const mem = pmSaidHere.get(saidKey);
+    if (mem || !sample) return mem;
+    try {
+      const raw = sessionStorage.getItem(sampleKey);
+      return raw ? (JSON.parse(raw) as NonNullable<ReturnType<typeof pmSaidHere.get>>) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
   const paintFrom = (said: ReturnType<typeof pmOpinionOf>): void => {
   const when = said?.at ? startedWhen(said.at) : '';
   const view: PmView = {
@@ -436,7 +461,7 @@ async function paintPm(
       ? async (kind, text) => {
           await word(kind, text);
           paintFrom(remember({ kind, at: new Date().toISOString(), ...(text ? { text } : {}), byName: pm.name } as NonNullable<ReturnType<typeof pmOpinionOf>>));
-          const line = kind === 'pm-ok' ? PM_WORDS.sentOk : PM_WORDS.sentChanges;
+          const line = sampleTail(kind === 'pm-ok' ? PM_WORDS.sentOk : PM_WORDS.sentChanges);
           o.reopen(line);
           return line;
         }
@@ -449,7 +474,7 @@ async function paintPm(
             onCall: async () => {
               await word('pm-call');
               paintFrom(remember({ kind: 'pm-call', at: new Date().toISOString(), byName: designerName } as NonNullable<ReturnType<typeof pmOpinionOf>>));
-              const line = PM_WORDS.sentCall(pm.name);
+              const line = sampleTail(PM_WORDS.sentCall(pm.name));
               o.reopen(line);
               return line;
             },
@@ -458,7 +483,7 @@ async function paintPm(
   };
   if (current?.key === key) repaint(d, key, { pm: view });
   };
-  paintFrom(newerPmSaid(pmOpinionOf(o.body), pmSaidHere.get(saidKey)));
+  paintFrom(newerPmSaid(pmOpinionOf(o.body), keptHere()));
 }
 
 /** The check of the developers' build (board R4): who checks it, their answers, and the viewer's answer when theirs. */

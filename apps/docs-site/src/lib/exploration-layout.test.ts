@@ -319,18 +319,19 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   it('a reviewer that took it is said first; nobody named reads the hat, never "the design lead"', () => {
     expect(waitBlockOf({ ...base, taken: 'Dana is looking at it.' })!.lines[0]).toBe('Dana is looking at it.');
     const b = waitBlockOf({ ...base, lead: null, role: 'designer', newPieces: true })!;
-    expect(b.title).toBe('The library owners decide what the library keeps');
+    expect(b.title).toBe('Waiting for the library owners');
     expect(b.lines).toEqual(['Nothing reaches the developers before the reviews are in.']);
     // Nothing new for the library: the design review, never the library decision.
     const design = waitBlockOf({ ...base, lead: null, role: 'designer' })!;
-    expect(design.title).toBe('The design reviewer checks it');
+    expect(design.title).toBe('Waiting for the design review');
+    expect(design.steps[0]!.text).toBe('The design reviewer checks it');
     expect(JSON.stringify(design)).not.toMatch(/library keeps|design lead/);
     expect(waitBlockOf({ ...base })!.title).toBe('Waiting for Dana');
     expect(waitBlockOf({ ...base })!.steps[0]!.text).toBe('Dana reviews the design');
   });
   it('exploring, someone else: who explores now, who decides next', () => {
     const b = waitBlockOf({ ...base, stage: 'exploring', role: 'designer' })!;
-    expect(b.title).toBe('Sofia is exploring');
+    expect(b.title).toBe('With Sofia');
     expect(b.steps[0]).toEqual({ text: 'Sofia explores', current: true });
     // Nothing new for the library yet: the next step is the design review, never "decides what the library keeps".
     expect(b.steps[1]!.text).toBe('Dana reviews the design');
@@ -344,7 +345,7 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   });
   it('exploring, the owner who cannot say Done exploring here: the line that says why', () => {
     const b = waitBlockOf({ ...base, stage: 'exploring', doneNote: 'Sofia keeps it.' })!;
-    expect(b.title).toBe('You are exploring');
+    expect(b.title).toBe('With you');
     expect(b.lines).toEqual(['Sofia keeps it.']);
   });
   it('handed to the developers: the current hand-off step and what comes after, in words', () => {
@@ -355,11 +356,11 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
       { status: 'waiting' as const, title: 'Shipped', detail: 'Then live in Acme Prints' },
     ];
     const b = waitBlockOf({ ...base, stage: 'ready', steps })!;
-    expect(b.title).toBe('Acme Prints developers build it');
+    expect(b.title).toBe('With the Acme Prints developers');
     expect(b.steps).toEqual([{ text: 'Acme Prints developers build it', current: true }, { text: 'You check their version' }, { text: 'Live in Acme Prints' }]);
     expect(b.lines).toEqual(['In their task list. You see here when one picks it up.']);
     const building = waitBlockOf({ ...base, stage: 'building', role: 'designer', builder: 'Malik', steps })!;
-    expect(building.title).toBe('Malik builds it');
+    expect(building.title).toBe('With Malik');
     expect(building.steps[1]!.text).toBe('Sofia checks their version');
     const dev = waitBlockOf({ ...base, stage: 'ready', role: 'developer', steps })!;
     expect(dev.eyebrow).toBe('For the developers');
@@ -368,9 +369,58 @@ describe('the turn block while nothing waits on the viewer (direction B)', () =>
   });
   it('check the build, someone not checking: who checks now and what the others said', () => {
     const b = waitBlockOf({ ...base, stage: 'check', role: 'designer', checkers: [{ name: 'Sofia', you: false, said: 'waiting' }, { name: 'Dana', you: false, said: 'looks-right' }, { name: 'Ann', you: false, said: 'not-needed' }] })!;
-    expect(b.title).toBe('Sofia checks the build');
+    expect(b.title).toBe('Waiting for Sofia');
     expect(b.steps).toEqual([{ text: 'Sofia checks', current: true }, { text: 'Live in Acme Prints' }]);
     expect(b.lines).toEqual(['Dana said it looks right.', 'It goes live in Acme Prints once it looks right.']);
+  });
+  it('says it once: no turn block title repeats its current step, in any stage, role or naming', () => {
+    const steps = [
+      { status: 'done' as const, title: 'Done exploring', detail: 'Sofia.' },
+      { status: 'waiting' as const, title: 'Developers build it', detail: 'In their task list.', current: true },
+      { status: 'waiting' as const, title: 'Review', detail: 'After the developers' },
+      { status: 'waiting' as const, title: 'Shipped', detail: 'Then live in Acme Prints' },
+    ];
+    const reviewing = [steps[0]!, { ...steps[1]!, status: 'done' as const, current: false }, { ...steps[2]!, current: true }, steps[3]!];
+    const mine = [steps[0]!, { ...steps[1]!, status: 'done' as const, current: false }, { ...steps[2]!, current: true, detail: 'Your review' }, steps[3]!];
+    const checkers = [{ name: 'Sofia', you: false, said: 'waiting' as const }];
+    const stages: WaitInput['stage'][] = ['exploring', 'waiting-for-lead', 'ready', 'building', 'check'];
+    const roles: WaitInput['role'][] = ['owner', 'designer', 'lead', 'developer', 'pm', 'viewer'];
+    // Same meaning, not only the same prefix: subject and verb stems ("Leo is exploring" ~ "Leo explores").
+    const stems = (t: string) => t.toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter((w) => w && !['is', 'are', 'the', 'a'].includes(w)).map((w) => w.replace(/(ing|es|s|e)$/, ''));
+    const repeats = (title: string, step: string) => {
+      const w = stems(step);
+      // The subject: a name, "you", or a group ("the library owners", "the Acme CRM developers"); the verb follows it.
+      const end = w.findIndex((x) => ['owner', 'reviewer', 'developer'].includes(x));
+      const at = end >= 0 ? end : 0;
+      const verb = w[at + 1];
+      const t = stems(title);
+      return Boolean(verb && t.includes(w[at]!) && t.includes(verb));
+    };
+    expect(repeats('Waiting for the library owners', 'The library owners decide')).toBe(false);
+    expect(repeats('Leo is exploring', 'Leo explores')).toBe(true);
+    expect(repeats('Sofia checks the build', 'Sofia checks')).toBe(true);
+    expect(repeats('With Leo', 'Leo explores')).toBe(false);
+    const said = (t: string) => t.trim().toLowerCase();
+    let checked = 0;
+    for (const stage of stages)
+      for (const role of roles)
+        for (const lead of ['Dana', null])
+          for (const newPieces of [false, true])
+            for (const hand of [steps, reviewing, mine])
+              for (const builder of [null, 'Malik']) {
+                const b = waitBlockOf({ ...base, stage, role, lead, newPieces, viewerLeads: role === 'lead', steps: hand, builder, checkers })!;
+                const now = b.steps.find((st) => st.current);
+                if (!now) continue;
+                checked++;
+                expect(said(b.title).startsWith(said(now.text)) || repeats(b.title, now.text), `${stage}/${role}: "${b.title}" repeats "${now.text}"`).toBe(false);
+              }
+    for (const pmSaid of [true, false])
+      for (const stage of ['exploring', 'waiting-for-lead'] as const) {
+        const b = pmBlockOf({ stage, said: pmSaid, lead: 'Dana', author: 'Sofia', product: 'Acme Prints', line: 'x' });
+        const now = b.steps.find((st) => st.current)!;
+        expect(said(b.title).startsWith(said(now.text)) || repeats(b.title, now.text), `pm ${stage} ${pmSaid}: "${b.title}"`).toBe(false);
+      }
+    expect(checked).toBeGreaterThan(100);
   });
   it('declined, archived, not started and shipped', () => {
     expect(waitBlockOf({ ...base, stage: 'declined', declinedLine: 'Closed.' })).toMatchObject({ title: 'The developers did not build it', steps: [], lines: ['Closed.'], action: null });
@@ -411,7 +461,7 @@ describe('the product manager in the turn block', () => {
   it('once said: waits like everyone, their word changeable', () => {
     const b = pmBlockOf({ ...pm, said: true, line: 'You said it looks good, today.' });
     expect(b.eyebrow).toBe('Nothing to do for now');
-    expect(b.title).toBe('Dana reviews the design');
+    expect(b.title).toBe('Waiting for Dana');
     expect(b.lines).toEqual(['You said it looks good, today.']);
     expect(b.action).toEqual({ kind: 'change-view', label: 'Change your view' });
   });

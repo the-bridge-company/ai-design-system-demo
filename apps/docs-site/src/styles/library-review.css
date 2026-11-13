@@ -294,9 +294,14 @@ a.lr-ask {
 
 /* A piece's name in the side list: UI 14 medium over its 13 meta line, one step apart. */
 .lr-side-title {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-medium);
   line-height: var(--typography-ui-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* The sub line: one kind of content (a face and the exploration, a person, or people). */
@@ -337,9 +342,16 @@ a.lr-ask {
   color: var(--color-text-link);
 }
 
-/* The age tag at the row's end: whole, the piece's name and meta wrap beside it. */
+/* The age tag on its own line under who asked, the full width of the row's text. */
 .lr-side-age {
+  display: flex;
+}
+
+/* An age tag hugs its words: it never shrinks below them ("Waiting 22 days" whole, in its pill). */
+.lr-age {
   flex: none;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .lr-side-flag.lr-muted {

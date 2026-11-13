@@ -246,24 +246,15 @@ function FamilyIcon({ name, size = 'md' }: { name: 'grid' | 'diamonds' | 'doc'; 
 function AskedLine({ p }: { p: ReviewPiece }) {
   const c = askedColumns(p);
   const from = c.from;
+  // The narrow side list says who only (owner gate 2026-11-13: "Claude AI · Fro..." read as broken); where it comes
+  // from is in the detail beside it, and said to screen readers here.
+  const origin = from.kind === 'direct' ? directWords(p) : `${from.first.name}${from.more > 0 ? ` and ${from.more} more` : ''}`;
   return (
     <>
       <Face name={c.person} size="xs" />
       <span className="lr-line-who">{c.person}</span>
-      <span className="lr-line-sep" aria-hidden="true">
-        {SEP.trim()}
-      </span>
-      <VisuallyHidden>, </VisuallyHidden>
-      {from.kind === 'direct' ? (
-        <span className="lr-line-t">{directWords(p)}</span>
-      ) : (
-        <>
-          <span className="lr-line-t" title={from.first.name}>
-            {from.first.name}
-          </span>
-          {from.more > 0 && <MoreTag n={from.more} what="explorations" />}
-        </>
-      )}
+      {c.morePeople > 0 && <MoreTag n={c.morePeople} what="people" />}
+      <VisuallyHidden>, {origin}</VisuallyHidden>
     </>
   );
 }
@@ -846,16 +837,19 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
     if (p.match && p.state === 'waiting') return <span className="lr-side-flag">Match found</span>;
     const d = decidedTag(p);
     if (d) return <span className="lr-muted lr-side-flag">{d.label}</span>;
-    // How long it has waited: the same tag as the detail, the List and its Home row (home-model waitPill).
-    if (p.state === 'waiting' && p.at) {
-      const w = waitPill(p.at, Date.now());
-      return (
-        <Badge tone={w.tone} size="sm" className={statusTagClass(w.tone, 'lr-side-age')}>
+    return null;
+  };
+  // How long it has waited: the same tag as the detail, the List and its Home row (home-model waitPill).
+  const ageTag = (p: ReviewPiece) => {
+    if (p.state !== 'waiting' || !p.at || (p.conflict && !p.conflict.pick)) return null;
+    const w = waitPill(p.at, Date.now());
+    return (
+      <span className="lr-side-age">
+        <Badge tone={w.tone} size="sm" className={statusTagClass(w.tone, 'lr-age')}>
           {w.label}
         </Badge>
-      );
-    }
-    return null;
+      </span>
+    );
   };
   return (
     <div className="lr-one">
@@ -901,6 +895,8 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
                             <span className="lr-muted lr-side-sub">
                               <AskedLine p={p} />
                             </span>
+                            {/* How long it has waited, on its own line under who: the full width of the text column. */}
+                            {ageTag(p)}
                           </span>
                           {stateMark(p)}
                         </button>
@@ -1099,7 +1095,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
     if (p.state === 'waiting' && p.at && mode === 'lead') {
       const w = waitPill(p.at, Date.now());
       return (
-        <Badge tone={w.tone} size="md" className={statusTagClass(w.tone)}>
+        <Badge tone={w.tone} size="md" className={statusTagClass(w.tone, 'lr-age')}>
           {w.label}
         </Badge>
       );

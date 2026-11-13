@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-13T03:37:41.017Z",
+  "createdAt": "2026-11-13T07:43:53.318Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {

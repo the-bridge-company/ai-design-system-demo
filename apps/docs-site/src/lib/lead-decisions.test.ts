@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withDecision, withDesignOk, withDoneExploring, withLeadAsked, withLeadAskedTo, withLibraryAsked, withoutLeadAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
-import { decisionRows, decisionTag, designerZoneTitle, leadHomeRow, leadWaitLine, nextName, rowAgeFrom, sayerName, turnSince } from './lead-decisions';
+import { decisionRows, decisionTag, designerZoneTitle, leadHomeRow, leadWaitLine, nextName, rowAgeFrom, rowTime, sayerName, turnSince } from './lead-decisions';
 import { waitingLabel } from './home-model';
 
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'New.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
@@ -118,5 +118,13 @@ describe('one clock for "waiting"', () => {
     const yes = withDecision(withDesignOk(both, { at: '2026-11-12T11:00:00.000Z' }), { kind: 'looks-right', hat: 'design', at: '2026-11-12T11:00:00.000Z', byName: 'Dana' });
     expect(turnSince(yes)).toBe('2026-11-07T10:00:00.000Z');
     expect(waitingLabel(turnSince(yes)!, Date.parse('2026-11-12T12:00:00.000Z'))).toBe('Waiting 5 days');
+  });
+  it('a listed row that waits on the viewer says Home\'s "Waiting 5 days", never its last change; any other row its last change', () => {
+    const both = withLibraryAsked(withLeadAsked(withPiecesRecord(start, { checkedAt: 't', pieces: [timeline], links: [] }), { at: '2026-11-07T10:00:00.000Z', byName: 'Sofia' }), { at: '2026-11-07T10:00:00.000Z' });
+    const yes = withDecision(withDesignOk(both, { at: '2026-11-12T11:00:00.000Z' }), { kind: 'looks-right', hat: 'design', at: '2026-11-12T11:00:00.000Z', byName: 'Dana' });
+    const now = Date.parse('2026-11-12T12:00:00.000Z');
+    const ago = (iso: string) => `changed ${iso.slice(0, 10)}`;
+    expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: true, now }, ago)).toBe('Waiting 5 days');
+    expect(rowTime({ body: yes, updated: '2026-11-11T09:00:00Z', waitsOnViewer: false, now }, ago)).toBe('changed 2026-11-11');
   });
 });

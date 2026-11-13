@@ -3,6 +3,7 @@
 // decisionsOf, openDecisionOf). Bridge voice: a designer reads it.
 import { stepTag } from './status-ladder';
 import { isNameAuthor, nameOfAuthor } from './author';
+import { waitingLabel } from './home-model';
 import { decisionsOf, homeRowLine, isPmKind, isWaitingForLead, leadTurnOf, openDecisionOf, parseExplorationBody, type Decision, type DecisionKind, type HatAsk } from '@bridge-ds/core';
 
 export interface DecisionRowView {
@@ -132,6 +133,15 @@ export function turnSince(body: string | null | undefined): string | null {
  */
 export function rowAgeFrom(x: { body?: string | null; updated: string; yourTurn: boolean }): string {
   return (x.yourTurn ? turnSince(x.body) : null) ?? x.updated;
+}
+
+/**
+ * The time on a listed exploration's line. A row that waits on the viewer (its turn on Explorations, or a review it
+ * asks of them, a library decision included) says since when, with Home's own tag: "Waiting 5 days" (turnSince, never
+ * the last change). Any other row says when it last changed ("yesterday", `ago`).
+ */
+export function rowTime(x: { body?: string | null; updated: string; waitsOnViewer: boolean; now: number }, ago: (iso: string) => string): string {
+  return x.waitsOnViewer ? waitingLabel(rowAgeFrom({ body: x.body, updated: x.updated, yourTurn: true }), x.now) : ago(x.updated);
 }
 
 export const TAKEN_FOR_MS = 2 * 24 * 60 * 60 * 1000;

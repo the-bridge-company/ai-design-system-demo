@@ -12,7 +12,7 @@ import { countsOnExplorations, reviewSecondLine } from '../lib/review-lines';
 import { viewerHats } from '../lib/team-reviews';
 import { settleWithin } from '../lib/settle-within';
 import { statusNote, statusOf, turnReason } from '../lib/explorations-page';
-import { rowAgeFrom } from '../lib/lead-decisions';
+import { rowTime } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
@@ -393,6 +393,16 @@ function reviewsLineOf(r: Row): string | null {
 }
 
 /**
+ * A review of this exploration waits on the viewer, whichever hat (a library decision included, which Explorations
+ * itself leaves to Library review): its line then says since when, with Home's tag ("Waiting 5 days").
+ */
+function asksViewer(r: Row): boolean {
+  const team = teamReviewsNow();
+  if (!team || !isWaitingForLead(r.body ?? null)) return false;
+  return viewerHats(r.body ?? null, { team, product: r.product ?? null, prAuthor: r.user.login, viewer: viewerReviewIds() }).length > 0;
+}
+
+/**
  * An exploration waits on the viewer here (Waiting on you, the Explorations badge): the old rule (the lead's turn or the
  * designer's), but a turn that asks only a library decision is Library review's, never counted here (two reviews).
  */
@@ -440,9 +450,9 @@ function listRow(r: Row): ListRow {
     author: (r.exploration ? explorationAuthorFor(r.user.login, r.body ?? null) : authorFor(r.user.login, r.body ?? null)) ?? r.user.login,
     agent: isAgent,
     opens: r.exploration ? 'exploration' : 'pr',
-    // An exploration says when it last moved, after who: "Florian · 2 h ago"; one that waits on the viewer, since it
-    // was sent to them (lib/lead-decisions rowAgeFrom, the clock of Home's "Waiting 4 days").
-    ago: r.exploration && r.updated_at ? shortAgo(rowAgeFrom({ body: r.body ?? null, updated: r.updated_at, yourTurn: turn })) || null : null,
+    // An exploration says when it last moved, after who: "Sofia · 2 h ago"; one that waits on the viewer (its turn, or
+    // any review it asks of them), since it was sent to them with Home's own tag: "Waiting 5 days" (lib/lead-decisions rowTime).
+    ago: r.exploration && r.updated_at ? rowTime({ body: r.body ?? null, updated: r.updated_at, waitsOnViewer: turn || asksViewer(r), now: Date.now() }, shortAgo) || null : null,
     pill: pillOf(r, lifecycle),
     lifecycle,
     yourTurn: turn,

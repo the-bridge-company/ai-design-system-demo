@@ -9,7 +9,7 @@ import { decisionsOf, EXPLORATION_LABEL, EXPLORATION_READY_LABEL, explorationPrB
 import { keepSampleAnswer, keepSampleStart, sampleLooksRight, sampleRead, sampleStarts } from './demo-in-browser';
 import { DEMO_VISIT_KEY, runsInBrowser, sampleStartLines, swapDemoDrafts } from './demo';
 import { SAMPLE_REVIEWS, viewerHats, viewerIds, waitingLineOf, type TeamReviews } from './team-reviews';
-import { turnSince } from './lead-decisions';
+import { rowTime, turnSince } from './lead-decisions';
 
 function memory() {
   const m = new Map<string, string>();
@@ -163,6 +163,10 @@ describe("the sample team's flows: Looks right never skips Dana's library decisi
     expect(waitingLineOf(a.body, { team, product: 'prints' })).toContain('Timeline');
     // Home's age tag keeps the clock of the ask (days ago), never "New today" for the hand-over to the library hat.
     expect(turnSince(a.body)).toBe(parseExplorationBody(p.body)?.designAskedAt);
+    // The Explorations list row ("Waiting for your library decision") says the same as Home, not Sofia's last change.
+    const asked = parseExplorationBody(p.body)!.designAskedAt!;
+    const fiveDaysOn = Date.parse(asked) + 5 * 24 * 60 * 60 * 1000;
+    expect(rowTime({ body: a.body, updated: new Date(fiveDaysOn - 24 * 60 * 60 * 1000).toISOString(), waitsOnViewer: true, now: fiveDaysOn }, () => 'yesterday')).toBe('Waiting 5 days');
   });
 
   it('the Explorations list reads the same kept copy as the page and Being built, from any read of the product', () => {

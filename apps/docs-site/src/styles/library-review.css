@@ -398,6 +398,11 @@ a.lr-ask {
   gap: var(--space-2);
 }
 
+.lr-detail-meta {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .lr-detail-ask {
   display: flex;
   flex-wrap: wrap;
@@ -1431,7 +1436,6 @@ a.lr-ask {
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-1-5);
-  margin-inline-start: auto;
 }
 
 .lr-row-reach {
@@ -1841,10 +1845,6 @@ a.lr-reach-card:focus-visible {
 
   .lr-list.is-lead .lr-row-reach {
     grid-column: 2 / -1;
-  }
-
-  .lr-detail-reach {
-    margin-inline-start: 0;
   }
 
   .lr-reach-head {

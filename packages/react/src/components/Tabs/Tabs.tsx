@@ -17,7 +17,10 @@ interface TabsContextValue {
 const TabsContext = createContext<TabsContextValue>({ variant: 'underline', size: 'md', inRoot: false });
 
 export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> {
-  /** `underline` for page-level sections (signal underline); `contained` for a compact segmented switch. Default `underline`. */
+  /**
+   * Default `underline`: the one look of Tabs (ink text over the signal underline). `contained` is deprecated: it
+   * looked like a SegmentedControl; switch a view or a filter with SegmentedControl, sections with underline Tabs.
+   */
   variant?: TabsVariant;
   /** Tab height follows density tokens. Default `md`. */
   size?: TabsSize;
@@ -31,7 +34,7 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'default
   children?: ReactNode;
 }
 
-/** Switches between views of the same context. Base UI Tabs: roving focus, arrow keys, ARIA wiring. */
+/** Switches between the sections or panels of one page or object. Base UI Tabs: roving focus, arrow keys, ARIA wiring. */
 export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   { variant = 'underline', size = 'md', orientation = 'horizontal', defaultValue, value, onValueChange, className, children, ...rest },
   ref,

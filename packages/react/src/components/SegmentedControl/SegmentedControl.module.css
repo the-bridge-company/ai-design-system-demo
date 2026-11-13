@@ -112,31 +112,36 @@
   background-color: var(--color-surface-pressed);
 }
 
-/* The raised surface, not the default one: in dark the default surface is the track's own color, so the plate
-   vanished. Raised is white in light and one step lighter than the track in dark. Its edge is the checked control
-   color (Deep Harbor in light, light Harbor in dark), the same edge as a pressed Button toggle: border.default was
-   the plate's own color in dark, so the selected segment had no edge there. */
+/* Selected (a radio, or the current page of a link-mode control): the raised plate. The raised surface, not the
+   default one: in dark the default surface is the track's own color, so the plate vanished. Its hairline edge is
+   border.emphasis, a neutral one step off the plate in both themes (border.default is the plate's own color in dark).
+   Never a Deep Harbor or focus-colored edge: an outline on the selection reads as keyboard focus. */
 .segment[aria-checked="true"],
 .segment[aria-current="page"] {
-  border-color: var(--color-control-checked-bg);
+  border-color: var(--color-border-emphasis);
   background-color: var(--color-surface-raised);
   color: var(--color-text-default);
   box-shadow: var(--elevation-raised);
 }
 
-/* The ring sits inside the segment: the track scrolls, so a ring outside it would be clipped. */
+/* The focus ring is the keyboard's only (:focus-visible): a pointer focus, or a script moving focus after a click,
+   draws nothing. The ring sits inside the segment, a step off its edge: the track scrolls, so a ring outside it would
+   be clipped. */
+.segment:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .segment:focus-visible {
   position: relative;
   z-index: 1;
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: calc(var(--focus-ring-width) * -1);
+  outline-offset: calc((var(--focus-ring-width) + var(--focus-ring-offset)) * -1);
 }
 
-/* On the Deep Harbor fill the ring turns to the fill's text color, one ring width inside the edge. */
+/* On the strong Deep Harbor fill the ring turns to the fill's text color, so it still shows. */
 .strong .segment[aria-checked="true"]:focus-visible,
 .strong .segment[aria-current="page"]:focus-visible {
   outline-color: var(--color-control-checked-fg);
-  outline-offset: calc(var(--focus-ring-width) * -2);
 }
 
 .segment:disabled,
@@ -145,9 +150,10 @@
   cursor: not-allowed;
 }
 
-/* Strong: the selected segment fills with Deep Harbor (the checked control color). */
+/* Strong: the selected segment fills with Deep Harbor (the checked control color). Only for the global space switch
+   (Library and Studio), in either mode; link mode alone does not make a control strong. */
 .strong .segment[aria-checked="true"],
-.segment[aria-current="page"] {
+.strong .segment[aria-current="page"] {
   border-color: var(--color-control-checked-bg);
   background-color: var(--color-control-checked-bg);
   color: var(--color-control-checked-fg);
@@ -192,19 +198,8 @@
   line-height: var(--font-line-height-none);
 }
 
-/* The selected segment's count takes the stronger tone; on the Deep Harbor fill it inverts. */
-.segment[aria-checked="true"] .count,
-.segment[aria-current="page"] .count {
-  border-color: transparent;
-  background-color: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
-}
-
-.strong .segment[aria-checked="true"] .count,
-.segment[aria-current="page"] .count {
-  background-color: var(--color-control-checked-fg);
-  color: var(--color-control-checked-bg);
-}
+/* The count looks the same in every segment, selected or not (strong too: the pill brings its own fill): only the
+   label's ink says which segment is selected. */
 
 .segment:disabled .count,
 .segment[data-disabled] .count {

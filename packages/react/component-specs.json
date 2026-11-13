@@ -4109,7 +4109,7 @@
     },
     {
       "name": "Banner",
-      "hash": "dd15480f",
+      "hash": "c1ea9e69",
       "source": [
         "packages/react/src/components/Banner/Banner.tsx",
         "packages/react/src/components/Banner/Banner.module.css",
@@ -4174,23 +4174,10 @@
           "fill": true
         },
         {
-          "id": "lead",
-          "name": "lead",
-          "kind": "frame",
-          "parent": "root",
-          "source": "Banner.module.css .lead",
-          "layout": {
-            "direction": "HORIZONTAL",
-            "primary": "MIN",
-            "counter": "MIN"
-          },
-          "grow": true
-        },
-        {
           "id": "icon",
           "name": "Icon",
           "kind": "icon",
-          "parent": "lead",
+          "parent": "root",
           "source": "Icon.module.css .icon, Icon.module.css .md, Banner.module.css .icon",
           "visible": "Icon",
           "swap": {
@@ -4200,29 +4187,17 @@
           }
         },
         {
-          "id": "content",
-          "name": "content",
+          "id": "title",
+          "name": "title",
           "kind": "frame",
-          "parent": "lead",
-          "source": "Banner.module.css .content",
+          "parent": "root",
+          "source": "Banner.module.css .title",
           "layout": {
             "direction": "VERTICAL",
             "primary": "MIN",
             "counter": "STRETCH"
           },
           "grow": true
-        },
-        {
-          "id": "title",
-          "name": "title",
-          "kind": "frame",
-          "parent": "content",
-          "source": "Banner.module.css .title",
-          "layout": {
-            "direction": "VERTICAL",
-            "primary": "MIN",
-            "counter": "STRETCH"
-          }
         },
         {
           "id": "title-text",
@@ -4235,13 +4210,14 @@
           "id": "description",
           "name": "description",
           "kind": "frame",
-          "parent": "content",
+          "parent": "root",
           "source": "Banner.module.css .description",
           "layout": {
             "direction": "VERTICAL",
             "primary": "MIN",
             "counter": "STRETCH"
-          }
+          },
+          "grow": true
         },
         {
           "id": "text",
@@ -4259,7 +4235,7 @@
           "layout": {
             "direction": "HORIZONTAL",
             "primary": "MIN",
-            "counter": "STRETCH",
+            "counter": "CENTER",
             "wrap": true
           },
           "visible": "Show actions"
@@ -4281,27 +4257,21 @@
             "root": {
               "fill": "color.surface.strong",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.surface.strong"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.on-solid",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {
@@ -4341,27 +4311,21 @@
             "root": {
               "fill": "color.bg.subtle",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.border.default"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.default",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {
@@ -4401,27 +4365,21 @@
             "root": {
               "fill": "color.bg.zone",
               "cornerRadius": "radius.container",
-              "paddingTop": "space.2",
-              "paddingRight": "space.2",
-              "paddingBottom": "space.2",
+              "paddingTop": "space.4",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.4",
               "paddingLeft": "space.4",
               "itemSpacing": "space.3",
               "minHeight": "calc(control.height.md + space.4)",
-              "counterAxisSpacing": "space.2",
+              "counterAxisSpacing": "space.0-5",
               "strokeWeight": "border-width.default",
               "stroke": "color.bg.zone"
-            },
-            "lead": {
-              "itemSpacing": "space.3"
             },
             "icon": {
               "width": "icon.size.md",
               "height": "icon.size.md",
               "stroke": "color.text.default",
               "strokeWeight": "icon.stroke"
-            },
-            "content": {
-              "itemSpacing": "space.0-5"
             },
             "title": {},
             "title-text": {
@@ -13130,7 +13088,7 @@
           ]
         }
       },
-      "hash": "c9127c85",
+      "hash": "ff78f172",
       "source": [
         "packages/react/src/components/Combobox/Combobox.tsx",
         "packages/react/src/components/Combobox/Combobox.module.css",
@@ -13260,10 +13218,10 @@
             "root": {
               "fill": "popup.bg",
               "cornerRadius": "popup.radius",
-              "paddingTop": "space.1",
-              "paddingRight": "space.1",
-              "paddingBottom": "space.1",
-              "paddingLeft": "space.1",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
               "strokeWeight": "border-width.default",
               "stroke": "popup.border"
             },
@@ -13276,7 +13234,7 @@
             },
             "list": {},
             "item": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -13291,7 +13249,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -13306,7 +13264,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -19667,7 +19625,7 @@
       "name": "Menu/Popup",
       "component": "Menu",
       "view": "popup",
-      "hash": "15075559",
+      "hash": "52937923",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19710,10 +19668,10 @@
             "root": {
               "fill": "popup.bg",
               "cornerRadius": "popup.radius",
-              "paddingTop": "space.1",
-              "paddingRight": "space.1",
-              "paddingBottom": "space.1",
-              "paddingLeft": "space.1",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
               "strokeWeight": "border-width.default",
               "stroke": "popup.border"
             },
@@ -19787,7 +19745,7 @@
       "name": "MenuItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "760b172f",
+      "hash": "b5732e9f",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -19860,7 +19818,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -19884,7 +19842,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -19908,7 +19866,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -19932,7 +19890,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -19969,7 +19927,7 @@
       "name": "MenuCheckboxItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "92138637",
+      "hash": "1f268b21",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20090,7 +20048,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20138,7 +20096,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20186,7 +20144,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20230,7 +20188,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20350,7 +20308,7 @@
           }
         ]
       },
-      "hash": "12803dc7",
+      "hash": "ed47da4d",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20547,7 +20505,7 @@
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20571,7 +20529,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20589,7 +20547,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20629,7 +20587,7 @@
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20653,7 +20611,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20671,7 +20629,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20703,7 +20661,7 @@
       "name": "MenuRadioItem",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "0d2cd901",
+      "hash": "970241cd",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -20790,7 +20748,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20825,7 +20783,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20860,7 +20818,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20892,7 +20850,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -20978,7 +20936,7 @@
           }
         ]
       },
-      "hash": "ef7fac42",
+      "hash": "35850be5",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -21192,7 +21150,7 @@
               "letterSpacing": "font.tracking.wide"
             },
             "item": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -21217,7 +21175,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -21242,7 +21200,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -21278,7 +21236,7 @@
       "name": "MenuSeparator",
       "component": "Menu",
       "view": "without-popup",
-      "hash": "e733115b",
+      "hash": "35c1d9cb",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -21315,7 +21273,7 @@
         {
           "part": "root",
           "property": "margin",
-          "value": "var(--space-1) calc(var(--space-1) * -1)",
+          "value": "var(--space-2) calc(var(--space-2) * -1)",
           "reason": "margins have no auto layout equivalent"
         }
       ]
@@ -21347,7 +21305,7 @@
           }
         ]
       },
-      "hash": "0f9b6b8e",
+      "hash": "e4155cc2",
       "source": [
         "packages/react/src/components/Menu/Menu.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -21410,7 +21368,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -21433,7 +21391,7 @@
           },
           "values": {
             "root": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": 0,
               "paddingRight": "space.2",
               "paddingBottom": 0,
@@ -29365,7 +29323,7 @@
           "defaultValue": "comfortable"
         }
       },
-      "hash": "ba711ef1",
+      "hash": "c6903061",
       "source": [
         "packages/react/src/components/SegmentedControl/SegmentedControl.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -29500,7 +29458,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29561,7 +29519,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29622,7 +29580,7 @@
               "itemSpacing": "space.1-5",
               "minHeight": "control.height.sm",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -29987,7 +29945,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30046,7 +30004,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -30105,7 +30063,7 @@
               "paddingLeft": "space.3",
               "itemSpacing": "space.1-5",
               "strokeWeight": "border-width.default",
-              "stroke": "color.control.checked.bg"
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "color.text.default",
@@ -31164,7 +31122,7 @@
           "defaultValue": "dark"
         }
       },
-      "hash": "cad30341",
+      "hash": "5787c15a",
       "source": [
         "packages/react/src/components/Select/Select.tsx",
         "packages/react/src/components/Field/Field.module.css",
@@ -31361,16 +31319,16 @@
             "root": {
               "fill": "popup.bg",
               "cornerRadius": "popup.radius",
-              "paddingTop": "space.1",
-              "paddingRight": "space.1",
-              "paddingBottom": "space.1",
-              "paddingLeft": "space.1",
+              "paddingTop": "space.2",
+              "paddingRight": "space.2",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.2",
               "strokeWeight": "border-width.default",
               "stroke": "popup.border"
             },
             "list": {},
             "item": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -31387,7 +31345,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-2": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -31404,7 +31362,7 @@
               "lineHeight": "typography.ui.line-height"
             },
             "item-3": {
-              "cornerRadius": "calc(popup.radius - space.1)",
+              "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
               "paddingRight": "space.2",
               "paddingBottom": "space.1",
@@ -36559,7 +36517,7 @@
           }
         ]
       },
-      "hash": "35e7eeef",
+      "hash": "9869d9e7",
       "source": [
         "packages/react/src/components/Tabs/Tabs.tsx",
         "packages/react/src/components/Icon/Icon.module.css",
@@ -37757,8 +37715,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37873,8 +37833,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -37989,8 +37951,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38132,8 +38096,10 @@
               "minHeight": "calc(control.height.sm - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38275,8 +38241,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38391,8 +38359,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38507,8 +38477,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",
@@ -38650,8 +38622,10 @@
               "minHeight": "calc(control.height.md - space.1)"
             },
             "indicator": {
-              "fill": "color.surface.default",
-              "cornerRadius": "radius.control"
+              "fill": "color.surface.raised",
+              "cornerRadius": "radius.control",
+              "strokeWeight": "border-width.default",
+              "stroke": "color.border.emphasis"
             },
             "label": {
               "textFill": "tabs.text-active",

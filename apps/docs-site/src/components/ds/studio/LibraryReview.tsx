@@ -11,11 +11,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Ellipsis, Info } from 'lucide-react';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
 import { QuietScene } from './QuietScene';
 import { Who } from './faces';
+import { People } from './People';
 import { ProductMark as ProductIcon } from './ProductMark';
 import { namedFace } from '../../../lib/cast-faces';
 import { isNew, Sample, thumbOf } from './LibraryReviewSample';
@@ -208,23 +209,15 @@ function NameFace({ name, size = 'sm', decorative = true }: { name: string; size
   return <Who p={namedFace(who, { sample: ctx.sample })} size={size} decorative={decorative} name={name} />;
 }
 
+/** How People (the one group of people, People.tsx) draws a name here: the review's own faces. */
+const nameFaceOf = (name: string, size: 'xs' | 'sm') => <NameFace name={name} size={size} />;
+
 /** A person's face, whole: nothing sits on it. */
 function Face({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm' }) {
   return (
     <span className="lr-face" title={name}>
       <NameFace name={name} size={size} />
     </span>
-  );
-}
-
-/** Up to three faces, overlapping (the DS AvatarGroup); the words next to them say who. */
-function Faces({ names, size = 'sm' }: { names: string[]; size?: 'xs' | 'sm' }) {
-  return (
-    <AvatarGroup aria-label={names.join(', ')} aria-hidden="true" size={size} max={FACES_SHOWN} className="lr-faces">
-      {names.slice(0, FACES_SHOWN).map((n, i) => (
-        <NameFace key={`${n}-${i}`} name={n} size={size} />
-      ))}
-    </AvatarGroup>
   );
 }
 
@@ -752,14 +745,7 @@ function Compare({ p, decides, busy, onAct, wait, mark, commenting, onCommentOpe
       )}
       <div className="lr-compare-foot">
         <span className="lr-compare-told">
-          {open ? (
-            <>
-              <Faces names={view.people} size="xs" />
-              {view.told}
-            </>
-          ) : (
-            wait && `${wait}.`
-          )}
+          {open ? <People names={view.people} size="sm" face={nameFaceOf} text={view.told} /> : wait && `${wait}.`}
         </span>
         {/* The two actions stay together on one line: when the footer wraps, they move under who is told as a pair,
             never the comment above the primary. */}
@@ -950,18 +936,12 @@ function MoreTag({ n, what }: { n: number; what: 'explorations' | 'people' }) {
 
 /**
  * The List's Asked by cell (owner, 2026-11-12, one kind of info per column, the same anatomy on every row): the face
- * and first name of who asked, then "+N" when more people asked (a conflict's other designer). Never an exploration,
- * never a product: those are the From column's.
+ * and first name of everyone who asked, as every group of people in Studio (People.tsx, lib/people-line): up to three,
+ * every face and name ("Sofia and Leo", never one face and "+1"); four or more, two and "+N". The names wrap on two
+ * lines before anyone is hidden. Never an exploration, never a product: those are the From column's.
  */
 function AskedByCell({ p }: { p: ReviewPiece }) {
-  const c = askedColumns(p);
-  return (
-    <span className="lr-asked" title={c.morePeople ? c.people.join(', ') : undefined}>
-      <Face name={c.person} />
-      <span className="lr-asked-name">{c.person}</span>
-      {c.morePeople > 0 && <MoreTag n={c.morePeople} what="people" />}
-    </span>
-  );
+  return <People names={askedColumns(p).people} size="sm" face={nameFaceOf} className="lr-asked" />;
 }
 
 /**
@@ -1768,18 +1748,8 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
             )}
           </div>
           {!v.reviews && (
-            <Banner
-              appearance="harbor"
-              className="lr-banner"
-              title={
-                <span className="lr-banner-title">
-                  <NameFace name={data.lead ?? 'Library owners'} size="xs" />
-                  {banner.strong}
-                </span>
-              }
-              actions={<Link href={links.howItWorks}>How library review works</Link>}
-            >
-              {banner.rest}
+            <Banner appearance="harbor" icon={Info} title={banner.strong}>
+              {banner.rest} <Link href={links.howItWorks}>How library review works</Link>
             </Banner>
           )}
           {data.loading && !shown.length ? (

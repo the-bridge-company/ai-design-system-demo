@@ -6,7 +6,7 @@ import { Icon, type LucideIcon } from '../Icon';
 import styles from './SegmentedControl.module.css';
 
 export type SegmentedControlSize = 'sm' | 'md';
-/** `default`: the selected segment is a raised plate. `strong`: it fills with Deep Harbor, for the one control a view is about. */
+/** `default`: the selected segment is a raised plate. `strong`: it fills with Deep Harbor, only for the global space switch. */
 export type SegmentedControlAppearance = 'default' | 'strong';
 
 /** Extra attributes for one segment's button: `data-*` hooks a script reads, plus id and title. Behavior stays in the group. */
@@ -54,7 +54,7 @@ export interface SegmentedControlProps
   onValueChange?: (value: string) => void;
   /** Default `md`. Use `sm` in toolbars and dense panels. Heights follow the density tokens. */
   size?: SegmentedControlSize;
-  /** Default `default`. `strong` fills the selected segment with Deep Harbor: one per view at most. */
+  /** Default `default` (the raised plate, link mode included). `strong` fills the selected segment with Deep Harbor: only the global space switch. */
   appearance?: SegmentedControlAppearance;
   /** Stretch to the container; segments share the width equally. */
   fullWidth?: boolean;

@@ -384,10 +384,11 @@
   line-height: var(--typography-meta-line-height);
 }
 
+/* The menu's inset spaces the head: its text lines up with the item icons, the DS separator follows. */
 .acc-menu-head {
   display: grid;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-2);
   overflow-wrap: anywhere;
 }
 

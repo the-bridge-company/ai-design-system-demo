@@ -2,7 +2,7 @@
 // and what they do in plain words. The switch names the person played and what they do (lib/demo-cast castRole). Picking one shows Studio again as that person (scripts/demo-cast.ts playCast):
 // their home, their gates, their words. Only on the sample team, only for a visitor (lib/demo-cast.ts).
 import { ChevronDown } from 'lucide-react';
-import { Button, Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
+import { Button, Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger, VisuallyHidden } from '@bridge-ds/react';
 import { Who } from './faces';
 import { CAST_WORDS, SAMPLE_CAST, castFaceLogin, castPerson, castRole, type CastKey, type CastPerson } from '../../../lib/demo-cast';
 
@@ -21,8 +21,10 @@ export function SeeItAs({ current, onPick }: SeeItAsProps) {
   return (
     <Menu>
       {/* One row on one axis (styles/demo-home.css): "See it as", the face, the name and what they do, then the DS
-          Button's own end icon. Named by its visible text (WCAG 2.5.3). */}
-      <MenuTrigger render={<Button variant="ghost" size="sm" iconEnd={ChevronDown} className="see-as-trigger" />}>
+          Button's own end icon. Named by its visible text (WCAG 2.5.3). Secondary at md, as the banner's Get started
+          (ButtonLink's default) next to it: one button language and one height on the warm banner, the surface fill
+          behind the face. */}
+      <MenuTrigger render={<Button variant="secondary" size="md" iconEnd={ChevronDown} className="see-as-trigger" />}>
         <span className="see-as-label">{CAST_WORDS.seeItAs}</span>
         <Who p={face(now)} size="xs" className="see-as-face" />
         <span className="see-as-person">
@@ -42,6 +44,7 @@ export function SeeItAs({ current, onPick }: SeeItAsProps) {
             </MenuRadioItem>
           ))}
         </MenuRadioGroup>
+        <MenuSeparator />
         <p className="see-as-note">{CAST_WORDS.menuNote}</p>
       </MenuContent>
     </Menu>

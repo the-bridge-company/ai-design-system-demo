@@ -354,7 +354,7 @@ export default function FaceSetting() {
                 </div>
                 {parts && (
                   <div id="yf-parts" className="yf-parts">
-                    <Tabs variant="contained" size="sm" value={tab} onValueChange={(v) => setTab(v as PartTab)}>
+                    <Tabs size="sm" value={tab} onValueChange={(v) => setTab(v as PartTab)}>
                       <TabsList aria-label={W.parts}>
                         <Tab value="hair">{W.tabs.hair}</Tab>
                         <Tab value="glasses">{W.tabs.glasses}</Tab>
@@ -385,7 +385,7 @@ export default function FaceSetting() {
                         </RadioGroup>
                       </TabsPanel>
                       <TabsPanel value="expression" className="yf-panel">
-                        {/* The panel is a grid: the control keeps its own width (it hugs its segments, like the tabs). */}
+                        {/* The panel is a grid: the control keeps its own width (it hugs its segments). */}
                         <SegmentedControl
                           className="yf-hug"
                           label={W.tabs.expression}

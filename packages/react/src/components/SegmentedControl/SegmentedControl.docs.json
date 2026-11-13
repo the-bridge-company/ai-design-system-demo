@@ -1,5 +1,5 @@
 {
-  "summary": "Picks one of a few views or modes, shown side by side as attached buttons: the brand of a preview, the density, light or dark. The choice applies at once, on the current screen.",
+  "summary": "Switches a view or a filter of the same content, shown side by side as attached segments: List, Grid or Board, the token type filter, light or dark, the brand of a preview. The choice applies at once, on the current screen. The selected segment is a raised plate on the track.",
   "preview": {
     "c": "SegmentedControl",
     "p": {
@@ -12,16 +12,18 @@
     }
   },
   "whenToUse": [
-    "Switching how the same content is shown: Light or Dark, Comfortable or Compact, Grid or List.",
+    "Switching a view or a filter of the same content: List, Grid or Board; the token type filter (All, Color, Spacing); Light or Dark; Side by side or Overlay in a compare; an expression picker.",
     "Short options where seeing every option at once helps the choice: two to five usually, more for filters people switch between often (status filters). On a phone the track scrolls sideways and never widens the page.",
     "Switching between sibling pages or spaces that are separate addresses (Library and Studio, Overview and Activity): give every segment an href. Each segment is a link, the current one marked as the page you are on.",
-    "Appearance strong when the control is what the view is about (the status filter of a list): the selected segment fills with Deep Harbor. At most one strong control per view.",
+    "Appearance default everywhere: the selected segment is a raised plate (the raised surface, a hairline edge, the raised elevation) with ink text.",
+    "Appearance strong only for the global space switch (Library and Studio in the top bar): the current segment fills with Deep Harbor. One on the site; never for a filter or a view switch.",
     "The change applies immediately, with no Save button.",
     "Size sm in dense toolbars, menus and panels; md everywhere else, including a page's filter bar, where it matches the md search field and Select beside it. Heights follow the density setting.",
     "fullWidth inside a narrow panel or menu, so the segments share the width equally."
   ],
   "whenNotToUse": [
-    "Switching between panels of different content: use Tabs, which link each tab to its panel.",
+    "Switching between sections or panels of different content (Settings groups, a component page's Usage and Code): use Tabs (underline), which link each tab to its panel.",
+    "A tab-like row built with your own CSS: never. A view switch is this control, a section switch is Tabs, nothing in between.",
     "A setting in a form that is saved later: use RadioGroup, which shows a label and help per option.",
     "Long labels, or options people pick once and forget: use Select.",
     "Turning one thing on or off: use Switch.",
@@ -67,13 +69,12 @@
       }
     },
     {
-      "title": "Strong for the control the view is about",
-      "text": "A list filtered by status: the selected filter fills with Deep Harbor, the strongest signal on the screen. Six short filters are fine; on a phone they scroll sideways.",
+      "title": "Filters keep the default plate",
+      "text": "A list filtered by status: the selected filter is the raised plate, like every other segmented control. Six short filters are fine; on a phone they scroll sideways. Strong is kept for the space switch.",
       "example": {
         "c": "SegmentedControl",
         "p": {
           "label": "Status",
-          "appearance": "strong",
           "size": "sm",
           "defaultValue": "open",
           "items": [
@@ -105,7 +106,7 @@
     },
     {
       "title": "Counts sit in a count tag",
-      "text": "Give a filter its count with the item's count field, never inside the label: it renders as a small neutral tag after the label, and the selected segment's tag takes the stronger tone.",
+      "text": "Give a filter its count with the item's count field, never inside the label: it renders as a small neutral tag after the label and looks the same in every segment, selected or not: only the label's ink follows the selection.",
       "example": {
         "c": "SegmentedControl",
         "p": {
@@ -180,9 +181,9 @@
     "With href on the segments it is navigation, not a choice: a nav named by label, each segment a link, the current one aria-current=\"page\". Tab moves from link to link; there is no arrow-key selection and no checked state.",
     "Tab enters the group on the selected segment and leaves it; arrow keys move the selection, Home and End jump to the ends.",
     "Give the group a name: aria-labelledby pointing at the visible label outside the track, or label (aria-label) when the context already names it.",
-    "The selected segment is marked by a raised plate with a checked-color edge (or the Deep Harbor fill with strong) and a darker text color, not by color alone.",
+    "The selected segment is marked by a raised plate with a neutral hairline edge and the raised elevation (or the Deep Harbor fill with strong) and ink text, not by color alone. Never a Deep Harbor or focus-colored outline: that reads as keyboard focus.",
     "When the track scrolls, arrow keys still move the selection and the selected segment scrolls into view.",
-    "The focus ring (focus.ring.color) shows on keyboard focus only.",
+    "The focus ring (focus.ring.color) shows on keyboard focus only (:focus-visible), inside the segment a step off its edge; a click draws no ring.",
     "Rendered without JavaScript, the HTML keeps role, aria-checked and data-value, so a small script can drive it: flip aria-checked and tabindex, and handle arrow keys."
   ],
   "contentGuidelines": [
@@ -195,11 +196,11 @@
     "root": "Track holding the segments",
     "sm": "Size sm",
     "fullWidth": "Full-width track, equal segments",
-    "strong": "Strong appearance: Deep Harbor selected segment",
+    "strong": "Strong appearance: Deep Harbor selected segment, only for the global space switch",
     "segment": "One option (native button, role radio)",
     "leading": "Decoration before the label, for example a color swatch",
     "icon": "Leading Lucide icon",
     "label": "Label",
-    "links": "Navigation mode: segments are links, the current one is the page you are on"
+    "links": "Navigation mode: segments are links, the current one is the page you are on (the same plate as a selected segment; strong only on the space switch)"
   }
 }

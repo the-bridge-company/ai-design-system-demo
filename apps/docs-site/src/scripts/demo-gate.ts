@@ -159,7 +159,8 @@ async function paintStrip(show: boolean, repo: string, visitor?: boolean) {
           (el.querySelector<HTMLElement>(':scope > span') ?? el).textContent = el.dataset.demoLabel ?? '';
           el.removeAttribute('data-gh-open');
         });
-      // "See it as" (lib/demo-cast.ts): a visitor of the sample team plays any of its people; a member stays themselves.
+      // "See it as" (lib/demo-cast.ts): a signed-out visitor of the sample team plays any of its people; a member, and
+      // anyone signed in, stays themselves (castOn is null for them).
       const person = on && (visiting ?? deps?.visitor?.()) ? castOn(repo) : null;
       const cast = person ? { current: person.key, onPick: playCast } : null;
       flushSync(() => root.render(on ? createElement(DemoBanner, { repo, back, onConnect: connectDesignSystem, cast }) : null));

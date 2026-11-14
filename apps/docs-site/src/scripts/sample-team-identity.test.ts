@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-// The sample team (lib/demo.ts SAMPLE_REPO, Acme Design) reads the same for everyone: someone signed in with GitHub
-// who is not on it sees exactly what a signed-out visitor sees (Dana, the sample data), from the first paint. Their own
-// name, changes, role and remembered counts never mix in. On a real team, the GitHub sign-in counts as before.
+// The sample team (lib/demo.ts SAMPLE_REPO, Acme Design): one person keeps their identity everywhere, only their role
+// changes per team. Someone signed in (GitHub or a Bridge account) is one more member there, Admin, as themselves: their
+// name, the lead's seat (lib/sample-member.ts). The data still reads through the visitor's read-only session, never
+// their GitHub token. A signed-out visitor plays Dana by default. On a real team, the GitHub sign-in counts as before.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenFingerprint } from '../lib/token-session';
 import { setContributeFetch } from './contribute-session';
@@ -65,18 +66,31 @@ async function model() {
 }
 
 describe('the sample team, signed in with GitHub or not', () => {
-  it('is the same model for a signed-in non-member and a signed-out visitor', async () => {
+  it('reads as Dana signed out, and as the person signed in: an Admin with the lead seat, through the same read-only session', async () => {
     history.replaceState(null, '', SAMPLE);
     expect(onSampleTeam()).toBe(true);
     visitAsDana();
     const visitor = await model();
-    signInWithGitHub();
-    const signedIn = await model();
-    expect(signedIn).toEqual(visitor);
-    expect(visitor.who).toMatchObject({ name: 'Dana', visitor: true });
+    expect(visitor.who).toMatchObject({ name: 'Dana', visitor: true, role: 'admin' });
+    expect(visitor.who?.self).toBeUndefined();
     expect(visitor.greeting).toBe('Good evening, Dana.');
     expect(visitor.github).toBe(false);
     expect(visitor.carriesGitHubToken).toBe(false);
+
+    signInWithGitHub();
+    const signedIn = await model();
+    expect(signedIn.who).toMatchObject({ name: 'Florian', role: 'admin', visitor: true, lead: true, decides: true, libraryOwner: true, self: { login: 'peterbono' } });
+    // None of Dana's own work reads as theirs: no member reference of hers.
+    expect(signedIn.who?.ref).toBeUndefined();
+    expect(signedIn.greeting).toBe('Good evening, Florian.');
+    // The data: the same route as the visitor, never their GitHub token, no GitHub session to renew there.
+    expect(signedIn.readsThrough).toBe(visitor.readsThrough);
+    expect(signedIn.token).toBe(visitor.token);
+    expect(signedIn.github).toBe(false);
+    expect(signedIn.renewable).toBe(false);
+    expect(signedIn.carriesGitHubToken).toBe(false);
+    expect(signedIn.linked).toBeNull();
+    expect(signedIn.home).toEqual(visitor.home);
   });
 
   it('keeps the GitHub sign-in on a real team', async () => {

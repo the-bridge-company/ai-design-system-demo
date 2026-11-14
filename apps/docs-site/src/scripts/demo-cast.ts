@@ -1,8 +1,10 @@
 // "See it as" in the browser (lib/demo-cast.ts says what it is): which person of the sample team this page plays.
 // The address (?as=sofia) wins and is kept for the next pages; else this browser's pick; else Dana. Read only on the
-// sample team: on any other team nobody is played, whatever the address or the storage say.
+// sample team, and only for a signed-out visitor: someone signed in is themselves there (lib/sample-member.ts), and on
+// any other team nobody is played, whatever the address or the storage say.
 import { CAST_PARAM, CAST_STORAGE_KEY, castPerson, chooseCast, type CastKey, type CastPerson } from '../lib/demo-cast';
 import { isSampleTeam } from '../lib/demo';
+import { sampleSelf } from './sample-self';
 
 const stored = (): string | null => {
   try {
@@ -29,9 +31,9 @@ const queryPick = (): string | null => {
   }
 };
 
-/** The person this page plays on `repo` ("owner/repo"), or null when `repo` is not the sample team. */
+/** The person this page plays on `repo` ("owner/repo"), or null when `repo` is not the sample team or someone is signed in. */
 export function castOn(repo: string | null | undefined): CastPerson | null {
-  if (!isSampleTeam(repo)) return null;
+  if (!isSampleTeam(repo) || sampleSelf()) return null;
   const q = queryPick();
   const person = chooseCast({ query: q, stored: stored() });
   // Picked by the address: kept, so the next page of the visit plays the same person.

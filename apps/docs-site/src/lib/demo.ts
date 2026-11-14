@@ -1,14 +1,15 @@
 // The demo: which design systems are the public demo, and the words a visitor reads there. Pure: no DOM, no
 // fetch, covered by demo.test.ts.
 //
-// A visitor without an account explores the sample team as its lead (Dana, a read-only email member session,
+// A signed-out visitor explores the sample team as its lead (Dana, a read-only email member session,
 // api/_lib/demo-members.ts): every screen runs the code of any team, and the server refuses each write in the
 // sample-team dialog's words (403 `demo`, api/contribute demoWriteRefusal). The sample team has one banner and one call to
 // action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Edits stay in this browser as
 // drafts for the visit (scripts/demo-drafts.ts); every action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
-// scripts/demo-gate.ts). Everyone reads the sample team that way, signed in or not: a GitHub sign-in or a Bridge account
-// of the browser never takes part there (scripts/github-session.ts onSampleTeam). On Bridge's own design system,
-// someone who can write to it keeps the normal Studio.
+// scripts/demo-gate.ts). Everyone reads the sample data that way, signed in or not: no GitHub token is used there
+// (scripts/github-session.ts onSampleTeam). Someone signed in keeps their identity: they are one more member of the
+// sample team, Admin, as themselves (lib/sample-member.ts), never Dana. On Bridge's own design system, someone who can
+// write to it keeps the normal Studio.
 
 import { canonicalRepo, isTeamKey } from './team-path.js';
 
@@ -287,8 +288,8 @@ export const sampleStartLines = (name: string, where: string): { line: string; n
 
 /**
  * The sample team's actions that run in this browser instead of opening the sample-team dialog: the banner says edits
- * stay in this browser, so the ones a visitor tries first do (Start an exploration as a designer, Looks right as Dana,
- * Add a product as Dana). Nothing is sent: the start and the product are kept here for the visit and Looks right is
+ * stay in this browser, so the ones a visitor tries first do (Start an exploration as a designer, Looks right as the lead,
+ * Add a product as the lead: Dana signed out, the person signed in). Nothing is sent: the start and the product are kept here for the visit and Looks right is
  * painted from a copy kept here (lib/demo-in-browser.ts). Every other write needs a real repository and keeps the
  * dialog (scripts/demo-gate.ts).
  */

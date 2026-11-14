@@ -345,6 +345,46 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
   });
 });
 
+describe('TeamChip: the sample team is one of your teams once signed in', () => {
+  const SAMPLE = 'acme-design-demo/bridge-demo-ds';
+  const signedIn = () => localStorage.setItem('bridge.account.self', JSON.stringify({ name: 'Florian', email: 'florian@example.com', login: 'peterbono' }));
+  const teamsOf = (menu: HTMLElement) => within(within(menu).getByRole('group', { name: 'Your teams' })).getAllByRole('menuitem').map((i) => [i.querySelector('.tc-team-name')?.textContent, i.querySelector('.tc-team-role')?.textContent ?? null, i.hasAttribute('data-current')]);
+
+  it('reads the same from your own team and from the sample team: Admin, its own mark, last, never a recent team', async () => {
+    signedIn();
+    localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify([SAMPLE, 'acme/ds']));
+    localStorage.setItem('bridge.teamRoles', JSON.stringify({ 'acme/ds': 'Admin' }));
+    page.viewer = { login: 'peterbono', name: 'Florian' };
+    const own = await openMenu();
+    await waitFor(() => expect(teamsOf(own.menu)).toEqual([['Ds', expect.any(String), true], ['Acme Design', 'Admin', false]]));
+    const sampleRow = within(own.menu).getByRole('menuitem', { name: /^Acme Design/ });
+    // Its own mark, the owner's (as on its chip), never the "AD" initials of a recent team.
+    expect(sampleRow.querySelector('[class*="_fallback_"]')?.textContent).toBe('A');
+    expect(within(own.menu).queryByRole('group', { name: 'Recent teams' })).toBeNull();
+    expect(within(own.menu).queryByRole('group', { name: 'Try it' })).toBeNull();
+    await own.user.keyboard('{Escape}');
+    document.body.innerHTML = '';
+
+    page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };
+    page.site = { name: 'Acme Design' };
+    page.viewer = { login: 'florian@example.com', name: 'Florian', email: 'florian@example.com' };
+    const user = userEvent.setup();
+    render(createElement(TeamChip, { launcher: true }));
+    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }));
+    const menu = await screen.findByRole('menu');
+    await waitFor(() => expect(teamsOf(menu).map(([n, r]) => [n, r])).toEqual([['Ds', 'Admin'], ['Acme Design', 'Admin']]));
+    expect(teamsOf(menu).map(([, , c]) => c)).toEqual([false, true]);
+    expect(within(menu).queryByRole('group', { name: 'Recent teams' })).toBeNull();
+  });
+
+  it('stays a recent team for a signed-out visitor', async () => {
+    localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify([SAMPLE]));
+    const { menu } = await openMenu();
+    expect(await within(menu).findByRole('group', { name: 'Recent teams' })).toBeInTheDocument();
+    expect(within(within(menu).getByRole('group', { name: 'Recent teams' })).getByRole('menuitem', { name: 'Acme Design' })).toBeInTheDocument();
+  });
+});
+
 describe('TeamChip pill and name, from the server', () => {
   it("shows an email admin's role from /api/contribute, Admin and never Can edit", async () => {
     const { setContributeFetch } = await import('../../../scripts/contribute-session');

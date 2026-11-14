@@ -30,7 +30,7 @@ import { paintAvatar, paintDrawnAvatar } from './avatar';
 import { knownDrawn } from './github-photo';
 import { clearPendingAction, keepPendingAction } from './pending-action';
 import { accountLimitLine, ghAction, ghButton, ghVerb } from '../lib/gh-wording';
-import { SIGNED_OUT_ELSEWHERE_KEY } from '../lib/access-view';
+import { ownerAvatarUrl, SIGNED_OUT_ELSEWHERE_KEY } from '../lib/access-view';
 import { bindDemoGate } from './demo-gate';
 import {
   type AppSession,
@@ -72,6 +72,8 @@ import { emailMemberFace } from '../lib/people';
 import { DEMO_VISIT_KEY, isSampleTeam } from '../lib/demo';
 import { sampleRead } from '../lib/demo-in-browser';
 import { castAccess } from '../lib/demo-cast';
+import { memberContact } from '../lib/sample-member';
+import { resolveSampleSelf, sampleSelfPending } from './sample-self';
 import { SEP } from '../lib/sep';
 import { KEPT_VERSION } from '../lib/kept-version';
 
@@ -182,9 +184,11 @@ export function readRepo(): RepoRef {
 }
 
 /**
- * This page is the sample team (lib/demo.ts SAMPLE_REPO, Acme Design): everyone reads it as its visitor does, as
- * Dana with the sample data, from the first paint. A GitHub sign-in or a linked account of this browser never takes
- * part there, so nothing of the person's own account (their name, their changes, their role) mixes with the demo.
+ * This page is the sample team (lib/demo.ts SAMPLE_REPO, Acme Design): everyone reads its sample data through the
+ * visitor's read-only session, from the first paint. No GitHub token and no linked GitHub role is used there, so the
+ * sample never reads or writes the person's own repositories. Who the page is for still follows the person: signed in,
+ * they are themselves, one more Admin of the team (lib/sample-member.ts, contribute-session contributorFor); signed
+ * out, the person they play ("See it as", Dana by default).
  */
 export function onSampleTeam(): boolean {
   if (typeof document === 'undefined' || document.documentElement.hasAttribute('data-no-repo')) return false;
@@ -1197,15 +1201,21 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
         el.textContent = role;
         el.hidden = !role;
       });
+      const member = email ? currentContributor() : null;
       acct.querySelectorAll<HTMLElement>('[data-gh-menu-email]').forEach((el) => {
-        el.textContent = email ? email.login : '';
+        el.textContent = email ? (member ? memberContact(member) : email.login) : '';
         el.hidden = !email;
       });
       acct.querySelectorAll<HTMLElement>('[data-gh-menu-title]').forEach((el) => (el.textContent = email ? (email.name ?? email.login) : 'GitHub'));
       const avatar = acct.querySelector<HTMLElement>('[data-gh-avatar]');
       if (avatar) {
         avatar.hidden = !viewer;
-        if (email) paintDrawnAvatar(avatar, emailMemberFace(email.name, email.login));
+        // The person signed in, on the sample team: their face as on their own team (their GitHub photo, or the drawn
+        // face they chose over it, scripts/github-photo decides), else drawn like any email member.
+        const self = member?.self;
+        if (self?.login && knownDrawn(self.login)) paintDrawnAvatar(avatar, self.login);
+        else if (self?.login) paintAvatar(avatar, self.login, self.avatar || ownerAvatarUrl(self.login, 64), 64);
+        else if (email) paintDrawnAvatar(avatar, emailMemberFace(email.name, email.login));
         // A drawn face, never bare initials: no photo (the sample team's developer, lib/demo-cast castGitHub), or the
         // person chose it over their photo, or GitHub only has the pattern (scripts/github-photo decides).
         else if (viewer && (!viewer.avatar_url || knownDrawn(viewer.login))) paintDrawnAvatar(avatar, viewer.login);
@@ -1486,6 +1496,23 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
           settle(known);
         },
       );
+      return;
+    }
+    // The sample team, with a sign-in that may be there but is not known yet (an account never read in this browser, a
+    // GitHub sign-in never checked): the page waits in its loading state (the account row holds its place, the home
+    // its skeleton, no "See it as") until it knows, never Dana first and the person a moment later. A browser with no
+    // sign-in hint at all is a signed-out visitor: Dana at once (scripts/sample-self.ts).
+    if (onSampleTeam() && sampleSelfPending()) {
+      paint();
+      void resolveSampleSelf().then(() => {
+        // The account's answer may have settled it already (onContributeChange above).
+        if (!checked && !githubToken()) {
+          const m = contributorFor(repo);
+          viewer = m ? contributorViewer(m) : castDeveloper();
+          done();
+        }
+        void contributeInfo(repo);
+      });
       return;
     }
     if (known || developer) {

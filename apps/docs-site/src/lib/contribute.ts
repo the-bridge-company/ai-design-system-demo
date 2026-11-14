@@ -72,6 +72,11 @@ export interface ContributeMember {
    * and the server refuses every write (403 `demo`, the demo dialog). The demo banner stays.
    */
   visitor?: boolean;
+  /**
+   * The person signed in on this browser, as a member of the sample team (lib/sample-member.ts sampleSelfMember): their
+   * own name, their GitHub account when they have one (login and photo, for their face), never set by the server.
+   */
+  self?: { login: string | null; avatar: string | null };
 }
 
 /**

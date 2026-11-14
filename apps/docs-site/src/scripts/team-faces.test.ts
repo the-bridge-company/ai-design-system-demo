@@ -48,6 +48,18 @@ describe('faceUri', () => {
     expect(faceUri(drawer, '~dana')).toBe(drawer.illustratedFaceUri(face('variant12')));
     expect(localStorage.getItem('bridge.faces.' + SAMPLE_REPO)).toBeNull();
   });
+
+  it('on the sample team: the person signed in wears their own saved face and choice there, a visitor never does', () => {
+    ctx.repo = SAMPLE_REPO;
+    noteAccountFace({ name: 'Florian', email: 'florian@example.com', github: { login: 'peterbono' }, face: face('variant30'), faceChoice: 'drawn' });
+    forgetDrawings();
+    // Signed out (no account kept here): the saved face of an earlier session is not theirs to show.
+    expect(faceUri(drawer, 'peterbono')).not.toBe(drawer.illustratedFaceUri(face('variant30')));
+    localStorage.setItem('bridge.account.self', JSON.stringify({ name: 'Florian', email: 'florian@example.com', login: 'peterbono' }));
+    forgetDrawings();
+    expect(faceUri(drawer, 'peterbono')).toBe(drawer.illustratedFaceUri(face('variant30')));
+    expect(choseDrawn('peterbono')).toBe(true);
+  });
 });
 
 describe('choseDrawn (photo or drawn face, Settings > You)', () => {

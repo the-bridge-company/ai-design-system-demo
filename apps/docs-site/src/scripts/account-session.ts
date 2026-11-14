@@ -154,8 +154,14 @@ export const renameAccount = (name: string) => update({ action: 'rename', name: 
 /** The AI tools the person uses (lib/ai-tools.ts), kept on their account. */
 export const saveAiTools = (tools: AiTool[]) => update({ action: 'ai-tools', tools });
 
-/** The person's drawn face (lib/team-faces.ts), kept on their account and in each of their teams. 409 face_taken names who wears it. */
-export const saveFace = (face: FaceRecipe) => update({ action: 'face', face });
+/**
+ * The person's drawn face (lib/team-faces.ts), kept on their account and in each of their teams. 409 face_taken names
+ * who wears it. `choice: 'drawn'` (someone with a GitHub photo) also shows it instead of the photo.
+ */
+export const saveFace = (face: FaceRecipe, choice?: 'drawn') => update({ action: 'face', face, ...(choice ? { choice } : {}) });
+
+/** Someone with a GitHub photo goes back to it in all their teams; their drawn face stays saved for later. */
+export const showPhoto = () => update({ action: 'face', choice: 'photo' });
 
 /** Account > Email: what Bridge emails the person about their work. */
 export const saveNotify = (choices: Partial<NotifyChoices>) => update({ action: 'notify', ...choices });

@@ -1,6 +1,9 @@
-// Asks GitHub once a week per person whether their avatar is a photo or the generated pattern (lib/github-photo), and
-// keeps the answer in this browser. One HEAD request per person, no API call, no quota.
-import { isIdenticonStamp, photoProbeUrl, readPhotoCache, type PhotoCache } from '../lib/github-photo';
+// The one place that decides whether a GitHub account shows its photo or Bridge's drawn face (lib/github-photo
+// showsDrawn): drawn when the person chose it in Settings > You (scripts/team-faces.ts choseDrawn), or when their
+// avatar is GitHub's generated pattern. Whether it is a photo is asked once a week per person and kept in this
+// browser. One HEAD request per person, no API call, no quota.
+import { isIdenticonStamp, photoProbeUrl, readPhotoCache, showsDrawn, type PhotoCache } from '../lib/github-photo';
+import { choseDrawn } from './team-faces';
 
 const STORE = 'bridge.people.photos.v1';
 let cache: PhotoCache | null = null;
@@ -17,11 +20,8 @@ function kept(): PhotoCache {
   return (cache = readPhotoCache(raw, Date.now()));
 }
 
-/** The answer already known for a login: true when Bridge draws the face, false for a photo, null when not asked yet. */
-export const knownDrawn = (login: string): boolean | null => kept()[login.toLowerCase()]?.drawn ?? null;
-
-/** Whether this login shows Bridge's drawn face (no photo on GitHub). A failed check keeps the photo. */
-export function drawnFace(login: string): Promise<boolean> {
+/** Whether GitHub only has the generated pattern for this login (no photo). A failed check reads as a photo. */
+function identicon(login: string): Promise<boolean> {
   const key = login.toLowerCase();
   const known = kept()[key];
   if (known) return Promise.resolve(known.drawn);
@@ -43,3 +43,14 @@ export function drawnFace(login: string): Promise<boolean> {
   }
   return p;
 }
+
+/** The answer already known for a login: true when Bridge draws the face, false for a photo, null when not asked yet. */
+export const knownDrawn = (login: string): boolean | null => showsDrawn(choseDrawn(login), kept()[login.toLowerCase()]?.drawn ?? null);
+
+/** Whether this login shows Bridge's drawn face (chosen, or no photo on GitHub). A failed check keeps the photo. */
+export function drawnFace(login: string): Promise<boolean> {
+  return choseDrawn(login) ? Promise.resolve(true) : identicon(login);
+}
+
+/** Whether this login has a photo of its own on GitHub: Settings > You offers the photo or drawn face choice only then. */
+export const hasPhoto = (login: string): Promise<boolean> => identicon(login).then((i) => !i);

@@ -35,7 +35,10 @@
 //   POST { action: 'face', face }              the person's drawn face (src/lib/team-faces.ts recipe), kept on the account
 //                                              and in the face map of each of their teams (api/_lib/team-faces.ts);
 //                                              { account }, 400 bad_face, 409 face_taken { holder, team } when someone
-//                                              on one of their teams already wears that hair style (first claim wins)
+//                                              on one of their teams already wears that hair style (first claim wins).
+//                                              `choice` (optional, someone with a GitHub photo): 'drawn' shows this face
+//                                              instead of the photo in all their teams; 'photo' (no face needed) goes
+//                                              back to the photo and keeps the saved face. `account.faceChoice`
 //   POST { action: 'sign-out' }                clears the cookie on this browser
 //   POST { action: 'sign-out-everywhere' }     bumps the account version: every session ends
 //   POST { action: 'delete-check' }            before the confirm field: { blocked: [{ repo, name, people }] }, the teams the
@@ -82,9 +85,9 @@ import { mergeEmailAccounts } from '../_lib/account-merge.js';
 import { canonicalEmail, emailSpellings, legacyEmail, sameEmail } from '../_lib/canonical-email.js';
 import { forgetChanges } from '../_lib/former-member.js';
 import { parseAiTools, type AiTool } from '../../src/lib/ai-tools.js';
-import { parseFace, type FaceRecipe } from '../../src/lib/team-faces.js';
+import { parseFace, parseFaceChoice, type FaceChoice, type FaceRecipe } from '../../src/lib/team-faces.js';
 import { emailMemberFace, nameFace } from '../../src/lib/people.js';
-import { putFace, takenIn } from '../_lib/team-faces.js';
+import { dropOverPhoto, putFace, takenIn } from '../_lib/team-faces.js';
 import { githubApp, type AppTokens } from '../_lib/github-app.js';
 import { mailCode, mailP, mailPage, escHtml, resendSender, type EmailMessage, type EmailSender } from '../_lib/email.js';
 import { clientIp, dayOf, envInt, fail, GITHUB_DOWN, HttpError, json, readBody, sameOrigin, secondsToTomorrow, sha256, type FetchLike } from '../_lib/http.js';
@@ -170,6 +173,8 @@ export interface PublicAccount {
   aiTools: AiTool[] | null;
   /** Their drawn face (Settings > You), null while they keep the one Bridge drew from their name. */
   face: FaceRecipe | null;
+  /** With a GitHub photo: whether their team sees the photo (default) or the drawn face. */
+  faceChoice: FaceChoice;
   /** What Bridge emails them about their work (Account > Email), defaults filled in. */
   notify: NotifyPrefs;
   teams: PublicTeam[];
@@ -394,7 +399,7 @@ async function publicAccount(ctx: Ctx, a: Account): Promise<PublicAccount> {
       teams.sort((x, y) => x.repo.localeCompare(y.repo));
     }
   }
-  return { email: shownEmail(a), name: a.name, nameSet: a.nameSet !== false, github: a.github ? { login: a.github.login, id: a.github.id } : null, aiTools: parseAiTools(a.aiTools), face: parseFace(a.face), notify: prefsOf(a), teams };
+  return { email: shownEmail(a), name: a.name, nameSet: a.nameSet !== false, github: a.github ? { login: a.github.login, id: a.github.id } : null, aiTools: parseAiTools(a.aiTools), face: parseFace(a.face), faceChoice: parseFaceChoice(a.faceChoice), notify: prefsOf(a), teams };
 }
 
 /**
@@ -780,7 +785,7 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
         const face = parseFace(a.face);
         if (face && nameFace(next.name) !== nameFace(a.name)) {
           const repos = (await publicAccount(ctx, next)).teams.map((t) => t.repo);
-          await putFace(svc.redis, repos, faceSeeds(next), next.name, face, ctx.now(), [emailMemberFace(a.name, a.email)]).catch(() => undefined);
+          await putFace(svc.redis, repos, faceSeeds(next), next.name, face, ctx.now(), [emailMemberFace(a.name, a.email)], a.faceChoice === 'drawn').catch(() => undefined);
         }
         return json(200, { account: await publicAccount(ctx, next) });
       }
@@ -792,18 +797,27 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
         return json(200, { account: await publicAccount(ctx, next) });
       }
       if (body.action === 'face') {
-        const face = parseFace(body.face);
-        if (!face) return fail(400, 'bad_face', 'Pick a face from the ones offered.');
         const teams = (await publicAccount(ctx, a)).teams;
         const repos = teams.map((t) => t.repo);
         const seeds = faceSeeds(a);
+        // Back to the photo: the saved face stays (for a later switch) and stops showing over the photo.
+        if (body.choice === 'photo') {
+          const next: Account = { ...a };
+          delete next.faceChoice;
+          await dropOverPhoto(svc.redis, repos, seeds).catch(() => undefined);
+          await putAccount(svc.redis, next);
+          return json(200, { account: await publicAccount(ctx, next) });
+        }
+        const face = parseFace(body.face);
+        if (!face) return fail(400, 'bad_face', 'Pick a face from the ones offered.');
+        const drawn = body.choice === 'drawn' || a.faceChoice === 'drawn';
         const taken = await takenIn(svc.redis, repos, face, seeds, async (repo) => new Set((await svc.members.list(repo)).map((m) => nameFace(m.name))));
         if (taken) {
           const team = teams.find((t) => t.repo === taken.repo)?.name || teamDisplayName(taken.repo);
           return fail(409, 'face_taken', `${taken.name} already wears this hair style in ${team}. Shuffle or pick another one.`, { holder: taken.name, team });
         }
-        await putFace(svc.redis, repos, seeds, a.name, face, ctx.now());
-        const next = { ...a, face };
+        await putFace(svc.redis, repos, seeds, a.name, face, ctx.now(), [], drawn);
+        const next: Account = { ...a, face, ...(drawn ? { faceChoice: 'drawn' as const } : {}) };
         await putAccount(svc.redis, next);
         return json(200, { account: await publicAccount(ctx, next) });
       }

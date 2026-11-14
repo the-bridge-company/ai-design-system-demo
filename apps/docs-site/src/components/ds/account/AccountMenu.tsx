@@ -3,7 +3,7 @@
 // without a nav (the sign-in, start and invite screens). One DS Menu: the name, email and role on this team, the GitHub account once linked (linking lives in Account
 // settings and in the actions that need it, never pushed here),
 // Account settings (the Account dialog: name, email, teams, sign out everywhere, delete; Settings itself starts with
-// the team, board D9), Sign out. An old link to #account opens the dialog. The face is the GitHub photo once linked, else the DS drawn face (never initials). The
+// the team, board D9), Sign out. An old link to #account opens the dialog. The face is the one the person shows everywhere (useFace: their GitHub photo or their drawn face, never initials). The
 // row's second line is the person's role on this team, else their email. Nothing shows signed out or on a site
 // without accounts: the GitHub block keeps working as before.
 import { useEffect, useState } from 'react';
@@ -23,27 +23,36 @@ import { FACES_EVENT, faceUri } from '../../../scripts/team-faces';
 /**
  * The drawn face of someone signed in by email (lazy: the drawings are a separate chunk): the face they saved in
  * Settings > You, else the one seeded by their name like every other place that shows them (lib/people
- * emailMemberFace, scripts/team-faces faceUri), or the GitHub photo once linked.
+ * emailMemberFace, scripts/team-faces faceUri). Once GitHub is linked: their photo, unless they chose their drawn face
+ * or have no photo (scripts/github-photo decides, as for every other face).
  */
 export function useFace(account: Account | null): string | undefined {
   const [face, setFace] = useState<string | undefined>(undefined);
   const login = account?.github?.login;
   const seed = account ? emailMemberFace(account.name, account.email) : null;
+  const choice = account?.faceChoice;
   useEffect(() => {
     let live = true;
+    const drawFrom = (s: string) => void import('@bridge-ds/react/avatar-illustrated').then((m) => live && setFace(faceUri(m, s)));
     const draw = () => {
-      if (login) setFace(ownerAvatarUrl(login, 64));
-      else if (seed) void import('@bridge-ds/react/avatar-illustrated').then((m) => live && setFace(faceUri(m, seed)));
+      if (login) {
+        void import('../../../scripts/github-photo').then(async ({ knownDrawn, drawnFace }) => {
+          const drawn = knownDrawn(login) ?? (await drawnFace(login));
+          if (!live) return;
+          if (drawn) drawFrom(login);
+          else setFace(ownerAvatarUrl(login, 64));
+        });
+      } else if (seed) drawFrom(seed);
       else setFace(undefined);
     };
     draw();
-    // A face saved in Settings > You shows here at once.
+    // A face saved or chosen in Settings > You shows here at once.
     document.addEventListener(FACES_EVENT, draw);
     return () => {
       live = false;
       document.removeEventListener(FACES_EVENT, draw);
     };
-  }, [login, seed]);
+  }, [login, seed, choice]);
   return face;
 }
 

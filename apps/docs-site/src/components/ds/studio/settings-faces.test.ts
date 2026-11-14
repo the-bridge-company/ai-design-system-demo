@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../../../scripts/github-photo', () => ({
   knownDrawn: (login: string) => login === 'acme-malik',
   drawnFace: async (login: string) => login === 'acme-malik',
+  hasPhoto: async (login: string) => login !== 'acme-malik',
 }));
 vi.mock('@bridge-ds/react', async (orig) => ({
   ...(await orig<typeof import('@bridge-ds/react')>()),

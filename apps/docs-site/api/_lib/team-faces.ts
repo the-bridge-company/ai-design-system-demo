@@ -2,9 +2,10 @@
 // member's Studio draws them the same and keeps them apart. Rules: src/lib/team-faces.ts.
 //
 // Key (Upstash Redis, the same database as accounts and members):
-//   bridge:team:faces:<repo>   { "<face seed>": { face, name, at } }  a face seed is a GitHub login, or `~name` for an
-//                              email member (src/lib/people.ts nameFace). No expiry: the face is freed when its holder
-//                              saves another one, leaves the team (dropped on read) or deletes their account.
+//   bridge:team:faces:<repo>   { "<face seed>": { face, name, at, overPhoto? } }  a face seed is a GitHub login, or `~name`
+//                              for an email member (src/lib/people.ts nameFace); `overPhoto` when the holder chose it
+//                              over their GitHub photo. No expiry: the face is freed when its holder saves another
+//                              one, leaves the team (dropped on read) or deletes their account.
 import type { Redis } from './redis.js';
 import { faceHolder, parseTeamFaces, type FaceRecipe, type TeamFaces } from '../../src/lib/team-faces.js';
 
@@ -41,13 +42,32 @@ export async function takenIn(redis: Redis, repos: readonly string[], face: Face
   return null;
 }
 
-/** Writes the person's face under each of their seeds in each team, and drops it under `dropSeeds` (an old name). */
-export async function putFace(redis: Redis, repos: readonly string[], seeds: readonly string[], name: string, face: FaceRecipe | null, at: number, dropSeeds: readonly string[] = []): Promise<void> {
+/**
+ * Writes the person's face under each of their seeds in each team, and drops it under `dropSeeds` (an old name).
+ * `overPhoto`: they chose it over their GitHub photo, so teammates draw it instead of the photo.
+ */
+export async function putFace(redis: Redis, repos: readonly string[], seeds: readonly string[], name: string, face: FaceRecipe | null, at: number, dropSeeds: readonly string[] = [], overPhoto = false): Promise<void> {
   for (const repo of repos) {
     const faces = await getTeamFaces(redis, repo);
     for (const s of [...dropSeeds, ...seeds]) delete faces[s.toLowerCase()];
-    if (face) for (const s of seeds) faces[s.toLowerCase()] = { face, name, at };
+    if (face) for (const s of seeds) faces[s.toLowerCase()] = { face, name, at, ...(overPhoto ? { overPhoto: true as const } : {}) };
     if (Object.keys(faces).length) await redis.cmd('SET', teamFacesKey(repo), JSON.stringify(faces));
     else await redis.cmd('DEL', teamFacesKey(repo));
+  }
+}
+
+/** Back to the GitHub photo: the person's saved faces stay where they are (same claim time), no longer shown over it. */
+export async function dropOverPhoto(redis: Redis, repos: readonly string[], seeds: readonly string[]): Promise<void> {
+  for (const repo of repos) {
+    const faces = await getTeamFaces(redis, repo);
+    let changed = false;
+    for (const s of seeds) {
+      const e = faces[s.toLowerCase()];
+      if (e?.overPhoto) {
+        delete e.overPhoto;
+        changed = true;
+      }
+    }
+    if (changed) await redis.cmd('SET', teamFacesKey(repo), JSON.stringify(faces));
   }
 }

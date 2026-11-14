@@ -11,7 +11,7 @@ import { START_PAGE } from './start';
 import { CALLBACK_PATH } from './github-signin';
 import { teamHref } from './team-path';
 import { parseAiTools, type AiTool } from './ai-tools';
-import { parseFace, type FaceRecipe } from './team-faces';
+import { parseFace, parseFaceChoice, type FaceChoice, type FaceRecipe } from './team-faces';
 
 export const ACCOUNT_API = '/api/account';
 /** Every action carries it, the server refuses one without it (CSRF), like /api/contribute. */
@@ -48,6 +48,8 @@ export interface Account {
   aiTools?: AiTool[] | null;
   /** Their drawn face (Settings > You, lib/team-faces.ts), null while they keep the one drawn from their name. */
   face?: FaceRecipe | null;
+  /** With a GitHub photo: whether their team sees the photo (the default) or the drawn face (Settings > You). */
+  faceChoice?: FaceChoice;
   /** What Bridge emails them about their work (Account > Email); absent from an older server. */
   notify?: NotifyChoices;
   teams: AccountTeam[];
@@ -101,7 +103,7 @@ export function parseAccount(v: unknown): Account | null {
       })
     : [];
   const notify = parseNotify(o.notify);
-  return { email, name: str(o.name), nameSet: o.nameSet !== false && Boolean(str(o.name)), github: login ? { login, id: typeof gh?.id === 'number' ? gh.id : 0 } : null, aiTools: parseAiTools(o.aiTools), face: parseFace(o.face), ...(notify ? { notify } : {}), teams };
+  return { email, name: str(o.name), nameSet: o.nameSet !== false && Boolean(str(o.name)), github: login ? { login, id: typeof gh?.id === 'number' ? gh.id : 0 } : null, aiTools: parseAiTools(o.aiTools), face: parseFace(o.face), faceChoice: parseFaceChoice(o.faceChoice), ...(notify ? { notify } : {}), teams };
 }
 
 /** Only a same-site path is a place to go after signing in; never the sign-in screen itself or the GitHub callback. */
@@ -163,6 +165,8 @@ const PERSONAL_PREFIXES = [
   'bridge.prstatus:',
   'bridge.view.',
   'bridge.people.names.',
+  // Which logins have a GitHub photo (scripts/github-photo.ts): the person and their teammates, like the names above.
+  'bridge.people.photos.',
   'bridge.suggestions.needs.',
   'bridge.review.looked.',
   // The team default of the AI tools, kept per team (scripts/ai-tools.ts); the person's own choice stays, like the theme.

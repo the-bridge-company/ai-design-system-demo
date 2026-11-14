@@ -493,14 +493,15 @@ html:has(.set-page, .ts-band) {
   gap: var(--space-8);
 }
 
-/* Settings > You, Your face (components/ds/studio/FaceSetting.tsx). Collapsed: the label block, the 40px face and
-   Change share one line. Open: the row stacks and uses the card's full width (no empty label column). */
+/* Settings > You, Your face (components/ds/studio/FaceSetting.tsx). Collapsed: the label block, the 40px face (with
+   Photo or Drawn face for someone with a GitHub photo) and Change share one line. Open: the row stacks and uses the card's full width (no empty label column). */
 .set-row.yf-row {
   align-items: center;
 }
 
 .yf-value {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
 }

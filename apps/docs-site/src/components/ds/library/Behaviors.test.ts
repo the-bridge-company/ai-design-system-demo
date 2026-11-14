@@ -51,7 +51,7 @@ describe('Behaviors section', () => {
     const stage = screen.getByRole('region', { name: 'Try it on the real Combobox' });
     expect(within(stage).getByRole('combobox', { name: 'Reviewer' })).toBeInTheDocument();
     expect(container.textContent).toContain('Expected announcement: No matches. Try another name.');
-    expect(stage.querySelector('.bh-stage-note')!.textContent).toBe('Type ba in the field');
+    expect(stage.querySelector('.bh-stage-note')!.textContent).toBe('Click the field, then press the down arrow');
 
     const loading = screen.getByRole('button', { name: /Says when results are loading/ });
     fireEvent.click(loading);

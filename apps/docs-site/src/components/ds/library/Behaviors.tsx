@@ -47,11 +47,13 @@ function Keys({ keys }: { keys: string[] }) {
 }
 
 export default function Behaviors({ name, behaviors, preview, live = false, storybook, storyId }: BehaviorsProps) {
-  const [activeId, setActiveId] = useState(behaviors[0]?.id ?? '');
+  const groups = behaviorGroups(behaviors);
+  // The first row shown (families are reordered), not the first one in the data.
+  const first = groups[0]?.items[0] ?? behaviors[0];
+  const [activeId, setActiveId] = useState(first?.id ?? '');
   const stageRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
-  const active = behaviors.find((b) => b.id === activeId) ?? behaviors[0];
-  const groups = behaviorGroups(behaviors);
+  const active = behaviors.find((b) => b.id === activeId) ?? first;
   const stageNode = live ? (active?.example ?? preview ?? null) : null;
   const frame = !live && storybook && storyId ? previewUrl(storybook, storyId, { theme: 'light' }) : null;
   const hasStage = Boolean(stageNode || frame);

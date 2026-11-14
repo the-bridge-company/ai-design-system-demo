@@ -1,5 +1,6 @@
 // /llms.txt: the same data as the human pages, flattened to plain text for agents.
 // Single source, two outputs: if a token or a rule changes, both the HTML and this file change on the next build.
+import { agentBehaviors } from '@bridge-ds/core';
 import { loadComponents } from './components';
 import { contrastPairs } from './contrast';
 import { agentRules } from './governance';
@@ -99,6 +100,13 @@ export function buildLlmsTxt(): string {
       push('Do:', ...c.docs.dos.map((x) => `- ${x.title}. ${x.text}`));
       push("Don't:", ...c.docs.donts.map((x) => `- ${x.title}. ${x.text}`));
       push('Accessibility:', ...c.docs.accessibility.map((x) => `- ${x}`));
+      const behaviors = agentBehaviors(c.docs.behaviors);
+      if (behaviors.length) {
+        push(
+          'Behaviors (id, family: text):',
+          ...behaviors.map((b) => `- ${b.id}, ${b.family}: ${b.text}${b.keys ? ` [${b.keys.join(', ')}]` : ''}${b.announces ? `. Announces "${b.announces}"` : ''}`),
+        );
+      }
     }
     push(`Tokens used: ${c.tokensUsed.map((t) => t.name).join(', ')}`);
     push(`Docs facts: [/docs-ai/${c.slug}.json](/docs-ai/${c.slug}.json)`, '');

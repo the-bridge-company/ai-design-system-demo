@@ -8,6 +8,7 @@
 // accessibility and content guidelines. Prose an AI wrote carries "draftedBy": "claude" and "needsReview": true
 // until a reviewer accepts it.
 
+import type { ComponentBehavior } from './behaviors';
 import { type JsonEntry, type JsonNode, fromPlain, getEntry, parseJson, plainEqual, serializeJson, toPlain } from './json-ast';
 
 export type DocsExampleNode = string | { c: string; p?: Record<string, unknown>; children?: DocsExampleNode[] };
@@ -31,6 +32,8 @@ export interface ComponentDocsJson {
   accessibility: string[];
   contentGuidelines?: string[];
   anatomy?: Record<string, string>;
+  /** How it reacts, in designer words (behaviors.ts): the Library spec, its Try it stage and what agents read. */
+  behaviors?: ComponentBehavior[];
   /** Who wrote the prose when it was not a person in the editor. Only "claude" today. */
   draftedBy?: string;
   /**
@@ -329,7 +332,7 @@ export function acceptDocsDraft(d: ComponentDocsJson): ComponentDocsJson {
 
 /** docs.json text the way the repo writes it: two spaces, keys in the Button.docs.json order, trailing newline. */
 export function formatDocsJson(d: Partial<ComponentDocsJson>): string {
-  const order = ['summary', 'category', 'status', ...DOCS_KEYS.filter((k) => k !== 'summary'), 'draftedBy', 'draftedSections', 'needsReview'];
+  const order = ['summary', 'category', 'status', ...DOCS_KEYS.filter((k) => k !== 'summary'), 'behaviors', 'draftedBy', 'draftedSections', 'needsReview'];
   const out: Record<string, unknown> = {};
   for (const k of order) if ((d as Record<string, unknown>)[k] !== undefined) out[k] = (d as Record<string, unknown>)[k];
   for (const [k, v] of Object.entries(d)) if (!(k in out) && v !== undefined) out[k] = v;

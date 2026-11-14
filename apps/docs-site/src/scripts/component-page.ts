@@ -7,7 +7,7 @@
 //   - the Storybook previews (data-sb-preview), which follow the preview brand and density (bridge:scope).
 // And the Components page: a link to #fam-<family> opens that family even if it was collapsed.
 import { showTabsPanel } from '@bridge-ds/react/dom';
-import { COMPONENT_TABS, CP_TAB_PICK, CP_TAB_SHOWN, isComponentTab, LEGACY_ANCHORS, previewUrl, storyInIndex, type ComponentTabId } from '../lib/library/component-page';
+import { COMPONENT_TABS, CP_TAB_PICK, CP_TAB_SHOWN, CP_TOC_REFRESH, isComponentTab, LEGACY_ANCHORS, previewUrl, storyInIndex, type ComponentTabId } from '../lib/library/component-page';
 
 /**
  * Checks that the published Storybook lists the story the previews play. When it does not (the code is ahead of the
@@ -111,6 +111,11 @@ export function initComponentPage(doc: Document = document) {
     select(owner ?? COMPONENT_TABS[0].id);
     doc.getElementById(h)?.scrollIntoView();
   };
+  // A section that comes in after the panel was read (an island): the rail lists the shown panel's headings again.
+  doc.addEventListener(CP_TOC_REFRESH, () => {
+    const shown = panels.find((p) => p.dataset.panel === page?.dataset.cpTab);
+    if (shown) paintToc(shown);
+  });
   // A tab picked by the reader: the address follows it, so Back and a shared link land on the same tab.
   doc.addEventListener(CP_TAB_PICK, (e) => {
     const id = (e as CustomEvent<{ id?: unknown }>).detail?.id;

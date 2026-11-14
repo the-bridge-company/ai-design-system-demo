@@ -268,7 +268,7 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
     'bridge_get_component',
     {
       title: 'Get component',
-      description: 'One component: props parsed from TypeScript (type, default, description, allowed values), usage docs (summary, whenToUse, whenNotToUse, dos/donts with examples, accessibility, contentGuidelines, anatomy), CSS variables it uses, story names, and figma: its Figma component and link from bridge.components.json, or "not linked to Figma yet". For a claude.ai artifact or any page that cannot install npm packages, call bridge_get_claude_design_system and load the Library from its base URL; never invent token values.',
+      description: 'One component: props parsed from TypeScript (type, default, description, allowed values), usage docs (summary, whenToUse, whenNotToUse, dos/donts with examples, accessibility, contentGuidelines, anatomy), behaviors when the docs list them ({ id, family, text, keys?, announces? }: how it reacts to keys and pointer, with stable ids shared across components) and version (the package version those ids ship in), CSS variables it uses, story names, and figma: its Figma component and link from bridge.components.json, or "not linked to Figma yet". For a claude.ai artifact or any page that cannot install npm packages, call bridge_get_claude_design_system and load the Library from its base URL; never invent token values.',
       inputSchema: { name: z.string().describe('Component name, e.g. Button.'), include: z.array(z.string()).optional().describe('Keep only these docs keys, e.g. ["whenToUse","accessibility"].') },
       annotations: RO,
     },

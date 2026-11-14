@@ -3,7 +3,7 @@
 // notes that name a component, its token counts, the story its previews play, and the Storybook addresses of those
 // previews (decision D2: every Library previews a component with the team's own Storybook, Bridge's included).
 // Pure and browser-safe: model data and releases come in as arguments.
-import { motionDocs, storybookIframeUrl, type ChangelogReleaseRow, type ComponentDocs, type GuidanceItem, type MotionDocs, type RepoModel } from '@bridge-ds/core';
+import { motionDocs, readBehaviors, storybookIframeUrl, type ChangelogReleaseRow, type ComponentDocs, type GuidanceItem, type MotionDocs, type RepoModel } from '@bridge-ds/core';
 import { loadComponents, type ComponentInfo } from './components';
 import { DENSITY_LABEL, tokenAxes } from './tokens';
 
@@ -32,6 +32,8 @@ export const componentTabPanelId = (id: ComponentTabId) => `tab-${id}`;
  */
 export const CP_TAB_PICK = 'bridge:cp-tab-pick';
 export const CP_TAB_SHOWN = 'bridge:cp-tab-shown';
+/** A section drawn after the page script read the panel (an island, Behaviors.tsx): the "On this page" rail lists it again. */
+export const CP_TOC_REFRESH = 'bridge:cp-toc-refresh';
 
 /** Section anchors from before the tabs, and the tab that now holds each. */
 export const LEGACY_ANCHORS: Readonly<Record<string, string>> = {
@@ -216,6 +218,7 @@ export function readableDocs(docs: ComponentDocs | null | undefined): ComponentD
     donts: items(docs.donts),
     accessibility: texts(docs.accessibility),
     contentGuidelines: texts(docs.contentGuidelines),
+    behaviors: readBehaviors(docs.behaviors),
   };
 }
 

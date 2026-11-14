@@ -24,6 +24,7 @@ import { mdTitleParts } from '../../../../lib/markdown';
 import { componentHref, libraryLink, pageHref, sourceHref, type LibraryData } from '../library-data';
 import { ConfluenceCopy } from '../ConfluenceCopy';
 import ComponentTabs from './ComponentTabs';
+import Behaviors from '../Behaviors';
 import '../../../../styles/component-stage.css';
 
 export interface ComponentViewProps {
@@ -41,6 +42,11 @@ export interface ComponentViewProps {
   figma?: ReactNode;
   /** The tabs (ComponentTabs) as a hydrated island, on a static page. Rendered here when absent. */
   tabs?: ReactNode;
+  /**
+   * The Behaviors section (Behaviors.tsx) as a hydrated island, on a static page that runs the real component. Rendered
+   * here when absent, with the team's Storybook story as its stage.
+   */
+  behaviors?: ReactNode;
 }
 
 const tokenLink = (data: LibraryData, path: string) => pageHref(data, `tokens/?t=${encodeURIComponent(path)}`);
@@ -96,7 +102,7 @@ function StoryPane({ storybook, storyId, theme, name, className }: { storybook: 
   );
 }
 
-export default function ComponentView({ data, component: c, Example, heroTools, playground, ahead, figma, tabs }: ComponentViewProps) {
+export default function ComponentView({ data, component: c, Example, heroTools, playground, ahead, figma, tabs, behaviors }: ComponentViewProps) {
   const { model, extras } = data;
   const d = readableDocs(c.docs);
   const status = statusOf(c);
@@ -234,6 +240,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
             <TabsPanel className="cp-panel" value="usage" id={componentTabPanelId('usage')} tabId={componentTabButtonId('usage')} data-panel="usage">
               <div data-le-read="">
                 {d && <UsagePanel docs={d} Example={Example} />}
+                {d?.behaviors?.length ? behaviors ?? <Behaviors name={c.name} behaviors={d.behaviors} storybook={storybook} storyId={story?.id} /> : null}
                 {!d && (
                   <p className="muted">
                     No usage guidance yet. Add <code>{c.files.docs}</code> to fill this tab.

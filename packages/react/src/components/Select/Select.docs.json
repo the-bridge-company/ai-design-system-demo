@@ -128,5 +128,80 @@
     "indicator": "Check mark on the selected option",
     "groupLabel": "Group heading",
     "separator": "Divider between groups, runs to the popup edge with the inset's 8px gap above and below"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-list",
+      "family": "Opening",
+      "text": "Opens a list",
+      "try": "Click the Select, or tab to it and press Enter",
+      "keys": [
+        "Enter",
+        "Space",
+        "ArrowDown",
+        "ArrowUp"
+      ]
+    },
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move",
+      "try": "Open the list, then press the arrow keys",
+      "keys": [
+        "ArrowDown",
+        "ArrowUp"
+      ]
+    },
+    {
+      "id": "type-to-jump",
+      "family": "Moving",
+      "text": "Type to jump",
+      "try": "Open the list, then type L"
+    },
+    {
+      "id": "pick-with-enter",
+      "family": "Picking",
+      "text": "Enter picks and closes (with multiple, the list stays open)",
+      "try": "Open the list, move to an option, then press Enter",
+      "keys": [
+        "Enter"
+      ]
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "try": "Open the list, then press Esc",
+      "keys": [
+        "Escape"
+      ]
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside",
+      "try": "Open the list, then click anywhere outside it"
+    },
+    {
+      "id": "tab-leaves",
+      "family": "Closing",
+      "text": "Tab leaves without picking",
+      "try": "Open the list, move to another option, then press Tab",
+      "keys": [
+        "Tab"
+      ]
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the trigger",
+      "try": "Open the list and pick an option: the focus ring is back on the Select"
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open, unless opened by touch",
+      "try": "Open the list, then try to scroll the page"
+    }
+  ]
 }

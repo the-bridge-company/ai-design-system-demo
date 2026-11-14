@@ -2,6 +2,7 @@
 import type { BridgeConfig } from './config.js';
 import type { RepoSource } from './source.js';
 import type { TokenSet } from './core-adapter.js';
+import { agentBehaviors } from '@bridge-ds/core';
 import { say } from './say.js';
 
 export interface PropInfo {
@@ -173,6 +174,25 @@ export function cssVarsUsed(css: string): string[] {
   return [...new Set([...css.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]!))].sort();
 }
 
+/**
+ * The version of the package that ships the components: the nearest package.json at or above the components folder
+ * (packages/react/src/components -> packages/react/package.json). Behavior ids are versioned by it.
+ */
+export async function componentsVersion(source: RepoSource, dir: string): Promise<string | undefined> {
+  const parts = dir.split('/').filter(Boolean);
+  for (let n = parts.length; n >= 0; n--) {
+    const text = await source.read([...parts.slice(0, n), 'package.json'].join('/'));
+    if (text == null) continue;
+    try {
+      const v = (JSON.parse(text) as { version?: unknown }).version;
+      return typeof v === 'string' ? v : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 export async function getComponent(source: RepoSource, config: BridgeConfig, set: TokenSet | null, name: string, ctx: { surface: 'mcp' | 'cli' } = { surface: 'mcp' }) {
   const all = await listComponentNames(source, config);
   const entry = all.find((c) => c.name.toLowerCase() === name.toLowerCase());
@@ -198,11 +218,21 @@ export async function getComponent(source: RepoSource, config: BridgeConfig, set
   const known = set ? new Set(set.allPaths().map((p) => set.cssVarName(p))) : null;
   const local = css ? new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]!)) : new Set<string>();
   const storyNames = storiesText ? [...storiesText.matchAll(/export const (\w+)\s*:/g)].map((m) => m[1]!) : [];
+  // Behaviors as agents read them ({ id, family, text, keys?, announces? }), with the version that ships those ids.
+  const behaviors = agentBehaviors(docs?.behaviors);
+  // Said once, at the top level: the docs keep the rest of the guidance.
+  if (docs && 'behaviors' in docs) {
+    const { behaviors: _top, ...rest } = docs;
+    docs = rest;
+  }
+  const version = behaviors.length ? await componentsVersion(source, config.components!.dir) : undefined;
   return {
     name: n,
+    ...(version ? { version } : {}),
     family: findFamily(storiesText),
     files: entry.files,
     ...(docs ? { docs } : {}),
+    ...(behaviors.length ? { behaviors } : {}),
     props: props?.props ?? [],
     ...(props?.extends ? { extends: props.extends } : {}),
     tokens: {

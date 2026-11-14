@@ -47,4 +47,10 @@ describe('/llms.txt', () => {
     expect(links).toContain('/tokens.css');
     for (const c of loadComponents()) expect(links).toContain(`/docs-ai/${c.slug}.json`);
   });
+
+  it('lists a component behaviors with their shared ids, keys and announcement', () => {
+    expect(text).toContain('Behaviors (id, family: text):');
+    expect(text).toContain('- close-on-escape, Closing: Closes on Escape [Escape]');
+    expect(text).toContain('- say-no-match, Feedback: Says when nothing matches. Announces "No matches. Try another name."');
+  });
 });

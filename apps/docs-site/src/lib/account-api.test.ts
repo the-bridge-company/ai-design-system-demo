@@ -154,14 +154,14 @@ describe('email codes', () => {
 
     const r = await handleAccount(act({ action: 'verify', email: 'MIA@acme.example', code: '123 456', name: 'Mia **Chen**' }), ENV, s.deps);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: null, aiTools: null, face: null, notify: { needs: 'soon', news: 'daily' }, teams: [] }, created: true, next: '/start/' });
+    expect(await r.json()).toEqual({ account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: null, aiTools: null, face: null, faceChoice: 'photo', notify: { needs: 'soon', news: 'daily' }, teams: [] }, created: true, next: '/start/' });
     const set = r.headers.get('set-cookie')!;
     expect(set.startsWith(`${ACCOUNT_COOKIE}=v1.`)).toBe(true);
     for (const part of ['Path=/;', 'HttpOnly', 'Secure', 'SameSite=Lax', `Max-Age=${ACCOUNT_SESSION_TTL_MS / 1000}`]) expect(set).toContain(part);
     const a = await getAccount(s.redis, 'mia@acme.example');
     expect(a).toMatchObject({ email: 'mia@acme.example', name: 'Mia Chen', github: null, version: 1 });
     expect(a!.id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(await (await handleAccount(me(cookieOf(r)), ENV, s.deps)).json()).toEqual({ available: true, account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: null, aiTools: null, face: null, notify: { needs: 'soon', news: 'daily' }, teams: [] } });
+    expect(await (await handleAccount(me(cookieOf(r)), ENV, s.deps)).json()).toEqual({ available: true, account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: null, aiTools: null, face: null, faceChoice: 'photo', notify: { needs: 'soon', news: 'daily' }, teams: [] } });
   });
 
   it('a new account without a typed name gets a stand-in from the email, and says nameSet false until renamed', async () => {
@@ -318,7 +318,7 @@ describe('GitHub', () => {
     const s = setup({ emails: [{ email: 'old@acme.example', verified: false, primary: false }, { email: 'Mia@Acme.example', verified: true, primary: true }] });
     const r = await handleAccount(act({ action: 'github', token: GH_TOKEN }), ENV, s.deps);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: { login: 'mia-gh', id: 77 }, aiTools: null, face: null, notify: { needs: 'soon', news: 'daily' }, teams: [] }, created: true, next: '/start/' });
+    expect(await r.json()).toEqual({ account: { email: 'mia@acme.example', name: 'Mia Chen', nameSet: true, github: { login: 'mia-gh', id: 77 }, aiTools: null, face: null, faceChoice: 'photo', notify: { needs: 'soon', news: 'daily' }, teams: [] }, created: true, next: '/start/' });
     expect(r.headers.get('set-cookie')).toContain(`${ACCOUNT_COOKIE}=v1.`);
     expect(await s.redis.cmd('GET', 'bridge:account:gh:77')).toBe('mia@acme.example');
   });
@@ -415,6 +415,24 @@ describe('Your face', () => {
     expect((await handleAccount(act({ action: 'face', face: face('variant40') }, { cookie: mia }), ENV, s.deps)).status).toBe(200);
     expect((await handleAccount(act({ action: 'delete' }, { cookie: sofia }), ENV, s.deps)).status).toBe(200);
     expect(Object.keys(await getTeamFaces(s.redis, 'acme/design'))).toEqual(['~mia']);
+  });
+
+  it('photo or drawn face: the photo by default, Drawn face shows over it in every team, Photo keeps the saved face', async () => {
+    const s = setup();
+    await s.members.put('acme/design', { ...member('sofia@acme.example'), name: 'Sofia' });
+    const { cookie } = await signInWithCode(s, 'sofia@acme.example', 'Sofia');
+    expect((await (await handleAccount(me(cookie), ENV, s.deps)).json()).account.faceChoice).toBe('photo');
+    const drawn = await handleAccount(act({ action: 'face', face: face('variant40'), choice: 'drawn' }, { cookie }), ENV, s.deps);
+    expect((await drawn.json()).account).toMatchObject({ face: face('variant40'), faceChoice: 'drawn' });
+    expect((await getTeamFaces(s.redis, 'acme/design'))['~sofia']).toMatchObject({ face: face('variant40'), overPhoto: true });
+    // A new face saved later stays over the photo.
+    await handleAccount(act({ action: 'face', face: face('variant41') }, { cookie }), ENV, s.deps);
+    const at = (await getTeamFaces(s.redis, 'acme/design'))['~sofia']!;
+    expect(at).toMatchObject({ face: face('variant41'), overPhoto: true });
+    // Back to the photo: no face needed, the saved one stays with its claim time.
+    const photo = await handleAccount(act({ action: 'face', choice: 'photo' }, { cookie }), ENV, s.deps);
+    expect((await photo.json()).account).toMatchObject({ face: face('variant41'), faceChoice: 'photo' });
+    expect((await getTeamFaces(s.redis, 'acme/design'))['~sofia']).toEqual({ face: face('variant41'), name: 'Sofia', at: at.at });
   });
 });
 

@@ -1,5 +1,6 @@
 // Whether a GitHub account has a photo of its own, or GitHub's generated pattern (the identicon every new account gets).
-// A person without a photo gets Bridge's drawn face instead, the same as an email member, never the pattern.
+// A person without a photo gets Bridge's drawn face instead, the same as an email member, never the pattern. A person
+// with a photo shows it, unless they chose their drawn face in Settings > You (showsDrawn).
 // GitHub says which is which only through the image's Last-Modified date: every identicon is stamped within a few
 // seconds of 2016-11-05 20:57 UTC, a photo with the day it was uploaded.
 
@@ -34,6 +35,14 @@ export function avatarLogin(url: string | null | undefined, login: string | null
   const named = loginOfAvatar(url);
   if (named) return named;
   return url && GITHUB_ID_AVATAR.test(url) && login && LOGIN.test(login) ? login.toLowerCase() : null;
+}
+
+/**
+ * Whether Bridge draws a person's face instead of showing their GitHub avatar: they chose their drawn face, or GitHub
+ * only has the generated pattern. `identicon`: null while not checked yet (the photo shows meanwhile, unless chosen).
+ */
+export function showsDrawn(chose: boolean, identicon: boolean | null): boolean | null {
+  return chose ? true : identicon;
 }
 
 /** Where the check reads (CORS open, Last-Modified readable), smallest size. */

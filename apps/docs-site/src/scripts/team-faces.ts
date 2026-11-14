@@ -4,8 +4,8 @@
 // member (lib/team-faces.ts teamDrawings), show everywhere without surface-by-surface work.
 //   - A real team: the team face map of its last members read (GET /api/contribute?members=1 `faces`, noted by
 //     scripts/contribute-session.ts), kept per team in this browser (`bridge.faces.<team>`) for the next first paint.
-//   - The person's own saved face (`bridge.face`, a copy of their account's), for the first paint and for a page that
-//     has not read its team yet.
+//   - The person's own saved face (`bridge.face`, a copy of their account's, with `overPhoto` when they show it instead
+//     of their GitHub photo), for the first paint and for a page that has not read its team yet.
 //   - The sample team: the cast, drawn as always (lib/cast-faces FACE_DRAWING_SEEDS); a visitor's saved face for the
 //     person they play stays in this browser only (`bridge.face.sample.<cast key>`).
 // `bridge:faces` tells mounted faces to draw again. Every storage call is wrapped: a blocked storage draws seeds.
@@ -98,28 +98,41 @@ export function rememberTeamFaces(team: string, data: TeamFaceData): void {
   announce();
 }
 
-/** The person's own saved face and the seeds it is drawn by, as this browser keeps them. */
-export function myFace(): { face: FaceRecipe; seeds: string[]; name: string } | null {
-  const raw = parseJson(get(MY_FACE_KEY)) as { face?: unknown; seeds?: unknown; name?: unknown } | null;
+/** The person's own saved face, the seeds it is drawn by, and whether it shows over their GitHub photo, as this browser keeps them. */
+export function myFace(): { face: FaceRecipe; seeds: string[]; name: string; overPhoto?: boolean } | null {
+  const raw = parseJson(get(MY_FACE_KEY)) as { face?: unknown; seeds?: unknown; name?: unknown; overPhoto?: unknown } | null;
   const face = parseFace(raw?.face);
   const seeds = Array.isArray(raw?.seeds) ? raw!.seeds.filter((s): s is string => typeof s === 'string') : [];
-  return face && seeds.length ? { face, seeds, name: typeof raw?.name === 'string' ? raw.name : '' } : null;
+  return face && seeds.length ? { face, seeds, name: typeof raw?.name === 'string' ? raw.name : '', ...(raw?.overPhoto === true ? { overPhoto: true } : {}) } : null;
 }
 
 /** Keeps the person's face in this browser (a copy of the account's), or forgets it (null). */
-export function rememberMyFace(x: { face: FaceRecipe; seeds: string[]; name: string } | null): void {
-  const next = x ? JSON.stringify({ face: x.face, seeds: x.seeds.map((s) => s.toLowerCase()), name: x.name }) : null;
+export function rememberMyFace(x: { face: FaceRecipe; seeds: string[]; name: string; overPhoto?: boolean } | null): void {
+  const next = x ? JSON.stringify({ face: x.face, seeds: x.seeds.map((s) => s.toLowerCase()), name: x.name, ...(x.overPhoto ? { overPhoto: true } : {}) }) : null;
   if (get(MY_FACE_KEY) === next) return;
   put(MY_FACE_KEY, next);
   announce();
+}
+
+/**
+ * Whether this person (a login) chose their drawn face over their GitHub photo (Settings > You): the person's own
+ * choice as their account says it, else as the team face map of this page says it. Read by scripts/github-photo.ts,
+ * the one place that decides photo or drawn face.
+ */
+export function choseDrawn(login: string): boolean {
+  const seed = login.trim().toLowerCase();
+  const mine = myFace();
+  if (mine?.seeds.includes(seed)) return Boolean(mine.overPhoto);
+  const team = facesTeam();
+  return Boolean(team && !isSampleTeam(team) && knownTeamFaces(team).saved[seed]?.overPhoto);
 }
 
 /** The seeds a signed-in person is drawn by: their name (as an email member), and their GitHub login once linked. */
 export const accountFaceSeeds = (a: { name: string | null; email: string; github: { login: string } | null }): string[] => [emailMemberFace(a.name, a.email), ...(a.github ? [a.github.login.toLowerCase()] : [])];
 
 /** Keeps the copy of a signed-in account's face (lib/account.ts Account.face) in step with what the server said. */
-export function noteAccountFace(a: { name: string | null; email: string; github: { login: string } | null; face?: FaceRecipe | null }): void {
-  rememberMyFace(a.face ? { face: a.face, seeds: accountFaceSeeds(a), name: a.name ?? a.email.split('@')[0]! } : null);
+export function noteAccountFace(a: { name: string | null; email: string; github: { login: string } | null; face?: FaceRecipe | null; faceChoice?: 'photo' | 'drawn' }): void {
+  rememberMyFace(a.face ? { face: a.face, seeds: accountFaceSeeds(a), name: a.name ?? a.email.split('@')[0]!, overPhoto: a.faceChoice === 'drawn' } : null);
 }
 
 /** The face the visitor saved for a person of the sample team, in this browser only (null: drawn as the cast is). */

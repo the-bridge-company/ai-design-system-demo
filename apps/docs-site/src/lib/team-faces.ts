@@ -83,7 +83,16 @@ export interface TeamFace {
   face: FaceRecipe;
   name: string;
   at: number;
+  /** The holder has a GitHub photo and chose this drawn face instead (Settings > You): it shows over their photo. */
+  overPhoto?: true;
 }
+
+/**
+ * What a person with a GitHub photo shows (Settings > You): their photo (the default, also for anything unreadable) or
+ * their drawn face. Kept on the account, so it follows them in every team.
+ */
+export type FaceChoice = 'photo' | 'drawn';
+export const parseFaceChoice = (v: unknown): FaceChoice => (v === 'drawn' ? 'drawn' : 'photo');
 
 /** The team face map: face seed (a login, or `~name` for an email member) to their saved face. */
 export type TeamFaces = Record<string, TeamFace>;
@@ -93,9 +102,9 @@ export function parseTeamFaces(raw: unknown): TeamFaces {
   const out: TeamFaces = {};
   if (!raw || typeof raw !== 'object') return out;
   for (const [seed, v] of Object.entries(raw as Record<string, unknown>)) {
-    const e = v as { face?: unknown; name?: unknown; at?: unknown } | null;
+    const e = v as { face?: unknown; name?: unknown; at?: unknown; overPhoto?: unknown } | null;
     const face = parseFace(e?.face);
-    if (face && typeof e?.name === 'string') out[seed.toLowerCase()] = { face, name: e.name, at: typeof e.at === 'number' ? e.at : 0 };
+    if (face && typeof e?.name === 'string') out[seed.toLowerCase()] = { face, name: e.name, at: typeof e.at === 'number' ? e.at : 0, ...(e.overPhoto === true ? { overPhoto: true as const } : {}) };
   }
   return out;
 }
@@ -249,8 +258,13 @@ export const FACE_WORDS = {
   bandIntro: 'How your team sees you next to your work, in every team you are in.',
   drawnLabel: 'Drawn face',
   drawnHelp: 'Made from your name. No photo needed.',
-  photoLabel: 'Photo',
-  photoHelp: 'From GitHub. It shows instead of a drawing.',
+  choiceLabel: 'Shown as',
+  choicePhoto: 'Photo',
+  choiceDrawn: 'Drawn face',
+  photoHelp: 'Your GitHub photo. Pick Drawn face to show a face Bridge draws for you instead.',
+  drawnOverPhotoHelp: 'Drawn by Bridge, shown instead of your GitHub photo.',
+  savedPhoto: 'Saved. Your team sees your photo.',
+  savedDrawn: 'Saved. Your team sees your drawn face.',
   openHelp: (team: string) => `Shuffle until it feels like you. Nobody in ${team} gets the same face.`,
   change: 'Change',
   preview: 'Your drawn face',

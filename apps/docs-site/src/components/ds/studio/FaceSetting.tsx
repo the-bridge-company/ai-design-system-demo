@@ -8,7 +8,9 @@
 //   - A Bridge account: saved on the account and in each of their teams (POST /api/account { action: 'face' }); the
 //     server refuses a style someone on one of their teams already wears, naming them.
 //   - The sample team: the person the visitor plays, kept in this browser only (said in one line).
-//   - A GitHub photo: shown as is, no Change (a drawn face instead of a photo is for later).
+//   - A GitHub photo: Shown as, Photo or Drawn face (a DS SegmentedControl, saved at once on the account, so it follows
+//     them in every team; the photo by default). Drawn face shows that face instead of the photo everywhere
+//     (scripts/github-photo decides for every surface) and brings Change back.
 //   - Signed out, not on the sample team: no row.
 // The 80px preview is the DS Avatar at its largest size (lg, 40px) doubled inside a sized container: the DS has no
 // larger Avatar size, and this is the only place that needs one.
@@ -18,7 +20,7 @@ import { Avatar, Button, Card, CardBody, Icon, Radio, RadioGroup, SegmentedContr
 import { drawingSeed } from '../../../lib/cast-faces';
 import { castFaceLogin, type CastKey } from '../../../lib/demo-cast';
 import { SAMPLE_TEAM, isSampleTeam, teamDisplayName } from '../../../lib/demo';
-import { EXPRESSIONS, FACE_WORDS as W, HAIR_STYLES, blockedHair, expressionOf, firstHairTiles, sameFace, shuffleFace, variant, FACE_PART_COUNTS, type Drawing, type FaceRecipe } from '../../../lib/team-faces';
+import { EXPRESSIONS, FACE_WORDS as W, type FaceChoice, HAIR_STYLES, blockedHair, expressionOf, firstHairTiles, sameFace, shuffleFace, variant, FACE_PART_COUNTS, type Drawing, type FaceRecipe } from '../../../lib/team-faces';
 import type { FaceDrawer } from '../../../scripts/team-faces';
 import { faceWords, partLabel } from '../../../lib/face-labels';
 
@@ -31,8 +33,10 @@ interface Who {
   /** Their face seeds (the first one is how teammates draw them). */
   seeds: string[];
   castKey?: CastKey;
-  /** A GitHub photo: shown instead of a drawing. */
+  /** A GitHub photo: offered against the drawn face. */
   photo?: string;
+  /** With a photo: which one their team sees (the account's choice, the photo by default). */
+  choice?: FaceChoice;
 }
 
 type PartTab = 'hair' | 'glasses' | 'beard' | 'expression';
@@ -63,11 +67,11 @@ async function whoIsHere(): Promise<Who | null> {
   const who: Who = { kind: 'account', team, teamName: here?.name || (team ? teamDisplayName(team) : 'your teams'), name: account.name ?? account.email.split('@')[0]!, seeds: accountFaceSeeds(account) };
   if (account.github) {
     const login = account.github.login;
-    const { drawnFace } = await import('../../../scripts/github-photo');
-    const drawn = await drawnFace(login).catch(() => true);
-    if (!drawn) {
+    const { hasPhoto } = await import('../../../scripts/github-photo');
+    if (await hasPhoto(login).catch(() => false)) {
       const { ownerAvatarUrl } = await import('../../../lib/access-view');
       who.photo = ownerAvatarUrl(login, 80);
+      who.choice = account.faceChoice ?? 'photo';
     }
   }
   return who;
@@ -103,6 +107,7 @@ export default function FaceSetting() {
   const [said, setSaid] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [choice, setChoice] = useState<FaceChoice>('photo');
   const change = useRef<HTMLButtonElement>(null);
   const timers = useRef<number[]>([]);
 
@@ -114,6 +119,7 @@ export default function FaceSetting() {
       teamFaces = faces;
       setM(drawer);
       setWho(w);
+      if (w?.choice) setChoice(w.choice);
       document.addEventListener(faces.FACES_EVENT, bump);
       // A real team: read its people and saved faces once (scripts/contribute-session.ts notes the face map).
       if (w?.kind === 'account' && w.team) void import('../../../scripts/contribute-session').then((c) => c.contributeTeam(w.team!)).catch(() => {});
@@ -216,12 +222,34 @@ export default function FaceSetting() {
         const { saveFace } = await import('../../../scripts/account-session');
         await saveFace(draft);
         // This page draws the new face at once; the team read catches up behind it.
-        teamFaces!.rememberMyFace({ face: draft, seeds: who.seeds, name: who.name });
+        teamFaces!.rememberMyFace({ face: draft, seeds: who.seeds, name: who.name, overPhoto: choice === 'drawn' });
         if (who.team) void import('../../../scripts/contribute-session').then((c) => c.contributeTeam(who.team!)).catch(() => {});
         setSaid(W.saved);
       }
       setDraft(null);
       close();
+    } catch (err) {
+      const e = err as { code?: string; message?: string };
+      setError(e.code === 'face_taken' && e.message ? e.message : W.failed);
+    } finally {
+      setBusy(false);
+    }
+  };
+  /** Photo or Drawn face, saved at once. Drawn face keeps the face shown here (saved with it when it never was). */
+  const choose = async (next: string) => {
+    if ((next !== 'photo' && next !== 'drawn') || next === choice || busy) return;
+    setBusy(true);
+    setError(null);
+    setSaid('');
+    try {
+      const session = await import('../../../scripts/account-session');
+      if (next === 'drawn') {
+        await session.saveFace(mine.face, 'drawn');
+        teamFaces!.rememberMyFace({ face: mine.face, seeds: who.seeds, name: who.name, overPhoto: true });
+      } else await session.showPhoto();
+      if (who.team) void import('../../../scripts/contribute-session').then((c) => c.contributeTeam(who.team!)).catch(() => {});
+      setChoice(next);
+      setSaid(next === 'drawn' ? W.savedDrawn : W.savedPhoto);
     } catch (err) {
       const e = err as { code?: string; message?: string };
       setError(e.code === 'face_taken' && e.message ? e.message : W.failed);
@@ -268,30 +296,9 @@ export default function FaceSetting() {
     </>
   );
 
-  if (who.photo) {
-    return (
-      <section className="ts-band" id="face" aria-labelledby="ts-face">
-        {header}
-        <Card>
-          <CardBody>
-            <div className="set-rows">
-              <div className="set-row yf-row">
-                <div>
-                  <p className="set-row-label">{W.photoLabel}</p>
-                  <p className="set-row-help">{W.photoHelp}</p>
-                </div>
-                <div className="set-row-value">
-                  <Avatar name={who.name} src={who.photo} size="lg" decorative />
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </section>
-    );
-  }
-
   const hairTiles = firstHairTiles(current.hair, taken, allHair);
+  // Someone with a GitHub photo who keeps it: the photo and the choice, no Change.
+  const showPhoto = Boolean(who.photo) && choice === 'photo';
 
   return (
     <section className="ts-band" id="face" aria-labelledby="ts-face">
@@ -302,21 +309,43 @@ export default function FaceSetting() {
             {!open ? (
               <div className="set-row yf-row">
                 <div>
-                  <p className="set-row-label">{W.drawnLabel}</p>
-                  <p className="set-row-help">{mine.lookAlikeOf ? W.lookAlike(mine.lookAlikeOf, who.teamName) : W.drawnHelp}</p>
+                  <p className="set-row-label" id="yf-label">
+                    {who.photo ? W.choiceLabel : W.drawnLabel}
+                  </p>
+                  <p className="set-row-help">{showPhoto ? W.photoHelp : mine.lookAlikeOf ? W.lookAlike(mine.lookAlikeOf, who.teamName) : who.photo ? W.drawnOverPhotoHelp : W.drawnHelp}</p>
                 </div>
                 <div className="set-row-value yf-value">
-                  <Avatar name={who.name} size="lg" fallback="illustrated" illustration={uri(mine.face)} decorative />
+                  {showPhoto ? <Avatar name={who.name} src={who.photo} size="lg" decorative /> : <Avatar name={who.name} size="lg" fallback="illustrated" illustration={uri(mine.face)} decorative />}
+                  {who.photo && (
+                    <SegmentedControl
+                      aria-labelledby="yf-label"
+                      size="sm"
+                      value={choice}
+                      disabled={busy}
+                      onValueChange={(v) => void choose(v)}
+                      items={[
+                        { value: 'photo', label: W.choicePhoto },
+                        { value: 'drawn', label: W.choiceDrawn },
+                      ]}
+                    />
+                  )}
                   <span role="status" className="set-row-help yf-said">
                     {said && <Icon icon={CircleCheck} size="sm" />}
                     {said}
                   </span>
+                  {error && (
+                    <span role="alert" className="set-row-help">
+                      {error}
+                    </span>
+                  )}
                 </div>
-                <div className="set-row-action">
-                  <Button ref={change} variant="secondary" size="sm" aria-expanded="false" onClick={startEdit}>
-                    {W.change}
-                  </Button>
-                </div>
+                {!showPhoto && (
+                  <div className="set-row-action">
+                    <Button ref={change} variant="secondary" size="sm" aria-expanded="false" onClick={startEdit}>
+                      {W.change}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="set-row set-row-stack yf-open" onKeyDown={onKeyDown}>

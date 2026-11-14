@@ -27,6 +27,7 @@ import {
 } from '../lib/token-session';
 import { closeDialog, isDialogOpen, openDialog as openDsDialog } from '@bridge-ds/react/dom';
 import { paintAvatar, paintDrawnAvatar } from './avatar';
+import { knownDrawn } from './github-photo';
 import { clearPendingAction, keepPendingAction } from './pending-action';
 import { accountLimitLine, ghAction, ghButton, ghVerb } from '../lib/gh-wording';
 import { SIGNED_OUT_ELSEWHERE_KEY } from '../lib/access-view';
@@ -1205,8 +1206,9 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
       if (avatar) {
         avatar.hidden = !viewer;
         if (email) paintDrawnAvatar(avatar, emailMemberFace(email.name, email.login));
-        // No photo (the sample team's developer, lib/demo-cast castGitHub): a drawn face, never bare initials.
-        else if (viewer && !viewer.avatar_url) paintDrawnAvatar(avatar, viewer.login);
+        // A drawn face, never bare initials: no photo (the sample team's developer, lib/demo-cast castGitHub), or the
+        // person chose it over their photo, or GitHub only has the pattern (scripts/github-photo decides).
+        else if (viewer && (!viewer.avatar_url || knownDrawn(viewer.login))) paintDrawnAvatar(avatar, viewer.login);
         else if (viewer) paintAvatar(avatar, viewer.login, viewer.avatar_url, 64);
       }
       // Named by its visible text (WCAG 2.5.3, as the account menu): the name, the team and the role, then a hidden

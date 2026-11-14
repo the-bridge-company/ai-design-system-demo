@@ -175,6 +175,46 @@ describe('Your face', () => {
     expect(screen.getByRole('button', { name: 'Save face' })).toBeInTheDocument();
   });
 
+  it('a GitHub photo: Photo by default with no Change; Drawn face saves at once, brings Change, and Photo goes back', async () => {
+    // GitHub answers dana-gh's avatar is a photo (its Last-Modified is not the identicon stamp); nothing else leaves.
+    vi.stubGlobal('fetch', async (input: unknown) => {
+      if (!/^https:\/\/avatars\.githubusercontent\.com\/dana-gh\?s=8$/.test(String(input))) throw new Error(`No network in this test: ${String(input)}`);
+      return new Response(null, { status: 200, headers: { 'Last-Modified': 'Tue, 03 Mar 2020 10:00:00 GMT' } });
+    });
+    const GH = { ...ACCOUNT, github: { login: 'dana-gh', id: 7 } };
+    let saved: Record<string, unknown> = { ...GH };
+    reply = (c) => {
+      if (c.method === 'GET') return json(200, { available: true, account: saved });
+      saved = { ...saved, ...(c.body?.face ? { face: c.body.face } : {}), faceChoice: c.body?.choice === 'photo' ? 'photo' : 'drawn' };
+      return json(200, { account: saved });
+    };
+    try {
+      const user = userEvent.setup();
+      render(createElement(FaceSetting));
+      const photo = await screen.findByRole('radio', { name: 'Photo' }, { timeout: 3000 });
+      expect(photo).toHaveAttribute('aria-checked', 'true');
+      expect(screen.getByText('Your GitHub photo. Pick Drawn face to show a face Bridge draws for you instead.')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
+      await expectNoAxeViolations(document.body);
+      await user.click(screen.getByRole('radio', { name: 'Drawn face' }));
+      expect(await screen.findByText('Saved. Your team sees your drawn face.')).toBeInTheDocument();
+      expect(calls.filter((c) => c.method === 'POST').map((c) => c.body)).toEqual([{ action: 'face', face: expect.objectContaining({ v: 1 }), choice: 'drawn' }]);
+      // Every surface now draws Dana instead of her photo (scripts/github-photo decides through this copy).
+      expect(JSON.parse(localStorage.getItem('bridge.face')!)).toMatchObject({ overPhoto: true });
+      const { knownDrawn } = await import('../../../scripts/github-photo');
+      expect(knownDrawn('dana-gh')).toBe(true);
+      expect(screen.getByText('Drawn by Bridge, shown instead of your GitHub photo.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument();
+      await user.click(screen.getByRole('radio', { name: 'Photo' }));
+      expect(await screen.findByText('Saved. Your team sees your photo.')).toBeInTheDocument();
+      expect(calls.filter((c) => c.method === 'POST').at(-1)!.body).toEqual({ action: 'face', choice: 'photo' });
+      expect(knownDrawn('dana-gh')).toBe(false);
+      expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   // The parts are DS TabsPanels (focusable, for the keyboard). jsdom has no :focus-visible, so the DS rules are read:
   // a mouse click never draws the ring around a panel, and the keyboard ring sits a step off the panel's content.
   it('the parts panel ring is for the keyboard only, a step away from the content (DS Tabs)', () => {

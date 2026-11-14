@@ -45,6 +45,8 @@ export interface Account {
   aiTools?: AiTool[];
   /** Their drawn face (Settings > You, src/lib/team-faces.ts), absent while they keep the one drawn from their name. */
   face?: FaceRecipe;
+  /** 'drawn' once a person with a GitHub photo shows their drawn face instead (Settings > You); absent: the photo. */
+  faceChoice?: 'drawn';
   /**
    * What Bridge emails the person about their work (Account > Email, api/_lib/notify.ts); absent: the defaults, things
    * that need them right away and what moved in a daily summary.

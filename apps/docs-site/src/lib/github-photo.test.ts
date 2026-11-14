@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { avatarLogin, isIdenticonStamp, loginOfAvatar, PHOTO_TTL_MS, readPhotoCache } from './github-photo';
+import { avatarLogin, isIdenticonStamp, loginOfAvatar, PHOTO_TTL_MS, readPhotoCache, showsDrawn } from './github-photo';
 
 describe('GitHub photo or generated pattern', () => {
+  it('draws the face when the person chose it, else only when GitHub has no photo', () => {
+    expect(showsDrawn(true, false)).toBe(true);
+    expect(showsDrawn(true, null)).toBe(true);
+    expect(showsDrawn(false, false)).toBe(false);
+    expect(showsDrawn(false, true)).toBe(true);
+    expect(showsDrawn(false, null)).toBeNull();
+  });
+
   it('reads GitHub identicon stamps as no photo, any other date as a photo', () => {
     expect(isIdenticonStamp('Sat, 05 Nov 2016 20:57:49 GMT')).toBe(true);
     expect(isIdenticonStamp('Sat, 05 Nov 2016 20:57:52 GMT')).toBe(true);

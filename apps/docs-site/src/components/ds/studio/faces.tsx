@@ -39,27 +39,35 @@ export function useFaces(): Draw | null {
   return draw;
 }
 
-/** True once Bridge knows this GitHub avatar is the generated pattern, not a photo (scripts/github-photo). */
+/**
+ * True when this GitHub account shows Bridge's drawn face instead of its avatar: the person chose it in Settings > You,
+ * or the avatar is the generated pattern (scripts/github-photo, the one place that decides).
+ */
 function useDrawnFace(photo: string | null | undefined, who?: string | null): boolean {
   const login = avatarLogin(photo, who);
   const [drawn, setDrawn] = useState<boolean>(false);
   useEffect(() => {
     if (!login) return setDrawn(false);
     let live = true;
-    void import('../../../scripts/github-photo').then(({ knownDrawn, drawnFace }) => {
-      const known = knownDrawn(login);
-      if (known !== null) return live && setDrawn(known);
-      void drawnFace(login).then((d) => live && setDrawn(d));
-    });
+    const check = () =>
+      void import('../../../scripts/github-photo').then(({ knownDrawn, drawnFace }) => {
+        const known = knownDrawn(login);
+        if (known !== null) return live && setDrawn(known);
+        void drawnFace(login).then((d) => live && setDrawn(d));
+      });
+    check();
+    // A choice made in Settings > You, or the team read, changed: ask again.
+    document.addEventListener(FACES_EVENT, check);
     return () => {
       live = false;
+      document.removeEventListener(FACES_EVENT, check);
     };
   }, [login]);
   return drawn;
 }
 
 /**
- * A person (their photo, else their drawn face seeded by login) or Claude (its own identity), as the DS Avatar. Shared
+ * A person (their photo, else or by their choice their drawn face seeded by login) or Claude (its own identity), as the DS Avatar. Shared
  * by the home, the Branches list rows (BranchRow `who`) and Settings (Members, Review rules), so the same person looks
  * the same everywhere.
  */
@@ -69,7 +77,7 @@ export function Who({ p, size = 'md', decorative = true, className }: { p: Face;
   const photo = isCastLogin(p.login) ? undefined : safeUrl(p.avatar ?? p.avatarUrl) || undefined;
   const drawn = useDrawnFace(p.agent ? null : photo, p.login);
   if (p.agent) return <Avatar kind="agent" brand="claude" name={p.name} size={size} decorative={decorative} className={className} />;
-  // A GitHub account without a photo of its own shows the drawn face, never GitHub's generated pattern.
+  // A GitHub account without a photo of its own, or whose person chose it, shows the drawn face; never GitHub's pattern.
   const src = drawn ? undefined : photo;
   return <Avatar name={p.name} src={src} size={size} decorative={decorative} className={className} fallback="illustrated" seed={p.login} illustration={draw?.(p.login)} />;
 }

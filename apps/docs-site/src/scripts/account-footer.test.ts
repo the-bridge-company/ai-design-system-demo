@@ -142,3 +142,48 @@ describe('the side nav account row', () => {
     expect(acct().querySelector<HTMLElement>('[data-gh-acct-role]')!.hidden).toBe(true);
   });
 });
+
+describe('the account row on the sample team', () => {
+  const SAMPLE = 'acme-design-demo/bridge-demo-ds';
+  const DANA = { email: 'dana@acme.example', name: 'Dana', role: 'admin', ref: 'a399f73add3dbb2d', lead: true, decides: true, visitor: true };
+  let account: unknown = null;
+  let answer: () => void = () => {};
+  beforeEach(async () => {
+    history.replaceState(null, '', `/studio/${SAMPLE}/`);
+    localStorage.setItem(`bridge.contribute.member:${SAMPLE}`, JSON.stringify(DANA));
+    member = DANA;
+    account = null;
+    const { setAccountFetch } = await import('./account-session');
+    const gate = new Promise<void>((r) => (answer = r));
+    setAccountFetch(async () => (await gate, json(200, { available: true, account })));
+  });
+
+  it('a signed-out visitor: Dana at once, no wait for the account', async () => {
+    await boot();
+    expect(acct().dataset.state).toBe('connected');
+    expect(acct().querySelector('[data-gh-login]')!.textContent).toBe('Dana');
+    answer();
+  });
+
+  it('an account never read here: the row waits unseen, then shows the person as Admin, never Dana first', async () => {
+    localStorage.setItem('bridge.accountTeamNames', JSON.stringify({ 'acme/ds': 'Acme' }));
+    account = { email: 'florian@example.com', name: 'Florian', github: null, teams: [] };
+    await boot();
+    expect(acct().dataset.state).toBe('checking');
+    expect(acct().querySelector('[data-gh-login]')!.textContent).toBe('');
+    answer();
+    await vi.waitFor(() => expect(acct().dataset.state).toBe('connected'));
+    expect(acct().querySelector('[data-gh-login]')!.textContent).toBe('Florian');
+    expect(acct().querySelector('[data-gh-acct-role]')!.textContent).toBe('Admin');
+    expect(acct().querySelector('[data-gh-menu-email]')!.textContent).toBe('florian@example.com');
+  });
+
+  it('an account trace but nobody signed in: Dana once the account says so', async () => {
+    localStorage.setItem('bridge.accountTeamNames', JSON.stringify({ 'acme/ds': 'Acme' }));
+    await boot();
+    expect(acct().dataset.state).toBe('checking');
+    answer();
+    await vi.waitFor(() => expect(acct().dataset.state).toBe('connected'));
+    expect(acct().querySelector('[data-gh-login]')!.textContent).toBe('Dana');
+  });
+});

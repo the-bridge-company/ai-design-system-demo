@@ -7,7 +7,8 @@
 //   - The person's own saved face (`bridge.face`, a copy of their account's, with `overPhoto` when they show it instead
 //     of their GitHub photo), for the first paint and for a page that has not read its team yet.
 //   - The sample team: the cast, drawn as always (lib/cast-faces FACE_DRAWING_SEEDS); a visitor's saved face for the
-//     person they play stays in this browser only (`bridge.face.sample.<cast key>`).
+//     person they play stays in this browser only (`bridge.face.sample.<cast key>`); someone signed in is one more
+//     member there, with their own face (lib/sample-member.ts).
 // `bridge:faces` tells mounted faces to draw again. Every storage call is wrapped: a blocked storage draws seeds.
 import { FACE_DRAWING_SEEDS, drawingSeed } from '../lib/cast-faces';
 import { SAMPLE_CAST, castFaceLogin, type CastKey } from '../lib/demo-cast';
@@ -15,6 +16,7 @@ import { isSampleTeam } from '../lib/demo';
 import { parseFace, parseTeamFaces, teamDrawings, type Drawing, type FaceRecipe, type TeamFaces } from '../lib/team-faces';
 import { emailMemberFace } from '../lib/people';
 import { pageTeam } from './ai-tools';
+import { sampleSelf } from './sample-self';
 
 export const FACES_EVENT = 'bridge:faces';
 const TEAM_KEY = 'bridge.faces.';
@@ -143,17 +145,22 @@ export function saveSampleFace(key: CastKey, face: FaceRecipe | null): void {
 
 /**
  * Everyone of `team` drawn apart (lib/team-faces.ts teamDrawings): the team's saved faces, the person's own face
- * when the team map does not have it yet, the cast as drawn on the sample team.
+ * when the team map does not have it yet, the cast as drawn on the sample team. On the sample team the person's own
+ * face counts only while they are signed in there as themselves (lib/sample-member.ts), never for a visitor.
  */
 export function drawingsOf(team: string, hairOf: (seed: string) => string, data: TeamFaceData = knownTeamFaces(team)): Record<string, Drawing> {
   const saved = { ...data.saved };
-  const mine = isSampleTeam(team) ? null : myFace();
+  const mine = isSampleTeam(team) && !sampleSelf() ? null : myFace();
   const people = [...data.people];
   if (mine) {
     for (const s of mine.seeds) if (!saved[s]) saved[s] = { face: mine.face, name: mine.name, at: Number.MAX_SAFE_INTEGER };
     if (!people.some((p) => mine.seeds.includes(p.seed.toLowerCase()))) people.push({ seed: mine.seeds[0]!, name: mine.name });
   }
-  return teamDrawings({ people, saved, hairOf, fixed: isSampleTeam(team) ? FACE_DRAWING_SEEDS : undefined });
+  const out = teamDrawings({ people, saved, hairOf, fixed: isSampleTeam(team) ? FACE_DRAWING_SEEDS : undefined });
+  // One face for the person under each of their seeds (their name, their GitHub login), whichever a surface draws.
+  const theirs = mine ? mine.seeds.map((s) => out[s]).find(Boolean) : undefined;
+  if (mine && theirs) for (const s of mine.seeds) out[s] ??= theirs;
+  return out;
 }
 
 function canDrawRecipes(m: FaceDrawer): boolean {

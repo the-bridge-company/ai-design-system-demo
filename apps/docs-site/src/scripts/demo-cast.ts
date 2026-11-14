@@ -4,7 +4,7 @@
 // any other team nobody is played, whatever the address or the storage say.
 import { CAST_PARAM, CAST_STORAGE_KEY, castPerson, chooseCast, type CastKey, type CastPerson } from '../lib/demo-cast';
 import { isSampleTeam } from '../lib/demo';
-import { sampleSelf } from './sample-self';
+import { sampleIdentityNow } from './sample-self';
 
 const stored = (): string | null => {
   try {
@@ -31,9 +31,10 @@ const queryPick = (): string | null => {
   }
 };
 
-/** The person this page plays on `repo` ("owner/repo"), or null when `repo` is not the sample team or someone is signed in. */
+/** The person this page plays on `repo` ("owner/repo"), or null when `repo` is not the sample team or someone is (or may be) signed in. */
 export function castOn(repo: string | null | undefined): CastPerson | null {
-  if (!isSampleTeam(repo) || sampleSelf()) return null;
+  // Nobody played while someone is signed in, nor while that is not known yet (no Dana first, then the person).
+  if (!isSampleTeam(repo) || sampleIdentityNow() !== 'out') return null;
   const q = queryPick();
   const person = chooseCast({ query: q, stored: stored() });
   // Picked by the address: kept, so the next page of the visit plays the same person.

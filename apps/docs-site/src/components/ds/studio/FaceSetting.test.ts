@@ -164,6 +164,24 @@ describe('Your face', () => {
     }
   });
 
+  it('on the sample team, signed in: their own face setting, saved to their account as on their own team', async () => {
+    Object.assign(at, { owner: 'acme-design-demo', repo: 'bridge-demo-ds' });
+    history.replaceState(null, '', '/studio/acme-design-demo/bridge-demo-ds/settings/?as=malik');
+    localStorage.setItem('bridge.account.self', JSON.stringify({ name: 'Dana', email: 'dana@acme.example' }));
+    try {
+      const user = userEvent.setup();
+      render(createElement(FaceSetting));
+      await user.click(await screen.findByRole('button', { name: 'Change' }));
+      await user.click(screen.getByRole('button', { name: 'Shuffle' }));
+      await user.click(screen.getByRole('button', { name: 'Save face' }));
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(screen.queryByText(/Saved in this browser only/)).toBeNull();
+      expect(localStorage.getItem('bridge.face.sample.malik')).toBeNull();
+    } finally {
+      Object.assign(at, { owner: 'acme', repo: 'ds' });
+    }
+  });
+
   it('a style taken meanwhile is refused with the holder\'s name, the editor stays open', async () => {
     reply = (c) => (c.method === 'GET' ? json(200, { available: true, account: ACCOUNT }) : json(409, { error: 'face_taken', message: 'Leo already wears this hair style in Acme Design. Shuffle or pick another one.', holder: 'Leo' }));
     const user = userEvent.setup();

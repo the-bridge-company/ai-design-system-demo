@@ -73,6 +73,7 @@ import { DEMO_VISIT_KEY, isSampleTeam } from '../lib/demo';
 import { sampleRead } from '../lib/demo-in-browser';
 import { castAccess } from '../lib/demo-cast';
 import { memberContact } from '../lib/sample-member';
+import { resolveSampleSelf, sampleSelfPending } from './sample-self';
 import { SEP } from '../lib/sep';
 import { KEPT_VERSION } from '../lib/kept-version';
 
@@ -1495,6 +1496,23 @@ export function initGitHubConnect(onChange?: (v: Viewer | null) => void) {
           settle(known);
         },
       );
+      return;
+    }
+    // The sample team, with a sign-in that may be there but is not known yet (an account never read in this browser, a
+    // GitHub sign-in never checked): the page waits in its loading state (the account row holds its place, the home
+    // its skeleton, no "See it as") until it knows, never Dana first and the person a moment later. A browser with no
+    // sign-in hint at all is a signed-out visitor: Dana at once (scripts/sample-self.ts).
+    if (onSampleTeam() && sampleSelfPending()) {
+      paint();
+      void resolveSampleSelf().then(() => {
+        // The account's answer may have settled it already (onContributeChange above).
+        if (!checked && !githubToken()) {
+          const m = contributorFor(repo);
+          viewer = m ? contributorViewer(m) : castDeveloper();
+          done();
+        }
+        void contributeInfo(repo);
+      });
       return;
     }
     if (known || developer) {

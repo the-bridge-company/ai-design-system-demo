@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { explorationPrBody, withLeadAsked, withLibraryAsked, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import type { ContributeMember } from './contribute';
-import { memberContact, parseSampleSelf, sampleRoleOf, sampleSelfMember, selfOfAccount, selfOfGitHub, sharedSeatIds, withSampleTeam } from './sample-member';
+import { memberContact, parseSampleSelf, sampleIdentity, sampleRoleOf, sampleSelfMember, selfOfAccount, selfOfGitHub, sharedSeatIds, withSampleTeam } from './sample-member';
 import { viewerHats } from './team-reviews';
 import { withSampleReviews } from './review-lines';
 import { SAMPLE_REPO } from './demo';
@@ -86,5 +86,18 @@ describe('the team switcher with the sample team', () => {
     expect(withSampleTeam([{ key: BRIDGE, current: true }], { signedIn: true, here: BRIDGE, recent: [BRIDGE], row })).toEqual([{ key: BRIDGE, current: true }]);
     const visitor = [row(SAMPLE_REPO, true)];
     expect(withSampleTeam(visitor, { signedIn: false, here: SAMPLE_REPO, recent: [], row })).toEqual(visitor);
+  });
+});
+
+describe('who the sample team is for, before it paints anyone', () => {
+  const none = { self: false, uncheckedGitHub: false, signingIn: false, accountTrace: false };
+  it('paints a signed-out visitor at once (Dana), and the person at once when known', () => {
+    expect(sampleIdentity(none)).toBe('out');
+    expect(sampleIdentity({ ...none, self: true, uncheckedGitHub: true })).toBe('self');
+  });
+  it('waits while a sign-in may be there: an account trace, a GitHub sign-in never checked, a sign-in under way', () => {
+    expect(sampleIdentity({ ...none, accountTrace: true })).toBe('pending');
+    expect(sampleIdentity({ ...none, uncheckedGitHub: true })).toBe('pending');
+    expect(sampleIdentity({ ...none, signingIn: true })).toBe('pending');
   });
 });

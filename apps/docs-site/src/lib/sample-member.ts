@@ -105,3 +105,25 @@ export function withSampleTeam<T extends { key: string }>(rows: readonly T[], x:
   const team = on ? x.here! : x.recent.find(sample)!;
   return [...kept, x.row(team, on)];
 }
+
+/** What this browser says about who is signed in, before any request (the hints of the layout's showcase guard). */
+export interface SignInHints {
+  /** The person is known: their Bridge account kept here, or a GitHub sign-in GitHub accepted (scripts/sample-self.ts). */
+  self: boolean;
+  /** A GitHub sign-in saved here whose last check is not for it (never checked, or another token). */
+  uncheckedGitHub: boolean;
+  /** A sign-in under way in this tab (GitHub, or linking GitHub to an account). */
+  signingIn: boolean;
+  /** An email membership of a real team, or the names of an account's teams: an account may be signed in. */
+  accountTrace: boolean;
+}
+
+/**
+ * Who the sample team is for, before it paints anyone: `self` (paint the person), `out` (a signed-out visitor: paint
+ * Dana at once, no wait), or `pending` (a sign-in may be there: the identity parts wait in their loading state until
+ * the account answers or the GitHub sign-in is checked, never Dana first and the person a moment later).
+ */
+export function sampleIdentity(h: SignInHints): 'self' | 'out' | 'pending' {
+  if (h.self) return 'self';
+  return h.uncheckedGitHub || h.signingIn || h.accountTrace ? 'pending' : 'out';
+}

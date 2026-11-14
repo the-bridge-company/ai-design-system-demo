@@ -4,7 +4,7 @@
 // deploy, a fork, `astro dev`) the GET says unavailable and the screens fall back to GitHub; never a fake success.
 // Signed in, <html data-account> is set so the GitHub-only account blocks step aside (styles/account.css).
 import { ACCOUNT_API, ACCOUNT_HEADER, ACCOUNT_WORDS, accountErrorText, GITHUB_PENDING_KEY, isPersonalKey, parseAccount, parseBlocked, signInHref, type Account, type AccountInfo, type BlockedTeam, type NotifyChoices, type SignedIn } from '../lib/account';
-import { forgetContributors, noteSampleSelfChanged, seedContributors } from './contribute-session';
+import { forgetContributors, seedContributors } from './contribute-session';
 import { noteAccountSelf } from './sample-self';
 import type { AiTool } from '../lib/ai-tools';
 import type { FaceRecipe } from '../lib/team-faces';
@@ -50,10 +50,16 @@ export function onAccountChange(fn: (a: Account | null) => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/** The person signed in changed: the sample team's sessions on this page read as them, or as the person played. */
+const selfChanged = () =>
+  void import('./contribute-session')
+    .then((m) => m.noteSampleSelfChanged())
+    .catch(() => undefined);
+
 function publish(a: Account | null) {
   if (typeof document !== 'undefined') document.documentElement.toggleAttribute('data-account', Boolean(a));
   // Who they are, for the sample team's first paint (scripts/sample-self.ts): there they are one more member, as themselves.
-  if (a && noteAccountSelf(a)) noteSampleSelfChanged();
+  if (a && noteAccountSelf(a)) selfChanged();
   // Each of the account's email teams knows its member at once, even one this browser never opened.
   if (a) seedContributors(a, a.teams);
   // Their saved face draws on every surface from the first paint of the next page (scripts/team-faces.ts).
@@ -93,7 +99,7 @@ export function getAccount(fresh = false): Promise<AccountInfo> {
       // The server answered: its team names name each team from the first paint of the next page.
       noteAccountTeamNames(a?.teams ?? null);
       // Nobody signed in, said by the server (never an unreachable one): the sample team stops naming them.
-      if (!a && noteAccountSelf(null)) noteSampleSelfChanged();
+      if (!a && noteAccountSelf(null)) selfChanged();
       publish(a);
       return { available: r.available !== false, account: a };
     },

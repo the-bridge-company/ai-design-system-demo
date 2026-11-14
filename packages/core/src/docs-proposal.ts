@@ -4,6 +4,7 @@
 // continues the open one), and an author line that says who wrote the text. In suggest mode the same edits are filed
 // as a suggestion (an issue with the cleaned docs, applied by a developer) instead. The GitHub writes use the core client.
 import type { ChangesMode } from './config';
+import { validateBehaviors } from './behaviors';
 import { formatDocsJson, missingProse, patchDocsJson, type ComponentDocsJson } from './docs-draft';
 import type { GitHubClient, PullRequestSummary } from './github-client';
 import type { RequestSource } from './requests';
@@ -63,6 +64,7 @@ export function validateDocs(d: ComponentDocsJson): DocsIssue[] {
   for (const k of ['dos', 'donts'] as const) d[k].forEach((g, i) => (!g.title.trim() || !g.text.trim()) && out.push({ field: `${k}.${i}`, message: 'Give every item a title and a sentence.' }));
   const prose = JSON.stringify([d.summary, d.whenToUse, d.whenNotToUse, d.dos, d.donts, d.accessibility, d.contentGuidelines ?? [], d.anatomy ?? {}]);
   if (EM_DASH.test(prose)) out.push({ field: 'voice', message: 'Replace the em dashes with a colon, a comma or two sentences.' });
+  out.push(...validateBehaviors(d.behaviors));
   return out;
 }
 

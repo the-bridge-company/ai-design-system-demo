@@ -7,6 +7,7 @@
 // The components folder, the suffixes and the barrel file come from bridge.config.json (components.*).
 // Pure: takes file bodies, reads nothing itself.
 
+import type { ComponentBehavior } from './behaviors';
 import type { ProseKey } from './docs-draft';
 import type { TokenRowTier } from './token-rows';
 
@@ -33,6 +34,8 @@ export interface ComponentDocs {
   accessibility: string[];
   contentGuidelines?: string[];
   anatomy?: Record<string, string>;
+  /** How it reacts, in designer words, grouped by shared family (behaviors.ts). Interactive components only. */
+  behaviors?: ComponentBehavior[];
   /** "claude" when an AI drafted the prose (docs-draft Action, bridge_draft_docs). */
   draftedBy?: string;
   /** Prose sections Claude drafted that wait for review, when a draft covered only some (missing: the whole file). */

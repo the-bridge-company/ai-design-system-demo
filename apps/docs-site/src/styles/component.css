@@ -877,3 +877,112 @@ a.tchip:hover {
   border-radius: var(--radius-container);
   background: var(--color-bg-subtle);
 }
+
+/* Behaviors (components/ds/library/Behaviors.tsx): the list grouped by family, and beside it one stage with the real
+   component. Stacked on a narrow page; side by side, the stage sticky, when there is room for both. */
+.bh-layout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 1100px) {
+  .bh-layout.has-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(var(--size-72), 0.8fr);
+    align-items: start;
+  }
+
+  .bh-layout.has-stage .bh-stage {
+    position: sticky;
+    top: var(--space-6);
+  }
+}
+
+.bh-list {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.bh-family-title {
+  margin: 0 0 var(--space-2);
+}
+
+.bh-family ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bh-row {
+  margin: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.bh-row[data-active] {
+  border-color: var(--color-border-strong);
+}
+
+.bh-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+
+.bh-text {
+  flex: 1 1 auto;
+}
+
+.bh-keys {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.bh-try {
+  margin-left: auto;
+}
+
+.bh-announce {
+  margin: var(--space-1) 0 0;
+}
+
+.bh-stage {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.bh-stage-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+}
+
+.bh-stage-frame {
+  display: grid;
+  min-height: var(--size-40);
+  place-items: center;
+  padding: var(--space-6);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+}
+
+.bh-stage-frame > * {
+  width: 100%;
+  max-width: var(--size-72);
+}
+
+.bh-stage-story {
+  width: 100%;
+  min-height: var(--size-72);
+  padding: 0;
+  background-color: var(--color-bg-default);
+}

@@ -128,5 +128,71 @@
     "indicator": "Check mark on the selected option",
     "groupLabel": "Group heading",
     "separator": "Divider between groups, runs to the popup edge with the inset's 8px gap above and below"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-list",
+      "family": "Opening",
+      "text": "Opens a list",
+      "keys": [
+        "Enter",
+        "Space",
+        "ArrowDown",
+        "ArrowUp"
+      ]
+    },
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move",
+      "keys": [
+        "ArrowDown",
+        "ArrowUp"
+      ]
+    },
+    {
+      "id": "type-to-jump",
+      "family": "Moving",
+      "text": "Type to jump"
+    },
+    {
+      "id": "pick-with-enter",
+      "family": "Picking",
+      "text": "Enter picks and closes (with multiple, the list stays open)",
+      "keys": [
+        "Enter"
+      ]
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "keys": [
+        "Escape"
+      ]
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside"
+    },
+    {
+      "id": "tab-leaves",
+      "family": "Closing",
+      "text": "Tab leaves without picking",
+      "keys": [
+        "Tab"
+      ]
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the trigger"
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open, unless opened by touch"
+    }
+  ]
 }

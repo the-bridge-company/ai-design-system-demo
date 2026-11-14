@@ -10,6 +10,7 @@ import Example from '../../components/Example.tsx';
 import PropsPlayground from '../../components/PropsPlayground.tsx';
 import ComponentView from '../../components/ds/library/views/ComponentView';
 import ComponentTabs from '../../components/ds/library/views/ComponentTabs';
+import Behaviors from '../../components/ds/library/Behaviors';
 import LibraryEditMode from '../../components/LibraryEditMode';
 import GitHubDialog from '../../components/GitHubDialog.astro';
 import PreviewScope from '../../components/PreviewScope.astro';
@@ -18,7 +19,7 @@ import FigmaLinkSite from '../../components/FigmaLinkSite';
 import { figmaLinkFor } from '../../components/ds/library/FigmaLink';
 import { studioHref } from '../../lib/team-path';
 import { loadComponents, playgroundSpec, type ComponentInfo } from '../../lib/library/components';
-import { componentNotes, mainStory, previewScopes } from '../../lib/library/component-page';
+import { componentNotes, mainStory, previewScopes, readableDocs } from '../../lib/library/component-page';
 import { lastUpdated, exists, readText } from '../../lib/repo';
 import { componentPrefill } from '../../lib/docs-prefill';
 import { siteRepo } from '../../lib/config';
@@ -40,6 +41,8 @@ const scopes = previewScopes(data.model);
 const originalDocs = exists(c.files.docs) ? readText(c.files.docs) : null;
 const editInitial = originalDocs ? JSON.parse(originalDocs) : componentPrefill(c).draft;
 const repo = siteRepo();
+// Behaviors (docs.json): the list with a live stage, the real component run in the page.
+const docs = readableDocs(c.docs);
 ---
 
 <Layout title={c.name} description={c.docs?.summary ?? c.description} sources={sources} updated={updated} crumbs={[{ label: 'Catalog', href: '/components/' }, { label: c.name }]} toc={false}>
@@ -48,6 +51,7 @@ const repo = siteRepo();
     <PreviewScope slot="heroTools" />
     <FigmaAheadSite slot="ahead" client:only="react" component={c.name} />
     <FigmaLinkSite slot="figma" client:only="react" {...figmaLinkFor(data.model, c.name)} settingsHref={studioHref('settings/#tools')} />
+    {docs?.behaviors?.length ? <Behaviors slot="behaviors" client:visible name={c.name} behaviors={docs.behaviors} preview={docs.preview ?? null} live /> : null}
     {spec && story && data.extras.storybook && <PropsPlayground slot="playground" client:visible spec={spec} storybook={data.extras.storybook} storyId={story.id} brands={scopes.brands} densities={scopes.densities} />}
   </ComponentView>
   <LibraryEditMode client:only="react" name={c.name} slug={c.slug} path={c.files.docs} original={originalDocs} initial={editInitial} repo={{ owner: repo.owner, repo: repo.repo }} />

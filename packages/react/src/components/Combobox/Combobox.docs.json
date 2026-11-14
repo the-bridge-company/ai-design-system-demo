@@ -94,5 +94,71 @@
     "inlineResults": "The always-open list region under the input (inline)",
     "indicator": "Check mark on selected options",
     "groupLabel": "Group heading"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "filter-while-typing",
+      "family": "Filtering",
+      "text": "Typing filters the list"
+    },
+    {
+      "id": "open-with-down-arrow",
+      "family": "Opening",
+      "text": "Down arrow opens the list and moves",
+      "keys": [
+        "ArrowDown"
+      ]
+    },
+    {
+      "id": "pick-with-enter",
+      "family": "Picking",
+      "text": "Enter picks the highlighted option",
+      "keys": [
+        "Enter"
+      ]
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Escape closes the list",
+      "keys": [
+        "Escape"
+      ]
+    },
+    {
+      "id": "clear-on-second-escape",
+      "family": "Closing",
+      "text": "A second Escape clears what was typed and the pick",
+      "keys": [
+        "Escape"
+      ]
+    },
+    {
+      "id": "say-no-match",
+      "family": "Feedback",
+      "text": "Says when nothing matches",
+      "announces": "No matches. Try another name."
+    },
+    {
+      "id": "say-loading",
+      "family": "Feedback",
+      "text": "Says when results are loading",
+      "announces": "Loading results",
+      "example": {
+        "c": "Combobox",
+        "p": {
+          "label": "Reviewer",
+          "placeholder": "Search people",
+          "loading": true,
+          "filter": null,
+          "options": []
+        }
+      }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus stays in the field after a pick"
+    }
+  ]
 }

@@ -13100,7 +13100,7 @@
           ]
         }
       },
-      "hash": "ff78f172",
+      "hash": "c6b88c0b",
       "source": [
         "packages/react/src/components/Combobox/Combobox.tsx",
         "packages/react/src/components/Combobox/Combobox.module.css",
@@ -13244,7 +13244,10 @@
               "paddingLeft": "space.2",
               "itemSpacing": "space.2"
             },
-            "list": {},
+            "list": {
+              "paddingRight": "space.2",
+              "paddingLeft": "space.2"
+            },
             "item": {
               "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",
@@ -31141,7 +31144,7 @@
           "defaultValue": "dark"
         }
       },
-      "hash": "c2171296",
+      "hash": "3f81a3c1",
       "source": [
         "packages/react/src/components/Select/Select.tsx",
         "packages/react/src/components/Field/Field.module.css",
@@ -31346,7 +31349,10 @@
               "strokeWeight": "border-width.default",
               "stroke": "popup.border"
             },
-            "list": {},
+            "list": {
+              "paddingRight": "space.2",
+              "paddingLeft": "space.2"
+            },
             "item": {
               "cornerRadius": "calc(popup.radius - space.2)",
               "paddingTop": "space.1",

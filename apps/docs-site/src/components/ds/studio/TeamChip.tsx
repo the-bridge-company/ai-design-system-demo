@@ -163,14 +163,16 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
       readName();
       document.addEventListener('bridge:team-model', readName);
       setSignInApp(session.prefersSignIn());
-      const { sampleSelf } = await import('../../../scripts/sample-self');
-      if (live) setSelfSignedIn(Boolean(sampleSelf()));
+      // Never awaited: the rest of the chip (its listeners included) does not wait on it.
+      const self = import('../../../scripts/sample-self');
+      const readSelf = () => void self.then(({ sampleSelf }) => live && setSelfSignedIn(Boolean(sampleSelf())));
+      readSelf();
       // This browser only: no GitHub call (the demo stays free for guests).
       const { startFacts } = await import('../../../scripts/start');
       if (live) setFacts(startFacts());
       session.initGitHubConnect((v) => {
         // Read again once the session knows: on the sample team a sign-in may have just been checked.
-        setSelfSignedIn(Boolean(sampleSelf()));
+        readSelf();
         setSessionKnown(true);
         setLinkedKnown(session.linkedRoleKnown());
         setSignedIn(Boolean(v));

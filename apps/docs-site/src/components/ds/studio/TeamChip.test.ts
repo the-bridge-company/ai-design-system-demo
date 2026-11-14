@@ -77,9 +77,11 @@ describe('TeamChip recent teams', () => {
 
   it('remembers this team once the page read it, and forgets it on a 404', async () => {
     localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['globex/tokens']));
+    const before = page.listeners.length;
     render(createElement(TeamChip, { launcher: true }));
-    await waitFor(() => expect(page.listeners.length).toBeGreaterThan(0));
-    // Every chip mounted so far hears it: a chip left from an earlier test may have registered first.
+    // This chip's own listener, not only one left from an earlier test: on a slow runner the event would come first.
+    await waitFor(() => expect(page.listeners.length).toBeGreaterThan(before));
+    // Every chip mounted so far hears it.
     act(() => page.listeners.forEach((l) => l({ state: 'anonymous-public' })));
     await waitFor(() => expect(stored()).toEqual(['acme/ds', 'globex/tokens']));
     act(() => page.listeners.forEach((l) => l({ state: 'anonymous-unknown' })));

@@ -250,6 +250,10 @@
   max-height: min(var(--available-height), var(--size-96));
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* The scroll box reaches the popup's inline edges and keeps the inset as its own padding, so a separator running to
+     those edges (negative inline margins) stays inside it: no sideways scroll. */
+  margin-inline: calc(var(--space-2) * -1);
+  padding-inline: var(--space-2);
   scroll-padding-block: var(--space-1);
 }
 

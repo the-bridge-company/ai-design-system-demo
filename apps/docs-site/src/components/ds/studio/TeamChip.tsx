@@ -11,8 +11,9 @@
 // top and the account at the bottom.
 // On the hosted site the menu opens with "Your teams" (board EmptyB): the teams the signed-in person belongs to (their
 // role remembered in this browser), the one they are on first with a check and their role; the empty browser
-// workspace only while they are in it or have no team of their own (lib/start.ts); and, for a visitor without a Bridge
-// account, "Try it" with Acme Design, the sample team (a member finds it in the account menu instead). The browser workspace (no repository yet,
+// workspace only while they are in it or have no team of their own (lib/start.ts); the sample team (Acme Design) once
+// someone signed in opened it, Admin, last (lib/sample-member.ts); and, for a visitor without a Bridge account who has
+// not, "Try it" with Acme Design (a member finds it in the account menu too). The browser workspace (no repository yet,
 // pages/studio/workspace.astro) names itself on the chip: "Ann's workspace", kept in this browser. Once "Create your
 // team" made the team on the server (no repository yet), the workspace page is that team's home and the chip names the
 // team with the person's role ("Northwind Design", Admin), never "Your workspace".
@@ -42,6 +43,7 @@ import { pickableTeams } from '../../../lib/pickable-teams';
 import { DEMO_HOME, MENU_WORDS, ownTeams, TEAM_HOME_WORDS, WORKSPACE_HOME, WORKSPACE_WORDS, workspaceHref, workspaceName, workspaceTeamKey, type StartFacts } from '../../../lib/start';
 import { isTeamKey, sameRepo, teamKeyId } from '../../../lib/team-path';
 import { linkedAccessState, strongerAccess } from '../../../lib/linked-role';
+import { SAMPLE_SELF_ROLE, sampleRoleOf, withSampleTeam } from '../../../lib/sample-member';
 
 export interface TeamChipProps {
   /** owner/repo known at build time (self-hosted). Null on a team shell: read from the address. */
@@ -100,6 +102,11 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   // A Bridge account (GET /api/account): its teams join "Your teams", each with its role.
   const account = useAccount();
   const signedIn = ghSignedIn || Boolean(account);
+  // The person is signed in on this browser (a Bridge account or a GitHub sign-in, scripts/sample-self.ts), whatever
+  // team this is: the sample team is then one of their teams, Admin (lib/sample-member.ts). On the sample team the
+  // session's viewer is never enough to say so: a signed-out visitor reads as the person they play.
+  const [selfSignedIn, setSelfSignedIn] = useState(false);
+  const personSignedIn = selfSignedIn || Boolean(account);
   const [recent, setRecent] = useState<string[]>([]);
   const [hosted, setHosted] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -156,10 +163,14 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
       readName();
       document.addEventListener('bridge:team-model', readName);
       setSignInApp(session.prefersSignIn());
+      const { sampleSelf } = await import('../../../scripts/sample-self');
+      if (live) setSelfSignedIn(Boolean(sampleSelf()));
       // This browser only: no GitHub call (the demo stays free for guests).
       const { startFacts } = await import('../../../scripts/start');
       if (live) setFacts(startFacts());
       session.initGitHubConnect((v) => {
+        // Read again once the session knows: on the sample team a sign-in may have just been checked.
+        setSelfSignedIn(Boolean(sampleSelf()));
         setSessionKnown(true);
         setLinkedKnown(session.linkedRoleKnown());
         setSignedIn(Boolean(v));
@@ -260,10 +271,10 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   // or the GitHub block for an email member and the played developer), so the trigger shows only the team's name.
   const rowRole = accountRowSaysRole({
     account: Boolean(account),
-    accountTeamRole: !workspace && hosted && name ? (account?.teams.find((t) => sameRepo(t.repo, name))?.role ?? null) : null,
+    accountTeamRole: !workspace && hosted && name ? (account?.teams.find((t) => sameRepo(t.repo, name))?.role ?? sampleRoleOf(name, true)) : null,
     ...blockRole,
   });
-  // The sample team's visitor plays one of its people, whose role the account row says: the chip shows the team's name
+  // On the sample team the account row says the role (the person played, or the person signed in): the chip shows the team's name
   // alone from first paint (styles/team-access.css keeps the server's pending badge out there too), never a "Checking"
   // or "Guest" that comes and goes and moves the name (A1).
   const playsSample = !workspace && !account && isSampleTeam(name);
@@ -271,7 +282,9 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   const offerTeams = launcher || hosted;
   // "Your teams": the teams the signed-in person belongs to (their role known in this browser), the one you are on first
   // with a check and your role. The browser workspace shows only while you are in it or have no team of your own; from
-  // the sample team or a team you are a guest of, the place you came from. The sample team stays under "Try it".
+  // the sample team or a team you are a guest of, the place you came from. Signed in, the sample team they opened is
+  // one of their teams (Admin, its own mark), always last so the list reads the same from every team
+  // (lib/sample-member.ts withSampleTeam); else it stays under "Try it".
   type TeamRow = { key: string; mark: ReactElement; title: string; line?: string; role?: string; href: string; current: boolean };
   const wsMark = <Avatar name={wsTeam ? wsName : (viewerName ?? 'Workspace')} size="xs" decorative />;
   // A team made in Bridge has no GitHub owner: its initials.
@@ -287,7 +300,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     const [o = '', r = ''] = t.split('/');
     return { key: t, mark: teamMark(t), title: current ? chip.name : recentTeamName(t, names), role, href: teamHref(o, r, null), current };
   };
-  const yours: TeamRow[] = (() => {
+  const listedTeams: TeamRow[] = (() => {
     if (!offerTeams) return [];
     const rows: TeamRow[] = [];
     if (chip.kind === 'workspace') rows.push({ key: wsTeam?.repo ?? 'ws', mark: wsMark, title: wsName, line: wsLine, ...(wsTeam ? { role: roleWord(wsTeam.role) } : {}), href: WORKSPACE_HOME, current: true });
@@ -314,6 +327,8 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     if (team) return [{ ...teamRowOf(team, false), line: 'Your most recent team' }];
     return [{ key: 'ws', mark: wsMark, title: wsName, line: wsLine, href, current: false }];
   })();
+  const yours: TeamRow[] =
+    offerTeams ? withSampleTeam(listedTeams, { signedIn: personSignedIn, here: name, recent, row: (t, current) => teamRowOf(t, current, roleWord(SAMPLE_SELF_ROLE)) }) : listedTeams;
   const listed = recent.filter((t) => !yours.some((y) => sameRepo(y.key, t)));
   const createItem = (
     // A dialog over the page: connect another design system by its repository, without leaving this one.
@@ -331,9 +346,10 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
   // The menu's parts in order, a separator between two: the teams to switch to (board EmptyB), what to do here, the
   // recent teams, then "Create a new team" once signed in (signed out it comes first among the actions).
   const blocks: { key: string; node: ReactNode }[] = [];
-  // The sample team never sits between real teams: a member signed in to Bridge finds it in the account menu
-  // (AccountMenu.tsx, "Try it · Acme Design"); a visitor without an account keeps it here, except on it.
-  const tryIt = offerTeams && chip.kind !== 'demo' && !account && !isSampleTeam(name);
+  // The sample team never sits between real teams: once opened by someone signed in it is the last of "Your teams";
+  // a member signed in to Bridge also finds it in the account menu (AccountMenu.tsx, "Try it · Acme Design"); a visitor
+  // without an account keeps it here until it is one of their teams, except on it.
+  const tryIt = offerTeams && chip.kind !== 'demo' && !account && !isSampleTeam(name) && !yours.some((y) => isSampleTeam(y.key));
   const teams = (
     <>
       {yours.length > 0 && (

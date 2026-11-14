@@ -33,6 +33,30 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-hosted');
 });
 
+describe('signed in, nobody is played', () => {
+  it('reads as the person signed in, Admin, and offers no See it as, whatever the address or the pick says', () => {
+    visit();
+    localStorage.setItem(CAST_STORAGE_KEY, 'sofia');
+    history.replaceState(null, '', `/studio/${SAMPLE}/?as=leo`);
+    localStorage.setItem('bridge.account.self', JSON.stringify({ name: 'Florian', email: 'florian@example.com', login: null }));
+    expect(castOn(SAMPLE)).toBeNull();
+    expect(playedGitHub(SAMPLE)).toBeNull();
+    expect(contributorFor(SAMPLE)).toMatchObject({ name: 'Florian', email: 'florian@example.com', role: 'admin', visitor: true });
+    expect(playsSomeoneElse(SAMPLE)).toBe(true);
+    expect(getToken()).toBe(CONTRIB_TOKEN);
+  });
+
+  it('asks the server for the lead seat: the visitor session as Dana', async () => {
+    localStorage.setItem(CAST_STORAGE_KEY, 'sofia');
+    localStorage.setItem('bridge.account.self', JSON.stringify({ name: 'Florian', email: 'florian@example.com' }));
+    const urls: string[] = [];
+    answer = (url) => (urls.push(url), json(200, { available: true, member: DANA }));
+    const info = await contributeInfo(SAMPLE);
+    expect(urls[0]).toContain('&as=dana');
+    expect(info.member).toMatchObject({ name: 'Florian', role: 'admin' });
+  });
+});
+
 describe('See it as, in the browser', () => {
   it('plays Dana by default: the member the server gave', () => {
     visit();

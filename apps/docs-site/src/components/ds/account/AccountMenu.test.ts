@@ -70,6 +70,15 @@ describe('AccountMenu', () => {
     expect(screen.getByRole('menuitem', { name: /sign out/i })).toBeTruthy();
   });
 
+  it('on the sample team as one more member: their own name, Admin, whatever team list the account has', async () => {
+    await openMenu('/studio/acme-design-demo/bridge-demo-ds/', { ...leo(), teams: [{ repo: 'acme/ds', role: 'admin' }] as Account['teams'] });
+    const trigger = screen.getByRole('button', { name: /account menu/i });
+    expect(within(trigger).getByText('Leo Martin')).toBeTruthy();
+    expect(within(trigger).getByText('Admin')).toBeTruthy();
+    expect(within(screen.getByRole('menu')).getByText('Admin')).toBeTruthy();
+    expect(screen.queryByText('Dana')).toBeNull();
+  });
+
   it('on their own team without GitHub: no GitHub prompt at all, and Try it', async () => {
     await openMenu('/studio/acme/ds/', leo());
     expect(within(screen.getByRole('menu')).getByText('Admin')).toBeTruthy();

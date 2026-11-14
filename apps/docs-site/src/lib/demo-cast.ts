@@ -1,4 +1,4 @@
-// "See it as": the people of the sample team (lib/demo.ts SAMPLE_REPO, Acme Design), and which of them a visitor plays.
+// "See it as": the people of the sample team (lib/demo.ts SAMPLE_REPO, Acme Design), and which of them a signed-out visitor plays.
 // Pure: no DOM, no storage, covered by demo-cast.test.ts. scripts/demo-cast.ts reads the choice in the browser.
 //
 // A signed-out visitor reads the sample team through one read-only session (api/contribute): every write is refused
@@ -7,7 +7,8 @@
 // who has no email membership and reads through the lead's session, the page plays them itself: the member every Studio
 // script asks for (scripts/contribute-session.ts contributorFor), or the GitHub viewer and access
 // (scripts/github-session.ts). Every screen then runs its own role rules on that person, the same code as on any team.
-// Never on a real team, never for a real member, never a sign-in: the server still refuses every write.
+// Never on a real team, never for a real member, never for someone signed in (they are themselves there,
+// lib/sample-member.ts): the server still refuses every write.
 
 import type { ContributeMember } from './contribute';
 import type { RepoAccess } from './access';

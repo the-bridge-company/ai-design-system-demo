@@ -54,10 +54,11 @@ async function whoIsHere(): Promise<Who | null> {
   const team = pageTeam();
   if (team && isSampleTeam(team)) {
     const { castOn } = await import('../../../scripts/demo-cast');
+    // A signed-out visitor sets the face of the person they play; someone signed in is themselves there (castOn is
+    // null, lib/sample-member.ts): their own face setting below, as on their own team.
     const person = castOn(team);
-    if (!person) return null;
     // The sample team by its name, as the team chip says it (its settings' name), never its repository in words.
-    return { kind: 'sample', team, teamName: teamDisplayName(team, { name: SAMPLE_TEAM }), name: person.name, seeds: [castFaceLogin(person).toLowerCase()], castKey: person.key };
+    if (person) return { kind: 'sample', team, teamName: teamDisplayName(team, { name: SAMPLE_TEAM }), name: person.name, seeds: [castFaceLogin(person).toLowerCase()], castKey: person.key };
   }
   const { getAccount } = await import('../../../scripts/account-session');
   const { account } = await getAccount().catch(() => ({ account: null }));

@@ -10,10 +10,12 @@ import type { DesignReviewMap, ReviewMember } from '../lib/team-reviews';
 import { GitHubError } from '@bridge-ds/core';
 import { mineIn } from '../lib/branches-page';
 import { CONTRIB_REFUSAL, CONTRIBUTE_API, GITHUB_API, CONTRIBUTE_HEADER, CONTRIBUTE_WORDS, contributeHashToken, FRESH_HEADER, MISSING_HEADER, parseMember, proxyUrl, restoreMissing, wantsFresh, type ContributeMember } from '../lib/contribute';
-import { isDemoRepo } from '../lib/demo';
+import { isDemoRepo, isSampleTeam } from '../lib/demo';
 import { nameFace } from '../lib/people';
 import { parseTeamFaces } from '../lib/team-faces';
-import { castGitHub, playedMember } from '../lib/demo-cast';
+import { castGitHub, DEFAULT_CAST, playedMember } from '../lib/demo-cast';
+import { sampleSelfMember } from '../lib/sample-member';
+import { sampleSelf } from './sample-self';
 import { castOn } from './demo-cast';
 
 /** The site cannot sign in with an email (no server piece, or not set up). */
@@ -68,14 +70,33 @@ function storedContributor(repo: string): ContributeMember | null {
 }
 
 /**
- * Who the page reads as on `repo` for the member `m` the server gave: on the sample team, a visitor's session plays the
- * person picked in "See it as" (lib/demo-cast.ts playedMember; null for the developer, who has no email membership).
- * Anyone else, and every other team, stays `m`.
+ * Who the page reads as on `repo` for the member `m` the server gave. On the sample team, a visitor's session reads as
+ * the person signed in on this browser, one more member of it, Admin (lib/sample-member.ts sampleSelfMember); signed
+ * out, as the person picked in "See it as" (lib/demo-cast.ts playedMember; null for the developer, who has no email
+ * membership). Anyone else, and every other team, stays `m`.
  */
 const played = (repo: string, m: ContributeMember | null): ContributeMember | null => {
-  const person = m?.visitor ? castOn(repo) : null;
+  if (!m?.visitor || !isSampleTeam(repo)) return m;
+  const self = sampleSelf();
+  if (self) return sampleSelfMember(m, self);
+  const person = castOn(repo);
   return person ? playedMember(m, person) : m;
 };
+
+/**
+ * The person signed in on this browser changed (their Bridge account was read, or the server said nobody is): every
+ * sample team session this page knows reads as them, or as the person played, from now on.
+ */
+export function noteSampleSelfChanged() {
+  for (const repo of contributorRepos()) {
+    const m = storedContributor(repo);
+    if (!m?.visitor || !isSampleTeam(repo)) continue;
+    infos.set(key(repo), Promise.resolve({ available: infoAvailable.get(key(repo)) ?? true, member: played(repo, m) }));
+    forgetRecent(repo);
+    mines.delete(key(repo));
+    listeners.forEach((fn) => fn(repo, played(repo, m)));
+  }
+}
 
 /** The member this browser last saw signed in on `repo`, or null. Synchronous: the server confirms it on each page. */
 export function contributorFor(repo: string): ContributeMember | null {
@@ -101,8 +122,9 @@ export const holdsContributeSession = (repo: string): boolean => Boolean(storedC
 export const holdsVisitorSession = (repo: string): boolean => Boolean(storedContributor(repo)?.visitor);
 
 /**
- * The visitor's read-only session on the sample team while the page plays someone other than its member (the server
- * reads "mine" and the session as that member): true then. Studio still reads through that session.
+ * The visitor's read-only session on the sample team while the page reads as someone other than its member (the person
+ * signed in, or someone played in "See it as"; the server reads "mine" and the session as that member): true then.
+ * Studio still reads through that session.
  */
 export function playsSomeoneElse(repo: string): boolean {
   const m = storedContributor(repo);
@@ -220,7 +242,8 @@ export function contributeInfo(repo: string): Promise<ContributeInfo> {
   const held = infos.get(k);
   if (held) return held;
   // On the sample team, who the visitor plays ("See it as"): the server gives their read-only session as that person.
-  const as = castOn(repo)?.key;
+  // Someone signed in reads through the lead's session (DEFAULT_CAST): they hold the lead's seat (lib/sample-member.ts).
+  const as = isSampleTeam(repo) && sampleSelf() ? DEFAULT_CAST : castOn(repo)?.key;
   const p = call<{ available?: boolean; member?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}${as ? `&as=${as}` : ''}`).then(
     (r) => {
       const info = { available: r.available === true, member: parseMember(r.member) };
@@ -418,8 +441,9 @@ export function contributeMine(repo: string, authorization?: string): Promise<Mi
   const k = authorization ? `${key(repo)}#gh` : key(repo);
   const held = mines.get(k);
   if (held) return held;
-  // Playing someone on the sample team: the server answers "mine" for its visitor session's member, not theirs. What
-  // they made reads as theirs from the exploration blocks (their member reference), as for any member.
+  // Reading as someone else on the sample team (the person signed in, or someone played): the server answers "mine" for
+  // its visitor session's member, not theirs. What they made reads as theirs from the exploration blocks (their member
+  // reference) or stays in this browser (lib/demo-in-browser.ts), never the lead's work.
   if (!authorization && playsSomeoneElse(repo)) return Promise.resolve({ branches: [], issues: [] });
   const p = call<{ branches?: unknown; issues?: unknown; products?: unknown }>('GET', `?repo=${encodeURIComponent(repo)}&mine=1`, undefined, authorization ? { Authorization: authorization } : {}).then(
     (r) => parseMine(r),

@@ -17,6 +17,7 @@ import { AccountDialog } from './AccountSettings';
 import { DEMO_HOME } from '../../../lib/start';
 import { DEMO_WORDS, isSampleTeam } from '../../../lib/demo';
 import { castJob } from '../../../lib/demo-cast';
+import { SAMPLE_SELF_ROLE, sampleRoleOf } from '../../../lib/sample-member';
 import '../../../styles/account.css';
 import { FACES_EVENT, faceUri } from '../../../scripts/team-faces';
 
@@ -115,10 +116,12 @@ export default function AccountMenu({ compact = false }: AccountMenuProps) {
   if (!account) return null;
 
   const name = accountName(account);
-  const here = team ? account.teams.find((t) => t.repo.toLowerCase() === team.toLowerCase()) : undefined;
+  // Their role on this team: an account team's, or Admin on the sample team, where everyone signed in is one more member
+  // (lib/sample-member.ts), as themselves.
+  const here = (team ? account.teams.find((t) => t.repo.toLowerCase() === team.toLowerCase()) : undefined) ?? (sampleRoleOf(team, true) ? { role: SAMPLE_SELF_ROLE } : undefined);
   const line = here ? roleWord(here.role) : account.email;
-  // Who they are on this team, one quiet line under the email: their job on the sample team (lib/demo-cast castJob,
-  // "Design lead"), and their access level as the account row says it ("Admin").
+  // Who they are on this team, one quiet line under the email: their job on the sample team when they are one of its
+  // people (lib/demo-cast castJob, "Design lead"), and their access level as the account row says it ("Admin").
   const job = team ? castJob(team, { email: account.email, login: account.github?.login })?.split(',')[0]?.trim() : null;
   const role = [job, here ? roleWord(here.role) : null].filter(Boolean).join(', ');
   const tryIt = offersTryIt(location.pathname);

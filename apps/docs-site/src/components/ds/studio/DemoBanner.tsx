@@ -5,7 +5,8 @@
 //     a Bridge account gets "Back to your workspace" instead: they have already started.
 //   - Bridge's own team, for a guest: "Bridge DS, read only." with "Back to your workspace" (or "Connect your design
 //     system" with no workspace yet, lib/start.ts demoBack).
-// On the sample team a visitor also gets "See it as" (SeeItAs.tsx): the same Studio as any of its five people.
+// On the sample team a signed-out visitor also gets "See it as" (SeeItAs.tsx): the same Studio as any of its five
+// people. Someone signed in is themselves there, an Admin of it (lib/sample-member.ts): no "See it as".
 // The action is secondary weight: the page keeps its own primary (Review all on the demo home). A DS Banner, neutral,
 // with the board's warm tint (styles/demo-home.css). Mounted by scripts/demo-gate.ts into the layout's [data-demo-strip].
 import { useId, useState } from 'react';
@@ -28,7 +29,7 @@ export interface DemoBannerProps {
   back?: { href: string; connect: boolean } | null;
   /** "Connect your design system" clicked (scripts/start-connect.ts). */
   onConnect?: (e: Event, href: string) => void;
-  /** The sample team's "See it as" (a visitor only): who the page plays, and what picking someone does. */
+  /** The sample team's "See it as" (a signed-out visitor only): who the page plays, and what picking someone does. */
   cast?: { current: CastKey; onPick: (key: CastKey) => void } | null;
 }
 

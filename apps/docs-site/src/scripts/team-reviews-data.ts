@@ -11,6 +11,7 @@ import { knownNames } from './people';
 import { isSampleTeam } from '../lib/demo';
 import { reviewGithubOwners, viewerIds, type ReviewMember, type TeamReviews } from '../lib/team-reviews';
 import { withSampleReviews } from '../lib/review-lines';
+import { sharedSeatIds } from '../lib/sample-member';
 
 let reading: Promise<TeamReviews> | null = null;
 let read: TeamReviews | null = null;
@@ -57,5 +58,11 @@ export function loadTeamReviews(): Promise<TeamReviews> {
 /** The reviews once read, else null: a list painted before them says the old words and repaints. */
 export const teamReviewsNow = (): TeamReviews | null => read;
 
-/** The viewer's ids for lib/team-reviews: their GitHub login and their member id. */
-export const viewerReviewIds = (): string[] => viewerIds(currentContributor() ? null : (currentViewer()?.login ?? null), currentContributor()?.ref ?? null);
+/**
+ * The viewer's ids for lib/team-reviews: their GitHub login and their member id, and on the sample team the lead's seat
+ * the signed-in person shares (lib/sample-member.ts sharedSeatIds): what is asked of the lead is asked of them.
+ */
+export const viewerReviewIds = (): string[] => {
+  const m = currentContributor();
+  return [...viewerIds(m ? null : (currentViewer()?.login ?? null), m?.ref ?? null), ...sharedSeatIds(m)];
+};

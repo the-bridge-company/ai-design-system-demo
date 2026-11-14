@@ -1,21 +1,22 @@
 // The Behaviors section of a component page (docs.json `behaviors`, @bridge-ds/core behaviors.ts): how the component
-// reacts, in designer words, grouped by shared family, keys drawn with the DS Kbd and the expected screen reader
-// announcement under a behavior that has one. Beside the list, one stage with the real component: "Try it" on a row
-// puts focus on it, so the reader performs the behavior there and then.
+// reacts, in designer words. One stage with the real component, then the list: one list per shared family, rows
+// divided, each row a DS toggle Button (text, keys in the DS Kbd, the expected screen reader announcement). The row
+// picked says, on the stage, what to do to see it ("Open the list, then press Esc").
 //
 // The stage is the real component in the page when the page runs the design system's own components (`live`, Bridge's
 // own Library, through the same registry as the docs examples), else the component's first story from the team's
 // Storybook, interactive. A behavior with its own `example` (a loading state) swaps the stage to it while picked.
-// Reduced motion: nothing here animates; the component's own motion tokens drop to 0 ms, and the stage comes into view
-// without a smooth scroll.
-import { useRef, useState } from 'react';
+// Wide: the stage sits beside the list and stays in view (sticky). Narrow: it comes first, above the list.
+// Reduced motion: nothing here animates; the component's own motion tokens drop to 0 ms, and bringing the stage into
+// view does not scroll smoothly.
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Kbd } from '@bridge-ds/react';
 import { behaviorGroups, keyLabel, type ComponentBehavior, type ExampleNode } from '@bridge-ds/core';
 import ClientExample from '../studio/ClientExample';
-import { previewUrl } from '../../../lib/library/component-page';
+import { CP_TOC_REFRESH, previewUrl } from '../../../lib/library/component-page';
 
 export interface BehaviorsProps {
-  /** Component name, for the copy and the stage's name. */
+  /** Component name, for the stage's name. */
   name: string;
   behaviors: ComponentBehavior[];
   /** docs.json preview: what the live stage draws by default. */
@@ -27,9 +28,13 @@ export interface BehaviorsProps {
   storyId?: string | undefined;
 }
 
-const FOCUSABLE = 'input:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"]), iframe';
-
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** True when the element is fully in the viewport. */
+function inView(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect();
+  return r.top >= 0 && r.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+}
 
 function Keys({ keys }: { keys: string[] }) {
   return (
@@ -42,83 +47,49 @@ function Keys({ keys }: { keys: string[] }) {
 }
 
 export default function Behaviors({ name, behaviors, preview, live = false, storybook, storyId }: BehaviorsProps) {
-  const [active, setActive] = useState<ComponentBehavior | null>(null);
+  const [activeId, setActiveId] = useState(behaviors[0]?.id ?? '');
   const stageRef = useRef<HTMLDivElement>(null);
+  const labelId = useId();
+  const active = behaviors.find((b) => b.id === activeId) ?? behaviors[0];
   const groups = behaviorGroups(behaviors);
   const stageNode = live ? (active?.example ?? preview ?? null) : null;
   const frame = !live && storybook && storyId ? previewUrl(storybook, storyId, { theme: 'light' }) : null;
   const hasStage = Boolean(stageNode || frame);
 
-  const tryIt = (b: ComponentBehavior) => {
-    setActive(b);
-    // After the stage has drawn the behavior's example: focus the real component, so the next key press is the behavior.
-    requestAnimationFrame(() => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      stage.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
-      stage.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
-    });
+  // The page's "On this page" rail lists the h2s of the shown panel: ask it again once this section is in the page.
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent(CP_TOC_REFRESH));
+  }, []);
+
+  const pick = (b: ComponentBehavior) => {
+    setActiveId(b.id);
+    // The stage says what to do: bring it into view when it is not (narrow pages, where it sits above the list).
+    const stage = stageRef.current;
+    if (stage && !inView(stage)) stage.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
 
   return (
     <section aria-labelledby="behaviors" className="bh">
       <h2 id="behaviors">Behaviors</h2>
-      {hasStage && <p className="muted">Pick Try it, then do it on the real {name} beside the list.</p>}
       <div className={hasStage ? 'bh-layout has-stage' : 'bh-layout'}>
-        <div className="bh-list">
-          {groups.map((g) => (
-            <div key={g.family} className="bh-family">
-              <h3 className="bh-family-title">{g.family}</h3>
-              <ul>
-                {g.items.map((b) => (
-                  <li key={b.id} className="bh-row" data-active={active?.id === b.id ? '' : undefined}>
-                    <div className="bh-line">
-                      <span className="bh-text">{b.text}</span>
-                      {b.keys && <Keys keys={b.keys} />}
-                      {hasStage && (
-                        <Button variant="ghost" size="sm" className="bh-try" aria-pressed={active?.id === b.id} aria-label={`Try it: ${b.text}`} onClick={() => tryIt(b)}>
-                          Try it
-                        </Button>
-                      )}
-                    </div>
-                    {b.announces && (
-                      <p className="bh-announce small muted">
-                        Expected announcement: <q>{b.announces}</q>
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        {hasStage && (
-          <div className="bh-stage" ref={stageRef}>
-            <p className="bh-stage-note small" aria-live="polite">
-              {active ? (
-                <>
-                  Now: {active.text}
-                  {active.keys && (
-                    <>
-                      {' '}
-                      <Keys keys={active.keys} />
-                    </>
-                  )}
-                </>
-              ) : (
-                `The real ${name}: every behavior on the left works here.`
-              )}
+        {hasStage && active && (
+          <div className="bh-stage" ref={stageRef} role="region" aria-labelledby={labelId}>
+            <p className="bh-stage-label" id={labelId}>
+              Try it on the real {name}
+            </p>
+            <p className="bh-stage-note" aria-live="polite">
+              {active.try ?? active.text}
             </p>
             {stageNode ? (
-              <div className="bh-stage-frame stage-checker" role="group" aria-label={`${name}, live`}>
-                <ClientExample key={active?.example ? active.id : 'preview'} node={stageNode} />
+              <div className="bh-stage-frame stage-checker">
+                <ClientExample key={active.example ? active.id : 'preview'} node={stageNode} />
               </div>
             ) : (
               frame && (
                 <iframe
                   className="bh-stage-frame bh-stage-story"
                   src={frame}
-                  title={`${name}, live from the Storybook`}
+                  title={`${name} from the Storybook`}
                   sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer"
                   loading="lazy"
@@ -127,6 +98,39 @@ export default function Behaviors({ name, behaviors, preview, live = false, stor
             )}
           </div>
         )}
+        <div className="bh-list">
+          {groups.map((g) => (
+            <div key={g.family} className="bh-family">
+              <h3 className="bh-family-title">{g.family}</h3>
+              <ul>
+                {g.items.map((b) => {
+                  const row = (
+                    <span className="bh-row-body">
+                      <span className="bh-text">{b.text}</span>
+                      {b.keys && <Keys keys={b.keys} />}
+                      {b.announces && (
+                        <span className="bh-announce">
+                          Expected announcement: <q>{b.announces}</q>
+                        </span>
+                      )}
+                    </span>
+                  );
+                  return (
+                    <li key={b.id}>
+                      {hasStage ? (
+                        <Button variant="ghost" fullWidth pressed={active?.id === b.id} className="bh-row" onClick={() => pick(b)}>
+                          {row}
+                        </Button>
+                      ) : (
+                        <div className="bh-row is-static">{row}</div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

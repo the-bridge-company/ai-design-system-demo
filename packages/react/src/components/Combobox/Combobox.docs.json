@@ -99,12 +99,14 @@
     {
       "id": "filter-while-typing",
       "family": "Filtering",
-      "text": "Typing filters the list"
+      "text": "Typing filters the list",
+      "try": "Type ba in the field"
     },
     {
       "id": "open-with-down-arrow",
       "family": "Opening",
       "text": "Down arrow opens the list and moves",
+      "try": "Click the field, then press the down arrow",
       "keys": [
         "ArrowDown"
       ]
@@ -113,6 +115,7 @@
       "id": "pick-with-enter",
       "family": "Picking",
       "text": "Enter picks the highlighted option",
+      "try": "Type ch, press the down arrow, then Enter",
       "keys": [
         "Enter"
       ]
@@ -121,6 +124,7 @@
       "id": "close-on-escape",
       "family": "Closing",
       "text": "Escape closes the list",
+      "try": "Type a letter, then press Esc",
       "keys": [
         "Escape"
       ]
@@ -129,6 +133,7 @@
       "id": "clear-on-second-escape",
       "family": "Closing",
       "text": "A second Escape clears what was typed and the pick",
+      "try": "Type a letter, then press Esc twice",
       "keys": [
         "Escape"
       ]
@@ -137,12 +142,14 @@
       "id": "say-no-match",
       "family": "Feedback",
       "text": "Says when nothing matches",
+      "try": "Type zz in the field",
       "announces": "No matches. Try another name."
     },
     {
       "id": "say-loading",
       "family": "Feedback",
       "text": "Says when results are loading",
+      "try": "Click the field: the list says it is loading",
       "announces": "Loading results",
       "example": {
         "c": "Combobox",
@@ -158,7 +165,8 @@
     {
       "id": "focus-after-close",
       "family": "Focus",
-      "text": "Focus stays in the field after a pick"
+      "text": "Focus stays in the field after a pick",
+      "try": "Pick a reviewer with a click, then type: the field still has focus"
     }
   ]
 }

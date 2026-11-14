@@ -29,6 +29,7 @@ describe('validateBehaviors', () => {
       { id: 'e', family: 'Closing', text: 'Five', announces: '' },
       { id: 'f', family: 'Closing', text: 'Six', example: 'Select' },
       { id: 'g', family: 'Closing', text: 'Closes \u2014 fast' },
+      { id: 'h', family: 'Closing', text: 'Seven', try: ' ' },
     ]);
     expect(issues.map((i) => i.field)).toEqual([
       'behaviors.0',
@@ -40,6 +41,7 @@ describe('validateBehaviors', () => {
       'behaviors.7.announces',
       'behaviors.8.example',
       'behaviors.9.text',
+      'behaviors.10.try',
     ]);
     expect(issues.find((i) => i.field === 'behaviors.3.id')!.message).toMatch(/used twice/);
     expect(issues.find((i) => i.field === 'behaviors.4.family')!.message).toContain(BEHAVIOR_FAMILIES.join(', '));
@@ -114,7 +116,11 @@ describe('reading and grouping', () => {
     expect(behaviorGroups([{ id: 'x', family: 'Zoom', text: 'Z' }, { id: 'y', family: 'Opening', text: 'O' }]).map((g) => g.family)).toEqual(['Opening', 'Zoom']);
   });
 
-  it('gives agents id, family, text, keys and announcement, never the stage example', () => {
+  it('gives every Select and Combobox behavior a line for the stage', () => {
+    for (const n of ['Select', 'Combobox']) expect(readBehaviors(docsOf(n).behaviors).every((b) => Boolean(b.try))).toBe(true);
+  });
+
+  it('gives agents id, family, text, keys and announcement, never the stage line or example', () => {
     const say = agentBehaviors(docsOf('Combobox').behaviors).find((b) => b.id === 'say-loading')!;
     expect(say).toEqual({ id: 'say-loading', family: 'Feedback', text: 'Says when results are loading', announces: 'Loading results' });
   });

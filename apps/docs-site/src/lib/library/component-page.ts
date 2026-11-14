@@ -32,6 +32,8 @@ export const componentTabPanelId = (id: ComponentTabId) => `tab-${id}`;
  */
 export const CP_TAB_PICK = 'bridge:cp-tab-pick';
 export const CP_TAB_SHOWN = 'bridge:cp-tab-shown';
+/** A section drawn after the page script read the panel (an island, Behaviors.tsx): the "On this page" rail lists it again. */
+export const CP_TOC_REFRESH = 'bridge:cp-toc-refresh';
 
 /** Section anchors from before the tabs, and the tab that now holds each. */
 export const LEGACY_ANCHORS: Readonly<Record<string, string>> = {

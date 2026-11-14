@@ -878,8 +878,8 @@ a.tchip:hover {
   background: var(--color-bg-subtle);
 }
 
-/* Behaviors (components/ds/library/Behaviors.tsx): the list grouped by family, and beside it one stage with the real
-   component. Stacked on a narrow page; side by side, the stage sticky, when there is room for both. */
+/* Behaviors (components/ds/library/Behaviors.tsx): one stage with the real component, then one list per family.
+   Narrow: the stage first, above the list. Wide: the list, and the stage beside it, kept in view under the header. */
 .bh-layout {
   display: grid;
   gap: var(--space-6);
@@ -891,9 +891,16 @@ a.tchip:hover {
     align-items: start;
   }
 
+  .bh-layout.has-stage .bh-list {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
   .bh-layout.has-stage .bh-stage {
     position: sticky;
-    top: var(--space-6);
+    top: calc(var(--layout-header-height) + var(--space-8));
+    grid-row: 1;
+    grid-column: 2;
   }
 }
 
@@ -902,74 +909,110 @@ a.tchip:hover {
   gap: var(--space-5);
 }
 
+/* The family: a quiet overline over its list, like the navigation's group labels. */
 .bh-family-title {
   margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-100);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-wide);
+  line-height: var(--font-leading-16);
+  text-transform: uppercase;
 }
 
+/* One list container per family, rows divided. The row plate is concentric: the list's radius less its inset. */
 .bh-family ul {
-  display: grid;
-  gap: var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: var(--space-1);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
   list-style: none;
 }
 
-.bh-row {
+.bh-family li {
   margin: 0;
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-control);
-  background-color: var(--color-surface-default);
+}
+
+.bh-family li + li {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+/* The row is the DS toggle Button (pressed: the selected look), opened up to hold a wrapping sentence. */
+.bh-family .bh-row {
+  justify-content: stretch;
+  min-height: var(--control-height-md);
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius-container) - var(--space-1));
   font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-regular);
   line-height: var(--typography-ui-line-height);
+  text-align: start;
+  white-space: normal;
 }
 
-.bh-row[data-active] {
-  border-color: var(--color-border-strong);
+.bh-family .bh-row > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible;
 }
 
-.bh-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
+.bh-family .bh-row.is-static {
+  display: block;
+}
+
+/* Fixed anatomy: the sentence wraps in its column, the keys keep theirs, both centered on the row. */
+.bh-row-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
   align-items: center;
 }
 
 .bh-text {
-  flex: 1 1 auto;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .bh-keys {
   display: inline-flex;
-  flex-wrap: wrap;
+  grid-column: 2;
+  grid-row: 1;
+  flex-wrap: nowrap;
   gap: var(--space-1);
 }
 
-.bh-try {
-  margin-left: auto;
-}
-
 .bh-announce {
-  margin: var(--space-1) 0 0;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-top: var(--space-0-5);
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
 .bh-stage {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.bh-stage-label {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
 }
 
 .bh-stage-note {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
   margin: 0;
+  color: var(--color-text-muted);
 }
 
 .bh-stage-frame {
   display: grid;
   min-height: var(--size-40);
   place-items: center;
+  margin-top: var(--space-1);
   padding: var(--space-6);
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-container);

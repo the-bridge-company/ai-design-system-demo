@@ -51,7 +51,7 @@ const docs = readableDocs(c.docs);
     <PreviewScope slot="heroTools" />
     <FigmaAheadSite slot="ahead" client:only="react" component={c.name} />
     <FigmaLinkSite slot="figma" client:only="react" {...figmaLinkFor(data.model, c.name)} settingsHref={studioHref('settings/#tools')} />
-    {docs?.behaviors?.length ? <Behaviors slot="behaviors" client:visible name={c.name} behaviors={docs.behaviors} preview={docs.preview ?? null} live /> : null}
+    {docs?.behaviors?.length ? <Behaviors slot="behaviors" client:idle name={c.name} behaviors={docs.behaviors} preview={docs.preview ?? null} live /> : null}
     {spec && story && data.extras.storybook && <PropsPlayground slot="playground" client:visible spec={spec} storybook={data.extras.storybook} storyId={story.id} brands={scopes.brands} densities={scopes.densities} />}
   </ComponentView>
   <LibraryEditMode client:only="react" name={c.name} slug={c.slug} path={c.files.docs} original={originalDocs} initial={editInitial} repo={{ owner: repo.owner, repo: repo.repo }} />

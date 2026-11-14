@@ -17,6 +17,8 @@ export interface ComponentBehavior {
   family: string;
   /** The component's own wording, in sentence case: "Closes on Escape". */
   text: string;
+  /** What the stage tells the reader to do to see it, one line: "Open the list, then press Esc". Page only. */
+  try?: string;
   /** Keys that perform it, as KeyboardEvent.key values ("Enter", "ArrowDown", "Escape", " " is written "Space"). Each one works alone. */
   keys?: string[];
   /** What a screen reader says when it happens, shown as "Expected announcement". */
@@ -25,7 +27,7 @@ export interface ComponentBehavior {
   example?: BehaviorExampleNode;
 }
 
-/** What an agent reads: the behavior without the stage example. */
+/** What an agent reads: the behavior without what only the stage uses (its line and its example). */
 export type AgentBehavior = Pick<ComponentBehavior, 'id' | 'family' | 'text' | 'keys' | 'announces'>;
 
 /** The shared family names, in the order a list reads best. A new family is a deliberate change here. */
@@ -65,11 +67,12 @@ export function validateBehaviors(list: unknown): BehaviorIssue[] {
     if (o.keys !== undefined && (!Array.isArray(o.keys) || !o.keys.length || !o.keys.every(isText))) {
       out.push({ field: `${at}.keys`, message: 'List the keys by name, like ["Enter"], or leave keys out.' });
     }
+    if (o.try !== undefined && !isText(o.try)) out.push({ field: `${at}.try`, message: 'Say what to do on the stage in one line, or leave try out.' });
     if (o.announces !== undefined && !isText(o.announces)) out.push({ field: `${at}.announces`, message: 'Fill or remove the announcement.' });
     if (o.example !== undefined && (typeof o.example !== 'object' || o.example === null || typeof (o.example as { c?: unknown }).c !== 'string')) {
       out.push({ field: `${at}.example`, message: 'An example names a component: { "c": "Combobox", "p": { ... } }.' });
     }
-    if (EM_DASH.test(JSON.stringify([o.text, o.announces]))) out.push({ field: `${at}.text`, message: 'Replace the em dashes with a colon, a comma or two sentences.' });
+    if (EM_DASH.test(JSON.stringify([o.text, o.try, o.announces]))) out.push({ field: `${at}.text`, message: 'Replace the em dashes with a colon, a comma or two sentences.' });
   });
   return out;
 }
@@ -91,6 +94,7 @@ export function readBehaviors(list: unknown): ComponentBehavior[] {
         id: o.id,
         family: o.family,
         text: o.text,
+        ...(isText(o.try) ? { try: o.try } : {}),
         ...(keys.length ? { keys } : {}),
         ...(isText(o.announces) ? { announces: o.announces } : {}),
         ...(example ? { example } : {}),
@@ -111,7 +115,7 @@ export function behaviorGroups(list: readonly ComponentBehavior[]): { family: st
 }
 
 /** The behaviors an agent reads ({ id, family, text, keys?, announces? }), from any docs.json value. */
-export const agentBehaviors = (list: unknown): AgentBehavior[] => readBehaviors(list).map(({ example: _stageOnly, ...b }) => b);
+export const agentBehaviors = (list: unknown): AgentBehavior[] => readBehaviors(list).map(({ example: _example, try: _try, ...b }) => b);
 
 /** How a key reads on a page: "↓" for ArrowDown, "Esc" for Escape (the Kbd component gives each its full name). */
 export function keyLabel(key: string): string {

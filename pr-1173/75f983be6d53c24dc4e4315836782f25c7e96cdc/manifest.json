@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-14T21:41:41.072Z",
-  "durationMs": 1378,
+  "createdAt": "2026-11-14T21:50:12.852Z",
+  "durationMs": 1692,
   "base": {
     "ref": "5aa20b6cafef502a450df3507b5bcf380bb814b3",
     "sha": "5aa20b6cafef502a450df3507b5bcf380bb814b3"
   },
   "head": {
-    "ref": "b731f464156db5c7d45fa9218ce0ab839924c50d",
-    "sha": "b731f464156db5c7d45fa9218ce0ab839924c50d"
+    "ref": "75f983be6d53c24dc4e4315836782f25c7e96cdc",
+    "sha": "75f983be6d53c24dc4e4315836782f25c7e96cdc"
   },
   "options": {
     "only": [
@@ -40,6 +40,7 @@
       "apps/docs-site/src/lib/llms.test.ts",
       "apps/docs-site/src/lib/llms.ts",
       "apps/docs-site/src/pages/components/[slug].astro",
+      "apps/docs-site/src/scripts/component-page.ts",
       "apps/docs-site/src/styles/component.css",
       "packages/core/src/behaviors.ts",
       "packages/core/src/component-scan.ts",

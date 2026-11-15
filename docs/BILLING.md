@@ -23,6 +23,10 @@ separated team keys, the same key the billing API takes as `team`:
   address of its Settings (`/studio/workspace/settings/?team=<id>`) or of its home (`/studio/workspace/?team=<id>`):
   16 letters and digits. Once that team is linked to a repository, its key becomes `owner/repo`: update the variable.
 
+A change to this variable (or to the Stripe keys) only applies after a new production build. Vercel's "Redeploy" of the
+same commit is cancelled by the ignored build step (`scripts/vercel-ignore.mjs` skips a build when no input changed),
+so the change waits for the next merge to main that touches the docs site. Plan the test with that in mind.
+
 Billing is on for a team when `BILLING_LAUNCHED` is true **or** the team is listed. For a listed team, everything
 applies: the Billing card (team admins only), status, checkout, portal, and the Free limits ("Needs Team" at the 4th
 editor; a 2nd design system for its admins). A listed team is founding only if it was marked by hand (so the test sees

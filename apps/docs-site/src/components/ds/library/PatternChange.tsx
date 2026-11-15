@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Button, ButtonGroup, Dialog, DialogClose, DialogContent, Link } from '@bridge-ds/react';
 import type { ActionPattern, IntegrationsConfig } from '@bridge-ds/core';
-import BehaviorRequestForm from '../studio/BehaviorRequestForm';
+import BehaviorRequestForm, { useLeadName } from '../studio/BehaviorRequestForm';
 import { behaviorFormCopy, behaviorSentLines } from '../../../lib/change-intent';
 import { setLibraryTeam } from '../../../scripts/repo-context';
 
@@ -28,7 +28,8 @@ export default function PatternChange({ pattern, owner, repo, integrations, page
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<number | null>(null);
   const doneRef = useRef<HTMLParagraphElement>(null);
-  const copy = behaviorFormCopy('pattern', null);
+  const lead = useLeadName(`${owner}/${repo}`);
+  const copy = behaviorFormCopy('pattern', null, lead);
 
   // The send goes through the member's session on this team (an email member through Bridge, a GitHub member with
   // their token), as Edit on a component page does (TeamEditMode.tsx).
@@ -44,7 +45,7 @@ export default function PatternChange({ pattern, owner, repo, integrations, page
   }, [sent]);
 
   if (sent !== null) {
-    const s = behaviorSentLines(sent);
+    const s = behaviorSentLines(sent, lead);
     return (
       <p className="pt-change-done" role="status" tabIndex={-1} ref={doneRef}>
         <strong>{s.lead}</strong> {s.next} <Link href={requestHref(sent)}>{s.link}</Link>
@@ -60,7 +61,7 @@ export default function PatternChange({ pattern, owner, repo, integrations, page
         <DialogContent
           size="md"
           title={copy.heading}
-          description="The design system lead decides. Once it is the default, your developers build it."
+          description={`${lead ?? 'The design system lead'} decides. Once it is the default, your developers build it.`}
           footer={
             <ButtonGroup align="end">
               <DialogClose render={<Button variant="secondary" disabled={busy} />}>Cancel</DialogClose>

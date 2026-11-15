@@ -276,19 +276,36 @@ export function declineReasonProblems(reason: string): string[] {
   return [];
 }
 
-/** The comment posted on a declined request: who declined it and why, in the decliner's words. */
-export function declineComment(reason: string, by?: string | null): string {
-  const quote = reason
+/**
+ * Who acts, in a comment Bridge posts: a GitHub login (written @login), or an email member by name ({ name }), who has
+ * no login (Bridge's server posts for them).
+ */
+export type RequestActor = string | { name: string } | null | undefined;
+
+/** "@flo" for a login, "Dana" for an email member, null when unknown. */
+export function requestActorText(by: RequestActor): string | null {
+  if (!by) return null;
+  if (typeof by === 'string') return by.replace(/^@/, '').trim() ? `@${by.replace(/^@/, '').trim()}` : null;
+  return by.name.trim() || null;
+}
+
+const quoted = (text: string) =>
+  text
     .trim()
     .split('\n')
     .map((l) => `> ${l}`.trimEnd())
     .join('\n');
-  return [`Declined${by ? ` by @${by.replace(/^@/, '')}` : ''} in Bridge Studio.`, '', quote, '', '<sub>Closed as not planned. Reopen the issue if things change.</sub>'].join('\n');
+
+/** The comment posted on a declined request: who declined it and why, in the decliner's words. */
+export function declineComment(reason: string, by?: RequestActor): string {
+  const who = requestActorText(by);
+  return [`Declined${who ? ` by ${who}` : ''} in Bridge Studio.`, '', quoted(reason), '', '<sub>Closed as not planned. Reopen the issue if things change.</sub>'].join('\n');
 }
 
 /** The comment posted when the lead makes a behavior request the default: it now waits for a developer. */
-export function behaviorDefaultComment(by?: string | null): string {
-  return [`Made the default${by ? ` by @${by.replace(/^@/, '')}` : ''} in Bridge Studio.`, '', '<sub>It now waits for a developer in Being built (label `bridge-build`).</sub>'].join('\n');
+export function behaviorDefaultComment(by?: RequestActor): string {
+  const who = requestActorText(by);
+  return [who ? `${who} made it the default in Bridge Studio.` : 'Made the default in Bridge Studio.', '', '<sub>It now waits for a developer in Being built (label `bridge-build`).</sub>'].join('\n');
 }
 
 /** Problems with a question to the requester, as sentences that say how to fix them. */
@@ -296,15 +313,15 @@ export function askRequesterProblems(text: string): string[] {
   return text.trim() ? [] : ['Write your question first: the requester reads it.'];
 }
 
-/** The comment a lead's question to the requester posts: who asks, then the question as they wrote it. */
-export function askRequesterComment(text: string, by?: string | null, requester?: string | null): string {
-  const quote = text
-    .trim()
-    .split('\n')
-    .map((l) => `> ${l}`.trimEnd())
-    .join('\n');
-  const to = requester && /^[A-Za-z0-9-]+$/.test(requester.replace(/^@/, '')) ? `@${requester.replace(/^@/, '')}, ` : '';
-  return [`${to}${to ? 'a' : 'A'} question${by ? ` from @${by.replace(/^@/, '')}` : ''} in Bridge Studio, before deciding:`, '', quote].join('\n');
+/**
+ * The comment a lead's question to the requester posts: who asks (and the requester, mentioned when it is a login),
+ * then the question as they wrote it. "Dana asks @mia, before deciding:".
+ */
+export function askRequesterComment(text: string, by?: RequestActor, requester?: string | null): string {
+  const who = requestActorText(by);
+  const to = requester && /^[A-Za-z0-9-]+$/.test(requester.replace(/^@/, '')) ? `@${requester.replace(/^@/, '')}` : '';
+  const head = who ? `${who} asks${to ? ` ${to}` : ''}, before deciding:` : `A question${to ? ` for ${to}` : ''}, before deciding:`;
+  return [head, '', quoted(text)].join('\n');
 }
 
 /**

@@ -170,6 +170,7 @@ function ComponentDrawer({
                   flow={flow}
                   setFlow={setFlow}
                   formId={formId}
+                  repo={repo}
                   rest={
                     <>
                       {preview && (

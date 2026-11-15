@@ -16,7 +16,7 @@ import { Pencil, Plus } from 'lucide-react';
 import { Button, Input, Link, Radio, RadioGroup, Select, Textarea } from '@bridge-ds/react';
 import type { IntegrationsConfig } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
-import BehaviorRequestForm from './BehaviorRequestForm';
+import BehaviorRequestForm, { useLeadName } from './BehaviorRequestForm';
 import {
   behaviorFormCopy,
   behaviorSentLines,
@@ -107,6 +107,7 @@ export function ChangeStep({ component, slug, hasTokens, behaviors = [], repo, i
   const [failed, setFailed] = useState<string | null>(null);
   const mode = flow.intent ? buildModeFor(flow.intent) : null;
   const copy = mode ? buildFormCopy(mode, component) : null;
+  const lead = useLeadName(repo);
 
   // A new component, or the step closed: start empty.
   useEffect(() => {
@@ -143,7 +144,7 @@ export function ChangeStep({ component, slug, hasTokens, behaviors = [], repo, i
 
   if (flow.sent) {
     const behave = flow.sent.mode === 'behave';
-    const s = flow.sent.mode === 'behave' ? behaviorSentLines(flow.sent.n) : buildSentLines(flow.sent.mode, flow.sent.n);
+    const s = flow.sent.mode === 'behave' ? behaviorSentLines(flow.sent.n, lead) : buildSentLines(flow.sent.mode, flow.sent.n);
     return (
       <div className="tcm-chg-done" role="status" tabIndex={-1} ref={doneRef}>
         <p>
@@ -282,13 +283,16 @@ export interface ChangeFooterProps {
   flow: ChangeFlow;
   setFlow: (f: ChangeFlow | ((f: ChangeFlow) => ChangeFlow)) => void;
   formId: string;
+  /** "owner/name" of the team: its one design lead is named on the send button of "Change how it behaves". */
+  repo: string;
   /** The drawer's other actions (Open in Storybook, More), shown while the step is closed. */
   rest?: React.ReactNode;
 }
 
 /** The drawer footer: "Change this component" (the one primary), or the step's action next to Cancel. */
-export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId, rest }: ChangeFooterProps) {
+export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId, repo, rest }: ChangeFooterProps) {
   const { connected, signIn, sample } = useConnected();
+  const lead = useLeadName(repo);
   const openerRef = useRef<HTMLButtonElement>(null);
   const reopen = useRef(false);
   useEffect(() => {
@@ -320,7 +324,7 @@ export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId
   const mode = flow.intent ? buildModeFor(flow.intent) : null;
   const look = flow.intent === 'look' && hasTokens;
   const built = mode ? buildFormCopy(mode, component) : null;
-  const copy = built ?? (flow.intent === 'behave' ? behaviorFormCopy('component', null) : null);
+  const copy = built ?? (flow.intent === 'behave' ? behaviorFormCopy('component', null, lead) : null);
   return (
     <>
       {cancel}

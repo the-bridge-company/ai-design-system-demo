@@ -87,9 +87,12 @@ describe('the lead decides before Being built', () => {
     const gh = { addComment: vi.fn(async () => undefined) };
     await askRequesterOnGitHub(gh as unknown as GitHubClient, 9, 'Which screen?', { by: 'lee', requester: 'dana' });
     expect(gh.addComment).toHaveBeenCalledWith(9, askRequesterComment('Which screen?', 'lee', 'dana'));
-    expect(askRequesterComment('Which screen?', 'lee', 'dana')).toBe('@dana, a question from @lee in Bridge Studio, before deciding:\n\n> Which screen?');
-    // An email member's name is not a login: no mention.
-    expect(askRequesterComment('Which screen?', null, 'Dana Kim')).toBe('A question in Bridge Studio, before deciding:\n\n> Which screen?');
+    expect(askRequesterComment('Which screen?', 'lee', 'dana')).toBe('@lee asks @dana, before deciding:\n\n> Which screen?');
+    // An email lead is named, never a login; an email requester's name is not a login: no mention.
+    expect(askRequesterComment('Which screen?', { name: 'Dana' }, 'Mia Ross')).toBe('Dana asks, before deciding:\n\n> Which screen?');
+    expect(askRequesterComment('Which screen?', null, null)).toBe('A question, before deciding:\n\n> Which screen?');
+    expect(behaviorDefaultComment({ name: 'Dana' })).toMatch(/^Dana made it the default in Bridge Studio\./);
+    expect(behaviorDefaultComment('lee')).toMatch(/^@lee made it the default/);
     await expect(askRequesterOnGitHub(gh as unknown as GitHubClient, 9, '  ')).rejects.toThrow(/Write your question/);
   });
 });

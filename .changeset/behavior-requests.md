@@ -17,3 +17,9 @@ form, and a component page's Behaviors section links members to the drawer. The 
 struck, an arrow and the wanted one, with who asked; the person who decides gets Make it the default, Not now (the
 decline with its reason) and Ask with the requester's first name. Undecided behavior requests wait on the home of the
 people who decide.
+
+A design lead or an admin signed in by email decides too: Bridge's server (`POST /api/contribute`
+`{ action: 'behavior-decision' }`) checks their member record and that the issue is an open behavior request of the
+team's repository, then makes it the default, says not now with the reason, or asks the requester, naming them in the
+comments. The send button and the sent line name the team's one design lead ("Send to Dana") when there is one.
+"Something looks wrong" is now about not matching Figma only.

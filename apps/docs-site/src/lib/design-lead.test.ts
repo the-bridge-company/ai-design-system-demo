@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deciderNames, isDesignLead, leadsLibrary, reviewAsk, type LeadViewer } from './design-lead';
+import { deciderNames, isDesignLead, leadsLibrary, reviewAsk, type LeadViewer, soleLeadName } from './design-lead';
 import { contributorAccess } from './access';
 import { emptyProductLine } from './product-page';
 import { startTargets } from './create-branch';
@@ -119,5 +119,16 @@ describe('reviewAsk', () => {
   });
   it('mentions the GitHub design owners on a team without email reviewers, never a team handle nor the viewer', () => {
     expect(reviewAsk({ emailLeads: [], githubLeads: ['@mo', 'peterbono', 'org/design'], except: { login: 'PeterBono' } })).toEqual({ mention: ['mo'], names: [] });
+  });
+});
+
+describe('soleLeadName: "Send to Dana" only when the team has one lead', () => {
+  it('names the one lead, else the one admin, else nobody', () => {
+    expect(soleLeadName([{ name: 'Dana Kim', role: 'admin', lead: true }, { name: 'Mia', role: 'edit' }])).toBe('Dana');
+    expect(soleLeadName([{ name: 'Ann Lee', role: 'admin' }, { name: 'Mia', role: 'edit' }])).toBe('Ann');
+    expect(soleLeadName([{ name: 'Dana', role: 'edit', lead: true }, { name: 'Lee', role: 'edit', lead: true }])).toBeNull();
+    expect(soleLeadName([{ name: 'Ann', role: 'admin' }, { name: 'Bo', role: 'admin' }])).toBeNull();
+    expect(soleLeadName([])).toBeNull();
+    expect(soleLeadName(null)).toBeNull();
   });
 });

@@ -3,7 +3,7 @@
 import { EXPLORATION_LABEL, isExplorationBranch } from './explorations';
 import { GitHubClient, GitHubError } from './github-client';
 import { BUILD_REQUEST_LABEL } from './build-requests';
-import { askRequesterComment, askRequesterProblems, behaviorDefaultComment, declineComment, declineReasonProblems, withRequestExploration } from './requests';
+import { askRequesterComment, askRequesterProblems, behaviorDefaultComment, declineComment, declineReasonProblems, withRequestExploration, type RequestActor } from './requests';
 
 export interface RequestExplorationLink {
   number: number;
@@ -48,7 +48,7 @@ export async function assignRequestOnGitHub(gh: GitHubClient, n: number, login: 
 }
 
 /** Declines a request: the reason as a comment the requester is notified of, then the issue closed as not planned. */
-export async function declineRequestOnGitHub(gh: GitHubClient, n: number, reason: string, by?: string | null): Promise<void> {
+export async function declineRequestOnGitHub(gh: GitHubClient, n: number, reason: string, by?: RequestActor): Promise<void> {
   const problems = declineReasonProblems(reason);
   if (problems.length) throw new GitHubError(422, problems.join(' '));
   await gh.addComment(n, declineComment(reason, by));
@@ -59,13 +59,13 @@ export async function declineRequestOnGitHub(gh: GitHubClient, n: number, reason
  * Makes a behavior request the default: it gets the `bridge-build` label, so it becomes a build request developers pick
  * up in Being built, and a comment says who decided. Throws when GitHub refuses the label (nothing changed then).
  */
-export async function makeBehaviorDefaultOnGitHub(gh: GitHubClient, n: number, by?: string | null): Promise<void> {
+export async function makeBehaviorDefaultOnGitHub(gh: GitHubClient, n: number, by?: RequestActor): Promise<void> {
   if (!(await gh.addLabels(n, [BUILD_REQUEST_LABEL]))) throw new GitHubError(422, `GitHub did not take the decision on #${n}. Check that you can edit the library, then try again.`);
   await gh.addComment(n, behaviorDefaultComment(by));
 }
 
 /** Asks the requester a question before deciding: one comment on the request, which stays open. */
-export async function askRequesterOnGitHub(gh: GitHubClient, n: number, text: string, opts: { by?: string | null; requester?: string | null } = {}): Promise<void> {
+export async function askRequesterOnGitHub(gh: GitHubClient, n: number, text: string, opts: { by?: RequestActor; requester?: string | null } = {}): Promise<void> {
   const problems = askRequesterProblems(text);
   if (problems.length) throw new GitHubError(422, problems.join(' '));
   await gh.addComment(n, askRequesterComment(text, opts.by, opts.requester));

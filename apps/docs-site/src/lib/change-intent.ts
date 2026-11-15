@@ -22,7 +22,7 @@ export const CHANGE_INTENTS: IntentOption[] = [
     label: 'Add a variant or option',
     line: 'A new variant, size, state or option, designed in Figma. A developer builds it with Claude from your Figma frame, in an exploration. You check it in the component sandbox, then send it for review.',
   },
-  { value: 'wrong', label: 'Something looks wrong', line: 'It does not match Figma, or it behaves badly. Report the mismatch with the frame.' },
+  { value: 'wrong', label: 'Something looks wrong', line: 'It does not match Figma. Report the mismatch with the frame.' },
 ];
 
 /** The line under "Adjust the look" when the component paints with no token (a layout component). */
@@ -178,7 +178,7 @@ export const TEAM_CHANGE_INTENTS: IntentOption[] = [
     label: 'Add a variant or option',
     line: 'A new variant, size, option or layout, designed in Figma. Your developers build it from your Figma frame, and you follow it in Being built until it is in the library.',
   },
-  { value: 'wrong', label: 'Something looks wrong', line: 'It does not match Figma, or it behaves badly. Your developers get the report with the frame and fix it.' },
+  { value: 'wrong', label: 'Something looks wrong', line: 'It does not match Figma. Your developers get the report with the frame and fix it.' },
 ];
 
 /**
@@ -352,15 +352,18 @@ export interface BehaviorFormCopy {
   missing: { which: string; wanted: string };
 }
 
-/** The words of the form, for a component's behavior or an action pattern's rule. `choice`: what she picked. */
-export function behaviorFormCopy(of: 'component' | 'pattern', choice: string | null): BehaviorFormCopy {
+/**
+ * The words of the form, for a component's behavior or an action pattern's rule. `choice`: what she picked. `lead`: the
+ * team's one design lead by first name (lib/design-lead soleLeadName), else null for "the design system lead".
+ */
+export function behaviorFormCopy(of: 'component' | 'pattern', choice: string | null, lead: string | null = null): BehaviorFormCopy {
   const what = of === 'pattern' ? 'rule' : 'behavior';
   return {
     heading: of === 'pattern' ? 'Suggest a change to this pattern' : 'Change how it behaves',
     which: { label: `Which ${what}`, placeholder: `Pick a ${what}` },
     wanted: choice === BEHAVIOR_NEW ? 'What should it do?' : 'What should it do instead?',
     where: { label: 'Where it gets in the way (optional)', hint: 'A screen or a product.' },
-    submit: 'Send to the design system lead',
+    submit: `Send to ${lead ?? 'the design system lead'}`,
     busy: 'Sending',
     missing: { which: `Pick the ${what} you want to change, or Something it does not do yet.`, wanted: 'Say what it should do, in a sentence.' },
   };
@@ -394,7 +397,7 @@ export function behaviorRequest(
   return behaviorRequestOf(target.of === 'pattern' ? `${target.name} pattern` : target.name, ask, { source: 'studio', requestedBy });
 }
 
-/** What the form says once sent, and where she follows it (the request in Studio). */
-export function behaviorSentLines(n: number): { lead: string; next: string; link: string } {
-  return { lead: `Request #${n} sent to the design system lead.`, next: 'They decide. Once it is the default, your developers build it.', link: 'Follow your request' };
+/** What the form says once sent, and where she follows it (the request in Studio). `lead`: as in behaviorFormCopy. */
+export function behaviorSentLines(n: number, lead: string | null = null): { lead: string; next: string; link: string } {
+  return { lead: `Request #${n} sent to ${lead ?? 'the design system lead'}.`, next: `${lead ?? 'They'} decide${lead ? 's' : ''}. Once it is the default, your developers build it.`, link: 'Follow your request' };
 }

@@ -245,3 +245,19 @@ describe('Change how it behaves (a team) and Suggest a change to this pattern', 
     expect(r.behavior).toEqual({ of: 'pattern', id: 'delete', rule: 1, today: 'Offer Undo', wanted: 'Always ask first' });
   });
 });
+
+describe('the lead by name on a behavior request', () => {
+  it('says the one lead\'s first name, else the design system lead', () => {
+    expect(behaviorFormCopy('component', null, 'Dana').submit).toBe('Send to Dana');
+    expect(behaviorFormCopy('component', null).submit).toBe('Send to the design system lead');
+    expect(behaviorSentLines(12, 'Dana')).toMatchObject({ lead: 'Request #12 sent to Dana.', next: 'Dana decides. Once it is the default, your developers build it.' });
+    expect(behaviorSentLines(12)).toMatchObject({ lead: 'Request #12 sent to the design system lead.', next: 'They decide. Once it is the default, your developers build it.' });
+  });
+
+  it('keeps Something looks wrong about Figma only: how it behaves has its own choice', () => {
+    for (const o of [...CHANGE_INTENTS, ...TEAM_CHANGE_INTENTS].filter((i) => i.value === 'wrong')) {
+      expect(o.line.startsWith('It does not match Figma.')).toBe(true);
+      expect(o.line).not.toMatch(/behave/);
+    }
+  });
+});

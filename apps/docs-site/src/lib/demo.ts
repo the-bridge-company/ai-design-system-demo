@@ -235,6 +235,7 @@ const ACTION_LINES: Readonly<Record<string, string>> = {
   'send a behavior request': 'A behavior request asks the design system lead to change how this works. They decide, then developers build it.',
   'make it the default': 'Making it the default changes how it works in every product. Developers build it next.',
   'ask the requester': 'Your question goes to the person who asked, on their request.',
+  'behavior-decision': 'Deciding on a behavior request changes how it works in every product, and tells the person who asked.',
   'assign requests': 'Assign gives this request to someone on the team, who then sees it waiting for them.',
   'assign someone': 'Assign gives this request to someone on the team, who then sees it waiting for them.',
   'decline requests': 'Decline closes this request and tells the person who asked why.',

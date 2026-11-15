@@ -8,9 +8,36 @@
 // design system lead, who decides on its page. The send button lives in the caller's footer (`form={formId}`).
 // Words and rules: lib/change-intent.ts.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { soleLeadName } from '../../../lib/design-lead';
 import { Input, Select, Textarea } from '@bridge-ds/react';
 import type { IntegrationsConfig } from '@bridge-ds/core';
 import { behaviorChoices, behaviorFormCopy, behaviorFormProblems, behaviorRequest, ruleChoices } from '../../../lib/change-intent';
+
+const leads = new Map<string, Promise<string | null>>();
+
+/**
+ * The team's one design lead by first name, for "Send to Dana" and "Request #N sent to Dana." (lib/design-lead
+ * soleLeadName, from the team's people read once per page and team), else null: the words say "the design system lead".
+ */
+export function useLeadName(repo: string): string | null {
+  const [name, setName] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    if (!leads.has(repo))
+      leads.set(
+        repo,
+        Promise.all([import('../../../scripts/contribute-session'), import('../../../scripts/github-session')])
+          .then(([c, g]) => c.contributeTeam(repo, g.currentContributor() ? null : g.getToken()))
+          .then((t) => soleLeadName(t.members))
+          .catch(() => null),
+      );
+    void leads.get(repo)!.then((n) => live && setName(n));
+    return () => {
+      live = false;
+    };
+  }, [repo]);
+  return name;
+}
 
 export type BehaviorTarget = { of: 'component'; name: string; behaviors: readonly { id: string; text: string }[] } | { of: 'pattern'; id: string; name: string; rules: readonly string[] };
 
@@ -35,7 +62,8 @@ export default function BehaviorRequestForm({ formId, target, repo, integrations
   const [problems, setProblems] = useState<string[]>([]);
   const [failed, setFailed] = useState<string | null>(null);
   const boxRef = useRef<HTMLFormElement>(null);
-  const copy = behaviorFormCopy(target.of, choice);
+  const lead = useLeadName(repo);
+  const copy = behaviorFormCopy(target.of, choice, lead);
   const options = target.of === 'component' ? behaviorChoices(target.behaviors) : ruleChoices(target.rules);
   const key = target.of === 'component' ? target.name : target.id;
 

@@ -29,6 +29,13 @@
 //                                                        api/_lib/library-update.ts (an update branch, package.json and
 //                                                        package-lock.json only, never the default branch, never a
 //                                                        merge); { state, pr, lockfile }
+//   POST { action: 'behavior-decision', repo, number, decision: 'default' | 'not-now' | 'ask', text? }
+//                                                        a design lead or an admin of the team signed in by email decides
+//                                                        on an open behavior request of the team's repository (labels
+//                                                        component-change and request: behavior), with Bridge's app:
+//                                                        default adds bridge-build and the comment naming them; not-now
+//                                                        posts the reason and closes it as not planned; ask posts the
+//                                                        question (api/_lib/behavior-decision.ts); { ok: true }
 //   GET  /api/contribute?npm=<name>,<name>,...           { latest: { <name>: <version> | null } }  the latest published
 //                                                        versions (public data, kept 5 minutes), at most 12 names
 //   GET  /api/contribute?repo=owner/name&gh=<GitHub REST path and query, URL-encoded, starting with />
@@ -198,6 +205,7 @@ import { buildComment, buildRecordOf, buildStateOf, buildSummary, designCheckSta
 import type { Notice } from '../_lib/notify-events.js';
 import { npmLatest, parseNpmNames, sendLibraryUpdate } from '../_lib/library-update.js';
 import { validPackageName } from '../../src/lib/library-update.js';
+import { askCommentOf, BEHAVIOR_DECISION_WORDS, BEHAVIOR_DECISIONS, BEHAVIOR_TEXT_MAX, behaviorIssueProblem, BUILD_REQUEST_LABEL as BUILD_LABEL_SERVER, declineCommentOf, decisionTextProblem, defaultCommentOf, requesterLoginOf, type BehaviorDecisionKind } from '../_lib/behavior-decision.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { mintReadPass, passOpens, verifyReadPass, type ReadPass } from '../_lib/read-pass.js';
 import { budgetOf, corsHeaders, isPublicRepo, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, STALE_KEEP_S, type ReadCtx, type Reader } from '../_lib/team-read.js';
@@ -675,6 +683,9 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
 
     case 'library-update':
       return await onLibraryUpdate(req, ctx, body);
+
+    case 'behavior-decision':
+      return await onBehaviorDecision(req, ctx, body);
 
     case 'set-pm':
       return await onSetPm(req, ctx, body);
@@ -1992,6 +2003,54 @@ async function onLibraryUpdate(req: Request, ctx: Ctx, body: Record<string, unkn
   // The team's next reads of the product ask GitHub again (the open pull requests moved).
   if (r.state === 'opened' || r.state === 'updated') await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
   return json(200, r);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// A behavior request decided by a design lead signed in by email (api/_lib/behavior-decision.ts)
+
+/**
+ * POST { action: 'behavior-decision', repo, number, decision, text? }: a design lead or an admin of the team signed in
+ * by email (their member record says so, never the browser) decides on an open behavior request of the team's own
+ * repository, the three things only: Make it the default (bridge-build and a comment), Not now (the reason, then
+ * closed as not planned) or Ask the requester (a comment). Bridge's app writes them, and the comments name the lead.
+ * GitHub leads keep their own GitHub path.
+ */
+async function onBehaviorDecision(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  const m = await sessionMember(ctx, req, team.full);
+  if (!m) return fail(401, 'signin', SIGNIN);
+  const admin = m.role === 'admin' || Boolean(ctx.svc.localAdmins && (await ctx.svc.localAdmins.isAdmin(team.full, m.email)));
+  if (!admin && !approves(m)) return fail(403, 'not-allowed', BEHAVIOR_DECISION_WORDS.notLead);
+  const kind = body.decision as BehaviorDecisionKind;
+  if (!BEHAVIOR_DECISIONS.includes(kind)) return fail(400, 'bad_request', 'Unknown decision.');
+  const n = Number(body.number);
+  if (!Number.isSafeInteger(n) || n < 1) return fail(400, 'bad_request', BEHAVIOR_DECISION_WORDS.noNumber);
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, BEHAVIOR_TEXT_MAX) : '';
+  const problem = decisionTextProblem(kind, text);
+  if (problem) return fail(400, 'bad_request', problem);
+  const token = await ctx.svc.app.installationToken(team.owner, team.repo);
+  if (!token) return fail(503, 'not_configured', NOT_CONFIGURED);
+  const base = `/repos/${team.owner}/${team.repo}/issues/${n}`;
+  const issue = await ghApp(ctx, token, 'GET', base);
+  if (issue.status === 404) return fail(404, 'not_found', BEHAVIOR_DECISION_WORDS.noNumber);
+  const why = behaviorIssueProblem(issue.status === 200 ? issue.data : null, kind);
+  if (why) return fail(why === 'notBehavior' ? 404 : 409, why === 'notBehavior' ? 'not_found' : why, BEHAVIOR_DECISION_WORDS[why]);
+  const name = m.name.trim() || 'A design lead';
+  const sent = (r: { status: number }) => {
+    if (r.status < 200 || r.status >= 300) throw new HttpError(502, 'unreachable', GITHUB_DOWN);
+  };
+  if (kind === 'default') {
+    sent(await ghAppSend(ctx, token, 'POST', `${base}/labels`, { labels: [BUILD_LABEL_SERVER] }));
+    sent(await ghAppSend(ctx, token, 'POST', `${base}/comments`, { body: defaultCommentOf(name) }));
+  } else if (kind === 'not-now') {
+    sent(await ghAppSend(ctx, token, 'POST', `${base}/comments`, { body: declineCommentOf(text, name) }));
+    sent(await ghAppSend(ctx, token, 'PATCH', base, { state: 'closed', state_reason: 'not_planned' }));
+  } else {
+    sent(await ghAppSend(ctx, token, 'POST', `${base}/comments`, { body: askCommentOf(text, name, requesterLoginOf(issue.data?.body)) }));
+  }
+  await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
+  return json(200, { ok: true });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

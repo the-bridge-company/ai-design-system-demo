@@ -69,6 +69,18 @@ export function deciderNames(members: readonly { name: string; role: string; lea
 }
 
 /**
+ * The one design lead of a team by first name ("Send to Dana"): its one member marked lead, else, with nobody marked,
+ * its one email admin. Null when there is none, several, or the members are unknown: the words then say "the design
+ * system lead".
+ */
+export function soleLeadName(members: readonly { name: string; role: string; lead?: boolean }[] | null | undefined): string | null {
+  const named = (members ?? []).filter((m) => m.name.trim());
+  const leads = named.filter((m) => m.lead);
+  const pick = leads.length ? leads : named.filter((m) => m.role === 'admin');
+  return pick.length === 1 ? pick[0]!.name.trim().split(/\s+/)[0]! : null;
+}
+
+/**
  * Who a review ask goes to (Done exploring, a designer's answer, Ask someone else to review), by the same rule as
  * deciderNames: on a team whose reviewers are members by email, those members (`names`, the lead who runs the team
  * first) and nobody is mentioned on GitHub, since no design owner is the one asked there; else the team's GitHub design

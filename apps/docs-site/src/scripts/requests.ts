@@ -27,7 +27,7 @@ import {
   type PullLike,
   type RequestRow,
 } from '../lib/requests-view';
-import { currentViewer, esc, getToken, ghGet, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, studioClient } from './github-session';
+import { currentViewer, esc, getToken, ghGet, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, signedInWithGitHub, studioClient } from './github-session';
 import { rateLimitedLine } from '../lib/gh-wording';
 import { attrUrl, safeUrl } from '../lib/html';
 import { owners } from './pr-status';
@@ -358,7 +358,15 @@ async function mountBehavior(r: RequestRow) {
   unmountBehavior();
   const root = createRoot(slot);
   behaviorRoot = root;
-  const decide = requestDecision(r, detailContext()).kind === 'decide';
+  // A GitHub owner decides with their own token (requestDecision); a design lead or an admin signed in by email (on the
+  // sample team, Dana, every visitor) through Bridge's server, which checks their member record again.
+  const viaGitHub = requestDecision(r, detailContext()).kind === 'decide';
+  const undecided = r.status === 'requested' && !r.assignees.length && !r.prs.length && !r.madeDefault;
+  const viaEmail = !viaGitHub && undecided && !signedInWithGitHub() && (await import('./design-lead')).viewerIsDesignLead();
+  if (!slot.isConnected) return;
+  const decide = viaGitHub || viaEmail;
+  const byEmail = (decision: 'default' | 'not-now' | 'ask', text?: string) =>
+    import('./contribute-session').then(({ decideBehaviorRequest }) => decideBehaviorRequest(REPO_KEY, { number: r.number, decision, ...(text ? { text } : {}) }));
   const asker = r.askerName || (r.requester ? `@${r.requester.replace(/^@/, '')}` : 'Someone');
   root.render(
     createElement(BehaviorDecision, {
@@ -370,12 +378,13 @@ async function mountBehavior(r: RequestRow) {
       actions: decide
         ? {
             onDefault: async () => {
-              await makeBehaviorDefaultOnGitHub(client(), r.number, currentViewer()?.login ?? null);
+              if (viaGitHub) await makeBehaviorDefaultOnGitHub(client(), r.number, currentViewer()?.login ?? null);
+              else await byEmail('default');
               changed(r, { madeDefault: true });
               focusState();
             },
-            onNotNow: (from: HTMLElement) => decline(from as HTMLButtonElement),
-            onAsk: (text: string) => askRequesterOnGitHub(client(), r.number, text, { by: currentViewer()?.login ?? null, requester: r.requester }),
+            onNotNow: (from: HTMLElement) => decline(from as HTMLButtonElement, viaGitHub ? undefined : (reason) => byEmail('not-now', reason)),
+            onAsk: (text: string) => (viaGitHub ? askRequesterOnGitHub(client(), r.number, text, { by: currentViewer()?.login ?? null, requester: r.requester }) : byEmail('ask', text)),
           }
         : null,
     }),
@@ -461,7 +470,8 @@ function assign(btn: HTMLButtonElement) {
   document.dispatchEvent(new CustomEvent(ASSIGN_EVENT, { detail }));
 }
 
-function decline(btn: HTMLButtonElement) {
+/** `send`: how the decline goes out when it is not the viewer's own GitHub token (a lead signed in by email). */
+function decline(btn: HTMLButtonElement, send?: (reason: string) => Promise<void>) {
   const r = current;
   if (!r) return;
   const detail: DeclineAskDetail = {
@@ -470,7 +480,8 @@ function decline(btn: HTMLButtonElement) {
     audience: declineAudience(r.requester),
     problems: declineReasonProblems,
     confirm: async (reason) => {
-      await declineRequestOnGitHub(client(), r.number, reason, currentViewer()?.login ?? null);
+      if (send) await send(reason);
+      else await declineRequestOnGitHub(client(), r.number, reason, currentViewer()?.login ?? null);
       changed(r, { status: 'declined' });
     },
     closed: (done) => {

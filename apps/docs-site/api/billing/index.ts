@@ -31,7 +31,9 @@ import {
   type BillingFlags,
   type BillingStripe,
   editorsOf,
+  billingFor,
   emptyBilling,
+  liveKey,
   effectiveTier,
   eventKey,
   EVENT_TTL_S,
@@ -262,7 +264,8 @@ async function stripeCall<T>(fn: () => Promise<T>): Promise<T> {
   } catch (e) {
     if (e instanceof HttpError) throw e;
     // Stripe's own message may name ids; the type is enough to find the cause in the logs.
-    console.error(`billing: stripe ${(e as { type?: string })?.type ?? 'error'}`);
+    const err = e as { type?: string; code?: string; param?: string };
+    console.error(`billing: stripe ${err?.type ?? 'error'}${err?.code ? ` ${err.code}` : ''}${err?.param ? ` (${err.param})` : ''}`);
     throw new HttpError(502, 'stripe', STRIPE_DOWN);
   }
 }
@@ -272,7 +275,8 @@ async function stripeCall<T>(fn: () => Promise<T>): Promise<T> {
 
 async function onStatus(ctx: Ctx, req: Request, teamArg: string): Promise<Response> {
   const { team: t } = await requireAdmin(ctx, req, teamArg);
-  const [b, founding, editors] = await Promise.all([getBilling(ctx.redis, t.full), isFounding(ctx.redis, t.full, ctx.flags), editorsNow(ctx, t.full)]);
+  const [stored, founding, editors] = await Promise.all([getBilling(ctx.redis, t.full), isFounding(ctx.redis, t.full, ctx.flags), editorsNow(ctx, t.full)]);
+  const b = billingFor(stored, liveKey(ctx.env.STRIPE_SECRET_KEY));
   const status: BillingStatus = {
     on: true,
     tier: founding ? 'free' : effectiveTier(b),
@@ -299,7 +303,8 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
   const t = a.team;
   if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
   if (await isFounding(ctx.redis, t.full, ctx.flags)) return fail(409, 'founding', FOUNDING);
-  const prev = await getBilling(ctx.redis, t.full);
+  const live = liveKey(ctx.env.STRIPE_SECRET_KEY);
+  const prev = billingFor(await getBilling(ctx.redis, t.full), live);
   if (effectiveTier(prev) !== 'free') return fail(409, 'already', ALREADY_PAYING);
   await dailyCap(ctx, a.who);
   const price = await stripeCall(() => ctx.stripe.priceIdByLookupKey(lookupKey('team', body.currency as 'eur', body.interval as 'yearly')));
@@ -316,14 +321,14 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
     const lock = `bridge:billing:lock:${t.full}`;
     if ((await ctx.redis.cmd('SET', lock, '1', 'EX', 30, 'NX')) !== 'OK') return fail(409, 'busy', BUSY);
     try {
-      const again = await getBilling(ctx.redis, t.full);
+      const again = billingFor(await getBilling(ctx.redis, t.full), live);
       customerId = again?.customerId ?? null;
       if (!customerId) {
         const made = await stripeCall(async () =>
           ctx.stripe.createCustomer({ name: await teamName(ctx, t.full), ...(a.email ? { email: a.email } : {}), metadata: { bridge_team: t.full }, ...(tax.footer ? { invoice_settings: { footer: tax.footer } } : {}) }),
         );
         customerId = made.id;
-        await putBilling(ctx.redis, t.full, { ...(again ?? emptyBilling(ctx.now())), customerId, updatedAt: new Date(ctx.now()).toISOString() });
+        await putBilling(ctx.redis, t.full, { ...(again ?? emptyBilling(ctx.now())), customerId, live, updatedAt: new Date(ctx.now()).toISOString() });
       }
     } finally {
       await ctx.redis.cmd('DEL', lock);
@@ -359,7 +364,7 @@ async function onPortal(ctx: Ctx, req: Request, body: Record<string, unknown>): 
   const a = await requireAdmin(ctx, req, body.team);
   const t = a.team;
   if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
-  const b = await getBilling(ctx.redis, t.full);
+  const b = billingFor(await getBilling(ctx.redis, t.full), liveKey(ctx.env.STRIPE_SECRET_KEY));
   if (!b?.customerId) return fail(409, 'no_customer', NO_CUSTOMER);
   await dailyCap(ctx, a.who);
   const configuration = await stripeCall(() => ctx.stripe.portalConfigurationId());
@@ -383,8 +388,9 @@ async function applyEvent(ctx: Ctx, type: string, obj: Record<string, any>): Pro
       const team = typeof obj.client_reference_id === 'string' ? obj.client_reference_id : obj.metadata?.bridge_team;
       const customer = typeof obj.customer === 'string' ? obj.customer : obj.customer?.id;
       if (typeof team === 'string' && team && typeof customer === 'string') {
-        const prev = await getBilling(ctx.redis, team);
-        if (prev?.customerId !== customer) await putBilling(ctx.redis, team, { ...(prev ?? emptyBilling(now)), customerId: customer, updatedAt: new Date(now).toISOString() });
+        const live = obj.livemode === true;
+        const prev = billingFor(await getBilling(ctx.redis, team), live);
+        if (prev?.customerId !== customer) await putBilling(ctx.redis, team, { ...(prev ?? emptyBilling(now)), customerId: customer, live, updatedAt: new Date(now).toISOString() });
       }
       return sync(typeof obj.subscription === 'string' ? obj.subscription : obj.subscription?.id);
     }

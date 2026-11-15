@@ -46,6 +46,8 @@ export interface TeamBilling {
   currency: Currency | null;
   interval: Interval | null;
   quantity: number | null;
+  /** Made with Stripe's live mode (true) or test mode (false). A record of the other mode is ignored (billingFor). */
+  live: boolean;
   updatedAt: string;
 }
 
@@ -56,7 +58,7 @@ export const foundingKey = (team: string) => `bridge:billing:founding:${lc(team)
 export const eventKey = (eventId: string) => `bridge:billing:event:${eventId}`;
 export const EVENT_TTL_S = 30 * 24 * 60 * 60;
 
-export const emptyBilling = (now: number): TeamBilling => ({ customerId: null, subscriptionId: null, tier: 'free', status: null, periodEnd: null, cancelAtPeriodEnd: false, currency: null, interval: null, quantity: null, updatedAt: new Date(now).toISOString() });
+export const emptyBilling = (now: number): TeamBilling => ({ customerId: null, subscriptionId: null, tier: 'free', status: null, periodEnd: null, cancelAtPeriodEnd: false, currency: null, interval: null, quantity: null, live: false, updatedAt: new Date(now).toISOString() });
 
 export function parseBilling(raw: unknown): TeamBilling | null {
   if (typeof raw !== 'string') return null;
@@ -74,6 +76,8 @@ export function parseBilling(raw: unknown): TeamBilling | null {
       currency: isCurrency(v.currency) ? v.currency : null,
       interval: isInterval(v.interval) ? v.interval : null,
       quantity: typeof v.quantity === 'number' ? v.quantity : null,
+      // Records written before the field existed were made in test mode.
+      live: v.live === true,
       updatedAt: str(v.updatedAt) ?? new Date(0).toISOString(),
     };
   } catch {
@@ -294,9 +298,19 @@ export function billingFromSubscription(prev: TeamBilling | null, sub: StripeSub
     currency: isCurrency(currency) ? currency : null,
     interval,
     quantity: typeof item?.quantity === 'number' ? item.quantity : null,
+    live: (sub as { livemode?: boolean }).livemode === true,
     updatedAt: new Date(now).toISOString(),
   };
 }
+
+/** True when the Stripe key is a live key (sk_live_ or rk_live_). */
+export const liveKey = (key: string | undefined): boolean => /^(sk|rk)_live_/.test((key ?? '').trim());
+
+/**
+ * The team's billing in the mode the site runs in: a record made in the other mode (a test customer after the switch
+ * to live keys) is ignored, so a new customer is made instead of reusing one Stripe does not know in this mode.
+ */
+export const billingFor = (b: TeamBilling | null, live: boolean): TeamBilling | null => (b && b.live === live ? b : null);
 
 /**
  * Writes what Stripe says now about one subscription on its team. A different, older subscription never overwrites

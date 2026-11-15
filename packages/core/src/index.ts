@@ -100,6 +100,7 @@ export * from './contrast-model';
 export * from './component-scan';
 export * from './behaviors';
 export * from './behavior-brief';
+export * from './behavior-preview';
 export * from './patterns';
 export * from './repo-model';
 export * from './repo-source-github';

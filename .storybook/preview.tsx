@@ -104,6 +104,53 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
   void document.fonts?.ready.then(soon);
 }
 
+// Played from Bridge Studio (iframe.html?...&embed=bridge-keys, apps/docs-site/src/lib/story-replay.ts): "Play both" on a
+// behavior request presses the same keys on today's story and on Claude's preview. Asked by its parent, the story
+// focuses its first control, presses the keys with Storybook's own userEvent (real keyboard events, Tab moving focus as
+// a browser does), then posts what it sees: the popup open (by role), the focused element's name, what the control
+// shows. Nothing else listens: the full Storybook and the other embeds never pass the parameter.
+if (typeof window !== 'undefined' && window.parent !== window && new URLSearchParams(window.location.search).get('embed') === 'bridge-keys') {
+  document.documentElement.classList.add('sb-embed');
+  const nameOf = (el: Element | null): string | null => {
+    if (!el || el === document.body) return null;
+    const labelled = el.getAttribute('aria-labelledby');
+    const byId = labelled ? labelled.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' ') : '';
+    const label = (el as HTMLInputElement).labels?.[0]?.textContent ?? '';
+    return (el.getAttribute('aria-label') || byId || label || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60) || null;
+  };
+  const visible = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+  };
+  const token = (k: string) => (k === ' ' || k === 'Space' ? ' ' : k.length === 1 ? k : `{${k}}`);
+  window.addEventListener('message', (e: MessageEvent) => {
+    const d = e.data as { type?: unknown; id?: unknown; keys?: unknown } | null;
+    if (!d || d.type !== 'bridge:press-keys' || typeof d.id !== 'string' || !Array.isArray(d.keys)) return;
+    const keys = d.keys.filter((k): k is string => typeof k === 'string' && k.length > 0 && k.length <= 20).slice(0, 12);
+    void (async () => {
+      const root = document.getElementById('storybook-root');
+      const first = root?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])') ?? null;
+      first?.focus();
+      const { userEvent } = await import('storybook/test');
+      const user = userEvent.setup();
+      for (const k of keys) await user.keyboard(token(k));
+      await new Promise((r) => setTimeout(r, 300));
+      const popup = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"], [role="dialog"], [role="alertdialog"]')).find(visible);
+      const role = popup?.getAttribute('role') ?? null;
+      const active = document.activeElement;
+      const result = {
+        open: role === 'listbox' ? 'list' : role === 'alertdialog' ? 'dialog' : role,
+        focus: active && (root?.contains(active) || popup?.contains(active)) ? nameOf(active) : null,
+        shows: first ? (first.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 60) || null : null,
+      };
+      (e.source as Window | null)?.postMessage({ type: 'bridge:keys-result', id: d.id, result }, '*');
+    })();
+  });
+  const ready = () => window.parent.postMessage({ type: 'bridge:keys-ready' }, '*');
+  if (document.readyState === 'complete') ready();
+  else window.addEventListener('load', ready, { once: true });
+}
+
 // Brands come from bridge.config.json through the token build, so a merged brand shows up in the toolbar.
 const brandTitle = (b: string) => b.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 

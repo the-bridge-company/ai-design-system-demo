@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-14T22:46:55.546Z",
+  "createdAt": "2026-11-15T02:20:26.890Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -10174,6 +10174,13 @@
           "story": "overlays-alertdialog--consequential",
           "props": {}
         },
+        "story=overlays-alertdialog--type-the-name": {
+          "file": "overlays-alertdialog-type-the-name.png",
+          "width": 384,
+          "height": 274,
+          "story": "overlays-alertdialog--type-the-name",
+          "props": {}
+        },
         "story=overlays-alertdialog--async-confirm": {
           "file": "overlays-alertdialog-async-confirm.png",
           "width": 384,
@@ -10229,6 +10236,13 @@
           "width": 384,
           "height": 174,
           "story": "overlays-alertdialog--consequential",
+          "props": {}
+        },
+        "story=overlays-alertdialog--type-the-name": {
+          "file": "overlays-alertdialog-type-the-name.png",
+          "width": 384,
+          "height": 274,
+          "story": "overlays-alertdialog--type-the-name",
           "props": {}
         },
         "story=overlays-alertdialog--async-confirm": {

@@ -43,6 +43,17 @@ variable needs a redeploy to apply.
 | Design systems | 1 | up to 3 | unlimited |
 | Billed | never | per editor, yearly (12 EUR / 14 USD a month) or monthly (15 EUR / 17 USD) | 490 EUR / 550 USD a month, yearly, by invoice |
 
+- **VAT**: `VAT_REGIME` in `apps/docs-site/src/lib/billing.ts` (and the same constant in
+  `scripts/stripe-organization.mjs`). Today `'franchise'`: Florian is a French micro-entrepreneur under the VAT franchise
+  (art. 293 B CGI), so Bridge charges **no VAT**. Checkout and the Organization script leave Stripe Tax off
+  (`automatic_tax: false`), still collect a VAT number (`tax_id_collection`, some customers want it on the invoice), and
+  every invoice carries the footer "TVA non applicable, art. 293 B du CGI. VAT not applicable, art. 293 B of the French
+  tax code.": set on the subscription (`subscription_data.invoice_settings.footer` in Checkout, `invoice_settings.footer`
+  in the Organization script) and on each customer Bridge creates. The Billing card says "VAT not applicable, art. 293 B
+  of the French tax code." Prices are the amounts paid. To switch to `'standard'` later (past the franchise thresholds,
+  or a company): register for VAT in Stripe Tax (France, then EU OSS), set both constants to `'standard'` and deploy;
+  Stripe Tax then adds VAT on top (prices are tax exclusive), reverse charge for EU businesses with a VAT number, no
+  footer. Customers made under the franchise keep the footer as their default: clear it in the Dashboard if needed.
 - **Editor**: whoever proposes or decides in Studio. Counted as the team's email members with Can edit or Admin, plus
   pending invites that would make one (Can edit, Reviewer, Admin). Can view and GitHub-only people do not count.
 - **Checkout quantity**: the team's editors, at least 1 and at most 10, times its design systems (1 to 3). One
@@ -80,7 +91,8 @@ user administers the repository (`GET /repos/<owner>/<repo>` with the same token
 the browser is trusted; the token is never logged or kept. A team made in Bridge (no repository) goes by the account
 only. For a GitHub sign-in the Stripe customer is made without an email: Checkout asks for the billing email.
 
-Checkout: subscription mode, `automatic_tax`, `tax_id_collection`, `billing_address_collection: required`, the
+Checkout: subscription mode, `automatic_tax` per the VAT regime (off under the franchise), the franchise footer,
+`tax_id_collection`, `billing_address_collection: required`, the
 customer made once per team and kept, `client_reference_id` and `metadata.bridge_team` = the team, back to the team's
 Settings. Prices are found by lookup key, never by id.
 
@@ -108,8 +120,11 @@ Webhook endpoint (Developers, Webhooks, Add endpoint):
   - `invoice.paid`
   - `invoice.payment_failed`
 
-Stripe settings (Dashboard, once per mode): Public details: business name **Bridge**; Tax: origin address in France,
-registrations (France, and EU OSS once needed); Customer emails: send finalized invoices and failed payment emails;
+Stripe settings (Dashboard, once per mode): Public details: business name **Bridge**; Settings, Billing, Invoices,
+**Default footer**: "TVA non applicable, art. 293 B du CGI. VAT not applicable, art. 293 B of the French tax code." (the
+API cannot set an account's default footer; Bridge sets it on every customer and subscription it makes, the default
+covers invoices made by hand); Tax: under the franchise, **no tax registration** (none exists in the sandbox as of
+2026-11-15) and no automatic tax by default; Customer emails: send finalized invoices and failed payment emails;
 Subscriptions: Smart Retries on.
 
 ## Testing end to end in test mode
@@ -119,8 +134,9 @@ Subscriptions: Smart Retries on.
    team (above) and redeploy. Nothing else changes for anyone.
 3. Use a team of your own, never a customer's. Sign in as its admin, open its Settings (Team tab; a team made in Bridge: its workspace Settings), Billing: Move to Team, pick a currency and
    yearly or monthly, Continue to payment.
-4. Pay with the card `4242 4242 4242 4242`, any future date, any CVC, any postal code. For a VAT number use
-   `FR12345678901` (test mode accepts it).
+4. Pay with the card `4242 4242 4242 4242`, any future date, any CVC, any postal code. A VAT number (test mode
+   accepts `FR12345678901`) shows on the invoice; no VAT is added, and the invoice footer reads "TVA non applicable,
+   art. 293 B du CGI. VAT not applicable, art. 293 B of the French tax code."
 5. Back in Settings: Team, the quantity paid for, the renewal date. Members: invite a 4th and 5th editor, they are sent.
 6. Manage billing: the portal shows the invoice; cancel. The card says "Stops on ..."; in the Dashboard, cancel the
    subscription immediately: the card shows Free again, and a new 4th editor invite waits.
@@ -142,7 +158,8 @@ STRIPE_SECRET_KEY=... node scripts/stripe-organization.mjs --team acme/design-sy
 ```
 
 It makes (or reuses) the team's customer and a yearly `bridge_org_<currency>_yearly` subscription with
-`collection_method: send_invoice`, `days_until_due: 30`, Stripe Tax on, `metadata.bridge_team`. Stripe emails the
+`collection_method: send_invoice`, `days_until_due: 30`, VAT per `VAT_REGIME` (franchise: Stripe Tax off and the
+art. 293 B footer on the customer and the subscription), `metadata.bridge_team`. Stripe emails the
 invoice; the webhook writes Organization on the team. It never makes a second subscription for a team that has one.
 
 ## Launch checklist
@@ -152,7 +169,8 @@ invoice; the webhook writes Organization on the team. It never makes a second su
 1. Live catalog: with the **live** key, `node scripts/stripe-catalog.mjs` (dry run), then `--apply`. It creates the two
    products (tax code `txcd_10103001`, `metadata.bridge_tier`), the six prices (same lookup keys, tax exclusive) and the
    portal configuration (`metadata.bridge_portal = team`), and changes nothing that exists. Run again: all `ok`.
-2. Live Stripe settings as above (business name, Tax, emails, retries).
+2. Live Stripe settings as above (business name, default invoice footer, no tax registration under the franchise,
+   emails, retries).
 3. Live webhook endpoint with the six events; copy its signing secret.
 4. Vercel Production: `STRIPE_SECRET_KEY` (live) and `STRIPE_WEBHOOK_SECRET` (live). Keep the test ones on Preview.
 5. Founding teams: `node --env-file=.env.prod scripts/billing-mark-founding.mjs` (dry run, lists the teams), then

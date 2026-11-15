@@ -1,8 +1,8 @@
 // /pricing/ (pages/pricing.astro): every price, tier, commitment and answer on the page, in one place. Pure data and
 // helpers, no DOM. The page ships on announcement day: until then it lives in a draft pull request.
 //
-// Every price and policy here is decided. Two launch blockers stay marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
-// launch date and a lawyer's review of the terms of service.
+// Every price and policy here is decided. One launch blocker stays marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
+// launch date. The policies are written in full in the terms of service (pages/terms.astro).
 
 export type Currency = 'EUR' | 'USD';
 export type Billing = 'yearly' | 'monthly';
@@ -13,7 +13,7 @@ export const BILLINGS: Billing[] = ['yearly', 'monthly'];
 export const DEFAULT_BILLING: Billing = 'yearly';
 
 // ---------------------------------------------------------------------------------------------------------------
-// Prices, whole units, excluding VAT.
+// Prices, whole units. VAT is not applicable (VAT franchise, art. 293 B of the French tax code).
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Team, billed yearly, per editor per month. Decided. */
@@ -60,9 +60,7 @@ export const FREE_DESIGN_SYSTEMS = 1;
 export const TEAM_DESIGN_SYSTEMS = 3;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Launch blockers. Three things stay open, and the page cannot ship before they are settled: the launch date, the
-// Organization contact address, and a lawyer's review of the terms of service (founding teams clause, the refund
-// policy, the pricing rollback refund and the support hours).
+// Launch blocker: the launch date. The page cannot ship before it is set.
 // ---------------------------------------------------------------------------------------------------------------
 
 // TO DECIDE (Florian), BLOCKS LAUNCH: the date the pricing is announced. Every team created before it is a founding
@@ -75,23 +73,26 @@ export const TEAM_DESIGN_SYSTEMS = 3;
 // - every existing team has been checked to keep what it had the day before;
 // - it is proven that no free account can produce an invoice;
 // - the pricing page and the homepage compare-row change ship in one deploy;
-// - the blockers in this file are filled (contact address, lawyer's review);
+// - the launch date below is filled;
 // - Florian is available for the next 48 hours.
 export const LAUNCH_DATE = '[LAUNCH DATE]';
 
-/** Organization support hours ("EU business hours"). To be reviewed by a lawyer with the terms of service. */
+/** Organization support hours ("EU business hours"). Also in the terms of service, section 9.3. */
 export const ORGANIZATION_SUPPORT_HOURS = 'Monday to Friday, 9:00 to 18:00 Paris time, except French public holidays';
 
 /** Who issues invoices. No street address on the page. */
-export const INVOICE_ENTITY = 'Florian Gouloubi, sole proprietor (entrepreneur individuel), France, SIREN 947 632 055, VAT FR01947632055';
+export const INVOICE_ENTITY = 'Florian Gouloubi, sole proprietor (entrepreneur individuel), France, SIREN 947 632 055';
 
-/** Refund policy. To be reviewed by a lawyer with the terms of service. */
+/** The VAT franchise mention, on the page and on every invoice. */
+export const VAT_MENTION = 'VAT not applicable (French micro-enterprise, art. 293 B of the French tax code).';
+
+/** Refund policy. Also in the terms of service, section 7. */
 export const REFUND_POLICY = [
   'Monthly: you keep access until the end of the paid month, with no prorated refund.',
   'Yearly: full refund within 30 days of the first payment; after that, access runs to the end of the paid year and the plan does not renew if you stop it.',
 ];
 
-/** A published commitment. To be reviewed by a lawyer with the terms of service. */
+/** A published commitment. Also in the terms of service, section 7.4. */
 export const PRICING_ROLLBACK_REFUND =
   'If we roll back a pricing change, we refund in full the difference between what you paid since that change and what you would have paid at the previous price.';
 
@@ -149,7 +150,7 @@ export const BILLING_LABEL: Record<Billing, string> = { yearly: 'Yearly', monthl
 export const TITLE = 'Free for a small team. Then a fair price per editor, capped per design system.';
 export const LEAD = 'Every tier has every feature. You pay for more people, more systems, and our commitments.';
 export const LICENSE_LINE = 'Components and tokens are MIT. Each Bridge version becomes MIT two years after release. Self-hosting without limit.';
-export const VAT_NOTE = 'Prices exclude VAT.';
+export const VAT_NOTE = VAT_MENTION;
 
 export interface Tier {
   id: TierId;
@@ -229,9 +230,8 @@ export const EDITOR_DEFINITION = 'An editor is anyone who proposes or decides in
 export const EDITOR_NOT_COUNTED = 'Readers, viewers, and developers who only work in GitHub do not count. Invite them freely, on every tier.';
 
 /** Founding teams. Wording decided by Florian. */
-// TO DECIDE (Florian), BLOCKS LAUNCH: a lawyer's review of the terms of service before launch: this founding teams
-// clause, REFUND_POLICY, PRICING_ROLLBACK_REFUND and ORGANIZATION_SUPPORT_HOURS. This text is a commitment that goes
-// into the terms of service.
+// This text is a commitment, written in full in the terms of service, section 10 (pages/terms.astro). The page links
+// "terms of service" in the last line to /terms/.
 export const FOUNDING_TITLE = 'Founding teams';
 export const FOUNDING_TEXT = [
   `Every team created on Bridge before ${LAUNCH_DATE} keeps, at no cost and with no end date, everything it could do that day: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
@@ -358,8 +358,9 @@ export const FAQ: FaqItem[] = [
     id: 'vat',
     question: 'How do VAT and invoices work?',
     answer: [
-      `Invoices are issued by ${INVOICE_ENTITY}.`,
-      'Prices exclude VAT; VAT is added as the law requires (reverse charge for EU businesses with a VAT number). A free team never receives an invoice.',
+      `Invoices are issued by ${INVOICE_ENTITY}, with the mention: VAT not applicable, art. 293 B of the French tax code. A free team never receives an invoice.`,
+      // TO DECIDE (Florian): this promise (30 days notice, same prices before VAT) is not confirmed yet.
+      'If Bridge starts charging VAT, we tell you 30 days before and prices stay the same, VAT excluded.',
     ],
   },
   {

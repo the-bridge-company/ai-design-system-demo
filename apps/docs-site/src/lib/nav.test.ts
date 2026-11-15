@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ABOUT, allPages, COMPARE, DEMO, DOCS_AUTOMATIC_MEASURE, DOCS_CONFLUENCE, DOCS_FIGMA_PLUGIN, DOCS_HOME, DOCS_SECURITY, HOW_REVIEW_WORKS, LANDING, LIBRARY_HOME, locate, PRICING, navFor, SETTINGS_HOME, SETTINGS_SECTIONS, spaceOf, WORKSPACE_SETTINGS, workspaceNav } from './nav';
+import { ABOUT, allPages, COMPARE, DEMO, DOCS_AUTOMATIC_MEASURE, DOCS_CONFLUENCE, DOCS_FIGMA_PLUGIN, DOCS_HOME, DOCS_SECURITY, HOW_REVIEW_WORKS, LANDING, LIBRARY_HOME, LEGAL, locate, PRICING, TERMS, navFor, SETTINGS_HOME, SETTINGS_SECTIONS, spaceOf, WORKSPACE_SETTINGS, workspaceNav } from './nav';
 import { WORKSPACE_HOME } from './start';
 import { DEMO_REPOS } from './demo';
 import { REDIRECT_SCRIPT_BODY, REDIRECTS, redirectScript, redirectTarget } from './redirects';
@@ -97,7 +97,9 @@ describe('routing: the landing at /, the Library home at /library/', () => {
     const footer = readFileSync(join(ROOT, 'apps/docs-site/src/components/site/SiteFooter.astro'), 'utf8');
     for (const name of ['ABOUT', 'PRICING', 'DOCS_HOME', 'DOCS_FIGMA_PLUGIN', 'STUDIO_HOME']) expect(header).toContain(name);
     expect(pageFile(PRICING)).toMatch(/pages\/pricing\.astro$/);
-    for (const name of ['ABOUT', 'PRICING', 'DOCS_HOME', 'DOCS_FIGMA_PLUGIN', 'DOCS_SECURITY', 'STUDIO_HOME']) expect(footer).toContain(name);
+    expect(pageFile(TERMS)).toMatch(/pages\/terms\.astro$/);
+    expect(pageFile(LEGAL)).toMatch(/pages\/legal\.astro$/);
+    for (const name of ['ABOUT', 'PRICING', 'TERMS', 'LEGAL', 'DOCS_HOME', 'DOCS_FIGMA_PLUGIN', 'DOCS_SECURITY', 'STUDIO_HOME']) expect(footer).toContain(name);
     // The comparison lives on the homepage: the footer does not link it again.
     expect(footer).not.toContain('COMPARE');
     // The demo is the hosted Studio of the dedicated demo repo, served by the team shell rewrite.

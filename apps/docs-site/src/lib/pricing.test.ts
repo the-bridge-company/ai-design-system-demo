@@ -89,4 +89,21 @@ describe('pricing (/pricing/)', () => {
     expect(allWords).not.toMatch(/—/);
     expect(allWords).not.toMatch(/contact sales|most popular|lifetime|countdown|limited time/i);
   });
+
+  it('says VAT is not applicable (VAT franchise), never "exclude VAT" or reverse charge', () => {
+    expect(pricing.VAT_NOTE).toBe('VAT not applicable (French micro-enterprise, art. 293 B of the French tax code).');
+    expect(allWords).not.toMatch(/exclude VAT|excluding VAT|reverse charge|FR01947632055/i);
+  });
+
+  it('keeps the terms, the legal notice and the privacy page free of placeholders and em dashes', () => {
+    for (const f of ['terms', 'legal', 'privacy']) {
+      const src = readFileSync(join(ROOT, `apps/docs-site/src/pages/${f}.astro`), 'utf8');
+      expect(src, f).not.toMatch(/—/);
+      expect(src, f).not.toMatch(/\[(À|A) COMPL|\[TO DECIDE|\[ADRESSE|\[DATE DE/);
+    }
+    const terms = readFileSync(join(ROOT, 'apps/docs-site/src/pages/terms.astro'), 'utf8');
+    expect(terms).toContain('293 B');
+    expect(terms).toContain('EUR 40');
+    expect(terms).not.toMatch(/reverse-charge|Autoliquidation/);
+  });
 });

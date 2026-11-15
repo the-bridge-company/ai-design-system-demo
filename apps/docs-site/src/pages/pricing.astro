@@ -25,6 +25,9 @@ import {
   money,
 } from '../lib/pricing';
 import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
+import { TERMS } from '../lib/nav';
+
+const TOS = 'terms of service';
 
 // Organization and discount questions go to Bridge's contact address (lib/pricing CONTACT_EMAIL).
 const contact = ORGANIZATION_CONTACT_HREF;
@@ -76,9 +79,20 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
 
     <section class="pr-section" aria-labelledby="pr-founding">
       <h2 id="pr-founding" class="pr-h2">{FOUNDING_TITLE}</h2>
-      {/* TO DECIDE (Florian), BLOCKS LAUNCH: a lawyer reviews this clause with the terms of service before launch. */}
       <div class="pr-panel">
-        {FOUNDING_TEXT.map((t) => <p>{t}</p>)}
+        {
+          FOUNDING_TEXT.map((t) =>
+            t.includes(TOS) ? (
+              <p>
+                {t.slice(0, t.indexOf(TOS))}
+                <Link href={TERMS}>{TOS}</Link>
+                {t.slice(t.indexOf(TOS) + TOS.length)}
+              </p>
+            ) : (
+              <p>{t}</p>
+            ),
+          )
+        }
       </div>
     </section>
 
@@ -91,7 +105,7 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
     <section class="pr-section" aria-labelledby="pr-org">
       <h2 id="pr-org" class="pr-h2">Organization</h2>
       <p class="pr-contact">
-        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly, excluding VAT. Questions before you choose it? Write to <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
+        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly. Questions before you choose it? Write to <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
       </p>
     </section>
   </div>

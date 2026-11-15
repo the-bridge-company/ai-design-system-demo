@@ -1,0 +1,55 @@
+---
+// /legal/: the legal notice (mentions légales) required by article 1-1 of the French law of 21 June 2004 (LCEN): who
+// publishes Bridge, how to reach them, who directs the publication and who hosts the site. Same reading column as
+// /privacy/ (styles/account.css .pv). Data: lib/legal.ts. Linked from every footer and from /terms/ section 1.
+import '../styles/homepage.css';
+import '../styles/account.css';
+import Landing from '../layouts/Landing.astro';
+import { Link } from '@bridge-ds/react';
+import { PRIVACY_PAGE } from '../lib/account';
+import { TERMS } from '../lib/nav';
+import { PUBLISHER } from '../lib/legal';
+
+const host = PUBLISHER.host;
+---
+
+<Landing title="Legal notice | Bridge" description="Who publishes Bridge, how to reach them and who hosts the site.">
+  <article class="hp pv">
+    <header class="zone pv-head">
+      <h1 class="pv-title">Legal notice</h1>
+      <p class="pv-lead">Who publishes Bridge, how to reach them and who hosts this site, as French law requires (article 1-1 of law no. 2004-575 of 21 June 2004).</p>
+    </header>
+
+    <section class="pv-section" aria-labelledby="lg-publisher">
+      <h2 id="lg-publisher" class="pv-h">Publisher</h2>
+      <ul>
+        <li>{PUBLISHER.name}, {PUBLISHER.status.charAt(0).toLowerCase() + PUBLISHER.status.slice(1)}</li>
+        <li>Address: {PUBLISHER.address}</li>
+        <li>Phone: {PUBLISHER.phone}</li>
+        <li>Email: <Link href={`mailto:${PUBLISHER.email}`}>{PUBLISHER.email}</Link></li>
+        <li>SIREN: {PUBLISHER.siren}</li>
+        <li>{PUBLISHER.vat}</li>
+      </ul>
+    </section>
+
+    <section class="pv-section" aria-labelledby="lg-director">
+      <h2 id="lg-director" class="pv-h">Publication director</h2>
+      <p>{PUBLISHER.director}</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="lg-host">
+      <h2 id="lg-host" class="pv-h">Host</h2>
+      <ul>
+        <li>{host.name}</li>
+        <li>Address: {host.address}</li>
+        {host.phone && <li>Phone: {host.phone}</li>}
+        <li>Contact: <Link href={`mailto:${host.contact}`}>{host.contact}</Link>, <Link href={host.contactPage}>vercel.com/contact</Link></li>
+      </ul>
+    </section>
+
+    <section class="pv-section" aria-labelledby="lg-more">
+      <h2 id="lg-more" class="pv-h">More</h2>
+      <p>The contract for using Bridge: <Link href={TERMS}>Terms of service</Link>. What Bridge keeps about you: <Link href={PRIVACY_PAGE}>Privacy</Link>.</p>
+    </section>
+  </article>
+</Landing>

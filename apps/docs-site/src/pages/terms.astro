@@ -1,0 +1,305 @@
+---
+// /terms/: Bridge's terms of service, for every plan, Free included. Same reading column as /privacy/ (styles/account.css
+// .pv). Linked from every footer and from the pricing page (Founding teams). Prices and policies match lib/pricing.ts.
+//
+// No lawyer review for now (Florian, 2026-11-15). The five questions to ask one, from the French review of the draft:
+// 1. Founding teams: does "indefinite term, Bridge may leave only if it stops the hosted service for everyone (six
+//    months notice and a self-hostable export) or for a serious breach" escape article 1210 of the Civil Code, and do
+//    advance consent to the transfer of the contract (art. 1216) plus Bridge's guarantee (porte-fort, art. 1204)
+//    protect teams well enough if the business of a sole proprietor is sold?
+// 2. Address: is a business domiciliation address enough for the "domicile" required by article 1-1 of the LCEN for a
+//    sole proprietor, and which phone number should be published?
+// 3. Courts: does Bridge's activity (SaaS subscription, APE 6201Z) make Florian a trader (commerçant) under article 48
+//    of the Code of Civil Procedure? If not, which dispute clause can really be enforced?
+// 4. Consumers: by reserving sign-up to professionals (a checkbox, plus SIREN or VAT number for paid plans), is Bridge
+//    exempt from naming a consumer mediator (L612-1 Consumer Code), Free accounts included?
+// 5. Availability and liability: do credits capped at one month, termination after three missed months out of six and
+//    a liability cap at twelve months of fees hold against articles 1170 and 1171 of the Civil Code and L442-1 of the
+//    Commercial Code?
+//
+// Sentences that depend on a TO DECIDE value below are left out of the page until it is decided. Never show a bracket.
+import '../styles/homepage.css';
+import '../styles/account.css';
+import Landing from '../layouts/Landing.astro';
+import { Link } from '@bridge-ds/react';
+import { PRIVACY_PAGE } from '../lib/account';
+import { LEGAL, PRICING } from '../lib/nav';
+import {
+  CONTACT_EMAIL,
+  FREE_DESIGN_SYSTEMS,
+  FREE_EDITORS,
+  LAUNCH_DATE,
+  ORGANIZATION_PRICE,
+  ORGANIZATION_SUPPORT_HOURS,
+  TEAM_DESIGN_SYSTEMS,
+  TEAM_PRICE,
+  editorsCapped,
+} from '../lib/pricing';
+import { PUBLISHER } from '../lib/legal';
+
+// TO DECIDE (Florian): version number and effective date of these terms. Until set, the page shows neither.
+const VERSION: string | null = null;
+const EFFECTIVE_DATE: string | null = null;
+// TO DECIDE (Florian): adding editors during a period: billed pro rata for the rest of the period, or from the next renewal.
+const ADDED_EDITORS_BILLING: string | null = null;
+// TO DECIDE (Florian): notice before a price change or a new version of these terms applies (30 days proposed).
+const CHANGE_NOTICE_DAYS: number | null = null;
+// TO DECIDE (Florian): how availability is measured (public status page or tool) and the monthly maintenance cap (4 hours proposed).
+const AVAILABILITY_TOOL: string | null = null;
+const MAINTENANCE_HOURS_PER_MONTH: number | null = null;
+// TO DECIDE (Florian): credit tiers (10% below 99.5%, 25% below 99%, 50% below 95% proposed).
+const CREDIT_TIERS: string | null = null;
+// TO DECIDE (Florian): the founding snapshot, an annex listing what a founding team could do on the launch date.
+const FOUNDING_SNAPSHOT_URL: string | null = null;
+// TO DECIDE (Florian): notice to paying teams if Bridge stops the hosted service (90 days proposed).
+const SHUTDOWN_NOTICE_DAYS_PAID: number | null = null;
+// TO DECIDE (Florian): format and place of the team data export.
+const EXPORT_FORMAT: string | null = null;
+// TO DECIDE (Florian): the data processing terms (GDPR art. 28) and their address.
+const DPA_URL: string | null = null;
+// TO DECIDE (Florian): confirm "Bridge does not use your content to train AI models".
+const NO_AI_TRAINING_CONFIRMED = false;
+// TO DECIDE (Florian): liability cap for a team that paid nothing (EUR 100 proposed).
+const FREE_LIABILITY_CAP_EUR: number | null = null;
+// TO DECIDE (Florian): where previous versions of these terms are kept.
+const HISTORY_URL: string | null = null;
+// TO DECIDE (Florian): a French translation, and which version prevails for customers in France.
+const FRENCH_VERSION_URL: string | null = null;
+// TO DECIDE (Florian): the Court of Appeal whose courts hear disputes.
+const COURT_OF_APPEAL_CITY: string | null = null;
+
+const launched = LAUNCH_DATE.startsWith('[') ? null : LAUNCH_DATE;
+const beforeLaunch = launched ? `before ${launched}` : 'before the day paid plans launched';
+const onLaunch = launched ? `on ${launched}` : 'on that day';
+const team = TEAM_PRICE.EUR;
+const usd = TEAM_PRICE.USD;
+const capped = editorsCapped(team.yearly);
+const mail = `mailto:${CONTACT_EMAIL}`;
+const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
+---
+
+<Landing title="Terms of service | Bridge" description="The contract between your team and Bridge, on every plan, Free included.">
+  <article class="hp pv">
+    <header class="zone pv-head">
+      <h1 class="pv-title">Terms of service</h1>
+      {VERSION && EFFECTIVE_DATE && <p class="pv-lead">Version {VERSION}, effective {EFFECTIVE_DATE}.</p>}
+      <p class="pv-lead">
+        These terms are the contract between you and Bridge. They apply to every plan, including Free. Please read them before you create a team. If anything here is unclear, write to <Link href={mail}>{CONTACT_EMAIL}</Link>.
+      </p>
+    </header>
+
+    <section class="pv-section" aria-labelledby="t1">
+      <h2 id="t1" class="pv-h">1. Who we are</h2>
+      <p>Bridge is a service published by Florian Gouloubi, an individual entrepreneur (entrepreneur individuel) established in France.</p>
+      <ul>
+        <li>SIREN: {PUBLISHER.siren}</li>
+        <li>{PUBLISHER.vat}</li>
+        <li>Activity: computer programming (APE 6201Z)</li>
+        <li>Address: {PUBLISHER.address}</li>
+        <li>Phone: {PUBLISHER.phone}</li>
+        <li>Contact: <Link href={mail}>{CONTACT_EMAIL}</Link></li>
+        <li>Publication director: Florian Gouloubi</li>
+        <li>Website hosting: {PUBLISHER.host.name}, {PUBLISHER.host.address} (see the <Link href={LEGAL}>legal notice</Link>)</li>
+      </ul>
+      <p>In these terms, "Bridge", "we" and "us" mean Florian Gouloubi as publisher of the service. "You" means the business or organisation that creates or joins a team, and the people it lets use Bridge on its behalf.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t2">
+      <h2 id="t2" class="pv-h">2. Who Bridge is for</h2>
+      <p>Bridge is a professional tool. By creating a team or starting a paid plan, you confirm that you act for the purposes of your trade, business, craft or profession, and not as a consumer. If you sign up on behalf of an organisation, you confirm that you are allowed to bind it to these terms.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t3">
+      <h2 id="t3" class="pv-h">3. Accounts and teams</h2>
+      <p>3.1 You sign in with GitHub or with a code sent to your email. Bridge has no passwords. Keep access to your email and GitHub account secure: anything done from your account is treated as done by you.</p>
+      <p>3.2 A team is the space where your people work on one or more design systems. Each team has at least one admin. Admins invite and remove members, choose roles and manage the plan.</p>
+      <p>3.3 An "editor" is a team member who can propose or approve changes to a design system. People who only view are not editors. The roles available, and which ones count as editors, are shown in the product and on the <Link href={PRICING}>pricing page</Link>.</p>
+      <p>3.4 Your design system stays in your own repository. Bridge reads it from GitHub and keeps only short-lived copies, as described in the <Link href={PRIVACY_PAGE}>privacy policy</Link>.</p>
+      <p>3.5 You are responsible for what your team puts into Bridge and for having the rights to it. You must not use Bridge to break the law, to infringe someone else's rights, to attack or overload the service, or to get around plan limits by technical means.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t4">
+      <h2 id="t4" class="pv-h">4. Plans and prices</h2>
+      <p>The current plans are below. The <Link href={PRICING}>pricing page</Link> shows them too; if the two ever differ, the pricing page at the date of your order applies to that order.</p>
+      <p><strong>Free</strong></p>
+      <ul>
+        <li>0, never billed. A Free team never receives an invoice.</li>
+        <li>Up to {FREE_EDITORS} editors and {FREE_DESIGN_SYSTEMS} design system.</li>
+        <li>No availability commitment and no support commitment.</li>
+      </ul>
+      <p><strong>Team</strong></p>
+      <ul>
+        <li>EUR {team.yearly.perEditor} per editor per month billed yearly, or EUR {team.monthly.perEditor} per editor per month billed monthly (USD {usd.yearly.perEditor} and USD {usd.monthly.perEditor}).</li>
+        <li>You are billed for at most {capped} editors per design system, however many editors you have.</li>
+        <li>Up to {TEAM_DESIGN_SYSTEMS} design systems.</li>
+        <li>Written support with a reply within 2 business days.</li>
+      </ul>
+      <p><strong>Organization</strong></p>
+      <ul>
+        <li>EUR {ORGANIZATION_PRICE.EUR} per month (USD {ORGANIZATION_PRICE.USD}), billed yearly.</li>
+        <li>Paid by invoice, due 30 days from the invoice date.</li>
+        <li>99.5% monthly availability with service credits (section 9).</li>
+        <li>Support with a reply within 1 business day, {ORGANIZATION_SUPPORT_HOURS}.</li>
+      </ul>
+      <p>VAT is not applicable to these prices (section 6).</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t5">
+      <h2 id="t5" class="pv-h">5. Billing and payment</h2>
+      <p>5.1 Team plans are paid by card through Stripe, our payment provider. Bridge never sees or stores your full card number. Organization plans are paid by bank transfer against an invoice, or by card if you prefer.</p>
+      <p>5.2 Paid plans renew automatically for the same period (one month or one year) unless you stop the renewal before the end of the current period. You can stop it at any time from your team settings or by writing to us.</p>
+      <p>5.3 {ADDED_EDITORS_BILLING && `${ADDED_EDITORS_BILLING} `}Removing editors takes effect at the next renewal.</p>
+      <p>5.4 Late payment (businesses only, as required by French law). Any amount not paid by its due date automatically bears late-payment interest, without any reminder being needed, at the rate of the European Central Bank's most recent refinancing operation plus 10 percentage points. A fixed compensation of EUR 40 for recovery costs is also due for each late invoice, and further recovery costs may be claimed on proof. No discount is given for early payment.</p>
+      <p>5.5 If an invoice stays unpaid 15 days after a written reminder, Bridge may move the team to read-only (section 8) until payment. Nothing is deleted.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t6">
+      <h2 id="t6" class="pv-h">6. VAT</h2>
+      <p>VAT not applicable, article 293 B of the French tax code (Code général des impôts): Bridge is a French micro-enterprise under the VAT franchise. Prices are the amounts you pay, and every invoice carries this mention.</p>
+      {/* TO DECIDE (Florian): this promise (30 days notice, same prices before VAT) is not confirmed yet. Same sentence as the pricing FAQ. */}
+      <p>If Bridge starts charging VAT, we tell you 30 days before and prices stay the same, VAT excluded.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t7">
+      <h2 id="t7" class="pv-h">7. Refunds and price changes</h2>
+      <p>7.1 Monthly plans. When you stop, you keep access until the end of the month you paid for. Months already started are not refunded or prorated.</p>
+      <p>7.2 Yearly plans. You can ask for a full refund within 30 days after your first yearly payment, and the plan then ends. After those 30 days, if you stop, you keep access until the end of the year you paid for, and the plan does not renew. The 30-day refund applies to the first yearly payment only, not to renewals.</p>
+      <p>
+        7.3 Price changes. A new price never applies to a period you have already paid. It applies to paying teams only from their next renewal, and we tell admins {notice}before that renewal, so you can stop the renewal if you disagree.
+      </p>
+      <p>7.4 Our price-change promise. If we raise a price and later go back to the previous price, we refund each affected team the difference between what it paid at the higher price since the change and what it would have paid at the previous price over the same period. "Going back" means publishing again, for the same plan, the price that applied before the change.</p>
+      <p>7.5 Refunds go back to the payment method used, within 14 days of our confirmation.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t8">
+      <h2 id="t8" class="pv-h">8. Limits</h2>
+      <p>8.1 When a team goes over a plan limit, for example after moving from a paid plan to Free, or when a payment fails, Bridge never deletes your work. It will, depending on the case:</p>
+      <ul>
+        <li>put the extra design systems or the team in read-only mode;</li>
+        <li>hide features that the current plan does not include; or</li>
+        <li>pause actions that would go over the limit.</li>
+      </ul>
+      <p>8.2 Everything comes back as it was when the team goes back under the limit or the payment is made.</p>
+      <p>8.3 A Free team is never billed. Bridge never moves a team to a paid plan without an admin choosing it.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t9">
+      <h2 id="t9" class="pv-h">9. Availability and support</h2>
+      <p>9.1 Free and Team. We work to keep Bridge available and fast, but these plans come with no availability commitment.</p>
+      <p>9.2 Organization. Bridge commits to 99.5% availability per calendar month.</p>
+      <ul>
+        <li>"Availability" means the share of minutes in the month during which the hosted Bridge application at bridgedesignsystem.com responds and lets signed-in members open their team.{AVAILABILITY_TOOL && ` It is measured by ${AVAILABILITY_TOOL}.`}</li>
+        <li>
+          Not counted as unavailability: maintenance announced at least 48 hours in advance{MAINTENANCE_HOURS_PER_MONTH ? ` (at most ${MAINTENANCE_HOURS_PER_MONTH} hours per month)` : ''}; outages of GitHub, Figma or other third-party services Bridge reads from; problems on your side (network, browser, identity provider, repository permissions); force majeure as defined by article 1218 of the French Civil Code; and suspension under section 11.
+        </li>
+        <li>If availability falls below 99.5% in a month, the team receives a credit on its next invoice{CREDIT_TIERS ? `: ${CREDIT_TIERS}` : ''}. Credits for a month are capped at one month's fee.</li>
+        <li>Ask for the credit in writing within 30 days after the end of the month concerned.</li>
+        <li>Credits are the agreed compensation for missed availability. This does not limit your other rights if availability falls so low that the essential purpose of the contract is defeated, including your right to terminate under section 12.3, nor does it limit liability for gross negligence or wilful misconduct.</li>
+      </ul>
+      <p>9.3 Support. Write to <Link href={mail}>{CONTACT_EMAIL}</Link> from an admin's email.</p>
+      <ul>
+        <li>Free: no support commitment. We read every message and answer when we can.</li>
+        <li>Team: a written reply within 2 business days.</li>
+        <li>Organization: a reply within 1 business day, {ORGANIZATION_SUPPORT_HOURS}.</li>
+      </ul>
+      <p>"Reply" means a first answer from a person, not necessarily a fix.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t10">
+      <h2 id="t10" class="pv-h">10. Founding teams</h2>
+      <p>10.1 Who. A founding team is any team created on Bridge {beforeLaunch}.</p>
+      <p>10.2 What they keep. For as long as this commitment lasts (section 10.4), a founding team keeps, at no charge:</p>
+      <ul>
+        <li>everything it could do {onLaunch}{FOUNDING_SNAPSHOT_URL && <>, as listed in the <Link href={FOUNDING_SNAPSHOT_URL}>founding snapshot</Link></>}; and</li>
+        <li>everything the Free plan gains after that date.</li>
+      </ul>
+      <p>No price change made after that date applies to a founding team for what it keeps under this section.</p>
+      <p>10.3 Support and availability. Founding teams receive the support and availability of the Free plan. If a founding team chooses a paid plan, that plan's terms apply to it for as long as it pays, and it returns to its founding rights when it stops.</p>
+      <p>10.4 Duration and the only way it ends. This commitment is made for an indefinite period. The founding team may leave at any time. Bridge may end it only in these cases:</p>
+      <ul>
+        <li>(a) Bridge stops operating the hosted service for all teams. Bridge then gives every founding team at least six months' written notice to the admins' email, and during that notice provides a complete export of the team's Bridge data in a format that can be loaded into a self-hosted Bridge, together with the self-hosting rights in section 14, with no limit on editors, design systems or duration.</li>
+        <li>(b) The founding team seriously breaches section 3.5 and does not remedy it within 30 days after written notice, or the breach endangers the service or other users.</li>
+      </ul>
+      <p>Bridge will not end this commitment for any other reason, including to move founding teams to a paid plan.</p>
+      <p>10.5 If Bridge changes hands. If the Bridge service, or the business that runs it, is sold, contributed or otherwise transferred, Bridge will transfer the contracts with founding teams together with the service, and will require the acquirer to take over this section 10 in full. Each founding team agrees now, in advance, to that transfer of its contract, which will take effect for it once it has been notified. Bridge guarantees (se porte fort) that the acquirer will honour this section; if the acquirer does not, Bridge remains liable for the consequences. No transfer of the service may be made in a way that removes these rights.</p>
+      <p>10.6 Changes to these terms (section 16) cannot reduce the rights in this section 10 for an existing founding team without that team's written agreement.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t11">
+      <h2 id="t11" class="pv-h">11. Suspension</h2>
+      <p>Bridge may suspend all or part of a team's access, without notice where the urgency requires it, if:</p>
+      <ul>
+        <li>the account is being used to attack, overload or compromise the service or other users;</li>
+        <li>the account appears compromised;</li>
+        <li>a payment is more than 15 days late after a written reminder (in that case the team goes to read-only, as in section 8); or</li>
+        <li>a court or authority requires it.</li>
+      </ul>
+      <p>We tell the admins why, unless the law prevents us, and we lift the suspension as soon as the reason has gone. Suspension never deletes your work.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t12">
+      <h2 id="t12" class="pv-h">12. Termination and export</h2>
+      <p>12.1 By you. You can stop a paid plan at any time; it ends at the end of the paid period (section 7). You can delete your account or your team at any time from Account settings. Deleting an account is described in the <Link href={PRIVACY_PAGE}>privacy policy</Link>.</p>
+      <p>12.2 By Bridge, for breach. If you seriously breach these terms, Bridge may terminate your team's contract after written notice giving you 30 days to remedy the breach, unless the breach cannot be remedied.</p>
+      <p>12.3 By you, for our breach. If Bridge seriously breaches these terms, including missing the Organization availability commitment in three months out of any six, you may terminate with immediate effect by writing to us, and we refund the fees paid for the unused part of the period.</p>
+      <p>
+        12.4 If Bridge stops the hosted service. Bridge will give paying teams {SHUTDOWN_NOTICE_DAYS_PAID ? `at least ${SHUTDOWN_NOTICE_DAYS_PAID} days'` : 'advance'} notice and refund the fees paid for any period after the end date. Founding teams receive the notice and export in section 10.4.
+      </p>
+      <p>12.5 Your data at the end. Your design system is in your own repository and stays there. Until the end date, and for 30 days after it, admins can export the team's Bridge data{EXPORT_FORMAT && ` (${EXPORT_FORMAT})`}. After that, we delete it, subject to the backup and retention periods in the privacy policy.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t13">
+      <h2 id="t13" class="pv-h">13. Data</h2>
+      <p>How Bridge handles personal data, where it is stored, for how long, and which providers process it is described in the <Link href={PRIVACY_PAGE}>privacy policy</Link>. In short, at the date of these terms: the account database is hosted by Upstash (Redis) in Frankfurt, Germany; a daily backup is stored with Vercel Blob in Paris, France, and kept 30 days; Resend sends sign-in codes and invites; Brevo sends work emails; GitHub is where your design system lives and where Bridge reads it from; and Stripe processes payments for paid plans.</p>
+      {DPA_URL && <p>Where Bridge processes personal data on your behalf, the <Link href={DPA_URL}>data processing terms</Link> apply and form part of these terms.</p>}
+    </section>
+
+    <section class="pv-section" aria-labelledby="t14">
+      <h2 id="t14" class="pv-h">14. Licences and self-hosting</h2>
+      <p>14.1 Bridge's components and design tokens are licensed under the MIT licence.</p>
+      <p>14.2 The rest of Bridge's source code is licensed under the Functional Source License, version 1.1, with MIT as the future licence (FSL-1.1-MIT). Each released version becomes available under the MIT licence two years after its release.</p>
+      <p>14.3 You may self-host Bridge for your own use, with no limit on editors, design systems or duration, under the licence terms in 14.1 and 14.2. The hosted plans in these terms only govern the service Bridge runs at bridgedesignsystem.com.</p>
+      <p>14.4 You keep all rights in your design system, your code and your content. You give Bridge only the rights it needs to run the service for you: to read, process, display and send them as you instruct. Bridge claims no ownership of them{NO_AI_TRAINING_CONFIRMED ? ' and does not use them to train AI models' : ''}.</p>
+      <p>14.5 The names "Bridge" and the Bridge logo are not licensed by these terms.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t15">
+      <h2 id="t15" class="pv-h">15. Liability</h2>
+      <p>15.1 Bridge is liable for direct damage caused by its breach of these terms, within the following limits.</p>
+      <p>15.2 For each team, Bridge's total liability over any twelve-month period is limited to the amounts that team paid Bridge in the twelve months before the event giving rise to the claim.{FREE_LIABILITY_CAP_EUR && ` For a Free or founding team that paid nothing, it is limited to EUR ${FREE_LIABILITY_CAP_EUR}.`}</p>
+      <p>15.3 Bridge is not liable for indirect losses, such as loss of profit, revenue, business or goodwill, or for losses caused by third-party services Bridge reads from or relies on (such as GitHub), by your own systems, or by force majeure (article 1218 of the French Civil Code).</p>
+      <p>15.4 None of these limits apply to damage caused by gross negligence (faute lourde) or wilful misconduct (faute dolosive), to bodily injury, or to any liability that cannot be limited by law. Nothing in these terms deprives Bridge's essential obligations of their substance.</p>
+      <p>15.5 Your design system lives in your repository. You remain responsible for your repository, its backups and the changes your team approves.</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t16">
+      <h2 id="t16" class="pv-h">16. Changes to these terms</h2>
+      <p>16.1 We may update these terms, for example when the product or the law changes.{HISTORY_URL && <> We publish every version with its date and keep <Link href={HISTORY_URL}>previous versions</Link> available.</>}</p>
+      <p>16.2 For paying teams, a new version applies from their next renewal. We email admins {notice}before it applies. If you disagree, stop the renewal and your current terms apply until the end of the paid period.</p>
+      {CHANGE_NOTICE_DAYS && <p>16.3 For Free teams, a new version applies {CHANGE_NOTICE_DAYS} days after we email the admins. If you disagree, you can stop using Bridge and delete your team.</p>}
+      <p>16.4 Changes required by law, or that only make the terms more favourable to you, may apply sooner.</p>
+      <p>16.5 No update can reduce the rights of an existing founding team under section 10 without its written agreement (section 10.6).</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t17">
+      <h2 id="t17" class="pv-h">17. General</h2>
+      <p>17.1 These terms, the pricing page at the date of your order, the privacy policy and, where relevant, the data processing terms and any signed order form for an Organization plan, form the whole agreement. If they conflict, a signed order form prevails, then these terms.</p>
+      <p>17.2 Your own purchasing terms do not apply unless Bridge agrees to them in writing.</p>
+      <p>17.3 If a clause is held invalid, the rest of the terms still apply.</p>
+      <p>17.4 You may transfer your contract to another entity only with our written agreement, which we will not refuse without good reason. Bridge may transfer these terms only under section 10.5 or together with the whole service, and only to an acquirer who takes them over.</p>
+      <p>17.5 These terms are written in English.{FRENCH_VERSION_URL && <> A <Link href={FRENCH_VERSION_URL}>French translation</Link> is available; for customers in France, the French version prevails.</>}</p>
+    </section>
+
+    <section class="pv-section" aria-labelledby="t18">
+      <h2 id="t18" class="pv-h">18. Governing law and courts</h2>
+      <p>18.1 These terms are governed by French law.</p>
+      <p>18.2 Before going to court, we both agree to try to settle any dispute amicably for 30 days after one of us writes to the other.</p>
+      {COURT_OF_APPEAL_CITY && <p>18.3 Any dispute that cannot be settled amicably will be brought before the competent courts within the jurisdiction of the Court of Appeal of {COURT_OF_APPEAL_CITY}, to the extent the law allows such a choice.</p>}
+    </section>
+
+    <section class="pv-section" aria-labelledby="t19">
+      <h2 id="t19" class="pv-h">19. Contact</h2>
+      <p>Bridge, Florian Gouloubi, entrepreneur individuel<br />{PUBLISHER.address}<br /><Link href={mail}>{CONTACT_EMAIL}</Link></p>
+    </section>
+  </article>
+</Landing>

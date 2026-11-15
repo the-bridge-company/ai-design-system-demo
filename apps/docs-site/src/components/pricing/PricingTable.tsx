@@ -34,7 +34,7 @@ export default function PricingTable() {
   const [shown, setShown] = useState<TierId>(NARROW_DEFAULT_TIER);
   const team = TEAM_PRICE[currency][billing];
   const price: TableGroup = {
-    name: 'Price, excluding VAT',
+    name: 'Price',
     rows: [
       {
         label: billing === 'yearly' ? 'Per month, billed yearly' : 'Per month, billed monthly',

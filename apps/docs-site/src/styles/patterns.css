@@ -84,6 +84,11 @@
   border-top: var(--border-width-default) solid var(--color-border-default);
 }
 
+/* Done in place (stage.sent): the words the product shows, quiet, where the button was. */
+.pt-row-done {
+  color: var(--color-text-muted);
+}
+
 .pt-again {
   display: flex;
   justify-content: flex-end;

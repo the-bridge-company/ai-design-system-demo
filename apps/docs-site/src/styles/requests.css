@@ -357,3 +357,49 @@
 #rq-assign-slot[hidden] {
   display: none;
 }
+
+/* A behavior request's decision zone (BehaviorDecision.tsx): who asked, today's sentence struck, an arrow, the wanted
+   sentence on one line, then the three actions for the person who decides. */
+.rq-bh {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.rq-bh-who {
+  margin: 0;
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.rq-bh-line {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--color-text-default);
+}
+
+.rq-bh-today {
+  color: var(--color-text-muted);
+}
+
+.rq-bh-arrow {
+  color: var(--color-text-muted);
+}
+
+.rq-bh-wanted {
+  font-weight: var(--font-weight-semibold);
+}
+
+.rq-bh-where {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.rq-bh .rq-decide {
+  margin-block-start: var(--space-2);
+}

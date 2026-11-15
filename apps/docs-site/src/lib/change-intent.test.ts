@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { BEHAVE_INTENT, BEHAVIOR_NEW, behaviorChoices, behaviorFormCopy, behaviorFormProblems, behaviorRequest, behaviorSentLines, isTeamChangeIntent, ruleChoices } from './change-intent';
 import { PICK_COMPONENT_LINE, CHANGE_INTENTS, TEAM_CHANGE_INTENTS, TEAM_FRAME_MISSING, MISMATCH_KIND, STRUCTURE_KINDS, buildFormCopy, buildFormProblems, buildModeFor, buildSentLines, teamBuildRequest, teamIntentOptions, FRAME_MISSING, developerMessage, NO_TOKEN_LINE, REQUEST_KIND_OF, changeFormCopy, changeFormProblems, changeRequest, formModeFor, intentOptions, isChangeIntent, sentLine, startedLines } from './change-intent';
-import { BUILD_KINDS, REQUEST_KINDS, composeBuildRequestIssue, parseBuildRequestIssue } from '@bridge-ds/core';
+import { BEHAVIOR_REQUEST_LABEL, BUILD_KINDS, REQUEST_KINDS, behaviorAskOf, composeBuildRequestIssue, composeRequestIssue, isBuildRequestIssue, parseBuildRequestIssue, parseRequestIssue } from '@bridge-ds/core';
 
 const hasEmDash = (s: string) => s.includes(String.fromCharCode(0x2014));
 const JARGON = /\b(pull request|PR|branch|commit|merge|changeset|CI|SHA|npm|workflow|Storybook)\b/;
@@ -180,5 +181,83 @@ describe('Change this component: from a home without a component', () => {
   it('says the next step in one plain line', () => {
     expect(PICK_COMPONENT_LINE).toBe('Pick the component you want to change, then choose Change this component.');
     expect(JARGON.test(PICK_COMPONENT_LINE)).toBe(false);
+  });
+});
+
+describe('Change how it behaves (a team) and Suggest a change to this pattern', () => {
+  const behaviors = [
+    { id: 'close-on-escape', text: 'Closes on Escape' },
+    { id: 'enter-picks', text: 'Enter picks and closes' },
+  ];
+
+  it('is the fourth intent on a team only, in plain words', () => {
+    expect(teamIntentOptions(true).map((o) => o.value)).toEqual(['look', 'variant', 'wrong', 'behave']);
+    expect(CHANGE_INTENTS.map((o) => o.value)).not.toContain('behave');
+    expect(isTeamChangeIntent('behave')).toBe(true);
+    expect(isChangeIntent('behave')).toBe(false);
+    expect(BEHAVE_INTENT.label).toBe('Change how it behaves');
+    expect(JARGON.test(`${BEHAVE_INTENT.label} ${BEHAVE_INTENT.line}`)).toBe(false);
+    expect(/\b(issue|label|prop)\b/i.test(BEHAVE_INTENT.line)).toBe(false);
+  });
+
+  it('offers the component\'s own behaviors, then something it does not do yet', () => {
+    expect(behaviorChoices(behaviors)).toEqual([
+      { value: 'close-on-escape', label: 'Closes on Escape' },
+      { value: 'enter-picks', label: 'Enter picks and closes' },
+      { value: BEHAVIOR_NEW, label: 'Something it does not do yet' },
+    ]);
+    expect(ruleChoices(['Ask first', 'Say what was done'])).toEqual([
+      { value: 'rule-0', label: 'Ask first' },
+      { value: 'rule-1', label: 'Say what was done' },
+      { value: BEHAVIOR_NEW, label: 'Something it does not do yet' },
+    ]);
+  });
+
+  it('needs a pick and what it should do instead', () => {
+    expect(behaviorFormProblems('component', { choice: null, wanted: ' ' })).toEqual([behaviorFormCopy('component', null).missing.which, behaviorFormCopy('component', null).missing.wanted]);
+    expect(behaviorFormProblems('pattern', { choice: 'rule-0', wanted: 'Keep the row and offer Undo' })).toEqual([]);
+    expect(behaviorFormCopy('component', 'close-on-escape').wanted).toBe('What should it do instead?');
+    expect(behaviorFormCopy('component', BEHAVIOR_NEW).wanted).toBe('What should it do?');
+    expect(behaviorFormCopy('pattern', null).which.label).toBe('Which rule');
+    for (const of of ['component', 'pattern'] as const) {
+      const c = behaviorFormCopy(of, null);
+      const words = [c.heading, c.which.label, c.wanted, c.where.label, c.where.hint, c.submit, c.missing.which, c.missing.wanted, ...Object.values(behaviorSentLines(3))].join(' ');
+      expect(hasEmDash(words)).toBe(false);
+      expect(JARGON.test(words)).toBe(false);
+      expect(/\b(issue|label|prop)\b/i.test(words)).toBe(false);
+    }
+  });
+
+  it('files a behavior request with today\'s sentence from the Library, kept out of Being built until the lead decides', () => {
+    const r = behaviorRequest({ of: 'component', name: 'Select', behaviors }, { choice: 'close-on-escape', wanted: 'Keeps the list open', where: '' }, 'dana');
+    expect(r).toMatchObject({ component: 'Select', kind: 'behavior', requestedBy: 'dana', behavior: { of: 'component', id: 'Select', behavior: 'close-on-escape', today: 'Closes on Escape', wanted: 'Keeps the list open' } });
+    const issue = composeRequestIssue(r);
+    expect(issue.labels).toContain(BEHAVIOR_REQUEST_LABEL);
+    expect(isBuildRequestIssue(issue.labels)).toBe(false);
+    expect(behaviorAskOf(parseRequestIssue(issue.body))?.today).toBe('Closes on Escape');
+    const fresh = behaviorRequest({ of: 'component', name: 'Select', behaviors }, { choice: BEHAVIOR_NEW, wanted: 'Opens on focus', where: 'Orders' });
+    expect(fresh.behavior).toEqual({ of: 'component', id: 'Select', today: '', wanted: 'Opens on focus', where: 'Orders' });
+  });
+
+  it('files a pattern rule by its place, under the pattern\'s name', () => {
+    const r = behaviorRequest({ of: 'pattern', id: 'delete', name: 'Delete', rules: ['Ask first', 'Offer Undo'] }, { choice: 'rule-1', wanted: 'Always ask first', where: '' });
+    expect(r.component).toBe('Delete pattern');
+    expect(r.behavior).toEqual({ of: 'pattern', id: 'delete', rule: 1, today: 'Offer Undo', wanted: 'Always ask first' });
+  });
+});
+
+describe('the lead by name on a behavior request', () => {
+  it('says the one lead\'s first name, else the design system lead', () => {
+    expect(behaviorFormCopy('component', null, 'Dana').submit).toBe('Send to Dana');
+    expect(behaviorFormCopy('component', null).submit).toBe('Send to the design system lead');
+    expect(behaviorSentLines(12, 'Dana')).toMatchObject({ lead: 'Request #12 sent to Dana.', next: 'Dana decides. Once it is the default, your developers build it.' });
+    expect(behaviorSentLines(12)).toMatchObject({ lead: 'Request #12 sent to the design system lead.', next: 'They decide. Once it is the default, your developers build it.' });
+  });
+
+  it('keeps Something looks wrong about Figma only: how it behaves has its own choice', () => {
+    for (const o of [...CHANGE_INTENTS, ...TEAM_CHANGE_INTENTS].filter((i) => i.value === 'wrong')) {
+      expect(o.line.startsWith('It does not match Figma.')).toBe(true);
+      expect(o.line).not.toMatch(/behave/);
+    }
   });
 });

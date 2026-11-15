@@ -13,7 +13,7 @@
 // guidance, contrast, adoption, the changelog). Nothing here is guessed.
 import { peopleNames } from './people-line';
 import type { ThumbSpec } from './branch-thumb';
-import { agoInSentence, calendarDays, isDocsProposalBranch, PUBLISH_ROUTE_COPY, requesterOf } from '@bridge-ds/core';
+import { agoInSentence, calendarDays, isDocsProposalBranch, isUndecidedBehaviorRequest, parseRequestIssue, PUBLISH_ROUTE_COPY, requesterOf, requestIssueTitle } from '@bridge-ds/core';
 import { STATUS_WORDS, VOCAB } from './vocabulary';
 import { isClaudeLogin, nameFace } from './people';
 import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
@@ -612,6 +612,50 @@ export function joinNeed(r: { id: string; name: string; email: string; createdAt
     thumb: { kind: 'icon', icon: 'person' },
     request: { id: r.id, name: r.name },
   };
+}
+
+/** An issue as GitHub lists it, what a behavior request row reads. */
+export interface BehaviorIssue {
+  number: number;
+  title: string;
+  body?: string | null;
+  labels: ({ name?: string } | string)[];
+  user?: { login: string } | null;
+  assignees?: { login: string }[] | null;
+  created_at: string;
+  pull_request?: unknown;
+}
+
+/**
+ * Behavior requests that wait for a decision (open, `request: behavior` without `bridge-build`, nobody on them), as
+ * rows of the people who decide (design system owners and design leads): "Dana asks to change how Select behaves".
+ * The row opens the request, where Make it the default, Not now and Ask Dana wait.
+ */
+export function behaviorNeeds(issues: readonly BehaviorIssue[], now: number): NeedRow[] {
+  return issues
+    .filter((i) => !i.pull_request && isUndecidedBehaviorRequest(i.labels) && !(i.assignees ?? []).length)
+    .map((i) => {
+      const r = parseRequestIssue(i.body);
+      const who = requesterOf(i.body);
+      // Who asked: the name Bridge wrote, else their login; never the app that filed it for an email member.
+      const author = i.user?.login && !/\[bot\]$/i.test(i.user.login) ? i.user.login : '';
+      const login = who?.login ?? r?.requestedBy ?? author;
+      const first = shortName(who?.name) ?? (login || null);
+      const since = Number.isFinite(Date.parse(i.created_at)) ? i.created_at : null;
+      return {
+        key: `behavior-${i.number}`,
+        kind: 'review' as const,
+        title: r ? requestIssueTitle(r) : i.title,
+        href: studioHref(`explorations/?request=${i.number}`),
+        person: first ? { login: login || first, name: first, avatar: null } : null,
+        line: first ? `${first} asks to change how it behaves` : 'A change to how it behaves',
+        since,
+        waitsOnYou: true,
+        pill: since ? waitPill(since, now) : null,
+        thumb: { kind: 'text' as const },
+        action: 'Decide',
+      };
+    });
 }
 
 /** "Waiting 1 h", "Waiting 2 days", "New" under an hour: a join request is a matter of hours, not days. */

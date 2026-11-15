@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  behaviorNeeds,
   joinNeed,
   rowAction,
   holdsReviewRight,
@@ -435,5 +436,27 @@ describe('a wait with no start time, next to a "Waiting for" line', () => {
     expect(pillSaidOnce('Waiting for your review', null)).toBeNull();
     const other = { label: 'Changes requested', tone: 'neutral' as const };
     expect(pillSaidOnce('Waiting for your review', other)).toBe(other);
+  });
+});
+
+describe('behavior requests wait on who decides', () => {
+  it('lists the undecided ones only, by who asked, opening the request', () => {
+    const body = (who: string) => `x\n\nRequested by ${who} through Bridge.\n\n<!-- bridge-request {"component":"Select","kind":"behavior","title":"Keeps the list open on Escape","summary":"s","changes":[],"source":"studio"} -->`;
+    const at = '2026-11-14T10:00:00Z';
+    const rows = behaviorNeeds(
+      [
+        { number: 9, title: 'Select: change', body: body('Dana Kim'), labels: ['component-change', 'request: behavior'], user: { login: 'bot' }, created_at: at },
+        { number: 10, title: 'Select: change', body: body('Dana Kim'), labels: ['component-change', 'request: behavior', 'bridge-build'], user: { login: 'bot' }, created_at: at },
+        { number: 11, title: 'Select: change', body: body('Dana Kim'), labels: ['request: behavior'], assignees: [{ login: 'lee' }], user: { login: 'bot' }, created_at: at },
+      ],
+      Date.parse('2026-11-15T10:00:00Z'),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ key: 'behavior-9', kind: 'review', title: 'Select: Keeps the list open on Escape', line: 'Dana asks to change how it behaves', waitsOnYou: true, action: 'Decide' });
+    expect(rows[0]!.person?.name).toBe('Dana');
+    expect(rows[0]!.href).toMatch(/explorations\/\?request=9$/);
+    // Nobody resolves (no line, only the app that filed it): no subject-less sentence, no face.
+    const [anon] = behaviorNeeds([{ number: 12, title: 'Select: x', body: body('Dana Kim').replace(/Requested by .* through Bridge\./, ''), labels: ['component-change', 'request: behavior'], user: { login: 'bridge-app[bot]' }, created_at: at }], Date.parse(at));
+    expect(anon).toMatchObject({ line: 'A change to how it behaves', person: null });
   });
 });

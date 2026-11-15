@@ -16,7 +16,7 @@
 import { type BridgeConfig } from './config';
 import { EXPLORATION_LABEL } from './explorations';
 import { DRAFTED_BY_CLAUDE_LABEL, FROM_FIGMA_LABEL, WAITING_FOR_CLAUDE_LABEL, parseFigmaOrigin } from './figma-push';
-import { closingIssueNumbers, composeRequestIssue, parseRequestIssue, REQUEST_KINDS, REQUEST_LABEL, requestIssueTitle, type ComponentChangeRequest, type RequestIssue, type RequestKind } from './requests';
+import { BEHAVIOR_REQUEST_LABEL, closingIssueNumbers, composeRequestIssue, parseRequestIssue, REQUEST_KINDS, REQUEST_LABEL, requestIssueTitle, type ComponentChangeRequest, type RequestIssue, type RequestKind } from './requests';
 import { isGuardrail, type ChangedFile, type TokenChangeKind, type TokenChangeSummary } from './risk';
 import { pullState, type CiSummary } from './review-gate';
 import { LATE_DAYS, STEP_LABEL, stepCount } from './status-ladder';
@@ -480,10 +480,20 @@ export function parseBuildSpec(body: string | null | undefined): unknown {
   }
 }
 
-/** Whether an issue is a build request: every component change request is one (bridge-build marks the new ones). Explorations are not. */
+/**
+ * Whether an issue is a build request: every component change request is one (bridge-build marks the new ones).
+ * Explorations are not, nor a behavior request the design system lead has not made the default yet (it carries
+ * bridge-build once made the default: isUndecidedBehaviorRequest).
+ */
 export function isBuildRequestIssue(labels: readonly ({ name?: string } | string)[] | null | undefined): boolean {
   const l = names(labels);
-  return (l.includes(BUILD_REQUEST_LABEL) || l.includes(REQUEST_LABEL)) && !l.includes(EXPLORATION_LABEL);
+  return (l.includes(BUILD_REQUEST_LABEL) || l.includes(REQUEST_LABEL)) && !l.includes(EXPLORATION_LABEL) && !isUndecidedBehaviorRequest(labels);
+}
+
+/** A behavior request that waits for the design system lead: labeled `request: behavior`, not yet `bridge-build`. */
+export function isUndecidedBehaviorRequest(labels: readonly ({ name?: string } | string)[] | null | undefined): boolean {
+  const l = names(labels);
+  return l.includes(BEHAVIOR_REQUEST_LABEL) && !l.includes(BUILD_REQUEST_LABEL);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

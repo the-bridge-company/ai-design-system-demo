@@ -29,6 +29,11 @@ export interface BehaviorsProps {
   storyId?: string | undefined;
   /** Behavior id -> the Patterns page of a behavior other components share too (lib/library/patterns.ts). */
   patterns?: Record<string, string> | undefined;
+  /**
+   * A team member who can send requests: the team's Studio Components drawer, opened on this component with "Change how
+   * it behaves" picked (?c=<slug>&intent=behave). Unset for readers: they never see it.
+   */
+  changeHref?: string | undefined;
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -99,7 +104,7 @@ export function Keys({ keys }: { keys: string[] }) {
   );
 }
 
-export default function Behaviors({ name, behaviors, preview, live = false, storybook, storyId, patterns }: BehaviorsProps) {
+export default function Behaviors({ name, behaviors, preview, live = false, storybook, storyId, patterns, changeHref }: BehaviorsProps) {
   const groups = behaviorGroups(behaviors);
   // The first row shown (families are reordered), not the first one in the data.
   const first = groups[0]?.items[0] ?? behaviors[0];
@@ -167,6 +172,11 @@ export default function Behaviors({ name, behaviors, preview, live = false, stor
           ))}
         </div>
       </div>
+      {changeHref && (
+        <p className="bh-change">
+          <Link href={changeHref}>Ask to change how it behaves</Link>
+        </p>
+      )}
     </section>
   );
 }

@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { composeRequestIssue, type ComponentChangeRequest } from '@bridge-ds/core';
+import { behaviorRequestOf, BUILD_REQUEST_LABEL, composeRequestIssue, type ComponentChangeRequest } from '@bridge-ds/core';
 import {
+  askerFirst,
+  BEHAVIOR_DEFAULT_LINE,
+  behaviorWaitLine,
   freshList,
   implementCommand,
   integrationsFromForm,
@@ -319,5 +322,30 @@ describe('deciding on a request', () => {
   it('says who reads a decline reason', () => {
     expect(declineAudience('@ana')).toBe('@ana gets a GitHub notification with your reason, and it stays on the request.');
     expect(declineAudience('')).toMatch(/posted on the request/);
+  });
+});
+
+describe('behavior requests in the list', () => {
+  const issue = (labels: string[]) => {
+    const i = composeRequestIssue(behaviorRequestOf('Select', { of: 'component', id: 'Select', behavior: 'close-on-escape', today: 'Closes on Escape', wanted: 'Keeps the list open' }));
+    return { number: 9, title: i.title, body: `${i.body}\n\nRequested by Dana Kim through Bridge.`, html_url: 'https://github.com/acme/ds/issues/9', state: 'open' as const, labels: [...i.labels, ...labels], user: { login: 'bridge-app[bot]' }, assignees: [], created_at: '2026-11-14T10:00:00Z' };
+  };
+
+  it('names who asked and waits for an owner, until made the default', () => {
+    const [r] = requestRows([issue([])], []);
+    expect(r).toMatchObject({ kind: 'behavior', kindLabel: 'Behavior change', askerName: 'Dana Kim', madeDefault: false });
+    expect(askerFirst(r!.askerName!)).toBe('Dana');
+    expect(askerFirst('@dana')).toBe('dana');
+    expect(requestDecision(r!, { viewer: 'lee', owners: ['lee'] }).kind).toBe('decide');
+    const [made] = requestRows([issue([BUILD_REQUEST_LABEL])], []);
+    expect(made!.madeDefault).toBe(true);
+    expect(requestDecision(made!, { viewer: 'lee', owners: ['lee'] })).toEqual({ kind: 'status', sentence: BEHAVIOR_DEFAULT_LINE });
+  });
+});
+
+describe('who decides on a behavior request', () => {
+  it('names the one design lead, never a GitHub owner', () => {
+    expect(behaviorWaitLine('Dana')).toBe('Dana decides what happens next.');
+    expect(behaviorWaitLine(null)).toBe('The design system lead decides what happens next.');
   });
 });

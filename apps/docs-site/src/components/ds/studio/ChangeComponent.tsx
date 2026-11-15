@@ -4,6 +4,8 @@
 //   - Add a variant or option (a variant, an option or a layout) and Something looks wrong: one short form that files a
 //     build request (scripts/build-request-send.ts, @bridge-ds/core createBuildRequestOnGitHub), then says where she
 //     follows it (Being built).
+//   - Change how it behaves: one of the component's behaviors (docs.json `behaviors`) and what it should do instead
+//     (BehaviorRequestForm.tsx). It files a behavior request the design system lead decides on before developers build it.
 // The step opens in place under the preview: what she wants to change (one DS RadioGroup), then the form. The drawer
 // footer keeps one primary action: "Change this component", then the step's own action (Edit its tokens, Send) next to
 // Cancel. A GitHub member writes with their token; an email member through Bridge's server (/api/contribute); signed
@@ -14,19 +16,22 @@ import { Pencil, Plus } from 'lucide-react';
 import { Button, Input, Link, Radio, RadioGroup, Select, Textarea } from '@bridge-ds/react';
 import type { IntegrationsConfig } from '@bridge-ds/core';
 import ButtonLink from '../ButtonLink';
+import BehaviorRequestForm, { useLeadName } from './BehaviorRequestForm';
 import {
+  behaviorFormCopy,
+  behaviorSentLines,
   buildFormCopy,
   buildFormProblems,
   buildModeFor,
   buildSentLines,
-  isChangeIntent,
+  isTeamChangeIntent,
   isStructureKind,
   STRUCTURE_KINDS,
   teamBuildRequest,
   teamIntentOptions,
   type BuildFormMode,
-  type ChangeIntent,
   type StructureKind,
+  type TeamChangeIntent,
 } from '../../../lib/change-intent';
 import { figmaFromLink, figmaLinkProblem } from '../../../lib/request-attachments';
 import { ghAction } from '../../../lib/gh-wording';
@@ -35,10 +40,10 @@ import { studioHref } from '../../../lib/team-path';
 /** Where the change step stands; owned by the drawer so its footer and body agree. */
 export interface ChangeFlow {
   open: boolean;
-  intent: ChangeIntent | null;
+  intent: TeamChangeIntent | null;
   busy: boolean;
-  /** Sent: the number Being built shows, and which form sent it. */
-  sent: { n: number; mode: BuildFormMode } | null;
+  /** Sent: the number Being built shows (a behavior request: its request page), and which form sent it. */
+  sent: { n: number; mode: BuildFormMode | 'behave' } | null;
 }
 
 export const CLOSED_FLOW: ChangeFlow = { open: false, intent: null, busy: false, sent: null };
@@ -75,6 +80,8 @@ export interface ChangeStepProps {
   slug: string;
   /** It paints with tokens: "Adjust the look" can be picked. */
   hasTokens: boolean;
+  /** Its behaviors as the Library says them (docs.json `behaviors`), for "Change how it behaves". */
+  behaviors?: readonly { id: string; text: string }[] | undefined;
   /** "owner/name" of the team. */
   repo: string;
   integrations?: IntegrationsConfig | undefined;
@@ -87,7 +94,7 @@ export interface ChangeStepProps {
 }
 
 /** The step in the drawer body: the question, then the form of the picked path, or what was sent. */
-export function ChangeStep({ component, slug, hasTokens, repo, integrations, componentUrl, flow, setFlow, formId }: ChangeStepProps) {
+export function ChangeStep({ component, slug, hasTokens, behaviors = [], repo, integrations, componentUrl, flow, setFlow, formId }: ChangeStepProps) {
   const headingId = useId();
   const boxRef = useRef<HTMLElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
@@ -100,6 +107,7 @@ export function ChangeStep({ component, slug, hasTokens, repo, integrations, com
   const [failed, setFailed] = useState<string | null>(null);
   const mode = flow.intent ? buildModeFor(flow.intent) : null;
   const copy = mode ? buildFormCopy(mode, component) : null;
+  const lead = useLeadName(repo);
 
   // A new component, or the step closed: start empty.
   useEffect(() => {
@@ -135,14 +143,16 @@ export function ChangeStep({ component, slug, hasTokens, repo, integrations, com
   }, [flow.sent]);
 
   if (flow.sent) {
-    const s = buildSentLines(flow.sent.mode, flow.sent.n);
+    const behave = flow.sent.mode === 'behave';
+    const s = flow.sent.mode === 'behave' ? behaviorSentLines(flow.sent.n, lead) : buildSentLines(flow.sent.mode, flow.sent.n);
     return (
       <div className="tcm-chg-done" role="status" tabIndex={-1} ref={doneRef}>
         <p>
           <strong>{s.lead}</strong> {s.next}
         </p>
         <p>
-          <Link href={studioHref(`building/?request=${flow.sent.n}`)}>{s.link}</Link>
+          {/* A behavior request is not built yet: it is followed on its own page until the lead decides. */}
+          <Link href={studioHref(behave ? `explorations/?request=${flow.sent.n}` : `building/?request=${flow.sent.n}`)}>{s.link}</Link>
         </p>
       </div>
     );
@@ -192,7 +202,7 @@ export function ChangeStep({ component, slug, hasTokens, repo, integrations, com
         name={`change-intent-${slug}`}
         value={flow.intent ?? ''}
         onValueChange={(v) => {
-          if (!isChangeIntent(v)) return;
+          if (!isTeamChangeIntent(v)) return;
           setProblems([]);
           setFailed(null);
           setFlow((f) => ({ ...f, intent: v }));
@@ -202,6 +212,18 @@ export function ChangeStep({ component, slug, hasTokens, repo, integrations, com
           <Radio key={o.value} value={o.value} label={o.label} description={o.line} disabled={o.disabled} />
         ))}
       </RadioGroup>
+      {flow.intent === 'behave' && (
+        <BehaviorRequestForm
+          formId={formId}
+          target={{ of: 'component', name: component, behaviors }}
+          repo={repo}
+          integrations={integrations}
+          pageUrl={componentUrl}
+          busy={flow.busy}
+          onBusy={(busy) => setFlow((f) => ({ ...f, busy }))}
+          onSent={(n) => setFlow({ open: false, intent: null, busy: false, sent: { n, mode: 'behave' } })}
+        />
+      )}
       {mode && copy && (
         <form id={formId} className="tcm-chg-form" noValidate onSubmit={(e) => void submit(e)} aria-label={copy.heading}>
           {copy.kind && (
@@ -261,13 +283,16 @@ export interface ChangeFooterProps {
   flow: ChangeFlow;
   setFlow: (f: ChangeFlow | ((f: ChangeFlow) => ChangeFlow)) => void;
   formId: string;
+  /** "owner/name" of the team: its one design lead is named on the send button of "Change how it behaves". */
+  repo: string;
   /** The drawer's other actions (Open in Storybook, More), shown while the step is closed. */
   rest?: React.ReactNode;
 }
 
 /** The drawer footer: "Change this component" (the one primary), or the step's action next to Cancel. */
-export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId, rest }: ChangeFooterProps) {
+export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId, repo, rest }: ChangeFooterProps) {
   const { connected, signIn, sample } = useConnected();
+  const lead = useLeadName(repo);
   const openerRef = useRef<HTMLButtonElement>(null);
   const reopen = useRef(false);
   useEffect(() => {
@@ -298,7 +323,8 @@ export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId
   );
   const mode = flow.intent ? buildModeFor(flow.intent) : null;
   const look = flow.intent === 'look' && hasTokens;
-  const copy = mode ? buildFormCopy(mode, component) : null;
+  const built = mode ? buildFormCopy(mode, component) : null;
+  const copy = built ?? (flow.intent === 'behave' ? behaviorFormCopy('component', null, lead) : null);
   return (
     <>
       {cancel}
@@ -309,11 +335,11 @@ export function ChangeFooter({ component, slug, hasTokens, flow, setFlow, formId
       )}
       {copy &&
         (connected || sample ? (
-          <Button variant="primary" type="submit" form={formId} loading={flow.busy} data-demo-write="send a build request">
+          <Button variant="primary" type="submit" form={formId} loading={flow.busy} data-demo-write={built ? 'send a build request' : 'send a behavior request'}>
             {flow.busy ? copy.busy : copy.submit}
           </Button>
         ) : (
-          <Button variant="primary" data-gh-open="" data-demo-write="send a build request">
+          <Button variant="primary" data-gh-open="" data-demo-write={built ? 'send a build request' : 'send a behavior request'}>
             {ghAction('send it', signIn)}
           </Button>
         ))}

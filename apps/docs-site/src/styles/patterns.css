@@ -143,3 +143,16 @@
   padding: 0;
   list-style: none;
 }
+
+/* "Suggest a change to this pattern" under the rules, for a member (PatternChange.tsx), and what it says once sent. */
+.pt-change {
+  margin-block-start: var(--space-3);
+}
+
+.pt-change-done {
+  margin: 0;
+}
+
+.pt-change-done:focus {
+  outline: none;
+}

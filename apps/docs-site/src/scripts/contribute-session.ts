@@ -390,6 +390,14 @@ export async function sayPmWord(repo: string, x: { product: string; copy: string
   await call('POST', '', { action: 'pm-word', repo, ...x }, githubToken ? { Authorization: `Bearer ${githubToken}` } : {});
 }
 
+/**
+ * A design lead or an admin signed in by email decides on a behavior request (checked by the server): make it the
+ * default, not now with the reason, or a question to the requester. Throws in Studio words.
+ */
+export async function decideBehaviorRequest(repo: string, x: { number: number; decision: 'default' | 'not-now' | 'ask'; text?: string }): Promise<void> {
+  await call('POST', '', { action: 'behavior-decision', repo, ...x });
+}
+
 /** Asks for a sign-in link. The server answers the same whether or not the email is on the team. */
 export async function requestEmailSignIn(repo: string, email: string): Promise<void> {
   await call('POST', '', { action: 'sign-in', repo, email: email.trim() });

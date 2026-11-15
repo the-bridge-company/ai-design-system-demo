@@ -8,7 +8,8 @@ import { Shapes } from 'lucide-react';
 import { EmptyState } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { LibraryPage, LibrarySourceNote, LibraryZone } from './LibraryState';
-import { teamLibraryData } from './library-data';
+import { studioLink, teamLibraryData } from './library-data';
+import PatternChange from './PatternChange';
 import { PATTERNS_PAGE, PatternsView, PatternView, patternHrefs, patternLinks } from './views/PatternsView';
 import { libraryPatterns, patternById, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
 import { httpsStorybook } from '../../../lib/team-components';
@@ -73,7 +74,24 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
   return (
     <>
       {/* No breadcrumb: the nav's Patterns entry is current, and the title says the pattern once. */}
-      <PatternView entry={entry} links={patternLinks(view, entry)} storybook={httpsStorybook(data.storybook)} />
+      <PatternView
+        entry={entry}
+        links={patternLinks(view, entry)}
+        storybook={httpsStorybook(data.storybook)}
+        ruleChange={
+          // Only a member who can write sends requests (the gate of Edit on a component page); readers never see it.
+          entry.kind === 'action' && data.canEdit ? (
+            <PatternChange
+              pattern={entry.pattern}
+              owner={data.owner}
+              repo={data.repo}
+              integrations={data.model.site.integrations}
+              pageUrl={new URL(`${all}?${PATTERN_QUERY}=${encodeURIComponent(entry.pattern.id)}`, location.origin).href}
+              requestHref={(n) => studioLink(view, `explorations/?request=${n}`)}
+            />
+          ) : undefined
+        }
+      />
       {source}
     </>
   );

@@ -36,6 +36,12 @@ describe('behaviorFactsOf', () => {
     });
   });
 
+  it('names the folder after the component when the ask carries its page slug', async () => {
+    const f = await behaviorFactsOf(77, { of: 'component', id: 'select', behavior: 'tab-leaves', today: 'Tab leaves without picking', wanted: 'Tab picks' }, 'Select');
+    expect(f.facts.files).toEqual([`${FOLDER}/Select.tsx`, `${FOLDER}/Select.docs.json`, `${FOLDER}/Select.test.tsx`]);
+    expect(f.facts.keys).toEqual(['Tab']);
+  });
+
   it('leaves out what cannot be read', async () => {
     const f = await behaviorFactsOf(76, { of: 'component', id: 'Combobox', behavior: 'x', today: 'a', wanted: 'b' });
     expect(f).toEqual({ facts: {}, madeDefault: null });

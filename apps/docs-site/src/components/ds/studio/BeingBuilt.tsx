@@ -504,7 +504,7 @@ function Detail({
     if (!ask) return;
     let live = true;
     void import("../../../scripts/behavior-facts")
-      .then((m) => m.behaviorFactsOf(v.number, ask))
+      .then((m) => m.behaviorFactsOf(v.number, ask, v.component))
       .then((f) => live && setFacts(f))
       .catch(() => live && setFacts({ facts: {}, madeDefault: null }));
     return () => {

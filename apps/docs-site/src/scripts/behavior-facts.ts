@@ -20,10 +20,12 @@ const RAW = { accept: 'application/vnd.github.raw', raw: true } as const;
 const cache = new Map<string, Promise<BehaviorDetailFacts>>();
 
 /** The facts of one behavior request, read once per page. */
-export function behaviorFactsOf(number: number, ask: BehaviorAsk): Promise<BehaviorDetailFacts> {
+export function behaviorFactsOf(number: number, ask: BehaviorAsk, component?: string | null): Promise<BehaviorDetailFacts> {
   const { owner, repo } = readRepo();
   const key = `${owner}/${repo}#${number}`;
-  if (!cache.has(key)) cache.set(key, read(`/repos/${owner}/${repo}`, number, ask));
+  // The folder and files are named after the component ("Select"), while the ask may carry its page slug ("select").
+  const name = component?.trim() && /^[A-Za-z][A-Za-z0-9]*$/.test(component.trim()) ? component.trim() : ask.id;
+  if (!cache.has(key)) cache.set(key, read(`/repos/${owner}/${repo}`, number, ask.of === 'component' ? { ...ask, id: name } : ask));
   return cache.get(key)!;
 }
 

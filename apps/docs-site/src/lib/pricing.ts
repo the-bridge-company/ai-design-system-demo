@@ -1,9 +1,8 @@
 // /pricing/ (pages/pricing.astro): every price, tier, commitment and answer on the page, in one place. Pure data and
 // helpers, no DOM. The page ships on announcement day: until then it lives in a draft pull request.
 //
-// Decided by Florian: Free (0, up to 3 editors, 1 design system), Team (12 EUR per editor per month billed yearly,
-// capped at 120 EUR per month per design system), Organization (490 EUR per month, billed yearly only). Prices
-// exclude VAT. Everything marked `TO DECIDE (Florian)` is a draft value that must be confirmed before launch.
+// Every price and policy here is decided. Three launch blockers stay marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
+// launch date, the Organization contact address and a lawyer's review of the terms of service.
 
 export type Currency = 'EUR' | 'USD';
 export type Billing = 'yearly' | 'monthly';
@@ -24,22 +23,17 @@ export const TEAM_YEARLY_CAP_EUR = 120;
 /** Organization, per month, billed yearly only. Decided. */
 export const ORGANIZATION_PER_MONTH_EUR = 490;
 
-// TO DECIDE (Florian): Team billed monthly, per editor per month. Draft: about +20% on yearly (Slack Pro charges
-// 20.7% more monthly than yearly).
+/** Team, billed monthly, per editor per month. Decided (about +20% on yearly, like Slack Pro). */
 export const TEAM_MONTHLY_PER_EDITOR_EUR = 15;
-// TO DECIDE (Florian): Team billed monthly, cap per design system per month. Draft: ten editors, like yearly.
+/** Team, billed monthly, the most a design system costs per month (ten editors, like yearly). Decided. */
 export const TEAM_MONTHLY_CAP_EUR = 150;
 
-// TO DECIDE (Florian): every USD amount below is a draft, with no source behind it yet.
-export const TEAM_YEARLY_PER_EDITOR_USD = 13;
-// TO DECIDE (Florian)
-export const TEAM_YEARLY_CAP_USD = 130;
-// TO DECIDE (Florian)
-export const TEAM_MONTHLY_PER_EDITOR_USD = 16;
-// TO DECIDE (Florian)
-export const TEAM_MONTHLY_CAP_USD = 160;
-// TO DECIDE (Florian)
-export const ORGANIZATION_PER_MONTH_USD = 540;
+/** USD, decided. */
+export const TEAM_YEARLY_PER_EDITOR_USD = 14;
+export const TEAM_YEARLY_CAP_USD = 140;
+export const TEAM_MONTHLY_PER_EDITOR_USD = 17;
+export const TEAM_MONTHLY_CAP_USD = 170;
+export const ORGANIZATION_PER_MONTH_USD = 550;
 
 export interface TeamPrice {
   perEditor: number;
@@ -66,34 +60,43 @@ export const FREE_DESIGN_SYSTEMS = 1;
 export const TEAM_DESIGN_SYSTEMS = 3;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Facts not decided yet. Shown on the page in brackets, so nobody can mistake them for a decision.
+// Launch blockers. Three things stay open, and the page cannot ship before they are settled: the launch date, the
+// Organization contact address, and a lawyer's review of the terms of service (founding teams clause, the refund
+// policy, the pricing rollback refund and the support hours).
 // ---------------------------------------------------------------------------------------------------------------
 
-// PLACEHOLDER, TO DECIDE (Florian): the date the pricing is announced. Every team created before it is a founding
-// team. Replace the bracketed text with the real date (for example "1 March 2027") on announcement day.
+// TO DECIDE (Florian), BLOCKS LAUNCH: the date the pricing is announced. Every team created before it is a founding
+// team. Replace the bracketed text with the real date (for example "2 March 2027") on announcement day.
+//
+// Launch rule (not shown on the page): launch on the first Tuesday or Wednesday after all of these are true in
+// production:
+// - Stripe is live under the entity below (INVOICE_ENTITY);
+// - one real payment and one real refund have been done end to end;
+// - every existing team has been checked to keep what it had the day before;
+// - it is proven that no free account can produce an invoice;
+// - the pricing page and the homepage compare-row change ship in one deploy;
+// - the blockers in this file are filled (contact address, lawyer's review);
+// - Florian is available for the next 48 hours.
 export const LAUNCH_DATE = '[LAUNCH DATE]';
 
-// TO DECIDE (Florian): Organization support hours. "EU business hours" is decided; the exact hours are a draft.
-export const ORGANIZATION_SUPPORT_HOURS = 'Monday to Friday, 9:00 to 18:00 Paris time';
+/** Organization support hours ("EU business hours"). To be reviewed by a lawyer with the terms of service. */
+export const ORGANIZATION_SUPPORT_HOURS = 'Monday to Friday, 9:00 to 18:00 Paris time, except French public holidays';
 
-// TO DECIDE (Florian): where Team and Organization data is hosted, and where Organization's isolated hosting runs.
-// No source yet. Today's account storage is on /privacy/ (Frankfurt, backups in Paris).
-export const HOSTING_REGION = '[TO DECIDE: hosting region for Team and Organization]';
+/** Who issues invoices. No street address on the page. */
+export const INVOICE_ENTITY = 'Florian Gouloubi, sole proprietor (entrepreneur individuel), France, SIREN 947 632 055, VAT FR01947632055';
 
-// TO DECIDE (Florian): the legal entity that issues invoices.
-export const INVOICE_ENTITY = '[TO DECIDE: legal entity on invoices]';
+/** Refund policy. To be reviewed by a lawyer with the terms of service. */
+export const REFUND_POLICY = [
+  'Monthly: you keep access until the end of the paid month, with no prorated refund.',
+  'Yearly: full refund within 30 days of the first payment; after that, access runs to the end of the paid year and the plan does not renew if you stop it.',
+];
 
-// TO DECIDE (Florian): the ordinary refund policy on monthly billing. No policy exists yet.
-export const MONTHLY_REFUND_POLICY = '[TO DECIDE: refund policy for monthly billing]';
+/** A published commitment. To be reviewed by a lawyer with the terms of service. */
+export const PRICING_ROLLBACK_REFUND =
+  'If we roll back a pricing change, we refund in full the difference between what you paid since that change and what you would have paid at the previous price.';
 
-// TO DECIDE (Florian): a commitment, so it needs his approval. Draft wording from the research session.
-export const PRICING_ROLLBACK_REFUND = 'If we roll back a pricing change, we refund in full what you paid under it.';
-
-// TO DECIDE (Florian): nonprofit, education and open source pricing. Not decided.
-export const SPECIAL_PRICING = '[TO DECIDE: nonprofit, education and open source pricing]';
-
-// TO DECIDE (Florian): no contact email exists on the site yet. The existing contact path is GitHub issues; replace
-// with a mailto (for example a sales-free hello@ address) when there is one.
+// TO DECIDE (Florian), BLOCKS LAUNCH: no contact email exists on the site yet. Until there is one, the contact line
+// links to GitHub issues, the site's existing contact path. Replace with a mailto when the address exists.
 // The page builds the link from lib/repo GITHUB_URL (a build-time module, kept out of this file so islands can import it).
 export const ORGANIZATION_CONTACT_PATH = '/issues';
 export const ORGANIZATION_CONTACT_LABEL = 'Write to us on GitHub';
@@ -227,7 +230,9 @@ export const EDITOR_DEFINITION = 'An editor is anyone who proposes or decides in
 export const EDITOR_NOT_COUNTED = 'Readers, viewers, and developers who only work in GitHub do not count. Invite them freely, on every tier.';
 
 /** Founding teams. Wording decided by Florian. */
-// TO REVIEW: to be reviewed by a lawyer before launch. This text is a commitment that goes into the terms of service.
+// TO DECIDE (Florian), BLOCKS LAUNCH: a lawyer's review of the terms of service before launch: this founding teams
+// clause, REFUND_POLICY, PRICING_ROLLBACK_REFUND and ORGANIZATION_SUPPORT_HOURS. This text is a commitment that goes
+// into the terms of service.
 export const FOUNDING_TITLE = 'Founding teams';
 export const FOUNDING_TEXT = [
   `Every team created on Bridge before ${LAUNCH_DATE} keeps, at no cost and with no end date, everything it could do that day: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
@@ -298,10 +303,20 @@ export const TABLE_GROUPS: TableGroup[] = [
 // FAQ. A string may hold a placeholder in brackets: those are undecided.
 // ---------------------------------------------------------------------------------------------------------------
 
+/** A link shown at the end of an answer. `privacy` and `contact` are resolved by the page. */
+export type FaqLink = { to: 'privacy' | 'contact'; label: string };
+
 export interface FaqItem {
   id: string;
   question: string;
+  /** Paragraphs. "{cap}" reads the Team yearly cap in the chosen currency. */
   answer: string[];
+  link?: FaqLink;
+}
+
+/** An answer's paragraphs in a currency: "{cap}" becomes "€120" or "$140". */
+export function faqAnswer(item: FaqItem, currency: Currency): string[] {
+  return item.answer.map((a) => a.split('{cap}').join(money(TEAM_PRICE[currency].yearly.cap, currency)));
 }
 
 export const FAQ: FaqItem[] = [
@@ -330,35 +345,42 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    // Facts from /privacy/ only. Never "hosted in the EU", "never leaves Europe" or a certification.
     id: 'hosting',
     question: 'Where is our data hosted?',
     answer: [
-      'Your design system stays in your own repository. Bridge reads it there and keeps only short-lived copies. Accounts and teams are stored in Frankfurt, Germany, with a daily backup in Paris, France: the privacy page has the details.',
-      `Hosting for Team and Organization: ${HOSTING_REGION}.`,
+      'Your design system never leaves your repository. What Bridge reads from GitHub is kept briefly: a few minutes for most answers, 7 days at most for file content.',
+      'Accounts are stored in an Upstash Redis database in Frankfurt, Germany, with a daily backup in Vercel Blob in Paris, France, kept 30 days.',
       'Self-hosting has no limit on every tier, Free included, so nobody depends on our hosting.',
     ],
+    link: { to: 'privacy', label: 'What Bridge keeps, in detail' },
   },
   {
     id: 'vat',
     question: 'How do VAT and invoices work?',
     answer: [
-      'Prices exclude VAT. VAT is added where it applies. Every payment comes with an invoice, and a free team never receives one.',
       `Invoices are issued by ${INVOICE_ENTITY}.`,
+      'Prices exclude VAT; VAT is added as the law requires (reverse charge for EU businesses with a VAT number). A free team never receives an invoice.',
     ],
   },
   {
     id: 'refunds',
+    question: 'Can we get a refund?',
+    answer: REFUND_POLICY,
+  },
+  {
+    id: 'pricing-wrong',
     question: 'What if we get pricing wrong?',
-    // TO DECIDE (Florian): PRICING_ROLLBACK_REFUND is a commitment; MONTHLY_REFUND_POLICY is not written yet.
-    answer: [`${PRICING_ROLLBACK_REFUND} [TO DECIDE: Florian to approve this commitment]`, `Monthly billing: ${MONTHLY_REFUND_POLICY}.`],
+    answer: [PRICING_ROLLBACK_REFUND],
   },
   {
     id: 'discounts',
     question: 'Do you offer discounts?',
     answer: [
-      `The volume discount is built into the price and is the same for everyone: past ${inWords(editorsCapped(TEAM_PRICE.EUR.yearly))} editors on a design system, editors cost nothing. There are no negotiated prices.`,
-      `Nonprofits, education and open source: ${SPECIAL_PRICING}.`,
+      "Team is free, with no sales call, for a design system whose repository is public under an OSI-approved open source license, and for teaching in a school or university: write to us with the repository link or the school's address.",
+      'We offer no other discount: the cap at {cap} per design system is our discount for large teams.',
     ],
+    link: { to: 'contact', label: ORGANIZATION_CONTACT_LABEL },
   },
   {
     id: 'saml',

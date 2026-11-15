@@ -1,17 +1,30 @@
-// /pricing/ FAQ: the DS Accordion, hydrated when it scrolls into view (client:visible). Words: lib/pricing.ts FAQ.
-import { Accordion, AccordionItem } from '@bridge-ds/react';
-import { FAQ } from '../../lib/pricing';
+// /pricing/ FAQ: the DS Accordion, hydrated when it scrolls into view (client:visible). Amounts follow the currency
+// switch (components/pricing/pricing-store.ts). Words: lib/pricing.ts FAQ.
+import { Accordion, AccordionItem, Link } from '@bridge-ds/react';
+import { FAQ, faqAnswer, type FaqLink } from '../../lib/pricing';
+import { usePricing } from './pricing-store';
 
-export default function PricingFaq() {
+export interface PricingFaqProps {
+  /** Where an answer's link goes. */
+  links: Record<FaqLink['to'], string>;
+}
+
+export default function PricingFaq({ links }: PricingFaqProps) {
+  const { currency } = usePricing();
   return (
     <Accordion headingLevel={3} className="pr-faq-list">
       {FAQ.map((f) => (
         <AccordionItem key={f.id} value={f.id} title={f.question}>
-          {f.answer.map((a) => (
+          {faqAnswer(f, currency).map((a) => (
             <p key={a} className="pr-faq-answer">
               {a}
             </p>
           ))}
+          {f.link && (
+            <p className="pr-faq-answer">
+              <Link href={links[f.link.to]}>{f.link.label}</Link>
+            </p>
+          )}
         </AccordionItem>
       ))}
     </Accordion>

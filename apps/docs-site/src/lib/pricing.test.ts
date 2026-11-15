@@ -26,6 +26,10 @@ const allWords = [...Object.values(pricing).flatMap(words), page].join('\n');
 describe('pricing (/pricing/)', () => {
   it('keeps the decided prices: Team 12 EUR capped at 120, Organization 490, Free 3 editors and 1 design system', () => {
     expect(TEAM_PRICE.EUR.yearly).toEqual({ perEditor: 12, cap: 120 });
+    expect(TEAM_PRICE.EUR.monthly).toEqual({ perEditor: 15, cap: 150 });
+    expect(TEAM_PRICE.USD.yearly).toEqual({ perEditor: 14, cap: 140 });
+    expect(TEAM_PRICE.USD.monthly).toEqual({ perEditor: 17, cap: 170 });
+    expect(ORGANIZATION_PRICE.USD).toBe(550);
     expect(ORGANIZATION_PRICE.EUR).toBe(490);
     expect(pricing.FREE_EDITORS).toBe(3);
     expect(pricing.FREE_DESIGN_SYSTEMS).toBe(1);
@@ -41,7 +45,7 @@ describe('pricing (/pricing/)', () => {
   it('formats whole amounts in each currency', () => {
     expect(money(12, 'EUR')).toBe('€12');
     expect(money(490, 'EUR')).toBe('€490');
-    expect(money(13, 'USD')).toBe('$13');
+    expect(money(14, 'USD')).toBe('$14');
   });
 
   it('defaults the currency from the browser language', () => {
@@ -72,7 +76,13 @@ describe('pricing (/pricing/)', () => {
     expect(COMMITMENTS.map((c) => c.text).join(' ')).toContain('FSL-1.1-MIT');
     expect(LAUNCH_DATE).toBe('[LAUNCH DATE]');
     expect(FOUNDING_TEXT[0]).toContain(`before ${LAUNCH_DATE} keeps`);
-    expect(FAQ.map((f) => f.id)).toEqual(['fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'discounts', 'saml', 'shutdown']);
+    expect(FAQ.map((f) => f.id)).toEqual(['fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
+    const discounts = FAQ.find((f) => f.id === 'discounts')!;
+    expect(pricing.faqAnswer(discounts, 'EUR').join(' ')).toContain('cap at €120 per design system');
+    expect(pricing.faqAnswer(discounts, 'USD').join(' ')).toContain('cap at $140 per design system');
+    // Only the three launch blockers stay open; nothing on the page reads as a placeholder but the launch date.
+    expect(allWords).not.toMatch(/\[TO DECIDE/);
+    expect(allWords).not.toMatch(/hosted in the EU|never leaves Europe/i);
   });
 
   it('never says what the page must not say', () => {

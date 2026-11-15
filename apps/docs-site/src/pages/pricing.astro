@@ -27,7 +27,7 @@ import {
 import { GITHUB_URL } from '../lib/repo';
 import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
 
-// TO DECIDE (Florian): there is no contact email on the site yet; GitHub issues is the existing contact path.
+// TO DECIDE (Florian), BLOCKS LAUNCH: there is no contact email on the site yet; GitHub issues is the existing contact path.
 const contact = `${GITHUB_URL}${ORGANIZATION_CONTACT_PATH}`;
 const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
 ---
@@ -77,7 +77,7 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
 
     <section class="pr-section" aria-labelledby="pr-founding">
       <h2 id="pr-founding" class="pr-h2">{FOUNDING_TITLE}</h2>
-      {/* To be reviewed by a lawyer before launch: this text is a commitment in the terms of service. */}
+      {/* TO DECIDE (Florian), BLOCKS LAUNCH: a lawyer reviews this clause with the terms of service before launch. */}
       <div class="pr-panel">
         {FOUNDING_TEXT.map((t) => <p>{t}</p>)}
       </div>
@@ -85,7 +85,7 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
 
     <section class="pr-section" aria-labelledby="pr-faq">
       <h2 id="pr-faq" class="pr-h2">Questions</h2>
-      <PricingFaq client:visible />
+      <PricingFaq client:visible links={{ privacy: PRIVACY_PAGE, contact }} />
       <p class="pr-text lp-muted">More on how Bridge handles your data: <Link href={PRIVACY_PAGE}>Privacy</Link>.</p>
     </section>
 

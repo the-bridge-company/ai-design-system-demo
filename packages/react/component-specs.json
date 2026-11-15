@@ -1711,14 +1711,16 @@
           }
         ]
       },
-      "hash": "121fb68e",
+      "hash": "eadfe6c9",
       "source": [
         "packages/react/src/components/AlertDialog/AlertDialog.tsx",
         "packages/react/src/components/AlertDialog/AlertDialog.module.css",
         "packages/react/src/components/Button/Button.module.css",
         "packages/react/src/components/ButtonGroup/ButtonGroup.module.css",
         "packages/react/src/components/Dialog/Dialog.module.css",
+        "packages/react/src/components/Field/Field.module.css",
         "packages/react/src/components/Icon/Icon.module.css",
+        "packages/react/src/components/Input/Input.module.css",
         "packages/react/src/components/Spinner/Spinner.module.css"
       ],
       "axes": [
@@ -1744,6 +1746,17 @@
           "type": "TEXT",
           "default": "Description",
           "prop": "description"
+        },
+        {
+          "name": "Placeholder",
+          "type": "TEXT",
+          "default": "Placeholder"
+        },
+        {
+          "name": "Show confirm text",
+          "type": "BOOLEAN",
+          "default": false,
+          "prop": "confirmText"
         }
       ],
       "parts": [
@@ -1836,6 +1849,104 @@
           "grow": true
         },
         {
+          "id": "confirm-text",
+          "name": "Confirm text",
+          "kind": "frame",
+          "parent": "root",
+          "source": "AlertDialog.module.css .confirmText",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          },
+          "visible": "Show confirm text"
+        },
+        {
+          "id": "field",
+          "name": "field",
+          "kind": "frame",
+          "parent": "confirm-text",
+          "source": "Field.module.css .field",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          }
+        },
+        {
+          "id": "label",
+          "name": "label",
+          "kind": "frame",
+          "parent": "field",
+          "source": "Field.module.css .label",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          }
+        },
+        {
+          "id": "text",
+          "name": "Text",
+          "kind": "text",
+          "parent": "label",
+          "characters": "Type \"Confirm text\" to confirm"
+        },
+        {
+          "id": "description-2",
+          "name": "description",
+          "kind": "frame",
+          "parent": "field",
+          "source": "Field.module.css .description",
+          "layout": {
+            "direction": "VERTICAL",
+            "primary": "MIN",
+            "counter": "STRETCH"
+          }
+        },
+        {
+          "id": "text-2",
+          "name": "Text",
+          "kind": "text",
+          "parent": "description-2",
+          "characters": "Delete tokens stays off until the text matches."
+        },
+        {
+          "id": "control",
+          "name": "control",
+          "kind": "frame",
+          "parent": "field",
+          "source": "Input.module.css .control, Input.module.css .md",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "CENTER"
+          },
+          "stretch": {
+            "width": true
+          }
+        },
+        {
+          "id": "input",
+          "name": "input",
+          "kind": "frame",
+          "parent": "control",
+          "source": "Input.module.css .input",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "MIN",
+            "counter": "CENTER"
+          },
+          "grow": true
+        },
+        {
+          "id": "placeholder",
+          "name": "Placeholder",
+          "kind": "text",
+          "parent": "input",
+          "text": "Placeholder"
+        },
+        {
           "id": "actions",
           "name": "actions",
           "kind": "frame",
@@ -1872,7 +1983,7 @@
           }
         },
         {
-          "id": "text",
+          "id": "text-3",
           "name": "Text",
           "kind": "text",
           "parent": "base-alert-dialog-close",
@@ -1891,7 +2002,7 @@
           }
         },
         {
-          "id": "label",
+          "id": "label-2",
           "name": "Label",
           "kind": "text",
           "parent": "button",
@@ -1944,6 +2055,56 @@
               "paddingBottom": "layout.inset",
               "paddingLeft": "layout.inset"
             },
+            "confirm-text": {
+              "paddingTop": "space.2",
+              "paddingRight": "layout.inset",
+              "paddingBottom": 0,
+              "paddingLeft": "layout.inset"
+            },
+            "field": {
+              "itemSpacing": "space.1-5"
+            },
+            "label": {},
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description-2": {},
+            "text-2": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "control": {
+              "fill": "input.bg",
+              "cornerRadius": "input.radius",
+              "paddingTop": 0,
+              "paddingRight": "control.padding-x.md",
+              "paddingBottom": 0,
+              "paddingLeft": "control.padding-x.md",
+              "itemSpacing": "space.2",
+              "minHeight": "control.height.md",
+              "strokeWeight": "border-width.default",
+              "stroke": "input.border"
+            },
+            "input": {
+              "fill": null,
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "height": "calc(control.height.md - border-width.default * 2)"
+            },
+            "placeholder": {
+              "textFill": "input.placeholder",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "actions": {
               "paddingTop": "space.3",
               "paddingRight": "layout.inset",
@@ -1955,7 +2116,7 @@
               "counterAxisSpacing": "space.2"
             },
             "base-alert-dialog-close": {},
-            "text": {
+            "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.ui.size",
@@ -1974,7 +2135,7 @@
               "strokeWeight": "border-width.default",
               "stroke": null
             },
-            "label": {
+            "label-2": {
               "textFill": "button.danger.text",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
@@ -2027,6 +2188,56 @@
               "paddingBottom": "layout.inset",
               "paddingLeft": "layout.inset"
             },
+            "confirm-text": {
+              "paddingTop": "space.2",
+              "paddingRight": "layout.inset",
+              "paddingBottom": 0,
+              "paddingLeft": "layout.inset"
+            },
+            "field": {
+              "itemSpacing": "space.1-5"
+            },
+            "label": {},
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "fontWeight": "font.weight.medium",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "description-2": {},
+            "text-2": {
+              "textFill": "color.text.muted",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "control": {
+              "fill": "input.bg",
+              "cornerRadius": "input.radius",
+              "paddingTop": 0,
+              "paddingRight": "control.padding-x.md",
+              "paddingBottom": 0,
+              "paddingLeft": "control.padding-x.md",
+              "itemSpacing": "space.2",
+              "minHeight": "control.height.md",
+              "strokeWeight": "border-width.default",
+              "stroke": "input.border"
+            },
+            "input": {
+              "fill": null,
+              "paddingTop": 0,
+              "paddingRight": 0,
+              "paddingBottom": 0,
+              "paddingLeft": 0,
+              "height": "calc(control.height.md - border-width.default * 2)"
+            },
+            "placeholder": {
+              "textFill": "input.placeholder",
+              "fontFamily": "font.family.sans",
+              "fontSize": "font.size.200",
+              "lineHeight": "font.line-height.normal"
+            },
             "actions": {
               "paddingTop": "space.3",
               "paddingRight": "layout.inset",
@@ -2038,7 +2249,7 @@
               "counterAxisSpacing": "space.2"
             },
             "base-alert-dialog-close": {},
-            "text": {
+            "text-3": {
               "textFill": "color.text.default",
               "fontFamily": "font.family.sans",
               "fontSize": "typography.ui.size",
@@ -2057,7 +2268,7 @@
               "strokeWeight": "border-width.default",
               "stroke": null
             },
-            "label": {
+            "label-2": {
               "textFill": "button.primary.text",
               "fontFamily": "font.family.sans",
               "fontSize": "font.size.200",
@@ -2085,6 +2296,12 @@
           "property": "box-shadow",
           "value": "var(--dialog-shadow)",
           "reason": "shadows are code-only tokens (no Figma variable)"
+        },
+        {
+          "part": "description-2",
+          "property": "margin",
+          "value": "calc(var(--space-1) * -1) 0 0",
+          "reason": "margins have no auto layout equivalent"
         }
       ],
       "motion": [

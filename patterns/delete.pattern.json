@@ -6,6 +6,7 @@
   "reversible": false,
   "rules": [
     "It cannot be undone, so ask first: an AlertDialog names what goes and says it cannot be undone.",
+    "When the impact is high (a team, an account, anything other people lose), the person types the name to confirm: the AlertDialog's confirmText keeps the delete button off until it matches. Otherwise a plain confirmation.",
     "The first button only asks: a secondary Button with the trash icon. Nothing is deleted on that click.",
     "The button that deletes repeats the verb and the object, like Delete this team, in the danger tone, with Cancel beside it."
   ],
@@ -25,10 +26,16 @@
     }
   ],
   "stage": {
-    "items": ["Marketing team", "Docs team", "Mobile team"],
+    "items": ["Marketing team", "Spring sale draft", "Old logo draft"],
     "action": "Delete",
     "icon": "trash",
     "confirm": {
+      "title": "Delete {item}?",
+      "text": "Only you worked on it. This cannot be undone.",
+      "confirmLabel": "Delete draft"
+    },
+    "typeName": {
+      "items": ["Marketing team"],
       "title": "Delete {item}?",
       "text": "Everyone on the team loses access at once. This cannot be undone.",
       "confirmLabel": "Delete this team"

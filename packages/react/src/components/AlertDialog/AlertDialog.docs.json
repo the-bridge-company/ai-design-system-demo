@@ -5,12 +5,14 @@
   ] },
   "whenToUse": [
     "Before an action that cannot be undone or that affects other people: deleting, revoking, overwriting.",
+    "High impact, when other people lose it (deleting a team, an account): pass confirmText with the name, and the person types it before the confirm button turns on.",
     "tone primary for consequential but safe actions, like publishing a release to every consumer."
   ],
   "whenNotToUse": [
     "Actions that can be undone: do them right away and offer Undo in a Toast.",
     "Collecting input: use Dialog.",
-    "Routine saves: confirmation fatigue teaches people to click through without reading."
+    "Routine saves: confirmation fatigue teaches people to click through without reading.",
+    "Typing the name for an action only the person loses, or one they repeat often: plain confirmation is enough there."
   ],
   "dos": [
     {
@@ -25,6 +27,13 @@
       "title": "Say the consequence, including what cannot be undone",
       "text": "\"Components that use them fall back to their defaults. This cannot be undone.\"",
       "example": { "c": "Row", "children": [ { "c": "Button", "p": { "variant": "danger" }, "children": ["Revoke access"] } ] }
+    },
+    {
+      "title": "Ask for the name when other people lose it",
+      "text": "Deleting Marketing team removes everyone's access: confirmText \"Marketing team\" makes the person type it, so the deletion is deliberate.",
+      "example": { "c": "Box", "children": [
+        { "c": "Input", "p": { "label": "Type \"Marketing team\" to confirm", "hint": "Delete this team stays off until the text matches." } }
+      ] }
     }
   ],
   "donts": [
@@ -35,23 +44,35 @@
         { "c": "Button", "p": { "variant": "secondary" }, "children": ["No"] },
         { "c": "Button", "p": { "variant": "danger" }, "children": ["Yes"] }
       ] }
+    },
+    {
+      "title": "Ask to type DELETE, or a word that is not the name",
+      "text": "A fixed word checks attention, not intent. Ask for the name of what goes, the one the title names.",
+      "example": { "c": "Box", "children": [
+        { "c": "Input", "p": { "label": "Type DELETE to confirm" } }
+      ] }
     }
   ],
   "accessibility": [
     "Base UI AlertDialog: role alertdialog, named by the title, described by the consequence.",
     "Focus starts on Cancel, the safe choice, so a reflexive Enter does not destroy anything.",
     "It does not close on an outside click; Escape and Cancel close it and focus returns to the trigger.",
-    "While loading, the confirm button keeps focus and announces aria-busy."
+    "While loading, the confirm button keeps focus and announces aria-busy.",
+    "With confirmText, focus starts on the field. Its label says what to type, its hint says the confirm button stays off until the text matches, and that button is disabled until then.",
+    "Enter in the field confirms only once the text matches. The match ignores spaces before and after and is case-sensitive."
   ],
   "contentGuidelines": [
     "Title: a question with the verb and the object and a count when there are several: \"Delete 3 tokens?\"",
     "Description: the consequence in one or two sentences. End with \"This cannot be undone.\" only when true.",
     "Confirm label repeats the verb: \"Delete tokens\", \"Revoke access\". Never \"OK\" or \"Yes\".",
-    "Cancel stays \"Cancel\"."
+    "Cancel stays \"Cancel\".",
+    "confirmText is the name as the title shows it: \"Delete Marketing team?\" asks for \"Marketing team\".",
+    "Keep the default field label, Type \"Marketing team\" to confirm, unless the text is not a name: for an email, confirmTextLabel \"Your email\"."
   ],
   "anatomy": {
     "alert": "Surface (shares Dialog styles, size sm)",
     "header": "Title and description",
-    "actions": "Cancel and confirm buttons"
+    "actions": "Cancel and confirm buttons",
+    "confirmText": "Field to type the name in, when the impact is high (confirmText)"
   }
 }

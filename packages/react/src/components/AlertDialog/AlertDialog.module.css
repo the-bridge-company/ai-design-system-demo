@@ -11,3 +11,9 @@
   flex: none;
   padding: var(--space-3) var(--layout-inset) var(--layout-inset);
 }
+
+/* The field to type in, when the impact is high (confirmText): under the description, above the actions. */
+.confirmText {
+  flex: none;
+  padding: var(--space-2) var(--layout-inset) 0;
+}

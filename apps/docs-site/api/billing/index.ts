@@ -17,7 +17,9 @@
 //   POST /api/billing/webhook                  Stripe only: signature checked on the raw body with STRIPE_WEBHOOK_SECRET,
 //        each event once (by id), the subscription read again from Stripe and written on its team (api/_lib/billing.ts).
 // Admins: an email admin of the team (the account cookie), or the account's linked GitHub account is an admin of the
-// repository (read with the Bridge app, GitHub id matched), as api/entry. POSTs other than the webhook carry
+// repository (read with the Bridge app, GitHub id matched), as api/entry; or, for a repository's team, Studio's GitHub
+// sign-in (`Authorization: Bearer`): GitHub says who the token is (GET /user) and that this user administers the
+// repository (GET /repos with the same token, permissions.admin). Teams made in Bridge: the account only. POSTs other than the webhook carry
 // `X-Bridge-Account: 1` (or `X-Bridge-Contribute: 1`) from a page of this site. Checkout and portal: a daily cap per account.
 //
 // Env (server only): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, BILLING_TEST_TEAMS (optional, before launch), KV_REST_API_URL + KV_REST_API_TOKEN (or the UPSTASH_ pair),
@@ -89,6 +91,7 @@ export const NO_CUSTOMER = 'Your team has no billing yet. Move it to Team first.
 export const BUSY = 'Bridge is preparing your payment. Try again in a few seconds.';
 export const STRIPE_DOWN = 'The payment service did not answer. Try again in a minute.';
 const SIGNIN = 'Your session ended. Sign in again.';
+const GITHUB_EXPIRED = 'Your GitHub sign-in expired. Sign in again.';
 const STORAGE_DOWN = 'Bridge could not reach its storage. Try again in a minute.';
 const MAX_BODY = 2048;
 /** Stripe events are small; anything past this is not one. */
@@ -141,33 +144,73 @@ function context(env: BillingEnv, deps: BillingDeps): Ctx | null {
 // ---------------------------------------------------------------------------------------------------------------
 // Who asks
 
-async function account(ctx: Ctx, req: Request): Promise<Account> {
-  const a = ctx.secret.length >= MIN_SECRET_LENGTH ? await sessionAccount(req, ctx.redis, ctx.secret, ctx.now()) : null;
-  if (!a) throw new HttpError(401, 'signin', SIGNIN);
-  return a;
+/** Studio's GitHub sign-in token (`Authorization: Bearer`), as api/_lib/team-caller.ts bearerOf reads it (not imported:
+ *  it would bundle api/contribute here). Never logged, never kept. */
+function bearerOf(req: Request): string | null {
+  const m = /^Bearer\s+([A-Za-z0-9_.-]{20,255})$/i.exec(req.headers.get('authorization') ?? '')?.[1];
+  return m ?? null;
 }
 
-/** The account is an admin of the team: an email admin, a seeded local admin, or a GitHub admin of the repository. */
-async function requireAdmin(ctx: Ctx, a: Account, teamArg: unknown): Promise<TeamRef> {
-  const t = await resolveTeam(ctx.redis, teamArg);
-  if (ctx.localAdmins && (await ctx.localAdmins.isAdmin(t.full, a.email))) return t;
-  if ((await ctx.members.get(t.full, a.email))?.role === 'admin') return t;
-  if (t.id || !a.github || !ctx.app) throw new HttpError(403, 'forbidden', ADMIN_ONLY);
-  const token = await ctx.app.installationToken(t.owner, t.repo);
-  if (!token) throw new HttpError(403, 'forbidden', ADMIN_ONLY);
+/** An admin of the team, and who they are: a Bridge account (email), or a GitHub sign-in (no email kept). */
+interface Admin {
+  team: TeamRef;
+  /** The Bridge account's address; null for a GitHub sign-in (Checkout then asks for the billing email). */
+  email: string | null;
+  /** Counts the daily cap: the account's address, or `gh:<GitHub user id>`. */
+  who: string;
+}
+
+const ghHeaders = (token: string) => ({ Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-billing', 'X-GitHub-Api-Version': '2022-11-28' });
+
+async function ghGet(ctx: Ctx, token: string, path: string): Promise<{ status: number; data: any }> {
   let res: Response;
   try {
-    res = await ctx.f(`https://api.github.com/repos/${t.owner}/${t.repo}/collaborators/${encodeURIComponent(a.github.login)}/permission`, {
-      method: 'GET',
-      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'bridge-billing', 'X-GitHub-Api-Version': '2022-11-28' },
-    });
+    res = await ctx.f(`https://api.github.com${path}`, { method: 'GET', headers: ghHeaders(token) });
   } catch {
     throw new HttpError(502, 'unreachable', GITHUB_DOWN);
   }
   if (res.status >= 500) throw new HttpError(502, 'unreachable', GITHUB_DOWN);
-  const data = (await res.json().catch(() => null)) as { permission?: string; user?: { id?: number } } | null;
-  if (res.status !== 200 || data?.permission !== 'admin' || data?.user?.id !== a.github.id) throw new HttpError(403, 'forbidden', ADMIN_ONLY);
-  return t;
+  return { status: res.status, data: await res.json().catch(() => null) };
+}
+
+/** The account (cookie) is an admin of the team: an email admin, a seeded local admin, or its linked GitHub account. */
+async function accountIsAdmin(ctx: Ctx, a: Account, t: TeamRef): Promise<boolean> {
+  if (ctx.localAdmins && (await ctx.localAdmins.isAdmin(t.full, a.email))) return true;
+  if ((await ctx.members.get(t.full, a.email))?.role === 'admin') return true;
+  if (t.id || !a.github || !ctx.app) return false;
+  const token = await ctx.app.installationToken(t.owner, t.repo);
+  if (!token) return false;
+  const r = await ghGet(ctx, token, `/repos/${t.owner}/${t.repo}/collaborators/${encodeURIComponent(a.github.login)}/permission`);
+  return r.status === 200 && r.data?.permission === 'admin' && r.data?.user?.id === a.github.id;
+}
+
+/**
+ * Studio's GitHub sign-in (`Authorization: Bearer`, scripts/github-session.ts): the token's own user, read from GitHub
+ * (GET /user), must be an admin of the repository (GET /repos with that same token: permissions.admin). Nothing the
+ * browser says about who it is counts; the token is never logged or kept. Repository teams only.
+ */
+async function githubAdmin(ctx: Ctx, token: string, t: TeamRef): Promise<Admin> {
+  if (t.id) throw new HttpError(403, 'forbidden', ADMIN_ONLY);
+  const me = await ghGet(ctx, token, '/user');
+  if (me.status === 401 || me.status === 403 || !Number.isSafeInteger(me.data?.id)) throw new HttpError(401, 'signin', GITHUB_EXPIRED);
+  const repo = await ghGet(ctx, token, `/repos/${t.owner}/${t.repo}`);
+  if (repo.status === 401) throw new HttpError(401, 'signin', GITHUB_EXPIRED);
+  if (repo.status !== 200 || repo.data?.permissions?.admin !== true) throw new HttpError(403, 'forbidden', ADMIN_ONLY);
+  return { team: t, email: null, who: `gh:${me.data.id}` };
+}
+
+/**
+ * Who asks, an admin of the team, or 401/403: the Bridge account cookie first (email admins, and an account with
+ * GitHub linked), else the Studio GitHub sign-in for a repository's team. A team made in Bridge: the account only.
+ */
+async function requireAdmin(ctx: Ctx, req: Request, teamArg: unknown): Promise<Admin> {
+  const t = await resolveTeam(ctx.redis, teamArg);
+  const a = ctx.secret.length >= MIN_SECRET_LENGTH ? await sessionAccount(req, ctx.redis, ctx.secret, ctx.now()) : null;
+  if (a && (await accountIsAdmin(ctx, a, t))) return { team: t, email: shownEmail(a), who: canonicalEmail(a.email) };
+  const bearer = bearerOf(req);
+  if (bearer && !t.id) return githubAdmin(ctx, bearer, t);
+  if (!a) throw new HttpError(401, 'signin', SIGNIN);
+  throw new HttpError(403, 'forbidden', ADMIN_ONLY);
 }
 
 function requireCsrf(req: Request): void {
@@ -175,8 +218,8 @@ function requireCsrf(req: Request): void {
   if (!header || !sameOrigin(req)) throw new HttpError(403, 'origin', 'Continue from Bridge on this site.');
 }
 
-async function dailyCap(ctx: Ctx, a: Account): Promise<void> {
-  const key = `bridge:billing:count:${canonicalEmail(a.email)}:${dayOf(ctx.now())}`;
+async function dailyCap(ctx: Ctx, who: string): Promise<void> {
+  const key = `bridge:billing:count:${who}:${dayOf(ctx.now())}`;
   const [n] = await ctx.redis.pipe([
     ['INCRBY', key, 1],
     ['EXPIRE', key, 2 * 24 * 60 * 60],
@@ -224,8 +267,7 @@ async function stripeCall<T>(fn: () => Promise<T>): Promise<T> {
 // Actions
 
 async function onStatus(ctx: Ctx, req: Request, teamArg: string): Promise<Response> {
-  const a = await account(ctx, req);
-  const t = await requireAdmin(ctx, a, teamArg);
+  const { team: t } = await requireAdmin(ctx, req, teamArg);
   const [b, founding, editors] = await Promise.all([getBilling(ctx.redis, t.full), isFounding(ctx.redis, t.full, ctx.flags), editorsNow(ctx, t.full)]);
   const status: BillingStatus = {
     on: true,
@@ -247,15 +289,15 @@ async function onStatus(ctx: Ctx, req: Request, teamArg: string): Promise<Respon
 }
 
 async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>): Promise<Response> {
-  const a = await account(ctx, req);
   if (!isCurrency(body.currency)) return fail(400, 'bad_request', 'Pick a currency: EUR or USD.');
   if (!isInterval(body.interval)) return fail(400, 'bad_request', 'Pick how to pay: yearly or monthly.');
-  const t = await requireAdmin(ctx, a, body.team);
+  const a = await requireAdmin(ctx, req, body.team);
+  const t = a.team;
   if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
   if (await isFounding(ctx.redis, t.full, ctx.flags)) return fail(409, 'founding', FOUNDING);
   const prev = await getBilling(ctx.redis, t.full);
   if (effectiveTier(prev) !== 'free') return fail(409, 'already', ALREADY_PAYING);
-  await dailyCap(ctx, a);
+  await dailyCap(ctx, a.who);
   const price = await stripeCall(() => ctx.stripe.priceIdByLookupKey(lookupKey('team', body.currency as 'eur', body.interval as 'yearly')));
   if (!price) {
     console.error('billing: a Team price is missing from the catalog (scripts/stripe-catalog.mjs)');
@@ -271,7 +313,7 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
       const again = await getBilling(ctx.redis, t.full);
       customerId = again?.customerId ?? null;
       if (!customerId) {
-        const made = await stripeCall(async () => ctx.stripe.createCustomer({ name: await teamName(ctx, t.full), email: shownEmail(a), metadata: { bridge_team: t.full } }));
+        const made = await stripeCall(async () => ctx.stripe.createCustomer({ name: await teamName(ctx, t.full), ...(a.email ? { email: a.email } : {}), metadata: { bridge_team: t.full } }));
         customerId = made.id;
         await putBilling(ctx.redis, t.full, { ...(again ?? emptyBilling(ctx.now())), customerId, updatedAt: new Date(ctx.now()).toISOString() });
       }
@@ -302,12 +344,12 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
 }
 
 async function onPortal(ctx: Ctx, req: Request, body: Record<string, unknown>): Promise<Response> {
-  const a = await account(ctx, req);
-  const t = await requireAdmin(ctx, a, body.team);
+  const a = await requireAdmin(ctx, req, body.team);
+  const t = a.team;
   if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
   const b = await getBilling(ctx.redis, t.full);
   if (!b?.customerId) return fail(409, 'no_customer', NO_CUSTOMER);
-  await dailyCap(ctx, a);
+  await dailyCap(ctx, a.who);
   const configuration = await stripeCall(() => ctx.stripe.portalConfigurationId());
   const back = `${siteOrigin(req, ctx.env.PUBLIC_SITE_URL)}${settingsPath(t)}#billing`;
   const session = await stripeCall(() => ctx.stripe.createPortalSession({ customer: b.customerId!, return_url: back, ...(configuration ? { configuration } : {}) }));

@@ -451,3 +451,89 @@ describe('test teams before launch (BILLING_TEST_TEAMS)', () => {
     expect(s.redis.keys().filter((k) => k.startsWith('bridge:billing:team:'))).toEqual([billingKey(TEAM)]);
   });
 });
+
+describe('an admin signed in to Studio with GitHub only (no Bridge account)', () => {
+  const ADMIN_TOKEN = 'gho_admin_token_000000000000';
+  const WRITER_TOKEN = 'gho_writer_token_00000000000';
+  const EXPIRED_TOKEN = 'gho_expired_token_0000000000';
+  const gh = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  function withGitHub(flags: BillingFlags = ON) {
+    const s = setup(flags);
+    const seen: string[] = [];
+    s.deps.fetch = (async (url: string, init: { headers: Record<string, string> }) => {
+      const auth = init.headers.Authorization ?? '';
+      const path = new URL(url).pathname;
+      seen.push(path);
+      if (auth === `Bearer ${EXPIRED_TOKEN}`) return gh(401, { message: 'Bad credentials' });
+      const id = auth === `Bearer ${ADMIN_TOKEN}` ? 1 : auth === `Bearer ${WRITER_TOKEN}` ? 2 : null;
+      if (id === null) return gh(401, {});
+      if (path === '/user') return gh(200, { id, login: id === 1 ? 'flo' : 'sam' });
+      if (path === `/repos/${TEAM}`) return gh(200, { full_name: TEAM, permissions: { admin: id === 1, push: true, pull: true } });
+      return gh(404, {});
+    }) as never;
+    const req = (token: string, method: 'GET' | 'POST', action = '', body?: unknown, extra: Record<string, string> = {}) =>
+      handleBilling(
+        new Request(`${ORIGIN}/api/billing${action ? `?action=${action}` : `?team=${TEAM}`}`, {
+          method,
+          headers: { host: HOST, authorization: `Bearer ${token}`, ...(method === 'POST' ? { origin: ORIGIN, 'content-type': 'application/json', 'x-bridge-account': '1' } : {}), ...extra },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        }),
+        ENV,
+        s.deps,
+      ).then(async (r) => ({ status: r.status, body: (await r.json()) as any }));
+    return { ...s, seen, req };
+  }
+
+  it('reads the status, starts checkout (Checkout asks the email) and opens the portal', async () => {
+    const s = withGitHub();
+    expect((await s.req(ADMIN_TOKEN, 'GET')).body).toMatchObject({ on: true, tier: 'free' });
+    const r = await s.req(ADMIN_TOKEN, 'POST', 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' });
+    expect(r.status).toBe(200);
+    const customer = s.fake.calls.find((x) => x.op === 'customer')!.p;
+    expect(customer).toEqual({ name: expect.any(String), metadata: { bridge_team: TEAM } });
+    expect(s.fake.calls.find((x) => x.op === 'checkout')!.p.client_reference_id).toBe(TEAM);
+    expect((await s.req(ADMIN_TOKEN, 'POST', 'portal', { team: TEAM })).status).toBe(200);
+    // The token is never kept.
+    expect(JSON.stringify(s.redis.snapshot())).not.toContain(ADMIN_TOKEN);
+  });
+
+  it('a GitHub user who is not admin of the repository: 403, whatever login the browser claims', async () => {
+    const s = withGitHub();
+    expect((await s.req(WRITER_TOKEN, 'GET')).status).toBe(403);
+    const spoof = await s.req(WRITER_TOKEN, 'POST', 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly', login: 'flo', githubId: 1 }, { 'x-github-login': 'flo' });
+    expect(spoof.status).toBe(403);
+    expect((await s.req(WRITER_TOKEN, 'POST', 'portal', { team: TEAM, login: 'flo' })).status).toBe(403);
+    expect(s.fake.calls).toEqual([]);
+  });
+
+  it('an invalid or expired token: 401', async () => {
+    const s = withGitHub();
+    expect(await s.req(EXPIRED_TOKEN, 'GET')).toEqual({ status: 401, body: { error: 'signin', message: 'Your GitHub sign-in expired. Sign in again.' } });
+    expect((await s.req(EXPIRED_TOKEN, 'POST', 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).status).toBe(401);
+  });
+
+  it('a team made in Bridge goes by the Bridge account only: a GitHub token alone is not enough', async () => {
+    const s = withGitHub({ launched: true, launchDate: '2027-02-01', testTeams: [] });
+    const r = await handleBilling(new Request(`${ORIGIN}/api/billing?team=_team/00112233aabbccdd`, { headers: { host: HOST, authorization: `Bearer ${ADMIN_TOKEN}` } }), ENV, s.deps);
+    expect(r.status).toBe(401);
+    expect(s.seen).toEqual([]);
+  });
+
+  it('the email account path is unchanged: an email admin with a stray GitHub token is still recognised by the account', async () => {
+    const s = withGitHub();
+    const c = await s.admin();
+    const r = await handleBilling(new Request(`${ORIGIN}/api/billing?team=${TEAM}`, { headers: { host: HOST, cookie: c, authorization: `Bearer ${WRITER_TOKEN}` } }), ENV, s.deps);
+    expect(r.status).toBe(200);
+    expect(s.seen).toEqual([]);
+  });
+
+  it('billing off for the team (flag false, not listed): { on: false }, GitHub never asked', async () => {
+    const s = withGitHub(OFF);
+    expect((await s.req(ADMIN_TOKEN, 'GET')).body).toEqual({ on: false });
+    expect((await s.req(ADMIN_TOKEN, 'POST', 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).status).toBe(503);
+    const listedElsewhere = withGitHub({ launched: false, launchDate: null, testTeams: ['other/ds'] });
+    expect((await listedElsewhere.req(ADMIN_TOKEN, 'GET')).body).toEqual({ on: false });
+    expect([...s.seen, ...listedElsewhere.seen]).toEqual([]);
+  });
+});

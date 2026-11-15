@@ -69,6 +69,13 @@ One Vercel function, `apps/docs-site/api/billing/index.ts`; `vercel.json` rewrit
 | `POST /api/billing/portal` `{ team }` | team admin | `{ url }` of a Customer Portal session |
 | `POST /api/billing/webhook` | Stripe | signature checked on the raw body, each event once |
 
+Team admin means: an email admin (the Bridge account cookie), an account whose linked GitHub account administers the
+repository, or, for a repository's team, Studio's GitHub sign-in alone: the browser sends its GitHub token as
+`Authorization: Bearer` (as the rest of Studio does), the server asks GitHub who it is (`GET /user`) and whether that
+user administers the repository (`GET /repos/<owner>/<repo>` with the same token, `permissions.admin`). No login sent by
+the browser is trusted; the token is never logged or kept. A team made in Bridge (no repository) goes by the account
+only. For a GitHub sign-in the Stripe customer is made without an email: Checkout asks for the billing email.
+
 Checkout: subscription mode, `automatic_tax`, `tax_id_collection`, `billing_address_collection: required`, the
 customer made once per team and kept, `client_reference_id` and `metadata.bridge_team` = the team, back to the team's
 Settings. Prices are found by lookup key, never by id.

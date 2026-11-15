@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
 import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
-import { behaviorMeta, behaviorRowNote } from './building-view';
+import { behaviorMeta, behaviorRowNote, viewTitle } from './building-view';
 import { behaviorRequestOf, composeRequestIssue } from '@bridge-ds/core';
 import { ageLabel, buildDetail, componentThumb, explorationBuildRows, previewedComponent, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, rowWaiting, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
@@ -511,5 +511,12 @@ describe('a behavior request in Being built', () => {
     expect(behaviorMeta({ askedBy: 'Sofia Ruiz', askedAt: '2026-11-14T10:00:00Z', madeDefault: { by: 'Dana', at: '2026-11-15T10:00:00Z' }, nameOf })).toBe('Asked by Sofia on Nov 14. Dana made it the default on Nov 15.');
     expect(behaviorMeta({ askedBy: null, askedAt: '2026-11-14T10:00:00Z', madeDefault: { by: '@lee', at: null }, nameOf })).toBe('Asked on Nov 14. Lee made it the default.');
     expect(behaviorMeta({ askedBy: 'Sofia', askedAt: '2026-11-14T10:00:00Z', madeDefault: null, nameOf })).toBe('Asked by Sofia on Nov 14.');
+  });
+});
+
+describe('a behavior request keeps its sentence as written', () => {
+  it('never lowers the first word of the wanted sentence (Tab, Escape)', () => {
+    expect(viewTitle({ component: 'Select', title: 'Tab picks the highlighted option', requestKind: 'behavior' })).toBe('Select: Tab picks the highlighted option');
+    expect(viewTitle({ component: 'Button', title: 'Add a lg size', requestKind: 'new-variant' })).toBe('Button: add a lg size');
   });
 });

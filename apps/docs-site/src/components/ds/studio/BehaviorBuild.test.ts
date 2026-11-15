@@ -35,8 +35,14 @@ describe('BehaviorDevelopers', () => {
       files: ['packages/react/src/components/Select/Select.tsx', 'packages/react/src/components/Select/Select.docs.json', 'packages/react/src/components/Select/Select.test.tsx'],
       primitives: [{ name: 'Select', module: '@base-ui/react/select' }],
     };
-    const { container } = render(createElement(BehaviorDevelopers, { ask, facts, brief: 'the brief' }));
+    const { container } = render(createElement(BehaviorDevelopers, { ask, facts, brief: 'the brief', github: { href: 'https://github.com/acme/ds/issues/75', label: 'Build request #75 on GitHub' } }));
     expect(screen.getByText('tab-leaves')).toBeTruthy();
+    // Labelled rows, then the request on GitHub, then the copy, last.
+    expect([...container.querySelectorAll('dt')].map((d) => d.textContent)).toEqual(['Behavior', 'Files to change', 'Base UI']);
+    expect(container.querySelector('.bb-bh-keys kbd, .bb-bh-keys [class*="kbd"]')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Build request #75 on GitHub' })).toBeTruthy();
+    const order = [...container.querySelectorAll('dl, a, button')].map((e) => e.tagName);
+    expect(order).toEqual(['DL', 'A', 'BUTTON']);
     expect(container.querySelectorAll('.bb-bh-files li')).toHaveLength(3);
     expect(screen.getByText('It wraps Select from @base-ui/react/select.')).toBeTruthy();
     await expectNoAxeViolations(container);
@@ -49,6 +55,9 @@ describe('BehaviorDevelopers', () => {
     const { rerender, container } = render(createElement(BehaviorDevelopers, { ask, facts: null, brief: null }));
     expect(screen.getByText('Reading the files of Select.')).toBeTruthy();
     rerender(createElement(BehaviorDevelopers, { ask, facts: {}, brief: null }));
+    // A read that came back empty: no bare id, no row.
+    expect(container.textContent).not.toContain('tab-leaves');
+    expect(container.querySelector('dl')).toBeNull();
     expect(container.textContent).not.toContain('Files to change');
     expect(container.textContent).not.toContain('It wraps');
     expect(screen.queryByRole('button')).toBeNull();

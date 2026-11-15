@@ -476,7 +476,12 @@ export function rowWaiting(v: Pick<BuildRequestView, 'status'> & LifecycleExtra 
 const listNames = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
 /** The title of a row and of the detail: "Button: add a lg size", the same words as the issue on GitHub. */
-export const viewTitle = (v: Pick<BuildRequestView, 'component' | 'title'>) => (v.component ? requestIssueTitle({ component: v.component, title: v.title }) : v.title);
+/**
+ * The title of a row and of its detail: "Button: add a lg size". A behavior request keeps the wanted sentence as written
+ * ("Select: Tab picks the highlighted option"): its first word is often a key's name (core requestIssueTitle).
+ */
+export const viewTitle = (v: Pick<BuildRequestView, 'component' | 'title'> & { requestKind?: BuildRequestView['requestKind'] | undefined }) =>
+  v.component ? requestIssueTitle({ component: v.component, title: v.title, kind: v.requestKind ?? null }) : v.title;
 
 /**
  * The library's own spelling of a component a request names ("button" or "Button " finds "Button"), when the library

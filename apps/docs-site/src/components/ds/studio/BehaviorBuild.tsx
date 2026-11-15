@@ -6,7 +6,7 @@
 //     and "Copy the request for Claude" (core buildRequestBrief, behavior-brief.ts). Nothing here is guessed: what
 //     the repository does not say stays out.
 import { useState } from 'react';
-import { Button, Kbd, VisuallyHidden } from '@bridge-ds/react';
+import { Button, Kbd, Link, VisuallyHidden } from '@bridge-ds/react';
 import { keyLabel, type BehaviorAsk, type BehaviorFacts } from '@bridge-ds/core';
 
 export interface BehaviorSentProps {
@@ -44,9 +44,15 @@ export interface BehaviorDevelopersProps {
   /** What the repository says, once read; null while it is read. */
   facts: BehaviorFacts | null;
   brief: string | null;
+  /** The request on GitHub: a plain link line. */
+  github?: { href: string; label: string } | null;
 }
 
-export function BehaviorDevelopers({ ask, facts, brief }: BehaviorDevelopersProps) {
+/**
+ * Labelled rows, each only when the repository says it: Behavior (its id and keys), Files to change, Base UI. Then the
+ * request on GitHub, then "Copy the request for Claude", last. A read that fails leaves its row out, never a bare id.
+ */
+export function BehaviorDevelopers({ ask, facts, brief, github }: BehaviorDevelopersProps) {
   const [done, setDone] = useState<'copied' | 'failed' | null>(null);
   const copy = async () => {
     if (!brief) return;
@@ -57,44 +63,65 @@ export function BehaviorDevelopers({ ask, facts, brief }: BehaviorDevelopersProp
       setDone('failed');
     }
   };
-  const which = ask.of === 'pattern' ? (ask.rule !== undefined ? `Rule ${ask.rule + 1} of the ${ask.id} pattern` : `A new rule of the ${ask.id} pattern`) : ask.behavior ?? 'A new behavior';
+  const keys = facts?.keys ?? [];
+  const files = facts?.files ?? [];
+  const primitives = facts?.primitives ?? [];
+  const behaviorRow = ask.of === 'component' && (ask.behavior ? keys.length > 0 : true);
   return (
     <div className="bb-bh-dev">
-      <p className="t-ui bb-measure">
-        <span className={ask.behavior ? 'mono' : undefined}>{which}</span>
-        {facts?.keys?.length ? (
-          <>
-            {' '}
-            <span className="bb-bh-keys">
-              {facts.keys.map((k) => (
-                <Kbd key={k} keys={keyLabel(k)} size="sm" />
-              ))}
-            </span>
-          </>
-        ) : null}
-      </p>
       {facts === null ? (
         <p className="t-ui t-muted">Reading the files of {ask.id}.</p>
       ) : (
-        <>
-          {facts.files?.length ? (
-            <>
-              <h4 className="t-ui bb-h4">Files to change</h4>
-              <ul className="t-ui bb-list bb-bh-files">
-                {facts.files.map((f) => (
-                  <li key={f} className="mono">
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-          {facts.primitives?.length ? (
-            <p className="t-ui t-muted bb-measure">
-              It wraps {facts.primitives.map((p) => `${p.name} from ${p.module}`).join(', ')}.
-            </p>
-          ) : null}
-        </>
+        (behaviorRow || files.length > 0 || primitives.length > 0) && (
+          <dl className="t-ui bb-bh-facts">
+            {behaviorRow && (
+              <div>
+                <dt>Behavior</dt>
+                <dd>
+                  {ask.behavior ? (
+                    <>
+                      <span className="mono">{ask.behavior}</span>{' '}
+                      <span className="bb-bh-keys">
+                        {keys.map((k) => (
+                          <Kbd key={k} keys={keyLabel(k)} size="sm" />
+                        ))}
+                      </span>
+                    </>
+                  ) : (
+                    'A new behavior'
+                  )}
+                </dd>
+              </div>
+            )}
+            {files.length > 0 && (
+              <div>
+                <dt>Files to change</dt>
+                <dd>
+                  <ul className="bb-bh-files">
+                    {files.map((f) => (
+                      <li key={f} className="mono">
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {primitives.length > 0 && (
+              <div>
+                <dt>Base UI</dt>
+                <dd>It wraps {primitives.map((p) => `${p.name} from ${p.module}`).join(', ')}.</dd>
+              </div>
+            )}
+          </dl>
+        )
+      )}
+      {github && (
+        <p className="t-ui">
+          <Link href={github.href} target="_blank" rel="noopener noreferrer">
+            {github.label}
+          </Link>
+        </p>
       )}
       {brief && (
         <span className="bb-copy">

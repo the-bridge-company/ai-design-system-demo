@@ -647,6 +647,15 @@ function Detail({
 
           {forDevelopers && <Accordion className="bb-dev" headingLevel={3}>
             <AccordionItem value="dev" title="For developers">
+              {ask ? (
+                <BehaviorDevelopers
+                  ask={ask}
+                  facts={facts?.facts ?? null}
+                  brief={behaviorBrief}
+                  github={safeUrl(v.url) ? { href: safeUrl(v.url), label: `Build request #${v.number} on GitHub` } : null}
+                />
+              ) : (
+              <>
               <ul className="t-ui bb-links">
                 <li>
                   <Link href={safeUrl(v.url, "#")} {...external}>
@@ -674,9 +683,7 @@ function Detail({
                   </li>
                 )}
               </ul>
-              {ask ? (
-                <BehaviorDevelopers ask={ask} facts={facts?.facts ?? null} brief={behaviorBrief} />
-              ) : d?.brief ? (
+              {d?.brief ? (
                 <>
                   <p className="t-ui t-muted bb-measure">
                     The brief gives Claude Code the change, the props, the Figma
@@ -690,6 +697,8 @@ function Detail({
                   The brief for Claude is on the branch: bridge figma show{" "}
                   {v.number}.
                 </p>
+              )}
+              </>
               )}
             </AccordionItem>
           </Accordion>}

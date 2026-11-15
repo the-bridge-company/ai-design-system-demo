@@ -1,0 +1,99 @@
+---
+// /pricing/: Free, Team and Organization. Ships on announcement day; until then it lives in a draft pull request.
+// Every price, word and placeholder: lib/pricing.ts. The switches and cards (PricingPlans) hydrate on load so the
+// currency follows the browser language; the comparison table (PricingTable) follows the same switches.
+import '../styles/pricing.css';
+import Landing from '../layouts/Landing.astro';
+import { Link } from '@bridge-ds/react';
+import PricingPlans from '../components/pricing/PricingPlans';
+import PricingTable from '../components/pricing/PricingTable';
+import PricingFaq from '../components/pricing/PricingFaq';
+import {
+  COMMITMENTS,
+  EDITOR_DEFINITION,
+  EDITOR_NOT_COUNTED,
+  EDITOR_TITLE,
+  FOUNDING_TEXT,
+  FOUNDING_TITLE,
+  LEAD,
+  LICENSE_LINE,
+  ORGANIZATION_CONTACT_LABEL,
+  ORGANIZATION_CONTACT_PATH,
+  ORGANIZATION_NOTE,
+  ORGANIZATION_PRICE,
+  TITLE,
+  money,
+} from '../lib/pricing';
+import { GITHUB_URL } from '../lib/repo';
+import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
+
+// TO DECIDE (Florian): there is no contact email on the site yet; GitHub issues is the existing contact path.
+const contact = `${GITHUB_URL}${ORGANIZATION_CONTACT_PATH}`;
+const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
+---
+
+<Landing title="Pricing | Bridge" description="Free for a small team. Then a fair price per editor, capped per design system. Every tier has every feature.">
+  <div class="lp-wrap pr">
+    <header class="pr-head">
+      <h1 class="lp-h">{TITLE}</h1>
+      <p class="pr-lead">{LEAD}</p>
+      <p class="pr-license">{LICENSE_LINE}</p>
+    </header>
+
+    <section class="pr-section" aria-label="Tiers">
+      <PricingPlans client:load hrefs={hrefs} />
+      <p class="pr-org-note">{ORGANIZATION_NOTE}</p>
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-commitments">
+      <div class="pr-section-head">
+        <h2 id="pr-commitments" class="pr-h2">Our commitments</h2>
+        <p class="pr-text lp-muted">These hold on every tier, Free included.</p>
+      </div>
+      <ul class="pr-commitments">
+        {
+          COMMITMENTS.map((c) => (
+            <li>
+              <h3>{c.title}</h3>
+              <p>{c.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-compare">
+      <h2 id="pr-compare" class="pr-h2">Compare the tiers</h2>
+      <PricingTable client:visible />
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-editor">
+      <h2 id="pr-editor" class="pr-h2">{EDITOR_TITLE}</h2>
+      <div class="pr-panel">
+        <p><strong>{EDITOR_DEFINITION}</strong></p>
+        <p>{EDITOR_NOT_COUNTED}</p>
+      </div>
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-founding">
+      <h2 id="pr-founding" class="pr-h2">{FOUNDING_TITLE}</h2>
+      {/* To be reviewed by a lawyer before launch: this text is a commitment in the terms of service. */}
+      <div class="pr-panel">
+        {FOUNDING_TEXT.map((t) => <p>{t}</p>)}
+      </div>
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-faq">
+      <h2 id="pr-faq" class="pr-h2">Questions</h2>
+      <PricingFaq client:visible />
+      <p class="pr-text lp-muted">More on how Bridge handles your data: <Link href={PRIVACY_PAGE}>Privacy</Link>.</p>
+    </section>
+
+    <section class="pr-section" aria-labelledby="pr-org">
+      <h2 id="pr-org" class="pr-h2">Organization</h2>
+      <p class="pr-contact">
+        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly, excluding VAT. Questions before you choose it? <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
+      </p>
+    </section>
+  </div>
+</Landing>

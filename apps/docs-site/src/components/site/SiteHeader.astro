@@ -1,5 +1,5 @@
 ---
-// The product site header (layouts/Landing.astro): the logo on the left, Product, Resources and About centred, one
+// The product site header (layouts/Landing.astro): the logo on the left, Product, Resources, Pricing and About centred, one
 // "Sign in" on the right, to the one sign-in screen (pages/signin.astro). Product and Resources are disclosure menus (a button with aria-expanded and a list of
 // links, not an ARIA menu: they navigate); under 900px everything moves into one sheet behind a Menu button.
 // Behaviour: scripts/site-nav.ts. Validated on the homepage test page (2026-10-21).
@@ -8,7 +8,7 @@ import { ChevronDown, Menu, X } from 'lucide-react';
 import Logo from '../Logo.astro';
 import ButtonLink from '../ds/ButtonLink';
 import SiteNavItem, { type Props as Item } from './SiteNavItem.astro';
-import { ABOUT, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, STUDIO_HOME } from '../../lib/nav';
+import { ABOUT, PRICING, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, STUDIO_HOME } from '../../lib/nav';
 import { SIGNIN_PAGE } from '../../lib/account';
 
 interface Props {
@@ -64,6 +64,9 @@ const groups: { id: string; label: string; items: Item[] }[] = [
           ))
         }
         <li class="nv-mi">
+          <Link variant="subtle" className="nv-top" href={PRICING} aria-current={here(PRICING)}>Pricing</Link>
+        </li>
+        <li class="nv-mi">
           <Link variant="subtle" className="nv-top" href={ABOUT} aria-current={here(ABOUT)}>About</Link>
         </li>
       </ul>
@@ -87,6 +90,7 @@ const groups: { id: string; label: string; items: Item[] }[] = [
         </>
       ))
     }
+    <Link variant="subtle" className="nv-about" href={PRICING} aria-current={here(PRICING)}>Pricing</Link>
     <Link variant="subtle" className="nv-about" href={ABOUT} aria-current={here(ABOUT)}>About</Link>
     <ButtonLink variant="primary" size="lg" href={SIGNIN_PAGE} className="nv-signin-full" data-session-cta=""><span data-session-cta-label>Sign in</span></ButtonLink>
   </div>

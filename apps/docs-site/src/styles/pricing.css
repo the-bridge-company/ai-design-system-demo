@@ -1,0 +1,329 @@
+/* /pricing/ (pages/pricing.astro, components/pricing/*). Mobile first, three cards side by side from 900px like the
+   rest of the site. Inside the landing column (.lp-wrap). Tokens only; light and dark come from the tokens. */
+
+.pr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding-block: var(--space-16) var(--space-24);
+}
+
+.pr-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 62ch;
+}
+
+.pr-head .lp-h {
+  text-wrap: balance;
+}
+
+.pr-lead {
+  margin: 0;
+  color: var(--color-text-default);
+  font-size: var(--font-size-400);
+  line-height: var(--font-leading-28);
+}
+
+.pr-license {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.pr-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.pr-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 62ch;
+}
+
+.pr-h2 {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  letter-spacing: var(--typography-h2-tracking);
+  line-height: var(--typography-h2-line-height);
+}
+
+.pr-text {
+  max-width: 62ch;
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* ---------- switches and cards ---------- */
+.pr-plans {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.pr-switches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.pr-vat {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .pr-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pr-cards > li {
+  display: flex;
+}
+
+.pr-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.pr-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pr-card[data-recommended] {
+  border-color: var(--color-border-emphasis);
+}
+
+.pr-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pr-tier {
+  margin: 0;
+  font-family: var(--typography-h3-family);
+  font-size: var(--typography-h3-size);
+  font-weight: var(--typography-h3-weight);
+  line-height: var(--typography-h3-line-height);
+}
+
+.pr-pitch {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-price {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pr-price p {
+  margin: 0;
+}
+
+.pr-amount {
+  font-family: var(--typography-display-family);
+  font-size: var(--font-size-800);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-leading-50);
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-unit {
+  color: var(--color-text-muted);
+  font-family: var(--typography-body-family);
+  font-size: var(--typography-ui-size);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-per,
+.pr-cap {
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-cap {
+  color: var(--color-text-default);
+}
+
+.pr-includes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-includes li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.pr-includes .pr-yes,
+.pr-includes .pr-no {
+  flex: none;
+  margin-top: var(--space-0-5);
+}
+
+.pr-yes {
+  color: var(--color-feedback-success-icon);
+}
+
+.pr-no {
+  color: var(--color-text-muted);
+}
+
+.pr-without {
+  color: var(--color-text-muted);
+}
+
+.pr-org-note {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* ---------- commitments ---------- */
+.pr-commitments {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6) var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 700px) {
+  .pr-commitments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .pr-commitments {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pr-commitments li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding-top: var(--space-4);
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+.pr-commitments h3 {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}
+
+.pr-commitments p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* ---------- comparison table ---------- */
+.pr-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.pr-cell {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pr-cell-text {
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* ---------- editor definition and founding teams ---------- */
+.pr-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--size-180);
+  padding: var(--space-6);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.pr-panel p {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* ---------- FAQ and contact ---------- */
+.pr-faq-list {
+  max-width: var(--size-180);
+}
+
+.pr-faq-answer {
+  margin: 0 0 var(--space-3);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.pr-faq-answer:last-child {
+  margin-bottom: 0;
+}
+
+.pr-contact {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* Side by side, the price blocks share one height so the three buttons line up. */
+@media (min-width: 900px) {
+  .pr-price {
+    min-height: calc(var(--size-20) + var(--size-12));
+  }
+}

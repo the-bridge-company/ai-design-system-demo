@@ -142,10 +142,10 @@ export const SHORT: CompareRow[] = [
     ],
   },
   {
-    feature: 'Free, with every feature',
-    detail: 'No paid plan',
+    feature: 'Free up to 3 editors, every feature',
+    detail: 'Self-hosting without limit',
     cells: [
-      y(),
+      y('Free up to 3 editors, with every feature. Paid tiers add editors, design systems and support; self-hosting has no limit on any tier.'),
       n,
       n,
       y('Chromatic, its visual testing service, is paid.', 'Chromatic is paid'),

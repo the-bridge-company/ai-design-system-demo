@@ -1,0 +1,77 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import * as pricing from './pricing';
+import {
+  COMMITMENTS,
+  FAQ,
+  FOUNDING_TEXT,
+  LAUNCH_DATE,
+  ORGANIZATION_PRICE,
+  TABLE_GROUPS,
+  TEAM_PRICE,
+  TIERS,
+  defaultCurrency,
+  editorsCapped,
+  money,
+  teamMonthlyCost,
+} from './pricing';
+import { ROOT } from './repo';
+
+const page = readFileSync(join(ROOT, 'apps/docs-site/src/pages/pricing.astro'), 'utf8');
+const words = (v: unknown): string[] =>
+  typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(words) : v && typeof v === 'object' ? Object.values(v).flatMap(words) : [];
+const allWords = [...Object.values(pricing).flatMap(words), page].join('\n');
+
+describe('pricing (/pricing/)', () => {
+  it('keeps the decided prices: Team 12 EUR capped at 120, Organization 490, Free 3 editors and 1 design system', () => {
+    expect(TEAM_PRICE.EUR.yearly).toEqual({ perEditor: 12, cap: 120 });
+    expect(ORGANIZATION_PRICE.EUR).toBe(490);
+    expect(pricing.FREE_EDITORS).toBe(3);
+    expect(pricing.FREE_DESIGN_SYSTEMS).toBe(1);
+    expect(pricing.TEAM_DESIGN_SYSTEMS).toBe(3);
+  });
+
+  it('caps every Team price at ten editors, so "editors past ten cost nothing" stays true', () => {
+    for (const c of pricing.CURRENCIES) for (const b of pricing.BILLINGS) expect(editorsCapped(TEAM_PRICE[c][b]), `${c} ${b}`).toBe(10);
+    expect(teamMonthlyCost(4, TEAM_PRICE.EUR.yearly)).toBe(48);
+    expect(teamMonthlyCost(25, TEAM_PRICE.EUR.yearly)).toBe(120);
+  });
+
+  it('formats whole amounts in each currency', () => {
+    expect(money(12, 'EUR')).toBe('€12');
+    expect(money(490, 'EUR')).toBe('€490');
+    expect(money(13, 'USD')).toBe('$13');
+  });
+
+  it('defaults the currency from the browser language', () => {
+    expect(defaultCurrency('fr-FR')).toBe('EUR');
+    expect(defaultCurrency('de')).toBe('EUR');
+    expect(defaultCurrency('en-GB')).toBe('EUR');
+    expect(defaultCurrency('en-US')).toBe('USD');
+    expect(defaultCurrency('en')).toBe('USD');
+    expect(defaultCurrency('ja-JP')).toBe('USD');
+    expect(defaultCurrency(undefined)).toBe('EUR');
+  });
+
+  it('recommends Team, and gives Free its one negative line', () => {
+    expect(TIERS.map((t) => t.id)).toEqual(['free', 'team', 'organization']);
+    expect(TIERS.filter((t) => t.recommended).map((t) => t.id)).toEqual(['team']);
+    expect(TIERS.filter((t) => t.without).map((t) => t.id)).toEqual(['free']);
+    for (const g of TABLE_GROUPS) for (const r of g.rows) expect(r.cells, r.label).toHaveLength(3);
+  });
+
+  it('names the real license and keeps the founding text with its placeholder date', () => {
+    const license = readFileSync(join(ROOT, 'LICENSE'), 'utf8');
+    expect(license).toContain('FSL-1.1-MIT');
+    expect(COMMITMENTS.map((c) => c.text).join(' ')).toContain('FSL-1.1-MIT');
+    expect(LAUNCH_DATE).toBe('[LAUNCH DATE]');
+    expect(FOUNDING_TEXT[0]).toContain(`before ${LAUNCH_DATE} keeps`);
+    expect(FAQ.map((f) => f.id)).toEqual(['fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'discounts', 'saml', 'shutdown']);
+  });
+
+  it('never says what the page must not say', () => {
+    expect(allWords).not.toMatch(/—/);
+    expect(allWords).not.toMatch(/contact sales|most popular|lifetime|countdown|limited time/i);
+  });
+});

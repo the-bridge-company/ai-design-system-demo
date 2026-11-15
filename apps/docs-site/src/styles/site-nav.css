@@ -277,6 +277,10 @@ a.nv-about {
   text-decoration-line: none;
 }
 
+a.nv-about + a.nv-about {
+  margin-top: 0;
+}
+
 a.nv-about[aria-current="page"] {
   color: var(--color-text-link);
 }

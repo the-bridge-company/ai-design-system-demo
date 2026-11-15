@@ -249,6 +249,8 @@ export interface PendingInvite {
   sentAt: string;
   /** Seed of the drawn face, when the person is known; else the email seeds it. */
   face?: string;
+  /** Billing: a fourth editor on Free, kept and not emailed until the team moves to Team (Resend sends it then). */
+  needsTeam?: boolean;
 }
 
 /** Someone the email field suggests: in the team or its organization, known to Bridge. */
@@ -364,7 +366,7 @@ export function sendLabel(n: number): string {
 }
 
 /** What happened to a send, in one sentence for the dialog's live line. */
-export function sentSummary(results: readonly { status: 'sent' | 'added' | 'already' | 'failed' }[]): string {
+export function sentSummary(results: readonly { status: 'sent' | 'added' | 'already' | 'waiting' | 'failed' }[]): string {
   const n = (s: string) => results.filter((r) => r.status === s).length;
   const parts: string[] = [];
   const sent = n('sent');
@@ -372,6 +374,7 @@ export function sentSummary(results: readonly { status: 'sent' | 'added' | 'alre
   if (sent) parts.push(`${sent} ${sent === 1 ? 'invite' : 'invites'} sent`);
   if (added) parts.push(`${added} added to the team`);
   if (n('already')) parts.push(`${n('already')} already invited`);
+  if (n('waiting')) parts.push(`${n('waiting')} ${n('waiting') === 1 ? 'waits' : 'wait'} for Team`);
   if (n('failed')) parts.push(`${n('failed')} not sent`);
   const s = parts.join(', ');
   return s ? `${s.charAt(0).toUpperCase()}${s.slice(1)}.` : '';

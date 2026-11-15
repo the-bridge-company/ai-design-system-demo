@@ -34,6 +34,7 @@ import { isSampleTeam } from '../../../lib/demo';
 import '../../../styles/invites.css';
 import { CountTag } from './CountTag';
 import { SEP } from '../../../lib/sep';
+import { BILLING_WORDS } from '../../../lib/billing';
 
 /** Where this browser keeps how many rows a team's members list showed: its next first paint reserves as many. */
 export const memberRowsKey = (team: string) => `bridge.settings.member-rows:${team.toLowerCase()}`;
@@ -166,7 +167,7 @@ function PendingRow({ p, data, act, onNotice }: { p: PendingInvite; data: Member
           pending
           line={
             <>
-              {pendingLine(p.sentAt, Date.now())}
+              {p.needsTeam ? BILLING_WORDS.needsTeam : pendingLine(p.sentAt, Date.now())}
               {data.canManage && (
                 <>
                   {SEP}

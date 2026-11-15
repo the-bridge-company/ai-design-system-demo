@@ -36,7 +36,7 @@ export interface ComponentDocs {
   anatomy?: Record<string, string>;
   /** How it reacts, in designer words, grouped by shared family (behaviors.ts). Interactive components only. */
   behaviors?: ComponentBehavior[];
-  /** "claude" when an AI drafted the prose (docs-draft Action, bridge_draft_docs). */
+  /** "claude" when an AI drafted the prose (bridge_draft_docs, the Library page draft exchange). */
   draftedBy?: string;
   /** Prose sections Claude drafted that wait for review, when a draft covered only some (missing: the whole file). */
   draftedSections?: ProseKey[];

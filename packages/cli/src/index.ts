@@ -110,7 +110,7 @@ Usage:
   bridge fix <component> [--case | --try fixes.json | --propose fixes.json --summary "..." | --with-claude]
                                       its gap case and the fix schema; the values referee on fixes (closer,
                                       same or worse, offline); figma-fixes.json on a branch for review;
-                                      or the loop with your own ANTHROPIC_API_KEY (\`bridge fix help\`)
+                                      or the line to say to your own Claude (\`bridge fix help\`)
   bridge history [token] [--json] [--limit n] [--author a] [--tier n] [--version v]
                                       token history: versions, merged changes, who, when, why
   bridge revert <pr|commit|id> [--dry-run] [--restore-conflicts] [--use-before path@file] [--suggest | --direct] [--json]

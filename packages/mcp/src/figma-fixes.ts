@@ -146,7 +146,7 @@ export async function figmaGapsOp(ctx: BridgeContext, a: FixFilesArgs = {}) {
     measured: files.measuredFrom,
     gaps,
     next: differs
-      ? say(ctx, `Read one: bridge_get_gap_case { component: \"${gaps[0]!.component}\" }, then say what differs in plain words.`, `Fix one: \`bridge fix ${gaps[0]!.component} --with-claude\`, or \`bridge fix ${gaps[0]!.component} --case\` to read its gap case.`)
+      ? say(ctx, `Read one: bridge_get_gap_case { component: \"${gaps[0]!.component}\" }, then say what differs in plain words.`, `Fix one with your own Claude: in Claude with Bridge connected, say "Fix ${gaps[0]!.component} in Figma with Bridge"; or \`bridge fix ${gaps[0]!.component} --case\` to read its gap case.`)
       : gaps.length
         ? 'Nothing differs that a fix can move: the rest cannot be checked, each with its reason.'
         : 'Every checked component matches its story.',
@@ -198,7 +198,7 @@ export async function getGapCaseOp(ctx: BridgeContext, a: FixFilesArgs & { compo
       ? say(
           ctx,
           `Say what differs on ${gap.component} in plain words, from the parts and deltas above.${missing.length ? ` Missing in Figma: ${missing.join(', ')}.` : ''}`,
-          `Write the fixes to a JSON file, then \`bridge fix ${gap.component} --try fixes.json\`; or let Claude do the rounds: \`bridge fix ${gap.component} --with-claude\`.`,
+          `Write the fixes to a JSON file, then \`bridge fix ${gap.component} --try fixes.json\`; or let your own Claude do the rounds: in Claude with Bridge connected, say "Fix ${gap.component} in Figma with Bridge".`,
         )
       : 'Nothing differs on this component: there is nothing to fix.',
   };

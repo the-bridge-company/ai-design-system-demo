@@ -8,12 +8,10 @@ import {
   applyFixes,
   figmaFixesPrBody,
   figmaGaps,
-  fixPrompt,
   gapCaseFor,
   matchVariant,
   mergeFigmaFixes,
   parseFidelityRun,
-  parseFixReply,
   parseMeasuredSpecsFile,
   specsFromMeasure,
   statusFixFor,
@@ -226,19 +224,7 @@ describe('matchVariant (a report key against the set)', () => {
   });
 });
 
-describe('prompt, reply and pull request body', () => {
-  it('the prompt carries the schema, the gap and the earlier rounds; the reply parser takes fenced or bare JSON', () => {
-    const { gap } = gapCaseFor({ component: 'TextInput', measured: loadWithBoxes(), run: textInputRun() });
-    const p = fixPrompt(gap, [{ fixes: [labelFixed], feedback: 'height: closer (-12 px -> -4 px)', verdict: 'closer' }]);
-    expect(p).toContain('kind "part"');
-    expect(p).toContain('8 px missing below the label');
-    expect(p).toContain('Round 1: you proposed');
-    expect(p).not.toMatch(/\u2014/);
-    expect(parseFixReply('Here:\n```json\n[{"id":"a","kind":"status"}]\n```')).toEqual([{ id: 'a', kind: 'status' }]);
-    expect(parseFixReply('{"fixes":[{"id":"b"}]}')).toEqual([{ id: 'b' }]);
-    expect(() => parseFixReply('no idea')).toThrow(/no JSON/);
-  });
-
+describe('status fix and pull request body', () => {
   it('the status fix after the last round is valid', () => {
     const { gap } = gapCaseFor({ component: 'TextInput', measured: loadWithBoxes(), run: textInputRun() });
     const f = statusFixFor(gap, ['textinput-differs']);

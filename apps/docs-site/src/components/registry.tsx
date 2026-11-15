@@ -58,3 +58,20 @@ export function resolveProps(props: Record<string, unknown> = {}, lookup: (name:
   }
   return out;
 }
+
+/** A docs.json example node ({ c, p, children }) where a value is expected. */
+const isExampleNode = (v: unknown): v is { c: string; p?: Record<string, unknown>; children?: unknown[] } =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && typeof (v as { c?: unknown }).c === 'string';
+
+/**
+ * Example nodes inside props (a Badge in a Select option's `badge`) drawn as elements with `render`, at every depth.
+ * Without it a component receives the raw { c, p, children } object and React refuses to draw it.
+ */
+export function resolveNestedNodes(value: unknown, render: (node: { c: string; p?: Record<string, unknown>; children?: unknown[] }) => ReactNode): unknown {
+  if (isExampleNode(value)) return render(value);
+  if (Array.isArray(value)) return value.map((v) => resolveNestedNodes(v, render));
+  if (typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, resolveNestedNodes(v, render)]));
+  }
+  return value;
+}

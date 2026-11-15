@@ -47,8 +47,6 @@ export const fixAllPhrase = (components: readonly string[]) =>
 /** The same without the names, for a list too long to write in Claude's address: bridge_figma_gaps lists them. */
 export const FIX_EVERY_PHRASE = 'Fix every component that differs in Figma with Bridge';
 
-/** The same with the team's Anthropic API key, from the repo. */
-export const fixCommand = (component: string) => `npx @bridge-ds/cli fix ${component} --with-claude`;
 
 /** What the designer sees once the check is saved: no command, no MCP, no API key (those go to the developer). */
 export const FIX_ASKED_TEXT = 'Your developer runs Claude on it. Copy the request and send it to them: it has everything they need.';
@@ -101,9 +99,8 @@ export function measureRequestForDeveloper(component: string, repo: string): str
 }
 
 /**
- * "Copy for your developer": the request a designer pastes in Slack or an issue. It holds the ways to run the fix
- * (Claude with the Bridge MCP server, or the CLI with the team's API key), which the plugin never displays. Bridge has
- * no server that runs Claude for the team (yet): a developer starts the run.
+ * "Copy for your developer": the request a designer pastes in Slack or an issue. It holds the line to say to Claude
+ * with the Bridge MCP server, which the plugin never displays. Bridge never runs Claude: a developer's Claude does.
  */
 export function fixRequestForDeveloper(component: string | readonly string[], repo: string): string {
   const all = typeof component === 'string' ? [component] : component;
@@ -115,8 +112,6 @@ export function fixRequestForDeveloper(component: string | readonly string[], re
     '',
     `The check is saved in ${DEFAULT_FIDELITY_RUN_FILE} on the ${REQUESTS_BRANCH} branch${repo ? ` of ${repo}` : ''}.`,
     `- With Claude Code or Claude Desktop and the Bridge MCP server, say: "${fixAllPhrase(all)}"`,
-    one ? `- Or in the repository, with the team's Anthropic API key: ${fixCommand(all[0]!)}` : "- Or in the repository, with the team's Anthropic API key, one component at a time:",
-    ...(one ? [] : all.map((c) => `  ${fixCommand(c)}`)),
     '',
     'Claude opens its fixes (figma-fixes.json) for review. Once they are merged, my next pull lays them on.',
   ].join('\n');

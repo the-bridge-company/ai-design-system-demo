@@ -231,7 +231,7 @@ interface SentLine {
 /** Where the text of a field comes from. Only "draft" text is rewritten by the plugin. */
 type TextSource = 'draft' | 'claude' | 'user';
 
-/** "Draft with my Claude" and "Draft with Claude (API key)" under a field. */
+/** "Draft with my Claude" under a field. */
 interface AssistState {
   message?: { kind: 'ok' | 'error'; text: string } | undefined;
   /** "Draft with my Claude": the pending drafts file on the requests branch and its polling. */
@@ -1419,8 +1419,8 @@ function removeToken(): void {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Writing help: the plugin's own draft (always), "Draft with my Claude" (the designer's Claude app with the Bridge MCP,
-// any Claude plan, no key), "Draft with Claude" (only with an API key in Settings, billed to the designer's Anthropic account).
+// Writing help: the plugin's own draft (always), and "Draft with my Claude" (the designer's Claude app with the Bridge
+// MCP, any Claude plan). Bridge never calls Claude itself.
 
 /** Images larger than this (base64 characters) are not sent to Claude: the API refuses images over 5 MB. */
 const CLAUDE_IMAGE_MAX = 6_500_000;
@@ -1806,13 +1806,9 @@ function offerView(a: AssistState, t: AssistTarget): Child {
 }
 
 /**
- * "Draft with Claude": a ghost text action on the label line of the field it fills (proximity), right-aligned. Without
- * an API key it starts the designer's own Claude (MCP) directly; with one it opens a small menu of the two ways. Hidden
- * while the designer's Claude drafts or its text is offered: the status block under the field holds the actions then.
- */
-/**
- * "Draft with Claude": one button, no choice of ways for the designer. With an API key a developer saved (Settings, For
- * developers), Claude drafts in one click; otherwise the designer's own Claude plan does (Draft with my Claude).
+ * "Draft with Claude": a ghost text action on the label line of the field it fills (proximity), right-aligned: it starts
+ * the designer's own Claude (MCP). Hidden while the designer's Claude drafts or its text is offered: the status block
+ * under the field holds the actions then.
  */
 function assistAction(a: AssistState, t: AssistTarget): Child {
   if (mineActive(a) || a.offer) return null;

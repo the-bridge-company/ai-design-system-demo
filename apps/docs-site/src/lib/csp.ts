@@ -10,7 +10,7 @@
 //   style-src   'unsafe-inline': Astro and React write style attributes and scoped <style> blocks.
 //   img-src     GitHub avatars, raw files (visual impact screenshots), issue attachments (github.com/user-attachments
 //               redirects to *.githubusercontent.com), data: and blob: (pasted request images, drawn avatars).
-//   connect-src GitHub API and raw files (Studio reads), Anthropic (docs drafting with the visitor's own key), own
+//   connect-src GitHub API and raw files (Studio reads), own
 //               /api (token exchange, Storybook proxy).
 //   frame-src   team Storybooks and preview apps live on any https host.
 //   form-action GitHub sign-in.
@@ -38,7 +38,7 @@ export const CSP_DIRECTIVES: Readonly<Record<string, readonly string[]>> = {
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", 'data:', 'blob:', 'https://avatars.githubusercontent.com', 'https://raw.githubusercontent.com', 'https://*.githubusercontent.com', 'https://github.com', 'https://vercel.live', 'https://vercel.com'],
   'font-src': ["'self'", 'data:'],
-  'connect-src': ["'self'", 'https://api.github.com', 'https://raw.githubusercontent.com', 'https://avatars.githubusercontent.com', 'https://api.anthropic.com', 'https://vercel.live', 'wss://ws-us3.pusher.com'],
+  'connect-src': ["'self'", 'https://api.github.com', 'https://raw.githubusercontent.com', 'https://avatars.githubusercontent.com', 'https://vercel.live', 'wss://ws-us3.pusher.com'],
   'frame-src': ["'self'", 'https:'],
   'object-src': ["'none'"],
   'base-uri': ["'none'"],

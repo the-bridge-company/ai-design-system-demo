@@ -444,13 +444,9 @@ a reviewer accepts it.
   tool itself.
 - **From a terminal.** `bridge docs draft Icon` prints the same pre-fill and prompt; `--json` prints
   `{ path, prefill, prompt }` for scripts.
-- **On pull requests, optional.** The `Docs drafts` workflow (`.github/workflows/docs-draft.yml`) runs when a
-  pull request touches components or tokens. Without the `ANTHROPIC_API_KEY` repository secret it posts one
-  comment, "AI doc drafts are off. Add ANTHROPIC_API_KEY to enable.", and passes. With it, each touched
-  component whose docs are missing, incomplete or older than its code gets a draft from `claude-sonnet-5-5`,
-  committed to the pull request branch with `"draftedBy": "claude"` and `"needsReview": true`; the comment lists
-  what was drafted. It never blocks a pull request, skips pull requests from forks, and never drafts on top of
-  its own commit.
+- **From a Library page.** Someone editing a component's docs asks their own Claude: Studio writes a pending draft
+  session, they say "Draft my Bridge changes" in Claude with Bridge connected, and the prose comes back marked
+  `"draftedBy": "claude"`. Bridge never runs Claude itself and holds no API key.
 - **Review.** In Bridge Studio, a pull request's Docs section lists the drafted files with a "Draft by Claude,
   needs review" badge: Accept commits `"needsReview": false` to the branch, Edit opens the docs editor. Studio
   Quality lists every docs file that still needs review. A docs-only change is Tier 1 (patch).
@@ -495,7 +491,7 @@ Ask Claude: "Which component requests are waiting?", "Implement request 42."
 
 ## Change texts from Figma
 
-A designer can have their own Claude (Claude Desktop or Claude Code, on their own plan, no API key) write the title
+A designer can have their own Claude (Claude Desktop or Claude Code, on their own plan) write the title
 and summary of a component change request or the Push description, from the DS Bridge Figma plugin. Third-party
 apps cannot use a Claude plan and Bridge has no backend, so the plugin and the MCP server meet in the GitHub repo
 both already reach with the designer's token.

@@ -211,11 +211,11 @@ reason is a note shown with the set. `matches` is refused.
 proposes a correction, Bridge checks that it brings the component closer to the code, and a person approves it
 like any other change; a component that will not come closer keeps an honest Differs or Can't check status.
 
-Bridge holds no API key. The reasoning is done by the team's Claude: Claude Code or Claude Desktop through the Bridge
-MCP server (on the person's own plan), or the CLI with the team's own `ANTHROPIC_API_KEY`. Bridge gives the tools and
-is the referee. Code: `packages/core/src/figma-fix-loop.ts` (pure: gaps, gap case, the values referee, the prompt),
-`packages/core/src/figma-fix-run.ts` (the loop as steps and the change for review, shared by the CLI and the MCP
-tools), `packages/mcp/src/figma-fixes.ts` (the tools), `packages/cli/src/fix.ts` (the commands and the loop runner).
+Bridge never runs Claude and holds no API key. The reasoning is done by the team's Claude: Claude Code or Claude
+Desktop through the Bridge MCP server (on the person's own plan). Bridge gives the tools and is the referee. Code:
+`packages/core/src/figma-fix-loop.ts` (pure: gaps, gap case, the values referee), `packages/core/src/figma-fix-run.ts`
+(the change for review, shared by the CLI and the MCP tools), `packages/mcp/src/figma-fixes.ts` (the tools),
+`packages/cli/src/fix.ts` (the commands).
 
 ### Where the files are
 
@@ -264,23 +264,21 @@ bridge gaps                                    # what differs
 bridge fix TextInput --case                    # the gap case and the schema
 bridge fix TextInput --try fixes.json          # the values referee (exit 0 when closer)
 bridge fix TextInput --propose fixes.json --summary "TextInput keeps its label row height." [--dry-run]
-bridge fix TextInput --with-claude [--model claude-sonnet-5-5] [--dry-run]
+bridge fix TextInput --with-claude           # the line to say to your own Claude
 ```
 
-`--with-claude` runs the loop with the team's `ANTHROPIC_API_KEY`: the prompt is the gap case plus the schema
-(`fixPrompt`), the reply is parsed into fix objects (`parseFixReply`), Bridge tries them, and the next round gets the
-problems or the deltas, up to 3 rounds. The closest fixes are proposed; when none came closer, a `status` fix
-(Differs, with the gap's summary as the reason). Without a key, the command says how to run the same loop from
-Claude Code with the MCP server.
+`--with-claude` runs nothing: it prints the line to say to your own Claude with Bridge connected, "Fix TextInput in
+Figma with Bridge". Your Claude then does the rounds with the MCP tools (the gap case, `bridge_try_figma_fix` up to 3
+times, then the closest fixes, or a `status` fix, Differs with the gap's summary as the reason).
 
 ### What the plugin's "Ask Claude to fix it" button calls
 
 After Compare with code, for a set whose result is Differs: write the run (`FigmaFidelityRun`: `report`, `built` per
 set and variant from the `read-built` read-back the plugin already does for its gap cases, with `boxes` and `hidden`,
 and `figmaRenders`) to `figma-fidelity.json` on the `bridge-requests` branch (the branch "Draft with my Claude" already
-writes to), then show one sentence and **Copy for your developer**. The copied request holds both ways to run the
-fix (the MCP phrase "Fix <component> in Figma with Bridge" and `npx @bridge-ds/cli fix <component> --with-claude`);
-the plugin never displays a command, an API key or MCP to the designer. The developer's Claude reads the run through
+writes to), then show one sentence and **Copy for your developer**. The copied request holds the line to say to
+Claude with Bridge connected ("Fix <component> in Figma with Bridge"); the plugin never displays a command or MCP to
+the designer. The developer's Claude reads the run through
 `bridge_figma_gaps` and `bridge_get_gap_case`. When the team uses Bridge inside its Claude (the hosted connector below),
 the plugin opens Claude with the request prefilled instead, and shows the fix session while Claude works. Before
 building, the pull already applies

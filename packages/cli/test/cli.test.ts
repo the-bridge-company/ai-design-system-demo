@@ -100,7 +100,7 @@ describe('bridge CLI', () => {
     }
   });
 
-  it('docs draft <Component>: pre-fill and prompt, --json for the docs-draft Action', () => {
+  it('docs draft <Component>: pre-fill and prompt, --json for scripts', () => {
     const r = bridge(REPO, 'docs', 'draft', 'Icon');
     expect(r.code).toBe(0);
     expect(r.out).toMatch(/Icon: packages\/react\/src\/components\/Icon\/Icon\.docs\.json/);

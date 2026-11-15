@@ -4,14 +4,14 @@
 // that throws leaves an empty frame instead of taking the page down: the example comes from the team's repository.
 import { Component, type ReactNode } from 'react';
 import type { ExampleNode } from '@bridge-ds/core';
-import { REGISTRY, resolveProps } from '../../registry';
+import { REGISTRY, resolveNestedNodes, resolveProps } from '../../registry';
 
 function render(node: ExampleNode, key?: number): ReactNode {
   if (typeof node === 'string') return node;
   const Comp = REGISTRY[node.c];
   if (!Comp) return null;
   return (
-    <Comp key={key} {...resolveProps(node.p)}>
+    <Comp key={key} {...(resolveNestedNodes(resolveProps(node.p), (n) => render(n as ExampleNode)) as Record<string, unknown>)}>
       {node.children?.map((child, i) => render(child, i))}
     </Comp>
   );

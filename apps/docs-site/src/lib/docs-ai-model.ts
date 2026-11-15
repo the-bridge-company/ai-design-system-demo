@@ -1,9 +1,8 @@
 // In-place docs drafting on a Library component page, as pure functions: which sections a scope drafts, which ones
-// are outdated, the prompt, the Messages API request and the answer. The browser side (src/scripts/docs-ai.ts) only
-// adds localStorage, fetch and the GitHub session. Shared logic lives in @bridge-ds/core (prefillDocs, docsPrompt,
-// docs-ai.ts), the same code the docs-draft Action and the MCP draft exchange use.
+// are outdated, the prompt and the answer. The answer comes from someone's own Claude through the Bridge MCP server
+// (the draft exchange): Bridge never calls Claude itself. The browser side (src/scripts/docs-ai.ts) only adds the GitHub
+// session. Shared logic lives in @bridge-ds/core (prefillDocs, docsPrompt, docs-ai.ts), as for the MCP tools.
 import {
-  type AnthropicHttpRequest,
   type ComponentDocsJson,
   type DocsConventions,
   type DocsDraftTask,
@@ -11,15 +10,11 @@ import {
   type DocsSections,
   type DocsTaskAnswer,
   type DraftResult,
-  DOCS_DRAFT_MODEL,
   PROSE_KEYS,
   type ProseKey,
-  anthropicReplyText,
-  anthropicRequest,
   docsSectionsAnswer,
   docsTaskPrompt,
   missingProse,
-  parseDocsTaskAnswer,
   prefillDocs,
   sanitizeDocsReplacement,
 } from '@bridge-ds/core';
@@ -32,10 +27,10 @@ export type DraftScope =
   | { kind: 'selection'; key: ProseKey; text: string; mode: 'clearer' | 'shorter' | 'voice' }; // rewrite a selected passage in the Bridge voice
 
 /**
- * Who writes: the designer's own API key from this browser, or a developer's Claude through the Bridge MCP server
- * (set up from the message of developerSetupMessage, never shown to the designer as terminal steps).
+ * Who writes: someone's own Claude through the Bridge MCP server (set up from the message of developerSetupMessage, never
+ * shown to the designer as terminal steps). The only way: Bridge never calls Claude with a key.
  */
-export type DraftWay = 'api-key' | 'my-claude';
+export type DraftWay = 'my-claude';
 
 export interface DraftAvailability {
   ways: DraftWay[];
@@ -66,9 +61,9 @@ export interface DocsAiContext {
 
 export const PROSE_SECTIONS = PROSE_KEYS;
 
-/** The ways open in this browser: an API key saved here, and a GitHub token that can write the draft exchange. */
-export function availability(has: { apiKey: boolean; exchange: boolean }): DraftAvailability {
-  const ways: DraftWay[] = [...(has.apiKey ? (['api-key'] as const) : []), ...(has.exchange ? (['my-claude'] as const) : [])];
+/** The way open in this browser: a GitHub session that can write the draft exchange. */
+export function availability(has: { exchange: boolean }): DraftAvailability {
+  const ways: DraftWay[] = has.exchange ? ['my-claude'] : [];
   return { ways, preferred: ways[0] ?? null };
 }
 
@@ -122,24 +117,6 @@ export function taskPrompt(ctx: DocsAiContext, docs: Partial<ComponentDocsJson> 
   return docsTaskPrompt(prefill, ctx.conventions, task);
 }
 
-/** System prompt of the direct call: who Claude writes for and the hard rules. */
-export const DOCS_SYSTEM_PROMPT = [
-  'You write the usage guidance of design system components for Bridge, read by designers and developers on the component\'s Library page.',
-  'Ground every sentence in the facts and the source given. Never invent props, variants, keyboard behavior, tokens or anatomy.',
-  'Bridge voice: sentence case, plain words, verbs first, calm and precise. Never use an em dash: use a colon, a comma or two sentences. No exclamation marks, no emoji, no Markdown.',
-  'Answer with one JSON object only, in the shape the prompt asks for.',
-].join('\n');
-
-/** The Messages API call with the designer's own key, straight from this browser. */
-export function docsApiRequest(apiKey: string, prompt: string, model: string = DOCS_DRAFT_MODEL): AnthropicHttpRequest {
-  return anthropicRequest({ apiKey, prompt, model, system: DOCS_SYSTEM_PROMPT, browser: true, maxTokens: 8000 });
-}
-
-/** The result of a direct call: the reply text parsed for the task, sanitized (no em dash, docs.json shapes). */
-export function resultFromReply(task: DocsDraftTask, replyBody: unknown): DraftDocsResult {
-  return toResult(parseDocsTaskAnswer(task, anthropicReplyText(replyBody)));
-}
-
 /** The result from the draft exchange (the user's own Claude wrote it through the Bridge MCP server). */
 export function resultFromExchange(task: DocsDraftTask, r: Pick<DraftResult, 'docs' | 'replacement'>): DraftDocsResult {
   if (task.kind === 'selection') {
@@ -152,16 +129,6 @@ export function resultFromExchange(task: DocsDraftTask, r: Pick<DraftResult, 'do
 
 function toResult(a: DocsTaskAnswer | { sections: DocsSections; checked: ProseKey[]; replacement?: undefined }): DraftDocsResult {
   return a.replacement !== undefined ? { sections: {}, replacement: a.replacement } : { sections: a.sections, checked: a.checked };
-}
-
-/** An error the designer can act on, for a failed direct call. Their docs stay as they were. */
-export function apiErrorMessage(status: number | 'network'): string {
-  if (status === 'network') return 'Could not reach Claude. Check your connection and try again. Your docs are unchanged.';
-  if (status === 401 || status === 403) return 'Claude did not accept the API key. Check it, or create a new one on console.anthropic.com.';
-  if (status === 429) return 'Claude is rate limiting this key. Wait a minute and try again.';
-  if (status === 400) return 'Claude could not read this request. Try a smaller scope, or write the text yourself.';
-  if (status === 529 || status >= 500) return 'Claude is busy right now. Try again in a moment.';
-  return `Claude answered with an error (${status}). Try again, or write the text yourself.`;
 }
 
 /** The label of the my-Claude way for a designer: a message to copy, never a terminal command or a GitHub token. */

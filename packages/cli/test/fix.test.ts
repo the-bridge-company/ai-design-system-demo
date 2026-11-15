@@ -1,14 +1,13 @@
 // bridge gaps / bridge fix: Fix with Claude from the terminal, in a temp git repo with a real Carbon measure and the
-// plugin's Check fidelity run. The loop runner talks to a fake model client: no API key, no network, no GitHub token
-// (the gh stub fails).
+// plugin's Check fidelity run. No network, no GitHub token (the gh stub fails); --with-claude only hands off to the
+// person's own Claude.
 import { copyFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { fixLoop, NO_KEY, runFix, runGaps, type FixModel } from '../src/fix.js';
+import { fixPhrase, runFix, runGaps } from '../src/fix.js';
 import type { RequestArgs, RequestIO } from '../src/request.js';
-import { BridgeContext } from '@bridge-ds/mcp';
 
 const GAP = join(__dirname, '../../core/test/fixtures/gap');
 
@@ -60,16 +59,6 @@ function repo(measure = 'carbon-measured-hidden-boxes.json'): string {
   return root;
 }
 
-/** A fake Claude: one scripted reply per round, and the prompts it got. */
-function fakeModel(replies: string[]): FixModel & { prompts: string[] } {
-  const prompts: string[] = [];
-  const fn = (async (prompt: string) => {
-    prompts.push(prompt);
-    return replies[prompts.length - 1] ?? '[]';
-  }) as FixModel & { prompts: string[] };
-  fn.prompts = prompts;
-  return fn;
-}
 
 describe('bridge gaps', () => {
   it('without a measure anywhere: the calm sentence and how to turn the automatic measure on, exit 0', async () => {
@@ -86,7 +75,7 @@ describe('bridge gaps', () => {
     expect(await runGaps(args('gaps'), repo(), o.value)).toBe(0);
     expect(o.text()).toContain('TextInput: Differs. TextInput differs from its story on 1 of 2 variants');
     expect(o.text()).toContain("IconButton: Can't check.");
-    expect(o.text()).toContain('bridge fix TextInput --with-claude');
+    expect(o.text()).toContain('Fix TextInput in Figma with Bridge');
     expect(o.text()).not.toMatch(/bridge_/);
   });
 });
@@ -124,38 +113,11 @@ describe('bridge fix', () => {
     await expect(runFix(args('fix', 'TextInput', '--propose', 'fixes.json'), root, io().value)).rejects.toThrow(/needs --summary/);
   });
 
-  it('--with-claude without a key says how to go on', async () => {
+  it('--with-claude hands off to your own Claude: the line to say, no key, nothing run', async () => {
     const o = io();
-    expect(await runFix(args('fix', 'TextInput', '--with-claude'), repo(), o.value)).toBe(1);
-    expect(o.text()).toBe(NO_KEY);
-    expect(o.text()).not.toMatch(/bridge_try_figma_fix|bridge_propose_figma_fixes/);
-  });
-});
-
-describe('the loop runner (fake model)', () => {
-  it('fixes TextInput in two rounds: the first closer, the second resolved, then proposes', async () => {
-    const root = repo();
-    const model = fakeModel([`Here are my fixes:\n\`\`\`json\n${JSON.stringify([labelFixed])}\n\`\`\``, JSON.stringify([labelFixed, outerFixed])]);
-    const o = io();
-    expect(await runFix(args('fix', 'TextInput', '--with-claude', '--dry-run'), root, o.value, model)).toBe(0);
-    expect(model.prompts).toHaveLength(2);
-    expect(model.prompts[0]).toContain('Height 72 in Figma vs 84 in code');
-    expect(model.prompts[1]).toContain('Round 1: you proposed');
-    expect(model.prompts[1]).toContain('(-12 px -> -4 px): closer');
-    expect(o.lines[0]).toMatch(/^Round 1: closer\. /);
-    expect(o.lines[1]).toMatch(/^Round 2: closer\. Closer to the code on the measured values: 1 of 1 difference resolved/);
-    expect(o.text()).toContain('`textinput-field-height` (part)');
-  });
-
-  it('retries on invalid replies with the problems, and proposes a status fix when nothing came closer', async () => {
-    const root = repo();
-    const model = fakeModel(['I am not sure.', JSON.stringify([{ ...labelFixed, height: 'tall' }]), JSON.stringify([{ ...labelFixed, height: 'hug' }])]);
-    const ctx = await BridgeContext.create({ root, surface: 'cli' });
-    const r = await fixLoop(ctx, { component: 'TextInput', ask: model, dryRun: true });
-    expect(r.rounds.map((x) => x.verdict ?? 'no fixes')).toEqual(['no fixes', 'invalid', 'same']);
-    expect(model.prompts[1]).toContain('The reply has no JSON');
-    expect(model.prompts[2]).toContain('height is hug, fill, fixed or a size in px');
-    expect(r.status).toBe('status-proposed');
-    expect(r.status === 'status-proposed' && r.proposed).toMatchObject({ status: 'dry-run', fixes: ['textinput-differs'] });
+    expect(await runFix(args('fix', 'TextInput', '--with-claude'), repo(), o.value)).toBe(0);
+    expect(o.text()).toContain('In Claude, say: "Fix TextInput in Figma with Bridge"');
+    expect(o.text()).not.toMatch(/API key|ANTHROPIC|bridge_/i);
+    expect(fixPhrase('TextInput')).toBe('Fix TextInput in Figma with Bridge');
   });
 });

@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { Avatar, Alert, AlertDialog, AlertDialogContent, Badge, Button, Dialog, DialogContent, IconButton, Input, Link, Menu, MenuContent, MenuGroup, MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Spinner, Textarea } from '@bridge-ds/react';
 import { Check, ChevronDown, Circle, CircleX, Copy, Ellipsis, PenLine, Plus, Sparkles, X } from 'lucide-react';
 import { docsAuthorLine, DRAFT_PHRASE, eligibleReviewers, leadsPublishTier1On, overrideHolders, PUBLISH_LABEL, type ComponentDocsJson, type DocsGuidance, type OverridePolicy, type ProseKey } from '@bridge-ds/core';
-import { REGISTRY, resolveProps } from './registry';
+import { REGISTRY, resolveNestedNodes, resolveProps } from './registry';
 import type { ExampleNode } from '../lib/components';
 import { cleanDocs, docsEdits, docsFileText, setDocsEdit, validateDocs, type DocsEdit } from '../lib/docs-draft-model';
 import type { Draft } from '../lib/editor-model';
@@ -146,7 +146,7 @@ function renderNode(node: ExampleNode, key?: number): ReactNode {
   const Comp = REGISTRY[node.c];
   if (!Comp) return null;
   return (
-    <Comp key={key} {...resolveProps(node.p)}>
+    <Comp key={key} {...(resolveNestedNodes(resolveProps(node.p), (n) => renderNode(n as ExampleNode)) as Record<string, unknown>)}>
       {node.children?.map((c, i) => renderNode(c, i))}
     </Comp>
   );
@@ -560,20 +560,10 @@ function StatusPill({ value, onChange }: { value: NonNullable<ComponentDocsJson[
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Claude setup panel (no way to draft yet), like the Figma plugin's Claude card.                                     */
 
-function ClaudeSetup({ repo, component, onSaved, ai }: { repo: string; component: string; onSaved: () => void; ai: DocsAi | null }) {
-  const [key, setKey] = useState('');
+function ClaudeSetup({ repo, component }: { repo: string; component: string }) {
   const [copied, setCopied] = useState(false);
-  const [msg, setMsg] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
-  const save = () => {
-    try {
-      ai?.saveApiKey(key.trim() || null);
-      setKey('');
-      onSaved();
-    } catch {
-      setMsg({ tone: 'danger', text: 'Drafting with Claude is not available on this site yet.' });
-    }
-  };
-  // The my-Claude way belongs to a developer: the designer copies the setup for them, she never sees the terminal steps.
+  // Drafting goes through someone's own Claude (Bridge connected): the designer copies the setup for a developer, she
+  // never sees the terminal steps. Bridge never runs Claude itself.
   const copySetup = () => {
     const page = `${location.origin}${location.pathname}?edit=1`;
     const text = developerSetupMessage({ repo, component, page, phrase: DRAFT_PHRASE });
@@ -585,19 +575,10 @@ function ClaudeSetup({ repo, component, onSaved, ai }: { repo: string; component
   return (
     <div className="le-setup">
       <p>Claude drafts the sections from the code. You review each one before anything is sent.</p>
-      <Input label="Anthropic API key" type="password" autoComplete="off" spellCheck={false} placeholder="sk-ant-..." value={key} onChange={(ev) => setKey(ev.target.value)} hint="Saved in this browser only. Each draft sends this page's text to Anthropic." />
-      <Button variant="secondary" size="sm" disabled={!key.trim()} onClick={save}>
-        Save key
-      </Button>
-      <p className="le-setup-note">No API key? A developer can draft it with their own Claude.</p>
+      <p className="le-setup-note">A developer drafts it with their own Claude, with Bridge connected.</p>
       <Button variant="ghost" size="sm" iconStart={copied ? Check : Copy} onClick={copySetup}>
         {copied ? COPY_SETUP.done : COPY_SETUP.label}
       </Button>
-      {msg && (
-        <p className={`le-setup-msg is-${msg.tone}`} role={msg.tone === 'danger' ? 'alert' : 'status'}>
-          {msg.text}
-        </p>
-      )}
     </div>
   );
 }
@@ -743,7 +724,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [editing]);
 
-  // Saving an API key (here or anywhere on the page) changes how Claude can be reached.
+  // Signing in (here or anywhere on the page) changes how Claude can be reached.
   useEffect(() => {
     const on = () => ai && setWays(ai.draftAvailability());
     document.addEventListener('bridge:docs-ai', on);
@@ -922,6 +903,9 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
 
   /* Drafting with Claude */
   const runDraft = async (scope: DraftScope, sel?: Selection) => {
+    // A visitor of the sample team: nothing is sent, so the sample-team dialog says what it does on a real team.
+    const gate = await import('../scripts/demo-gate').catch(() => null);
+    if (gate?.sampleVisitor()) return void gate.openMakeItYours('draft with claude');
     const m = ai ?? (await loadAi());
     const av = m?.draftAvailability() ?? { ways: [], preferred: null };
     setWays(av);
@@ -958,7 +942,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
       }
     } catch (err) {
       if (ctrl.signal.aborted) setNotice({ tone: 'info', text: 'Stopped. Nothing changed on the page.' });
-      else setNotice({ tone: 'danger', text: `Claude could not draft: ${(err as Error).message}. Try again, or write the section yourself.` });
+      else setNotice({ tone: 'danger', text: `Claude could not draft: ${(err as Error).message.replace(/\.\s*$/, '')}. Try again, or write the section yourself.` });
     } finally {
       setDrafting(null);
     }
@@ -1214,18 +1198,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
       )}
     </>
   );
-  const claudeSetup = (onDone: () => void) => (
-    <ClaudeSetup
-      repo={repoName}
-      component={p.name}
-      ai={ai}
-      onSaved={() => {
-        if (ai) setWays(ai.draftAvailability());
-        onDone();
-        announce('Key saved in this browser. Draft with Claude is ready.');
-      }}
-    />
-  );
+  const claudeSetup = (_onDone: () => void) => <ClaudeSetup repo={repoName} component={p.name} />;
 
   const bar = (
     <div className="le-bar" role="region" aria-label={`Editing ${p.name}`} data-state={barState}>

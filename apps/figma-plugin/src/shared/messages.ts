@@ -221,7 +221,6 @@ export interface RequestMap {
   'clear-token': { request: Record<string, never>; response: { cleared: true } };
   /** Records what the last GitHub call with the saved token showed ("rejected" after a 401). */
   'token-state': { request: { state: TokenState }; response: { tokenState: TokenState | undefined } };
-  /** Anthropic API key (optional, kept when empty) and model, in client storage on this computer. */
   /** PNG (base64) of a component when its baseline was taken: the "before" image of a Claude draft. */
   'baseline-image': { request: { nodeId: string }; response: string | null };
   snapshot: { request: Record<string, never>; response: FigmaSnapshot };

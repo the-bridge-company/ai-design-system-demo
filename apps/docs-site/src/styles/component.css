@@ -959,6 +959,20 @@ a.tchip:hover {
   overflow: visible;
 }
 
+/* A row other components share: its "Shared" link sits after the row, centered on it, outside the row's button. */
+.bh-family .bh-item.has-pattern {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  align-items: center;
+}
+
+.bh-pattern {
+  padding-inline-end: var(--space-3);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+}
+
 .bh-family .bh-row.is-static {
   display: block;
 }

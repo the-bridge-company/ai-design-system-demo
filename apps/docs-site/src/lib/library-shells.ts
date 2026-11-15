@@ -21,6 +21,8 @@ export interface LibraryPage {
   meta: string;
   /** Sits slightly apart from the pages above it (All tokens under the foundations). */
   apart?: boolean;
+  /** Built hidden, shown once the team's data has it (Patterns: scripts/library-team.ts showPatternsNav). */
+  until?: 'patterns';
 }
 
 /**
@@ -68,6 +70,8 @@ export const LIBRARY_TEAM_NAV: LibraryNavEntry[] = [
   { route: '', label: 'Home', icon: 'home', meta: 'What this design system holds and where to start' },
   { label: 'Foundations', icon: 'layers', children: LIBRARY_FOUNDATION_PAGES },
   { route: 'components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance and live stories' },
+  // One page for a team (its patterns are only known once its data is read): the index, each pattern by ?p=<id>.
+  { route: 'patterns/', label: 'Patterns', icon: 'hand', meta: 'Interactions several components share and actions people take across the product', until: 'patterns' },
   { label: 'Use', icon: 'book', children: LIBRARY_USE_PAGES },
 ];
 
@@ -78,7 +82,7 @@ export const libraryTeamPages = (): LibraryPage[] => LIBRARY_TEAM_NAV.flatMap((e
  * The Library routes a team has, relative to its Library root ('' is Home). Each has a shell page. 'foundations/'
  * opens Color (as on Bridge's own Library), for links made before Foundations had a page per topic.
  */
-export const LIBRARY_SHELL_ROUTES = ['', ...LIBRARY_FOUNDATION_PAGES.map((p) => p.route).filter((r) => r !== 'tokens/'), 'foundations/', 'components/', COMPONENT_SHELL_ROUTE, 'tokens/', ...LIBRARY_USE_PAGES.map((p) => p.route)] as const;
+export const LIBRARY_SHELL_ROUTES = ['', ...LIBRARY_FOUNDATION_PAGES.map((p) => p.route).filter((r) => r !== 'tokens/'), 'foundations/', 'components/', COMPONENT_SHELL_ROUTE, 'patterns/', 'tokens/', ...LIBRARY_USE_PAGES.map((p) => p.route)] as const;
 
 export type LibraryShellRoute = string;
 
@@ -134,6 +138,10 @@ export function ownLibraryPath(route = ''): string {
   const comp = /^components\/([a-z0-9][a-z0-9-]*)\/$/i.exec(p);
   if (comp) return `/components/${comp[1]!.toLowerCase()}/${hash ? `#${hash}` : ''}`;
   if (p === 'foundations/') return '/foundations/color/';
+  if (p === 'patterns/') {
+    const id = new URLSearchParams(query).get('p');
+    return id && /^[a-z0-9][a-z0-9-]*$/.test(id) ? `/patterns/${id}/` : '/patterns/';
+  }
   if ([...LIBRARY_FOUNDATION_PAGES, ...LIBRARY_USE_PAGES].some((f) => f.route === p)) return `/${p}${hash ? `#${hash}` : ''}`;
   return LIBRARY_ROOT;
 }

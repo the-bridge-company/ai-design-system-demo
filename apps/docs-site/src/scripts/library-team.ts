@@ -11,6 +11,7 @@ import { LIBRARY_SHELL_ROOT, libraryFromPath, libraryHref } from '../lib/library
 import { RESERVED_PATHS_URL, STUDIO_ROOT, teamHref, type ReservedPaths } from '../lib/team-path';
 import { llmsTxtUrl } from '../lib/library/published';
 import { libraryTeamName } from '../lib/recent-teams';
+import { libraryPatterns } from '../lib/library/patterns';
 import { loadTeamData, loadTeamLlms, whenLibraryOpen } from './team-data';
 import { libraryFileUrl } from './library-access-api';
 import { refreshSpaceSwitch } from './space-switch';
@@ -64,6 +65,11 @@ export function paintTeamName(team: { owner: string; repo: string }, site: { nam
   if (typeof document !== 'undefined' && root === document) document.title = document.title.replace(/\| [^|]+$/, `| ${shown}`);
 }
 
+/** The Patterns entry of a team's nav is built hidden: it shows once the team's data has patterns to show. */
+export function showPatternsNav(has: boolean, root: ParentNode = document) {
+  for (const el of root.querySelectorAll<HTMLElement>('[data-nav-until="patterns"]')) el.hidden = !has;
+}
+
 /** The team's llms.txt as the page's alternate (agents find it from any Library page), once it is known to exist. */
 function linkLlms(href: string) {
   if (document.head.querySelector('link[rel="alternate"][data-library-llms]')) return;
@@ -93,6 +99,7 @@ export function initLibraryTeam() {
     .then(() => loadTeamData())
     .then(async (data) => {
       paintTeamName(team, data.model.site);
+      showPatternsNav(libraryPatterns(data.model).length > 0);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));
     })

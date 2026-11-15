@@ -14,6 +14,8 @@
 // are in starts expanded. Deeper levels (each component) live as cards on their group page, not in the nav.
 import type { IconName } from '../brand/icons';
 import { loadComponents } from './components';
+import { repoModel } from './model';
+import { libraryPatterns, patternRoute, patternsLead, PATTERNS_ROUTE } from './library/patterns';
 import { START_PAGE, WORKSPACE_HOME, WORKSPACE_SETTINGS } from './start';
 import { LIBRARY_FOUNDATION_PAGES, LIBRARY_USE_PAGES } from './library-shells';
 
@@ -33,6 +35,8 @@ export interface NavItem {
   branchAware?: boolean;
   /** One line for search, llms.txt and the group pages. */
   meta?: string;
+  /** The first page of a kind inside its group: a quiet label above it names the kind (Patterns: Interactions, Actions). */
+  heading?: string;
 }
 
 /** A top-level side nav entry: a page, or a group of pages that expands in place. */
@@ -53,6 +57,8 @@ export interface NavEntry {
    * ProductsNav.tsx), or at the foot above the account (Settings). Unset: the top entries.
    */
   place?: 'design-system' | 'foot';
+  /** Built hidden, shown once the team's data has it (a team's Library: lib/library-shells.ts). */
+  until?: 'patterns';
 }
 
 /** The Library home. "/" is the product landing (pages/index.astro), with its own header and footer. */
@@ -112,6 +118,22 @@ export const STUDIO_QUALITY_HREF = '/studio/quality/';
 export const SETTINGS_SECTIONS = ['general', 'repository', 'roles', 'approvals', 'tools', 'integrations'] as const;
 export const HOW_REVIEW_WORKS = '/how-review-works/';
 
+/** The Patterns index of Bridge's own Library. */
+export const PATTERNS_HOME = `/${PATTERNS_ROUTE}`;
+
+/**
+ * The Patterns group: Overview (the index, never a second "Patterns"), then each pattern by name under a quiet label
+ * for its kind (Interactions, Actions), from patterns/ and the components' shared behaviors. Empty without patterns.
+ */
+export function patternsNav(): NavItem[] {
+  const groups = libraryPatterns(repoModel);
+  if (!groups.length) return [];
+  return [
+    { href: PATTERNS_HOME, label: 'Overview', meta: patternsLead(groups) },
+    ...groups.flatMap((g) => g.items.map((e, i): NavItem => ({ href: `/${patternRoute(e.pattern.id)}`, label: e.pattern.name, meta: e.pattern.purpose, ...(i === 0 ? { heading: g.label } : {}) }))),
+  ];
+}
+
 /** Component families for the catalog page (cards), from the optional `category` in <Name>.docs.json. */
 export function componentFamilies() {
   const groups = new Map<string, NavItem[]>();
@@ -123,10 +145,12 @@ export function componentFamilies() {
 }
 
 export function libraryNav(): NavEntry[] {
+  const patterns = patternsNav();
   return [
     { href: LIBRARY_HOME, label: 'Home', icon: 'home', meta: "What's new and where to start" },
     { label: 'Foundations', icon: 'layers', children: FOUNDATIONS },
     { href: '/components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance' },
+    ...(patterns.length ? [{ label: 'Patterns', icon: 'hand' as const, children: patterns }] : []),
     { label: 'Use', icon: 'book', children: LIBRARY_USE },
   ];
 }

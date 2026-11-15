@@ -10,6 +10,7 @@ import type { ChangelogReleaseRow } from './changelog-model';
 import type { ContrastPairResult } from './contrast-model';
 import type { SpecCoverage } from './component-spec';
 import { motionDocs, type MotionDocs } from './motion-docs';
+import { modelAgentPatterns, patternLlmsLines } from './patterns';
 import { isUnder, normalizeRepoPath, type RepoSource } from './repo-source';
 import type { RepoModel } from './repo-model';
 
@@ -382,6 +383,9 @@ export function snapshotLlmsTxt(model: RepoModel, snapshot: Pick<RepoSnapshot, '
     out.push(`- \`${t.path}\` (\`${t.cssVar}\`, ${t.tier} ${t.type}): ${values || 'no value'}${note ? `. ${note}` : ''}`);
   }
   if (tokens.length > shown.length) out.push('', `${tokens.length - shown.length} more tokens are in ${SNAPSHOT_FILE}.`);
+  // Patterns (patterns/): interactions read from the components' shared behaviors, actions with their rules.
+  const patterns = patternLlmsLines(modelAgentPatterns(model));
+  if (patterns.length) out.push('', ...patterns);
   out.push('', '## Components', '');
   if (!comps.length) out.push('No components were read (components.dir in bridge.config.json names the folder).');
   for (const c of comps) {

@@ -1,0 +1,10 @@
+---
+// Library shell, Patterns (lib/library-shells.ts): served for /library/<owner>/<repo>/patterns/, the index and, with
+// ?p=<id>, one pattern. The same views as Bridge's own pages, with the team's model (LibraryTeamPatterns.tsx).
+import LibraryShell from '../../../components/LibraryShell.astro';
+import LibraryTeamPatterns from '../../../components/ds/library/LibraryTeamPatterns';
+---
+
+<LibraryShell title="Patterns" description="Interactions several components share and actions people take across the product, in a team's design system." reading>
+  <LibraryTeamPatterns client:load />
+</LibraryShell>

@@ -1,0 +1,25 @@
+---
+// Library > Patterns > one pattern (patterns/<id>.pattern.json), rendered at build time and hydrated for its stage:
+// the real components of this design system, run in the page (components/ds/library/views/PatternsView.tsx).
+import '../../styles/component.css';
+import Layout from '../../layouts/Layout.astro';
+import { PatternView, patternLinks } from '../../components/ds/library/views/PatternsView';
+import { siteLibraryData } from '../../lib/library-site';
+import { freshness } from '../../lib/sources';
+import { libraryPatterns, patternById } from '../../lib/library/patterns';
+import { PATTERNS_DIR, PATTERN_SUFFIX } from '@bridge-ds/core';
+
+export function getStaticPaths() {
+  const groups = libraryPatterns(siteLibraryData().model);
+  return groups.flatMap((g) => g.items).map((e) => ({ params: { slug: e.pattern.id } }));
+}
+
+const { slug } = Astro.params;
+const data = siteLibraryData();
+const entry = patternById(libraryPatterns(data.model), slug!)!;
+const sources = [`${PATTERNS_DIR}/${entry.pattern.id}${PATTERN_SUFFIX}`];
+---
+
+<Layout title={entry.pattern.name} description={entry.pattern.purpose} sources={sources} updated={freshness(sources)}>
+  <PatternView client:load entry={entry} links={patternLinks(data, entry)} live />
+</Layout>

@@ -13,8 +13,10 @@
 //     Library review), or a `bridge-origin` block, or the "Needed by" block of the branch opened for an exploration.
 //     The issue's own body first, then the body of the pull request that does the work.
 //   - a push from Figma (and Claude's fix from Figma): the design is approved in Figma, the lead's library.
+//   - a behavior request the lead made the default (labels `request: behavior` and `bridge-build`, requests.ts): the
+//     lead's own decision on the request page. Who made it is in a comment, read by its detail only (no read per row).
 // Pure: no DOM, no fetch. Unit tested in build-origin.test.ts.
-import { isFigmaPush, type BuildRequestView, type ProductConfig } from '@bridge-ds/core';
+import { BEHAVIOR_REQUEST_LABEL, BUILD_REQUEST_LABEL, isFigmaPush, type BuildRequestView, type ProductConfig } from '@bridge-ds/core';
 import { auditOriginLine, bridgeBlocks, statedOrigin } from './library-origin';
 
 export type BuildOrigin =
@@ -25,7 +27,9 @@ export type BuildOrigin =
   /** A library change the lead approved: in Library review (`approvedBy`), or in Figma. */
   | { kind: 'library'; via: 'review' | 'figma'; approvedBy: string | null }
   /** A group of a product's adoption report the lead sent to developers. */
-  | { kind: 'audit'; product: string | null; href: string | null };
+  | { kind: 'audit'; product: string | null; href: string | null }
+  /** A behavior request the lead made the default; `by` their first name when known. */
+  | { kind: 'behavior'; by: string | null };
 
 /** What a row may carry: core's view, plus the marks of an exploration row or a fix row. */
 export type OriginRow = Pick<BuildRequestView, 'kind' | 'number' | 'pull'> & {
@@ -88,7 +92,13 @@ export function buildOriginOf(row: OriginRow, ctx: OriginContext = {}): BuildOri
   const own = (ctx.pulls ?? []).filter((p) => !p.product);
   const self = row.kind === 'issue' ? ctx.issues?.find((i) => Number(i.number) === row.number) : own.find((p) => Number(p.number) === row.number);
   const work = row.pull ? own.find((p) => Number(p.number) === row.pull!.number) : undefined;
-  return originInBody(self, products) ?? (work && work !== self ? originInBody(work, products) : null);
+  return originInBody(self, products) ?? (work && work !== self ? originInBody(work, products) : null) ?? (row.kind === 'issue' && madeDefault(self) ? { kind: 'behavior', by: null } : null);
+}
+
+/** A behavior request the lead made the default: it carries both labels. */
+function madeDefault(x: Labelled | undefined): boolean {
+  const l = (x?.labels ?? []).map((n) => (typeof n === 'string' ? n : (n.name ?? '')).toLowerCase());
+  return l.includes(BEHAVIOR_REQUEST_LABEL) && l.includes(BUILD_REQUEST_LABEL);
 }
 
 /**
@@ -96,6 +106,7 @@ export function buildOriginOf(row: OriginRow, ctx: OriginContext = {}): BuildOri
  * timeline", "Library change Dana approved", "Library change approved in Figma", "From the Acme CRM adoption report".
  */
 export function buildOriginLine(o: BuildOrigin): string {
+  if (o.kind === 'behavior') return `${o.by ?? 'The lead'} made it the default`;
   if (o.kind === 'exploration') return o.self ? (o.sentBy ? `Exploration ${o.sentBy} sent` : 'Exploration sent to developers') : `From ${o.name}`;
   if (o.kind === 'audit') return auditOriginLine(o);
   if (o.via === 'figma') return 'Library change approved in Figma';
@@ -107,6 +118,7 @@ export function buildOriginLine(o: BuildOrigin): string {
  * "Dana sent it", "Approved in Figma". The list row keeps buildOriginLine.
  */
 export function buildOriginShort(o: BuildOrigin): string {
+  if (o.kind === 'behavior') return `${o.by ?? 'The lead'} made it the default`;
   if (o.kind === 'exploration') return o.self ? (o.sentBy ? `${o.sentBy} sent it` : 'Sent to developers') : `From ${o.name}`;
   if (o.kind === 'audit') return auditOriginLine(o);
   if (o.via === 'figma') return 'Approved in Figma';

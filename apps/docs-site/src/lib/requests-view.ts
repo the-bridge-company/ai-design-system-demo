@@ -260,9 +260,14 @@ export function wantsToChange(requester: string, component: string): string {
 }
 
 /** The one-sentence status of a request detail, in a designer's words. */
-export function requestStateLine(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'> & { madeDefault?: boolean | undefined }): string {
+export function requestStateLine(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'> & { madeDefault?: boolean | undefined; kind?: RequestKind | null | undefined }): string {
   const who = requestOwner(r);
-  if (r.madeDefault && r.status === 'requested' && !r.prs.length) return who ? `Made the default. @${who} builds it.` : BEHAVIOR_DEFAULT_LINE;
+  // A behavior request, followed by the designer who asked: where it is in their words, no developer detail.
+  if (r.kind === 'behavior' || r.madeDefault) {
+    if (r.status === 'done') return BEHAVIOR_STAGE_LINE.done;
+    if (r.status === 'declined') return BEHAVIOR_STAGE_LINE.declined;
+    if (r.madeDefault || r.status === 'in-progress') return who || r.prs.some((p) => p.state === 'open') ? BEHAVIOR_STAGE_LINE.building : BEHAVIOR_DEFAULT_LINE;
+  }
   if (r.status === 'done') return who ? `Done by @${who}.` : 'Done.';
   if (r.status === 'declined') return 'Declined: closed on GitHub without a change.';
   if (r.prs.some((p) => p.exploration && p.state === 'open')) return who ? `@${who} is exploring it.` : 'Someone is exploring it.';
@@ -302,8 +307,15 @@ export function behaviorWaitLine(lead: string | null): string {
   return `${lead ?? 'The design system lead'} decides what happens next.`;
 }
 
-/** What a behavior request says once the lead made it the default. */
-export const BEHAVIOR_DEFAULT_LINE = 'Made the default. It waits for a developer in Being built.';
+/** What a behavior request says once the lead made it the default, before a developer takes it. */
+export const BEHAVIOR_DEFAULT_LINE = 'Being built: it waits for a developer.';
+
+/** Where a behavior request is after the lead decided, in the words of the person who asked. */
+export const BEHAVIOR_STAGE_LINE = {
+  building: 'Being built: a developer is on it.',
+  done: 'Done: it is in the library.',
+  declined: 'Not now: it stays as it is.',
+} as const;
 
 /** The name on "Ask <name>": the first name of who asked, else their login. */
 export function askerFirst(asker: string): string {

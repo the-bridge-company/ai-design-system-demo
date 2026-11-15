@@ -53,6 +53,11 @@ export interface BuildData {
   viewer?: string | null;
   /** The viewer's profile name: their rows read with it where only a name is recorded. */
   viewerName?: string | null;
+  /**
+   * The viewer reads developer details (a behavior request's "For developers"): signed in with a GitHub account (the
+   * developer the sample team's visitor plays included), never an email member, who designs.
+   */
+  developer?: boolean;
 }
 
 const noRepoPage = () => typeof document !== 'undefined' && document.documentElement.hasAttribute('data-no-repo');
@@ -226,10 +231,10 @@ async function read(): Promise<BuildData> {
 }
 
 /** Who You is, as on Changes: the signed-in person (a GitHub login, or an email member's address), else nobody. */
-function viewerOf(): Pick<BuildData, 'viewer' | 'viewerName'> {
+function viewerOf(): Pick<BuildData, 'viewer' | 'viewerName' | 'developer'> {
   const me = currentViewer();
   const login = me?.login ?? currentContributor()?.email ?? null;
-  return { viewer: login, viewerName: me?.name ?? currentContributor()?.name ?? null };
+  return { viewer: login, viewerName: me?.name ?? currentContributor()?.name ?? null, developer: Boolean(me?.login && !me.email) && !currentContributor() };
 }
 
 /** On a team shell, the team's settings read (scripts/team-data, memoized per page); a failed read keeps the defaults. */

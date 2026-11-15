@@ -51,10 +51,15 @@ import {
 import { Check, Copy, Hammer } from "lucide-react";
 import {
   BUILD_IMAGE_LABEL,
+  buildRequestBrief,
   DEFAULT_PRODUCTS,
+  requesterOf,
+  type BehaviorFacts,
   type BuildRequestView,
   type ProductConfig,
 } from "@bridge-ds/core";
+import { BehaviorDevelopers, BehaviorSent } from "./BehaviorBuild";
+import { behaviorMeta, behaviorRowNote } from "../../../lib/building-view";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
 import ButtonLink from "../ButtonLink";
@@ -382,8 +387,10 @@ function Rows({
           onOpen(v);
         };
         // Nobody picked it up yet: Pick up on the row's own line (it opens the request, where the developer takes it).
+        // A behavior request is picked up by a developer only: a designer follows where it stands.
+        const behaviorNote = v.kind === "issue" ? behaviorRowNote(data.bodies.get(v.number)) : null;
         const pickUp =
-          v.kind === "issue" && v.status === "requested" ? (
+          v.kind === "issue" && v.status === "requested" && (!behaviorNote || data.developer === true) ? (
             <Button size="sm" className="ex-review" onClick={() => onOpen(v)} aria-label={`Pick up ${viewTitle(v)}`}>
               {PICK_UP_WORDS.row}
             </Button>
@@ -398,7 +405,7 @@ function Rows({
             onClick={click}
             end={pickUp}
             line={withWaiting(rowLine(v, now, data.nameOf), shortWaitLine(rowWaiting(v)))}
-            note={auditNoteOf(v, data)}
+            note={auditNoteOf(v, data) ?? behaviorNote ?? undefined}
             pill={statusTag(v)}
             statusAtEnd
             className={v.stale ? "bb-stale" : undefined}
@@ -490,6 +497,24 @@ function Detail({
       v.kind === "issue" ? buildDetail(data.bodies.get(v.number), v) : null,
     [v, data]
   );
+  // A behavior request: who made it the default, and what the repository says (keys, files, primitive), read once.
+  const ask = d?.behavior ?? null;
+  const [facts, setFacts] = useState<{ facts: BehaviorFacts; madeDefault: { by: string | null; at: string | null } | null } | null>(null);
+  useEffect(() => {
+    if (!ask) return;
+    let live = true;
+    void import("../../../scripts/behavior-facts")
+      .then((m) => m.behaviorFactsOf(v.number, ask, v.component))
+      .then((f) => live && setFacts(f))
+      .catch(() => live && setFacts({ facts: {}, madeDefault: null }));
+    return () => {
+      live = false;
+    };
+  }, [ask, v.number]);
+  // Developer details of a behavior request are for developers: a designer follows where it stands only.
+  const forDevelopers = !ask || data.developer === true;
+  const behaviorBrief =
+    ask && d?.request && facts ? buildRequestBrief(d.request, { issue: v.number, issueUrl: v.url, facts: facts.facts }) : null;
   const steps = timelineSteps(v);
   const tag = statusTag(v);
   const jira = jiraLink(v.jira, data.jiraBase);
@@ -515,7 +540,7 @@ function Detail({
           </Badge>{" "}
           {v.sentence}
         </p>
-        {v.kind === "issue" && v.status === "requested" && safeUrl(v.url) && (
+        {forDevelopers && v.kind === "issue" && v.status === "requested" && safeUrl(v.url) && (
           <p className="t-ui t-muted bb-pickup">
             <ButtonLink variant="primary" href={safeUrl(v.url)} {...external}>
               {PICK_UP_WORDS.detail}
@@ -531,7 +556,17 @@ function Detail({
             <h3 className="t-ui bb-h" id="bb-sent">
               What was sent
             </h3>
-            {d ? (
+            {ask ? (
+              <BehaviorSent
+                ask={ask}
+                meta={behaviorMeta({
+                  askedBy: requesterOf(data.bodies.get(v.number))?.name ?? (v.requestedBy ? data.nameOf(v.requestedBy) : null),
+                  askedAt: v.createdAt,
+                  madeDefault: facts?.madeDefault ?? null,
+                  nameOf: data.nameOf,
+                })}
+              />
+            ) : d ? (
               <>
                 <p className="t-body bb-measure">{d.summary}</p>
                 {d.line && <p className="t-body bb-measure">{d.line}</p>}
@@ -594,7 +629,7 @@ function Detail({
                 design and what changed are on the change.
               </p>
             )}
-            <p className="t-meta t-muted bb-meta">
+            {!ask && <p className="t-meta t-muted bb-meta">
               {originOfRow(v)
                 ? `${buildOriginLine(originOfRow(v)!)}. Sent on ${shortDate(v.createdAt)}.`
                 : v.requestedBy
@@ -607,11 +642,20 @@ function Detail({
                   Open in Figma
                 </Link>
               )}
-            </p>
+            </p>}
           </section>
 
-          <Accordion className="bb-dev" headingLevel={3}>
+          {forDevelopers && <Accordion className="bb-dev" headingLevel={3}>
             <AccordionItem value="dev" title="For developers">
+              {ask ? (
+                <BehaviorDevelopers
+                  ask={ask}
+                  facts={facts?.facts ?? null}
+                  brief={behaviorBrief}
+                  github={safeUrl(v.url) ? { href: safeUrl(v.url), label: `Build request #${v.number} on GitHub` } : null}
+                />
+              ) : (
+              <>
               <ul className="t-ui bb-links">
                 <li>
                   <Link href={safeUrl(v.url, "#")} {...external}>
@@ -654,8 +698,10 @@ function Detail({
                   {v.number}.
                 </p>
               )}
+              </>
+              )}
             </AccordionItem>
-          </Accordion>
+          </Accordion>}
         </div>
         <aside className="bb-aside">
           <section className="bb-section bb-status" aria-labelledby="bb-status">

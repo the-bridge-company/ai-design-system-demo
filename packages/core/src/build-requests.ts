@@ -13,6 +13,7 @@
 // writes are in build-requests-github.ts; the gate rule (design and tech approval credited to a Figma push) is
 // withFigmaPushApprovals in review-gate.ts, applied by branchVerdict.
 
+import { behaviorBrief, type BehaviorFacts } from './behavior-brief';
 import { type BridgeConfig } from './config';
 import { EXPLORATION_LABEL } from './explorations';
 import { DRAFTED_BY_CLAUDE_LABEL, FROM_FIGMA_LABEL, WAITING_FOR_CLAUDE_LABEL, parseFigmaOrigin } from './figma-push';
@@ -389,8 +390,13 @@ const propLine = (p: BuildProp) => {
  */
 export function buildRequestBrief(
   r: ComponentChangeRequest & { build?: BuildRequestExtra | undefined },
-  ctx: { issue?: number | undefined; issueUrl?: string | undefined; componentsDir?: string | undefined; agentsFile?: string | undefined; files?: string[] | undefined } = {},
+  ctx: { issue?: number | undefined; issueUrl?: string | undefined; componentsDir?: string | undefined; agentsFile?: string | undefined; files?: string[] | undefined; facts?: BehaviorFacts | undefined } = {},
 ): string {
+  // A behavior request made the default: its own brief (behavior-brief.ts), never the Figma one.
+  if (r.kind === 'behavior') {
+    const b = behaviorBrief(r, { issue: ctx.issue, issueUrl: ctx.issueUrl, agentsFile: ctx.agentsFile, facts: ctx.facts ?? (ctx.files ? { files: ctx.files } : undefined) });
+    if (b) return b;
+  }
   const ref = ctx.issue ? `#${ctx.issue}` : 'this issue';
   const dir = `${(ctx.componentsDir ?? 'packages/react/src/components').replace(/\/+$/, '')}/${r.component}`;
   const b = r.build;

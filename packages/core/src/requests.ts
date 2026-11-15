@@ -5,6 +5,7 @@
 // Shared by the Figma plugin, Studio, the MCP server, the CLI and the Jira Action, so a request reads the same
 // everywhere. The issue body is plain Markdown for people plus one hidden JSON block for tools.
 
+import { behaviorBrief, type BehaviorFacts } from './behavior-brief';
 import { draftBehaviorText } from './change-drafts';
 import { EXPLORATION_LABEL, explorationRules } from './explorations';
 import { subjectTitle } from './titles';
@@ -358,7 +359,12 @@ export function requestImagePath(component: string, date: Date): string {
  * The brief Claude gets to implement a request (CLI `bridge request implement`, MCP `bridge_get_request`): the request,
  * the component's files, the repo rules, and how to open the pull request so it closes the issue.
  */
-export function requestBrief(r: ComponentChangeRequest, ctx: { issue: number; issueUrl?: string; files?: string[]; agentsFile?: string; exploration?: string | undefined }): string {
+export function requestBrief(r: ComponentChangeRequest, ctx: { issue: number; issueUrl?: string; files?: string[]; agentsFile?: string; exploration?: string | undefined; facts?: BehaviorFacts | undefined }): string {
+  // A behavior request: what the behavior is today, the wanted one, and the docs.json entry and test to update.
+  if (r.kind === 'behavior') {
+    const b = behaviorBrief(r, { issue: ctx.issue, issueUrl: ctx.issueUrl, agentsFile: ctx.agentsFile, facts: ctx.facts ?? (ctx.files ? { files: ctx.files } : undefined) });
+    if (b) return b;
+  }
   const exploration = ctx.exploration ?? r.exploration;
   return [
     `Implement Bridge component change request #${ctx.issue}${ctx.issueUrl ? ` (${ctx.issueUrl})` : ''}.`,
@@ -381,13 +387,6 @@ export function requestBrief(r: ComponentChangeRequest, ctx: { issue: number; is
       ? [`- This request is part of the exploration ${exploration}.`, ...explorationRules(exploration), `- Reference the request in the commit message ("Refs #${ctx.issue}"). Shipping the exploration closes it.`]
       : [`- Work on a branch named agent/request-${ctx.issue}. The pull request body must contain "Closes #${ctx.issue}".`]),
     // Sent from a product's adoption report: the pull request says so too, so Bridge's Changes row names the report.
-    ...(r.kind === 'behavior' && r.behavior
-      ? [
-          r.behavior.of === 'pattern'
-            ? `- It changes a rule of the ${r.behavior.id} pattern: update patterns/${r.behavior.id}.pattern.json and the places it lists in usedIn, so the pattern and the product stay the same.`
-            : `- It changes how ${r.component} behaves: update the behavior${r.behavior.behavior ? ` ${r.behavior.behavior}` : ''} in its docs.json \`behaviors\` list with the new sentence, with the code and the tests.`,
-        ]
-      : []),
     ...(r.origin?.kind === 'audit' ? [`- Also put this line in the pull request body, unchanged (Bridge shows where the change comes from): <!-- bridge-origin ${JSON.stringify(r.origin).replace(/>/g, '\\u003e')} -->`] : []),
     '- If the request is unclear or conflicts with the guidance, comment on the issue instead of guessing.',
   ].join('\n');

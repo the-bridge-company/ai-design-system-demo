@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { assembleBuildRequests, composeBuildRequestIssue, figmaAheadLine, buildSummaryLine, DEFAULT_PRODUCTS, type ProductConfig } from '@bridge-ds/core';
 import { fixtureBuildData, FIXTURE_BUILDERS } from '../../dev/build-requests';
+import { behaviorMeta, behaviorRowNote } from './building-view';
+import { behaviorRequestOf, composeRequestIssue } from '@bridge-ds/core';
 import { ageLabel, buildDetail, componentThumb, explorationBuildRows, previewedComponent, mergeRows, type RestPull, detailFromQuery, detailQuery, jiraLink, listedRows, pageSentence, rowPeople, rowProduct, rowThumb, propLine, rowLine, rowWaiting, slimIssue, slimPull, statusTag, timelineSteps, toBuildIssue, toBuildPull, withLifecycle, withProducts } from './building-view';
 import { YOU } from './branches-page';
 import { buildStateOf, type BuildState } from './building-page';
@@ -491,5 +493,23 @@ describe('the filters of Being built', () => {
     expect(keyOf(41)).toBe('shop');
     expect(keyOf(33)).toBe('shop');
     expect(keyOf(39)).toBe('library');
+  });
+});
+
+describe('a behavior request in Being built', () => {
+  const body = composeRequestIssue(behaviorRequestOf('Select', { of: 'component', id: 'Select', behavior: 'tab-leaves', today: 'Tab leaves without picking', wanted: 'Tab picks the highlighted option' })).body;
+  it('reads its ask in the detail, and today in the list', () => {
+    const d = buildDetail(body, { kind: 'issue', number: 75, url: 'https://github.com/acme/ds/issues/75' })!;
+    expect(d.behavior).toMatchObject({ behavior: 'tab-leaves', today: 'Tab leaves without picking', wanted: 'Tab picks the highlighted option' });
+    expect(d.brief).toContain('Build Bridge behavior request #75');
+    expect(behaviorRowNote(body)).toBe('Today: Tab leaves without picking');
+    expect(behaviorRowNote(composeBuildRequestIssue({ component: 'Button', kind: 'new-variant', title: 'x', summary: 'y', figma: {}, source: 'figma' }).body)).toBeNull();
+  });
+
+  it('says who asked and who made it the default, once', () => {
+    const nameOf = (l: string) => ({ lee: 'Lee Park' })[l] ?? l;
+    expect(behaviorMeta({ askedBy: 'Sofia Ruiz', askedAt: '2026-11-14T10:00:00Z', madeDefault: { by: 'Dana', at: '2026-11-15T10:00:00Z' }, nameOf })).toBe('Asked by Sofia on Nov 14. Dana made it the default on Nov 15.');
+    expect(behaviorMeta({ askedBy: null, askedAt: '2026-11-14T10:00:00Z', madeDefault: { by: '@lee', at: null }, nameOf })).toBe('Asked on Nov 14. Lee made it the default.');
+    expect(behaviorMeta({ askedBy: 'Sofia', askedAt: '2026-11-14T10:00:00Z', madeDefault: null, nameOf })).toBe('Asked by Sofia on Nov 14.');
   });
 });

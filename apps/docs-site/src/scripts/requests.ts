@@ -28,7 +28,7 @@ import {
   type PullLike,
   type RequestRow,
 } from '../lib/requests-view';
-import { currentViewer, esc, getToken, ghGet, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, signedInWithGitHub, studioClient } from './github-session';
+import { currentContributor, currentViewer, esc, getToken, ghGet, hasWorkingToken, initGitHubConnect, limitLine, prefersSignIn, RateLimitError, readRepo, signedInWithGitHub, studioClient } from './github-session';
 import { rateLimitedLine } from '../lib/gh-wording';
 import { attrUrl, safeUrl } from '../lib/html';
 import { owners } from './pr-status';
@@ -245,12 +245,14 @@ export interface DetailContext {
   owners: string[];
   /** The site has Sign in with GitHub. */
   signIn?: boolean;
+  /** The viewer reads developer details (a GitHub account, not an email member): a behavior request hides them otherwise. */
+  developer?: boolean;
 }
 
 /** The viewer and the owners, read now (the viewer changes when someone connects). */
 export function detailContext(): DetailContext {
   const o = owners();
-  return { viewer: hasWorkingToken() ? (currentViewer()?.login ?? null) : null, owners: [...new Set([...o.design, ...o.tech])], signIn: prefersSignIn() };
+  return { viewer: hasWorkingToken() ? (currentViewer()?.login ?? null) : null, owners: [...new Set([...o.design, ...o.tech])], signIn: prefersSignIn(), developer: Boolean(currentViewer()?.login && !currentViewer()?.email) && !currentContributor() };
 }
 
 /**
@@ -305,7 +307,7 @@ export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer
   ${crumbs(r.number)}
   <header class="zone cg-pr-open">
     <h1 class="cg-pr-title">${esc(ask ? requestIssueTitle(r) : subjectTitle(r.component, r.title))} <span class="cg-num">#${r.number}</span></h1>
-    <p class="cg-pr-meta">${badgeHtml(r.kindLabel)}${badgeHtml(r.statusLabel, { tone: r.tone, className: 'rv-status' })}${ask ? '' : `<span>${esc(wantsToChange(r.requester, r.component))}</span>`}<time datetime="${esc(r.createdAt)}">${esc(shortDate(r.createdAt))}</time>${jira}<a class="cg-gh" href="${attrUrl(r.url)}" target="_blank" rel="noopener">Open on GitHub<span class="sr-only"> (opens in a new tab)</span></a></p>
+    <p class="cg-pr-meta">${badgeHtml(r.kindLabel)}${badgeHtml(r.statusLabel, { tone: r.tone, className: 'rv-status' })}${ask ? '' : `<span>${esc(wantsToChange(r.requester, r.component))}</span>`}<time datetime="${esc(r.createdAt)}">${esc(shortDate(r.createdAt))}</time>${jira}${ask && !ctx.developer ? '' : `<a class="cg-gh" href="${attrUrl(r.url)}" target="_blank" rel="noopener">Open on GitHub<span class="sr-only"> (opens in a new tab)</span></a>`}</p>
     <p class="cg-pr-state" id="rq-state" role="status" tabindex="-1"${waitsOnLead ? ' hidden' : ''}>${esc(waitsOnLead ? '' : decision.sentence)}</p>
     ${primary ? `<p class="cg-pr-cta rq-decide" id="rq-actions">${primary}</p>` : ''}
     <div id="rq-assign-slot" hidden></div>
@@ -315,7 +317,7 @@ export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer
     ${ask ? '' : section('rq-sec-summary', 'Summary', esc(r.kindLabel), `<p class="rq-summary">${esc(req?.summary || 'The issue has no Bridge summary. Open it on GitHub to read it.')}</p>${design}`, true)}
     ${pictures ? section('rq-sec-images', pictures.title, '', pictures.body, true) : ''}
     ${ask ? '' : section('rq-sec-changes', 'Changes', String(changes.length), table, changes.length > 0)}
-    ${r.prs.length ? section('rq-sec-build', 'Where it is built', esc(build), buildBody) : ''}
+    ${r.prs.length && !(ask && !ctx.developer) ? section('rq-sec-build', 'Where it is built', esc(build), buildBody) : ''}
   </div>`;
 }
 

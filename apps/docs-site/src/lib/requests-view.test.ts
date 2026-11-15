@@ -5,6 +5,7 @@ import { behaviorRequestOf, BUILD_REQUEST_LABEL, composeRequestIssue, type Compo
 import {
   askerFirst,
   BEHAVIOR_DEFAULT_LINE,
+  BEHAVIOR_STAGE_LINE,
   behaviorWaitLine,
   freshList,
   implementCommand,
@@ -347,5 +348,17 @@ describe('who decides on a behavior request', () => {
   it('names the one design lead, never a GitHub owner', () => {
     expect(behaviorWaitLine('Dana')).toBe('Dana decides what happens next.');
     expect(behaviorWaitLine(null)).toBe('The design system lead decides what happens next.');
+  });
+});
+
+describe('a behavior request followed by who asked it', () => {
+  const base = { kind: 'behavior' as const, assignees: [] as string[], prs: [] as { number: number; url: string; state: 'open' | 'closed'; merged: boolean; author: string | null }[] };
+  it('reads Being built, then Done, in their words', () => {
+    expect(requestStateLine({ ...base, status: 'requested', madeDefault: true })).toBe(BEHAVIOR_DEFAULT_LINE);
+    expect(requestStateLine({ ...base, status: 'requested', madeDefault: true, assignees: ['acme-malik'] })).toBe(BEHAVIOR_STAGE_LINE.building);
+    expect(requestStateLine({ ...base, status: 'in-progress', madeDefault: true, prs: [{ number: 80, url: 'u', state: 'open', merged: false, author: 'acme-malik' }] })).toBe(BEHAVIOR_STAGE_LINE.building);
+    expect(requestStateLine({ ...base, status: 'done', madeDefault: true })).toBe('Done: it is in the library.');
+    expect(requestStateLine({ ...base, status: 'declined' })).toBe('Not now: it stays as it is.');
+    for (const l of [BEHAVIOR_DEFAULT_LINE, ...Object.values(BEHAVIOR_STAGE_LINE)]) expect(l).not.toMatch(/@|GitHub|pull request/);
   });
 });

@@ -97,3 +97,14 @@ describe('sentByOf', () => {
     expect(sentByOf(null)).toBeNull();
   });
 });
+
+describe('a behavior request the lead made the default', () => {
+  const row: OriginRow = { kind: 'issue', number: 75, pull: null };
+  it('comes from the lead once it carries bridge-build, and is not listed before', () => {
+    const issues = [{ number: 75, body: 'x', labels: ['component-change', 'request: behavior', 'bridge-build'] }];
+    expect(buildOriginOf(row, { issues })).toEqual({ kind: 'behavior', by: null });
+    expect(buildOriginOf(row, { issues: [{ ...issues[0]!, labels: ['component-change', 'request: behavior'] }] })).toBeNull();
+    expect(buildOriginLine({ kind: 'behavior', by: null })).toBe('The lead made it the default');
+    expect(buildOriginLine({ kind: 'behavior', by: 'Dana' })).toBe('Dana made it the default');
+  });
+});

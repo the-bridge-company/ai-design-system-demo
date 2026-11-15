@@ -26,6 +26,10 @@ import {
   parseBuildSpec,
   productOfBranch,
   requestIssueTitle,
+  behaviorAskOf,
+  type BehaviorAsk,
+  type BuildRequestExtra,
+  type ComponentChangeRequest,
   type BuildIssueLike,
   type BuildProp,
   type BuildPullLike,
@@ -367,6 +371,10 @@ export interface BuildDetail {
   /** The brief for Claude, with the issue number. Null for a library branch from Figma (its brief lives on the branch). */
   brief: string | null;
   hasSpec: boolean;
+  /** A behavior request (kind behavior): what it asks, for its own section and its brief once the facts are read. */
+  behavior: BehaviorAsk | null;
+  /** The request as the issue carries it, to write the brief again with what the repository says (behavior facts). */
+  request: (ComponentChangeRequest & { build: BuildRequestExtra }) | null;
 }
 
 /** What was sent, read back from the issue body (a build request or a plain component change request). */
@@ -384,7 +392,30 @@ export function buildDetail(body: string | null | undefined, v: Pick<BuildReques
     figmaName: r.figma?.nodeName ?? null,
     brief: v.kind === 'issue' ? buildRequestBrief(r, { issue: v.number, issueUrl: v.url }) : null,
     hasSpec: parseBuildSpec(body) !== undefined,
+    behavior: r.kind === 'behavior' ? behaviorAskOf(r) : null,
+    request: r,
   };
+}
+
+/**
+ * Who asked a behavior request and who made it the default, said once under the change: "Asked by Sofia on Nov 14.
+ * Dana made it the default on Nov 15." `madeDefault` comes from the comment Bridge writes (core madeDefaultOf): an
+ * email lead by name, a GitHub lead as @login (named with `nameOf`); unknown until read, then left out when absent.
+ */
+export function behaviorMeta(x: { askedBy: string | null; askedAt: string; madeDefault: { by: string | null; at: string | null } | null; nameOf: (login: string) => string }): string {
+  const first = (n: string) => n.trim().split(/\s+/)[0]!;
+  const asked = x.askedBy?.trim() ? `Asked by ${first(x.askedBy)} on ${shortDate(x.askedAt)}.` : `Asked on ${shortDate(x.askedAt)}.`;
+  if (!x.madeDefault) return asked;
+  const by = x.madeDefault.by ? first(x.madeDefault.by.startsWith('@') ? x.nameOf(x.madeDefault.by.slice(1)) : x.madeDefault.by) : 'The lead';
+  return `${asked} ${by} made it the default${x.madeDefault.at ? ` on ${shortDate(x.madeDefault.at)}` : ''}.`;
+}
+
+/** The line under a behavior request's title in the list: what it does today ("Today: Tab leaves without picking"). */
+export function behaviorRowNote(body: string | null | undefined): string | null {
+  const r = parseBuildRequestIssue(body);
+  const ask = r?.kind === 'behavior' ? behaviorAskOf(r) : null;
+  if (!ask) return null;
+  return ask.today ? `Today: ${ask.today}` : 'Something it does not do yet';
 }
 
 /** "Add `size` (variant): sm, md, lg. Default md." in plain words for the designer. */

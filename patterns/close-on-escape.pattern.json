@@ -1,0 +1,6 @@
+{
+  "id": "close-on-escape",
+  "kind": "interaction",
+  "name": "Close on Escape",
+  "purpose": "Escape closes an open list."
+}

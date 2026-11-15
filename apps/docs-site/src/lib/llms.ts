@@ -1,6 +1,7 @@
 // /llms.txt: the same data as the human pages, flattened to plain text for agents.
 // Single source, two outputs: if a token or a rule changes, both the HTML and this file change on the next build.
-import { agentBehaviors } from '@bridge-ds/core';
+import { agentBehaviors, modelAgentPatterns, patternLlmsLines } from '@bridge-ds/core';
+import { repoModel } from './model';
 import { loadComponents } from './components';
 import { contrastPairs } from './contrast';
 import { agentRules } from './governance';
@@ -79,6 +80,9 @@ export function buildLlmsTxt(): string {
   );
   push('## Contrast', '', 'Pairs are listed in packages/tokens/src/contrast.checks.json and checked against WCAG AA (4.5:1 text, 3:1 UI).');
   push(failing.length ? 'Pairs currently below AA (do not copy these combinations into new places):' : 'All listed pairs pass AA in both themes.', ...failing, '');
+
+  // Patterns (patterns/): interactions read from the components' shared behaviors, actions with their rules.
+  push(...patternLlmsLines(modelAgentPatterns(repoModel)));
 
   push('## Components', '');
   for (const c of components) {

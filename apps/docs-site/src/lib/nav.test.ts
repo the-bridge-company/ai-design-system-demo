@@ -15,6 +15,7 @@ function pageFile(href: string): string | null {
   const route = href.replace(/^\/|\/$/g, '');
   const candidates = route === '' ? ['index.astro'] : [`${route}.astro`, `${route}/index.astro`];
   if (route.startsWith('components/') && route !== 'components') candidates.push('components/[slug].astro');
+  if (route.startsWith('patterns/')) candidates.push('patterns/[slug].astro');
   return candidates.map((c) => join(PAGES, c)).find((f) => existsSync(f)) ?? null;
 }
 
@@ -22,6 +23,17 @@ describe('navigation data', () => {
   it('links every nav entry to a page that exists', () => {
     const missing = allPages().filter((p) => !pageFile(p.href));
     expect(missing.map((p) => p.href)).toEqual([]);
+  });
+
+  it('lists Patterns by name under each kind, its index as Overview, never a second "Patterns"', () => {
+    const patterns = navFor('library').find((e) => e.label === 'Patterns');
+    expect(patterns?.children?.[0]).toMatchObject({ href: '/patterns/', label: 'Overview' });
+    const items = patterns!.children!;
+    expect(items.map((i) => i.label)).not.toContain('Patterns');
+    expect(items.filter((i) => i.heading).map((i) => i.heading)).toEqual(['Interactions', 'Actions']);
+    expect(items.find((i) => i.heading === 'Interactions')?.label).toBe('Close on Escape');
+    expect(items.map((i) => i.label)).toEqual(expect.arrayContaining(['Delete', 'Send for review', 'Pick with Enter']));
+    expect(locate('/patterns/delete/')).toMatchObject({ group: 'Patterns', item: { label: 'Delete' } });
   });
 
   it('lists each page once per space', () => {
@@ -107,8 +119,8 @@ describe('routing: the landing at /, the Library home at /library/', () => {
 });
 
 describe('navigation shape', () => {
-  it('keeps the Library to Home, Foundations, Components and Use, with All tokens last under Foundations', () => {
-    expect(navFor('library').map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Use']);
+  it('keeps the Library to Home, Foundations, Components, Patterns and Use, with All tokens last under Foundations', () => {
+    expect(navFor('library').map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Patterns', 'Use']);
     const found = navFor('library').find((e) => e.label === 'Foundations')!.children!;
     expect(found.at(-1)).toMatchObject({ href: '/tokens/', label: 'All tokens', apart: true });
   });

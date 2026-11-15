@@ -1,0 +1,18 @@
+---
+// Library > Patterns: every pattern of patterns/ by kind (Interactions, Actions), rendered at build time
+// (components/ds/library/views/PatternsView.tsx). The nav lists this page as Overview, never a second "Patterns".
+import Layout from '../../layouts/Layout.astro';
+import { PatternsView, patternHrefs } from '../../components/ds/library/views/PatternsView';
+import { siteLibraryData } from '../../lib/library-site';
+import { freshness } from '../../lib/sources';
+import { libraryPatterns, patternsLead } from '../../lib/library/patterns';
+import { PATTERNS_DIR, PATTERN_SUFFIX } from '@bridge-ds/core';
+
+const data = siteLibraryData();
+const groups = libraryPatterns(data.model);
+const sources = groups.flatMap((g) => g.items).map((e) => `${PATTERNS_DIR}/${e.pattern.id}${PATTERN_SUFFIX}`);
+---
+
+<Layout title="Patterns" description={patternsLead(groups)} sources={sources} updated={freshness(sources)}>
+  <PatternsView groups={groups} hrefs={patternHrefs(data, groups)} />
+</Layout>

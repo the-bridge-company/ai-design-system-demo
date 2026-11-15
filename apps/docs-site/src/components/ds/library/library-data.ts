@@ -9,6 +9,7 @@ import type { TeamData } from '../../../scripts/team-data';
 import { libraryHref } from '../../../lib/library-shells';
 import { studioHref, studioHrefAt, teamHref } from '../../../lib/team-path';
 import { libraryTeamName } from '../../../lib/recent-teams';
+import { PATTERN_QUERY, PATTERNS_ROUTE, patternRoute } from '../../../lib/library/patterns';
 
 export interface LibraryTeam {
   owner: string;
@@ -126,6 +127,16 @@ export const componentRoute = (slug: string, hash = ''): string => `components/$
 
 /** A component page of this Library. */
 export const componentHref = (data: Pick<LibraryData, 'team'>, slug: string, hash = ''): string => pageHref(data, componentRoute(slug, hash));
+
+/**
+ * A pattern page of this Library: its own address on Bridge's Library (/patterns/<id>/), the one Patterns shell with the
+ * pattern in the query on a team's (patterns/?p=<id>), since a team's patterns are only known once its data is read.
+ */
+export const patternHref = (data: Pick<LibraryData, 'team'>, id: string): string =>
+  data.team ? pageHref(data, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`) : `/${patternRoute(id)}`;
+
+/** The Patterns index of this Library. */
+export const patternsHref = (data: Pick<LibraryData, 'team'>): string => pageHref(data, PATTERNS_ROUTE);
 
 /** A repository file of this Library's design system on GitHub, or undefined when the source is unknown. */
 export const sourceHref = (data: Pick<LibraryData, 'extras'>, path: string): string | undefined =>

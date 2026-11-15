@@ -16,6 +16,7 @@ import { readRepoTexts, parentDir, type RepoSource, type RepoSourceRef } from '.
 import type { IntegrationsConfig } from './requests';
 import type { Rights, VisualImpactMode } from './rights';
 import { cssVarsIn } from './usage';
+import { PATTERNS_DIR, patternIdOf, readPatterns, type Pattern } from './patterns';
 import { buildTokenRows, tokenRowAxes, tokenRowIndex, type TokenRows, type TokenRowTier } from './token-rows';
 
 /** Paths used when bridge.config.json does not name them: where this repo kept them before the config did. */
@@ -229,6 +230,11 @@ export interface RepoModel {
    * has none or it is invalid (the reason is in `problems`). Absent from a model built before Bridge read it.
    */
   componentMap?: ComponentMapFile | null;
+  /**
+   * The patterns of patterns/<id>.pattern.json (patterns.ts), well-formed ones only, in kind order then by name. Empty
+   * when the repository has none; absent from a model built before Bridge read them.
+   */
+  patterns?: Pattern[];
   specs: {
     path: string;
     /** Parsed component-specs.json, null when missing or of another version. */
@@ -304,6 +310,9 @@ export async function loadRepoModel(source: RepoSource, options: RepoModelOption
   let compFiles: string[] = [];
   const codeRead: string[] = [specsPath, COMPONENT_MAP_FILE];
   const docsRead: string[] = [];
+  // Patterns: one file each in patterns/ (a missing folder lists nothing). Read with the docs.
+  const patternFiles = (await source.list(PATTERNS_DIR)).filter((p) => patternIdOf(p) !== null);
+  docsRead.push(...patternFiles);
   if (options.components !== false) {
     compFiles = await source.list(comps.dir);
     for (const f of compFiles) {
@@ -419,6 +428,12 @@ export async function loadRepoModel(source: RepoSource, options: RepoModelOption
     }
   }
 
+  const patternRead = readPatterns(patternFiles.flatMap((p): [string, string][] => {
+    const body = readMore(p);
+    return body === undefined ? [] : [[p, body]];
+  }));
+  problems.push(...patternRead.problems);
+
   const mapRead = readComponentMap(readMore(COMPONENT_MAP_FILE));
   problems.push(...mapRead.problems.map((p) => `${COMPONENT_MAP_FILE}: ${p}`));
 
@@ -433,6 +448,7 @@ export async function loadRepoModel(source: RepoSource, options: RepoModelOption
     components,
     styles: { globs: listedStyles.globs, vars: styleVars },
     componentMap: mapRead.map,
+    patterns: patternRead.patterns,
     specs: { path: specsPath, file: specsFile, coverage },
   };
 }

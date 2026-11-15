@@ -99,6 +99,7 @@ export * from './token-rows';
 export * from './contrast-model';
 export * from './component-scan';
 export * from './behaviors';
+export * from './patterns';
 export * from './repo-model';
 export * from './repo-source-github';
 export * from './repo-access';

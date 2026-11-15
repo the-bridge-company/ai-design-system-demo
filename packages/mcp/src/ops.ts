@@ -5,6 +5,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { buildAuditReport, compareWithBaseline, DesignSystemIndex, type AuditReport } from '@bridge-ds/core/audit';
 import { auditSnippet } from './audit.js';
 import { cssVarsUsed, getComponent, listComponentNames, listComponents, scaffoldComponent, type ScaffoldInput } from './components.js';
+import { getPattern, listPatterns } from './patterns.js';
 import { approverEntries, leadsPublishTier1On, soloOwnerOf, soloOwnerSentence, tier1PublishSentence, changesMode, reviewOnGitHub, baseBranchOf, planTokenProposal, writeTokenProposalOnGitHub, suggestTokenProposalOnGitHub, suggestionIssueTitle, type ChangesMode, branchWithJiraKey, parseJiraKey, productsOf, cssModuleClasses, docsPrompt, entryLabel, expandOwners, isExplorationPull, isGuardedExploration, prefillDocs, protectedBranchesOf, shipPolicy, TeamDirectory, unreadableTeams, whoCanShipSentence, type BridgeConfig, type DocsContrastInput, type GitHubClient } from '@bridge-ds/core';
 import { branchExists, collectAuditFiles, commitToNewLocalBranch, currentBranch, git, loadAllowlist } from '@bridge-ds/core/node';
 import { core, type Combo, type Issue, type PairInput, type TokenEdit, type TokenSet } from './core-adapter.js';
@@ -251,6 +252,18 @@ export async function getComponentOp(ctx: BridgeContext, a: { name: string; incl
     c.docs = Object.fromEntries(Object.entries(c.docs).filter(([k]) => keep.has(k)));
   }
   return { ...c, figma: figmaFieldOf(map, c.name) };
+}
+
+// --- patterns ---------------------------------------------------------------------------------------------
+
+export async function listPatternsOp(ctx: BridgeContext, a: { kind?: string }) {
+  const { config } = await ctx.config();
+  return listPatterns(ctx.source, config, a);
+}
+
+export async function getPatternOp(ctx: BridgeContext, a: { id: string }): Promise<Record<string, unknown>> {
+  const { config } = await ctx.config();
+  return { ...(await getPattern(ctx.source, config, a)) };
 }
 
 const NATIVE_ELEMENTS: Record<string, string> = { Button: 'button', Input: 'input', Span: 'span', Div: 'div', Anchor: 'a', TextArea: 'textarea', Select: 'select', UList: 'ul', Paragraph: 'p', Heading: 'h2', Label: 'label', Image: 'img' };

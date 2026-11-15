@@ -1,0 +1,6 @@
+{
+  "id": "pick-with-enter",
+  "kind": "interaction",
+  "name": "Pick with Enter",
+  "purpose": "Enter picks the option the list has highlighted."
+}

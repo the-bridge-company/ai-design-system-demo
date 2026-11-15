@@ -1,0 +1,69 @@
+{
+  "id": "send-for-review",
+  "kind": "action",
+  "name": "Send for review",
+  "purpose": "Sends a change to the people who decide, before it reaches the library.",
+  "reversible": true,
+  "rules": [
+    "It can be taken back, so it never asks first: a Toast says it was sent, with Undo.",
+    "One verb, set by the team: Send suggestion when the DS lead reviews suggestions, Send for review when changes go straight to review.",
+    "Once sent, say so in the same words: Sent for review, or Suggestion sent."
+  ],
+  "components": ["Button", "Toast"],
+  "usedIn": [
+    {
+      "screen": "Studio, Tokens, your draft",
+      "label": "Send for review or Send suggestion",
+      "file": "apps/docs-site/src/components/explorer/TokenEditorKit.astro",
+      "match": "sendButton('tokens', mode)"
+    },
+    {
+      "screen": "Library, a component page, Edit",
+      "label": "Send for review or Send suggestion",
+      "file": "apps/docs-site/src/components/LibraryEditMode.tsx",
+      "match": "sendWords('docs', mode)"
+    },
+    {
+      "screen": "Studio, New brand",
+      "label": "Send for review or Send suggestion",
+      "file": "apps/docs-site/src/components/ds/studio/NewBrandFlow.tsx",
+      "match": "sendButton('brand', mode)"
+    },
+    {
+      "screen": "Studio, Tokens, Undo this change",
+      "label": "Send for review or Send suggestion",
+      "file": "apps/docs-site/src/components/HistoryPlanner.astro",
+      "match": "sendButton('revert', mode)"
+    },
+    {
+      "screen": "An exploration of a product, Missing from the library",
+      "label": "Send for review or Send suggestion",
+      "file": "apps/docs-site/src/scripts/product-branch.ts",
+      "match": "sendButton('piece', mode)"
+    },
+    {
+      "screen": "Settings, Review rules",
+      "label": "Send for review",
+      "file": "apps/docs-site/src/components/ds/studio/ReviewRulesEditor.tsx",
+      "match": "Send for review"
+    },
+    {
+      "screen": "Settings, Integrations",
+      "label": "Send for review",
+      "file": "apps/docs-site/src/scripts/integrations.ts",
+      "match": "'Send for review'"
+    },
+    {
+      "screen": "Studio, first steps",
+      "label": "Send for review",
+      "file": "apps/docs-site/src/components/ds/studio/Onboarding.tsx",
+      "match": "Send for review"
+    }
+  ],
+  "stage": {
+    "items": ["Primary button color", "Card radius", "Toast guidance"],
+    "action": "Send for review",
+    "done": "{item} sent for review.",
+    "undone": "{item} is back in your draft."
+  }
+}

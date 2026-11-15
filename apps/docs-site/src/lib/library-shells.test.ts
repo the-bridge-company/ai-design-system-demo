@@ -142,7 +142,9 @@ describe('addresses', () => {
   it('gives every nav page a shell route, with the same Foundations pages as the own Library', () => {
     const pages = libraryTeamPages().map((p) => p.route);
     for (const r of pages) expect(LIBRARY_SHELL_ROUTES).toContain(r);
-    expect(LIBRARY_TEAM_NAV.map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Use']);
+    expect(LIBRARY_TEAM_NAV.map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Patterns', 'Use']);
+    // Patterns is built hidden: a team shows it once its data has patterns (scripts/library-team.ts).
+    expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({ route: 'patterns/', until: 'patterns' });
     expect(FOUNDATIONS.map((f) => f.href)).toEqual(LIBRARY_FOUNDATION_PAGES.map((p) => `/${p.route}`));
     expect(pages).toContain('foundations/accessibility/');
   });
@@ -230,6 +232,9 @@ describe('Use pages', () => {
     for (const p of LIBRARY_USE_PAGES) expect(LIBRARY_SHELL_ROUTES).toContain(p.route);
     expect(libraryHref('acme', 'ds', 'changelog/')).toBe('/library/acme/ds/changelog/');
     expect(ownLibraryPath('how-review-works/')).toBe('/how-review-works/');
+    expect(ownLibraryPath('patterns/')).toBe('/patterns/');
+    expect(ownLibraryPath('patterns/?p=close-on-escape')).toBe('/patterns/close-on-escape/');
+    expect(ownLibraryPath('patterns/?p=../x')).toBe('/patterns/');
     expect(ownLibraryRedirects({ owner: 'acme', repo: 'ds' }).find((r) => r.source === '/library/acme/ds/install/')?.destination).toBe('/install/');
   });
 });

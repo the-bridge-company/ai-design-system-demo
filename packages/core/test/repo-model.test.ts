@@ -248,6 +248,7 @@ test('this repo: the model is the same through the local, memory and GitHub sour
   assert.deepEqual(fromFs.problems, []);
   assert.ok(fromFs.tokens.rows.all.length > 100);
   assert.ok((fromFs.components?.list.length ?? 0) > 20);
+  assert.ok((fromFs.patterns ?? []).some((p) => p.id === 'delete'));
   // The same bytes served from memory, as a GitHub or snapshot source would serve them.
   const paths = [
     'bridge.config.json',
@@ -256,6 +257,7 @@ test('this repo: the model is the same through the local, memory and GitHub sour
     fromFs.config.components!.index!,
     fromFs.specs.path,
     'bridge.components.json',
+    ...(await fs.list('patterns')),
     ...Object.keys(fromFs.styles.vars),
   ];
   const bodies = await readRepoTexts(fs, paths);

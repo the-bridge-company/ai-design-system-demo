@@ -1,0 +1,37 @@
+{
+  "id": "delete",
+  "kind": "action",
+  "name": "Delete",
+  "purpose": "Removes something for good, like a team or an account: nothing brings it back.",
+  "reversible": false,
+  "rules": [
+    "It cannot be undone, so ask first: an AlertDialog names what goes and says it cannot be undone.",
+    "The first button only asks: a secondary Button with the trash icon. Nothing is deleted on that click.",
+    "The button that deletes repeats the verb and the object, like Delete this team, in the danger tone, with Cancel beside it."
+  ],
+  "components": ["Button", "AlertDialog"],
+  "usedIn": [
+    {
+      "screen": "Settings, Danger zone",
+      "label": "Delete this team",
+      "file": "apps/docs-site/src/lib/delete-team.ts",
+      "match": "button: { team: 'Delete this team'"
+    },
+    {
+      "screen": "Account settings",
+      "label": "Delete my account",
+      "file": "apps/docs-site/src/lib/account.ts",
+      "match": "deleteConfirm: 'Delete my account'"
+    }
+  ],
+  "stage": {
+    "items": ["Marketing team", "Docs team", "Mobile team"],
+    "action": "Delete",
+    "icon": "trash",
+    "confirm": {
+      "title": "Delete {item}?",
+      "text": "Everyone on the team loses access at once. This cannot be undone.",
+      "confirmLabel": "Delete this team"
+    }
+  }
+}

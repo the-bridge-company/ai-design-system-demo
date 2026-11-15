@@ -276,6 +276,28 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
   );
 
   server.registerTool(
+    'bridge_list_patterns',
+    {
+      title: 'List patterns',
+      description: 'List the patterns of the design system (patterns/<id>.pattern.json) with id, kind and what each is for: interactions (one gesture several components share, like close-on-escape) and actions (a task people take across the product, like delete). Call bridge_get_pattern before building a flow that does one of them.',
+      inputSchema: { kind: z.enum(['interaction', 'action']).optional().describe('Only this kind.') },
+      annotations: RO,
+    },
+    run((a) => ops.listPatternsOp(ctx, a)),
+  );
+
+  server.registerTool(
+    'bridge_get_pattern',
+    {
+      title: 'Get pattern',
+      description: 'One pattern by id or name, with its kind. An interaction gives the components that do it, each in its own words and keys (from their docs.json behaviors). An action gives whether it can be undone, its rules (Undo in a Toast when it can be undone, an AlertDialog first when it cannot), the components it uses and usedIn: the real places of the product that do it. Follow the rules when building that flow.',
+      inputSchema: { id: z.string().describe('Pattern id or name, e.g. delete or close-on-escape.') },
+      annotations: RO,
+    },
+    run((a) => ops.getPatternOp(ctx, a)),
+  );
+
+  server.registerTool(
     'bridge_draft_docs',
     {
       title: 'Draft component docs',

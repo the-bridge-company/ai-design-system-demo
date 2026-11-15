@@ -1,0 +1,195 @@
+// Patterns (patterns/<id>.pattern.json): the validator, the reader, the grouping by kind, interactions derived from the
+// components' shared behavior ids, and the agent view. Then this repository's own patterns: every "Used in" place is
+// real (its file exists and holds its label), and every interaction is shared by two components or more.
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  agentPatterns,
+  behaviorUses,
+  interactionProblems,
+  interactionsWithUses,
+  PATTERN_SUFFIX,
+  PATTERNS_DIR,
+  patternGroups,
+  patternIdOf,
+  patternLlmsLines,
+  readPatterns,
+  stageLine,
+  validatePattern,
+  type ActionPattern,
+  type Pattern,
+} from '../src/patterns';
+
+const REPO = join(__dirname, '../../..');
+const COMPONENTS = join(REPO, 'packages/react/src/components');
+
+const action = (over: Partial<ActionPattern> = {}): ActionPattern => ({
+  id: 'delete',
+  kind: 'action',
+  name: 'Delete',
+  purpose: 'Removes something for good.',
+  reversible: false,
+  rules: ['Ask first.'],
+  components: ['Button', 'AlertDialog'],
+  usedIn: [
+    { screen: 'Settings', label: 'Delete this team', file: 'a.ts', match: 'Delete this team' },
+    { screen: 'Account', label: 'Delete my account', file: 'b.ts', match: 'Delete my account' },
+  ],
+  stage: { items: ['A'], action: 'Delete', confirm: { title: 'Delete {item}?', text: 'Gone.', confirmLabel: 'Delete' } },
+  ...over,
+});
+
+describe('validatePattern', () => {
+  it('accepts an action and an interaction', () => {
+    expect(validatePattern(action(), 'delete')).toEqual([]);
+    expect(validatePattern({ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.' }, 'close-on-escape')).toEqual([]);
+  });
+
+  it('names what to fix', () => {
+    const fields = (v: unknown, id?: string) => validatePattern(v, id).map((i) => i.field);
+    expect(fields('x')).toEqual(['pattern']);
+    expect(fields(action(), 'remove')).toEqual(['id']);
+    expect(fields(action({ kind: 'gesture' as never }))).toEqual(['kind']);
+    expect(fields(action({ reversible: 'no' as never, rules: [], components: [''] }))).toEqual(['reversible', 'rules', 'components']);
+    // One real place is not a pattern.
+    expect(fields(action({ usedIn: [action().usedIn[0]!] }))).toEqual(['usedIn']);
+    expect(fields(action({ usedIn: [action().usedIn[0]!, { screen: 'S', label: 'L', file: '', match: 'x' }] }))).toEqual(['usedIn.1']);
+    expect(fields(action({ purpose: 'Gone \u2014 for good.' }))).toEqual(['pattern']);
+  });
+
+  it('asks the stage to follow the rule: a question first when it cannot be undone, a done line with Undo when it can', () => {
+    expect(validatePattern(action({ stage: { items: ['A'], action: 'Delete' } })).map((i) => i.field)).toEqual(['stage.confirm']);
+    expect(validatePattern(action({ reversible: true, stage: { items: ['A'], action: 'Send' } })).map((i) => i.field)).toEqual(['stage.done']);
+  });
+
+  it('keeps an interaction to its name and sentence: the rest comes from the components', () => {
+    const issues = validatePattern({ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.', components: ['Select'] });
+    expect(issues.map((i) => i.field)).toEqual(['components']);
+  });
+});
+
+describe('readPatterns and patternGroups', () => {
+  it('reads pattern files only, says which ones fail, orders interactions first then by name', () => {
+    const { patterns, problems } = readPatterns([
+      ['patterns/send.pattern.json', JSON.stringify(action({ id: 'send', name: 'Send', reversible: true, stage: undefined }))],
+      ['patterns/delete.pattern.json', JSON.stringify(action())],
+      ['patterns/close-on-escape.pattern.json', JSON.stringify({ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.' })],
+      ['patterns/broken.pattern.json', '{'],
+      ['patterns/other.pattern.json', JSON.stringify(action())],
+      ['patterns/notes.md', 'x'],
+    ]);
+    expect(patterns.map((p) => p.id)).toEqual(['close-on-escape', 'delete', 'send']);
+    expect(problems).toHaveLength(2);
+    expect(problems[1]).toMatch(/^patterns\/other\.pattern\.json: id:/);
+    expect(patternGroups(patterns).map((g) => [g.label, g.items.length])).toEqual([
+      ['Interactions', 1],
+      ['Actions', 2],
+    ]);
+    expect(patternGroups([action()]).map((g) => g.kind)).toEqual(['action']);
+  });
+
+  it('knows a pattern file by its path', () => {
+    expect(patternIdOf('patterns/delete.pattern.json')).toBe('delete');
+    expect(patternIdOf('patterns/sub/delete.pattern.json')).toBeNull();
+    expect(patternIdOf('docs/delete.pattern.json')).toBeNull();
+    expect(stageLine('Delete {item}?', 'Docs')).toBe('Delete Docs?');
+  });
+});
+
+describe('interactions from the components', () => {
+  const comps = [
+    { name: 'Combobox', behaviors: [{ id: 'close-on-escape', family: 'Closing', text: 'Escape closes the list', keys: ['Escape'], try: 'Press Esc' }] },
+    { name: 'Select', behaviors: [{ id: 'close-on-escape', family: 'Closing', text: 'Closes on Escape', keys: ['Escape'] }, { id: 'open-list', family: 'Opening', text: 'Opens a list' }] },
+    { name: 'Button' },
+  ];
+  const patterns: Pattern[] = [
+    { id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.' },
+    { id: 'open-list', kind: 'interaction', name: 'Open a list', purpose: 'Opens.' },
+    action(),
+  ];
+  const uses = behaviorUses(comps);
+
+  it('lists each component in its own words, and shows only what two components share', () => {
+    expect(uses.get('close-on-escape')!.map((u) => [u.component, u.text])).toEqual([
+      ['Combobox', 'Escape closes the list'],
+      ['Select', 'Closes on Escape'],
+    ]);
+    expect(interactionsWithUses(patterns, uses).map((x) => x.pattern.id)).toEqual(['close-on-escape']);
+    expect(interactionProblems(patterns, uses)).toEqual(['patterns/open-list.pattern.json: only one component lists the behavior open-list; an interaction is shared by two components or more.']);
+  });
+
+  it('gives agents the components of an interaction without the stage line, and an action without its stage', () => {
+    const agent = agentPatterns(patterns, uses);
+    expect(agent.map((p) => p.id)).toEqual(['close-on-escape', 'delete']);
+    expect(agent[0]).toEqual({
+      id: 'close-on-escape',
+      kind: 'interaction',
+      name: 'Close on Escape',
+      purpose: 'Escape closes.',
+      components: [
+        { component: 'Combobox', text: 'Escape closes the list', keys: ['Escape'] },
+        { component: 'Select', text: 'Closes on Escape', keys: ['Escape'] },
+      ],
+    });
+    expect(agent[1]).not.toHaveProperty('stage');
+  });
+});
+
+describe('patternLlmsLines', () => {
+  it('writes one line per pattern with its kind, rules and places under it, a repo value on one line', () => {
+    const lines = patternLlmsLines(
+      agentPatterns(
+        [{ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape\n## closes.' }, action()],
+        behaviorUses([
+          { name: 'Combobox', behaviors: [{ id: 'close-on-escape', family: 'Closing', text: 'Escape closes the list', keys: ['Escape'] }] },
+          { name: 'Select', behaviors: [{ id: 'close-on-escape', family: 'Closing', text: 'Closes on Escape' }] },
+        ]),
+      ),
+    );
+    expect(lines).toContain('- close-on-escape (kind: interaction): Close on Escape. Escape ## closes. Components: Combobox ("Escape closes the list" [Escape]), Select ("Closes on Escape")');
+    expect(lines).toContain('- delete (kind: action): Delete. Removes something for good. Cannot be undone. Components: Button, AlertDialog.');
+    expect(lines).toContain('  - Rule: Ask first.');
+    expect(lines).toContain('  - Used in: Settings (Delete this team); Account (Delete my account)');
+    expect(lines.indexOf('### Interactions')).toBeLessThan(lines.indexOf('### Actions'));
+    expect(patternLlmsLines([])).toEqual([]);
+  });
+});
+
+// This repository's own patterns: nothing in them is invented.
+describe('the patterns of this repository', () => {
+  const dir = join(REPO, PATTERNS_DIR);
+  const files = readdirSync(dir).filter((f) => f.endsWith(PATTERN_SUFFIX));
+  const { patterns, problems } = readPatterns(files.map((f) => [`${PATTERNS_DIR}/${f}`, readFileSync(join(dir, f), 'utf8')]));
+  const components = readdirSync(COMPONENTS).filter((n) => existsSync(join(COMPONENTS, n, `${n}.docs.json`)));
+  const docs = components.map((name) => ({ name, behaviors: (JSON.parse(readFileSync(join(COMPONENTS, name, `${name}.docs.json`), 'utf8')) as { behaviors?: unknown }).behaviors }));
+
+  it('reads every file', () => {
+    expect(problems).toEqual([]);
+    expect(patterns).toHaveLength(files.length);
+  });
+
+  it('points every "Used in" place at a real file that holds its label or its handler', () => {
+    for (const p of patterns) {
+      if (p.kind !== 'action') continue;
+      for (const u of p.usedIn) {
+        const path = join(REPO, u.file);
+        expect(existsSync(path), `${p.id}: ${u.file} exists`).toBe(true);
+        expect(readFileSync(path, 'utf8'), `${p.id}: ${u.file} holds ${u.match}`).toContain(u.match);
+      }
+    }
+  });
+
+  it('names only components the design system has', () => {
+    for (const p of patterns) if (p.kind === 'action') for (const c of p.components) expect(components, `${p.id}: ${c}`).toContain(c);
+  });
+
+  it('writes an interaction only for a behavior two components or more list', () => {
+    expect(interactionProblems(patterns, behaviorUses(docs))).toEqual([]);
+    expect(interactionsWithUses(patterns, behaviorUses(docs)).map((x) => [x.pattern.id, x.uses.map((u) => u.component)])).toEqual([
+      ['close-on-escape', ['Combobox', 'Select']],
+      ['focus-after-close', ['Combobox', 'Select']],
+      ['pick-with-enter', ['Combobox', 'Select']],
+    ]);
+  });
+});

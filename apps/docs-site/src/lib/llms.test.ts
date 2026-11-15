@@ -48,6 +48,14 @@ describe('/llms.txt', () => {
     for (const c of loadComponents()) expect(links).toContain(`/docs-ai/${c.slug}.json`);
   });
 
+  it('lists the patterns with their kind: interactions in each component\'s words, actions with rules and places', () => {
+    expect(text).toContain('## Patterns');
+    expect(text).toContain('- close-on-escape (kind: interaction): Close on Escape. Escape closes an open list. Components: Combobox ("Escape closes the list" [Escape]), Select ("Closes on Escape" [Escape])');
+    expect(text).toMatch(/- delete \(kind: action\): Delete\. .* Cannot be undone\. Components: Button, AlertDialog\./);
+    expect(text).toContain('  - Used in: Settings, Danger zone (Delete this team); Account settings (Delete my account)');
+    expect(text.indexOf('## Patterns')).toBeLessThan(text.indexOf('## Components'));
+  });
+
   it('lists a component behaviors with their shared ids, keys and announcement', () => {
     expect(text).toContain('Behaviors (id, family: text):');
     expect(text).toContain('- close-on-escape, Closing: Closes on Escape [Escape]');

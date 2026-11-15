@@ -1,0 +1,136 @@
+/* Library > Patterns (components/ds/library/views/PatternsView.tsx). Existing tokens only. The stage of an interaction
+   reuses the Behaviors layout of component pages (styles/component.css .bh-*). */
+
+.pt-group + .pt-group,
+.pt-section + .pt-section {
+  margin-top: var(--space-10);
+}
+
+.pt-group h2,
+.pt-section h2 {
+  margin: 0 0 var(--space-4);
+}
+
+/* Index: one card per pattern, its name and one sentence. */
+.pt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-64), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+.pt-card h3,
+.pt-card p {
+  margin: 0;
+}
+
+.pt-card p {
+  color: var(--color-text-muted);
+}
+
+/* Interaction: the component's name over its row, in the place of a family label, as a link to its Behaviors. */
+.pt-comp-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* Action stage: the rows in one container, divided, each name and its button centered on the row. */
+.bh-stage-frame.pt-stage-frame {
+  display: grid;
+  min-height: 0;
+  place-items: stretch;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.bh-stage-frame.pt-stage-frame > * {
+  max-width: none;
+}
+
+.pt-rows {
+  margin: 0;
+  padding: var(--space-1);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  list-style: none;
+}
+
+.pt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  align-items: center;
+  min-height: var(--control-height-md);
+  margin: 0;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+}
+
+.pt-row + .pt-row {
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+.pt-again {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Rules and where the product does it: plain lists, the screen quiet before the label people read there. */
+.pt-rules {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.pt-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-used {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+
+/* A label, then the screens that show it, quiet under it. */
+.pt-used > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pt-used dt {
+  font-weight: var(--font-weight-semibold);
+}
+
+.pt-used dd {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.pt-files {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

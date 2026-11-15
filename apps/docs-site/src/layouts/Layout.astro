@@ -101,7 +101,7 @@ const nav: NavEntry[] = library
   ? LIBRARY_TEAM_NAV.map((e) =>
       e.children
         ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta })) }
-        : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta },
+        : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta, ...(e.until ? { until: e.until } : {}) },
     )
   : workspace
     ? workspaceNav()
@@ -306,7 +306,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                 const current = isCurrent(entry.href);
                 const inside = !current && here.entry?.label === entry.label;
                 return (
-                  <li>
+                  <li hidden={entry.until ? true : undefined} data-nav-until={entry.until}>
                     <Link variant="subtle" className="nav-link" href={entry.href} aria-current={current ? 'page' : undefined} data-active={inside ? '' : undefined} data-keep-branch={isStudio ? '' : undefined}>
                       <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                       <span>{entry.label}</span>
@@ -340,11 +340,14 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                   </button>
                   <ul class="nav-sub" id={id}>
                     {entry.children!.map((item) => (
-                      <li class:list={[{ 'nav-apart': item.apart }]}>
-                        <Link variant="subtle" href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined} data-keep-branch={isStudio ? '' : undefined}>
-                          <span>{item.label}</span>
-                        </Link>
-                      </li>
+                      <>
+                        {item.heading && <li class="nav-sub-head">{item.heading}</li>}
+                        <li class:list={[{ 'nav-apart': item.apart }]}>
+                          <Link variant="subtle" href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined} data-keep-branch={isStudio ? '' : undefined}>
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      </>
                     ))}
                   </ul>
                 </li>

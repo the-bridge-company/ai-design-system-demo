@@ -1,0 +1,92 @@
+// @vitest-environment jsdom
+// Library > Patterns: the index by kind, an action performed on its stage with the real components the rule names
+// (AlertDialog first when it cannot be undone, a Toast with Undo when it can), an interaction with each component in
+// its own words on the Behaviors stage, and the component page's shared rows linking to their interaction.
+import '../../../../../../../packages/react/src/test/setup';
+import { createElement } from 'react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { expectNoAxeViolations } from '../../../../../../../packages/react/src/test/axe';
+import { repoModel } from '../../../../lib/model';
+import { loadComponents } from '../../../../lib/library/components';
+import { libraryPatterns, patternById } from '../../../../lib/library/patterns';
+import type { LibraryData } from '../library-data';
+import ComponentView from './ComponentView';
+import { PatternsView, PatternView, patternHrefs, patternLinks, usedByLabel } from './PatternsView';
+
+const own: LibraryData = { model: repoModel, team: null, extras: {} };
+const SB = 'https://storybook.example.com';
+const groups = libraryPatterns(repoModel);
+const view = (id: string, extra: { live?: boolean; storybook?: string } = { live: true }) => {
+  const entry = patternById(groups, id)!;
+  return render(createElement(PatternView, { entry, links: patternLinks(own, entry), ...extra }));
+};
+
+describe('Patterns index', () => {
+  it('lists each kind once, each pattern by name with what it is for, and never a second "Patterns" title', () => {
+    const { container } = render(createElement(PatternsView, { groups, hrefs: patternHrefs(own, groups) }));
+    expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Patterns', 'Interactions', 'Actions']);
+    expect(screen.getByRole('link', { name: 'Delete' })).toHaveAttribute('href', '/patterns/delete/');
+    expect(container.textContent).toContain('Escape closes an open list.');
+  });
+});
+
+describe('an action', () => {
+  it('that cannot be undone asks first in an AlertDialog, then the row goes; Start again brings it back', async () => {
+    view('delete');
+    const stage = screen.getByRole('region', { name: 'Try Delete' });
+    expect(within(stage).getByText('Try Delete on a row: it asks first, since it cannot be undone.')).toBeInTheDocument();
+    fireEvent.click(within(stage).getByRole('button', { name: 'Delete: Docs team' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(within(dialog).getByText('Delete Docs team?')).toBeInTheDocument();
+    expect(within(dialog).getByText(/This cannot be undone/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete this team' }));
+    expect(within(stage).queryByText('Docs team')).toBeNull();
+    fireEvent.click(within(stage).getByRole('button', { name: 'Start again' }));
+    expect(within(stage).getByText('Docs team')).toBeInTheDocument();
+  });
+
+  it('that can be undone goes at once, with Undo in the Toast that brings it back in its place', async () => {
+    view('send-for-review');
+    const stage = screen.getByRole('region', { name: 'Try Send for review' });
+    fireEvent.click(within(stage).getByRole('button', { name: 'Send for review: Card radius' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(within(stage).queryByText('Card radius')).toBeNull();
+    expect(await screen.findByText('Card radius sent for review.')).toBeInTheDocument();
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Undo' })));
+    expect([...stage.querySelectorAll('.pt-row-name')].map((n) => n.textContent)).toEqual(['Primary button color', 'Card radius', 'Toast guidance']);
+  });
+
+  it('says its rules, its components as links, and where the product does it, files folded for developers', async () => {
+    const { container } = view('delete');
+    expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Delete', 'Try it', 'Rules', 'Components', 'Used in']);
+    expect(screen.getByRole('link', { name: 'AlertDialog' })).toHaveAttribute('href', '/components/alert-dialog/');
+    expect(container.querySelector('.pt-used')!.textContent).toContain('Settings, Danger zone');
+    expect(container.querySelector('.pt-used')!.textContent).not.toContain('apps/docs-site');
+    expect(usedByLabel([{ label: 'A', screen: 'x' }, { label: 'B', screen: 'y' }, { label: 'A', screen: 'z' }])).toEqual([['A', ['x', 'z']], ['B', ['y']]]);
+    await expectNoAxeViolations();
+  });
+});
+
+describe('an interaction', () => {
+  it('shows each component in its own words, its name linking to its Behaviors, and the picked one on the stage', () => {
+    view('close-on-escape', { storybook: SB });
+    expect(screen.getByRole('link', { name: 'Select' })).toHaveAttribute('href', '/components/select/#behaviors');
+    const row = screen.getByRole('button', { name: /Escape closes the list/ });
+    fireEvent.click(row);
+    expect(row).toHaveAttribute('aria-pressed', 'true');
+    const stage = screen.getByRole('region', { name: 'Try it on the real Combobox' });
+    expect(stage.querySelector('iframe')).not.toBeNull();
+    // Said once: the section is the components, the stage says "Try it on the real ...".
+    expect([...document.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Close on Escape', 'Components']);
+  });
+});
+
+describe('a component page', () => {
+  it('links each shared behavior row to its interaction, and only those', () => {
+    const select = loadComponents(repoModel).find((c) => c.name === 'Select')!;
+    const { container } = render(createElement(ComponentView, { data: { ...own, extras: { storybook: SB } }, component: select }));
+    const shared = [...container.querySelectorAll<HTMLAnchorElement>('.bh-pattern')].map((a) => a.getAttribute('href'));
+    expect(shared.sort()).toEqual(['/patterns/close-on-escape/', '/patterns/focus-after-close/', '/patterns/pick-with-enter/']);
+  });
+});

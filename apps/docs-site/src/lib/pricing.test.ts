@@ -59,6 +59,11 @@ describe('pricing (/pricing/)', () => {
     expect(TIERS.filter((t) => t.recommended).map((t) => t.id)).toEqual(['team']);
     expect(TIERS.filter((t) => t.without).map((t) => t.id)).toEqual(['free']);
     for (const g of TABLE_GROUPS) for (const r of g.rows) expect(r.cells, r.label).toHaveLength(3);
+    // Teams have roles today on every tier: never shown as taken away. "Our commitments" is said once, as a section.
+    const roles = TABLE_GROUPS.flatMap((g) => g.rows).find((r) => r.label === 'Roles')!;
+    expect(roles.cells).toEqual([true, true, true]);
+    expect(TIERS.flatMap((t) => t.includes).join(' ')).not.toMatch(/roles/i);
+    expect(TABLE_GROUPS.map((g) => g.name)).not.toContain('Our commitments');
   });
 
   it('names the real license and keeps the founding text with its placeholder date', () => {

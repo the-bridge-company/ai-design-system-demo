@@ -195,7 +195,7 @@ export const TIERS: Tier[] = [
     includes: [
       'Everything in Team',
       'Unlimited design systems and editors',
-      'SAML on your own identity provider, SCIM and roles',
+      'SAML on your own identity provider, and SCIM',
       'Decision audit export',
       'Managed for you: hosted by us, your data isolated, backups',
       'Uptime of 99.5% a month, with service credits up to one month',
@@ -246,6 +246,9 @@ export interface TableRow {
   label: string;
   cells: [TableCell, TableCell, TableCell];
 }
+/** The tier a phone shows first in the comparison, one tier at a time. */
+export const NARROW_DEFAULT_TIER: TierId = 'team';
+
 export interface TableGroup {
   name: string;
   rows: TableRow[];
@@ -277,12 +280,12 @@ export const TABLE_GROUPS: TableGroup[] = [
       { label: 'Sign in with Google, GitHub or Microsoft', cells: [true, true, true] },
       { label: 'SAML on your own identity provider', cells: [false, false, true] },
       { label: 'SCIM', cells: [false, false, true] },
-      { label: 'Roles', cells: [false, false, true] },
+      { label: 'Roles', cells: [true, true, true] },
       { label: 'Decision audit export', cells: [false, false, true] },
     ],
   },
   {
-    name: 'Our commitments',
+    name: 'Service',
     rows: [
       { label: 'Hosted for you, data isolated, backups', cells: [false, false, true] },
       { label: 'Uptime', cells: ['No commitment', 'No commitment', '99.5% a month, service credits up to one month'] },
@@ -323,7 +326,7 @@ export const FAQ: FaqItem[] = [
     question: 'Why pay if we can self-host?',
     answer: [
       'You can self-host Bridge without any limit, on every tier. Paying is for when you would rather not run it yourselves.',
-      'Team adds editors, design systems and written support. Organization adds SAML, SCIM, roles and the decision audit export, and we run it for you: hosting, isolation, backups, an uptime commitment and a faster answer.',
+      'Team adds editors, design systems and written support. Organization adds SAML, SCIM and the decision audit export, and we run it for you: hosting, isolation, backups, an uptime commitment and a faster answer.',
     ],
   },
   {

@@ -272,6 +272,42 @@
   gap: var(--space-6);
 }
 
+/* One set of column widths for every group, so the tiers line up from group to group. The DS Table reads
+   --_col-width on each cell (layout="fixed"). */
+.pr-table-group .pr-col-label {
+  --_col-width: 34%;
+}
+
+.pr-table-group .pr-col-tier {
+  --_col-width: 22%;
+}
+
+/* The tier switch only exists on narrow screens. */
+.pr-tier-switch {
+  display: none;
+}
+
+/* Under 700px: the labels and the chosen tier, no sideways scroll. */
+@media (max-width: 699px) {
+  .pr-tier-switch {
+    display: block;
+  }
+
+  .pr-table-group .pr-col-label {
+    --_col-width: 55%;
+  }
+
+  .pr-table-group .pr-col-tier {
+    --_col-width: 45%;
+  }
+
+  .pr-table[data-shown="free"] .pr-col-tier:not([data-tier="free"]),
+  .pr-table[data-shown="team"] .pr-col-tier:not([data-tier="team"]),
+  .pr-table[data-shown="organization"] .pr-col-tier:not([data-tier="organization"]) {
+    display: none;
+  }
+}
+
 .pr-cell {
   display: inline-flex;
   align-items: center;

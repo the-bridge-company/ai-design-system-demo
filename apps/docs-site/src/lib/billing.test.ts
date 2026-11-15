@@ -6,7 +6,9 @@ import Stripe from 'stripe';
 import { describe, expect, it } from 'vitest';
 import { type Account, ACCOUNT_COOKIE, putAccount, signAccountSession } from '../../api/_lib/account';
 import {
+  billingFor,
   billingFromSubscription,
+  liveKey,
   type BillingFlags,
   billingKey,
   type BillingStripe,
@@ -217,6 +219,18 @@ describe('founding teams and the tier that applies', () => {
     expect((await getBilling(redis, 'acme/ds'))?.customerId).toBe('cus_9');
     expect(await redis.cmd('GET', 'bridge:billing:customer:cus_9')).toBe('acme/ds');
     expect(await redis.cmd('GET', foundingKey('acme/ds'))).not.toBeNull();
+  });
+
+  it('ignores a record made in the other Stripe mode (a test customer once the keys are live)', () => {
+    const testRecord = { ...emptyBilling(T0), customerId: 'cus_test' };
+    expect(testRecord.live).toBe(false);
+    expect(billingFor(testRecord, true)).toBeNull();
+    expect(billingFor(testRecord, false)?.customerId).toBe('cus_test');
+    expect(billingFor({ ...testRecord, live: true }, true)?.customerId).toBe('cus_test');
+    expect(liveKey('sk_live_x')).toBe(true);
+    expect(liveKey('rk_live_x')).toBe(true);
+    expect(liveKey('sk_test_x')).toBe(false);
+    expect(liveKey(undefined)).toBe(false);
   });
 
   it('finds the subscription of an invoice in every API shape', () => {

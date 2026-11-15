@@ -1,12 +1,14 @@
 // /api/billing: Stripe for Team (self-serve) and Organization (by invoice, scripts/stripe-organization.mjs), docs/BILLING.md.
 //
 // Off until launch: while src/lib/billing.ts BILLING_LAUNCHED is false, or STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET is
-// missing, GET /api/billing says { billing: 'off' } and every other call answers 503. The webhook needs the two keys only
+// missing, GET /api/billing says { billing: 'off' }, GET ?team= says { on: false } and checkout and portal answer 503.
+// Before launch, billing is on for the teams of the server env BILLING_TEST_TEAMS only (end-to-end tests). The webhook needs the two keys only
 // (a subscription made in test mode before launch still syncs). No key or secret is ever logged, stored or sent back.
 //
 // Endpoints (JSON; errors are { error, message } in Studio words). vercel.json rewrites /api/billing/<action> here.
 //   GET  /api/billing                          { billing: 'on' | 'off' }
-//   GET  /api/billing?team=<team>              team admin: the Billing card (src/lib/billing.ts BillingStatus)
+//   GET  /api/billing?team=<team>              { on: false } when billing is off for that team, else team admin: the
+//                                              Billing card (src/lib/billing.ts BillingStatus, on: true)
 //   POST /api/billing/checkout { team, currency: 'eur'|'usd', interval: 'yearly'|'monthly' }
 //        team admin, Free, not founding: a Stripe Checkout Session for Team, { url } to go to. Quantity: the team's
 //        editors, 1 to 10 (editors past ten are free), times its design systems (one per team today), one subscription
@@ -18,11 +20,12 @@
 // repository (read with the Bridge app, GitHub id matched), as api/entry. POSTs other than the webhook carry
 // `X-Bridge-Account: 1` (or `X-Bridge-Contribute: 1`) from a page of this site. Checkout and portal: a daily cap per account.
 //
-// Env (server only): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, KV_REST_API_URL + KV_REST_API_TOKEN (or the UPSTASH_ pair),
+// Env (server only): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, BILLING_TEST_TEAMS (optional, before launch), KV_REST_API_URL + KV_REST_API_TOKEN (or the UPSTASH_ pair),
 // LIBRARY_SESSION_SECRET, GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY (GitHub admins), PUBLIC_SITE_URL (optional).
 
 import { sessionAccount, shownEmail, type Account } from '../_lib/account.js';
 import {
+  billingOn,
   type BillingFlags,
   type BillingStripe,
   editorsOf,
@@ -225,6 +228,7 @@ async function onStatus(ctx: Ctx, req: Request, teamArg: string): Promise<Respon
   const t = await requireAdmin(ctx, a, teamArg);
   const [b, founding, editors] = await Promise.all([getBilling(ctx.redis, t.full), isFounding(ctx.redis, t.full, ctx.flags), editorsNow(ctx, t.full)]);
   const status: BillingStatus = {
+    on: true,
     tier: founding ? 'free' : effectiveTier(b),
     founding,
     status: b?.status ?? null,
@@ -247,6 +251,7 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
   if (!isCurrency(body.currency)) return fail(400, 'bad_request', 'Pick a currency: EUR or USD.');
   if (!isInterval(body.interval)) return fail(400, 'bad_request', 'Pick how to pay: yearly or monthly.');
   const t = await requireAdmin(ctx, a, body.team);
+  if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
   if (await isFounding(ctx.redis, t.full, ctx.flags)) return fail(409, 'founding', FOUNDING);
   const prev = await getBilling(ctx.redis, t.full);
   if (effectiveTier(prev) !== 'free') return fail(409, 'already', ALREADY_PAYING);
@@ -299,6 +304,7 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
 async function onPortal(ctx: Ctx, req: Request, body: Record<string, unknown>): Promise<Response> {
   const a = await account(ctx, req);
   const t = await requireAdmin(ctx, a, body.team);
+  if (!billingOn(ctx.flags, t.full)) return fail(503, 'billing_off', BILLING_OFF);
   const b = await getBilling(ctx.redis, t.full);
   if (!b?.customerId) return fail(409, 'no_customer', NO_CUSTOMER);
   await dailyCap(ctx, a);
@@ -384,11 +390,14 @@ export async function handleBilling(req: Request, env: BillingEnv, deps: Billing
     const flags = flagsOf(deps.flags);
     if (method === 'GET') {
       const team = new URL(req.url).searchParams.get('team');
-      const on = flags.launched && keysSet(env);
-      if (team === null) return json(200, { billing: on ? 'on' : 'off' });
-      const ctx = on ? context(env, deps) : null;
-      if (!ctx) return fail(503, 'billing_off', BILLING_OFF);
-      return await onStatus(ctx, req, team);
+      if (team === null) return json(200, { billing: flags.launched && keysSet(env) ? 'on' : 'off' });
+      // Per team: { on: false } (the card shows nothing) unless billing is on for this very team (launched, or one of
+      // BILLING_TEST_TEAMS) and the keys are set. Nothing is read while billing is on for no team at all.
+      const ctx = flags.launched || flags.testTeams.length ? context(env, deps) : null;
+      if (!ctx) return json(200, { on: false }, { 'Cache-Control': 'private, no-store' });
+      const t = await resolveTeam(ctx.redis, team);
+      if (!billingOn(ctx.flags, t.full)) return json(200, { on: false }, { 'Cache-Control': 'private, no-store' });
+      return await onStatus(ctx, req, t.full);
     }
     if (method !== 'POST') return json(405, { error: 'method', message: 'Use GET or POST.' }, { Allow: 'GET, POST' });
     if (action === 'webhook') {
@@ -397,7 +406,7 @@ export async function handleBilling(req: Request, env: BillingEnv, deps: Billing
       return await onWebhook(ctx, req);
     }
     requireCsrf(req);
-    const ctx = flags.launched ? context(env, deps) : null;
+    const ctx = flags.launched || flags.testTeams.length ? context(env, deps) : null;
     if (!ctx) return fail(503, 'billing_off', BILLING_OFF);
     if (!/^application\/json\b/i.test(req.headers.get('content-type') ?? '')) return fail(415, 'content_type', 'Send JSON.');
     const body = await readBody(req, MAX_BODY);

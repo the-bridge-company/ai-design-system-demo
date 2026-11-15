@@ -89,7 +89,7 @@ import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { designReviewsOf, isDesignReviewSetting, isLibraryOwner, reviewsNoteOf, setDesignReview } from '../_lib/review-settings.js';
 // The older single setting, still sent as `reviewMode` (deprecated, two-reviews): read only.
 import { reviewModeOf } from '../_lib/review-mode.js';
-import { countsAsEditor, editorFits, editorsOf, flagsOf, type BillingFlags } from '../_lib/billing.js';
+import { billingOn, countsAsEditor, editorFits, editorsOf, flagsOf, type BillingFlags } from '../_lib/billing.js';
 import { BILLING_WORDS } from '../../src/lib/billing.js';
 
 export { appJwt } from '../_lib/github-app.js';
@@ -914,7 +914,7 @@ async function editorRoom(ctx: Ctx, full: string, pendingNow?: readonly StoredIn
 
 /** An email member who already proposes or decides: a new invite (to change their role) adds no editor. */
 async function alreadyEditor(ctx: Ctx, full: string, email: string): Promise<boolean> {
-  if (!flagsOf(ctx.billing).launched || !ctx.svc.members) return false;
+  if (!billingOn(flagsOf(ctx.billing), full) || !ctx.svc.members) return false;
   const m = await ctx.svc.members.get(full, email);
   return Boolean(m && countsAsEditor(m.role));
 }

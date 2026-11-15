@@ -30,7 +30,7 @@ import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
 import { actionOf, BILLING_OFF, FOUNDING, handleBilling, settingsPath } from '../../api/billing/index';
 import { inviteStoreOn } from '../../api/invites/index';
-import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
+import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, billingOnFor, parseTestTeams, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
 
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
@@ -38,8 +38,8 @@ const SECRET = 's'.repeat(40);
 const WHSEC = 'whsec_test_fake';
 const ENV = { LIBRARY_SESSION_SECRET: SECRET, STRIPE_SECRET_KEY: 'sk_test_fake_not_a_real_key', STRIPE_WEBHOOK_SECRET: WHSEC };
 const T0 = Date.parse('2027-03-01T10:00:00Z');
-const ON: BillingFlags = { launched: true, launchDate: '2027-02-01' };
-const OFF: BillingFlags = { launched: false, launchDate: null };
+const ON: BillingFlags = { launched: true, launchDate: '2027-02-01', testTeams: [] };
+const OFF: BillingFlags = { launched: false, launchDate: null, testTeams: [] };
 const TEAM = 'northwind/ds';
 
 const sub = (x: Partial<StripeSubscriptionLike> & { lookup?: string; quantity?: number; end?: number } = {}): StripeSubscriptionLike => ({
@@ -85,7 +85,7 @@ function fakeStripe() {
   return { stripe, calls, subs };
 }
 
-function setup(flags = ON) {
+function setup(flags: BillingFlags = ON) {
   let now = T0;
   const redis = memoryRedis(() => now);
   const members = memberStore(redis);
@@ -156,7 +156,8 @@ describe('the shared rules', () => {
 
   it('a status answer is checked before the card reads it', () => {
     expect(parseBillingStatus({ tier: 'gold', founding: false })).toBeNull();
-    expect(parseBillingStatus({ tier: 'team', founding: false, currency: 'gbp', quantity: 3 })).toMatchObject({ tier: 'team', currency: null, quantity: 3 });
+    expect(parseBillingStatus({ on: true, tier: 'team', founding: false, currency: 'gbp', quantity: 3 })).toMatchObject({ tier: 'team', currency: null, quantity: 3 });
+    expect(parseBillingStatus({ on: false })).toBeNull();
   });
 });
 
@@ -172,7 +173,7 @@ describe('founding teams and the tier that applies', () => {
 
   it('no launch date yet: every team is founding', async () => {
     const redis = memoryRedis();
-    expect(await isFounding(redis, TEAM, { launched: true, launchDate: null })).toBe(true);
+    expect(await isFounding(redis, TEAM, { launched: true, launchDate: null, testTeams: [] })).toBe(true);
   });
 
   it('a marked team, or a team made in Bridge before the date, is founding; a newer one is not', async () => {
@@ -231,7 +232,8 @@ describe('/api/billing with billing off', () => {
     const s = setup(OFF);
     const c = await s.admin();
     expect((await s.get(c, '')).body).toEqual({ billing: 'off' });
-    expect(await s.get(c)).toEqual({ status: 503, body: { error: 'billing_off', message: BILLING_OFF } });
+    expect(await s.get(c)).toEqual({ status: 200, body: { on: false } });
+    expect((await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).body).toEqual({ error: 'billing_off', message: BILLING_OFF });
     expect((await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).status).toBe(503);
     expect((await s.post(c, 'portal', { team: TEAM })).status).toBe(503);
     expect(s.fake.calls).toEqual([]);
@@ -242,7 +244,7 @@ describe('/api/billing with billing off', () => {
     const c = await s.admin();
     const noHook = { LIBRARY_SESSION_SECRET: SECRET, STRIPE_SECRET_KEY: 'sk_test_fake_not_a_real_key' };
     expect((await s.get(c, '', noHook)).body).toEqual({ billing: 'off' });
-    expect((await s.get(c, `?team=${TEAM}`, noHook)).status).toBe(503);
+    expect((await s.get(c, `?team=${TEAM}`, noHook)).body).toEqual({ on: false });
     expect((await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' }, { LIBRARY_SESSION_SECRET: SECRET })).status).toBe(503);
     const r = await handleBilling(new Request(`${ORIGIN}/api/billing?action=webhook`, { method: 'POST', headers: { 'stripe-signature': 't=1,v1=x' }, body: '{}' }), noHook, s.deps);
     expect(r.status).toBe(503);
@@ -258,7 +260,7 @@ describe('/api/billing with billing on', () => {
     expect((await s.get(c, '')).body).toEqual({ billing: 'on' });
     const r = await s.get(c);
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ tier: 'free', founding: false, editors: 2, checkoutQuantity: 2, canManage: false });
+    expect(r.body).toMatchObject({ on: true, tier: 'free', founding: false, editors: 2, checkoutQuantity: 2, canManage: false });
     const sam = await s.cookie('sam@northwind.io', 'Sam');
     expect((await s.get(sam)).status).toBe(403);
     expect((await s.get('')).status).toBe(401);
@@ -394,5 +396,58 @@ describe('the webhook', () => {
     expect((await s.hook(e)).status).toBe(500);
     fail = false;
     expect((await s.hook(e)).body).toEqual({ received: true, applied: true });
+  });
+});
+
+describe('test teams before launch (BILLING_TEST_TEAMS)', () => {
+  const TEST: BillingFlags = { launched: false, launchDate: null, testTeams: [TEAM] };
+
+  it('reads the env list: team keys, a bare id as a team made in Bridge, lower case, no blanks', () => {
+    expect(parseTestTeams(' Northwind/DS , 00112233aabbccdd,, _team/99112233aabbccdd ')).toEqual([TEAM, '_team/00112233aabbccdd', '_team/99112233aabbccdd']);
+    expect(parseTestTeams(undefined)).toEqual([]);
+    expect(billingOnFor(false, [TEAM], 'Northwind/ds')).toBe(true);
+    expect(billingOnFor(false, [TEAM], 'other/ds')).toBe(false);
+    expect(billingOnFor(true, [], 'other/ds')).toBe(true);
+  });
+
+  it('on for the listed team: status, checkout and portal, not founding without a mark, Free limits apply', async () => {
+    const s = setup(TEST);
+    const c = await s.admin();
+    expect((await s.get(c, '')).body).toEqual({ billing: 'off' });
+    expect((await s.get(c)).body).toMatchObject({ on: true, tier: 'free', founding: false });
+    expect((await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).status).toBe(200);
+    await putBilling(s.redis, TEAM, { ...emptyBilling(T0), customerId: 'cus_7' });
+    expect((await s.post(c, 'portal', { team: TEAM })).status).toBe(200);
+    expect(await teamPlan(s.redis, TEAM, TEST)).toEqual({ tier: 'free', founding: false, limited: true });
+    await markFounding(s.redis, TEAM, T0);
+    expect((await teamPlan(s.redis, TEAM, TEST)).limited).toBe(false);
+  });
+
+  it('off for a team not in the list: { on: false }, checkout and portal 503, no limit', async () => {
+    const s = setup(TEST);
+    await s.members.put('other/ds', { email: 'jo@northwind.io', name: 'Jo', role: 'admin', version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
+    const c = await s.cookie('jo@northwind.io', 'Jo');
+    expect((await s.get(c, '?team=other/ds')).body).toEqual({ on: false });
+    expect((await s.post(c, 'checkout', { team: 'other/ds', currency: 'eur', interval: 'yearly' })).status).toBe(503);
+    expect((await s.post(c, 'portal', { team: 'other/ds' })).status).toBe(503);
+    expect(await teamPlan(s.redis, 'other/ds', TEST)).toEqual({ tier: 'free', founding: true, limited: false });
+    expect(s.fake.calls).toEqual([]);
+  });
+
+  it('flag false and list empty: { on: false } with nothing read, as today', async () => {
+    const s = setup(OFF);
+    const reads: unknown[] = [];
+    const spy = { cmd: async (...a: unknown[]) => void reads.push(a), pipe: async (x: unknown[]) => (reads.push(x), []) };
+    const r = await handleBilling(new Request(`${ORIGIN}/api/billing?team=${TEAM}`, { headers: { host: HOST } }), ENV, { ...s.deps, redis: spy as never });
+    expect(await r.json()).toEqual({ on: false });
+    expect(reads).toEqual([]);
+  });
+
+  it('the webhook stores state whatever the list: only on the team the event names', async () => {
+    const s = setup(OFF);
+    s.fake.subs.set('sub_1', sub());
+    expect((await s.hook({ id: 'evt_t', object: 'event', type: 'customer.subscription.created', data: { object: { id: 'sub_1' } } })).body).toEqual({ received: true, applied: true });
+    expect((await getBilling(s.redis, TEAM))?.tier).toBe('team');
+    expect(s.redis.keys().filter((k) => k.startsWith('bridge:billing:team:'))).toEqual([billingKey(TEAM)]);
   });
 });

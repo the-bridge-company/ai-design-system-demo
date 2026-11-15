@@ -15,6 +15,18 @@ export const BILLING_LAUNCHED = false;
  */
 export const BILLING_LAUNCH_DATE: string | null = null;
 
+/**
+ * Teams billing is on for before launch (end-to-end tests): the server env BILLING_TEST_TEAMS, comma separated team
+ * keys as /api/billing takes them ("owner/repo", "_team/<id>", or a team made in Bridge's bare id). Read on the server
+ * only; the Billing card learns it from GET /api/billing?team=.
+ */
+export function parseTestTeams(raw: string | undefined | null): string[] {
+  return [...new Set((raw ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean).map((s) => (/^[a-f0-9]{16}$/.test(s) ? `_team/${s}` : s)))];
+}
+
+/** Billing applies to a team: launched for everyone, or the team is one of the test teams. */
+export const billingOnFor = (launched: boolean, testTeams: readonly string[], team: string): boolean => launched || testTeams.includes(team.trim().toLowerCase());
+
 export type Tier = 'free' | 'team' | 'organization';
 export type Currency = 'eur' | 'usd';
 export type Interval = 'yearly' | 'monthly';
@@ -74,8 +86,10 @@ export function checkoutPrice(quantity: number, currency: Currency, interval: In
 
 export const money = (amount: number, currency: Currency): string => (currency === 'eur' ? `${amount} €` : `$${amount}`);
 
-/** The Settings answer of GET /api/billing (api/billing): what the Billing card shows. */
+/** The Settings answer of GET /api/billing (api/billing): what the Billing card shows. A team billing is off for
+ *  gets { on: false } instead, and the card shows nothing. */
 export interface BillingStatus {
+  on: true;
   tier: Tier;
   founding: boolean;
   /** active, trialing, past_due, canceled... as Stripe says it, or null on Free. */
@@ -100,9 +114,10 @@ export { isCurrency, isInterval };
 /** A GET /api/billing answer, checked; anything else is null (the card shows nothing). */
 export function parseBillingStatus(v: unknown): BillingStatus | null {
   const r = v as Partial<BillingStatus> | null;
-  if (!r || typeof r !== 'object' || !TIERS.includes(r.tier as Tier) || typeof r.founding !== 'boolean') return null;
+  if (!r || typeof r !== 'object' || r.on !== true || !TIERS.includes(r.tier as Tier) || typeof r.founding !== 'boolean') return null;
   const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : null);
   return {
+    on: true,
     tier: r.tier as Tier,
     founding: r.founding,
     status: typeof r.status === 'string' ? r.status : null,

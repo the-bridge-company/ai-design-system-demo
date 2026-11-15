@@ -15,16 +15,25 @@
 // rules (what is past them waits), founding teams excepted. No secret is ever stored here.
 
 import type { Redis } from './redis.js';
-import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, FREE_DESIGN_SYSTEMS, FREE_EDITORS, isCurrency, isInterval, tierOfLookupKey, type Currency, type Interval, type Tier } from '../../src/lib/billing.js';
+import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, billingOnFor, parseTestTeams, FREE_DESIGN_SYSTEMS, FREE_EDITORS, isCurrency, isInterval, tierOfLookupKey, type Currency, type Interval, type Tier } from '../../src/lib/billing.js';
 import { teamKeyId } from '../../src/lib/team-path.js';
 
-/** The switch and the launch date, injectable so tests run both ways. Defaults: src/lib/billing.ts. */
+/**
+ * The switch, the launch date and the test teams, injectable so tests run every way. Defaults: src/lib/billing.ts, and
+ * BILLING_TEST_TEAMS from the server env (read on each request, so a change in Vercel applies at the next deploy).
+ */
 export interface BillingFlags {
   launched: boolean;
   launchDate: string | null;
+  /** Team keys billing is on for before launch (src/lib/billing.ts parseTestTeams). */
+  testTeams: readonly string[];
 }
-export const BILLING_FLAGS: BillingFlags = { launched: BILLING_LAUNCHED, launchDate: BILLING_LAUNCH_DATE };
-export const flagsOf = (f?: Partial<BillingFlags>): BillingFlags => ({ ...BILLING_FLAGS, ...(f ?? {}) });
+export const BILLING_FLAGS: Omit<BillingFlags, 'testTeams'> = { launched: BILLING_LAUNCHED, launchDate: BILLING_LAUNCH_DATE };
+export const flagsOf = (f?: Partial<BillingFlags>): BillingFlags => ({ ...BILLING_FLAGS, testTeams: parseTestTeams(process.env.BILLING_TEST_TEAMS), ...(f ?? {}) });
+/** Billing applies to this team (launched, or a test team). */
+export const billingOn = (flags: BillingFlags, team: string): boolean => billingOnFor(flags.launched, flags.testTeams, team);
+/** Billing applies to some team: false means nothing below reads anything. */
+const anyBilling = (flags: BillingFlags): boolean => flags.launched || flags.testTeams.length > 0;
 
 export interface TeamBilling {
   customerId: string | null;
@@ -96,6 +105,8 @@ export const effectiveTier = (b: TeamBilling | null): Tier => (b && b.tier !== '
  * every team is one (nothing can be limited before launch). Founding teams are never limited and never billed.
  */
 export async function isFounding(redis: Redis, team: string, flags: BillingFlags): Promise<boolean> {
+  // A test team before launch: founding only when marked by hand, so the test sees Free, Team and the limits.
+  if (!flags.launched && flags.testTeams.includes(lc(team))) return (await redis.cmd('GET', foundingKey(team))) !== null;
   if (!flags.launchDate) return true;
   if ((await redis.cmd('GET', foundingKey(team))) !== null) return true;
   const launch = Date.parse(flags.launchDate);
@@ -125,7 +136,7 @@ export interface TeamPlan {
 
 /** What applies to a team now. With billing off: no limit, and nothing is read. */
 export async function teamPlan(redis: Redis | null, team: string, flags: BillingFlags): Promise<TeamPlan> {
-  if (!flags.launched || !redis) return { tier: 'free', founding: true, limited: false };
+  if (!billingOn(flags, team) || !redis) return { tier: 'free', founding: true, limited: false };
   const founding = await isFounding(redis, team, flags);
   const tier = effectiveTier(await getBilling(redis, team));
   return { tier, founding, limited: !founding && tier === 'free' };
@@ -158,7 +169,7 @@ export async function editorFits(redis: Redis | null, team: string, flags: Billi
  * not count).
  */
 export async function designSystemFits(redis: Redis | null, adminOf: () => Promise<string[]>, flags: BillingFlags): Promise<boolean> {
-  if (!flags.launched || !redis) return true;
+  if (!anyBilling(flags) || !redis) return true;
   let free = 0;
   for (const team of await adminOf()) if ((await teamPlan(redis, team, flags)).limited) free++;
   return free < FREE_DESIGN_SYSTEMS;

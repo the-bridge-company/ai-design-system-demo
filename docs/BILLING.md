@@ -9,7 +9,27 @@ by hand and billed by invoice. Everything ships **off**: until launch day, produ
 - One date: `BILLING_LAUNCH_DATE` in the same file (`null`). Teams created before it are founding teams. While it is
   null, every team counts as founding.
 - No key, no billing: when `STRIPE_SECRET_KEY` or `STRIPE_WEBHOOK_SECRET` is missing, `GET /api/billing` says
-  `{ "billing": "off" }` and every other call answers 503 "Billing is not available on this site yet."
+  `{ "billing": "off" }`, `GET /api/billing?team=` says `{ "on": false }`, and checkout and portal answer 503 "Billing
+  is not available on this site yet."
+- Test teams before launch: `BILLING_TEST_TEAMS` (below) turns billing on for the listed teams only.
+
+## BILLING_TEST_TEAMS: one team on, before launch
+
+A server environment variable, set by Florian in Vercel (Production, or Preview), **removed after the test**. Comma
+separated team keys, the same key the billing API takes as `team`:
+
+- a repository's team: `owner/repo` (the part of its Studio address after `/studio/`),
+- a team made in Bridge without a repository: `_team/<id>`, or the bare `<id>`. The id is the `team=` value in the
+  address of its Settings (`/studio/workspace/settings/?team=<id>`) or of its home (`/studio/workspace/?team=<id>`):
+  16 letters and digits. Once that team is linked to a repository, its key becomes `owner/repo`: update the variable.
+
+Billing is on for a team when `BILLING_LAUNCHED` is true **or** the team is listed. For a listed team, everything
+applies: the Billing card (team admins only), status, checkout, portal, and the Free limits ("Needs Team" at the 4th
+editor; a 2nd design system for its admins). A listed team is founding only if it was marked by hand (so the test sees
+Free, then Team). Every other team sees no change. The webhook accepts every signed event once the keys are set, and
+writes only on the team the event names. With `BILLING_LAUNCHED` false and the list empty, Studio and the API behave as
+before (the Settings page asks `/api/billing?team=` once for an admin and gets `{ "on": false }`). Changing the
+variable needs a redeploy to apply.
 
 ## The rules the code applies
 
@@ -44,7 +64,7 @@ One Vercel function, `apps/docs-site/api/billing/index.ts`; `vercel.json` rewrit
 | Call | Who | What |
 | --- | --- | --- |
 | `GET /api/billing` | anyone | `{ billing: 'on' \| 'off' }` |
-| `GET /api/billing?team=<owner/repo>` | team admin | the Billing card's status |
+| `GET /api/billing?team=<team>` | anyone; the status itself to team admins only | `{ on: false }` where billing is off for that team, else the Billing card's status (`on: true`) |
 | `POST /api/billing/checkout` `{ team, currency: eur\|usd, interval: yearly\|monthly }` | team admin | `{ url }` of a Stripe Checkout Session |
 | `POST /api/billing/portal` `{ team }` | team admin | `{ url }` of a Customer Portal session |
 | `POST /api/billing/webhook` | Stripe | signature checked on the raw body, each event once |
@@ -84,11 +104,9 @@ Subscriptions: Smart Retries on.
 ## Testing end to end in test mode
 
 1. In the sandbox the catalog and the portal configuration already exist (run `scripts/stripe-catalog.mjs` to check).
-2. On a preview branch, set `BILLING_LAUNCHED = true` and a `BILLING_LAUNCH_DATE` (today), and give the Preview
-   environment the test-mode `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (a test webhook endpoint pointing at the
-   preview's `/api/billing/webhook`).
-3. Previews share production's Redis: test with a team of your own, never a customer's. Sign in as the admin of a
-   team that is not founding (a repository team not marked, or a team made in Bridge after that date), open Settings, Team, Billing: Move to Team, pick a currency and
+2. With the test-mode keys and the sandbox webhook endpoint in place, set `BILLING_TEST_TEAMS` to the key of one test
+   team (above) and redeploy. Nothing else changes for anyone.
+3. Use a team of your own, never a customer's. Sign in as its admin, open its Settings (Team tab; a team made in Bridge: its workspace Settings), Billing: Move to Team, pick a currency and
    yearly or monthly, Continue to payment.
 4. Pay with the card `4242 4242 4242 4242`, any future date, any CVC, any postal code. For a VAT number use
    `FR12345678901` (test mode accepts it).
@@ -117,6 +135,8 @@ It makes (or reuses) the team's customer and a yearly `bridge_org_<currency>_yea
 invoice; the webhook writes Organization on the team. It never makes a second subscription for a team that has one.
 
 ## Launch checklist
+
+0. Remove `BILLING_TEST_TEAMS` from Vercel (and cancel the test subscription in the sandbox).
 
 1. Live catalog: with the **live** key, `node scripts/stripe-catalog.mjs` (dry run), then `--apply`. It creates the two
    products (tax code `txcd_10103001`, `metadata.bridge_tier`), the six prices (same lookup keys, tax exclusive) and the

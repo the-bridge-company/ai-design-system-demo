@@ -1,5 +1,6 @@
-// Settings > Team > Billing, for the team's admins only, and only once billing is launched (lib/billing.ts
-// BILLING_LAUNCHED): what the team is on and what that includes, then one action.
+// Settings > Team > Billing (and the workspace Settings of a team made in Bridge), for the team's admins only, and only
+// where the server says billing is on for that team (launched, or one of BILLING_TEST_TEAMS before launch): what the
+// team is on and what that includes, then one action.
 //   founding team     the founding line, nothing to pay
 //   Free              Move to Team: currency and yearly or monthly, the quantity and price shown before paying, then
 //                     Stripe Checkout (scripts/billing-session.ts asks the server for the session)
@@ -8,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { CreditCard, ExternalLink } from 'lucide-react';
 import { Alert, Badge, Button, Card, CardBody, SegmentedControl } from '@bridge-ds/react';
-import { BILLING_LAUNCHED, BILLING_WORDS as W, type BillingStatus, type Currency, type Interval } from '../../../lib/billing';
+import { BILLING_WORDS as W, type BillingStatus, type Currency, type Interval } from '../../../lib/billing';
 import { useTeamPeople } from './members-state';
 
 /** Where the page goes for Stripe (tests swap it). */
@@ -83,13 +84,13 @@ export function BillingRows({ team, status }: { team: string; status: BillingSta
   );
 }
 
-/** The band: an admin of a real team, billing launched and on (the server answers), else nothing. */
-export default function BillingCard({ launched = BILLING_LAUNCHED }: { launched?: boolean }) {
-  const people = useTeamPeople();
-  const team = people && people.context === 'real' && people.canManage ? people.repo : null;
+/**
+ * The band for one team, its admin only: asks the server whether billing is on for this team (launched, or a test team
+ * before launch) and shows nothing until it says so. `site`: the workspace Settings of a team made in Bridge.
+ */
+export function BillingBand({ team, layout = 'shell' }: { team: string; layout?: 'shell' | 'site' }) {
   const [status, setStatus] = useState<BillingStatus | null>(null);
   useEffect(() => {
-    if (!launched || !team) return;
     let live = true;
     void import('../../../scripts/billing-session').then(({ getBillingStatus }) => getBillingStatus(team)).then((s) => {
       if (live) setStatus(s);
@@ -97,19 +98,41 @@ export default function BillingCard({ launched = BILLING_LAUNCHED }: { launched?
     return () => {
       live = false;
     };
-  }, [launched, team]);
-  if (!launched || !team || !status) return null;
+  }, [team]);
+  if (!status) return null;
+  const card = (
+    <Card>
+      <CardBody>
+        <BillingRows team={team} status={status} />
+      </CardBody>
+    </Card>
+  );
+  if (layout === 'site')
+    return (
+      <section className="set-band" id="billing" aria-labelledby="set-billing">
+        <div className="set-band-intro">
+          <h2 id="set-billing" className="set-h">
+            {W.band}
+          </h2>
+          <p className="set-intro">{W.intro}</p>
+        </div>
+        <div className="set-band-body">{card}</div>
+      </section>
+    );
   return (
     <section className="ts-band" id="billing" aria-labelledby="ts-billing">
       <h2 id="ts-billing" className="ts-h">
         {W.band}
       </h2>
       <p className="ts-intro">{W.intro}</p>
-      <Card>
-        <CardBody>
-          <BillingRows team={team} status={status} />
-        </CardBody>
-      </Card>
+      {card}
     </section>
   );
+}
+
+/** The team shell's band: an admin of a real team, once the server says billing is on for it; else nothing. */
+export default function BillingCard() {
+  const people = useTeamPeople();
+  const team = people && people.context === 'real' && people.canManage ? people.repo : null;
+  return team ? <BillingBand team={team} /> : null;
 }

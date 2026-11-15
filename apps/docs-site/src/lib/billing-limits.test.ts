@@ -19,8 +19,8 @@ const SECRET = 's'.repeat(40);
 const ENV = { LIBRARY_SESSION_SECRET: SECRET };
 const T0 = Date.parse('2027-03-01T10:00:00Z');
 const TEAM = 'northwind/ds';
-const ON: BillingFlags = { launched: true, launchDate: '2027-02-01' };
-const OFF: BillingFlags = { launched: false, launchDate: null };
+const ON: BillingFlags = { launched: true, launchDate: '2027-02-01', testTeams: [] };
+const OFF: BillingFlags = { launched: false, launchDate: null, testTeams: [] };
 
 const res = (status: number) => new Response('{}', { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -191,5 +191,32 @@ describe('billing on: Free covers one design system', () => {
     const s = setup(ON);
     const ana = await s.cookie('ana@acme.io', 'Ana');
     expect((await s.act(ana, { action: 'create-team', name: 'Acme', discover: false })).status).toBe(200);
+  });
+});
+
+describe('billing off, one test team (BILLING_TEST_TEAMS): limits there only', () => {
+  const TEST: BillingFlags = { launched: false, launchDate: null, testTeams: [TEAM] };
+
+  it('the listed team waits at the 4th editor; another team does not', async () => {
+    const s = setup(TEST);
+    const jo = await s.fullTeam();
+    const r = await s.inv(jo, { action: 'invite', repo: TEAM, role: 'edit', people: [{ email: 'ana@northwind.io' }] });
+    expect(r.body.results[0].status).toBe('waiting');
+    for (const [e, role] of [['jo@acme.io', 'admin'], ['a@acme.io', 'edit'], ['b@acme.io', 'edit']] as const) await s.members.put('acme/ds', { email: e, name: e, role, version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
+    const joAcme = await s.cookie('jo@acme.io', 'Jo');
+    const other = await s.inv(joAcme, { action: 'invite', repo: 'acme/ds', role: 'edit', people: [{ email: 'c@acme.io' }] });
+    expect(other.body.results[0].status).toBe('sent');
+  });
+
+  it('a team made in Bridge listed by its key: its admin cannot start a second team; unlisted, they can', async () => {
+    const KEY = '_team/00112233aabbccdd';
+    for (const flags of [{ launched: false, launchDate: null, testTeams: [KEY] }, OFF]) {
+      const s = setup(flags);
+      await s.redis.cmd('SET', 'bridge:team:rec:00112233aabbccdd', JSON.stringify({ id: '00112233aabbccdd', name: 'Test', createdBy: 'lead@acme.io', createdAt: new Date(T0).toISOString(), repo: null, storybook: null }));
+      await s.members.put(KEY, { email: 'ana@acme.io', name: 'Ana', role: 'admin', version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
+      const ana = await s.cookie('ana@acme.io', 'Ana');
+      const r = await s.act(ana, { action: 'create-team', name: 'Second', discover: false });
+      expect(r.status).toBe(flags === OFF ? 200 : 409);
+    }
   });
 });

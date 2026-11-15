@@ -159,7 +159,7 @@ import { demoDialog, isSampleTeam, teamDisplayName } from '../../src/lib/demo.js
 import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { parseAiTools } from '../../src/lib/ai-tools.js';
 import { isTeamKey, STUDIO_ROOT, teamHref as studioTeamHref, teamKeyId, teamKeyOf } from '../../src/lib/team-path.js';
-import { countsAsEditor, designSystemFits, editorFits, editorsOf, flagsOf, moveBilling, type BillingFlags } from '../_lib/billing.js';
+import { billingOn, countsAsEditor, designSystemFits, editorFits, editorsOf, flagsOf, moveBilling, type BillingFlags } from '../_lib/billing.js';
 import { BILLING_WORDS } from '../../src/lib/billing.js';
 
 export type { FetchLike };
@@ -716,7 +716,7 @@ async function acceptInvite(ctx: Ctx, req: Request, a: Account, inv: StoredInvit
   if (!sameEmail(inv.email, email) || Date.parse(inv.expiresAt) <= ctx.now()) return fail(410, 'expired', INVITE_GONE);
   const t = await resolveTeam(ctx, inv.repo);
   // Billing: a fourth editor on Free waits for Team (the invite stays; nobody already on the team loses anything).
-  if (ctx.billing.launched && countsAsEditor(inv.role)) {
+  if (billingOn(ctx.billing, t.full) && countsAsEditor(inv.role)) {
     const was = await ctx.svc.members.get(t.full, email);
     if (!(was && countsAsEditor(was.role)) && (inv.needsTeam || !(await editorRoom(ctx, t.full, inv.id)))) return fail(409, 'needs_team', BILLING_WORDS.joinWaits);
   }

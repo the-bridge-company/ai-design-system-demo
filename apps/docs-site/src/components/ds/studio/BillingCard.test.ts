@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// Settings > Billing: nothing at all while billing is off (as shipped), nothing for a member who is not admin; for an
+// Settings > Billing: nothing where the server says billing is off for the team (as shipped), nothing for a member who
+// is not admin; for an
 // admin, the tier and what it includes, the founding line, Move to Team with the quantity and price shown before
 // paying, Manage billing once there is a customer. Words never carry an em dash.
 import '../../../../../../packages/react/src/test/setup';
@@ -20,10 +21,10 @@ vi.mock('../../../scripts/billing-session', () => ({
   portalUrl: (...a: unknown[]) => portalUrl(...a),
 }));
 
-const { default: BillingCard, BillingRows, go } = await import('./BillingCard');
+const { default: BillingCard, BillingBand, BillingRows, go } = await import('./BillingCard');
 
 const admin = { context: 'real', repo: 'acme/ds', team: 'Acme DS', canManage: true, members: [] };
-const free: BillingStatus = { tier: 'free', founding: false, status: null, periodEnd: null, cancelAtPeriodEnd: false, currency: null, interval: null, quantity: null, editors: 4, checkoutQuantity: 4, canManage: false };
+const free: BillingStatus = { on: true, tier: 'free', founding: false, status: null, periodEnd: null, cancelAtPeriodEnd: false, currency: null, interval: null, quantity: null, editors: 4, checkoutQuantity: 4, canManage: false };
 
 describe('who sees Billing', () => {
   beforeEach(() => getBillingStatus.mockReset().mockResolvedValue(free));
@@ -31,33 +32,32 @@ describe('who sees Billing', () => {
     people = null;
   });
 
-  it('nobody while billing is off, an admin included; nothing is asked', () => {
-    people = admin;
+  it('a member who is not admin sees nothing, and nothing is asked', () => {
+    people = { ...admin, canManage: false };
     const { container } = render(createElement(BillingCard));
     expect(container.innerHTML).toBe('');
     expect(getBillingStatus).not.toHaveBeenCalled();
   });
 
-  it('a member who is not admin sees nothing, launched or not', () => {
-    people = { ...admin, canManage: false };
-    const { container } = render(createElement(BillingCard, { launched: true }));
-    expect(container.innerHTML).toBe('');
-    expect(getBillingStatus).not.toHaveBeenCalled();
-  });
-
-  it('an admin sees the band once launched and the server answers', async () => {
+  it('an admin sees the band where the server says billing is on for the team (launched, or a test team)', async () => {
     people = admin;
-    render(createElement(BillingCard, { launched: true }));
+    render(createElement(BillingCard));
     expect(await screen.findByRole('heading', { name: 'Billing' })).toBeTruthy();
     expect(getBillingStatus).toHaveBeenCalledWith('acme/ds');
   });
 
-  it('nothing when the server says billing is off (null)', async () => {
+  it('nothing where the server says off for the team (null): billing off and no test team is today', async () => {
     people = admin;
     getBillingStatus.mockResolvedValue(null);
-    const { container } = render(createElement(BillingCard, { launched: true }));
+    const { container } = render(createElement(BillingCard));
     await waitFor(() => expect(getBillingStatus).toHaveBeenCalled());
     expect(container.innerHTML).toBe('');
+  });
+
+  it('a team made in Bridge: the same band in its workspace Settings', async () => {
+    render(createElement(BillingBand, { team: '_team/00112233aabbccdd', layout: 'site' }));
+    expect(await screen.findByRole('heading', { name: 'Billing' })).toBeTruthy();
+    expect(getBillingStatus).toHaveBeenCalledWith('_team/00112233aabbccdd');
   });
 });
 

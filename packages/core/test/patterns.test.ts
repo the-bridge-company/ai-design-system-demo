@@ -61,6 +61,8 @@ describe('validatePattern', () => {
   it('asks the stage to follow the rule: a question first when it cannot be undone, a done line with Undo when it can', () => {
     expect(validatePattern(action({ stage: { items: ['A'], action: 'Delete' } })).map((i) => i.field)).toEqual(['stage.confirm']);
     expect(validatePattern(action({ reversible: true, stage: { items: ['A'], action: 'Send' } })).map((i) => i.field)).toEqual(['stage.done']);
+    expect(validatePattern(action({ reversible: true, stage: { items: ['A'], action: 'Send', sent: 'Sent' } }))).toEqual([]);
+    expect(validatePattern(action({ reversible: true, stage: { items: ['A'], action: 'Send', sent: ' ' } })).map((i) => i.field)).toEqual(['stage.sent']);
   });
 
   it('asks to type the name only on rows of the stage, and only when it cannot be undone', () => {

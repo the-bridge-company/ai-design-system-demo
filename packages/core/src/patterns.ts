@@ -67,6 +67,11 @@ export interface PatternStage {
   done?: string;
   /** What the toast says after Undo. "{item}" is the row. */
   undone?: string;
+  /**
+   * What the row says in its place once done, when the product has no Undo for it (the way back is elsewhere, in the
+   * rules): "Sent for review". No toast then.
+   */
+  sent?: string;
 }
 
 interface PatternBase {
@@ -166,7 +171,8 @@ export function validatePattern(value: unknown, fileId?: string): PatternIssue[]
       else if (!isTextList(t.items) || !isText(t.title) || !isText(t.text) || !isText(t.confirmLabel)) out.push({ field: 'stage.typeName', message: 'Name the rows whose impact is high (items) and their question: title, text, confirmLabel.' });
       else if (t.items.some((x) => !rows.includes(x))) out.push({ field: 'stage.typeName', message: `Ask to type the name only on rows of the stage: ${(t.items as string[]).filter((x) => !rows.includes(x)).join(', ')} is not one.` });
     }
-    if (o.reversible === true && !isText(s.done)) out.push({ field: 'stage.done', message: 'It can be undone: the stage says it is done, with Undo (done).' });
+    if (s.sent !== undefined && !isText(s.sent)) out.push({ field: 'stage.sent', message: 'Say what the row reads once done, like Sent for review, or leave sent out.' });
+    else if (o.reversible === true && !isText(s.done) && !isText(s.sent)) out.push({ field: 'stage.done', message: 'It can be undone: the stage says it is done, with Undo (done), or in the row itself (sent).' });
   }
   if (EM_DASH.test(JSON.stringify(value))) out.push({ field: 'pattern', message: 'Replace the em dashes with a colon, a comma or two sentences.' });
   return out;

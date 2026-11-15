@@ -1,8 +1,8 @@
 // The stage of an action pattern (patterns/<id>.pattern.json `stage`): rows, each with the action, performed with the
 // real DS components the rule names. It cannot be undone: the AlertDialog asks first, the row goes on confirm; a row
 // whose impact is high (`typeName`) asks the person to type its name first (AlertDialog confirmText). It can
-// be undone: the row goes at once and a Toast says so, with Undo that brings it back in its place. "Start again"
-// brings every row back. Nothing leaves the page: the rows are the stage's own.
+// be undone: the row goes at once and a Toast says so, with Undo that brings it back in its place, unless the product
+// has no Undo for it (`sent`): then the row stays and says it is done, in its place. "Start again" brings every row back. Nothing leaves the page: the rows are the stage's own.
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, Button, ToastProvider, useToast } from '@bridge-ds/react';
@@ -16,6 +16,7 @@ const listOf = (xs: string[]): string => (xs.length < 2 ? (xs[0] ?? '') : `${xs.
 /** The line over the rows: what to do, and what the rule makes happen. */
 export const stageNote = (p: Pick<ActionPattern, 'reversible' | 'stage'>): string => {
   const s = p.stage!;
+  if (p.reversible && s.sent) return `Press ${s.action} on a row: it goes at once, and the row says ${s.sent}.`;
   if (p.reversible) return `Press ${s.action} on a row: it goes at once, with Undo in the message that appears.`;
   const typed = s.typeName?.items ?? [];
   const asks = `Press ${s.action} on a row: it asks first, since it cannot be undone.`;
@@ -34,6 +35,8 @@ function Rows({ pattern }: { pattern: ActionPattern }) {
   const [asking, setAsking] = useState<string | null>(null);
   // The row last asked about: the dialog keeps its words while it closes.
   const [asked, setAsked] = useState<string | null>(null);
+  // The rows done in place, when the product has no Undo for it (stage.sent).
+  const [done, setDone] = useState<string[]>([]);
   const toast = useToast();
   // A row comes back in its place: the stage's order, not the end of the list.
   const restore = (item: string) => setLeft((xs) => stage.items.filter((x) => x === item || xs.includes(x)));
@@ -44,6 +47,7 @@ function Rows({ pattern }: { pattern: ActionPattern }) {
       setAsked(item);
       return setAsking(item);
     }
+    if (stage.sent) return setDone((xs) => [...xs, item]);
     remove(item);
     const id = toast.add({
       title: stageLine(stage.done!, item),
@@ -68,14 +72,18 @@ function Rows({ pattern }: { pattern: ActionPattern }) {
           {left.map((item) => (
             <li key={item} className="pt-row">
               <span className="pt-row-name">{item}</span>
-              <Button variant="secondary" size="sm" iconStart={icon} onClick={() => act(item)} aria-label={`${stage.action}: ${item}`}>
-                {stage.action}
-              </Button>
+              {done.includes(item) ? (
+                <span className="pt-row-done">{stage.sent}</span>
+              ) : (
+                <Button variant="secondary" size="sm" iconStart={icon} onClick={() => act(item)} aria-label={`${stage.action}: ${item}`}>
+                  {stage.action}
+                </Button>
+              )}
             </li>
           ))}
         </ul>
       )}
-      {left.length < stage.items.length && (
+      {(left.length < stage.items.length || done.length > 0) && (
         <div className="pt-again">
           <Button
             variant="ghost"
@@ -83,6 +91,7 @@ function Rows({ pattern }: { pattern: ActionPattern }) {
             onClick={() => {
               toast.close();
               setLeft(stage.items);
+              setDone([]);
             }}
           >
             Start again

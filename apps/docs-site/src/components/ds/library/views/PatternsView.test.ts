@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Library > Patterns: the index by kind, an action performed on its stage with the real components the rule names
-// (AlertDialog first when it cannot be undone, a Toast with Undo when it can), an interaction with each component in
+// (AlertDialog first when it cannot be undone, the row saying it is done when it can), an interaction with each component in
 // its own words on the Behaviors stage, and the component page's shared rows linking to their interaction.
 import '../../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -67,15 +67,19 @@ describe('an action', () => {
     expect(within(stage).queryByText('Marketing team')).toBeNull();
   });
 
-  it('that can be undone goes at once, with Undo in the Toast that brings it back in its place', async () => {
+  it('sent for review goes at once and the row says so in its place, no Undo; Start again brings it back', async () => {
     view('send-for-review');
     const stage = screen.getByRole('region', { name: 'Try Send for review' });
+    expect(within(stage).getByText('Press Send for review on a row: it goes at once, and the row says Sent for review.')).toBeInTheDocument();
     fireEvent.click(within(stage).getByRole('button', { name: 'Send for review: Card radius' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    expect(within(stage).queryByText('Card radius')).toBeNull();
-    expect(await screen.findByText('Card radius sent for review.')).toBeInTheDocument();
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Undo' })));
-    expect([...stage.querySelectorAll('.pt-row-name')].map((n) => n.textContent)).toEqual(['Primary button color', 'Card radius', 'Toast guidance']);
+    expect(within(stage).getByText('Card radius')).toBeInTheDocument();
+    expect(within(stage).getByText('Sent for review')).toBeInTheDocument();
+    expect(within(stage).queryByRole('button', { name: 'Send for review: Card radius' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    await expectNoAxeViolations(stage);
+    fireEvent.click(within(stage).getByRole('button', { name: 'Start again' }));
+    expect(within(stage).getByRole('button', { name: 'Send for review: Card radius' })).toBeInTheDocument();
   });
 
   it('says its rules, its components as links, and where the product does it, files folded for developers', async () => {

@@ -5,11 +5,13 @@
   "purpose": "Sends a change to the people who decide, before it reaches the library.",
   "reversible": true,
   "rules": [
-    "It can be taken back, so it never asks first: a Toast says it was sent, with Undo.",
-    "One verb, set by the team: Send suggestion when the DS lead reviews suggestions, Send for review when changes go straight to review.",
-    "Once sent, say so in the same words: Sent for review, or Suggestion sent."
+    "There is no Undo: once it goes, the place it was sent from says so, Sent for review or Suggestion sent, with what happens next.",
+    "To take it back, the author picks Back to draft in More actions on the review: reviewers are not asked until it is sent again. A suggestion stays with the DS lead, who decides.",
+    "One verb, set by the team: Send suggestion when the DS lead reviews suggestions, Send for review when changes go straight to review."
   ],
-  "components": ["Button", "Toast"],
+  "components": [
+    "Button"
+  ],
   "usedIn": [
     {
       "screen": "Studio, Tokens, your draft",
@@ -58,12 +60,21 @@
       "label": "Send for review",
       "file": "apps/docs-site/src/components/ds/studio/Onboarding.tsx",
       "match": "Send for review"
+    },
+    {
+      "screen": "A change in review, More actions",
+      "label": "Back to draft",
+      "file": "apps/docs-site/src/components/ds/studio/BranchReview.tsx",
+      "match": "Back to draft"
     }
   ],
   "stage": {
-    "items": ["Primary button color", "Card radius", "Toast guidance"],
+    "items": [
+      "Primary button color",
+      "Card radius",
+      "Toast guidance"
+    ],
     "action": "Send for review",
-    "done": "{item} sent for review.",
-    "undone": "{item} is back in your draft."
+    "sent": "Sent for review"
   }
 }

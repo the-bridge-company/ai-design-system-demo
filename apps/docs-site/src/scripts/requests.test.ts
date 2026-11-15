@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { REQUEST_LABEL } from '@bridge-ds/core';
-import { requestsCacheKey, type RequestRow } from '../lib/requests-view';
+import { behaviorRequestOf, composeRequestIssue, REQUEST_LABEL } from '@bridge-ds/core';
+import { requestRows, requestsCacheKey, type RequestRow } from '../lib/requests-view';
 import { loadRequestRows, renderRequestDetail, rowHtml } from './requests';
 
 const TEXT = '<img src=x onerror=alert(1)>';
@@ -94,5 +94,20 @@ describe('requests HTML (untrusted issue data)', () => {
     expect(rows.length).toBe(1);
     expectInert(rowHtml(rows[0]!));
     expectInert(renderRequestDetail(rows[0]!));
+  });
+});
+
+describe('a behavior request\'s page', () => {
+  it('titles it with the wanted sentence, and never says a GitHub owner decides', () => {
+    const i = composeRequestIssue(behaviorRequestOf('Select', { of: 'component', id: 'Select', behavior: 'tab', today: 'Tab leaves without picking', wanted: 'Tab picks the highlighted option, then moves to the next field' }));
+    const [r] = requestRows([{ number: 74, title: i.title, body: i.body, html_url: 'https://github.com/acme/ds/issues/74', state: 'open', labels: i.labels, user: { login: 'dana' }, assignees: [], created_at: '2026-11-14T10:00:00Z' }], []);
+    for (const ctx of [{ viewer: null, owners: ['peterbono'] }, { viewer: 'peterbono', owners: ['peterbono'] }]) {
+      const box = document.createElement('div');
+      box.innerHTML = renderRequestDetail(r!, ctx);
+      expect(box.querySelector('h1')!.textContent).toContain('Select: Tab picks the highlighted option, then moves to the next field');
+      const state = box.querySelector<HTMLElement>('#rq-state')!;
+      expect(state.hidden).toBe(true);
+      expect(box.textContent).not.toContain('design system owner');
+    }
   });
 });

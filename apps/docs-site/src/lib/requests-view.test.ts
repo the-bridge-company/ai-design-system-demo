@@ -5,6 +5,7 @@ import { behaviorRequestOf, BUILD_REQUEST_LABEL, composeRequestIssue, type Compo
 import {
   askerFirst,
   BEHAVIOR_DEFAULT_LINE,
+  behaviorWaitLine,
   freshList,
   implementCommand,
   integrationsFromForm,
@@ -339,5 +340,12 @@ describe('behavior requests in the list', () => {
     const [made] = requestRows([issue([BUILD_REQUEST_LABEL])], []);
     expect(made!.madeDefault).toBe(true);
     expect(requestDecision(made!, { viewer: 'lee', owners: ['lee'] })).toEqual({ kind: 'status', sentence: BEHAVIOR_DEFAULT_LINE });
+  });
+});
+
+describe('who decides on a behavior request', () => {
+  it('names the one design lead, never a GitHub owner', () => {
+    expect(behaviorWaitLine('Dana')).toBe('Dana decides what happens next.');
+    expect(behaviorWaitLine(null)).toBe('The design system lead decides what happens next.');
   });
 });

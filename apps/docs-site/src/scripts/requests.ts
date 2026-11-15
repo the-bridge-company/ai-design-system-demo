@@ -10,6 +10,7 @@ import { JIRA_IN_BRIDGE, REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
 import { askRequesterOnGitHub, assignRequestOnGitHub, behaviorAskOf, BUILD_IMAGE_LABEL, makeBehaviorDefaultOnGitHub, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
 import {
   askerFirst,
+  behaviorWaitLine,
   assigneeOptions,
   buildState,
   declineAudience,
@@ -277,6 +278,9 @@ export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer
   // the person who decides, holds the three actions. Its sentences are said there once, not again in the sections.
   const ask = r.kind === 'behavior' ? behaviorAskOf(req) : null;
   const primary = ask ? '' : primaryAction(r, decision.kind === 'decide');
+  // An undecided behavior request waits on the design lead, not on a GitHub owner: its line is painted once the zone
+  // knows who decides (mountBehavior), and never for the person who decides.
+  const waitsOnLead = Boolean(ask) && decision.kind !== 'status';
   const key = shownKey(r);
   const jira = key ? (jiraUrl(key) ? `<a href="${attrUrl(jiraUrl(key))}" target="_blank" rel="noopener">${esc(key)}</a>` : `<span class="mono">${esc(key)}</span>`) : '';
   const changes = req?.changes ?? [];
@@ -300,9 +304,9 @@ export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer
   return `
   ${crumbs(r.number)}
   <header class="zone cg-pr-open">
-    <h1 class="cg-pr-title">${esc(subjectTitle(r.component, r.title))} <span class="cg-num">#${r.number}</span></h1>
+    <h1 class="cg-pr-title">${esc(ask ? requestIssueTitle(r) : subjectTitle(r.component, r.title))} <span class="cg-num">#${r.number}</span></h1>
     <p class="cg-pr-meta">${badgeHtml(r.kindLabel)}${badgeHtml(r.statusLabel, { tone: r.tone, className: 'rv-status' })}${ask ? '' : `<span>${esc(wantsToChange(r.requester, r.component))}</span>`}<time datetime="${esc(r.createdAt)}">${esc(shortDate(r.createdAt))}</time>${jira}<a class="cg-gh" href="${attrUrl(r.url)}" target="_blank" rel="noopener">Open on GitHub<span class="sr-only"> (opens in a new tab)</span></a></p>
-    <p class="cg-pr-state" id="rq-state" role="status" tabindex="-1">${esc(decision.sentence)}</p>
+    <p class="cg-pr-state" id="rq-state" role="status" tabindex="-1"${waitsOnLead ? ' hidden' : ''}>${esc(waitsOnLead ? '' : decision.sentence)}</p>
     ${primary ? `<p class="cg-pr-cta rq-decide" id="rq-actions">${primary}</p>` : ''}
     <div id="rq-assign-slot" hidden></div>
     ${ask ? '<div id="rq-behavior-slot" class="rq-bh-slot"></div>' : ''}
@@ -365,6 +369,17 @@ async function mountBehavior(r: RequestRow) {
   const viaEmail = !viaGitHub && undecided && !signedInWithGitHub() && (await import('./design-lead')).viewerIsDesignLead();
   if (!slot.isConnected) return;
   const decide = viaGitHub || viaEmail;
+  if (undecided) {
+    const state = document.getElementById('rq-state');
+    if (state && !decide) {
+      const { leadNameOf } = await import('../components/ds/studio/BehaviorRequestForm');
+      const lead = await leadNameOf(REPO_KEY);
+      if (!state.isConnected) return;
+      state.textContent = behaviorWaitLine(lead);
+      state.hidden = false;
+    }
+  }
+  if (!slot.isConnected) return;
   const byEmail = (decision: 'default' | 'not-now' | 'ask', text?: string) =>
     import('./contribute-session').then(({ decideBehaviorRequest }) => decideBehaviorRequest(REPO_KEY, { number: r.number, decision, ...(text ? { text } : {}) }));
   const asker = r.askerName || (r.requester ? `@${r.requester.replace(/^@/, '')}` : 'Someone');

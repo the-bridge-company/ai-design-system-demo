@@ -34,7 +34,7 @@ describe('behavior request kind', () => {
     const r = behaviorRequestOf('Select', select, { requestedBy: 'dana' });
     const issue = composeRequestIssue(r);
     expect(issue.labels).toEqual(expect.arrayContaining([REQUEST_LABEL, BEHAVIOR_REQUEST_LABEL, 'source: studio']));
-    expect(issue.title).toBe('Select: change "Closes on Escape"');
+    expect(issue.title).toBe('Select: Keeps the list open and clears the search on Escape');
     expect(issue.body).toContain('| close-on-escape | Closes on Escape | Keeps the list open and clears the search on Escape |');
     expect(issue.body).toContain('**Where it gets in the way:** Orders, the filter bar');
     expect(issue.body).not.toMatch(/\u2014/);
@@ -44,9 +44,16 @@ describe('behavior request kind', () => {
   });
 
   it('drafts the title and summary from the two sentences only', () => {
-    expect(draftBehaviorText('Select', select)).toEqual({ title: 'Change "Closes on Escape"', summary: 'Today: Closes on Escape. Wanted: Keeps the list open and clears the search on Escape. It gets in the way in Orders, the filter bar.' });
-    expect(draftBehaviorText('Select', { of: 'component', today: '', wanted: 'opens on focus' })).toEqual({ title: 'Add a behavior', summary: 'Select does not do this yet. Wanted: Opens on focus.' });
-    expect(draftBehaviorText('Delete pattern', { of: 'pattern', today: '', wanted: 'x' }).title).toBe('Add a rule');
+    expect(draftBehaviorText('Select', select)).toEqual({ title: 'Keeps the list open and clears the search on Escape', summary: 'Today: Closes on Escape. Wanted: Keeps the list open and clears the search on Escape. It gets in the way in Orders, the filter bar.' });
+    expect(draftBehaviorText('Select', { of: 'component', today: '', wanted: 'opens on focus.' })).toEqual({ title: 'Opens on focus', summary: 'Select does not do this yet. Wanted: Opens on focus.' });
+    expect(draftBehaviorText('Select', { of: 'component', today: 'x', wanted: 'a '.repeat(80) }).title.length).toBeLessThanOrEqual(104);
+  });
+
+  it('titles the issue with the wanted sentence, its key name kept as written', () => {
+    const tab = behaviorRequestOf('Select', { of: 'component', id: 'Select', behavior: 'tab-leaves', today: 'Tab leaves without picking', wanted: 'Tab picks the highlighted option, then moves to the next field' });
+    expect(composeRequestIssue(tab).title).toBe('Select: Tab picks the highlighted option, then moves to the next field');
+    const rule = behaviorRequestOf('Delete pattern', { of: 'pattern', id: 'delete', rule: 0, today: 'Ask first', wanted: 'Offer Undo instead of asking' });
+    expect(composeRequestIssue(rule).title).toBe('Delete pattern: Offer Undo instead of asking');
   });
 
   it('carries a pattern rule by its place', () => {

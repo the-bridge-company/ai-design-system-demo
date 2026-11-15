@@ -441,7 +441,7 @@ describe('a wait with no start time, next to a "Waiting for" line', () => {
 
 describe('behavior requests wait on who decides', () => {
   it('lists the undecided ones only, by who asked, opening the request', () => {
-    const body = (who: string) => `x\n\nRequested by ${who} through Bridge.\n\n<!-- bridge-request {"component":"Select","kind":"behavior","title":"Change \\"Closes on Escape\\"","summary":"s","changes":[],"source":"studio"} -->`;
+    const body = (who: string) => `x\n\nRequested by ${who} through Bridge.\n\n<!-- bridge-request {"component":"Select","kind":"behavior","title":"Keeps the list open on Escape","summary":"s","changes":[],"source":"studio"} -->`;
     const at = '2026-11-14T10:00:00Z';
     const rows = behaviorNeeds(
       [
@@ -452,8 +452,11 @@ describe('behavior requests wait on who decides', () => {
       Date.parse('2026-11-15T10:00:00Z'),
     );
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ key: 'behavior-9', kind: 'review', title: 'Select: change "Closes on Escape"', line: 'asks to change how Select behaves', waitsOnYou: true, action: 'Decide' });
+    expect(rows[0]).toMatchObject({ key: 'behavior-9', kind: 'review', title: 'Select: Keeps the list open on Escape', line: 'Dana asks to change how it behaves', waitsOnYou: true, action: 'Decide' });
     expect(rows[0]!.person?.name).toBe('Dana');
     expect(rows[0]!.href).toMatch(/explorations\/\?request=9$/);
+    // Nobody resolves (no line, only the app that filed it): no subject-less sentence, no face.
+    const [anon] = behaviorNeeds([{ number: 12, title: 'Select: x', body: body('Dana Kim').replace(/Requested by .* through Bridge\./, ''), labels: ['component-change', 'request: behavior'], user: { login: 'bridge-app[bot]' }, created_at: at }], Date.parse(at));
+    expect(anon).toMatchObject({ line: 'A change to how it behaves', person: null });
   });
 });

@@ -19,19 +19,24 @@ const leads = new Map<string, Promise<string | null>>();
  * The team's one design lead by first name, for "Send to Dana" and "Request #N sent to Dana." (lib/design-lead
  * soleLeadName, from the team's people read once per page and team), else null: the words say "the design system lead".
  */
+export function leadNameOf(repo: string): Promise<string | null> {
+  if (!leads.has(repo))
+    leads.set(
+      repo,
+      Promise.all([import('../../../scripts/contribute-session'), import('../../../scripts/github-session')])
+        .then(([c, g]) => c.contributeTeam(repo, g.currentContributor() ? null : g.getToken()))
+        .then((t) => soleLeadName(t.members))
+        .catch(() => null),
+    );
+  return leads.get(repo)!;
+}
+
+/** leadNameOf as React state: null until it is read, and when there is none. */
 export function useLeadName(repo: string): string | null {
   const [name, setName] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    if (!leads.has(repo))
-      leads.set(
-        repo,
-        Promise.all([import('../../../scripts/contribute-session'), import('../../../scripts/github-session')])
-          .then(([c, g]) => c.contributeTeam(repo, g.currentContributor() ? null : g.getToken()))
-          .then((t) => soleLeadName(t.members))
-          .catch(() => null),
-      );
-    void leads.get(repo)!.then((n) => live && setName(n));
+    void leadNameOf(repo).then((n) => live && setName(n));
     return () => {
       live = false;
     };

@@ -213,12 +213,14 @@ const sentence = (s: string) => {
 
 /**
  * The title and summary of a behavior request (requests.ts behaviorRequestOf), from today's sentence and the wanted
- * one only: "Change "Closes on Escape"", "Today: Closes on Escape. Wanted: Keeps the list open on Escape."
+ * one only: the wanted sentence as the title ("Keeps the list open on Escape"), and "Today: Closes on Escape. Wanted:
+ * Keeps the list open on Escape." as the summary.
  */
 export function draftBehaviorText(subject: string, ask: Pick<BehaviorAsk, 'of' | 'today' | 'wanted' | 'where'>): DraftText {
   const today = ask.today.trim();
   const where = ask.where?.trim() ? ` It gets in the way in ${ask.where.trim().replace(/[.]+$/, '')}.` : '';
-  const title = today ? `Change "${quoted(today)}"` : ask.of === 'pattern' ? 'Add a rule' : 'Add a behavior';
+  // The title is what it should do: the issue reads "Select: Tab picks the highlighted option".
+  const title = capital(quoted(ask.wanted, 100));
   const lead = today ? `Today: ${sentence(today)}` : `${subject.trim() || 'It'} does not do this yet.`;
   return { title: cleanDraftText(title), summary: cleanDraftText(`${lead} Wanted: ${sentence(ask.wanted)}${where}`) };
 }

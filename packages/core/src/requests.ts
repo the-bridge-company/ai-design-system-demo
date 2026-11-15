@@ -196,9 +196,12 @@ const MARK = 'bridge-request';
 const kindLabel = (k: RequestKind) => REQUEST_KINDS.find((x) => x.value === k)?.label ?? 'Other';
 const kindSlug = (k: RequestKind) => `request: ${k}`;
 
-/** Issue title: "Button: add a danger ghost variant". */
-export function requestIssueTitle(r: Pick<ComponentChangeRequest, 'component' | 'title'>): string {
-  return subjectTitle(r.component, r.title);
+/**
+ * Issue title: "Button: add a danger ghost variant". A behavior request's title is the wanted sentence, kept as written
+ * ("Select: Tab picks the highlighted option"): its first word is often a key's name.
+ */
+export function requestIssueTitle(r: Pick<ComponentChangeRequest, 'component' | 'title'> & { kind?: RequestKind | null | undefined }): string {
+  return subjectTitle(r.component, r.title, r.kind === 'behavior' ? [r.title.trim().split(/\s+/)[0] ?? ''] : []);
 }
 
 /** The GitHub issue for a request: readable Markdown, the labels tools filter on, and a hidden JSON block. */

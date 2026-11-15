@@ -293,6 +293,15 @@ export function requestDecision(r: Pick<RequestRow, 'status' | 'assignees' | 'pr
   return { kind: 'wait', sentence: `Nobody is on it yet. A design system owner (${names}) decides what happens next.${ctx.viewer ? '' : ` ${ghVerb(ctx.signIn ?? false)} if that is you.`}` };
 }
 
+/**
+ * Who decides on an undecided behavior request, for anyone but them: the team's one design lead by first name
+ * (lib/design-lead soleLeadName), else the design system lead. The person who decides reads no line: the three
+ * actions say it.
+ */
+export function behaviorWaitLine(lead: string | null): string {
+  return `${lead ?? 'The design system lead'} decides what happens next.`;
+}
+
 /** What a behavior request says once the lead made it the default. */
 export const BEHAVIOR_DEFAULT_LINE = 'Made the default. It waits for a developer in Being built.';
 

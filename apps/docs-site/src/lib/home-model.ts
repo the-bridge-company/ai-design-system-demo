@@ -13,7 +13,7 @@
 // guidance, contrast, adoption, the changelog). Nothing here is guessed.
 import { peopleNames } from './people-line';
 import type { ThumbSpec } from './branch-thumb';
-import { agoInSentence, calendarDays, isDocsProposalBranch, isUndecidedBehaviorRequest, parseRequestIssue, PUBLISH_ROUTE_COPY, requesterOf, subjectTitle } from '@bridge-ds/core';
+import { agoInSentence, calendarDays, isDocsProposalBranch, isUndecidedBehaviorRequest, parseRequestIssue, PUBLISH_ROUTE_COPY, requesterOf, requestIssueTitle } from '@bridge-ds/core';
 import { STATUS_WORDS, VOCAB } from './vocabulary';
 import { isClaudeLogin, nameFace } from './people';
 import { explorationAuthorFor, isNameAuthor, nameOfAuthor } from './author';
@@ -637,16 +637,18 @@ export function behaviorNeeds(issues: readonly BehaviorIssue[], now: number): Ne
     .map((i) => {
       const r = parseRequestIssue(i.body);
       const who = requesterOf(i.body);
-      const login = who?.login ?? r?.requestedBy ?? i.user?.login ?? '';
-      const subject = r?.component ?? (i.title.split(':')[0] ?? '').trim();
+      // Who asked: the name Bridge wrote, else their login; never the app that filed it for an email member.
+      const author = i.user?.login && !/\[bot\]$/i.test(i.user.login) ? i.user.login : '';
+      const login = who?.login ?? r?.requestedBy ?? author;
+      const first = shortName(who?.name) ?? (login || null);
       const since = Number.isFinite(Date.parse(i.created_at)) ? i.created_at : null;
       return {
         key: `behavior-${i.number}`,
         kind: 'review' as const,
-        title: r ? subjectTitle(r.component, r.title) : i.title,
+        title: r ? requestIssueTitle(r) : i.title,
         href: studioHref(`explorations/?request=${i.number}`),
-        person: { login, name: shortName(who?.name) ?? login, avatar: null },
-        line: `asks to change how ${subject} behaves`,
+        person: first ? { login: login || first, name: first, avatar: null } : null,
+        line: first ? `${first} asks to change how it behaves` : 'A change to how it behaves',
         since,
         waitsOnYou: true,
         pill: since ? waitPill(since, now) : null,

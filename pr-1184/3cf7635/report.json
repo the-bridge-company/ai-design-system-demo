@@ -1,0 +1,631 @@
+{
+  "pr": 1184,
+  "sha": "3cf76354405e9f09e89b71d98430608e91b6198d",
+  "baseSha": "346cec08f883591c702a769698cf4ad3fea86f09",
+  "failed": false,
+  "failures": [],
+  "warnings": 4,
+  "screens": [
+    "landing",
+    "home",
+    "changes",
+    "exploration",
+    "building",
+    "settings",
+    "product"
+  ],
+  "variants": [
+    {
+      "screen": "landing",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 5984,
+      "png": "landing-desktop-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 9,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 4069,
+      "webp": "landing-desktop-light.webp",
+      "diff": {
+        "ratio": 0.0005285493827160494,
+        "pixels": 2055,
+        "box": {
+          "x0": 536,
+          "y0": 31,
+          "x1": 894,
+          "y1": 43
+        },
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 2700,
+      "fullHeight": 5984,
+      "png": "landing-desktop-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 9,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 4345,
+      "webp": "landing-desktop-dark.webp",
+      "diff": {
+        "ratio": 0.0005491255144032922,
+        "pixels": 2135,
+        "box": {
+          "x0": 536,
+          "y0": 31,
+          "x1": 894,
+          "y1": 43
+        },
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 8068,
+      "png": "landing-mobile-light.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 9,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 3913,
+      "webp": "landing-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "landing",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 2532,
+      "fullHeight": 8068,
+      "png": "landing-mobile-dark.png",
+      "axe": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 9,
+          "help": "Elements must have their visible text as part of their accessible name"
+        }
+      ],
+      "ms": 3389,
+      "webp": "landing-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "home-desktop-light.png",
+      "axe": [],
+      "ms": 10366,
+      "webp": "home-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "home-desktop-dark.png",
+      "axe": [],
+      "ms": 10201,
+      "webp": "home-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "home-mobile-light.png",
+      "axe": [],
+      "ms": 10369,
+      "webp": "home-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "home",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "home-mobile-dark.png",
+      "axe": [],
+      "ms": 12814,
+      "webp": "home-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "changes-desktop-light.png",
+      "axe": [],
+      "ms": 11819,
+      "webp": "changes-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "changes-desktop-dark.png",
+      "axe": [],
+      "ms": 11610,
+      "webp": "changes-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "changes-mobile-light.png",
+      "axe": [],
+      "ms": 10606,
+      "webp": "changes-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "changes",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "changes-mobile-dark.png",
+      "axe": [],
+      "ms": 10615,
+      "webp": "changes-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "exploration-desktop-light.png",
+      "axe": [],
+      "ms": 11582,
+      "webp": "exploration-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "exploration-desktop-dark.png",
+      "axe": [],
+      "ms": 9835,
+      "webp": "exploration-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "exploration-mobile-light.png",
+      "axe": [],
+      "ms": 11164,
+      "webp": "exploration-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "exploration",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "exploration-mobile-dark.png",
+      "axe": [],
+      "ms": 9409,
+      "webp": "exploration-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "building-desktop-light.png",
+      "axe": [],
+      "ms": 13099,
+      "webp": "building-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "building-desktop-dark.png",
+      "axe": [],
+      "ms": 13807,
+      "webp": "building-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1206,
+      "fullHeight": 1206,
+      "png": "building-mobile-light.png",
+      "axe": [],
+      "ms": 10749,
+      "webp": "building-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "building",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1206,
+      "fullHeight": 1206,
+      "png": "building-mobile-dark.png",
+      "axe": [],
+      "ms": 11144,
+      "webp": "building-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 971,
+      "fullHeight": 971,
+      "png": "settings-desktop-light.png",
+      "axe": [],
+      "ms": 9409,
+      "webp": "settings-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 971,
+      "fullHeight": 971,
+      "png": "settings-desktop-dark.png",
+      "axe": [],
+      "ms": 9415,
+      "webp": "settings-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1111,
+      "fullHeight": 1111,
+      "png": "settings-mobile-light.png",
+      "axe": [],
+      "ms": 9354,
+      "webp": "settings-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "settings",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 1111,
+      "fullHeight": 1111,
+      "png": "settings-mobile-dark.png",
+      "axe": [],
+      "ms": 11293,
+      "webp": "settings-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-light.png",
+      "axe": [],
+      "ms": 9322,
+      "webp": "product-desktop-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "desktop",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "height": 962,
+      "fullHeight": 962,
+      "png": "product-desktop-dark.png",
+      "axe": [],
+      "ms": 9219,
+      "webp": "product-desktop-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "light",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-light.png",
+      "axe": [],
+      "ms": 8971,
+      "webp": "product-mobile-light.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    },
+    {
+      "screen": "product",
+      "viewport": "mobile",
+      "theme": "dark",
+      "consoleErrors": [],
+      "pageErrors": [],
+      "status": 200,
+      "overflow": null,
+      "height": 906,
+      "fullHeight": 906,
+      "png": "product-mobile-dark.png",
+      "axe": [],
+      "ms": 9282,
+      "webp": "product-mobile-dark.webp",
+      "diff": {
+        "ratio": 0,
+        "pixels": 0,
+        "box": null,
+        "sizeChanged": false
+      }
+    }
+  ]
+}

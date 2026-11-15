@@ -33,6 +33,7 @@ const ALLOWED: Record<string, string> = {
   'components/Illustration.astro': 'hardcoded SVG from brand/illustrations.ts, never repo SVG',
   'components/home/HpStepSection.astro': 'Astro-rendered slot markup written in the page',
   'components/ds/ScriptDialog.astro': 'dialogHtml escapes title, description and attributes; body is a slot',
+  'scripts/ask-first.ts': 'alertDialogHtml escapes title, description and labels; no body',
   'pages/studio/components/docs/[slug].astro': 'redirectScript: constant body, target escaped in data-to',
   'components/LibraryEditMode.tsx': 'static example markup rendered at build time from registry resolveProps (handlers, raw HTML and unsafe URLs dropped)',
   'lib/library-use.ts': 'the match is text inside a code sample shown on the Install page, not a sink',

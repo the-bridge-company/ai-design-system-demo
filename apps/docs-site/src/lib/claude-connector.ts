@@ -21,6 +21,10 @@ export const CONNECTOR_WORDS = {
   status: 'In Claude',
   notConnected: 'Not connected yet.',
   remove: 'Remove',
+  // The AlertDialog before Remove (the Delete pattern, plain): the connection cannot come back, only a new one.
+  removeAsk: (by: string) => `Remove ${by}'s connection?`,
+  removeText: (client: string) => `${client} stops working with Bridge at once. This cannot be undone: to use Bridge there again, connect it again from Claude.`,
+  removeConfirm: 'Remove connection',
   removed: 'Removed. That Claude no longer works with Bridge until it connects again.',
   noRepo: 'Connect your design system first. Then use Bridge inside your Claude.',
 } as const;

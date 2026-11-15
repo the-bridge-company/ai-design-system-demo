@@ -24,6 +24,7 @@ import { cssValue, esc, icon } from './util';
 import { isStageToken, previewSamples } from '../../lib/preview-fit';
 import { fitFrames, sampleFrame, sampleNames } from './preview-frames';
 import { badgeHtml, closeDialog, isDialogOpen, openDialog } from '@bridge-ds/react/dom';
+import { askFirst } from '../ask-first';
 
 const FALLBACK_SAMPLES = ['Card', 'Table', 'Button'];
 const MODE_NAME: Record<string, string> = { light: 'Light', dark: 'Dark', bridge: 'Bridge', ocean: 'Ocean', comfortable: 'Comfortable', compact: 'Compact', value: 'Value' };
@@ -320,9 +321,12 @@ export function initReview(d: ExplorerData) {
     // Undo from the highest index so the remaining indexes stay valid.
     b.dataset.xeUndo!.split(',').map(Number).sort((x, y) => y - x).forEach((i) => undoEdit(i));
   });
-  sheet.querySelector('[data-xe-discard]')?.addEventListener('click', () => {
+  // Discard cannot be undone: it asks first in the DS AlertDialog, over the drawer (never window.confirm).
+  sheet.querySelector('[data-xe-discard]')?.addEventListener('click', async () => {
     const n = count();
-    if (!n || !window.confirm(`Discard ${n} change${n === 1 ? '' : 's'}? Your draft is emptied in this browser.`)) return;
+    if (!n) return;
+    const many = n === 1 ? 'change' : 'changes';
+    if (!(await askFirst({ title: `Discard ${n} ${many}?`, description: 'Your draft is emptied in this browser. This cannot be undone.', confirmLabel: `Discard ${many}` }))) return;
     discardDraft();
   });
   // Proposing replaces the sheet with the propose dialog; the sheet stays behind it.

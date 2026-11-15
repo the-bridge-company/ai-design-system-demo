@@ -118,6 +118,7 @@ import {
   writeLooked,
   type ConvInput,
   type GuidanceDocs,
+  offersCloseUndo,
 } from '../lib/review-page';
 import type { ActKind, BranchReviewProps, GuidanceView, PersonRef, TokenRowView, VisualView } from '../components/ds/studio/BranchReview';
 /** The Motion change id (components/ds/studio/BranchReview MOTION_CHANGE), kept here so the island loads lazily. */
@@ -1433,7 +1434,17 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
     onAct: (kind, text) => act(kind, text, { pull, gate, docs: x.docs, write, statusRun, values: Boolean(approvals.valuesOnly) }),
     onOverride: () => openOverride?.(),
     onDraft: () => backToDraft(pull.number, reload).then(() => undefined),
-    onClose: () => act('close', '', { pull, gate, docs: x.docs, write, statusRun }),
+    // Close change acts at once (it can be reopened): the repainted review says so in a toast with Undo, which reopens.
+    onClose: async () => {
+      closedJustNow = pull.number;
+      try {
+        return await act('close', '', { pull, gate, docs: x.docs, write, statusRun });
+      } catch (err) {
+        closedJustNow = null;
+        throw err;
+      }
+    },
+    undoClose: undoCloseFor(pull, statusRun),
     links: { review: reviewLink(location.origin, pull.number), developer: pull.html_url },
     share: shareable
       ? {
@@ -1551,6 +1562,23 @@ async function act(kind: ActKind | 'close', text: string, x: { pull: Pull; gate:
   const said = { suggest: 'Changes asked for.', comment: 'Comment posted.', approve: 'Approved.', merge: 'Added to the library.', 'approve-merge': 'Approved and added to the library.', close: 'Closed.' }[kind as string] ?? 'Done.';
   await openPr(pull.number, false);
   return said;
+}
+
+/** The change this viewer closed a moment ago: its next paint offers Undo once (Close change never asks first). */
+let closedJustNow: number | null = null;
+
+/**
+ * Undo of Close change, on the paint right after it: the existing Reopen of this change (statusRun), offered only
+ * when that Reopen applies to the viewer (lib/review-page offersCloseUndo).
+ */
+function undoCloseFor(pull: Pull, statusRun: StatusActionRun): (() => Promise<void>) | null {
+  const justClosed = closedJustNow === pull.number;
+  if (justClosed) closedJustNow = null;
+  const run = statusRun.run;
+  if (!run || !offersCloseUndo({ justClosed, state: pull.state, merged: Boolean(pull.merged_at), statusAction: statusRun.kind })) return null;
+  return async () => {
+    await run();
+  };
 }
 
 /** Runs a decision on the open review (the review queue's own bar). False when nothing open or nothing sent. */

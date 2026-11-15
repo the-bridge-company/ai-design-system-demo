@@ -21,10 +21,10 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Check, ChevronsUpDown, LogIn, Plus, UserPlus, X } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
-import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger, Skeleton, VisuallyHidden } from '@bridge-ds/react';
+import { Avatar, Badge, Button, Icon, Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger, Skeleton, ToastProvider, useToast, VisuallyHidden } from '@bridge-ds/react';
 import type { RepoAccessState } from '@bridge-ds/core';
 import { accountRowSaysRole, busyBadge, chipIdentity, chipShowsBadge, isDemoTeam, memberRole, ownerAvatarUrl, recentTeamName, roleBadge } from '../../../lib/access-view';
-import { forgetRecentTeam, knownTeamName, loadRecentTeams, loadTeamNames, loadTeamRoles, noteTeamAccess, noteTeamName, noteTeamRole } from '../../../lib/recent-teams';
+import { forgetRecentTeam, knownTeamName, restoreRecentTeams, loadRecentTeams, loadTeamNames, loadTeamRoles, noteTeamAccess, noteTeamName, noteTeamRole } from '../../../lib/recent-teams';
 import { pillState } from '../../../lib/access';
 import { isHosted, pageTeamFromPath, teamHref } from '../../../lib/team-path';
 import { ghButton } from '../../../lib/gh-wording';
@@ -85,6 +85,23 @@ const DemoMark = () => (
     <Drawing name="logo" width={18} />
   </span>
 );
+
+/** A recent team just removed: its name for the toast, and the list as it was, for Undo. */
+interface Removed {
+  shown: string;
+  before: string[];
+}
+
+/** The toast after Remove from recent teams, with Undo (the patterns' reversible rule: it never asks first). */
+function RemovedToast({ removed, onUndo, onClose }: { removed: Removed; onUndo: () => void; onClose: () => void }) {
+  const toast = useToast();
+  useEffect(() => {
+    toast.add({ title: `${removed.shown} removed from recent teams`, action: { label: 'Undo', onClick: onUndo }, timeout: 8000, onClose });
+    // Once per removal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [removed]);
+  return null;
+}
 
 export default function TeamChip({ repo: built = null, launcher = false, workspace = false }: TeamChipProps) {
   const [name, setName] = useState<string | null>(workspace ? null : built);
@@ -248,7 +265,13 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
     setRoles(noteTeamRole(name, memberRole(shownAccess, true, reviewer)));
   }, [hosted, name, shownAccess, roleSignedIn, recent, reviewer]);
 
-  const forget = (team: string) => setRecent(others(forgetRecentTeam(team), name));
+  // Reversible, so it never asks: the team leaves the list at once and a toast offers Undo (the list as it was).
+  const [removed, setRemoved] = useState<Removed | null>(null);
+  const forget = (team: string, shown: string) => {
+    const before = loadRecentTeams();
+    setRecent(others(forgetRecentTeam(team), name));
+    setRemoved({ shown, before });
+  };
 
   const [owner = ''] = (name ?? '').split('/');
   const accountTeamName = (t: string) => account?.teams.find((x) => x.repo.toLowerCase() === t.toLowerCase())?.name?.trim() || null;
@@ -431,7 +454,7 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
                   aria-label={`Remove ${shown} from recent teams`}
                   title="Remove from recent teams"
                   closeOnClick={false}
-                  onClick={() => forget(t)}
+                  onClick={() => forget(t, shown)}
                 />
               </div>
             );
@@ -496,6 +519,16 @@ export default function TeamChip({ repo: built = null, launcher = false, workspa
           ))}
         </MenuContent>
       </Menu>
+      {removed && (
+        // Mounted only once something was removed: no toast region on every page for nothing.
+        <ToastProvider limit={1}>
+          <RemovedToast
+            removed={removed}
+            onUndo={() => setRecent(others(restoreRecentTeams(removed.before), name))}
+            onClose={() => setRemoved((r) => (r === removed ? null : r))}
+          />
+        </ToastProvider>
+      )}
       {offerTeams && <NewTeamDialog open={creating} onOpenChange={setCreating} signedIn={ghSignedIn} check={check} />}
       {invitedOnce && (
         <Suspense fallback={null}>

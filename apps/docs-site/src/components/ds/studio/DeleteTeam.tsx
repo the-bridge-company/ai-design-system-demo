@@ -1,15 +1,15 @@
 // The Danger zone at the foot of a team's Settings, for its admins only (lib/delete-team.ts has the words):
 //   a team made in Bridge     "Delete this team"
 //   a repository's team       "Disconnect this team from Bridge": Bridge forgets it, the repository stays on GitHub
-// One row (what it does on the left, the action on the same line), then a confirm dialog that asks for the team's
-// name, typed exactly. Once done: the browser forgets the team (lib/recent-teams forgetTeamEverywhere) and goes to the
+// One row (what it does on the left, the action on the same line), then an AlertDialog that asks for the team's name,
+// typed exactly (its confirmText: the Delete pattern, high impact). Once done: the browser forgets the team (lib/recent-teams forgetTeamEverywhere) and goes to the
 // person's next team, else the start page. The server (api/entry delete-team) checks the admin again.
 //   DeleteTeamRow    the row and its dialog, for a known team and an admin (TeamKeySettings renders it in its band)
 //   DeleteTeamBand   the team shell's band: shown once Members says the viewer manages this real team, else nothing
-import { useId, useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Trash2, Unplug } from 'lucide-react';
-import { Alert, Button, ButtonGroup, Card, CardBody, Dialog, DialogClose, DialogContent, Input, Link } from '@bridge-ds/react';
-import { confirmMatches, DELETE_TEAM_WORDS as W, deleteKindOf, githubAppsHref } from '../../../lib/delete-team';
+import { Alert, AlertDialog, AlertDialogContent, Button, Card, CardBody, Link } from '@bridge-ds/react';
+import { DELETE_TEAM_WORDS as W, deleteKindOf, githubAppsHref } from '../../../lib/delete-team';
 import { useTeamPeople } from './members-state';
 
 /** Where the page goes once the team is gone (tests swap it). */
@@ -25,15 +25,12 @@ export interface DeleteTeamRowProps {
 export function DeleteTeamRow({ team, name }: DeleteTeamRowProps) {
   const kind = deleteKindOf(team);
   const [open, setOpen] = useState(false);
-  const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const formId = useId();
-  const ok = confirmMatches(typed, name);
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!ok || busy) return;
+  // The AlertDialog keeps its button off until the name matches (confirmText).
+  const submit = async () => {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -62,45 +59,36 @@ export function DeleteTeamRow({ team, name }: DeleteTeamRowProps) {
             </div>
           </div>
         </div>
-        <Dialog
+        <AlertDialog
           open={open}
           onOpenChange={(next) => {
             if (busy) return;
             setOpen(next);
-            if (!next) {
-              setTyped('');
-              setError(null);
-            }
+            if (!next) setError(null);
           }}
         >
-          <DialogContent
+          <AlertDialogContent
             title={W.title[kind](name)}
             description={W.text[kind]}
-            size="sm"
-            hideClose
-            footer={
-              <ButtonGroup align="end">
-                <DialogClose render={<Button variant="secondary" disabled={busy} />}>{W.cancel}</DialogClose>
-                <Button type="submit" form={formId} variant="danger" loading={busy} disabled={!ok || busy}>
-                  {W.button[kind]}
-                </Button>
-              </ButtonGroup>
-            }
+            confirmLabel={W.button[kind]}
+            cancelLabel={W.cancel}
+            confirmText={name}
+            confirmTextLabel={W.confirmLabel(name)}
+            closeOnConfirm={false}
+            loading={busy}
+            onConfirm={() => void submit()}
           >
-            <form id={formId} className="set-delete-form" noValidate onSubmit={(e) => void submit(e)}>
-              {kind === 'repository' && (
-                <p className="set-row-help">
-                  {W.github}{' '}
-                  <Link href={githubAppsHref(team)} target="_blank" rel="noopener noreferrer">
-                    {W.githubLink}
-                  </Link>
-                </p>
-              )}
-              <Input label={W.confirmLabel(name)} name="confirm" autoComplete="off" spellCheck={false} value={typed} onValueChange={setTyped} />
-              {error && <Alert tone="danger">{error}</Alert>}
-            </form>
-          </DialogContent>
-        </Dialog>
+            {kind === 'repository' && (
+              <p className="set-row-help">
+                {W.github}{' '}
+                <Link href={githubAppsHref(team)} target="_blank" rel="noopener noreferrer">
+                  {W.githubLink}
+                </Link>
+              </p>
+            )}
+            {error && <Alert tone="danger">{error}</Alert>}
+          </AlertDialogContent>
+        </AlertDialog>
       </CardBody>
     </Card>
   );

@@ -820,12 +820,6 @@ export function initTokenEditor() {
     saveDraft();
     recompute();
   });
-  $('ed-discard')?.addEventListener('click', () => {
-    if (!S || !S.draft.edits.length || !window.confirm('Discard every draft edit?')) return;
-    S.draft = emptyDraft();
-    saveDraft();
-    recompute();
-  });
   $('ed-add')?.addEventListener('click', (e) => openDialog('ed-add-dialog', { returnFocus: e.currentTarget as HTMLElement }));
   $('ed-add-save')?.addEventListener('click', () => {
     if (!S) return;

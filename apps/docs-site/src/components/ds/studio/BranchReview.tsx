@@ -3,7 +3,7 @@
 // highlighted and click-to-edit; tokens as before and after; components as before and after screens), the
 // conversation, one line about checks, and one sticky decision bar. A branch with several changes gets an outline
 // and a "looked at" reading aid. Rules: lib/review-page.ts. Data and GitHub writes: scripts/reviews.ts.
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { Who } from './faces';
@@ -29,6 +29,8 @@ import {
   MenuItem,
   MenuSeparator,
   MenuSubmenu,
+  ToastProvider,
+  useToast,
   MenuTrigger,
   Progress,
   SidebarNav,
@@ -162,6 +164,8 @@ export interface BranchReviewProps {
   onOverride: () => void;
   onDraft: () => Promise<string | void>;
   onClose: () => Promise<string | void>;
+  /** Right after Close change (it acts at once, it can be reopened): Undo on its toast reopens the change. */
+  undoClose?: (() => Promise<void>) | null;
   links: { review: string; developer: string };
   share: Omit<ShareChangeProps, 'open' | 'onOpenChange' | 'hideTrigger'> | null;
   /** A line to say on mount (the result of the action that repainted the review). */
@@ -881,7 +885,7 @@ function DecisionBar({ p, leftLine, inputRef }: { p: BranchReviewProps; leftLine
   const [text, setText] = useState('');
   const [busy, setBusy] = useState<ActKind | null>(null);
   const [said, setSaid] = useState(p.said ?? '');
-  const [confirm, setConfirm] = useState<'merge' | 'close' | null>(null);
+  const [confirm, setConfirm] = useState<'merge' | null>(null);
   const [share, setShare] = useState(false);
   const a = p.actions;
   const run = async (kind: ActKind) => {
@@ -983,7 +987,7 @@ function DecisionBar({ p, leftLine, inputRef }: { p: BranchReviewProps; leftLine
             {a.menu.draft && <MenuItem onClick={() => void later(p.onDraft)}>Back to draft</MenuItem>}
             {a.menu.close && <MenuSeparator />}
             {a.menu.close && (
-              <MenuItem tone="danger" onClick={() => setConfirm('close')}>
+              <MenuItem tone="danger" onClick={() => void later(p.onClose)}>
                 Close change
               </MenuItem>
             )}
@@ -1005,18 +1009,6 @@ function DecisionBar({ p, leftLine, inputRef }: { p: BranchReviewProps; leftLine
           onConfirm={() => {
             setConfirm(null);
             if (primary) void run(primary.kind);
-          }}
-        />
-      </AlertDialog>
-      <AlertDialog open={confirm === 'close'} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent
-          title="Close this change without adding it to the library?"
-          description="Nothing reaches the library. Its author can reopen it."
-          confirmLabel="Close change"
-          tone="danger"
-          onConfirm={() => {
-            setConfirm(null);
-            void later(p.onClose);
           }}
         />
       </AlertDialog>
@@ -1131,8 +1123,27 @@ export function BranchReview(p: BranchReviewProps) {
         </div>
       )}
       {!p.inQueue && <DecisionBar p={p} leftLine={multi ? progress.leftLine : null} inputRef={inputRef}/>}
+      {p.undoClose && (
+        <ToastProvider limit={1}>
+          <ClosedToast undo={p.undoClose} />
+        </ToastProvider>
+      )}
     </div>
   );
+}
+
+/** "Change closed" with Undo, once, on the paint right after Close change. A failed reopen says why. */
+function ClosedToast({ undo }: { undo: () => Promise<void> }) {
+  const toast = useToast();
+  useEffect(() => {
+    toast.add({
+      title: 'Change closed',
+      description: 'Nothing reaches the library.',
+      action: { label: 'Undo', onClick: () => void undo().catch((err: Error) => toast.error(err.message)) },
+      timeout: 8000,
+    });
+  }, [undo, toast]);
+  return null;
 }
 
 let root: Root | null = null;

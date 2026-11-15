@@ -290,7 +290,7 @@ describe('the role picker', () => {
 });
 
 describe('Settings > Members', () => {
-  it('an admin gets Invite collaborators, a role picker and a More menu per person, and confirms a removal in the row', async () => {
+  it('an admin gets Invite collaborators, a role picker and a More menu per person, and confirms a removal in an AlertDialog', async () => {
     page.data = real();
     const user = userEvent.setup();
     render(createElement(MembersSection));
@@ -302,9 +302,11 @@ describe('Settings > Members', () => {
 
     await user.click(screen.getByRole('button', { name: 'More for Leo' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Remove from team' }));
-    expect(screen.getByText('Remove Leo from acme/ds? They lose access on GitHub too.')).toBeInTheDocument();
+    const dialog = await screen.findByRole('alertdialog', { name: 'Remove Leo from acme/ds?' });
+    expect(dialog).toHaveTextContent('They lose access in Bridge and on GitHub at once. This cannot be undone');
     expect(api.removeMember).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    await expectNoAxeViolations(dialog);
+    await user.click(within(dialog).getByRole('button', { name: 'Remove from team' }));
     await waitFor(() => expect(api.removeMember).toHaveBeenCalledWith('acme/ds', 'leo'));
     expect(await screen.findByText('Leo was removed from acme/ds.')).toBeInTheDocument();
     await expectNoAxeViolations(document.body);

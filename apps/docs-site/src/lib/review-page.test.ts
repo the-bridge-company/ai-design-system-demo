@@ -391,3 +391,34 @@ describe('bodyWhy', () => {
     expect(long.endsWith('word...')).toBe(true);
   });
 });
+
+describe('Undo after Close change: only for who the Reopen button allows', async () => {
+  const { offersCloseUndo } = await import('./review-page');
+  const { reopenEligibility, statusAction } = await import('./change-status');
+  // What the closed change's status action is for this viewer: the same rule as the Reopen button.
+  const kindFor = (viewer: string, canWrite: boolean) =>
+    statusAction({
+      lifecycle: 'closed',
+      isAuthor: viewer === 'ana',
+      canWrite,
+      exploration: false,
+      tokenEdits: false,
+      reopen: reopenEligibility({ state: 'closed', viewer, author: 'ana', owners: ['lead'], canWrite, branch: 'exists' }),
+    });
+  const offers = (viewer: string, canWrite = true, more: Partial<{ justClosed: boolean; state: string; merged: boolean }> = {}) =>
+    offersCloseUndo({ justClosed: true, state: 'closed', merged: false, statusAction: kindFor(viewer, canWrite), ...more });
+
+  it('the author and an owner get Undo', () => {
+    expect(offers('ana')).toBe(true);
+    expect(offers('lead')).toBe(true);
+  });
+  it('a reviewer who is neither, even with write access, gets none: Undo never widens who can reopen', () => {
+    expect(offers('sam', true)).toBe(false);
+    expect(offers('lead', false)).toBe(false);
+  });
+  it('only right after closing, and never once merged', () => {
+    expect(offers('ana', true, { justClosed: false })).toBe(false);
+    expect(offers('ana', true, { merged: true })).toBe(false);
+    expect(offers('ana', true, { state: 'open' })).toBe(false);
+  });
+});

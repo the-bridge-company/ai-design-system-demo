@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-// The Danger zone of a team's Settings: admins of a real team only; the confirm dialog asks for the team's name typed
-// exactly; once done the page goes where the server says (the person's next team, else the start page); a refusal is
+// The Danger zone of a team's Settings: admins of a real team only; the AlertDialog asks for the team's name typed
+// exactly (confirmText, the Delete pattern for high impact); once done the page goes where the server says (the person's next team, else the start page); a refusal is
 // said in the dialog. Words never carry an em dash.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DELETE_TEAM_WORDS, confirmMatches, deleteKindOf, githubAppsHref } from '../../../lib/delete-team';
@@ -48,8 +48,9 @@ describe('the confirm dialog', () => {
     deleteTeam.mockResolvedValue({ kind: 'team', next: '/studio/acme/other/' });
     render(createElement(DeleteTeamRow, { team: '_team/00112233aabbccdd', name: "Florian's workspace" }));
     await userEvent.click(screen.getByRole('button', { name: 'Delete this team' }));
-    const dialog = await screen.findByRole('dialog', { name: "Delete Florian's workspace?" });
-    const confirm = () => dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const dialog = await screen.findByRole('alertdialog', { name: "Delete Florian's workspace?" });
+    const confirm = () => within(dialog).getByRole<HTMLButtonElement>('button', { name: 'Delete this team' });
+    expect(document.activeElement).toBe(screen.getByLabelText("Type Florian's workspace to confirm"));
     expect(confirm().disabled).toBe(true);
     const field = screen.getByLabelText("Type Florian's workspace to confirm");
     await userEvent.type(field, "florian's workspace");
@@ -66,11 +67,11 @@ describe('the confirm dialog', () => {
     deleteTeam.mockRejectedValue(new Error('Only admins of this team can do this. Ask an admin of the team to make you one.'));
     render(createElement(DeleteTeamRow, { team: 'acme/ds', name: 'Acme DS' }));
     await userEvent.click(screen.getByRole('button', { name: 'Disconnect this team' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Disconnect Acme DS from Bridge?' });
+    const dialog = await screen.findByRole('alertdialog', { name: 'Disconnect Acme DS from Bridge?' });
     expect(dialog.textContent).toContain('stay on GitHub');
     expect(screen.getByRole('link', { name: DELETE_TEAM_WORDS.githubLink }).getAttribute('href')).toBe('https://github.com/acme/ds/settings/installations');
     await userEvent.type(screen.getByLabelText('Type Acme DS to confirm'), 'Acme DS');
-    await userEvent.click(dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Disconnect this team' }));
     expect(await screen.findByText(/Only admins of this team can do this/)).toBeTruthy();
     expect(leave.to).not.toHaveBeenCalled();
   });

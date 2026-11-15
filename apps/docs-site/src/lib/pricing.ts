@@ -1,8 +1,8 @@
 // /pricing/ (pages/pricing.astro): every price, tier, commitment and answer on the page, in one place. Pure data and
 // helpers, no DOM. The page ships on announcement day: until then it lives in a draft pull request.
 //
-// Every price and policy here is decided. Three launch blockers stay marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
-// launch date, the Organization contact address and a lawyer's review of the terms of service.
+// Every price and policy here is decided. Two launch blockers stay marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
+// launch date and a lawyer's review of the terms of service.
 
 export type Currency = 'EUR' | 'USD';
 export type Billing = 'yearly' | 'monthly';
@@ -95,11 +95,10 @@ export const REFUND_POLICY = [
 export const PRICING_ROLLBACK_REFUND =
   'If we roll back a pricing change, we refund in full the difference between what you paid since that change and what you would have paid at the previous price.';
 
-// TO DECIDE (Florian), BLOCKS LAUNCH: no contact email exists on the site yet. Until there is one, the contact line
-// links to GitHub issues, the site's existing contact path. Replace with a mailto when the address exists.
-// The page builds the link from lib/repo GITHUB_URL (a build-time module, kept out of this file so islands can import it).
-export const ORGANIZATION_CONTACT_PATH = '/issues';
-export const ORGANIZATION_CONTACT_LABEL = 'Write to us on GitHub';
+// Bridge's contact address (an OVH redirect to Florian's inbox). Shown as text, so it reads even where mailto: does nothing.
+export const CONTACT_EMAIL = 'hello@bridgedesignsystem.com';
+export const ORGANIZATION_CONTACT_HREF = `mailto:${CONTACT_EMAIL}`;
+export const ORGANIZATION_CONTACT_LABEL = CONTACT_EMAIL;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Formatting and defaults.

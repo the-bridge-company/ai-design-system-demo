@@ -18,17 +18,16 @@ import {
   LEAD,
   LICENSE_LINE,
   ORGANIZATION_CONTACT_LABEL,
-  ORGANIZATION_CONTACT_PATH,
+  ORGANIZATION_CONTACT_HREF,
   ORGANIZATION_NOTE,
   ORGANIZATION_PRICE,
   TITLE,
   money,
 } from '../lib/pricing';
-import { GITHUB_URL } from '../lib/repo';
 import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
 
-// TO DECIDE (Florian), BLOCKS LAUNCH: there is no contact email on the site yet; GitHub issues is the existing contact path.
-const contact = `${GITHUB_URL}${ORGANIZATION_CONTACT_PATH}`;
+// Organization and discount questions go to Bridge's contact address (lib/pricing CONTACT_EMAIL).
+const contact = ORGANIZATION_CONTACT_HREF;
 const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
 ---
 
@@ -92,7 +91,7 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
     <section class="pr-section" aria-labelledby="pr-org">
       <h2 id="pr-org" class="pr-h2">Organization</h2>
       <p class="pr-contact">
-        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly, excluding VAT. Questions before you choose it? <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
+        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly, excluding VAT. Questions before you choose it? Write to <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
       </p>
     </section>
   </div>

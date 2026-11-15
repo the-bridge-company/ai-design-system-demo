@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { Avatar, Alert, AlertDialog, AlertDialogContent, Badge, Button, Dialog, DialogContent, IconButton, Input, Link, Menu, MenuContent, MenuGroup, MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Spinner, Textarea } from '@bridge-ds/react';
 import { Check, ChevronDown, Circle, CircleX, Copy, Ellipsis, PenLine, Plus, Sparkles, X } from 'lucide-react';
 import { docsAuthorLine, DRAFT_PHRASE, eligibleReviewers, leadsPublishTier1On, overrideHolders, PUBLISH_LABEL, type ComponentDocsJson, type DocsGuidance, type OverridePolicy, type ProseKey } from '@bridge-ds/core';
-import { REGISTRY, resolveProps } from './registry';
+import { REGISTRY, resolveNestedNodes, resolveProps } from './registry';
 import type { ExampleNode } from '../lib/components';
 import { cleanDocs, docsEdits, docsFileText, setDocsEdit, validateDocs, type DocsEdit } from '../lib/docs-draft-model';
 import type { Draft } from '../lib/editor-model';
@@ -146,7 +146,7 @@ function renderNode(node: ExampleNode, key?: number): ReactNode {
   const Comp = REGISTRY[node.c];
   if (!Comp) return null;
   return (
-    <Comp key={key} {...resolveProps(node.p)}>
+    <Comp key={key} {...(resolveNestedNodes(resolveProps(node.p), (n) => renderNode(n as ExampleNode)) as Record<string, unknown>)}>
       {node.children?.map((c, i) => renderNode(c, i))}
     </Comp>
   );
@@ -903,6 +903,9 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
 
   /* Drafting with Claude */
   const runDraft = async (scope: DraftScope, sel?: Selection) => {
+    // A visitor of the sample team: nothing is sent, so the sample-team dialog says what it does on a real team.
+    const gate = await import('../scripts/demo-gate').catch(() => null);
+    if (gate?.sampleVisitor()) return void gate.openMakeItYours('draft with claude');
     const m = ai ?? (await loadAi());
     const av = m?.draftAvailability() ?? { ways: [], preferred: null };
     setWays(av);
@@ -939,7 +942,7 @@ export default function LibraryEditMode(p: LibraryEditModeProps) {
       }
     } catch (err) {
       if (ctrl.signal.aborted) setNotice({ tone: 'info', text: 'Stopped. Nothing changed on the page.' });
-      else setNotice({ tone: 'danger', text: `Claude could not draft: ${(err as Error).message}. Try again, or write the section yourself.` });
+      else setNotice({ tone: 'danger', text: `Claude could not draft: ${(err as Error).message.replace(/\.\s*$/, '')}. Try again, or write the section yourself.` });
     } finally {
       setDrafting(null);
     }

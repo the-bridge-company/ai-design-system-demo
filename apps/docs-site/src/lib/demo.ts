@@ -232,6 +232,7 @@ const ACTION_LINES: Readonly<Record<string, string>> = {
   'send a new brand': 'A new brand gives a product its own colors and type on the same library. The people who decide review it first.',
   'undo a change': 'Undo puts the library back the way it was before this change, once the people who decide agree.',
   'send a build request': 'A build request asks developers to build this component change, with your design attached.',
+  'draft with claude': 'Your own Claude, with Bridge connected, drafts the sections. Each one waits for your Keep or Discard.',
   'send a behavior request': 'A behavior request asks the design system lead to change how this works. They decide, then developers build it.',
   'make it the default': 'Making it the default changes how it works in every product. Developers build it next.',
   'ask the requester': 'Your question goes to the person who asked, on their request.',

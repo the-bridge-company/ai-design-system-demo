@@ -42,7 +42,7 @@ import {
   type ChecklistStatus,
 } from '@bridge-ds/react';
 import type { ExampleNode } from '../../../lib/components';
-import { REGISTRY, resolveProps } from '../../registry';
+import { REGISTRY, resolveNestedNodes, resolveProps } from '../../registry';
 import ButtonLink from '../ButtonLink';
 import { AddedNotice, EditInChange } from './ContinueChange';
 import { ShareChange, type ShareChangeProps } from './ShareChange';
@@ -216,7 +216,7 @@ function renderNode(node: ExampleNode, key?: number): ReactNode {
   const Comp = REGISTRY[node.c];
   if (!Comp) return null;
   return (
-    <Comp key={key} {...resolveProps(node.p)}>
+    <Comp key={key} {...(resolveNestedNodes(resolveProps(node.p), (n) => renderNode(n as ExampleNode)) as Record<string, unknown>)}>
       {node.children?.map((c, i) => renderNode(c, i))}
     </Comp>
   );

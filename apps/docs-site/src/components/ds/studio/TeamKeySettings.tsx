@@ -17,6 +17,7 @@ import MembersSection from './MembersSection';
 import AppearanceSetting from './AppearanceSetting';
 import AiToolsSetting from './AiToolsSetting';
 import { DeleteTeamRow } from './DeleteTeam';
+import { BillingBand } from './BillingCard';
 import { DELETE_TEAM_WORDS } from '../../../lib/delete-team';
 import { TEAM_NAME_WORDS, teamNameProblem } from '../../../lib/team-name';
 import { adminOnlyText } from '../../../lib/settings-view';
@@ -252,6 +253,8 @@ export default function TeamKeySettings() {
       <Band id="appearance" title="Appearance" intro="How Bridge looks for you, only in this browser. It changes nothing for your team.">
         <AppearanceSetting />
       </Band>
+
+      {admin && <BillingBand team={team.key} layout="site" />}
 
       {admin && (
         <Band id="danger-zone" title={DELETE_TEAM_WORDS.band} intro={DELETE_TEAM_WORDS.intro.team}>

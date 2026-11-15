@@ -159,6 +159,8 @@ import { demoDialog, isSampleTeam, teamDisplayName } from '../../src/lib/demo.js
 import { demoVisitorEmail } from '../_lib/demo-members.js';
 import { parseAiTools } from '../../src/lib/ai-tools.js';
 import { isTeamKey, STUDIO_ROOT, teamHref as studioTeamHref, teamKeyId, teamKeyOf } from '../../src/lib/team-path.js';
+import { billingOn, countsAsEditor, designSystemFits, editorFits, editorsOf, flagsOf, moveBilling, type BillingFlags } from '../_lib/billing.js';
+import { BILLING_WORDS } from '../../src/lib/billing.js';
 
 export type { FetchLike };
 
@@ -192,6 +194,8 @@ export interface EntryDeps {
   grantApp?: AppTokens;
   /** `npm run dev:full` only (api/_lib/local-admin.ts): admins seeded locally, ignored outside local mode. */
   localAdmins?: LocalAdmins;
+  /** Billing switch and launch date (tests run both ways); src/lib/billing.ts otherwise. */
+  billing?: Partial<BillingFlags>;
 }
 
 export type EntryTeamRole = 'view' | 'edit' | 'reviewer' | 'admin';
@@ -298,6 +302,20 @@ interface Ctx {
   random: (n: number) => Uint8Array;
   svc: Services;
   env: EntryEnv;
+  /** Billing: the Free limits apply only once launched (api/_lib/billing.ts). */
+  billing: BillingFlags;
+}
+
+/**
+ * One more editor fits the team's tier (always while billing is off: nothing is read then). `except`: an invite being
+ * accepted, already counted among the pending ones.
+ */
+async function editorRoom(ctx: Ctx, full: string, except?: string): Promise<boolean> {
+  return editorFits(ctx.svc.redis, full, ctx.billing, async () => {
+    const now = ctx.now();
+    const invites = (await ctx.svc.invites.list(full)).filter((i) => i.id !== except && Date.parse(i.expiresAt) > now);
+    return editorsOf(await ctx.svc.members.list(full), invites);
+  });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -697,6 +715,11 @@ async function acceptInvite(ctx: Ctx, req: Request, a: Account, inv: StoredInvit
   // An invite sent to any spelling of the account's mailbox (a Gmail address with dots) is theirs.
   if (!sameEmail(inv.email, email) || Date.parse(inv.expiresAt) <= ctx.now()) return fail(410, 'expired', INVITE_GONE);
   const t = await resolveTeam(ctx, inv.repo);
+  // Billing: a fourth editor on Free waits for Team (the invite stays; nobody already on the team loses anything).
+  if (billingOn(ctx.billing, t.full) && countsAsEditor(inv.role)) {
+    const was = await ctx.svc.members.get(t.full, email);
+    if (!(was && countsAsEditor(was.role)) && (inv.needsTeam || !(await editorRoom(ctx, t.full, inv.id)))) return fail(409, 'needs_team', BILLING_WORDS.joinWaits);
+  }
   if (inv.role === 'view' || inv.role === 'edit' || (inv.role === 'admin' && (!a.github || t.id))) {
     const role: EmailRole = inv.role === 'admin' ? 'admin' : inv.role === 'view' ? 'view' : 'edit';
     const prev = await ctx.svc.members.get(t.full, email);
@@ -855,6 +878,8 @@ async function onApprove(ctx: Ctx, req: Request, a: Account, body: Record<string
   const admin = await requireAdmin(ctx, a, body.repo);
   const r = await findRequest(ctx, admin.full, body.id);
   const prev = await ctx.svc.members.get(admin.full, r.email);
+  // Billing: the request joins with Can edit; a fourth editor on Free waits (the request stays).
+  if (!prev && !(await editorRoom(ctx, admin.full))) return fail(409, 'needs_team', BILLING_WORDS.editorFull);
   const member: EmailMember = prev ?? { email: r.email, name: r.name, role: 'edit', version: 1, addedBy: admin.login || a.name, at: new Date(ctx.now()).toISOString() };
   if (!prev) await ctx.svc.members.put(admin.full, member);
   await removeRequest(ctx.svc.redis, admin.full, r.email);
@@ -963,6 +988,11 @@ async function onCreateTeam(ctx: Ctx, a: Account, body: Record<string, unknown>)
   const now = ctx.now();
   const at = new Date(now).toISOString();
   const kept = await ownTeamWithoutRepo(ctx, a);
+  // Billing: a new design system past the one Free covers waits for Team (nothing is made, nothing deleted).
+  if (!kept) {
+    const adminOf = async () => (await membershipsOf(ctx, email)).filter((m) => m.member.role === 'admin').map((m) => m.repo);
+    if (!(await designSystemFits(ctx.svc.redis, adminOf, ctx.billing))) return fail(409, 'needs_team', BILLING_WORDS.designSystemWaits);
+  }
   const rec: TeamRecord = kept ? { ...kept, name } : { id: Buffer.from(ctx.random(8)).toString('hex'), name, createdBy: email, createdAt: at, repo: null, storybook: null };
   const key = teamKeyOf(rec.id);
   await putTeamRecord(ctx.svc.redis, rec);
@@ -1043,6 +1073,8 @@ async function moveTeam(ctx: Ctx, from: string, to: string): Promise<void> {
     await invites.remove(inv);
     if (left > 0) await invites.put({ ...inv, repo: to }, left);
   }
+  // Billing (customer, plan, founding mark) follows the team; never dropped.
+  await moveBilling(redis, from, to);
   await forgetTeamKey(redis, from, now);
 }
 
@@ -1333,7 +1365,7 @@ export async function handleEntry(req: Request, env: EntryEnv, deps: EntryDeps):
     if (method === 'POST') requireCsrf(req);
     const svc = services(env, deps);
     if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);
-    const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env };
+    const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env, billing: flagsOf(deps.billing) };
     const a = await sessionAccount(req, svc.redis, svc.secret, ctx.now());
     if (method === 'POST') {
       if (!/^application\/json\b/i.test(req.headers.get('content-type') ?? '')) return fail(415, 'content_type', 'Send JSON.');

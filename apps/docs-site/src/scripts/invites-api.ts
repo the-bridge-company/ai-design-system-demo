@@ -100,7 +100,8 @@ export function listInvites(repo: string): Promise<{ invites: PendingInvite[]; p
   }));
 }
 
-export type SendStatus = 'sent' | 'added' | 'already' | 'failed';
+/** `waiting`: kept, not emailed, marked Needs Team (billing, a fourth editor on Free; never while billing is off). */
+export type SendStatus = 'sent' | 'added' | 'already' | 'waiting' | 'failed';
 
 export interface SendResult {
   email: string;

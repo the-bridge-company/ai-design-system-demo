@@ -11,7 +11,8 @@
 // On the demo, that is the demo's sample team. Appearance (light or dark) is this browser's own choice, there for
 // everyone whatever the team read gives (AppearanceSetting.tsx). Your face (FaceSetting.tsx): the person's drawn face,
 // kept apart from their teammates', for a signed-in account or the person played on the sample team.
-// Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
+// Billing (BillingCard.tsx), admins of a real team only, shown only where /api/billing says billing is on for the team
+// (launched, or a test team before launch). Danger zone (DeleteTeam.tsx), admins of a real team only: "Disconnect this team from Bridge" (the repository stays).
 // The bands sit in four groups, one shown at a time under the DS Tabs (SettingsTabs.tsx, lib/settings-sections.ts,
 // scripts/settings-sections.ts), each group its tab's DS TabsPanel, linked from outside the Tabs root (tabId) since
 // each holds islands of its own: Team (name, members, products, library access, danger
@@ -31,6 +32,7 @@ import { MembersSkeleton, SAMPLE_MEMBER_ROWS, TeamNameSkeleton } from '../../../
 import FigmaFileSetting from '../../../components/ds/studio/FigmaFileSetting';
 import { FIGMA_FILE_WORDS } from '../../../lib/figma-file';
 import DeleteTeamBand from '../../../components/ds/studio/DeleteTeam';
+import BillingCard from '../../../components/ds/studio/BillingCard';
 import { TEAM_NAME_WORDS } from '../../../lib/team-name';
 import { TabsPanel } from '@bridge-ds/react';
 import SettingsTabs from '../../../components/ds/studio/SettingsTabs';
@@ -60,6 +62,7 @@ import { groupId, tabId } from '../../../lib/settings-sections';
     <section class="ts-band" id="library-access" aria-labelledby="set-library-access">
       <LibraryAccessSection client:only="react" />
     </section>
+    <BillingCard client:only="react" />
     <DeleteTeamBand client:only="react" />
   </TabsPanel>
 

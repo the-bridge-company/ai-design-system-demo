@@ -101,6 +101,8 @@ function failure(err: unknown, unavailable: string): Notice | null {
   // Refused on a demo team: the demo dialog says why (scripts/invites-api), nothing more to say here.
   if (err instanceof Error && (err as Error & { code?: string }).code === 'demo') return null;
   if (err instanceof Error && err.name === 'InvitesUnavailable') return { tone: 'info', text: unavailable };
+  // Billing: a fourth editor on Free waits for Team. Not a mistake: said calmly.
+  if (err instanceof Error && (err as Error & { code?: string }).code === 'needs_team') return { tone: 'info', text: err.message };
   // A daily cap or a resend too soon is not a mistake: said calmly, with when to try again.
   if (err instanceof Error && (err as Error & { status?: number }).status === 429) return { tone: 'info', text: err.message || MEMBERS_WORDS.limitReached };
   return { tone: 'danger', text: err instanceof Error && err.message ? err.message : 'Something went wrong. Try again in a minute.' };
@@ -178,6 +180,7 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
       const results = await (await api()).sendInvites(data.repo, normalizeChoice(choice), inviteePeople(emails, people));
       const failed = results.filter((r) => r.status === 'failed');
       const ok = results.length > 0 && failed.length === 0;
+      const waiting = results.some((r) => r.status === 'waiting');
       // The new pending invites come from the server: read them again.
       try {
         const r = await (await api()).listInvites(data.repo);
@@ -186,7 +189,7 @@ export function memberActions(data: MembersData, update: (fn: (d: MembersData) =
         /* the list refreshes next time */
       }
       const text = [sentSummary(results), ...results.map((f) => f.message).filter(Boolean)].join(' ');
-      return { notice: { tone: ok ? 'success' : 'danger', text: text || 'Nothing was sent. Try again in a minute.' }, left: failed.map((f) => f.email) };
+      return { notice: { tone: ok ? (waiting ? 'info' : 'success') : 'danger', text: text || 'Nothing was sent. Try again in a minute.' }, left: failed.map((f) => f.email) };
     } catch (err) {
       return { notice: failure(err, unavailable), left: emails };
     }

@@ -89,6 +89,8 @@ import { explorationKeeper } from '../_lib/exploration-keeper.js';
 import { designReviewsOf, isDesignReviewSetting, isLibraryOwner, reviewsNoteOf, setDesignReview } from '../_lib/review-settings.js';
 // The older single setting, still sent as `reviewMode` (deprecated, two-reviews): read only.
 import { reviewModeOf } from '../_lib/review-mode.js';
+import { billingOn, countsAsEditor, editorFits, editorsOf, flagsOf, type BillingFlags } from '../_lib/billing.js';
+import { BILLING_WORDS } from '../../src/lib/billing.js';
 
 export { appJwt } from '../_lib/github-app.js';
 export { resendSender, sameOrigin };
@@ -161,6 +163,11 @@ export interface StoredInvite {
   expiresAt: string;
   sentAt: string;
   tokenHash: string;
+  /**
+   * Billing (api/_lib/billing.ts): the invite would make a fourth editor on Free. It is kept, never emailed, and
+   * cannot be accepted until the team moves to Team; Resend sends it once there is room. Never set while billing is off.
+   */
+  needsTeam?: boolean;
 }
 
 /** What an invite link still says after its invite is gone. */
@@ -229,6 +236,8 @@ export interface InvitesDeps {
   redis?: Redis;
   /** `npm run dev:full` only (api/_lib/local-admin.ts): admins seeded locally, ignored outside local mode. */
   localAdmins?: LocalAdmins;
+  /** Billing switch and launch date (tests run both ways); src/lib/billing.ts otherwise. */
+  billing?: Partial<BillingFlags>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -891,6 +900,32 @@ interface Ctx {
   random: (n: number) => Uint8Array;
   svc: Services;
   limits: Record<LimitKind, number>;
+  /** Billing: the Free limits apply only once launched (api/_lib/billing.ts). */
+  billing?: BillingFlags;
+}
+
+/** One more editor fits the team's tier (always while billing is off: nothing is read then). */
+async function editorRoom(ctx: Ctx, full: string, pendingNow?: readonly StoredInvite[]): Promise<boolean> {
+  return editorFits(ctx.svc.redis, full, flagsOf(ctx.billing), async () => {
+    const members = ctx.svc.members ? await ctx.svc.members.list(full) : [];
+    return editorsOf(members, pendingNow ?? (await pending(ctx, full)));
+  });
+}
+
+/** An email member who already proposes or decides: a new invite (to change their role) adds no editor. */
+async function alreadyEditor(ctx: Ctx, full: string, email: string): Promise<boolean> {
+  if (!billingOn(flagsOf(ctx.billing), full) || !ctx.svc.members) return false;
+  const m = await ctx.svc.members.get(full, email);
+  return Boolean(m && countsAsEditor(m.role));
+}
+
+/** Keeps an invite that waits for Team: stored like any other, no email sent (Resend sends it once there is room). */
+async function storeWaiting(ctx: Ctx, inv: Omit<StoredInvite, 'tokenHash' | 'sentAt' | 'expiresAt'>): Promise<StoredInvite> {
+  const { hash } = newToken(ctx.random);
+  const now = ctx.now();
+  const full: StoredInvite = { ...inv, needsTeam: true, tokenHash: hash, sentAt: new Date(now).toISOString(), expiresAt: new Date(now + INVITE_TTL_MS).toISOString() };
+  await ctx.svc.store.put(full, Math.ceil(INVITE_TTL_MS / 1000));
+  return full;
 }
 
 /**
@@ -1051,7 +1086,7 @@ async function inviteMany(
   const reserved = Math.min(candidates.size, room);
   const release = await reserve(ctx, x.counter, x.full, reserved);
   let emailed = 0;
-  const results: { email: string; status: 'sent' | 'added' | 'already' | 'failed'; message?: string }[] = [];
+  const results: { email: string; status: 'sent' | 'added' | 'already' | 'waiting' | 'failed'; message?: string }[] = [];
   const seen = new Set<string>();
   try {
     for (const p of people) {
@@ -1088,6 +1123,13 @@ async function inviteMany(
           continue;
         }
         const id = Buffer.from(ctx.random(8)).toString('hex');
+        // Billing: a fourth editor on Free waits, marked "needs Team": kept, not emailed, nothing charged.
+        if (countsAsEditor(x.role) && !(await alreadyEditor(ctx, x.full, email)) && !(await editorRoom(ctx, x.full, current))) {
+          const waiting = await storeWaiting(ctx, { id, repo: x.full, email, role: x.role, ...(x.reviewAs ? { reviewAs: x.reviewAs } : {}), invitedBy: x.me.login, invitedByName: x.me.name, createdAt: new Date(ctx.now()).toISOString() });
+          current.push(waiting);
+          results.push({ email, status: 'waiting', message: BILLING_WORDS.editorWaits });
+          continue;
+        }
         const inv = await storeAndSend(
           ctx,
           { id, repo: x.full, email, role: x.role, ...(x.reviewAs ? { reviewAs: x.reviewAs } : {}), invitedBy: x.me.login, invitedByName: x.me.name, createdAt: new Date(ctx.now()).toISOString() },
@@ -1111,7 +1153,9 @@ async function inviteMany(
 async function resendOne(ctx: Ctx, req: Request, env: InvitesEnv, full: string, id: unknown, me: Inviter, counter: string): Promise<Response> {
   const inv = await findInvite(ctx, full, id);
   const now = ctx.now();
-  const since = now - Date.parse(inv.sentAt);
+  // An invite that waits for Team goes out once the team has room (moved to Team, or an editor left).
+  if (inv.needsTeam && countsAsEditor(inv.role) && !(await editorRoom(ctx, full))) throw new HttpError(409, 'needs_team', BILLING_WORDS.editorWaits);
+  const since = inv.needsTeam ? RESEND_COOLDOWN_MS : now - Date.parse(inv.sentAt);
   if (since < RESEND_COOLDOWN_MS) throw limitError('resend_soon', LIMIT_WORDS.resend_soon, Math.ceil((RESEND_COOLDOWN_MS - since) / 1000));
   const resendKey = [countKey('resend', `${full}:${inv.id}`, dayOf(now))];
   const [count = 0] = await ctx.svc.store.bump(resendKey, 1, COUNTER_TTL_S);
@@ -1199,6 +1243,8 @@ async function setEmailRole(ctx: Ctx, full: string, body: Record<string, unknown
   const m = (await ctx.svc.members!.get(full, email))!;
   const next: EmailRole = role === 'admin' ? 'admin' : role === 'view' ? 'view' : 'edit';
   if (m.role === 'admin' && next !== 'admin' && by.teamless && (await otherAdmins(ctx, full, email)) === 0) throw new HttpError(409, 'last-admin', LAST_ADMIN);
+  // Billing: Can view to Can edit or Admin makes one more editor; on Free past three it waits for Team.
+  if (!countsAsEditor(m.role) && countsAsEditor(next) && !(await editorRoom(ctx, full))) throw new HttpError(409, 'needs_team', BILLING_WORDS.editorFull);
   // Someone who only views is no design lead: the role goes with it, and coming back does not give it back.
   if (m.role !== next) {
     const { lead: _lead, ...rest } = m;
@@ -1267,6 +1313,8 @@ async function onEmailAdminPost(ctx: Ctx, req: Request, env: InvitesEnv, body: R
       const inv = await findInvite(ctx, ad.full, body.id);
       const { role, reviewAs } = parseRole(body.role, body.reviewAs);
       noReviewer(role);
+      // Billing: a Can view invite turned into an editor's waits for room on Free.
+      if (!inv.needsTeam && !countsAsEditor(inv.role) && countsAsEditor(role) && !(await editorRoom(ctx, ad.full))) throw new HttpError(409, 'needs_team', BILLING_WORDS.editorFull);
       const { reviewAs: _old, ...rest } = inv;
       const next = { ...rest, role, ...(reviewAs ? { reviewAs } : {}) };
       await ctx.svc.store.put(next, Math.max(1, Math.ceil((Date.parse(inv.expiresAt) - ctx.now()) / 1000)));
@@ -1311,7 +1359,7 @@ async function onGet(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise<
   const repoArg = new URL(req.url).searchParams.get('repo');
   if (repoArg === null) return json(200, { available: Boolean(svc) });
   if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);
-  const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, limits: limitsFrom(env) };
+  const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, limits: limitsFrom(env), billing: flagsOf(deps.billing) };
   if (asAccount(ctx, req, repoArg)) {
     const ad = await emailAdmin(ctx, req, repoArg);
     const list = await pending(ctx, ad.full);
@@ -1329,7 +1377,7 @@ async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise
   if (!/^application\/json\b/i.test(req.headers.get('content-type') ?? '')) return fail(415, 'content_type', 'Send JSON.');
   const svc = services(env, deps);
   if (!svc) return fail(503, 'not_configured', NOT_CONFIGURED);
-  const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, limits: limitsFrom(env) };
+  const ctx: Ctx = { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, limits: limitsFrom(env), billing: flagsOf(deps.billing) };
   const body = await readBody(req);
   const refused = await demoRefusal(ctx, req, body.repo);
   if (refused) return refused;
@@ -1359,6 +1407,8 @@ async function onPost(req: Request, env: InvitesEnv, deps: InvitesDeps): Promise
       const { facts } = await authorize(ctx, req, body.repo, 'admin');
       const inv = await findInvite(ctx, facts.full, body.id);
       const { role, reviewAs } = parseRole(body.role, body.reviewAs);
+      // Billing: a Can view invite turned into an editor's waits for room on Free.
+      if (!inv.needsTeam && !countsAsEditor(inv.role) && countsAsEditor(role) && !(await editorRoom(ctx, facts.full))) throw new HttpError(409, 'needs_team', BILLING_WORDS.editorFull);
       const { reviewAs: _old, ...rest } = inv;
       const next = { ...rest, role, ...(reviewAs ? { reviewAs } : {}) };
       await ctx.svc.store.put(next, Math.max(1, Math.ceil((Date.parse(inv.expiresAt) - ctx.now()) / 1000)));

@@ -5,7 +5,7 @@
 //   - Not now: the existing Decline dialog, with a required reason the requester reads (RequestDecide.tsx);
 //   - Ask <first name>: a question to the requester, in a DS Dialog, posted on the request (core askRequesterOnGitHub).
 // Never "for one product only": a behavior is the library's, for every product. Words: lib/requests-view.ts.
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { Alert, Button, ButtonGroup, Dialog, DialogClose, DialogContent, Textarea, VisuallyHidden } from '@bridge-ds/react';
 import { askRequesterProblems } from '@bridge-ds/core';
 
@@ -30,9 +30,11 @@ export interface BehaviorDecisionProps {
   where?: string | undefined;
   /** Only for the person who decides; unset, the zone only says what is asked. */
   actions?: BehaviorDecisionActions | null;
+  /** "Play both": today and Claude's preview (BehaviorReplaySlot), for the lead and the person who asked. */
+  replay?: ReactNode;
 }
 
-export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions }: BehaviorDecisionProps) {
+export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions, replay }: BehaviorDecisionProps) {
   const headingId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +103,7 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
         <strong className="rq-bh-wanted">{wanted}</strong>
       </p>
       {where && <p className="rq-bh-where">It gets in the way in {where.replace(/[.]+$/, '')}.</p>}
+      {replay}
       {actions && (
         <>
           <ButtonGroup className="rq-decide">

@@ -1026,7 +1026,7 @@ export class GitHubClient {
   }
 
   /** Edits an issue: its body, or closes it with a reason ("not_planned" for a declined request). */
-  async updateIssue(n: number, patch: { body?: string; state?: 'open' | 'closed'; state_reason?: 'completed' | 'not_planned' | 'reopened' }): Promise<IssueSummary> {
+  async updateIssue(n: number, patch: { title?: string; body?: string; state?: 'open' | 'closed'; state_reason?: 'completed' | 'not_planned' | 'reopened' }): Promise<IssueSummary> {
     this.assertToken('Editing an issue');
     return toIssue(await this.request<RawIssue>('PATCH', `${this.repoPath}/issues/${n}`, patch));
   }

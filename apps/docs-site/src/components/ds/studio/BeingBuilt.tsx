@@ -59,6 +59,7 @@ import {
   type ProductConfig,
 } from "@bridge-ds/core";
 import { BehaviorDevelopers, BehaviorSent } from "./BehaviorBuild";
+import BehaviorCheck from "./BehaviorCheck";
 import { behaviorMeta, behaviorRowNote } from "../../../lib/building-view";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
@@ -511,6 +512,26 @@ function Detail({
       live = false;
     };
   }, [ask, v.number]);
+  // Check against the preview (board G4): the developer's build against Claude's preview, when both are published.
+  const [check, setCheck] = useState<{ preview: string; build: string; behaviors: { id: string; family: string; text: string; keys: string[] }[] } | null>(null);
+  const headRef = v.pull ? (data.pulls ?? []).find((p) => Number(p.number) === v.pull!.number)?.head?.ref ?? null : null;
+  useEffect(() => {
+    if (!ask || data.developer !== true || !v.pull || v.pull.state !== "open" || !headRef) return;
+    let live = true;
+    void import("../../../scripts/behavior-preview-data")
+      .then(async (m) => {
+        const play = await m.behaviorPreviewPlay(v.number, ask);
+        if (!play || play.state.kind !== "ready") return;
+        const build = m.branchStoryUrl(play.template, headRef, play.storyId, v.pull!.number);
+        if (!build || !live) return;
+        const own = play.behaviors.filter((b) => b.id === ask.behavior);
+        setCheck({ preview: play.state.preview, build, behaviors: [...own, ...play.behaviors.filter((b) => b.id !== ask.behavior)] });
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [ask, v.number, v.pull, headRef, data.developer]);
   // Developer details of a behavior request are for developers: a designer follows where it stands only.
   const forDevelopers = !ask || data.developer === true;
   const behaviorBrief =
@@ -644,6 +665,8 @@ function Detail({
               )}
             </p>}
           </section>
+
+          {check && <BehaviorCheck component={v.component} preview={check.preview} build={check.build} behaviors={check.behaviors} />}
 
           {forDevelopers && <Accordion className="bb-dev" headingLevel={3}>
             <AccordionItem value="dev" title="For developers">

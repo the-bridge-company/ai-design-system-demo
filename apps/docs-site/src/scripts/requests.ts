@@ -7,7 +7,7 @@ import { workNature } from '../lib/work-nature';
 import { devTag, markWork, natureAttr } from './work-filter';
 import { badgeHtml, buttonHtml } from '@bridge-ds/react/dom';
 import { JIRA_IN_BRIDGE, REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
-import { askRequesterOnGitHub, assignRequestOnGitHub, behaviorAskOf, BUILD_IMAGE_LABEL, makeBehaviorDefaultOnGitHub, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
+import { askRequesterOnGitHub, assignRequestOnGitHub, behaviorAskOf, behaviorRequestOf, composeRequestIssue, BUILD_IMAGE_LABEL, makeBehaviorDefaultOnGitHub, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
 import {
   askerFirst,
   behaviorWaitLine,
@@ -34,6 +34,7 @@ import { attrUrl, safeUrl } from '../lib/html';
 import { owners } from './pr-status';
 import { ASSIGN_EVENT, DECLINE_EVENT, type AssignAskDetail, type DeclineAskDetail } from '../components/ds/studio/RequestDecide';
 import { siteConfig } from './repo-context';
+import { studioHref } from '../lib/team-path';
 
 const repo = readRepo();
 const REPO_KEY = `${repo.owner}/${repo.repo}`;
@@ -385,8 +386,32 @@ async function mountBehavior(r: RequestRow) {
   const byEmail = (decision: 'default' | 'not-now' | 'ask', text?: string) =>
     import('./contribute-session').then(({ decideBehaviorRequest }) => decideBehaviorRequest(REPO_KEY, { number: r.number, decision, ...(text ? { text } : {}) }));
   const asker = r.askerName || (r.requester ? `@${r.requester.replace(/^@/, '')}` : 'Someone');
+  // "Play both" (today and Claude's preview): for the lead who decides and for the person who asked, nobody else.
+  const me = currentViewer();
+  const contributor = currentContributor();
+  const same = (a?: string | null, b?: string | null) => Boolean(a && b && a.trim().replace(/^@/, '').toLowerCase() === b.trim().replace(/^@/, '').toLowerCase());
+  const asked = (signedInWithGitHub() && same(me?.login, r.requester)) || (!signedInWithGitHub() && same(contributor?.name, r.askerName));
+  const replayViewer: 'lead' | 'requester' | null = decide ? 'lead' : asked && (r.status === 'requested' || r.status === 'in-progress') ? 'requester' : null;
+  const { default: BehaviorReplaySlot } = replayViewer ? await import('../components/ds/studio/BehaviorReplaySlot') : { default: null };
+  if (!slot.isConnected) return;
+  // Her new words (board G2), before the lead decided: the request saved with them; the team's workflow makes the
+  // preview again from them. An email member writes through Bridge, which keeps her "Requested by" line.
+  const saveWords = async (wanted: string) => {
+    const req = r.request;
+    if (!req) throw new Error('Open it again: the request could not be read.');
+    const next = behaviorRequestOf(req.component, { ...ask, wanted }, { source: req.source, requestedBy: req.requestedBy ?? null });
+    const issue = composeRequestIssue(next);
+    await studioClient(REPO_KEY, getToken()).updateIssue(r.number, { title: issue.title, body: issue.body });
+    r.request = next;
+    r.title = next.title;
+    forgetRequests();
+  };
   root.render(
     createElement(BehaviorDecision, {
+      replay:
+        replayViewer && BehaviorReplaySlot
+          ? createElement(BehaviorReplaySlot, { number: r.number, ask, viewer: replayViewer, settingsHref: studioHref('settings/#team-claude'), onSaveWords: replayViewer === 'requester' && undecided ? saveWords : null })
+          : null,
       today: ask.today,
       wanted: ask.wanted,
       asker,

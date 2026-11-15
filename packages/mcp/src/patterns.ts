@@ -52,6 +52,6 @@ export async function getPattern(source: RepoSource, config: BridgeConfig, a: { 
   const { patterns } = await readAgentPatterns(source, config);
   const q = a.id.trim().toLowerCase();
   const p = patterns.find((x) => x.id === q || x.name.toLowerCase() === q);
-  if (!p) throw new Error(`No pattern "${a.id}". Known: ${patterns.map((x) => x.id).join(', ') || 'none'} (bridge_list_patterns).`);
+  if (!p) throw new Error(`No pattern "${a.id}". Known: ${patterns.map((x) => x.id).join(', ') || 'none'}.`);
   return p;
 }

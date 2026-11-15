@@ -1,8 +1,5 @@
-// Docs drafted with Claude, in place on a Library component page. Two ways, both the designer's own:
-// - 'api-key': one Messages API call straight from this browser with their Anthropic API key. The key is kept only in
-//   this browser's localStorage and is only ever sent to api.anthropic.com.
-// - 'my-claude': their own Claude (Claude Code or Desktop with the Bridge MCP server) writes the sections through the
-//   draft exchange: Studio writes a pending session on the requests branch with the GitHub token the site already
+// Docs drafted with Claude, in place on a Library component page, by someone's own Claude (Claude Code or Desktop with
+// the Bridge MCP server) through the draft exchange; Bridge never calls Claude itself: Studio writes a pending session on the requests branch with the GitHub token the site already
 //   uses, the designer says "Draft my Bridge changes", and Studio polls the file until the answer is there.
 // Results are always proposals: the caller shows them as "Drafted by Claude" (applyDraft marks draftedSections) and
 // the designer reviews them. The pure logic is in ../lib/docs-ai-model.ts and @bridge-ds/core.
@@ -24,13 +21,10 @@ import {
   type DraftDocsResult,
   type DraftScope,
   type DraftWay,
-  apiErrorMessage,
   availability,
-  docsApiRequest,
   isEmptyTask,
   outdatedFromDates,
   resultFromExchange,
-  resultFromReply,
   scopeTask,
   taskPrompt,
 } from '../lib/docs-ai-model';
@@ -40,42 +34,16 @@ import { ghVerb } from '../lib/gh-wording';
 export type { DraftAvailability, DraftDocsResult, DraftScope, DraftWay } from '../lib/docs-ai-model';
 export { DRAFT_PHRASE };
 
-const API_KEY_KEY = 'bridge.anthropic.key';
-const MODEL_KEY = 'bridge.anthropic.model';
-
-function readApiKey(): string | null {
-  try {
-    return localStorage.getItem(API_KEY_KEY)?.trim() || null;
-  } catch {
-    return null;
-  }
+// An Anthropic key an earlier version kept in this browser: forgotten, Bridge never calls Claude with a key.
+try {
+  if (typeof localStorage !== 'undefined') for (const k of ['bridge.anthropic.key', 'bridge.anthropic.model']) localStorage.removeItem(k);
+} catch {
+  /* storage blocked: nothing was kept either */
 }
 
-/** Saves (or with null, forgets) the designer's Anthropic API key in this browser only. */
-export function saveApiKey(key: string | null): void {
-  try {
-    if (key?.trim()) localStorage.setItem(API_KEY_KEY, key.trim());
-    else localStorage.removeItem(API_KEY_KEY);
-  } catch {
-    /* private mode: no key is kept */
-  }
-  document.dispatchEvent(new CustomEvent('bridge:docs-ai', { detail: draftAvailability() }));
-}
-
-/** True when an API key is saved in this browser (never returns the key itself). */
-export const hasApiKey = (): boolean => Boolean(readApiKey());
-
-function model(): string | undefined {
-  try {
-    return localStorage.getItem(MODEL_KEY) || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** The ways open here: an API key saved in this browser and/or a working GitHub token for the draft exchange. */
+/** The way open here: a working GitHub session for the draft exchange. */
 export function draftAvailability(): DraftAvailability {
-  return availability({ apiKey: hasApiKey(), exchange: hasWorkingToken() });
+  return availability({ exchange: hasWorkingToken() });
 }
 
 const contexts = new Map<string, Promise<DocsAiContext>>();
@@ -139,21 +107,6 @@ export function applyDraft<T extends Partial<ComponentDocsJson>>(docs: T, sectio
 }
 
 const aborted = () => new DOMException('Drafting was cancelled.', 'AbortError');
-
-async function viaApiKey(prompt: string, signal: AbortSignal | undefined): Promise<unknown> {
-  const key = readApiKey();
-  if (!key) throw new Error('Add your Anthropic API key first. It stays in this browser.');
-  const req = docsApiRequest(key, prompt, model());
-  let res: Response;
-  try {
-    res = await fetch(req.url, { ...req.init, ...(signal ? { signal } : {}) });
-  } catch (err) {
-    if (signal?.aborted) throw aborted();
-    throw new Error(apiErrorMessage('network'), { cause: err });
-  }
-  if (!res.ok) throw new Error(apiErrorMessage(res.status));
-  return res.json();
-}
 
 async function viaMyClaude(
   input: { slug: string; name: string; path: string; task: Parameters<typeof resultFromExchange>[0]; prompt: string },
@@ -222,13 +175,6 @@ export async function draftDocs(input: {
   }
   const prompt = taskPrompt(ctx, docs, task);
   if (signal?.aborted) throw aborted();
-  if (way === 'api-key') {
-    onStatus?.('Claude is drafting');
-    const body = await viaApiKey(prompt, signal);
-    const result = resultFromReply(task, body);
-    onStatus?.('Drafted by Claude AI. Review it before you propose it.');
-    return result;
-  }
   const r = await viaMyClaude({ slug, name: input.name || ctx.name, path: ctx.files.docs, task, prompt }, signal, onStatus);
   const result = resultFromExchange(task, r);
   onStatus?.('Drafted by Claude AI. Review it before you propose it.');

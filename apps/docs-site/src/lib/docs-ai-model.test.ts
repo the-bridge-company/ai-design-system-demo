@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROSE_KEYS, type ComponentDocsJson } from '@bridge-ds/core';
-import { availability, docsApiRequest, isEmptyTask, outdatedFromDates, resultFromExchange, resultFromReply, scopeTask, taskPrompt, type DocsAiContext } from './docs-ai-model';
+import { availability, isEmptyTask, outdatedFromDates, resultFromExchange, scopeTask, taskPrompt, type DocsAiContext } from './docs-ai-model';
 
 const EM = '\u2014';
 
@@ -23,13 +23,10 @@ const ctx: DocsAiContext = {
   conventions: { voice: 'Sentence case.', source: 'export const Badge = () => null;', styles: '.root { color: var(--color-text-default); }' },
 };
 
-const reply = (text: string, stop = 'end_turn') => ({ stop_reason: stop, content: [{ type: 'text', text }] });
-
 describe('availability', () => {
-  it('lists the open ways, the API key first', () => {
-    expect(availability({ apiKey: false, exchange: false })).toEqual({ ways: [], preferred: null });
-    expect(availability({ apiKey: false, exchange: true })).toEqual({ ways: ['my-claude'], preferred: 'my-claude' });
-    expect(availability({ apiKey: true, exchange: true })).toEqual({ ways: ['api-key', 'my-claude'], preferred: 'api-key' });
+  it('one way: your own Claude through the draft exchange, once signed in', () => {
+    expect(availability({ exchange: false })).toEqual({ ways: [], preferred: null });
+    expect(availability({ exchange: true })).toEqual({ ways: ['my-claude'], preferred: 'my-claude' });
   });
 });
 
@@ -72,7 +69,7 @@ describe('page-fill answers when the code is newer', () => {
 
   it('an accurate section is omitted (Still accurate), a contradicted one returned (Updated), the empty one drafted', () => {
     const answer = { summary: 'Shows a short status next to a name. It has no size prop.', whenNotToUse: ['For actions: use a Button.'] };
-    const r = resultFromReply(task, reply(JSON.stringify(answer)));
+    const r = resultFromExchange(task, { docs: answer });
     expect(r.sections).toEqual(answer);
     expect(r.checked).toEqual(['whenToUse', 'dos', 'donts', 'accessibility', 'contentGuidelines']);
     expect(r.checked).not.toContain('summary');
@@ -80,7 +77,7 @@ describe('page-fill answers when the code is newer', () => {
   });
 
   it('every written section still accurate: only the empty one comes back', () => {
-    const r = resultFromReply(task, reply('{"whenNotToUse": ["For actions."]}'));
+    const r = resultFromExchange(task, { docs: { whenNotToUse: ['For actions.'] } });
     expect(r).toEqual({ sections: { whenNotToUse: ['For actions.'] }, checked: ['summary', 'whenToUse', 'dos', 'donts', 'accessibility', 'contentGuidelines'] });
   });
 
@@ -130,40 +127,8 @@ describe('prompt', () => {
   });
 });
 
-describe('direct API call', () => {
-  it('goes to api.anthropic.com with the browser header and the default model', () => {
-    const req = docsApiRequest('sk-test-not-a-key', 'PROMPT');
-    expect(req.url).toBe('https://api.anthropic.com/v1/messages');
-    expect(req.init.headers['anthropic-dangerous-direct-browser-access']).toBe('true');
-    expect(req.init.headers['x-api-key']).toBe('sk-test-not-a-key');
-    const body = JSON.parse(req.init.body);
-    expect(body.model).toBe('claude-sonnet-5-5');
-    expect(body.messages).toEqual([{ role: 'user', content: 'PROMPT' }]);
-    expect(body.system).toMatch(/Never use an em dash/);
-  });
-});
-
 describe('answers', () => {
   const sections = { kind: 'sections' as const, keys: ['summary', 'dos'] as ('summary' | 'dos')[] };
-
-  it('parses fenced JSON, keeps only the asked keys, strips em dashes and broken items', () => {
-    const text = `Here you go:\n\`\`\`json\n${JSON.stringify({ summary: `Shows a status ${EM} next to a name.`, dos: [{ title: 'Keep it short', text: `One word ${EM} two at most.` }, { title: 'Empty' }], anatomy: { root: 'Invented' }, whenToUse: ['Not asked'] })}\n\`\`\``;
-    const r = resultFromReply(sections, reply(text));
-    expect(r).toEqual({ sections: { summary: 'Shows a status, next to a name.', dos: [{ title: 'Keep it short', text: 'One word, two at most.' }] }, checked: [] });
-    expect(JSON.stringify(r)).not.toContain(EM);
-  });
-
-  it('a selection returns the replacement only', () => {
-    const task = { kind: 'selection' as const, key: 'summary' as const, text: 'Shows a short status.', mode: 'voice' as const };
-    expect(resultFromReply(task, reply(`{"replacement": "Shows a status ${EM} briefly.", "summary": "ignored"}`))).toEqual({ sections: {}, replacement: 'Shows a status, briefly.' });
-    expect(resultFromReply(task, reply('"Short status label."'))).toEqual({ sections: {}, replacement: 'Short status label.' });
-  });
-
-  it('fails with a sentence when Claude declined or sent none of the sections', () => {
-    expect(() => resultFromReply(sections, reply('{"whenToUse": ["x"]}'))).toThrow(/none of the sections/);
-    expect(() => resultFromReply(sections, reply('', 'refusal'))).toThrow(/declined/);
-    expect(() => resultFromReply(sections, reply('I cannot help.'))).toThrow(/no JSON/);
-  });
 
   it('exchange results are sanitized the same way', () => {
     expect(resultFromExchange(sections, { docs: { summary: `A ${EM} B` } })).toEqual({ sections: { summary: 'A, B' }, checked: [] });

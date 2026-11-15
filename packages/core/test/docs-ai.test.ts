@@ -1,14 +1,13 @@
-// Docs drafted with Claude: tasks, prompts, answer parsing and sanitizing, review marks per section, the Messages API
-// request, and docs items in the draft exchange (Bridge Studio asks the user's own Claude through the MCP server).
+// Docs drafted with Claude: tasks, prompts, answer sanitizing, review marks per section, and docs items in the draft
+// exchange (Bridge Studio asks the user's own Claude through the MCP server; Bridge never calls Claude itself).
 import { describe, expect, it } from 'vitest';
 import {
+  docsSectionsAnswer,
   type ComponentDocsJson,
   type DraftItem,
   DraftPoller,
   PROSE_KEYS,
   acceptDocsDraft,
-  anthropicReplyText,
-  anthropicRequest,
   applyDocsSections,
   composePendingDrafts,
   createDocsDraftSession,
@@ -16,10 +15,7 @@ import {
   ensureRequestsBranch,
   formatDocsJson,
   markClaudeDraft,
-  mergeDocsDraft,
   mergeDraftResults,
-  parseDocsReply,
-  parseDocsTaskAnswer,
   parsePendingDrafts,
   prefillDocs,
   REQUESTS_BRANCH,
@@ -54,7 +50,7 @@ describe('docs tasks and prompts', () => {
     expect(p).toContain('"replacement"');
   });
 
-  it('without options the prompt is the Action one: the missing prose as a full docs.json', () => {
+  it('without options the prompt asks the missing prose as a full docs.json', () => {
     expect(docsTaskPrompt(prefill, {}, { kind: 'sections', keys: ['dos'] })).not.toContain('Fill only these keys');
     const action = docsPrompt(prefill);
     expect(action).toMatch(/^Write the missing prose of Badge\.docs\.json/);
@@ -70,13 +66,6 @@ describe('docs tasks and prompts', () => {
 });
 
 describe('answers', () => {
-  it('parses plain or fenced JSON and fails on prose', () => {
-    expect(parseDocsReply('{"summary":"x"}')).toEqual({ summary: 'x' });
-    expect(parseDocsReply('Sure:\n```json\n{"dos":[]}\n```')).toEqual({ dos: [] });
-    expect(() => parseDocsReply('No.')).toThrow(/no JSON/);
-    expect(() => parseDocsReply('[1]')).toThrow();
-  });
-
   it('sanitizes to the docs.json shapes: only the keys, no em dash, no broken items, examples only when asked', () => {
     const raw = {
       summary: `A label ${EM} short.\nTwo lines.`,
@@ -98,12 +87,8 @@ describe('answers', () => {
     expect(sanitizeDocsSections('nope')).toEqual({});
   });
 
-  it('a selection answer is the replacement only; sections need at least one asked key', () => {
-    const sel = { kind: 'selection' as const, key: 'summary' as const, text: 'x', mode: 'voice' as const };
-    expect(parseDocsTaskAnswer(sel, `{"replacement":"Shows ${EM} a status."}`)).toEqual({ sections: {}, replacement: 'Shows, a status.' });
-    expect(parseDocsTaskAnswer(sel, 'Shows a status.')).toEqual({ sections: {}, replacement: 'Shows a status.' });
-    expect(() => parseDocsTaskAnswer(sel, '{"replacement":""}')).toThrow(/no rewritten passage/);
-    expect(() => parseDocsTaskAnswer({ kind: 'sections', keys: ['dos'] }, '{"summary":"x"}')).toThrow(/none of the sections/);
+  it('sections need at least one asked key', () => {
+    expect(() => docsSectionsAnswer({ kind: 'sections', keys: ['dos'] }, { summary: 'x' })).toThrow(/none of the sections/);
   });
 });
 
@@ -111,15 +96,15 @@ describe('check sections (written text older than the code)', () => {
   const task = { kind: 'sections' as const, keys: ['summary', 'dos', 'accessibility'] as ('summary' | 'dos' | 'accessibility')[], check: ['summary', 'accessibility'] as ('summary' | 'accessibility')[] };
 
   it('an accurate checked section is omitted and reported as checked; a contradicted one comes back; the empty one is drafted', () => {
-    const a = parseDocsTaskAnswer(task, JSON.stringify({ dos: [{ title: 'Short', text: 'One word.' }], accessibility: ['Announces the tone, not only its color.'] }));
+    const a = docsSectionsAnswer(task, { dos: [{ title: 'Short', text: 'One word.' }], accessibility: ['Announces the tone, not only its color.'] });
     expect(a.sections).toEqual({ dos: [{ title: 'Short', text: 'One word.' }], accessibility: ['Announces the tone, not only its color.'] });
     expect(a.checked).toEqual(['summary']);
   });
 
   it('every checked section accurate: an empty answer is valid when only checks were asked', () => {
     const only = { kind: 'sections' as const, keys: ['summary'] as 'summary'[], check: ['summary'] as 'summary'[] };
-    expect(parseDocsTaskAnswer(only, '{}')).toEqual({ sections: {}, checked: ['summary'] });
-    expect(() => parseDocsTaskAnswer({ kind: 'sections', keys: ['dos'] }, '{}')).toThrow(/none of the sections/);
+    expect(docsSectionsAnswer(only, {})).toEqual({ sections: {}, checked: ['summary'] });
+    expect(() => docsSectionsAnswer({ kind: 'sections', keys: ['dos'] }, {})).toThrow(/none of the sections/);
   });
 
   it('exchange results keep checked, and accept {"docs": {}} for all-accurate checks', () => {
@@ -161,29 +146,6 @@ describe('review marks per section', () => {
     expect(Object.keys(JSON.parse(text)).slice(-3)).toEqual(['draftedBy', 'draftedSections', 'needsReview']);
   });
 
-  it('mergeDocsDraft (the Action) fills only empty sections, keeps anatomy and marks what it drafted', () => {
-    const d = mergeDocsDraft(base, { summary: 'Invented.', whenToUse: [`Next ${EM} to a name.`], anatomy: { root: 'Changed' } });
-    expect(d.summary).toBe('S.');
-    expect(d.whenToUse).toEqual(['Next, to a name.']);
-    expect(d.anatomy).toEqual({ root: 'Container' });
-    expect(d).toMatchObject({ draftedBy: 'claude', needsReview: true, draftedSections: ['whenToUse'] });
-  });
-});
-
-describe('Messages API request', () => {
-  it('builds a browser call and an Action call, and reads the text', () => {
-    const b = anthropicRequest({ apiKey: 'test-key', prompt: 'P', browser: true, system: 'S' });
-    expect(b.url).toBe('https://api.anthropic.com/v1/messages');
-    expect(b.init.headers).toMatchObject({ 'x-api-key': 'test-key', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' });
-    expect(JSON.parse(b.init.body)).toMatchObject({ model: 'claude-sonnet-5-5', system: 'S', messages: [{ role: 'user', content: 'P' }] });
-    const a = anthropicRequest({ apiKey: 'k', prompt: 'P', fallback: true });
-    expect(a.init.headers['anthropic-beta']).toBe('server-side-fallback-2026-07-01');
-    expect(a.init.headers['anthropic-dangerous-direct-browser-access']).toBeUndefined();
-    expect(JSON.parse(a.init.body).fallbacks).toBe('default');
-    expect(anthropicReplyText({ stop_reason: 'end_turn', content: [{ type: 'thinking' }, { type: 'text', text: 'a' }, { type: 'text', text: 'b' }] })).toBe('ab');
-    expect(() => anthropicReplyText({ stop_reason: 'refusal' })).toThrow(/declined/);
-    expect(() => anthropicReplyText({ stop_reason: 'max_tokens' })).toThrow(/cut off/);
-  });
 });
 
 describe('docs items in the draft exchange', () => {

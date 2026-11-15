@@ -1,7 +1,6 @@
-// The Claude fix loop as steps, shared by the runners: the CLI (`bridge fix --with-claude`, the team's own API key) and
-// the MCP tools (the team's Claude calls them, through the hosted Bridge connector or a local server). Each
-// round asks Claude for fixes from the gap case and the earlier rounds, and the values referee (tryFigmaFixes) judges
-// them; the outcome is the closest fixes, or an honest status fix when none came closer. The change for review
+// The change for review of Claude's Figma fixes. The rounds are the person's own Claude calling the MCP tools (through
+// the hosted Bridge connector or a local server): it proposes fixes from the gap case, the values referee
+// (tryFigmaFixes) judges them, and it keeps the closest, or an honest status fix when none came closer. The change for review
 // (figmaFixesProposal) is the same for the MCP server, the CLI and the server: the referee runs again, fixes that move
 // the component further from the code are refused, and figma-fixes.json goes on a bridge/figma-fixes-<component> branch
 // as a draft pull request labelled drafted-by-claude and figma-fixes.
@@ -9,83 +8,15 @@
 // Pure and browser safe, like figma-fix-loop.ts: the caller reads the files, asks Claude and writes to GitHub.
 
 import { baseBranchOf, type BridgeConfig } from './config';
-import { FIX_LOOP_MAX_ROUNDS, figmaFixesPrBody, fixPrompt, gapCaseFor, parseFixReply, statusFixFor, touchesLayout, tryFigmaFixes, type FixAttempt, type FixVerdict, type GapCaseForInput, type TriedVariant } from './figma-fix-loop';
+import { figmaFixesPrBody, gapCaseFor, touchesLayout, tryFigmaFixes, type FixVerdict, type GapCaseForInput, type TriedVariant } from './figma-fix-loop';
 import type { FigmaFix } from './figma-fixes';
 import { DRAFTED_BY_CLAUDE_LABEL } from './figma-push';
-import type { GapCase } from './gap-case';
 import { classifyRisk } from './risk';
 
 /** Where `bridge specs --measure` writes, from the repo root. */
 export const DEFAULT_MEASURED_SPECS_FILE = 'measured-specs.json';
 /** The label every figma-fixes.json change carries, next to drafted-by-claude. */
 export const FIGMA_FIXES_LABEL = 'figma-fixes';
-
-/** Asks Claude one prompt, returns the reply text. Runners pass the team's key; tests pass a fake. */
-export type FixAsk = (prompt: string) => Promise<string>;
-
-/** Where a loop stands between rounds: plain JSON, so a server can keep it between requests. */
-export interface FixLoopState {
-  component: string;
-  /** Rounds done. */
-  round: number;
-  attempts: FixAttempt[];
-  /** The closest fixes so far (verdict closer), with their score and the referee's summary. */
-  best?: { fixes: unknown[]; score: number; summary: string } | undefined;
-  /** No round left, or every difference resolved. */
-  done: boolean;
-}
-
-export interface FixLoopRound {
-  round: number;
-  fixes: unknown[];
-  /** invalid: the fixes broke the schema; undefined: no fixes could be read from the reply. */
-  verdict?: FixVerdict | 'invalid' | undefined;
-  summary: string;
-}
-
-export const startFixLoop = (component: string): FixLoopState => ({ component, round: 0, attempts: [], done: false });
-
-/**
- * One round: Claude proposes fixes from the gap case and what the earlier rounds gave, the values referee tries them,
- * and the state keeps the closest. `ask` may throw (the network, the key): the state is then unchanged.
- */
-export async function fixLoopRound(input: GapCaseForInput, state: FixLoopState, ask: FixAsk, gap: GapCase = gapCaseFor(input).gap): Promise<{ state: FixLoopState; round: FixLoopRound }> {
-  if (state.done || state.round >= FIX_LOOP_MAX_ROUNDS) return { state: { ...state, done: true }, round: { round: state.round, fixes: [], summary: 'No round left.' } };
-  const round = state.round + 1;
-  const reply = await ask(fixPrompt(gap, state.attempts));
-  const next = (attempt: FixAttempt, r: FixLoopRound, extra: Partial<FixLoopState> = {}) => {
-    const s: FixLoopState = { ...state, ...extra, round, attempts: [...state.attempts, attempt] };
-    if (s.round >= FIX_LOOP_MAX_ROUNDS) s.done = true;
-    return { state: s, round: r };
-  };
-  let fixes: unknown[];
-  try {
-    fixes = parseFixReply(reply);
-  } catch (e) {
-    const msg = (e as Error).message;
-    return next({ fixes: [], feedback: `${msg} Answer with a JSON array of fix objects only.` }, { round, fixes: [], summary: msg });
-  }
-  const tried = tryFigmaFixes({ ...input, proposed: fixes });
-  if (tried.status === 'invalid') return next({ fixes, feedback: `Invalid, fix these problems:\n${tried.problems.join('\n')}` }, { round, fixes, verdict: 'invalid', summary: tried.summary });
-  const r: FixLoopRound = { round, fixes, verdict: tried.verdict, summary: tried.summary };
-  const attempt: FixAttempt = { fixes, feedback: `${tried.summary}\n${tried.detail}`, verdict: tried.verdict };
-  if (tried.verdict !== 'closer') return next(attempt, r);
-  const all = tried.variants.flatMap((v) => v.differences);
-  const score = all.filter((d) => d.result === 'resolved').length * 2 + all.filter((d) => d.result === 'closer').length - tried.variants.reduce((n, v) => n + v.regressions.length, 0);
-  const best = !state.best || score > state.best.score ? { fixes, score, summary: tried.summary } : state.best;
-  const resolved = all.every((d) => d.result === 'resolved');
-  return next(attempt, r, { best, ...(resolved ? { done: true } : {}) });
-}
-
-/** What the loop proposes once done: the closest fixes, or a status fix (Differs, with the reason) when none came closer. */
-export function fixLoopOutcome(gap: GapCase, state: FixLoopState, existingIds: string[] = []): { kind: 'fixes' | 'status'; fixes: unknown[]; summary: string } {
-  if (state.best) return { kind: 'fixes', fixes: state.best.fixes, summary: `Claude's fixes bring ${gap.component} closer to its story. ${state.best.summary}` };
-  return {
-    kind: 'status',
-    fixes: [statusFixFor(gap, existingIds)],
-    summary: `No fix brought ${gap.component} closer to its story in ${FIX_LOOP_MAX_ROUNDS} rounds: it keeps an honest Differs status with the reason.`,
-  };
-}
 
 const slug = (s: string) =>
   s

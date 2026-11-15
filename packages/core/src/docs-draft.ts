@@ -38,7 +38,7 @@ export interface ComponentDocsJson {
   draftedBy?: string;
   /**
    * The prose sections Claude drafted that wait for review, when a draft covered only some of them (in-place drafting
-   * on the Library page, the docs-draft Action). Missing means the whole file. Accepting removes it.
+   * on the Library page). Missing means the whole file. Accepting removes it.
    */
   draftedSections?: ProseKey[];
   /** True while drafted prose waits for a reviewer. Accepting sets it to false. */
@@ -208,7 +208,7 @@ export interface DocsConventions {
   styles?: string;
 }
 
-/** What docsPrompt asks for. Without `keys`, the missing prose as a full docs.json (the docs-draft Action, bridge_draft_docs). */
+/** What docsPrompt asks for. Without `keys`, the missing prose as a full docs.json (bridge_draft_docs). */
 export interface DocsPromptOptions {
   /** Only these sections, answered as an object holding only them. */
   keys?: readonly ProseKey[];

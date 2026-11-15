@@ -1,14 +1,13 @@
 // The Claude correction loop for the Figma pull, step 3: the team's own Claude (Claude Code or Claude Desktop through the
-// Bridge MCP server, or an API key the team set) reads a gap case, writes fixes (figma-fixes.json), and Bridge is the
+// Bridge MCP server) reads a gap case, writes fixes (figma-fixes.json), and Bridge is the
 // referee. This file is the referee's offline half and the brief: which components differ (figmaGaps), one component's
 // gap case (gapCaseFor), and the VALUES check of proposed fixes (tryFigmaFixes): the fixes are validated, laid on the
 // measure, the set is rebuilt the way the plugin pulls it (specsFromMeasure), and each differing variant is compared
 // again with what the code renders. The PIXEL check (the story shot against the real Figma render) runs later, in the
 // plugin's Check fidelity after the next pull: nothing here can say a component matches.
 //
-// Pure and browser safe: the MCP server, the CLI, the plugin and Studio can all run it. The key is always the
-// team's own: the prompt and the reply parser serve the loop runners (figma-fix-run.ts: `bridge fix --with-claude`, and
-// Bridge's server with the key a team admin connected), never a key of Bridge's.
+// Pure and browser safe: the MCP server, the CLI, the plugin and Studio can all run it. Bridge never runs Claude: the
+// rounds are the person's own Claude calling the MCP tools (bridge_get_gap_case, bridge_try_figma_fix).
 
 import { matchVariant, variantKeyOf, type ComponentSpec, type SpecField, type SpecPart, type SpecValue, type SpecVariant } from './component-spec';
 import type { FidelityComponentResult, FidelityReport } from './fidelity';
@@ -21,8 +20,6 @@ import { specsFromMeasure } from './measured-only';
 export const DEFAULT_FIDELITY_RUN_FILE = 'figma-fidelity.json';
 /** Rounds of try per component before the loop gives up and proposes an honest status instead. */
 export const FIX_LOOP_MAX_ROUNDS = 3;
-/** The model the CLI loop runner asks when the team's API key is set and no model is named. */
-export const FIX_LOOP_MODEL = 'claude-sonnet-5-5';
 
 /**
  * One Check fidelity run, as the plugin saves it: the report (the shot referee), and per set what the layers read back
@@ -645,60 +642,6 @@ export function figmaFixesPrBody(input: { component: string; summary: string; ga
     `Drafted by Claude through ${input.tool}. figma-fixes.json only: no component, token or plugin change.`,
   ];
   return lines.join('\n');
-}
-
-// ---------------------------------------------------------------------------------------------
-// The loop runner's prompt and reply (for a team API key; Claude Code uses the MCP tools instead)
-
-export interface FixAttempt {
-  fixes: unknown[];
-  /** Validation problems, or the try's detail. */
-  feedback: string;
-  verdict?: FixVerdict | undefined;
-}
-
-/** The prompt for one round: the gap case, the schema, and what the earlier rounds gave. Asks for fix objects only. */
-export function fixPrompt(gap: GapCase, attempts: FixAttempt[] = []): string {
-  const parts = [
-    `You fix how Bridge draws the ${gap.component} component in Figma so it matches its Storybook story. Bridge measured the story in a browser and drew the Figma set from that measure; some variants differ. Write corrections for figma-fixes.json.`,
-    '',
-    FIX_SCHEMA_SUMMARY,
-    '',
-    'The gap case (expected is the code, actual is Figma):',
-    '',
-    JSON.stringify({ component: gap.component, summary: gap.summary, detail: gap.detail, variants: gap.variants.map((v) => ({ key: v.key, story: v.story, differences: v.differences, unexplained: v.unexplained })), fixes: gap.fixes }, null, 1),
-  ];
-  for (const [i, a] of attempts.entries()) {
-    parts.push('', `Round ${i + 1}: you proposed`, JSON.stringify(a.fixes), `Bridge said${a.verdict ? ` (${a.verdict})` : ''}:`, a.feedback);
-  }
-  parts.push(
-    '',
-    attempts.length
-      ? 'Revise: keep what moved closer, change what did not. Use the same ids for fixes you revise.'
-      : 'Propose the smallest set of fixes that explains the differences.',
-    'Answer with a JSON array of fix objects only, no prose, "by": "claude" on each. If no fix can move it closer, answer one fix of kind "status" with "status": "differs" (or "cant-check") and the reason in a sentence.',
-  );
-  return parts.join('\n');
-}
-
-/** The fix objects in a reply: a JSON array (or { "fixes": [...] }), in a code fence or not. Throws a sentence otherwise. */
-export function parseFixReply(text: string): unknown[] {
-  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(text);
-  const body = (fence ? fence[1]! : text).trim();
-  const start = body.search(/[[{]/);
-  if (start < 0) throw new Error('The reply has no JSON: expected an array of fix objects.');
-  const open = body[start]!;
-  const end = body.lastIndexOf(open === '[' ? ']' : '}');
-  let data: unknown;
-  try {
-    data = JSON.parse(body.slice(start, end + 1));
-  } catch (e) {
-    throw new Error(`The reply is not valid JSON: ${(e as Error).message}`);
-  }
-  if (Array.isArray(data)) return data;
-  if (isObj(data) && Array.isArray(data.fixes)) return data.fixes;
-  if (isObj(data) && typeof data.kind === 'string') return [data];
-  throw new Error('The reply is JSON but not a list of fix objects.');
 }
 
 /** A status fix for a component that did not converge: what the loop proposes after its last round. */

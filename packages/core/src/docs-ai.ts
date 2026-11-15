@@ -1,8 +1,7 @@
-// Component docs drafted with Claude: the task (which sections, or a selected passage), the prompt, the answer
-// parsing and sanitizing, the merge into a docs.json, and the Messages API request. Shared by the docs-draft GitHub
-// Action (scripts/docs-draft.mjs), the in-place drafting of the Library page (apps/docs-site docs-ai) and the draft
-// exchange (the user's own Claude through the Bridge MCP server), so an answer is cleaned the same way everywhere.
-// Pure: no DOM, no Node-only API. The callers do the fetch.
+// Component docs drafted with Claude: the task (which sections, or a selected passage), the prompt, and the answer's
+// sanitizing into a docs.json. Claude is always the person's own, through the Bridge MCP server (the draft exchange of
+// the Library page, bridge_draft_docs): Bridge never calls Claude itself. Shared so an answer is cleaned the same way
+// everywhere. Pure: no DOM, no Node-only API.
 
 import { cleanDraftText } from './change-drafts';
 import {
@@ -16,9 +15,6 @@ import {
   docsPrompt,
   markClaudeDraft,
 } from './docs-draft';
-
-export const DOCS_DRAFT_MODEL = 'claude-sonnet-5-5';
-export const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
 
 /** How a selected passage is rewritten. */
 export type DocsSelectionMode = 'clearer' | 'shorter' | 'voice';
@@ -91,18 +87,6 @@ export function docsTaskPrompt(prefill: DocsPrefill, conventions: DocsConvention
 
 // ---------------------------------------------------------------------------------------------
 // Answers: parse and sanitize
-
-/** The first JSON object in a model reply (plain, or inside a ```json fence). Throws when there is none. */
-export function parseDocsReply(text: string): Record<string, unknown> {
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
-  const body = fenced ? fenced[1]! : text;
-  const start = body.indexOf('{');
-  const end = body.lastIndexOf('}');
-  if (start < 0 || end <= start) throw new Error('The reply holds no JSON object.');
-  const json = JSON.parse(body.slice(start, end + 1)) as unknown;
-  if (!json || typeof json !== 'object' || Array.isArray(json)) throw new Error('The reply is not a docs.json object.');
-  return json as Record<string, unknown>;
-}
 
 /** One line of docs prose: em dashes out, whitespace folded, trimmed. */
 export const cleanDocsText = (s: string): string => cleanDraftText(s.replace(/[\r\n]+/g, ' '));
@@ -177,26 +161,6 @@ export function sanitizeDocsReplacement(raw: unknown): string {
 export type DocsTaskAnswer = { sections: DocsSections; checked: ProseKey[]; replacement?: undefined } | { sections: DocsSections; checked?: undefined; replacement: string };
 
 /**
- * A task's answer from Claude's reply text. Sections: the requested keys, sanitized; throws when none came back.
- * Selection: `replacement` only (sections stay empty); a reply that is plain text counts as the passage.
- */
-export function parseDocsTaskAnswer(task: DocsDraftTask, text: string): DocsTaskAnswer {
-  if (task.kind === 'selection') {
-    let raw: unknown = text;
-    try {
-      const json = parseDocsReply(text);
-      raw = json.replacement ?? json.text ?? json[task.key];
-    } catch {
-      raw = text.replace(/```[a-z]*\s*|```/gi, '');
-    }
-    const replacement = sanitizeDocsReplacement(raw);
-    if (!replacement) throw new Error('Claude sent no rewritten passage. Try again.');
-    return { sections: {}, replacement };
-  }
-  return docsSectionsAnswer(task, parseDocsReply(text));
-}
-
-/**
  * Sections and checked of a sections task from an answer object: absent checked keys are still accurate. Throws only
  * when the task checks nothing and none of its keys came back.
  */
@@ -221,67 +185,4 @@ export function applyDocsSections<T extends Partial<ComponentDocsJson>>(docs: T,
   const keys = PROSE_KEYS.filter((k) => sections[k] !== undefined);
   if (!keys.length) return docs;
   return markClaudeDraft({ ...docs, ...sections }, keys);
-}
-
-/**
- * The docs-draft Action's merge: Claude's prose on top of the pre-fill draft, only where the pre-fill is empty (a
- * written section is never overwritten), anatomy kept from the code, the drafted sections marked for review.
- */
-export function mergeDocsDraft(prefillDraft: Partial<ComponentDocsJson>, reply: Record<string, unknown>): Partial<ComponentDocsJson> {
-  const empty = PROSE_KEYS.filter((k) => {
-    const v = prefillDraft[k];
-    return v === undefined || (typeof v === 'string' ? !v.trim() : Array.isArray(v) && !v.length);
-  });
-  const sections = sanitizeDocsSections(reply, empty, { examples: true });
-  const merged: Partial<ComponentDocsJson> = { ...prefillDraft, ...sections };
-  if (reply.preview && !prefillDraft.preview && isExample(reply.preview)) merged.preview = reply.preview;
-  merged.anatomy = prefillDraft.anatomy;
-  const drafted = PROSE_KEYS.filter((k) => sections[k] !== undefined);
-  return markClaudeDraft(merged, drafted.length && drafted.length < PROSE_KEYS.length ? drafted : undefined);
-}
-
-// ---------------------------------------------------------------------------------------------
-// The Messages API call (raw HTTP: no SDK dependency for one call)
-
-export interface AnthropicHttpRequest {
-  url: string;
-  init: { method: 'POST'; headers: Record<string, string>; body: string };
-}
-
-export interface AnthropicRequestInput {
-  apiKey: string;
-  prompt: string;
-  model?: string | undefined;
-  system?: string | undefined;
-  maxTokens?: number | undefined;
-  /** A direct call from a browser page (the user's own key): adds the header the API asks for. */
-  browser?: boolean | undefined;
-  /** Re-run a declined request on a fallback model inside the same call (server-side fallback beta). */
-  fallback?: boolean | undefined;
-}
-
-/** The Messages API request for one prompt. The key goes in x-api-key, to api.anthropic.com only. */
-export function anthropicRequest(input: AnthropicRequestInput): AnthropicHttpRequest {
-  const headers: Record<string, string> = { 'x-api-key': input.apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
-  if (input.fallback) headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
-  if (input.browser) headers['anthropic-dangerous-direct-browser-access'] = 'true';
-  const body: Record<string, unknown> = {
-    model: input.model || DOCS_DRAFT_MODEL,
-    max_tokens: input.maxTokens ?? 16000,
-    ...(input.fallback ? { fallbacks: 'default' } : {}),
-    ...(input.system ? { system: input.system } : {}),
-    messages: [{ role: 'user', content: input.prompt }],
-  };
-  return { url: ANTHROPIC_MESSAGES_URL, init: { method: 'POST', headers, body: JSON.stringify(body) } };
-}
-
-/** The text of a Messages API reply. Throws when Claude declined or the reply was cut off. */
-export function anthropicReplyText(msg: unknown): string {
-  const m = (msg ?? {}) as { stop_reason?: string; content?: { type?: string; text?: unknown }[] };
-  if (m.stop_reason === 'refusal') throw new Error('Claude declined to draft this one.');
-  if (m.stop_reason === 'max_tokens') throw new Error('The reply was cut off (max_tokens).');
-  return (m.content ?? [])
-    .filter((b) => b?.type === 'text' && typeof b.text === 'string')
-    .map((b) => b.text as string)
-    .join('');
 }

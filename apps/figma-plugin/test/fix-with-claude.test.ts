@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_FIDELITY_RUN_FILE, type FigmaFidelityRun, REQUESTS_BRANCH, fidelityVerdict, parseFidelityRun } from '@bridge-ds/core';
-import { DIFFERS_HANDOFF_TEXT, FIX_ASKED_TEXT, FIX_NEXT_TEXT, NO_REFERENCES_HANDOFF_TEXT, differsRequestForDeveloper, fixCommand, fixPhrase, fixRequestForDeveloper, referencesRequestForDeveloper, runNeedsWrite, writeFidelityRun } from '../src/sync/fix-with-claude';
+import { DIFFERS_HANDOFF_TEXT, FIX_ASKED_TEXT, FIX_NEXT_TEXT, NO_REFERENCES_HANDOFF_TEXT, differsRequestForDeveloper, fixPhrase, fixRequestForDeveloper, referencesRequestForDeveloper, runNeedsWrite, writeFidelityRun } from '../src/sync/fix-with-claude';
 import { FakeGitHub } from './fake-github';
 
 const run = (percent: number): FigmaFidelityRun => ({
@@ -31,14 +31,13 @@ test('Fix with Claude: the run is written to figma-fidelity.json on the requests
   assert.deepEqual(read.built?.TextInput?.['Size=md']?.boxes?.root, { x: 0, y: 0, width: 300, height: 76 });
   assert.equal(await client.getFile(DEFAULT_FIDELITY_RUN_FILE, 'main'), undefined, 'never on the library branch');
   assert.equal(fixPhrase('TextInput'), 'Fix TextInput in Figma with Bridge');
-  assert.equal(fixCommand('TextInput'), 'npx @bridge-ds/cli fix TextInput --with-claude');
 });
 
-test('Ask Claude to fix it: the designer sees no command, the copied request for the developer holds both ways', () => {
+test('Ask Claude to fix it: the designer sees no command, the copied request for the developer holds the line to say', () => {
   for (const text of [FIX_ASKED_TEXT, FIX_NEXT_TEXT]) assert.doesNotMatch(text, /npx|MCP|API key|branch|CLI|—/);
   const req = fixRequestForDeveloper('TextInput', 'acme/ds');
   assert.match(req, /Fix TextInput in Figma with Bridge/);
-  assert.match(req, /npx @bridge-ds\/cli fix TextInput --with-claude/);
+  assert.doesNotMatch(req, /API key|ANTHROPIC|npx/);
   assert.match(req, /figma-fidelity\.json on the bridge-requests branch of acme\/ds/);
   assert.doesNotMatch(req, /—/);
 });

@@ -33,9 +33,6 @@ export * as claudeDesign from './claude-design.js';
 export * as behaviorPreview from './behavior-preview.js';
 export type { BehaviorPreviewHost, PreviewReport } from './behavior-preview.js';
 export type { ClaudeDesignHost, ClaudeDesignManifest, TeamClaudeDesign } from './claude-design.js';
-// The docs logic the docs-draft GitHub Action (scripts/docs-draft.mjs) runs, from the core compiled into this bundle:
-// the workflow builds the MCP library, not core.
-export { DOCS_DRAFT_MODEL, anthropicReplyText, anthropicRequest, formatDocsJson, mergeDocsDraft, missingProse, parseDocsReply } from '@bridge-ds/core';
 // The exploration steps a designer takes in Studio (start, save, Done exploring with its two reviews, the design
 // review's Looks right), from the core compiled into this bundle: the hosted site runs them as the sample team's members
 // (api/contribute `seed-demo-explorations`). askLeadOnGitHub and leadApproveOnGitHub are the deprecated names, kept for

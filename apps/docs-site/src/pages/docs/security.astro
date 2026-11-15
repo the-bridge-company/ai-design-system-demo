@@ -273,13 +273,13 @@ const STORED = [
       <li><strong>What it can do.</strong> What the person could do, under their GitHub account: start branches, open draft pull requests, comment and review. It never merges, and never writes straight to the default branch.</li>
       <li><strong>What Bridge sees.</strong> The tool calls, not the conversation. For three component fix tools, it keeps the steps (what was read, each attempt’s result, the pull request) for 7 days so the team can follow along.</li>
       <li><strong>The Figma plugin</strong> never calls an AI provider and has no place for an AI key. “Ask Claude to fix it” opens the team’s own Claude in the browser.</li>
-      <li><strong>Optional, per person.</strong> On a Library page, someone may paste their own Anthropic API key to draft docs. It stays in that browser and goes only to Anthropic’s API, with that page’s text.</li>
+      <li><strong>Docs drafting</strong> on a Library page goes through someone’s own assistant too: Bridge leaves a request, they ask their Claude, and the draft comes back for review.</li>
     </ul>
     <DevDetail id="ai-dev" client:visible>
       <ul>
         <li>Connector: <Link href={src('apps/docs-site/api/mcp/index.ts')}><code>api/mcp/index.ts</code></Link> runs the MCP server (<Link href={src('packages/mcp/src/server.ts')}><code>packages/mcp/src/server.ts</code></Link>, every tool listed there except <code>bridge_merge_branch</code>, which it neither lists nor runs) with the person’s GitHub App user token, renewed on the server. Push access checked at sign-in (<code>permissions.push</code> or <code>admin</code>).</li>
         <li>No AI key in the plugin, tested: <Link href={src('apps/figma-plugin/test/push-drafts.test.ts')}><code>apps/figma-plugin/test/push-drafts.test.ts</code></Link>.</li>
-        <li>Browser-only key for docs drafting: <Link href={src('apps/docs-site/src/scripts/docs-ai.ts')}><code>src/scripts/docs-ai.ts</code></Link>.</li>
+        <li>Docs drafting through the person’s own Claude (the draft exchange): <Link href={src('apps/docs-site/src/scripts/docs-ai.ts')}><code>src/scripts/docs-ai.ts</code></Link>.</li>
       </ul>
     </DevDetail>
   </section>

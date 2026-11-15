@@ -1,6 +1,6 @@
 // Build time: the deterministic docs pre-fill of a component, from what the docs site already parsed (props from the
 // TypeScript, tokens and classes from the CSS module, the contrast checks). Same core function as the MCP tool, the
-// CLI and the docs-draft Action (@bridge-ds/core prefillDocs), so a draft starts from the same facts everywhere.
+// CLI and the MCP tools (@bridge-ds/core prefillDocs), so a draft starts from the same facts everywhere.
 import { prefillDocs, type DocsPrefill, type DocsPrefillInput } from '@bridge-ds/core';
 import type { ComponentInfo } from './components';
 import { contrastPairs } from './contrast';
@@ -57,7 +57,7 @@ function voiceSection(md: string | undefined): string | undefined {
  * /docs-ai/<slug>.json: the pre-fill input from the code (props, JSDoc, tokens, CSS module classes, contrast), the
  * repo conventions (AGENTS.md, the voice of the design language, the reference docs.json) and the component's source
  * and stylesheet. The browser adds the docs it has now and calls prefillDocs, the same core function as the MCP tool,
- * the CLI and the docs-draft Action.
+ * the CLI and the MCP tools.
  */
 export function docsAiContext(c: ComponentInfo): DocsAiContext {
   const cfg = repoModel.config;

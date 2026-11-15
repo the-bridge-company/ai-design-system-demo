@@ -47,11 +47,11 @@ test('Ask Claude to fix all N: the rows that would show their own button, shown 
   for (const r of rows) assert.equal(canAskClaude(r, true), fixAllEligible([r, { ...r, name: 'twin' }], true).length === 2);
 });
 
-test('Copy for your developer after Ask Claude to fix all N: the request and one command per component', () => {
+test('Copy for your developer after Ask Claude to fix all N: the request and the line to say, no key', () => {
   const req = fixRequestForDeveloper(['Button', 'TextInput'], 'acme/ds');
   assert.match(req, /^Could you ask Claude to fix these 2 components in Figma\?/);
   assert.match(req, /say: "Fix these 2 components in Figma with Bridge: Button, TextInput"/);
-  assert.match(req, /npx @bridge-ds\/cli fix Button --with-claude\n {2}npx @bridge-ds\/cli fix TextInput --with-claude/);
+  assert.doesNotMatch(req, /API key|ANTHROPIC|npx/);
   assert.equal(fixRequestForDeveloper(['Button'], 'acme/ds'), fixRequestForDeveloper('Button', 'acme/ds'));
   assert.doesNotMatch(req, /\u2014/);
 });

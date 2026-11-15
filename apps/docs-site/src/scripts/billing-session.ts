@@ -1,6 +1,9 @@
 // The browser side of /api/billing (api/billing/index.ts): the Billing card's status, and the two ways out to Stripe
 // (Checkout to move to Team, the Customer Portal to manage it). The account session is the httpOnly cookie of
-// /api/account; every POST carries X-Bridge-Account (CSRF). Nothing here holds a key: the server makes the sessions.
+// /api/account; for a repository's team, the GitHub sign-in of this browser goes along too (Bearer, as the rest of
+// Studio sends it), so an admin signed in with GitHub only is recognised; the server asks GitHub who it is. A team made
+// in Bridge goes by the account only. Every POST carries X-Bridge-Account (CSRF). Nothing here holds a Stripe key.
+import { isTeamKey } from '../lib/team-path';
 import { parseBillingStatus, type BillingStatus, type Currency, type Interval } from '../lib/billing';
 
 export const BILLING_API = '/api/billing';
@@ -26,6 +29,18 @@ export function setBillingFetch(f: Fetch | null) {
   fetchImpl = f ?? ((input, init) => fetch(input, init));
 }
 
+/** The GitHub sign-in of this browser, for a repository's team only; nothing for an email account or a team made in Bridge. */
+async function githubAuth(team: string): Promise<Record<string, string>> {
+  if (isTeamKey(team)) return {};
+  try {
+    const { workingGitHubToken } = await import('./account-session');
+    const token = await workingGitHubToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function call(path: string, init: RequestInit): Promise<Record<string, unknown>> {
   let res: Response;
   try {
@@ -41,14 +56,14 @@ async function call(path: string, init: RequestInit): Promise<Record<string, unk
 /** The team's billing for its admin; null when billing is off or the person is not an admin (the card shows nothing). */
 export async function getBillingStatus(team: string): Promise<BillingStatus | null> {
   try {
-    return parseBillingStatus(await call(`${BILLING_API}?team=${encodeURIComponent(team)}`, { method: 'GET', headers: { Accept: 'application/json' } }));
+    return parseBillingStatus(await call(`${BILLING_API}?team=${encodeURIComponent(team)}`, { method: 'GET', headers: { Accept: 'application/json', ...(await githubAuth(team)) } }));
   } catch {
     return null;
   }
 }
 
-const post = (action: 'checkout' | 'portal', body: Record<string, unknown>) =>
-  call(`${BILLING_API}/${action}`, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Bridge-Account': '1' }, body: JSON.stringify(body) });
+const post = async (action: 'checkout' | 'portal', body: { team: string } & Record<string, unknown>) =>
+  call(`${BILLING_API}/${action}`, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Bridge-Account': '1', ...(await githubAuth(body.team)) }, body: JSON.stringify(body) });
 
 /** Only Stripe's own pages: the server answers with one, never anything the browser should follow elsewhere. */
 const stripeUrl = (u: unknown): string => {

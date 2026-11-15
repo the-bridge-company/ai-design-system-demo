@@ -213,7 +213,8 @@ export interface StripeEventLike {
 
 export interface BillingStripe {
   priceIdByLookupKey(key: string): Promise<string | null>;
-  createCustomer(p: { name: string; email: string; metadata: Record<string, string> }): Promise<{ id: string }>;
+  /** Without an email (a GitHub sign-in), Checkout asks for the billing email. */
+  createCustomer(p: { name: string; email?: string; metadata: Record<string, string> }): Promise<{ id: string }>;
   createCheckoutSession(p: Record<string, unknown>): Promise<{ url: string | null }>;
   /** The portal configuration tagged metadata.bridge_portal = 'team', else null (Stripe's default then applies). */
   portalConfigurationId(): Promise<string | null>;

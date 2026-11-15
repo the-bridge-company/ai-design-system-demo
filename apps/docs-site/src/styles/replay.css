@@ -2,8 +2,14 @@
    by side, each side's result in one line under its frame. */
 .rq-replay-slot {
   display: grid;
+  justify-items: start;
   gap: var(--space-3);
   margin-block: var(--space-3);
+}
+
+/* The replay and the words editor keep the full width; a lone button keeps its own. */
+.rq-replay-slot > :not(button) {
+  justify-self: stretch;
 }
 
 .rq-replay {

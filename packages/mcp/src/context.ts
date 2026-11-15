@@ -50,6 +50,11 @@ export interface ContextOptions {
    * team setting that remembers the team's artifact. Absent: the public Bridge site, no team setting.
    */
   claudeDesign?: import('./claude-design.js').ClaudeDesignHost;
+  /**
+   * Claude's preview of a behavior request (behavior-preview.ts): on the hosted connector, Bridge's server records it
+   * on the request with Bridge's own app. Absent (a local server): a preview cannot be recorded.
+   */
+  behaviorPreview?: import('./behavior-preview.js').BehaviorPreviewHost;
 }
 
 /** Whether a request only reads: GET and HEAD, and GraphQL queries (POST /graphql without a mutation). */

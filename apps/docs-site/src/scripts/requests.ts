@@ -34,7 +34,6 @@ import { attrUrl, safeUrl } from '../lib/html';
 import { owners } from './pr-status';
 import { ASSIGN_EVENT, DECLINE_EVENT, type AssignAskDetail, type DeclineAskDetail } from '../components/ds/studio/RequestDecide';
 import { siteConfig } from './repo-context';
-import { studioHref } from '../lib/team-path';
 
 const repo = readRepo();
 const REPO_KEY = `${repo.owner}/${repo.repo}`;
@@ -410,7 +409,7 @@ async function mountBehavior(r: RequestRow) {
     createElement(BehaviorDecision, {
       replay:
         replayViewer && BehaviorReplaySlot
-          ? createElement(BehaviorReplaySlot, { number: r.number, ask, viewer: replayViewer, settingsHref: studioHref('settings/#team-claude'), onSaveWords: replayViewer === 'requester' && undecided ? saveWords : null })
+          ? createElement(BehaviorReplaySlot, { number: r.number, ask, viewer: replayViewer, onSaveWords: replayViewer === 'requester' && undecided ? saveWords : null })
           : null,
       today: ask.today,
       wanted: ask.wanted,

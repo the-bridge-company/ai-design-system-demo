@@ -1,8 +1,9 @@
 // The request page's "Play both" (BehaviorDecision's replay), loaded once the page knows who looks: the design lead
-// who decides or the person who asked (anyone else sees nothing of it). While Claude prepares the preview, it reads
-// again every 30 seconds (paused while the tab is hidden). The person who asked can change her words while the lead
-// has not decided (board G2): the request is saved with them, the team's workflow makes the preview again, and the
-// next preview says "Updated from your words".
+// who decides or the person who asked (anyone else sees nothing of it). With no preview yet, they read the line to say
+// to their own Claude; while someone's Claude prepares it, the page reads again every 30 seconds (paused while the tab
+// is hidden). The person who asked can change her words while the lead has not decided (board G2): the request is
+// saved with them, the preview made from the old words asks to be updated ("Ask your Claude to update the preview"),
+// and the next one says "Updated from your words".
 import { useEffect, useState } from 'react';
 import { Button, ButtonGroup, Textarea } from '@bridge-ds/react';
 import type { BehaviorAsk } from '@bridge-ds/core';
@@ -15,11 +16,10 @@ export interface BehaviorReplaySlotProps {
   number: number;
   ask: BehaviorAsk;
   viewer: 'lead' | 'requester';
-  settingsHref: string;
   /** The person who asked, before the lead decided: saves her new words. Throws in words she can act on. */
   onSaveWords?: ((wanted: string) => Promise<void>) | null;
   /** For tests: the read. */
-  load?: (fresh: boolean) => Promise<PreviewPlay | null>;
+  load?: (fresh: boolean, ask: BehaviorAsk) => Promise<PreviewPlay | null>;
 }
 
 export const WORDS_EDIT = {
@@ -31,29 +31,26 @@ export const WORDS_EDIT = {
   empty: 'Say what it should do, in a sentence.',
 } as const;
 
-export default function BehaviorReplaySlot({ number, ask, viewer, settingsHref, onSaveWords, load }: BehaviorReplaySlotProps) {
+export default function BehaviorReplaySlot({ number, ask, viewer, onSaveWords, load }: BehaviorReplaySlotProps) {
   const [play, setPlay] = useState<PreviewPlay | null>(null);
   const [round, setRound] = useState(0);
   const [editing, setEditing] = useState(false);
   const [words, setWords] = useState(ask.wanted);
   const [problem, setProblem] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  // Saved new words: what the workflow said before them is the old preview, so it reads as preparing until it answers.
-  const [savedAt, setSavedAt] = useState<number | null>(null);
+  // Her words now: once she saved new ones, a preview made from the old ones is out of date.
+  const [current, setCurrent] = useState<BehaviorAsk>(ask);
+  useEffect(() => setCurrent(ask), [ask]);
 
   useEffect(() => {
     let live = true;
     const read = (fresh: boolean) =>
-      (load ?? ((f: boolean) => import('../../../scripts/behavior-preview-data').then((m) => m.behaviorPreviewPlay(number, ask, { fresh: f }))))(fresh).then((p) => {
-        if (!live) return;
-        const old = savedAt !== null && p && (!p.preview?.at || Date.parse(p.preview.at) < savedAt);
-        setPlay(p && old ? { ...p, state: { kind: 'preparing' } } : p);
-      });
+      (load ?? ((f: boolean, a: BehaviorAsk) => import('../../../scripts/behavior-preview-data').then((m) => m.behaviorPreviewPlay(number, a, { fresh: f }))))(fresh, current).then((p) => live && setPlay(p));
     void read(round > 0);
     return () => {
       live = false;
     };
-  }, [number, ask, round, load, savedAt]);
+  }, [number, current, round, load]);
 
   // Claude is preparing it: read again until it is ready or failed.
   useEffect(() => {
@@ -73,7 +70,7 @@ export default function BehaviorReplaySlot({ number, ask, viewer, settingsHref, 
     try {
       await onSaveWords(words.trim());
       setEditing(false);
-      setSavedAt(Date.now());
+      setCurrent({ ...current, wanted: words.trim() });
       setRound((n) => n + 1);
     } catch (err) {
       setProblem((err as Error).message);
@@ -83,8 +80,8 @@ export default function BehaviorReplaySlot({ number, ask, viewer, settingsHref, 
   };
   return (
     <div className="rq-replay-slot">
-      <BehaviorReplay state={play.state} keys={play.keys} announces={play.announces} viewer={viewer} settingsHref={settingsHref} component={play.component} />
-      {viewer === 'requester' && onSaveWords && play.state.kind !== 'off' &&
+      <BehaviorReplay state={play.state} keys={play.keys} announces={play.announces} viewer={viewer} number={number} component={play.component} />
+      {viewer === 'requester' && onSaveWords &&
         (editing ? (
           <div className="rq-replay-edit">
             <Textarea label={WORDS_EDIT.label} rows={3} required value={words} onValueChange={(v) => { setWords(v); setProblem(null); }} error={problem ?? undefined} />

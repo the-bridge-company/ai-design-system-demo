@@ -57,6 +57,7 @@ const TOOLS = [
   'bridge_list_reviews',
   'bridge_list_suggestions',
   'bridge_list_tokens',
+  'bridge_make_behavior_preview',
   'bridge_mark_figma_change_drafted',
   'bridge_merge_branch',
   'bridge_missing_pieces',
@@ -72,6 +73,7 @@ const TOOLS = [
   'bridge_propose_token_change',
   'bridge_push_figma_component',
   'bridge_reopen_branch',
+  'bridge_report_behavior_preview',
   'bridge_review_branch',
   'bridge_review_pr',
   'bridge_review_suggestion',
@@ -146,7 +148,7 @@ describe('MCP over stdio', () => {
     expect(config.source).toContain(config.write);
   });
 
-  it('lists the 73 tools with JSON schemas and read-only hints', async () => {
+  it('lists the 75 tools with JSON schemas and read-only hints', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(TOOLS);
     const getToken = tools.find((t) => t.name === 'bridge_get_token')!;

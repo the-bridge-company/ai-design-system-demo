@@ -60,6 +60,8 @@ import {
 } from "@bridge-ds/core";
 import { BehaviorDevelopers, BehaviorSent } from "./BehaviorBuild";
 import BehaviorCheck from "./BehaviorCheck";
+import BehaviorReplay from "./BehaviorReplay";
+import type { ReplayState } from "../../../lib/story-replay";
 import { behaviorMeta, behaviorRowNote } from "../../../lib/building-view";
 import type { ThumbSpec } from "../../../lib/branch-thumb";
 import { BranchRow } from "./BranchRow";
@@ -514,14 +516,18 @@ function Detail({
   }, [ask, v.number]);
   // Check against the preview (board G4): the developer's build against Claude's preview, when both are published.
   const [check, setCheck] = useState<{ preview: string; build: string; behaviors: { id: string; family: string; text: string; keys: string[] }[] } | null>(null);
+  // No preview to check against yet: the developer reads the line to say to their own Claude.
+  const [handoff, setHandoff] = useState<ReplayState | null>(null);
   const headRef = v.pull ? (data.pulls ?? []).find((p) => Number(p.number) === v.pull!.number)?.head?.ref ?? null : null;
   useEffect(() => {
-    if (!ask || data.developer !== true || !v.pull || v.pull.state !== "open" || !headRef) return;
+    if (!ask || data.developer !== true) return;
     let live = true;
     void import("../../../scripts/behavior-preview-data")
       .then(async (m) => {
         const play = await m.behaviorPreviewPlay(v.number, ask);
-        if (!play || play.state.kind !== "ready") return;
+        if (!play || !live) return;
+        if (play.state.kind === "ask" || play.state.kind === "preparing" || play.state.kind === "failed") return setHandoff(play.state);
+        if (play.state.kind !== "ready" || !v.pull || v.pull.state !== "open" || !headRef) return;
         const build = m.branchStoryUrl(play.template, headRef, play.storyId, v.pull!.number);
         if (!build || !live) return;
         const own = play.behaviors.filter((b) => b.id === ask.behavior);
@@ -666,6 +672,7 @@ function Detail({
             </p>}
           </section>
 
+          {handoff && <BehaviorReplay state={handoff} keys={[]} viewer="developer" number={v.number} component={v.component} />}
           {check && <BehaviorCheck component={v.component} preview={check.preview} build={check.build} behaviors={check.behaviors} />}
 
           {forDevelopers && <Accordion className="bb-dev" headingLevel={3}>

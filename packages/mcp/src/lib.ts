@@ -30,6 +30,8 @@ export * as componentMap from './component-map.js';
 export * as explorationFigma from './exploration-figma.js';
 export * as suggestions from './suggestions.js';
 export * as claudeDesign from './claude-design.js';
+export * as behaviorPreview from './behavior-preview.js';
+export type { BehaviorPreviewHost, PreviewReport } from './behavior-preview.js';
 export type { ClaudeDesignHost, ClaudeDesignManifest, TeamClaudeDesign } from './claude-design.js';
 // The docs logic the docs-draft GitHub Action (scripts/docs-draft.mjs) runs, from the core compiled into this bundle:
 // the workflow builds the MCP library, not core.

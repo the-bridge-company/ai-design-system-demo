@@ -3,14 +3,17 @@
 // agent/preview-<n>, bridge.config.json previews.apps.storybook) side by side, the same keys pressed on both, each
 // side's result in one line (lib/story-replay.ts, the frames answer by postMessage). Also used by Being built's
 // "Check against the preview" (BehaviorCheck.tsx) with the developer's build as a third side.
-// States, from the request's preview comment (core parsePreviewState):
-//   preparing  "Claude is preparing the preview."
-//   ready      the two frames and Play both; "Updated from your words" after the requester changed them
-//   failed     what went wrong, in one line; the lead can still decide on the sentences
-//   off        nothing for the person who asked; the lead reads one line on how to turn it on in Settings
+// The preview is made by the person's own Claude through the Bridge connector, never by Bridge: Bridge only records it
+// (core parsePreviewState, Bridge's app blocks). States:
+//   ask        no preview yet (or made from words since changed): "Ask your Claude to make (update) the preview",
+//              the line to say ("Make the Bridge preview for request #n") and Copy, the docs drafting hand-off's pattern
+//   preparing  "Malik's Claude is preparing the preview."
+//   ready      the two frames and Play both; "Updated from your words" once it was made again
+//   failed     what went wrong, in one line; the lead can still decide on the sentences; the hand-off again
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Alert, Badge, Button, Kbd, Link } from '@bridge-ds/react';
-import { keyLabel } from '@bridge-ds/core';
+import { Alert, Badge, Button, Kbd } from '@bridge-ds/react';
+import { Check, Copy } from 'lucide-react';
+import { keyLabel, previewPhrase } from '@bridge-ds/core';
 import { PRESS_MESSAGE, READY_MESSAGE, SIDE_LABEL, parseKeysResult, resultLine, type KeysResult, type ReplaySide, type ReplayState } from '../../../lib/story-replay';
 import '../../../styles/replay.css';
 
@@ -89,10 +92,10 @@ export interface BehaviorReplayProps {
   keys: readonly string[];
   /** The behavior's announcement today, from its docs.json ("Expected announcement"). */
   announces?: string | null | undefined;
-  /** The design lead who decides (sees how to turn it on, and that they can still decide), or the person who asked. */
-  viewer: 'lead' | 'requester';
-  /** Settings, Claude, where the lead turns the previews on. */
-  settingsHref: string;
+  /** The design lead who decides (reads that they can still decide), the person who asked, or a developer. */
+  viewer: 'lead' | 'requester' | 'developer';
+  /** The request's number: the line the person says to their Claude names it. */
+  number: number;
   component: string;
 }
 
@@ -100,8 +103,12 @@ export const REPLAY_WORDS = {
   preparing: 'Claude is preparing the preview.',
   failed: (reason: string | null) => `Claude could not make the preview${reason ? `: ${reason.replace(/[.]+$/, '')}` : ''}.`,
   decideAnyway: 'You can still decide on the sentences.',
-  off: "Claude's previews are off for this team.",
-  offLink: 'Turn them on in Settings',
+  ask: 'Ask your Claude to make the preview.',
+  askUpdate: 'Ask your Claude to update the preview.',
+  say: 'In Claude, with Bridge connected, say',
+  copy: 'Copy',
+  copied: 'Copied',
+  preparingBy: (by: string) => `${by}'s Claude is preparing the preview.`,
   updated: 'Updated from your words',
   unplayable: "Claude made the change, but your Storybook does not publish each branch yet, so it cannot be played here.",
   play: 'Play both',
@@ -110,33 +117,52 @@ export const REPLAY_WORDS = {
   expected: 'Expected announcement',
 } as const;
 
-export default function BehaviorReplay({ state, keys, announces, viewer, settingsHref, component }: BehaviorReplayProps) {
+/** "Ask your Claude to make the preview", and the line to say, with Copy: the hand-off to the person's own Claude. */
+function AskClaude({ number, update }: { number: number; update: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const phrase = previewPhrase(number, update);
+  return (
+    <p className="t-ui rq-replay-note rq-replay-ask">
+      {update ? REPLAY_WORDS.askUpdate : REPLAY_WORDS.ask} {REPLAY_WORDS.say} <q className="rq-replay-phrase">{phrase}</q>{' '}
+      <Button
+        variant="ghost"
+        size="sm"
+        iconStart={copied ? Check : Copy}
+        onClick={() => {
+          void navigator.clipboard?.writeText(phrase).then(() => setCopied(true), () => setCopied(false));
+        }}
+      >
+        {copied ? REPLAY_WORDS.copied : REPLAY_WORDS.copy}
+      </Button>
+    </p>
+  );
+}
+
+export default function BehaviorReplay({ state, keys, announces, viewer, number, component }: BehaviorReplayProps) {
   const headingId = useId();
   const frames: ReplayFrame[] = state.kind === 'ready' ? [{ side: 'today', src: state.today }, { side: 'preview', src: state.preview }] : [];
   const { run, frameRef, play } = useKeyReplay(frames);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<Map<ReplaySide, KeysResult | null> | null>(null);
 
-  if (state.kind === 'off')
-    return viewer === 'lead' ? (
-      <p className="t-ui t-muted rq-replay-note">
-        {REPLAY_WORDS.off} <Link href={settingsHref}>{REPLAY_WORDS.offLink}</Link>
-      </p>
-    ) : null;
+  if (state.kind === 'ask') return <AskClaude number={number} update={state.update} />;
   if (state.kind === 'unplayable')
     return viewer === 'lead' ? <p className="t-ui t-muted rq-replay-note">{REPLAY_WORDS.unplayable}</p> : null;
   if (state.kind === 'preparing')
     return (
       <p className="t-ui t-muted rq-replay-note" role="status">
-        {REPLAY_WORDS.preparing}
+        {state.by ? REPLAY_WORDS.preparingBy(state.by.split(/\s+/)[0]!) : REPLAY_WORDS.preparing}
       </p>
     );
   if (state.kind === 'failed')
     return (
-      <Alert tone="warning" className="rq-replay-note">
-        {REPLAY_WORDS.failed(state.reason)}
-        {viewer === 'lead' ? ` ${REPLAY_WORDS.decideAnyway}` : ''}
-      </Alert>
+      <>
+        <Alert tone="warning" className="rq-replay-note">
+          {REPLAY_WORDS.failed(state.reason)}
+          {viewer === 'lead' ? ` ${REPLAY_WORDS.decideAnyway}` : ''}
+        </Alert>
+        <AskClaude number={number} update={false} />
+      </>
     );
 
   const go = async () => {

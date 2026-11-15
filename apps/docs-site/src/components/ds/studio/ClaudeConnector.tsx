@@ -7,8 +7,7 @@
 //                      AlertDialog (it cannot be undone).
 // A "For developers" fold: Claude Code with the hosted address, and the local MCP server with npx. Words:
 // lib/claude-connector.ts.
-// Below it, the measure of the team's components (MeasureSetting): what lets Claude fix what differs in Figma; then
-// Claude's previews of behavior requests (PreviewSetting): the workflow that makes each one on its own branch.
+// Below it, the measure of the team's components (MeasureSetting): what lets Claude fix what differs in Figma.
 import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, Button, Card, CardBody } from '@bridge-ds/react';
@@ -16,7 +15,6 @@ import { UrlText, useCopy } from './TeamLink';
 import { NoticeLine } from './MemberParts';
 import { Code, DevFold } from './SettingsParts';
 import MeasureSetting from './MeasureSetting';
-import PreviewSetting from './PreviewSetting';
 import type { Notice } from './members-state';
 import { CONNECTOR_WORDS as W, connectionSentence, connectorUrl, developerSnippets, type Connection } from '../../../lib/claude-connector';
 import { accessContext, type AccessContext } from '../../../lib/library-access';
@@ -159,7 +157,6 @@ export default function ClaudeConnector() {
           </CardBody>
         </Card>
         {context && <MeasureSetting context={context} />}
-        {context && <PreviewSetting context={context} />}
       </div>
     </>
   );

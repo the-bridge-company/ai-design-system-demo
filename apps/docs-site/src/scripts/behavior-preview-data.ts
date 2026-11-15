@@ -1,13 +1,13 @@
 // What "Play both" needs on a behavior request (components/ds/studio/BehaviorReplay.tsx), read once per request with
 // the list's reader (github-session ghGet) and the team's model (scripts/team-data):
-//   - where Claude's preview stands: the request's preview comment the team's workflow keeps (core parsePreviewState),
-//     and whether the workflow is in the repository at all (off: nothing runs);
+//   - where Claude's preview stands: the record Bridge keeps on the request once the person's own Claude made it
+//     through the Bridge connector (core parsePreviewState, Bridge's app blocks only), against the wanted sentence now;
 //   - the two stories: today's from the team's Storybook (bridge.config.json storybook.url, else
 //     previews.production.storybook), the preview's from the per-branch Storybook (previews.apps.storybook) of
 //     agent/preview-<n>, the component's first story in both;
 //   - the keys to press and today's announcement, from the component's docs.json (lib/story-replay).
-// Null when there is nothing to play: a pattern, a component without a story or a team without a Storybook.
-import { BEHAVIOR_PREVIEW_WORKFLOW_FILE, parsePreviewState, previewUrl, readBehaviors, type BehaviorAsk, type BehaviorPreviewState } from '@bridge-ds/core';
+// Null for a pattern or a component the team does not have (nothing to ask a preview of).
+import { parsePreviewState, previewUrl, readBehaviors, type BehaviorAsk, type BehaviorPreviewState } from '@bridge-ds/core';
 import { ghGet, readRepo } from './github-session';
 import { behaviorOf, keysStoryUrl, replaySequence, replayStateOf } from '../lib/story-replay';
 import { httpsStorybook } from '../lib/team-components';
@@ -44,30 +44,26 @@ async function read(R: string, number: number, ask: BehaviorAsk): Promise<Previe
   if (!teamOfPage()) return null;
   const data = await loadTeamData();
   const c = data.model.components?.list.find((x) => x.name === ask.id);
-  const storybook = httpsStorybook(data.storybook);
-  const story = c?.stories[0];
-  if (!c || !story || !storybook) return null;
+  if (!c) return null;
+  // Without a Storybook or a story there is nothing to play: the preview can still be asked for and made.
+  const storybook = httpsStorybook(data.storybook) ?? '';
+  const story = c.stories[0];
   const template = data.model.config.previews?.apps?.storybook ?? null;
-  const [comments, workflow] = await Promise.all([
-    ghGet<{ body?: string | null; user?: { login?: string | null } | null }[]>(`${R}/issues/${number}/comments?per_page=100`, { fresh: true })
-      .then((f) => f.data)
-      .catch(() => []),
-    ghGet<unknown>(`${R}/contents/${BEHAVIOR_PREVIEW_WORKFLOW_FILE}?ref=${encodeURIComponent(data.defaultBranch)}`)
-      .then(() => true)
-      .catch(() => false),
-  ]);
+  const comments = await ghGet<{ body?: string | null; user?: { login?: string | null; type?: string | null } | null }[]>(`${R}/issues/${number}/comments?per_page=100`, { fresh: true })
+    .then((f) => f.data)
+    .catch(() => []);
   const preview = parsePreviewState(comments);
   const behaviors = c.docs?.behaviors;
   const { announces } = behaviorOf(behaviors, ask);
   return {
-    state: replayStateOf({ preview, workflow, today: storybook, template, storyId: story.id }),
+    state: replayStateOf({ preview, wanted: ask.wanted, today: storybook, template, storyId: story?.id ?? '' }),
     keys: replaySequence(behaviors, ask.behavior),
     announces,
     component: c.name,
     preview,
     storybook,
     template,
-    storyId: story.id,
+    storyId: story?.id ?? '',
     behaviors: readBehaviors(behaviors).flatMap((b) => (b.keys?.length ? [{ id: b.id, family: b.family, text: b.text, keys: b.keys }] : [])),
   };
 }

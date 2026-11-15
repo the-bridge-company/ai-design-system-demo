@@ -36,6 +36,13 @@
 //                                                        default adds bridge-build and the comment naming them; not-now
 //                                                        posts the reason and closes it as not planned; ask posts the
 //                                                        question (api/_lib/behavior-decision.ts); { ok: true }
+//   POST { action: 'behavior-preview', repo, number, state: 'preparing' | 'ready' | 'failed', branch?, pr?, sha?, reason? }
+//                                                        someone on the team (an email member, or a GitHub account that
+//                                                        reads the team's repository) records Claude's preview of an open
+//                                                        behavior request, made by their own Claude through the Bridge
+//                                                        connector: Bridge's app keeps one comment on the request with
+//                                                        the block Studio reads (api/_lib/behavior-preview.ts); a ready
+//                                                        preview needs its open draft pull request on agent/preview-<n>
 //   GET  /api/contribute?npm=<name>,<name>,...           { latest: { <name>: <version> | null } }  the latest published
 //                                                        versions (public data, kept 5 minutes), at most 12 names
 //   GET  /api/contribute?repo=owner/name&gh=<GitHub REST path and query, URL-encoded, starting with />
@@ -205,6 +212,7 @@ import { buildComment, buildRecordOf, buildStateOf, buildSummary, designCheckSta
 import type { Notice } from '../_lib/notify-events.js';
 import { npmLatest, parseNpmNames, sendLibraryUpdate } from '../_lib/library-update.js';
 import { validPackageName } from '../../src/lib/library-update.js';
+import { PREVIEW_KINDS, PREVIEW_WORDS, previewBlocksOf, previewCommentOf, previewProblems, wantedOf, type PreviewBlock, type PreviewKind } from '../_lib/behavior-preview.js';
 import { askCommentOf, BEHAVIOR_DECISION_WORDS, BEHAVIOR_DECISIONS, BEHAVIOR_TEXT_MAX, behaviorIssueProblem, BUILD_REQUEST_LABEL as BUILD_LABEL_SERVER, declineCommentOf, decisionTextProblem, defaultCommentOf, requesterLoginOf, type BehaviorDecisionKind } from '../_lib/behavior-decision.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { mintReadPass, passOpens, verifyReadPass, type ReadPass } from '../_lib/read-pass.js';
@@ -686,6 +694,9 @@ async function onAction(req: Request, ctx: Ctx): Promise<Response> {
 
     case 'behavior-decision':
       return await onBehaviorDecision(req, ctx, body);
+
+    case 'behavior-preview':
+      return await onBehaviorPreview(req, ctx, body);
 
     case 'set-pm':
       return await onSetPm(req, ctx, body);
@@ -2051,6 +2062,62 @@ async function onBehaviorDecision(req: Request, ctx: Ctx, body: Record<string, u
   }
   await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
   return json(200, { ok: true });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Claude's preview of a behavior request, recorded by Bridge (api/_lib/behavior-preview.ts)
+
+/**
+ * POST { action: 'behavior-preview', repo, number, state, branch?, pr?, sha?, reason? }: someone on the team records
+ * the preview their own Claude made (bridge_report_behavior_preview, through the hosted connector). Checked here: they
+ * are on the team, the issue is an open behavior request of the team's repository, and a ready preview's draft pull
+ * request is open on agent/preview-<n>. Bridge's app writes the one record comment (kept up to date), naming who made
+ * it; the round counts the ready previews so far, and the record keeps the wanted sentence it was made from.
+ */
+async function onBehaviorPreview(req: Request, ctx: Ctx, body: Record<string, unknown>): Promise<Response> {
+  const team = parseRepo(body.repo);
+  const t = { ...team, full: team.full.toLowerCase() };
+  const who = await callerOn(ctx, req, t);
+  if (!who) return fail(401, 'signin', SIGNIN);
+  const n = Number(body.number);
+  if (!Number.isSafeInteger(n) || n < 1) return fail(400, 'bad_request', BEHAVIOR_DECISION_WORDS.noNumber);
+  const state = body.state as PreviewKind;
+  if (!PREVIEW_KINDS.includes(state)) return fail(400, 'bad_request', 'The state is preparing, ready or failed.');
+  const problems = previewProblems(n, { state: body.state, branch: body.branch, pr: body.pr, sha: body.sha, reason: body.reason });
+  if (problems.length) return fail(400, 'bad_request', problems.join(' '));
+  const token = await ctx.svc.app.installationToken(team.owner, team.repo);
+  if (!token) return fail(503, 'not_configured', NOT_CONFIGURED);
+  const R = `/repos/${team.owner}/${team.repo}`;
+  const issue = await ghApp(ctx, token, 'GET', `${R}/issues/${n}`);
+  if (issue.status === 404) return fail(404, 'not_found', BEHAVIOR_DECISION_WORDS.noNumber);
+  const why = behaviorIssueProblem(issue.status === 200 ? issue.data : null, 'ask');
+  if (why) return fail(why === 'notBehavior' ? 404 : 409, why === 'notBehavior' ? 'not_found' : why, BEHAVIOR_DECISION_WORDS[why]);
+  if (state === 'ready') {
+    const pull = await ghApp(ctx, token, 'GET', `${R}/pulls/${Number(body.pr)}`);
+    if (pull.status !== 200 || pull.data?.state !== 'open' || pull.data?.head?.ref !== body.branch || pull.data?.head?.repo?.full_name?.toLowerCase() !== t.full) return fail(409, 'no_pull', PREVIEW_WORDS.noPull(n));
+  }
+  const comments = await ghApp(ctx, token, 'GET', `${R}/issues/${n}/comments?per_page=100`);
+  const blocks = previewBlocksOf(Array.isArray(comments.data) ? comments.data : []);
+  const readyRounds = blocks.filter((b) => b.block.state === 'ready').map((b) => b.block.round ?? 1);
+  const round = (readyRounds.length ? Math.max(...readyRounds) : 0) + 1;
+  const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 280) : '';
+  const sha = typeof body.sha === 'string' ? body.sha : '';
+  const wanted = wantedOf(issue.data?.body);
+  const block: PreviewBlock = {
+    state,
+    ...(state === 'ready' ? { branch: String(body.branch), pr: Number(body.pr), ...(sha ? { sha } : {}) } : {}),
+    round,
+    ...(wanted ? { wanted } : {}),
+    ...(state === 'failed' ? { reason } : {}),
+    by: who.name,
+    at: new Date(ctx.now()).toISOString(),
+  };
+  const text = previewCommentOf(block);
+  const last = blocks[blocks.length - 1];
+  const w = last ? await ghAppSend(ctx, token, 'PATCH', `${R}/issues/comments/${last.id}`, { body: text }) : await ghAppSend(ctx, token, 'POST', `${R}/issues/${n}/comments`, { body: text });
+  if (w.status < 200 || w.status >= 300) return fail(502, 'unreachable', GITHUB_DOWN);
+  await noteWrite(ctx.svc.redis, t.full, ctx.now()).catch(() => undefined);
+  return json(200, { ok: true, preview: block });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

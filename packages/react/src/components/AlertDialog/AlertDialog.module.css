@@ -17,3 +17,12 @@
   flex: none;
   padding: var(--space-2) var(--layout-inset) 0;
 }
+
+/*
+ * The root of the static AlertDialog (dom/alert-dialog.ts): one stacking context on the modal layer, so its scrim and
+ * popup sit above a static Dialog or Drawer opened before it (same layer, later in the page), drawer included.
+ */
+.stack {
+  position: relative;
+  z-index: var(--layer-modal);
+}

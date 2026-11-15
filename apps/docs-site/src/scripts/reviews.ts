@@ -16,7 +16,7 @@ import { rowTime } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, reopenOnGitHub, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -118,6 +118,7 @@ import {
   writeLooked,
   type ConvInput,
   type GuidanceDocs,
+  offersCloseUndo,
 } from '../lib/review-page';
 import type { ActKind, BranchReviewProps, GuidanceView, PersonRef, TokenRowView, VisualView } from '../components/ds/studio/BranchReview';
 /** The Motion change id (components/ds/studio/BranchReview MOTION_CHANGE), kept here so the island loads lazily. */
@@ -1443,7 +1444,7 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
         throw err;
       }
     },
-    undoClose: undoCloseFor(pull),
+    undoClose: undoCloseFor(pull, statusRun),
     links: { review: reviewLink(location.origin, pull.number), developer: pull.html_url },
     share: shareable
       ? {
@@ -1566,13 +1567,17 @@ async function act(kind: ActKind | 'close', text: string, x: { pull: Pull; gate:
 /** The change this viewer closed a moment ago: its next paint offers Undo once (Close change never asks first). */
 let closedJustNow: number | null = null;
 
-/** Undo of Close change, on the paint right after it: reopens the change (core reopenOnGitHub) and paints it again. */
-function undoCloseFor(pull: Pull): (() => Promise<void>) | null {
-  if (closedJustNow !== pull.number || pull.state !== 'closed' || pull.merged_at) return null;
-  closedJustNow = null;
+/**
+ * Undo of Close change, on the paint right after it: the existing Reopen of this change (statusRun), offered only
+ * when that Reopen applies to the viewer (lib/review-page offersCloseUndo).
+ */
+function undoCloseFor(pull: Pull, statusRun: StatusActionRun): (() => Promise<void>) | null {
+  const justClosed = closedJustNow === pull.number;
+  if (justClosed) closedJustNow = null;
+  const run = statusRun.run;
+  if (!run || !offersCloseUndo({ justClosed, state: pull.state, merged: Boolean(pull.merged_at), statusAction: statusRun.kind })) return null;
   return async () => {
-    await reopenOnGitHub(studioClient(REPO_KEY), pull.number);
-    await openPr(pull.number, false);
+    await run();
   };
 }
 

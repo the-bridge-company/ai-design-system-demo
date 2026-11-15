@@ -66,6 +66,9 @@ describe('alertDialogHtml', () => {
     openDialog('sheet');
     openDialog('ask', { initialFocus: alertDialogCancel('ask') });
     expect(document.getElementById('sheet')!.inert).toBe(true);
+    // Its own stacking context on the modal layer, after the sheet: the scrim covers the sheet too.
+    expect(document.getElementById('ask')!.className).toBe('stack');
+    expect(document.getElementById('sheet')!.compareDocumentPosition(document.getElementById('ask')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(isDialogOpen('ask')).toBe(false);
     expect(isDialogOpen('sheet')).toBe(true);

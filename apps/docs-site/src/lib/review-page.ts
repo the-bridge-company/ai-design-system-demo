@@ -659,3 +659,12 @@ export function reviewActions(x: ActionInput): ReviewActions {
 
 /** The Studio address of a branch review ("Link to this review"). */
 export const reviewLink = (origin: string, pr: number) => `${origin}${studioHref(`explorations/?pr=${pr}`)}`;
+
+/**
+ * Undo on the toast after Close change: only on the paint right after this viewer closed it, never merged, and only
+ * when the existing Reopen applies to them (its author or an owner, with the right to write: core reopenEligibility,
+ * the status action "reopen"). Undo never lets more people reopen than the Reopen button does.
+ */
+export function offersCloseUndo(x: { justClosed: boolean; state: string; merged: boolean; statusAction: string | null }): boolean {
+  return x.justClosed && x.state === 'closed' && !x.merged && x.statusAction === 'reopen';
+}

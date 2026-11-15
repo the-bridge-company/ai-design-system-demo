@@ -65,7 +65,7 @@ export function alertDialogHtml(options: AlertDialogHtmlOptions): string {
     buttonHtml(confirmLabel, { variant: tone, attributes: { 'data-dialog-close': true, value: ALERT_DIALOG_CONFIRM } }) +
     `</div>`;
   return (
-    `<div id="${escapeHtml(id)}" data-bridge-dialog="" data-disable-pointer-dismissal="" hidden="">` +
+    `<div id="${escapeHtml(id)}" class="${styles.stack}" data-bridge-dialog="" data-disable-pointer-dismissal="" hidden="">` +
     `<div role="presentation" class="${dialogStyles.backdrop}" aria-hidden="true" data-dialog-backdrop=""></div>` +
     `<div role="presentation" class="${dialogStyles.viewport}" data-dialog-viewport="">` +
     `<div${popupAttrs}>` +

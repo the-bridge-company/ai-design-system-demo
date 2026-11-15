@@ -50,6 +50,13 @@ export function forgetRecentTeam(team: string, store: RecentStore | null = brows
   return list;
 }
 
+/** Undo of forgetRecentTeam: puts back the list as it was before (its order too) and returns it. */
+export function restoreRecentTeams(list: readonly string[], store: RecentStore | null = browserStore()): string[] {
+  const next = [...list];
+  write(store, next);
+  return next;
+}
+
 /**
  * What a team page does once its access is known: a repository it read is remembered first, one GitHub answered 404
  * for is forgotten, anything else (not known yet, App not set up) leaves the list alone. Returns the new list.

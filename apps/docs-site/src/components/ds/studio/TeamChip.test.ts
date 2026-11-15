@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // The team chip's "Recent teams": a team joins only after its page read the repository, and each entry has its own
-// remove action, a sibling menu item reachable with the arrow keys, that updates the list in place. Its "Your team"
+// remove action, a sibling menu item reachable with the arrow keys, that updates the list in place and says so in a
+// toast with Undo. Its "Your team"
 // and "Try it" sections (board EmptyB), and the browser workspace's chip.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -114,6 +115,23 @@ describe('TeamChip recent teams', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Tokens' })).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Ui' })).toBeInTheDocument();
     expect(stored()).toEqual(['initech/ui']);
+  });
+
+  it('says it was removed in a toast, and Undo puts the team back where it was', async () => {
+    localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['globex/tokens', 'initech/ui']));
+    const { user, menu } = await openMenu();
+    await user.click(within(menu).getByRole('menuitem', { name: 'Remove Tokens from recent teams' }));
+    expect(stored()).toEqual(['initech/ui']);
+    // Reversible, so nothing asked first: no dialog, only the toast.
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(await screen.findByText('Tokens removed from recent teams')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(stored()).toEqual(['globex/tokens', 'initech/ui']);
+    // Back in the menu, in its place.
+    if (!screen.queryByRole('menu')) await user.click(screen.getByRole('button', { name: /, team menu$/ }));
+    const again = await screen.findByRole('menu');
+    const tokens = await within(again).findByRole('menuitem', { name: 'Tokens' });
+    expect(tokens.compareDocumentPosition(within(again).getByRole('menuitem', { name: 'Ui' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('has no axe violations with recent teams listed', async () => {

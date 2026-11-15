@@ -73,8 +73,9 @@ describe('Settings > Members, an email contributor', () => {
     expect(await screen.findByText('Leo is now Admin.')).toBeInTheDocument();
     await user.click(within((await screen.findByText('Leo')).closest('tr')!).getByRole('button', { name: 'More for Leo' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Remove from team' }));
-    expect(screen.getByText('Remove Leo from acme/ds? They are signed out at once.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Remove Leo from acme/ds?' });
+    expect(dialog).toHaveTextContent('They are signed out at once.');
+    await user.click(within(dialog).getByRole('button', { name: 'Remove from team' }));
     await waitFor(() => expect(api.removeEmailMember).toHaveBeenCalledWith('acme/ds', 'leo@acme.example'));
     expect(api.removeMember).not.toHaveBeenCalled();
   });

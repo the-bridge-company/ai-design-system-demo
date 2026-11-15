@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // The Account dialog of the account menu (Settings starts with the team, board D9), against the /api/account contract with the network mocked: the name and
 // email with Rename, Link GitHub with the reason, the teams with their role, Sign out everywhere, Delete my account
-// confirmed in the page (type DELETE, never window.confirm) with the last-admin refusal said in place. The side nav
+// confirmed in an AlertDialog where the person types their email (never window.confirm) with the last-admin refusal
+// said in place. The side nav
 // row and its menu read the same account. Axe clean.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
@@ -118,7 +119,7 @@ describe('the account', () => {
     expect(posts('github')).toHaveLength(0);
   });
 
-  it('names the team before the confirm field when the person is its last admin, and makes someone admin inline', async () => {
+  it('names the team before the confirm dialog when the person is its last admin, and makes someone admin inline', async () => {
     let blocked = true;
     const invites: Call[] = [];
     reply = (c) => {
@@ -138,18 +139,18 @@ describe('the account', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete my account' }));
     expect(await screen.findByText('You are the only admin of Northwind Design.')).toBeInTheDocument();
     // The way out comes first; no confirm field yet.
-    expect(screen.queryByRole('textbox', { name: 'Type DELETE to confirm' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Type leo@acme.example to confirm' })).toBeNull();
     await expectNoAxeViolations(container);
     await user.click(screen.getByRole('button', { name: 'Make Kim Lee admin' }));
     await waitFor(() => expect(invites).toHaveLength(1));
     expect(invites[0]!.body).toEqual({ action: 'set-role', repo: '_team/c0ffee0000000017', email: 'kim@northwind.io', role: 'admin' });
     expect(invites[0]!.headers['X-Bridge-Account']).toBe('1');
-    expect(await screen.findByRole('textbox', { name: 'Type DELETE to confirm' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'Type leo@acme.example to confirm' })).toBeInTheDocument();
     expect(screen.getByText('Kim Lee is now admin.')).toBeInTheDocument();
     setInvitesFetch(null);
   });
 
-  it('deletes only once DELETE is typed, and says a late last-admin refusal in place', async () => {
+  it('deletes only once the email is typed in the AlertDialog, and says a late last-admin refusal in place', async () => {
     reply = (c) =>
       c.method === 'GET'
         ? json(200, { available: true, account: ACCOUNT })
@@ -159,18 +160,20 @@ describe('the account', () => {
     const { container } = render(createElement(AccountSettings));
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Delete my account' }));
-    const confirm = await screen.findByRole('textbox', { name: 'Type DELETE to confirm' });
-    expect(confirm).toHaveFocus();
-    const del = screen.getAllByRole('button', { name: 'Delete my account' }).at(-1)!;
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete your account?' });
+    expect(dialog).toHaveTextContent('This cannot be undone.');
+    const confirm = within(dialog).getByRole('textbox', { name: 'Type leo@acme.example to confirm' });
+    await waitFor(() => expect(confirm).toHaveFocus());
+    const del = within(dialog).getByRole('button', { name: 'Delete my account' });
     expect(del).toBeDisabled();
-    await user.type(confirm, 'delete');
+    await user.type(confirm, 'Leo@acme.example');
     expect(del).toBeDisabled();
     await user.clear(confirm);
-    await user.type(confirm, 'DELETE');
+    await user.type(confirm, 'leo@acme.example');
     expect(del).toBeEnabled();
-    await expectNoAxeViolations(container);
+    await expectNoAxeViolations(dialog);
     await user.click(del);
-    expect(await screen.findByText('You are the only admin of Acme Design. Make someone else an admin first, then delete your account.')).toBeInTheDocument();
+    expect(await within(dialog).findByText('You are the only admin of Acme Design. Make someone else an admin first, then delete your account.')).toBeInTheDocument();
     expect(posts('delete')).toHaveLength(1);
     expect(navigate.to).not.toHaveBeenCalled();
     expect(window.confirm).not.toHaveBeenCalled();
@@ -183,7 +186,7 @@ describe('the account', () => {
     const user = userEvent.setup();
     expect(await screen.findByText('GitHub @leo')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Delete my account' }));
-    await user.type(await screen.findByRole('textbox', { name: 'Type DELETE to confirm' }), 'DELETE{Enter}');
+    await user.type(await screen.findByRole('textbox', { name: 'Type leo@acme.example to confirm' }), 'leo@acme.example{Enter}');
     await waitFor(() => expect(navigate.to).toHaveBeenCalledWith('/signin/?bye=deleted'));
     expect(posts('delete')[0]!.headers.Authorization).toBe('Bearer ghu_abc');
     expect(posts('delete')[0]!.headers['X-Bridge-Account']).toBe('1');

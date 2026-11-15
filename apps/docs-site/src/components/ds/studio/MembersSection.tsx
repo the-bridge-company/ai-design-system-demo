@@ -2,7 +2,7 @@
 // count beside the title, and for an admin the page's one primary action, "Invite collaborators", on the title's line.
 // Then a DS Table, Person and Role: each person's name, one muted line ("Reviews design"), and on the same row their
 // role picker (RolePicker, the one the invite dialog uses) and a "More" menu with Remove from team.
-// Remove asks once, in the row itself, before anything happens. Pending invites close the list, with Resend on their
+// Remove asks once, in an AlertDialog (the Delete pattern, plain), before anything happens. Pending invites close the list, with Resend on their
 // line. Someone who is not an admin reads the same list with roles as text and no controls (board I4).
 // An email member (lib/contribute.ts) reads as any member, with no tag of their own; an admin makes them Admin or Can
 // edit (Reviewer is disabled in their picker, with the reason: reviewers approve on GitHub) or removes them.
@@ -14,7 +14,7 @@
 // in the list at once (withJoined, BR-19), and a read after the row leaves confirms it.
 import { useEffect, useState } from 'react';
 import { Link2Off, MoreHorizontal, UserPlus } from 'lucide-react';
-import { Alert, Button, ButtonGroup, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
+import { Alert, AlertDialog, AlertDialogContent, Button, EmptyState, IconButton, Menu, MenuContent, MenuItem, MenuTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import RolePicker from './RolePicker';
 import { NoticeLine, PersonCell } from './MemberParts';
 import InviteDialog from './InviteDialog';
@@ -138,23 +138,16 @@ function MemberRow({ m, data, admins, act, onNotice }: { m: Member; data: Member
           </span>
         </TableCell>
       </TableRow>
-      {confirming && (
-        <TableRow className="mem-confirm">
-          <TableCell colSpan={2}>
-            <span className="mem-confirm-body">
-              <span>{email ? MEMBERS_WORDS.removeConfirmEmail(m.name, data.team) : MEMBERS_WORDS.removeConfirm(m.name, data.team)}</span>
-              <ButtonGroup>
-                <Button variant="secondary" onClick={() => setConfirming(false)} autoFocus>
-                  Cancel
-                </Button>
-                <Button variant="danger" loading={busy} onClick={() => void run(() => act.remove(m))}>
-                  Remove
-                </Button>
-              </ButtonGroup>
-            </span>
-          </TableCell>
-        </TableRow>
-      )}
+      <AlertDialog open={confirming} onOpenChange={(next) => !busy && setConfirming(next)}>
+        <AlertDialogContent
+          title={MEMBERS_WORDS.removeAsk(m.name, data.team)}
+          description={email ? MEMBERS_WORDS.removeTextEmail : MEMBERS_WORDS.removeText}
+          confirmLabel={MEMBERS_WORDS.remove}
+          closeOnConfirm={false}
+          loading={busy}
+          onConfirm={() => void run(() => act.remove(m))}
+        />
+      </AlertDialog>
     </>
   );
 }

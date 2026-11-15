@@ -3,9 +3,9 @@
 // tests, the branch on GitHub) folds under "For developers" for tech owners only.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BranchReview, type BranchReviewProps } from './BranchReview';
 
 const base: BranchReviewProps = {
@@ -123,5 +123,24 @@ describe('BranchReview', () => {
     expect(acts).toEqual(['approve']);
     // Nothing is faked in the page: no Approved state until the server says so.
     expect(screen.queryByText('You approved')).toBeNull();
+  });
+
+  it('Close change acts at once (it can be reopened): no dialog asks first', async () => {
+    const onClose = vi.fn(async () => 'Closed.');
+    const p = { ...base, actions: { ...base.actions, menu: { ...base.actions.menu, close: true } }, onClose };
+    render(createElement(BranchReview, p as BranchReviewProps));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Close change' }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  it('right after Close change, the toast says so with Undo, which reopens the change', async () => {
+    const undoClose = vi.fn(async () => undefined);
+    render(createElement(BranchReview, { ...base, undoClose }));
+    expect(await screen.findByText('Change closed')).toBeTruthy();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(undoClose).toHaveBeenCalledOnce());
   });
 });

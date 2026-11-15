@@ -3,13 +3,13 @@
 // acts on. The name and email with Rename (inline form); GitHub linked, or Link GitHub with the one line saying
 // why (only to review on GitHub or connect a repository); the person's teams, each opening its space with its role;
 // Email, one line saying what Bridge emails them, Change opening the two choices (things that need me, what moved); Sign out and
-// Sign out everywhere; then Delete my account, confirmed in the page (type DELETE), never window.confirm. Before the
-// confirm field, Bridge asks the server whether a team would refuse it (the only admin of a team with other members):
-// that team is named first, with "Make <name> admin" inline or "Hand over the team", and the field comes once it is
-// clear. Nothing shows signed out or on a site without accounts.
+// Sign out everywhere; then Delete my account, confirmed in an AlertDialog where the person types their email (the
+// Delete pattern, high impact), never window.confirm. Before the dialog, Bridge asks the server whether a team would
+// refuse it (the only admin of a team with other members): that team is named first, with "Make <name> admin" inline
+// or "Hand over the team", and the dialog comes once it is clear. Nothing shows signed out or on a site without accounts.
 import { useId, useState, type FormEvent } from 'react';
 import { LogOut, Trash2 } from 'lucide-react';
-import { Alert, Avatar, Badge, Button, Dialog, DialogContent, Divider, Icon, Input, Link, Select } from '@bridge-ds/react';
+import { Alert, AlertDialog, AlertDialogContent, Avatar, Badge, Button, Dialog, DialogContent, Divider, Icon, Input, Link, Select } from '@bridge-ds/react';
 import { GitHubMark } from '../studio/brand-icons';
 import { useAccount, useFace } from './AccountMenu';
 import { ACCOUNT_WORDS as W, accountName, PRIVACY_PAGE, roleWord, signedOutHref, type Account, type BlockedTeam, type NotifyChoices } from '../../../lib/account';
@@ -326,16 +326,14 @@ function LastAdmin({ team, onMade }: { team: BlockedTeam; onMade: (name: string)
   );
 }
 
-function DeleteRow() {
+function DeleteRow({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
-  const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
   const [blocked, setBlocked] = useState<BlockedTeam[]>([]);
   const [said, setSaid] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
-  const confirmed = typed.trim() === W.deleteConfirmWord;
-  // Before the confirm field: a team that would refuse it is said first, with its way out.
+  // Before the dialog: a team that would refuse it is said first, with its way out.
   const check = async () => {
     setChecking(true);
     setRefusal(null);
@@ -350,9 +348,9 @@ function DeleteRow() {
       setChecking(false);
     }
   };
-  const remove = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!confirmed) return;
+  // The AlertDialog keeps its button off until the email matches (confirmText).
+  const remove = async () => {
+    if (busy) return;
     setBusy(true);
     setRefusal(null);
     const api = await import('../../../scripts/account-session');
@@ -370,7 +368,7 @@ function DeleteRow() {
         <div className="acc-set-text">
           <p className="acc-set-sub">{W.deleteHelp}</p>
         </div>
-        {!open && !blocked.length && (
+        {!blocked.length && (
           <Button variant="secondary" iconStart={Trash2} loading={checking} onClick={() => void check()}>
             {W.deleteTitle}
           </Button>
@@ -391,28 +389,32 @@ function DeleteRow() {
           {said}
         </p>
       )}
-      {refusal && <Alert tone="danger">{refusal}</Alert>}
-      {open && (
-        <form className="acc-set-form" noValidate onSubmit={(e) => void remove(e)}>
-          <Input label={W.deleteConfirmLabel} name="confirm" autoComplete="off" autoFocus value={typed} onValueChange={setTyped} />
-          <div className="acc-set-actions">
-            <Button type="submit" variant="danger" disabled={!confirmed} loading={busy}>
-              {W.deleteConfirm}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setOpen(false);
-                setTyped('');
-                setRefusal(null);
-                setSaid('');
-              }}
-            >
-              {W.cancel}
-            </Button>
-          </div>
-        </form>
-      )}
+      {refusal && !open && <Alert tone="danger">{refusal}</Alert>}
+      <AlertDialog
+        open={open}
+        onOpenChange={(next) => {
+          if (busy) return;
+          setOpen(next);
+          if (!next) {
+            setRefusal(null);
+            setSaid('');
+          }
+        }}
+      >
+        <AlertDialogContent
+          title={W.deleteAsk}
+          description={W.deleteText}
+          confirmLabel={W.deleteConfirm}
+          cancelLabel={W.cancel}
+          confirmText={email}
+          confirmTextLabel={W.deleteConfirmLabel(email)}
+          closeOnConfirm={false}
+          loading={busy}
+          onConfirm={() => void remove()}
+        >
+          {refusal && <Alert tone="danger">{refusal}</Alert>}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -427,7 +429,7 @@ export function AccountRows({ account }: { account: Account }) {
       <EmailRow account={account} />
       <SessionRow />
       <Divider spacing="none" />
-      <DeleteRow />
+      <DeleteRow email={account.email} />
       <p className="acc-set-sub">
         <Link href={PRIVACY_PAGE}>{W.privacy}</Link>
       </p>

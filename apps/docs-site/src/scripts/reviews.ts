@@ -16,7 +16,7 @@ import { rowTime } from '../lib/lead-decisions';
 import { waitingForLibraryLine } from '../lib/library-impact-view';
 import { authorFor, explorationAuthorFor } from '../lib/author';
 import { figmaPushFor, tokenValuesFor } from './figma-push-read';
-import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
+import { EXPLORATION_USE_CASES, explorationStateLabel, isArchivedExploration, isGuardedExploration, type ExplorationStatus, isHeldExploration, explorationStatus, parseExplorationBody, isInReview as isWaitingForLead, resolveBranchPreviews, askOthersToReviewOnGitHub, closeOnGitHub, commentOnGitHub, findPreviewComment, reviewersToAsk, isActiveExploration, isExplorationPull, agoInSentence, markSuggestionsAppliedOnGitHub, mergeOnGitHub, visualOffer, OverrideMergeError, overrideMergeOnGitHub, parseNeededBy, parseFigmaOrigin, DEFAULT_PRODUCTS, reviewOnGitHub, requesterOf, requesterFirstName, lookAgainReviewers, canOverride, overrideReasonMin, ownerOverridePolicy, reopenOnGitHub, type ProductConfig, type Rights, type ShipPolicy, type ToolingConfig } from '@bridge-ds/core';
 import { loadTeams, siteApprovalRules, siteApprovers, siteRoles, siteShipPolicy, siteSoloOwner, teamDirectory, teamSnapshot } from './teams';
 import { effectiveTier, isAutomationPull, isFigmaFixPull, reviewQueue } from '../lib/review-queue';
 import {
@@ -1433,7 +1433,17 @@ async function detailProps(x: DetailInput): Promise<BranchReviewProps | null> {
     onAct: (kind, text) => act(kind, text, { pull, gate, docs: x.docs, write, statusRun, values: Boolean(approvals.valuesOnly) }),
     onOverride: () => openOverride?.(),
     onDraft: () => backToDraft(pull.number, reload).then(() => undefined),
-    onClose: () => act('close', '', { pull, gate, docs: x.docs, write, statusRun }),
+    // Close change acts at once (it can be reopened): the repainted review says so in a toast with Undo, which reopens.
+    onClose: async () => {
+      closedJustNow = pull.number;
+      try {
+        return await act('close', '', { pull, gate, docs: x.docs, write, statusRun });
+      } catch (err) {
+        closedJustNow = null;
+        throw err;
+      }
+    },
+    undoClose: undoCloseFor(pull),
     links: { review: reviewLink(location.origin, pull.number), developer: pull.html_url },
     share: shareable
       ? {
@@ -1551,6 +1561,19 @@ async function act(kind: ActKind | 'close', text: string, x: { pull: Pull; gate:
   const said = { suggest: 'Changes asked for.', comment: 'Comment posted.', approve: 'Approved.', merge: 'Added to the library.', 'approve-merge': 'Approved and added to the library.', close: 'Closed.' }[kind as string] ?? 'Done.';
   await openPr(pull.number, false);
   return said;
+}
+
+/** The change this viewer closed a moment ago: its next paint offers Undo once (Close change never asks first). */
+let closedJustNow: number | null = null;
+
+/** Undo of Close change, on the paint right after it: reopens the change (core reopenOnGitHub) and paints it again. */
+function undoCloseFor(pull: Pull): (() => Promise<void>) | null {
+  if (closedJustNow !== pull.number || pull.state !== 'closed' || pull.merged_at) return null;
+  closedJustNow = null;
+  return async () => {
+    await reopenOnGitHub(studioClient(REPO_KEY), pull.number);
+    await openPr(pull.number, false);
+  };
 }
 
 /** Runs a decision on the open review (the review queue's own bar). False when nothing open or nothing sent. */

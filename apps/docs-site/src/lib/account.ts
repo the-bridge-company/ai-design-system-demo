@@ -271,8 +271,10 @@ export const ACCOUNT_WORDS = {
   deleted: 'Your account is deleted.',
   deleteTitle: 'Delete my account',
   deleteHelp: 'Removes your account, your email memberships and your sessions. Your teams keep the changes you made, signed "A former member".',
-  deleteConfirmLabel: 'Type DELETE to confirm',
-  deleteConfirmWord: 'DELETE',
+  // The AlertDialog of Delete my account (the Delete pattern, high impact): the person types their email to confirm.
+  deleteAsk: 'Delete your account?',
+  deleteText: 'Your account, your email memberships and your sessions go at once. This cannot be undone.',
+  deleteConfirmLabel: (email: string) => `Type ${email} to confirm`,
   deleteConfirm: 'Delete my account',
   lastAdmin: 'You are the only admin of a team with other members. Make someone else an admin first, then delete your account.',
   // Said before the confirm field (delete-check), with the way out on the same card.

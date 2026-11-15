@@ -412,8 +412,10 @@ export const MEMBERS_WORDS = {
   resent: 'Sent again.',
   remove: 'Remove from team',
   cancelInvite: 'Cancel invite',
-  removeConfirm: (name: string, team: string) => `Remove ${name} from ${team}? They lose access on GitHub too.`,
-  removeConfirmEmail: (name: string, team: string) => `Remove ${name} from ${team}? They are signed out at once.`,
+  // Remove from team asks in an AlertDialog (the Delete pattern, plain): inviting them again is a new invite, not an undo.
+  removeAsk: (name: string, team: string) => `Remove ${name} from ${team}?`,
+  removeText: 'They lose access in Bridge and on GitHub at once. This cannot be undone: to bring them back, invite them again.',
+  removeTextEmail: 'They are signed out at once. This cannot be undone: to bring them back, invite them again.',
   reviewerNote: 'Reviewers start once the settings change is approved.',
   /** The members table's second column: what each person may do in Bridge (their job is the line under their name). */
   accessHead: 'Access',

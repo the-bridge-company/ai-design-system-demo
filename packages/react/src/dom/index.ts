@@ -21,6 +21,7 @@ export { checklistHtml, checklistRowHtml, type ChecklistHtmlOptions, type Checkl
 export { segmentedControlHtml, bindSegmentedControls, selectSegment, type SegmentHtmlItem, type SegmentedControlHtmlOptions } from './segmented-control';
 export { switchHtml, bindSwitches, setSwitchChecked, type SwitchHtmlOptions } from './switch';
 export { dialogHtml, bindDialogs, openDialog, closeDialog, isDialogOpen, dialogReturnValue, type DialogHtmlOptions, type OpenDialogOptions } from './dialog';
+export { alertDialogHtml, alertDialogCancel, ALERT_DIALOG_CONFIRM, type AlertDialogHtmlOptions } from './alert-dialog';
 export { drawerHtml, type DrawerHtmlOptions } from './drawer';
 export { showTabsPanel } from './tabs';
 export { copyText } from '../utils/copy';

@@ -768,15 +768,23 @@ function EmptyFrame({ label }: { label: string | null }) {
   );
 }
 
-/** The line a write produced, once, as a DS toast (success, or danger when it says something did not happen). */
-function SaidToast({ said }: { said: string | undefined }) {
+/**
+ * The line a write produced, once, as a DS toast (success, or danger when it says something did not happen). `undo`:
+ * the way back the write has (Archive: Unarchive), offered on the toast as Undo, so a reversible action never asks.
+ */
+function SaidToast({ said, undo }: { said: string | undefined; undo?: (() => Promise<string | void>) | null }) {
   const toast = useToast();
   const shown = useRef<string | null>(null);
   useEffect(() => {
     if (!said || shown.current === said) return;
     shown.current = said;
-    toast.add({ title: said, tone: 'success', timeout: 8000 });
-  }, [said, toast]);
+    toast.add({
+      title: said,
+      tone: 'success',
+      timeout: 8000,
+      ...(undo ? { action: { label: 'Undo', onClick: () => void undo().catch((err: Error) => toast.error(err.message)) } } : {}),
+    });
+  }, [said, toast, undo]);
   return null;
 }
 
@@ -1071,7 +1079,8 @@ export function ExplorationPage(p: ExplorationPageProps) {
   return (
     <ToastProvider limit={2}>
       <ExplorationBody {...p} />
-      <SaidToast said={p.said} />
+      {/* Archive acts at once (it can be taken back): its toast offers Undo, the Unarchive this page already has. */}
+      <SaidToast said={p.said} undo={p.archived && p.said === ARCHIVED_LINE ? p.onUnarchive : null} />
     </ToastProvider>
   );
 }

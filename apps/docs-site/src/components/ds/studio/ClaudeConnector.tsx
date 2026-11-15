@@ -3,13 +3,14 @@
 //   Connector address  the two steps (Add custom connector with this address; sign in with Bridge), the address with
 //                      Copy address on its row, and one line for Claude Team and Enterprise Owners.
 //   In Claude          "Connected in Claude by Dana Kim, last used Oct 25, 2026." or "Not connected yet."; each
-//                      connection on its own line with Remove for its owner or a team admin.
+//                      connection on its own line with Remove for its owner or a team admin, asked first in an
+//                      AlertDialog (it cannot be undone).
 // A "For developers" fold: Claude Code with the hosted address, and the local MCP server with npx. Words:
 // lib/claude-connector.ts.
 // Below it, the measure of the team's components (MeasureSetting): what lets Claude fix what differs in Figma.
 import { useEffect, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { Button, Card, CardBody } from '@bridge-ds/react';
+import { AlertDialog, AlertDialogContent, Button, Card, CardBody } from '@bridge-ds/react';
 import { UrlText, useCopy } from './TeamLink';
 import { NoticeLine } from './MemberParts';
 import { Code, DevFold } from './SettingsParts';
@@ -38,6 +39,8 @@ export default function ClaudeConnector() {
   const [list, setList] = useState<Connection[] | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  // The connection Remove asks about, until the person answers.
+  const [asking, setAsking] = useState<Connection | null>(null);
   const { copied, said, copy } = useCopy();
   const url = typeof location === 'undefined' ? '/mcp' : connectorUrl(location.origin);
 
@@ -123,7 +126,7 @@ export default function ClaudeConnector() {
                         {c.by}, {c.client}
                       </span>
                       {(c.mine || canManage) && (
-                        <Button variant="ghost" data-density="compact" onClick={() => void remove(c)}>
+                        <Button variant="ghost" data-density="compact" onClick={() => setAsking(c)}>
                           {W.remove}
                         </Button>
                       )}
@@ -133,6 +136,16 @@ export default function ClaudeConnector() {
               </div>
             </div>
             <NoticeLine notice={notice} />
+            <AlertDialog open={asking !== null} onOpenChange={(next) => !next && setAsking(null)}>
+              {asking && (
+                <AlertDialogContent
+                  title={W.removeAsk(asking.by)}
+                  description={W.removeText(asking.client)}
+                  confirmLabel={W.removeConfirm}
+                  onConfirm={() => void remove(asking)}
+                />
+              )}
+            </AlertDialog>
             <DevFold
               facts={[
                 { term: 'Claude Code', value: snippets.claudeCode, code: true },

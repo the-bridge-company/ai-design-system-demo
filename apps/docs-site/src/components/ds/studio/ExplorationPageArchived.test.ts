@@ -81,6 +81,24 @@ describe('ExplorationPage, archived', () => {
     expect(screen.getByText('Open in Claude Code')).toBeTruthy();
   });
 
+  it('right after Archive (it acts at once), the toast says so with Undo, which unarchives', async () => {
+    const onUnarchive = vi.fn(async () => 'Back in the lists.');
+    render(createElement(ExplorationPage, { ...base, archived: true, onUnarchive, said: ARCHIVED_LINE }));
+    expect((await screen.findAllByText(ARCHIVED_LINE)).length).toBeGreaterThan(1);
+    // Nothing asked: no confirm dialog, only the toast.
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    });
+    expect(onUnarchive).toHaveBeenCalledOnce();
+  });
+
+  it('a toast with another line, or for a viewer who cannot unarchive, offers no Undo', async () => {
+    render(createElement(ExplorationPage, { ...base, archived: true, onUnarchive: null, said: ARCHIVED_LINE }));
+    await screen.findAllByText(ARCHIVED_LINE);
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
+
   it('a viewer who cannot unarchive reads the line without the button', () => {
     render(createElement(ExplorationPage, { ...base, archived: true, onUnarchive: null }));
     expect(screen.getByText(ARCHIVED_LINE)).toBeTruthy();

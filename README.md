@@ -32,7 +32,8 @@ to it as pull requests that people review.
 - **Branch previews**: every PR publishes snapshot packages and per-branch deploys of the docs, Storybook and the
   admin demo, listed on the Branches page. A product staging can preview a branch's tokens without reinstalling.
 
-Maintained by Florian Gouloubi. Licensed MIT.
+Maintained by Florian Gouloubi. Fair source: the components and tokens are MIT, the product is FSL-1.1-MIT.
+See [License](#license).
 
 ## Live
 
@@ -223,5 +224,16 @@ Bridge components. Component behavior comes from [Base UI](https://base-ui.com),
 
 ## License
 
-MIT, Copyright (c) 2026 Florian Gouloubi. See [`LICENSE`](LICENSE). Third-party code keeps its own license
-(`apps/admin/_original/LICENSE`).
+Copyright (c) 2026 Florian Gouloubi. Two licenses, one per layer. Every package carries its own `LICENSE` file,
+and its `package.json` declares the same thing.
+
+| Layer | License | Packages |
+| --- | --- | --- |
+| What you install in your own product | MIT | `@bridge-ds/react`, `@bridge-ds/tokens`, `@bridge-ds/core`, `@bridge-ds/toolbar`, `@bridge-ds/eslint-plugin`, `@bridge-ds/stylelint-plugin` |
+| Studio, the Figma plugin, the connector and the tools | [FSL-1.1-MIT](LICENSE) | `apps/docs-site`, `apps/admin`, `apps/figma-plugin`, `@bridge-ds/cli`, `@bridge-ds/mcp`, `@bridge-ds/visual` |
+
+Fair source means your team can read, audit, change and run the whole product inside your company, self-hosting
+included, but not resell it as a competing product. Two commitments do not move: each FSL version becomes MIT two
+years after its release, and the components and tokens stay MIT with no non-compete clause.
+
+Third-party code keeps its own license (`apps/admin/_original/LICENSE`).

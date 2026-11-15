@@ -35,15 +35,36 @@ describe('an action', () => {
   it('that cannot be undone asks first in an AlertDialog, then the row goes; Start again brings it back', async () => {
     view('delete');
     const stage = screen.getByRole('region', { name: 'Try Delete' });
-    expect(within(stage).getByText('Press Delete on a row: it asks first, since it cannot be undone.')).toBeInTheDocument();
-    fireEvent.click(within(stage).getByRole('button', { name: 'Delete: Docs team' }));
+    expect(within(stage).getByText('Press Delete on a row: it asks first, since it cannot be undone. Marketing team also asks for its name: other people lose it.')).toBeInTheDocument();
+    fireEvent.click(within(stage).getByRole('button', { name: 'Delete: Spring sale draft' }));
     const dialog = await screen.findByRole('alertdialog');
-    expect(within(dialog).getByText('Delete Docs team?')).toBeInTheDocument();
+    expect(within(dialog).getByText('Delete Spring sale draft?')).toBeInTheDocument();
     expect(within(dialog).getByText(/This cannot be undone/)).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete this team' }));
-    expect(within(stage).queryByText('Docs team')).toBeNull();
+    // Plain confirmation: nothing to type.
+    expect(within(dialog).queryByRole('textbox')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete draft' }));
+    expect(within(stage).queryByText('Spring sale draft')).toBeNull();
     fireEvent.click(within(stage).getByRole('button', { name: 'Start again' }));
-    expect(within(stage).getByText('Docs team')).toBeInTheDocument();
+    expect(within(stage).getByText('Spring sale draft')).toBeInTheDocument();
+  });
+
+  it('whose impact is high asks to type the name: Delete this team stays off until it matches', async () => {
+    view('delete');
+    const stage = screen.getByRole('region', { name: 'Try Delete' });
+    fireEvent.click(within(stage).getByRole('button', { name: 'Delete: Marketing team' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(within(dialog).getByText('Delete Marketing team?')).toBeInTheDocument();
+    const field = within(dialog).getByRole('textbox', { name: 'Type "Marketing team" to confirm' });
+    const confirm = within(dialog).getByRole('button', { name: 'Delete this team' });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(field, { target: { value: 'Marketing' } });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(field, { target: { value: 'Marketing team' } });
+    const on = within(dialog).getByRole('button', { name: 'Delete this team' });
+    expect(on).toBeEnabled();
+    await expectNoAxeViolations(dialog);
+    fireEvent.click(on);
+    expect(within(stage).queryByText('Marketing team')).toBeNull();
   });
 
   it('that can be undone goes at once, with Undo in the Toast that brings it back in its place', async () => {

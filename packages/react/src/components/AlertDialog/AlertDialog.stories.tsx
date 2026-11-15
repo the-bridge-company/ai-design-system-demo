@@ -39,6 +39,21 @@ export const Consequential: Story = {
   ),
 };
 
+/** High impact: other people lose it. The person types the name; Delete this team stays off until it matches. */
+export const TypeTheName: Story = {
+  render: () => (
+    <AlertDialog>
+      <AlertDialogTrigger render={<Button variant="secondary" iconStart={Trash2} />}>Delete this team</AlertDialogTrigger>
+      <AlertDialogContent
+        title="Delete Marketing team?"
+        description="Everyone on the team loses access at once. This cannot be undone."
+        confirmLabel="Delete this team"
+        confirmText="Marketing team"
+      />
+    </AlertDialog>
+  ),
+};
+
 export const AsyncConfirm: Story = {
   render: function Render() {
     const [open, setOpen] = useState(false);

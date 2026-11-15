@@ -41,6 +41,13 @@ export interface PatternUse {
 /** The icons a stage button may carry. */
 export const STAGE_ICONS = ['trash'] as const;
 
+/** A question the stage asks first: title, consequence and the confirm button. "{item}" is the row. */
+export interface StageQuestion {
+  title: string;
+  text: string;
+  confirmLabel: string;
+}
+
 /** What the stage plays: rows, each with the action. Page only, agents never read it. */
 export interface PatternStage {
   /** The rows the stage starts with: "Marketing site". */
@@ -49,8 +56,13 @@ export interface PatternStage {
   action: string;
   /** The icon at the start of that button, when the rules name one. */
   icon?: (typeof STAGE_ICONS)[number];
-  /** The question asked first, when it cannot be undone. "{item}" is the row. */
-  confirm?: { title: string; text: string; confirmLabel: string };
+  /** The question asked first, when it cannot be undone. "{item}" is the row, in each line. */
+  confirm?: StageQuestion;
+  /**
+   * The rows whose impact is high (other people lose them), asked with their own question: the person types the row's
+   * name before the confirm button turns on (AlertDialog confirmText). The other rows keep the plain `confirm`.
+   */
+  typeName?: StageQuestion & { items: string[] };
   /** What the toast says once done, when it can be undone. "{item}" is the row. */
   done?: string;
   /** What the toast says after Undo. "{item}" is the row. */
@@ -147,6 +159,13 @@ export function validatePattern(value: unknown, fileId?: string): PatternIssue[]
     if (s.icon !== undefined && !(STAGE_ICONS as readonly unknown[]).includes(s.icon)) out.push({ field: 'stage.icon', message: `Use a known icon: ${STAGE_ICONS.join(', ')}, or leave icon out.` });
     const c = s.confirm as Record<string, unknown> | undefined;
     if (o.reversible === false && !(c && isText(c.title) && isText(c.text) && isText(c.confirmLabel))) out.push({ field: 'stage.confirm', message: 'It cannot be undone: the stage asks first (confirm: title, text, confirmLabel).' });
+    if (s.typeName !== undefined) {
+      const t = (s.typeName && typeof s.typeName === 'object' ? s.typeName : {}) as Record<string, unknown>;
+      const rows = isTextList(s.items) ? s.items : [];
+      if (o.reversible !== false) out.push({ field: 'stage.typeName', message: 'Typing the name is for what cannot be undone: remove typeName, or set reversible to false.' });
+      else if (!isTextList(t.items) || !isText(t.title) || !isText(t.text) || !isText(t.confirmLabel)) out.push({ field: 'stage.typeName', message: 'Name the rows whose impact is high (items) and their question: title, text, confirmLabel.' });
+      else if (t.items.some((x) => !rows.includes(x))) out.push({ field: 'stage.typeName', message: `Ask to type the name only on rows of the stage: ${(t.items as string[]).filter((x) => !rows.includes(x)).join(', ')} is not one.` });
+    }
     if (o.reversible === true && !isText(s.done)) out.push({ field: 'stage.done', message: 'It can be undone: the stage says it is done, with Undo (done).' });
   }
   if (EM_DASH.test(JSON.stringify(value))) out.push({ field: 'pattern', message: 'Replace the em dashes with a colon, a comma or two sentences.' });

@@ -63,6 +63,18 @@ describe('validatePattern', () => {
     expect(validatePattern(action({ reversible: true, stage: { items: ['A'], action: 'Send' } })).map((i) => i.field)).toEqual(['stage.done']);
   });
 
+  it('asks to type the name only on rows of the stage, and only when it cannot be undone', () => {
+    const q = { title: 'Delete {item}?', text: 'Everyone loses access.', confirmLabel: 'Delete this team' };
+    type Stage = NonNullable<ActionPattern['stage']>;
+    const stage = (typeName: unknown): Stage => ({ ...action().stage!, items: ['A', 'B'], typeName }) as Stage;
+    const fields = (over: Partial<ActionPattern>) => validatePattern(action(over)).map((i) => i.field);
+    expect(fields({ stage: stage({ ...q, items: ['A'] }) })).toEqual([]);
+    expect(fields({ stage: stage({ ...q, items: ['C'] }) })).toEqual(['stage.typeName']);
+    expect(validatePattern(action({ stage: stage({ ...q, items: ['C'] }) }))[0]!.message).toMatch(/C is not one/);
+    expect(fields({ stage: stage({ items: ['A'], title: 'Delete {item}?' }) })).toEqual(['stage.typeName']);
+    expect(fields({ reversible: true, stage: { ...stage({ ...q, items: ['A'] }), done: 'Sent' } })).toEqual(['stage.typeName']);
+  });
+
   it('keeps an interaction to its name and sentence: the rest comes from the components', () => {
     const issues = validatePattern({ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.', components: ['Select'] });
     expect(issues.map((i) => i.field)).toEqual(['components']);

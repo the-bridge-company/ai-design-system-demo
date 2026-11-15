@@ -280,6 +280,7 @@ describe('/api/billing with billing on', () => {
       line_items: [{ price: 'price_bridge_team_usd_monthly', quantity: 10 }],
       automatic_tax: { enabled: false },
       tax_id_collection: { enabled: true },
+      allow_promotion_codes: true,
       billing_address_collection: 'required',
       subscription_data: { metadata: { bridge_team: TEAM }, invoice_settings: { footer: FRANCHISE_FOOTER } },
       success_url: `${ORIGIN}/studio/northwind/ds/settings/?billing=done#billing`,

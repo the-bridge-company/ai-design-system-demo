@@ -341,6 +341,9 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
       automatic_tax: { enabled: tax.automaticTax },
       // A VAT number on the invoice, whatever the regime (some customers need it there).
       tax_id_collection: { enabled: true },
+      // A promotion code field: the open source and teaching offer (free Team, on request) and one-off codes made in
+      // the Stripe Dashboard. No code exists by default, so nothing changes for anyone else.
+      allow_promotion_codes: true,
       billing_address_collection: 'required',
       // The customer exists already: Checkout keeps the address and name it collects on it (needed for tax).
       customer_update: { address: 'auto', name: 'auto' },

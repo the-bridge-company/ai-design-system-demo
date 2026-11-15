@@ -11,7 +11,7 @@ const ICONS = { trash: Trash2 } as const;
 
 /** The line over the rows: what to do, and what the rule makes happen. */
 export const stageNote = (p: Pick<ActionPattern, 'reversible' | 'stage'>): string =>
-  p.reversible ? `Try ${p.stage!.action} on a row: it goes at once, with Undo in the message that appears.` : `Try ${p.stage!.action} on a row: it asks first, since it cannot be undone.`;
+  p.reversible ? `Press ${p.stage!.action} on a row: it goes at once, with Undo in the message that appears.` : `Press ${p.stage!.action} on a row: it asks first, since it cannot be undone.`;
 
 function Rows({ pattern }: { pattern: ActionPattern }) {
   const stage = pattern.stage!;

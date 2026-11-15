@@ -35,7 +35,7 @@ describe('an action', () => {
   it('that cannot be undone asks first in an AlertDialog, then the row goes; Start again brings it back', async () => {
     view('delete');
     const stage = screen.getByRole('region', { name: 'Try Delete' });
-    expect(within(stage).getByText('Try Delete on a row: it asks first, since it cannot be undone.')).toBeInTheDocument();
+    expect(within(stage).getByText('Press Delete on a row: it asks first, since it cannot be undone.')).toBeInTheDocument();
     fireEvent.click(within(stage).getByRole('button', { name: 'Delete: Docs team' }));
     const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Delete Docs team?')).toBeInTheDocument();

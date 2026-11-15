@@ -45,7 +45,7 @@ Working on the server itself: `npm run mcp:build` in a clone of this repo builds
 
 <!-- tools:start (generated from the server: npm run readme:tools -w @bridge-ds/mcp) -->
 
-81 tools. "writes" tools change files, branches, pull requests or issues; they need a token in remote mode and only run when the person asked.
+83 tools. "writes" tools change files, branches, pull requests or issues; they need a token in remote mode and only run when the person asked.
 
 | Tool | Access | What it does |
 | --- | --- | --- |
@@ -96,6 +96,7 @@ Working on the server itself: `npm run mcp:build` in a clone of this repo builds
 | `bridge_list_reviews` | reads | Open pull requests on the repo (flagging the ones Bridge opened) and, locally, the bridge/* proposal branches. |
 | `bridge_list_suggestions` | reads | Suggestions in the repo: GitHub issues labeled bridge-suggestion, each an exact change (tokens, docs, a component spec, a brand, a revert, settings) that the owners approve and a developer applies. |
 | `bridge_list_tokens` | reads | List tokens with their resolved CSS value in one mode. |
+| `bridge_make_behavior_preview` | writes | When the person says "Make the Bridge preview for request #n" (or "Update the Bridge preview for request #n"): everything to make the preview of a behavior request (an issue labeled request: behavior) in this repository: the request (today's sentence, the wanted one), the component's files, its docs.json behaviors entry with its keys, and `brief`: change the component and that entry, add a test that presses the keys, push the branch agent/preview-<n>, open a draft pull request "Preview for #<n>" that never says "Closes", then call bridge_report_behavior_preview. |
 | `bridge_mark_figma_change_drafted` | writes | After you pushed the code for a component change from Figma to its branch: mark its pull request ready for review, label it drafted-by-claude (no longer waiting-for-claude) and say so in its description, in one step, for a person to review. |
 | `bridge_merge_branch` | writes | Merge a branch into main through the same gate as Studio's Merge button: tests pass, the approvals its tier needs (Tier 1: one owner approval; Tier 2 and 3: design and tech; a branch that applies an approved suggestion with Closes #n carries its approvals while the suggestion stays approved and the tier is not higher), no changes requested, no conflict, not a draft or an exploration, and the person holds the right to ship (governance.rights). |
 | `bridge_missing_pieces` | writes | Check a product branch (an exploration started for a product) against the library: the adoption audit on each product file it changes, at its start and at its head, keeps what the branch added. |
@@ -111,6 +112,7 @@ Working on the server itself: `npm run mcp:build` in a clone of this repo builds
 | `bridge_propose_token_change` | writes | Propose token edits as a reviewable change. |
 | `bridge_push_figma_component` | writes | What the DS Bridge plugin Push tab does, from a structured diff of a Figma component (the v 1 spec shape: component, figmaName, coded, kind, title, summary, changes, rebinds, needsCode, unknown, variantAxes, properties, bindings, anatomy). |
 | `bridge_reopen_branch` | writes | Reopen a closed branch, with Studio's rule: its author or an owner with write access, and only while its work is still on GitHub. |
+| `bridge_report_behavior_preview` | writes | After bridge_make_behavior_preview: records the preview on the request through Bridge (Bridge's server writes it on the request, so Studio shows it to the lead and the person who asked). |
 | `bridge_review_branch` | writes | Approve, request changes or comment on a branch, as the review box in Studio, on the version the person saw, under their GitHub account. |
 | `bridge_review_pr` | writes | Post a review on a PR as the token owner: comment, approve or request changes, with a body. |
 | `bridge_review_suggestion` | writes | Approve, request changes on, comment on or decline a suggestion, as the person whose GitHub token the server has. |

@@ -1,86 +1,54 @@
-// Claude's preview of a behavior request: one generator (behaviorPreviewWorkflowYaml) for Studio's "Turn on Claude's
-// previews" and templates/bridge-behavior-preview.yml, and the preview comment the workflow keeps, read back by Studio.
-// After changing the generator, run
-//   BRIDGE_UPDATE_WORKFLOWS=1 npx vitest run --project core packages/core/test/behavior-preview.test.ts
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { parse } from 'yaml';
+// Claude's preview of a behavior request, made by the person's own Claude through the Bridge connector: the brief
+// bridge_make_behavior_preview gives, the report's rules, and the record Bridge's app writes, read back by Studio
+// (only Bridge's own blocks).
 import { describe, expect, it } from 'vitest';
-import { BEHAVIOR_PREVIEW_WORKFLOW_FILE, behaviorPreviewWorkflowYaml, parsePreviewState, PREVIEW_CLAUDE_CODE, previewBranch } from '../src/behavior-preview';
+import { behaviorPreviewBrief, behaviorRequestOf, isBridgeAppComment, parsePreviewState, previewBranch, behaviorPreviewComment, previewPhrase, previewReportProblems } from '../src/index';
 
-const ROOT = join(__dirname, '../../..');
-const BOT = { login: 'github-actions[bot]' };
+const bridge = { login: 'bridge-design-studio[bot]', type: 'Bot' };
+const req = behaviorRequestOf('Select', { of: 'component', id: 'Select', behavior: 'tab-leaves', today: 'Tab leaves without picking', wanted: 'Tab picks the highlighted option' });
 
-describe('the template', () => {
-  it("is the generator's output", () => {
-    const yaml = behaviorPreviewWorkflowYaml();
-    if (process.env.BRIDGE_UPDATE_WORKFLOWS) writeFileSync(join(ROOT, 'templates/bridge-behavior-preview.yml'), yaml);
-    expect(readFileSync(join(ROOT, 'templates/bridge-behavior-preview.yml'), 'utf8')).toBe(yaml);
+describe('the brief', () => {
+  it('says the change, the branch, the draft "Preview for #n" without Closes, and how to tell Bridge', () => {
+    const b = behaviorPreviewBrief(req, 75, { files: ['packages/react/src/components/Select/Select.tsx'], docsPath: 'packages/react/src/components/Select/Select.docs.json', keys: ['Tab'], defaultBranch: 'main' });
+    expect(b).toContain('Behavior: tab-leaves (keys: Tab)');
+    expect(b).toContain('git switch -C agent/preview-75 origin/main');
+    expect(b).toContain('Update its `behaviors` entry `tab-leaves` in packages/react/src/components/Select/Select.docs.json');
+    expect(b).toContain('presses Tab');
+    expect(b).toContain('--title "Preview for #75"');
+    expect(b).toContain('Never write "Closes #75"');
+    expect(b).toContain('bridge_report_behavior_preview with number 75, state "ready"');
+    expect(b).not.toMatch(/API key|ANTHROPIC|\u2014/i);
+    expect(previewBranch(75)).toBe('agent/preview-75');
+    expect(previewPhrase(75)).toBe('Make the Bridge preview for request #75');
+    expect(previewPhrase(75, true)).toBe('Update the Bridge preview for request #75');
   });
 });
 
-describe('behaviorPreviewWorkflowYaml', () => {
-  const wf = parse(behaviorPreviewWorkflowYaml({ defaultBranch: 'trunk' })) as {
-    on: Record<string, { types: string[] }>;
-    permissions: Record<string, string>;
-    jobs: { preview: { if: string; env: Record<string, string>; steps: { name?: string; uses?: string; run?: string; with?: Record<string, string>; env?: Record<string, string> }[] } };
-  };
-  const steps = wf.jobs.preview.steps;
-
-  it('runs on a behavior request opened or edited, and on a comment, never once it is the default', () => {
-    expect(wf.on.issues!.types).toEqual(['opened', 'edited', 'labeled']);
-    expect(wf.on.issue_comment!.types).toEqual(['created']);
-    expect(wf.jobs.preview.if).toContain("'request: behavior'");
-    expect(wf.jobs.preview.if).toContain("!contains(github.event.issue.labels.*.name, 'bridge-build')");
-    expect(wf.permissions).toEqual({ contents: 'write', 'pull-requests': 'write', issues: 'write' });
-  });
-
-  it('uses the team key only in the step that runs Claude, never writes it, and works on agent/preview-<n>', () => {
-    const yaml = behaviorPreviewWorkflowYaml();
-    expect(yaml.match(/secrets\.ANTHROPIC_API_KEY/g)).toHaveLength(2); // HAS_KEY, and Claude's step
-    const claude = steps.find((s) => s.name === 'Claude makes the change')!;
-    expect(claude.env!.ANTHROPIC_API_KEY).toBe('${{ secrets.ANTHROPIC_API_KEY }}');
-    expect(claude.run).toContain(`npx -y ${PREVIEW_CLAUDE_CODE} -p "$PROMPT"`);
-    expect(claude.run).toContain('git push --force origin "$BRANCH"');
-    expect(claude.run).not.toMatch(/echo .*ANTHROPIC/);
-    expect(wf.jobs.preview.env.BRANCH).toBe('agent/preview-${{ github.event.issue.number }}');
-    expect(previewBranch(12)).toBe('agent/preview-12');
-    expect(steps.find((s) => s.uses === 'actions/checkout@v4')!.with!.ref).toBe('trunk');
-  });
-
-  it('opens a draft "Preview for #n" that never closes the request', () => {
-    const ready = steps.find((s) => s.name === 'Open the draft pull request, say it is ready')!.with!.script!;
-    expect(ready).toContain("title: 'Preview for #' + n");
-    expect(ready).toContain('draft: true');
-    expect(ready).not.toMatch(/Closes #/);
-  });
-
-  it('every script parses', () => {
-    for (const s of steps) if (s.with?.script) expect(() => new Function('github', 'context', 'core', 'process', `return (async () => {${s.with!.script}})`)).not.toThrow();
-    expect(BEHAVIOR_PREVIEW_WORKFLOW_FILE).toBe('.github/workflows/bridge-behavior-preview.yml');
-    expect(behaviorPreviewWorkflowYaml()).not.toMatch(/\u2014/);
+describe('the report', () => {
+  it('needs the branch and the pull request when ready, a reason when failed', () => {
+    expect(previewReportProblems(75, { state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234' })).toEqual([]);
+    expect(previewReportProblems(75, { state: 'ready', branch: 'agent/preview-7', pr: 0 })).toHaveLength(2);
+    expect(previewReportProblems(75, { state: 'failed' })).toEqual(['Say why the preview could not be made, in one sentence.']);
+    expect(previewReportProblems(75, { state: 'preparing' })).toEqual([]);
   });
 });
 
-describe('parsePreviewState', () => {
-  const block = (o: unknown) => `Claude's preview is ready.\n\n<!-- bridge-preview ${JSON.stringify(o)} -->`;
-  it('reads the latest preview comment', () => {
-    expect(parsePreviewState([{ user: BOT, body: block({ state: 'preparing', round: 1 }) }, { body: 'Dana asks' }, { user: BOT, body: block({ state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234', round: 2, at: '2026-11-15T10:00:00Z' }) }])).toEqual({
-      state: 'ready',
-      branch: 'agent/preview-75',
-      pr: 80,
-      sha: 'abc1234',
-      round: 2,
-      at: '2026-11-15T10:00:00Z',
-    });
-    expect(parsePreviewState([{ user: BOT, body: block({ state: 'failed', reason: 'The component has no tests folder.' }) }])).toMatchObject({ state: 'failed', reason: 'The component has no tests folder.' });
+describe('the record', () => {
+  it('is read back from Bridge app comments only', () => {
+    const body = behaviorPreviewComment({ state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234', round: 2, wanted: 'Tab picks the highlighted option', by: 'Malik', at: '2026-11-15T10:00:00Z' });
+    expect(body.startsWith("Claude's preview is ready in #80.")).toBe(true);
+    expect(parsePreviewState([{ body, user: bridge }])).toEqual({ state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234', round: 2, wanted: 'Tab picks the highlighted option', by: 'Malik', at: '2026-11-15T10:00:00Z' });
+    // Someone pasting a block by hand, or another app's bot, is never read.
+    expect(parsePreviewState([{ body, user: { login: 'sofia', type: 'User' } }])).toBeNull();
+    expect(parsePreviewState([{ body, user: { login: 'github-actions[bot]', type: 'Bot' } }])).toBeNull();
+    expect(isBridgeAppComment({ user: bridge })).toBe(true);
   });
 
-  it('keeps nothing it cannot trust', () => {
+  it('keeps the latest, nothing it cannot trust', () => {
+    const preparing = behaviorPreviewComment({ state: 'preparing', by: 'Malik' });
+    const failed = behaviorPreviewComment({ state: 'failed', reason: 'Select has no test file.' });
+    expect(parsePreviewState([{ body: preparing, user: bridge }, { body: failed, user: bridge }])).toEqual({ state: 'failed', reason: 'Select has no test file.' });
+    expect(parsePreviewState([{ body: '<!-- bridge-preview {"state":"ready","branch":"main","sha":"x\\"><b>"} -->', user: bridge }])).toEqual({ state: 'ready' });
     expect(parsePreviewState([])).toBeNull();
-    // A block someone else posts is never read: only the workflow's own.
-    expect(parsePreviewState([{ user: { login: 'someone' }, body: block({ state: 'ready', branch: 'agent/preview-9', pr: 9 }) }])).toBeNull();
-    expect(parsePreviewState([{ user: BOT, body: block({ state: 'merged' }) }])).toBeNull();
-    expect(parsePreviewState([{ user: BOT, body: block({ state: 'ready', branch: 'main', sha: 'x"><script>' }) }])).toEqual({ state: 'ready' });
   });
 });

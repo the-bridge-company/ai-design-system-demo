@@ -35,7 +35,7 @@
 // (email members in Studio), PUBLIC_SITE_URL (the issuer; else the request's origin). Nothing here logs.
 
 import { randomBytes } from 'node:crypto';
-import { BridgeContext, handleHttp, maskEmail, pieces, type ClaudeDesignHost, type WhoAmI } from '@bridge-ds/mcp';
+import { BridgeContext, handleHttp, maskEmail, pieces, type BehaviorPreviewHost, type ClaudeDesignHost, type WhoAmI } from '@bridge-ds/mcp';
 import { contributorOf, cookieName, designerProductsFor, handleContribute, ownedWorkFor, signSession, type ContribEnv } from '../contribute/index.js';
 import { displayName, sessionAccount } from '../_lib/account.js';
 import { sameEmail } from '../_lib/canonical-email.js';
@@ -110,7 +110,7 @@ export interface ConnectorDeps {
   app?: AppTokens;
   mcp?: McpHandler;
   /** How the context is made (tests: a context without GitHub calls). */
-  context?: (opts: { repo: string; token: string; fetch?: FetchLike; owned?: () => Promise<{ repo: string; branch: string }[] | null>; identity?: () => Promise<WhoAmI | null>; claudeDesign?: ClaudeDesignHost }) => Promise<BridgeContext>;
+  context?: (opts: { repo: string; token: string; fetch?: FetchLike; owned?: () => Promise<{ repo: string; branch: string }[] | null>; identity?: () => Promise<WhoAmI | null>; claudeDesign?: ClaudeDesignHost; behaviorPreview?: BehaviorPreviewHost }) => Promise<BridgeContext>;
   /** The library check of an exploration (tests replace it; default: the MCP server's bridge_missing_pieces, recorded). */
   checkPieces?: (ctx: BridgeContext, pr: number | string) => Promise<{ pieces: unknown[]; recorded: boolean }>;
 }
@@ -512,6 +512,28 @@ function toolResults(body: unknown): Map<string | number, { result: Record<strin
   return out;
 }
 
+/**
+ * Claude's preview of a behavior request (bridge_report_behavior_preview, and "preparing" from
+ * bridge_make_behavior_preview): recorded by this site's server with Bridge's own app (api/contribute
+ * `behavior-preview`), as the person of this grant: an email member by their member session, someone signed in with
+ * GitHub by their own token. The server checks they are on the team and the issue is an open behavior request.
+ */
+export function behaviorPreviewHost(who: { member: { email: string; name: string; version: number } | null; token: string }, team: string, env: ConnectorEnv, deps: ConnectorDeps, svc: Services): BehaviorPreviewHost {
+  const now = deps.now ?? Date.now;
+  return {
+    record: async (input) => {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-Bridge-Contribute': '1' };
+      if (who.member) headers.Cookie = `${cookieName(team)}=${signSession({ repo: team.toLowerCase(), email: who.member.email, name: who.member.name, v: who.member.version, exp: now() + PROXY_SESSION_MS }, svc.secret)}`;
+      else headers.Authorization = `Bearer ${who.token}`;
+      const req = new Request('https://bridge.invalid/api/contribute', { method: 'POST', headers, body: JSON.stringify({ action: 'behavior-preview', repo: team, ...input }) });
+      const res = await handleContribute(req, env, { fetch: deps.fetch, now, redis: svc.redis, ...(deps.members ? { members: deps.members } : {}), ...(deps.app ? { app: deps.app } : {}) });
+      const said = (await res.json().catch(() => null)) as { preview?: unknown; message?: unknown } | null;
+      if (!res.ok) throw new Error(typeof said?.message === 'string' && said.message ? said.message : 'Bridge could not record the preview. Try again in a minute.');
+      return said?.preview as Awaited<ReturnType<BehaviorPreviewHost['record']>>;
+    },
+  };
+}
+
 /** Where the hosted connector reads the Library for Claude Design (this site) and keeps the team's artifact (Redis). */
 export function claudeDesignHost(repo: string, redis: Redis, site: Site, f: FetchLike): ClaudeDesignHost {
   return {
@@ -577,9 +599,11 @@ async function onMcp(req: Request, env: ConnectorEnv, deps: ConnectorDeps, svc: 
   // The Library in Claude Design: served by this site, the team's artifact kept with the team. The MCP tool checks the
   // role (admins and leads, from this grant's identity) before it saves.
   const claudeDesign = claudeDesignHost(grant.repo, svc.redis, site, deps.fetch);
+  // Claude's preview of a behavior request: recorded by this server with Bridge's app, as this grant's person.
+  const behaviorPreview = behaviorPreviewHost({ member: emailMember, token }, grant.repo, env, deps, svc);
   const ctx = deps.context
-    ? await deps.context({ repo: grant.repo, token, ...(routed ? { fetch: ghFetch } : {}), ...(owned ? { owned } : {}), identity, claudeDesign })
-    : await BridgeContext.create({ repo: grant.repo, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch, ...(owned ? { owned } : {}), identity, claudeDesign });
+    ? await deps.context({ repo: grant.repo, token, ...(routed ? { fetch: ghFetch } : {}), ...(owned ? { owned } : {}), identity, claudeDesign, behaviorPreview })
+    : await BridgeContext.create({ repo: grant.repo, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch, ...(owned ? { owned } : {}), identity, claudeDesign, behaviorPreview });
   // The body was read here (to record the steps): the transport takes it parsed, the request goes on without it.
   const headers = new Headers(req.headers);
   headers.delete('content-length');

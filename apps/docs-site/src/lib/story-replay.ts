@@ -77,25 +77,26 @@ export const SIDE_LABEL: Record<ReplaySide, string> = { today: 'Today', preview:
 
 /** What Play both shows (BehaviorReplay.tsx). */
 export type ReplayState =
-  | { kind: 'preparing' }
+  /** No preview yet, or it was made from words the requester changed since: someone asks their Claude to make it. */
+  | { kind: 'ask'; update: boolean }
+  | { kind: 'preparing'; by: string | null }
   | { kind: 'ready'; today: string; preview: string; updated: boolean }
   | { kind: 'failed'; reason: string | null }
   /** Claude made the change, but the team's Storybook does not publish each branch: nothing to play. */
-  | { kind: 'unplayable' }
-  | { kind: 'off' };
+  | { kind: 'unplayable' };
 
 /**
- * From what was read (the request's preview comment, whether the workflow is in the repository, the team's Storybook
- * and its per-branch template, the story): the state the page shows. No comment yet with the workflow installed:
- * Claude is preparing it (the run has not said so yet).
+ * From what was read (Bridge's preview record on the request, the request's wanted sentence now, the team's Storybook
+ * and its per-branch template, the story): the state the page shows. A record made from other words than the request
+ * says now is out of date: the person who can make it is asked to update it.
  */
-export function replayStateOf(x: { preview: BehaviorPreviewState | null; workflow: boolean; today: string; template: string | null; storyId: string }): ReplayState {
+export function replayStateOf(x: { preview: BehaviorPreviewState | null; wanted: string; today: string; template: string | null; storyId: string }): ReplayState {
   const p = x.preview;
-  if (!p) return x.workflow ? { kind: 'preparing' } : { kind: 'off' };
-  if (p.state === 'no-key') return { kind: 'off' };
-  if (p.state === 'preparing') return { kind: 'preparing' };
+  if (!p) return { kind: 'ask', update: false };
+  if (p.wanted && p.wanted.trim() !== x.wanted.trim()) return { kind: 'ask', update: true };
+  if (p.state === 'preparing') return { kind: 'preparing', by: p.by ?? null };
   if (p.state === 'failed') return { kind: 'failed', reason: p.reason ?? null };
-  const base = p.branch && x.template ? httpsStorybook(previewUrl(x.template, { branch: p.branch, ...(p.pr ? { pr: p.pr } : {}), ...(p.sha ? { sha: p.sha } : {}) })) : undefined;
+  const base = p.branch && x.template && x.today && x.storyId ? httpsStorybook(previewUrl(x.template, { branch: p.branch, ...(p.pr ? { pr: p.pr } : {}), ...(p.sha ? { sha: p.sha } : {}) })) : undefined;
   if (!base) return { kind: 'unplayable' };
   return { kind: 'ready', today: keysStoryUrl(x.today, x.storyId), preview: keysStoryUrl(base, x.storyId), updated: (p.round ?? 1) > 1 };
 }

@@ -21,6 +21,7 @@ import * as explorationFigma from './exploration-figma.js';
 import * as suggestions from './suggestions.js';
 import { whoami } from './whoami.js';
 import * as claudeDesign from './claude-design.js';
+import * as behaviorPreview from './behavior-preview.js';
 import { BRIDGE_SITE_URL } from './site.js';
 import { CHANGE_MARKER_RULE, DRAFT_LINE_MAX, DRAFT_PHRASE, DRAFT_TITLE_MAX, EXPLORATION_USE_CASES, REQUEST_KINDS } from '@bridge-ds/core';
 
@@ -111,7 +112,7 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
         'Adding, renaming or removing a token is Tier 3: tell the user it needs design and tech owner approval.',
         'New brands: bridge_plan_brand first (dry run with ramps and the contrast gate for every theme), then bridge_propose_brand. A new brand is Tier 3.',
         'To undo a merged token change use bridge_plan_revert first (it shows conflicts with later changes), then bridge_propose_revert; never revert by hand-editing files.',
-        'Component changes (new component, variant, prop, structure, visual, token binding) are requests: GitHub issues labeled component-change. bridge_list_requests finds them, bridge_get_request returns a brief to implement one in a pull request that says "Closes #n", bridge_create_request files a new one. Pushed from Figma, a component change that needs code is a build request (bridge_list_build_requests, bridge_get_build_request): the design is already approved in Figma, developers build it in a pull request that says "Closes #n".',
+        'Component changes (new component, variant, prop, structure, visual, token binding) are requests: GitHub issues labeled component-change. bridge_list_requests finds them, bridge_get_request returns a brief to implement one in a pull request that says "Closes #n", bridge_create_request files a new one. A behavior request (labeled request: behavior) is previewed by the person\'s own Claude: when they say "Make the Bridge preview for request #n" (or "Update ..."), call bridge_make_behavior_preview, do what its brief says, then bridge_report_behavior_preview. Pushed from Figma, a component change that needs code is a build request (bridge_list_build_requests, bridge_get_build_request): the design is already approved in Figma, developers build it in a pull request that says "Closes #n".',
         'Pushes from the Figma plugin count as design-approved: token value changes ship by themselves once the automatic checks pass (bridge_branch_status says so), a token renamed or removed still needs the tech approval.',
         `Change texts from Figma and docs from Bridge Studio: when the user says "${DRAFT_PHRASE}" (or asks you to draft their Bridge changes or docs), call bridge_pending_drafts. For change items, look at the before and after images and write each title, summary and change line in the Bridge voice. For docs items (scope "docs"), follow the brief: write only the sections it asks for, grounded in the props, CSS module classes and source it quotes, never an invented prop or behavior, never anatomy. Then call bridge_write_drafts. The designer reviews them in the DS Bridge Figma plugin or on the Library page.`,
         'Studio parity: a designer can do in their AI tool (Claude, GitHub Copilot or any MCP client) what they do in Bridge Studio. Branches in review: bridge_what_needs_me (the queue), bridge_branch_status, bridge_send_for_review, bridge_back_to_draft, bridge_review_branch, bridge_ask_someone_else, bridge_comment, bridge_update_from_main (token conflicts too), bridge_try_branch (try it in a product, share it), bridge_combine_branches, bridge_close_branch, bridge_reopen_branch, bridge_merge_branch (same gate as Studio, owner override with a reason). Docs: bridge_save_docs. Writes act under the person\'s GitHub token: only do them when the person asked, and merge only when they explicitly asked to merge.',
@@ -611,6 +612,37 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     run((a) => requests.getRequest(ctx, a)),
+  );
+
+  server.registerTool(
+    'bridge_make_behavior_preview',
+    {
+      title: "Make Claude's preview of a behavior request",
+      description:
+        'When the person says "Make the Bridge preview for request #n" (or "Update the Bridge preview for request #n"): everything to make the preview of a behavior request (an issue labeled request: behavior) in this repository: the request (today\'s sentence, the wanted one), the component\'s files, its docs.json behaviors entry with its keys, and `brief`: change the component and that entry, add a test that presses the keys, push the branch agent/preview-<n>, open a draft pull request "Preview for #<n>" that never says "Closes", then call bridge_report_behavior_preview. On the Bridge connector it also tells the request that your Claude is preparing it. If you cannot push from here, say so and report state "failed".',
+      inputSchema: { number: z.number().int().positive().describe('The request (issue) number.') },
+      annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    run(async (a) => behaviorPreview.makeBehaviorPreview(ctx, a) as unknown as Promise<Record<string, unknown>>),
+  );
+
+  server.registerTool(
+    'bridge_report_behavior_preview',
+    {
+      title: "Record Claude's preview of a behavior request",
+      description:
+        'After bridge_make_behavior_preview: records the preview on the request through Bridge (Bridge\'s server writes it on the request, so Studio shows it to the lead and the person who asked). state "ready" with the branch agent/preview-<n>, the draft pull request number and the commit sha; "failed" with the reason in one sentence. Needs the Bridge connector.',
+      inputSchema: {
+        number: z.number().int().positive().describe('The request (issue) number.'),
+        state: z.enum(['ready', 'failed']).describe('ready: the branch is pushed and the draft pull request is open. failed: it could not be made.'),
+        branch: z.string().optional().describe('ready: agent/preview-<n>.'),
+        pr: z.number().int().positive().optional().describe('ready: the draft pull request "Preview for #<n>".'),
+        sha: z.string().optional().describe('ready: the commit pushed.'),
+        reason: z.string().optional().describe('failed: why, in one sentence.'),
+      },
+      annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    run(async (a) => behaviorPreview.reportBehaviorPreview(ctx, a) as unknown as Promise<Record<string, unknown>>),
   );
 
   server.registerTool(

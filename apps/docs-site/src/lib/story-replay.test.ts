@@ -34,18 +34,21 @@ describe('what a story answers', () => {
 });
 
 describe('the state Play both shows', () => {
-  const x = { workflow: true, today: 'https://sb.acme.com', template: 'https://sb-git-{branch}-acme.vercel.app', storyId: 'components-select--default' };
-  it('prepares, plays, says it failed, or is off', () => {
-    expect(replayStateOf({ ...x, preview: null })).toEqual({ kind: 'preparing' });
-    expect(replayStateOf({ ...x, workflow: false, preview: null })).toEqual({ kind: 'off' });
-    expect(replayStateOf({ ...x, preview: { state: 'no-key' } })).toEqual({ kind: 'off' });
+  const x = { wanted: 'Tab picks the option', today: 'https://sb.acme.com', template: 'https://sb-git-{branch}-acme.vercel.app', storyId: 'components-select--default' };
+  it('asks for the preview, then prepares, plays, says it failed', () => {
+    expect(replayStateOf({ ...x, preview: null })).toEqual({ kind: 'ask', update: false });
+    expect(replayStateOf({ ...x, preview: { state: 'preparing', by: 'Malik', wanted: x.wanted } })).toEqual({ kind: 'preparing', by: 'Malik' });
     expect(replayStateOf({ ...x, preview: { state: 'failed', reason: 'No test folder' } })).toEqual({ kind: 'failed', reason: 'No test folder' });
-    expect(replayStateOf({ ...x, preview: { state: 'ready', branch: 'agent/preview-75', round: 2 } })).toEqual({
+    expect(replayStateOf({ ...x, preview: { state: 'ready', branch: 'agent/preview-75', round: 2, wanted: x.wanted } })).toEqual({
       kind: 'ready',
       today: keysStoryUrl('https://sb.acme.com', 'components-select--default'),
       preview: 'https://sb-git-agent-preview-75-acme.vercel.app/iframe.html?id=components-select--default&viewMode=story&embed=bridge-keys',
       updated: true,
     });
     expect(replayStateOf({ ...x, template: null, preview: { state: 'ready', branch: 'agent/preview-75' } })).toEqual({ kind: 'unplayable' });
+  });
+
+  it('after she changed her words, asks to update it', () => {
+    expect(replayStateOf({ ...x, preview: { state: 'ready', branch: 'agent/preview-75', wanted: 'Tab leaves' } })).toEqual({ kind: 'ask', update: true });
   });
 });

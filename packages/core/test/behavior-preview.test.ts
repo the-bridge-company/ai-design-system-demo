@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { BEHAVIOR_PREVIEW_WORKFLOW_FILE, behaviorPreviewWorkflowYaml, parsePreviewState, PREVIEW_CLAUDE_CODE, previewBranch } from '../src/behavior-preview';
 
 const ROOT = join(__dirname, '../../..');
+const BOT = { login: 'github-actions[bot]' };
 
 describe('the template', () => {
   it("is the generator's output", () => {
@@ -64,7 +65,7 @@ describe('behaviorPreviewWorkflowYaml', () => {
 describe('parsePreviewState', () => {
   const block = (o: unknown) => `Claude's preview is ready.\n\n<!-- bridge-preview ${JSON.stringify(o)} -->`;
   it('reads the latest preview comment', () => {
-    expect(parsePreviewState([{ body: block({ state: 'preparing', round: 1 }) }, { body: 'Dana asks' }, { body: block({ state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234', round: 2, at: '2026-11-15T10:00:00Z' }) }])).toEqual({
+    expect(parsePreviewState([{ user: BOT, body: block({ state: 'preparing', round: 1 }) }, { body: 'Dana asks' }, { user: BOT, body: block({ state: 'ready', branch: 'agent/preview-75', pr: 80, sha: 'abc1234', round: 2, at: '2026-11-15T10:00:00Z' }) }])).toEqual({
       state: 'ready',
       branch: 'agent/preview-75',
       pr: 80,
@@ -72,12 +73,14 @@ describe('parsePreviewState', () => {
       round: 2,
       at: '2026-11-15T10:00:00Z',
     });
-    expect(parsePreviewState([{ body: block({ state: 'failed', reason: 'The component has no tests folder.' }) }])).toMatchObject({ state: 'failed', reason: 'The component has no tests folder.' });
+    expect(parsePreviewState([{ user: BOT, body: block({ state: 'failed', reason: 'The component has no tests folder.' }) }])).toMatchObject({ state: 'failed', reason: 'The component has no tests folder.' });
   });
 
   it('keeps nothing it cannot trust', () => {
     expect(parsePreviewState([])).toBeNull();
-    expect(parsePreviewState([{ body: block({ state: 'merged' }) }])).toBeNull();
-    expect(parsePreviewState([{ body: block({ state: 'ready', branch: 'main', sha: 'x"><script>' }) }])).toEqual({ state: 'ready' });
+    // A block someone else posts is never read: only the workflow's own.
+    expect(parsePreviewState([{ user: { login: 'someone' }, body: block({ state: 'ready', branch: 'agent/preview-9', pr: 9 }) }])).toBeNull();
+    expect(parsePreviewState([{ user: BOT, body: block({ state: 'merged' }) }])).toBeNull();
+    expect(parsePreviewState([{ user: BOT, body: block({ state: 'ready', branch: 'main', sha: 'x"><script>' }) }])).toEqual({ state: 'ready' });
   });
 });

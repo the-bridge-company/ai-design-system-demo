@@ -41,9 +41,13 @@ export interface BehaviorPreviewState {
 
 const KINDS: readonly BehaviorPreviewKind[] = ['preparing', 'ready', 'failed', 'no-key'];
 
-/** The preview state the comments of a request say (the latest Bridge preview block wins), or null without one. */
-export function parsePreviewState(comments: readonly { body?: string | null }[]): BehaviorPreviewState | null {
+/** Who writes the preview blocks: the workflow, as GitHub Actions. A block anyone else posts is never read. */
+export const PREVIEW_AUTHOR = 'github-actions[bot]';
+
+/** The preview state the comments of a request say (the latest block the workflow wrote wins), or null without one. */
+export function parsePreviewState(comments: readonly { body?: string | null; user?: { login?: string | null } | null }[]): BehaviorPreviewState | null {
   for (const c of [...comments].reverse()) {
+    if (c.user?.login !== PREVIEW_AUTHOR) continue;
     const m = new RegExp(`<!-- ${PREVIEW_MARK} (\\{[\\s\\S]*?\\}) -->`).exec(c.body ?? '');
     if (!m) continue;
     try {
@@ -152,7 +156,7 @@ ${instructions}
             if (issue.user.type !== 'Bot' && !['OWNER', 'MEMBER', 'COLLABORATOR'].includes(issue.author_association)) return core.setOutput('skip', 'true');
             const MARK = '${PREVIEW_MARK}';
             const comments = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number: n, per_page: 100 });
-            const mine = comments.filter((c) => (c.body || '').includes('<!-- ' + MARK + ' '));
+            const mine = comments.filter((c) => c.user && c.user.login === 'github-actions[bot]' && (c.body || '').includes('<!-- ' + MARK + ' '));
             const last = mine.length ? JSON.parse(/<!-- bridge-preview (\\{[\\s\\S]*?\\}) -->/.exec(mine[mine.length - 1].body)[1]) : null;
             // A comment: only the requester's. Someone who joined by email comments through Bridge's app, whose own
             // words (a decision, a question) never count: theirs start with "**<their name>** (via Bridge):".
@@ -247,7 +251,7 @@ ${instructions}
             const data = { state: 'ready', branch, pr: pr.number, sha: process.env.SHA, round: Number(process.env.ROUND) || 1, key: process.env.KEY, at: new Date().toISOString() };
             const text = ["Claude's preview is ready.", '', '<!-- ${PREVIEW_MARK} ' + JSON.stringify(data) + ' -->'].join('\\n');
             const comments = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number: n, per_page: 100 });
-            const mine = comments.filter((c) => (c.body || '').includes('<!-- ${PREVIEW_MARK} '));
+            const mine = comments.filter((c) => c.user && c.user.login === 'github-actions[bot]' && (c.body || '').includes('<!-- ${PREVIEW_MARK} '));
             if (mine.length) await github.rest.issues.updateComment({ ...context.repo, comment_id: mine[mine.length - 1].id, body: text });
             else await github.rest.issues.createComment({ ...context.repo, issue_number: n, body: text });
 
@@ -265,7 +269,7 @@ ${instructions}
             const data = { state: 'failed', reason, round: Number(process.env.ROUND) || 1, key: process.env.KEY, at: new Date().toISOString() };
             const text = ["Claude's preview could not be made: " + reason, '', '<!-- ${PREVIEW_MARK} ' + JSON.stringify(data) + ' -->'].join('\\n');
             const comments = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number: n, per_page: 100 });
-            const mine = comments.filter((c) => (c.body || '').includes('<!-- ${PREVIEW_MARK} '));
+            const mine = comments.filter((c) => c.user && c.user.login === 'github-actions[bot]' && (c.body || '').includes('<!-- ${PREVIEW_MARK} '));
             if (mine.length) await github.rest.issues.updateComment({ ...context.repo, comment_id: mine[mine.length - 1].id, body: text });
             else await github.rest.issues.createComment({ ...context.repo, issue_number: n, body: text });
 `;

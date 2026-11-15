@@ -49,7 +49,7 @@ async function read(R: string, number: number, ask: BehaviorAsk): Promise<Previe
   if (!c || !story || !storybook) return null;
   const template = data.model.config.previews?.apps?.storybook ?? null;
   const [comments, workflow] = await Promise.all([
-    ghGet<{ body?: string | null }[]>(`${R}/issues/${number}/comments?per_page=100`, { fresh: true })
+    ghGet<{ body?: string | null; user?: { login?: string | null } | null }[]>(`${R}/issues/${number}/comments?per_page=100`, { fresh: true })
       .then((f) => f.data)
       .catch(() => []),
     ghGet<unknown>(`${R}/contents/${BEHAVIOR_PREVIEW_WORKFLOW_FILE}?ref=${encodeURIComponent(data.defaultBranch)}`)

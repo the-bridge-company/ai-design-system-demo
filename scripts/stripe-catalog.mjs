@@ -109,6 +109,9 @@ export async function syncCatalog(stripe, { apply = false, log = console.log } =
     await stripe.billingPortal.configurations.create(PORTAL);
     say('created portal configuration');
   } else say('missing portal configuration');
+  // The account's default invoice footer has no API for a standard account: Bridge sets the franchise footer on every
+  // customer and subscription it makes, and the Dashboard default covers invoices made by hand (docs/BILLING.md).
+  say('check   Dashboard > Settings > Billing > Invoices > Default footer (VAT franchise line, docs/BILLING.md)');
   return lines;
 }
 

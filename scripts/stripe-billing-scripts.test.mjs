@@ -2,11 +2,11 @@
 // lookup key, the Organization script bills by invoice in 30 days and never makes a second subscription, and the
 // founding marks cover every team Redis knows, once. Stripe is a fake; Redis is the in-memory one.
 import { describe, expect, it } from 'vitest';
-import { LOOKUP_KEYS, TEAM_PRICES } from '../apps/docs-site/src/lib/billing.ts';
+import { FRANCHISE_FOOTER as SITE_FOOTER, LOOKUP_KEYS, TEAM_PRICES, VAT_REGIME as SITE_REGIME } from '../apps/docs-site/src/lib/billing.ts';
 import { memoryRedis } from '../apps/docs-site/api/_lib/redis.ts';
 import { isFounding } from '../apps/docs-site/api/_lib/billing.ts';
 import { PORTAL, PRICES, priceMismatch, syncCatalog, TAX_CODE } from './stripe-catalog.mjs';
-import { parseArgs, setUpOrganization, subscriptionParams } from './stripe-organization.mjs';
+import { FRANCHISE_FOOTER, parseArgs, setUpOrganization, subscriptionParams, VAT_REGIME } from './stripe-organization.mjs';
 import { markFounding, teamsFromKeys } from './billing-mark-founding.mjs';
 
 function fakeStripe(seed = {}) {
@@ -62,7 +62,8 @@ describe('scripts/stripe-catalog.mjs', () => {
     const before = s.made.length;
     const again = await syncCatalog(s, { apply: true, log: () => {} });
     expect(s.made.length).toBe(before);
-    expect(again.every((l) => l.startsWith('ok'))).toBe(true);
+    expect(again.every((l) => l.startsWith('ok') || l.startsWith('check'))).toBe(true);
+    expect(again.at(-1)).toContain('Default footer');
   });
 
   it('reports a price that differs, never replaces it', () => {
@@ -80,8 +81,20 @@ describe('scripts/stripe-organization.mjs', () => {
     expect(() => parseArgs(['--team', 'a/b', '--email', 'a@b.co', '--name', 'A'])).toThrow(/--country/);
   });
 
-  it('bills by invoice, 30 days to pay, with Stripe Tax, tagged with the team', () => {
-    expect(subscriptionParams(parseArgs(argv), 'cus_1', 'price_org')).toMatchObject({ collection_method: 'send_invoice', days_until_due: 30, automatic_tax: { enabled: true }, metadata: { bridge_team: 'acme/ds' }, items: [{ price: 'price_org', quantity: 1 }] });
+  it('follows the site: same VAT regime and footer', () => {
+    expect(VAT_REGIME).toBe(SITE_REGIME);
+    expect(FRANCHISE_FOOTER).toBe(SITE_FOOTER);
+  });
+
+  it('franchise: bills by invoice, 30 days to pay, no Stripe Tax, the art. 293 B footer, tagged with the team', () => {
+    const p = subscriptionParams(parseArgs(argv), 'cus_1', 'price_org', 'franchise');
+    expect(p).toMatchObject({ collection_method: 'send_invoice', days_until_due: 30, automatic_tax: { enabled: false }, invoice_settings: { footer: FRANCHISE_FOOTER }, metadata: { bridge_team: 'acme/ds' }, items: [{ price: 'price_org', quantity: 1 }] });
+  });
+
+  it('standard: Stripe Tax on, no footer', () => {
+    const p = subscriptionParams(parseArgs(argv), 'cus_1', 'price_org', 'standard');
+    expect(p.automatic_tax).toEqual({ enabled: true });
+    expect(p.invoice_settings).toBeUndefined();
   });
 
   it('dry run makes nothing; apply makes the customer with its VAT number, then the subscription; never twice', async () => {
@@ -91,7 +104,8 @@ describe('scripts/stripe-organization.mjs', () => {
     expect(s.made).toEqual([]);
     await setUpOrganization(s, parseArgs([...argv, '--apply']), () => {});
     expect(s.made.map(([k]) => k)).toEqual(['customer', 'subscription']);
-    expect(s.made[0][1]).toMatchObject({ metadata: { bridge_team: 'acme/ds' }, tax_id_data: [{ type: 'eu_vat', value: 'FR12345678901' }], address: { country: 'FR' } });
+    expect(s.made[0][1]).toMatchObject({ metadata: { bridge_team: 'acme/ds' }, tax_id_data: [{ type: 'eu_vat', value: 'FR12345678901' }], address: { country: 'FR' }, invoice_settings: { footer: FRANCHISE_FOOTER } });
+    expect(s.made[1][1]).toMatchObject({ automatic_tax: { enabled: false }, invoice_settings: { footer: FRANCHISE_FOOTER } });
     const paid = fakeStripe({ prices, customers: [{ id: 'cus_1', metadata: { bridge_team: 'acme/ds' } }], subs: [{ customer: 'cus_1', status: 'active', items: { data: [{ price: { lookup_key: 'bridge_org_eur_yearly' } }] } }] });
     expect(await setUpOrganization(paid, parseArgs([...argv, '--apply']), () => {})).toEqual({ customer: 'cus_1', subscription: null });
     expect(paid.made).toEqual([]);

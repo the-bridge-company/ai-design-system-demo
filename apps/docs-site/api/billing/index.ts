@@ -51,7 +51,7 @@ import { memberStore, type MemberStore } from '../_lib/members.js';
 import { redisRest, type Redis } from '../_lib/redis.js';
 import { getTeamNames, resolveTeam, type TeamRef } from '../_lib/teams.js';
 import { inviteStoreOn, type InviteStore } from '../invites/index.js';
-import { checkoutQuantity, isCurrency, isInterval, lookupKey, type BillingStatus } from '../../src/lib/billing.js';
+import { checkoutQuantity, isCurrency, isInterval, lookupKey, taxSetup, VAT_REGIME, type BillingStatus, type VatRegime } from '../../src/lib/billing.js';
 import { teamDisplayName } from '../../src/lib/demo.js';
 import { STUDIO_ROOT } from '../../src/lib/team-path.js';
 import { canonicalEmail } from '../_lib/canonical-email.js';
@@ -78,6 +78,8 @@ export interface BillingDeps {
   app?: AppTokens;
   /** Tests inject a fake; otherwise the real client on STRIPE_SECRET_KEY. */
   stripe?: BillingStripe;
+  /** Tests run both regimes; src/lib/billing.ts VAT_REGIME otherwise. */
+  vatRegime?: VatRegime;
   /** Tests run both ways; otherwise src/lib/billing.ts. */
   flags?: Partial<BillingFlags>;
   localAdmins?: LocalAdmins;
@@ -110,6 +112,7 @@ interface Ctx {
   app: AppTokens | null;
   stripe: BillingStripe;
   flags: BillingFlags;
+  vatRegime: VatRegime;
   secret: string;
   localAdmins: LocalAdmins | null;
 }
@@ -136,6 +139,7 @@ function context(env: BillingEnv, deps: BillingDeps): Ctx | null {
     app: deps.app ?? (appId && pem ? githubApp(appId, pem, deps.fetch, now, { userAgent: 'bridge-billing' }) : null),
     stripe: deps.stripe ?? stripeClient(env.STRIPE_SECRET_KEY!.trim()),
     flags: flagsOf(deps.flags),
+    vatRegime: deps.vatRegime ?? VAT_REGIME,
     secret: env.LIBRARY_SESSION_SECRET?.trim() ?? '',
     localAdmins: activeLocalAdmins(deps.localAdmins),
   };
@@ -304,6 +308,8 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
     return fail(503, 'billing_off', BILLING_OFF);
   }
   const quantity = checkoutQuantity(await editorsNow(ctx, t.full), 1);
+  // VAT (src/lib/billing.ts VAT_REGIME): under the franchise no tax is computed and every invoice carries the footer.
+  const tax = taxSetup(ctx.vatRegime);
   // One customer per team, made once: a lock keeps two tabs from making two.
   let customerId = prev?.customerId ?? null;
   if (!customerId) {
@@ -313,7 +319,9 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
       const again = await getBilling(ctx.redis, t.full);
       customerId = again?.customerId ?? null;
       if (!customerId) {
-        const made = await stripeCall(async () => ctx.stripe.createCustomer({ name: await teamName(ctx, t.full), ...(a.email ? { email: a.email } : {}), metadata: { bridge_team: t.full } }));
+        const made = await stripeCall(async () =>
+          ctx.stripe.createCustomer({ name: await teamName(ctx, t.full), ...(a.email ? { email: a.email } : {}), metadata: { bridge_team: t.full }, ...(tax.footer ? { invoice_settings: { footer: tax.footer } } : {}) }),
+        );
         customerId = made.id;
         await putBilling(ctx.redis, t.full, { ...(again ?? emptyBilling(ctx.now())), customerId, updatedAt: new Date(ctx.now()).toISOString() });
       }
@@ -328,9 +336,10 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
       customer: customerId,
       client_reference_id: t.full,
       metadata: { bridge_team: t.full },
-      subscription_data: { metadata: { bridge_team: t.full } },
+      subscription_data: { metadata: { bridge_team: t.full }, ...(tax.footer ? { invoice_settings: { footer: tax.footer } } : {}) },
       line_items: [{ price, quantity }],
-      automatic_tax: { enabled: true },
+      automatic_tax: { enabled: tax.automaticTax },
+      // A VAT number on the invoice, whatever the regime (some customers need it there).
       tax_id_collection: { enabled: true },
       billing_address_collection: 'required',
       // The customer exists already: Checkout keeps the address and name it collects on it (needed for tax).

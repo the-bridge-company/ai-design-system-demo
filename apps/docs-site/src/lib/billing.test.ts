@@ -30,7 +30,7 @@ import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
 import { actionOf, BILLING_OFF, FOUNDING, handleBilling, settingsPath } from '../../api/billing/index';
 import { inviteStoreOn } from '../../api/invites/index';
-import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, billingOnFor, parseTestTeams, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
+import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, FRANCHISE_FOOTER, taxSetup, VAT_REGIME, billingOnFor, parseTestTeams, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
 
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
@@ -266,7 +266,7 @@ describe('/api/billing with billing on', () => {
     expect((await s.get('')).status).toBe(401);
   });
 
-  it('checkout: a Team session with tax, address and VAT number, one customer kept, back to Settings', async () => {
+  it('checkout: a Team session with address and VAT number (no VAT: franchise), one customer kept, back to Settings', async () => {
     const s = setup();
     const c = await s.admin();
     for (let i = 0; i < 13; i++) await s.members.put(TEAM, editor(`p${i}@northwind.io`));
@@ -278,10 +278,10 @@ describe('/api/billing with billing on', () => {
       customer: 'cus_1',
       client_reference_id: TEAM,
       line_items: [{ price: 'price_bridge_team_usd_monthly', quantity: 10 }],
-      automatic_tax: { enabled: true },
+      automatic_tax: { enabled: false },
       tax_id_collection: { enabled: true },
       billing_address_collection: 'required',
-      subscription_data: { metadata: { bridge_team: TEAM } },
+      subscription_data: { metadata: { bridge_team: TEAM }, invoice_settings: { footer: FRANCHISE_FOOTER } },
       success_url: `${ORIGIN}/studio/northwind/ds/settings/?billing=done#billing`,
       cancel_url: `${ORIGIN}/studio/northwind/ds/settings/#billing`,
     });
@@ -491,7 +491,7 @@ describe('an admin signed in to Studio with GitHub only (no Bridge account)', ()
     const r = await s.req(ADMIN_TOKEN, 'POST', 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' });
     expect(r.status).toBe(200);
     const customer = s.fake.calls.find((x) => x.op === 'customer')!.p;
-    expect(customer).toEqual({ name: expect.any(String), metadata: { bridge_team: TEAM } });
+    expect(customer).toEqual({ name: expect.any(String), metadata: { bridge_team: TEAM }, invoice_settings: { footer: FRANCHISE_FOOTER } });
     expect(s.fake.calls.find((x) => x.op === 'checkout')!.p.client_reference_id).toBe(TEAM);
     expect((await s.req(ADMIN_TOKEN, 'POST', 'portal', { team: TEAM })).status).toBe(200);
     // The token is never kept.
@@ -535,5 +535,38 @@ describe('an admin signed in to Studio with GitHub only (no Bridge account)', ()
     const listedElsewhere = withGitHub({ launched: false, launchDate: null, testTeams: ['other/ds'] });
     expect((await listedElsewhere.req(ADMIN_TOKEN, 'GET')).body).toEqual({ on: false });
     expect([...s.seen, ...listedElsewhere.seen]).toEqual([]);
+  });
+});
+
+describe('VAT regime', () => {
+  it('ships under the franchise (art. 293 B CGI): no VAT, the footer, the card says so', () => {
+    expect(VAT_REGIME).toBe('franchise');
+    expect(taxSetup('franchise')).toEqual({ automaticTax: false, footer: FRANCHISE_FOOTER });
+    expect(taxSetup('standard')).toEqual({ automaticTax: true, footer: null });
+    expect(BILLING_WORDS.vat).toBe('VAT not applicable, art. 293 B of the French tax code.');
+    expect(BILLING_WORDS.vat).not.toMatch(/reverse charge/);
+  });
+
+  it('franchise: checkout without Stripe Tax, VAT number still collected, footer on the customer and the subscription', async () => {
+    const s = setup();
+    const c = await s.admin();
+    expect((await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' })).status).toBe(200);
+    const session = s.fake.calls.find((x) => x.op === 'checkout')!.p;
+    expect(session.automatic_tax).toEqual({ enabled: false });
+    expect(session.tax_id_collection).toEqual({ enabled: true });
+    expect(session.subscription_data).toEqual({ metadata: { bridge_team: TEAM }, invoice_settings: { footer: FRANCHISE_FOOTER } });
+    expect(s.fake.calls.find((x) => x.op === 'customer')!.p.invoice_settings).toEqual({ footer: FRANCHISE_FOOTER });
+  });
+
+  it('standard: Stripe Tax on, no footer', async () => {
+    const s = setup();
+    (s.deps as { vatRegime?: string }).vatRegime = 'standard';
+    const c = await s.admin();
+    await s.post(c, 'checkout', { team: TEAM, currency: 'eur', interval: 'yearly' });
+    const session = s.fake.calls.find((x) => x.op === 'checkout')!.p;
+    expect(session.automatic_tax).toEqual({ enabled: true });
+    expect(session.tax_id_collection).toEqual({ enabled: true });
+    expect(session.subscription_data).toEqual({ metadata: { bridge_team: TEAM } });
+    expect(s.fake.calls.find((x) => x.op === 'customer')!.p.invoice_settings).toBeUndefined();
   });
 });

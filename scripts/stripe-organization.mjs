@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Organization is never self-serve: Florian sets it up for a team once the contract is agreed (docs/BILLING.md). This
 // makes the team's Stripe customer (or reuses it) and a yearly subscription billed by invoice: Stripe emails the
-// invoice, payable within 30 days, VAT computed by Stripe Tax (reverse charge with a valid EU VAT number). The
-// webhook (api/billing) then writes the subscription on the team: Studio shows Organization.
+// invoice, payable within 30 days. VAT follows VAT_REGIME (below, same as apps/docs-site/src/lib/billing.ts): under the
+// franchise (art. 293 B CGI) no VAT, Stripe Tax off, and the footer on every invoice; under 'standard', Stripe Tax
+// computes it (reverse charge with a valid EU VAT number). The webhook (api/billing) then writes the subscription on the
+// team: Studio shows Organization.
 //
 //   STRIPE_SECRET_KEY=... node scripts/stripe-organization.mjs --team acme/design-system --currency eur \
 //     --email billing@acme.example --name "Acme SAS" --country FR --postal-code 75002 [--city Paris] \
@@ -13,6 +15,10 @@
 // (not canceled) gets nothing new. The key is read from the environment only and never printed.
 
 import { fileURLToPath } from 'node:url';
+
+/** Keep in step with apps/docs-site/src/lib/billing.ts (scripts/stripe-billing-scripts.test.mjs checks it). */
+export const VAT_REGIME = 'franchise';
+export const FRANCHISE_FOOTER = 'TVA non applicable, art. 293 B du CGI. VAT not applicable, art. 293 B of the French tax code.';
 
 const TEAM = /^(?:[a-z0-9][a-z0-9-]{0,38}\/[a-z0-9._-]{1,100}|_team\/[a-f0-9]{16})$/;
 
@@ -38,24 +44,26 @@ export function parseArgs(argv) {
   if (o.currency !== 'eur' && o.currency !== 'usd') throw new Error('--currency eur or usd.');
   if (!o.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) throw new Error('--email, where Stripe sends the invoices, is required.');
   if (!o.name) throw new Error('--name, the legal name on the invoice, is required.');
-  if (!o.country || !/^[A-Z]{2}$/.test(o.country)) throw new Error('--country (two letters, FR) is required: Stripe Tax needs it.');
+  if (!o.country || !/^[A-Z]{2}$/.test(o.country)) throw new Error('--country (two letters, FR) is required: it goes on the invoice (and Stripe Tax needs it under the standard regime).');
   return o;
 }
 
-/** The subscription parameters (the price by lookup key, billed by invoice, 30 days to pay). */
-export function subscriptionParams(o, customer, price) {
+/** The subscription parameters (the price by lookup key, billed by invoice, 30 days to pay, VAT per regime). */
+export function subscriptionParams(o, customer, price, regime = VAT_REGIME) {
+  const franchise = regime === 'franchise';
   return {
     customer,
     items: [{ price, quantity: 1 }],
     collection_method: 'send_invoice',
     days_until_due: 30,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: !franchise },
+    ...(franchise ? { invoice_settings: { footer: FRANCHISE_FOOTER } } : {}),
     metadata: { bridge_team: o.team },
     description: 'Bridge Organization, billed yearly',
   };
 }
 
-export async function setUpOrganization(stripe, o, log = console.log) {
+export async function setUpOrganization(stripe, o, log = console.log, regime = VAT_REGIME) {
   const lookup = `bridge_org_${o.currency}_yearly`;
   const price = (await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 })).data[0];
   if (!price) throw new Error(`No price ${lookup}: run scripts/stripe-catalog.mjs --apply first.`);
@@ -80,8 +88,9 @@ export async function setUpOrganization(stripe, o, log = console.log) {
       metadata: { bridge_team: o.team },
       ...(o.vat ? { tax_id_data: [{ type: 'eu_vat', value: o.vat }] } : {}),
       preferred_locales: ['en'],
+      ...(regime === 'franchise' ? { invoice_settings: { footer: FRANCHISE_FOOTER } } : {}),
     }));
-  const sub = await stripe.subscriptions.create(subscriptionParams(o, customer.id, price.id));
+  const sub = await stripe.subscriptions.create(subscriptionParams(o, customer.id, price.id, regime));
   log(`created: Organization for ${o.team}, subscription ${sub.id} (${sub.status}); Stripe emails the first invoice to ${o.email}.`);
   return { customer: customer.id, subscription: sub.id };
 }

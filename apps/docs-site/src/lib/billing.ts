@@ -27,6 +27,22 @@ export function parseTestTeams(raw: string | undefined | null): string[] {
 /** Billing applies to a team: launched for everyone, or the team is one of the test teams. */
 export const billingOnFor = (launched: boolean, testTeams: readonly string[], team: string): boolean => launched || testTeams.includes(team.trim().toLowerCase());
 
+/**
+ * How Bridge charges VAT. 'franchise': Florian is a French micro-entrepreneur under the VAT franchise (art. 293 B CGI):
+ * no VAT is charged, Stripe Tax stays off, and every invoice carries FRANCHISE_FOOTER. A VAT number can still be given
+ * at checkout (some customers want it on the invoice).
+ * To switch to 'standard' (past the franchise thresholds, or a company): register for VAT in Stripe Tax (France, then
+ * EU OSS), set VAT_REGIME = 'standard' here and in scripts/stripe-organization.mjs, and deploy. Checkout and the
+ * Organization script then turn automatic_tax on and drop the footer; prices are already tax exclusive.
+ */
+export type VatRegime = 'franchise' | 'standard';
+export const VAT_REGIME: VatRegime = 'franchise';
+export const FRANCHISE_FOOTER = 'TVA non applicable, art. 293 B du CGI. VAT not applicable, art. 293 B of the French tax code.';
+
+/** What a regime asks of Stripe: Stripe Tax on or off, and the invoice footer (null: none). */
+export const taxSetup = (regime: VatRegime): { automaticTax: boolean; footer: string | null } =>
+  regime === 'franchise' ? { automaticTax: false, footer: FRANCHISE_FOOTER } : { automaticTax: true, footer: null };
+
 export type Tier = 'free' | 'team' | 'organization';
 export type Currency = 'eur' | 'usd';
 export type Interval = 'yearly' | 'monthly';
@@ -42,7 +58,7 @@ export const FREE_DESIGN_SYSTEMS = 1;
 export const TEAM_EDITOR_CAP = 10;
 export const TEAM_DESIGN_SYSTEMS = 3;
 
-/** Per editor per month, before VAT, in whole units of the currency. */
+/** Per editor per month, in whole units of the currency (no VAT under the franchise; before VAT under 'standard'). */
 export const TEAM_PRICES: Record<Currency, Record<Interval, number>> = {
   eur: { yearly: 12, monthly: 15 },
   usd: { yearly: 14, monthly: 17 },
@@ -78,7 +94,7 @@ export function checkoutQuantity(editors: number, designSystems = 1): number {
   return e * s;
 }
 
-/** The price shown before paying: per month and per billing period, before VAT. */
+/** The price shown before paying: per month and per billing period (VAT: see VAT_REGIME). */
 export function checkoutPrice(quantity: number, currency: Currency, interval: Interval): { perMonth: number; perPeriod: number } {
   const perMonth = quantity * TEAM_PRICES[currency][interval];
   return { perMonth, perPeriod: interval === 'yearly' ? perMonth * 12 : perMonth };
@@ -159,7 +175,12 @@ export const BILLING_WORDS = {
       ? `${who}: ${money(perMonth, currency)} a month, billed ${money(perPeriod, currency)} a year.`
       : `${who}: ${money(perMonth, currency)} a month, billed monthly.`;
   },
-  vat: 'Prices exclude VAT. EU businesses with a VAT number pay none: reverse charge.',
+  /** The VAT line under the price, per regime; `vat` is the one in force. */
+  vatLine: {
+    franchise: 'VAT not applicable, art. 293 B of the French tax code.',
+    standard: 'Prices exclude VAT. EU businesses with a VAT number pay none: reverse charge.',
+  } satisfies Record<VatRegime, string>,
+  vat: VAT_REGIME === 'franchise' ? 'VAT not applicable, art. 293 B of the French tax code.' : 'Prices exclude VAT. EU businesses with a VAT number pay none: reverse charge.',
   refund: { yearly: 'Full refund within 30 days.', monthly: 'Stop anytime: you keep Team to the end of the paid month.' } satisfies Record<Interval, string>,
   pay: 'Continue to payment',
   manage: 'Manage billing',

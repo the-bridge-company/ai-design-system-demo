@@ -2,7 +2,7 @@
 // with Claude and checks the code. The drawer first asks what she wants to change (three intents), then leads to the
 // flow that does it: the component's tokens, an exploration a developer builds from her Figma frame, or a mismatch report. The
 // words and the rules live here, pure and tested (change-intent.test.ts); scripts/request-form.ts paints them.
-import type { BuildRequestInput, ComponentChangeRequest, RequestKind } from '@bridge-ds/core';
+import { behaviorRequestOf, type BehaviorAsk, type BuildRequestInput, type ComponentChangeRequest, type RequestKind } from '@bridge-ds/core';
 import { ghAction } from './gh-wording';
 import { requestFromForm, type RequestForm } from './requests-view';
 
@@ -181,15 +181,36 @@ export const TEAM_CHANGE_INTENTS: IntentOption[] = [
   { value: 'wrong', label: 'Something looks wrong', line: 'It does not match Figma, or it behaves badly. Your developers get the report with the frame and fix it.' },
 ];
 
+/**
+ * A team's intents: the three of Bridge's own drawer, plus "Change how it behaves" (behavior requests, decided by the
+ * design system lead before developers build them). Bridge's own drawer (scripts/request-form.ts) keeps its three.
+ */
+export type TeamChangeIntent = ChangeIntent | 'behave';
+
+export interface TeamIntentOption {
+  value: TeamChangeIntent;
+  label: string;
+  line: string;
+}
+
+/** The fourth intent on a team: how the component behaves when people use it. */
+export const BEHAVE_INTENT: TeamIntentOption = {
+  value: 'behave',
+  label: 'Change how it behaves',
+  line: 'What it does when people use it, like what Escape or Enter does. The design system lead decides, then your developers build it.',
+};
+
+export const isTeamChangeIntent = (x: unknown): x is TeamChangeIntent => isChangeIntent(x) || x === 'behave';
+
 /** The intent options of a team's component: "Adjust the look" is off when it has no token to edit. */
-export function teamIntentOptions(hasTokens: boolean): (IntentOption & { disabled: boolean })[] {
-  return TEAM_CHANGE_INTENTS.map((o) => (o.value === 'look' && !hasTokens ? { ...o, line: NO_TOKEN_LINE, disabled: true } : { ...o, disabled: false }));
+export function teamIntentOptions(hasTokens: boolean): (TeamIntentOption & { disabled: boolean })[] {
+  return [...TEAM_CHANGE_INTENTS, BEHAVE_INTENT].map((o) => (o.value === 'look' && !hasTokens ? { ...o, line: NO_TOKEN_LINE, disabled: true } : { ...o, disabled: false }));
 }
 
 /** The form on a team: a structure change or a mismatch report. Null for "Adjust the look" (a link). */
 export type BuildFormMode = 'structure' | 'mismatch';
 
-export const buildModeFor = (intent: ChangeIntent): BuildFormMode | null => (intent === 'variant' ? 'structure' : intent === 'wrong' ? 'mismatch' : null);
+export const buildModeFor = (intent: TeamChangeIntent): BuildFormMode | null => (intent === 'variant' ? 'structure' : intent === 'wrong' ? 'mismatch' : null);
 
 /** What kind of structure change, in her words, and the build request kind it files. */
 export const STRUCTURE_KINDS: { value: 'new-variant' | 'prop-change' | 'structure'; label: string }[] = [
@@ -297,3 +318,83 @@ export function buildSentLines(mode: BuildFormMode, n: number): { lead: string; 
  * (?intent=variant): the next step, in one line.
  */
 export const PICK_COMPONENT_LINE = 'Pick the component you want to change, then choose Change this component.';
+
+// ---------------------------------------------------------------------------------------------------------------
+// "Change how it behaves" (a component's behaviors) and "Suggest a change to this pattern" (an action pattern's rules):
+// one short form that files a behavior request (@bridge-ds/core behaviorRequestOf, kind `behavior`). It waits for the
+// design system lead, who makes it the default (it becomes a build request in Being built) or says why not now.
+
+/** The choice for something the component or the pattern does not do yet. */
+export const BEHAVIOR_NEW = 'new';
+
+export interface BehaviorChoice {
+  value: string;
+  label: string;
+}
+
+/** What she picks from: the component's own behaviors, in its own words, then "Something it does not do yet". */
+export function behaviorChoices(behaviors: readonly { id: string; text: string }[]): BehaviorChoice[] {
+  return [...behaviors.map((b) => ({ value: b.id, label: b.text })), { value: BEHAVIOR_NEW, label: 'Something it does not do yet' }];
+}
+
+/** The rules of an action pattern, by place ("rule-0"), then "Something it does not do yet". */
+export function ruleChoices(rules: readonly string[]): BehaviorChoice[] {
+  return [...rules.map((text, i) => ({ value: `rule-${i}`, label: text })), { value: BEHAVIOR_NEW, label: 'Something it does not do yet' }];
+}
+
+export interface BehaviorFormCopy {
+  heading: string;
+  which: { label: string; placeholder: string };
+  wanted: string;
+  where: { label: string; hint: string };
+  submit: string;
+  busy: string;
+  missing: { which: string; wanted: string };
+}
+
+/** The words of the form, for a component's behavior or an action pattern's rule. `choice`: what she picked. */
+export function behaviorFormCopy(of: 'component' | 'pattern', choice: string | null): BehaviorFormCopy {
+  const what = of === 'pattern' ? 'rule' : 'behavior';
+  return {
+    heading: of === 'pattern' ? 'Suggest a change to this pattern' : 'Change how it behaves',
+    which: { label: `Which ${what}`, placeholder: `Pick a ${what}` },
+    wanted: choice === BEHAVIOR_NEW ? 'What should it do?' : 'What should it do instead?',
+    where: { label: 'Where it gets in the way (optional)', hint: 'A screen or a product.' },
+    submit: 'Send to the design system lead',
+    busy: 'Sending',
+    missing: { which: `Pick the ${what} you want to change, or Something it does not do yet.`, wanted: 'Say what it should do, in a sentence.' },
+  };
+}
+
+/** Problems that block the send, in the words of the form. Empty when it can be sent. */
+export function behaviorFormProblems(of: 'component' | 'pattern', f: { choice: string | null; wanted: string }): string[] {
+  const { missing } = behaviorFormCopy(of, f.choice);
+  return [...(f.choice ? [] : [missing.which]), ...(f.wanted.trim() ? [] : [missing.wanted])];
+}
+
+/**
+ * The behavior request the form files. A component: `id` its name, the behavior picked by id. A pattern: `id` its id,
+ * the rule by its place; the issue starts with "<Name> pattern". Today's sentence is the one the Library shows.
+ */
+export function behaviorRequest(
+  target: { of: 'component'; name: string; behaviors: readonly { id: string; text: string }[] } | { of: 'pattern'; id: string; name: string; rules: readonly string[] },
+  f: { choice: string; wanted: string; where: string },
+  requestedBy?: string | null,
+): ComponentChangeRequest {
+  const isNew = f.choice === BEHAVIOR_NEW;
+  let ask: BehaviorAsk;
+  if (target.of === 'component') {
+    const picked = isNew ? undefined : target.behaviors.find((b) => b.id === f.choice);
+    ask = { of: 'component', id: target.name, ...(picked ? { behavior: picked.id } : {}), today: picked?.text ?? '', wanted: f.wanted, where: f.where };
+  } else {
+    const i = isNew ? -1 : Number(/^rule-(\d+)$/.exec(f.choice)?.[1] ?? -1);
+    const rule = i >= 0 ? target.rules[i] : undefined;
+    ask = { of: 'pattern', id: target.id, ...(rule !== undefined ? { rule: i } : {}), today: rule ?? '', wanted: f.wanted, where: f.where };
+  }
+  return behaviorRequestOf(target.of === 'pattern' ? `${target.name} pattern` : target.name, ask, { source: 'studio', requestedBy });
+}
+
+/** What the form says once sent, and where she follows it (the request in Studio). */
+export function behaviorSentLines(n: number): { lead: string; next: string; link: string } {
+  return { lead: `Request #${n} sent to the design system lead.`, next: 'They decide. Once it is the default, your developers build it.', link: 'Follow your request' };
+}

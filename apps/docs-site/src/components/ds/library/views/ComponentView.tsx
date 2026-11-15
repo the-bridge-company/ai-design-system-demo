@@ -21,7 +21,7 @@ import { componentMotion, componentNotes, componentTabButtonId, componentTabPane
 import { tokenAxes } from '../../../../lib/library/tokens';
 import { humanDate } from '../../../../lib/library/stats';
 import { mdTitleParts } from '../../../../lib/markdown';
-import { componentHref, libraryLink, pageHref, patternHref, sourceHref, type LibraryData } from '../library-data';
+import { componentHref, libraryLink, pageHref, patternHref, sourceHref, studioLink, type LibraryData } from '../library-data';
 import { interactionIds, libraryPatterns } from '../../../../lib/library/patterns';
 import { ConfluenceCopy } from '../ConfluenceCopy';
 import ComponentTabs from './ComponentTabs';
@@ -245,7 +245,7 @@ export default function ComponentView({ data, component: c, Example, heroTools, 
             <TabsPanel className="cp-panel" value="usage" id={componentTabPanelId('usage')} tabId={componentTabButtonId('usage')} data-panel="usage">
               <div data-le-read="">
                 {d && <UsagePanel docs={d} Example={Example} />}
-                {d?.behaviors?.length ? behaviors ?? <Behaviors name={c.name} behaviors={d.behaviors} storybook={storybook} storyId={story?.id} patterns={behaviorPatterns(data)} /> : null}
+                {d?.behaviors?.length ? behaviors ?? <Behaviors name={c.name} behaviors={d.behaviors} storybook={storybook} storyId={story?.id} patterns={behaviorPatterns(data)} changeHref={data.team && extras.canEdit ? studioLink(data, `components/?c=${encodeURIComponent(c.slug)}&intent=behave`) : undefined} /> : null}
                 {!d && (
                   <p className="muted">
                     No usage guidance yet. Add <code>{c.files.docs}</code> to fill this tab.

@@ -6,7 +6,7 @@
 // A request title never repeats the component: the issue title already starts with it ("Badge: add a danger tone").
 
 import type { DiffEntry } from './diff-engine';
-import type { RequestChange, RequestKind } from './requests';
+import type { BehaviorAsk, RequestChange, RequestKind } from './requests';
 import { modeDisplayName } from './types';
 import { formatValue } from './values';
 
@@ -199,6 +199,28 @@ export function draftRequestText(component: string, kind: RequestKind, changes: 
   const rest = kind === 'new-component' ? 0 : changes.length - 1;
   const summary = rest > 0 ? `${d.summary} ${capital(plural(rest, 'other change'))} ${rest === 1 ? 'is' : 'are'} listed below.` : d.summary;
   return { title: cleanDraftText(d.title), summary: cleanDraftText(summary) };
+}
+
+/** A sentence as a quote in a title: no trailing period, cut at a word near `max` characters. */
+function quoted(s: string, max = 60): string {
+  const t = s.trim().replace(/[.!]+$/, '');
+  return t.length <= max ? t : `${t.slice(0, max).replace(/\s+\S*$/, '')}...`;
+}
+const sentence = (s: string) => {
+  const t = s.trim();
+  return t ? capital(/[.!?]$/.test(t) ? t : `${t}.`) : '';
+};
+
+/**
+ * The title and summary of a behavior request (requests.ts behaviorRequestOf), from today's sentence and the wanted
+ * one only: "Change "Closes on Escape"", "Today: Closes on Escape. Wanted: Keeps the list open on Escape."
+ */
+export function draftBehaviorText(subject: string, ask: Pick<BehaviorAsk, 'of' | 'today' | 'wanted' | 'where'>): DraftText {
+  const today = ask.today.trim();
+  const where = ask.where?.trim() ? ` It gets in the way in ${ask.where.trim().replace(/[.]+$/, '')}.` : '';
+  const title = today ? `Change "${quoted(today)}"` : ask.of === 'pattern' ? 'Add a rule' : 'Add a behavior';
+  const lead = today ? `Today: ${sentence(today)}` : `${subject.trim() || 'It'} does not do this yet.`;
+  return { title: cleanDraftText(title), summary: cleanDraftText(`${lead} Wanted: ${sentence(ask.wanted)}${where}`) };
 }
 
 // ---------------------------------------------------------------------------------------------

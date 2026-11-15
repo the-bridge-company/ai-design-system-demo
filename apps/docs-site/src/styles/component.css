@@ -904,6 +904,11 @@ a.tchip:hover {
   }
 }
 
+/* A team member's way to ask for a behavior change, under the list (Behaviors.tsx changeHref). */
+.bh-change {
+  margin: var(--space-3) 0 0;
+}
+
 .bh-list {
   display: grid;
   gap: var(--space-5);

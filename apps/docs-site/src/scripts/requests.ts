@@ -7,8 +7,9 @@ import { workNature } from '../lib/work-nature';
 import { devTag, markWork, natureAttr } from './work-filter';
 import { badgeHtml, buttonHtml } from '@bridge-ds/react/dom';
 import { JIRA_IN_BRIDGE, REQUEST_TRIAGE_IN_STUDIO } from '../lib/studio-flags';
-import { assignRequestOnGitHub, BUILD_IMAGE_LABEL, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
+import { askRequesterOnGitHub, assignRequestOnGitHub, behaviorAskOf, BUILD_IMAGE_LABEL, makeBehaviorDefaultOnGitHub, closingIssueNumbers, subjectTitle, declineReasonProblems, declineRequestOnGitHub, REQUEST_LABEL, REQUEST_STATUS_LABEL, requestIssueTitle, type IntegrationsConfig } from '@bridge-ds/core';
 import {
+  askerFirst,
   assigneeOptions,
   buildState,
   declineAudience,
@@ -272,7 +273,10 @@ function primaryAction(r: RequestRow, decide: boolean): string {
 export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer: null, owners: [] }): string {
   const req = r.request;
   const decision = requestDecision(r, ctx);
-  const primary = primaryAction(r, decision.kind === 'decide');
+  // A behavior request: its decision zone (BehaviorDecision, mounted in #rq-behavior-slot) says what is asked and, for
+  // the person who decides, holds the three actions. Its sentences are said there once, not again in the sections.
+  const ask = r.kind === 'behavior' ? behaviorAskOf(req) : null;
+  const primary = ask ? '' : primaryAction(r, decision.kind === 'decide');
   const key = shownKey(r);
   const jira = key ? (jiraUrl(key) ? `<a href="${attrUrl(jiraUrl(key))}" target="_blank" rel="noopener">${esc(key)}</a>` : `<span class="mono">${esc(key)}</span>`) : '';
   const changes = req?.changes ?? [];
@@ -297,15 +301,16 @@ export function renderRequestDetail(r: RequestRow, ctx: DetailContext = { viewer
   ${crumbs(r.number)}
   <header class="zone cg-pr-open">
     <h1 class="cg-pr-title">${esc(subjectTitle(r.component, r.title))} <span class="cg-num">#${r.number}</span></h1>
-    <p class="cg-pr-meta">${badgeHtml(r.kindLabel)}${badgeHtml(r.statusLabel, { tone: r.tone, className: 'rv-status' })}<span>${esc(wantsToChange(r.requester, r.component))}</span><time datetime="${esc(r.createdAt)}">${esc(shortDate(r.createdAt))}</time>${jira}<a class="cg-gh" href="${attrUrl(r.url)}" target="_blank" rel="noopener">Open on GitHub<span class="sr-only"> (opens in a new tab)</span></a></p>
+    <p class="cg-pr-meta">${badgeHtml(r.kindLabel)}${badgeHtml(r.statusLabel, { tone: r.tone, className: 'rv-status' })}${ask ? '' : `<span>${esc(wantsToChange(r.requester, r.component))}</span>`}<time datetime="${esc(r.createdAt)}">${esc(shortDate(r.createdAt))}</time>${jira}<a class="cg-gh" href="${attrUrl(r.url)}" target="_blank" rel="noopener">Open on GitHub<span class="sr-only"> (opens in a new tab)</span></a></p>
     <p class="cg-pr-state" id="rq-state" role="status" tabindex="-1">${esc(decision.sentence)}</p>
     ${primary ? `<p class="cg-pr-cta rq-decide" id="rq-actions">${primary}</p>` : ''}
     <div id="rq-assign-slot" hidden></div>
+    ${ask ? '<div id="rq-behavior-slot" class="rq-bh-slot"></div>' : ''}
   </header>
   <div class="cg-secs">
-    ${section('rq-sec-summary', 'Summary', esc(r.kindLabel), `<p class="rq-summary">${esc(req?.summary || 'The issue has no Bridge summary. Open it on GitHub to read it.')}</p>${design}`, true)}
+    ${ask ? '' : section('rq-sec-summary', 'Summary', esc(r.kindLabel), `<p class="rq-summary">${esc(req?.summary || 'The issue has no Bridge summary. Open it on GitHub to read it.')}</p>${design}`, true)}
     ${pictures ? section('rq-sec-images', pictures.title, '', pictures.body, true) : ''}
-    ${section('rq-sec-changes', 'Changes', String(changes.length), table, changes.length > 0)}
+    ${ask ? '' : section('rq-sec-changes', 'Changes', String(changes.length), table, changes.length > 0)}
     ${r.prs.length ? section('rq-sec-build', 'Where it is built', esc(build), buildBody) : ''}
   </div>`;
 }
@@ -325,9 +330,56 @@ export async function openRequest(n: number, push = true, openPulls?: Promise<Pu
   const r = list.find((x) => x.number === n);
   if (Number(new URLSearchParams(location.search).get('request')) !== n) return;
   current = r ?? null;
+  unmountBehavior();
   d.innerHTML = r
     ? renderRequestDetail(r, detailContext())
     : `${crumbs(n)}<p class="cg-muted">#${n} is not a component change request in ${esc(REPO_KEY)}, or GitHub cannot be read right now. <a href="https://github.com/${esc(REPO_KEY)}/issues/${n}">Open it on GitHub</a>.</p>`;
+  if (r) void mountBehavior(r);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// A behavior request's decision zone (components/ds/studio/BehaviorDecision): what is asked for everyone, and Make it
+// the default, Not now (the Decline dialog) and Ask <name> for the person who decides, with the viewer's own token.
+
+let behaviorRoot: { unmount: () => void } | null = null;
+
+function unmountBehavior() {
+  behaviorRoot?.unmount();
+  behaviorRoot = null;
+}
+
+async function mountBehavior(r: RequestRow) {
+  const slot = document.getElementById('rq-behavior-slot');
+  const ask = r.kind === 'behavior' ? behaviorAskOf(r.request) : null;
+  if (!slot || !ask) return;
+  const [{ createElement }, { createRoot }, { default: BehaviorDecision }] = await Promise.all([import('react'), import('react-dom/client'), import('../components/ds/studio/BehaviorDecision')]);
+  // Painted again meanwhile (a connect, another request): that paint mounts its own.
+  if (!slot.isConnected) return;
+  unmountBehavior();
+  const root = createRoot(slot);
+  behaviorRoot = root;
+  const decide = requestDecision(r, detailContext()).kind === 'decide';
+  const asker = r.askerName || (r.requester ? `@${r.requester.replace(/^@/, '')}` : 'Someone');
+  root.render(
+    createElement(BehaviorDecision, {
+      today: ask.today,
+      wanted: ask.wanted,
+      asker,
+      askerFirst: askerFirst(asker),
+      where: ask.where,
+      actions: decide
+        ? {
+            onDefault: async () => {
+              await makeBehaviorDefaultOnGitHub(client(), r.number, currentViewer()?.login ?? null);
+              changed(r, { madeDefault: true });
+              focusState();
+            },
+            onNotNow: (from: HTMLElement) => decline(from as HTMLButtonElement),
+            onAsk: (text: string) => askRequesterOnGitHub(client(), r.number, text, { by: currentViewer()?.login ?? null, requester: r.requester }),
+          }
+        : null,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -343,11 +395,13 @@ const client = () => studioClient(REPO_KEY, getToken() ?? '');
 function repaint() {
   const d = document.getElementById('rv-detail');
   if (!current || !d || d.hidden || Number(new URLSearchParams(location.search).get('request')) !== current.number) return;
+  unmountBehavior();
   d.innerHTML = renderRequestDetail(current, detailContext());
+  void mountBehavior(current);
 }
 
 /** A decision changes the row in place (the list shows it too) and drops the cached list. */
-function changed(r: RequestRow, patch: Partial<Pick<RequestRow, 'assignees' | 'status'>>) {
+function changed(r: RequestRow, patch: Partial<Pick<RequestRow, 'assignees' | 'status' | 'madeDefault'>>) {
   Object.assign(r, patch);
   r.statusLabel = REQUEST_STATUS_LABEL[r.status];
   r.tone = requestTone(r.status);

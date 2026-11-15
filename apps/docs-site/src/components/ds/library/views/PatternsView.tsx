@@ -4,6 +4,7 @@
 //   Index     one group per kind (Interactions, Actions), each pattern a card: its name and what it is for.
 //   Pattern   what it is for, then the stage. An interaction: the components that do it, each in its own words, on the
 //             stage. An action: the stage, the rules, the components it uses and where the product does it.
+import type { ReactNode } from 'react';
 import { Link } from '@bridge-ds/react';
 import { LibraryHeader } from '../FoundationParts';
 import ActionStage from '../ActionStage';
@@ -65,9 +66,11 @@ export interface PatternViewProps {
   /** True when the page runs the real components itself (Bridge's own Library). */
   live?: boolean;
   storybook?: string | undefined;
+  /** Under an action's rules, for a member who can send requests: "Suggest a change to this pattern" (PatternChange). */
+  ruleChange?: ReactNode;
 }
 
-export function PatternView({ entry, links, live = false, storybook }: PatternViewProps) {
+export function PatternView({ entry, links, live = false, storybook, ruleChange }: PatternViewProps) {
   const { pattern } = entry;
   return (
     <>
@@ -88,6 +91,7 @@ export function PatternView({ entry, links, live = false, storybook }: PatternVi
                 <li key={r}>{r}</li>
               ))}
             </ul>
+            {ruleChange && <div className="pt-change">{ruleChange}</div>}
           </section>
           <section aria-labelledby="pt-components" className="pt-section">
             <h2 id="pt-components">Components</h2>

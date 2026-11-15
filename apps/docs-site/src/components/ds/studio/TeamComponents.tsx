@@ -16,7 +16,8 @@ import TokenSpecimens from './TokenSpecimens';
 import ComponentsList from './ComponentsList';
 import ClientExample from './ClientExample';
 import { ChangeFooter, ChangeStep, CLOSED_FLOW, type ChangeFlow } from './ChangeComponent';
-import { isChangeIntent, PICK_COMPONENT_LINE, type ChangeIntent } from '../../../lib/change-intent';
+import { isTeamChangeIntent, PICK_COMPONENT_LINE, type TeamChangeIntent } from '../../../lib/change-intent';
+import { readBehaviors } from '@bridge-ds/core';
 import { filterTeamRows, pickStorybook, rowExceptions, storyPreview, teamCatalogRows, teamComponentRows, teamComponentsLead, teamFamilies, type TeamComponentRow } from '../../../lib/team-components';
 import { usedInFact, type ProductAudit } from '../../../lib/components-studio';
 import { fitFrames } from '../../../scripts/explorer/preview-frames';
@@ -116,7 +117,7 @@ function ComponentDrawer({
   storybook: string | undefined;
   /** The team's products that render it (the "Used in" cell); undefined without an audit of a product. */
   usedIn?: { product: string; instances: number }[] | undefined;
-  startIntent?: ChangeIntent | null;
+  startIntent?: TeamChangeIntent | null;
   onClose: () => void;
 }) {
   const found = row ? storyPreview(storybook, row) : null;
@@ -138,6 +139,8 @@ function ComponentDrawer({
   }, [row, startIntent]);
   const repo = `${data.owner}/${data.repo}`;
   const hasTokens = (row?.tokens ?? 0) > 0;
+  // Its behaviors as the Library shows them (docs.json `behaviors`): what "Change how it behaves" offers to change.
+  const behaviors = useMemo(() => (row ? readBehaviors(data.model.components?.list.find((c) => c.name === row.name)?.docs?.behaviors).map((b) => ({ id: b.id, text: b.text })) : []), [row, data.model]);
   const more = github && (
     // The source file is for developers: it waits in More.
     <Menu>
@@ -231,6 +234,7 @@ function ComponentDrawer({
               component={row.name}
               slug={row.slug}
               hasTokens={hasTokens}
+              behaviors={behaviors}
               repo={repo}
               integrations={data.model.site.integrations}
               componentUrl={new URL(libraryHref(data.owner, data.repo, `components/${row.slug}/`), location.origin).href}
@@ -260,14 +264,14 @@ function Ready({ data, refreshing, onRefresh }: { data: TeamData; refreshing: bo
   // From a home's "Ask for a component change" (?intent=, and ?c=<slug> when it names one): the drawer opens on that
   // component with the step on that choice; without a component, one line says to pick one. Read once, then the
   // intent leaves the address so a reload or another row starts plain.
-  const [deep, setDeep] = useState<{ intent: ChangeIntent | null; pick: boolean }>({ intent: null, pick: false });
+  const [deep, setDeep] = useState<{ intent: TeamChangeIntent | null; pick: boolean }>({ intent: null, pick: false });
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const intent = params.get('intent');
     const slug = params.get('c');
     const row = slug ? rows.find((r) => r.slug === slug.toLowerCase()) : undefined;
     if (row) setOpen(row);
-    if (isChangeIntent(intent)) {
+    if (isTeamChangeIntent(intent)) {
       setDeep({ intent: row ? intent : null, pick: !row });
       params.delete('intent');
       const q = params.toString();

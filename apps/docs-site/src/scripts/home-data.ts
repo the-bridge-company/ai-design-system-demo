@@ -5,7 +5,7 @@
 // the before/after (the token diff, else the visual impact run). Paints progressively through `onUpdate`. The rules
 // are pure in lib/home-model.ts and lib/branch-thumb.ts. Admins of a real team on the hosted site also get the people
 // asking to join it (board E7b, GET /api/entry?requests=), first in the list.
-import { closingIssueNumbers, defaultProduct, isGuardedExploration, isHandedOff, isToolingPull, parseNeededBy, productsOf, requesterOf, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
+import { BEHAVIOR_REQUEST_LABEL, closingIssueNumbers, defaultProduct, isGuardedExploration, isHandedOff, isToolingPull, parseNeededBy, productsOf, requesterOf, type ProductConfig, type ToolingConfig } from '@bridge-ds/core';
 import { siteConfig, siteKnown } from './repo-context';
 import { designTaskReads, rememberQuestions, taskUrlOf } from './design-task';
 import { askerRole, devQuestionOf, taskStage, type DesignTaskRead } from '../lib/review-state';
@@ -37,6 +37,7 @@ import { previewShotOf } from './preview-shots';
 import {
   CLAUDE,
   badgeRows,
+  behaviorNeeds,
   changeNeed,
   devQuestionNeed,
   explorationReviewNeed,
@@ -51,6 +52,7 @@ import {
   explorationPerson,
   sortNeeds,
   waitingSince,
+  type BehaviorIssue,
   type BranchCard,
   type ChangeFacts,
   type GuidanceDraft,
@@ -317,6 +319,8 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   let reviewer = rightNow();
   // People asking to join: admins only, read next to the branches.
   let joins: NeedRow[] = [];
+  // Behavior requests nobody decided yet: for the people who decide (owners, design leads), read once the teams are.
+  let behaviors: NeedRow[] = [];
   // The open changes, once read: a guidance draft someone already sent (published or in review) no longer waits on you.
   let open: HomePull[] = [];
   let onItsWay: (n: number) => boolean | undefined = () => undefined;
@@ -325,7 +329,7 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
     const f = facts();
     // A design lead (scripts/design-lead: an email admin or lead too) reviews the library's checks and guidance drafts,
     // as Changes > Waiting on me lists them (scripts/waiting-extras).
-    return [...joins, ...(reviewer || viewerIsDesignLead() ? [...(contrastNeed(f.contrastFail) ? [contrastNeed(f.contrastFail)!] : []), ...f.guidance.map((g) => guidanceNeed(g, now, guidanceChangeOf(g, open, onItsWay)))] : [])];
+    return [...joins, ...(reviewer || viewerIsDesignLead() ? behaviors : []), ...(reviewer || viewerIsDesignLead() ? [...(contrastNeed(f.contrastFail) ? [contrastNeed(f.contrastFail)!] : []), ...f.guidance.map((g) => guidanceNeed(g, now, guidanceChangeOf(g, open, onItsWay)))] : [])];
   };
   const empty: HomeData = { viewer, loading: true, settled: false, failed: null, needs: [], branches: [], explorations: [], decisions: 0, reviewer };
   if (!viewer || !hasWorkingToken()) {
@@ -390,6 +394,14 @@ export async function loadHome(stat: HomeStatic | (() => HomeStatic), paintHome:
   open = pulls;
   await loadTeams();
   reviewer = rightNow();
+  // One read of the open behavior requests, only for someone who decides on them; the rows paint when it lands.
+  if (reviewer || viewerIsDesignLead())
+    void ghGet<BehaviorIssue[]>(`/repos/${owner}/${repo}/issues?labels=${encodeURIComponent(BEHAVIOR_REQUEST_LABEL)}&state=open&per_page=50`)
+      .then((f) => {
+        behaviors = behaviorNeeds(f.data, now);
+        if (behaviors.length) repaint();
+      })
+      .catch(() => undefined);
   // Suggestions wait next to branches: read in parallel, painted when they land.
   let suggestions: NeedRow[] = [];
   const suggestionsRead = loadSuggestionNeeds(personOf)

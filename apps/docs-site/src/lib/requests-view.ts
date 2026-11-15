@@ -6,6 +6,7 @@
 // Color only says status: requested waits (violet), done is green, in progress and declined stay grey.
 import {
   subjectTitle,
+  BUILD_REQUEST_LABEL,
   closingIssueNumbers,
   fromPlain,
   getEntry,
@@ -15,6 +16,7 @@ import {
   REQUEST_LABEL,
   REQUEST_STATUS_LABEL,
   requestStatus,
+  requesterOf,
   serializeJson,
   validateIntegrations,
   type ComponentChangeRequest,
@@ -90,6 +92,10 @@ export interface RequestRow {
   jiraKey: string | null;
   /** The parsed request, when the issue body carries one. */
   request: ComponentChangeRequest | null;
+  /** Who asked, by name when Bridge wrote it ("Dana Kim", an email member), else the requester's login. */
+  askerName?: string;
+  /** A behavior request the lead made the default: it carries bridge-build and waits for a developer in Being built. */
+  madeDefault?: boolean;
 }
 
 const labelName = (l: { name?: string } | string) => (typeof l === 'string' ? l : (l.name ?? ''));
@@ -176,6 +182,8 @@ export function requestRow(issue: IssueLike, linked: Map<number, LinkedPull[]>):
     prs,
     jiraKey: jiraKeyFrom(issue.labels),
     request,
+    askerName: requesterOf(issue.body)?.name ?? request?.requestedBy ?? issue.user?.login ?? '',
+    madeDefault: kind === 'behavior' && issue.labels.some((l) => labelName(l) === BUILD_REQUEST_LABEL),
   };
 }
 
@@ -252,8 +260,9 @@ export function wantsToChange(requester: string, component: string): string {
 }
 
 /** The one-sentence status of a request detail, in a designer's words. */
-export function requestStateLine(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'>): string {
+export function requestStateLine(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'> & { madeDefault?: boolean | undefined }): string {
   const who = requestOwner(r);
+  if (r.madeDefault && r.status === 'requested' && !r.prs.length) return who ? `Made the default. @${who} builds it.` : BEHAVIOR_DEFAULT_LINE;
   if (r.status === 'done') return who ? `Done by @${who}.` : 'Done.';
   if (r.status === 'declined') return 'Declined: closed on GitHub without a change.';
   if (r.prs.some((p) => p.exploration && p.state === 'open')) return who ? `@${who} is exploring it.` : 'Someone is exploring it.';
@@ -275,13 +284,22 @@ const login = (x: string) => x.trim().replace(/^@/, '').toLowerCase();
  * Only a waiting request nobody is on gets one, and only for a design system owner who is connected (owners after
  * rights, the same lists the reviews count). Everyone else reads who decides; owners come from the config, never guessed.
  */
-export function requestDecision(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'>, ctx: { viewer: string | null; owners: string[]; signIn?: boolean }): RequestDecision {
-  if (r.status !== 'requested' || requestOwner(r) || r.prs.length) return { kind: 'status', sentence: requestStateLine(r) };
+export function requestDecision(r: Pick<RequestRow, 'status' | 'assignees' | 'prs'> & { madeDefault?: boolean | undefined }, ctx: { viewer: string | null; owners: string[]; signIn?: boolean }): RequestDecision {
+  if (r.status !== 'requested' || requestOwner(r) || r.prs.length || r.madeDefault) return { kind: 'status', sentence: requestStateLine(r) };
   const owners = [...new Set(ctx.owners.map((o) => o.trim().replace(/^@/, '')).filter(Boolean))];
   if (ctx.viewer && owners.some((o) => login(o) === login(ctx.viewer!))) return { kind: 'decide', sentence: 'Nobody is on it yet. You decide what happens next.' };
   if (!owners.length) return { kind: 'wait', sentence: 'Nobody is on it yet. A design system owner decides what happens next: name them in Settings, Roles.' };
   const names = owners.length <= 2 ? owners.map((o) => `@${o}`).join(' or ') : `@${owners[0]} or ${owners.length - 1} more`;
   return { kind: 'wait', sentence: `Nobody is on it yet. A design system owner (${names}) decides what happens next.${ctx.viewer ? '' : ` ${ghVerb(ctx.signIn ?? false)} if that is you.`}` };
+}
+
+/** What a behavior request says once the lead made it the default. */
+export const BEHAVIOR_DEFAULT_LINE = 'Made the default. It waits for a developer in Being built.';
+
+/** The name on "Ask <name>": the first name of who asked, else their login. */
+export function askerFirst(asker: string): string {
+  const a = asker.trim().replace(/^@/, '');
+  return (a.includes(' ') ? a.split(/\s+/)[0] : a) || 'them';
 }
 
 /** The Start an exploration form, filled from a request: its title as the name (60 characters at most), its summary as the purpose. */

@@ -5,10 +5,11 @@
 // Shared by the Figma plugin, Studio, the MCP server, the CLI and the Jira Action, so a request reads the same
 // everywhere. The issue body is plain Markdown for people plus one hidden JSON block for tools.
 
+import { draftBehaviorText } from './change-drafts';
 import { EXPLORATION_LABEL, explorationRules } from './explorations';
 import { subjectTitle } from './titles';
 
-export type RequestKind = 'new-component' | 'new-variant' | 'prop-change' | 'structure' | 'visual' | 'token-binding' | 'bug' | 'other';
+export type RequestKind = 'new-component' | 'new-variant' | 'prop-change' | 'structure' | 'visual' | 'token-binding' | 'bug' | 'behavior' | 'other';
 export type RequestSource = 'figma' | 'studio' | 'cli' | 'mcp';
 export type RequestStatus = 'requested' | 'in-progress' | 'done' | 'declined';
 
@@ -20,6 +21,7 @@ export const REQUEST_KINDS: { value: RequestKind; label: string; hint: string }[
   { value: 'visual', label: 'Visual change', hint: 'Spacing, radius, layout or icon placement.' },
   { value: 'token-binding', label: 'Token change', hint: 'The component should paint with another token.' },
   { value: 'bug', label: 'Bug', hint: 'It looks or behaves differently from the guidance.' },
+  { value: 'behavior', label: 'Behavior change', hint: 'How a component or an action pattern behaves: one of its behaviors or rules, or something it does not do yet.' },
   { value: 'other', label: 'Other', hint: 'Anything else.' },
 ];
 
@@ -66,6 +68,81 @@ export interface ComponentChangeRequest {
    * the Changes Library row says "Needed by <name> · <product>". Unset for a change the DS lead starts.
    */
   origin?: RequestOrigin | undefined;
+  /** A behavior request (kind `behavior`): which behavior or rule, today's sentence and the wanted one. */
+  behavior?: BehaviorAsk | undefined;
+}
+
+/**
+ * What a behavior request asks (phase 2 of behaviors): one behavior of a component (its docs.json `behaviors`,
+ * behaviors.ts) or one rule of an action pattern (patterns/<id>.pattern.json, patterns.ts), or something it does not do
+ * yet, and what it should do instead. The design system lead decides: made the default, it becomes a build request
+ * (the `bridge-build` label, build-requests.ts); not now, it is declined with a reason.
+ */
+export interface BehaviorAsk {
+  of: 'component' | 'pattern';
+  /** The component name ("Select") or the pattern id ("delete"). */
+  id: string;
+  /** The behavior id ("close-on-escape"), for a component behavior. Absent for something it does not do yet. */
+  behavior?: string | undefined;
+  /** The rule's place in the pattern's `rules`, from 0, for a pattern rule. Absent for something it does not do yet. */
+  rule?: number | undefined;
+  /** Today's sentence, as the Library says it. Empty for something it does not do yet. */
+  today: string;
+  /** What it should do instead, in the requester's words. */
+  wanted: string;
+  /** Where it gets in the way (a screen, a product), when the requester said. */
+  where?: string | undefined;
+}
+
+/** The label of a behavior request (every request carries `request: <kind>`). */
+export const BEHAVIOR_REQUEST_LABEL = 'request: behavior';
+
+const isText = (x: unknown): x is string => typeof x === 'string' && x.trim() !== '';
+
+/** The behavior ask of a request, checked (a body anyone can edit may hold any shape), or null when it has none. */
+export function behaviorAskOf(r: Pick<ComponentChangeRequest, 'kind' | 'behavior'> | null | undefined): BehaviorAsk | null {
+  const b = r?.behavior as Partial<BehaviorAsk> | undefined;
+  if (!b || r?.kind !== 'behavior' || typeof b !== 'object') return null;
+  if ((b.of !== 'component' && b.of !== 'pattern') || !isText(b.id) || !isText(b.wanted) || typeof (b.today ?? '') !== 'string') return null;
+  const rule = typeof b.rule === 'number' && Number.isInteger(b.rule) && b.rule >= 0 ? b.rule : undefined;
+  return {
+    of: b.of,
+    id: b.id.trim(),
+    ...(isText(b.behavior) ? { behavior: b.behavior.trim() } : {}),
+    ...(rule !== undefined ? { rule } : {}),
+    today: (b.today ?? '').trim(),
+    wanted: b.wanted.trim(),
+    ...(isText(b.where) ? { where: b.where.trim() } : {}),
+  };
+}
+
+/**
+ * The request a behavior ask files: kind `behavior`, its title and summary drafted from the two sentences
+ * (change-drafts draftBehaviorText), and one change row (what, today, wanted) so every reader of requests shows it.
+ * `subject` is what the issue title starts with: the component name, or "<Pattern name> pattern".
+ */
+export function behaviorRequestOf(subject: string, ask: BehaviorAsk, opts: { source?: RequestSource; requestedBy?: string | null | undefined } = {}): ComponentChangeRequest {
+  const clean: BehaviorAsk = {
+    of: ask.of,
+    id: ask.id.trim(),
+    ...(ask.behavior?.trim() ? { behavior: ask.behavior.trim() } : {}),
+    ...(ask.rule !== undefined ? { rule: ask.rule } : {}),
+    today: ask.today.trim(),
+    wanted: ask.wanted.trim(),
+    ...(ask.where?.trim() ? { where: ask.where.trim() } : {}),
+  };
+  const text = draftBehaviorText(subject, clean);
+  const field = clean.behavior ?? (clean.rule !== undefined ? `Rule ${clean.rule + 1}` : 'New behavior');
+  return {
+    component: subject.trim(),
+    kind: 'behavior',
+    title: text.title,
+    summary: text.summary,
+    changes: [{ field, ...(clean.today ? { before: clean.today } : {}), after: clean.wanted }],
+    source: opts.source ?? 'studio',
+    ...(opts.requestedBy ? { requestedBy: opts.requestedBy } : {}),
+    behavior: clean,
+  };
 }
 
 /**
@@ -144,6 +221,8 @@ export function composeRequestIssue(r: ComponentChangeRequest, opts: { labels?: 
     ...(r.images?.length ? [...r.images.map((u, i) => `![${r.component} design ${i + 1}](${u})`), ''] : []),
     ...(figma ? [`**Design:** ${figma}`, ''] : []),
     ...(opts.componentUrl ? [`**Component:** ${opts.componentUrl}`, ''] : []),
+    ...(r.kind === 'behavior' && r.behavior?.where?.trim() ? [`**Where it gets in the way:** ${r.behavior.where.trim()}`, ''] : []),
+    ...(r.kind === 'behavior' ? ['**The design system lead decides first.** Build it once it carries the `bridge-build` label (made the default in Bridge Studio).', ''] : []),
     ...(r.exploration ? [`**Exploration:** \`${r.exploration}\`. Implement it on that branch, not in a pull request to main: it ships to product staging as a snapshot, and developers take the branch once the designer is done exploring.`, ''] : []),
     '## How to implement',
     '',
@@ -207,6 +286,27 @@ export function declineComment(reason: string, by?: string | null): string {
   return [`Declined${by ? ` by @${by.replace(/^@/, '')}` : ''} in Bridge Studio.`, '', quote, '', '<sub>Closed as not planned. Reopen the issue if things change.</sub>'].join('\n');
 }
 
+/** The comment posted when the lead makes a behavior request the default: it now waits for a developer. */
+export function behaviorDefaultComment(by?: string | null): string {
+  return [`Made the default${by ? ` by @${by.replace(/^@/, '')}` : ''} in Bridge Studio.`, '', '<sub>It now waits for a developer in Being built (label `bridge-build`).</sub>'].join('\n');
+}
+
+/** Problems with a question to the requester, as sentences that say how to fix them. */
+export function askRequesterProblems(text: string): string[] {
+  return text.trim() ? [] : ['Write your question first: the requester reads it.'];
+}
+
+/** The comment a lead's question to the requester posts: who asks, then the question as they wrote it. */
+export function askRequesterComment(text: string, by?: string | null, requester?: string | null): string {
+  const quote = text
+    .trim()
+    .split('\n')
+    .map((l) => `> ${l}`.trimEnd())
+    .join('\n');
+  const to = requester && /^[A-Za-z0-9-]+$/.test(requester.replace(/^@/, '')) ? `@${requester.replace(/^@/, '')}, ` : '';
+  return [`${to}${to ? 'a' : 'A'} question${by ? ` from @${by.replace(/^@/, '')}` : ''} in Bridge Studio, before deciding:`, '', quote].join('\n');
+}
+
 /**
  * Where a request stands: open with no linked pull request = requested; open with an open linked pull request =
  * in progress; closed as completed or by a merged pull request = done; closed otherwise = declined.
@@ -261,6 +361,13 @@ export function requestBrief(r: ComponentChangeRequest, ctx: { issue: number; is
       ? [`- This request is part of the exploration ${exploration}.`, ...explorationRules(exploration), `- Reference the request in the commit message ("Refs #${ctx.issue}"). Shipping the exploration closes it.`]
       : [`- Work on a branch named agent/request-${ctx.issue}. The pull request body must contain "Closes #${ctx.issue}".`]),
     // Sent from a product's adoption report: the pull request says so too, so Bridge's Changes row names the report.
+    ...(r.kind === 'behavior' && r.behavior
+      ? [
+          r.behavior.of === 'pattern'
+            ? `- It changes a rule of the ${r.behavior.id} pattern: update patterns/${r.behavior.id}.pattern.json and the places it lists in usedIn, so the pattern and the product stay the same.`
+            : `- It changes how ${r.component} behaves: update the behavior${r.behavior.behavior ? ` ${r.behavior.behavior}` : ''} in its docs.json \`behaviors\` list with the new sentence, with the code and the tests.`,
+        ]
+      : []),
     ...(r.origin?.kind === 'audit' ? [`- Also put this line in the pull request body, unchanged (Bridge shows where the change comes from): <!-- bridge-origin ${JSON.stringify(r.origin).replace(/>/g, '\\u003e')} -->`] : []),
     '- If the request is unclear or conflicts with the guidance, comment on the issue instead of guessing.',
   ].join('\n');

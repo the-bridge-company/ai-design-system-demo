@@ -1,0 +1,53 @@
+---
+// Homepage "Founding teams", board "Home B" (Claude Design canvas, page "Site · Pricing & founding"): after the
+// questions and before the last call, the founding date as the title, three numbered facts, and two links (create a
+// team, see the planned prices). The board's "why" sentence waits for Florian's words. Words: lib/pricing.ts
+// HOME_FOUNDING. Styles: styles/home-founding.css.
+import '../../styles/home-founding.css';
+import { Link } from '@bridge-ds/react';
+import { ArrowRight } from 'lucide-react';
+import ButtonLink from '../ds/ButtonLink';
+import { HOME_FOUNDING as F } from '../../lib/pricing';
+import { PRICING, TERMS } from '../../lib/nav';
+
+interface Props {
+  /** Where "Create your team" goes: the sign-in screen with sign-up words. */
+  getStarted: string;
+}
+const { getStarted } = Astro.props;
+---
+
+<section class="hp-founding" aria-labelledby="hp-founding-t">
+  <div class="hp-wrap hp-fd-grid">
+    <div class="hp-fd-text">
+      <p class="hp-eyebrow hp-fd-eyebrow">{F.eyebrow}</p>
+      <h2 id="hp-founding-t" class="hp-fd-h">{F.title}</h2>
+      <p class="hp-fd-p">{F.lead}</p>
+      <div class="hp-fd-cta">
+        <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={getStarted}>{F.primary}</ButtonLink>
+        <ButtonLink variant="link" size="lg" href={PRICING}>{F.secondary}</ButtonLink>
+      </div>
+    </div>
+    <ol class="hp-fd-list">
+      {
+        F.facts.map((f, i) => (
+          <li>
+            <span class="hp-fd-n" aria-hidden="true">{i + 1}</span>
+            <span class="hp-fd-fact">
+              <strong>{f.title}</strong>
+              <span class="hp-fd-note">
+                {f.text}
+                {f.link && (
+                  <>
+                    {' '}
+                    <Link href={`${TERMS}#t10`}>{f.link}</Link>
+                  </>
+                )}
+              </span>
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

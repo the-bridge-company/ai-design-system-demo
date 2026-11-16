@@ -9,7 +9,10 @@ import '../styles/site.css';
 import '../styles/brand.css';
 import '../styles/site-nav.css';
 import '../styles/landing.css';
-import { Link } from '@bridge-ds/react';
+import { AnnouncementStrip, Link } from '@bridge-ds/react';
+import { CalendarCheck } from 'lucide-react';
+import { STRIP } from '../lib/pricing';
+import { PRICING } from '../lib/nav';
 import SiteHeader from '../components/site/SiteHeader.astro';
 import SiteFooter from '../components/site/SiteFooter.astro';
 import SiteIcons from '../components/site/SiteIcons.astro';
@@ -19,9 +22,14 @@ interface Props {
   /** The full document title. */
   title: string;
   description: string;
+  /**
+   * The page opens with a Harbor zone of its own (/privacy/, /terms/, /legal/): the founding strip takes the neutral
+   * ground, one Harbor zone per screen.
+   */
+  zoneHeader?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, zoneHeader = false } = Astro.props;
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
 const path = Astro.url.pathname.replace(/\/?$/, '/');
 ---
@@ -58,6 +66,15 @@ const path = Astro.url.pathname.replace(/\/?$/, '/');
   </head>
   <body class="lp-body">
     <Link variant="subtle" className="skip" href="#main">Skip to content</Link>
+    {/* Board "Home C": the quiet founding strip above the header, on every marketing page (never in Studio or the Library). */}
+    <AnnouncementStrip
+      label={STRIP.label}
+      icon={CalendarCheck}
+      appearance={zoneHeader ? 'neutral' : 'harbor'}
+    >
+      {STRIP.before}<strong>{STRIP.strong}</strong>{STRIP.after}
+      <Link slot="action" href={`${PRICING}#founding`}>{STRIP.link}</Link>
+    </AnnouncementStrip>
     <SiteHeader path={path} />
 
     <main id="main" tabindex="-1" class="lp-main">

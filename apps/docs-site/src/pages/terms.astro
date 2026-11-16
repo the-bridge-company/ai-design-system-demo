@@ -30,6 +30,7 @@ import {
   FREE_EDITORS,
   FOUNDING_CUTOFF_LABEL,
   PAID_PLANS_OPEN,
+  PAID_PLANS_EARLIEST_LABEL,
   ORGANIZATION_PRICE,
   ORGANIZATION_SUPPORT_HOURS,
   TEAM_DESIGN_SYSTEMS,
@@ -76,7 +77,7 @@ const mail = `mailto:${CONTACT_EMAIL}`;
 const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 ---
 
-<Landing title="Terms of service | Bridge" description="The contract between your team and Bridge, on every plan, Free included.">
+<Landing zoneHeader title="Terms of service | Bridge" description="The contract between your team and Bridge, on every plan, Free included.">
   <article class="hp pv">
     <header class="zone pv-head">
       <h1 class="pv-title">Terms of service</h1>
@@ -118,7 +119,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t4">
       <h2 id="t4" class="pv-h">4. Plans and prices</h2>
-      <p>Bridge is free for every team today. Paid plans open in {PAID_PLANS_OPEN}; we write to every team at least 30 days before, with the final prices. When paid plans open, the plans below apply.</p>
+      <p>Bridge is free for every team today. Paid plans open in {PAID_PLANS_OPEN}, not before {PAID_PLANS_EARLIEST_LABEL}; we write to every team at least 30 days before, with the final prices. When paid plans open, the plans below apply.</p>
       <p>The plans and their planned prices are below. The <Link href={PRICING}>pricing page</Link> shows them too; if the two ever differ, the pricing page at the date of your order applies to that order.</p>
       <p><strong>Free</strong></p>
       <ul>

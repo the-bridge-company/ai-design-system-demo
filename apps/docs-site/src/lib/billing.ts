@@ -6,8 +6,15 @@
 // limits are never checked, and the billing endpoints answer 503 (docs/BILLING.md, launch checklist). Prices here
 // are the ones the pricing page publishes (lib/pricing.ts once it ships): per editor per month, before VAT.
 
-/** The one switch. False: production behaves exactly as before billing existed. Flipped on launch day. */
+/**
+ * The one switch. False: production behaves exactly as before billing existed. Flipped on launch day.
+ * GUARD: never set it to true before 2027-04-01 (BILLING_EARLIEST_LAUNCH). Paid plans open after the founding cutoff,
+ * as /pricing/ and /terms/ publish ("not before 1 April 2027"); billing.test fails if it is true before that day.
+ */
 export const BILLING_LAUNCHED = false;
+
+/** The first day paid plans may open (lib/pricing.ts PAID_PLANS_EARLIEST, the same day). */
+export const BILLING_EARLIEST_LAUNCH = '2027-04-01';
 
 /**
  * The founding cutoff, exclusive (ISO, YYYY-MM-DD, read as midnight UTC): every team made in Bridge before it is a

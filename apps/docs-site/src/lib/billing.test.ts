@@ -32,7 +32,7 @@ import { memberStore } from '../../api/_lib/members';
 import { memoryRedis } from '../../api/_lib/redis';
 import { actionOf, BILLING_OFF, FOUNDING, handleBilling, settingsPath } from '../../api/billing/index';
 import { inviteStoreOn } from '../../api/invites/index';
-import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, FRANCHISE_FOOTER, taxSetup, VAT_REGIME, billingOnFor, parseTestTeams, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
+import { BILLING_EARLIEST_LAUNCH, BILLING_LAUNCHED, BILLING_LAUNCH_DATE, BILLING_WORDS, FRANCHISE_FOOTER, taxSetup, VAT_REGIME, billingOnFor, parseTestTeams, checkoutPrice, checkoutQuantity, LOOKUP_KEYS, lookupKey, parseBillingStatus, tierOfLookupKey } from './billing';
 
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
@@ -126,6 +126,12 @@ describe('the shared rules', () => {
   it('ships off, with the founding cutoff the pricing page publishes: teams made before 1 April 2027', () => {
     expect(BILLING_LAUNCHED).toBe(false);
     expect(BILLING_LAUNCH_DATE).toBe('2027-04-01');
+  });
+
+  it('never launches before 1 April 2027: the switch stays false while today is earlier', () => {
+    expect(BILLING_EARLIEST_LAUNCH).toBe('2027-04-01');
+    const tooEarly = Date.now() < Date.parse(`${BILLING_EARLIEST_LAUNCH}T00:00:00Z`);
+    if (tooEarly) expect(BILLING_LAUNCHED, 'BILLING_LAUNCHED must stay false before 2027-04-01').toBe(false);
   });
 
   it('a team made on 31 March 2027 is founding; one made on 1 April 2027 is not', async () => {

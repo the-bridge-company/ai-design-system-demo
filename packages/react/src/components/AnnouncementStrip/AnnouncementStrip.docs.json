@@ -1,0 +1,62 @@
+{
+  "summary": "A quiet strip across the top of every page of a site, above its header: one lasting, site-wide fact the reader should know wherever they land, with at most one link to learn more.",
+  "preview": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams created by 31 March 2027 stay free, with no end date."] },
+  "whenToUse": [
+    "A fact that holds across the whole site for weeks or months and matters wherever a reader lands: a pricing commitment, a change of terms, a planned shutdown date.",
+    "Above the site header, full bleed, on marketing and documentation pages. One per site.",
+    "Give at most one link, a DS Link after the message, to the page that explains it (\"Read the commitment\").",
+    "harbor (default) on pages that open on the plain page color; neutral when the page under the strip opens with a Harbor zone of its own."
+  ],
+  "whenNotToUse": [
+    "A mode the page is in (previewing a past change, editing): use Banner.",
+    "A message about the page's content or a failure: use Alert.",
+    "Confirming an action the user just took: use a Toast.",
+    "Inside an app (Studio, Library): app pages carry state, not announcements.",
+    "Promotions, countdowns or urgency: a strip states a fact, it never pushes."
+  ],
+  "dos": [
+    {
+      "title": "State the fact and the date",
+      "text": "One or two short sentences a reader can repeat: what is true, and until when.",
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams created by 31 March 2027 stay free, with no end date."] }
+    },
+    {
+      "title": "Neutral under a Harbor page header",
+      "text": "One Harbor zone per screen: when the page opens with a Harbor header, the strip takes the subtle ground.",
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Terms update", "appearance": "neutral" }, "children": ["Our terms of service change on 1 March 2027."] }
+    }
+  ],
+  "donts": [
+    {
+      "title": "Urgency or a sales pitch",
+      "text": "\"Only 3 days left, upgrade now!\" turns a fact into a promotion. Readers learn to ignore strips that push.",
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Offer" }, "children": ["Only 3 days left, upgrade now!"] }
+    },
+    {
+      "title": "A Button in the strip",
+      "text": "The strip links to where the fact is explained. An action that changes something belongs on that page.",
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams" }, "children": ["Teams created by 31 March 2027 stay free."] }
+    }
+  ],
+  "accessibility": [
+    "A complementary landmark (aside) named by its label, so screen reader users can find it in the landmarks list or skip it.",
+    "Not a live region and not dismissible: it is part of the page when it loads, and it never moves focus.",
+    "The icon is decorative (aria-hidden); the words carry the message.",
+    "The link is a real DS Link, reached with Tab before the site header.",
+    "harbor uses color.bg.zone with color.text.default (13.07:1 light, 14.05:1 dark) and color.text.link (7.03:1, 6.47:1); neutral uses color.bg.subtle with color.text.default."
+  ],
+  "contentGuidelines": [
+    "One or two short sentences, a fact and its date. Sentence case, no exclamation marks.",
+    "At most one emphasis (strong) on the word that matters.",
+    "Link text names where it goes: \"Read the commitment\", not \"Learn more\"."
+  ],
+  "anatomy": {
+    "strip": "Container: a complementary landmark, full bleed, one centred row that wraps",
+    "harbor": "Harbor appearance: the light Harbor zone (default)",
+    "neutral": "Neutral appearance: the subtle ground",
+    "message": "The line: icon, text and link, centred together",
+    "icon": "Leading icon, decorative",
+    "text": "The notice",
+    "action": "One DS Link to learn more; on phones it takes its own line"
+  }
+}

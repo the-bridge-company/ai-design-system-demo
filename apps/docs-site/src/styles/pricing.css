@@ -1,129 +1,218 @@
-/* /pricing/ (pages/pricing.astro, components/pricing/*). Mobile first, three cards side by side from 900px like the
-   rest of the site. Inside the landing column (.lp-wrap). Tokens only; light and dark come from the tokens. */
+/* /pricing/ (pages/pricing.astro, components/pricing/*), board "Pricing A, Founding first". Inside .hp (homepage.css:
+   the column, the drawing colors). Mobile first; side by side from 900px like the rest of the site. Tokens only; the
+   dark theme comes from the tokens. */
 
 .pr {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-  padding-block: var(--space-16) var(--space-24);
+  padding-bottom: calc(var(--space-24) + var(--space-6));
 }
 
-.pr-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: 62ch;
-}
-
-.pr-head .lp-h {
-  text-wrap: balance;
-}
-
-.pr-lead {
+.pr p {
   margin: 0;
-  color: var(--color-text-default);
-  font-size: var(--font-size-400);
-  line-height: var(--font-leading-28);
 }
 
-.pr-license {
-  margin: 0;
+.pr-muted {
   color: var(--color-text-muted);
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
 }
 
-.pr-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+.pr-small {
+  font-size: var(--font-size-200);
+  line-height: var(--font-leading-20);
 }
 
-.pr-section-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: 62ch;
+.pr-text {
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
+}
+
+.pr-strong {
+  color: var(--color-text-default);
+}
+
+/* ---------- type ---------- */
+.pr-h1 {
+  --_size: clamp(var(--font-size-700), 4.4vw, calc(var(--font-size-1000) - var(--space-1)));
+
+  max-width: 19ch;
+  margin: 0;
+  font-family: var(--typography-display-family);
+  font-size: var(--_size);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--font-tracking-tight);
+  line-height: var(--font-line-height-tight);
+  font-variation-settings: "SOFT" 100;
 }
 
 .pr-h2 {
   margin: 0;
-  font-family: var(--typography-h2-family);
-  font-size: var(--typography-h2-size);
-  font-weight: var(--typography-h2-weight);
-  letter-spacing: var(--typography-h2-tracking);
-  line-height: var(--typography-h2-line-height);
+  font-family: var(--typography-display-family);
+  font-size: var(--font-size-600);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+  font-variation-settings: "SOFT" 100;
 }
 
-.pr-text {
-  max-width: 62ch;
-  margin: 0;
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
+.pr-h2-lg {
+  font-size: var(--font-size-700);
 }
 
-/* ---------- switches and cards ---------- */
-.pr-plans {
+/* ---------- hero: the words, then the calendar ---------- */
+.pr-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
+}
+
+.pr-hero-text {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  align-items: flex-start;
 }
 
-.pr-switches {
+.pr-lead {
+  max-width: 40ch;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-400);
+  line-height: var(--font-leading-32);
+}
+
+.pr-hero-cta {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
 }
 
-.pr-planned-note {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--color-text-default);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+.pr-hero-art {
+  display: flex;
+  justify-content: center;
 }
 
-.pr-planned {
-  align-self: flex-start;
-  margin-bottom: var(--space-1);
+.pr-cal {
+  width: min(100%, var(--size-80));
+  height: auto;
 }
 
-.pr-cta-note {
-  margin: calc(var(--space-3) * -1) 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-align: center;
+/* The date is circled once on load, with the heading's stroke (styles/hand-underline.css). */
+.pr-cal-ring {
+  stroke-dasharray: 1;
+  animation: hand-ul-draw calc(var(--motion-duration-slow) * 2) var(--motion-easing-standard) calc(var(--motion-duration-slow) * 2) both;
 }
 
-.pr-today {
-  margin: 0;
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-body-line-height);
+@media (prefers-reduced-motion: reduce) {
+  .pr-cal-ring {
+    animation: none;
+  }
 }
 
-.pr-vat {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+/* ---------- the founding band: the one Harbor zone of the page ---------- */
+.pr-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-zone);
+  scroll-margin-top: var(--space-6);
 }
 
-.pr-cards {
+.pr-band-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+}
+
+.pr-facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-6);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-@media (min-width: 900px) {
-  .pr-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.pr-facts li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
+}
+
+.pr-fact {
+  font-family: var(--typography-display-family);
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+  font-variation-settings: "SOFT" 100;
+}
+
+/* ---------- sections ---------- */
+.pr-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-top: var(--space-20);
+}
+
+.pr-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.pr-split-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---------- plans ---------- */
+.pr-plans {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.pr-plans-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-8);
+}
+
+.pr-plans-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--size-180);
+}
+
+.pr-plans-title .pr-muted {
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
+}
+
+.pr-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.pr-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .pr-cards > li {
@@ -134,17 +223,6 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-}
-
-.pr-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.pr-card[data-recommended] {
-  border-color: var(--color-border-emphasis);
 }
 
 .pr-card-head {
@@ -162,152 +240,76 @@
   line-height: var(--typography-h3-line-height);
 }
 
-.pr-pitch {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+.pr-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .pr-price {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.pr-price p {
-  margin: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
 }
 
 .pr-amount {
   font-family: var(--typography-display-family);
-  font-size: var(--font-size-800);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--font-leading-50);
+  font-size: var(--font-size-900);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-none);
   font-variant-numeric: tabular-nums;
+  font-variation-settings: "SOFT" 100;
 }
 
 .pr-unit {
   color: var(--color-text-muted);
-  font-family: var(--typography-body-family);
-  font-size: var(--typography-ui-size);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--typography-ui-line-height);
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-20);
 }
 
-.pr-per,
-.pr-cap {
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.pr-cap {
-  color: var(--color-text-default);
+.pr-pitch {
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
 }
 
 .pr-includes {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-.pr-includes li {
-  display: flex;
-  align-items: flex-start;
   gap: var(--space-2);
-}
-
-.pr-includes .pr-yes,
-.pr-includes .pr-no {
-  flex: none;
-  margin-top: var(--space-0-5);
-}
-
-.pr-yes {
-  color: var(--color-feedback-success-icon);
-}
-
-.pr-no {
-  color: var(--color-text-muted);
-}
-
-.pr-without {
-  color: var(--color-text-muted);
-}
-
-.pr-org-note {
-  max-width: 62ch;
   margin: 0;
+  padding: 0 0 0 calc(var(--space-4) + var(--space-0-5));
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
+}
+
+/* The three footers share one height (a button, or two lines of text), so they start on one line. */
+.pr-card-foot {
+  box-sizing: border-box;
+  min-height: calc(var(--control-height-md) + 2 * var(--space-3) + var(--border-width-default));
+}
+
+.pr-foot-note {
   color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
+  font-size: var(--font-size-200);
+  line-height: var(--font-leading-20);
 }
 
-/* ---------- commitments ---------- */
-.pr-commitments {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6) var(--space-8);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 700px) {
-  .pr-commitments {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 900px) {
-  .pr-commitments {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.pr-commitments li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1-5);
-  padding-top: var(--space-4);
-  border-top: var(--border-width-default) solid var(--color-border-default);
-}
-
-.pr-commitments h3 {
-  margin: 0;
-  font-size: var(--typography-body-size);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--typography-body-line-height);
-}
-
-.pr-commitments p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-/* ---------- comparison table ---------- */
+/* ---------- the differences ---------- */
 .pr-table {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+  min-width: 0;
 }
 
-/* One set of column widths for every group, so the tiers line up from group to group. The DS Table reads
-   --_col-width on each cell (layout="fixed"). */
 .pr-table-group .pr-col-label {
-  --_col-width: 34%;
+  --_col-width: 31%;
 }
 
 .pr-table-group .pr-col-tier {
-  --_col-width: 22%;
+  --_col-width: 23%;
 }
 
 /* The tier switch only exists on narrow screens. */
@@ -315,7 +317,37 @@
   display: none;
 }
 
-/* Under 700px: the labels and the chosen tier, no sideways scroll. */
+/* ---------- on every tier ---------- */
+.pr-commitments {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5) var(--space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-24);
+}
+
+.pr-commitments li {
+  padding-top: var(--space-3);
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+/* ---------- FAQ ---------- */
+.pr-faq .hp-faqart {
+  max-width: var(--size-80);
+}
+
+.pr-faq-answer {
+  max-width: 60ch;
+  padding-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-300);
+  line-height: var(--font-leading-26);
+}
+
+/* ---------- phones: the labels and one tier, no sideways scroll ---------- */
 @media (max-width: 699px) {
   .pr-tier-switch {
     display: block;
@@ -334,60 +366,53 @@
   .pr-table[data-shown="organization"] .pr-col-tier:not([data-tier="organization"]) {
     display: none;
   }
+
+  .pr-hero-art .pr-cal {
+    width: min(70%, var(--size-60));
+  }
 }
 
-.pr-cell {
-  display: inline-flex;
-  align-items: center;
+@media (min-width: 700px) {
+  .pr-commitments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.pr-cell-text {
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-}
-
-/* ---------- editor definition and founding teams ---------- */
-.pr-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: var(--size-180);
-  padding: var(--space-6);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-container);
-  background-color: var(--color-bg-subtle);
-}
-
-.pr-panel p {
-  margin: 0;
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
-}
-
-/* ---------- FAQ and contact ---------- */
-.pr-faq-list {
-  max-width: var(--size-180);
-}
-
-.pr-faq-answer {
-  margin: 0 0 var(--space-3);
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
-}
-
-.pr-faq-answer:last-child {
-  margin-bottom: 0;
-}
-
-.pr-contact {
-  margin: 0;
-  font-size: var(--typography-body-size);
-  line-height: var(--typography-body-line-height);
-}
-
-/* Side by side, the price blocks share one height so the three buttons line up. */
 @media (min-width: 900px) {
-  .pr-price {
-    min-height: var(--size-40);
+  .pr-hero {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: var(--space-12);
+    padding-top: var(--space-20);
+    padding-bottom: var(--space-16);
+  }
+
+  .pr-cal {
+    width: min(100%, calc(var(--size-96) - var(--space-1)));
+  }
+
+  .pr-band {
+    padding: var(--space-10) var(--space-12);
+  }
+
+  .pr-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-10);
+  }
+
+  .pr-section {
+    padding-top: var(--space-24);
+  }
+
+  .pr-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pr-split {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: var(--space-12);
+  }
+
+  .pr-commitments {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

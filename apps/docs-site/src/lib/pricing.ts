@@ -70,6 +70,9 @@ export const TEAM_DESIGN_SYSTEMS = 3;
 export const FOUNDING_CUTOFF = '2027-03-31';
 export const FOUNDING_CUTOFF_LABEL = '31 March 2027';
 export const PAID_PLANS_OPEN = '2027';
+/** Paid plans open on this day at the earliest, after the founding cutoff (lib/billing.ts guards BILLING_LAUNCHED). */
+export const PAID_PLANS_EARLIEST = '2027-04-01';
+export const PAID_PLANS_EARLIEST_LABEL = '1 April 2027';
 
 // Rule for opening paid plans (not shown on the page): open them on the first Tuesday or Wednesday after all of
 // these are true in production:
@@ -150,93 +153,80 @@ export const BILLING_LABEL: Record<Billing, string> = { yearly: 'Yearly', monthl
 // Words.
 // ---------------------------------------------------------------------------------------------------------------
 
-export const TITLE = 'Free for a small team. Then a fair price per editor, capped per design system.';
-export const LEAD = 'Every tier has every feature. You pay for more people, more systems, and our commitments.';
-export const LICENSE_LINE = 'Components and tokens are MIT. Each Bridge version becomes MIT two years after release. Self-hosting without limit.';
+// Pricing A "Founding first" (Claude Design canvas, page "Site · Pricing & founding", board Wip-site-pricing-A).
+export const HERO_TITLE = `Bridge is free today. Start your team by ${FOUNDING_CUTOFF_LABEL} and it stays free.`;
+/** "terms of service" in it links to /terms/. */
+export const HERO_LEAD = `Every tier has every feature. Paid plans open in ${PAID_PLANS_OPEN}, at the planned prices below. A team created by ${FOUNDING_CUTOFF_LABEL} never moves to them: it is written in our terms of service.`;
+/** How people sign in today, one wording everywhere (/privacy/, /terms/ 3.1). There is no Google or Microsoft sign-in. */
+export const SIGN_IN = 'Sign in with GitHub or a code sent to your email, on every tier. SAML on your own identity provider is Organization.';
+export const HERO_NOTE = 'No card needed. Sign in with GitHub or a code sent to your email.';
 export const VAT_NOTE = VAT_MENTION;
-export const TODAY_LINE = `Bridge is free for every team today. Paid plans open in ${PAID_PLANS_OPEN}.`;
-export const PLANNED_NOTE = 'Planned prices: they may still change before paid plans open. Founding teams stay free whatever happens.';
-export const PLANNED_BADGE = 'Planned price';
+
+export const PLANS_TITLE = `What paid plans will cost from ${PAID_PLANS_OPEN}`;
+export const PLANNED_NOTE = 'Planned prices: they may still change before paid plans open. You pay for more people, more design systems and our service, never for features.';
+export const OPENS_BADGE = `Opens in ${PAID_PLANS_OPEN}`;
 
 export interface Tier {
   id: TierId;
   name: string;
-  /** One line under the name: who it is for. */
+  /** One line under the price. "{cap}" is the Team cap in the chosen currency and billing. */
   pitch: string;
   /** What comes with it, in order. The first item may say "Everything in ...". */
   includes: string[];
-  /** The one line that says what the tier does not commit to. Free only. */
-  without?: string;
-  cta: string;
-  /** A small line under the button. */
-  ctaNote?: string;
-  recommended?: boolean;
+  /** A neutral badge next to the name: paid tiers say when they open. */
+  badge?: string;
+  /** The card's one button, secondary. No button on Team: it cannot be bought yet. */
+  cta?: string;
+  /** Text in the card footer instead of a button. */
+  footerNote?: string;
 }
-
-export const EVERY_FEATURE = 'Every feature: the whole review flow, full decision history, the Figma plugin, the Claude connector (MCP server) and agents';
 
 export const TIERS: Tier[] = [
   {
     id: 'free',
     name: 'Free',
     pitch: 'For a small team getting started.',
-    includes: [
-      `Up to ${inWords(FREE_EDITORS)} editors`,
-      'Unlimited readers',
-      'One design system',
-      EVERY_FEATURE,
-      'Sign in with Google, GitHub or Microsoft',
-      'Self-hosting without any limit',
-    ],
-    without: 'No uptime commitment and no support commitment',
-    cta: 'Start free',
+    includes: [`Up to ${inWords(FREE_EDITORS)} editors`, 'Unlimited readers', 'One design system', 'Every feature'],
+    cta: 'Create your team',
   },
   {
     id: 'team',
     name: 'Team',
-    pitch: 'For a team that grows past three editors.',
+    pitch: 'At most {cap} a month per design system: editors past ten cost nothing.',
     includes: ['Everything in Free', 'Unlimited editors', `Up to ${inWords(TEAM_DESIGN_SYSTEMS)} design systems`, 'Written support, answer within two business days'],
-    cta: 'Start free today',
-    ctaNote: `Team opens in ${PAID_PLANS_OPEN}`,
-    recommended: true,
+    badge: OPENS_BADGE,
+    footerNote: `Start today on Free. Created by ${FOUNDING_CUTOFF_LABEL}, your team never pays this.`,
   },
   {
     id: 'organization',
     name: 'Organization',
     pitch: 'We run it, back it up and answer.',
     includes: [
-      'Everything in Team',
-      'Unlimited design systems and editors',
+      'Everything in Team, unlimited editors and design systems',
       'SAML on your own identity provider, and SCIM',
       'Decision audit export',
-      'Managed for you: hosted by us, your data isolated, backups',
-      'Uptime of 99.5% a month, with service credits up to one month',
-      `Support answer within one business day, ${ORGANIZATION_SUPPORT_HOURS}`,
+      'Hosted by us, data isolated, backups',
+      '99.5% uptime a month, answer within one business day',
     ],
+    badge: OPENS_BADGE,
     cta: 'Ask about Organization',
   },
 ];
 
-export const ORGANIZATION_NOTE =
-  'Everything in Bridge can be self-hosted. Organization is for teams who would rather we run it, back it up and answer.';
-
-/** "Our commitments": permanent wording. */
-export const COMMITMENTS: { title: string; text: string }[] = [
-  { title: 'Components and tokens are MIT', text: 'What goes into your product is MIT, with no non-compete.' },
-  {
-    title: 'Each version becomes MIT',
-    text: 'The rest of Bridge is under the Functional Source License (FSL-1.1-MIT). Each Bridge version becomes MIT two years after its release.',
-  },
-  { title: 'Self-hosting has no limit', text: 'On every tier, Free included: as many editors and design systems as you like.' },
-  { title: 'Sign in your way, on every tier', text: 'Google, GitHub and Microsoft sign-in on every tier. Only SAML on your own identity provider is Organization.' },
-  { title: 'A free account never receives an invoice', text: 'No card to start, and no automatic charge when you grow.' },
-  { title: 'A limit never deletes', text: 'Past a limit, Bridge pauses, hides or makes read-only. It never deletes your work.' },
+/** "On every tier, Free included": permanent wording, a bold lead and the rest of the sentence. */
+export const COMMITMENTS_TITLE = 'On every tier, Free included';
+export const COMMITMENTS: { lead: string; text: string }[] = [
+  { lead: 'Components and tokens are MIT.', text: 'What goes into your product, with no non-compete.' },
+  { lead: 'Each version becomes MIT', text: 'two years after its release (FSL-1.1-MIT).' },
+  { lead: 'Self-hosting has no limit:', text: 'as many editors and design systems as you like.' },
+  { lead: 'A free account never receives an invoice.', text: 'No card, no automatic charge when you grow.' },
+  { lead: 'A limit never deletes.', text: 'Bridge pauses, hides or makes read-only.' },
+  { lead: 'Sign-in stays free on every tier.', text: SIGN_IN },
 ];
 
-/** Who counts as an editor: written on the page. */
-export const EDITOR_TITLE = 'Who counts as an editor';
-export const EDITOR_DEFINITION = 'An editor is anyone who proposes or decides in Studio.';
-export const EDITOR_NOT_COUNTED = 'Readers, viewers, and developers who only work in GitHub do not count. Invite them freely, on every tier.';
+/** Who counts as an editor: written on the page, next to the differences. */
+export const EDITOR_LEAD = 'Who counts as an editor:';
+export const EDITOR_TEXT = 'anyone who proposes or decides in Studio. Readers, viewers and developers who only work in GitHub do not count.';
 
 /** Founding teams. Wording decided by Florian. */
 // This text is a commitment, written in full in the terms of service, section 10 (pages/terms.astro). The page links
@@ -249,62 +239,72 @@ export const FOUNDING_TEXT = [
   'This commitment is part of our terms of service and binds anyone who takes Bridge over.',
 ];
 
+/**
+ * The Harbor band of /pricing/ (#founding): three facts, then the rest, sentence by sentence from FOUNDING_TEXT. Only
+ * the first sentence changes: its subject ("Every team created on Bridge by 31 March 2027") becomes the first fact and
+ * "Your team", and "with no end date" is said once, by the second fact's title. Every other sentence is FOUNDING_TEXT
+ * word for word (pricing.test checks it). /terms/ section 10 keeps the full commitment.
+ */
+export const FOUNDING_BAND_TITLE = 'The founding team commitment';
+export const FOUNDING_BAND_LINK = 'Read it in our terms of service';
+export const FOUNDING_FACTS: { title: string; text: string }[] = [
+  { title: FOUNDING_CUTOFF_LABEL, text: 'The last day to create a founding team on Bridge.' },
+  {
+    title: 'Free, with no end date',
+    text: 'Your team keeps, at no cost, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.',
+  },
+  { title: 'In writing', text: 'This commitment is part of our terms of service and binds anyone who takes Bridge over. No future price change applies to it.' },
+];
+export const FOUNDING_BAND_NOTE = `Support and uptime stay those of Free. ${'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.'}`;
+
+/** Home B: the founding section before the last call. The board's "why" sentence waits for Florian's words. */
+export const HOME_FOUNDING = {
+  eyebrow: 'Founding teams',
+  title: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays free.`,
+  lead: `Bridge is free for every team today. Paid plans open in ${PAID_PLANS_OPEN}.`,
+  primary: 'Create your team',
+  secondary: 'See planned prices',
+  facts: [
+    { title: 'No end date', text: 'At no cost. No future price change applies to it.' },
+    { title: 'Everything your team can do', text: 'All its editors, all its design systems and every feature, as they are the day paid plans open, plus anything Free gains later.' },
+    { title: 'Written in our terms', text: 'It binds anyone who takes Bridge over.', link: 'Read it in our terms' },
+  ],
+  closing: `Your next exploration is one change away. Created by ${FOUNDING_CUTOFF_LABEL}, your team stays free.`,
+};
+
+/** Home C: the strip above the site header on every marketing page. "FREE" is shown in capitals, in a strong. */
+export const STRIP = {
+  label: 'Founding teams',
+  before: `Paid plans open in ${PAID_PLANS_OPEN}. Teams created by ${FOUNDING_CUTOFF_LABEL} stay `,
+  strong: 'FREE',
+  after: ', with no end date.',
+  link: 'Read the commitment',
+};
+
+
 // ---------------------------------------------------------------------------------------------------------------
-// The comparison table: one row per line, one cell per tier (Free, Team, Organization). `true` is a check, `false` a
-// dash, a string says it in words. The price row is drawn by the island, from the switches.
+// The comparison: only the rows that differ between tiers, one cell per tier (Free, Team, Organization), in words.
 // ---------------------------------------------------------------------------------------------------------------
 
-export type TableCell = boolean | string;
-export interface TableRow {
+export const DIFF_TITLE = 'Only what changes between tiers';
+export const SAME_EVERYWHERE =
+  'Everything else is the same on every tier: the whole review flow, full decision history, the Figma plugin, the Claude connector (MCP server), agents, roles, sign-in with GitHub or a code sent to your email, and self-hosting without limit.';
+
+export interface DiffRow {
   label: string;
-  cells: [TableCell, TableCell, TableCell];
+  cells: [string, string, string];
 }
 /** The tier a phone shows first in the comparison, one tier at a time. */
 export const NARROW_DEFAULT_TIER: TierId = 'team';
 
-export interface TableGroup {
-  name: string;
-  rows: TableRow[];
-}
-
-export const TABLE_GROUPS: TableGroup[] = [
-  {
-    name: 'People and design systems',
-    rows: [
-      { label: 'Editors', cells: [`Up to ${FREE_EDITORS}`, 'Unlimited', 'Unlimited'] },
-      { label: 'Readers', cells: ['Unlimited', 'Unlimited', 'Unlimited'] },
-      { label: 'Design systems', cells: [String(FREE_DESIGN_SYSTEMS), `Up to ${TEAM_DESIGN_SYSTEMS}`, 'Unlimited'] },
-    ],
-  },
-  {
-    name: 'Features',
-    rows: [
-      { label: 'The whole review flow', cells: [true, true, true] },
-      { label: 'Full decision history', cells: [true, true, true] },
-      { label: 'Figma plugin', cells: [true, true, true] },
-      { label: 'Claude connector (MCP server)', cells: [true, true, true] },
-      { label: 'Agents', cells: [true, true, true] },
-      { label: 'Self-hosting without limit', cells: [true, true, true] },
-    ],
-  },
-  {
-    name: 'Sign-in and control',
-    rows: [
-      { label: 'Sign in with Google, GitHub or Microsoft', cells: [true, true, true] },
-      { label: 'SAML on your own identity provider', cells: [false, false, true] },
-      { label: 'SCIM', cells: [false, false, true] },
-      { label: 'Roles', cells: [true, true, true] },
-      { label: 'Decision audit export', cells: [false, false, true] },
-    ],
-  },
-  {
-    name: 'Service',
-    rows: [
-      { label: 'Hosted for you, data isolated, backups', cells: [false, false, true] },
-      { label: 'Uptime', cells: ['No commitment', 'No commitment', '99.5% a month, service credits up to one month'] },
-      { label: 'Support', cells: ['No commitment', 'Written, answer within two business days', `Answer within one business day, ${ORGANIZATION_SUPPORT_HOURS}`] },
-    ],
-  },
+export const DIFF_ROWS: DiffRow[] = [
+  { label: 'Editors', cells: [`Up to ${FREE_EDITORS}`, 'Unlimited', 'Unlimited'] },
+  { label: 'Design systems', cells: [String(FREE_DESIGN_SYSTEMS), `Up to ${TEAM_DESIGN_SYSTEMS}`, 'Unlimited'] },
+  { label: 'SAML and SCIM', cells: ['No', 'No', 'Included'] },
+  { label: 'Decision audit export', cells: ['No', 'No', 'Included'] },
+  { label: 'Hosted for you, isolated, backed up', cells: ['No', 'No', 'Included'] },
+  { label: 'Uptime', cells: ['No commitment', 'No commitment', '99.5% a month, service credits'] },
+  { label: 'Support', cells: ['No commitment', 'Written, two business days', 'One business day, Paris hours'] },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -327,12 +327,16 @@ export function faqAnswer(item: FaqItem, currency: Currency): string[] {
   return item.answer.map((a) => a.split('{cap}').join(money(TEAM_PRICE[currency].yearly.cap, currency)));
 }
 
+export const FAQ_TITLE = 'Questions teams ask about price';
+/** Open when the page loads. */
+export const FAQ_OPEN = 'when';
+
 export const FAQ: FaqItem[] = [
   {
     id: 'when',
     question: 'When do paid plans open?',
     answer: [
-      `In ${PAID_PLANS_OPEN}. We will write to every team at least 30 days before, with the final prices. Until then everything is free, and teams created by ${FOUNDING_CUTOFF_LABEL} stay free after.`,
+      `Not before ${PAID_PLANS_EARLIEST_LABEL}. We will write to every team at least 30 days before, with the final prices. Teams created by ${FOUNDING_CUTOFF_LABEL} stay free.`,
     ],
   },
   {
@@ -403,7 +407,7 @@ export const FAQ: FaqItem[] = [
     question: 'What does SAML on Organization do?',
     answer: [
       'Your people sign in to Bridge through your own identity provider, with your rules. With SCIM, people you add or remove there join or leave Bridge by themselves.',
-      'Google, GitHub and Microsoft sign-in stay available on every tier.',
+      SIGN_IN,
     ],
   },
   {

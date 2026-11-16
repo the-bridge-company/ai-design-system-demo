@@ -1,115 +1,123 @@
 ---
-// /pricing/: Free, Team and Organization. Bridge is free for every team today; paid plans open in 2027, so Team and
-// Organization show planned prices and no button leads to a payment.
-// Every price, word and placeholder: lib/pricing.ts. The switches and cards (PricingPlans) hydrate on load so the
-// currency follows the browser language; the comparison table (PricingTable) follows the same switches.
+// /pricing/, board "Pricing A, Founding first" (Claude Design canvas, page "Site · Pricing & founding"). Bridge is free
+// for every team today and paid plans open in 2027, so the page leads with the founding date: the hero (one primary
+// action), the Harbor band with the founding commitment (#founding, linked from the site strip), what paid plans will
+// cost (planned prices, PricingPlans), only what changes between tiers (PricingTable), what holds on every tier, and
+// the FAQ with "When do paid plans open?" open. Words and prices: lib/pricing.ts. Styles: styles/pricing.css, with
+// the homepage drawing colors (styles/homepage.css .hp-draw) for the calendar and the FAQ drawing.
+import '../styles/homepage.css';
+import '../styles/home-illus.css';
 import '../styles/pricing.css';
 import Landing from '../layouts/Landing.astro';
 import { Link } from '@bridge-ds/react';
+import { ArrowRight } from 'lucide-react';
+import ButtonLink from '../components/ds/ButtonLink';
+import HandUnderline from '../components/site/HandUnderline.astro';
+import FoundingCalendar from '../components/pricing/FoundingCalendar.astro';
+import HpFaqArt from '../components/home/HpFaqArt.astro';
 import PricingPlans from '../components/pricing/PricingPlans';
 import PricingTable from '../components/pricing/PricingTable';
 import PricingFaq from '../components/pricing/PricingFaq';
 import {
   COMMITMENTS,
-  EDITOR_DEFINITION,
-  EDITOR_NOT_COUNTED,
-  EDITOR_TITLE,
-  FOUNDING_TEXT,
-  FOUNDING_TITLE,
-  LEAD,
-  LICENSE_LINE,
-  ORGANIZATION_CONTACT_LABEL,
+  COMMITMENTS_TITLE,
+  DIFF_TITLE,
+  EDITOR_LEAD,
+  EDITOR_TEXT,
+  FAQ_TITLE,
+  FOUNDING_BAND_LINK,
+  FOUNDING_BAND_NOTE,
+  FOUNDING_BAND_TITLE,
+  FOUNDING_FACTS,
+  HERO_LEAD,
+  HERO_NOTE,
+  HERO_TITLE,
   ORGANIZATION_CONTACT_HREF,
-  ORGANIZATION_NOTE,
-  ORGANIZATION_PRICE,
-  TITLE,
-  TODAY_LINE,
-  money,
+  SAME_EVERYWHERE,
 } from '../lib/pricing';
-import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
-import { TERMS } from '../lib/nav';
+import { PRIVACY_PAGE, signInHref } from '../lib/account';
+import { DEMO, TERMS } from '../lib/nav';
 
+// Create your team opens the sign-in screen with sign-up words, like the homepage's Get started.
+const GET_STARTED = signInHref(null, true);
+const COMMITMENT = `${TERMS}#t10`;
 const TOS = 'terms of service';
-
-// Organization and discount questions go to Bridge's contact address (lib/pricing CONTACT_EMAIL).
-const contact = ORGANIZATION_CONTACT_HREF;
-const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
+// The H1 ends on "free.": the hand-drawn stroke goes under "free", not under the period.
+const FREE_AT = HERO_TITLE.lastIndexOf('free');
+const titleHead = HERO_TITLE.slice(0, FREE_AT);
+const titleTail = HERO_TITLE.slice(FREE_AT + 'free'.length);
+const leadAt = HERO_LEAD.indexOf(TOS);
 ---
 
-<Landing title="Pricing | Bridge" description="Free for a small team. Then a fair price per editor, capped per design system. Every tier has every feature.">
-  <div class="lp-wrap pr">
-    <header class="pr-head">
-      <h1 class="lp-h">{TITLE}</h1>
-      <p class="pr-lead">{LEAD}</p>
-      <p class="pr-license">{LICENSE_LINE}</p>
-      <p class="pr-today">{TODAY_LINE}</p>
-    </header>
-
-    <section class="pr-section" aria-label="Tiers">
-      <PricingPlans client:load hrefs={hrefs} />
-      <p class="pr-org-note">{ORGANIZATION_NOTE}</p>
+<Landing title="Pricing | Bridge" description="Bridge is free today. Start your team by 31 March 2027 and it stays free, with no end date. Planned prices for paid plans from 2027.">
+  <div class="hp pr">
+    <section class="hp-wrap pr-hero" aria-labelledby="pr-title">
+      <div class="pr-hero-text">
+        <h1 id="pr-title" class="pr-h1">{titleHead}<HandUnderline>free</HandUnderline>{titleTail}</h1>
+        <p class="pr-lead">
+          {HERO_LEAD.slice(0, leadAt)}<Link href={TERMS}>{TOS}</Link>{HERO_LEAD.slice(leadAt + TOS.length)}
+        </p>
+        <div class="pr-hero-cta">
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Create your team</span></ButtonLink>
+          <ButtonLink variant="secondary" size="lg" href={DEMO}>Open the demo</ButtonLink>
+        </div>
+        <p class="pr-small pr-muted">{HERO_NOTE}</p>
+      </div>
+      <div class="pr-hero-art"><FoundingCalendar /></div>
     </section>
 
-    <section class="pr-section" aria-labelledby="pr-commitments">
-      <div class="pr-section-head">
-        <h2 id="pr-commitments" class="pr-h2">Our commitments</h2>
-        <p class="pr-text lp-muted">These hold on every tier, Free included.</p>
+    <div class="hp-wrap">
+      <section id="founding" class="pr-band" aria-labelledby="pr-founding">
+        <div class="pr-band-head">
+          <h2 id="pr-founding" class="pr-h2">{FOUNDING_BAND_TITLE}</h2>
+          <Link href={COMMITMENT}>{FOUNDING_BAND_LINK}</Link>
+        </div>
+        <ul class="pr-facts">
+          {
+            FOUNDING_FACTS.map((f) => (
+              <li>
+                <span class="pr-fact">{f.title}</span>
+                <p>{f.text}</p>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="pr-small">{FOUNDING_BAND_NOTE}</p>
+      </section>
+    </div>
+
+    <section class="hp-wrap pr-section" aria-labelledby="pr-plans">
+      <PricingPlans client:load hrefs={{ free: GET_STARTED, organization: ORGANIZATION_CONTACT_HREF }} />
+    </section>
+
+    <section class="hp-wrap pr-section pr-split" aria-labelledby="pr-diff">
+      <div class="pr-split-side">
+        <h2 id="pr-diff" class="pr-h2">{DIFF_TITLE}</h2>
+        <p class="pr-text">{SAME_EVERYWHERE}</p>
+        <p class="pr-text pr-muted"><strong class="pr-strong">{EDITOR_LEAD}</strong> {EDITOR_TEXT}</p>
       </div>
+      <PricingTable client:visible />
+    </section>
+
+    <section class="hp-wrap pr-section" aria-labelledby="pr-commitments">
+      <h2 id="pr-commitments" class="pr-h2">{COMMITMENTS_TITLE}</h2>
       <ul class="pr-commitments">
         {
           COMMITMENTS.map((c) => (
             <li>
-              <h3>{c.title}</h3>
-              <p>{c.text}</p>
+              <strong>{c.lead}</strong> {c.text}
             </li>
           ))
         }
       </ul>
     </section>
 
-    <section class="pr-section" aria-labelledby="pr-compare">
-      <h2 id="pr-compare" class="pr-h2">Compare the tiers</h2>
-      <PricingTable client:visible />
-    </section>
-
-    <section class="pr-section" aria-labelledby="pr-editor">
-      <h2 id="pr-editor" class="pr-h2">{EDITOR_TITLE}</h2>
-      <div class="pr-panel">
-        <p><strong>{EDITOR_DEFINITION}</strong></p>
-        <p>{EDITOR_NOT_COUNTED}</p>
+    <section class="hp-wrap pr-section pr-split pr-faq" aria-labelledby="pr-faq">
+      <div class="pr-split-side">
+        <h2 id="pr-faq" class="pr-h2 pr-h2-lg">{FAQ_TITLE}</h2>
+        <HpFaqArt />
       </div>
-    </section>
-
-    <section class="pr-section" aria-labelledby="pr-founding">
-      <h2 id="pr-founding" class="pr-h2">{FOUNDING_TITLE}</h2>
-      <div class="pr-panel">
-        {
-          FOUNDING_TEXT.map((t) =>
-            t.includes(TOS) ? (
-              <p>
-                {t.slice(0, t.indexOf(TOS))}
-                <Link href={TERMS}>{TOS}</Link>
-                {t.slice(t.indexOf(TOS) + TOS.length)}
-              </p>
-            ) : (
-              <p>{t}</p>
-            ),
-          )
-        }
-      </div>
-    </section>
-
-    <section class="pr-section" aria-labelledby="pr-faq">
-      <h2 id="pr-faq" class="pr-h2">Questions</h2>
-      <PricingFaq client:visible links={{ privacy: PRIVACY_PAGE, contact }} />
-      <p class="pr-text lp-muted">More on how Bridge handles your data: <Link href={PRIVACY_PAGE}>Privacy</Link>.</p>
-    </section>
-
-    <section class="pr-section" aria-labelledby="pr-org">
-      <h2 id="pr-org" class="pr-h2">Organization</h2>
-      <p class="pr-contact">
-        Organization is {money(ORGANIZATION_PRICE.EUR, 'EUR')} a month ({money(ORGANIZATION_PRICE.USD, 'USD')}), billed yearly. Questions before you choose it? Write to <Link href={contact}>{ORGANIZATION_CONTACT_LABEL}</Link>.
-      </p>
+      <PricingFaq client:visible links={{ privacy: PRIVACY_PAGE, contact: ORGANIZATION_CONTACT_HREF }} />
     </section>
   </div>
 </Landing>

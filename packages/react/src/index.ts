@@ -32,6 +32,7 @@ export * from './components/Form';
 // Feedback
 export * from './components/Alert';
 export * from './components/Banner';
+export * from './components/AnnouncementStrip';
 export * from './components/Toast';
 export * from './components/Progress';
 export * from './components/Spinner';

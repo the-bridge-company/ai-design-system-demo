@@ -1,0 +1,76 @@
+/* A full-bleed strip above a site's header: one centred line that wraps on narrow screens. Existing tokens only. */
+.strip {
+  --_bg: var(--color-bg-zone);
+  --_text: var(--color-text-default);
+
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--size-11);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--_bg);
+  color: var(--_text);
+  font-family: var(--font-family-sans);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* Harbor is the zone color (color.bg.zone): text.default 13.07:1 light, 14.05:1 dark; text.link and the focus ring
+   7.03:1 and 6.47:1, the pairs Banner harbor already checks. */
+.harbor {
+  --_bg: var(--color-bg-zone);
+}
+
+.neutral {
+  --_bg: var(--color-bg-subtle);
+}
+
+.message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-3);
+  max-width: var(--size-300);
+  margin: 0;
+  text-align: center;
+}
+
+.icon {
+  flex: none;
+  color: var(--_text);
+}
+
+.text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Emphasis stays at the semibold weight: `bolder` from regular would jump past it. */
+.text :where(b, strong) {
+  font-weight: var(--font-weight-semibold);
+}
+
+.action {
+  flex: none;
+}
+
+/* Phones: one centred paragraph, the icon inline before the words, the link on its own line under them. */
+@media (max-width: 640px) {
+  .message {
+    display: block;
+  }
+
+  .icon {
+    display: inline-block;
+    margin-inline-end: var(--space-2);
+    vertical-align: text-bottom;
+  }
+
+  .action {
+    display: block;
+    margin-block-start: var(--space-1);
+  }
+}

@@ -335,9 +335,7 @@
 }
 
 /* ---------- FAQ ---------- */
-.pr-faq .hp-faqart {
-  max-width: var(--size-80);
-}
+/* The FAQ cast at the homepage's size: the same illustration, the width of its column. */
 
 .pr-faq-answer {
   max-width: 60ch;

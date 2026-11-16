@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-16T01:42:54.345Z",
-  "durationMs": 285610,
+  "createdAt": "2026-11-16T02:07:18.293Z",
+  "durationMs": 307163,
   "base": {
     "ref": "db721f8d558741361bcd3189f3a78c4de9579a25",
     "sha": "db721f8d558741361bcd3189f3a78c4de9579a25"
   },
   "head": {
-    "ref": "b8ff2a8e19045cce8b3786e9d619aadcf0867786",
-    "sha": "b8ff2a8e19045cce8b3786e9d619aadcf0867786"
+    "ref": "5d48367d31a10435435145ba09b5f34e3968b991",
+    "sha": "5d48367d31a10435435145ba09b5f34e3968b991"
   },
   "options": {
     "only": [
@@ -33,6 +33,7 @@
     "vars": [],
     "files": [
       ".changeset/founding-first.md",
+      "apps/docs-site/src/components/ds/studio/TeamChip.test.ts",
       "apps/docs-site/src/components/home/HpFounding.astro",
       "apps/docs-site/src/components/pricing/FoundingCalendar.astro",
       "apps/docs-site/src/components/pricing/PricingFaq.tsx",
@@ -53,6 +54,7 @@
       "apps/docs-site/src/styles/home-founding.css",
       "apps/docs-site/src/styles/homepage.css",
       "apps/docs-site/src/styles/pricing.css",
+      "apps/figma-plugin/test/component-pull.test.ts",
       "packages/core/src/audit/components.ts",
       "packages/react/component-specs.json",
       "packages/react/src/components/AnnouncementStrip/AnnouncementStrip.docs.json",
@@ -5142,11 +5144,18 @@
       "storyId": "feedback-spinner--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 505,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 0.06,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 720,
+          "width": 112,
+          "height": 64
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -5157,7 +5166,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__feedback-spinner--all-states__ocean-dark.png",
+        "after": "after/story__feedback-spinner--all-states__ocean-dark.png",
+        "diff": "diff/story__feedback-spinner--all-states__ocean-dark.png",
+        "composite": "composite/story__feedback-spinner--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__feedback-toast--all-states__ocean-dark",
@@ -5262,18 +5276,11 @@
       "storyId": "overlays-menu--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "changed",
-      "changedPixels": 12472,
+      "status": "unchanged",
+      "changedPixels": 0,
       "totalPixels": 815104,
-      "percent": 1.53,
-      "boxes": [
-        {
-          "x": 32,
-          "y": 704,
-          "width": 256,
-          "height": 92
-        }
-      ],
+      "percent": 0,
+      "boxes": [],
       "size": {
         "before": {
           "width": 1024,
@@ -5284,12 +5291,7 @@
           "height": 796
         }
       },
-      "images": {
-        "before": "before/story__overlays-menu--all-states__ocean-dark.png",
-        "after": "after/story__overlays-menu--all-states__ocean-dark.png",
-        "diff": "diff/story__overlays-menu--all-states__ocean-dark.png",
-        "composite": "composite/story__overlays-menu--all-states__ocean-dark.png"
-      }
+      "images": {}
     },
     {
       "key": "story__overlays-popover--all-states__ocean-dark",

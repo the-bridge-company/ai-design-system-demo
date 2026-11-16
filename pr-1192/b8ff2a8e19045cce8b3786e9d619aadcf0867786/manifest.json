@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-16T01:35:36.566Z",
-  "durationMs": 277898,
+  "createdAt": "2026-11-16T01:42:54.345Z",
+  "durationMs": 285610,
   "base": {
     "ref": "db721f8d558741361bcd3189f3a78c4de9579a25",
     "sha": "db721f8d558741361bcd3189f3a78c4de9579a25"
   },
   "head": {
-    "ref": "7577b05c8753428cfccc74a46e153751eefabd6a",
-    "sha": "7577b05c8753428cfccc74a46e153751eefabd6a"
+    "ref": "b8ff2a8e19045cce8b3786e9d619aadcf0867786",
+    "sha": "b8ff2a8e19045cce8b3786e9d619aadcf0867786"
   },
   "options": {
     "only": [
@@ -143,8 +143,8 @@
   },
   "summary": {
     "shots": 256,
-    "changed": 0,
-    "unchanged": 240,
+    "changed": 1,
+    "unchanged": 239,
     "added": 16,
     "removed": 0,
     "errors": 0,
@@ -5262,11 +5262,18 @@
       "storyId": "overlays-menu--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 12472,
       "totalPixels": 815104,
-      "percent": 0,
-      "boxes": [],
+      "percent": 1.53,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 704,
+          "width": 256,
+          "height": 92
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -5277,7 +5284,12 @@
           "height": 796
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__overlays-menu--all-states__ocean-dark.png",
+        "after": "after/story__overlays-menu--all-states__ocean-dark.png",
+        "diff": "diff/story__overlays-menu--all-states__ocean-dark.png",
+        "composite": "composite/story__overlays-menu--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__overlays-popover--all-states__ocean-dark",

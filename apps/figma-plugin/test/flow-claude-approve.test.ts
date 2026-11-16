@@ -28,7 +28,7 @@ const session = (component: string, number: number) => ({ component, state: 'rea
 test("a lead approves Claude's fixes: Approve all, refused ones keep their row, then Approve on one", async () => {
   const sent: any[] = [];
   let answer: (prs: number[]) => unknown = (prs) => ({ approved: prs.filter((n) => n !== 103).map((n) => ({ pr: n })), refused: [{ pr: 103, code: 'checks_pending', reason: 'Bridge is still checking this fix. Approve it again in a minute.' }], landed: true, how: 'together' });
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     pulled: true,
     sync: { claudeAsked: JSON.stringify(Object.fromEntries(Object.keys(COMPONENTS).map((c) => [c, minutesAgo(30)]))), claudeConnector: 'yes' },
     register: (routes) =>

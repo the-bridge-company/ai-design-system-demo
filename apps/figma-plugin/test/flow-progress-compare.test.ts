@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { openPlugin, pixelsImage } from './ui-harness';
 
 test('Compare with code: a bar of the variants compared, in the block where the result appears', async () => {
-  const p = await openPlugin({ pixels: true });
+  const p = await openPlugin({ fullScope: true, pixels: true });
   await p.click('Check for updates');
   await p.click('Apply to Figma');
   await p.until(() => p.headline() === 'Your design system is in Figma', 15000);

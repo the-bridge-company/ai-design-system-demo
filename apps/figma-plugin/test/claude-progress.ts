@@ -6,7 +6,7 @@ import { type Harness, openPlugin } from './ui-harness';
 export const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
 
 export async function reopenWith(answer: { session?: unknown; prs?: unknown[] }): Promise<Harness & { row: () => Element | null }> {
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     pulled: true,
     sync: { claudeAsked: JSON.stringify({ IconButton: minutesAgo(6) }), claudeConnector: 'yes' },
     register: (routes) =>

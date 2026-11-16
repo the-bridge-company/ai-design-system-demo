@@ -13,10 +13,22 @@ The same name everywhere: the Community page, the Plugins menu, the development 
 and the plugin window title (`src/main/index.ts`). "Bridge" alone is too generic to find. The id
 `1693034743850648023` does not change.
 
-## Tagline (58 of 60 characters)
+## Scope
+
+The listing makes one promise, the one decided for the MVP (owner, 2026-11-11, note on the Studio canvas
+"Décisions" page): **"Your tokens sync both ways. Bridge tells you what is missing in your Figma and checks that it
+has caught up with the code."** ("Start from a mockup" is a Studio feature, not the plugin's.)
+
+Everything else the code can do is hidden behind one constant, `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts`, and is
+never mentioned here: drawing or updating component sets from code, two-way variant sync, component changes sent
+from Figma as requests or branches, "Ask Claude to fix it" and the fix loop, "Draft with Claude" and the Claude setup
+card. "Send to Figma" (2026-11-10) is a Studio button, off there; the plugin has none. Setting the constant to `false`
+shows them again; this listing would then need its own update.
+
+## Tagline (52 of 60 characters)
 
 ```
-Pull tokens from GitHub. Send Figma edits back for review.
+Your tokens sync both ways between GitHub and Figma.
 ```
 
 ## Description
@@ -25,36 +37,34 @@ Paste as is (plain text with line breaks; use the dialog's list button for the "
 Every line says what the plugin does today; check it against "What each claim rests on" below before changing it.
 
 ```
+Your tokens sync both ways. DS Bridge tells you what is missing in your Figma and checks that it has caught up with the code.
+
 DS Bridge connects Figma Variables to the design tokens of a design system kept in a GitHub repository. The repository stays the source of truth: you pull from it, edit in Figma, and send your edits back for review.
 
 Connect
 - Sign in with Bridge: the plugin opens bridgedesignsystem.com in your browser, you pick your team, and the plugin gets that team's repository and a GitHub sign-in that expires. No token to paste. You need a Bridge account for this.
 - Or, for developers: paste a fine-grained GitHub token limited to one repository.
 
-Pull: from the repository into Figma
+Pull: from the code into Figma
 - Reads the token files (W3C DTCG JSON) of your main branch and shows every change before anything is written.
 - Creates one variable collection per tier (Primitives, Brand, Base, Semantic, Density, Component) with their modes: themes, brands, densities. Aliases between collections are kept.
 - Keeps the edits you made in Figma. Tokens removed in code are marked [orphan], never deleted.
 - On plans limited to one mode per collection, it creates one collection per mode instead.
-- Components (optional): when the repository has the component specs file Bridge generates, Pull also draws component sets with variants, bound to the variables. Check each one: some components are not supported yet, and the plugin lists them.
+- Tells you what is missing: which components from the code this file does not have yet.
 
-Push: from Figma back to the repository
-- Lists what you changed since your last pull, with color swatches before and after. When a token changed both in Figma and in the repository, you choose which one to keep.
+Push: your Figma edits back to the code
+- Lists the variables you changed since your last pull, with color swatches before and after. When a token changed both in Figma and in the code, you choose which one to keep.
 - Checks the color pairs your repository lists for contrast, in every brand and theme (AA, AAA or fail). An edit that makes a pair fail cannot be sent.
 - Where it goes depends on your repository:
   - Suggestion mode: your edits become a GitHub issue for your design system lead. Nothing is written to the code.
   - Pull request mode: the plugin opens a branch and a pull request with the token files you changed (plus a changeset when your repository asks for one), a table of the changes and the contrast before and after.
-- Component changes found in Figma go out as GitHub issues, branches or pull requests for your team to review and build.
 - The plugin never writes to your main branch. In pull request mode, if your team set up Bridge's GitHub app, Bridge can merge a pull request that only changes token values once your checks pass. Renamed or removed tokens wait for a developer.
 
-Compare with code (optional)
-- Exports each component set the plugin drew and compares it with images of the same component rendered from your code, which your repository publishes with Bridge's GitHub workflow. Nothing in the file changes.
-
-Claude (optional)
-- The plugin never calls an AI service and holds no AI key. "Ask Claude to fix it" opens claude.ai in your browser with the request written for your team's own Claude, where Bridge is added as a connector. "Draft with Claude" leaves your changes in a file in your repository for your Claude to read, then fills in the text it writes back. Nothing is sent until you press Send.
+Compare with code
+- Checks that the component sets Bridge knows in this file still look like the code: each one is exported and compared with images of the same component rendered from your code, which your repository publishes with Bridge's GitHub workflow. Nothing in the file changes.
 
 Privacy
-- The plugin talks to two sites: api.github.com (your repository) and bridgedesignsystem.com (Sign in with Bridge, merging a token pull request, and the progress of a Claude fix). No analytics.
+- The plugin talks to two sites: api.github.com (your repository) and bridgedesignsystem.com (Sign in with Bridge, and merging a token pull request). No analytics, no AI service.
 - Your GitHub sign-in or token is saved in this plugin's storage on your computer, never in the Figma file and never shown again. It is sent only to GitHub and to bridgedesignsystem.com, which uses it to ask GitHub who you are and what you can access.
 - The repository, branch and tokens folder are saved in the Figma file, so everyone in the file uses the same ones.
 
@@ -65,10 +75,8 @@ Bridge: https://bridgedesignsystem.com
 ## Tags (12 of 12)
 
 ```
-design tokens, variables, github, pull request, design system, dtcg, git, tokens, contrast, accessibility, components, handoff
+design tokens, variables, github, pull request, design system, dtcg, git, tokens, contrast, accessibility, token sync, handoff
 ```
-
-"code sync" was replaced by "components": nothing is synced live, you pull and push by hand.
 
 ## Support contact
 
@@ -85,40 +93,39 @@ https://github.com/the-bridge-company/ai-design-system-demo/issues
 ## Data security answers
 
 For Figma's data security questions (publish dialog, or a reviewer's email). Plain answers, true for the code on
-`main`; the proof is in "What each claim rests on".
+`main` with `PLUGIN_MVP_SCOPE` on; the proof is in "What each claim rests on".
 
 **Does the plugin make network requests? To which domains?**
 Yes, to two domains, both declared in `manifest.json`:
 - `https://api.github.com`: reads and writes the team's own repository (token files, configuration, branches, pull
-  requests, issues, and PNG exports of components the user chooses to send).
-- `https://bridgedesignsystem.com` (Bridge, our site): `POST /api/plugin-link` for Sign in with Bridge,
-  `POST /api/ship` to ask Bridge to merge a token pull request the user just opened (and, for leads, to approve
-  Claude's fixes), `GET /api/fix-sessions` to show the progress of a fix the user asked Claude for.
-The plugin also opens links in the user's browser when they click them (github.com, claude.ai, bridgedesignsystem.com),
-through `figma.openExternal`.
+  requests and issues for the variable edits the user sends, and the reference images Compare with code reads).
+- `https://bridgedesignsystem.com` (Bridge, our site): `POST /api/plugin-link` for Sign in with Bridge, and
+  `POST /api/ship` to ask Bridge to merge a token pull request the user just opened.
+The plugin also opens links in the user's browser when they click them (github.com, bridgedesignsystem.com), through
+`figma.openExternal`.
 
 **What data leaves Figma?**
-- To GitHub, the team's own repository: token values and names, the Figma file name, the file key and node ids when
-  Figma provides them, PNG exports of the components the user sends, and the text the user writes.
-- To bridgedesignsystem.com: the GitHub sign-in or token (in the `Authorization` header), the repository name, pull
-  request numbers and component names. Bridge uses the token to ask GitHub who the user is and what they can access,
-  and does not keep it. During Sign in with Bridge, the token is held encrypted on Bridge's side for at most 5
-  minutes, until the plugin collects it once.
+- To GitHub, the team's own repository: token values and names, the Figma file name, and the text the user writes.
+- To bridgedesignsystem.com: the GitHub sign-in or token (in the `Authorization` header), the repository name and
+  pull request numbers. Bridge uses the token to ask GitHub who the user is and what they can access, and does not
+  keep it. During Sign in with Bridge, the token is held encrypted on Bridge's side for at most 5 minutes, until the
+  plugin collects it once.
+- Compare with code exports component images inside the plugin to compare them; they are not sent anywhere.
 
 **What does the plugin store, and where?**
 - On the user's computer (`figma.clientStorage`): the GitHub sign-in or token, whether GitHub last refused it, how it
   was obtained (Bridge or pasted) and the GitHub login of the person who signed in.
 - In the Figma file (shared plugin data, namespace `dsbridge`): the repository, branch and tokens folder, the last
-  pulled commit, ids and markers on the variables and component sets the plugin manages, and per-person sync state
-  keyed by the Figma user id (the `currentuser` permission). The token is never stored in the file.
+  pulled commit, ids and markers on the variables and component sets the plugin manages, the last Compare with code
+  result, and per-person sync state keyed by the Figma user id (the `currentuser` permission). The token is never
+  stored in the file.
 
 **Personal data, analytics, tracking?**
 No analytics and no tracking. The Figma user id stays in the file's plugin data and is not sent anywhere by the
 plugin. The GitHub login comes from GitHub through Sign in with Bridge and stays on the computer.
 
 **AI?**
-The plugin never calls Anthropic or any AI service and holds no AI key. Claude features open claude.ai in the user's
-browser, or leave a file in the user's repository that the user's own Claude reads through the Bridge connector.
+None. The plugin never calls Anthropic or any AI service and holds no AI key.
 
 **Third parties?**
 GitHub, for the team's own repository. Bridge (bridgedesignsystem.com) is ours.
@@ -129,22 +136,22 @@ Re-check these before changing the copy above.
 
 | Claim | Where it is in the code |
 | --- | --- |
+| Only the MVP promise is shown | `src/shared/scope.ts` (`PLUGIN_MVP_SCOPE`), `test/flow-mvp-scope.test.ts` |
 | Sign in with Bridge, no token to paste, sign-in expires | `src/sync/bridge-sign-in.ts` (`startBridgeSignIn`, `pollBridgeSignIn`), `apps/docs-site/api/plugin-link/index.ts` |
 | Pasted fine-grained token for developers | `src/ui/index.ts` (`viewSettings`, "For developers: connect with a token") |
 | Token in client storage only, never in the file | `src/main/github-token.ts` (`saveGitHubToken`) |
-| Token sent to bridgedesignsystem.com | `src/sync/ship.ts` (`armShip`, `markFigmaPush`), `src/sync/approve-fixes.ts`, `src/sync/fix-session.ts` (`readFixSession`) |
-| Two domains, no analytics | `manifest.json` `allowedDomains`; every `fetch` is in `src/ui/index.ts` and `src/sync/` (GitHub client, the three files above, `bridge-sign-in.ts`) |
+| Token sent to bridgedesignsystem.com | `src/sync/ship.ts` (`armShip`, `markFigmaPush`), `src/sync/bridge-sign-in.ts` |
+| Two domains, no analytics | `manifest.json` `allowedDomains`; with the MVP scope every `fetch` is the GitHub client, `bridge-sign-in.ts` or `ship.ts` (the fix loop's `fix-session.ts` and `approve-fixes.ts` are hidden: `watchFixes` and `approver` return early) |
 | Preview before anything is written, local edits kept, orphans not deleted | `src/sync/flows.ts` (`analyze`, `buildPull`), `src/main/apply.ts` |
 | One collection per tier, aliases across collections, one collection per mode on limited plans | `src/sync/mapping.ts`, `src/main/apply.ts` (split layout when `addMode` throws) |
-| Component sets from the specs file, unsupported ones listed | `src/sync/component-pull.ts`, `src/main/build-components.ts` |
+| What is missing in Figma | `src/ui/index.ts` (`missingInFigmaGroup`), from the component specs (`src/sync/component-pull.ts`, `coverageView`) |
 | Three-way diff, conflicts decided by the user, swatches | `src/sync/flows.ts` (`buildPush`), `src/ui/index.ts` (`viewPush`) |
 | Contrast AA, AAA or fail, failing pair blocks the send | `@bridge-ds/core` `wcag.ts`, `src/ui/index.ts` (`viewPush`, blocking problems disable the bar) |
 | Suggestion mode: a GitHub issue | `src/sync/flows.ts` (`sendSuggestion`), `@bridge-ds/core` `config.ts` (`changesMode`: "suggest" when the config does not say) |
 | Pull request mode: branch, pull request, change table, contrast | `src/sync/flows.ts` (`openPullRequest`), `@bridge-ds/core` `pr-composer.ts` |
 | Bridge can merge token-value pull requests after checks | `src/sync/ship.ts`, `apps/docs-site/api/ship/index.ts` (needs the Bridge GitHub app) |
-| Component changes as issues or branches | `src/sync/publish.ts` (`sendComponentPush`), `src/sync/requests.ts` |
 | Compare with code | `src/sync/fidelity.ts` (`runFidelityCheck`), images on the `bridge-visual` branch |
-| Never calls an AI service, holds no AI key | no Anthropic call or key in `src/`; `src/sync/claude-connector.ts` (opens claude.ai), `src/sync/my-claude.ts` (file on the requests branch) |
+| Never calls an AI service, holds no AI key | no Anthropic call or key in `src/` |
 
 ## What the previous copy said that was not true
 
@@ -161,7 +168,8 @@ The copy submitted on 2026-10-16 promised more than the plugin does today, or de
 - "Nothing is ever written to main. CI and your code owners decide." Partly true: the plugin never writes to main,
   but Bridge can merge a token-value pull request once the checks pass.
 - "Contrast ... the token build in CI fails on them." True for this repository only; it depends on each team's CI.
-- Components, Compare with code, Sign in with Bridge and the Claude features were not mentioned at all.
+- Sign in with Bridge and Compare with code were not mentioned. The other features the code has (drawing components,
+  component requests, the Claude features) are out of the MVP scope: hidden in the plugin, not in the listing.
 
 ## Images
 

@@ -9,6 +9,7 @@ import { analyze, buildPull } from '../src/sync/flows';
 import { DEFAULT_SETTINGS, type FigmaSnapshot, type InitPayload } from '../src/shared/messages';
 import { FakeGitHub } from './fake-github';
 import { applyPlanToSnapshot } from './figma-sim';
+import { scope } from '../src/shared/scope';
 import { realChecksText, realConfigText, realFiles } from './helpers';
 
 export const REPO = 'acme/acme-design-system';
@@ -85,11 +86,17 @@ export interface Open {
   pixels?: boolean;
   /** Edits the snapshot before the plugin reads it. */
   edit?: (s: FigmaSnapshot) => void;
+  /**
+   * Shows the features the MVP hides (shared/scope.ts): drawing components, component requests, the Claude fix loop,
+   * Draft with Claude. Off by default: the plugin opens as it ships.
+   */
+  fullScope?: boolean;
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export async function openPlugin(o: Open = {}): Promise<Harness> {
+  scope.mvp = !o.fullScope;
   const data = await repoData();
   const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', { url: 'https://www.figma.com/plugin/', pretendToBeVisual: true });
   const w = dom.window as unknown as Window & typeof globalThis;

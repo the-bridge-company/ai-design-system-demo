@@ -14,12 +14,31 @@ The plugin has three tabs: **Pull** (code to Figma, "Bring the latest tokens fro
 **Settings**. The token logic is `@bridge-ds/core` (`packages/core`); this package is the Figma glue.
 
 It works on the free Figma plan: it only uses the Plugin API (`figma.variables`), the GitHub REST API and the
-Bridge site (bridgedesignsystem.com: Sign in with Bridge, shipping a token push, the progress of a Claude fix; see
-"Network" below). Nothing is synced live and the plugin never writes to `main` directly.
+Bridge site (bridgedesignsystem.com: Sign in with Bridge and shipping a token push; see "Network" below). Nothing
+is synced live and the plugin never writes to `main` directly.
+
+## Scope (MVP)
+
+The plugin keeps one promise (owner decision 2026-11-11, Studio canvas "Décisions"): **"Your tokens sync both ways.
+Bridge tells you what is missing in your Figma and checks that it has caught up with the code."**
+
+| Shown | Hidden for the MVP, code kept |
+| --- | --- |
+| Sign in with Bridge (or a developer token) | Drawing and updating component sets from code ("Pull components", "Include components", Update, Update all) |
+| Pull of tokens into Figma Variables | Two-way variant sync (component changes read back from Figma) |
+| Push of variable edits: a pull request or a suggestion, contrast checked | Component changes sent from Figma: requests, library branches, "Request a component change", "Not in the design system yet", "Fix in Figma first" |
+| What is missing in Figma: the components from the code this file does not have | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
+| Compare with code | "Draft with Claude" and the Claude card in Settings |
+
+One constant decides it: `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts` (`true` ships). Setting it to `false` shows the
+hidden features again, as `JIRA_IN_BRIDGE` does in the site. The sections below marked **Hidden in the MVP** document
+that code. "Send to Figma" is a Studio button (`SEND_TO_FIGMA_IN_STUDIO`, off); the plugin has none.
+`test/flow-mvp-scope.test.ts` checks the MVP screens; the other flow tests open the plugin with `fullScope: true` to
+keep covering the hidden code.
 
 See it with real data on the live Bridge site: the [token explorer](https://bridgedesignsystem.com/studio/tokens/)
-shows what a Pull brings into Figma, and [Reviews](https://bridgedesignsystem.com/studio/reviews/?pr=4) shows
-the pull request a Push opened (PR #4). Components are in [Storybook](https://bridge-storybook.floriangouloubi.com).
+shows what a Pull brings into Figma, and [Changes](https://bridgedesignsystem.com/studio/changes/?pr=468) shows
+the pull request a Push opened (PR #468). Components are in [Storybook](https://bridge-storybook.floriangouloubi.com).
 
 ## Install (Figma desktop)
 
@@ -80,16 +99,19 @@ The manifest allows two sites, and the plugin calls only these:
 - `https://api.github.com`: everything about the repository. File contents are read through the git trees and blobs
   endpoints, never from `raw.githubusercontent.com`.
 - `https://bridgedesignsystem.com`, with the saved GitHub sign-in or token as `Authorization: Bearer`:
-  `POST /api/plugin-link` (Sign in with Bridge, `src/sync/bridge-sign-in.ts`), `POST /api/ship` (ship a token push
-  once its checks pass, `src/sync/ship.ts`; approve Claude's fixes, `src/sync/approve-fixes.ts`) and
-  `GET /api/fix-sessions` (what Claude is doing on a fix, `src/sync/fix-session.ts`). The site uses the token to ask
-  GitHub who is calling and what they can access; it does not keep it.
+  `POST /api/plugin-link` (Sign in with Bridge, `src/sync/bridge-sign-in.ts`) and `POST /api/ship` (ship a token push
+  once its checks pass, `src/sync/ship.ts`). The site uses the token to ask GitHub who is calling and what they can
+  access; it does not keep it. The hidden fix loop also calls `POST /api/ship` (approve Claude's fixes,
+  `src/sync/approve-fixes.ts`) and `GET /api/fix-sessions` (`src/sync/fix-session.ts`); with the MVP scope neither
+  runs, and the manifest's reasoning does not list them.
 
 Links to the site's former address, `https://bridge.floriangouloubi.com`, are still recognised (`isStudioUrl`); they
-open in the browser, which needs no allowlist, so that domain is not in `allowedDomains`. No analytics. The plugin never calls Anthropic and holds no API key: Claude runs in the team's own Claude account, with
-Bridge added as a connector.
+open in the browser, which needs no allowlist, so that domain is not in `allowedDomains`. No analytics. The plugin
+never calls Anthropic and holds no API key.
 
 ## Writing help: drafts, optionally written by Claude
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 Designers should not have to document every change by hand. Two levels, in this order on screen:
 
@@ -117,6 +139,8 @@ Designers should not have to document every change by hand. Two levels, in this 
 Whatever Claude writes, nothing is sent until you press Send request, Send for review or Send to exploration.
 
 ## Ask Claude to fix it
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 When Compare with code finds a component that differs, **Ask Claude to fix it** hands it to the team's own Claude (Bridge
 is a connector in it; no API key anywhere). The first time in a file, one sentence says to add Bridge to the team's
@@ -188,6 +212,8 @@ kept, and tokens changed on both sides are shown as conflicts for you to decide.
 prefix in its description, so you can rebind layers before deleting it yourself.
 
 ### Pull components (code to Figma component sets)
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 The Pull preview has a **Components** group when the repo has `packages/react/component-specs.json` (or
 `components.specs` in `bridge.config.json`). It lists each coded component as new, updated or unchanged, and
@@ -318,6 +344,10 @@ set description says "In code, reduced motion turns this off."
 
 ### Compare with code (does each component look like the code?)
 
+Shown in the MVP. It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`), which only a pull with
+the hidden component drawing makes. In a file without them it says "No component set from code in this file yet:
+nothing to compare", and the Components group of Pull lists every component from the code as missing in Figma.
+
 The generator can build a set that has the right variants and bindings but still looks wrong (a compound part
 drawn too short, a missing transparent border, a text style not carried over). **Compare with code**, under the
 Components group of the Pull preview, catches that: it exports every generated variant with `exportAsync` (PNG,
@@ -437,6 +467,8 @@ change can also be edited and sent on its own from its row menu (**Edit the requ
 
 ### Push components: back to the library as a library branch
 
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
+
 For review, each checked component change goes to its own library branch, routed by what DS Bridge can write with
 certainty (`src/sync/component-push.ts`, rules in `planComponentPush` from `@bridge-ds/core`). It reads the diff Pull
 reads in "Review updates" (the set's baseline against Figma now), the other way round. The row says where it goes, in
@@ -469,6 +501,8 @@ Update rebuilds it from code, which clears the mark. While the branch is in revi
 and keeps the Figma version. To an exploration, component changes stay requests built on the exploration branch.
 
 ### Two flows: variables become pull requests, components go to library branches
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 The Push tab has two groups, one under the other.
 

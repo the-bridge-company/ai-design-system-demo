@@ -45,7 +45,7 @@ export const ASKED = ['CheckboxGroup', 'CodeBlock', 'Form', 'Avatar', 'Spinner',
 export async function openFixList(): Promise<Harness> {
   // Popover: asked a minute ago, nothing back yet (waiting). Menu: asked two hours ago, nothing ever came back.
   const asked = Object.fromEntries(ASKED.map((c) => [c, c === 'Popover' ? minutesAgo(1) : minutesAgo(120)]));
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     pulled: true,
     sync: { claudeAsked: JSON.stringify(asked), claudeConnector: 'yes', lastPullAt: LAST_PULL_AT },
     register: (routes) =>

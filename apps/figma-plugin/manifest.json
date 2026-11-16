@@ -9,6 +9,6 @@
   "permissions": ["currentuser"],
   "networkAccess": {
     "allowedDomains": ["https://api.github.com", "https://bridgedesignsystem.com"],
-    "reasoning": "DS Bridge reads design token files from the team's GitHub repository through the GitHub REST API (api.github.com) and opens pull requests or issues with the designer's changes. It also calls the Bridge site, bridgedesignsystem.com, with the designer's GitHub sign-in: \"Sign in with Bridge\" gets a one-time code (POST /api/plugin-link) and polls until the designer picks their team; after a push of token values it asks Bridge to merge that pull request once its checks pass (POST /api/ship); and while the team's Claude fixes a component it reads the fix's progress (GET /api/fix-sessions). \"Ask Claude to fix it\" opens claude.ai in the browser. No analytics. The plugin never calls Anthropic and holds no API key."
+    "reasoning": "DS Bridge reads design token files from the team's GitHub repository through the GitHub REST API (api.github.com) and opens a pull request or an issue with the designer's variable edits. It also calls the Bridge site, bridgedesignsystem.com, with the designer's GitHub sign-in: \"Sign in with Bridge\" gets a one-time code (POST /api/plugin-link) and polls until the designer picks their team; after a push of token values it asks Bridge to merge that pull request once its checks pass (POST /api/ship). No analytics and no AI service: the plugin never calls Anthropic and holds no API key."
   }
 }

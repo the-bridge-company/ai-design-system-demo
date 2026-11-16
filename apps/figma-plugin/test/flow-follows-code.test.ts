@@ -8,7 +8,7 @@ import { openPlugin } from './ui-harness';
 const FOLLOWS = 'Components now follow how they look in code, measured in Storybook.';
 
 test('Automatic: the measure arrives, the update list says once that components now follow the code', async () => {
-  const p = await openPlugin();
+  const p = await openPlugin({ fullScope: true });
   await p.click('Check for updates');
   assert.ok(!p.text().includes(FOLLOWS), 'no measure yet: a first pull from the static spec says nothing about it');
   await p.click('Apply to Figma');

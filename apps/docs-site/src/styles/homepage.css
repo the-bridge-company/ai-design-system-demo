@@ -1436,18 +1436,6 @@
   font-variation-settings: "SOFT" 100;
 }
 
-.hp-hz-p {
-  margin: var(--space-5) 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--_t19);
-  line-height: var(--font-leading-32);
-}
-
-.hp-hz-cta {
-  display: flex;
-  margin-top: var(--space-8);
-}
-
 .hp-pano {
   position: relative;
   width: 100%;

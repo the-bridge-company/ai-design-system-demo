@@ -1,5 +1,38 @@
 # @bridge-ds/figma-plugin
 
+## 0.10.0
+
+### Minor Changes
+
+- 28d4b96: The DS Bridge Figma plugin keeps one promise for the MVP: your tokens sync both ways, and Bridge tells you what is missing in your Figma and checks that it has caught up with the code. Pull says which components from the code the file is missing, counting the team's own components by name ("Forms/Select" is Select). Drawing components, component requests from Figma, "Ask Claude to fix it" and "Draft with Claude" are hidden behind one flag (`PLUGIN_MVP_SCOPE`). The plugin is named DS Bridge everywhere and only reaches api.github.com and bridgedesignsystem.com. The docs, security page and homepage say the same.
+
+### Patch Changes
+
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- ff5669c: Plugin (MVP scope): checking again after a pull no longer titles the screen "Variables are in, building components";
+  the MVP builds no components. Studio Connect Figma: when Bridge cannot be reached it says so instead of asking to
+  sign in, and when only GitHub is connected in the browser it says the Bridge account sign-in is the missing step.
+- Updated dependencies [06282ec]
+- Updated dependencies [7ec2e45]
+- Updated dependencies [b65f98b]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [4ca0f44]
+- Updated dependencies [7e05245]
+- Updated dependencies [689e919]
+- Updated dependencies [52e54d1]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [1fb3e59]
+- Updated dependencies [41c308e]
+- Updated dependencies [16f29b8]
+- Updated dependencies [adeb58f]
+- Updated dependencies [9ae871c]
+- Updated dependencies [346cec0]
+- Updated dependencies [15c75ed]
+- Updated dependencies [7a5a507]
+- Updated dependencies [9aecdee]
+- Updated dependencies [35e5ca0]
+  - @bridge-ds/core@1.0.0
+
 ## 0.9.0
 
 ### Minor Changes

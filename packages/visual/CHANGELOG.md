@@ -1,5 +1,30 @@
 # @bridge-ds/visual
 
+## 0.3.30
+
+### Patch Changes
+
+- Updated dependencies [06282ec]
+- Updated dependencies [7ec2e45]
+- Updated dependencies [b65f98b]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [4ca0f44]
+- Updated dependencies [7e05245]
+- Updated dependencies [689e919]
+- Updated dependencies [52e54d1]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [1fb3e59]
+- Updated dependencies [41c308e]
+- Updated dependencies [16f29b8]
+- Updated dependencies [adeb58f]
+- Updated dependencies [9ae871c]
+- Updated dependencies [346cec0]
+- Updated dependencies [15c75ed]
+- Updated dependencies [7a5a507]
+- Updated dependencies [9aecdee]
+- Updated dependencies [35e5ca0]
+  - @bridge-ds/core@1.0.0
+
 ## 0.3.29
 
 ### Patch Changes

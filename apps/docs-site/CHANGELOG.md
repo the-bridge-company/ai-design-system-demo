@@ -1,5 +1,369 @@
 # @bridge-ds/docs-site
 
+## 0.34.0
+
+### Minor Changes
+
+- 4ca0f44: Behavior requests in Being built: once the design system lead makes one the default, it is listed like any build
+  request ("The lead made it the default", today's sentence under its title) and reads Shipped when the change that
+  closes it merges. Its detail shows today's sentence struck, an arrow and the wanted one, where it gets in the way, who
+  asked and who made it the default (read from Bridge's comment, core `madeDefaultOf`). For a developer, "For developers"
+  adds the behavior id with its keys from the component's docs.json, the files to change (read from the repository: its
+  source, its docs.json, its tests), the Base UI primitive its source imports (core `basePrimitivesOf`) and "Copy the
+  request for Claude": core `behaviorBrief`, which `requestBrief` and `buildRequestBrief` now give for kind `behavior`
+  (change the code, update the docs.json entry and deprecate the old id when the meaning changes, a test that presses the
+  keys, a changeset, "Closes #n"). A designer following their request reads where it is in their words (Being built,
+  Done), without developer details.
+- 7e05245: Claude's preview of a behavior request, made by the person's own Claude through the Bridge connector: Bridge never runs
+  Claude. Two MCP tools: `bridge_make_behavior_preview` gives their Claude the request, the component's files, its
+  docs.json behaviors entry and the brief (core `behaviorPreviewBrief`: change the code and the entry, add a key-press test,
+  push `agent/preview-<n>`, open a draft "Preview for #n" that never closes the request); `bridge_report_behavior_preview`
+  records it on the request through Bridge (the hosted connector's server, `POST /api/contribute { action:
+'behavior-preview' }`, checks the person is on the team and the issue is an open behavior request, and Bridge's app keeps
+  one record comment). Studio reads only Bridge's records (core `parsePreviewState`, `isBridgeAppComment`).
+
+  On the request page, the lead who decides and the person who asked get "Play both": with no preview yet, "Ask your Claude
+  to make the preview" and the line to say ("Make the Bridge preview for request #n", with Copy); then today's story and the
+  preview's (the team's per-branch Storybook, `previews.apps.storybook`) side by side, the same keys pressed in both (the
+  stories answer `embed=bridge-keys` from `.storybook/preview.tsx`, with Storybook's own userEvent), each side's result in
+  one line, and the behavior's "Expected announcement". The person who asked can change her words; the preview made from
+  the old ones asks to be updated, and the next one says "Updated from your words". In Being built, a developer reads the
+  same hand-off, then "Check against the preview": every behavior with keys played on Claude's preview and on their pull
+  request's preview, a row checking when both agree. `GitHubClient.updateIssue` takes a title.
+
+- 689e919: Behavior requests: a person asks to change how a component behaves, or a rule of an action pattern, and the design
+  system lead decides. Core gains the request kind `behavior` (label "Behavior change", `request: behavior`) with its ask
+  (`BehaviorAsk`: the component or pattern, the behavior id or the rule's place, today's sentence, the wanted one, where
+  it gets in the way), `behaviorRequestOf`, `behaviorAskOf`, `draftBehaviorText`, `makeBehaviorDefaultOnGitHub` (adds
+  `bridge-build`, so it becomes a build request) and `askRequesterOnGitHub`. An undecided behavior request stays out of
+  the build requests (`isUndecidedBehaviorRequest`).
+
+  In Studio, a team's Components drawer gets a fourth choice, "Change how it behaves": pick one of the component's own
+  behaviors (or something it does not do yet), say what it should do instead and, if you like, where it gets in the way.
+  A team's Library pattern page offers members "Suggest a change to this pattern" on an action pattern, with the same
+  form, and a component page's Behaviors section links members to the drawer. The request's page shows today's sentence
+  struck, an arrow and the wanted one, with who asked; the person who decides gets Make it the default, Not now (the
+  decline with its reason) and Ask with the requester's first name. Undecided behavior requests wait on the home of the
+  people who decide.
+
+  A design lead or an admin signed in by email decides too: Bridge's server (`POST /api/contribute`
+  `{ action: 'behavior-decision' }`) checks their member record and that the issue is an open behavior request of the
+  team's repository, then makes it the default, says not now with the reason, or asks the requester, naming them in the
+  comments. The send button and the sent line name the team's one design lead ("Send to Dana") when there is one.
+  "Something looks wrong" is now about not matching Figma only.
+
+- 52e54d1: Behaviors, phase 1: a component's docs.json can list how it reacts, in designer words (`behaviors`: `{ id, family, text, try?, keys?, announces?, example? }`), with ids shared across components (`close-on-escape`) and family names shared too (Opening, Filtering, Moving, Picking, Closing, Focus, Feedback). Select lists 9 and Combobox 8, checked against the components and Base UI. Core types and validates the list (`validateBehaviors`, also run by `validateDocs`), reads it from any repo (`readBehaviors`), groups it (`behaviorGroups`) and gives the agent view (`agentBehaviors`). The Library component page shows a Behaviors section in Usage: one stage with the real component (Bridge's own page runs it, a team's Library plays its Storybook story), above the list on narrow pages and beside it, sticky, on wide ones; one list per family, each row a DS toggle Button with its keys in the DS Kbd and the expected screen reader announcement; the row picked says on the stage what to do (`try`, a stage-only line). The "On this page" rail lists the section. `bridge_get_component` returns `behaviors` and the `version` of the package that ships their ids, and /llms.txt lists them.
+- ba1e04c: Billing with Stripe, off until launch: Team through Stripe Checkout and the Customer Portal, Organization by invoice, founding teams never limited or billed, and the Free limits (a 4th editor or a 2nd design system waits for Team). Nothing changes while `BILLING_LAUNCHED` is false (docs/BILLING.md).
+- 41c308e: Delete pattern: plain confirmation, or the name typed to confirm when the impact is high (a team, an account, anything other people lose), with the AlertDialog's `confirmText`. A pattern stage can name its high impact rows (`stage.typeName`: `items` and their own question); `validatePattern` checks they are rows of the stage and that the action cannot be undone. The Library's Delete stage plays both: Marketing team asks for its name, the two drafts ask a plain question.
+- adeb58f: AnnouncementStrip: a quiet, full-bleed strip above a site's header for one lasting, site-wide fact, with an optional
+  icon and one DS Link (`label`, `icon`, `action`, `appearance` harbor or neutral). A complementary landmark, not a live
+  region, not dismissible. The audit maps AnnouncementBar and similar names to it.
+
+  The site: /pricing/ leads with the founding date (board "Pricing A, Founding first"): hero with a Field Guide calendar
+  and the hand-drawn stroke under "free" (now one shared piece with the homepage's "Keep"), the founding commitment in a
+  Harbor band, planned prices with no recommended tier, only the rows that differ, what holds on every tier, and the FAQ
+  open on "When do paid plans open?" (not before 1 April 2027). The homepage gets a "Founding teams" section before the
+  last call, and every marketing page the founding strip. Billing: BILLING_LAUNCHED must stay false before 2027-04-01,
+  checked by a test.
+
+- 346cec0: Bridge is MCP only: it never runs Claude with an API key. Claude is always the person's own, through the Bridge MCP
+  server or connector.
+
+  - **CLI (breaking):** `bridge fix <component> --with-claude` no longer calls the Anthropic API with `ANTHROPIC_API_KEY`
+    (and `--model` is gone). It prints the line to say to your own Claude with Bridge connected, "Fix <component> in
+    Figma with Bridge" (`--json`: `{ status: "handoff", say }`), and exits 0. Your Claude does the rounds with the MCP
+    tools (`bridge_get_gap_case`, `bridge_try_figma_fix`, `bridge_propose_figma_fixes`).
+  - **Docs drafts:** the "Docs drafts" GitHub workflow and `scripts/docs-draft.mjs` are removed. Library pages draft
+    through the "My Claude" draft exchange only: the "Anthropic API key" field and the key kept in the browser are gone
+    (a key saved by an earlier version is forgotten on the next visit), and the site no longer allows
+    `api.anthropic.com` in its Content Security Policy.
+  - **Core (breaking):** removed `anthropicRequest`, `anthropicReplyText`, `DOCS_DRAFT_MODEL`, `ANTHROPIC_MESSAGES_URL`,
+    `parseDocsReply`, `parseDocsTaskAnswer`, `mergeDocsDraft`, the fix loop runner (`startFixLoop`, `fixLoopRound`,
+    `fixLoopOutcome`, `fixPrompt`, `parseFixReply`, `FIX_LOOP_MODEL`). The MCP library no longer re-exports them.
+  - **Figma plugin:** "Copy for your developer" after Ask Claude to fix it holds the line to say to Claude only, no CLI
+    command with a key.
+
+- 15c75ed: Patterns: one Library section, two kinds. A repository keeps one file per pattern in `patterns/<id>.pattern.json` (`{ id, kind, name, purpose }`). An interaction (`kind: "interaction"`) is keyed by a behavior id of the components' docs.json and exists only while two components or more list that id: which components do it, and each one's words and keys, are read from them, never written again (Close on Escape, Pick with Enter and Focus after a pick, on Select and Combobox). An action (`kind: "action"`) is a task people take across the product, with whether it can be undone, its rules, the DS components it uses, `usedIn` (the real places that do it, each with the file that holds its label and the text that file contains, checked by a test) and a stage. The shared rule: Undo in a Toast when it can be undone, an AlertDialog first when it cannot. Bridge ships Delete and Send for review (its button reads Send suggestion when a team sends suggestions), from an inventory of its own UI. Core validates and reads patterns (`validatePattern`, `readPatterns`, `patternGroups`), derives interactions (`behaviorUses`, `interactionsWithUses`, `interactionProblems`), gives the agent view (`agentPatterns`, `modelAgentPatterns`) and llms.txt lines (`patternLlmsLines`, also in a team's published llms.txt); the repo model reads them (`patterns`). The Library has a Patterns section: Overview, then each pattern by name under Interactions and Actions. An interaction page plays each component on the Behaviors stage; an action page plays the pattern with the real Button, AlertDialog and Toast, then its rules, components and where it is used. A component page's shared behavior rows link to their interaction. A team's Library shows Patterns only when its data has some. MCP: `bridge_list_patterns` and `bridge_get_pattern`.
+- db721f8: Pricing is published while Bridge is free for every team: paid plans open in 2027. Team and Organization show planned
+  prices, no button leads to a payment, and founding teams are every team created by 31 March 2027
+  (`BILLING_LAUNCH_DATE = '2027-04-01'`, exclusive; `BILLING_LAUNCHED` stays false). The terms are version 1, effective
+  16 November 2026. The homepage comparison row reads "Free today, paid plans from 2027".
+- db721f8: Pricing page at /pricing/: Free (up to 3 editors, every feature), Team (per editor, capped per design system,
+  recommended) and Organization (published price, billed yearly). Yearly or monthly and EUR or USD switches, the currency
+  following the browser language; our commitments, the full comparison, who counts as an editor, founding teams and a
+  FAQ. Prices and placeholders live in one file, lib/pricing.ts. Pricing joins the site header, footer and search. The
+  homepage comparison row now reads "Free up to 3 editors, every feature", self-hosting without limit.
+- d555240: Sample team: someone signed in is one more member of Acme Design, Admin, as themselves (their name, their face, their greeting), and what waits on Dana waits on them too. No "See it as" for them; a signed-out visitor still plays Dana. The team switcher lists Acme Design under Your teams, last, with its own mark and Admin, from every team.
+- ad95ac0: Studio has a Patterns page, under Design system right after Components. It lists the design system's patterns (patterns/<id>.pattern.json) grouped as the Library groups them, Interactions then Actions: each row names the pattern, says what it is for and which components it uses, and opens its Library page. Whoever decides on behavior requests (a library reviewer or a design lead) also sees the changes asked on each pattern that wait for a decision, each linked to its request. Bridge's own Studio lists it while patterns/ has some; a team's Studio shows it once the team's data has patterns, the same rule as its Library, and this browser remembers the answer for the next pages.
+- db721f8: Terms of service at /terms/ and a legal notice at /legal/ (LCEN article 1-1: publisher, publication director, host),
+  both linked from every footer. Prices say VAT is not applicable (VAT franchise, art. 293 B of the French tax code). The
+  privacy page names Stripe for paid plans and the data controller. The pricing page links its founding teams commitment
+  to the terms.
+- 35e5ca0: Settings > Reviews splits the one review in two: "Decides what the library keeps" (the library owners, one list for the team) and "Reviews the design before developers" (reviewers per product, or off). Explorations In review say who and why they wait, Home rows name the hat, and Library review lists library decisions only. Teams moved once: "Shared, no review" became design review off. Fixes: Library review's subtitle, list and sidebar now share one count (it could read 11 next to 12), and a new component's before and after preview no longer shows "none" next to an empty tile.
+- 4753774: RadioGroup gains `appearance="tile"`: options that are pictures in wrapping rows of equal tiles, the tile is the control (no
+  radio circle drawn, the radio stays focusable), the selected one ringed, a disabled tile's picture grey.
+
+  Your face: a drawn face that is yours and never a teammate's. `@bridge-ds/react/avatar-illustrated` draws a face from
+  its parts (`FaceRecipe`, `faceRecipe(seed)`, `illustratedFaceSvg`, `illustratedFaceUri`, `FACE_PART_VARIANTS`). In
+  Studio, Settings > You opens with "Your face": Change, Shuffle (a 300ms riffle, none under reduced motion) and, on
+  demand, the parts (hair, glasses, beard, expression) as DS RadioGroup tiles, with a teammate's style taken and named. The face is kept on the
+  Bridge account (`POST /api/account { action: 'face' }`, 409 `face_taken` naming who wears the style) and in each team's
+  face map, read with the team; every surface draws through it, and a new member gets a distinct face by itself (their
+  seed redrawn until its hair is free). On the sample team the face stays in this browser. The account menu shows the
+  person's role on this team under their email.
+
+### Patch Changes
+
+- e8ec6b2: Accessibility pass on Studio. The current page in the side nav shows the focus ring again when it has keyboard focus (its hairline outline used to replace it). Library review's List is a valid ARIA table (a family no longer wraps its row groups in another row group), and One by one's side list keeps the heading outline (h2 per family, h3 per group). Quality's adoption rows are named by what they show, then "Open the adoption report", instead of a label that hid the run and the numbers. The browser tab names the exploration or the "Who gets it" piece opened in place.
+- 4268880: The Field Guide scenes rest within 5 seconds (WCAG 2.2.2, pause, stop, hide). The sign-in story plays on from the closed bridge and rests on it, with the cart crossing under the flag and "kept"; the Studio header scenes, Home's harbor and Quality's lighthouse breathe for a moment, then hold still. Reduced motion still never starts them. Tests: Testing Library waits up to 5 seconds for an island's first lazy load (the demo dialog took about 3 seconds cold), which made demo-gate and other first-open tests fail on a busy run.
+- 8ab3f0c: Account menu: an email member reads name, email and access as three quiet lines on one left edge; access is no longer green.
+- 746c8ba: Account menu: the access line starts on the same edge as the name and email.
+- 3ccba1b: The account menu says each thing once. It no longer offers "Try it · Acme Design" on the sample team itself, and it never pushes GitHub: no "Link GitHub" item and no "GitHub not linked" line. Linking GitHub lives in Account settings and in the actions that need it; a linked account still shows which one. Library review's compare stage now starts with today and the way that is new to the library (on the sample team: Sofia's 24 px), so the outcome shows the real proposal; a way the library already has (Leo's 12 px, Compact) is checked first only when no way is new.
+- ee90b50: Account menu: the head shows the face, the name with the role as a tag, and the email under it.
+- 7046607: Bridge's own screens follow its Action patterns. Delete this team and Delete my account ask in an AlertDialog where
+  the person types the team's name or their email. Removing a Claude connection, removing someone from a team and
+  discarding draft changes ask in a plain AlertDialog, never window.confirm. Removing a recent team, archiving an
+  exploration and closing a change act at once, and their toast offers Undo.
+- 06282ec: An app type scale. Page titles drop from 44 to 30px (`typography.h1`), section titles from 30 to 24px (`typography.h2`), card and dialog titles from 21 to 16px semibold (`typography.h3`), body keeps 16px on a 24px line. New: `typography.meta` (13/18, the secondary line under a name or title), with the primitives `font.size.150` (13px), `font.leading.18` and `font.leading.24`. Components set their text on the role line heights (20px for UI text, 18 for meta, 16 for captions) instead of 1.2, 1.35 and 1.5 ratios that landed off the 4px grid, descriptions and errors under fields read in meta (13px) instead of 12px with wide tracking, and a bold word inside a Banner title no longer jumps to black (900). In Bridge, the current nav entry keeps the medium weight of the others (color and plate say where you are), the "See it as" menu sets names in medium over a 13px muted line, and text that sets no line height inherits 1.5 of its size instead of 24px.
+- 7ec2e45: Looks right no longer files a library request for a piece that uses the library as is: a change to one part of a library component at a value the library already has (a Card at 12 px is Compact) has nothing to build. The library's known options and the rule (`usesLibraryAsIs`, `asIsOption`) now live in core, so Looks right and Studio's pages read one source.
+- 9bb5094: Shell first paint without jumps: the team chip names the team from the first paint (the sample team reads Acme Design,
+  an unknown team waits under a skeleton), the rail keeps the Products group's place with skeleton rows, a team Library
+  holds one screen before its footer, the sample banner keeps its place, the search palette stays anchored, opening a
+  dialog no longer shifts the header, and the design system read starts with a text-free skeleton. Rail badges: the
+  Library review count shows on every page, Being built counts the build requests a developer can pick up. The GitHub
+  account row is the DS Menu (name, email, access, Settings, Sign out); Invite collaborators reads like every item; the
+  Library rail shows the account row to someone signed in. Token counts say "semantic tokens" everywhere; the For AI
+  agents icon sits on its title line. Studio search lists the team's components and tokens.
+- f3b26f4: A library piece's padding is named "padding", not "room inside". In Studio:
+
+  - A list row or card that waits says only who it waits on ("Waiting for Dana").
+  - A component change shows its icon under its preview until the preview paints.
+  - The Library card counts In review from Library review and keeps a short line.
+  - Claude AI's guidance drafts show the agent mark, the draft's words and their age.
+  - Library review keeps its layout while it reads.
+
+- f3b26f4: Library review shows how long each piece has waited, the same tag Home shows. The agent is "Claude AI" everywhere,
+  including in older change titles. A guidance draft's queue line
+  reads "From the code".
+- f3b26f4: Library review's side list and List wrap long names to two lines instead of cutting them, and the side list shows
+  how long each piece has waited. Every docs row has the same preview. The Library card keeps its summary on one line.
+- f3b26f4: In Library review's One by one side list, each row shows who asked and puts how long it has waited on its own line,
+  with titles at most two lines. The age tags hug their words, and the List's State column fits "Waiting 22 days".
+- f3b26f4: Usage guidance drafted by Claude and flagged "needs review" on main is now a Docs decision in Library review. It has
+  the same row, an age (when the docs.json was flagged) and "Add to the library", which accepts the draft and publishes
+  it as a Tier 1 docs change. Home's row and the Library review piece come from one list and one age.
+- f3b26f4: Studio lists say one thing everywhere. The Library card counts its with-developer steps from Being built's rows. The
+  Board shows only the statuses the filter keeps, with equal-width columns and "Shipped (30 days)" on one line. Cards and
+  rows of an exploration read one clock with one formatter. Every in-progress tag has a dot, and Quality's waits are
+  grey. The PM uses the lead's verbs (Review, Looks right). A developer gets a Pick up action. There is one Home hero
+  layout for every role. The Button link variant keeps a 24px target.
+- e70b1e2: Studio batch C, the exploration page and Library review. The status card says who it waits for ("Waiting for Dana"),
+  the current step in one line naming the person, no "now", the Field Guide drawing as a strip above the heading, and the
+  actions filling the card's text column; the waiting sentence is no longer repeated in the header. One late rule: a
+  review wait is grey for days 0 to 2 and amber from day 3, the day Bridge's reminder has gone out, with the status card
+  saying the day it went (one constant, `REMINDED_AFTER_DAYS`). The PM note says "Say what to change." once, the designer's
+  link reads "Mark that Ann agreed", the AI button "Continue in Claude AI", the owner's face sits on the first meta line,
+  a team commit shows the team's initials, and the library choice stays secondary while Looks right is the page's
+  primary. An exploration that uses a library piece as it is (Leo's Compact) shows no library decision. Library review:
+  the queue's family headings in the h3 style and default-size decision buttons, the asker named ("Malik", never "A
+  lead"), the kind in sentence case ("Color fix"), sentence-case Map labels and the DS tag for "2 ways" (no amber), one
+  "2 ways" tag in the compare header, quiet checked rows, an honest specimen title, and six screens per product on "Who
+  gets it" in rows of three. Team pages (Components, Quality, the adoption report, Settings, brands, explorations,
+  reviews, tokens) show their skeleton and one screen-reader sentence while they read, never the progress card.
+- 645fab4: Studio batch D. Library > Color: a ramp's eleven steps share the card's width, the 950 step whole, hex labels 8px in
+  at the code size. Settings: who reviews lives only in the Reviews tab, at the width of every section; a GitHub member an
+  email admin cannot change reads "Can edit · set on GitHub" on their row instead of a general sentence. Quality: the
+  documentation card shows one bar instead of a dot per component, the draft row's Review is the DS Button as on Home, and
+  the section no longer repeats the card's count. Components: 40px thumbnails with 8px around them in the row, samples
+  inset 12px at the sides and never cut, the icon at 20px, the screen-reader-only helper labelled, In Figma reads Yes or
+  No with "Use auto layout" as a note. The sample team draws Ann with short light hair, apart from Dana. Marketing home:
+  the waiting cards' labels sit 6px under their edge, and a designer (Sofia) asks for the review.
+- 400d917: Billing: an admin signed in to Studio with GitHub only (no Bridge account) can read the billing status, move to Team and manage billing; the server checks with GitHub that the token's own user administers the repository.
+- 106a21b: Billing: Checkout turns Stripe Managed Payments off, so the VAT franchise footer is accepted (Bridge sells in its own name).
+- 1e3546a: Billing: Checkout accepts a promotion code (the free Team for open source and teaching, and one-off codes from the Stripe Dashboard).
+- 4aea7dd: Billing: a customer made with Stripe's test keys is ignored once the keys are live (and the other way round), so checkout makes a new customer instead of failing. Stripe errors log their code.
+- d5635c9: Billing: no VAT under the French VAT franchise (art. 293 B CGI). Checkout and the Organization script leave Stripe Tax off, still collect a VAT number, and every invoice carries "TVA non applicable, art. 293 B du CGI. VAT not applicable, art. 293 B of the French tax code." One constant, VAT_REGIME, switches to standard VAT later.
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- c7481c6: Being built lists only build work that comes from the design lead: an exploration the lead sent to developers, or a library change the lead approved (in Library review, in Figma, or a group of an adoption report the lead sent). Each card says where it comes from ("From Contact page summary", "Library change Dana approved", "Exploration Dana sent") instead of "Asked by Leo"; a request someone filed directly is not listed, and the page, the Studio home line and a developer's count follow. `scripts/build-origins-cleanup.mjs` (dry run by default) gives the sample team's items their origin and closes its leftovers.
+- d121912: Being built reads like Explorations. List and Grid group the work by product under a title with its count tag (one shared ListGroup on both pages), the library's own work under Library, and order each group along the ladder: Ready to build, Being built, Checking. Cards are Explorations' card with no product chip (the group says it once) and the same person line, who has it now and when it last moved ("Malik · yesterday"). Card titles take up to two lines before an ellipsis, on every Studio card, the whole title in the link's name and tooltip. A component preview in a thumbnail shows whole: scaled to fit inside one inner padding and centered, never cut at the edge; Bridge's Storybook posts each story's size for it (embed=bridge-thumb).
+- c72ea51: Homepage walking card: Design Engineer (the longer title ran into the card's padding).
+- 19300f5: `Combobox` takes `inline`: the list sits under the input in the page flow, always open, the first result highlighted (a command palette, or a picker that fills a Dialog), with no Show options or Clear button; plus a `suffix` after the query, and `prefix` and `suffix` on each option (a kind glyph or swatch, a short kind word). `SegmentedControl` gets a link mode: give the items an `href` and the control is a `nav` of links, the current one `aria-current="page"`. `Pagination` takes `noun` ("Piece 3 of 12", "Next piece"). In Bridge, the Cmd+K search is the DS Combobox in inline mode (components/ds/SearchPalette.tsx), the Library and Studio switch is the DS SegmentedControl in link mode (two links, the space you are in the current page), and the phone One by one review pager says "Piece 3 of 12".
+- 40e42e0: Group heading counts (Explorations, Being built, products, members) use the same DS Badge count appearance as Library review.
+- ce41f93: Badge takes `appearance="count"` for the number next to a group heading in a review list: ink figures (text.default, medium, tabular, caption 12/16) on the emphasis neutral fill, no border, at 7:1 or more in every brand and theme; inside the current or selected item it takes the stronger tone (surface.inverse). `tone` is ignored for counts. Nav and tab counts are unchanged (Tabs, SegmentedControl and SidebarNav keep their count slot).
+
+  Library review: the group and chapter counts (Foundations 5, Colors 4) use it. Before, they were muted text on the neutral status fill with a hairline border (5.08:1) and read as disabled on the tinted group cards.
+
+- 4d95e38: Studio Home, Explorations, product pages and Being built, second craft pass. The Home's waiting rows show the exploration's capture, like Explorations; on a phone they are a thumbnail beside the title and who asks, with the tag and Review under them. The Home's first card says what Start an exploration is for. Explorations and Being built rows put their status tag in a column at the row's end. A product's groups flow side by side, each as wide as its cards. The site's list spacing applies to prose lists only, no longer to component lists (breadcrumbs, pagination, bordered rows). The handover notes read as a section title, part labels and text.
+- 6647117: Studio Home, Explorations, the exploration page, product pages and Being built: craft fixes. The " · " between the parts of a status line gets room on both sides (it read as one cramped mark). The Home's "Sofia, Leo and Claude AI are waiting on you." sits beside its avatars again. The turn zone's question takes the card heading size with the drawing at the top of its row, so it fits on one or two lines. The Activity line runs on the faces' axis with equal gaps. A product's live link and its library version each get their own line. Counts next to a group label are count tags.
+- 5c042f8: New Stepper: the steps of a flow as one path (numbered markers on a connecting line; done, current and upcoming states; vertical, or horizontal that stacks on narrow containers; aria-current="step"). SegmentedControl items take a `count`, shown in a count tag like Tabs and SidebarNav; the three share one count tag (neutral pill, stronger tone on the selected item). PopoverContent takes `initialFocus`. Craft fixes: Breadcrumb and Pagination items ignore a page's own list spacing (later crumbs sat 3px low), Kbd sm and Avatar xs text no longer go under 12px, SidebarNav rows use the 20px UI line height.
+
+  Library: the a11y check icons center on the first line, the component header groups its resources, the color specimens pass AA (pressed surface, overlay scrim, primitive ramp labels), counts sit in count tags (token types, component families), the duplicated component count is gone, the "Figma is ahead" line shows only to maintainers, Button usage reads without code. Home: an "Open the demo" button next to Get started, step numbers on the first line, the waiting review cards at a legible size, the Acme team's names in the mocks.
+
+- fdcf7e6: Library review and Settings follow-up: the compare canvas has a hairline edge, so it holds together on a dark page,
+  and keyboard focus or a fragment link on these pages lands below the sticky top bar instead of under it.
+- 15b4e5b: Library review and Settings craft pass. A conflict's ways are checkboxes (today included, no "Both" row): what is
+  checked drives the stage (one look per value, labels under each card with a colour and line-style key) and the outcome
+  sentence, recorded on the pick values that already exist. The progress card counts decided pieces, seen as a quiet
+  note, and follows the filters. Before and after captions line up, a colour drawn as text or a button shows its
+  measured contrast with AA in words, the eyebrow says a kind once, people show their face, counts are neutral Badges,
+  the side list fades at its end, and on a phone the plates come before the decision. Settings: review rules line the
+  faces up with their labels, the Role header starts on the roles, AI tools stack, and "No product manager" reads at
+  full contrast.
+- 5e53d99: Studio shell craft pass, part 2: on a phone the sample-team banner folds to one line with a Details button (62px
+  instead of 150px); the Library/Studio switch is drawn as a segmented control (a raised plate on a neutral track) instead
+  of one solid button; tour steps are narrower so they cover less of the next section; Settings ends the side nav under
+  Design system instead of floating at the foot; the sign-in drawing opens on the whole bridge and the screen fades in;
+  the sign-in and entry steps share one left edge.
+- ebb6238: Studio shell craft pass: the side nav counts are small neutral Badges centred on their label, the phone top bar no
+  longer shows the rail toggle beside the menu button (it pushed the logo under the search), the search field takes the
+  Library/Studio switch's height, the sample-team banner's action ends on the top bar's edge, page titles sit at the
+  same height with or without an action, the home tour's arrow points at the rows it talks about, and the Library review
+  detail header has a readable eyebrow with a spaced separator and a page link sized and set to the title's first line.
+- 1fb3e59: One source for every number and status word in Studio. Core adds the status ladder (`status-ladder.ts`: Exploring,
+  In review, Ready to build, Being built, Checking, Shipped; Not doing this and Archived off the ladder) with
+  `LATE_DAYS`, the one threshold behind every amber tag, and build request summaries speak its words. Studio maps every
+  surface to the ladder (who it waits on is the second line, never a status), keeps tags grey until a wait is late,
+  compares a component part against the library's own value everywhere (Card padding is 20 px, Leo's 12 px is the
+  library's Compact), counts "waiting" from when an exploration was sent for review, defines each count once (See all,
+  Library card, Leo's and Malik's Home, Asked by: You), counts every decision in the exploration stepper, and computes
+  the Quality verdict from the numbers it shows (adoption per product, unused tokens by kind against their totals).
+- 16f29b8: Sample team: no personal data, and the first two actions run in the browser. Settings > Reviews names only the cast (never the GitHub owners of the repository hosting it) and says the review rights in plain words ("Checks the look", "Checks the code", "Adds it to the library") instead of config keys. Example names in the Color specimen, the token editor preview, Card and Avatar docs read as people of the cast or generic people. The component page's Code tab no longer prints the raw Storybook address and says "Open in Storybook" instead of "Workbench". Start an exploration and Looks right work in the browser on the sample team; Looks right moves the exploration on as the real approval does (Ready to build, or the library decision while a new piece waits), and every read of the visit agrees. A component page shows one Figma status: never "Not linked to Figma yet" beside "Figma is ahead", and the hint only to a lead.
+- 5f503fb: The sample team no longer depends on GitHub's live rate limit. Reads through Bridge answer what is kept whenever GitHub cannot be asked: a reader over their request budget, a team or reader over their GitHub calls, GitHub's limit or a GitHub outage all serve the last good answer (marked stale) instead of "Bridge is busy". Visitors of the sample team get kept answers at once while one function checks GitHub behind them (stale-while-revalidate, one call across functions). The team's product list falls back to the last one Bridge read. Studio keeps the team it opened when a read fails, never shows "Nothing needs you", "Nothing noted yet" or "Nothing in progress" from a failed read, and says quietly when part of a page could not be read. An open tab reloads once to the new version when a deploy removed the code it needed, and a token style rule a browser rejects no longer throws.
+- e84c217: Descriptions read in UI 14/20, meta 13/18 is for row metadata only. The line under a chapter title in Library review and its "Reaches" summary, page and section intros, setting help, field hints, role help, dialog help and the demo banner detail move back to UI 14/20 in the muted color. Ages, bylines, row lines, card meta, counters and thumbnail captions stay in meta through `t-meta t-muted`; `t-ui t-muted` now reads as a UI description.
+- 16c0021: The Library component pages (Usage, Tokens, Code, Changelog) and the token editor's palette families now use the design system's own Tabs instead of links and buttons styled as tabs. Same indicator, spacing, type, hover and focus as every DS tab list; arrow keys, Home and End per the APG; the Changelog's release count sits in the tab's count tag. Every address still works: #code, #changelog and the old section anchors (#props, #anatomy, #changes) open the right tab, and the address follows the tab. Unused tab styles are gone.
+- 67e34ae: `@bridge-ds/react/dom` gains `tagHtml()`, the exact markup of a static `<Tag>` for pages that build rows in plain scripts, and `badgeHtml()` takes an `icon` (the glyphs the DOM renderers draw, such as `check` and `x`), like `<Badge icon>`. `iconButtonHtml()` draws the `ellipsis` glyph (MoreHorizontal) and takes a `tabindex` in `attributes` in place of the default one, like `tabIndex` on the React IconButton (a roving grid cell). Parity tests compare all of them with the React components.
+
+  Studio Tokens and the token editor now use the design system's own components instead of hand-made copies: the type filter is a SegmentedControl with counts (a removable Tag when the table is scoped to a component), the row actions are a Menu, the editor's ramp is a SegmentedControl of swatches with DS tooltips (a RadioGroup of steps for sizes and durations), More families is a Menu, More options is a Button, the review is the DS Dialog, the draft count is a Badge, contrast results are Badges, aliases are Tags and the row actions button is the DS IconButton. The Library tree is the SidebarNav. Keyboard paths, deep links and the draft flow are unchanged; the hand-made styles are gone.
+
+- 19300f5: The illustrated face's hair styles, glasses and beards have human names. `FACE_PART_NAMES` and `faceVariantName(part, variant)` give each of the 64 hair styles, 11 glasses and 12 beards a short name written from its drawing ("Short curls", "Space buns", "Round glasses", "Handlebar moustache"), unique within its part. They are exported by `@bridge-ds/react/avatar-illustrated` and by the new data-only entry `@bridge-ds/react/avatar-illustrated/names`, which a page or a server imports without loading the drawings.
+
+  Settings > You > Your face names its tiles with them ("Curly puffs, taken by Sofia" instead of "Hair style 40, taken by Sofia") and says them after a Shuffle ("New face: space buns, round sunglasses."). Hat, No glasses and No beard stay.
+
+- d98ab9f: Settings > You, Your face: someone with a GitHub photo now picks Shown as, Photo or Drawn face. The photo stays the default. Drawn face is saved on their account at once, so it follows them in every team: the account menu, the side nav, rows, greetings and people lists draw that face instead of the photo, for them and for their teammates. Change comes back to customise it, and Photo goes back to the photo while keeping the drawn face for later.
+- 28d4b96: The DS Bridge Figma plugin keeps one promise for the MVP: your tokens sync both ways, and Bridge tells you what is missing in your Figma and checks that it has caught up with the code. Pull says which components from the code the file is missing, counting the team's own components by name ("Forms/Select" is Select). Drawing components, component requests from Figma, "Ask Claude to fix it" and "Draft with Claude" are hidden behind one flag (`PLUGIN_MVP_SCOPE`). The plugin is named DS Bridge everywhere and only reaches api.github.com and bridgedesignsystem.com. The docs, security page and homepage say the same.
+- dcfa668: One filter pattern everywhere. Select gets `inlineLabel`: the filter's name inside the trigger in secondary text, then the value in default text and the chevron ("Status Waiting", "Product All products"), the trigger hugging its content and named by both ("Product: All products"). `multiple` with `values` and `onValuesChange` picks several values, the list staying open while options are ticked, and `displayValue` sums them up ("In progress", "Leo +1"). Studio's filters all use it, at the md control height beside the search field and the view switch, and all take several values (people, products, families and statuses combine): Library review (Status, Asked by, Product), Explorations and Being built (Status, Product, Person, "Everyone" now reads "Person Everyone"), and the Family filter of Components, the Storybook and team components and the library's component pages ("Family All"). One rule for every filter: nothing ticked is the filter's all word ("Not shipped yet", "In progress", "Everyone"), never an option among its own members; each option carries its count tag; an option with nothing in it is not listed; the trigger reads the first ticked option then "+N" ("Status Being built +1"), never "2 statuses". On a phone the filters are one row that scrolls sideways inside itself, never the page, with a fade on the edge that hides a filter. An inline-label trigger takes the DS focus ring (outline and offset) instead of the inset field line, and every Select trigger is positioned so its visually hidden parts never escape a scrolling row.
+- a814ec0: Studio final polish, owner's decisions. Quality's banner button follows its headline ("See each product" when a product is far from using the library). The lead's home says the wait once: no "Oldest" chip, each row keeps its own age. Compare ways keys use calm brand hues (blue, teal, purple) with their line styles, never the orange or amber series. Malik is drawn with his own face, clearly apart from Dana's. Library review hides the Group column when no group has a name to show, and "Measuring" reads "Not counted yet" with a plain explanation. The Library and Studio switch shows two equal segments, icon and word on desktop, icons on a phone. The sign-in bridge draws the missing piece's place as a dashed slot, so it never reads as broken.
+- 3175695: Studio final polish pass. The quiet Home's sentence keeps one link and says each stage in the status ladder's words (In review, Ready to build, Being built, being checked), the same as the cards under it. A developer's Home leads with "Pick up a build request" when some wait, and no longer repeats the Being built line; the library's health and the Being built line show to the lead only. A product manager's optional asks read "Sofia and Leo would like your opinion.", never "Your changes need you.". The home tour reserves its own room under what it points at, so it no longer covers the next lines or section. Compare ways: each look's caption says whose it is and its value once ("Today and Sofia 20 px", "Leo 12 px (Compact)") on one centre line, every option row fits one line, and Comment and the primary stay together as a pair. Counts after a label are count tags everywhere (Suggestions, Members, join requests), Components says its count once, separators go through the shared one, and long row titles take two lines on a phone.
+- 285c55c: Keep the face part names out of the modules the /api functions load: importing @bridge-ds/react there crashed every /api call in production.
+- c31c0b2: `bridge audit --no-regress` now also fails when component imitations go up since the baseline (skipped while the baseline was written before imitation detection). Banner gets `appearance="harbor"`: the light Harbor zone (`color.bg.zone`) for a designer note or a Field Guide moment. The docs site's Library review designer note uses it again, and the docs site audit baseline records the current imitation count.
+- 2c4a094: Banner: the icon, the title's first line and the actions now share one centre line. Actions sit on the title's first line instead of floating at the vertical centre of a multi-line banner, and the title and detail keep one text column indented past the icon. Library review's designer note says it once: "Dana decides what the library keeps." then "The decision shows here and on your exploration." with "How library review works" inline at the end, on the Banner's own icon (no hand-made face in the title).
+- eac82b8: Homepage closing: no call to action before paid plans open (the founding section carries it); the walking card reads Founder & Design Engineer.
+- 7704ca1: `@bridge-ds/react/dom` renders two more components for pages without React at runtime: `buttonHtml()`,
+  `buttonClassName()` and `iconButtonHtml()` give the exact markup of Button and IconButton, `drawerHtml()` gives the
+  markup of Drawer, which opens and closes with the Dialog functions (`openDialog`, `closeDialog`). Parity tests compare
+  each with its React component.
+
+  Bridge's Library, homepage and site use the real design system components instead of hand-made copies: the site
+  buttons are DS Buttons and IconButtons, the token detail drawer and the Studio component drawer are the DS Drawer,
+  the copy toast is the DS Toast, the homepage step tabs are the DS Tabs, the "Copy as" menu of every token row is one
+  DS SegmentedControl per page, the "Used by" chip is a DS Button that opens its list and "Unused" a DS Badge.
+
+- 4f436c5: Studio uses the design system's own components where it had hand-made copies. Library review: the designer's "who decides" note is a neutral Banner, decisions wait in a Toast with Undo, One by one on a phone moves with Pagination (compact), the Map's "5 of 12" is a Badge, and the eyebrow's dot is the shared separator. The exploration capture shows a Button look on hover and a Tag on touch. The adoption report shows values and token names with TokenValue. The token review table marks added and removed tokens with Badges, the visual impact filters are SegmentedControls and its Before and After labels Badges. The token history's demo switch is a Switch. The changelog's announcement shows the agent Avatar. Typed " · " separators go through lib/sep. Dead hand-made CSS (unused counts, avatars, chips, banners, the old GitHub dialog box) is gone.
+
+  `@bridge-ds/react/dom` gains two renderers for plain-script pages: `switchHtml` (with `bindSwitches`, `setSwitchChecked`) and `segmentedControlHtml` (with `bindSegmentedControls`, `selectSegment`), the same classes and static contract as `<Switch>` and `<SegmentedControl>`, guarded by parity tests.
+
+- 0f7207d: The Library never names a team from its repository: the sample team reads Acme Design from first paint, and a team whose name is not known yet shows a placeholder.
+- a1cedaa: Library review: the chapter heads drop the "Reaches ..." line; the From column and the chapter's own line already say it.
+- f7015d6: Library review: every chapter card lines up on one column grid (each group's name now sits on top of its rows), the columns fold before a card overflows, and a single person's name stays on one line.
+- a93cf29: Library review One by one: the piece's facts on two lines, where it comes from ("From Sofia", her exploration) then where it stands (its state, who gets it).
+- aac6b1f: Library review: the List rows drop the library page icon; the detail keeps it beside the title.
+- 892014e: Library review: the Map shows the List itself under it. Picking an exploration, a piece or a product narrows the same rows, checkboxes and decisions as the List; with nothing picked, the whole List shows. The read-only compact rows under the map are gone.
+- 19300f5: `MenuContent` takes an `anchor`: the menu opens from an element, a ref, a virtual box (`{ getBoundingClientRect }`) or a point (`{ x, y }`) instead of its MenuTrigger. New types `MenuAnchor`, `MenuAnchorPoint`, `MenuAnchorRect` and `MenuVirtualAnchor`. `DrawerContent` takes `keepMounted`: the closed sheet stays in the DOM, hidden, so a script can bind its body and footer at load. In Bridge, the row actions menu of Studio Tokens is anchored to the row's own button, which now stays in place while the menu is open (no more swap for a DS trigger); a second click on it closes the menu. The token review is the DS Drawer again (StaticDrawer, which gains a footer slot) instead of a large Dialog.
+- fe61c82: Studio pages no longer paint one list and then another a second later. Explorations and Home wait for where each exploration stands (the developers' tasks, the reviews, the team's library reviews) before their first paint, so a card never starts in Ready to build and moves to Shipped. What the browser keeps (the team's settings, its design system, GitHub answers, the saved list) only stands in when the live read fails, with the quiet "could not be read" line, and a copy kept by an older version of Bridge is ignored and dropped. For the sample and public teams, Bridge answers a kept copy at once only when it is under a minute old; older, it waits for GitHub and falls back to the kept copy only when GitHub is busy, down or silent. An exploration asked before the two reviews now names both hats on the reviewer's Home row ("Sofia's screen: your design review and a library decision") and on its Explorations second line.
+- 9d24729: One way to show a group of people in Studio (People, lib/people-line): up to three people every face in the DS AvatarGroup and every first name, four or more the first two and "+N", "Sofia, Leo and 2 others". The decision footer now says "Sofia and Leo will be notified." in ui 14/20 with sm faces centred on it (Library review compare, the exploration's library panel note and decided line, and the toasts); Library review's Asked by shows both people instead of "Sofia +1"; the build review header uses the DS AvatarGroup instead of a homemade overlap; the home's "waiting on you" line follows the same rule.
+- fcc762f: Settings name only the team's own people. On the sample team, Review rules never name the account that hosts its repository: Dana (design lead) checks the look, and its developer Malik is named as its config holds him. Team Settings now sit in four groups under a section nav (Team, Reviews, Tools, You), Review rules first in Reviews, with calmer copy ("A new value needs no code review" instead of "Nobody checks the code", "Small changes" instead of a contradictory leads line) and GitHub said once per fact. Members shows the person's job under their name and their access in an "Access" column; write access alone never reads as "Reviewer" before the team's review rules are read.
+
+  One face per person and one product mark everywhere: Sofia and Leo no longer share a drawing on the home, Library review draws people (no initials circles) and shows products with the side nav's folder mark (no letter squares). A product manager's view on explorations reads as optional input: no "waiting on you", no age, no badge.
+
+- ff5669c: Plugin (MVP scope): checking again after a pull no longer titles the screen "Variables are in, building components";
+  the MVP builds no components. Studio Connect Figma: when Bridge cannot be reached it says so instead of asking to
+  sign in, and when only GitHub is connected in the browser it says the Bridge account sign-in is the missing step.
+- 6e56c93: Popup lists breathe: Menu, Select and Combobox popups now keep an 8px inset (space.2) between their edge and their items, up from 4px. Items stay concentric with the popup (popup radius minus the inset: 12px on Bridge, the control radius, and 8px on Ocean), and separators keep the inset's 8px gap above and below while still running to the popup edge. In the docs site, the account menu's head and the "See it as" footer note drop their own padding and line up with the menu items (the note on the names, after the faces), the note now sits under a DS MenuSeparator, and the sample banner's "See it as" uses the same secondary Button, at the same size, as "Get started" next to it, so the warm banner has one button language.
+- 8df323b: Pricing FAQ: the cast illustration at the homepage's size (440 px), no longer capped.
+- 19300f5: Being built: every row follows one pattern, explorations included. The line says when it was sent and where it comes from ("Sent 4 days ago · Exploration Dana sent"), the status is the tag, and who it waits on sits under the tag ("Waiting for Sofia's check"), never an absolute date like "Done exploring on Nov 8". Invite collaborators: on the sample team, the line under each person is their job ("Designer", "Developer"), as in Settings > Members; the access level stays in the role column. Library review: a colour piece about dark raised surfaces is drawn on the dark theme's raised surface, so its contrast badge measures the pair the title names. The design language names the Harbor zone precisely: `color.bg.zone` is `color.harbor.200` (`#CFE8FF`) in light and `color.harbor.900` (`#00274B`) in dark; `color.harbor.100` (`#E4F1FE`) is the signal and selection tint, not a zone.
+- 12f7267: Product page: the exploration groups stack (Exploring first) on one card grid, and a card no longer repeats its group's state as a tag.
+- 5232316: Library > Color: a step's usage note reads "3 uses" (title: "Used by 3 semantic tokens"), one label that never splits
+  "3" from its word. Where a step is too narrow for the count and its word, the layout shows the count alone, the full
+  sentence in its title; no strip scrolls and no note passes its step's inset, whatever the count.
+- ea87ef4: Library review List: who asked splits into two columns with one kind of info each and the same anatomy on every row. Asked by shows a face and a first name; From shows the exploration on one line with its product under it in muted text, or "Asked directly" when no exploration asked. The folder icon leaves the cell. Each chapter card gets its own grid, the title column takes the rest, and when the list runs out of room Who gets it folds first, then Today › After, so no cell cuts its words at 1389px and every row has the same height. The side list of One by one reads the same way on one line: "Sofia · Contact page summary".
+- d45ece6: Sample team: whoever runs it in "See it as" (Dana) gets Add a product again, in Start an exploration's Where list and in Settings > Products. The same dialog adds the product in this browser, nothing is sent; it shows in the side nav, on its page and in Where, and Start an exploration comes back with it picked. Designers, the product manager and the developer never see it, as on a real team.
+- b6de8b2: Team Settings uses the design system's own Tabs (underline variant) for Team, Reviews, Tools and You, instead of links styled as tabs. Same indicator, spacing, type, hover and focus as every other DS tab list; arrow keys, Home and End move between tabs; each group is its tab's panel. Old anchors (#roles, #approvals, #figma) still open the right group and the address follows the tab.
+- bea4764: The sample team's Card padding decision is a real three-way choice: today 20 px, Sofia's way 24 px (roomier, new), Leo's way 12 px (the library's Compact). Library review's outcome line names each screen when sizes are kept ("Keep two sizes: today's 20 stays the default, Sofia's screen uses 24 px"). The "same as today" path stays for real teams. A part reaches the lead only when at least one way is new to the library: when every way is a value the library already has (its default, Compact), there is no queue item, no count and no tag, and the exploration page says it in one quiet line ("Leo's screen uses Compact (12 px), already in the library. Nothing to decide.").
+- 3d63be8: The Library and Studio switch in the top bar shows the same two drawn icons for everyone (the book for the Library, pen and notes for Studio). It no longer puts the signed-in person's GitHub photo on the Studio segment, which also showed on the sample team while the viewer played a persona; the face belongs in the account row. On the current segment's Deep Harbor plate, the book's leaf now takes the plate's color instead of showing as a light page.
+- 6d06638: AnnouncementStrip: `href` makes the whole strip one link (the message is its text). The site strip uses it, without "Read the commitment"; "free" in the founding section's title is in the brand blue.
+- f3ae1c5: Studio's header search finds the team's work, not only its components and tokens. Results are grouped by kind: Explorations (by name, product or person, with the same status word as the Explorations list, read from the same task and review reads once they are in, and who explores it by first name, "In review · Sofia"), the pieces waiting in Library review that the viewer acts on (with the list's state words, "New size · Waiting 2 days"), the build requests not shipped yet on Being built, the team's products, components, tokens, then Studio's pages under their former names too, and the Settings bands (Members, Review rules, Figma and Claude) that this Studio's Settings page has. Components, tokens, products and pages show at once; explorations, reviews and build requests come from the same reads Studio's pages make, the first time the palette opens, while a loading row says so. The search button and field now say "Search explorations, components, tokens".
+- a756fd6: `TabsPanel` can live outside its `Tabs` root: give it `tabId` (the id of its Tab, which points back with
+  `aria-controls`) and it renders the same DS panel, a labelled tabpanel in the tab order, shown until the page picks
+  one. `showTabsPanel()` from `@bridge-ds/react/dom` shows the picked panel and hides the others. For pages whose tabs
+  are one island and whose panels are server-rendered or hold islands of their own.
+
+  The Team Settings groups and the four panels of a Library component page are now DS TabsPanels linked to their DS
+  Tabs, instead of hand-made tabpanels: the docs site has no imitation left.
+
+- 4a54bc9: One logic for tab-like controls. Tabs (underline) switch the sections of a page or object; SegmentedControl switches a view or a filter of the same content. Tabs: the selected tab is ink text over the underline, never a box; the focus ring shows on keyboard focus only, inside the tab a step off its edge, and a click draws none. SegmentedControl: the selected segment (and the current link in link mode) is the raised plate with a neutral hairline edge, no longer a Deep Harbor outline that read as focus; the Deep Harbor fill needs `appearance="strong"`, now only on the Library and Studio space switch (link mode no longer fills by itself). Count tags look the same selected or not in both. Tabs `variant="contained"` is deprecated and wears the same plate as SegmentedControl. In Bridge, the space switch asks for `strong` and the face parts in Settings use underline Tabs.
+- 942a8df: Studio Components: the empty filter status line no longer adds a second gap under the search bar.
+- 59a7363: Studio says the person's role once. When the account row at the foot of the side nav already names it (a Bridge account on this team, an email member, the sample team's developer), the team chip shows only the team's name; it keeps its badge when it says something the row does not (Checking, Explore freely, Guest, a visitor, signed out). The teams list in the chip's menu keeps every role. On the sample team, "See it as" now names what the person played does ("Dana Design lead", "Malik Developer"), and its face, words and chevron sit on one axis.
+- e62537d: Token explorer and editor fixes after the move to DS components. The editor's color ramp is a DS RadioGroup of tiles: a 32px swatch per step with its step number under it, the picked step in the DS checked ring, the value the token had marked "was" (the same dot leads "was neutral.0" in the pick row), no grey track; arrow keys pick as before. The editor opens on the family of the current value and the family tabs are the underline DS Tabs (tabs switch sections) and follow it; every part sits on the footer's side padding, More keeps a DS gap from the tabs and the title's mode uses the shared separator. In the table, every value preview is one 24px box centred in its row (it no longer took the exploration page's padded stage style), easing curves and duration bars are drawn, shadows show on a card of the column's own surface over its subtle background, long values (a cubic-bezier next to its alias) end in an ellipsis with the whole text on hover instead of being clipped, and values start on one column at rest and on hover. The token details description wraps (three lines, whole on a phone) instead of being cut on one line. The explorer frame hugs short lists up to the viewport height and scrolls inside past it.
+- 494c8c3: The Studio Home tour takes no room in the page. It no longer reserves a blank block under what it points at, so the Harbor hero keeps its natural height whether the tour is open or not. "Where to start" floats beside "Start an exploration", over the harbor's sky, with its arrow on the button (under it on a phone, inside the screen). The other steps float under the rows or cards they talk about, on a phone too, instead of becoming a card that pushes the page down.
+- a4df815: Exploration page: the turn card is back to its composition (drawing at the right of the heading, 80px); only the waiting card's drawing changes.
+- 6b0c8c9: The exploration page's turn block says it once: its title says whose hands the screen is in ("With the Acme CRM
+  developers", "With Malik", "Waiting for Sofia", "Waiting for the design review") and the current step what they do, so
+  no title repeats its current step word for word (Ready to build, Being built, Check the build, a wait with nobody named,
+  the product manager's card once said). The viewer's own review asks "Does their version look right?".
+- a3a21fc: Type sweep on the new scale. Secondary lines read in meta (13/18) everywhere: who and when under a row, ages, counts' companions, descriptions under titles, card meta, column labels, setting help, field counters and the Stepper's step meta. 12px stays for section labels, table heads, badges, tags and counts, keyboard keys, code values and chart ticks. Row titles in lists (home, Explorations, Library review) are UI 14 medium over their meta line instead of 16 over 12 or 14. Muted UI text (`t-ui t-muted`) and the new `t-meta` utility use meta. Every rule that sets a role size now sets the role's line height too (no more 14/21 or 12/18 from the root ratio).
+- 414350e: `TabsPanel`: the panel's focus ring is for the keyboard only. A pointer focus (a click on the panel's text, or Safari handing focus to the panel when a button inside it is clicked) draws no ring, the browser's included, and the keyboard ring now sits `--space-1` away from the panel so its content never touches it.
+
+  Settings > You, Your face: the four expressions are drawn apart at 80px (each one changes the eyes, brows and mouth visibly), the Expression control hugs its segments, the help line names the sample team "Acme Design" as its chip does, and the expression help is plain: "Expressions show on bigger faces. In small rows, people recognise you by your hair."
+
+- Updated dependencies [e8ec6b2]
+- Updated dependencies [7046607]
+- Updated dependencies [41c308e]
+- Updated dependencies [06282ec]
+- Updated dependencies [7ec2e45]
+- Updated dependencies [b65f98b]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [4ca0f44]
+- Updated dependencies [7e05245]
+- Updated dependencies [689e919]
+- Updated dependencies [52e54d1]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [19300f5]
+- Updated dependencies [ce41f93]
+- Updated dependencies [5c042f8]
+- Updated dependencies [1fb3e59]
+- Updated dependencies [41c308e]
+- Updated dependencies [16f29b8]
+- Updated dependencies [67e34ae]
+- Updated dependencies [19300f5]
+- Updated dependencies [1742f8c]
+- Updated dependencies [dcfa668]
+- Updated dependencies [adeb58f]
+- Updated dependencies [c31c0b2]
+- Updated dependencies [2c4a094]
+- Updated dependencies [7704ca1]
+- Updated dependencies [4f436c5]
+- Updated dependencies [9ae871c]
+- Updated dependencies [0cc35ed]
+- Updated dependencies [346cec0]
+- Updated dependencies [19300f5]
+- Updated dependencies [15c75ed]
+- Updated dependencies [6e56c93]
+- Updated dependencies [e03015e]
+- Updated dependencies [5aa20b6]
+- Updated dependencies [7a5a507]
+- Updated dependencies [9aecdee]
+- Updated dependencies [6d06638]
+- Updated dependencies [a756fd6]
+- Updated dependencies [4a54bc9]
+- Updated dependencies [35e5ca0]
+- Updated dependencies [a3a21fc]
+- Updated dependencies [414350e]
+- Updated dependencies [4753774]
+  - @bridge-ds/react@1.9.0
+  - @bridge-ds/tokens@1.9.0
+  - @bridge-ds/core@1.0.0
+
 ## 0.33.0
 
 ### Minor Changes

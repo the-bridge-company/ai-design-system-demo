@@ -269,7 +269,6 @@ export const HOME_FOUNDING = {
     { title: 'Everything your team can do', text: 'All its editors, all its design systems and every feature, as they are the day paid plans open, plus anything Free gains later.' },
     { title: 'Written in our terms', text: 'It binds anyone who takes Bridge over.', link: 'Read it in our terms' },
   ],
-  closing: `Your next exploration is one change away. Created by ${FOUNDING_CUTOFF_LABEL}, your team stays free.`,
 };
 
 /** Home C: the strip above the site header on every marketing page. "FREE" is shown in capitals, in a strong. */

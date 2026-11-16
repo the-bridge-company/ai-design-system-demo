@@ -170,13 +170,12 @@ const GET_STARTED = signInHref(null, true);
     <!-- Founding teams: the date, three facts, before the last call (board Home B). -->
     <HpFounding getStarted={GET_STARTED} />
 
-    <!-- Closing: Horizon. Florian carries the kept card across the bridge; hover or focus pauses the walk. -->
+    <!-- Closing: Horizon. Florian carries the kept card across the bridge; hover or focus pauses the walk. No call to
+         action here before paid plans open: the founding section just above already carries it (one CTA, said once). -->
     <section class="hp-closing" aria-labelledby="hp-close-t">
       <div class="hp-wrap hp-hz-text">
         <p class="hp-eyebrow">Free · Source available</p>
         <h2 id="hp-close-t" class="hp-hz-h">Explore freely. <HandUnderline late>Keep</HandUnderline> what works.</h2>
-        <p class="hp-hz-p">{HOME_FOUNDING.closing}</p>
-        <div class="hp-hz-cta"><ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Get started</span></ButtonLink></div>
       </div>
       <div class="hp-pano" data-pano>
         <div class="hp-hz-stage" data-pano-stage>

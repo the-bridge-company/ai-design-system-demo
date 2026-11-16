@@ -5077,7 +5077,7 @@ function viewSettings(): View {
             ),
             tokenError() && !tokenField ? h('p', { class: 'form-error', role: 'alert' }, icon('alert'), tokenError()) : null,
             tokenField
-              ? tokenInput('New fine-grained token', 'Replaces the saved one when you save. Stays on this computer, never in the file.')
+              ? tokenInput('New fine-grained token', 'Replaces the saved one when you save. Saved on this computer only, never in the file. Sent only to GitHub and Bridge.')
               : null,
             h(
               'div',
@@ -5096,7 +5096,7 @@ function viewSettings(): View {
             { class: 'card' },
             h('div', { class: 'group-head' }, h('h2', null, 'GitHub token'), h('button', { class: 'btn ghost', onClick: () => void request('open-url', { url: 'https://github.com/settings/personal-access-tokens/new' }) }, 'Create one on GitHub')),
             h('p', { class: 'lede' }, "Bridge uses it to read your design system and send your edits. Your design system's owner can give you one."),
-            tokenInput('Token', 'Stays on this computer, never in the file, never shown again.'),
+            tokenInput('Token', 'Saved on this computer only, never in the file, never shown again. Sent only to GitHub and Bridge.'),
             // The permissions are for whoever creates the token: folded.
             h('details', { class: 'notes dev-details' }, h('summary', null, 'Creating the token yourself?'), h('p', { class: 'muted' }, tokenHelp(state.push ? changesModeOf(state.push.analysis) : undefined))),
           ),
@@ -5183,7 +5183,7 @@ function claudeCard(): HTMLElement {
           'li',
           null,
           hasToken
-            ? 'Add Bridge to Claude, once. Copy fills in the GitHub token saved in this plugin; it stays on this computer.'
+            ? 'Add Bridge to Claude, once. Copy puts the GitHub token saved in this plugin into the command: paste it only on this computer.'
             : 'Connect the design system first: Copy then fills in its token. Then add Bridge to Claude, once.',
           snippet('code', 'Claude Code, in a terminal', mcp.code, filled.code),
           h('details', { class: 'notes' }, h('summary', null, 'Using the Claude app instead'), snippet('desktop', 'In claude_desktop_config.json', mcp.desktop, filled.desktop)),

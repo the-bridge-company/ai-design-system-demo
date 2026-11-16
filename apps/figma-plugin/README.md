@@ -13,8 +13,9 @@ The plugin has three tabs: **Pull** (code to Figma, "Bring the latest tokens fro
 **Push** (Figma to code, "Send your Figma edits to the repo as a pull request for review") and
 **Settings**. The token logic is `@bridge-ds/core` (`packages/core`); this package is the Figma glue.
 
-It works on the free Figma plan: it only uses the Plugin API (`figma.variables`) and the GitHub REST
-API. Nothing is synced live and nothing is written to `main` directly.
+It works on the free Figma plan: it only uses the Plugin API (`figma.variables`), the GitHub REST API and the
+Bridge site (bridgedesignsystem.com: Sign in with Bridge, shipping a token push, the progress of a Claude fix; see
+"Network" below). Nothing is synced live and the plugin never writes to `main` directly.
 
 See it with real data on the live Bridge site: the [token explorer](https://bridgedesignsystem.com/studio/tokens/)
 shows what a Pull brings into Figma, and [Reviews](https://bridgedesignsystem.com/studio/reviews/?pr=4) shows
@@ -72,9 +73,22 @@ this plugin; it is not stored in the Figma file and is never displayed again (th
 showing only that a token is saved). Repository, base branch (`main`) and tokens path
 (`packages/tokens/src`) are stored in the file's shared plugin data so the whole team uses the same ones.
 
-The manifest allows `https://api.github.com` and the Bridge site. File contents are read through the git trees and
-blobs endpoints, never from `raw.githubusercontent.com`. The plugin never calls Anthropic and holds no API key: Claude
-runs in the team's own Claude account, with Bridge added as a connector.
+### Network
+
+The manifest allows two sites, and the plugin calls only these:
+
+- `https://api.github.com`: everything about the repository. File contents are read through the git trees and blobs
+  endpoints, never from `raw.githubusercontent.com`.
+- `https://bridgedesignsystem.com`, with the saved GitHub sign-in or token as `Authorization: Bearer`:
+  `POST /api/plugin-link` (Sign in with Bridge, `src/sync/bridge-sign-in.ts`), `POST /api/ship` (ship a token push
+  once its checks pass, `src/sync/ship.ts`; approve Claude's fixes, `src/sync/approve-fixes.ts`) and
+  `GET /api/fix-sessions` (what Claude is doing on a fix, `src/sync/fix-session.ts`). The site uses the token to ask
+  GitHub who is calling and what they can access; it does not keep it.
+
+`https://bridge.floriangouloubi.com` (the site's former address) is still in `allowedDomains`, but this version never
+calls it: only links to it are recognised (`isStudioUrl`), and links open in the browser without the allowlist. No
+analytics. The plugin never calls Anthropic and holds no API key: Claude runs in the team's own Claude account, with
+Bridge added as a connector.
 
 ## Writing help: drafts, optionally written by Claude
 
@@ -89,8 +103,8 @@ Designers should not have to document every change by hand. Two levels, in this 
    description follows the checked changes only while it is still the plugin's draft (while it is, each request
    sent with the push gets its own drafted summary instead of the variables line).
 2. **Draft with my Claude (your own Claude plan, through MCP, recommended).** Third-party apps cannot use a Claude
-   plan and Bridge has no backend, so the plugin and your Claude meet in the GitHub repo both already reach with
-   your token. Clicking the button uploads the before and after PNGs and writes `.bridge/drafts/<session>.json` on
+   plan and the plugin sends nothing to an AI service, so the plugin and your Claude meet in the GitHub repo both
+   already reach with your token. Clicking the button uploads the before and after PNGs and writes `.bridge/drafts/<session>.json` on
    the `bridge-requests` branch (protocol: `draft-exchange.ts` in `@bridge-ds/core`), then shows **Waiting for your
    Claude** with the sentence to say, "Draft my Bridge changes", a copy button and Cancel. In Claude Desktop or
    Claude Code with the Bridge MCP server, `bridge_pending_drafts` returns the changes and the images, Claude writes
@@ -348,11 +362,16 @@ side, and the other variants that differ under a disclosure. Nothing in the file
    plain-language guardrail messages. Blocking problems disable the **Send for review**
    button (**Push to pull request #N** when adding to your open PR).
 4. Opens the PR: one branch `tokens/<slug>-<yyyymmdd-hhmm>`, **one atomic commit** containing only
-   the changed token files plus a changeset (`minor`, or `major` when a token is renamed or removed),
-   a **draft** PR labelled `tokens` with a change table (token, tier, old -> new per mode of its tier,
-   contrast before -> after), the guardrail checklist and the risk tier
-   ("Tier 3: token change, needs design + tech approval"). If the PR from your last push is still
-   open, you can add the commit to it instead of opening a new one.
+   the changed token files plus a changeset when `bridge.config.json` names the package to bump (`minor`, or `major`
+   when a token is renamed or removed), a PR **ready for review** (a draft only when it adds a new brand) labelled
+   `tokens` and `source: figma`, with a change table (token, tier, old -> new per mode of its tier, contrast
+   before -> after), the guardrail checklist and the risk tier ("From Figma: design-approved, ships once the checks
+   pass", or "waits for a developer OK" for a rename or removal). If the PR from your last push is still open, you can
+   add the commit to it instead of opening a new one.
+5. Right after, the plugin asks the Bridge site to ship it (`POST /api/ship`, `src/sync/ship.ts`). With the Bridge
+   GitHub app installed, Bridge re-reads the PR and, when it changes token values only, approves it and turns on
+   auto-merge, so GitHub merges it once the required checks pass. Renames, removals and anything else wait for a
+   developer. Without the app, nothing happens and the PR waits for a review as usual.
 
 **Suggest mode** (`"changes": "suggest"` in `bridge.config.json`, the default when the key is absent; a repo with
 no `bridge.config.json` keeps the branch flow). The button reads **Send suggestion** and nothing is written to git:
@@ -665,7 +684,7 @@ apps/figma-plugin/
   community/             Figma Community listing (listing.md), icon, cover and gallery PNGs, and their sources
   scripts/               esbuild build and test runner (both bundle @bridge-ds/core from source)
   src/main/              main thread: figma.variables, clientStorage, plugin data (no network)
-  src/ui/                UI iframe: Pull, Push and Settings tabs, rendering, GitHub calls, Anthropic calls (with a key)
+  src/ui/                UI iframe: Pull, Push and Settings tabs, rendering, GitHub and Bridge site calls (no AI calls)
   src/shared/messages.ts typed message protocol between the two, collection names, default settings
   src/sync/              Figma glue on top of @bridge-ds/core:
     mapping.ts           tiers <-> Figma collections and modes, pull plan, snapshot back to tokens
@@ -673,7 +692,11 @@ apps/figma-plugin/
     components.ts        component signatures, diff, classification (changed, new, Figma-only)
     component-pull.ts    pull components: load component-specs.json, plan sets and bindings (main/build-components.ts builds them)
     requests.ts          send a component change request (image on bridge-requests, then the issue)
-    claude.ts            writing help: the Messages API call (user's key), answer parsing
+    claude.ts            writing help: the shape of a draft by the designer's own Claude (no API call, no key)
+    my-claude.ts         "Draft with my Claude": the drafts file on the requests branch, polled until Claude answers
+    claude-connector.ts  "Ask Claude to fix it": the claude.ai link and the watch for Claude's fix on GitHub
+    bridge-sign-in.ts    Sign in with Bridge (POST /api/plugin-link)
+    ship.ts              ask Bridge to ship a token push (POST /api/ship)
   test/                  end-to-end pull/edit/push flows against an in-memory GitHub and a simulated
                          Figma (single and split layouts), including the PR #4 contrast regressions
 ```

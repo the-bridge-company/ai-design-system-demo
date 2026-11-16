@@ -22,6 +22,12 @@ describe('Connect Figma (Studio side of Sign in with Bridge)', () => {
     expect(pick.kind === 'pick' && pick.teams.map(teamLabel)).toEqual(['Acme DS', 'Zeta']);
   });
 
+  it('says Bridge is unreachable instead of asking to sign in, and names GitHub when it is connected here', () => {
+    expect(connectStep('ABCDEFGH23', null, false, undefined, { reachable: false }).kind).toBe('unreachable');
+    expect(connectStep('ABCDEFGH23', null, false, undefined, { reachable: true, githubHere: true })).toEqual({ kind: 'signin', githubHere: true });
+    expect(connectStep('ABCDEFGH23', null, false)).toEqual({ kind: 'signin', githubHere: false });
+  });
+
   it('never shows a token or an em dash', () => {
     const all = Object.values(CONNECT_WORDS).map((w) => (typeof w === 'function' ? w('Acme') : w)).join(' ');
     expect(all).not.toMatch(/token|—/i);

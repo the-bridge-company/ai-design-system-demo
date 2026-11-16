@@ -34,15 +34,16 @@ export default function ConnectFigma() {
   useEffect(() => {
     let live = true;
     void (async () => {
-      const account: Account | null = await import('../../../scripts/account-session')
+      const info = await import('../../../scripts/account-session')
         .then(({ getAccount }) => getAccount())
-        .then((x) => x.account)
-        .catch(() => null);
+        .catch(() => ({ available: false, account: null }));
+      const account: Account | null = info.account;
+      const githubHere = await import('../../../scripts/github-session').then((s) => s.readAppSession() !== null).catch(() => false);
       const github = account ? await freshGitHub().catch(() => null) : null;
       // The same teams as the team switcher, the site's own design system included (scripts/pickable-teams.ts).
       const teams = account && github ? await import('../../../scripts/pickable-teams').then(({ loadPickableTeams }) => loadPickableTeams(account, github.token)).catch(() => undefined) : undefined;
       if (!live) return;
-      const s = connectStep(code, account, Boolean(github), teams);
+      const s = connectStep(code, account, Boolean(github), teams, { reachable: info.available, githubHere });
       setStep(s);
       if (s.kind === 'pick') setTeam(s.teams[0]!.repo);
     })();
@@ -86,10 +87,12 @@ export default function ConnectFigma() {
   switch (step.kind) {
     case 'no-code':
       return <Alert tone="info">{W.noCode}</Alert>;
+    case 'unreachable':
+      return <Alert tone="warning">{W.unreachable}</Alert>;
     case 'signin':
       return (
         <div className="cf-step">
-          <p>{W.signin}</p>
+          <p>{step.githubHere ? W.signinGitHubHere : W.signin}</p>
           <Button variant="primary" onClick={() => location.assign(signInHref(here()))}>
             {W.signinAction}
           </Button>

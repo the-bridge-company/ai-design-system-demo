@@ -12,7 +12,7 @@ import { Hand } from 'lucide-react';
 import { EmptyState, Link, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import { BEHAVIOR_REQUEST_LABEL } from '@bridge-ds/core';
 import { TeamLoadError, TeamPageSkeleton, TeamSourceNote, useTeamData } from './TeamState';
-import { patternRequests, requestsLabel, studioPatternGroups, studioPatternsLead, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
+import { patternRequests, studioPatternGroups, studioPatternsLead, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
 import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
 import { libraryHref } from '../../../lib/library-shells';
 import { setPageSummary } from '../../../lib/page-summary';
@@ -80,7 +80,6 @@ export function PatternsTable({ groups, requests }: { groups: readonly StudioPat
                   <TableCell className="spt-col-asked">
                     {list.length > 0 && (
                       <>
-                        {list.length > 1 && <span className="spt-asked-count">{requestsLabel(list.length)}</span>}
                         <ul className="spt-asked">
                           {list.map((q) => (
                             <li key={q.number}>

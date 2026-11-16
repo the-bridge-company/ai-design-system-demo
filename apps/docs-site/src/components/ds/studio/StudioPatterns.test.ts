@@ -32,10 +32,11 @@ describe('PatternsTable', () => {
     expect(within(row).getByRole('link', { name: 'Delete pattern: offer Undo' }).getAttribute('href')).toMatch(/\/studio\/explorations\/\?request=12$/);
   });
 
-  it('counts the changes on a row only when there are several', () => {
+  it('lists every change asked on a row, with no count repeating the links', () => {
     render(createElement(PatternsTable, { groups: GROUPS, requests: new Map([['delete', [{ number: 12, title: 'Offer Undo' }, { number: 13, title: 'Type the name' }]]]) }));
     const row = screen.getByRole('link', { name: 'Delete' }).closest('tr')!;
-    expect(within(row).getByText('2 changes asked')).toBeTruthy();
+    expect(within(row).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(row).queryByText('2 changes asked')).toBeNull();
   });
 
   it('draws no column for an empty answer', () => {

@@ -185,10 +185,12 @@ The carousel only shows real UI. Gallery 1 is `dist/ui.html` rendered in Chrome 
 GitHub; outside Figma, the Figma side (the variables and two edits) comes from the plugin's test simulator, as the
 caption says. Galleries 2 and 3 are the live pages, unedited.
 
-**Gallery 1 is out of date and must be rendered again before the next version is submitted.** It shows the old
-repository name (`peterbono/ai-design-system-demo`), "Opens a draft pull request for review" and a "Push and open pull
-request" button. Today the button reads **Send for review** (or **Send suggestion**), the Pull tab's first action is
-**Check for updates**, and token pull requests are not drafts. Use "Rebuild the images" below.
+**The three carousel images are out of date; render them again before the next version is submitted** (the cover and
+its copy are current). Gallery 1 shows the old repository name (`peterbono/ai-design-system-demo`), "Opens a draft
+pull request for review" and a "Push and open pull request" button. Galleries 2 and 3 frame the old address
+`bridge.floriangouloubi.com`, PR #4 and the old copy ("a draft PR", "CI and code owners decide"). The sources are
+ready (`src/art.html`, `src/plugin-shots.mjs`, `src/web-shots.mjs`, PR #468); only the screenshots are missing. Use
+"Rebuild the images" below, with a read-only `GITHUB_TOKEN` or after GitHub's anonymous limit resets.
 
 ## How to publish (owner)
 

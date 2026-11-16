@@ -1,5 +1,78 @@
 # @bridge-ds/mcp
 
+## 1.0.0
+
+### Major Changes
+
+- 35e5ca0: `bridge_promote_exploration` asks the two reviews and returns `reviews`, `status` (`in-review` or `ready-to-build`, replacing `waiting-for-lead` and `done-exploring`) and `waitingFor`. `bridge_continue_exploration` returns `designReviewWords` and the library answer per piece (`leadWords` stays as a deprecated alias for 2 releases); list tools carry `waitingFor`, `bridge_what_needs_me` names each item's `hat`, and `bridge_get_settings` / `bridge_get_config` name both roles.
+
+  Major because `bridge_promote_exploration`'s `status` values changed: a client comparing `status` to `waiting-for-lead` or `done-exploring` breaks. For 2 releases the result also carries `legacyStatus` with the old value (and `leads` with the design owners on `in-review`), so such a client switches to `legacyStatus` without other changes. No tool takes an exploration status as input.
+
+### Minor Changes
+
+- 7e05245: Claude's preview of a behavior request, made by the person's own Claude through the Bridge connector: Bridge never runs
+  Claude. Two MCP tools: `bridge_make_behavior_preview` gives their Claude the request, the component's files, its
+  docs.json behaviors entry and the brief (core `behaviorPreviewBrief`: change the code and the entry, add a key-press test,
+  push `agent/preview-<n>`, open a draft "Preview for #n" that never closes the request); `bridge_report_behavior_preview`
+  records it on the request through Bridge (the hosted connector's server, `POST /api/contribute { action:
+'behavior-preview' }`, checks the person is on the team and the issue is an open behavior request, and Bridge's app keeps
+  one record comment). Studio reads only Bridge's records (core `parsePreviewState`, `isBridgeAppComment`).
+
+  On the request page, the lead who decides and the person who asked get "Play both": with no preview yet, "Ask your Claude
+  to make the preview" and the line to say ("Make the Bridge preview for request #n", with Copy); then today's story and the
+  preview's (the team's per-branch Storybook, `previews.apps.storybook`) side by side, the same keys pressed in both (the
+  stories answer `embed=bridge-keys` from `.storybook/preview.tsx`, with Storybook's own userEvent), each side's result in
+  one line, and the behavior's "Expected announcement". The person who asked can change her words; the preview made from
+  the old ones asks to be updated, and the next one says "Updated from your words". In Being built, a developer reads the
+  same hand-off, then "Check against the preview": every behavior with keys played on Claude's preview and on their pull
+  request's preview, a row checking when both agree. `GitHubClient.updateIssue` takes a title.
+
+- 52e54d1: Behaviors, phase 1: a component's docs.json can list how it reacts, in designer words (`behaviors`: `{ id, family, text, try?, keys?, announces?, example? }`), with ids shared across components (`close-on-escape`) and family names shared too (Opening, Filtering, Moving, Picking, Closing, Focus, Feedback). Select lists 9 and Combobox 8, checked against the components and Base UI. Core types and validates the list (`validateBehaviors`, also run by `validateDocs`), reads it from any repo (`readBehaviors`), groups it (`behaviorGroups`) and gives the agent view (`agentBehaviors`). The Library component page shows a Behaviors section in Usage: one stage with the real component (Bridge's own page runs it, a team's Library plays its Storybook story), above the list on narrow pages and beside it, sticky, on wide ones; one list per family, each row a DS toggle Button with its keys in the DS Kbd and the expected screen reader announcement; the row picked says on the stage what to do (`try`, a stage-only line). The "On this page" rail lists the section. `bridge_get_component` returns `behaviors` and the `version` of the package that ships their ids, and /llms.txt lists them.
+- 346cec0: Bridge is MCP only: it never runs Claude with an API key. Claude is always the person's own, through the Bridge MCP
+  server or connector.
+
+  - **CLI (breaking):** `bridge fix <component> --with-claude` no longer calls the Anthropic API with `ANTHROPIC_API_KEY`
+    (and `--model` is gone). It prints the line to say to your own Claude with Bridge connected, "Fix <component> in
+    Figma with Bridge" (`--json`: `{ status: "handoff", say }`), and exits 0. Your Claude does the rounds with the MCP
+    tools (`bridge_get_gap_case`, `bridge_try_figma_fix`, `bridge_propose_figma_fixes`).
+  - **Docs drafts:** the "Docs drafts" GitHub workflow and `scripts/docs-draft.mjs` are removed. Library pages draft
+    through the "My Claude" draft exchange only: the "Anthropic API key" field and the key kept in the browser are gone
+    (a key saved by an earlier version is forgotten on the next visit), and the site no longer allows
+    `api.anthropic.com` in its Content Security Policy.
+  - **Core (breaking):** removed `anthropicRequest`, `anthropicReplyText`, `DOCS_DRAFT_MODEL`, `ANTHROPIC_MESSAGES_URL`,
+    `parseDocsReply`, `parseDocsTaskAnswer`, `mergeDocsDraft`, the fix loop runner (`startFixLoop`, `fixLoopRound`,
+    `fixLoopOutcome`, `fixPrompt`, `parseFixReply`, `FIX_LOOP_MODEL`). The MCP library no longer re-exports them.
+  - **Figma plugin:** "Copy for your developer" after Ask Claude to fix it holds the line to say to Claude only, no CLI
+    command with a key.
+
+- 15c75ed: Patterns: one Library section, two kinds. A repository keeps one file per pattern in `patterns/<id>.pattern.json` (`{ id, kind, name, purpose }`). An interaction (`kind: "interaction"`) is keyed by a behavior id of the components' docs.json and exists only while two components or more list that id: which components do it, and each one's words and keys, are read from them, never written again (Close on Escape, Pick with Enter and Focus after a pick, on Select and Combobox). An action (`kind: "action"`) is a task people take across the product, with whether it can be undone, its rules, the DS components it uses, `usedIn` (the real places that do it, each with the file that holds its label and the text that file contains, checked by a test) and a stage. The shared rule: Undo in a Toast when it can be undone, an AlertDialog first when it cannot. Bridge ships Delete and Send for review (its button reads Send suggestion when a team sends suggestions), from an inventory of its own UI. Core validates and reads patterns (`validatePattern`, `readPatterns`, `patternGroups`), derives interactions (`behaviorUses`, `interactionsWithUses`, `interactionProblems`), gives the agent view (`agentPatterns`, `modelAgentPatterns`) and llms.txt lines (`patternLlmsLines`, also in a team's published llms.txt); the repo model reads them (`patterns`). The Library has a Patterns section: Overview, then each pattern by name under Interactions and Actions. An interaction page plays each component on the Behaviors stage; an action page plays the pattern with the real Button, AlertDialog and Toast, then its rules, components and where it is used. A component page's shared behavior rows link to their interaction. A team's Library shows Patterns only when its data has some. MCP: `bridge_list_patterns` and `bridge_get_pattern`.
+
+### Patch Changes
+
+- b65f98b: `bridge audit` finds component imitations: hand-made versions of a pattern a design system component covers, often built out of DS parts so a count of DS versus non-DS elements called them adoption. It flags `role="tab"`, `"tablist"`, `"tabpanel"`, `"radiogroup"`, `"dialog"`, `"menu"`, `"combobox"` and the like outside the DS component that renders them (a DS Link with `role="tab"` included), data attributes that wire a tab by hand (`data-set-tab`), `aria-pressed` toggle groups, count spans instead of the count Badge, a button class on a link, style sheet rules that name a tab, chip, pill, badge, button, switch, dialog or toast and draw its border, background or radius by hand, interactive markup built in strings (`<button role="tab">` in a template literal), and separators typed between elements. The patterns come from the DS component inventory: a pattern is checked only when the DS exports its component, every other component covers its own kebab name, and the DS component sources are never checked. A class set only on the DS component it names is an override, not an imitation. Each finding names the file, line, pattern and the DS component to use. An imitation is not adoption: the element leaves the component adoption counts. The report gains `metrics.imitations`, an `imitations` summary with top fixes, `files[].imitations`, and the delta against a baseline; the CLI and the Markdown summary print them; `bridge-audit-ignore-next-line: reason` comments and the allowlist cover imitations too. `bridge_audit` returns the same.
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- Updated dependencies [06282ec]
+- Updated dependencies [7ec2e45]
+- Updated dependencies [b65f98b]
+- Updated dependencies [f3b26f4]
+- Updated dependencies [4ca0f44]
+- Updated dependencies [7e05245]
+- Updated dependencies [689e919]
+- Updated dependencies [52e54d1]
+- Updated dependencies [ca06aa9]
+- Updated dependencies [1fb3e59]
+- Updated dependencies [41c308e]
+- Updated dependencies [16f29b8]
+- Updated dependencies [adeb58f]
+- Updated dependencies [9ae871c]
+- Updated dependencies [346cec0]
+- Updated dependencies [15c75ed]
+- Updated dependencies [7a5a507]
+- Updated dependencies [9aecdee]
+- Updated dependencies [35e5ca0]
+  - @bridge-ds/core@1.0.0
+  - @bridge-ds/visual@0.3.30
+
 ## 0.17.0
 
 ### Minor Changes

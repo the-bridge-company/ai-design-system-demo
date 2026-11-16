@@ -1,5 +1,119 @@
 # @bridge-ds/core
 
+## 1.0.0
+
+### Major Changes
+
+- 346cec0: Bridge is MCP only: it never runs Claude with an API key. Claude is always the person's own, through the Bridge MCP
+  server or connector.
+
+  - **CLI (breaking):** `bridge fix <component> --with-claude` no longer calls the Anthropic API with `ANTHROPIC_API_KEY`
+    (and `--model` is gone). It prints the line to say to your own Claude with Bridge connected, "Fix <component> in
+    Figma with Bridge" (`--json`: `{ status: "handoff", say }`), and exits 0. Your Claude does the rounds with the MCP
+    tools (`bridge_get_gap_case`, `bridge_try_figma_fix`, `bridge_propose_figma_fixes`).
+  - **Docs drafts:** the "Docs drafts" GitHub workflow and `scripts/docs-draft.mjs` are removed. Library pages draft
+    through the "My Claude" draft exchange only: the "Anthropic API key" field and the key kept in the browser are gone
+    (a key saved by an earlier version is forgotten on the next visit), and the site no longer allows
+    `api.anthropic.com` in its Content Security Policy.
+  - **Core (breaking):** removed `anthropicRequest`, `anthropicReplyText`, `DOCS_DRAFT_MODEL`, `ANTHROPIC_MESSAGES_URL`,
+    `parseDocsReply`, `parseDocsTaskAnswer`, `mergeDocsDraft`, the fix loop runner (`startFixLoop`, `fixLoopRound`,
+    `fixLoopOutcome`, `fixPrompt`, `parseFixReply`, `FIX_LOOP_MODEL`). The MCP library no longer re-exports them.
+  - **Figma plugin:** "Copy for your developer" after Ask Claude to fix it holds the line to say to Claude only, no CLI
+    command with a key.
+
+### Minor Changes
+
+- b65f98b: `bridge audit` finds component imitations: hand-made versions of a pattern a design system component covers, often built out of DS parts so a count of DS versus non-DS elements called them adoption. It flags `role="tab"`, `"tablist"`, `"tabpanel"`, `"radiogroup"`, `"dialog"`, `"menu"`, `"combobox"` and the like outside the DS component that renders them (a DS Link with `role="tab"` included), data attributes that wire a tab by hand (`data-set-tab`), `aria-pressed` toggle groups, count spans instead of the count Badge, a button class on a link, style sheet rules that name a tab, chip, pill, badge, button, switch, dialog or toast and draw its border, background or radius by hand, interactive markup built in strings (`<button role="tab">` in a template literal), and separators typed between elements. The patterns come from the DS component inventory: a pattern is checked only when the DS exports its component, every other component covers its own kebab name, and the DS component sources are never checked. A class set only on the DS component it names is an override, not an imitation. Each finding names the file, line, pattern and the DS component to use. An imitation is not adoption: the element leaves the component adoption counts. The report gains `metrics.imitations`, an `imitations` summary with top fixes, `files[].imitations`, and the delta against a baseline; the CLI and the Markdown summary print them; `bridge-audit-ignore-next-line: reason` comments and the allowlist cover imitations too. `bridge_audit` returns the same.
+- 4ca0f44: Behavior requests in Being built: once the design system lead makes one the default, it is listed like any build
+  request ("The lead made it the default", today's sentence under its title) and reads Shipped when the change that
+  closes it merges. Its detail shows today's sentence struck, an arrow and the wanted one, where it gets in the way, who
+  asked and who made it the default (read from Bridge's comment, core `madeDefaultOf`). For a developer, "For developers"
+  adds the behavior id with its keys from the component's docs.json, the files to change (read from the repository: its
+  source, its docs.json, its tests), the Base UI primitive its source imports (core `basePrimitivesOf`) and "Copy the
+  request for Claude": core `behaviorBrief`, which `requestBrief` and `buildRequestBrief` now give for kind `behavior`
+  (change the code, update the docs.json entry and deprecate the old id when the meaning changes, a test that presses the
+  keys, a changeset, "Closes #n"). A designer following their request reads where it is in their words (Being built,
+  Done), without developer details.
+- 7e05245: Claude's preview of a behavior request, made by the person's own Claude through the Bridge connector: Bridge never runs
+  Claude. Two MCP tools: `bridge_make_behavior_preview` gives their Claude the request, the component's files, its
+  docs.json behaviors entry and the brief (core `behaviorPreviewBrief`: change the code and the entry, add a key-press test,
+  push `agent/preview-<n>`, open a draft "Preview for #n" that never closes the request); `bridge_report_behavior_preview`
+  records it on the request through Bridge (the hosted connector's server, `POST /api/contribute { action:
+'behavior-preview' }`, checks the person is on the team and the issue is an open behavior request, and Bridge's app keeps
+  one record comment). Studio reads only Bridge's records (core `parsePreviewState`, `isBridgeAppComment`).
+
+  On the request page, the lead who decides and the person who asked get "Play both": with no preview yet, "Ask your Claude
+  to make the preview" and the line to say ("Make the Bridge preview for request #n", with Copy); then today's story and the
+  preview's (the team's per-branch Storybook, `previews.apps.storybook`) side by side, the same keys pressed in both (the
+  stories answer `embed=bridge-keys` from `.storybook/preview.tsx`, with Storybook's own userEvent), each side's result in
+  one line, and the behavior's "Expected announcement". The person who asked can change her words; the preview made from
+  the old ones asks to be updated, and the next one says "Updated from your words". In Being built, a developer reads the
+  same hand-off, then "Check against the preview": every behavior with keys played on Claude's preview and on their pull
+  request's preview, a row checking when both agree. `GitHubClient.updateIssue` takes a title.
+
+- 689e919: Behavior requests: a person asks to change how a component behaves, or a rule of an action pattern, and the design
+  system lead decides. Core gains the request kind `behavior` (label "Behavior change", `request: behavior`) with its ask
+  (`BehaviorAsk`: the component or pattern, the behavior id or the rule's place, today's sentence, the wanted one, where
+  it gets in the way), `behaviorRequestOf`, `behaviorAskOf`, `draftBehaviorText`, `makeBehaviorDefaultOnGitHub` (adds
+  `bridge-build`, so it becomes a build request) and `askRequesterOnGitHub`. An undecided behavior request stays out of
+  the build requests (`isUndecidedBehaviorRequest`).
+
+  In Studio, a team's Components drawer gets a fourth choice, "Change how it behaves": pick one of the component's own
+  behaviors (or something it does not do yet), say what it should do instead and, if you like, where it gets in the way.
+  A team's Library pattern page offers members "Suggest a change to this pattern" on an action pattern, with the same
+  form, and a component page's Behaviors section links members to the drawer. The request's page shows today's sentence
+  struck, an arrow and the wanted one, with who asked; the person who decides gets Make it the default, Not now (the
+  decline with its reason) and Ask with the requester's first name. Undecided behavior requests wait on the home of the
+  people who decide.
+
+  A design lead or an admin signed in by email decides too: Bridge's server (`POST /api/contribute`
+  `{ action: 'behavior-decision' }`) checks their member record and that the issue is an open behavior request of the
+  team's repository, then makes it the default, says not now with the reason, or asks the requester, naming them in the
+  comments. The send button and the sent line name the team's one design lead ("Send to Dana") when there is one.
+  "Something looks wrong" is now about not matching Figma only.
+
+- 52e54d1: Behaviors, phase 1: a component's docs.json can list how it reacts, in designer words (`behaviors`: `{ id, family, text, try?, keys?, announces?, example? }`), with ids shared across components (`close-on-escape`) and family names shared too (Opening, Filtering, Moving, Picking, Closing, Focus, Feedback). Select lists 9 and Combobox 8, checked against the components and Base UI. Core types and validates the list (`validateBehaviors`, also run by `validateDocs`), reads it from any repo (`readBehaviors`), groups it (`behaviorGroups`) and gives the agent view (`agentBehaviors`). The Library component page shows a Behaviors section in Usage: one stage with the real component (Bridge's own page runs it, a team's Library plays its Storybook story), above the list on narrow pages and beside it, sticky, on wide ones; one list per family, each row a DS toggle Button with its keys in the DS Kbd and the expected screen reader announcement; the row picked says on the stage what to do (`try`, a stage-only line). The "On this page" rail lists the section. `bridge_get_component` returns `behaviors` and the `version` of the package that ships their ids, and /llms.txt lists them.
+- 1fb3e59: One source for every number and status word in Studio. Core adds the status ladder (`status-ladder.ts`: Exploring,
+  In review, Ready to build, Being built, Checking, Shipped; Not doing this and Archived off the ladder) with
+  `LATE_DAYS`, the one threshold behind every amber tag, and build request summaries speak its words. Studio maps every
+  surface to the ladder (who it waits on is the second line, never a status), keeps tags grey until a wait is late,
+  compares a component part against the library's own value everywhere (Card padding is 20 px, Leo's 12 px is the
+  library's Compact), counts "waiting" from when an exploration was sent for review, defines each count once (See all,
+  Library card, Leo's and Malik's Home, Asked by: You), counts every decision in the exploration stepper, and computes
+  the Quality verdict from the numbers it shows (adoption per product, unused tokens by kind against their totals).
+- 41c308e: Delete pattern: plain confirmation, or the name typed to confirm when the impact is high (a team, an account, anything other people lose), with the AlertDialog's `confirmText`. A pattern stage can name its high impact rows (`stage.typeName`: `items` and their own question); `validatePattern` checks they are rows of the stage and that the action cannot be undone. The Library's Delete stage plays both: Marketing team asks for its name, the two drafts ask a plain question.
+- 15c75ed: Patterns: one Library section, two kinds. A repository keeps one file per pattern in `patterns/<id>.pattern.json` (`{ id, kind, name, purpose }`). An interaction (`kind: "interaction"`) is keyed by a behavior id of the components' docs.json and exists only while two components or more list that id: which components do it, and each one's words and keys, are read from them, never written again (Close on Escape, Pick with Enter and Focus after a pick, on Select and Combobox). An action (`kind: "action"`) is a task people take across the product, with whether it can be undone, its rules, the DS components it uses, `usedIn` (the real places that do it, each with the file that holds its label and the text that file contains, checked by a test) and a stage. The shared rule: Undo in a Toast when it can be undone, an AlertDialog first when it cannot. Bridge ships Delete and Send for review (its button reads Send suggestion when a team sends suggestions), from an inventory of its own UI. Core validates and reads patterns (`validatePattern`, `readPatterns`, `patternGroups`), derives interactions (`behaviorUses`, `interactionsWithUses`, `interactionProblems`), gives the agent view (`agentPatterns`, `modelAgentPatterns`) and llms.txt lines (`patternLlmsLines`, also in a team's published llms.txt); the repo model reads them (`patterns`). The Library has a Patterns section: Overview, then each pattern by name under Interactions and Actions. An interaction page plays each component on the Behaviors stage; an action page plays the pattern with the real Button, AlertDialog and Toast, then its rules, components and where it is used. A component page's shared behavior rows link to their interaction. A team's Library shows Patterns only when its data has some. MCP: `bridge_list_patterns` and `bridge_get_pattern`.
+- 7a5a507: Patterns: an action stage can say it is done in the row itself (`stage.sent`) when the product has no Undo for it. Send for review now describes the real behavior: no Undo, the place it was sent from says Sent for review or Suggestion sent, and the way back is Back to draft on the review.
+- 35e5ca0: Two reviews: the library decision (governance.owners.design, for every product) and the design review (products[].designReview, a list of reviewers per product, off per product) replace the one review that waited on the design lead. New `two-reviews.ts` (reviewsFor, waitingFor, noReviewLine, designReviewOf, migrateReviews), `askReviewsOnGitHub` and `designApproveOnGitHub`; block fields `lead*` become `design*` (old names still read), decisions carry their `hat`. `askLeadOnGitHub`, `leadApproveOnGitHub` and `isWaitingForLead` stay as deprecated aliases for 2 releases.
+
+### Patch Changes
+
+- 06282ec: An app type scale. Page titles drop from 44 to 30px (`typography.h1`), section titles from 30 to 24px (`typography.h2`), card and dialog titles from 21 to 16px semibold (`typography.h3`), body keeps 16px on a 24px line. New: `typography.meta` (13/18, the secondary line under a name or title), with the primitives `font.size.150` (13px), `font.leading.18` and `font.leading.24`. Components set their text on the role line heights (20px for UI text, 18 for meta, 16 for captions) instead of 1.2, 1.35 and 1.5 ratios that landed off the 4px grid, descriptions and errors under fields read in meta (13px) instead of 12px with wide tracking, and a bold word inside a Banner title no longer jumps to black (900). In Bridge, the current nav entry keeps the medium weight of the others (color and plate say where you are), the "See it as" menu sets names in medium over a 13px muted line, and text that sets no line height inherits 1.5 of its size instead of 24px.
+- 7ec2e45: Looks right no longer files a library request for a piece that uses the library as is: a change to one part of a library component at a value the library already has (a Card at 12 px is Compact) has nothing to build. The library's known options and the rule (`usesLibraryAsIs`, `asIsOption`) now live in core, so Looks right and Studio's pages read one source.
+- f3b26f4: A library piece's padding is named "padding", not "room inside". In Studio:
+
+  - A list row or card that waits says only who it waits on ("Waiting for Dana").
+  - A component change shows its icon under its preview until the preview paints.
+  - The Library card counts In review from Library review and keeps a short line.
+  - Claude AI's guidance drafts show the agent mark, the draft's words and their age.
+  - Library review keeps its layout while it reads.
+
+- ca06aa9: Bridge moves to https://bridgedesignsystem.com. Pages on bridge.floriangouloubi.com redirect there permanently, with the same path and query. The API, the Claude connector (/mcp, OAuth, its metadata), the GitHub webhook, a GitHub sign-in already on its way and files such as tokens.css keep answering on the old address, so connectors, Figma plugins and toolbars installed with it keep working. A Claude connector added with the old address keeps its issuer; the person signs in on the new address. The Figma plugin may reach both addresses. The MCP server, the toolbar's read proxy, docs links and templates name the new address.
+- 16f29b8: Sample team: no personal data, and the first two actions run in the browser. Settings > Reviews names only the cast (never the GitHub owners of the repository hosting it) and says the review rights in plain words ("Checks the look", "Checks the code", "Adds it to the library") instead of config keys. Example names in the Color specimen, the token editor preview, Card and Avatar docs read as people of the cast or generic people. The component page's Code tab no longer prints the raw Storybook address and says "Open in Storybook" instead of "Workbench". Start an exploration and Looks right work in the browser on the sample team; Looks right moves the exploration on as the real approval does (Ready to build, or the library decision while a new piece waits), and every read of the visit agrees. A component page shows one Figma status: never "Not linked to Figma yet" beside "Figma is ahead", and the hint only to a lead.
+- adeb58f: AnnouncementStrip: a quiet, full-bleed strip above a site's header for one lasting, site-wide fact, with an optional
+  icon and one DS Link (`label`, `icon`, `action`, `appearance` harbor or neutral). A complementary landmark, not a live
+  region, not dismissible. The audit maps AnnouncementBar and similar names to it.
+
+  The site: /pricing/ leads with the founding date (board "Pricing A, Founding first"): hero with a Field Guide calendar
+  and the hand-drawn stroke under "free" (now one shared piece with the homepage's "Keep"), the founding commitment in a
+  Harbor band, planned prices with no recommended tier, only the rows that differ, what holds on every tier, and the FAQ
+  open on "When do paid plans open?" (not before 1 April 2027). The homepage gets a "Founding teams" section before the
+  last call, and every marketing page the founding strip. Billing: BILLING_LAUNCHED must stay false before 2027-04-01,
+  checked by a test.
+
+- 9ae871c: An answer to the library's Ask for changes, written in the same millisecond as that ask for changes (fast automation), now asks the library decision again. Before, the piece's "changes" answer was compared with a strict "before the ask", so an equal timestamp left the exploration out of In review with nothing waiting on anyone.
+- 9aecdee: The repository snapshot carries only what the model reads: story files as their title and story exports, stylesheets without comments (the served model is unchanged). It keeps the newest 15 releases instead of 60; older notes stay in the CHANGELOG.md files. The CLI snapshot drops from 1.30 MB to 1.09 MB and the repo snapshot from about 0.99 MB to about 0.82 MB.
+
 ## 0.35.0
 
 ### Minor Changes

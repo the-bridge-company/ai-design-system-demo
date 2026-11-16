@@ -71,9 +71,9 @@ const path = Astro.url.pathname.replace(/\/?$/, '/');
       label={STRIP.label}
       icon={CalendarCheck}
       appearance={zoneHeader ? 'neutral' : 'harbor'}
+      href={`${PRICING}#founding`}
     >
       {STRIP.before}<strong>{STRIP.strong}</strong>{STRIP.after}
-      <Link slot="action" href={`${PRICING}#founding`}>{STRIP.link}</Link>
     </AnnouncementStrip>
     <SiteHeader path={path} />
 

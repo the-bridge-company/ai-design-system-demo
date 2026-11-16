@@ -12,8 +12,13 @@ export interface AnnouncementStripProps extends Omit<HTMLAttributes<HTMLElement>
   children: ReactNode;
   /** Leading Lucide icon, decorative: the words carry the message. */
   icon?: LucideIcon;
-  /** One link after the message, where the reader learns more: a DS Link. Never a Button. */
+  /** One link after the message, where the reader learns more: a DS Link. Never a Button. Ignored when `href` is set. */
   action?: ReactNode;
+  /**
+   * Makes the whole strip one link to where the reader learns more: the message is the link's text, so no separate
+   * "Read more" is needed. Underlined on hover, with the focus ring inside the strip.
+   */
+  href?: string;
   /**
    * `harbor` (default): the light Harbor zone (`color.bg.zone`), for a site-wide notice on marketing pages. `neutral`:
    * the subtle ground, when the page under it opens with a Harbor zone of its own.
@@ -28,16 +33,27 @@ export interface AnnouncementStripProps extends Omit<HTMLAttributes<HTMLElement>
  * a message about the page's content, use Alert.
  */
 export const AnnouncementStrip = forwardRef<HTMLElement, AnnouncementStripProps>(function AnnouncementStrip(
-  { label, icon, action, appearance = 'harbor', className, children, ...rest },
+  { label, icon, action, href, appearance = 'harbor', className, children, ...rest },
   ref,
 ) {
+  const message = (
+    <>
+      {icon && <Icon icon={icon} size="sm" className={styles.icon} />}
+      <span className={styles.text}>{children}</span>
+    </>
+  );
   return (
-    <aside ref={ref} aria-label={label} className={cx(styles.strip, styles[appearance], className)} {...rest}>
-      <p className={styles.message}>
-        {icon && <Icon icon={icon} size="sm" className={styles.icon} />}
-        <span className={styles.text}>{children}</span>
-        {action != null && action !== false && <span className={styles.action}>{action}</span>}
-      </p>
+    <aside ref={ref} aria-label={label} className={cx(styles.strip, styles[appearance], href && styles.linked, className)} {...rest}>
+      {href ? (
+        <a href={href} className={cx(styles.message, styles.whole)}>
+          {message}
+        </a>
+      ) : (
+        <p className={styles.message}>
+          {message}
+          {action != null && action !== false && <span className={styles.action}>{action}</span>}
+        </p>
+      )}
     </aside>
   );
 });

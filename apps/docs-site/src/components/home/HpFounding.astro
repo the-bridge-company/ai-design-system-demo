@@ -21,7 +21,7 @@ const { getStarted } = Astro.props;
   <div class="hp-wrap hp-fd-grid">
     <div class="hp-fd-text">
       <p class="hp-eyebrow hp-fd-eyebrow">{F.eyebrow}</p>
-      <h2 id="hp-founding-t" class="hp-fd-h">{F.title}</h2>
+      <h2 id="hp-founding-t" class="hp-fd-h">{F.titleLead}<span class="hp-fd-accent">{F.titleAccent}</span>{F.titleEnd}</h2>
       <p class="hp-fd-p">{F.lead}</p>
       <div class="hp-fd-cta">
         <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={getStarted}>{F.primary}</ButtonLink>

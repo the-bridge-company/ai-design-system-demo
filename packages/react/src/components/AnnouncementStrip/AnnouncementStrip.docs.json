@@ -4,7 +4,7 @@
   "whenToUse": [
     "A fact that holds across the whole site for weeks or months and matters wherever a reader lands: a pricing commitment, a change of terms, a planned shutdown date.",
     "Above the site header, full bleed, on marketing and documentation pages. One per site.",
-    "Give at most one link, a DS Link after the message, to the page that explains it (\"Read the commitment\").",
+    "Give at most one way on: either the whole strip as a link (href) to the page that explains it, or one DS Link after the message (action). Prefer href when the message itself says enough.",
     "harbor (default) on pages that open on the plain page color; neutral when the page under the strip opens with a Harbor zone of its own."
   ],
   "whenNotToUse": [
@@ -48,7 +48,7 @@
   "contentGuidelines": [
     "One or two short sentences, a fact and its date. Sentence case, no exclamation marks.",
     "At most one emphasis (strong) on the word that matters.",
-    "Link text names where it goes: \"Read the commitment\", not \"Learn more\"."
+    "With action, the link text names where it goes (\"Read the commitment\"), not \"Learn more\". With href, the message is the link text: no extra words."
   ],
   "anatomy": {
     "strip": "Container: a complementary landmark, full bleed, one centred row that wraps",

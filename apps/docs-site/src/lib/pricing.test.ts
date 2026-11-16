@@ -151,4 +151,9 @@ describe('pricing (/pricing/)', () => {
     expect(page).toContain('id="founding"');
     for (const app of ['Layout.astro']) expect(readFileSync(join(ROOT, `apps/docs-site/src/layouts/${app}`), 'utf8')).not.toContain('AnnouncementStrip');
   });
+
+  it('the founding title as drawn reads exactly the title, with "free" apart for the blue', () => {
+    expect(pricing.HOME_FOUNDING.titleLead + pricing.HOME_FOUNDING.titleAccent + pricing.HOME_FOUNDING.titleEnd).toBe(pricing.HOME_FOUNDING.title);
+    expect(pricing.HOME_FOUNDING.titleAccent).toBe('free');
+  });
 });

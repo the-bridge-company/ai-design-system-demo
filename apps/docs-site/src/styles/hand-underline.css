@@ -1,0 +1,48 @@
+/* The hand-drawn Deep Harbor stroke under one word of a heading (components/site/HandUnderline.astro): "Keep" on the
+   homepage, "free" on /pricing/. It draws itself once on load; under reduced motion it is simply there. Tokens only. */
+
+.hand-ul {
+  position: relative;
+  display: inline-block;
+}
+
+.hand-ul-line {
+  position: absolute;
+  left: calc(var(--space-1-5) * -1);
+  bottom: calc(var(--space-2) * -1);
+  width: calc(100% + var(--space-3));
+  height: calc(var(--space-4) + var(--space-0-5));
+  overflow: visible;
+}
+
+.hand-ul-line path {
+  fill: transparent;
+  stroke: var(--color-action-primary-bg);
+  stroke-width: 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: hand-ul-draw calc(var(--motion-duration-slow) * 2) var(--motion-easing-standard) calc(var(--motion-duration-moderate) * 2) both;
+}
+
+/* Lower on the page (the homepage closing): a quicker stroke. */
+.hand-ul-late path {
+  animation-duration: var(--motion-duration-slow);
+}
+
+@keyframes hand-ul-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand-ul-line path {
+    animation: none;
+  }
+}

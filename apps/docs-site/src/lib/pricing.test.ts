@@ -8,7 +8,9 @@ import {
   FOUNDING_TEXT,
   FOUNDING_CUTOFF,
   ORGANIZATION_PRICE,
-  TABLE_GROUPS,
+  DIFF_ROWS,
+  FOUNDING_FACTS,
+  FOUNDING_BAND_NOTE,
   TEAM_PRICE,
   TIERS,
   defaultCurrency,
@@ -17,7 +19,7 @@ import {
   teamMonthlyCost,
 } from './pricing';
 import { ROOT } from './repo';
-import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE } from './billing';
+import { BILLING_EARLIEST_LAUNCH, BILLING_LAUNCHED, BILLING_LAUNCH_DATE } from './billing';
 
 const page = readFileSync(join(ROOT, 'apps/docs-site/src/pages/pricing.astro'), 'utf8');
 const words = (v: unknown): string[] =>
@@ -59,22 +61,25 @@ describe('pricing (/pricing/)', () => {
     expect(defaultCurrency(undefined)).toBe('EUR');
   });
 
-  it('recommends Team, and gives Free its one negative line', () => {
+  it('shows the rows that differ only, recommends no tier, and never takes roles away', () => {
     expect(TIERS.map((t) => t.id)).toEqual(['free', 'team', 'organization']);
-    expect(TIERS.filter((t) => t.recommended).map((t) => t.id)).toEqual(['team']);
-    expect(TIERS.filter((t) => t.without).map((t) => t.id)).toEqual(['free']);
-    for (const g of TABLE_GROUPS) for (const r of g.rows) expect(r.cells, r.label).toHaveLength(3);
-    // Teams have roles today on every tier: never shown as taken away. "Our commitments" is said once, as a section.
-    const roles = TABLE_GROUPS.flatMap((g) => g.rows).find((r) => r.label === 'Roles')!;
-    expect(roles.cells).toEqual([true, true, true]);
+    expect(TIERS.some((t) => 'recommended' in t)).toBe(false);
+    expect(DIFF_ROWS.map((r) => r.label)).toEqual(['Editors', 'Design systems', 'SAML and SCIM', 'Decision audit export', 'Hosted for you, isolated, backed up', 'Uptime', 'Support']);
+    for (const r of DIFF_ROWS) {
+      expect(r.cells, r.label).toHaveLength(3);
+      expect(new Set(r.cells).size, r.label).toBeGreaterThan(1);
+    }
+    // Teams have roles today on every tier: roles are named among what is the same everywhere.
+    expect(pricing.SAME_EVERYWHERE).toMatch(/^Everything else is the same on every plan:/);
+    expect(pricing.SAME_EVERYWHERE).toContain('roles');
     expect(TIERS.flatMap((t) => t.includes).join(' ')).not.toMatch(/roles/i);
-    expect(TABLE_GROUPS.map((g) => g.name)).not.toContain('Our commitments');
   });
 
   it('names the real license and keeps the founding text with its placeholder date', () => {
     const license = readFileSync(join(ROOT, 'LICENSE'), 'utf8');
     expect(license).toContain('FSL-1.1-MIT');
     expect(COMMITMENTS.map((c) => c.text).join(' ')).toContain('FSL-1.1-MIT');
+    expect(pricing.HERO_TITLE).toBe('Bridge is free today. Start your team by 31 March 2027 and it stays free.');
     expect(FOUNDING_CUTOFF).toBe('2027-03-31');
     expect(FOUNDING_TEXT[0]).toContain('created on Bridge by 31 March 2027 keeps');
     // The billing code reads the same cutoff, exclusive: the day after.
@@ -82,6 +87,9 @@ describe('pricing (/pricing/)', () => {
     next.setUTCDate(next.getUTCDate() + 1);
     expect(BILLING_LAUNCH_DATE).toBe(next.toISOString().slice(0, 10));
     expect(BILLING_LAUNCHED).toBe(false);
+    expect(BILLING_EARLIEST_LAUNCH).toBe(pricing.PAID_PLANS_EARLIEST);
+    expect(FAQ[0].answer[0]).toBe('Not before 1 April 2027. We will write to every team at least 30 days before, with the final prices. Teams created by 31 March 2027 stay free.');
+    expect(pricing.FAQ_OPEN).toBe(FAQ[0].id);
     expect(FAQ.map((f) => f.id)).toEqual(['when', 'fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
     const discounts = FAQ.find((f) => f.id === 'discounts')!;
     expect(pricing.faqAnswer(discounts, 'EUR').join(' ')).toContain('cap at €120 per design system');
@@ -113,10 +121,29 @@ describe('pricing (/pricing/)', () => {
     expect(terms).not.toMatch(/reverse-charge|Autoliquidation/);
   });
 
-  it('says prices are planned and gives no path to pay', () => {
-    expect(pricing.TODAY_LINE).toBe('Bridge is free for every team today. Paid plans open in 2027.');
-    expect(TIERS.map((t) => t.cta)).toEqual(['Start free', 'Start free today', 'Ask about Organization']);
-    expect(TIERS.find((t) => t.id === 'team')!.ctaNote).toBe('Team opens in 2027');
+  it('says prices are planned, gives no path to pay and keeps one primary action (the hero)', () => {
+    expect(TIERS.map((t) => t.cta)).toEqual(['Create your team', undefined, 'Ask about Organization']);
+    expect(TIERS.filter((t) => t.badge).map((t) => t.id)).toEqual(['team', 'organization']);
+    expect(TIERS.find((t) => t.id === 'team')!.footerNote).toBe('Start today on Free. Created by 31 March 2027, your team never pays this.');
+    expect(page.match(/variant="primary"/g)).toHaveLength(1);
     expect(allWords).not.toMatch(/countdown|hurry|launch offer|checkout/i);
+  });
+
+  it('keeps every founding sentence word for word in the band, only the first subject changes', () => {
+    const band = [...FOUNDING_FACTS.map((f) => f.text), FOUNDING_BAND_NOTE].join(' ');
+    const [first, ...rest] = FOUNDING_TEXT;
+    expect(band).toContain(first.replace('Every team created on Bridge by 31 March 2027 keeps', 'Your team keeps'));
+    for (const sentence of rest.join(' ').split(/(?<=\.) /)) expect(band, sentence).toContain(sentence);
+    expect(FOUNDING_FACTS[0].title).toBe('31 March 2027');
+  });
+
+  it('puts the founding strip on every marketing page: FREE in a strong, a link to #founding', () => {
+    expect(pricing.STRIP.before + pricing.STRIP.strong + pricing.STRIP.after).toBe('Paid plans open in 2027. Teams created by 31 March 2027 stay FREE, with no end date.');
+    const landing = readFileSync(join(ROOT, 'apps/docs-site/src/layouts/Landing.astro'), 'utf8');
+    expect(landing).toContain('<AnnouncementStrip');
+    expect(landing).toContain('<strong>{STRIP.strong}</strong>');
+    expect(landing).toContain('#founding');
+    expect(page).toContain('id="founding"');
+    for (const app of ['Layout.astro']) expect(readFileSync(join(ROOT, `apps/docs-site/src/layouts/${app}`), 'utf8')).not.toContain('AnnouncementStrip');
   });
 });

@@ -2352,6 +2352,205 @@
       ]
     },
     {
+      "name": "AnnouncementStrip",
+      "example": {
+        "c": "AnnouncementStrip",
+        "p": {
+          "label": "Founding teams"
+        }
+      },
+      "hash": "233d2447",
+      "source": [
+        "packages/react/src/components/AnnouncementStrip/AnnouncementStrip.tsx",
+        "packages/react/src/components/AnnouncementStrip/AnnouncementStrip.module.css",
+        "packages/react/src/components/Icon/Icon.module.css"
+      ],
+      "axes": [
+        {
+          "name": "Appearance",
+          "prop": "appearance",
+          "values": [
+            "harbor",
+            "neutral"
+          ],
+          "default": "harbor"
+        }
+      ],
+      "properties": [
+        {
+          "name": "Label",
+          "type": "TEXT",
+          "default": "AnnouncementStrip",
+          "prop": "children"
+        },
+        {
+          "name": "Action",
+          "type": "TEXT",
+          "default": "Action",
+          "prop": "action"
+        },
+        {
+          "name": "Icon",
+          "type": "BOOLEAN",
+          "default": false,
+          "prop": "icon"
+        },
+        {
+          "name": "Show action",
+          "type": "BOOLEAN",
+          "default": false,
+          "prop": "action"
+        }
+      ],
+      "parts": [
+        {
+          "id": "root",
+          "name": "AnnouncementStrip",
+          "kind": "frame",
+          "source": "AnnouncementStrip.module.css .strip, AnnouncementStrip.module.css .harbor",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER"
+          },
+          "fill": true
+        },
+        {
+          "id": "message",
+          "name": "message",
+          "kind": "frame",
+          "parent": "root",
+          "source": "AnnouncementStrip.module.css .message",
+          "layout": {
+            "direction": "HORIZONTAL",
+            "primary": "CENTER",
+            "counter": "CENTER",
+            "wrap": true
+          }
+        },
+        {
+          "id": "icon",
+          "name": "Icon",
+          "kind": "icon",
+          "parent": "message",
+          "source": "Icon.module.css .icon, Icon.module.css .sm, AnnouncementStrip.module.css .icon",
+          "visible": "Icon",
+          "swap": {
+            "property": "Icon",
+            "default": "Icon/CalendarCheck",
+            "prop": "icon"
+          }
+        },
+        {
+          "id": "text",
+          "name": "Label",
+          "kind": "text",
+          "parent": "message",
+          "source": "AnnouncementStrip.module.css .text",
+          "text": "Label"
+        },
+        {
+          "id": "action",
+          "name": "Action",
+          "kind": "text",
+          "parent": "message",
+          "source": "AnnouncementStrip.module.css .action",
+          "text": "Action",
+          "visible": "Show action"
+        }
+      ],
+      "variants": [
+        {
+          "props": {
+            "Appearance": "harbor"
+          },
+          "values": {
+            "root": {
+              "fill": "color.bg.zone",
+              "paddingTop": "space.2",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.4",
+              "minHeight": "size.11"
+            },
+            "message": {
+              "itemSpacing": "space.3",
+              "counterAxisSpacing": "space.1"
+            },
+            "icon": {
+              "width": "icon.size.sm",
+              "height": "icon.size.sm",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "action": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CalendarCheck"
+          }
+        },
+        {
+          "props": {
+            "Appearance": "neutral"
+          },
+          "values": {
+            "root": {
+              "fill": "color.bg.subtle",
+              "paddingTop": "space.2",
+              "paddingRight": "space.4",
+              "paddingBottom": "space.2",
+              "paddingLeft": "space.4",
+              "minHeight": "size.11"
+            },
+            "message": {
+              "itemSpacing": "space.3",
+              "counterAxisSpacing": "space.1"
+            },
+            "icon": {
+              "width": "icon.size.sm",
+              "height": "icon.size.sm",
+              "stroke": "color.text.default",
+              "strokeWeight": "icon.stroke"
+            },
+            "text": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            },
+            "action": {
+              "textFill": "color.text.default",
+              "fontFamily": "font.family.sans",
+              "fontSize": "typography.ui.size",
+              "lineHeight": "typography.ui.line-height"
+            }
+          },
+          "slots": {
+            "icon": "Icon/CalendarCheck"
+          }
+        }
+      ],
+      "unmapped": [
+        {
+          "part": "root",
+          "property": "width",
+          "value": "100%",
+          "reason": "fills its container: Figma draws it at a fixed width"
+        }
+      ]
+    },
+    {
       "name": "Avatar",
       "hash": "b37c6a87",
       "source": [
@@ -41110,6 +41309,11 @@
       "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z\"/><path d=\"m7 16.5-4.74-2.85\"/><path d=\"m7 16.5 5-3\"/><path d=\"M7 16.5v5.17\"/><path d=\"M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z\"/><path d=\"m17 16.5-5-3\"/><path d=\"m17 16.5 4.74-2.85\"/><path d=\"M17 16.5v5.17\"/><path d=\"M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z\"/><path d=\"M12 8 7.26 5.15\"/><path d=\"m12 8 4.74-2.85\"/><path d=\"M12 13.5V8\"/></svg>"
     },
     {
+      "name": "CalendarCheck",
+      "lucide": "calendar-check",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2v3\"/><path d=\"M16 2v3\"/><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18\"/><path d=\"m9 15 2 2 4-4\"/></svg>"
+    },
+    {
       "name": "Check",
       "lucide": "check",
       "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg>"
@@ -41375,6 +41579,10 @@
       "sets": [
         "AlertDialog/Popup"
       ]
+    },
+    {
+      "name": "AnnouncementStrip",
+      "status": "generated"
     },
     {
       "name": "Avatar",

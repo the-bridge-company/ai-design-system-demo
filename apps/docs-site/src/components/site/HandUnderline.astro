@@ -1,0 +1,13 @@
+---
+// One word of a heading with the hand-drawn Deep Harbor stroke under it: "Keep" on the homepage (hero and closing),
+// "free" on /pricing/. The word is the slot; the stroke is decorative. Styles: styles/hand-underline.css.
+import '../../styles/hand-underline.css';
+
+interface Props {
+  /** Lower on the page: a quicker stroke. */
+  late?: boolean;
+}
+const { late = false } = Astro.props;
+---
+
+<span class="hand-ul"><slot /><svg class:list={['hand-ul-line', late && 'hand-ul-late']} viewBox="0 0 150 18" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12C28 6 66 3.5 104 6.5S140 11 147 7" pathLength="1"></path></svg></span>

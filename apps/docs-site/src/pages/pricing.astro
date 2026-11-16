@@ -9,7 +9,7 @@ import '../styles/homepage.css';
 import '../styles/home-illus.css';
 import '../styles/pricing.css';
 import Landing from '../layouts/Landing.astro';
-import { Badge, Link } from '@bridge-ds/react';
+import { Link } from '@bridge-ds/react';
 import { ArrowRight } from 'lucide-react';
 import ButtonLink from '../components/ds/ButtonLink';
 import HandUnderline from '../components/site/HandUnderline.astro';
@@ -29,7 +29,6 @@ import {
   FOUNDING_BAND_NOTE,
   FOUNDING_BAND_TITLE,
   FOUNDING_FACTS,
-  HERO_BADGE,
   HERO_LEAD,
   HERO_NOTE,
   HERO_TITLE,
@@ -54,7 +53,6 @@ const leadAt = HERO_LEAD.indexOf(TOS);
   <div class="hp pr">
     <section class="hp-wrap pr-hero" aria-labelledby="pr-title">
       <div class="pr-hero-text">
-        <Badge tone="info" dot>{HERO_BADGE}</Badge>
         <h1 id="pr-title" class="pr-h1">{titleHead}<HandUnderline>free</HandUnderline>{titleTail}</h1>
         <p class="pr-lead">
           {HERO_LEAD.slice(0, leadAt)}<Link href={TERMS}>{TOS}</Link>{HERO_LEAD.slice(leadAt + TOS.length)}

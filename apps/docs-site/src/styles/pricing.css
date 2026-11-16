@@ -284,6 +284,12 @@
   line-height: var(--font-leading-24);
 }
 
+/* The three footers share one height (a button, or two lines of text), so they start on one line. */
+.pr-card-foot {
+  box-sizing: border-box;
+  min-height: calc(var(--control-height-md) + 2 * var(--space-3) + var(--border-width-default));
+}
+
 .pr-foot-note {
   color: var(--color-text-muted);
   font-size: var(--font-size-200);

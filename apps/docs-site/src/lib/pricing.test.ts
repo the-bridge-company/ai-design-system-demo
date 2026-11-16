@@ -70,7 +70,10 @@ describe('pricing (/pricing/)', () => {
       expect(new Set(r.cells).size, r.label).toBeGreaterThan(1);
     }
     // Teams have roles today on every tier: roles are named among what is the same everywhere.
-    expect(pricing.SAME_EVERYWHERE).toMatch(/^Everything else is the same on every plan:/);
+    expect(pricing.SAME_EVERYWHERE).toMatch(/^Everything else is the same on every tier:/);
+    // There is no Google or Microsoft sign-in: never claim one.
+    expect(allWords).not.toMatch(/Microsoft|Google/);
+    expect(pricing.COMMITMENTS.find((c) => c.lead === 'Sign-in stays free on every tier.')!.text).toBe(pricing.SIGN_IN);
     expect(pricing.SAME_EVERYWHERE).toContain('roles');
     expect(TIERS.flatMap((t) => t.includes).join(' ')).not.toMatch(/roles/i);
   });
@@ -132,7 +135,9 @@ describe('pricing (/pricing/)', () => {
   it('keeps every founding sentence word for word in the band, only the first subject changes', () => {
     const band = [...FOUNDING_FACTS.map((f) => f.text), FOUNDING_BAND_NOTE].join(' ');
     const [first, ...rest] = FOUNDING_TEXT;
-    expect(band).toContain(first.replace('Every team created on Bridge by 31 March 2027 keeps', 'Your team keeps'));
+    expect(band).toContain(first.replace('Every team created on Bridge by 31 March 2027 keeps, at no cost and with no end date,', 'Your team keeps, at no cost,'));
+    expect(FOUNDING_FACTS[1].title).toBe('Free, with no end date');
+    expect(band).not.toContain('with no end date');
     for (const sentence of rest.join(' ').split(/(?<=\.) /)) expect(band, sentence).toContain(sentence);
     expect(FOUNDING_FACTS[0].title).toBe('31 March 2027');
   });

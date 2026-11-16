@@ -154,13 +154,12 @@ export const BILLING_LABEL: Record<Billing, string> = { yearly: 'Yearly', monthl
 // ---------------------------------------------------------------------------------------------------------------
 
 // Pricing A "Founding first" (Claude Design canvas, page "Site · Pricing & founding", board Wip-site-pricing-A).
-export const HERO_BADGE = 'Free for every team today';
 export const HERO_TITLE = `Bridge is free today. Start your team by ${FOUNDING_CUTOFF_LABEL} and it stays free.`;
 /** "terms of service" in it links to /terms/. */
 export const HERO_LEAD = `Every tier has every feature. Paid plans open in ${PAID_PLANS_OPEN}, at the planned prices below. A team created by ${FOUNDING_CUTOFF_LABEL} never moves to them: it is written in our terms of service.`;
-// The board says "Sign in with Google, GitHub or Microsoft"; today Bridge signs in with GitHub or a code sent by email
-// (/privacy/, /terms/ 3.1), so the hero says what is true today.
-export const HERO_NOTE = 'No card needed. Sign in with GitHub or with a code sent to your email.';
+/** How people sign in today, one wording everywhere (/privacy/, /terms/ 3.1). There is no Google or Microsoft sign-in. */
+export const SIGN_IN = 'Sign in with GitHub or a code sent to your email, on every tier. SAML on your own identity provider is Organization.';
+export const HERO_NOTE = 'No card needed. Sign in with GitHub or a code sent to your email.';
 export const VAT_NOTE = VAT_MENTION;
 
 export const PLANS_TITLE = `What paid plans will cost from ${PAID_PLANS_OPEN}`;
@@ -222,7 +221,7 @@ export const COMMITMENTS: { lead: string; text: string }[] = [
   { lead: 'Self-hosting has no limit:', text: 'as many editors and design systems as you like.' },
   { lead: 'A free account never receives an invoice.', text: 'No card, no automatic charge when you grow.' },
   { lead: 'A limit never deletes.', text: 'Bridge pauses, hides or makes read-only.' },
-  { lead: 'Sign in your way.', text: 'Google, GitHub and Microsoft on every tier; SAML on Organization.' },
+  { lead: 'Sign-in stays free on every tier.', text: SIGN_IN },
 ];
 
 /** Who counts as an editor: written on the page, next to the differences. */
@@ -242,8 +241,9 @@ export const FOUNDING_TEXT = [
 
 /**
  * The Harbor band of /pricing/ (#founding): three facts, then the rest, sentence by sentence from FOUNDING_TEXT. Only
- * the subject of the first sentence changes ("Every team created on Bridge by 31 March 2027" becomes the first fact and
- * "Your team"); every other sentence is FOUNDING_TEXT word for word (pricing.test checks it).
+ * the first sentence changes: its subject ("Every team created on Bridge by 31 March 2027") becomes the first fact and
+ * "Your team", and "with no end date" is said once, by the second fact's title. Every other sentence is FOUNDING_TEXT
+ * word for word (pricing.test checks it). /terms/ section 10 keeps the full commitment.
  */
 export const FOUNDING_BAND_TITLE = 'The founding team commitment';
 export const FOUNDING_BAND_LINK = 'Read it in our terms of service';
@@ -251,7 +251,7 @@ export const FOUNDING_FACTS: { title: string; text: string }[] = [
   { title: FOUNDING_CUTOFF_LABEL, text: 'The last day to create a founding team on Bridge.' },
   {
     title: 'Free, with no end date',
-    text: 'Your team keeps, at no cost and with no end date, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.',
+    text: 'Your team keeps, at no cost, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.',
   },
   { title: 'In writing', text: 'This commitment is part of our terms of service and binds anyone who takes Bridge over. No future price change applies to it.' },
 ];
@@ -265,9 +265,9 @@ export const HOME_FOUNDING = {
   primary: 'Create your team',
   secondary: 'See planned prices',
   facts: [
-    { title: 'No end date', text: 'At no cost, with no end date. No future price change applies to it.' },
+    { title: 'No end date', text: 'At no cost. No future price change applies to it.' },
     { title: 'Everything your team can do', text: 'All its editors, all its design systems and every feature, as they are the day paid plans open, plus anything Free gains later.' },
-    { title: 'Written in our terms', text: 'It binds anyone who takes Bridge over.', link: 'Read the commitment' },
+    { title: 'Written in our terms', text: 'It binds anyone who takes Bridge over.', link: 'Read it in our terms' },
   ],
   closing: `Your next exploration is one change away. Created by ${FOUNDING_CUTOFF_LABEL}, your team stays free.`,
 };
@@ -288,7 +288,7 @@ export const STRIP = {
 
 export const DIFF_TITLE = 'Only what changes between tiers';
 export const SAME_EVERYWHERE =
-  'Everything else is the same on every plan: the whole review flow, full decision history, the Figma plugin, the Claude connector (MCP server), agents, roles, sign-in with Google, GitHub or Microsoft, and self-hosting without limit.';
+  'Everything else is the same on every tier: the whole review flow, full decision history, the Figma plugin, the Claude connector (MCP server), agents, roles, sign-in with GitHub or a code sent to your email, and self-hosting without limit.';
 
 export interface DiffRow {
   label: string;
@@ -407,7 +407,7 @@ export const FAQ: FaqItem[] = [
     question: 'What does SAML on Organization do?',
     answer: [
       'Your people sign in to Bridge through your own identity provider, with your rules. With SCIM, people you add or remove there join or leave Bridge by themselves.',
-      'Google, GitHub and Microsoft sign-in stay available on every tier.',
+      SIGN_IN,
     ],
   },
   {

@@ -67,6 +67,11 @@ export const LANDING = '/';
 export const COMPARE = '/compare/';
 /** The product pages around the landing, with the same light header (layouts/Landing.astro). */
 export const ABOUT = '/about/';
+/** Free, Team and Organization (pages/pricing.astro). */
+export const PRICING = '/pricing/';
+/** The terms of service (pages/terms.astro) and the legal notice (pages/legal.astro), linked from every footer. */
+export const TERMS = '/terms/';
+export const LEGAL = '/legal/';
 /** The product documentation (layouts/Docs.astro): an early version, to grow into a full guide. */
 export const DOCS_HOME = '/docs/';
 export const DOCS_FIGMA_PLUGIN = '/docs/figma-plugin/';

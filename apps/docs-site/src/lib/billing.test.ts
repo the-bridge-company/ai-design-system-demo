@@ -123,9 +123,19 @@ function setup(flags: BillingFlags = ON) {
 const editor = (email: string, role: 'view' | 'edit' | 'admin' = 'edit') => ({ email, name: email.split('@')[0]!, role, version: 1, addedBy: 'x', at: new Date(T0).toISOString() });
 
 describe('the shared rules', () => {
-  it('ships off: the switch is false and no launch date is set', () => {
+  it('ships off, with the founding cutoff the pricing page publishes: teams made before 1 April 2027', () => {
     expect(BILLING_LAUNCHED).toBe(false);
-    expect(BILLING_LAUNCH_DATE).toBeNull();
+    expect(BILLING_LAUNCH_DATE).toBe('2027-04-01');
+  });
+
+  it('a team made on 31 March 2027 is founding; one made on 1 April 2027 is not', async () => {
+    const redis = memoryRedis(() => T0);
+    const flags: BillingFlags = { launched: true, launchDate: BILLING_LAUNCH_DATE, testTeams: [] };
+    const rec = (id: string, createdAt: string) => redis.cmd('SET', `bridge:team:rec:${id}`, JSON.stringify({ id, name: 'T', createdBy: 'a@b.io', createdAt, repo: null }));
+    await rec('0000000000000331', '2027-03-31T23:59:59Z');
+    await rec('0000000000000401', '2027-04-01T00:00:00Z');
+    expect(await isFounding(redis, '_team/0000000000000331', flags)).toBe(true);
+    expect(await isFounding(redis, '_team/0000000000000401', flags)).toBe(false);
   });
 
   it('quantity: editors 1 to 10 per design system, times 1 to 3 design systems', () => {

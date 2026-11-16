@@ -6,8 +6,8 @@ by hand and billed by invoice. Everything ships **off**: until launch day, produ
 - One switch: `BILLING_LAUNCHED` in `apps/docs-site/src/lib/billing.ts` (`false`). While it is false, Studio shows no
   billing at all (the Billing card is not even in the Settings page), the Free limits are never checked (no extra read),
   and every billing endpoint answers 503.
-- One date: `BILLING_LAUNCH_DATE` in the same file (`null`). Teams created before it are founding teams. While it is
-  null, every team counts as founding.
+- One date: `BILLING_LAUNCH_DATE` in the same file (`2027-04-01`, exclusive). Teams created before it are founding
+  teams, as the pricing page publishes ("teams created by 31 March 2027"). Set to null, every team counts as founding.
 - No key, no billing: when `STRIPE_SECRET_KEY` or `STRIPE_WEBHOOK_SECRET` is missing, `GET /api/billing` says
   `{ "billing": "off" }`, `GET /api/billing?team=` says `{ "on": false }`, and checkout and portal answer 503 "Billing
   is not available on this site yet."
@@ -175,9 +175,9 @@ invoice; the webhook writes Organization on the team. It never makes a second su
 4. Vercel Production: `STRIPE_SECRET_KEY` (live) and `STRIPE_WEBHOOK_SECRET` (live). Keep the test ones on Preview.
 5. Founding teams: `node --env-file=.env.prod scripts/billing-mark-founding.mjs` (dry run, lists the teams), then
    `--apply`. Add any team Redis does not know with `--team owner/repo`.
-6. In `apps/docs-site/src/lib/billing.ts`: `BILLING_LAUNCH_DATE` = launch day, `BILLING_LAUNCHED = true`, in the same
-   pull request as the pricing page (#1184, `LAUNCH_DATE` there is the same day). Add Stripe to `/privacy/` (payment
-   processor) in that pull request.
+6. In `apps/docs-site/src/lib/billing.ts`: `BILLING_LAUNCHED = true`. `BILLING_LAUNCH_DATE` stays `2027-04-01`, the
+   founding cutoff the pricing page publishes ("teams created by 31 March 2027", `FOUNDING_CUTOFF` in lib/pricing.ts).
+   Stripe is already on `/privacy/`.
 7. After the deploy: `GET /api/billing` says `on`; a real checkout with a real card on a test team, refunded in the
    Dashboard.
 

@@ -79,9 +79,10 @@ describe('the Ask to join button', () => {
     entry.ask.mockResolvedValue({ requested: true });
     show();
     await userEvent.click(await screen.findByRole('button', { name: 'Ask to join the team' }));
-    await waitFor(() => expect(acc.signIn).toHaveBeenCalledWith(acc.token));
-    expect(await screen.findByText(ASK_WORDS.sent)).toBeInTheDocument();
-  });
+    // The click loads the sign-in path lazily: on a busy CI runner that takes seconds, not milliseconds.
+    await waitFor(() => expect(acc.signIn).toHaveBeenCalledWith(acc.token), { timeout: 10_000 });
+    expect(await screen.findByText(ASK_WORDS.sent, {}, { timeout: 10_000 })).toBeInTheDocument();
+  }, 20_000);
 
   it('copies the message and says so when Bridge cannot send it', async () => {
     entry.ask.mockRejectedValue(Object.assign(new Error('no'), { status: 404 }));

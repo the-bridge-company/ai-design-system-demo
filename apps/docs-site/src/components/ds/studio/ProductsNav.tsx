@@ -19,6 +19,7 @@ import { navProductRows, navProducts, NO_SIGNALS, readSignals, type NavProduct, 
 import { siteIcon } from '../../../brand/site-icons';
 import { productInitials } from '../../../lib/rail-collapse';
 import type { IconName } from '../../../brand/icons';
+import { NAV_PATTERNS_EVENT, rememberedPatterns, shownDesignPages } from '../../../lib/nav-patterns';
 
 export { navProducts, type NavProduct };
 
@@ -27,6 +28,8 @@ export interface NavPage {
   href: string;
   label: string;
   icon: IconName;
+  /** Built hidden on a team shell, shown once the team's data has patterns (lib/nav-patterns.ts). */
+  until?: 'patterns';
 }
 
 /** The All products page (pages/studio/products/index.astro). */
@@ -65,9 +68,11 @@ export interface ProductsNavViewProps {
   signals?: ProductSignals;
   /** The team's products are not read yet: the group holds this many skeleton rows (0 draws no group). */
   pendingRows?: number;
+  /** The team has patterns: the pages built hidden (`until: 'patterns'`) show. */
+  patterns?: boolean;
 }
 
-export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS, pendingRows = 0 }: ProductsNavViewProps) {
+export function ProductsNavView({ products, current, path = '', pages = [], signals = NO_SIGNALS, pendingRows = 0, patterns = false }: ProductsNavViewProps) {
   const rows = navProductRows(products, signals, current);
   const allHere = path === ALL_PRODUCTS_PATH;
   // The collapsed rail draws two letters per product instead of the folder (styles/site.css, data-initials).
@@ -102,7 +107,7 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
         </SidebarNavSection>
       )}
       <SidebarNavSection title="Design system" className="rail-section rail-design-system" data-design-system-nav="">
-        {pages.map((p) => (
+        {shownDesignPages(pages, patterns).map((p) => (
           <SidebarNavItem key={p.href} href={studioHref(p.href)} icon={siteIcon(p.icon)} active={holds(p.href, path)} data-keep-branch="">
             {p.label}
           </SidebarNavItem>
@@ -150,6 +155,8 @@ export default function ProductsNav({ products, current = null, path = '', pages
   const [pending, setPending] = useState(!products);
   const [pendingRows, setPendingRows] = useState(PRODUCTS_PENDING_ROWS);
   const [team, setTeam] = useState<string | null>(null);
+  // A team's Patterns entry: what this browser remembers for the team, then what its data says on this page.
+  const [patterns, setPatterns] = useState(false);
   // Once mounted, the links point at the team in the address (studioHref) and the order reads this browser.
   const [, setMounted] = useState(false);
   useEffect(() => {
@@ -161,6 +168,12 @@ export default function ProductsNav({ products, current = null, path = '', pages
       if (!live) return;
       setTeam(t);
       setSignals(readSignals(t, storage()));
+      if (!products) {
+        const kept = rememberedPatterns(t, storage());
+        if (kept !== null) setPatterns(kept);
+        // Never read for this team in this browser: its data says (one read per page, shared with the page's own).
+        else void import('../../../scripts/team-data').then((m) => m.loadTeamData()).catch(() => undefined);
+      }
       const kept = t ? Number(storage()?.getItem(productRowsKey(t)) ?? NaN) : NaN;
       if (Number.isInteger(kept) && kept >= 0) setPendingRows(kept);
       else if (isSampleTeam(t)) setPendingRows(SAMPLE_PRODUCT_ROWS);
@@ -188,9 +201,12 @@ export default function ProductsNav({ products, current = null, path = '', pages
       });
     read();
     document.addEventListener('bridge:team-model', read);
+    const said = (e: Event) => live && setPatterns((e as CustomEvent<{ has: boolean }>).detail.has);
+    document.addEventListener(NAV_PATTERNS_EVENT, said);
     return () => {
       live = false;
       document.removeEventListener('bridge:team-model', read);
+      document.removeEventListener(NAV_PATTERNS_EVENT, said);
     };
   }, [products]);
   // Remember how many rows the group drew for this team: the next first paint reserves exactly that.
@@ -202,5 +218,5 @@ export default function ProductsNav({ products, current = null, path = '', pages
       /* storage blocked: the next page reserves the default */
     }
   }, [pending, team, list, signals, here]);
-  return <ProductsNavView products={list} current={here} path={at} pages={pages} signals={signals} pendingRows={pending ? pendingRows : 0} />;
+  return <ProductsNavView products={list} current={here} path={at} pages={pages} signals={signals} pendingRows={pending ? pendingRows : 0} patterns={!products ? patterns : true} />;
 }

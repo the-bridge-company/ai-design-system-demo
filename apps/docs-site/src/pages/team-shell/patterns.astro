@@ -1,0 +1,13 @@
+---
+// Team shell of Studio Patterns (lib/team-shells.ts): served for /studio/<owner>/<repo>/patterns/ by the vercel.json
+// rewrite. The patterns are read from the team's repository in the browser (components/ds/studio/StudioPatterns.tsx).
+import '../../styles/studio-patterns.css';
+import TeamShell from '../../components/TeamShell.astro';
+import { TeamPatterns } from '../../components/ds/studio/StudioPatterns';
+---
+
+<TeamShell route="patterns/" title="Patterns" what="patterns" description="The interactions and actions shared across this team's product, and the changes asked on them.">
+  <div class="spt">
+    <TeamPatterns client:load />
+  </div>
+</TeamShell>

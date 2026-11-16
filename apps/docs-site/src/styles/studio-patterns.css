@@ -1,0 +1,44 @@
+/* Studio Patterns (pages/studio/patterns.astro, components/ds/studio/StudioPatterns.tsx): one DS Table, the kinds as
+   quiet row-group labels (as the Components list's families), each row a name, what it is for and its components. */
+
+.spt {
+  max-width: var(--studio-page-max);
+}
+
+.spt-table .spt-group th {
+  padding-top: var(--space-5);
+  border-bottom: 0;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.spt-table tbody:first-of-type .spt-group th {
+  padding-top: var(--space-2);
+}
+
+.spt-table .spt-name {
+  padding-block: var(--space-2);
+}
+
+.spt-purpose {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+.spt-muted {
+  color: var(--color-text-muted);
+}
+
+.spt-asked {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spt-asked li + li {
+  margin-top: var(--space-1);
+}

@@ -23,6 +23,8 @@ import type { AuditReport, HistoryPoint } from '@bridge-ds/core/audit';
 import { githubBusy, type GitHubBusy } from '../lib/github-busy';
 import { TEAM_PROGRESS_START, teamProgress, type TeamLoadEvent, type TeamProgress } from '../lib/load-progress';
 import { isDesignLead } from '../lib/design-lead';
+import { libraryPatterns } from '../lib/library/patterns';
+import { NAV_PATTERNS_EVENT, notePatterns } from '../lib/nav-patterns';
 
 export interface TeamData {
   owner: string;
@@ -287,10 +289,24 @@ export function loadTeamData(): Promise<TeamData> {
       ...(read.busy ? { busy: read.busy } : {}),
     };
   })();
-  pending.catch(() => {
+  pending.then(notePatternsOf, () => {
     pending = null; // a failed read is retried by the next call (Try again)
   });
   return pending;
+}
+
+/** Whether the team has patterns, for its Studio nav (lib/nav-patterns.ts): kept in this browser, and said to the page. */
+function notePatternsOf(d: TeamData) {
+  const team = `${d.owner}/${d.repo}`;
+  const has = libraryPatterns(d.model).length > 0;
+  let store: Storage | null = null;
+  try {
+    store = typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    store = null;
+  }
+  notePatterns(team, has, store);
+  if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent(NAV_PATTERNS_EVENT, { detail: { team, has } }));
 }
 
 /** The team's snapshot, whatever head it was computed from (adoption audits), null without one. Never rejects. */

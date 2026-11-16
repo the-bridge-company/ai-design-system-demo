@@ -56,7 +56,9 @@ describe('navigation data', () => {
       const nav = navFor(space);
       // Top-level entries: the ones not placed under a headed group of the Studio rail (Design system) or at its foot.
       expect(nav.filter((e) => !e.place).length).toBeLessThanOrEqual(7);
-      expect(nav.length).toBeLessThanOrEqual(8);
+      // The Studio's Design system group stays a handful: Components, Patterns, Tokens, Quality.
+      expect(nav.filter((e) => e.place === 'design-system').length).toBeLessThanOrEqual(4);
+      expect(nav.length).toBeLessThanOrEqual(9);
       for (const e of nav) expect(Boolean(e.href) !== Boolean(e.children), e.label).toBe(true);
     }
   });
@@ -137,8 +139,8 @@ describe('navigation shape', () => {
 });
 
 describe('studio nav', () => {
-  it('lists Home, Branches, Being built, Components, Tokens, Quality, Settings', () => {
-    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Explorations', 'Library review', 'Being built', 'Components', 'Tokens', 'Quality', 'Settings']);
+  it('lists Home, Explorations, Library review, Being built, Components, Patterns, Tokens, Quality, Settings', () => {
+    expect(navFor('studio').map((e) => e.label)).toEqual(['Home', 'Explorations', 'Library review', 'Being built', 'Components', 'Patterns', 'Tokens', 'Quality', 'Settings']);
   });
 
   it('makes Explorations one page with its own count, and drops the pages it replaced', () => {

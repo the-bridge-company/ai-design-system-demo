@@ -160,13 +160,27 @@ export function libraryNav(): NavEntry[] {
   ];
 }
 
-export function studioNav(): NavEntry[] {
+/** Studio > Patterns (pages/studio/patterns.astro): the patterns of the design system and the changes asked on them. */
+export const STUDIO_PATTERNS_HREF = '/studio/patterns/';
+
+/**
+ * The Studio nav. Patterns sits under Design system right after Components, only for a design system with patterns:
+ * Bridge's own when its patterns/ has some; a team's (`team`, the team shells) built hidden (`until`), shown once its
+ * data has patterns (components/ds/studio/ProductsNav.tsx), the same rule as its Library. Not branchAware: the page reads
+ * the latest library only, a "Viewing" selector there would change nothing.
+ */
+export function studioNav(opts: { team?: boolean } = {}): NavEntry[] {
+  const patterns: NavEntry[] =
+    opts.team || libraryPatterns(repoModel).length
+      ? [{ href: STUDIO_PATTERNS_HREF, label: 'Patterns', icon: 'hand', place: 'design-system', meta: 'Interactions and actions shared across the product, and the changes asked on them', ...(opts.team ? { until: 'patterns' as const } : {}) }]
+      : [];
   return [
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
     { href: STUDIO_EXPLORATIONS_HREF, label: 'Explorations', icon: 'branch', badge: 'explorations', meta: 'Every exploration, what waits on you first, from exploring to shipped' },
     { href: STUDIO_LIBRARY_REVIEW_HREF, label: 'Library review', icon: 'review', badge: 'reviews', meta: 'What enters the library: every piece an exploration asks for, decided one by one or as a list' },
     { href: STUDIO_BUILDING_HREF, label: 'Being built', icon: 'wrench', badge: 'building', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release' },
     { href: '/studio/components/', label: 'Components', icon: 'diamonds', branchAware: true, place: 'design-system', meta: 'Status, tokens, code and Figma links per component' },
+    ...patterns,
     { href: '/studio/tokens/', label: 'Tokens', icon: 'grid', branchAware: true, place: 'design-system', meta: 'Edit tokens into a draft, with live preview and guardrails' },
     { href: STUDIO_QUALITY_HREF, label: 'Quality', icon: 'shield', branchAware: true, place: 'design-system', meta: 'Contrast gate, token validation, docs completeness and adoption, most severe first' },
     { href: SETTINGS_HOME, label: 'Settings', icon: 'sliders', place: 'foot', meta: 'GitHub connection, the repository this workspace reads, and who approves what' },
@@ -187,7 +201,7 @@ export function workspaceNav(): NavEntry[] {
   ];
 }
 
-export const navFor = (space: Space) => (space === 'studio' ? studioNav() : libraryNav());
+export const navFor = (space: Space, opts: { team?: boolean } = {}) => (space === 'studio' ? studioNav(opts) : libraryNav());
 
 const norm = (path: string) => path.replace(/\/?$/, '/');
 

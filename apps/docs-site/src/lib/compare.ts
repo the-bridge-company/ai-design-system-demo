@@ -142,8 +142,8 @@ export const SHORT: CompareRow[] = [
     ],
   },
   {
-    feature: 'Free today, paid plans from 2027',
-    detail: 'Teams created by 31 March 2027 stay free',
+    feature: 'Free with every feature, today',
+    detail: 'Paid plans from 2027. Teams created by 31 March 2027 stay free',
     cells: [
       y('Free for every team today, with every feature. Paid plans open in 2027; teams created by 31 March 2027 stay free, and self-hosting has no limit on any tier.'),
       n,

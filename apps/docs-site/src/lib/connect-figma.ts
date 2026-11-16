@@ -15,7 +15,8 @@ export function codeFrom(search: string): string | null {
 
 export type ConnectStep =
   | { kind: 'no-code' }
-  | { kind: 'signin' }
+  | { kind: 'unreachable' }
+  | { kind: 'signin'; githubHere: boolean }
   | { kind: 'github' }
   | { kind: 'no-teams' }
   | { kind: 'pick'; teams: PickTeam[] };
@@ -28,9 +29,18 @@ export type PickTeam = Pick<AccountTeam, 'repo'> & { name: string | null };
  * the list the team switcher shows (scripts/pickable-teams.ts: the account's teams, the site's own design system when
  * GitHub lets this person push to it, the teams this browser opened); without it, the account's teams.
  */
-export function connectStep(code: string | null, account: Account | null, hasGitHub: boolean, pickable?: readonly PickTeam[]): ConnectStep {
+export function connectStep(
+  code: string | null,
+  account: Account | null,
+  hasGitHub: boolean,
+  pickable?: readonly PickTeam[],
+  seen: { reachable?: boolean; githubHere?: boolean } = {},
+): ConnectStep {
   if (!code) return { kind: 'no-code' };
-  if (!account) return { kind: 'signin' };
+  // Bridge did not answer: never ask someone who may well be signed in to sign in again.
+  if (seen.reachable === false) return { kind: 'unreachable' };
+  // Signed in to GitHub in this browser (the Studio side nav shows that GitHub account) but not to Bridge: say which.
+  if (!account) return { kind: 'signin', githubHere: seen.githubHere === true };
   if (!hasGitHub) return { kind: 'github' };
   const teams = [...(pickable ?? account.teams)].sort((a, b) => (a.name ?? a.repo).localeCompare(b.name ?? b.repo));
   return teams.length ? { kind: 'pick', teams } : { kind: 'no-teams' };
@@ -43,6 +53,8 @@ export const CONNECT_WORDS = {
   lede: 'Pick the team whose design system this Figma file uses. Bridge connects the plugin, nothing else changes.',
   noCode: 'Open this page from the Bridge plugin in Figma: Settings, Sign in with Bridge.',
   signin: 'Sign in to Bridge first, then come back here.',
+  signinGitHubHere: 'GitHub is connected in this browser, but you are not signed in to your Bridge account. Sign in to Bridge, then come back here.',
+  unreachable: 'Bridge could not check your sign-in. Reload this page in a minute.',
   signinAction: 'Sign in',
   github: 'The plugin works on your design system through GitHub. Connect your GitHub account once, then pick the team.',
   githubAction: 'Connect GitHub',

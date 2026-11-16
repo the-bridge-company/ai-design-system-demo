@@ -2061,8 +2061,9 @@ function viewPull(): View {
       prop.kept.length ? `${plural(prop.kept.length, 'Figma edit')} kept: send them from Push.` : '',
     ].filter(Boolean);
     const left = view?.retry ?? false;
-    // Variables are written first, then the components: until they are built, the file is not up to date yet.
-    const building = !cr && !!state.busy;
+    // Variables are written first, then the components: until they are built, the file is not up to date yet. The MVP
+    // scope builds no components, so a busy plugin there is checking again, never building.
+    const building = fullScope() && !cr && !!state.busy;
     // The first pull of this file, done: the designer's next step, in one sentence (orientation, no dead end).
     const firstDone = !p.analysis.baseSha && !problems.length && !left && !building && !view?.stopped;
     if (firstDone) text.push('To change something, edit it in Figma, then send it from Push.');

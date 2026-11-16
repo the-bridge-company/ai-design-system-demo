@@ -1,7 +1,8 @@
 // Studio > Patterns (lib/nav.ts STUDIO_PATTERNS_HREF): the patterns of the design system, from patterns/<id>.pattern.json
 // (lib/library/patterns.ts, the Library's groups and order), in one DS Table under quiet group labels (Interactions,
 // Actions; the group says the kind once, rows never repeat it). Each row: the pattern's name, linked to its Library page,
-// what it is for, the components it uses. For whoever decides on behavior requests (a reviewer of the library or a
+// what it is for, the components it uses (said once on the group row when every row of the group uses the same ones,
+// lib/studio-patterns.ts sharedComponents). For whoever decides on behavior requests (a reviewer of the library or a
 // design lead, as Home's Decide rows), one more column: the changes asked on each pattern that wait for a decision
 // (lib/studio-patterns.ts), each linked to its request page. Nobody else sees the column.
 //
@@ -12,7 +13,7 @@ import { Hand } from 'lucide-react';
 import { EmptyState, Link, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
 import { BEHAVIOR_REQUEST_LABEL } from '@bridge-ds/core';
 import { TeamLoadError, TeamPageSkeleton, TeamSourceNote, useTeamData } from './TeamState';
-import { patternRequests, studioPatternGroups, studioPatternsLead, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
+import { patternRequests, sharedComponents, studioPatternGroups, studioPatternsLead, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
 import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
 import { libraryHref } from '../../../lib/library-shells';
 import { setPageSummary } from '../../../lib/page-summary';
@@ -60,42 +61,56 @@ export function PatternsTable({ groups, requests }: { groups: readonly StudioPat
           {asked && <TableHead className="spt-col-asked">Waiting for your decision</TableHead>}
         </TableRow>
       </TableHeader>
-      {groups.map((g) => (
-        <TableBody key={g.kind} data-spt-group={g.kind}>
-          <TableRow className="spt-group">
-            <TableHead scope="rowgroup" colSpan={cols}>
-              {g.label}
-            </TableHead>
-          </TableRow>
-          {g.rows.map((r) => {
-            const list = requests?.get(r.id) ?? [];
-            return (
-              <TableRow key={r.id} data-spt-row={r.id}>
-                <TableCell role="rowheader" className="spt-name">
-                  <Link href={r.href}>{r.name}</Link>
-                  <span className="spt-purpose">{r.purpose}</span>
-                </TableCell>
-                <TableCell className="spt-col-uses spt-muted">{r.components.join(', ')}</TableCell>
-                {asked && (
-                  <TableCell className="spt-col-asked">
-                    {list.length > 0 && (
-                      <>
-                        <ul className="spt-asked">
-                          {list.map((q) => (
-                            <li key={q.number}>
-                              <Link href={studioHref(`explorations/?request=${q.number}`)}>{q.title}</Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
+      {groups.map((g) => {
+        // Every row uses the same components: the group row says them once, in their column; the rows leave it empty.
+        const shared = sharedComponents(g);
+        return (
+          <TableBody key={g.kind} data-spt-group={g.kind}>
+            <TableRow className="spt-group">
+              {shared ? (
+                <>
+                  <TableHead scope="rowgroup">{g.label}</TableHead>
+                  <TableCell className="spt-col-uses spt-muted" data-spt-shared="">
+                    {shared.join(', ')}
                   </TableCell>
-                )}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      ))}
+                  {asked && <TableCell className="spt-col-asked" />}
+                </>
+              ) : (
+                <TableHead scope="rowgroup" colSpan={cols}>
+                  {g.label}
+                </TableHead>
+              )}
+            </TableRow>
+            {g.rows.map((r) => {
+              const list = requests?.get(r.id) ?? [];
+              return (
+                <TableRow key={r.id} data-spt-row={r.id}>
+                  <TableCell role="rowheader" className="spt-name">
+                    <Link href={r.href}>{r.name}</Link>
+                    <span className="spt-purpose">{r.purpose}</span>
+                  </TableCell>
+                  <TableCell className="spt-col-uses spt-muted">{shared ? null : r.components.join(', ')}</TableCell>
+                  {asked && (
+                    <TableCell className="spt-col-asked">
+                      {list.length > 0 && (
+                        <>
+                          <ul className="spt-asked">
+                            {list.map((q) => (
+                              <li key={q.number}>
+                                <Link href={studioHref(`explorations/?request=${q.number}`)}>{q.title}</Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        );
+      })}
     </Table>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { behaviorRequestOf, composeRequestIssue, type BehaviorAsk } from '@bridge-ds/core';
-import { patternRequests, requestsLabel, studioPatternGroups, studioPatternsLead } from './studio-patterns';
+import { patternRequests, requestsLabel, sharedComponents, studioPatternGroups, studioPatternsLead, type StudioPatternRow } from './studio-patterns';
 import { libraryPatterns, patternRoute } from './library/patterns';
 import { repoModel } from './model';
 import type { BehaviorIssue } from './home-model';
@@ -36,6 +36,25 @@ describe('Studio Patterns rows', () => {
     expect(studioPatternsLead([])).toBe('');
     expect(requestsLabel(1)).toBe('1 change asked');
     for (const s of [lead, studioPatternsLead(own, 3)]) expect(s).not.toContain('—');
+  });
+});
+
+describe('the components a group shares', () => {
+  const row = (id: string, components: string[]): StudioPatternRow => ({ id, name: id, purpose: '', components, href: `/${id}/` });
+
+  it('are said once when every row uses the same ones, in any order', () => {
+    expect(sharedComponents({ rows: [row('a', ['Combobox', 'Select']), row('b', ['Select', 'Combobox']), row('c', ['Combobox', 'Select'])] })).toEqual(['Combobox', 'Select']);
+  });
+
+  it('stay per row when rows differ, for a lone row, an empty group or no components', () => {
+    expect(sharedComponents({ rows: [row('delete', ['Button', 'AlertDialog']), row('send', ['Button'])] })).toBeNull();
+    expect(sharedComponents({ rows: [row('delete', ['Button', 'AlertDialog'])] })).toBeNull();
+    expect(sharedComponents({ rows: [] })).toBeNull();
+    expect(sharedComponents({ rows: [row('a', []), row('b', [])] })).toBeNull();
+  });
+
+  it("on Bridge's own patterns: the actions differ, so they keep their own", () => {
+    expect(sharedComponents(own.find((g) => g.kind === 'action')!)).toBeNull();
   });
 });
 

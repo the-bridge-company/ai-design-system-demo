@@ -58,7 +58,7 @@ export function measureSetupProposal(o: { prefix: string; date: Date; storybook?
     body: [
       `Adds \`${MEASURE_WORKFLOW_FILE}\`, from Studio (Settings, Claude, ${MEASURE_SETUP_ACTION}).`,
       '',
-      `It measures what your Storybook draws (\`bridge specs --measure\`, headless Chrome) ${how}, every Monday as a fallback, and by hand. It publishes \`measured-specs.json\` and the story shots to the \`${MEASURE_BRANCH}\` branch, only when the measure changed. The Claude fix tools, the Figma plugin ("Ask Claude to fix it") and Studio read it there.`,
+      `It measures what your Storybook draws (\`bridge specs --measure\`, headless Chrome) ${how}, every Monday as a fallback, and by hand. It publishes \`measured-specs.json\` and the story shots to the \`${MEASURE_BRANCH}\` branch, only when the measure changed. The Claude fix tools and Studio read it there.`,
       '',
       `Token: only the run's \`GITHUB_TOKEN\`, with \`contents: write\` to push \`${MEASURE_BRANCH}\`. No secret to add. Your default branch is never written.`,
       '',

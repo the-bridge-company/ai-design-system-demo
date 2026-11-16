@@ -180,18 +180,16 @@ The copy submitted on 2026-10-16 promised more than the plugin does today, or de
 | Cover (thumbnail) | [`cover.png`](cover.png) | 1920 x 1080 |
 | Carousel 1 | [`gallery-1-plugin.png`](gallery-1-plugin.png): the plugin UI, Pull and Push | 1920 x 1080 |
 | Carousel 2 | [`gallery-2-pull-request.png`](gallery-2-pull-request.png): PR #468, opened by the plugin, in Bridge Studio, Changes | 1920 x 1080 |
-| Carousel 3 | [`gallery-3-tokens.png`](gallery-3-tokens.png): the same tokens in the Bridge Studio token explorer | 1920 x 1080 |
+| Carousel 3 | [`gallery-3-tokens.png`](gallery-3-tokens.png): the Bridge DS tokens in the Bridge Studio token explorer | 1920 x 1080 |
 
 The carousel only shows real UI. Gallery 1 is `dist/ui.html` rendered in Chrome against this repository's tokens on
 GitHub; outside Figma, the Figma side (the variables and two edits) comes from the plugin's test simulator, as the
 caption says. Galleries 2 and 3 are the live pages, unedited.
 
-**The three carousel images are out of date; render them again before the next version is submitted** (the cover and
-its copy are current). Gallery 1 shows the old repository name (`peterbono/ai-design-system-demo`), "Opens a draft
-pull request for review" and a "Push and open pull request" button. Galleries 2 and 3 frame the old address
-`bridge.floriangouloubi.com`, PR #4 and the old copy ("a draft PR", "CI and code owners decide"). The sources are
-ready (`src/art.html`, `src/plugin-shots.mjs`, `src/web-shots.mjs`, PR #468); only the screenshots are missing. Use
-"Rebuild the images" below, with a read-only `GITHUB_TOKEN` or after GitHub's anonymous limit resets.
+Rendered again on 2026-11-16 for the MVP scope: gallery 1 shows the Pull of a first file with "0 of 81 components
+from the code are in this file" and the missing ones, and the Push with **Send for review**; galleries 2 and 3 are
+the Bridge DS team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The
+PR #468 page currently ends with "The before and after could not be captured": that is the live page, unedited.
 
 ## How to publish (owner)
 

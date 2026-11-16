@@ -52,13 +52,14 @@ await page.route('https://api.github.com/**', async (r) => {
     const c = JSON.parse(readFileSync(cacheFile(url), 'utf8'));
     return r.fulfill({ status: c.status, contentType: c.contentType, headers: { 'access-control-allow-origin': '*' }, body: c.body });
   }
-  const res = await r.fetch({ headers: { ...headers, ...auth } });
+  const res = await r.fetch({ headers: { ...headers, ...auth }, timeout: 60000 }).catch(() => undefined);
+  if (!res) return r.abort().catch(() => undefined);
   if (res.status() === 200 || res.status() === 404)
     writeFileSync(cacheFile(url), JSON.stringify({ status: res.status(), contentType: res.headers()['content-type'] ?? 'application/json', body: await res.text() }));
   return r.fulfill({ response: res });
 });
 // A file with no components yet: the component scans find nothing (the shots show variables only).
-const answers = { init, snapshot, 'scan-components': { components: [], fileKey: undefined }, 'scan-generated': [], 'read-built': {}, thumbnails: {} };
+const answers = { init, snapshot, 'scan-components': { components: [], fileKey: undefined }, 'scan-generated': [], 'list-components': [], 'read-built': {}, thumbnails: {} };
 await page.exposeBinding('__answer', (_src, type) => answers[type] ?? null);
 await page.addInitScript(() => {
   // parent === window outside Figma: answer the UI's requests like the main thread would.
@@ -81,8 +82,8 @@ const settle = () =>
 if (mode === 'pull') {
   await page.getByRole('button', { name: 'Check for updates' }).click();
   await settle();
-  // Open the list, so the shot shows the tokens themselves.
-  await page.getByText(/^See the \d+ variables$/).click();
+  // Open what is missing in Figma, so the shot shows the promise: tokens to bring in, components the file lacks.
+  await page.getByText(/^\d+ components? missing in Figma$/).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: join(outDir, 'plugin-pull.png') });
 } else {

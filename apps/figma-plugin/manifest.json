@@ -1,5 +1,5 @@
 {
-  "name": "Bridge",
+  "name": "DS Bridge",
   "id": "1693034743850648023",
   "api": "1.0.0",
   "main": "dist/code.js",
@@ -8,7 +8,7 @@
   "documentAccess": "dynamic-page",
   "permissions": ["currentuser"],
   "networkAccess": {
-    "allowedDomains": ["https://api.github.com", "https://bridgedesignsystem.com", "https://bridge.floriangouloubi.com"],
-    "reasoning": "Bridge reads design token files from the team's GitHub repository through the GitHub REST API (api.github.com) and opens pull requests or issues with the designer's changes. It also calls the Bridge site, bridgedesignsystem.com, with the designer's GitHub sign-in: \"Sign in with Bridge\" gets a one-time code (POST /api/plugin-link) and polls until the designer picks their team; after a push of token values it asks Bridge to merge that pull request once its checks pass (POST /api/ship); and while the team's Claude fixes a component it reads the fix's progress (GET /api/fix-sessions). bridge.floriangouloubi.com is the site's former address; this version does not call it. \"Ask Claude to fix it\" opens claude.ai in the browser. No analytics. The plugin never calls Anthropic and holds no API key."
+    "allowedDomains": ["https://api.github.com", "https://bridgedesignsystem.com"],
+    "reasoning": "DS Bridge reads design token files from the team's GitHub repository through the GitHub REST API (api.github.com) and opens pull requests or issues with the designer's changes. It also calls the Bridge site, bridgedesignsystem.com, with the designer's GitHub sign-in: \"Sign in with Bridge\" gets a one-time code (POST /api/plugin-link) and polls until the designer picks their team; after a push of token values it asks Bridge to merge that pull request once its checks pass (POST /api/ship); and while the team's Claude fixes a component it reads the fix's progress (GET /api/fix-sessions). \"Ask Claude to fix it\" opens claude.ai in the browser. No analytics. The plugin never calls Anthropic and holds no API key."
   }
 }

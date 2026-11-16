@@ -99,13 +99,14 @@ test('suggest, read-only token: the variable edits are one token suggestion with
   for (const path of ['radius.sm', 'space.3']) assert.deepEqual(set.byPath.get(path)!.values, direct.byPath.get(path)!.values, path);
 });
 
-test('direct: the same push still opens a branch and a draft pull request (behaviour kept)', async () => {
+test('direct: the same push still opens a branch and a pull request ready for review (behaviour kept)', async () => {
   const gh = new FakeGitHub(repoFiles('direct'));
   const { client, a, proposal } = await edited(gh);
   const res = await publish(client, { analysis: a, proposal, components: [], unchecked: new Set(), description: 'Rounder small corners.', title: '', fileName: 'Test', coded: [], mode: changesModeOf(a) });
   assert.equal(res.suggestions.length, 0);
   assert.ok(res.pr && gh.branches.has(res.pr.branch));
   assert.equal(gh.prs.length, 1);
+  assert.equal(gh.prs[0]!.draft, false);
   assert.equal(gh.issues.length, 0);
   assert.equal(sentTitle(res, 'direct'), 'Sent for review');
 });

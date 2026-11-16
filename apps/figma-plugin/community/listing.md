@@ -9,10 +9,9 @@ that render them are in [`src/`](src/) (see "Rebuild the images" at the end).
 DS Bridge
 ```
 
-This is the name Figma shows on the Community page and in the Plugins menu of people who install it. The development
-copy imported from `manifest.json` shows as **Bridge** (`"name"` in the manifest, and the window title in
-`src/main/index.ts`). Keep **DS Bridge** as the public name ("Bridge" alone is too generic to find) and align the
-manifest `"name"` and the window title on it in the next version. The id `1693034743850648023` does not change.
+The same name everywhere: the Community page, the Plugins menu, the development copy (`"name"` in `manifest.json`)
+and the plugin window title (`src/main/index.ts`). "Bridge" alone is too generic to find. The id
+`1693034743850648023` does not change.
 
 ## Tagline (58 of 60 characters)
 
@@ -95,8 +94,6 @@ Yes, to two domains, both declared in `manifest.json`:
 - `https://bridgedesignsystem.com` (Bridge, our site): `POST /api/plugin-link` for Sign in with Bridge,
   `POST /api/ship` to ask Bridge to merge a token pull request the user just opened (and, for leads, to approve
   Claude's fixes), `GET /api/fix-sessions` to show the progress of a fix the user asked Claude for.
-The manifest also lists `https://bridge.floriangouloubi.com`, Bridge's former address. This version never calls it;
-it can go in the next version.
 The plugin also opens links in the user's browser when they click them (github.com, claude.ai, bridgedesignsystem.com),
 through `figma.openExternal`.
 
@@ -173,7 +170,7 @@ The copy submitted on 2026-10-16 promised more than the plugin does today, or de
 | Icon | [`icon.png`](icon.png) | 128 x 128 |
 | Cover (thumbnail) | [`cover.png`](cover.png) | 1920 x 1080 |
 | Carousel 1 | [`gallery-1-plugin.png`](gallery-1-plugin.png): the plugin UI, Pull and Push | 1920 x 1080 |
-| Carousel 2 | [`gallery-2-pull-request.png`](gallery-2-pull-request.png): PR #4, opened by the plugin, in Bridge Reviews | 1920 x 1080 |
+| Carousel 2 | [`gallery-2-pull-request.png`](gallery-2-pull-request.png): PR #468, opened by the plugin, in Bridge Studio, Changes | 1920 x 1080 |
 | Carousel 3 | [`gallery-3-tokens.png`](gallery-3-tokens.png): the same tokens in the Bridge Studio token explorer | 1920 x 1080 |
 
 The carousel only shows real UI. Gallery 1 is `dist/ui.html` rendered in Chrome against this repository's tokens on
@@ -193,9 +190,9 @@ must be on for that account (Figma requires it to publish).
 1. Build: from the repository root, `npm install` then `npm run plugin:build`.
 2. If the plugin is not imported yet: **Plugins > Development > Import plugin from manifest...** and pick
    `apps/figma-plugin/manifest.json`.
-3. Open any design file, then **Plugins > Development > Bridge** and run it once to check it opens.
+3. Open any design file, then **Plugins > Development > DS Bridge** and run it once to check it opens.
 4. **Plugins > Development > Manage plugins in development**, find DS Bridge, open its **...** menu and choose
-   **Publish** (on some versions the entry sits directly under **Plugins > Development > Bridge > Publish**).
+   **Publish** (on some versions the entry sits directly under **Plugins > Development > DS Bridge > Publish**).
 5. Plugin id. Done: `manifest.json` holds the published id `1693034743850648023`. For a fork, the publish dialog gives a new id
    (a long number) and asks you to put it in `manifest.json`. Do it, run `npm run plugin:build` again, and
    continue. Then commit the new id on a branch and open a PR (`fix(figma-plugin): published plugin id`), so
@@ -214,7 +211,10 @@ Later releases: build, then **Publish new version** from the same menu, with rel
 
 ## Rebuild the images
 
-Needs Google Chrome installed (one headless instance at a time) and the repository dependencies.
+Needs Google Chrome installed (one headless instance at a time) and the repository dependencies. GitHub is read
+anonymously unless `GITHUB_TOKEN` is set (read-only use; the pages never see it). Anonymous reads are limited to 60 an
+hour per network: `plugin-shots.mjs` keeps GitHub's answers in `$OUT/github-cache`, so the push shot reuses the pull
+shot's reads; run `web-shots.mjs` in the next hour if the limit is reached.
 
 ```sh
 npm run plugin:build
@@ -223,7 +223,7 @@ OUT=/tmp/ds-bridge-shots && mkdir -p $OUT
 npx esbuild community/src/snapshot.ts --bundle --platform=node --format=esm --target=node20 --conditions=source --outfile=$OUT/snapshot.mjs
 node $OUT/snapshot.mjs $OUT/push.json color/text/muted=palette/neutral/700 color/action/primary/bg=palette/primary/800
 echo '{"fileName":"Bridge tokens","collections":[],"variables":[]}' > $OUT/pull.json
-export GITHUB_TOKEN=$(gh auth token)   # read-only GitHub calls; the pages never see it
+# optional: export GITHUB_TOKEN=... (read-only calls; the pages never see it)
 node community/src/plugin-shots.mjs $OUT/pull.json $OUT pull
 node community/src/plugin-shots.mjs $OUT/push.json $OUT push
 node community/src/web-shots.mjs $OUT

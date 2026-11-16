@@ -18,7 +18,7 @@ let cancelBuild = false;
 /** Long work tells the plugin how far it is: the words, and items done of total when it can count them. */
 const postProgress = (message: string, done?: number, total?: number) => figma.ui.postMessage(progressEnvelope(message, done, total));
 
-figma.showUI(__html__, { width: 480, height: 640, themeColors: true, title: 'Bridge' });
+figma.showUI(__html__, { width: 480, height: 640, themeColors: true, title: 'DS Bridge' });
 enableUiTurns();
 
 /** The file's shared plugin data (namespace dsbridge), as the store shared-state.ts reads and writes. */

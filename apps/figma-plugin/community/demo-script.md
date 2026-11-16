@@ -13,8 +13,8 @@ contrast. Show only what the plugin does today (see [`listing.md`](listing.md)),
 1. **Plugin build.** Use the build of the version you will submit: the release zip
    ([bridge-figma-plugin.zip](https://github.com/the-bridge-company/ai-design-system-demo/releases/download/figma-plugin-latest/bridge-figma-plugin.zip))
    or `npm run plugin:build` from the repository root. If it is not imported yet: **Plugins > Development > Import
-   plugin from manifest...**. The development copy is named **Bridge** in the menu (the manifest name); the listing
-   says **DS Bridge**. That is expected until the manifest name is aligned.
+   plugin from manifest...**. If an older copy named **Bridge** is still listed, remove it first in **Plugins >
+   Development > Manage plugins in development**, so the menu shows only **DS Bridge**, the name on the listing.
 2. **Repository.** The public sample team `acme-design-demo/bridge-demo-ds` (Acme Design). Its `bridge.config.json`
    says `"changes": "direct"`, so Push opens a real pull request there, which is what the video shows. Its
    `component-specs.json` is there, so Pull also draws components. It has no Figma reference images
@@ -44,8 +44,8 @@ Total target: about 80 seconds. Move the mouse slowly and pause one second on ea
 
 | # | Time | Action | The viewer must see | Max |
 | --- | --- | --- | --- | --- |
-| 1 | 0:00 | Press **Record**. In the empty file, **Plugins > Development > Bridge**. | The plugin opens on **Pull**: "Get your design system", "First time in this file: Bridge adds its variables and components." Tabs Pull, Push, Settings. | 6 s |
-| 2 | 0:06 | Click **Check for updates**. Scroll the preview slowly once. | The list of new tokens from `main` (names and values), the **Components** group with its count, and the button **Apply to Figma**. Nothing is written yet. | 12 s |
+| 1 | 0:00 | Press **Record**. In the empty file, **Plugins > Development > DS Bridge**. | The plugin window, titled **DS Bridge**, opens on **Pull**: "Get your design system", "First time in this file: Bridge adds its variables and components." Tabs Pull, Push, Settings. | 6 s |
+| 2 | 0:06 | Click **Check for updates**. Scroll the preview slowly once. | "Bring your design system into this file", **Changes in the design system** with the token count (open **See the N variables** to show names and values), **New components** with its count, **Include components** ticked, and the button **Apply to Figma**. Nothing is written yet. | 12 s |
 | 3 | 0:18 | Click **Apply to Figma**. | The progress line ("Writing variables", then building components). If the build takes more than 8 seconds, stop the recording here (**Cmd+Ctrl+Esc**) and start a second one (shot 4) once "Your design system is in Figma" shows. | 8 s |
 | 4 | 0:26 | Clip 2 starts on "Your design system is in Figma". Click an empty spot of the canvas, open **Local variables** in the right panel. | The collections **Primitives, Brand, Base, Semantic, Density, Component**; in **Semantic**, the **Light** and **Dark** columns, values shown as aliases (`palette/neutral/600`). | 10 s |
 | 5 | 0:36 | Close the variables window. Go to the **Components** page, select one variant of **Button**. | The Button component set with its variants; in the right panel the fill shows a variable, not a raw hex. | 8 s |

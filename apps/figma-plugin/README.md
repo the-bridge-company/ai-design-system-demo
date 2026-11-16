@@ -27,7 +27,7 @@ the pull request a Push opened (PR #4). Components are in [Storybook](https://br
    and unzip it. `.github/workflows/figma-plugin-release.yml` rebuilds it on every plugin change to `main`.
 2. In the Figma desktop app: **Plugins > Development > Import plugin from manifest...** and pick
    `bridge-figma-plugin/manifest.json`.
-3. Run it from **Plugins > Development > Bridge**.
+3. Run it from **Plugins > Development > DS Bridge**.
 
 To update it, unzip the new zip over the same `bridge-figma-plugin` folder, replacing its files: nothing to import
 again. Importing the new folder as well leaves two dev entries with the same id and no way to tell which one runs; if
@@ -85,9 +85,8 @@ The manifest allows two sites, and the plugin calls only these:
   `GET /api/fix-sessions` (what Claude is doing on a fix, `src/sync/fix-session.ts`). The site uses the token to ask
   GitHub who is calling and what they can access; it does not keep it.
 
-`https://bridge.floriangouloubi.com` (the site's former address) is still in `allowedDomains`, but this version never
-calls it: only links to it are recognised (`isStudioUrl`), and links open in the browser without the allowlist. No
-analytics. The plugin never calls Anthropic and holds no API key: Claude runs in the team's own Claude account, with
+Links to the site's former address, `https://bridge.floriangouloubi.com`, are still recognised (`isStudioUrl`); they
+open in the browser, which needs no allowlist, so that domain is not in `allowedDomains`. No analytics. The plugin never calls Anthropic and holds no API key: Claude runs in the team's own Claude account, with
 Bridge added as a connector.
 
 ## Writing help: drafts, optionally written by Claude

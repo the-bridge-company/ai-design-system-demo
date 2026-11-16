@@ -189,7 +189,8 @@ caption says. Galleries 2 and 3 are the live pages, unedited.
 Rendered again on 2026-11-16 for the MVP scope: gallery 1 shows the Pull of a first file with "0 of 81 components
 from the code are in this file" and the missing ones, and the Push with **Send for review**; galleries 2 and 3 are
 the Bridge DS team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The
-PR #468 page currently ends with "The before and after could not be captured": that is the live page, unedited.
+PR #468 page is captured down to its conversation (`clipHeight` in `web-shots.mjs`): the crop is made at capture,
+the page itself is not edited. Below it the live page shows the status of its before and after images, left out.
 
 ## How to publish (owner)
 

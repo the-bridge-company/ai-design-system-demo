@@ -295,6 +295,7 @@ describe('/api/billing with billing on', () => {
       automatic_tax: { enabled: false },
       tax_id_collection: { enabled: true },
       allow_promotion_codes: true,
+      managed_payments: { enabled: false },
       billing_address_collection: 'required',
       subscription_data: { metadata: { bridge_team: TEAM }, invoice_settings: { footer: FRANCHISE_FOOTER } },
       success_url: `${ORIGIN}/studio/northwind/ds/settings/?billing=done#billing`,

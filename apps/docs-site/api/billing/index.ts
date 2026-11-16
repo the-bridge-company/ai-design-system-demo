@@ -349,6 +349,9 @@ async function onCheckout(ctx: Ctx, req: Request, body: Record<string, unknown>)
       // A promotion code field: the open source and teaching offer (free Team, on request) and one-off codes made in
       // the Stripe Dashboard. No code exists by default, so nothing changes for anyone else.
       allow_promotion_codes: true,
+      // Bridge sells in its own name (VAT franchise footer, its own invoices): never Stripe Managed Payments, which a
+      // new Stripe account may turn on by default and which refuses subscription_data.invoice_settings.
+      managed_payments: { enabled: false },
       billing_address_collection: 'required',
       // The customer exists already: Checkout keeps the address and name it collects on it (needed for tax).
       customer_update: { address: 'auto', name: 'auto' },

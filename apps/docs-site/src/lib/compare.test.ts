@@ -73,7 +73,7 @@ describe('comparison (homepage and /compare/)', () => {
     const last = (f: string) => row(f).cells[TOOLS.length - 1];
     expect(last('Figma kit built from code, with a fidelity check').short).toBe('No fidelity check');
     expect(last('Two-way sync between Figma variables and code').short).toBe('Code to Figma only');
-    expect(last('Free up to 3 editors, every feature').state).toBe('no');
+    expect(last('Free today, paid plans from 2027').state).toBe('no');
   });
 
   it('compares variants from code, two-tier variables and fixing drift in the full table only, crediting each tool', () => {

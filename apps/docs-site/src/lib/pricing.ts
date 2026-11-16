@@ -1,8 +1,8 @@
 // /pricing/ (pages/pricing.astro): every price, tier, commitment and answer on the page, in one place. Pure data and
-// helpers, no DOM. The page ships on announcement day: until then it lives in a draft pull request.
+// helpers, no DOM. Published while Bridge is free for every team: paid plans open in 2027, so prices are planned.
 //
-// Every price and policy here is decided. One launch blocker stays marked `TO DECIDE (Florian), BLOCKS LAUNCH`: the
-// launch date. The policies are written in full in the terms of service (pages/terms.astro).
+// Every price and policy here is decided, as planned prices for when paid plans open. The policies are written in full
+// in the terms of service (pages/terms.astro).
 
 export type Currency = 'EUR' | 'USD';
 export type Billing = 'yearly' | 'monthly';
@@ -60,22 +60,25 @@ export const FREE_DESIGN_SYSTEMS = 1;
 export const TEAM_DESIGN_SYSTEMS = 3;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Launch blocker: the launch date. The page cannot ship before it is set.
+// Today and the founding cutoff. Bridge is free for every team today; paid plans open in 2027, date not set.
 // ---------------------------------------------------------------------------------------------------------------
 
-// TO DECIDE (Florian), BLOCKS LAUNCH: the date the pricing is announced. Every team created before it is a founding
-// team. Replace the bracketed text with the real date (for example "2 March 2027") on announcement day.
-//
-// Launch rule (not shown on the page): launch on the first Tuesday or Wednesday after all of these are true in
-// production:
+/**
+ * Founding teams: every team created on Bridge up to this day, included (ISO, Paris calendar day). The billing code
+ * reads the same cutoff as BILLING_LAUNCH_DATE = the next day, exclusive (lib/billing.ts; pricing.test checks both).
+ */
+export const FOUNDING_CUTOFF = '2027-03-31';
+export const FOUNDING_CUTOFF_LABEL = '31 March 2027';
+export const PAID_PLANS_OPEN = '2027';
+
+// Rule for opening paid plans (not shown on the page): open them on the first Tuesday or Wednesday after all of
+// these are true in production:
 // - Stripe is live under the entity below (INVOICE_ENTITY);
 // - one real payment and one real refund have been done end to end;
 // - every existing team has been checked to keep what it had the day before;
 // - it is proven that no free account can produce an invoice;
-// - the pricing page and the homepage compare-row change ship in one deploy;
-// - the launch date below is filled;
+// - every team has been told at least 30 days before, with the final prices (FAQ "When do paid plans open?");
 // - Florian is available for the next 48 hours.
-export const LAUNCH_DATE = '[LAUNCH DATE]';
 
 /** Organization support hours ("EU business hours"). Also in the terms of service, section 9.3. */
 export const ORGANIZATION_SUPPORT_HOURS = 'Monday to Friday, 9:00 to 18:00 Paris time, except French public holidays';
@@ -151,6 +154,9 @@ export const TITLE = 'Free for a small team. Then a fair price per editor, cappe
 export const LEAD = 'Every tier has every feature. You pay for more people, more systems, and our commitments.';
 export const LICENSE_LINE = 'Components and tokens are MIT. Each Bridge version becomes MIT two years after release. Self-hosting without limit.';
 export const VAT_NOTE = VAT_MENTION;
+export const TODAY_LINE = `Bridge is free for every team today. Paid plans open in ${PAID_PLANS_OPEN}.`;
+export const PLANNED_NOTE = 'Planned prices: they may still change before paid plans open. Founding teams stay free whatever happens.';
+export const PLANNED_BADGE = 'Planned price';
 
 export interface Tier {
   id: TierId;
@@ -162,6 +168,8 @@ export interface Tier {
   /** The one line that says what the tier does not commit to. Free only. */
   without?: string;
   cta: string;
+  /** A small line under the button. */
+  ctaNote?: string;
   recommended?: boolean;
 }
 
@@ -188,7 +196,8 @@ export const TIERS: Tier[] = [
     name: 'Team',
     pitch: 'For a team that grows past three editors.',
     includes: ['Everything in Free', 'Unlimited editors', `Up to ${inWords(TEAM_DESIGN_SYSTEMS)} design systems`, 'Written support, answer within two business days'],
-    cta: 'Start with Team',
+    cta: 'Start free today',
+    ctaNote: `Team opens in ${PAID_PLANS_OPEN}`,
     recommended: true,
   },
   {
@@ -234,7 +243,7 @@ export const EDITOR_NOT_COUNTED = 'Readers, viewers, and developers who only wor
 // "terms of service" in the last line to /terms/.
 export const FOUNDING_TITLE = 'Founding teams';
 export const FOUNDING_TEXT = [
-  `Every team created on Bridge before ${LAUNCH_DATE} keeps, at no cost and with no end date, everything it could do that day: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
+  `Every team created on Bridge by ${FOUNDING_CUTOFF_LABEL} keeps, at no cost and with no end date, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
   'No future price change applies to it. Support and uptime stay those of Free.',
   'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.',
   'This commitment is part of our terms of service and binds anyone who takes Bridge over.',
@@ -320,10 +329,17 @@ export function faqAnswer(item: FaqItem, currency: Currency): string[] {
 
 export const FAQ: FaqItem[] = [
   {
+    id: 'when',
+    question: 'When do paid plans open?',
+    answer: [
+      `In ${PAID_PLANS_OPEN}. We will write to every team at least 30 days before, with the final prices. Until then everything is free, and teams created by ${FOUNDING_CUTOFF_LABEL} stay free after.`,
+    ],
+  },
+  {
     id: 'fourth-editor',
     question: 'What happens when we invite a fourth editor on Free?',
     answer: [
-      'The invitation waits, marked "needs Team". Nothing is charged automatically and nothing is deleted: your three editors keep working, and readers can still join.',
+      'Today, nothing: Bridge is free for every team, with no limit on editors. Once paid plans open, the invitation waits, marked "needs Team". Nothing is charged automatically and nothing is deleted: your three editors keep working, and readers can still join.',
       'Move to Team when you are ready, and the invitation goes through.',
     ],
   },
@@ -331,7 +347,7 @@ export const FAQ: FaqItem[] = [
     id: 'stop-paying',
     question: 'What happens if we stop paying?',
     answer: [
-      'What goes past the Free tier becomes read-only. Everyone can still read the design system and its decisions. Nothing is deleted.',
+      'Once paid plans open, what goes past the Free tier becomes read-only if you stop paying. Everyone can still read the design system and its decisions. Nothing is deleted.',
       'Editing comes back as soon as you pay again, or when the team fits within Free.',
     ],
   },
@@ -339,7 +355,7 @@ export const FAQ: FaqItem[] = [
     id: 'self-host',
     question: 'Why pay if we can self-host?',
     answer: [
-      'You can self-host Bridge without any limit, on every tier. Paying is for when you would rather not run it yourselves.',
+      'You can self-host Bridge without any limit, on every tier. Once paid plans open, paying is for when you would rather not run it yourselves.',
       'Team adds editors, design systems and written support. Organization adds SAML, SCIM and the decision audit export, and we run it for you: hosting, isolation, backups, an uptime commitment and a faster answer.',
     ],
   },
@@ -358,7 +374,7 @@ export const FAQ: FaqItem[] = [
     id: 'vat',
     question: 'How do VAT and invoices work?',
     answer: [
-      `Invoices are issued by ${INVOICE_ENTITY}, with the mention: VAT not applicable, art. 293 B of the French tax code. A free team never receives an invoice.`,
+      `Bridge sends no invoice today. Once paid plans open, invoices are issued by ${INVOICE_ENTITY}, with the mention: VAT not applicable, art. 293 B of the French tax code. A free team never receives an invoice.`,
       // TO DECIDE (Florian): this promise (30 days notice, same prices before VAT) is not confirmed yet.
       'If Bridge starts charging VAT, we tell you 30 days before and prices stay the same, VAT excluded.',
     ],
@@ -366,7 +382,7 @@ export const FAQ: FaqItem[] = [
   {
     id: 'refunds',
     question: 'Can we get a refund?',
-    answer: REFUND_POLICY,
+    answer: ['Once paid plans open:', ...REFUND_POLICY],
   },
   {
     id: 'pricing-wrong',
@@ -377,7 +393,7 @@ export const FAQ: FaqItem[] = [
     id: 'discounts',
     question: 'Do you offer discounts?',
     answer: [
-      "Team is free, with no sales call, for a design system whose repository is public under an OSI-approved open source license, and for teaching in a school or university: write to us with the repository link or the school's address.",
+      "Once paid plans open, Team stays free, with no sales call, for a design system whose repository is public under an OSI-approved open source license, and for teaching in a school or university: write to us with the repository link or the school's address.",
       'We offer no other discount: the cap at {cap} per design system is our discount for large teams.',
     ],
     link: { to: 'contact', label: ORGANIZATION_CONTACT_LABEL },

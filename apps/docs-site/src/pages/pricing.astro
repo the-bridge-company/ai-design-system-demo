@@ -1,5 +1,6 @@
 ---
-// /pricing/: Free, Team and Organization. Ships on announcement day; until then it lives in a draft pull request.
+// /pricing/: Free, Team and Organization. Bridge is free for every team today; paid plans open in 2027, so Team and
+// Organization show planned prices and no button leads to a payment.
 // Every price, word and placeholder: lib/pricing.ts. The switches and cards (PricingPlans) hydrate on load so the
 // currency follows the browser language; the comparison table (PricingTable) follows the same switches.
 import '../styles/pricing.css';
@@ -22,6 +23,7 @@ import {
   ORGANIZATION_NOTE,
   ORGANIZATION_PRICE,
   TITLE,
+  TODAY_LINE,
   money,
 } from '../lib/pricing';
 import { SIGNIN_PAGE, PRIVACY_PAGE } from '../lib/account';
@@ -40,6 +42,7 @@ const hrefs = { free: SIGNIN_PAGE, team: SIGNIN_PAGE, organization: contact };
       <h1 class="lp-h">{TITLE}</h1>
       <p class="pr-lead">{LEAD}</p>
       <p class="pr-license">{LICENSE_LINE}</p>
+      <p class="pr-today">{TODAY_LINE}</p>
     </header>
 
     <section class="pr-section" aria-label="Tiers">

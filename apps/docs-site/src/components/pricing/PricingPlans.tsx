@@ -14,6 +14,8 @@ import {
   TEAM_PRICE,
   TIERS,
   VAT_NOTE,
+  PLANNED_BADGE,
+  PLANNED_NOTE,
   editorsCapped,
   inWords,
   money,
@@ -29,6 +31,15 @@ export interface PricingPlansProps {
   hrefs: Record<TierId, string>;
 }
 
+/** On Team and Organization: the price is planned, not charged yet (paid plans open in 2027). */
+function Planned() {
+  return (
+    <Badge tone="neutral" size="sm" className="pr-planned">
+      {PLANNED_BADGE}
+    </Badge>
+  );
+}
+
 function Price({ tier, billing, currency }: { tier: Tier; billing: Billing; currency: Currency }) {
   if (tier.id === 'free') {
     return (
@@ -42,6 +53,7 @@ function Price({ tier, billing, currency }: { tier: Tier; billing: Billing; curr
     const p = TEAM_PRICE[currency][billing];
     return (
       <div className="pr-price">
+        <Planned />
         <p className="pr-amount">
           {money(p.perEditor, currency)}
           <span className="pr-unit"> per editor per month</span>
@@ -55,6 +67,7 @@ function Price({ tier, billing, currency }: { tier: Tier; billing: Billing; curr
   }
   return (
     <div className="pr-price">
+      <Planned />
       <p className="pr-amount">
         {money(ORGANIZATION_PRICE[currency], currency)}
         <span className="pr-unit"> per month</span>
@@ -84,6 +97,7 @@ export default function PricingPlans({ hrefs }: PricingPlansProps) {
           items={CURRENCIES.map((c) => ({ value: c, label: CURRENCY_LABEL[c] }))}
         />
         <p className="pr-vat">{VAT_NOTE}</p>
+        <p className="pr-planned-note">{PLANNED_NOTE}</p>
       </div>
 
       <ul className="pr-cards">
@@ -106,6 +120,7 @@ export default function PricingPlans({ hrefs }: PricingPlansProps) {
                 <ButtonLink href={hrefs[t.id]} variant={t.recommended ? 'primary' : 'secondary'} size="lg" fullWidth>
                   {t.cta}
                 </ButtonLink>
+                {t.ctaNote && <p className="pr-cta-note">{t.ctaNote}</p>}
                 <ul className="pr-includes">
                   {t.includes.map((line) => (
                     <li key={line}>

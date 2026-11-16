@@ -76,6 +76,34 @@
   gap: var(--space-3) var(--space-4);
 }
 
+.pr-planned-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.pr-planned {
+  align-self: flex-start;
+  margin-bottom: var(--space-1);
+}
+
+.pr-cta-note {
+  margin: calc(var(--space-3) * -1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  text-align: center;
+}
+
+.pr-today {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-body-line-height);
+}
+
 .pr-vat {
   margin: 0;
   color: var(--color-text-muted);
@@ -360,6 +388,6 @@
 /* Side by side, the price blocks share one height so the three buttons line up. */
 @media (min-width: 900px) {
   .pr-price {
-    min-height: calc(var(--size-20) + var(--size-12));
+    min-height: var(--size-40);
   }
 }

@@ -28,7 +28,8 @@ import {
   CONTACT_EMAIL,
   FREE_DESIGN_SYSTEMS,
   FREE_EDITORS,
-  LAUNCH_DATE,
+  FOUNDING_CUTOFF_LABEL,
+  PAID_PLANS_OPEN,
   ORGANIZATION_PRICE,
   ORGANIZATION_SUPPORT_HOURS,
   TEAM_DESIGN_SYSTEMS,
@@ -37,9 +38,9 @@ import {
 } from '../lib/pricing';
 import { PUBLISHER } from '../lib/legal';
 
-// TO DECIDE (Florian): version number and effective date of these terms. Until set, the page shows neither.
-const VERSION: string | null = null;
-const EFFECTIVE_DATE: string | null = null;
+/** Version 1, effective the day the pricing page was published. */
+const VERSION: string | null = '1';
+const EFFECTIVE_DATE: string | null = '16 November 2026';
 // TO DECIDE (Florian): adding editors during a period: billed pro rata for the rest of the period, or from the next renewal.
 const ADDED_EDITORS_BILLING: string | null = null;
 // TO DECIDE (Florian): notice before a price change or a new version of these terms applies (30 days proposed).
@@ -49,7 +50,7 @@ const AVAILABILITY_TOOL: string | null = null;
 const MAINTENANCE_HOURS_PER_MONTH: number | null = null;
 // TO DECIDE (Florian): credit tiers (10% below 99.5%, 25% below 99%, 50% below 95% proposed).
 const CREDIT_TIERS: string | null = null;
-// TO DECIDE (Florian): the founding snapshot, an annex listing what a founding team could do on the launch date.
+// TO DECIDE (Florian): the founding snapshot, an annex listing what a founding team can do on the day paid plans open.
 const FOUNDING_SNAPSHOT_URL: string | null = null;
 // TO DECIDE (Florian): notice to paying teams if Bridge stops the hosted service (90 days proposed).
 const SHUTDOWN_NOTICE_DAYS_PAID: number | null = null;
@@ -68,9 +69,6 @@ const FRENCH_VERSION_URL: string | null = null;
 // TO DECIDE (Florian): the Court of Appeal whose courts hear disputes.
 const COURT_OF_APPEAL_CITY: string | null = null;
 
-const launched = LAUNCH_DATE.startsWith('[') ? null : LAUNCH_DATE;
-const beforeLaunch = launched ? `before ${launched}` : 'before the day paid plans launched';
-const onLaunch = launched ? `on ${launched}` : 'on that day';
 const team = TEAM_PRICE.EUR;
 const usd = TEAM_PRICE.USD;
 const capped = editorsCapped(team.yearly);
@@ -120,7 +118,8 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t4">
       <h2 id="t4" class="pv-h">4. Plans and prices</h2>
-      <p>The current plans are below. The <Link href={PRICING}>pricing page</Link> shows them too; if the two ever differ, the pricing page at the date of your order applies to that order.</p>
+      <p>Bridge is free for every team today. Paid plans open in {PAID_PLANS_OPEN}; we write to every team at least 30 days before, with the final prices. When paid plans open, the plans below apply.</p>
+      <p>The plans and their planned prices are below. The <Link href={PRICING}>pricing page</Link> shows them too; if the two ever differ, the pricing page at the date of your order applies to that order.</p>
       <p><strong>Free</strong></p>
       <ul>
         <li>0, never billed. A Free team never receives an invoice.</li>
@@ -146,8 +145,8 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t5">
       <h2 id="t5" class="pv-h">5. Billing and payment</h2>
-      <p>5.1 Team plans are paid by card through Stripe, our payment provider. Bridge never sees or stores your full card number. Organization plans are paid by bank transfer against an invoice, or by card if you prefer.</p>
-      <p>5.2 Paid plans renew automatically for the same period (one month or one year) unless you stop the renewal before the end of the current period. You can stop it at any time from your team settings or by writing to us.</p>
+      <p>5.1 When paid plans open, Team plans are paid by card through Stripe, our payment provider. Bridge never sees or stores your full card number. Organization plans are paid by bank transfer against an invoice, or by card if you prefer.</p>
+      <p>5.2 When paid plans open, paid plans renew automatically for the same period (one month or one year) unless you stop the renewal before the end of the current period. You can stop it at any time from your team settings or by writing to us.</p>
       <p>5.3 {ADDED_EDITORS_BILLING && `${ADDED_EDITORS_BILLING} `}Removing editors takes effect at the next renewal.</p>
       <p>5.4 Late payment (businesses only, as required by French law). Any amount not paid by its due date automatically bears late-payment interest, without any reminder being needed, at the rate of the European Central Bank's most recent refinancing operation plus 10 percentage points. A fixed compensation of EUR 40 for recovery costs is also due for each late invoice, and further recovery costs may be claimed on proof. No discount is given for early payment.</p>
       <p>5.5 If an invoice stays unpaid 15 days after a written reminder, Bridge may move the team to read-only (section 8) until payment. Nothing is deleted.</p>
@@ -162,6 +161,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t7">
       <h2 id="t7" class="pv-h">7. Refunds and price changes</h2>
+      <p>When paid plans open, these rules apply to them.</p>
       <p>7.1 Monthly plans. When you stop, you keep access until the end of the month you paid for. Months already started are not refunded or prorated.</p>
       <p>7.2 Yearly plans. You can ask for a full refund within 30 days after your first yearly payment, and the plan then ends. After those 30 days, if you stop, you keep access until the end of the year you paid for, and the plan does not renew. The 30-day refund applies to the first yearly payment only, not to renewals.</p>
       <p>
@@ -173,7 +173,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t8">
       <h2 id="t8" class="pv-h">8. Limits</h2>
-      <p>8.1 When a team goes over a plan limit, for example after moving from a paid plan to Free, or when a payment fails, Bridge never deletes your work. It will, depending on the case:</p>
+      <p>8.1 When paid plans open and a team goes over a plan limit, for example after moving from a paid plan to Free, or when a payment fails, Bridge never deletes your work. It will, depending on the case:</p>
       <ul>
         <li>put the extra design systems or the team in read-only mode;</li>
         <li>hide features that the current plan does not include; or</li>
@@ -186,7 +186,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
     <section class="pv-section" aria-labelledby="t9">
       <h2 id="t9" class="pv-h">9. Availability and support</h2>
       <p>9.1 Free and Team. We work to keep Bridge available and fast, but these plans come with no availability commitment.</p>
-      <p>9.2 Organization. Bridge commits to 99.5% availability per calendar month.</p>
+      <p>9.2 Organization. When paid plans open, Bridge commits to 99.5% availability per calendar month.</p>
       <ul>
         <li>"Availability" means the share of minutes in the month during which the hosted Bridge application at bridgedesignsystem.com responds and lets signed-in members open their team.{AVAILABILITY_TOOL && ` It is measured by ${AVAILABILITY_TOOL}.`}</li>
         <li>
@@ -207,13 +207,13 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t10">
       <h2 id="t10" class="pv-h">10. Founding teams</h2>
-      <p>10.1 Who. A founding team is any team created on Bridge {beforeLaunch}.</p>
+      <p>10.1 Who. A founding team is any team created on Bridge up to and including {FOUNDING_CUTOFF_LABEL}.</p>
       <p>10.2 What they keep. For as long as this commitment lasts (section 10.4), a founding team keeps, at no charge:</p>
       <ul>
-        <li>everything it could do {onLaunch}{FOUNDING_SNAPSHOT_URL && <>, as listed in the <Link href={FOUNDING_SNAPSHOT_URL}>founding snapshot</Link></>}; and</li>
-        <li>everything the Free plan gains after that date.</li>
+        <li>everything it can do on the day paid plans open{FOUNDING_SNAPSHOT_URL && <>, as listed in the <Link href={FOUNDING_SNAPSHOT_URL}>founding snapshot</Link></>}; and</li>
+        <li>everything the Free plan gains after that day.</li>
       </ul>
-      <p>No price change made after that date applies to a founding team for what it keeps under this section.</p>
+      <p>No price change made after that day applies to a founding team for what it keeps under this section.</p>
       <p>10.3 Support and availability. Founding teams receive the support and availability of the Free plan. If a founding team chooses a paid plan, that plan's terms apply to it for as long as it pays, and it returns to its founding rights when it stops.</p>
       <p>10.4 Duration and the only way it ends. This commitment is made for an indefinite period. The founding team may leave at any time. Bridge may end it only in these cases:</p>
       <ul>

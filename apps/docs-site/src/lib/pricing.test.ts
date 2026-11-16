@@ -6,7 +6,7 @@ import {
   COMMITMENTS,
   FAQ,
   FOUNDING_TEXT,
-  LAUNCH_DATE,
+  FOUNDING_CUTOFF,
   ORGANIZATION_PRICE,
   TABLE_GROUPS,
   TEAM_PRICE,
@@ -17,6 +17,7 @@ import {
   teamMonthlyCost,
 } from './pricing';
 import { ROOT } from './repo';
+import { BILLING_LAUNCHED, BILLING_LAUNCH_DATE } from './billing';
 
 const page = readFileSync(join(ROOT, 'apps/docs-site/src/pages/pricing.astro'), 'utf8');
 const words = (v: unknown): string[] =>
@@ -74,14 +75,19 @@ describe('pricing (/pricing/)', () => {
     const license = readFileSync(join(ROOT, 'LICENSE'), 'utf8');
     expect(license).toContain('FSL-1.1-MIT');
     expect(COMMITMENTS.map((c) => c.text).join(' ')).toContain('FSL-1.1-MIT');
-    expect(LAUNCH_DATE).toBe('[LAUNCH DATE]');
-    expect(FOUNDING_TEXT[0]).toContain(`before ${LAUNCH_DATE} keeps`);
-    expect(FAQ.map((f) => f.id)).toEqual(['fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
+    expect(FOUNDING_CUTOFF).toBe('2027-03-31');
+    expect(FOUNDING_TEXT[0]).toContain('created on Bridge by 31 March 2027 keeps');
+    // The billing code reads the same cutoff, exclusive: the day after.
+    const next = new Date(`${FOUNDING_CUTOFF}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    expect(BILLING_LAUNCH_DATE).toBe(next.toISOString().slice(0, 10));
+    expect(BILLING_LAUNCHED).toBe(false);
+    expect(FAQ.map((f) => f.id)).toEqual(['when', 'fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
     const discounts = FAQ.find((f) => f.id === 'discounts')!;
     expect(pricing.faqAnswer(discounts, 'EUR').join(' ')).toContain('cap at €120 per design system');
     expect(pricing.faqAnswer(discounts, 'USD').join(' ')).toContain('cap at $140 per design system');
     // Only the three launch blockers stay open; nothing on the page reads as a placeholder but the launch date.
-    expect(allWords).not.toMatch(/\[TO DECIDE/);
+    expect(allWords).not.toMatch(/\[TO DECIDE|\[LAUNCH/);
     expect(allWords).not.toMatch(/hosted in the EU|never leaves Europe/i);
   });
 
@@ -105,5 +111,12 @@ describe('pricing (/pricing/)', () => {
     expect(terms).toContain('293 B');
     expect(terms).toContain('EUR 40');
     expect(terms).not.toMatch(/reverse-charge|Autoliquidation/);
+  });
+
+  it('says prices are planned and gives no path to pay', () => {
+    expect(pricing.TODAY_LINE).toBe('Bridge is free for every team today. Paid plans open in 2027.');
+    expect(TIERS.map((t) => t.cta)).toEqual(['Start free', 'Start free today', 'Ask about Organization']);
+    expect(TIERS.find((t) => t.id === 'team')!.ctaNote).toBe('Team opens in 2027');
+    expect(allWords).not.toMatch(/countdown|hurry|launch offer|checkout/i);
   });
 });

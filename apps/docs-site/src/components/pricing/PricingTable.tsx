@@ -37,11 +37,11 @@ export default function PricingTable() {
     name: 'Price',
     rows: [
       {
-        label: billing === 'yearly' ? 'Per month, billed yearly' : 'Per month, billed monthly',
+        label: 'Planned price, per month',
         cells: [
           money(0, currency),
-          `${money(team.perEditor, currency)} per editor, at most ${money(team.cap, currency)} per design system`,
-          `${money(ORGANIZATION_PRICE[currency], currency)}${billing === 'monthly' ? ', billed yearly only' : ''}`,
+          `${money(team.perEditor, currency)} per editor, at most ${money(team.cap, currency)} per design system, billed ${billing}`,
+          `${money(ORGANIZATION_PRICE[currency], currency)}, billed yearly${billing === 'monthly' ? ' only' : ''}`,
         ],
       },
     ],

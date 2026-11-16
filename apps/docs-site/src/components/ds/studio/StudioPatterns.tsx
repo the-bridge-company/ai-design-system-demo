@@ -80,7 +80,7 @@ export function PatternsTable({ groups, requests }: { groups: readonly StudioPat
                   <TableCell className="spt-col-asked">
                     {list.length > 0 && (
                       <>
-                        <span className="spt-asked-count">{requestsLabel(list.length)}</span>
+                        {list.length > 1 && <span className="spt-asked-count">{requestsLabel(list.length)}</span>}
                         <ul className="spt-asked">
                           {list.map((q) => (
                             <li key={q.number}>
@@ -133,8 +133,8 @@ export function TeamPatterns() {
   if (load.status === 'error') return <TeamLoadError failure={load.failure} onRetry={retry} />;
   return (
     <>
-      <PatternsBody groups={groups} />
       <TeamSourceNote data={load.data} refreshing={load.refreshing} onRefresh={retry} />
+      <PatternsBody groups={groups} />
     </>
   );
 }

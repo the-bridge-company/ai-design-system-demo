@@ -28,8 +28,14 @@ describe('PatternsTable', () => {
     render(createElement(PatternsTable, { groups: GROUPS, requests: new Map([['delete', [{ number: 12, title: 'Delete pattern: offer Undo' }]]]) }));
     expect(screen.getByRole('columnheader', { name: 'Waiting for your decision' })).toBeTruthy();
     const row = screen.getByRole('link', { name: 'Delete' }).closest('tr')!;
-    expect(within(row).getByText('1 change asked')).toBeTruthy();
+    expect(within(row).queryByText('1 change asked')).toBeNull();
     expect(within(row).getByRole('link', { name: 'Delete pattern: offer Undo' }).getAttribute('href')).toMatch(/\/studio\/explorations\/\?request=12$/);
+  });
+
+  it('counts the changes on a row only when there are several', () => {
+    render(createElement(PatternsTable, { groups: GROUPS, requests: new Map([['delete', [{ number: 12, title: 'Offer Undo' }, { number: 13, title: 'Type the name' }]]]) }));
+    const row = screen.getByRole('link', { name: 'Delete' }).closest('tr')!;
+    expect(within(row).getByText('2 changes asked')).toBeTruthy();
   });
 
   it('draws no column for an empty answer', () => {

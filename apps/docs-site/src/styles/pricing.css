@@ -45,14 +45,14 @@
 .pr-h2 {
   margin: 0;
   font-family: var(--typography-display-family);
-  font-size: clamp(var(--font-size-500), 2.6vw, calc(var(--font-size-600) + var(--space-0-5)));
+  font-size: var(--font-size-600);
   font-weight: var(--font-weight-semibold);
   line-height: var(--font-line-height-tight);
   font-variation-settings: "SOFT" 100;
 }
 
 .pr-h2-lg {
-  font-size: clamp(var(--font-size-600), 3.2vw, calc(var(--font-size-700) + var(--space-1)));
+  font-size: var(--font-size-700);
 }
 
 /* ---------- hero: the words, then the calendar ---------- */
@@ -146,7 +146,7 @@
 
 .pr-fact {
   font-family: var(--typography-display-family);
-  font-size: calc(var(--font-size-500) + var(--space-0-5));
+  font-size: var(--font-size-500);
   font-weight: var(--font-weight-semibold);
   line-height: var(--font-line-height-tight);
   font-variation-settings: "SOFT" 100;
@@ -265,12 +265,12 @@
 
 .pr-unit {
   color: var(--color-text-muted);
-  font-size: calc(var(--font-size-300) - var(--border-width-1));
+  font-size: var(--font-size-300);
   line-height: var(--font-leading-20);
 }
 
 .pr-pitch {
-  font-size: calc(var(--font-size-300) - var(--border-width-1));
+  font-size: var(--font-size-300);
   line-height: var(--font-leading-24);
 }
 
@@ -280,7 +280,7 @@
   gap: var(--space-2);
   margin: 0;
   padding: 0 0 0 calc(var(--space-4) + var(--space-0-5));
-  font-size: calc(var(--font-size-300) - var(--border-width-1));
+  font-size: var(--font-size-300);
   line-height: var(--font-leading-24);
 }
 
@@ -325,7 +325,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: calc(var(--font-size-300) - var(--border-width-1));
+  font-size: var(--font-size-300);
   line-height: var(--font-leading-24);
 }
 

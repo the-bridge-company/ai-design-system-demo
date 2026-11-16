@@ -74,7 +74,7 @@
 .hp-fd-n {
   color: var(--color-text-link);
   font-family: var(--typography-display-family);
-  font-size: calc(var(--font-size-600) + var(--space-0-5));
+  font-size: var(--font-size-600);
   font-weight: var(--font-weight-semibold);
   line-height: var(--font-line-height-tight);
 }

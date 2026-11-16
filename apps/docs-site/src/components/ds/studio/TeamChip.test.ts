@@ -330,10 +330,12 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
     expect(screen.queryByText('Demo')).toBeNull();
   });
 
+  // The menu can open before its groups are filled in on a loaded CI runner (failed once at 153 ms with the group not
+  // there yet, passed on the run before with the same code): wait for the group instead of reading it at once.
   it('on a team, lists it under "Your teams" once, not again in the recent teams', async () => {
     localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['acme/ds', 'globex/tokens']));
     const { menu } = await openMenu();
-    expect(within(within(menu).getByRole('group', { name: 'Your teams' })).getByRole('menuitem', { name: /^Ds/ })).toBeInTheDocument();
+    expect(within(await within(menu).findByRole('group', { name: 'Your teams' }, { timeout: 10_000 })).getByRole('menuitem', { name: /^Ds/ })).toBeInTheDocument();
     expect(within(menu).getAllByRole('menuitem', { name: /^Ds/ })).toHaveLength(1);
     expect(within(menu).getByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
   });
@@ -344,13 +346,15 @@ describe('TeamChip teams to switch to (board EmptyB)', () => {
     localStorage.setItem(RECENT_TEAMS_KEY, JSON.stringify(['acme-design-demo/bridge-demo-ds', 'globex/tokens']));
     const user = userEvent.setup();
     render(createElement(TeamChip, { launcher: true }));
-    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }));
-    const menu = await screen.findByRole('menu');
-    const yours = within(menu).getByRole('group', { name: 'Your teams' });
+    // Slow on a loaded CI runner (timed out once at 5 s, passes in about 0.3 s here): the chip and the menu groups
+    // are awaited with room, and the test gets more time than the 5 s default.
+    await user.click(await screen.findByRole('button', { name: /^Acme Design, .*team menu$/ }, { timeout: 10_000 }));
+    const menu = await screen.findByRole('menu', {}, { timeout: 10_000 });
+    const yours = await within(menu).findByRole('group', { name: 'Your teams' }, { timeout: 10_000 });
     expect(within(yours).getByRole('menuitem', { name: /^Acme Design/ })).toHaveAttribute('data-current');
     expect(within(within(menu).getByRole('group', { name: 'Recent teams' })).getByRole('menuitem', { name: 'Tokens' })).toBeInTheDocument();
     expect(within(menu).queryByRole('group', { name: 'Try it' })).toBeNull();
-  });
+  }, 20_000);
 
   it('on the sample team without a workspace, lists only the team it is on, as on any team', async () => {
     page.team = { owner: 'acme-design-demo', repo: 'bridge-demo-ds' };

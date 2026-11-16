@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { openPlugin } from './ui-harness';
 
 test('Update: a bar with the set being built, the percentage and the time left, next to Stop', async () => {
-  const p = await openPlugin();
+  const p = await openPlugin({ fullScope: true });
   const win = p.document.defaultView!;
   const post = (message: string, done?: number, total?: number) => win.postMessage({ pluginMessage: { kind: 'progress', message, ...(total ? { done, total } : {}) } }, '*');
   // The clock moves 20 s a set without the test waiting for it.

@@ -115,8 +115,8 @@
     <div class="brand"><svg class="mark"><use href="#mark" /></svg>DS Bridge</div>
     <div class="tag">Figma plugin · free</div>
   </div>
-  <h1>Figma Variables in.<br>Reviewed <em>pull requests</em> out.</h1>
-  <p class="lead">Git stays the source of truth for your design tokens. Designers edit them in Figma, and every change goes back as a pull request with a contrast check.</p>
+  <h1>Your tokens sync<br><em>both ways</em>.</h1>
+  <p class="lead">Pull your tokens into Figma, send your edits back for review. Bridge tells you what is missing in your Figma and checks that it has caught up with the code.</p>
 
   <div class="plate code">
     <h3>Code <small>GitHub · DTCG JSON</small></h3>
@@ -146,7 +146,7 @@
       <path d="M592 300 H54" stroke="#0b4a8b" stroke-width="5" stroke-linecap="round" marker-end="url(#head-deep)" />
     </svg>
     <div class="lane pull"><b>Pull</b><span>code to Figma</span></div>
-    <div class="lane push"><b>Push</b><span>Figma to a reviewed pull request</span></div>
+    <div class="lane push"><b>Push</b><span>Figma back for review</span></div>
   </div>
 
   <div class="plate figma">
@@ -165,37 +165,37 @@
     <div class="brand"><svg class="mark"><use href="#mark" /></svg>DS Bridge</div>
     <div class="step"><b>1</b>Pull and push</div>
     <h2>Tokens from main in. Your edits out.</h2>
-    <p class="lead">Pull creates one collection per tier, with its modes. Push shows every edit with swatches and the contrast it moves, then opens the pull request.</p>
+    <p class="lead">Pull shows every change before it writes one collection per tier, and what is missing in Figma. Push lists your edits with swatches and the contrast they move, then sends them for review.</p>
   </div>
-  <p class="foot">The plugin UI as it ships, reading this repository's real tokens from GitHub (595 variables). Outside Figma, the Figma side (two re-pointed variables) comes from the plugin's test simulator.</p>
+  <p class="foot">The plugin UI as it ships, reading this repository's real tokens from GitHub. Outside Figma, the Figma side (two re-pointed variables) comes from the plugin's test simulator.</p>
   <div class="shot window w-pull"><div class="bar">DS Bridge<span>Bridge tokens</span></div><img data-shot="plugin-pull.png" alt=""></div>
   <div class="shot window w-push"><div class="bar">DS Bridge<span>Bridge tokens</span></div><img data-shot="plugin-push.png" alt=""></div>
   <div class="w-label" style="left:680px"><b>Pull</b>: code to Figma, first pull</div>
-  <div class="w-label" style="left:1304px"><b>Push</b>: Figma to pull request</div>
+  <div class="w-label" style="left:1304px"><b>Push</b>: Figma back for review</div>
 </div>
 
 <div class="view canvas gallery" id="gallery-review">
   <div class="zone-block"></div>
   <div class="copy on-zone">
     <div class="brand"><svg class="mark"><use href="#mark" /></svg>DS Bridge</div>
-    <div class="step"><b>2</b>Reviewed, never pushed to main</div>
-    <h2>Every change becomes a pull request.</h2>
-    <p class="lead">One branch, one commit, a changeset and a draft PR with the change table, contrast before and after, and the risk tier. CI and code owners decide.</p>
+    <div class="step"><b>2</b>Reviewed, never written to main</div>
+    <h2>Your edits, ready to review.</h2>
+    <p class="lead">A pull request with the change table, contrast before and after and the risk tier, or a suggestion for your design system lead. Token values can ship once your checks pass.</p>
   </div>
-  <p class="foot">Pull request #4, opened by the plugin, in Bridge Studio, Changes.<br><span class="mono">bridgedesignsystem.com/studio/changes</span></p>
-  <div class="shot browser"><div class="bar"><i></i><i></i><i></i><span class="url">bridgedesignsystem.com/studio/changes/?pr=4</span></div><div class="page"><img data-shot="web-review.png" alt=""></div></div>
+  <p class="foot">Pull request #468, opened by the plugin, in Bridge Studio, Changes.<br><span class="mono">bridgedesignsystem.com/studio/changes</span></p>
+  <div class="shot browser"><div class="bar"><i></i><i></i><i></i><span class="url">bridgedesignsystem.com/studio/~/the-bridge-company/…/changes/?pr=468</span></div><div class="page"><img data-shot="web-review.png" alt=""></div></div>
 </div>
 
 <div class="view canvas gallery" id="gallery-tokens">
   <div class="zone-block"></div>
   <div class="copy on-zone">
     <div class="brand"><svg class="mark"><use href="#mark" /></svg>DS Bridge</div>
-    <div class="step"><b>3</b>Any DTCG repository</div>
+    <div class="step"><b>3</b>Your DTCG repository</div>
     <h2>Tiered collections, straight from Git.</h2>
     <p class="lead">Primitives, Brand, Base, Semantic, Density and Component, with aliases kept across collections. Point <span class="mono" style="font-size:22px">bridge.config.json</span> at your own token files.</p>
   </div>
   <p class="foot">The same tokens in the Bridge Studio token explorer.<br><span class="mono">bridgedesignsystem.com/studio/tokens</span></p>
-  <div class="shot browser"><div class="bar"><i></i><i></i><i></i><span class="url">bridgedesignsystem.com/studio/tokens/</span></div><div class="page"><img data-shot="web-tokens.png" alt=""></div></div>
+  <div class="shot browser"><div class="bar"><i></i><i></i><i></i><span class="url">bridgedesignsystem.com/studio/~/the-bridge-company/…/tokens/</span></div><div class="page"><img data-shot="web-tokens.png" alt=""></div></div>
 </div>
 
 <script>

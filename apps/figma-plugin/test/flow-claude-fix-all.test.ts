@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { openPlugin, pixelsImage } from './ui-harness';
 
 test('Ask Claude to fix all N: connect once, one request for the list, every row waiting', async () => {
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     specSource: 'measured',
     files: { 'measured-specs.json': readFileSync('test/fixtures/measured-specs.json', 'utf8') },
     pixels: true,

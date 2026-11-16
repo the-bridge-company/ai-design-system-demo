@@ -9,7 +9,7 @@ import { openPlugin, pixelsImage } from './ui-harness';
 test('Ask Claude to fix it: connect once, the request copied, waiting, working with steps, then ready', async () => {
   let session: unknown;
   let prs: unknown[] = [];
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     specSource: 'measured-only',
     files: { 'measured-specs.json': readFileSync('test/fixtures/measured-specs.json', 'utf8') },
     pixels: true,

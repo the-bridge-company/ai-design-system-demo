@@ -14,7 +14,7 @@ test("Ask Claude to fix all: one bar for the list, components finished of three,
     Badge: { component: 'Badge', state: 'ready', startedAt: minutesAgo(9), updatedAt: minutesAgo(5), elapsed: 240, quiet: false, maxRounds: 3, steps: steps(3).map((s) => ({ ...s, status: 'done' })), pr: { number: 92, url: 'https://github.com/acme/acme-design-system/pull/92' } },
     IconButton: { component: 'IconButton', state: 'working', startedAt: minutesAgo(5), updatedAt: minutesAgo(1), elapsed: 60, quiet: false, round: 1, maxRounds: 3, steps: steps(2) },
   };
-  const p = await openPlugin({
+  const p = await openPlugin({ fullScope: true,
     pulled: true,
     sync: { claudeAsked: JSON.stringify({ Badge: at, IconButton: at, Tooltip: at }), claudeConnector: 'yes' },
     register: (routes) =>

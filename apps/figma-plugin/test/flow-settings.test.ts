@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { REPO, openPlugin } from './ui-harness';
 
 test('a failed settings save keeps the fidelity result and never shows Connected above the error', async () => {
-  const p = await openPlugin();
+  const p = await openPlugin({ fullScope: true });
   // A first pull builds the component sets; Check fidelity from its result: no code images yet, a finished result.
   await p.click('Check for updates');
   await p.click('Apply to Figma');

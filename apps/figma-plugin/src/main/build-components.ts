@@ -120,6 +120,22 @@ async function generatedSets(): Promise<ComponentSetNode[]> {
   return figma.root.findAllWithCriteria({ types: ['COMPONENT_SET'] }).filter((s) => !!s.getSharedPluginData(NS, 'componentId'));
 }
 
+/**
+ * Every component of the file by name, for "what is missing in Figma": component sets and lone components (not the
+ * variants inside a set), on every page. Components of enabled libraries are not listed: the Plugin API has no list of
+ * a library's components. Bridge's mark rides along, so a set Bridge drew is matched by it, not by its name.
+ */
+export async function listComponents(): Promise<{ name: string; nodeId: string; componentId?: string }[]> {
+  await figma.loadAllPagesAsync();
+  return figma.root
+    .findAllWithCriteria({ types: ['COMPONENT_SET', 'COMPONENT'] })
+    .filter((n) => !(n.type === 'COMPONENT' && n.parent?.type === 'COMPONENT_SET'))
+    .map((n) => {
+      const componentId = n.getSharedPluginData(NS, 'componentId');
+      return { name: n.name, nodeId: n.id, ...(componentId ? { componentId } : {}) };
+    });
+}
+
 /** Component sets Bridge generated, for the pull preview (new, updated or unchanged). */
 export async function scanGenerated(): Promise<GeneratedSet[]> {
   return (await generatedSets()).map((s) => ({

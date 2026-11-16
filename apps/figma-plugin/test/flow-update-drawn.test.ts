@@ -7,7 +7,7 @@ import { openPlugin } from './ui-harness';
 const b64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
 
 test('no code images: "After: drawn by Bridge", drawn off-canvas as the row comes into view', async () => {
-  const p = await openPlugin();
+  const p = await openPlugin({ fullScope: true });
   await p.click('Check for updates');
   await p.click('Apply to Figma');
   await p.until(() => p.headline() === 'Your design system is in Figma', 15000);

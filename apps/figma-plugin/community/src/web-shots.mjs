@@ -1,5 +1,5 @@
-// Screenshots of live pages for the Community gallery: the Bridge Studio token explorer, the Reviews page of
-// PR #4 (opened by DS Bridge) and the PR itself on GitHub. Nothing is staged: the pages are loaded as they are.
+// Screenshots of live pages for the Community gallery: the Bridge Studio token explorer, the Changes page of
+// PR #468 (opened by DS Bridge, ready for review, shipped once its checks passed) and the PR itself on GitHub. Nothing is staged: the pages are loaded as they are.
 // Bridge pages call api.github.com from the browser; anonymous reads are limited to 60 an hour, so with
 // GITHUB_TOKEN set those GET calls are answered with the token added on this side (the page never sees it).
 // BRIDGE_URL points the Bridge shots at another build (a local `npm run docs:preview`, say); ONLY=web-review
@@ -15,9 +15,11 @@ const only = process.env.ONLY?.split(',').filter(Boolean);
 const shots = [
   // The draft tray is fixed to the viewport, so a full-page capture paints it over the table; it is empty in a
   // fresh browser, so it is hidden for the shot (only when empty: a real draft would stay visible).
-  { name: 'web-tokens', url: `${bridge}/studio/tokens/`, hideEmptyDraftTray: true },
-  { name: 'web-review', url: `${bridge}/studio/changes/?pr=4` },
-  { name: 'web-github-pr', url: 'https://github.com/the-bridge-company/ai-design-system-demo/pull/4' },
+  { name: 'web-tokens', url: `${bridge}/studio/~/the-bridge-company/ai-design-system-demo/tokens/`, hideEmptyDraftTray: true },
+  // Cropped at capture above the page's last section (the before and after status), so the shot ends on the change
+  // itself, "Where it shows" and the conversation. The page is not edited.
+  { name: 'web-review', url: `${bridge}/studio/~/the-bridge-company/ai-design-system-demo/changes/?pr=468`, clipHeight: 640 },
+  { name: 'web-github-pr', url: 'https://github.com/the-bridge-company/ai-design-system-demo/pull/468' },
 ].filter((s) => !only || only.includes(s.name));
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 810 }, deviceScaleFactor: 2, colorScheme: 'light' });
@@ -36,7 +38,7 @@ for (const s of shots) {
       const tray = document.getElementById('ed-tray');
       if (tray && /No draft changes yet/.test(tray.textContent ?? '')) tray.style.display = 'none';
     });
-  await page.screenshot({ path: join(outDir, `${s.name}.png`) });
+  await page.screenshot({ path: join(outDir, `${s.name}.png`), ...(s.clipHeight ? { clip: { x: 0, y: 0, width: 1440, height: s.clipHeight } } : {}) });
   await page.screenshot({ path: join(outDir, `${s.name}-full.png`), fullPage: true });
 }
 await browser.close();

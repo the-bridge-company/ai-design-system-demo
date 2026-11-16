@@ -13,12 +13,32 @@ The plugin has three tabs: **Pull** (code to Figma, "Bring the latest tokens fro
 **Push** (Figma to code, "Send your Figma edits to the repo as a pull request for review") and
 **Settings**. The token logic is `@bridge-ds/core` (`packages/core`); this package is the Figma glue.
 
-It works on the free Figma plan: it only uses the Plugin API (`figma.variables`) and the GitHub REST
-API. Nothing is synced live and nothing is written to `main` directly.
+It works on the free Figma plan: it only uses the Plugin API (`figma.variables`), the GitHub REST API and the
+Bridge site (bridgedesignsystem.com: Sign in with Bridge and shipping a token push; see "Network" below). Nothing
+is synced live and the plugin never writes to `main` directly.
+
+## Scope (MVP)
+
+The plugin keeps one promise (owner decision 2026-11-11, Studio canvas "Décisions"): **"Your tokens sync both ways.
+Bridge tells you what is missing in your Figma and checks that it has caught up with the code."**
+
+| Shown | Hidden for the MVP, code kept |
+| --- | --- |
+| Sign in with Bridge (or a developer token) | Drawing and updating component sets from code ("Pull components", "Include components", Update, Update all) |
+| Pull of tokens into Figma Variables | Two-way variant sync (component changes read back from Figma) |
+| Push of variable edits: a pull request or a suggestion, contrast checked | Component changes sent from Figma: requests, library branches, "Request a component change", "Not in the design system yet", "Fix in Figma first" |
+| What is missing in Figma: the components from the code this file does not have (its own count, by name) | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
+| Compare with code | "Draft with Claude" and the Claude card in Settings |
+
+One constant decides it: `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts` (`true` ships). Setting it to `false` shows the
+hidden features again, as `JIRA_IN_BRIDGE` does in the site. The sections below marked **Hidden in the MVP** document
+that code. "Send to Figma" is a Studio button (`SEND_TO_FIGMA_IN_STUDIO`, off); the plugin has none.
+`test/flow-mvp-scope.test.ts` checks the MVP screens; the other flow tests open the plugin with `fullScope: true` to
+keep covering the hidden code.
 
 See it with real data on the live Bridge site: the [token explorer](https://bridgedesignsystem.com/studio/tokens/)
-shows what a Pull brings into Figma, and [Reviews](https://bridgedesignsystem.com/studio/reviews/?pr=4) shows
-the pull request a Push opened (PR #4). Components are in [Storybook](https://bridge-storybook.floriangouloubi.com).
+shows what a Pull brings into Figma, and [Changes](https://bridgedesignsystem.com/studio/changes/?pr=468) shows
+the pull request a Push opened (PR #468). Components are in [Storybook](https://bridge-storybook.floriangouloubi.com).
 
 ## Install (Figma desktop)
 
@@ -26,7 +46,7 @@ the pull request a Push opened (PR #4). Components are in [Storybook](https://br
    and unzip it. `.github/workflows/figma-plugin-release.yml` rebuilds it on every plugin change to `main`.
 2. In the Figma desktop app: **Plugins > Development > Import plugin from manifest...** and pick
    `bridge-figma-plugin/manifest.json`.
-3. Run it from **Plugins > Development > Bridge**.
+3. Run it from **Plugins > Development > DS Bridge**.
 
 To update it, unzip the new zip over the same `bridge-figma-plugin` folder, replacing its files: nothing to import
 again. Importing the new folder as well leaves two dev entries with the same id and no way to tell which one runs; if
@@ -72,11 +92,26 @@ this plugin; it is not stored in the Figma file and is never displayed again (th
 showing only that a token is saved). Repository, base branch (`main`) and tokens path
 (`packages/tokens/src`) are stored in the file's shared plugin data so the whole team uses the same ones.
 
-The manifest allows `https://api.github.com` and the Bridge site. File contents are read through the git trees and
-blobs endpoints, never from `raw.githubusercontent.com`. The plugin never calls Anthropic and holds no API key: Claude
-runs in the team's own Claude account, with Bridge added as a connector.
+### Network
+
+The manifest allows two sites, and the plugin calls only these:
+
+- `https://api.github.com`: everything about the repository. File contents are read through the git trees and blobs
+  endpoints, never from `raw.githubusercontent.com`.
+- `https://bridgedesignsystem.com`, with the saved GitHub sign-in or token as `Authorization: Bearer`:
+  `POST /api/plugin-link` (Sign in with Bridge, `src/sync/bridge-sign-in.ts`) and `POST /api/ship` (ship a token push
+  once its checks pass, `src/sync/ship.ts`). The site uses the token to ask GitHub who is calling and what they can
+  access; it does not keep it. The hidden fix loop also calls `POST /api/ship` (approve Claude's fixes,
+  `src/sync/approve-fixes.ts`) and `GET /api/fix-sessions` (`src/sync/fix-session.ts`); with the MVP scope neither
+  runs, and the manifest's reasoning does not list them.
+
+Links to the site's former address, `https://bridge.floriangouloubi.com`, are still recognised (`isStudioUrl`); they
+open in the browser, which needs no allowlist, so that domain is not in `allowedDomains`. No analytics. The plugin
+never calls Anthropic and holds no API key.
 
 ## Writing help: drafts, optionally written by Claude
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 Designers should not have to document every change by hand. Two levels, in this order on screen:
 
@@ -89,8 +124,8 @@ Designers should not have to document every change by hand. Two levels, in this 
    description follows the checked changes only while it is still the plugin's draft (while it is, each request
    sent with the push gets its own drafted summary instead of the variables line).
 2. **Draft with my Claude (your own Claude plan, through MCP, recommended).** Third-party apps cannot use a Claude
-   plan and Bridge has no backend, so the plugin and your Claude meet in the GitHub repo both already reach with
-   your token. Clicking the button uploads the before and after PNGs and writes `.bridge/drafts/<session>.json` on
+   plan and the plugin sends nothing to an AI service, so the plugin and your Claude meet in the GitHub repo both
+   already reach with your token. Clicking the button uploads the before and after PNGs and writes `.bridge/drafts/<session>.json` on
    the `bridge-requests` branch (protocol: `draft-exchange.ts` in `@bridge-ds/core`), then shows **Waiting for your
    Claude** with the sentence to say, "Draft my Bridge changes", a copy button and Cancel. In Claude Desktop or
    Claude Code with the Bridge MCP server, `bridge_pending_drafts` returns the changes and the images, Claude writes
@@ -104,6 +139,8 @@ Designers should not have to document every change by hand. Two levels, in this 
 Whatever Claude writes, nothing is sent until you press Send request, Send for review or Send to exploration.
 
 ## Ask Claude to fix it
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 When Compare with code finds a component that differs, **Ask Claude to fix it** hands it to the team's own Claude (Bridge
 is a connector in it; no API key anywhere). The first time in a file, one sentence says to add Bridge to the team's
@@ -175,6 +212,8 @@ kept, and tokens changed on both sides are shown as conflicts for you to decide.
 prefix in its description, so you can rebind layers before deleting it yourself.
 
 ### Pull components (code to Figma component sets)
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 The Pull preview has a **Components** group when the repo has `packages/react/component-specs.json` (or
 `components.specs` in `bridge.config.json`). It lists each coded component as new, updated or unchanged, and
@@ -305,6 +344,21 @@ set description says "In code, reduced motion turns this off."
 
 ### Compare with code (does each component look like the code?)
 
+Shown in the MVP. It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`): the comparison needs the
+variants and parts Bridge drew. The team's own components that match a code component by name (see "What is missing
+in Figma") are listed under it with one line, "Bridge can't compare this one yet: it was not drawn by Bridge.", and
+nothing is redrawn.
+
+### What is missing in Figma
+
+On Pull, the Components group says "N of M components from the code are in this file", names the missing ones, and
+folds the ones "found by name". A code component is in the file when a set Bridge drew carries its mark, or else when
+a local component set or lone component has the same name after normalisation (`src/sync/figma-names.ts`: the last
+segment of a path, so "Forms/Select" is Select; case, spaces, hyphens, underscores and dots ignored). The mark wins: a
+set Bridge drew is never matched by name for another component. The list comes from `list-components`
+(`src/main/build-components.ts`, every page loaded first). Components of enabled libraries are not counted: the Plugin
+API has no list of a library's components. Level 0 mapping only: no variant is read or synced.
+
 The generator can build a set that has the right variants and bindings but still looks wrong (a compound part
 drawn too short, a missing transparent border, a text style not carried over). **Compare with code**, under the
 Components group of the Pull preview, catches that: it exports every generated variant with `exportAsync` (PNG,
@@ -348,11 +402,16 @@ side, and the other variants that differ under a disclosure. Nothing in the file
    plain-language guardrail messages. Blocking problems disable the **Send for review**
    button (**Push to pull request #N** when adding to your open PR).
 4. Opens the PR: one branch `tokens/<slug>-<yyyymmdd-hhmm>`, **one atomic commit** containing only
-   the changed token files plus a changeset (`minor`, or `major` when a token is renamed or removed),
-   a **draft** PR labelled `tokens` with a change table (token, tier, old -> new per mode of its tier,
-   contrast before -> after), the guardrail checklist and the risk tier
-   ("Tier 3: token change, needs design + tech approval"). If the PR from your last push is still
-   open, you can add the commit to it instead of opening a new one.
+   the changed token files plus a changeset when `bridge.config.json` names the package to bump (`minor`, or `major`
+   when a token is renamed or removed), a PR **ready for review** (a draft only when it adds a new brand) labelled
+   `tokens` and `source: figma`, with a change table (token, tier, old -> new per mode of its tier, contrast
+   before -> after), the guardrail checklist and the risk tier ("From Figma: design-approved, ships once the checks
+   pass", or "waits for a developer OK" for a rename or removal). If the PR from your last push is still open, you can
+   add the commit to it instead of opening a new one.
+5. Right after, the plugin asks the Bridge site to ship it (`POST /api/ship`, `src/sync/ship.ts`). With the Bridge
+   GitHub app installed, Bridge re-reads the PR and, when it changes token values only, approves it and turns on
+   auto-merge, so GitHub merges it once the required checks pass. Renames, removals and anything else wait for a
+   developer. Without the app, nothing happens and the PR waits for a review as usual.
 
 **Suggest mode** (`"changes": "suggest"` in `bridge.config.json`, the default when the key is absent; a repo with
 no `bridge.config.json` keeps the branch flow). The button reads **Send suggestion** and nothing is written to git:
@@ -419,6 +478,8 @@ change can also be edited and sent on its own from its row menu (**Edit the requ
 
 ### Push components: back to the library as a library branch
 
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
+
 For review, each checked component change goes to its own library branch, routed by what DS Bridge can write with
 certainty (`src/sync/component-push.ts`, rules in `planComponentPush` from `@bridge-ds/core`). It reads the diff Pull
 reads in "Review updates" (the set's baseline against Figma now), the other way round. The row says where it goes, in
@@ -451,6 +512,8 @@ Update rebuilds it from code, which clears the mark. While the branch is in revi
 and keeps the Figma version. To an exploration, component changes stay requests built on the exploration branch.
 
 ### Two flows: variables become pull requests, components go to library branches
+
+**Hidden in the MVP** (`PLUGIN_MVP_SCOPE`, see "Scope").
 
 The Push tab has two groups, one under the other.
 
@@ -665,7 +728,7 @@ apps/figma-plugin/
   community/             Figma Community listing (listing.md), icon, cover and gallery PNGs, and their sources
   scripts/               esbuild build and test runner (both bundle @bridge-ds/core from source)
   src/main/              main thread: figma.variables, clientStorage, plugin data (no network)
-  src/ui/                UI iframe: Pull, Push and Settings tabs, rendering, GitHub calls, Anthropic calls (with a key)
+  src/ui/                UI iframe: Pull, Push and Settings tabs, rendering, GitHub and Bridge site calls (no AI calls)
   src/shared/messages.ts typed message protocol between the two, collection names, default settings
   src/sync/              Figma glue on top of @bridge-ds/core:
     mapping.ts           tiers <-> Figma collections and modes, pull plan, snapshot back to tokens
@@ -673,7 +736,11 @@ apps/figma-plugin/
     components.ts        component signatures, diff, classification (changed, new, Figma-only)
     component-pull.ts    pull components: load component-specs.json, plan sets and bindings (main/build-components.ts builds them)
     requests.ts          send a component change request (image on bridge-requests, then the issue)
-    claude.ts            writing help: the Messages API call (user's key), answer parsing
+    claude.ts            writing help: the shape of a draft by the designer's own Claude (no API call, no key)
+    my-claude.ts         "Draft with my Claude": the drafts file on the requests branch, polled until Claude answers
+    claude-connector.ts  "Ask Claude to fix it": the claude.ai link and the watch for Claude's fix on GitHub
+    bridge-sign-in.ts    Sign in with Bridge (POST /api/plugin-link)
+    ship.ts              ask Bridge to ship a token push (POST /api/ship)
   test/                  end-to-end pull/edit/push flows against an in-memory GitHub and a simulated
                          Figma (single and split layouts), including the PR #4 contrast regressions
 ```

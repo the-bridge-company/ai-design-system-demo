@@ -1,5 +1,5 @@
 // "Draft with my Claude": the designer's own Claude (Claude Desktop or Claude Code on their own plan) writes the text,
-// through the Bridge MCP server. Third-party apps cannot use a Claude plan and Bridge has no backend, so the channel is
+// through the Bridge MCP server. Third-party apps cannot use a Claude plan and the plugin sends nothing to an AI service, so the channel is
 // the GitHub repo both already reach with the designer's token (protocol: @bridge-ds/core draft-exchange.ts):
 //
 // 1. start: upload the before and after PNGs and write `.bridge/drafts/<sessionId>.json` on the requests branch.

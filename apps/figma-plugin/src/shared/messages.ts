@@ -244,6 +244,8 @@ export interface RequestMap {
   selection: { request: Record<string, never>; response: SelectionInfo | null };
   /** Component sets Bridge generated (shared plugin data dsbridge / componentId). */
   'scan-generated': { request: Record<string, never>; response: GeneratedSet[] };
+  /** Every component set and lone component of the file by name, with Bridge's mark when it has one (local only). */
+  'list-components': { request: Record<string, never>; response: { name: string; nodeId: string; componentId?: string | undefined }[] };
   /** Marks variables or component sets "Experimental" (or clears the mark): unchecked by default on every push. */
   'set-experimental': { request: { targets: { kind: 'variable' | 'component'; id: string }[]; value: boolean }; response: { updated: number } };
   /** PNG thumbnails (base64, 2x) of nodes, for the Pull "Review updates" before and after. */

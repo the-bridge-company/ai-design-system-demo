@@ -3,7 +3,7 @@
 
 import { type RequestMap, type RequestType, type ResponseEnvelope, isRequest, isStudioUrl, progressEnvelope } from '../shared/messages';
 import { applyPullPlan } from './apply';
-import { applyComponentPlan, renderIncoming, scanGenerated } from './build-components';
+import { applyComponentPlan, listComponents, renderIncoming, scanGenerated } from './build-components';
 import { exportVariants, readBuilt } from './fidelity';
 import { baselineImage, bindRaw, exportImage, exportThumbnails, markPushed, rebaseline, renameInBaselines, saveSignatures, scanComponents, selectionInfo, setExperimental } from './components';
 import { clearGitHubToken, readGitHubToken, saveGitHubToken, setGitHubTokenState } from './github-token';
@@ -18,7 +18,7 @@ let cancelBuild = false;
 /** Long work tells the plugin how far it is: the words, and items done of total when it can count them. */
 const postProgress = (message: string, done?: number, total?: number) => figma.ui.postMessage(progressEnvelope(message, done, total));
 
-figma.showUI(__html__, { width: 480, height: 640, themeColors: true, title: 'Bridge' });
+figma.showUI(__html__, { width: 480, height: 640, themeColors: true, title: 'DS Bridge' });
 enableUiTurns();
 
 /** The file's shared plugin data (namespace dsbridge), as the store shared-state.ts reads and writes. */
@@ -127,6 +127,9 @@ const handlers: Handlers = {
   },
   async 'scan-generated'() {
     return scanGenerated();
+  },
+  async 'list-components'() {
+    return listComponents();
   },
   async 'fidelity-export'({ nodeId, keys, scale }) {
     return exportVariants(nodeId, keys, scale);

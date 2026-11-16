@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { openPlugin } from './ui-harness';
 
 test('Check fidelity from the end of a pull: progress first, then the result as the headline, with an action', async () => {
-  const p = await openPlugin();
+  const p = await openPlugin({ fullScope: true });
   await p.click('Check for updates');
   await p.click('Apply to Figma');
   await p.until(() => p.headline() === 'Your design system is in Figma', 15000);

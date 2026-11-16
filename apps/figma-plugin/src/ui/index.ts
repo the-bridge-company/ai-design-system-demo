@@ -53,6 +53,8 @@ import { ASK_TTL_MS, type Asked, CLAUDE_NEW_CHAT, CONNECTOR_WORDS, WATCH_MS, ask
 import { ASK_AGAIN_ROWS, FINISHED_ROWS, type FixRowKind, type FixSession, fixRow, fixRowsSummary, readFixSession } from '../sync/fix-session';
 import { PREVIEW_WORDS, RENDER_CAP_MS, type UpdatePreview, codeImageSource, previewKey } from '../sync/update-preview';
 import { BridgeSignInPoller, type LinkPoll, SIGN_IN_WORDS, startBridgeSignIn } from '../sync/bridge-sign-in';
+import { fullScope } from '../shared/scope';
+import { type FigmaComponentName, NOT_DRAWN_BY_BRIDGE, type PresenceInFigma, presenceInFigma } from '../sync/figma-names';
 
 type Tab = 'pull' | 'push' | 'settings';
 const TABS: { id: Tab; label: string }[] = [
@@ -72,6 +74,8 @@ interface PullState {
   report?: ApplyReport | undefined;
   /** Component sets from component-specs.json on the branch; undefined when the repo has none. */
   components?: ComponentPullPlan | undefined;
+  /** Every component of the file by name ('list-components'): the team's own count as present, not only Bridge's. */
+  figmaComponents?: FigmaComponentName[] | undefined;
   componentsError?: ComponentsReadProblem | undefined;
   /** Spec source Measured: how many variants a measured story gave values to. */
   measured?: MeasuredOverlayReport | undefined;
@@ -863,13 +867,13 @@ async function loadPull(prev?: PullState): Promise<PullState> {
     if (loaded) {
       const generated = await request('scan-generated', {});
       // Sets pushed from Figma: where their library branch stands decides whether the pull rebuilds them from code.
-      const numbers = pushedNumbers(generated);
+      const numbers = fullScope() ? pushedNumbers(generated) : [];
       const statuses = numbers.length ? await figmaPushStatusesOnGitHub(getClient(), numbers) : new Map<number, FigmaPushStatus>();
       inReview = pushedInReview(generated, statuses);
       components = buildComponentPlan(loaded.specs, loaded.path, generated, analysis.head, { pushed: statuses, specSource: loaded.source, unmarkedSource: state.init!.settings.specSource ?? 'static' });
     }
     const updated = components?.components.filter((c) => c.status === 'updated' && c.nodeId) ?? [];
-    if (components && updated.length) {
+    if (components && updated.length && fullScope()) {
       // Review updates: the sets as they are now, compared with what the update builds, and their thumbnails.
       // Only the sets to update: reading every component of a big file takes minutes.
       const scanned = await request('scan-components', { nodeIds: updated.map((c) => c.nodeId!) });
@@ -880,6 +884,8 @@ async function loadPull(prev?: PullState): Promise<PullState> {
   } catch (err) {
     componentsError = componentsErrorOf(err, 'pull');
   }
+  // The file's own components by name, for what is missing in Figma (a failed read only loses the name matches).
+  const figmaComponents = components ? await request('list-components', {}).catch(() => undefined) : undefined;
   const refs = reviews.length ? await loadReferenceManifest(getClient()).catch(() => undefined) : undefined;
   const lastBranch = state.init!.sync.lastPrBranch;
   const sentPr = lastBranch ? await getClient().findOpenPullRequest(lastBranch).catch(() => undefined) : undefined;
@@ -892,6 +898,7 @@ async function loadPull(prev?: PullState): Promise<PullState> {
     previews: prev?.previews ?? {},
     proposal: buildPull(analysis, choices),
     components,
+    ...(figmaComponents ? { figmaComponents } : {}),
     componentsError,
     // A first pull brings the whole library, as enabling a Figma library does; later pulls offer new sets opt-in.
     includeComponents: prev?.includeComponents ?? (!!components?.components.length && components.components.every((c) => c.status === 'new')),
@@ -918,7 +925,7 @@ function checkPull(): void {
       let p = await loadPull();
       // The design system moved on but nothing in this file would change: it is up to date. The new base is recorded
       // quietly instead of asking for an Update that writes nothing ("66 new changes" next to "Nothing changes").
-      const updates = (p.components?.components ?? []).some((c) => c.status === 'updated');
+      const updates = fullScope() && (p.components?.components ?? []).some((c) => c.status === 'updated');
       if (variablesUpToDate(p) && commitsBehind(p.analysis) > 0 && !updates && !componentsToBuild(p).length) {
         await request('apply-pull', { plan: p.proposal.plan });
         await loadInit();
@@ -934,6 +941,8 @@ function checkPull(): void {
 
 /** Component sets "Update all" builds: every updated set not updated yet, and new ones when opted in. */
 function componentsToBuild(p: PullState): PlannedComponent[] {
+  // MVP scope: Bridge does not draw or update component sets (shared/scope.ts).
+  if (!fullScope()) return [];
   return (p.components?.components ?? []).filter((c) => (c.status === 'updated' && !p.done.has(c.componentId)) || (c.status === 'new' && p.includeComponents));
 }
 
@@ -1087,7 +1096,8 @@ function scanPush(keep?: PushState, then?: () => void): void {
       let componentsError: ComponentsReadProblem | undefined;
       let fileKey: string | undefined;
       let pushes: ComponentPush[] = [];
-      try {
+      // MVP scope: component changes are not read or sent from Figma, only variables.
+      if (fullScope()) try {
         const scanned = await request('scan-components', {});
         fileKey = scanned.fileKey;
         components = classifyComponents(scanned.components, await loadCodedComponents(c, analysis.headFiles.treeSha, analysis.headFiles.config));
@@ -1811,6 +1821,7 @@ function offerView(a: AssistState, t: AssistTarget): Child {
  * under the field holds the actions then.
  */
 function assistAction(a: AssistState, t: AssistTarget): Child {
+  if (!fullScope()) return null;
   if (mineActive(a) || a.offer) return null;
   return h(
     'div',
@@ -1859,12 +1870,14 @@ function refreshRequestAssist(): void {
 
 /** Under the label line of a field with "Draft with Claude": why it is unavailable. Refreshed in place as the designer types. */
 function assistWhy(a: AssistState, t: AssistTarget): Child {
+  if (!fullScope()) return null;
   if (!t.empty) return null;
   const why = emptyWhy(a, t);
   return h('small', { class: 'muted assist-why', id: `${t.id}-why`, hidden: !why }, why ?? '');
 }
 
 function assistStatus(a: AssistState, t: AssistTarget): Child {
+  if (!fullScope()) return null;
   const parts = [
     mineView(a, t),
     offerView(a, t),
@@ -1992,7 +2005,7 @@ const repoRows = (): [string, string | undefined][] => [
 
 function needSetup(): View {
   return {
-    body: intro({ title: 'Connect your design system', text: "Bridge brings your design system's tokens and components into Figma, and sends your edits back to it. Pick the design system this file uses.", art: 'guide', moment: 'welcome' }),
+    body: intro({ title: 'Connect your design system', text: fullScope() ? "Bridge brings your design system's tokens and components into Figma, and sends your edits back to it. Pick the design system this file uses." : "Bridge brings your design system's tokens into Figma, sends your edits back to it, and tells you what is missing in Figma. Pick the design system this file uses.", art: 'guide', moment: 'welcome' }),
     // No sign-in yet: the one action is to sign in, right here. A design system without a token goes to Settings.
     bar: state.init?.hasToken
       ? { label: 'Connect your design system', onClick: () => { state.tab = 'settings'; state.expanded.add('repo-edit'); render(); } }
@@ -2014,7 +2027,7 @@ function viewPull(): View {
           ? `Connected to ${state.justConnected}.`
           : init.sync.baseSha
             ? init.sync.lastPullAt ? `Last updated in this file on ${when(init.sync.lastPullAt)}.` : undefined
-            : 'First time in this file: Bridge adds its variables and components.',
+            : fullScope() ? 'First time in this file: Bridge adds its variables and components.' : 'First time in this file: Bridge adds its variables.',
         art: 'tokens',
       }), compareBlock(), claudeRunsGroup(), howUpdatesWork(!!init.sync.baseSha), forDevelopers([...repoRows(), ['Last pulled commit', short(init.sync.baseSha)]])],
       // Pull is getting updates: its one action. Comparing with code is its own block, with its own button.
@@ -2122,7 +2135,7 @@ function viewPull(): View {
   const catchUp = upToDate && behind > 0;
   const headline = pullHeadline({ baseSha: a.baseSha, variablesUpToDate: upToDate, behind, status });
   const lastPulled = a.baseSha && init.sync.lastPullAt ? `Last updated in this file on ${when(init.sync.lastPullAt)}` : '';
-  const freshCount = (p.components?.components ?? []).filter((c) => c.status === 'new').length;
+  const freshCount = fullScope() ? (p.components?.components ?? []).filter((c) => c.status === 'new').length : 0;
   const meta = !a.baseSha
     ? `${plural(prop.plan.variables.length, 'variable')}${freshCount ? ` and ${plural(freshCount, 'component')}` : ''} from the design system. Nothing is written until you apply.`
     : catchUp
@@ -2192,7 +2205,7 @@ function viewPull(): View {
 
   const open = prop.unresolvedConflicts.length;
   // New sets from code: the choice sits next to the action it changes (on by default on a first pull).
-  const freshSets = (p.components?.components ?? []).filter((c) => c.status === 'new').length;
+  const freshSets = fullScope() ? (p.components?.components ?? []).filter((c) => c.status === 'new').length : 0;
   const toggle = freshSets
     ? { label: `Include components (${freshSets})`, checked: p.includeComponents, focusId: 'pull-components', onChange: (v: boolean) => { p.includeComponents = v; render(); } }
     : undefined;
@@ -2403,6 +2416,7 @@ function componentsGroup(p: PullState): Child {
   if (p.componentsError) return componentsErrorCallout(p.componentsError);
   const plan = p.components;
   if (!plan) return null;
+  if (!fullScope()) return missingInFigmaGroup(plan, p.figmaComponents);
   const reviews = [...p.reviews.filter((r) => !p.done.has(r.componentId)), ...p.done.values()];
   const fresh = plan.components.filter((c) => c.status === 'new');
   const upToDate = plan.components.filter((c) => c.status === 'unchanged' && !p.done.has(c.componentId));
@@ -2480,6 +2494,46 @@ function componentsGroup(p: PullState): Child {
   return out;
 }
 
+/**
+ * MVP scope: what is missing in this file, never built. The components from the code with no set in this file (new in
+ * the plan, or ones the generator cannot read), counted against the ones Bridge finds here.
+ */
+function missingInFigmaGroup(plan: ComponentPullPlan, figma: readonly FigmaComponentName[] | undefined): Child {
+  const x = presenceOf(plan, figma);
+  const present = x.marked.length + x.byName.length;
+  const total = present + x.missing.length;
+  if (!total) return null;
+  return group(
+    'Components',
+    x.missing.length,
+    null,
+    x.missing.length ? `${present} of ${plural(total, 'component')} from the code ${present === 1 ? 'is' : 'are'} in this file.` : `All ${plural(total, 'component')} from the code are in this file.`,
+    [
+      x.missing.length
+        ? h('details', { class: 'notes', 'data-block': 'missing-in-figma' }, h('summary', null, `${plural(x.missing.length, 'component')} missing in Figma`), h('ul', null, x.missing.map((n) => h('li', null, n))))
+        : null,
+      x.byName.length
+        ? h(
+            'details',
+            { class: 'notes', 'data-block': 'present-by-name' },
+            h('summary', null, `${plural(x.byName.length, 'component')} found by name`),
+            h('ul', null, x.byName.map((m) => h('li', null, m.figmaName === m.name ? m.name : `${m.name} (${m.figmaName} in Figma)`))),
+          )
+        : null,
+    ],
+  );
+}
+
+/**
+ * Where each component from the code stands in this file: drawn by Bridge (its mark, which wins), the team's own under
+ * the same name, or missing. The code components are the plan's sets and the ones the generator cannot read.
+ */
+function presenceOf(plan: ComponentPullPlan, figma: readonly FigmaComponentName[] | undefined): PresenceInFigma {
+  const marked = plan.components.filter((c) => c.status !== 'new').map((c) => c.name);
+  const names = [...plan.components.map((c) => c.name), ...coverageView(plan).missing.map((m) => m.name)];
+  return presenceInFigma(names, marked, figma ?? []);
+}
+
 /** A first pull brings everything, all new: the headline says it, the list is there on demand (as for variables). */
 function foldOnFirstPull(p: PullState, summary: string, content: HTMLElement): HTMLElement {
   return p.analysis.baseSha ? content : h('details', { class: 'notes' }, h('summary', null, summary), content);
@@ -2510,9 +2564,9 @@ const COMPARE_LEDE = 'Do the components in this file still look like the code? B
 /** Check, Review, Apply: open for a first pull, one line to unfold for someone who has pulled before. */
 function howUpdatesWork(returning: boolean): HTMLElement {
   const card = steps([
-    ['Check', "Bridge reads the design system's tokens and components."],
+    ['Check', fullScope() ? "Bridge reads the design system's tokens and components." : "Bridge reads the design system's tokens, and which of its components this file has."],
     ['Review', 'Every new, edited or deleted token is listed with its value. Nothing is written yet.'],
-    ['Apply', 'Figma variables are created or updated, and components are built from the code. Your own edits stay until you send them from Push.'],
+    ['Apply', fullScope() ? 'Figma variables are created or updated, and components are built from the code. Your own edits stay until you send them from Push.' : 'Figma variables are created or updated. Your own edits stay until you send them from Push.'],
   ]);
   return returning ? h('details', { class: 'notes', 'data-how': 'updates' }, h('summary', null, 'How updates work'), card) : card;
 }
@@ -2784,7 +2838,7 @@ const approveRefused = new Map<string, string>();
 /** Whether this person approves Claude's fixes here; asks Bridge once per team, then renders again. */
 function approver(): boolean {
   const init = state.init;
-  if (!init?.token || !connected()) return false;
+  if (!fullScope() || !init?.token || !connected()) return false;
   const repo = init.settings.repo;
   if (approval.repo !== repo) {
     approval.repo = repo;
@@ -2886,6 +2940,7 @@ function waitingFor(): string[] {
  * with the Bridge sign-in. Started when the plugin opens with asks pending, and after each ask.
  */
 function watchFixes(): void {
+  if (!fullScope()) return;
   if (fixWatch || fixLooking || !connected() || !Object.keys(parseAsked(state.init?.sync.claudeAsked)).length) return;
   const look = async () => {
     fixWatch = undefined;
@@ -3104,6 +3159,7 @@ const ROW_ORDER: Record<FixRowKind, number> = { ready: 0, approved: 1, 'cant-fix
  * ("9 fixes in this file, 10 need drawing in Figma, 8 waiting."); the rows to act on follow, finished ones folded.
  */
 function claudeRunsGroup(): Child {
+  if (!fullScope()) return null;
   const names = [...new Set([...claudeFixes.keys(), ...claudeSessions.keys(), ...waitingFor()])];
   const rows = names.flatMap((n) => {
     const r = claudeRow(n);
@@ -3226,9 +3282,11 @@ function fidelityThumbs(name: string, images: { key: string; figma: string; code
 /** Pull, after components: does each generated set look like the code? */
 function fidelityGroup(p: PullState): Child {
   const generated = (p.components?.components ?? []).filter((c) => c.status !== 'new');
+  // The team's own components under a code name: the comparison needs the variants Bridge drew, so each says so.
+  const byName = p.components ? presenceOf(p.components, p.figmaComponents).byName : [];
   const f = p.fidelity;
   // Asked for (running or answered): it always shows, even with nothing in this file to compare yet.
-  if (!generated.length && !f?.running && !f?.outcome && !f?.error) return null;
+  if (!generated.length && !byName.length && !f?.running && !f?.outcome && !f?.error) return null;
   const outcome = f?.outcome;
   const action = h(
     'button',
@@ -3246,7 +3304,7 @@ function fidelityGroup(p: PullState): Child {
     lede = NO_REFERENCES_HANDOFF_TEXT;
     content = h('div', { class: 'inline-actions' }, handoffButton(p, 'references', referencesRequestForDeveloper(state.init?.settings.repo ?? '')));
   }
-  else if (outcome?.kind === 'no-sets') lede = 'No component set from code in this file yet. Pull components first.';
+  else if (outcome?.kind === 'no-sets') lede = byName.length ? 'None of the components below was drawn by Bridge, so none can be compared yet.' : fullScope() ? 'No component set from code in this file yet. Pull components first.' : 'No component set from code in this file yet: nothing to compare.';
   else if (outcome?.kind === 'done') {
     // Every component compared matches the code: the Bridge mark lands next to the sentence, once.
     const allMatch = outcome.report.summary.differs === 0 && outcome.report.summary.matches > 0;
@@ -3270,7 +3328,7 @@ function fidelityGroup(p: PullState): Child {
         // which stay one click away under the variants.
         const gap = r.status === 'differs' ? f?.gaps?.find((g) => g.component === it.name)?.summary : undefined;
         // Asked (now or before: the watch resumes), or Claude's fix found: the row shows that, not the button again.
-        const claude = r.status === 'differs' ? claudePanel(it.name) : null;
+        const claude = r.status === 'differs' && fullScope() ? claudePanel(it.name) : null;
         const rowKind = claudeRow(it.name)?.kind ?? 'waiting';
         const finished = r.status === 'differs' && (FINISHED_ROWS.includes(rowKind) || ASK_AGAIN_ROWS.includes(rowKind));
         const asked = (f?.fix?.component === it.name && f.fix.status !== 'error' && f.fix.status !== 'connect') || (!!claude && !finished);
@@ -3280,14 +3338,14 @@ function fidelityGroup(p: PullState): Child {
           { class: 'row review' },
           h('div', { class: 'row-head' }, h('span', { class: 'comp-name' }, it.name), kind),
           gap ? h('p', null, gap) : h('p', { class: r.status === 'differs' ? '' : 'muted' }, r.status === 'differs' ? differsSentence(r) : fidelityComponentLine(r)),
-          canAskClaude({ differs: r.status === 'differs', asked }, !!p.measure)
+          fullScope() && canAskClaude({ differs: r.status === 'differs', asked }, !!p.measure)
             ? h('div', { class: 'inline-actions' }, h('button', { class: 'btn', 'data-focus-id': `fix-${it.name}`, disabled: askWriting(p) || !!state.busy, onClick: () => void fixWithClaude(p, it.name) }, 'Ask Claude to fix it'))
             : null,
           // Claude cannot help without a measure of the stories: the designer still has one thing to do (no dead end).
           r.status === 'differs' && !p.measure
             ? h('div', { class: 'handoff' }, h('p', { class: 'muted' }, DIFFERS_HANDOFF_TEXT), h('div', { class: 'inline-actions' }, handoffButton(p, it.name, differsRequestForDeveloper(r, state.init?.settings.repo ?? '', fidelityVerdict))))
             : null,
-          r.status === 'differs' ? fixPanel(p, it.name) : null,
+          r.status === 'differs' && fullScope() ? fixPanel(p, it.name) : null,
           claude,
           // The three images on demand: the list stays a list to scan (FID-5).
           r.status === 'differs' && it.images
@@ -3306,9 +3364,9 @@ function fidelityGroup(p: PullState): Child {
     // For developers triaging the differences: every component and variant as JSON, without the images.
     const report = outcome.report;
     // One ask for the whole list, under the summary, from two rows Claude can fix; each row keeps its own button.
-    const fixable = fixAllEligible(askRows, !!p.measure);
+    const fixable = fullScope() ? fixAllEligible(askRows, !!p.measure) : [];
     // Claude's fixes ready on their rows: a lead approves them all at once, next to the ask.
-    const approveAll = approveAllButton(outcome.items.flatMap((it) => {
+    const approveAll = !fullScope() ? null : approveAllButton(outcome.items.flatMap((it) => {
       const k = it.result.status === 'differs' ? claudeRow(it.name)?.kind : undefined;
       return k ? [{ name: it.name, kind: k }] : [];
     }));
@@ -3321,9 +3379,9 @@ function fidelityGroup(p: PullState): Child {
             approveAll,
           )
         : null,
-      approveNote(),
-      fixAllPanel(p),
-      claudeBatchBar(),
+      fullScope() ? approveNote() : null,
+      fullScope() ? fixAllPanel(p) : null,
+      fullScope() ? claudeBatchBar() : null,
       // The headline counts every set, not compared ones too: the list names what it holds.
       rowList('fidelity', rows, 10, 'compared'),
       notCompared.length
@@ -3352,7 +3410,14 @@ function fidelityGroup(p: PullState): Child {
       ),
     ];
   }
-  return group('Compare with code', generated.length, action, lede, content);
+  const notDrawn = byName.length
+    ? h(
+        'ul',
+        { class: 'rows', 'data-block': 'not-drawn-by-bridge' },
+        byName.map((m) => h('li', { class: 'row' }, h('div', { class: 'row-head' }, h('span', { class: 'comp-name' }, m.name), h('span', { class: 'kind row-end' }, 'Not compared')), h('p', { class: 'muted' }, NOT_DRAWN_BY_BRIDGE))),
+      )
+    : null;
+  return group('Compare with code', generated.length + byName.length, action, lede, [content, notDrawn]);
 }
 
 /** The components not in Figma, each with its reason, and the layout helpers, folded under the count. */
@@ -4169,7 +4234,9 @@ function sentNotes(r: PushState): Child[] {
  * The quiet way to a request the scan cannot see, at the very bottom: muted text and one link action (secondary,
  * figure and ground). Once opened, the manual request form takes its place in its own region, with its own primary.
  */
-function requestLine(r: PushState | undefined): HTMLElement {
+function requestLine(r: PushState | undefined): Child {
+  // MVP scope: component changes are not sent from Figma (teams use their own process).
+  if (!fullScope()) return null;
   if (r?.form?.key === 'manual') {
     return h(
       'section',
@@ -4575,16 +4642,16 @@ function viewPush(): View {
           title: 'Send your edits',
           // Worded for the repo's mode: a suggestion repo has no explorations to promise (SUG-2).
           text: knownMode() === 'suggest'
-            ? 'Variable edits and component changes go to your DS lead as suggestions. Nothing reaches the product until it is approved.'
-            : 'Variable edits and component changes go to the library, or into an exploration to try them first.',
+            ? `${fullScope() ? 'Variable edits and component changes go' : 'Variable edits go'} to your DS lead as suggestions. Nothing reaches the product until it is approved.`
+            : `${fullScope() ? 'Variable edits and component changes go' : 'Variable edits go'} to the library, or into an exploration to try them first.`,
           art: 'paint',
         }),
         steps([
-          ['Edit in Figma', 'Change the design system\'s variables, or a component: a variant, a property, a part, the color or size it uses.'],
+          ['Edit in Figma', fullScope() ? 'Change the design system\'s variables, or a component: a variant, a property, a part, the color or size it uses.' : 'Change the design system\'s variables: a value, an alias, a name.'],
           ['Review the changes', 'Every change is listed and checked. Uncheck what is not ready.'],
           knownMode() === 'suggest'
             ? ['Send', 'Send suggestion: your DS lead approves it, then a developer applies it.']
-            : ['Send', 'Send for review: your team checks it, and what needs code goes to a developer.'],
+            : ['Send', fullScope() ? 'Send for review: your team checks it, and what needs code goes to a developer.' : 'Send for review: your team checks it before it reaches the product.'],
         ]),
         requestLine(undefined),
       ],
@@ -5077,7 +5144,7 @@ function viewSettings(): View {
             ),
             tokenError() && !tokenField ? h('p', { class: 'form-error', role: 'alert' }, icon('alert'), tokenError()) : null,
             tokenField
-              ? tokenInput('New fine-grained token', 'Replaces the saved one when you save. Stays on this computer, never in the file.')
+              ? tokenInput('New fine-grained token', 'Replaces the saved one when you save. Saved on this computer only, never in the file. Sent only to GitHub and Bridge.')
               : null,
             h(
               'div',
@@ -5096,7 +5163,7 @@ function viewSettings(): View {
             { class: 'card' },
             h('div', { class: 'group-head' }, h('h2', null, 'GitHub token'), h('button', { class: 'btn ghost', onClick: () => void request('open-url', { url: 'https://github.com/settings/personal-access-tokens/new' }) }, 'Create one on GitHub')),
             h('p', { class: 'lede' }, "Bridge uses it to read your design system and send your edits. Your design system's owner can give you one."),
-            tokenInput('Token', 'Stays on this computer, never in the file, never shown again.'),
+            tokenInput('Token', 'Saved on this computer only, never in the file, never shown again. Sent only to GitHub and Bridge.'),
             // The permissions are for whoever creates the token: folded.
             h('details', { class: 'notes dev-details' }, h('summary', null, 'Creating the token yourself?'), h('p', { class: 'muted' }, tokenHelp(state.push ? changesModeOf(state.push.analysis) : undefined))),
           ),
@@ -5153,7 +5220,8 @@ function snippet(id: string, label: string, text: string, copy = text): HTMLElem
  * how to connect it in Studio. The designer's Claude app route for drafts ("Draft with my Claude") keeps its setup,
  * folded for developers.
  */
-function claudeCard(): HTMLElement {
+function claudeCard(): Child {
+  if (!fullScope()) return null;
   const repo = state.init!.settings.repo;
   const team = studioTeamUrl(repo);
   const hasToken = !!state.init!.hasToken;
@@ -5183,7 +5251,7 @@ function claudeCard(): HTMLElement {
           'li',
           null,
           hasToken
-            ? 'Add Bridge to Claude, once. Copy fills in the GitHub token saved in this plugin; it stays on this computer.'
+            ? 'Add Bridge to Claude, once. Copy puts the GitHub token saved in this plugin into the command: paste it only on this computer.'
             : 'Connect the design system first: Copy then fills in its token. Then add Bridge to Claude, once.',
           snippet('code', 'Claude Code, in a terminal', mcp.code, filled.code),
           h('details', { class: 'notes' }, h('summary', null, 'Using the Claude app instead'), snippet('desktop', 'In claude_desktop_config.json', mcp.desktop, filled.desktop)),

@@ -1,0 +1,22 @@
+---
+// Studio Patterns: the patterns of Bridge's own design system (patterns/<id>.pattern.json), grouped by kind as the
+// Library groups them, each row linked to its Library page, and for whoever decides, the changes asked on each one
+// (components/ds/studio/StudioPatterns.tsx). The nav lists it only while patterns/ has some (lib/nav.ts studioNav).
+import '../../styles/studio.css';
+import '../../styles/studio-patterns.css';
+import Layout from '../../layouts/Layout.astro';
+import StudioHeader from '../../components/StudioHeader.astro';
+import StudioPatterns from '../../components/ds/studio/StudioPatterns';
+import { repoModel } from '../../lib/model';
+import { libraryPatterns, patternRoute } from '../../lib/library/patterns';
+import { studioPatternGroups, studioPatternsLead } from '../../lib/studio-patterns';
+
+const groups = studioPatternGroups(libraryPatterns(repoModel), (id) => `/${patternRoute(id)}`);
+---
+
+<Layout title="Patterns" description="The interactions and actions shared across the product, each linked to its Library page, and the changes asked on them." wide>
+  <div class="spt">
+    <StudioHeader title="Patterns" summary={studioPatternsLead(groups)} />
+    <StudioPatterns client:load groups={groups} />
+  </div>
+</Layout>

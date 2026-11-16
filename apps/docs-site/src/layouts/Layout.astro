@@ -105,13 +105,13 @@ const nav: NavEntry[] = library
     )
   : workspace
     ? workspaceNav()
-    : navFor(space);
+    : navFor(space, { team: hosted });
 const isStudio = space === 'studio';
 // The Studio rail (option A, 2026-11-04): the top entries, then Products and Design system (ProductsNav, with the
 // entries placed 'design-system'), then Settings at the foot. The workspace has no groups: Home, then Settings.
 const groups = isStudio && !library;
 const topNav = groups ? nav.filter((e) => !e.place) : nav;
-const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon })) : [];
+const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon, ...(e.until ? { until: e.until } : {}) })) : [];
 const footNav = groups ? nav.filter((e) => e.place === 'foot' && e.href) : [];
 const isHome = path === LIBRARY_HOME || path === STUDIO_HOME;
 // Tokens, Components and Quality can show the library as an open change (lib/view-scope): the selector and the banner.

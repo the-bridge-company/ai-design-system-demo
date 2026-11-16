@@ -67,6 +67,7 @@ export const STUDIO_SEARCH_PAGES: readonly StudioSearchPage[] = [
   { route: 'building/', label: 'Being built', meta: 'Changes sent from Figma that developers are building, where each one stands, and the next release', keys: 'build requests component change requests figma push developers in progress shipped' },
   { route: 'products/', label: 'All products', meta: 'Every product of the team, and where its explorations stand', keys: 'products apps' },
   { route: 'components/', label: 'Components', meta: 'Status, tokens, code and Figma links per component', keys: 'catalog' },
+  { route: 'patterns/', label: 'Patterns', meta: 'Interactions and actions shared across the product, and the changes asked on them', keys: 'interactions actions behaviors behavior requests' },
   { route: 'tokens/', label: 'Tokens', meta: 'Edit tokens into a draft, with live preview and guardrails', keys: 'variables colors token lookup hex' },
   { route: 'quality/', label: 'Quality', meta: 'Contrast gate, token validation, docs completeness and adoption, most severe first', keys: 'checks contrast gate token validation adoption audit docs completeness guidance' },
   { route: 'settings/', label: 'Settings', meta: 'GitHub connection, the repository this workspace reads, and who approves what', keys: 'settings github connection repository governance' },

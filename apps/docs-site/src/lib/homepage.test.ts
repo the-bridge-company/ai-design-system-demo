@@ -58,7 +58,7 @@ describe('homepage sections', () => {
     expect(page).toContain('<HpConnectCard />');
     const card = readFileSync(join(ROOT, 'apps/docs-site/src/components/home/HpConnectCard.tsx'), 'utf8');
     expect(card).toContain("const NAME = 'Florian Gouloubi';");
-    expect(card).toContain("const ROLE = 'Founder & Design Engineer';");
+    expect(card).toContain("const ROLE = 'Design Engineer';");
     expect(card).toContain("const LINKEDIN = 'https://www.linkedin.com/in/floriangouloubi/';");
     expect(card).toMatch(/<Card interactive/);
     expect(card).toMatch(/<Avatar name=\{NAME\} size="lg" decorative \/>/);

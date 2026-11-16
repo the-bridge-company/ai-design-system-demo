@@ -15,11 +15,12 @@ const GROUPS: StudioPatternGroup[] = [
 ];
 
 describe('PatternsTable', () => {
-  it('groups the rows under their kind once, each name opening its Library page', async () => {
+  it('groups the rows under their kind once, each name opening its Library page, a lone row keeping its components', async () => {
     const { container } = render(createElement(PatternsTable, { groups: GROUPS, requests: null }));
     expect(screen.getAllByRole('rowheader').map((c) => c.textContent)).toEqual(['Interactions', 'Close on EscapeEscape closes what opened.', 'Actions', 'DeleteRemoves something for good.']);
     expect(screen.getByRole('link', { name: 'Delete' }).getAttribute('href')).toBe('/patterns/delete/');
     expect(screen.getByText('Button, AlertDialog')).toBeTruthy();
+    expect(container.querySelector('[data-spt-shared]')).toBeNull();
     expect(screen.queryByText('Waiting for your decision')).toBeNull();
     await expectNoAxeViolations(container);
   });
@@ -37,6 +38,24 @@ describe('PatternsTable', () => {
     const row = screen.getByRole('link', { name: 'Delete' }).closest('tr')!;
     expect(within(row).getAllByRole('listitem')).toHaveLength(2);
     expect(within(row).queryByText('2 changes asked')).toBeNull();
+  });
+
+  it('says the components once on the group row when every row shares them, and keeps them per row when they differ', async () => {
+    const row = (id: string, name: string, components: string[]) => ({ id, name, purpose: `${name}.`, components, href: `/patterns/${id}/` });
+    const groups: StudioPatternGroup[] = [
+      { kind: 'interaction', label: 'Interactions', rows: [row('close-on-escape', 'Close on Escape', ['Combobox', 'Select']), row('type-ahead', 'Type ahead', ['Select', 'Combobox'])] },
+      { kind: 'action', label: 'Actions', rows: [row('delete', 'Delete', ['Button', 'AlertDialog']), row('send', 'Send for review', ['Button'])] },
+    ];
+    const { container } = render(createElement(PatternsTable, { groups, requests: new Map([['delete', [{ number: 12, title: 'Offer Undo' }]]]) }));
+    const uses = (id: string) => container.querySelector(`[data-spt-row="${id}"] .spt-col-uses`)!.textContent;
+    const shared = container.querySelector<HTMLElement>('[data-spt-group="interaction"] .spt-group')!;
+    expect(within(shared).getByRole('rowheader').textContent).toBe('Interactions');
+    expect(shared.querySelector('[data-spt-shared]')!.textContent).toBe('Combobox, Select');
+    expect([uses('close-on-escape'), uses('type-ahead')]).toEqual(['', '']);
+    expect(container.querySelector('[data-spt-group="action"] [data-spt-shared]')).toBeNull();
+    expect([uses('delete'), uses('send')]).toEqual(['Button, AlertDialog', 'Button']);
+    expect(screen.getAllByText('Combobox, Select')).toHaveLength(1);
+    await expectNoAxeViolations(container);
   });
 
   it('draws no column for an empty answer', () => {

@@ -7,7 +7,7 @@ import { ExternalLink } from 'lucide-react';
 import ButtonLink from '../ds/ButtonLink';
 
 const NAME = 'Florian Gouloubi';
-const ROLE = 'Founder & Design Engineer';
+const ROLE = 'Design Engineer';
 const LINKEDIN = 'https://www.linkedin.com/in/floriangouloubi/';
 
 export default function HpConnectCard() {

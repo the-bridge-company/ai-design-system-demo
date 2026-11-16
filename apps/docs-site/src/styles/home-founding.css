@@ -110,3 +110,8 @@
     padding-top: var(--space-2);
   }
 }
+
+/* "free" in the title, in the brand blue (the eyebrow's color): the one word the section is about. */
+.hp-fd-accent {
+  color: var(--color-text-link);
+}

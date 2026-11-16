@@ -261,6 +261,10 @@ export const FOUNDING_BAND_NOTE = `Support and uptime stay those of Free. ${'If 
 export const HOME_FOUNDING = {
   eyebrow: 'Founding teams',
   title: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays free.`,
+  /** The title as drawn: "free" in the brand blue (HpFounding). Together they read exactly `title`. */
+  titleLead: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays `,
+  titleAccent: 'free',
+  titleEnd: '.',
   lead: `Bridge is free for every team today. Paid plans open in ${PAID_PLANS_OPEN}.`,
   primary: 'Create your team',
   secondary: 'See planned prices',
@@ -277,7 +281,6 @@ export const STRIP = {
   before: `Paid plans open in ${PAID_PLANS_OPEN}. Teams created by ${FOUNDING_CUTOFF_LABEL} stay `,
   strong: 'FREE',
   after: ', with no end date.',
-  link: 'Read the commitment',
 };
 
 

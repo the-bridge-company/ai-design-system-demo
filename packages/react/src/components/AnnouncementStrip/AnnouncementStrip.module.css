@@ -57,6 +57,33 @@
   flex: none;
 }
 
+/* The whole strip is the link (`href`): the strip's own colors, the message underlined on hover, the ring inside. */
+.linked {
+  padding: 0;
+}
+
+.whole {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-11);
+  max-width: none;
+  padding: var(--space-2) var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .whole:hover .text {
+    text-decoration: underline;
+    text-underline-offset: var(--space-1);
+  }
+}
+
+.whole:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
 /* Phones: one centred paragraph, the icon inline before the words, the link on its own line under them. */
 @media (max-width: 640px) {
   .message {

@@ -43,3 +43,6 @@ export const Neutral: Story = { args: { appearance: 'neutral' } };
 export const MessageOnly: Story = { args: { icon: undefined, action: undefined, children: 'Bridge is free for every team today.' } };
 /** On a phone the link takes its own line under the message. */
 export const Phone: Story = { ...phone };
+
+/** The whole strip is the link: the message says enough, no "Read more". */
+export const WholeStripLink: Story = { args: { action: undefined, href: '#founding' } };

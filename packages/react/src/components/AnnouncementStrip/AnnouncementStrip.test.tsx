@@ -50,4 +50,18 @@ describe('AnnouncementStrip', () => {
     expect(region.querySelector('svg')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
   });
+
+  it('with href, the whole strip is one link whose text is the message, and no separate action shows', async () => {
+    const { container } = render(
+      <AnnouncementStrip label="Founding teams" icon={CalendarCheck} href="/pricing/#founding" action={<Link href="/x">Read the commitment</Link>}>
+        Teams created by 31 March 2027 stay <strong>FREE</strong>.
+      </AnnouncementStrip>,
+    );
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute('href', '/pricing/#founding');
+    expect(links[0]).toHaveTextContent('Teams created by 31 March 2027 stay FREE.');
+    expect(screen.getByRole('complementary', { name: 'Founding teams' })).toContainElement(links[0]!);
+    await expectNoAxeViolations(container);
+  });
 });

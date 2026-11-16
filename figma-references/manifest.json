@@ -1,8 +1,8 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-15T16:19:36.700Z",
-  "sha": "7e0524514be32d01cf97b432fed01b64837a7d3a",
+  "createdAt": "2026-11-16T02:11:53.599Z",
+  "sha": "adeb58ff26c3fb220b887fcecc440ec057ad1e82",
   "scale": 2,
   "mode": {
     "brand": "bridge",
@@ -103,6 +103,21 @@
           "file": "alertdialog-popup/tone-primary.png",
           "width": 384,
           "height": 222
+        }
+      }
+    },
+    "AnnouncementStrip": {
+      "specHash": "233d2447",
+      "variants": {
+        "Appearance=harbor": {
+          "file": "announcementstrip/appearance-harbor.png",
+          "width": 320,
+          "height": 44
+        },
+        "Appearance=neutral": {
+          "file": "announcementstrip/appearance-neutral.png",
+          "width": 320,
+          "height": 44
         }
       }
     },

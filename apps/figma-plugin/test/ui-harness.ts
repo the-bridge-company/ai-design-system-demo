@@ -91,6 +91,10 @@ export interface Open {
    * Draft with Claude. Off by default: the plugin opens as it ships.
    */
   fullScope?: boolean;
+  /** The file's own components (local sets and lone components), as 'list-components' lists them. */
+  components?: { name: string; nodeId?: string }[];
+  /** Sets Bridge drew before (its mark), as 'scan-generated' lists them. */
+  generated?: { componentId: string; nodeId: string; name: string; specHash: string; variants: string[] }[];
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -120,11 +124,15 @@ export async function openPlugin(o: Open = {}): Promise<Harness> {
   // Where the token came from and who signed in (figma.clientStorage in Figma): none for a legacy pasted token.
   let tokenSource: string | undefined = o.bridge ? 'bridge' : undefined;
   let tokenAccount: string | undefined;
-  let generated: unknown[] = [];
+  let generated: unknown[] = [...(o.generated ?? [])];
   const main: Record<string, (payload: any) => unknown> = {
     init: () => ({ settings, sync, hasToken: !!token, token, tokenState: token ? 'ok' : undefined, ...(token && tokenSource ? { tokenSource } : {}), ...(token && tokenAccount ? { tokenAccount } : {}), fileName: 'Checkout redesign', claude: { hasKey: false, key: undefined, model: 'claude-sonnet-5-5' } }),
     snapshot: () => snapshot,
     'scan-generated': () => generated,
+    'list-components': () => [
+      ...(o.components ?? []).map((c, i) => ({ name: c.name, nodeId: c.nodeId ?? `own${i}` })),
+      ...generated.map((g) => ({ name: (g as { name: string }).name, nodeId: (g as { nodeId: string }).nodeId, componentId: (g as { componentId: string }).componentId })),
+    ],
     'apply-pull': () => {
       // Figma now holds the design system's variables (what a pull writes).
       if (!snapshot.variables.length) snapshot = structuredClone(data.pulled);

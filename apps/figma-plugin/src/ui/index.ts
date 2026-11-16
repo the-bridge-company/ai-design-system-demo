@@ -54,6 +54,7 @@ import { ASK_AGAIN_ROWS, FINISHED_ROWS, type FixRowKind, type FixSession, fixRow
 import { PREVIEW_WORDS, RENDER_CAP_MS, type UpdatePreview, codeImageSource, previewKey } from '../sync/update-preview';
 import { BridgeSignInPoller, type LinkPoll, SIGN_IN_WORDS, startBridgeSignIn } from '../sync/bridge-sign-in';
 import { fullScope } from '../shared/scope';
+import { type FigmaComponentName, NOT_DRAWN_BY_BRIDGE, type PresenceInFigma, presenceInFigma } from '../sync/figma-names';
 
 type Tab = 'pull' | 'push' | 'settings';
 const TABS: { id: Tab; label: string }[] = [
@@ -73,6 +74,8 @@ interface PullState {
   report?: ApplyReport | undefined;
   /** Component sets from component-specs.json on the branch; undefined when the repo has none. */
   components?: ComponentPullPlan | undefined;
+  /** Every component of the file by name ('list-components'): the team's own count as present, not only Bridge's. */
+  figmaComponents?: FigmaComponentName[] | undefined;
   componentsError?: ComponentsReadProblem | undefined;
   /** Spec source Measured: how many variants a measured story gave values to. */
   measured?: MeasuredOverlayReport | undefined;
@@ -881,6 +884,8 @@ async function loadPull(prev?: PullState): Promise<PullState> {
   } catch (err) {
     componentsError = componentsErrorOf(err, 'pull');
   }
+  // The file's own components by name, for what is missing in Figma (a failed read only loses the name matches).
+  const figmaComponents = components ? await request('list-components', {}).catch(() => undefined) : undefined;
   const refs = reviews.length ? await loadReferenceManifest(getClient()).catch(() => undefined) : undefined;
   const lastBranch = state.init!.sync.lastPrBranch;
   const sentPr = lastBranch ? await getClient().findOpenPullRequest(lastBranch).catch(() => undefined) : undefined;
@@ -893,6 +898,7 @@ async function loadPull(prev?: PullState): Promise<PullState> {
     previews: prev?.previews ?? {},
     proposal: buildPull(analysis, choices),
     components,
+    ...(figmaComponents ? { figmaComponents } : {}),
     componentsError,
     // A first pull brings the whole library, as enabling a Figma library does; later pulls offer new sets opt-in.
     includeComponents: prev?.includeComponents ?? (!!components?.components.length && components.components.every((c) => c.status === 'new')),
@@ -2410,7 +2416,7 @@ function componentsGroup(p: PullState): Child {
   if (p.componentsError) return componentsErrorCallout(p.componentsError);
   const plan = p.components;
   if (!plan) return null;
-  if (!fullScope()) return missingInFigmaGroup(plan);
+  if (!fullScope()) return missingInFigmaGroup(plan, p.figmaComponents);
   const reviews = [...p.reviews.filter((r) => !p.done.has(r.componentId)), ...p.done.values()];
   const fresh = plan.components.filter((c) => c.status === 'new');
   const upToDate = plan.components.filter((c) => c.status === 'unchanged' && !p.done.has(c.componentId));
@@ -2492,21 +2498,40 @@ function componentsGroup(p: PullState): Child {
  * MVP scope: what is missing in this file, never built. The components from the code with no set in this file (new in
  * the plan, or ones the generator cannot read), counted against the ones Bridge finds here.
  */
-function missingInFigmaGroup(plan: ComponentPullPlan): Child {
-  const cov = coverageView(plan);
-  const inFile = plan.components.filter((c) => c.status !== 'new').length;
-  const missing = [...plan.components.filter((c) => c.status === 'new').map((c) => c.name), ...cov.missing.map((m) => m.name)];
-  const total = inFile + missing.length;
+function missingInFigmaGroup(plan: ComponentPullPlan, figma: readonly FigmaComponentName[] | undefined): Child {
+  const x = presenceOf(plan, figma);
+  const present = x.marked.length + x.byName.length;
+  const total = present + x.missing.length;
   if (!total) return null;
   return group(
     'Components',
-    missing.length,
+    x.missing.length,
     null,
-    missing.length ? `${inFile} of ${plural(total, 'component')} from the code ${inFile === 1 ? 'is' : 'are'} in this file.` : `All ${plural(total, 'component')} from the code are in this file.`,
-    missing.length
-      ? h('details', { class: 'notes', 'data-block': 'missing-in-figma' }, h('summary', null, `${plural(missing.length, 'component')} missing in Figma`), h('ul', null, missing.map((n) => h('li', null, n))))
-      : null,
+    x.missing.length ? `${present} of ${plural(total, 'component')} from the code ${present === 1 ? 'is' : 'are'} in this file.` : `All ${plural(total, 'component')} from the code are in this file.`,
+    [
+      x.missing.length
+        ? h('details', { class: 'notes', 'data-block': 'missing-in-figma' }, h('summary', null, `${plural(x.missing.length, 'component')} missing in Figma`), h('ul', null, x.missing.map((n) => h('li', null, n))))
+        : null,
+      x.byName.length
+        ? h(
+            'details',
+            { class: 'notes', 'data-block': 'present-by-name' },
+            h('summary', null, `${plural(x.byName.length, 'component')} found by name`),
+            h('ul', null, x.byName.map((m) => h('li', null, m.figmaName === m.name ? m.name : `${m.name} (${m.figmaName} in Figma)`))),
+          )
+        : null,
+    ],
   );
+}
+
+/**
+ * Where each component from the code stands in this file: drawn by Bridge (its mark, which wins), the team's own under
+ * the same name, or missing. The code components are the plan's sets and the ones the generator cannot read.
+ */
+function presenceOf(plan: ComponentPullPlan, figma: readonly FigmaComponentName[] | undefined): PresenceInFigma {
+  const marked = plan.components.filter((c) => c.status !== 'new').map((c) => c.name);
+  const names = [...plan.components.map((c) => c.name), ...coverageView(plan).missing.map((m) => m.name)];
+  return presenceInFigma(names, marked, figma ?? []);
 }
 
 /** A first pull brings everything, all new: the headline says it, the list is there on demand (as for variables). */
@@ -3257,9 +3282,11 @@ function fidelityThumbs(name: string, images: { key: string; figma: string; code
 /** Pull, after components: does each generated set look like the code? */
 function fidelityGroup(p: PullState): Child {
   const generated = (p.components?.components ?? []).filter((c) => c.status !== 'new');
+  // The team's own components under a code name: the comparison needs the variants Bridge drew, so each says so.
+  const byName = p.components ? presenceOf(p.components, p.figmaComponents).byName : [];
   const f = p.fidelity;
   // Asked for (running or answered): it always shows, even with nothing in this file to compare yet.
-  if (!generated.length && !f?.running && !f?.outcome && !f?.error) return null;
+  if (!generated.length && !byName.length && !f?.running && !f?.outcome && !f?.error) return null;
   const outcome = f?.outcome;
   const action = h(
     'button',
@@ -3277,7 +3304,7 @@ function fidelityGroup(p: PullState): Child {
     lede = NO_REFERENCES_HANDOFF_TEXT;
     content = h('div', { class: 'inline-actions' }, handoffButton(p, 'references', referencesRequestForDeveloper(state.init?.settings.repo ?? '')));
   }
-  else if (outcome?.kind === 'no-sets') lede = fullScope() ? 'No component set from code in this file yet. Pull components first.' : 'No component set from code in this file yet: nothing to compare.';
+  else if (outcome?.kind === 'no-sets') lede = byName.length ? 'None of the components below was drawn by Bridge, so none can be compared yet.' : fullScope() ? 'No component set from code in this file yet. Pull components first.' : 'No component set from code in this file yet: nothing to compare.';
   else if (outcome?.kind === 'done') {
     // Every component compared matches the code: the Bridge mark lands next to the sentence, once.
     const allMatch = outcome.report.summary.differs === 0 && outcome.report.summary.matches > 0;
@@ -3383,7 +3410,14 @@ function fidelityGroup(p: PullState): Child {
       ),
     ];
   }
-  return group('Compare with code', generated.length, action, lede, content);
+  const notDrawn = byName.length
+    ? h(
+        'ul',
+        { class: 'rows', 'data-block': 'not-drawn-by-bridge' },
+        byName.map((m) => h('li', { class: 'row' }, h('div', { class: 'row-head' }, h('span', { class: 'comp-name' }, m.name), h('span', { class: 'kind row-end' }, 'Not compared')), h('p', { class: 'muted' }, NOT_DRAWN_BY_BRIDGE))),
+      )
+    : null;
+  return group('Compare with code', generated.length + byName.length, action, lede, [content, notDrawn]);
 }
 
 /** The components not in Figma, each with its reason, and the layout helpers, folded under the count. */

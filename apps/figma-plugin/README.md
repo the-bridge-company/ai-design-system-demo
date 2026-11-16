@@ -27,7 +27,7 @@ Bridge tells you what is missing in your Figma and checks that it has caught up 
 | Sign in with Bridge (or a developer token) | Drawing and updating component sets from code ("Pull components", "Include components", Update, Update all) |
 | Pull of tokens into Figma Variables | Two-way variant sync (component changes read back from Figma) |
 | Push of variable edits: a pull request or a suggestion, contrast checked | Component changes sent from Figma: requests, library branches, "Request a component change", "Not in the design system yet", "Fix in Figma first" |
-| What is missing in Figma: the components from the code this file does not have | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
+| What is missing in Figma: the components from the code this file does not have (its own count, by name) | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
 | Compare with code | "Draft with Claude" and the Claude card in Settings |
 
 One constant decides it: `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts` (`true` ships). Setting it to `false` shows the
@@ -344,9 +344,20 @@ set description says "In code, reduced motion turns this off."
 
 ### Compare with code (does each component look like the code?)
 
-Shown in the MVP. It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`), which only a pull with
-the hidden component drawing makes. In a file without them it says "No component set from code in this file yet:
-nothing to compare", and the Components group of Pull lists every component from the code as missing in Figma.
+Shown in the MVP. It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`): the comparison needs the
+variants and parts Bridge drew. The team's own components that match a code component by name (see "What is missing
+in Figma") are listed under it with one line, "Bridge can't compare this one yet: it was not drawn by Bridge.", and
+nothing is redrawn.
+
+### What is missing in Figma
+
+On Pull, the Components group says "N of M components from the code are in this file", names the missing ones, and
+folds the ones "found by name". A code component is in the file when a set Bridge drew carries its mark, or else when
+a local component set or lone component has the same name after normalisation (`src/sync/figma-names.ts`: the last
+segment of a path, so "Forms/Select" is Select; case, spaces, hyphens, underscores and dots ignored). The mark wins: a
+set Bridge drew is never matched by name for another component. The list comes from `list-components`
+(`src/main/build-components.ts`, every page loaded first). Components of enabled libraries are not counted: the Plugin
+API has no list of a library's components. Level 0 mapping only: no variant is read or synced.
 
 The generator can build a set that has the right variants and bindings but still looks wrong (a compound part
 drawn too short, a missing transparent border, a text style not carried over). **Compare with code**, under the

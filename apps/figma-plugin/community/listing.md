@@ -50,7 +50,7 @@ Pull: from the code into Figma
 - Creates one variable collection per tier (Primitives, Brand, Base, Semantic, Density, Component) with their modes: themes, brands, densities. Aliases between collections are kept.
 - Keeps the edits you made in Figma. Tokens removed in code are marked [orphan], never deleted.
 - On plans limited to one mode per collection, it creates one collection per mode instead.
-- Tells you what is missing: which components from the code this file does not have yet.
+- Tells you what is missing: which components from the code this file does not have yet. Your own components count: they are matched by name ("Forms/Select" is the code's Select). Components from libraries are not counted yet.
 
 Push: your Figma edits back to the code
 - Lists the variables you changed since your last pull, with color swatches before and after. When a token changed both in Figma and in the code, you choose which one to keep.
@@ -61,7 +61,7 @@ Push: your Figma edits back to the code
 - The plugin never writes to your main branch. In pull request mode, if your team set up Bridge's GitHub app, Bridge can merge a pull request that only changes token values once your checks pass. Renamed or removed tokens wait for a developer.
 
 Compare with code
-- Checks that the component sets Bridge knows in this file still look like the code: each one is exported and compared with images of the same component rendered from your code, which your repository publishes with Bridge's GitHub workflow. Nothing in the file changes.
+- Checks that the component sets Bridge drew in this file still look like the code: each one is exported and compared with images of the same component rendered from your code, which your repository publishes with Bridge's GitHub workflow. Your own components, matched by name, are listed with "Bridge can't compare this one yet: it was not drawn by Bridge." Nothing in the file changes.
 
 Privacy
 - The plugin talks to two sites: api.github.com (your repository) and bridgedesignsystem.com (Sign in with Bridge, and merging a token pull request). No analytics, no AI service.
@@ -110,7 +110,8 @@ The plugin also opens links in the user's browser when they click them (github.c
   pull request numbers. Bridge uses the token to ask GitHub who the user is and what they can access, and does not
   keep it. During Sign in with Bridge, the token is held encrypted on Bridge's side for at most 5 minutes, until the
   plugin collects it once.
-- Compare with code exports component images inside the plugin to compare them; they are not sent anywhere.
+- Compare with code exports component images inside the plugin to compare them; they are not sent anywhere. The
+  component names read for "what is missing" stay in the plugin too.
 
 **What does the plugin store, and where?**
 - On the user's computer (`figma.clientStorage`): the GitHub sign-in or token, whether GitHub last refused it, how it
@@ -144,7 +145,7 @@ Re-check these before changing the copy above.
 | Two domains, no analytics | `manifest.json` `allowedDomains`; with the MVP scope every `fetch` is the GitHub client, `bridge-sign-in.ts` or `ship.ts` (the fix loop's `fix-session.ts` and `approve-fixes.ts` are hidden: `watchFixes` and `approver` return early) |
 | Preview before anything is written, local edits kept, orphans not deleted | `src/sync/flows.ts` (`analyze`, `buildPull`), `src/main/apply.ts` |
 | One collection per tier, aliases across collections, one collection per mode on limited plans | `src/sync/mapping.ts`, `src/main/apply.ts` (split layout when `addMode` throws) |
-| What is missing in Figma | `src/ui/index.ts` (`missingInFigmaGroup`), from the component specs (`src/sync/component-pull.ts`, `coverageView`) |
+| What is missing in Figma, own components matched by name, Bridge's mark first | `src/sync/figma-names.ts` (`normalizeComponentName`, `presenceInFigma`), `src/main/build-components.ts` (`listComponents`, local components only), `src/ui/index.ts` (`missingInFigmaGroup`), `test/figma-names.test.ts`, `test/flow-missing-by-name.test.ts` |
 | Three-way diff, conflicts decided by the user, swatches | `src/sync/flows.ts` (`buildPush`), `src/ui/index.ts` (`viewPush`) |
 | Contrast AA, AAA or fail, failing pair blocks the send | `@bridge-ds/core` `wcag.ts`, `src/ui/index.ts` (`viewPush`, blocking problems disable the bar) |
 | Suggestion mode: a GitHub issue | `src/sync/flows.ts` (`sendSuggestion`), `@bridge-ds/core` `config.ts` (`changesMode`: "suggest" when the config does not say) |

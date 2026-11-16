@@ -1,7 +1,7 @@
 {
   "version": 1,
   "tool": "@bridge-ds/cli",
-  "createdAt": "2026-11-15T16:46:05.970Z",
+  "createdAt": "2026-11-16T02:38:08.799Z",
   "storybook": "https://bridge-storybook.floriangouloubi.com",
   "scale": 2,
   "components": {
@@ -3980,6 +3980,30 @@
             "announce": "auto",
             "title": "Figma sync is running",
             "children": "New variables appear here when the sync finishes. You can keep editing."
+          }
+        }
+      }
+    },
+    "AnnouncementStrip": {
+      "variants": {
+        "Appearance=harbor": {
+          "file": "feedback-announcementstrip-harbor.png",
+          "width": 729.31,
+          "height": 20,
+          "story": "feedback-announcementstrip--harbor",
+          "props": {
+            "appearance": "harbor",
+            "label": "Founding teams"
+          }
+        },
+        "Appearance=neutral": {
+          "file": "feedback-announcementstrip-neutral.png",
+          "width": 729.31,
+          "height": 20,
+          "story": "feedback-announcementstrip--neutral",
+          "props": {
+            "appearance": "neutral",
+            "label": "Founding teams"
           }
         }
       }

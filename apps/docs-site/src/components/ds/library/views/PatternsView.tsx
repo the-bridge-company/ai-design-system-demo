@@ -3,9 +3,11 @@
 // browser (LibraryTeamPatterns.tsx). Data: lib/library/patterns.ts over patterns/<id>.pattern.json.
 //   Index     one group per kind (Interactions, Actions), each pattern a card: its name and what it is for.
 //   Pattern   what it is for, then the stage. An interaction: the components that do it, each in its own words, on the
-//             stage. An action: the stage, the rules, the components it uses and where the product does it.
+//             stage. An action: the stage, the rules, the components it uses and where the product does it. A place in
+//             a product of its own repository (usedIn[].product) says the product's name, and its file links there.
 import type { ReactNode } from 'react';
 import { Link } from '@bridge-ds/react';
+import { patternUseHref, patternUsePlace, type PatternUse, type ProductConfig } from '@bridge-ds/core';
 import { LibraryHeader } from '../FoundationParts';
 import ActionStage from '../ActionStage';
 import InteractionStage from '../InteractionStage';
@@ -54,11 +56,30 @@ export function PatternsView({ groups, hrefs }: { groups: PatternGroup[]; hrefs:
   );
 }
 
-/** The places of an action by the label people read there, in order of first appearance: [label, screens]. */
-export function usedByLabel(list: readonly { label: string; screen: string }[]): [string, string[]][] {
-  const by = new Map<string, string[]>();
-  for (const u of list) (by.get(u.label) ?? by.set(u.label, []).get(u.label)!).push(u.screen);
+/** The places of an action by the label people read there, in order of first appearance: [label, places]. */
+export function placesByLabel<T extends { label: string }>(list: readonly T[]): [string, T[]][] {
+  const by = new Map<string, T[]>();
+  for (const u of list) (by.get(u.label) ?? by.set(u.label, []).get(u.label)!).push(u);
   return [...by.entries()];
+}
+
+/** The places of an action by label, screens only: [label, screens]. */
+export const usedByLabel = (list: readonly { label: string; screen: string }[]): [string, string[]][] => placesByLabel(list).map(([label, places]) => [label, places.map((u) => u.screen)]);
+
+/** The repository a Library shows: where its places' files are (the design system's own, or a product's). */
+export interface PatternSite {
+  owner: string;
+  repo: string;
+  defaultBranch?: string | undefined;
+  products?: readonly ProductConfig[] | undefined;
+}
+
+/** A place as the page shows it: the product's name when it names one, and its file on GitHub when that is known. */
+export function patternPlace(u: PatternUse, site: PatternSite | undefined): { productName: string | null; href: string | null } {
+  if (!site) return { productName: u.product ?? null, href: null };
+  const ctx = { products: site.products, designSystemRepo: site.owner && site.repo ? `${site.owner}/${site.repo}` : null, branch: site.defaultBranch };
+  const { product } = patternUsePlace(u, ctx);
+  return { productName: product?.name ?? u.product ?? null, href: patternUseHref(u, ctx) };
 }
 
 export interface PatternViewProps {
@@ -70,9 +91,11 @@ export interface PatternViewProps {
   storybook?: string | undefined;
   /** Under an action's rules, for a member who can send requests: "Suggest a change to this pattern" (PatternChange). */
   ruleChange?: ReactNode;
+  /** The repository and its products (model.site): a place's product name and its file's link on GitHub. */
+  site?: PatternSite | undefined;
 }
 
-export function PatternView({ entry, links, live = false, storybook, ruleChange }: PatternViewProps) {
+export function PatternView({ entry, links, live = false, storybook, ruleChange, site }: PatternViewProps) {
   const { pattern } = entry;
   return (
     <>
@@ -107,22 +130,33 @@ export function PatternView({ entry, links, live = false, storybook, ruleChange 
             <h2 id="pt-used">Used in</h2>
             {/* Each label once, with every screen that shows it. */}
             <dl className="pt-used">
-              {usedByLabel(entry.pattern.usedIn).map(([label, screens]) => (
+              {placesByLabel(entry.pattern.usedIn).map(([label, places]) => (
                 <div key={label}>
                   <dt>{label}</dt>
-                  {screens.map((sc) => (
-                    <dd key={sc}>{sc}</dd>
-                  ))}
+                  {places.map((u) => {
+                    const { productName } = patternPlace(u, site);
+                    return <dd key={`${u.screen} ${u.product ?? ''}`}>{productName ? `${u.screen}, in ${productName}` : u.screen}</dd>;
+                  })}
                 </div>
               ))}
             </dl>
             <DevDetail id="pt-files" title="For developers: where each one is in the code">
               <ul className="pt-files">
-                {entry.pattern.usedIn.map((u) => (
-                  <li key={`${u.screen} ${u.file}`} className="mono">
-                    {u.file}
-                  </li>
-                ))}
+                {entry.pattern.usedIn.map((u) => {
+                  const { productName, href } = patternPlace(u, site);
+                  const file = productName ? `${productName}: ${u.file}` : u.file;
+                  return (
+                    <li key={`${u.screen} ${u.product ?? ''} ${u.file}`} className="mono">
+                      {href ? (
+                        <Link href={href} external>
+                          {file}
+                        </Link>
+                      ) : (
+                        file
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </DevDetail>
           </section>

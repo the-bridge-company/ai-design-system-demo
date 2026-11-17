@@ -12,7 +12,7 @@ import { loadComponents } from '../../../../lib/library/components';
 import { libraryPatterns, patternById } from '../../../../lib/library/patterns';
 import type { LibraryData } from '../library-data';
 import ComponentView from './ComponentView';
-import { PatternsView, PatternView, patternHrefs, patternLinks, usedByLabel } from './PatternsView';
+import { PatternsView, PatternView, patternHrefs, patternLinks, placesByLabel, usedByLabel } from './PatternsView';
 
 const own: LibraryData = { model: repoModel, team: null, extras: {} };
 const SB = 'https://storybook.example.com';
@@ -89,6 +89,25 @@ describe('an action', () => {
     expect(container.querySelector('.pt-used')!.textContent).toContain('Settings, Danger zone');
     expect(container.querySelector('.pt-used')!.textContent).not.toContain('apps/docs-site');
     expect(usedByLabel([{ label: 'A', screen: 'x' }, { label: 'B', screen: 'y' }, { label: 'A', screen: 'z' }])).toEqual([['A', ['x', 'z']], ['B', ['y']]]);
+    await expectNoAxeViolations();
+  });
+
+  it("names a place's product and links its file in that product's repository, a design system file in this one", async () => {
+    const entry = patternById(groups, 'delete')!;
+    if (entry.kind !== 'action') throw new Error('delete is an action');
+    const inCrm = { screen: 'Contacts', label: 'Delete contact', product: 'crm', file: 'src/contacts/Row.tsx', match: 'Delete contact' };
+    const withCrm = { ...entry, pattern: { ...entry.pattern, usedIn: [entry.pattern.usedIn[0]!, inCrm] } };
+    const site = { owner: 'acme-design-demo', repo: 'acme-ds', defaultBranch: 'main', products: [{ key: 'crm', name: 'CRM', repo: 'acme-design-demo/acme-crm' }, { key: 'library', name: 'Library', default: true }] };
+    const { container } = render(createElement(PatternView, { entry: withCrm, links: patternLinks(own, withCrm), site }));
+    expect([...container.querySelectorAll('.pt-used dd')].map((d) => d.textContent)).toEqual([entry.pattern.usedIn[0]!.screen, 'Contacts, in CRM']);
+    // The files sit in the "For developers" fold, closed until asked.
+    fireEvent.click(screen.getByRole('button', { name: 'For developers: where each one is in the code' }));
+    const files = [...container.querySelectorAll('.pt-files a')].map((a) => [a.textContent?.replace(' (opens in a new tab)', ''), a.getAttribute('href')]);
+    expect(files).toEqual([
+      [entry.pattern.usedIn[0]!.file, `https://github.com/acme-design-demo/acme-ds/blob/main/${entry.pattern.usedIn[0]!.file}`],
+      ['CRM: src/contacts/Row.tsx', 'https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/contacts/Row.tsx'],
+    ]);
+    expect(placesByLabel([inCrm, { ...inCrm, screen: 'Leads' }]).map(([l, p]) => [l, p.length])).toEqual([['Delete contact', 2]]);
     await expectNoAxeViolations();
   });
 });

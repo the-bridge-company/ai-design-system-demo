@@ -339,6 +339,22 @@ same rule.
 - **With Claude:** the tools that start work take `product`. Claude infers it from the repository or folder it
   works in (`bridge_list_products` says which one and how), and asks you when it is not obvious.
 
+### Where a pattern happens
+
+An action pattern (`patterns/<id>.pattern.json`, kind `action`) lists in `usedIn` the real places that do it: the
+screen, the label people read, the `file` that holds it and a `match` that file contains. Without `product`, `file`
+is relative to the design system repository. A place in a product that lives in its own repository adds `product`,
+a key of `products`, and its `file` is then relative to that repository:
+
+```json
+{ "screen": "Contacts", "label": "Delete contact", "product": "crm", "file": "src/contacts/ContactRow.tsx", "match": "Delete contact" }
+```
+
+A key `products` does not list makes the file a problem (Library and `bridge_list_patterns` say which and why). The
+Library shows the place as "Contacts, in CRM" and links the file in the product's repository; `bridge_get_pattern`
+and llms.txt give Claude the product's name and repository. The design system repository's own test checks that
+every place without `product` holds its `match`; it cannot read another repository, so it skips a product's places.
+
 ## New brands
 
 A brand re-points palette, radius and font roles; components never change. `bridge_plan_brand` starts from

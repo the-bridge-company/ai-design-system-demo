@@ -80,6 +80,7 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
         entry={entry}
         links={patternLinks(view, entry)}
         storybook={httpsStorybook(data.storybook)}
+        site={data.model.site}
         ruleChange={
           // Only a member who can write sends requests (the gate of Edit on a component page); readers never see it.
           entry.kind === 'action' && data.canEdit ? (

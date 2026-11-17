@@ -21,5 +21,5 @@ const sources = [`${PATTERNS_DIR}/${entry.pattern.id}${PATTERN_SUFFIX}`];
 ---
 
 <Layout title={entry.pattern.name} description={entry.pattern.purpose} sources={sources} updated={freshness(sources)}>
-  <PatternView client:load entry={entry} links={patternLinks(data, entry)} live />
+  <PatternView client:load entry={entry} links={patternLinks(data, entry)} site={data.model.site} live />
 </Layout>

@@ -3,6 +3,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { BridgeContext, ops } from '../src/lib.js';
 import { REPO } from './helpers.js';
+import { parseConfig } from '../src/config.js';
+import { getPattern, listPatterns } from '../src/patterns.js';
+import type { RepoSource } from '../src/source.js';
 
 let ctx: BridgeContext;
 beforeAll(async () => {
@@ -45,5 +48,23 @@ describe('bridge_get_pattern', () => {
 
   it('names the known ids when the pattern does not exist', async () => {
     await expect(ops.getPatternOp(ctx, { id: 'teleport' })).rejects.toThrow(/No pattern "teleport". Known: .*delete/);
+  });
+});
+
+describe('a place in a product of its own repository', () => {
+  const place = (product: string) => ({ screen: 'Contacts', label: 'Delete contact', product, file: 'src/contacts/Row.tsx', match: 'Delete contact' });
+  const pattern = (id: string, product: string) =>
+    JSON.stringify({ id, kind: 'action', name: id, purpose: 'Removes it.', reversible: false, rules: ['Ask first.'], components: ['Button'], usedIn: [{ screen: 'Settings', label: 'Delete', file: 'a.ts', match: 'Delete' }, place(product)] });
+  const files: Record<string, string> = { 'patterns/delete.pattern.json': pattern('delete', 'crm'), 'patterns/remove.pattern.json': pattern('remove', 'shop') };
+  const source: RepoSource = { kind: 'local', label: 'acme', list: async (prefix = '') => Object.keys(files).filter((f) => f.startsWith(prefix)), read: async (p) => files[p] ?? null };
+  const config = parseConfig({ repo: { owner: 'acme-design-demo', name: 'acme-ds' }, products: [{ key: 'crm', name: 'CRM', repo: 'acme-design-demo/acme-crm' }, { key: 'library', name: 'Library', default: true }] });
+
+  it('gives agents the product name and repository, and reports an unknown product key', async () => {
+    const p = (await getPattern(source, config, { id: 'delete' })) as { usedIn: Record<string, unknown>[] };
+    expect(p.usedIn[1]).toEqual({ ...place('crm'), productName: 'CRM', repo: 'acme-design-demo/acme-crm' });
+    expect(p.usedIn[0]).not.toHaveProperty('product');
+    const list = await listPatterns(source, config, {});
+    expect(list.patterns.map((x) => x.id)).toEqual(['delete']);
+    expect(list.problems).toEqual([expect.stringMatching(/^patterns\/remove\.pattern\.json: usedIn\.1\.product: bridge\.config\.json products has no "shop"/)]);
   });
 });

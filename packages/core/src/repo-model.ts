@@ -428,10 +428,14 @@ export async function loadRepoModel(source: RepoSource, options: RepoModelOption
     }
   }
 
-  const patternRead = readPatterns(patternFiles.flatMap((p): [string, string][] => {
-    const body = readMore(p);
-    return body === undefined ? [] : [[p, body]];
-  }));
+  // Places naming a product (usedIn[].product) are checked against the products the config lists.
+  const patternRead = readPatterns(
+    patternFiles.flatMap((p): [string, string][] => {
+      const body = readMore(p);
+      return body === undefined ? [] : [[p, body]];
+    }),
+    { products: site.products },
+  );
   problems.push(...patternRead.problems);
 
   const mapRead = readComponentMap(readMore(COMPONENT_MAP_FILE));

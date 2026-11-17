@@ -291,7 +291,7 @@ export function createServer(ctx: BridgeContext, opts: ServerOptions = {}): McpS
     'bridge_get_pattern',
     {
       title: 'Get pattern',
-      description: 'One pattern by id or name, with its kind. An interaction gives the components that do it, each in its own words and keys (from their docs.json behaviors). An action gives whether it can be undone, its rules (Undo in a Toast when it can be undone, an AlertDialog first when it cannot), the components it uses and usedIn: the real places of the product that do it. Follow the rules when building that flow.',
+      description: 'One pattern by id or name, with its kind. An interaction gives the components that do it, each in its own words and keys (from their docs.json behaviors). An action gives whether it can be undone, its rules (Undo in a Toast when it can be undone, an AlertDialog first when it cannot), the components it uses and usedIn: the real places of the product that do it (a place in a product with its own repository names the product, its name and that repository, its file relative to it). Follow the rules when building that flow.',
       inputSchema: { id: z.string().describe('Pattern id or name, e.g. delete or close-on-escape.') },
       annotations: RO,
     },

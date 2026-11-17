@@ -102,5 +102,11 @@ describe('vercel-ignore agent branches', () => {
     };
     expect(decide('docs', { ref: 'agent/library-phase-5' }, git)).toMatchObject({ build: false });
     expect(decide('storybook', { ref: 'agent/x' }, git).build).toBe(false);
+    expect(decide('docs', { ref: 'agent/preview-1202' }, git).build).toBe(false);
+  });
+
+  it("deploys the Storybook of Claude's behavior preview, which Studio plays", () => {
+    const git = (args) => (args[0] === 'merge-base' ? 'abc1234\n' : 'packages/react/src/components/Select/Select.tsx\n');
+    expect(decide('storybook', { ref: 'agent/preview-1202' }, git).build).toBe(true);
   });
 });

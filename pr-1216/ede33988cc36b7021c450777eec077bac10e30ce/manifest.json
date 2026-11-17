@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-17T13:38:32.441Z",
-  "durationMs": 1224,
+  "createdAt": "2026-11-17T13:47:51.719Z",
+  "durationMs": 912,
   "base": {
-    "ref": "dc0f61ba99808575db064ce6506036f7c6c918e1",
-    "sha": "dc0f61ba99808575db064ce6506036f7c6c918e1"
+    "ref": "cd93cc62b6e5ec729cded21cc5ceaeb9184afbe4",
+    "sha": "cd93cc62b6e5ec729cded21cc5ceaeb9184afbe4"
   },
   "head": {
-    "ref": "ef466a9b449425444c7571fee5fcf6dbe053007b",
-    "sha": "ef466a9b449425444c7571fee5fcf6dbe053007b"
+    "ref": "ede33988cc36b7021c450777eec077bac10e30ce",
+    "sha": "ede33988cc36b7021c450777eec077bac10e30ce"
   },
   "options": {
     "only": [
@@ -40,6 +40,7 @@
       "apps/docs-site/src/lib/llms.test.ts",
       "apps/docs-site/src/lib/studio-patterns.test.ts",
       "packages/core/test/patterns.test.ts",
+      "packages/mcp/test/patterns.test.ts",
       "packages/react/src/components/Accordion/Accordion.docs.json",
       "packages/react/src/components/AlertDialog/AlertDialog.docs.json",
       "packages/react/src/components/AlertDialog/AlertDialog.test.tsx",

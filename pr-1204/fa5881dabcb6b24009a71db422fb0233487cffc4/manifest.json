@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-17T00:47:10.954Z",
-  "durationMs": 149061,
+  "createdAt": "2026-11-17T02:27:18.721Z",
+  "durationMs": 151263,
   "base": {
-    "ref": "691101be5eb0b4a1230f8d1c199291dd6041bff2",
-    "sha": "691101be5eb0b4a1230f8d1c199291dd6041bff2"
+    "ref": "d2c66ccd4786f8d6d52c8f5b4aca6b0f413ffaf3",
+    "sha": "d2c66ccd4786f8d6d52c8f5b4aca6b0f413ffaf3"
   },
   "head": {
-    "ref": "39d4ee24574b30fd35eff27985e7f23678f8695a",
-    "sha": "39d4ee24574b30fd35eff27985e7f23678f8695a"
+    "ref": "fa5881dabcb6b24009a71db422fb0233487cffc4",
+    "sha": "fa5881dabcb6b24009a71db422fb0233487cffc4"
   },
   "options": {
     "only": [
@@ -60,12 +60,12 @@
   },
   "summary": {
     "shots": 40,
-    "changed": 0,
-    "unchanged": 40,
+    "changed": 1,
+    "unchanged": 39,
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 0
+    "maxPercent": 8.59
   },
   "shots": [
     {
@@ -363,11 +363,18 @@
       "storyId": "forms-select--all-states",
       "brand": "ocean",
       "theme": "dark",
-      "status": "unchanged",
-      "changedPixels": 0,
+      "status": "changed",
+      "changedPixels": 77218,
       "totalPixels": 899072,
-      "percent": 0,
-      "boxes": [],
+      "percent": 8.59,
+      "boxes": [
+        {
+          "x": 32,
+          "y": 672,
+          "width": 800,
+          "height": 206
+        }
+      ],
       "size": {
         "before": {
           "width": 1024,
@@ -378,7 +385,12 @@
           "height": 878
         }
       },
-      "images": {}
+      "images": {
+        "before": "before/story__forms-select--all-states__ocean-dark.png",
+        "after": "after/story__forms-select--all-states__ocean-dark.png",
+        "diff": "diff/story__forms-select--all-states__ocean-dark.png",
+        "composite": "composite/story__forms-select--all-states__ocean-dark.png"
+      }
     },
     {
       "key": "story__forms-select--default__ocean-dark",

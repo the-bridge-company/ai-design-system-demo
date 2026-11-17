@@ -23,6 +23,8 @@ export interface LibraryPage {
   apart?: boolean;
   /** Built hidden, shown once the team's data has it (Patterns: scripts/library-team.ts showPatternsNav). */
   until?: 'patterns';
+  /** Its name inside its nav group when that differs from the page's (the Patterns index is Overview there). */
+  navLabel?: string;
 }
 
 /**
@@ -60,7 +62,14 @@ export const COMPONENT_SHELL_ROUTE = 'components/item/';
 export const COMPONENT_SLUG_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
 
 /** A top-level entry of a team's Library side nav: a page, or a group of pages (Foundations). */
-export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[] };
+export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[]; until?: 'patterns' };
+
+/**
+ * The Patterns index of a team's Library: "Patterns" in search, "Overview" in the nav group, as on Bridge's own Library
+ * (lib/nav.ts patternsNav). The group's other pages are the team's patterns, only known once its data is read: the
+ * browser adds them under Overview (scripts/library-team.ts fillPatternsNav), each at ?p=<id>.
+ */
+export const LIBRARY_PATTERNS_PAGE: LibraryPage = { route: 'patterns/', label: 'Patterns', navLabel: 'Overview', icon: 'hand', meta: 'Interactions several components share and actions people take across the product', until: 'patterns' };
 
 /**
  * The side nav of a team's Library: the same structure as Bridge's own Library (lib/nav.ts libraryNav), Home,
@@ -70,8 +79,8 @@ export const LIBRARY_TEAM_NAV: LibraryNavEntry[] = [
   { route: '', label: 'Home', icon: 'home', meta: 'What this design system holds and where to start' },
   { label: 'Foundations', icon: 'layers', children: LIBRARY_FOUNDATION_PAGES },
   { route: 'components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance and live stories' },
-  // One page for a team (its patterns are only known once its data is read): the index, each pattern by ?p=<id>.
-  { route: 'patterns/', label: 'Patterns', icon: 'hand', meta: 'Interactions several components share and actions people take across the product', until: 'patterns' },
+  // One shell for a team (its patterns are only known once its data is read): the index, each pattern by ?p=<id>.
+  { label: 'Patterns', icon: 'hand', until: 'patterns', children: [LIBRARY_PATTERNS_PAGE] },
   { label: 'Use', icon: 'book', children: LIBRARY_USE_PAGES },
 ];
 

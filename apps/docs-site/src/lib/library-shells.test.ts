@@ -144,7 +144,8 @@ describe('addresses', () => {
     for (const r of pages) expect(LIBRARY_SHELL_ROUTES).toContain(r);
     expect(LIBRARY_TEAM_NAV.map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Patterns', 'Use']);
     // Patterns is built hidden: a team shows it once its data has patterns (scripts/library-team.ts).
-    expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({ route: 'patterns/', until: 'patterns' });
+    // A group, as on Bridge's own Library: Overview is the index (still "Patterns" in search), the team's patterns follow.
+    expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({ until: 'patterns', children: [{ route: 'patterns/', label: 'Patterns', navLabel: 'Overview', until: 'patterns' }] });
     expect(FOUNDATIONS.map((f) => f.href)).toEqual(LIBRARY_FOUNDATION_PAGES.map((p) => `/${p.route}`));
     expect(pages).toContain('foundations/accessibility/');
   });

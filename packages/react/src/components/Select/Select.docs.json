@@ -182,8 +182,9 @@
       "text": "A click outside closes and keeps the highlighted option (with multiple, it only closes)",
       "try": "Open the list, move to another option with the arrow keys, then click anywhere outside it",
       "keys": [
+        "Enter",
         "ArrowDown",
-        "ArrowUp"
+        "click-outside"
       ]
     },
     {

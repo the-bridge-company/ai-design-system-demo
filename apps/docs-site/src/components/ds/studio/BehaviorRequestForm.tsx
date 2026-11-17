@@ -222,31 +222,29 @@ function NewPatternForm({ formId, target, repo, integrations, pageUrl, busy, onB
         <p className="spt-places-line" id={`${formId}-places-line`}>
           {c.places.line}
         </p>
-        {f.places.map((p, i) => (
-          <div className="spt-place" key={i} role="group" aria-label={c.place(i + 1)}>
-            <div className="spt-place-head">
-              <span className="spt-place-n" aria-hidden="true">
-                {c.place(i + 1)}
-              </span>
-              <IconButton icon={X} label={c.remove(i + 1)} size="sm" variant="ghost" onClick={() => setF((x) => ({ ...x, places: x.places.filter((_, j) => j !== i) }))} />
+        <div className="spt-places-list">
+          {f.places.map((p, i) => (
+            <div className="spt-place" key={i} role="group" aria-label={c.place(i + 1)}>
+              <div className="spt-place-head">
+                <span className="spt-place-n" aria-hidden="true">
+                  {c.place(i + 1)}
+                </span>
+                <IconButton icon={X} label={c.remove(i + 1)} size="sm" variant="ghost" onClick={() => setF((x) => ({ ...x, places: x.places.filter((_, j) => j !== i) }))} />
+              </div>
+              <div className="spt-place-pair">
+                <Input label={c.screen.label} placeholder={c.screen.placeholder} autoComplete="off" value={p.screen} onValueChange={(v) => setPlace(i, 'screen', v)} aria-invalid={shown.places && !p.screen.trim() ? true : undefined} />
+                <Input label={c.label.label} placeholder={c.label.placeholder} autoComplete="off" value={p.label} onValueChange={(v) => setPlace(i, 'label', v)} aria-invalid={shown.places && !p.label.trim() ? true : undefined} />
+              </div>
+              <Input label={c.link.label} placeholder={c.link.placeholder} autoComplete="off" value={p.link} onValueChange={(v) => setPlace(i, 'link', v)} />
             </div>
-            <div className="spt-place-pair">
-              <Input label={c.screen.label} placeholder={c.screen.placeholder} autoComplete="off" value={p.screen} onValueChange={(v) => setPlace(i, 'screen', v)} aria-invalid={shown.places && !p.screen.trim() ? true : undefined} />
-              <Input label={c.label.label} placeholder={c.label.placeholder} autoComplete="off" value={p.label} onValueChange={(v) => setPlace(i, 'label', v)} aria-invalid={shown.places && !p.label.trim() ? true : undefined} />
-            </div>
-            <Input label={c.link.label} placeholder={c.link.placeholder} autoComplete="off" value={p.link} onValueChange={(v) => setPlace(i, 'link', v)} />
+          ))}
+          <div>
+            <Button variant="secondary" size="sm" iconStart={Plus} onClick={() => setF((x) => ({ ...x, places: [...x.places, EMPTY_PLACE] }))}>
+              {c.add}
+            </Button>
           </div>
-        ))}
-        <div>
-          <Button variant="secondary" size="sm" iconStart={Plus} onClick={() => setF((x) => ({ ...x, places: [...x.places, EMPTY_PLACE] }))}>
-            {c.add}
-          </Button>
+          {shown.places && <Alert tone="danger">{shown.places}</Alert>}
         </div>
-        {shown.places && (
-          <Alert tone="danger">
-            {shown.places}
-          </Alert>
-        )}
       </fieldset>
       <Failed text={failed} />
     </form>

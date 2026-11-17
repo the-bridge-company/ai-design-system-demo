@@ -286,19 +286,29 @@ export default function StudioPatterns({ groups }: { groups: StudioPatternGroup[
 export function TeamPatterns() {
   const { load, retry } = useTeamData();
   const data = load.status === 'ready' ? load.data : null;
+  // The sample team's visitor explores as its people: the buttons show, and Send opens the sample-team dialog.
+  const [sample, setSample] = useState(false);
+  useEffect(() => {
+    if (!data) return;
+    let live = true;
+    void import('../../../scripts/demo-gate').then((d) => live && setSample(d.sampleVisitor()));
+    return () => {
+      live = false;
+    };
+  }, [data]);
   const groups = useMemo(() => (data ? studioPatternGroups(libraryPatterns(data.model), (id) => libraryHref(data.owner, data.repo, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`)) : []), [data]);
   const suggest = useMemo<PatternSuggestContext | null>(
     () =>
       data
         ? {
             repo: `${data.owner}/${data.repo}`,
-            canEdit: Boolean(data.canEdit),
+            canEdit: Boolean(data.canEdit) || sample,
             integrations: data.model.site.integrations,
             components: (data.model.components?.list ?? []).map((c) => ({ name: c.name, behaviors: readBehaviors(c.docs?.behaviors).map((b) => ({ id: b.id, text: b.text })) })),
             pageUrl: (id) => new URL(libraryHref(data.owner, data.repo, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`), location.origin).href,
           }
         : null,
-    [data],
+    [data, sample],
   );
   // Loading and errors: the buttons wait until membership is known, so nothing flashes and disappears.
   if (load.status === 'loading') return <TeamPageSkeleton label="Reading the patterns" rows={4} />;

@@ -109,8 +109,6 @@
 
 /* A new action's places: one block per place, the screen and the label side by side, then the optional link. */
 .spt-places {
-  display: grid;
-  gap: var(--space-4);
   margin: 0;
   padding: 0;
   border: 0;
@@ -126,8 +124,18 @@
 }
 
 .spt-places-line {
-  margin: calc(-1 * var(--space-3)) 0 0;
+  margin: var(--space-1) 0 var(--space-4);
   color: var(--color-text-muted);
+}
+
+.spt-places-list {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: stretch;
+}
+
+.spt-places-list > div:has(> button) {
+  justify-self: start;
 }
 
 .spt-place {

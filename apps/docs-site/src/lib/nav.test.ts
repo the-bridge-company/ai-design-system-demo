@@ -27,7 +27,7 @@ describe('navigation data', () => {
 
   it('lists Patterns by kind, Interactions then Actions, each opening the index on its section (decision 2026-11-15)', () => {
     const patterns = navFor('library').find((e) => e.label === 'Patterns')!;
-    // No Overview row and no row per pattern: the kinds Bridge's design system has, both today.
+    // No Overview row and no row per pattern: both kinds, always (a kind with no pattern yet lands on its empty line).
     expect(patterns.children!.map((i) => [i.label, i.href])).toEqual([
       ['Interactions', '/patterns/#pt-interaction'],
       ['Actions', '/patterns/#pt-action'],

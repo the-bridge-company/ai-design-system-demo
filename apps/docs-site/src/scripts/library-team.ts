@@ -73,16 +73,14 @@ export function showPatternsNav(has: boolean, root: ParentNode = document) {
 
 /**
  * The rows of a team's Patterns group, by kind (Interactions, Actions: lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES),
- * built hidden by the layout: each shows when the team has a pattern of its kind. On a pattern's page (?p=<id>) the row
- * of that pattern's kind is the current page; on the index none is (the group holds the page).
+ * both shown even for a kind with no pattern yet (its section says how one comes to exist). On a pattern's page
+ * (?p=<id>) the row of that pattern's kind is the current page; on the index none is (the group holds the page).
  */
-export function showPatternKinds(kinds: readonly PatternKind[], current: PatternKind | null, root: ParentNode = document) {
+export function markPatternKind(current: PatternKind | null, root: ParentNode = document) {
   for (const li of root.querySelectorAll<HTMLElement>('[data-nav-kind]')) {
-    const kind = li.dataset.navKind as PatternKind;
-    li.hidden = !kinds.includes(kind);
     const a = li.querySelector('a');
     if (!a) continue;
-    if (kind === current) a.setAttribute('aria-current', 'page');
+    if (li.dataset.navKind === current) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
 }
@@ -119,7 +117,7 @@ export function initLibraryTeam() {
       const patterns = libraryPatterns(data.model);
       // The pattern this page shows: only the Patterns shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx).
       const shown = document.documentElement.dataset.libraryShell === 'patterns' ? new URLSearchParams(location.search).get(PATTERN_QUERY) : null;
-      showPatternKinds(patterns.map((g) => g.kind), shown ? (patternById(patterns, shown)?.kind ?? null) : null);
+      markPatternKind(shown ? (patternById(patterns, shown)?.kind ?? null) : null);
       showPatternsNav(patterns.length > 0);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));

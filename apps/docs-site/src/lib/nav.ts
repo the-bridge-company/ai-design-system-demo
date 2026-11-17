@@ -135,15 +135,16 @@ export const PATTERNS_HOME = `/${PATTERNS_ROUTE}`;
 
 /**
  * The Patterns group, by kind (founder decision 2026-11-15): Interactions, then Actions, each opening the index on its
- * section (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES, the same rows as a team's Library), only the kinds this
- * design system has. No row per pattern and no Overview: a pattern's page makes its kind's row current. Empty without
- * patterns.
+ * section (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES, the same rows as a team's Library). Both rows, even for a
+ * kind with no pattern yet: its section says how one comes to exist. No row per pattern and no Overview: a pattern's
+ * page makes its kind's row current. Empty without patterns.
  */
 export function patternsNav(): NavItem[] {
   const groups = libraryPatterns(repoModel);
-  return LIBRARY_PATTERN_KIND_PAGES.flatMap((row): NavItem[] => {
-    const group = groups.find((g) => g.kind === row.kind);
-    return group ? [{ href: `/${row.route}`, label: row.label, meta: row.meta, kind: group.kind, also: group.items.map((e) => `/${patternRoute(e.pattern.id)}`) }] : [];
+  if (!groups.length) return [];
+  return LIBRARY_PATTERN_KIND_PAGES.map((row): NavItem => {
+    const items = groups.find((g) => g.kind === row.kind)?.items ?? [];
+    return { href: `/${row.route}`, label: row.label, meta: row.meta, kind: row.kind!, also: items.map((e) => `/${patternRoute(e.pattern.id)}`) };
   });
 }
 

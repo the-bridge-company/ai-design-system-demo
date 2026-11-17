@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERN_KIND_LABEL, PATTERN_KINDS, type RepoModel } from '@bridge-ds/core';
 import { repoModel } from '../model';
-import { interactionIds, libraryPatterns, patternById, patternComponents, patternsLead } from './patterns';
+import { interactionIds, libraryPatterns, PATTERN_KIND_EMPTY, PATTERN_KIND_SUGGEST, patternById, patternComponents, patternKindGroups, PATTERNS_EMPTY, patternsLead } from './patterns';
 import { patternsNav } from '../nav';
 import { LIBRARY_PATTERN_KIND_PAGES, patternKindSection } from '../library-shells';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -44,6 +44,25 @@ describe('libraryPatterns', () => {
   it('shows nothing for a model without patterns', () => {
     expect(libraryPatterns({ ...repoModel, patterns: [] } as RepoModel)).toEqual([]);
     expect(libraryPatterns({ ...repoModel, patterns: undefined } as RepoModel)).toEqual([]);
+  });
+});
+
+describe('a kind with no pattern yet', () => {
+  it('keeps its place, in order, with no pattern', () => {
+    const only = groups.filter((g) => g.kind === 'action');
+    expect(patternKindGroups(only).map((g) => [g.kind, g.label, g.items.length])).toEqual([
+      ['interaction', 'Interactions', 0],
+      ['action', 'Actions', 2],
+    ]);
+    expect(patternKindGroups([]).map((g) => g.label)).toEqual(['Interactions', 'Actions']);
+  });
+
+  it('says how one comes to exist, in the Bridge voice', () => {
+    for (const text of [...Object.values(PATTERN_KIND_EMPTY), PATTERNS_EMPTY, ...Object.values(PATTERN_KIND_SUGGEST)]) {
+      expect(text).not.toMatch(/[\u2014!]/);
+    }
+    expect(PATTERN_KIND_EMPTY.interaction).toMatch(/^None yet\. .*two components .*closing on Escape\.$/);
+    expect(PATTERN_KIND_EMPTY.action).toMatch(/^None yet\. .*at least two places, like Delete\.$/);
   });
 });
 
@@ -109,6 +128,12 @@ describe('the Patterns nav rows, by kind (founder decision 2026-11-15)', () => {
   it('opens sections the Patterns page has', () => {
     const html = renderToStaticMarkup(createElement(PatternsView, { groups, hrefs: patternHrefs({ team: null }, groups) }));
     for (const g of groups) expect(html).toContain(`id="${patternKindSection(g.kind)}"`);
+  });
+
+  it('opens both sections even when one kind has no pattern yet', () => {
+    const only = groups.filter((g) => g.kind === 'interaction');
+    const html = renderToStaticMarkup(createElement(PatternsView, { groups: only, hrefs: patternHrefs({ team: null }, only) }));
+    for (const k of PATTERN_KINDS) expect(html).toContain(`id="${patternKindSection(k)}"`);
   });
 
   it("lists Bridge's own kinds, each standing for its patterns' pages, no row per pattern and no Overview", () => {

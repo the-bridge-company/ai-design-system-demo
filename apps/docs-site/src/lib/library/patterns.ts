@@ -67,6 +67,26 @@ export const interactionIds = (groups: readonly PatternGroup[]): Set<string> => 
 /** The components a pattern uses: an action names them, an interaction is the components that do it. */
 export const patternComponents = (e: PatternEntry): string[] => (e.kind === 'action' ? e.pattern.components : e.components.map((c) => c.component));
 
+/**
+ * What a kind with no pattern says, on the Library's Patterns page and in Studio's Patterns table: how a pattern of that
+ * kind comes to exist (the rules of patterns/: an interaction is shared by two components or more, an action is done
+ * the same way in at least two places). Both kinds keep their place, so the page reads the same with or without them.
+ */
+export const PATTERN_KIND_EMPTY: Record<PatternKind, string> = {
+  interaction: 'None yet. An interaction appears here once two components do the same thing the same way, like closing on Escape.',
+  action: 'None yet. An action appears here once people do the same task the same way in at least two places, like Delete.',
+};
+
+/** The same rules for a Library with no pattern at all, said once under "No patterns yet". */
+export const PATTERNS_EMPTY = 'An interaction appears here once two components do the same thing the same way, like closing on Escape. An action, once people do the same task the same way in at least two places, like Delete.';
+
+/** The link a member who can write gets beside an empty kind, to suggest one in Studio. */
+export const PATTERN_KIND_SUGGEST: Record<PatternKind, string> = { interaction: 'Suggest an interaction', action: 'Suggest an action' };
+
+/** The kinds in order, each with its patterns (none for a kind the design system lacks): the page shows both. */
+export const patternKindGroups = (groups: readonly PatternGroup[]): PatternGroup[] =>
+  PATTERN_KINDS.map((kind) => groups.find((g) => g.kind === kind) ?? { kind, label: PATTERN_KIND_LABEL[kind], items: [] });
+
 /** The one line of the Patterns index and of the nav: how many of each kind. */
 export function patternsLead(groups: readonly PatternGroup[]): string {
   const n = (kind: PatternKind) => groups.find((g) => g.kind === kind)?.items.length ?? 0;

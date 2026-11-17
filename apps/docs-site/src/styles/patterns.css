@@ -40,6 +40,24 @@
   color: var(--color-text-muted);
 }
 
+/* Index: a kind with no pattern keeps its place, a small drawing beside how one comes to exist (as Notes' empty
+   state in an exploration, styles/exploration-page.css .xp-notes-empty). */
+.pt-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 65ch;
+}
+
+.pt-empty p {
+  margin: 0;
+}
+
+.pt-empty-art {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
 /* Interaction: the component's name over its row, in the place of a family label, as a link to its Behaviors. */
 .pt-comp-title {
   margin: 0 0 var(--space-2);

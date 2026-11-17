@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { behaviorRequestOf, composeRequestIssue, type BehaviorAsk } from '@bridge-ds/core';
-import { askedNotPatterns, patternRequests, requestsLabel, sharedComponents, studioPatternGroups, studioPatternsLead, type StudioPatternRow } from './studio-patterns';
+import { askedNotPatterns, patternRequests, requestsLabel, sharedComponents, studioPatternGroups, studioPatternsLead, suggestAsked, suggestPatternRoute, type StudioPatternRow } from './studio-patterns';
 import { libraryPatterns, patternRoute } from './library/patterns';
 import { repoModel } from './model';
 import type { BehaviorIssue } from './home-model';
@@ -15,6 +15,27 @@ function issue(number: number, subject: string, ask: BehaviorAsk, labels = ['com
 }
 
 describe('Studio Patterns rows', () => {
+  it('keep both kinds, a kind with no pattern as a group with no row', () => {
+    const only = studioPatternGroups(libraryPatterns(repoModel).filter((g) => g.kind === 'interaction'), (id) => id);
+    expect(only.map((g) => [g.label, g.rows.length > 0])).toEqual([
+      ['Interactions', true],
+      ['Actions', false],
+    ]);
+    // The lead counts what there is, and says nothing of the empty kind (the table does).
+    expect(studioPatternsLead(only)).toMatch(/^\d+ interactions shared across the product\.$/);
+    expect(studioPatternGroups([], (id) => id).every((g) => !g.rows.length)).toBe(true);
+  });
+
+  it('open the Suggest a pattern drawer from the address, on a kind or on the choice', () => {
+    expect(suggestPatternRoute('action')).toBe('patterns/?suggest=action');
+    expect(suggestPatternRoute(null)).toBe('patterns/?suggest=pattern');
+    expect(suggestAsked('?suggest=action')).toBe('action');
+    expect(suggestAsked('?suggest=interaction')).toBe('interaction');
+    expect(suggestAsked('?suggest=pattern')).toBeNull();
+    expect(suggestAsked('?suggest=<x>')).toBeNull();
+    expect(suggestAsked('')).toBeUndefined();
+  });
+
   it("are Bridge's own patterns/ files, in the Library's groups and order, each linked to its Library page", () => {
     expect(own.map((g) => g.label)).toEqual(['Interactions', 'Actions']);
     const all = own.flatMap((g) => g.rows);

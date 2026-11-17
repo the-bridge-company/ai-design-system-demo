@@ -124,7 +124,7 @@ const showToc = toc ?? (!isStudio && !wide && !isHome);
 const navRoute = libraryRoute === COMPONENT_SHELL_ROUTE ? 'components/' : libraryRoute;
 const isCurrent = (href: string) => (library ? href === `${LIBRARY_SHELL_ROOT}${navRoute}` : path === href);
 // A row is current on its page, and on the pages it stands for (under Patterns, a pattern's page makes its kind's row
-// current). A team's pattern page (?p=<id>) is only known in the browser: scripts/library-team.ts showPatternKinds.
+// current). A team's pattern page (?p=<id>) is only known in the browser: scripts/library-team.ts markPatternKind.
 const isCurrentItem = (item: NavItem) => isCurrent(item.href) || Boolean(item.also?.includes(path));
 
 // Breadcrumb only below the side nav's depth (a component page): the Harbor header and the nav say the rest.
@@ -344,8 +344,8 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                   </button>
                   <ul class="nav-sub" id={id} data-nav-sub={entry.until}>
                     {entry.children!.map((item) => (
-                      // A team's Patterns rows are built hidden: each shows once its data has a pattern of that kind.
-                      <li class:list={[{ 'nav-apart': item.apart }]} hidden={library && item.kind ? true : undefined} data-nav-kind={item.kind}>
+                      // A team's Patterns rows (both kinds, empty or not): the browser marks the current one on a pattern's page.
+                      <li class:list={[{ 'nav-apart': item.apart }]} data-nav-kind={item.kind}>
                         <Link variant="subtle" href={item.href} aria-current={isCurrentItem(item) ? 'page' : undefined} data-keep-branch={isStudio ? '' : undefined}>
                           <span>{item.label}</span>
                         </Link>

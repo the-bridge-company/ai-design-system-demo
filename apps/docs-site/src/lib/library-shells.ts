@@ -23,7 +23,7 @@ export interface LibraryPage {
   apart?: boolean;
   /** Built hidden, shown once the team's data has it (Patterns: scripts/library-team.ts showPatternsNav). */
   until?: 'patterns';
-  /** A row under Patterns: the kind of pattern it opens the Patterns page on (shown only when there is one of it). */
+  /** A row under Patterns: the kind of pattern it opens the Patterns page on (shown even with none of it yet). */
   kind?: 'interaction' | 'action';
 }
 
@@ -76,9 +76,9 @@ export const patternKindSection = (kind: 'interaction' | 'action'): string => `p
 /**
  * The rows under Patterns, by kind (founder decision 2026-11-15): a gesture several components share is an
  * Interaction, a task that chains several components is an Action, how one component applies a gesture stays on its
- * page. Each row opens the Patterns page on its kind's section; a Library shows a row only when it has a pattern of
- * that kind. The same rows for Bridge's own Library (lib/nav.ts patternsNav) and every team's (scripts/library-team.ts
- * showPatternKinds). Labels are @bridge-ds/core PATTERN_KIND_LABEL (library-shells.test.ts checks it).
+ * page. Each row opens the Patterns page on its kind's section; both rows show while the Library has patterns, a kind
+ * with none yet landing on its section's empty line. The same rows for Bridge's own Library (lib/nav.ts patternsNav)
+ * and every team's (scripts/library-team.ts markPatternKind). Labels are @bridge-ds/core PATTERN_KIND_LABEL (library-shells.test.ts checks it).
  */
 export const LIBRARY_PATTERN_KIND_PAGES: LibraryPage[] = [
   { route: `patterns/#${patternKindSection('interaction')}`, label: 'Interactions', icon: 'hand', meta: 'Gestures several components share, the same wherever they appear', kind: 'interaction' },
@@ -94,7 +94,7 @@ export const LIBRARY_TEAM_NAV: LibraryNavEntry[] = [
   { label: 'Foundations', icon: 'layers', children: LIBRARY_FOUNDATION_PAGES },
   { route: 'components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance and live stories' },
   // One shell for a team (its patterns are only known once its data is read): the index, each pattern by ?p=<id>. Its
-  // rows are the kinds, built hidden, each shown once the team's data has a pattern of it.
+  // rows are the kinds, both always (the group shows once the team's data has a pattern).
   { label: 'Patterns', icon: 'hand', until: 'patterns', children: LIBRARY_PATTERN_KIND_PAGES },
   { label: 'Use', icon: 'book', children: LIBRARY_USE_PAGES },
 ];

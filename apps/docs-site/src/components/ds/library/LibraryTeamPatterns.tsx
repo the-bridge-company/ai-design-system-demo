@@ -10,10 +10,11 @@ import ButtonLink from '../ButtonLink';
 import { LibraryPage, LibrarySourceNote, LibraryZone } from './LibraryState';
 import { studioLink, teamLibraryData } from './library-data';
 import PatternChange from './PatternChange';
-import { PATTERNS_PAGE, PatternsView, PatternView, patternHrefs, patternLinks } from './views/PatternsView';
+import { PATTERNS_INTRO, PATTERNS_PAGE, PatternsView, PatternView, patternHrefs, patternLinks } from './views/PatternsView';
 import { libraryPatterns, patternById, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
 import { httpsStorybook } from '../../../lib/team-components';
 import { libraryHref } from '../../../lib/library-shells';
+import { suggestPatternRoute } from '../../../lib/studio-patterns';
 import { resetTeamData, type TeamData } from '../../../scripts/team-data';
 import '../../../styles/component.css';
 import '../../../styles/library.css';
@@ -46,11 +47,12 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
   if (!id) {
     return (
       <>
-        {groups.length ? (
-          <PatternsView groups={groups} hrefs={patternHrefs(view, groups)} />
-        ) : (
-          <EmptyState icon={Shapes} headingLevel={2} title="No patterns yet" description="Patterns come from the patterns folder of the design system's repository." />
-        )}
+        <PatternsView
+          groups={groups}
+          hrefs={patternHrefs(view, groups)}
+          // Only a member who can write suggests (the gate of Edit on a component page); readers and visitors get no link.
+          suggestHref={data.canEdit ? (kind) => studioLink(view, suggestPatternRoute(kind)) : undefined}
+        />
         {source}
       </>
     );
@@ -104,7 +106,7 @@ export default function LibraryTeamPatterns() {
   return (
     <LibraryPage
       label="Reading the patterns"
-      header={(data) => (data || patternInAddress() ? null : <LibraryZone title={PATTERNS_PAGE.title} art={PATTERNS_PAGE.art} lead="Interactions several components share, and actions people take across the product." />)}
+      header={(data) => (data || patternInAddress() ? null : <LibraryZone title={PATTERNS_PAGE.title} art={PATTERNS_PAGE.art} lead={PATTERNS_INTRO} />)}
       ready={(data, r) => <Ready data={data} refreshing={r.refreshing} />}
     />
   );

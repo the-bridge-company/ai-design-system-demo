@@ -292,6 +292,8 @@ export interface SuggestPatternDrawerProps {
   /** "Suggest a change to it instead": the drawer of the pattern a name already is. */
   onDuplicate: (id: string) => void;
   onClose: () => void;
+  /** The kind to open on (the Library's "Suggest an action" beside an empty kind); unset, the kept pick or none. */
+  preset?: PatternSuggestKind | null | undefined;
 }
 
 const readKind = (repo: string): PatternSuggestKind | null => {
@@ -303,18 +305,22 @@ const readKind = (repo: string): PatternSuggestKind | null => {
   }
 };
 
-export function SuggestPatternDrawer({ open, suggest, lead, rows, interactions, onDuplicate, onClose }: SuggestPatternDrawerProps) {
+export function SuggestPatternDrawer({ open, suggest, lead, rows, interactions, onDuplicate, onClose, preset = null }: SuggestPatternDrawerProps) {
   const formId = useId();
-  const [kind, setKind] = useState<PatternSuggestKind | null>(() => readKind(suggest.repo));
+  const [kind, setKind] = useState<PatternSuggestKind | null>(() => preset ?? readKind(suggest.repo));
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<number | null>(null);
   const c = suggestPatternCopy(lead);
-  // Opened again: a fresh start after a send; the kept draft comes back otherwise.
-  useEffect(() => {
-    if (!open) return;
-    setSent(null);
-    setKind(readKind(suggest.repo));
-  }, [open, suggest.repo]);
+  // Opened again: a fresh start after a send; the preset kind, else the kept draft, comes back otherwise. Set while
+  // rendering (not in an effect) so the kind cards mount with it: their group takes its value at mount.
+  const [shownOpen, setShownOpen] = useState(open);
+  if (open !== shownOpen) {
+    setShownOpen(open);
+    if (open) {
+      setSent(null);
+      setKind(preset ?? readKind(suggest.repo));
+    }
+  }
   const pick = (v: string) => {
     if (!isPatternSuggestKind(v)) return;
     setKind(v);

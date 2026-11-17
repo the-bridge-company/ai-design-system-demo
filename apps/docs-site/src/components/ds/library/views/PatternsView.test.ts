@@ -31,6 +31,46 @@ describe('Patterns index', () => {
   });
 });
 
+describe('Patterns index, a kind with no pattern yet', () => {
+  const only = groups.filter((g) => g.kind === 'interaction');
+
+  it('keeps its heading with how one comes to exist, and no link for a reader', async () => {
+    const { container } = render(createElement(PatternsView, { groups: only, hrefs: patternHrefs(own, only) }));
+    expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Patterns', 'Interactions', 'Actions']);
+    const actions = screen.getByRole('region', { name: 'Actions' });
+    expect(actions.querySelector('p')!.textContent).toBe('None yet. An action appears here once people do the same task the same way in at least two places, like Delete.');
+    expect(within(actions).queryByRole('link')).toBeNull();
+    // A small Field Guide drawing, decorative.
+    expect(actions.querySelector('svg.ill')?.getAttribute('aria-hidden')).toBe('true');
+    await expectNoAxeViolations(container);
+  });
+
+  it('gives a member who can write one link to suggest that kind in Studio', async () => {
+    const { container } = render(createElement(PatternsView, { groups: only, hrefs: patternHrefs(own, only), suggestHref: (k) => `/studio/acme/ds/patterns/?suggest=${k ?? 'pattern'}` }));
+    const link = within(screen.getByRole('region', { name: 'Actions' })).getByRole('link', { name: 'Suggest an action' });
+    expect(link).toHaveAttribute('href', '/studio/acme/ds/patterns/?suggest=action');
+    // Only beside the empty kind: the Interactions cards carry none.
+    expect(screen.getAllByRole('link', { name: /^Suggest/ })).toHaveLength(1);
+    await expectNoAxeViolations(container);
+  });
+});
+
+describe('Patterns index, no pattern at all', () => {
+  it('says it once in an empty state with the rules of both kinds, under the page title', async () => {
+    const { container } = render(createElement(PatternsView, { groups: [], hrefs: {} }));
+    expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Patterns', 'No patterns yet']);
+    expect(container.textContent).toContain('An interaction appears here once two components do the same thing the same way, like closing on Escape.');
+    expect(container.textContent).toContain('An action, once people do the same task the same way in at least two places, like Delete.');
+    expect(screen.queryByRole('link')).toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
+  it('offers a member who can write "Suggest a pattern", on the choice of kind', () => {
+    render(createElement(PatternsView, { groups: [], hrefs: {}, suggestHref: (k) => `/studio/patterns/?suggest=${k ?? 'pattern'}` }));
+    expect(screen.getByRole('link', { name: 'Suggest a pattern' })).toHaveAttribute('href', '/studio/patterns/?suggest=pattern');
+  });
+});
+
 describe('an action', () => {
   it('that cannot be undone asks first in an AlertDialog, then the row goes; Start again brings it back', async () => {
     view('delete');

@@ -2,7 +2,7 @@
 // A team's Library shell: noindex unless the team opts in on a public repository, and the build-time links follow the
 // team in the address.
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyIndexing, markNoindex, paintTeamName, pointLibraryLinks, showPatternKinds, showPatternsNav } from './library-team';
+import { applyIndexing, markNoindex, paintTeamName, pointLibraryLinks, markPatternKind, showPatternsNav } from './library-team';
 
 const robots = () => document.head.querySelectorAll('meta[name="robots"]');
 
@@ -87,15 +87,15 @@ describe('the team name in a Library (never the repository in words)', () => {
 });
 
 describe('the Patterns group of a team Library nav', () => {
-  // The markup Layout.astro builds for the group: hidden until the team has patterns, one row per kind, each hidden
-  // until the team has a pattern of it, opening the Patterns page on its section.
+  // The markup Layout.astro builds for the group: hidden until the team has patterns, one row per kind, both always
+  // (a kind with no pattern yet lands on its section's empty line), opening the Patterns page on its section.
   const built = () => `
     <ul class="nav">
       <li class="nav-group" hidden data-nav-until="patterns">
         <button type="button" class="nav-link nav-toggle" data-nav-group="Patterns" aria-controls="g" aria-expanded="true"><span>Patterns</span></button>
         <ul class="nav-sub" id="g" data-nav-sub="patterns">
-          <li hidden data-nav-kind="interaction"><a class="link subtle" href="/library/acme/ds/patterns/#pt-interaction"><span>Interactions</span></a></li>
-          <li hidden data-nav-kind="action"><a class="link subtle" href="/library/acme/ds/patterns/#pt-action"><span>Actions</span></a></li>
+          <li data-nav-kind="interaction"><a class="link subtle" href="/library/acme/ds/patterns/#pt-interaction"><span>Interactions</span></a></li>
+          <li data-nav-kind="action"><a class="link subtle" href="/library/acme/ds/patterns/#pt-action"><span>Actions</span></a></li>
         </ul>
       </li>
       <li class="nav-group"><ul class="nav-sub" id="u"><li><a href="/library/acme/ds/install/" aria-current="page"><span>Install</span></a></li></ul></li>
@@ -106,11 +106,9 @@ describe('the Patterns group of a team Library nav', () => {
     document.body.innerHTML = '';
   });
 
-  it('shows only the kinds the team has, no row per pattern and no Overview', () => {
+  it('keeps both kinds, even one the team has no pattern of, no row per pattern and no Overview', () => {
     document.body.innerHTML = built();
-    showPatternKinds(['interaction'], null);
-    expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/#pt-interaction']);
-    showPatternKinds(['interaction', 'action'], null);
+    markPatternKind(null);
     expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/#pt-interaction', 'Actions /library/acme/ds/patterns/#pt-action']);
     // Other groups are left alone.
     expect(document.querySelector('#u a')!.getAttribute('aria-current')).toBe('page');
@@ -118,11 +116,11 @@ describe('the Patterns group of a team Library nav', () => {
 
   it("makes the row of the shown pattern's kind the current page, and moves it when run again", () => {
     document.body.innerHTML = built();
-    showPatternKinds(['interaction', 'action'], 'action');
+    markPatternKind('action');
     expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/#pt-interaction', '> Actions /library/acme/ds/patterns/#pt-action']);
-    showPatternKinds(['interaction', 'action'], 'interaction');
+    markPatternKind('interaction');
     expect(rows()).toEqual(['> Interactions /library/acme/ds/patterns/#pt-interaction', 'Actions /library/acme/ds/patterns/#pt-action']);
-    showPatternKinds(['interaction', 'action'], null);
+    markPatternKind(null);
     expect(document.querySelectorAll('[data-nav-sub] [aria-current]')).toHaveLength(0);
   });
 
@@ -130,11 +128,8 @@ describe('the Patterns group of a team Library nav', () => {
     document.body.innerHTML = built();
     const group = document.querySelector<HTMLElement>('[data-nav-until="patterns"]')!;
     expect(group.hidden).toBe(true);
-    showPatternKinds([], null);
     showPatternsNav(false);
     expect(group.hidden).toBe(true);
-    expect(rows()).toEqual([]);
-    showPatternKinds(['interaction'], null);
     showPatternsNav(true);
     expect(group.hidden).toBe(false);
   });

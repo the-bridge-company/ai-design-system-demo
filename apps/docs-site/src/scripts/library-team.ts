@@ -11,7 +11,7 @@ import { LIBRARY_SHELL_ROOT, libraryFromPath, libraryHref } from '../lib/library
 import { RESERVED_PATHS_URL, STUDIO_ROOT, teamHref, type ReservedPaths } from '../lib/team-path';
 import { llmsTxtUrl } from '../lib/library/published';
 import { libraryTeamName } from '../lib/recent-teams';
-import { libraryPatterns } from '../lib/library/patterns';
+import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE, teamPatternsNav, type TeamPatternNavItem } from '../lib/library/patterns';
 import { loadTeamData, loadTeamLlms, whenLibraryOpen } from './team-data';
 import { libraryFileUrl } from './library-access-api';
 import { refreshSpaceSwitch } from './space-switch';
@@ -70,6 +70,42 @@ export function showPatternsNav(has: boolean, root: ParentNode = document) {
   for (const el of root.querySelectorAll<HTMLElement>('[data-nav-until="patterns"]')) el.hidden = !has;
 }
 
+/**
+ * Fills the Patterns group of a team's nav under its built Overview: a quiet kind label, then one page per pattern of
+ * the team (lib/library/patterns.ts teamPatternsNav). Each row is a copy of the built Overview row (the DS Link the
+ * layout renders), so it looks and behaves like every other page of the nav. On a pattern page that pattern is the
+ * current page, not Overview. Running it again replaces the rows it added.
+ */
+export function fillPatternsNav(items: readonly TeamPatternNavItem[], root: ParentNode = document) {
+  for (const list of root.querySelectorAll<HTMLElement>('[data-nav-sub="patterns"]')) {
+    for (const el of list.querySelectorAll('[data-nav-pattern]')) el.remove();
+    const overview = list.querySelector<HTMLLIElement>(':scope > li:not(.nav-sub-head)');
+    const link = overview?.querySelector('a');
+    if (!overview || !link) continue;
+    const onPattern = items.some((i) => i.current);
+    if (onPattern) link.removeAttribute('aria-current');
+    const rows: HTMLLIElement[] = [];
+    for (const item of items) {
+      if (item.heading) {
+        const head = document.createElement('li');
+        head.className = 'nav-sub-head';
+        head.textContent = item.heading;
+        head.setAttribute('data-nav-pattern', '');
+        rows.push(head);
+      }
+      const row = overview.cloneNode(true) as HTMLLIElement;
+      row.setAttribute('data-nav-pattern', item.id);
+      const a = row.querySelector('a')!;
+      a.setAttribute('href', item.href);
+      a.querySelector('span')!.textContent = item.label;
+      if (item.current) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+      rows.push(row);
+    }
+    overview.after(...rows);
+  }
+}
+
 /** The team's llms.txt as the page's alternate (agents find it from any Library page), once it is known to exist. */
 function linkLlms(href: string) {
   if (document.head.querySelector('link[rel="alternate"][data-library-llms]')) return;
@@ -99,7 +135,11 @@ export function initLibraryTeam() {
     .then(() => loadTeamData())
     .then(async (data) => {
       paintTeamName(team, data.model.site);
-      showPatternsNav(libraryPatterns(data.model).length > 0);
+      const patterns = libraryPatterns(data.model);
+      // The pattern this page shows: only the Patterns shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx).
+      const shown = document.documentElement.dataset.libraryShell === 'patterns' ? new URLSearchParams(location.search).get(PATTERN_QUERY) : null;
+      fillPatternsNav(teamPatternsNav(patterns, (id) => libraryHref(team.owner, team.repo, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`), shown));
+      showPatternsNav(patterns.length > 0);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));
     })

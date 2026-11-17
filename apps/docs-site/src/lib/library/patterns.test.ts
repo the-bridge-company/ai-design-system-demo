@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import type { RepoModel } from '@bridge-ds/core';
 import { repoModel } from '../model';
-import { interactionIds, libraryPatterns, patternById, patternComponents, patternsLead } from './patterns';
+import { interactionIds, libraryPatterns, patternById, patternComponents, patternsLead, teamPatternsNav } from './patterns';
+import { patternsNav } from '../nav';
 import { patternHref } from '../../components/ds/library/library-data';
 import { patternHrefs, patternLinks } from '../../components/ds/library/views/PatternsView';
 import { behaviorPatterns } from '../../components/ds/library/views/ComponentView';
@@ -65,5 +66,33 @@ describe('pattern links', () => {
     const titles = (m: RepoModel) => librarySearchIndex(m, 'acme', 'ds').filter((i) => i.kind === 'page').map((i) => i.title);
     expect(titles(repoModel)).toContain('Patterns');
     expect(titles({ ...repoModel, patterns: [] } as RepoModel)).not.toContain('Patterns');
+  });
+});
+
+describe('teamPatternsNav (a team Library nav, under Overview)', () => {
+  const href = (id: string) => `/library/acme/ds/patterns/?p=${id}`;
+
+  it('lists the team\'s own patterns in the order and under the kind labels of Bridge\'s own nav', () => {
+    const items = teamPatternsNav(groups, href);
+    const own = patternsNav().slice(1);
+    expect(items.map((i) => [i.label, i.heading])).toEqual(own.map((i) => [i.label, i.heading]));
+    expect(items.map((i) => i.heading).filter(Boolean)).toEqual(['Interactions', 'Actions']);
+    expect(items[0]).toEqual({ id: 'close-on-escape', href: '/library/acme/ds/patterns/?p=close-on-escape', label: patternById(groups, 'close-on-escape')!.pattern.name, meta: patternById(groups, 'close-on-escape')!.pattern.purpose, heading: 'Interactions', current: false });
+    expect(items.some((i) => i.current)).toBe(false);
+  });
+
+  it('marks only the pattern the page shows', () => {
+    const items = teamPatternsNav(groups, href, 'delete');
+    expect(items.filter((i) => i.current).map((i) => i.id)).toEqual(['delete']);
+    // An id the team does not have marks nothing (Overview stays current).
+    expect(teamPatternsNav(groups, href, 'not-a-pattern').some((i) => i.current)).toBe(false);
+  });
+
+  it('shows only the kinds the team has, and nothing without patterns', () => {
+    const interactionsOnly = groups.filter((g) => g.kind === 'interaction');
+    const items = teamPatternsNav(interactionsOnly, href);
+    expect(items.map((i) => i.heading).filter(Boolean)).toEqual(['Interactions']);
+    expect(items.map((i) => i.id)).toEqual(['close-on-escape', 'focus-after-close', 'pick-with-enter']);
+    expect(teamPatternsNav([], href)).toEqual([]);
   });
 });

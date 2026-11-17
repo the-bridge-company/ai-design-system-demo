@@ -257,7 +257,8 @@ describe('the lead who decides', () => {
     gh.lead = true;
     gh.issues = [issue(45, 'Delete pattern', rule), issue(46, 'Archive pattern', archive)];
     const { container } = render(createElement(PatternsBody, { groups: GROUPS, suggest: suggest() }));
-    await waitFor(() => expect(container.querySelector('[data-spt-asked]')).toBeTruthy());
+    // The lead's read loads the session, teams and roles modules lazily: slow under the full parallel CI run.
+    await waitFor(() => expect(container.querySelector('[data-spt-asked]')).toBeTruthy(), { timeout: 5000 });
     const line = container.querySelector<HTMLElement>('[data-spt-asked]')!;
     expect(line.textContent).toBe('Asked, not patterns yet: Archive');
     expect(within(line).getByRole('link', { name: 'Archive' }).getAttribute('href')).toMatch(/request=46$/);

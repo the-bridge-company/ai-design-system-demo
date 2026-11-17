@@ -12,6 +12,7 @@ import InteractionStage from '../InteractionStage';
 import DevDetail from '../../DevDetail';
 import { patternsLead, type PatternEntry, type PatternGroup } from '../../../../lib/library/patterns';
 import { componentHref, patternHref, type LibraryData } from '../library-data';
+import { patternKindSection } from '../../../../lib/library-shells';
 import '../../../../styles/patterns.css';
 
 export const PATTERNS_PAGE = { title: 'Patterns', art: 'guide' } as const;
@@ -34,8 +35,9 @@ export function PatternsView({ groups, hrefs }: { groups: PatternGroup[]; hrefs:
         <p>{patternsLead(groups)}</p>
       </LibraryHeader>
       {groups.map((g) => (
-        <section key={g.kind} aria-labelledby={`pt-${g.kind}`} className="pt-group">
-          <h2 id={`pt-${g.kind}`}>{g.label}</h2>
+        // The nav's rows under Patterns (Interactions, Actions) open this page on these sections.
+        <section key={g.kind} aria-labelledby={patternKindSection(g.kind)} className="pt-group">
+          <h2 id={patternKindSection(g.kind)}>{g.label}</h2>
           <ul className="pt-cards">
             {g.items.map((e) => (
               <li key={e.pattern.id} className="pt-card">

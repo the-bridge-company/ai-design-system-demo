@@ -12,7 +12,7 @@ const PAGES = join(ROOT, 'apps/docs-site/src/pages');
 
 /** The page file that serves a route, if any (static pages only; component pages come from [slug].astro). */
 function pageFile(href: string): string | null {
-  const route = href.replace(/^\/|\/$/g, '');
+  const route = href.replace(/#.*$/, '').replace(/^\/|\/$/g, '');
   const candidates = route === '' ? ['index.astro'] : [`${route}.astro`, `${route}/index.astro`];
   if (route.startsWith('components/') && route !== 'components') candidates.push('components/[slug].astro');
   if (route.startsWith('patterns/')) candidates.push('patterns/[slug].astro');
@@ -25,15 +25,22 @@ describe('navigation data', () => {
     expect(missing.map((p) => p.href)).toEqual([]);
   });
 
-  it('lists Patterns by name under each kind, its index as Overview, never a second "Patterns"', () => {
-    const patterns = navFor('library').find((e) => e.label === 'Patterns');
-    expect(patterns?.children?.[0]).toMatchObject({ href: '/patterns/', label: 'Overview' });
-    const items = patterns!.children!;
-    expect(items.map((i) => i.label)).not.toContain('Patterns');
-    expect(items.filter((i) => i.heading).map((i) => i.heading)).toEqual(['Interactions', 'Actions']);
-    expect(items.find((i) => i.heading === 'Interactions')?.label).toBe('Close on Escape');
-    expect(items.map((i) => i.label)).toEqual(expect.arrayContaining(['Delete', 'Send for review', 'Pick with Enter']));
-    expect(locate('/patterns/delete/')).toMatchObject({ group: 'Patterns', item: { label: 'Delete' } });
+  it('lists Patterns by kind, Interactions then Actions, each opening the index on its section (decision 2026-11-15)', () => {
+    const patterns = navFor('library').find((e) => e.label === 'Patterns')!;
+    // No Overview row and no row per pattern: the kinds Bridge's design system has, both today.
+    expect(patterns.children!.map((i) => [i.label, i.href])).toEqual([
+      ['Interactions', '/patterns/#pt-interaction'],
+      ['Actions', '/patterns/#pt-action'],
+    ]);
+    // A pattern's page makes its kind's row current; the index belongs to the group, no row current.
+    expect(locate('/patterns/delete/')).toMatchObject({ group: 'Patterns', item: { label: 'Actions' } });
+    expect(locate('/patterns/close-on-escape/')).toMatchObject({ group: 'Patterns', item: { label: 'Interactions' } });
+    expect(locate('/patterns/')).toEqual({ space: 'library', entry: patterns, group: 'Patterns' });
+    // Search and llms.txt still find the index (as "Patterns") and each pattern by name.
+    const pages = allPages().filter((p) => p.href.startsWith('/patterns/'));
+    expect(pages[0]).toMatchObject({ href: '/patterns/', label: 'Patterns' });
+    expect(pages.map((p) => p.label)).toEqual(expect.arrayContaining(['Close on Escape', 'Delete', 'Send for review', 'Pick with Enter']));
+    expect(pages.map((p) => p.label)).not.toContain('Overview');
   });
 
   it('lists each page once per space', () => {

@@ -17,7 +17,7 @@ import { loadComponents } from './components';
 import { repoModel } from './model';
 import { libraryPatterns, patternRoute, patternsLead, PATTERNS_ROUTE } from './library/patterns';
 import { START_PAGE, WORKSPACE_HOME, WORKSPACE_SETTINGS } from './start';
-import { LIBRARY_FOUNDATION_PAGES, LIBRARY_USE_PAGES } from './library-shells';
+import { LIBRARY_FOUNDATION_PAGES, LIBRARY_PATTERN_KIND_PAGES, LIBRARY_PATTERNS_PAGE, LIBRARY_USE_PAGES } from './library-shells';
 
 // Studio links in both modes (self-hosted /studio/, team shells /studio/<owner>/<repo>/). Browser code imports it from
 // lib/team-path directly: this module reads the repository at build time.
@@ -35,8 +35,10 @@ export interface NavItem {
   branchAware?: boolean;
   /** One line for search, llms.txt and the group pages. */
   meta?: string;
-  /** The first page of a kind inside its group: a quiet label above it names the kind (Patterns: Interactions, Actions). */
-  heading?: string;
+  /** A row under Patterns: the kind of pattern it opens the Patterns page on. */
+  kind?: 'interaction' | 'action';
+  /** Other pages this row stands for, current there too: under Patterns, the page of each pattern of its kind. */
+  also?: string[];
 }
 
 /** A top-level side nav entry: a page, or a group of pages that expands in place. */
@@ -59,6 +61,11 @@ export interface NavEntry {
   place?: 'design-system' | 'foot';
   /** Built hidden, shown once the team's data has it (a team's Library: lib/library-shells.ts). */
   until?: 'patterns';
+  /**
+   * The pages a group stands for when its rows are sections of a page (Patterns: the index and each pattern): search,
+   * llms.txt and locate read these instead of the rows.
+   */
+  pages?: NavItem[];
 }
 
 /** The Library home. "/" is the product landing (pages/index.astro), with its own header and footer. */
@@ -127,15 +134,26 @@ export const HOW_REVIEW_WORKS = '/how-review-works/';
 export const PATTERNS_HOME = `/${PATTERNS_ROUTE}`;
 
 /**
- * The Patterns group: Overview (the index, never a second "Patterns"), then each pattern by name under a quiet label
- * for its kind (Interactions, Actions), from patterns/ and the components' shared behaviors. Empty without patterns.
+ * The Patterns group, by kind (founder decision 2026-11-15): Interactions, then Actions, each opening the index on its
+ * section (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES, the same rows as a team's Library), only the kinds this
+ * design system has. No row per pattern and no Overview: a pattern's page makes its kind's row current. Empty without
+ * patterns.
  */
 export function patternsNav(): NavItem[] {
   const groups = libraryPatterns(repoModel);
+  return LIBRARY_PATTERN_KIND_PAGES.flatMap((row): NavItem[] => {
+    const group = groups.find((g) => g.kind === row.kind);
+    return group ? [{ href: `/${row.route}`, label: row.label, meta: row.meta, kind: group.kind, also: group.items.map((e) => `/${patternRoute(e.pattern.id)}`) }] : [];
+  });
+}
+
+/** The pages of the Patterns group, for search and llms.txt: the index, then each pattern. Empty without patterns. */
+export function patternPages(): NavItem[] {
+  const groups = libraryPatterns(repoModel);
   if (!groups.length) return [];
   return [
-    { href: PATTERNS_HOME, label: 'Overview', meta: patternsLead(groups) },
-    ...groups.flatMap((g) => g.items.map((e, i): NavItem => ({ href: `/${patternRoute(e.pattern.id)}`, label: e.pattern.name, meta: e.pattern.purpose, ...(i === 0 ? { heading: g.label } : {}) }))),
+    { href: PATTERNS_HOME, label: LIBRARY_PATTERNS_PAGE.label, meta: patternsLead(groups) },
+    ...groups.flatMap((g) => g.items.map((e): NavItem => ({ href: `/${patternRoute(e.pattern.id)}`, label: e.pattern.name, meta: e.pattern.purpose }))),
   ];
 }
 
@@ -155,7 +173,7 @@ export function libraryNav(): NavEntry[] {
     { href: LIBRARY_HOME, label: 'Home', icon: 'home', meta: "What's new and where to start" },
     { label: 'Foundations', icon: 'layers', children: FOUNDATIONS },
     { href: '/components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance' },
-    ...(patterns.length ? [{ label: 'Patterns', icon: 'hand' as const, children: patterns }] : []),
+    ...(patterns.length ? [{ label: 'Patterns', icon: 'hand' as const, children: patterns, pages: patternPages() }] : []),
     { label: 'Use', icon: 'book', children: LIBRARY_USE },
   ];
 }
@@ -226,9 +244,11 @@ export function locate(path: string): { space: Space; entry?: NavEntry; group?: 
   const nav = navFor(space);
   const found = (entry: NavEntry, item: NavItem) => ({ space, entry, group: entry.children ? entry.label : undefined, item });
   for (const e of nav) {
-    const exact = pagesOf(e).find((i) => i.href === p);
+    const exact = pagesOf(e).find((i) => i.href === p || i.also?.includes(p));
     if (exact) return found(e, exact);
   }
+  // A page a group stands for without a row of its own (the Patterns index): the group, no current row.
+  for (const e of nav) if (e.pages?.some((i) => i.href === p)) return { space, entry: e, group: e.label };
   // Nested pages (a component page) belong to the closest parent entry.
   let best: { entry: NavEntry; item: NavItem } | undefined;
   for (const e of nav) {
@@ -243,7 +263,7 @@ export function locate(path: string): { space: Space; entry?: NavEntry; group?: 
 /** Every page entry of both spaces, for the command palette and llms.txt. */
 export function allPages(): (NavItem & { space: Space })[] {
   const spaces: Space[] = ['library', 'studio'];
-  return spaces.flatMap((space) => navFor(space).flatMap((e) => pagesOf(e).map((i) => ({ ...i, space }))));
+  return spaces.flatMap((space) => navFor(space).flatMap((e) => (e.pages ?? pagesOf(e)).map((i) => ({ ...i, space }))));
 }
 
 export const SPACE_LABEL: Record<Space, string> = { library: 'Library', studio: 'Studio' };

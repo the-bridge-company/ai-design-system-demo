@@ -38,7 +38,9 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
   useEffect(() => {
     if (entry) document.title = document.title.replace(/^[^|]*\|/, `${entry.pattern.name} |`);
     void import('../../../scripts/shell').then((shell) => shell.initToc());
-  }, [entry]);
+    // The nav's rows by kind (#pt-interaction, #pt-action) land here before the sections exist: go to it once drawn.
+    if (!id && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+  }, [entry, id]);
   const source = <LibrarySourceNote data={data} refreshing={refreshing} onRefresh={reload} />;
 
   if (!id) {

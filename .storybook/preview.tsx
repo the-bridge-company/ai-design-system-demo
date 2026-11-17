@@ -136,7 +136,9 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
       for (let i = 0; i < 30 && !control(); i++) await new Promise((r) => setTimeout(r, 100));
       const first = control();
       first?.focus();
-      const user = userEvent.setup();
+      // 100 ms between keys, as a fast typist: with none, a key pressed while a popup is still opening is sometimes lost
+      // (Enter then ArrowDown on Select left "System" highlighted about one time in five instead of "Light").
+      const user = userEvent.setup({ delay: 100 });
       for (const k of keys) await user.keyboard(token(k));
       await new Promise((r) => setTimeout(r, 300));
       const popup = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"], [role="dialog"], [role="alertdialog"]')).find(visible);

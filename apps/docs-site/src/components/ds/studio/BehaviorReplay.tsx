@@ -53,29 +53,38 @@ export function useKeyReplay(frames: readonly ReplayFrame[]) {
       const loaded = new Map(frames.map((f) => [f.side, new Promise<void>((done) => ready.current.set(f.side, done))]));
       setRun((n) => n + 1);
       const out = new Map<ReplaySide, KeysResult | null>();
+      // Every frame loads at once, but they play one after another: a page has one focus, and a frame that focuses its
+      // story takes it from the frame still playing, whose keys then land nowhere ("the focus left it" on one side only).
+      const late = new Set<ReplaySide>();
       await Promise.all(
         frames.map(async (f) => {
           const timeout = new Promise<'late'>((r) => setTimeout(() => r('late'), ANSWER_MS));
-          if ((await Promise.race([loaded.get(f.side), timeout])) === 'late') return void out.set(f.side, null);
-          const id = `${f.side}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const answer = new Promise<KeysResult | null>((resolve) => {
-            const on = (e: MessageEvent) => {
-              if (e.source !== refs.current.get(f.side)?.contentWindow) return;
-              const r = parseKeysResult(e.data, id);
-              if (!r) return;
-              window.removeEventListener('message', on);
-              resolve(r);
-            };
-            window.addEventListener('message', on);
-            setTimeout(() => {
-              window.removeEventListener('message', on);
-              resolve(null);
-            }, ANSWER_MS);
-          });
-          refs.current.get(f.side)?.contentWindow?.postMessage({ type: PRESS_MESSAGE, id, keys: [...keys] }, new URL(f.src).origin);
-          out.set(f.side, await answer);
+          if ((await Promise.race([loaded.get(f.side), timeout])) === 'late') late.add(f.side);
         }),
       );
+      for (const f of frames) {
+        if (late.has(f.side)) {
+          out.set(f.side, null);
+          continue;
+        }
+        const id = `${f.side}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const answer = new Promise<KeysResult | null>((resolve) => {
+          const on = (e: MessageEvent) => {
+            if (e.source !== refs.current.get(f.side)?.contentWindow) return;
+            const r = parseKeysResult(e.data, id);
+            if (!r) return;
+            window.removeEventListener('message', on);
+            resolve(r);
+          };
+          window.addEventListener('message', on);
+          setTimeout(() => {
+            window.removeEventListener('message', on);
+            resolve(null);
+          }, ANSWER_MS);
+        });
+        refs.current.get(f.side)?.contentWindow?.postMessage({ type: PRESS_MESSAGE, id, keys: [...keys] }, new URL(f.src).origin);
+        out.set(f.side, await answer);
+      }
       return out;
     },
     [frames],

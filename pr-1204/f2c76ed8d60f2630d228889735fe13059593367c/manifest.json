@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-17T00:14:34.253Z",
-  "durationMs": 173476,
+  "createdAt": "2026-11-17T00:28:10.549Z",
+  "durationMs": 174010,
   "base": {
-    "ref": "0c13025af0aba353e5e7982a6e6964542687ed28",
-    "sha": "0c13025af0aba353e5e7982a6e6964542687ed28"
+    "ref": "03c40fa39b513125ba7623493370c46c94ab0321",
+    "sha": "03c40fa39b513125ba7623493370c46c94ab0321"
   },
   "head": {
-    "ref": "e07611291696d1e5b4910b41149f51541ce162f1",
-    "sha": "e07611291696d1e5b4910b41149f51541ce162f1"
+    "ref": "f2c76ed8d60f2630d228889735fe13059593367c",
+    "sha": "f2c76ed8d60f2630d228889735fe13059593367c"
   },
   "options": {
     "only": [

@@ -14,6 +14,7 @@ describe('the brief', () => {
     expect(b).toContain('git switch -C agent/preview-75 origin/main');
     expect(b).toContain('Update its `behaviors` entry `tab-leaves` in packages/react/src/components/Select/Select.docs.json');
     expect(b).toContain('presses Tab');
+    expect(b).toContain('a click away from the component is written `click-outside`');
     expect(b).toContain('--title "Preview for #75"');
     expect(b).toContain('Never write "Closes #75"');
     expect(b).toContain('bridge_report_behavior_preview with number 75, state "ready"');

@@ -19,7 +19,11 @@ export interface ComponentBehavior {
   text: string;
   /** What the stage tells the reader to do to see it, one line: "Open the list, then press Esc". Page only. */
   try?: string;
-  /** Keys that perform it, as KeyboardEvent.key values ("Enter", "ArrowDown", "Escape", " " is written "Space"). Each one works alone. */
+  /**
+   * Keys that perform it, as KeyboardEvent.key values ("Enter", "ArrowDown", "Escape", " " is written "Space"). Each one
+   * works alone. One pointer gesture is written here too: `click-outside` (CLICK_OUTSIDE), a click away from the
+   * component and its popup, so a mouse behavior ("Closes on a click outside") can be replayed and shown like a key.
+   */
   keys?: string[];
   /** What a screen reader says when it happens, shown as "Expected announcement". */
   announces?: string;
@@ -117,8 +121,11 @@ export function behaviorGroups(list: readonly ComponentBehavior[]): { family: st
 /** The behaviors an agent reads ({ id, family, text, keys?, announces? }), from any docs.json value. */
 export const agentBehaviors = (list: unknown): AgentBehavior[] => readBehaviors(list).map(({ example: _example, try: _try, ...b }) => b);
 
-/** How a key reads on a page: "↓" for ArrowDown, "Esc" for Escape (the Kbd component gives each its full name). */
+/** The pointer gesture a behavior's `keys` may hold: a click away from the component and its popup. */
+export const CLICK_OUTSIDE = 'click-outside';
+
+/** How a key reads on a page: "↓" for ArrowDown, "Esc" for Escape, "Click outside" for the gesture (the Kbd component gives each its full name). */
 export function keyLabel(key: string): string {
-  const map: Record<string, string> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', ' ': 'Space' };
+  const map: Record<string, string> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', ' ': 'Space', [CLICK_OUTSIDE]: 'Click outside' };
   return map[key] ?? key;
 }

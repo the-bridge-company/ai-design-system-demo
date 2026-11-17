@@ -109,8 +109,8 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
 // Played from Bridge Studio (iframe.html?...&embed=bridge-keys, apps/docs-site/src/lib/story-replay.ts): "Play both" on a
 // behavior request presses the same keys on today's story and on Claude's preview. Asked by its parent, the story
 // focuses its first control, presses the keys with Storybook's own userEvent (real keyboard events, Tab moving focus as
-// a browser does), then posts what it sees: the popup open (by role), the focused element's name, what the control
-// shows. Nothing else listens: the full Storybook and the other embeds never pass the parameter.
+// a browser does; `click-outside` clicks away from the story), then posts what it sees: the popup open (by role), the
+// focused element's name, what the control shows. Nothing else listens: the full Storybook and the other embeds never pass the parameter.
 if (typeof window !== 'undefined' && window.parent !== window && new URLSearchParams(window.location.search).get('embed') === 'bridge-keys') {
   document.documentElement.classList.add('sb-embed');
   const nameOf = (el: Element | null): string | null => {
@@ -125,6 +125,20 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   };
   const token = (k: string) => (k === ' ' || k === 'Space' ? ' ' : k.length === 1 ? k : `{${k}}`);
+  // `click-outside` (CLICK_OUTSIDE in @bridge-ds/core) is the one pointer gesture a behavior's keys may hold: a click on
+  // a spot of its own in the frame's corner, outside the story root and outside every portaled popup, as a mouse user
+  // clicking away would.
+  const CLICK_OUTSIDE = 'click-outside';
+  const outsideSpot = (): HTMLElement => {
+    const found = document.querySelector<HTMLElement>('[data-bridge-outside]');
+    if (found) return found;
+    const spot = document.createElement('div');
+    spot.setAttribute('data-bridge-outside', '');
+    spot.setAttribute('aria-hidden', 'true');
+    spot.style.cssText = 'position:fixed;right:0;bottom:0;width:8px;height:8px;';
+    document.body.appendChild(spot);
+    return spot;
+  };
   window.addEventListener('message', (e: MessageEvent) => {
     const d = e.data as { type?: unknown; id?: unknown; keys?: unknown } | null;
     if (!d || d.type !== 'bridge:press-keys' || typeof d.id !== 'string' || !Array.isArray(d.keys)) return;
@@ -139,7 +153,13 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
       // 100 ms between keys, as a fast typist: with none, a key pressed while a popup is still opening is sometimes lost
       // (Enter then ArrowDown on Select left "System" highlighted about one time in five instead of "Light").
       const user = userEvent.setup({ delay: 100 });
-      for (const k of keys) await user.keyboard(token(k));
+      // The spot exists before a popup opens: Base UI (floating-ui) ignores a press on an element added after the popup
+      // opened, as it would a third-party overlay, and the list would stay open.
+      const spot = keys.includes(CLICK_OUTSIDE) ? outsideSpot() : null;
+      for (const k of keys) {
+        if (k === CLICK_OUTSIDE && spot) await user.click(spot);
+        else await user.keyboard(token(k));
+      }
       await new Promise((r) => setTimeout(r, 300));
       const popup = Array.from(document.querySelectorAll('[role="listbox"], [role="menu"], [role="dialog"], [role="alertdialog"]')).find(visible);
       const role = popup?.getAttribute('role') ?? null;

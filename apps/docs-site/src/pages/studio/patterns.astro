@@ -1,22 +1,33 @@
 ---
 // Studio Patterns: the patterns of Bridge's own design system (patterns/<id>.pattern.json), grouped by kind as the
-// Library groups them, each row linked to its Library page, and for whoever decides, the changes asked on each one
-// (components/ds/studio/StudioPatterns.tsx). The nav lists it only while patterns/ has some (lib/nav.ts studioNav).
+// Library groups them, and for whoever decides, the changes asked on each one (components/ds/studio/StudioPatterns.tsx).
+// Signed out, each row links to its Library page; a member who can write gets "Suggest a pattern" and a drawer per row,
+// as on a team's page (pages/team-shell/patterns.astro): the components and request settings come from the build.
+// The nav lists it only while patterns/ has some (lib/nav.ts studioNav).
 import '../../styles/studio.css';
 import '../../styles/studio-patterns.css';
+import '../../styles/team-components.css';
+import '../../styles/requests.css';
 import Layout from '../../layouts/Layout.astro';
 import StudioHeader from '../../components/StudioHeader.astro';
-import StudioPatterns from '../../components/ds/studio/StudioPatterns';
+import StudioPatterns, { type SiteSuggest } from '../../components/ds/studio/StudioPatterns';
+import { readBehaviors } from '@bridge-ds/core';
 import { repoModel } from '../../lib/model';
 import { libraryPatterns, patternRoute } from '../../lib/library/patterns';
 import { studioPatternGroups, studioPatternsLead } from '../../lib/studio-patterns';
 
 const groups = studioPatternGroups(libraryPatterns(repoModel), (id) => `/${patternRoute(id)}`);
+// What a member's suggestion needs, as TeamPatterns reads it from a team's model: the request settings and every
+// component's behaviors (docs.json), for "Ask another component to do this".
+const site: SiteSuggest = {
+  integrations: repoModel.site.integrations,
+  components: (repoModel.components?.list ?? []).map((c) => ({ name: c.name, behaviors: readBehaviors(c.docs?.behaviors).map((b) => ({ id: b.id, text: b.text })) })),
+};
 ---
 
 <Layout title="Patterns" description="The interactions and actions shared across the product, each linked to its Library page, and the changes asked on them." wide>
   <div class="spt">
     <StudioHeader title="Patterns" summary={studioPatternsLead(groups)} />
-    <StudioPatterns client:load groups={groups} />
+    <StudioPatterns client:load groups={groups} site={site} />
   </div>
 </Layout>

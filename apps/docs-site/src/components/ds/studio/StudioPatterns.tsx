@@ -8,13 +8,15 @@
 // table for proposals that are not patterns yet ("Asked, not patterns yet: Archive, Type to jump on Menu"). Nobody
 // else sees either.
 //
-// On a team (TeamPatterns), a member who can write suggests (PatternDrawers.tsx): "Suggest a pattern" on the header's
+// On either host, a member who can write suggests (PatternDrawers.tsx): "Suggest a pattern" on the header's
 // title line (or in the empty state, then the only one), and every row opens a drawer, like the Components drawer,
 // with the pattern, its Library page and one way to suggest. A reader keeps the table as it is, names linked to the
 // Library. Nothing a person proposes becomes a row: a pattern exists once a developer merged its file.
 //
-// Two hosts: Bridge's own Studio (pages/studio/patterns.astro, groups built at build time, read only) and a team's
-// Studio (pages/team-shell/patterns.astro, TeamPatterns below, the team's model read in the browser).
+// Two hosts, the same body: Bridge's own Studio (pages/studio/patterns.astro, StudioPatterns below: the groups, the
+// components and the request settings built at build time, who may write read in the browser from the session's access
+// to this site's repository, as every self-hosted Studio page does) and a team's Studio (pages/team-shell/patterns.astro,
+// TeamPatterns below, the team's model read in the browser). Signed out, both read only.
 import { Fragment, useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Hand } from 'lucide-react';
 import { Button, EmptyState, Link, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@bridge-ds/react';
@@ -30,6 +32,10 @@ import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/lib
 import { libraryHref } from '../../../lib/library-shells';
 import { setPageSummary } from '../../../lib/page-summary';
 import type { BehaviorIssue } from '../../../lib/home-model';
+
+// The session module, imported once for the page's hooks (the requests read and, on Bridge's own Studio, the access).
+let sessionModule: Promise<typeof import('../../../scripts/github-session')> | null = null;
+const githubSession = () => (sessionModule ??= import('../../../scripts/github-session'));
 
 interface Asked {
   requests: Map<string, PatternRequest[]>;
@@ -47,7 +53,7 @@ function usePatternRequests(groups: readonly StudioPatternGroup[], behaviorNames
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [session, { loadTeams }, { viewerRole }, { viewerIsDesignLead }] = await Promise.all([import('../../../scripts/github-session'), import('../../../scripts/teams'), import('../../../scripts/needs-you'), import('../../../scripts/design-lead')]);
+      const [session, { loadTeams }, { viewerRole }, { viewerIsDesignLead }] = await Promise.all([githubSession(), import('../../../scripts/teams'), import('../../../scripts/needs-you'), import('../../../scripts/design-lead')]);
       const repo = session.readRepo();
       await session.resolveAccess(repo).catch(() => null);
       await loadTeams();
@@ -277,9 +283,42 @@ export function PatternsBody({ groups, suggest = null }: PatternsBodyProps) {
   );
 }
 
-/** Bridge's own Studio: the groups as built. */
-export default function StudioPatterns({ groups }: { groups: StudioPatternGroup[] }) {
-  return <PatternsBody groups={groups} />;
+/** What Bridge's own Studio knows at build time to let a member suggest (the rest is read in the browser). */
+export type SiteSuggest = Pick<PatternSuggestContext, 'integrations' | 'components'>;
+
+/**
+ * Bridge's own Studio: this site's repository and whether the viewer may write to it (the session's access, the same
+ * rule as a team's canEdit: GitHub write access, or an email member who can edit), null signed out and until known.
+ */
+function useSiteSuggest(groups: readonly StudioPatternGroup[], site: SiteSuggest | undefined): PatternSuggestContext | null {
+  const [seen, setSeen] = useState<{ repo: string; canEdit: boolean } | null>(null);
+  useEffect(() => {
+    if (!site) return;
+    let live = true;
+    void (async () => {
+      const session = await githubSession();
+      const r = session.readRepo();
+      const repo = `${r.owner}/${r.repo}`;
+      const paint = (a: { write: boolean } | null) => live && setSeen(a ? { repo, canEdit: a.write } : null);
+      // Every later read (a sign-in, a sign-out) repaints; the first one is asked here.
+      session.onAccess(paint);
+      paint(await session.resolveAccess(r));
+    })().catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [site]);
+  return useMemo(() => {
+    if (!site || !seen) return null;
+    const hrefs = new Map(groups.flatMap((g) => g.rows.map((r) => [r.id, r.href] as const)));
+    return { ...site, ...seen, pageUrl: (id) => new URL(hrefs.get(id) ?? '/', location.origin).href };
+  }, [groups, site, seen]);
+}
+
+/** Bridge's own Studio: the groups as built; a member who can write suggests from here, as on a team. */
+export default function StudioPatterns({ groups, site }: { groups: StudioPatternGroup[]; site?: SiteSuggest }) {
+  const suggest = useSiteSuggest(groups, site);
+  return <PatternsBody groups={groups} suggest={suggest} />;
 }
 
 /** A team's Studio: its patterns from its model, read in the browser; a member who can write suggests from here. */

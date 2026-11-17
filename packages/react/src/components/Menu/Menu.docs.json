@@ -119,5 +119,99 @@
     "group": "Group",
     "groupLabel": "Group label",
     "separator": "Separator, runs to the popup edge with the inset's 8px gap above and below"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-list",
+      "family": "Opening",
+      "text": "Opens the menu",
+      "try": "Tab to Token actions and press Enter",
+      "keys": [
+        "Enter",
+        "Space",
+        "ArrowDown"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open, unless opened by touch",
+      "try": "Open the menu, then try to scroll the page",
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move, and wrap at the ends",
+      "try": "Open the menu, then press the arrow keys",
+      "keys": [
+        "ArrowDown",
+        "ArrowUp"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "jump-to-ends",
+      "family": "Moving",
+      "text": "Home and End go to the first and the last item",
+      "try": "Open the menu, then press End",
+      "keys": [
+        "Home",
+        "End"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "type-to-jump",
+      "family": "Moving",
+      "text": "Type to jump",
+      "try": "Open the menu, then type M",
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "pick-with-enter",
+      "family": "Picking",
+      "text": "Enter runs the highlighted item and closes the menu",
+      "try": "Open the menu, move to an item, then press Enter",
+      "keys": [
+        "Enter"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "try": "Open the menu, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside",
+      "try": "Open the menu, then click anywhere outside it",
+      "keys": [
+        "click-outside"
+      ],
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "focus-on-open",
+      "family": "Focus",
+      "text": "Opened from the keyboard, the first item takes the focus",
+      "try": "Tab to Token actions and press Enter: Rename has the focus",
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the trigger",
+      "try": "Open the menu and pick an item: the focus ring is back on Token actions",
+      "example": { "c": "Menu", "children": [{ "c": "MenuTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Token actions"] } } }, { "c": "MenuContent", "children": [{ "c": "MenuItem", "children": ["Rename"] }, { "c": "MenuItem", "children": ["Duplicate"] }, { "c": "MenuItem", "children": ["Move to group"] }, { "c": "MenuItem", "p": { "tone": "danger" }, "children": ["Delete"] }] }] }
+    }
+  ]
 }

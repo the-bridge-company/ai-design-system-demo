@@ -2,5 +2,5 @@
   "id": "pick-with-enter",
   "kind": "interaction",
   "name": "Pick with Enter",
-  "purpose": "Enter picks the option the list has highlighted."
+  "purpose": "Enter picks the item the arrow keys moved to: an option, a menu item, a tab."
 }

@@ -1,0 +1,6 @@
+{
+  "id": "close-on-outside-click",
+  "kind": "interaction",
+  "name": "Close on a click outside",
+  "purpose": "A click anywhere outside closes what is open, without picking or saving anything."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "scroll-lock",
+  "kind": "interaction",
+  "name": "Page scroll paused",
+  "purpose": "While it is open, the page behind it does not scroll."
+}

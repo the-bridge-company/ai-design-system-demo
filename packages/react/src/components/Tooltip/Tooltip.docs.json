@@ -40,5 +40,31 @@
   "anatomy": {
     "positioner": "Positioning layer (layer.tooltip)",
     "tooltip": "Surface (tooltip.bg, tooltip.text, tooltip.radius)"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "show-on-focus",
+      "family": "Opening",
+      "text": "Shows when its control gets keyboard focus",
+      "try": "Tab to the copy button: the tip shows",
+      "example": { "c": "Tooltip", "p": { "content": "Copy token name" }, "children": [{ "c": "IconButton", "p": { "icon": "Copy", "label": "Copy token name" } }] }
+    },
+    {
+      "id": "show-on-hover",
+      "family": "Opening",
+      "text": "Shows on hover, after a short delay",
+      "try": "Point at the copy button and wait",
+      "example": { "c": "Tooltip", "p": { "content": "Copy token name" }, "children": [{ "c": "IconButton", "p": { "icon": "Copy", "label": "Copy token name" } }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Escape hides it",
+      "try": "Tab to the copy button, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "Tooltip", "p": { "content": "Copy token name" }, "children": [{ "c": "IconButton", "p": { "icon": "Copy", "label": "Copy token name" } }] }
+    }
+  ]
 }

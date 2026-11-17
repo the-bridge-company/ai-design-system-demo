@@ -1,0 +1,6 @@
+{
+  "id": "open-from-trigger",
+  "kind": "interaction",
+  "name": "Open from a button",
+  "purpose": "Enter or Space on the button opens the dialog, panel or popover it names."
+}

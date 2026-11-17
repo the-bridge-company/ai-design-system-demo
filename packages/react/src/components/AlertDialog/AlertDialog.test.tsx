@@ -115,3 +115,84 @@ describe('AlertDialog with a text to type (confirmText)', () => {
     expect(confirmTextMatches('', 'Marketing team')).toBe(false);
   });
 });
+
+// The behaviors AlertDialog.docs.json declares, each played with its keys (or its click outside).
+describe('AlertDialog behaviors', () => {
+  function DeleteTokens() {
+    return (
+      <AlertDialog>
+        <AlertDialogTrigger render={<Button variant="danger" />}>Delete tokens</AlertDialogTrigger>
+        <AlertDialogContent title="Delete 3 tokens?" description="This cannot be undone." confirmLabel="Delete tokens" />
+      </AlertDialog>
+    );
+  }
+  const locked = () => document.documentElement.hasAttribute('data-base-ui-scroll-locked');
+  const confirm = (dialog: HTMLElement) => Array.from(dialog.querySelectorAll('button')).find((b) => b.textContent === 'Delete tokens')!;
+
+  it('Enter or Space on the trigger opens it', async () => {
+    const user = userEvent.setup();
+    render(<DeleteTokens />);
+    const trigger = screen.getByRole('button', { name: 'Delete tokens' });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    await screen.findByRole('alertdialog');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.keyboard(' ');
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('Escape closes it, nothing confirmed, and focus returns to the trigger', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <AlertDialog>
+        <AlertDialogTrigger render={<Button variant="danger" />}>Delete tokens</AlertDialogTrigger>
+        <AlertDialogContent title="Delete 3 tokens?" description="This cannot be undone." confirmLabel="Delete tokens" onConfirm={onConfirm} />
+      </AlertDialog>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Delete tokens' });
+    await user.click(trigger);
+    await screen.findByRole('alertdialog');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('Tab keeps the focus on its two buttons', async () => {
+    const user = userEvent.setup();
+    render(<DeleteTokens />);
+    await user.click(screen.getByRole('button', { name: 'Delete tokens' }));
+    const dialog = await screen.findByRole('alertdialog');
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    await waitFor(() => expect(cancel).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(confirm(dialog)).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(cancel).toHaveFocus());
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    await waitFor(() => expect(confirm(dialog)).toHaveFocus());
+  });
+
+  it('a click outside does not close it', async () => {
+    const user = userEvent.setup();
+    render(<DeleteTokens />);
+    await user.click(screen.getByRole('button', { name: 'Delete tokens' }));
+    await screen.findByRole('alertdialog');
+    await user.click(document.body);
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('pauses the page scroll while open', async () => {
+    const user = userEvent.setup();
+    render(<DeleteTokens />);
+    await waitFor(() => expect(locked()).toBe(false));
+    await user.click(screen.getByRole('button', { name: 'Delete tokens' }));
+    await screen.findByRole('alertdialog');
+    await waitFor(() => expect(locked()).toBe(true));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(locked()).toBe(false));
+  });
+});

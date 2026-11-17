@@ -1,0 +1,6 @@
+{
+  "id": "trap-focus",
+  "kind": "interaction",
+  "name": "Focus stays inside",
+  "purpose": "While it is open, Tab and Shift+Tab move only between its own controls."
+}

@@ -99,16 +99,17 @@ describe('proposals that are not patterns yet', () => {
       { screen: 'Acme Prints, Orders', label: 'Move to archive' },
     ],
   };
-  const jump: BehaviorAsk = { of: 'component', id: 'Menu', behavior: 'type-to-jump', today: '', wanted: 'Typing a letter jumps to the first item.' };
+  // Combobox's own behavior, asked of Select (which does not do it): one component only, so not an interaction.
+  const jump: BehaviorAsk = { of: 'component', id: 'Select', behavior: 'clear-on-second-escape', today: '', wanted: 'A second Escape clears the pick.' };
 
   it('lists a new action and a behavior asked of a component that does not do it, by name, oldest first', () => {
-    const names = new Map([['type-to-jump', 'Type to jump']]);
-    expect(askedNotPatterns([issue(31, 'Menu', jump), issue(30, 'Archive pattern', archive)], own, names)).toEqual([
+    const names = new Map([['clear-on-second-escape', 'A second Escape clears']]);
+    expect(askedNotPatterns([issue(31, 'Select', jump), issue(30, 'Archive pattern', archive)], own, names)).toEqual([
       { number: 30, name: 'Archive' },
-      { number: 31, name: 'Type to jump on Menu' },
+      { number: 31, name: 'A second Escape clears on Select' },
     ]);
     // Without the component's words, the id in words.
-    expect(askedNotPatterns([issue(31, 'Menu', jump)], own)).toEqual([{ number: 31, name: 'Type to jump on Menu' }]);
+    expect(askedNotPatterns([issue(31, 'Select', jump)], own)).toEqual([{ number: 31, name: 'Clear on second escape on Select' }]);
   });
 
   it('leaves out what is a row (an adoption of an interaction, a change to a pattern) and what does not wait on the lead', () => {
@@ -134,14 +135,14 @@ describe('proposals that are not patterns yet', () => {
 
   it('never become a row, a Library pattern or an agent pattern while their request is open', () => {
     const before = libraryPatterns(repoModel);
-    const issues = [issue(30, 'Archive pattern', archive), issue(31, 'Menu', jump)];
+    const issues = [issue(30, 'Archive pattern', archive), issue(31, 'Select', jump)];
     expect(askedNotPatterns(issues, own)).toHaveLength(2);
     expect(patternRequests(issues, own).size).toBe(0);
     // The Library reads only the pattern files: the open requests change nothing.
     expect(libraryPatterns(repoModel)).toEqual(before);
     const ids = studioPatternGroups(libraryPatterns(repoModel), (id) => id).flatMap((g) => g.rows.map((r) => r.id));
     expect(ids).not.toContain('archive');
-    expect(ids).not.toContain('type-to-jump');
+    expect(ids).not.toContain('clear-on-second-escape');
   });
 
   it('are counted in the lead sentence with the changes, once', () => {

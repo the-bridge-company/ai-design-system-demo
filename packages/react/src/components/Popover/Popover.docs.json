@@ -43,5 +43,52 @@
     "title": "Title",
     "description": "Description",
     "close": "Close button"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-from-trigger",
+      "family": "Opening",
+      "text": "Opens from its button",
+      "try": "Tab to Reviewers and press Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ],
+      "example": { "c": "Popover", "children": [{ "c": "PopoverTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Reviewers"] } } }, { "c": "PopoverContent", "p": { "title": "Reviewers" }, "children": [{ "c": "Button", "p": { "variant": "ghost" }, "children": ["Add reviewer"] }] }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "try": "Open the popover, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "Popover", "children": [{ "c": "PopoverTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Reviewers"] } } }, { "c": "PopoverContent", "p": { "title": "Reviewers" }, "children": [{ "c": "Button", "p": { "variant": "ghost" }, "children": ["Add reviewer"] }] }] }
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside",
+      "try": "Open the popover, then click anywhere outside it",
+      "keys": [
+        "click-outside"
+      ],
+      "example": { "c": "Popover", "children": [{ "c": "PopoverTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Reviewers"] } } }, { "c": "PopoverContent", "p": { "title": "Reviewers" }, "children": [{ "c": "Button", "p": { "variant": "ghost" }, "children": ["Add reviewer"] }] }] }
+    },
+    {
+      "id": "focus-on-open",
+      "family": "Focus",
+      "text": "Focus moves to its first control, or the one it names",
+      "try": "Open the popover: the focus ring is on Add reviewer",
+      "example": { "c": "Popover", "children": [{ "c": "PopoverTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Reviewers"] } } }, { "c": "PopoverContent", "p": { "title": "Reviewers" }, "children": [{ "c": "Button", "p": { "variant": "ghost" }, "children": ["Add reviewer"] }] }] }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Escape puts the focus back on its button",
+      "try": "Open the popover and press Esc: the focus ring is back on Reviewers",
+      "example": { "c": "Popover", "children": [{ "c": "PopoverTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Reviewers"] } } }, { "c": "PopoverContent", "p": { "title": "Reviewers" }, "children": [{ "c": "Button", "p": { "variant": "ghost" }, "children": ["Add reviewer"] }] }] }
+    }
+  ]
 }

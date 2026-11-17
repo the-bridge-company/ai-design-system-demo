@@ -1,0 +1,6 @@
+{
+  "id": "move-with-arrows",
+  "kind": "interaction",
+  "name": "Move with the arrow keys",
+  "purpose": "The arrow keys move between the items of one control: options, menu items, tabs, choices."
+}

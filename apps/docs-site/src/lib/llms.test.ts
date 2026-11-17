@@ -50,7 +50,7 @@ describe('/llms.txt', () => {
 
   it('lists the patterns with their kind: interactions in each component\'s words, actions with rules and places', () => {
     expect(text).toContain('## Patterns');
-    expect(text).toContain('- close-on-escape (kind: interaction): Close on Escape. Escape closes an open list. Components: Combobox ("Escape closes the list" [Escape]), Select ("Closes on Escape" [Escape])');
+    expect(text).toContain('- close-on-escape (kind: interaction): Close on Escape. Escape closes what is open over the page: a list, a menu, a dialog, a tip. Components: Combobox ("Escape closes the list" [Escape]), Select ("Closes on Escape" [Escape]), AlertDialog ("Escape cancels: nothing happens" [Escape]), Dialog ("Closes on Escape" [Escape]), Drawer ("Closes on Escape" [Escape]), Menu ("Closes on Escape" [Escape]), Popover ("Closes on Escape" [Escape]), Tooltip ("Escape hides it" [Escape])');
     expect(text).toMatch(/- delete \(kind: action\): Delete\. .* Cannot be undone\. Components: Button, AlertDialog\./);
     expect(text).toContain('  - Used in: Settings, Danger zone (Delete this team); Account settings (Delete my account)');
     expect(text.indexOf('## Patterns')).toBeLessThan(text.indexOf('## Components'));

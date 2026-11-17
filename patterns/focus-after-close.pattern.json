@@ -1,6 +1,6 @@
 {
   "id": "focus-after-close",
   "kind": "interaction",
-  "name": "Focus after a pick",
-  "purpose": "After a pick, focus is on the control the list opened from, so the keyboard carries on from there."
+  "name": "Focus after closing",
+  "purpose": "When it closes, the focus is back on the control it opened from, so the keyboard carries on from there."
 }

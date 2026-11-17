@@ -1,0 +1,6 @@
+{
+  "id": "type-to-jump",
+  "kind": "interaction",
+  "name": "Type to jump",
+  "purpose": "Typing the first letters of an item moves to it."
+}

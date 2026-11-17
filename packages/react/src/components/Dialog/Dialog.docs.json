@@ -75,5 +75,69 @@
     "sm": "Size sm (384px)",
     "md": "Size md (560px, default)",
     "lg": "Size lg (720px)"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-from-trigger",
+      "family": "Opening",
+      "text": "Opens from its button",
+      "try": "Tab to Rename token and press Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ],
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open",
+      "try": "Open the dialog, then try to scroll the page",
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "trap-focus",
+      "family": "Focus",
+      "text": "Tab stays inside the dialog",
+      "try": "Open the dialog, then press Tab a few times",
+      "keys": [
+        "Tab"
+      ],
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "try": "Open the dialog, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside, unless that is turned off for a form",
+      "try": "Open the dialog, then click the dimmed page",
+      "keys": [
+        "click-outside"
+      ],
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "focus-on-open",
+      "family": "Focus",
+      "text": "Focus moves to the first field",
+      "try": "Open the dialog: the focus ring is on New name",
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the button that opened it",
+      "try": "Open the dialog and press Esc: the focus ring is back on Rename token",
+      "example": { "c": "Dialog", "children": [{ "c": "DialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Rename token"] } } }, { "c": "DialogContent", "p": { "title": "Rename token", "description": "References update in the next release.", "footer": { "c": "DialogClose", "p": { "render": { "c": "Button", "p": { "variant": "ghost" }, "children": ["Cancel"] } } } }, "children": [{ "c": "Input", "p": { "label": "New name", "defaultValue": "color.signal.default" } }] }] }
+    }
+  ]
 }

@@ -1,0 +1,6 @@
+{
+  "id": "open-list",
+  "kind": "interaction",
+  "name": "Open a list from its button",
+  "purpose": "Enter, Space or the down arrow on the button opens its list."
+}

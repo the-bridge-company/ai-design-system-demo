@@ -1,0 +1,6 @@
+{
+  "id": "jump-to-ends",
+  "kind": "interaction",
+  "name": "Jump with Home and End",
+  "purpose": "Home goes to the first item, End to the last."
+}

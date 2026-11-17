@@ -96,3 +96,82 @@ describe('Drawer', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Review changes' })).toHaveFocus());
   });
 });
+
+// The behaviors Drawer.docs.json declares, each played with its keys (or its click outside).
+describe('Drawer behaviors', () => {
+  function Filters({ disablePointerDismissal = false }: { disablePointerDismissal?: boolean }) {
+    return (
+      <Drawer disablePointerDismissal={disablePointerDismissal}>
+        <DrawerTrigger render={<Button variant="secondary" />}>Filters</DrawerTrigger>
+        <DrawerContent title="Filters" footer={<Button>Apply</Button>}>
+          <p>Status</p>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+  const locked = () => document.documentElement.hasAttribute('data-base-ui-scroll-locked');
+
+  it('Enter or Space on the trigger opens it, focus moves inside, Escape closes and focus returns', async () => {
+    stubHeights(100, 100);
+    const user = userEvent.setup();
+    render(<Filters />);
+    const trigger = screen.getByRole('button', { name: 'Filters' });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    const dialog = await screen.findByRole('dialog', { name: 'Filters' });
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.keyboard(' ');
+    expect(await screen.findByRole('dialog', { name: 'Filters' })).toBeInTheDocument();
+  });
+
+  it('Tab keeps the focus inside: past the last control it wraps to the first', async () => {
+    stubHeights(100, 100);
+    const user = userEvent.setup();
+    render(<Filters />);
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    const dialog = await screen.findByRole('dialog');
+    const close = screen.getByRole('button', { name: 'Close panel' });
+    const apply = screen.getByRole('button', { name: 'Apply' });
+    // The sheet itself takes the focus first, then Tab walks its controls.
+    await waitFor(() => expect(dialog).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(close).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(apply).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(close).toHaveFocus());
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    await waitFor(() => expect(apply).toHaveFocus());
+  });
+
+  it('a click outside closes it, unless disablePointerDismissal', async () => {
+    stubHeights(100, 100);
+    const user = userEvent.setup();
+    const { unmount } = render(<Filters />);
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    await screen.findByRole('dialog');
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    unmount();
+    render(<Filters disablePointerDismissal />);
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    await screen.findByRole('dialog');
+    await user.click(document.body);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('pauses the page scroll while open', async () => {
+    stubHeights(100, 100);
+    const user = userEvent.setup();
+    render(<Filters />);
+    await waitFor(() => expect(locked()).toBe(false));
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    await screen.findByRole('dialog');
+    await waitFor(() => expect(locked()).toBe(true));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(locked()).toBe(false));
+  });
+});

@@ -1,8 +1,9 @@
 // Patterns for agents (bridge_list_patterns, bridge_get_pattern): the repository's patterns/<id>.pattern.json read
 // through @bridge-ds/core patterns.ts. Interactions come with the components that list their behavior id, in each
 // component's own words (read from the components' docs.json); actions with their rules, components and the real
-// places that do them. Never the stage: that is for the Library page only.
-import { agentPatterns, behaviorUses, PATTERN_KINDS, PATTERNS_DIR, patternIdOf, readPatterns, type AgentPattern } from '@bridge-ds/core';
+// places that do them (a place in a product with its own repository names the product and that repository). Never the
+// stage: that is for the Library page only.
+import { agentPatterns, behaviorUses, PATTERN_KINDS, PATTERNS_DIR, patternIdOf, productsOf, readPatterns, type AgentPattern } from '@bridge-ds/core';
 import type { BridgeConfig } from './config.js';
 import type { RepoSource } from './source.js';
 import { listComponentNames } from './components.js';
@@ -12,7 +13,12 @@ export async function readAgentPatterns(source: RepoSource, config: BridgeConfig
   const paths = (await source.list(PATTERNS_DIR)).filter((p) => patternIdOf(p) !== null);
   if (!paths.length) return { patterns: [], problems: [] };
   const bodies = await Promise.all(paths.map(async (p) => [p, await source.read(p)] as const));
-  const { patterns, problems } = readPatterns(bodies.filter((b): b is readonly [string, string] => b[1] !== null).map(([p, b]) => [p, b]));
+  // A place in a product (usedIn[].product) must name a product bridge.config.json lists; agents get its name and repo.
+  const products = productsOf(config);
+  const { patterns, problems } = readPatterns(
+    bodies.filter((b): b is readonly [string, string] => b[1] !== null).map(([p, b]) => [p, b]),
+    { products },
+  );
   // Interactions need the components' behaviors: their docs.json, read only when there is one to fill.
   let components: { name: string; behaviors?: unknown }[] = [];
   if (patterns.some((p) => p.kind === 'interaction') && config.components) {
@@ -30,7 +36,8 @@ export async function readAgentPatterns(source: RepoSource, config: BridgeConfig
       }),
     );
   }
-  return { patterns: agentPatterns(patterns, behaviorUses(components)), problems };
+  const designSystemRepo = config.repo?.owner && config.repo.name ? `${config.repo.owner}/${config.repo.name}` : null;
+  return { patterns: agentPatterns(patterns, behaviorUses(components), { products, designSystemRepo }), problems };
 }
 
 /** The list: id, kind, name and what it is for, optionally one kind. */

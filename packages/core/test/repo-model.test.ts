@@ -9,6 +9,7 @@ import { memorySource, readRepoTexts } from '../src/repo-source';
 import { GitHubClient } from '../src/github-client';
 import { gitHubSource } from '../src/repo-source-github';
 import { fakeGitHub, noSleep } from './fake-github';
+import { buildSnapshot, parseSnapshot, recordingSource, snapshotSource } from '../src/snapshot';
 
 const color = (hex: string) => ({ $type: 'color', $value: { colorSpace: 'srgb', components: [0, 0, 0].map((_, i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255), hex } });
 const dim = (value: number) => ({ $type: 'dimension', $value: { value, unit: 'px' } });
@@ -285,4 +286,26 @@ test('this repo: the model is the same through the local, memory and GitHub sour
   assert.equal(capped.specs.file, null);
   assert.deepEqual(capped.problems, [`${fromFs.specs.path}: ${fromFs.specs.path} is ${Math.round(files[fromFs.specs.path]!.length / 1000)} KB; Bridge reads files up to 1000 KB.`]);
   assert.deepEqual(capped.tokens.rows, fromFs.tokens.rows);
+});
+
+test('patterns: a place in a product of its own repository is read, an unknown product key is a problem, and a snapshot carries it raw', async () => {
+  const place = (product: string) => ({ screen: 'Contacts', label: 'Delete contact', product, file: 'src/contacts/Row.tsx', match: 'Delete contact' });
+  const pattern = (id: string, product: string) =>
+    json({ id, kind: 'action', name: id, purpose: 'Removes it.', reversible: false, rules: ['Ask first.'], components: ['Button'], usedIn: [{ screen: 'Settings', label: 'Delete', file: 'a.ts', match: 'Delete' }, place(product)] });
+  const files = {
+    'bridge.config.json': json({ repo: { owner: 'acme-design-demo', name: 'acme-ds' }, products: [{ key: 'crm', name: 'CRM', repo: 'acme-design-demo/acme-crm' }, { key: 'library', name: 'Library', default: true }] }),
+    'patterns/delete.pattern.json': pattern('delete', 'crm'),
+    'patterns/remove.pattern.json': pattern('remove', 'shop'),
+  };
+  const rec = recordingSource(memorySource(files, { owner: 'acme-design-demo', repo: 'acme-ds', sha: 'f00' }));
+  const model = await loadRepoModel(rec.source);
+  assert.deepEqual((model.patterns ?? []).map((p) => p.id), ['delete']);
+  assert.ok(model.problems.some((p) => p.startsWith('patterns/remove.pattern.json: usedIn.1.product: bridge.config.json products has no "shop"')));
+  // What `bridge snapshot` publishes keeps the pattern file as written: a reader with this core reads `product`, whatever
+  // CLI wrote the snapshot.
+  const snap = parseSnapshot(JSON.stringify(buildSnapshot({ model, paths: rec.paths, files: rec.files, version: '1.0.0' })));
+  assert.equal(snap.files['patterns/delete.pattern.json'], files['patterns/delete.pattern.json']);
+  const read = await loadRepoModel(snapshotSource(snap));
+  const del = (read.patterns ?? []).find((p) => p.id === 'delete');
+  assert.equal(del?.kind === 'action' ? del.usedIn[1]!.product : undefined, 'crm');
 });

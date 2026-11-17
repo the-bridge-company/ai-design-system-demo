@@ -14,12 +14,16 @@ import {
   patternGroups,
   patternIdOf,
   patternLlmsLines,
+  patternUseHref,
+  patternUsePlace,
+  modelAgentPatterns,
   readPatterns,
   stageLine,
   validatePattern,
   type ActionPattern,
   type Pattern,
 } from '../src/patterns';
+import { DEFAULT_PRODUCTS, type ProductConfig } from '../src/products';
 
 const REPO = join(__dirname, '../../..');
 const COMPONENTS = join(REPO, 'packages/react/src/components');
@@ -80,6 +84,58 @@ describe('validatePattern', () => {
   it('keeps an interaction to its name and sentence: the rest comes from the components', () => {
     const issues = validatePattern({ id: 'close-on-escape', kind: 'interaction', name: 'Close on Escape', purpose: 'Escape closes.', components: ['Select'] });
     expect(issues.map((i) => i.field)).toEqual(['components']);
+  });
+});
+
+// Acme's products: the CRM and Prints live in their own repositories, the library is the design system's.
+const PRODUCTS: ProductConfig[] = [
+  { key: 'crm', name: 'CRM', repo: 'acme-design-demo/acme-crm' },
+  { key: 'prints', name: 'Prints', repo: 'acme-design-demo/acme-prints' },
+  { key: 'admin', name: 'Admin', path: 'apps/admin' },
+  { key: 'library', name: 'Library', default: true },
+];
+const DS = 'acme-design-demo/acme-ds';
+const inCrm = { screen: 'Contacts', label: 'Delete contact', product: 'crm', file: 'src/contacts/Row.tsx', match: 'Delete contact' };
+
+describe('a place in a product of its own repository', () => {
+  const withCrm = action({ usedIn: [action().usedIn[0]!, inCrm] });
+
+  it('is valid with a product key the config lists, and without product as before', () => {
+    expect(validatePattern(withCrm, 'delete', { products: PRODUCTS })).toEqual([]);
+    expect(validatePattern(action(), 'delete', { products: PRODUCTS })).toEqual([]);
+    // No products given: the key is not checked, only its shape.
+    expect(validatePattern(withCrm, 'delete')).toEqual([]);
+  });
+
+  it('reports a key the config does not list, or a blank one, on that place', () => {
+    const unknown = validatePattern(action({ usedIn: [action().usedIn[0]!, { ...inCrm, product: 'shop' }] }), 'delete', { products: PRODUCTS });
+    expect(unknown.map((i) => i.field)).toEqual(['usedIn.1.product']);
+    expect(unknown[0]!.message).toBe('bridge.config.json products has no "shop". Use one of: crm, prints, admin, library, or leave product out for a file of the design system repository.');
+    expect(validatePattern(action({ usedIn: [action().usedIn[0]!, { ...inCrm, product: ' ' }] }), 'delete', { products: PRODUCTS }).map((i) => i.field)).toEqual(['usedIn.1.product']);
+  });
+
+  it('never drops it silently: readPatterns leaves the file out and says why', () => {
+    const { patterns, problems } = readPatterns([['patterns/delete.pattern.json', JSON.stringify(action({ usedIn: [action().usedIn[0]!, { ...inCrm, product: 'shop' }] }))]], { products: PRODUCTS });
+    expect(patterns).toEqual([]);
+    expect(problems).toEqual([expect.stringMatching(/^patterns\/delete\.pattern\.json: usedIn\.1\.product: bridge\.config\.json products has no "shop"/)]);
+    expect(readPatterns([['patterns/delete.pattern.json', JSON.stringify(withCrm)]], { products: PRODUCTS }).patterns).toHaveLength(1);
+  });
+
+  it('resolves to the product and its repository, a file of the design system otherwise', () => {
+    expect(patternUsePlace(inCrm, { products: PRODUCTS, designSystemRepo: DS })).toEqual({ product: PRODUCTS[0], repo: 'acme-design-demo/acme-crm' });
+    expect(patternUsePlace({ product: 'admin' }, { products: PRODUCTS, designSystemRepo: DS })).toEqual({ product: PRODUCTS[2], repo: null });
+    expect(patternUsePlace({}, { products: PRODUCTS, designSystemRepo: DS })).toEqual({ product: null, repo: null });
+    expect(patternUseHref(inCrm, { products: PRODUCTS, designSystemRepo: DS, branch: 'main' })).toBe('https://github.com/acme-design-demo/acme-crm/blob/HEAD/src/contacts/Row.tsx');
+    expect(patternUseHref({ file: 'apps/admin/Danger zone.tsx' }, { products: PRODUCTS, designSystemRepo: DS, branch: 'main' })).toBe('https://github.com/acme-design-demo/acme-ds/blob/main/apps/admin/Danger%20zone.tsx');
+    expect(patternUseHref({ file: 'a.ts' }, {})).toBeNull();
+  });
+
+  it('tells agents the product name and repository, in the MCP shape and in llms.txt', () => {
+    const agent = agentPatterns([withCrm], new Map(), { products: PRODUCTS, designSystemRepo: DS });
+    expect(agent[0]!.kind === 'action' && agent[0]!.usedIn).toEqual([action().usedIn[0], { ...inCrm, productName: 'CRM', repo: 'acme-design-demo/acme-crm' }]);
+    expect(patternLlmsLines(agent)).toContain('  - Used in: Settings (Delete this team); Contacts (Delete contact) in CRM [acme-design-demo/acme-crm]');
+    const fromModel = modelAgentPatterns({ patterns: [withCrm], components: null, site: { owner: 'acme-design-demo', repo: 'acme-ds', products: PRODUCTS } });
+    expect(fromModel).toEqual(agent);
   });
 });
 
@@ -174,7 +230,11 @@ describe('patternLlmsLines', () => {
 describe('the patterns of this repository', () => {
   const dir = join(REPO, PATTERNS_DIR);
   const files = readdirSync(dir).filter((f) => f.endsWith(PATTERN_SUFFIX));
-  const { patterns, problems } = readPatterns(files.map((f) => [`${PATTERNS_DIR}/${f}`, readFileSync(join(dir, f), 'utf8')]));
+  const products = (JSON.parse(readFileSync(join(REPO, 'bridge.config.json'), 'utf8')) as { products?: { key: string }[] }).products;
+  const { patterns, problems } = readPatterns(
+    files.map((f) => [`${PATTERNS_DIR}/${f}`, readFileSync(join(dir, f), 'utf8')]),
+    { products: products?.length ? products : DEFAULT_PRODUCTS },
+  );
   const components = readdirSync(COMPONENTS).filter((n) => existsSync(join(COMPONENTS, n, `${n}.docs.json`)));
   const docs = components.map((name) => ({ name, behaviors: (JSON.parse(readFileSync(join(COMPONENTS, name, `${name}.docs.json`), 'utf8')) as { behaviors?: unknown }).behaviors }));
 
@@ -187,6 +247,9 @@ describe('the patterns of this repository', () => {
     for (const p of patterns) {
       if (p.kind !== 'action') continue;
       for (const u of p.usedIn) {
+        // A place in a product (usedIn[].product) is a file of that product's own repository: this test cannot read
+        // another repository, so it checks only the files of this one. The reader still checks the product key.
+        if (u.product) continue;
         const path = join(REPO, u.file);
         expect(existsSync(path), `${p.id}: ${u.file} exists`).toBe(true);
         expect(readFileSync(path, 'utf8'), `${p.id}: ${u.file} holds ${u.match}`).toContain(u.match);

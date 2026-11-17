@@ -127,7 +127,7 @@ function newPatternBrief(r: ComponentChangeRequest, ask: BehaviorAsk, ref: strin
     '',
     'Do:',
     `1. Write ${file}: id "${ask.id}", kind "action", name "${name}", its purpose and rules from above, the components it uses, and usedIn.`,
-    '2. For every place, find the screen in the product code (the Bridge connector lists the product repositories) and write its usedIn entry: the screen, the label people read, the file and a match that is in that file.',
+    '2. For every place, find the screen in the product code (the Bridge connector lists the product repositories) and write its usedIn entry: the screen, the label people read, the file and a match that is in that file. A place in a product with its own repository also gets product: its key from bridge.config.json products, and its file is relative to that repository.',
     `3. If a place cannot be found in the code, leave it out and comment on ${ref} instead of guessing. A pattern needs at least two places.`,
     '4. Run the tests: the pattern test fails when a match is not in its file.',
     '5. Add a changeset.',

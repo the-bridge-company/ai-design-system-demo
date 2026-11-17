@@ -12,9 +12,12 @@
 //
 // Nothing in a pattern is invented: `usedIn` names the real places of the product that do it, each with the file that
 // holds its label (`file`) and the text that file must contain (`match`). A repository checks those in its tests, so a
-// pattern cannot drift away from the product. Pure: no I/O.
+// pattern cannot drift away from the product. A place in a product that lives in its own repository (bridge.config.json
+// products[].repo, like Acme's CRM) names that product by its key (`product`); its `file` is then relative to that
+// repository. Without `product`, `file` is relative to the design system repository. Pure: no I/O.
 
 import { readBehaviors } from './behaviors';
+import { productCodeRepoOf, type ProductConfig } from './products';
 
 /** The folder of pattern files, repo-relative. */
 export const PATTERNS_DIR = 'patterns';
@@ -32,7 +35,12 @@ export interface PatternUse {
   screen: string;
   /** The label they read there: "Delete this team". */
   label: string;
-  /** The repo-relative file that holds that label or its handler. */
+  /**
+   * The product the place is in, by its bridge.config.json products[].key ("crm"), when its code lives in that
+   * product's own repository. Absent: the design system repository.
+   */
+  product?: string;
+  /** The file that holds that label or its handler, relative to the product's repository (or this one, without product). */
   file: string;
   /** Text that file contains (the label as written, or the call that words it). */
   match: string;
@@ -112,8 +120,22 @@ export interface InteractionUse {
   try?: string;
 }
 
+/** A place as an agent reads it: a place in a product says the product's name and the repository that holds `file`. */
+export interface AgentPatternUse extends PatternUse {
+  /** The product's name ("CRM"), when the place names a product. */
+  productName?: string;
+  /** "owner/name" of the repository `file` is in, when the place names a product that has its own. */
+  repo?: string;
+}
+
 /** What an agent reads: an action without its stage; an interaction with the components that do it, in their words. */
-export type AgentPattern = Omit<ActionPattern, 'stage'> | (InteractionPattern & { components: Omit<InteractionUse, 'try'>[] });
+export type AgentPattern = (Omit<ActionPattern, 'stage' | 'usedIn'> & { usedIn: AgentPatternUse[] }) | (InteractionPattern & { components: Omit<InteractionUse, 'try'>[] });
+
+/** What a reader knows about the repository: the products bridge.config.json lists, to check `product` keys. */
+export interface PatternReadOptions {
+  /** bridge.config.json products. Given, a place naming a key not listed is a problem; absent, keys are not checked. */
+  products?: readonly Pick<ProductConfig, 'key'>[] | undefined;
+}
 
 export interface PatternIssue {
   field: string;
@@ -134,7 +156,7 @@ export function patternIdOf(path: string): string | null {
 }
 
 /** What blocks a pattern file. `fileId` is the id its file name gives, when known. */
-export function validatePattern(value: unknown, fileId?: string): PatternIssue[] {
+export function validatePattern(value: unknown, fileId?: string, options: PatternReadOptions = {}): PatternIssue[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [{ field: 'pattern', message: 'Write the pattern as an object with an id, a kind, a name and its rules.' }];
   const o = value as Record<string, unknown>;
   const out: PatternIssue[] = [];
@@ -157,6 +179,11 @@ export function validatePattern(value: unknown, fileId?: string): PatternIssue[]
     o.usedIn.forEach((u: unknown, i) => {
       const x = (u && typeof u === 'object' ? u : {}) as Record<string, unknown>;
       if (!isText(x.screen) || !isText(x.label) || !isText(x.file) || !isText(x.match)) out.push({ field: `usedIn.${i}`, message: 'Give each place its screen, its label, its file and the text that file contains.' });
+      if (!('product' in x)) return;
+      const keys = options.products?.map((p) => p.key);
+      const known = keys?.length ? `: ${keys.join(', ')}` : '';
+      if (!isText(x.product)) out.push({ field: `usedIn.${i}.product`, message: `Name the product by its key from bridge.config.json products${known}, or leave product out for a file of the design system repository.` });
+      else if (keys && !keys.includes(x.product)) out.push({ field: `usedIn.${i}.product`, message: `bridge.config.json products has no "${x.product}"${known ? `. Use one of${known}` : ''}, or leave product out for a file of the design system repository.` });
     });
   if (o.stage !== undefined) {
     const s = (o.stage && typeof o.stage === 'object' ? o.stage : {}) as Record<string, unknown>;
@@ -179,15 +206,16 @@ export function validatePattern(value: unknown, fileId?: string): PatternIssue[]
 }
 
 /** A pattern a page can show, from any file (a repository Bridge does not control may write any shape); null when it is not one. */
-export function readPattern(value: unknown): Pattern | null {
-  return validatePattern(value).length ? null : (value as Pattern);
+export function readPattern(value: unknown, options?: PatternReadOptions): Pattern | null {
+  return validatePattern(value, undefined, options).length ? null : (value as Pattern);
 }
 
 /**
  * The patterns of a repository, from its pattern files (path -> body): well-formed ones only, in kind order then by
- * name. `problems` says which files could not be read and why.
+ * name. `problems` says which files could not be read and why (a place naming a product the config does not list
+ * among them: the whole file is left out and said, never silently trimmed).
  */
-export function readPatterns(files: Iterable<[string, string]>): { patterns: Pattern[]; problems: string[] } {
+export function readPatterns(files: Iterable<[string, string]>, options: PatternReadOptions = {}): { patterns: Pattern[]; problems: string[] } {
   const patterns: Pattern[] = [];
   const problems: string[] = [];
   for (const [path, body] of files) {
@@ -200,7 +228,7 @@ export function readPatterns(files: Iterable<[string, string]>): { patterns: Pat
       problems.push(`${path}: ${(err as Error).message}`);
       continue;
     }
-    const issues = validatePattern(value, id);
+    const issues = validatePattern(value, id, options);
     if (issues.length) problems.push(`${path}: ${issues.map((i) => `${i.field}: ${i.message}`).join(' ')}`);
     else patterns.push(value as Pattern);
   }
@@ -251,13 +279,54 @@ export function interactionProblems(patterns: readonly Pattern[], uses: Map<stri
   });
 }
 
-/** The patterns an agent reads: shared interactions with their components in their words, actions without their stage. */
-export function agentPatterns(patterns: readonly Pattern[], uses: Map<string, InteractionUse[]>): AgentPattern[] {
+/** The repository a pattern's places resolve against: its own ("owner/name") and its products. */
+export interface PatternPlaceContext {
+  products?: readonly ProductConfig[] | undefined;
+  /** "owner/name" of the design system repository. */
+  designSystemRepo?: string | null | undefined;
+}
+
+/**
+ * Where a place's file is: the product it names (when bridge.config.json lists it) and that product's own repository
+ * ("owner/name"); `repo` is null for a file of the design system repository (no product, or a product living in a
+ * folder of it).
+ */
+export function patternUsePlace(use: Pick<PatternUse, 'product'>, ctx: PatternPlaceContext): { product: ProductConfig | null; repo: string | null } {
+  const product = use.product ? (ctx.products?.find((p) => p.key === use.product) ?? null) : null;
+  return { product, repo: product ? productCodeRepoOf(product, ctx.designSystemRepo) : null };
+}
+
+const segments = (path: string): string => path.replace(/^\.?\/+/, '').split('/').map(encodeURIComponent).join('/');
+
+/**
+ * The place's file on GitHub: in its product's repository (its default branch, HEAD), else in the design system
+ * repository at `branch`. Null when the design system repository is unknown and the place names no product repository.
+ */
+export function patternUseHref(use: Pick<PatternUse, 'product' | 'file'>, ctx: PatternPlaceContext & { branch?: string | undefined }): string | null {
+  const { repo } = patternUsePlace(use, ctx);
+  const at = repo ?? ctx.designSystemRepo;
+  if (!at) return null;
+  const [owner, name] = at.split('/');
+  return `https://github.com/${encodeURIComponent(owner!)}/${encodeURIComponent(name!)}/blob/${repo ? 'HEAD' : encodeURIComponent(ctx.branch || 'HEAD')}/${segments(use.file)}`;
+}
+
+/** A place for an agent: a place in a product gets the product's name and, when it has one, its repository. */
+function agentUse(use: PatternUse, ctx: PatternPlaceContext): AgentPatternUse {
+  if (!use.product) return use;
+  const { product, repo } = patternUsePlace(use, ctx);
+  return { ...use, ...(product ? { productName: product.name } : {}), ...(repo ? { repo } : {}) };
+}
+
+/**
+ * The patterns an agent reads: shared interactions with their components in their words, actions without their stage.
+ * With the repository's products, an action's places in a product say its name and repository (AgentPatternUse).
+ */
+export function agentPatterns(patterns: readonly Pattern[], uses: Map<string, InteractionUse[]>, ctx: PatternPlaceContext = {}): AgentPattern[] {
   const shared = new Map(interactionsWithUses(patterns, uses).map((x) => [x.pattern.id, x.uses]));
   return patterns.flatMap((p): AgentPattern[] => {
     if (p.kind === 'action') {
-      const { stage: _stage, ...rest } = p;
-      return [rest];
+      const { stage: _stage, usedIn, ...rest } = p;
+      return [{ ...rest, usedIn: usedIn.map((u) => agentUse(u, ctx)) }];
     }
     const list = shared.get(p.id);
     return list ? [{ ...p, components: list.map(({ try: _try, ...u }) => u) }] : [];
@@ -267,9 +336,17 @@ export function agentPatterns(patterns: readonly Pattern[], uses: Map<string, In
 /** "{item}" in a stage line, filled. */
 export const stageLine = (line: string, item: string): string => line.replace(/\{item\}/g, item);
 
-/** The patterns of a repo model for agents: its patterns, and its components' behaviors for the interactions. */
-export const modelAgentPatterns = (model: { patterns?: Pattern[] | undefined; components: { list: { name: string; docs: { behaviors?: unknown } | null }[] } | null }): AgentPattern[] =>
-  agentPatterns(model.patterns ?? [], behaviorUses((model.components?.list ?? []).map((c) => ({ name: c.name, behaviors: c.docs?.behaviors }))));
+/** The patterns of a repo model for agents: its patterns, its components' behaviors for the interactions, its products for the places. */
+export const modelAgentPatterns = (model: {
+  patterns?: Pattern[] | undefined;
+  components: { list: { name: string; docs: { behaviors?: unknown } | null }[] } | null;
+  site?: { owner: string; repo: string; products?: readonly ProductConfig[] | undefined } | undefined;
+}): AgentPattern[] =>
+  agentPatterns(
+    model.patterns ?? [],
+    behaviorUses((model.components?.list ?? []).map((c) => ({ name: c.name, behaviors: c.docs?.behaviors }))),
+    model.site ? { products: model.site.products, designSystemRepo: model.site.owner && model.site.repo ? `${model.site.owner}/${model.site.repo}` : null } : {},
+  );
 
 /** One line of repo text: whitespace collapsed, so a value cannot open a heading or a list of its own. */
 const one = (text: string): string => text.replace(/\s+/g, ' ').trim();
@@ -290,7 +367,7 @@ export function patternLlmsLines(list: readonly AgentPattern[]): string[] {
         out.push(
           `- ${p.id} (kind: action): ${one(p.name)}. ${one(p.purpose)} ${p.reversible ? 'Can be undone.' : 'Cannot be undone.'} Components: ${p.components.map(one).join(', ')}.`,
           ...p.rules.map((r) => `  - Rule: ${one(r)}`),
-          `  - Used in: ${p.usedIn.map((u) => `${one(u.screen)} (${one(u.label)})`).join('; ')}`,
+          `  - Used in: ${p.usedIn.map((u) => `${one(u.screen)} (${one(u.label)})${u.product ? ` in ${one(u.productName ?? u.product)}${u.repo ? ` [${one(u.repo)}]` : ''}` : ''}`).join('; ')}`,
         );
       }
     }

@@ -44,6 +44,18 @@ export function studioPatternGroups(groups: readonly PatternGroup[], href: (id: 
 }
 
 /**
+ * The components every row of a group uses, when they all use the same ones (in any order): the group row says them
+ * once and its rows leave the cell empty. Null for a group of one row (it keeps its own value) or rows that differ.
+ */
+export function sharedComponents(group: Pick<StudioPatternGroup, 'rows'>): string[] | null {
+  const [first, ...rest] = group.rows;
+  if (!first || !rest.length || !first.components.length) return null;
+  const key = (c: readonly string[]) => [...c].sort().join('\n');
+  const k = key(first.components);
+  return rest.every((r) => key(r.components) === k) ? first.components : null;
+}
+
+/**
  * The open behavior requests that wait for a decision, per pattern id (oldest first). Requests about anything else
  * (a component behavior no pattern names, a pattern this design system does not have) are left out.
  */

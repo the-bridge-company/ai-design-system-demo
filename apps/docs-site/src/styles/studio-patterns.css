@@ -5,7 +5,7 @@
   max-width: var(--studio-page-max);
 }
 
-.spt-table .spt-group th {
+.spt-table .spt-group > * {
   padding-top: var(--space-5);
   border-bottom: 0;
   background-color: transparent;
@@ -15,7 +15,12 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.spt-table tbody:first-of-type .spt-group th {
+/* The components the whole group shares, said once on its row: muted and regular weight, as the rows' cells. */
+.spt-table .spt-group [data-spt-shared] {
+  font-weight: var(--font-weight-regular);
+}
+
+.spt-table tbody:first-of-type .spt-group > * {
   padding-top: var(--space-2);
 }
 

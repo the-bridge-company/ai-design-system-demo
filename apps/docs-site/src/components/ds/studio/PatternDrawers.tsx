@@ -243,6 +243,7 @@ function WaitingRequest({ q, repo, decider, onDecided }: { q: PatternRequest; re
     <div className="spt-d-req">
       <BehaviorDecision
         heading={false}
+        decisionFirst
         today={q.ask.today}
         wanted={q.ask.wanted}
         where={q.ask.where}

@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Plus, X } from 'lucide-react';
 import { soleLeadName } from '../../../lib/design-lead';
-import { Alert, Button, IconButton, Input, Select, Textarea } from '@bridge-ds/react';
+import { Alert, Button, IconButton, Input, Select, Textarea, VisuallyHidden } from '@bridge-ds/react';
 import type { ComponentChangeRequest, IntegrationsConfig } from '@bridge-ds/core';
 import {
   adopterChoices,
@@ -218,7 +218,13 @@ function NewPatternForm({ formId, target, repo, integrations, pageUrl, busy, onB
       <Textarea label={c.purpose} name="purpose" rows={2} required value={f.purpose} onValueChange={(v) => set('purpose', v)} error={shown.purpose} aria-invalid={shown.purpose ? true : undefined} />
       <Textarea label={c.rules.label} name="rules" rows={3} required hint={c.rules.hint} value={f.rules} onValueChange={(v) => set('rules', v)} error={shown.rules} aria-invalid={shown.rules ? true : undefined} />
       <fieldset className="spt-places" aria-describedby={`${formId}-places-line`}>
-        <legend className="spt-places-h">{c.places.title}</legend>
+        <legend className="spt-places-h">
+          {c.places.title}
+          <span className="spt-required" aria-hidden="true">
+            *
+          </span>
+          <VisuallyHidden> (required)</VisuallyHidden>
+        </legend>
         <p className="spt-places-line" id={`${formId}-places-line`}>
           {c.places.line}
         </p>

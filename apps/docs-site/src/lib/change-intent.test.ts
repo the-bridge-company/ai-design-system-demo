@@ -323,6 +323,9 @@ describe('Suggest a pattern', () => {
   it('speaks in the Bridge voice, naming the lead when there is one', () => {
     expect(suggestPatternCopy('Dana').submit).toBe('Send to Dana');
     expect(suggestPatternCopy(null).description).toBe('The design system lead decides, then your developers make it a pattern. It shows here once it is in the code.');
+    expect(patternDrawerCopy().waiting(1)).toBe('One change waits for your decision');
+    expect(patternDrawerCopy().waiting(2)).toBe('2 changes wait for your decision');
+    expect([adoptFormCopy(true).where.label, interactionChangeCopy().where.label]).toEqual(['Where people would feel it (optional)', 'Where people would feel it (optional)']);
     expect(adoptFormCopy(true, 'Dana').after).toBe('Dana decides. Once it is the default, your developers build it and it shows here.');
     const text = JSON.stringify([SUGGEST_KINDS, suggestPatternCopy('Dana'), adoptFormCopy(false), adoptFormCopy(true), interactionChangeCopy(), patternDrawerCopy('Dana'), NEW_PATTERN_COPY.missing, NEW_PATTERN_COPY.places]);
     expect(text).not.toMatch(/—/);

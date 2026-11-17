@@ -34,9 +34,11 @@ export interface BehaviorDecisionProps {
   replay?: ReactNode;
   /** False where a title above already names the request (a pattern's drawer): the zone is labelled, not headed. */
   heading?: boolean;
+  /** The decision before Play both (a pattern's drawer): the three actions come right after what is asked. */
+  decisionFirst?: boolean;
 }
 
-export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions, replay, heading = true }: BehaviorDecisionProps) {
+export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions, replay, heading = true, decisionFirst = false }: BehaviorDecisionProps) {
   const headingId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
         <strong className="rq-bh-wanted">{wanted}</strong>
       </p>
       {where && <p className="rq-bh-where">It gets in the way in {where.replace(/[.]+$/, '')}.</p>}
-      {replay}
+      {!decisionFirst && replay}
       {actions && (
         <>
           <ButtonGroup className="rq-decide">
@@ -178,6 +180,7 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
           </Dialog>
         </>
       )}
+      {decisionFirst && replay}
     </section>
   );
 }

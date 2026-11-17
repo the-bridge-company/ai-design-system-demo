@@ -173,7 +173,7 @@ export function AskedLine({ proposals }: { proposals: readonly AskedProposal[] }
   if (!proposals.length) return null;
   return (
     <p className="spt-asked-line" data-spt-asked="">
-      Asked, not patterns yet:{' '}
+      <span className="spt-asked-label">Asked, not patterns yet:</span>{' '}
       {proposals.map((p, i) => (
         <Fragment key={p.number}>
           {i > 0 && ', '}

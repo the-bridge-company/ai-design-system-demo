@@ -575,7 +575,7 @@ export function adoptFormCopy(fromRow: boolean, lead: string | null = null) {
     none: 'Every component already does this.',
     noBehavior: 'No component lists a behavior yet. Start from a component: Change how it behaves.',
     wanted: 'What should it do?',
-    where: { label: 'Where it gets in the way (optional)', hint: 'A screen or a product.' },
+    where: { label: 'Where people would feel it (optional)', hint: 'A screen or a product.' },
     after: fromRow
       ? `${lead ?? 'The design system lead'} decides. Once it is the default, your developers build it and it shows here.`
       : 'Once two components do it, it shows here as an interaction. Your developers give it its name.',
@@ -618,7 +618,7 @@ export function interactionChangeCopy(lead: string | null = null) {
     open: 'Suggest a change',
     which: { label: 'On which component?', placeholder: 'Pick a component', hint: 'Each one says it in its own words, from the Library.' },
     wanted: 'What should it do instead?',
-    where: { label: 'Where it gets in the way (optional)', hint: 'A screen or a product.' },
+    where: { label: 'Where people would feel it (optional)', hint: 'A screen or a product.' },
     submit: `Send to ${lead ?? 'the design system lead'}`,
     missing: { which: 'Pick the component whose behavior you want to change.', wanted: 'Say what it should do, in a sentence.' },
   } as const;
@@ -633,7 +633,7 @@ export function patternDrawerCopy(lead: string | null = null) {
     back: 'Back',
     close: 'Close',
     /** The lead's section: what waits for their decision on this pattern. */
-    waiting: (n: number) => `${n} ${n === 1 ? 'waits' : 'wait'} for your decision`,
+    waiting: (n: number) => (n === 1 ? 'One change waits for your decision' : `${n} changes wait for your decision`),
     after: `${lead ?? 'The design system lead'} decides. Once it is the default, your developers build it and it shows here.`,
   } as const;
 }

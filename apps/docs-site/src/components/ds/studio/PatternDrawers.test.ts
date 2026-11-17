@@ -130,6 +130,8 @@ describe('a member who can write', () => {
     fireEvent.click(within(d).getByRole('radio', { name: /An action people take in several places/ }));
     expect(field('Name', d)).toBeTruthy();
     expect(within(d).getByRole('group', { name: 'Place 2' })).toBeTruthy();
+    // The places are required like the other fields: the same marker, and said to screen readers.
+    expect(within(d).getByRole('group', { name: /^Where people do it today\s*\*?\s*\(required\)/ })).toBeTruthy();
     expect(within(d).getByRole('button', { name: 'Send to the design system lead' }).getAttribute('data-demo-write')).toBe('suggest a pattern');
     await expectNoAxeViolations(d);
   });
@@ -191,6 +193,7 @@ describe('a member who can write', () => {
     const d = drawer();
     expect(within(d).getByText('Once two components do it, it shows here as an interaction. Your developers give it its name.')).toBeTruthy();
     expect(within(d).getByText('Only components that do not do it yet.')).toBeTruthy();
+    expect(field('Where people would feel it', d)).toBeTruthy();
     await expectNoAxeViolations(d);
     fireEvent.click(within(d).getByRole('button', { name: 'Send to the design system lead' }));
     await waitFor(() => expect(gh.sent).toHaveLength(1));
@@ -243,7 +246,7 @@ describe('the lead who decides', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     const d = await screen.findByRole('dialog', { name: 'Delete' });
-    expect(within(d).getByRole('heading', { name: '1 waits for your decision' })).toBeTruthy();
+    expect(within(d).getByRole('heading', { name: 'One change waits for your decision' })).toBeTruthy();
     await waitFor(() => expect(within(d).getByRole('button', { name: 'Make it the default' })).toBeTruthy());
     expect(within(d).getByText('Sofia · #45')).toBeTruthy();
     // One primary: the decision. Her own suggest button steps down.

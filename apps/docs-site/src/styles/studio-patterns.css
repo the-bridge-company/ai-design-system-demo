@@ -55,8 +55,21 @@
 
 /* The lead's one quiet line under the table: proposals that are not patterns yet. */
 .spt-asked-line {
-  margin: var(--space-4) 0 0;
-  color: var(--color-text-muted);
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-default);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* Its label reads as a label, the names as the table's links: same text size and color as the table body. */
+.spt-asked-label {
+  font-weight: var(--font-weight-medium);
+}
+
+/* A group of fields that is required: the same marker as a DS Field label. */
+.spt-required {
+  margin-inline-start: var(--space-0-5);
+  color: var(--color-feedback-danger-text);
 }
 
 /* The drawers: the pattern (its components, its Library page), the form under a rule, what waits for the lead. */

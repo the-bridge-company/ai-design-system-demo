@@ -146,11 +146,12 @@ export function behaviorPreviewBrief(r: ComponentChangeRequest, n: number, f: Be
       ? '3. Keep the places the pattern lists in usedIn doing the same.'
       : `3. Update its \`behaviors\` entry${ask.behavior ? ` \`${ask.behavior}\`` : ''} in ${f.docsPath ?? 'its docs.json'}: the text says the new behavior, the keys are the keys that do it. Keep the id when the meaning stays; when the meaning changes, give it a new kebab-case id.`,
     `4. Add a test next to its other tests that ${f.keys?.length ? `presses ${f.keys.join(', ')}` : 'presses the keys that do it'} and checks the new behavior. Run it.`,
-    `5. Commit, push ${branch}, and open a draft pull request titled "Preview for #${n}" (gh pr create --draft --base ${base} --title "Preview for #${n}"). Never write "Closes #${n}": it is a preview, a developer builds from it or keeps it.`,
-    `6. Tell Bridge: bridge_report_behavior_preview with number ${n}, state "ready", branch "${branch}", the pull request number and the commit sha. If it cannot be done, report state "failed" with the reason in one sentence, and push nothing.`,
+    '5. Add a changeset for the package you changed (a patch, one sentence saying the new behavior), as AGENTS.md asks of every change.',
+    `6. Commit, push ${branch}, and open a draft pull request titled "Preview for #${n}" (gh pr create --draft --base ${base} --title "Preview for #${n}"). Never write "Closes #${n}": it is a preview, a developer builds from it or keeps it.`,
+    `7. Tell Bridge: bridge_report_behavior_preview with number ${n}, state "ready", branch "${branch}", the pull request number and the commit sha. If it cannot be done, report state "failed" with the reason in one sentence, and push nothing.`,
     '',
     'Rules:',
-    `- Follow ${f.agentsFile ?? 'AGENTS.md'}. Touch only the component (or the pattern), its docs.json, its tests and its stories: never CI, workflows or package files.`,
+    `- Follow ${f.agentsFile ?? 'AGENTS.md'}. Touch only the component (or the pattern), its docs.json, its tests, its stories and the changeset: never CI, workflows or package files.`,
     `- If something is unclear, ask the person instead of guessing.`,
   ].join('\n');
 }

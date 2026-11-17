@@ -5,11 +5,12 @@
 //   - the two stories: today's from the team's Storybook (bridge.config.json storybook.url, else
 //     previews.production.storybook), the preview's from the per-branch Storybook (previews.apps.storybook) of
 //     agent/preview-<n>, the component's first story in both;
-//   - the keys to press and today's announcement, from the component's docs.json (lib/story-replay).
+//   - the keys to press and today's announcement, from the component's docs.json (lib/story-replay); once the preview
+//     is ready, the keys of the behavior it changed or added, from the preview branch's docs.json.
 // Null for a pattern or a component the team does not have (nothing to ask a preview of).
 import { parsePreviewState, previewUrl, readBehaviors, type BehaviorAsk, type BehaviorPreviewState } from '@bridge-ds/core';
 import { ghGet, readRepo } from './github-session';
-import { behaviorOf, keysStoryUrl, replaySequence, replayStateOf } from '../lib/story-replay';
+import { behaviorOf, keysStoryUrl, previewBehaviorId, replaySequence, replayStateOf } from '../lib/story-replay';
 import { httpsStorybook } from '../lib/team-components';
 import type { ReplayState } from '../lib/story-replay';
 
@@ -57,7 +58,7 @@ async function read(R: string, number: number, ask: BehaviorAsk): Promise<Previe
   const { announces } = behaviorOf(behaviors, ask);
   return {
     state: replayStateOf({ preview, wanted: ask.wanted, today: storybook, template, storyId: story?.id ?? '' }),
-    keys: replaySequence(behaviors, ask.behavior),
+    keys: (await previewKeys(R, c.files.docs, preview, behaviors, ask.behavior)) ?? replaySequence(behaviors, ask.behavior),
     announces,
     component: c.name,
     preview,
@@ -66,6 +67,17 @@ async function read(R: string, number: number, ask: BehaviorAsk): Promise<Previe
     storyId: story?.id ?? '',
     behaviors: readBehaviors(behaviors).flatMap((b) => (b.keys?.length ? [{ id: b.id, family: b.family, text: b.text, keys: b.keys }] : [])),
   };
+}
+
+/** The keys of the behavior the ready preview changed or added (its branch's docs.json), or null to keep today's. */
+async function previewKeys(R: string, docsPath: string, preview: BehaviorPreviewState | null, today: unknown, asked: string | null | undefined): Promise<string[] | null> {
+  if (preview?.state !== 'ready' || !preview.branch || !docsPath) return null;
+  const path = docsPath.split('/').map(encodeURIComponent).join('/');
+  const branchDocs = await ghGet<{ content?: string }>(`${R}/contents/${path}?ref=${encodeURIComponent(preview.branch)}`)
+    .then((f) => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob((f.data.content ?? '').replace(/\s/g, '')), (ch) => ch.charCodeAt(0)))) as { behaviors?: unknown })
+    .catch(() => null);
+  const id = branchDocs ? previewBehaviorId(today, branchDocs.behaviors, asked) : null;
+  return id ? replaySequence(branchDocs!.behaviors, id) : null;
 }
 
 /** A branch's Storybook story that answers the keys, from the per-branch template, or null without one. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLICK_OUTSIDE, keyLabel } from '@bridge-ds/core';
-import { behaviorOf, keysStoryUrl, parseKeysResult, replaySequence, replayStateOf, resultLine, RESULT_MESSAGE, sameResult } from './story-replay';
+import { behaviorOf, keysStoryUrl, parseKeysResult, previewBehaviorId, replaySequence, replayStateOf, resultLine, RESULT_MESSAGE, sameResult } from './story-replay';
 
 const behaviors = [
   { id: 'open-on-enter', family: 'Opening', text: 'Enter opens the list', keys: ['Enter', 'ArrowDown'] },
@@ -57,5 +57,25 @@ describe('the state Play both shows', () => {
 
   it('after she changed her words, asks to update it', () => {
     expect(replayStateOf({ ...x, preview: { state: 'ready', branch: 'agent/preview-75', wanted: 'Tab leaves' } })).toEqual({ kind: 'ask', update: true });
+  });
+});
+
+describe('previewBehaviorId', () => {
+  const today = [
+    { id: 'open', family: 'Opening', text: 'Opens', keys: ['Enter'] },
+    { id: 'close-on-outside-click', family: 'Closing', text: 'Closes on a click outside' },
+  ];
+  it('finds the behavior the preview renamed and gave keys, and plays it as the preview wrote it', () => {
+    const preview = [today[0], { id: 'pick-on-outside-click', family: 'Closing', text: 'A click outside keeps the option', keys: ['Enter', 'ArrowDown', 'click-outside'] }];
+    expect(previewBehaviorId(today, preview, null)).toBe('pick-on-outside-click');
+    expect(replaySequence(preview, 'pick-on-outside-click')).toEqual(['Enter', 'ArrowDown', 'click-outside']);
+  });
+  it('keeps the asked behavior when the preview changed it', () => {
+    const preview = [{ ...today[0], keys: ['Enter', 'ArrowDown'] }, today[1]];
+    expect(previewBehaviorId(today, preview, 'open')).toBe('open');
+  });
+  it('is null when the preview changed no behavior', () => {
+    expect(previewBehaviorId(today, today, null)).toBeNull();
+    expect(previewBehaviorId(today, undefined, 'open')).toBeNull();
   });
 });

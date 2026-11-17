@@ -66,6 +66,18 @@ export function replaySequence(behaviorsJson: unknown, behaviorId: string | null
   return [...lead, ...own.slice(0, 1)];
 }
 
+/**
+ * The behavior Claude's preview changed or added, in the preview branch's docs.json: the one the request names when the
+ * branch still has it, else the first behavior that is new or differs from today's. Null when the branch changes none.
+ * Play both presses its keys, so a new behavior (or one whose keys changed) is played as the preview wrote it.
+ */
+export function previewBehaviorId(todayJson: unknown, previewJson: unknown, asked: string | null | undefined): string | null {
+  const today = new Map(readBehaviors(todayJson).map((b) => [b.id, JSON.stringify([b.text, b.keys ?? []])]));
+  const preview = readBehaviors(previewJson);
+  if (asked && preview.some((b) => b.id === asked && today.get(asked) !== JSON.stringify([b.text, b.keys ?? []]))) return asked;
+  return preview.find((b) => today.get(b.id) !== JSON.stringify([b.text, b.keys ?? []]) && b.keys?.length)?.id ?? null;
+}
+
 /** The behavior a request asks about, as the component's docs.json says it today (its announcement, its keys). */
 export function behaviorOf(behaviorsJson: unknown, ask: Pick<BehaviorAsk, 'behavior'>): { announces: string | null; keys: string[] } {
   const b = ask.behavior ? readBehaviors(behaviorsJson).find((x) => x.id === ask.behavior) : undefined;

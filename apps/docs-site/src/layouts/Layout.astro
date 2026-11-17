@@ -325,8 +325,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
               }
               // Every group renders open, the same for every visitor; scripts/shell.ts applies this tab's toggles
               // to the other groups (lib/nav-groups.ts) and never closes the one holding the current page.
-              // A team's Patterns rows are sections of one page (#pt-<kind>): the group holds that page.
-              const current = library ? entry.children!.some((c) => isCurrent(c.href.split('#')[0]!)) : here.entry?.label === entry.label;
+              const current = library ? entry.children!.some((c) => isCurrent(c.href)) : here.entry?.label === entry.label;
               const id = `nav-group-${n}`;
               return (
                 <li class="nav-group">

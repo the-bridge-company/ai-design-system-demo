@@ -25,20 +25,21 @@ describe('navigation data', () => {
     expect(missing.map((p) => p.href)).toEqual([]);
   });
 
-  it('lists Patterns by kind, Interactions then Actions, each opening the index on its section (decision 2026-11-15)', () => {
+  it('lists Patterns by kind, Interactions then Actions, each its own page (decisions 2026-11-15 and 2026-11-17)', () => {
     const patterns = navFor('library').find((e) => e.label === 'Patterns')!;
     // No Overview row and no row per pattern: both kinds, always (a kind with no pattern yet lands on its empty line).
     expect(patterns.children!.map((i) => [i.label, i.href])).toEqual([
-      ['Interactions', '/patterns/#pt-interaction'],
-      ['Actions', '/patterns/#pt-action'],
+      ['Interactions', '/patterns/interactions/'],
+      ['Actions', '/patterns/actions/'],
     ]);
-    // A pattern's page makes its kind's row current; the index belongs to the group, no row current.
+    // A kind's page is its row; a pattern's page makes its kind's row current.
     expect(locate('/patterns/delete/')).toMatchObject({ group: 'Patterns', item: { label: 'Actions' } });
     expect(locate('/patterns/close-on-escape/')).toMatchObject({ group: 'Patterns', item: { label: 'Interactions' } });
-    expect(locate('/patterns/')).toEqual({ space: 'library', entry: patterns, group: 'Patterns' });
-    // Search and llms.txt still find the index (as "Patterns") and each pattern by name.
+    expect(locate('/patterns/actions/')).toMatchObject({ group: 'Patterns', item: { label: 'Actions' } });
+    // Search and llms.txt find each kind's page, then each pattern by name; the old index is a redirect, not a page.
     const pages = allPages().filter((p) => p.href.startsWith('/patterns/'));
-    expect(pages[0]).toMatchObject({ href: '/patterns/', label: 'Patterns' });
+    expect(pages.slice(0, 2).map((p) => p.href)).toEqual(['/patterns/interactions/', '/patterns/actions/']);
+    expect(pages.map((p) => p.href)).not.toContain('/patterns/');
     expect(pages.map((p) => p.label)).toEqual(expect.arrayContaining(['Close on Escape', 'Delete', 'Send for review', 'Pick with Enter']));
     expect(pages.map((p) => p.label)).not.toContain('Overview');
   });

@@ -1,17 +1,15 @@
 /* Library > Patterns (components/ds/library/views/PatternsView.tsx). Existing tokens only. The stage of an interaction
    reuses the Behaviors layout of component pages (styles/component.css .bh-*). */
 
-.pt-group + .pt-group,
 .pt-section + .pt-section {
   margin-top: var(--space-10);
 }
 
-.pt-group h2,
 .pt-section h2 {
   margin: 0 0 var(--space-4);
 }
 
-/* Index: one card per pattern, its name and one sentence. */
+/* A kind page: one card per pattern, its name and one sentence. */
 .pt-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--size-64), 1fr));
@@ -31,17 +29,26 @@
   background-color: var(--color-surface-default);
 }
 
-.pt-card h3,
+.pt-card h2,
 .pt-card p {
   margin: 0;
+}
+
+/* A card's name is the page's second level (the kind is the title), set at the size of a card title, not a section's. */
+.pt-card h2 {
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: normal;
+  line-height: var(--typography-body-line-height);
 }
 
 .pt-card p {
   color: var(--color-text-muted);
 }
 
-/* Index: a kind with no pattern keeps its place, a small drawing beside how one comes to exist (as Notes' empty
-   state in an exploration, styles/exploration-page.css .xp-notes-empty). */
+/* A kind page with no pattern yet: a Field Guide drawing beside how one comes to exist (as Notes' empty state in an
+   exploration, styles/exploration-page.css .xp-notes-empty). */
 .pt-empty {
   display: flex;
   align-items: center;

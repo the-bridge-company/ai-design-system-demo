@@ -88,14 +88,14 @@ describe('the team name in a Library (never the repository in words)', () => {
 
 describe('the Patterns group of a team Library nav', () => {
   // The markup Layout.astro builds for the group: shown for every team, one row per kind, both always (a kind with no
-  // pattern yet lands on its section's empty line), opening the Patterns page on its section.
+  // pattern yet lands on its section's empty line), each its own page.
   const built = () => `
     <ul class="nav">
       <li class="nav-group">
         <button type="button" class="nav-link nav-toggle" data-nav-group="Patterns" aria-controls="g" aria-expanded="true"><span>Patterns</span></button>
         <ul class="nav-sub" id="g">
-          <li data-nav-kind="interaction"><a class="link subtle" href="/library/acme/ds/patterns/#pt-interaction"><span>Interactions</span></a></li>
-          <li data-nav-kind="action"><a class="link subtle" href="/library/acme/ds/patterns/#pt-action"><span>Actions</span></a></li>
+          <li data-nav-kind="interaction"><a class="link subtle" href="/library/acme/ds/patterns/interactions/"><span>Interactions</span></a></li>
+          <li data-nav-kind="action"><a class="link subtle" href="/library/acme/ds/patterns/actions/"><span>Actions</span></a></li>
         </ul>
       </li>
       <li class="nav-group"><ul class="nav-sub" id="u"><li><a href="/library/acme/ds/install/" aria-current="page"><span>Install</span></a></li></ul></li>
@@ -109,7 +109,7 @@ describe('the Patterns group of a team Library nav', () => {
   it('keeps both kinds, even one the team has no pattern of, no row per pattern and no Overview', () => {
     document.body.innerHTML = built();
     markPatternKind(null);
-    expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/#pt-interaction', 'Actions /library/acme/ds/patterns/#pt-action']);
+    expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/interactions/', 'Actions /library/acme/ds/patterns/actions/']);
     // Other groups are left alone.
     expect(document.querySelector('#u a')!.getAttribute('aria-current')).toBe('page');
   });
@@ -117,9 +117,9 @@ describe('the Patterns group of a team Library nav', () => {
   it("makes the row of the shown pattern's kind the current page, and moves it when run again", () => {
     document.body.innerHTML = built();
     markPatternKind('action');
-    expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/#pt-interaction', '> Actions /library/acme/ds/patterns/#pt-action']);
+    expect(rows()).toEqual(['Interactions /library/acme/ds/patterns/interactions/', '> Actions /library/acme/ds/patterns/actions/']);
     markPatternKind('interaction');
-    expect(rows()).toEqual(['> Interactions /library/acme/ds/patterns/#pt-interaction', 'Actions /library/acme/ds/patterns/#pt-action']);
+    expect(rows()).toEqual(['> Interactions /library/acme/ds/patterns/interactions/', 'Actions /library/acme/ds/patterns/actions/']);
     markPatternKind(null);
     expect(document.querySelectorAll('#g [aria-current]')).toHaveLength(0);
   });

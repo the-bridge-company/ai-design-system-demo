@@ -1,17 +1,19 @@
 // A team's Library, Patterns (src/pages/library-shell/patterns/): the same views as Bridge's own pages
-// (views/PatternsView.tsx), fed with the team's model read in the browser (scripts/team-data.ts). One shell for both:
-//   /library/<owner>/<repo>/patterns/          the index, by kind
-//   /library/<owner>/<repo>/patterns/?p=<id>   one pattern (a team's patterns are only known once its data is read)
+// (views/PatternsView.tsx), fed with the team's model read in the browser (scripts/team-data.ts):
+//   /library/<owner>/<repo>/patterns/interactions/   Patterns > Interactions (and actions/: Patterns > Actions)
+//   /library/<owner>/<repo>/patterns/?p=<id>         one pattern (a team's patterns are only known once its data is read)
+//   /library/<owner>/<repo>/patterns/                the old index: sends to Interactions
 // An interaction's stage is each component's first story from the team's Storybook (bridge.config.json storybook.url).
 import { useEffect, useMemo } from 'react';
 import { Shapes } from 'lucide-react';
 import { EmptyState } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { LibraryPage, LibrarySourceNote, LibraryZone } from './LibraryState';
-import { studioLink, teamLibraryData } from './library-data';
+import { patternKindHref, studioLink, teamLibraryData } from './library-data';
 import PatternChange from './PatternChange';
-import { PATTERNS_INTRO, PATTERNS_PAGE, PatternsView, PatternView, patternHrefs, patternLinks } from './views/PatternsView';
-import { libraryPatterns, patternById, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
+import { PATTERNS_ART, PatternKindView, PatternView, patternHrefs, patternLinks } from './views/PatternsView';
+import { libraryPatterns, patternById, PATTERN_KIND_INTRO, PATTERN_KIND_ROUTE, patternKindGroup, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
+import { PATTERN_KIND_LABEL, type PatternKind } from '@bridge-ds/core';
 import { httpsStorybook } from '../../../lib/team-components';
 import { libraryHref } from '../../../lib/library-shells';
 import { suggestPatternRoute } from '../../../lib/studio-patterns';
@@ -30,7 +32,7 @@ const patternInAddress = (): string | null => {
   return id && /^[a-z0-9][a-z0-9-]*$/.test(id) ? id : null;
 };
 
-function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
+function Ready({ data, refreshing, kind }: { data: TeamData; refreshing: boolean; kind: PatternKind | null }) {
   const view = teamLibraryData(data);
   const groups = useMemo(() => libraryPatterns(data.model), [data.model]);
   const id = useMemo(patternInAddress, []);
@@ -39,19 +41,17 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
   useEffect(() => {
     if (entry) document.title = document.title.replace(/^[^|]*\|/, `${entry.pattern.name} |`);
     void import('../../../scripts/shell').then((shell) => shell.initToc());
-    // The nav's rows by kind (#pt-interaction, #pt-action) land here before the sections exist: go to it once drawn.
-    if (!id && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
-  }, [entry, id]);
+  }, [entry]);
   const source = <LibrarySourceNote data={data} refreshing={refreshing} onRefresh={reload} />;
 
-  if (!id) {
+  if (kind) {
     return (
       <>
-        <PatternsView
-          groups={groups}
+        <PatternKindView
+          group={patternKindGroup(groups, kind)}
           hrefs={patternHrefs(view, groups)}
           // Only a member who can write suggests (the gate of Edit on a component page); readers and visitors get no link.
-          suggestHref={data.canEdit ? (kind) => studioLink(view, suggestPatternRoute(kind)) : undefined}
+          suggestHref={data.canEdit ? (k) => studioLink(view, suggestPatternRoute(k)) : undefined}
         />
         {source}
       </>
@@ -66,8 +66,8 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
           title={`No pattern named "${id}"`}
           description="It may have been renamed or removed from the repository."
           actions={
-            <ButtonLink variant="primary" href={all}>
-              See every pattern
+            <ButtonLink variant="primary" href={patternKindHref(view, 'interaction')}>
+              See the interactions
             </ButtonLink>
           }
         />
@@ -102,12 +102,24 @@ function Ready({ data, refreshing }: { data: TeamData; refreshing: boolean }) {
   );
 }
 
-export default function LibraryTeamPatterns() {
+/**
+ * `kind`: the shell of Patterns > Interactions or Patterns > Actions. Unset, the pattern shell (?p=<id>); with no pattern
+ * in the address it is the old index, which sends to Interactions (as Bridge's own /patterns/ does).
+ */
+export default function LibraryTeamPatterns({ kind = null }: { kind?: PatternKind | null }) {
+  const old = !kind && typeof location !== 'undefined' && !patternInAddress();
+  useEffect(() => {
+    if (!old) return;
+    // A link to the old index's Actions section (#pt-action) still lands on Actions.
+    const to = location.hash === '#pt-action' ? PATTERN_KIND_ROUTE.action : PATTERN_KIND_ROUTE.interaction;
+    location.replace(`${location.pathname.replace(/\/?$/, '/')}${to.slice(PATTERNS_ROUTE.length)}`);
+  }, [old]);
+  if (old) return null;
   return (
     <LibraryPage
       label="Reading the patterns"
-      header={(data) => (data || patternInAddress() ? null : <LibraryZone title={PATTERNS_PAGE.title} art={PATTERNS_PAGE.art} lead={PATTERNS_INTRO} />)}
-      ready={(data, r) => <Ready data={data} refreshing={r.refreshing} />}
+      header={(data) => (data || !kind ? null : <LibraryZone title={PATTERN_KIND_LABEL[kind]} art={PATTERNS_ART} lead={PATTERN_KIND_INTRO[kind]} />)}
+      ready={(data, r) => <Ready data={data} refreshing={r.refreshing} kind={kind} />}
     />
   );
 }

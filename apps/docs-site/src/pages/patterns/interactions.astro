@@ -1,0 +1,19 @@
+---
+// Library > Patterns > Interactions (founder decision 2026-11-17: one page per kind): the interactions of patterns/, rendered at
+// build time (components/ds/library/views/PatternsView.tsx PatternKindView). The nav's Interactions row opens it.
+import Layout from '../../layouts/Layout.astro';
+import { PatternKindView, patternHrefs } from '../../components/ds/library/views/PatternsView';
+import { siteLibraryData } from '../../lib/library-site';
+import { freshness } from '../../lib/sources';
+import { libraryPatterns, patternKindGroup, patternKindLead } from '../../lib/library/patterns';
+import { PATTERNS_DIR, PATTERN_SUFFIX } from '@bridge-ds/core';
+
+const data = siteLibraryData();
+const groups = libraryPatterns(data.model);
+const group = patternKindGroup(groups, 'interaction');
+const sources = group.items.map((e) => `${PATTERNS_DIR}/${e.pattern.id}${PATTERN_SUFFIX}`);
+---
+
+<Layout title={group.label} description={patternKindLead(group)} sources={sources} updated={freshness(sources)} toc={false}>
+  <PatternKindView group={group} hrefs={patternHrefs(data, groups)} />
+</Layout>

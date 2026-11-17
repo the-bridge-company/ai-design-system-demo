@@ -9,7 +9,8 @@ import type { TeamData } from '../../../scripts/team-data';
 import { libraryHref } from '../../../lib/library-shells';
 import { studioHref, studioHrefAt, teamHref } from '../../../lib/team-path';
 import { libraryTeamName } from '../../../lib/recent-teams';
-import { PATTERN_QUERY, PATTERNS_ROUTE, patternRoute } from '../../../lib/library/patterns';
+import { PATTERN_KIND_ROUTE, PATTERN_QUERY, PATTERNS_ROUTE, patternRoute } from '../../../lib/library/patterns';
+import type { PatternKind } from '@bridge-ds/core';
 
 export interface LibraryTeam {
   owner: string;
@@ -135,8 +136,8 @@ export const componentHref = (data: Pick<LibraryData, 'team'>, slug: string, has
 export const patternHref = (data: Pick<LibraryData, 'team'>, id: string): string =>
   data.team ? pageHref(data, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`) : `/${patternRoute(id)}`;
 
-/** The Patterns index of this Library. */
-export const patternsHref = (data: Pick<LibraryData, 'team'>): string => pageHref(data, PATTERNS_ROUTE);
+/** A kind's Patterns page of this Library (Patterns > Interactions, Patterns > Actions). */
+export const patternKindHref = (data: Pick<LibraryData, 'team'>, kind: PatternKind): string => (data.team ? pageHref(data, PATTERN_KIND_ROUTE[kind]) : `/${PATTERN_KIND_ROUTE[kind]}`);
 
 /** A repository file of this Library's design system on GitHub, or undefined when the source is unknown. */
 export const sourceHref = (data: Pick<LibraryData, 'extras'>, path: string): string | undefined =>

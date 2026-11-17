@@ -1,30 +1,26 @@
-// Library > Patterns, for any repo model: the index (PatternsView) and one pattern (PatternView). Bridge's own pages
-// (pages/patterns/) render them at build time, the pattern page as an island (its stage and its developer fold); a team's Library renders them in the
-// browser (LibraryTeamPatterns.tsx). Data: lib/library/patterns.ts over patterns/<id>.pattern.json.
-//   Index     one group per kind (Interactions, Actions), each pattern a card: its name and what it is for. A kind with
-//             no pattern keeps its place (the nav's row lands on it): a small drawing and how one comes to exist, plus
-//             for a member who can write a link to suggest one in Studio. No pattern at all: one empty state instead.
+// Library > Patterns, for any repo model: a page per kind (PatternKindView: Interactions, Actions) and one pattern
+// (PatternView). Bridge's own pages (pages/patterns/) render them at build time, the pattern page as an island (its stage
+// and its developer fold); a team's Library renders them in the browser (LibraryTeamPatterns.tsx). Data:
+// lib/library/patterns.ts over patterns/<id>.pattern.json.
+//   Kind      the kind as the title, then each pattern a card: its name and what it is for. None yet: a Field Guide
+//             drawing and how one comes to exist, plus for a member who can write a link to suggest one in Studio.
 //   Pattern   what it is for, then the stage. An interaction: the components that do it, each in its own words, on the
 //             stage. An action: the stage, the rules, the components it uses and where the product does it. A place in
 //             a product of its own repository (usedIn[].product) says the product's name, and its file links there.
 import type { ReactNode } from 'react';
-import { Shapes } from 'lucide-react';
-import { EmptyState, Link } from '@bridge-ds/react';
+import { Link } from '@bridge-ds/react';
 import { patternUseHref, patternUsePlace, type PatternKind, type PatternUse, type ProductConfig } from '@bridge-ds/core';
 import { LibraryHeader } from '../FoundationParts';
 import ActionStage from '../ActionStage';
 import InteractionStage from '../InteractionStage';
 import DevDetail from '../../DevDetail';
-import ButtonLink from '../../ButtonLink';
 import { Drawing } from '../../studio/Drawing';
-import { PATTERN_KIND_EMPTY, PATTERN_KIND_SUGGEST, patternKindGroups, PATTERNS_EMPTY, patternsLead, type PatternEntry, type PatternGroup } from '../../../../lib/library/patterns';
+import { PATTERN_KIND_EMPTY, PATTERN_KIND_SUGGEST, patternKindLead, type PatternEntry, type PatternGroup } from '../../../../lib/library/patterns';
 import { componentHref, patternHref, type LibraryData } from '../library-data';
-import { patternKindSection } from '../../../../lib/library-shells';
 import '../../../../styles/patterns.css';
 
-export const PATTERNS_PAGE = { title: 'Patterns', art: 'guide' } as const;
-/** What the page holds, before anything is read and when there is no pattern yet (the empty state says the rest). */
-export const PATTERNS_INTRO = 'Interactions several components share, and actions people take across the product.';
+/** The kind pages' art (the Field Guide's guide book), as the old Patterns index had. */
+export const PATTERNS_ART = 'guide' as const;
 
 /** Pattern id -> its page in this Library. */
 export const patternHrefs = (data: Pick<LibraryData, 'team'>, groups: readonly PatternGroup[]): Record<string, string> =>
@@ -37,69 +33,49 @@ export function patternLinks(data: Pick<LibraryData, 'team' | 'model'>, entry: P
   return Object.fromEntries(names.flatMap((n) => (slugs.has(n) ? [[n, componentHref(data, slugs.get(n)!, entry.kind === 'interaction' ? '#behaviors' : '')]] : [])));
 }
 
-export interface PatternsViewProps {
-  groups: PatternGroup[];
+export interface PatternKindViewProps {
+  /** The kind this page shows, with its patterns (none yet is a group with no item). */
+  group: PatternGroup;
   hrefs: Record<string, string>;
-  /**
-   * Where a member who can write suggests a pattern in Studio, for a kind or (null) any: set only for them, readers and
-   * visitors get no link.
-   */
-  suggestHref?: ((kind: PatternKind | null) => string) | undefined;
+  /** Where a member who can write suggests one of this kind in Studio: set only for them, readers get no link. */
+  suggestHref?: ((kind: PatternKind) => string) | undefined;
 }
 
-export function PatternsView({ groups, hrefs, suggestHref }: PatternsViewProps) {
-  const empty = !groups.some((g) => g.items.length);
+/**
+ * Patterns > Interactions or Patterns > Actions (founder decision 2026-11-17, one page per kind): the kind as the
+ * title, one sentence, then a card per pattern (its name and what it is for), or how one comes to exist while there is
+ * none: a Field Guide drawing beside the kind's line, and for a member who can write a link to suggest one.
+ */
+export function PatternKindView({ group, hrefs, suggestHref }: PatternKindViewProps) {
   return (
     <>
-      <LibraryHeader title={PATTERNS_PAGE.title} art={PATTERNS_PAGE.art} canEdit={false}>
-        <p>{empty ? PATTERNS_INTRO : patternsLead(groups)}</p>
+      <LibraryHeader title={group.label} art={PATTERNS_ART} canEdit={false}>
+        <p>{patternKindLead(group)}</p>
       </LibraryHeader>
-      {empty ? (
-        <EmptyState
-          icon={Shapes}
-          headingLevel={2}
-          title="No patterns yet"
-          description={PATTERNS_EMPTY}
-          actions={
-            suggestHref ? (
-              <ButtonLink variant="primary" href={suggestHref(null)}>
-                Suggest a pattern
-              </ButtonLink>
-            ) : undefined
-          }
-        />
+      {group.items.length ? (
+        <ul className="pt-cards" data-pt-kind={group.kind}>
+          {group.items.map((e) => (
+            <li key={e.pattern.id} className="pt-card">
+              <h2>
+                <Link href={hrefs[e.pattern.id]}>{e.pattern.name}</Link>
+              </h2>
+              <p>{e.pattern.purpose}</p>
+            </li>
+          ))}
+        </ul>
       ) : (
-        patternKindGroups(groups).map((g) => (
-          // The nav's rows under Patterns (Interactions, Actions) open this page on these sections, empty or not.
-          <section key={g.kind} aria-labelledby={patternKindSection(g.kind)} className="pt-group" data-pt-kind={g.kind}>
-            <h2 id={patternKindSection(g.kind)}>{g.label}</h2>
-            {g.items.length ? (
-              <ul className="pt-cards">
-                {g.items.map((e) => (
-                  <li key={e.pattern.id} className="pt-card">
-                    <h3>
-                      <Link href={hrefs[e.pattern.id]}>{e.pattern.name}</Link>
-                    </h3>
-                    <p>{e.pattern.purpose}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="pt-empty" data-pt-empty={g.kind}>
-                <Drawing name="components" width={56} className="pt-empty-art" />
-                <p className="t-ui t-muted">
-                  {PATTERN_KIND_EMPTY[g.kind]}
-                  {suggestHref && (
-                    <>
-                      {' '}
-                      <Link href={suggestHref(g.kind)}>{PATTERN_KIND_SUGGEST[g.kind]}</Link>
-                    </>
-                  )}
-                </p>
-              </div>
+        <div className="pt-empty" data-pt-empty={group.kind}>
+          <Drawing name="components" width={88} className="pt-empty-art" />
+          <p className="t-ui t-muted">
+            {PATTERN_KIND_EMPTY[group.kind]}
+            {suggestHref && (
+              <>
+                {' '}
+                <Link href={suggestHref(group.kind)}>{PATTERN_KIND_SUGGEST[group.kind]}</Link>
+              </>
             )}
-          </section>
-        ))
+          </p>
+        </div>
       )}
     </>
   );

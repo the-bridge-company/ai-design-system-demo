@@ -15,9 +15,9 @@
 import type { IconName } from '../brand/icons';
 import { loadComponents } from './components';
 import { repoModel } from './model';
-import { libraryPatterns, patternRoute, patternsLead, PATTERNS_ROUTE } from './library/patterns';
+import { libraryPatterns, patternKindGroup, patternKindLead, patternRoute } from './library/patterns';
 import { START_PAGE, WORKSPACE_HOME, WORKSPACE_SETTINGS } from './start';
-import { LIBRARY_FOUNDATION_PAGES, LIBRARY_PATTERN_KIND_PAGES, LIBRARY_PATTERNS_PAGE, LIBRARY_USE_PAGES } from './library-shells';
+import { LIBRARY_FOUNDATION_PAGES, LIBRARY_PATTERN_KIND_PAGES, LIBRARY_USE_PAGES } from './library-shells';
 
 // Studio links in both modes (self-hosted /studio/, team shells /studio/<owner>/<repo>/). Browser code imports it from
 // lib/team-path directly: this module reads the repository at build time.
@@ -128,14 +128,10 @@ export const STUDIO_QUALITY_HREF = '/studio/quality/';
 export const SETTINGS_SECTIONS = ['general', 'repository', 'roles', 'approvals', 'tools', 'integrations'] as const;
 export const HOW_REVIEW_WORKS = '/how-review-works/';
 
-/** The Patterns index of Bridge's own Library. */
-export const PATTERNS_HOME = `/${PATTERNS_ROUTE}`;
-
 /**
- * The Patterns group, by kind (founder decision 2026-11-15): Interactions, then Actions, each opening the index on its
- * section (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES, the same rows as a team's Library). Both rows, even for a
- * kind with no pattern yet: its section says how one comes to exist. No row per pattern and no Overview: a pattern's
- * page makes its kind's row current. Both rows even with no pattern at all (the page's empty state).
+ * The Patterns group: one page per kind, Interactions then Actions (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES,
+ * the same rows as a team's Library; founder decisions 2026-11-15 and 2026-11-17). Both rows, even for a kind with no
+ * pattern yet (its page says how one comes to exist). No row per pattern: a pattern's page makes its kind's row current.
  */
 export function patternsNav(): NavItem[] {
   const groups = libraryPatterns(repoModel);
@@ -145,11 +141,11 @@ export function patternsNav(): NavItem[] {
   });
 }
 
-/** The pages of the Patterns group, for search and llms.txt: the index (always), then each pattern. */
+/** The pages of the Patterns group, for search and llms.txt: each kind's page, then each pattern. */
 export function patternPages(): NavItem[] {
   const groups = libraryPatterns(repoModel);
   return [
-    { href: PATTERNS_HOME, label: LIBRARY_PATTERNS_PAGE.label, meta: patternsLead(groups) },
+    ...patternsNav().map(({ href, label, kind }): NavItem => ({ href, label, meta: patternKindLead(patternKindGroup(groups, kind!)) })),
     ...groups.flatMap((g) => g.items.map((e): NavItem => ({ href: `/${patternRoute(e.pattern.id)}`, label: e.pattern.name, meta: e.pattern.purpose }))),
   ];
 }
@@ -241,7 +237,7 @@ export function locate(path: string): { space: Space; entry?: NavEntry; group?: 
     const exact = pagesOf(e).find((i) => i.href === p || i.also?.includes(p));
     if (exact) return found(e, exact);
   }
-  // A page a group stands for without a row of its own (the Patterns index): the group, no current row.
+  // A page a group stands for without a row of its own (`pages`): the group, no current row.
   for (const e of nav) if (e.pages?.some((i) => i.href === p)) return { space, entry: e, group: e.label };
   // Nested pages (a component page) belong to the closest parent entry.
   let best: { entry: NavEntry; item: NavItem } | undefined;

@@ -68,7 +68,7 @@ export const interactionIds = (groups: readonly PatternGroup[]): Set<string> => 
 export const patternComponents = (e: PatternEntry): string[] => (e.kind === 'action' ? e.pattern.components : e.components.map((c) => c.component));
 
 /**
- * What a kind with no pattern says, on the Library's Patterns page and in Studio's Patterns table: how a pattern of that
+ * What a kind with no pattern says, on its Library page and in Studio's Patterns table: how a pattern of that
  * kind comes to exist (the rules of patterns/: an interaction is shared by two components or more, an action is done
  * the same way in at least two places). Both kinds keep their place, so the page reads the same with or without them.
  */
@@ -77,9 +77,6 @@ export const PATTERN_KIND_EMPTY: Record<PatternKind, string> = {
   action: 'None yet. An action appears here once people do the same task the same way in at least two places, like Delete.',
 };
 
-/** The same rules for a Library with no pattern at all, said once under "No patterns yet". */
-export const PATTERNS_EMPTY = 'An interaction appears here once two components do the same thing the same way, like closing on Escape. An action, once people do the same task the same way in at least two places, like Delete.';
-
 /** The link a member who can write gets beside an empty kind, to suggest one in Studio. */
 export const PATTERN_KIND_SUGGEST: Record<PatternKind, string> = { interaction: 'Suggest an interaction', action: 'Suggest an action' };
 
@@ -87,7 +84,31 @@ export const PATTERN_KIND_SUGGEST: Record<PatternKind, string> = { interaction: 
 export const patternKindGroups = (groups: readonly PatternGroup[]): PatternGroup[] =>
   PATTERN_KINDS.map((kind) => groups.find((g) => g.kind === kind) ?? { kind, label: PATTERN_KIND_LABEL[kind], items: [] });
 
-/** The one line of the Patterns index and of the nav: how many of each kind. */
+/**
+ * Each kind has its own Library page (founder decision 2026-11-17, "two real pages"): Patterns > Interactions and
+ * Patterns > Actions. The old index (patterns/) sends to Interactions; a pattern keeps its own address.
+ */
+export const PATTERN_KIND_ROUTE: Record<PatternKind, string> = { interaction: `${PATTERNS_ROUTE}interactions/`, action: `${PATTERNS_ROUTE}actions/` };
+
+/** What a kind is, in one sentence: its page's intro while it has none, and its nav row's line. */
+export const PATTERN_KIND_INTRO: Record<PatternKind, string> = {
+  interaction: 'Gestures several components share, the same wherever they appear.',
+  action: 'Tasks that chain several components, done the same way across the product.',
+};
+
+/** The one sentence under a kind page's title: how many there are, or what the kind is while there is none. */
+export function patternKindLead(group: Pick<PatternGroup, 'kind' | 'items'>): string {
+  const n = group.items.length;
+  if (!n) return PATTERN_KIND_INTRO[group.kind];
+  return group.kind === 'interaction'
+    ? `${n} ${n === 1 ? 'interaction' : 'interactions'} several components share. Each one works the same wherever it appears.`
+    : `${n} ${n === 1 ? 'action' : 'actions'} people take across the product. Each one works the same wherever it appears.`;
+}
+
+/** One kind of a Library's patterns, with none for a kind it lacks. */
+export const patternKindGroup = (groups: readonly PatternGroup[], kind: PatternKind): PatternGroup => patternKindGroups(groups).find((g) => g.kind === kind)!;
+
+/** The one line of the Patterns group for search and llms.txt: how many of each kind. */
 export function patternsLead(groups: readonly PatternGroup[]): string {
   const n = (kind: PatternKind) => groups.find((g) => g.kind === kind)?.items.length ?? 0;
   const parts = [

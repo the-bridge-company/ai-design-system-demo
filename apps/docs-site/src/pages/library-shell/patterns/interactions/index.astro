@@ -1,0 +1,11 @@
+---
+// Library shell, Patterns > Interactions (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES): served for
+// /library/<owner>/<repo>/patterns/interactions/, the team's interactions (LibraryTeamPatterns.tsx, the same view as Bridge's own page).
+import LibraryShell from '../../../../components/LibraryShell.astro';
+import LibraryTeamPatterns from '../../../../components/ds/library/LibraryTeamPatterns';
+import { PATTERN_KIND_INTRO } from '../../../../lib/library/patterns';
+---
+
+<LibraryShell title="Interactions" description={PATTERN_KIND_INTRO.interaction} reading toc={false}>
+  <LibraryTeamPatterns client:load kind="interaction" />
+</LibraryShell>

@@ -3,13 +3,14 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERN_KIND_LABEL, PATTERN_KINDS, type RepoModel } from '@bridge-ds/core';
 import { repoModel } from '../model';
-import { interactionIds, libraryPatterns, PATTERN_KIND_EMPTY, PATTERN_KIND_SUGGEST, patternById, patternComponents, patternKindGroups, PATTERNS_EMPTY, patternsLead } from './patterns';
+import { interactionIds, libraryPatterns, PATTERN_KIND_EMPTY, PATTERN_KIND_INTRO, PATTERN_KIND_ROUTE, PATTERN_KIND_SUGGEST, patternById, patternComponents, patternKindGroup, patternKindGroups, patternKindLead, patternRoute, patternsLead } from './patterns';
 import { patternsNav } from '../nav';
-import { LIBRARY_PATTERN_KIND_PAGES, patternKindSection } from '../library-shells';
+import { LIBRARY_PATTERN_KIND_PAGES, LIBRARY_SHELL_ROUTES, ownLibraryPath } from '../library-shells';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { patternHref } from '../../components/ds/library/library-data';
-import { PatternsView, patternHrefs, patternLinks } from '../../components/ds/library/views/PatternsView';
+import { PatternKindView, patternHrefs, patternLinks } from '../../components/ds/library/views/PatternsView';
+import { REDIRECTS } from '../redirects';
 import { behaviorPatterns } from '../../components/ds/library/views/ComponentView';
 import { librarySearchIndex } from './search-index';
 
@@ -58,7 +59,7 @@ describe('a kind with no pattern yet', () => {
   });
 
   it('says how one comes to exist, in the Bridge voice', () => {
-    for (const text of [...Object.values(PATTERN_KIND_EMPTY), PATTERNS_EMPTY, ...Object.values(PATTERN_KIND_SUGGEST)]) {
+    for (const text of [...Object.values(PATTERN_KIND_EMPTY), ...Object.values(PATTERN_KIND_INTRO), ...Object.values(PATTERN_KIND_SUGGEST)]) {
       expect(text).not.toMatch(/[\u2014!]/);
     }
     expect(PATTERN_KIND_EMPTY.interaction).toMatch(/^None yet\. .*two components .*closing on Escape\.$/);
@@ -112,48 +113,65 @@ describe('pattern links', () => {
     });
   });
 
-  it('lists the team Patterns page in search, with or without patterns (as the nav does)', () => {
+  it("lists the team's kind pages in search, with or without patterns (as the nav does)", () => {
     const titles = (m: RepoModel) => librarySearchIndex(m, 'acme', 'ds').filter((i) => i.kind === 'page').map((i) => i.title);
-    expect(titles(repoModel)).toContain('Patterns');
-    expect(titles({ ...repoModel, patterns: [] } as RepoModel)).toContain('Patterns');
+    expect(titles(repoModel)).toEqual(expect.arrayContaining(['Interactions', 'Actions']));
+    expect(titles({ ...repoModel, patterns: [] } as RepoModel)).toEqual(expect.arrayContaining(['Interactions', 'Actions']));
   });
 });
 
-describe('the Patterns nav rows, by kind (founder decision 2026-11-15)', () => {
-  it('has one row per kind, named as core names the kind, opening the index on its section', () => {
-    expect(LIBRARY_PATTERN_KIND_PAGES.map((r) => [r.kind, r.label])).toEqual(PATTERN_KINDS.map((k) => [k, PATTERN_KIND_LABEL[k]]));
-    for (const r of LIBRARY_PATTERN_KIND_PAGES) expect(r.route).toBe(`patterns/#${patternKindSection(r.kind!)}`);
+describe('the Patterns pages, one per kind (founder decision 2026-11-17)', () => {
+  it('has one nav row per kind, named as core names the kind, each its own page', () => {
+    expect(LIBRARY_PATTERN_KIND_PAGES.map((r) => [r.kind, r.label, r.route])).toEqual(PATTERN_KINDS.map((k) => [k, PATTERN_KIND_LABEL[k], PATTERN_KIND_ROUTE[k]]));
+    expect(PATTERN_KIND_ROUTE).toEqual({ interaction: 'patterns/interactions/', action: 'patterns/actions/' });
+    // A team has a shell for each kind, and the pattern shell (?p=<id>).
+    for (const r of LIBRARY_PATTERN_KIND_PAGES) expect(LIBRARY_SHELL_ROUTES).toContain(r.route);
+    expect(LIBRARY_SHELL_ROUTES).toContain('patterns/');
   });
 
-  it('opens sections the Patterns page has', () => {
-    const html = renderToStaticMarkup(createElement(PatternsView, { groups, hrefs: patternHrefs({ team: null }, groups) }));
-    for (const g of groups) expect(html).toContain(`id="${patternKindSection(g.kind)}"`);
+  it('sends the old index to Interactions, on Bridge and for its own team address, a pattern keeping its page', () => {
+    expect(REDIRECTS['/patterns']).toBe('/patterns/interactions/');
+    expect(ownLibraryPath('patterns/')).toBe('/patterns/interactions/');
+    expect(ownLibraryPath('patterns/actions/')).toBe('/patterns/actions/');
+    expect(ownLibraryPath('patterns/?p=delete')).toBe('/patterns/delete/');
   });
 
-  it('opens both sections even when one kind has no pattern yet', () => {
+  it('says how many there are, or what the kind is while there is none', () => {
+    expect(patternKindLead({ kind: 'action', items: [] })).toBe(PATTERN_KIND_INTRO.action);
+    expect(patternKindLead(patternKindGroup(groups, 'action'))).toMatch(/^\d+ actions? people take across the product\. Each one works the same wherever it appears\.$/);
+    expect(patternKindLead(patternKindGroup(groups, 'interaction'))).toMatch(/^\d+ interactions? several components share\./);
+  });
+
+  it('draws each kind on its own page, a kind with none yet included', () => {
     const only = groups.filter((g) => g.kind === 'interaction');
-    const html = renderToStaticMarkup(createElement(PatternsView, { groups: only, hrefs: patternHrefs({ team: null }, only) }));
-    for (const k of PATTERN_KINDS) expect(html).toContain(`id="${patternKindSection(k)}"`);
+    for (const k of PATTERN_KINDS) {
+      const html = renderToStaticMarkup(createElement(PatternKindView, { group: patternKindGroup(only, k), hrefs: patternHrefs({ team: null }, only) }));
+      expect(html).toContain(`<h1`);
+      expect(html.includes('data-pt-empty')).toBe(k === 'action');
+    }
   });
 
-  it("lists Bridge's own kinds, each standing for its patterns' pages, no row per pattern and no Overview", () => {
-    expect(patternsNav()).toEqual([
-      { href: '/patterns/#pt-interaction', label: 'Interactions', meta: expect.any(String), kind: 'interaction', also: [
-          '/patterns/close-on-outside-click/',
-          '/patterns/close-on-escape/',
-          '/patterns/focus-after-close/',
-          '/patterns/focus-on-open/',
-          '/patterns/trap-focus/',
-          '/patterns/jump-to-ends/',
-          '/patterns/move-with-arrows/',
-          '/patterns/open-list/',
-          '/patterns/open-from-trigger/',
-          '/patterns/scroll-lock/',
-          '/patterns/pick-with-enter/',
-          '/patterns/type-to-jump/',
-        ],
-      },
-      { href: '/patterns/#pt-action', label: 'Actions', meta: expect.any(String), kind: 'action', also: ['/patterns/delete/', '/patterns/send-for-review/'] },
+  it("lists Bridge's own kinds, each its own page standing for its patterns' pages, no row per pattern", () => {
+    expect(patternsNav()).toEqual(
+      PATTERN_KINDS.map((k) => ({ href: `/${PATTERN_KIND_ROUTE[k]}`, label: PATTERN_KIND_LABEL[k], meta: expect.any(String), kind: k, also: patternKindGroup(groups, k).items.map((e) => `/${patternRoute(e.pattern.id)}`) })),
+    );
+    // Bridge's own: its 12 interactions (#1216), its 2 actions.
+    expect(patternsNav().map((r) => r.also)).toEqual([
+      [
+        '/patterns/close-on-outside-click/',
+        '/patterns/close-on-escape/',
+        '/patterns/focus-after-close/',
+        '/patterns/focus-on-open/',
+        '/patterns/trap-focus/',
+        '/patterns/jump-to-ends/',
+        '/patterns/move-with-arrows/',
+        '/patterns/open-list/',
+        '/patterns/open-from-trigger/',
+        '/patterns/scroll-lock/',
+        '/patterns/pick-with-enter/',
+        '/patterns/type-to-jump/',
+      ],
+      ['/patterns/delete/', '/patterns/send-for-review/'],
     ]);
   });
 });

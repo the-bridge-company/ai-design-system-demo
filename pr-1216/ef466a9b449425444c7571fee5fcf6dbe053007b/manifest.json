@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "tool": "@bridge-ds/visual",
+  "createdAt": "2026-11-17T13:38:32.441Z",
+  "durationMs": 1224,
+  "base": {
+    "ref": "dc0f61ba99808575db064ce6506036f7c6c918e1",
+    "sha": "dc0f61ba99808575db064ce6506036f7c6c918e1"
+  },
+  "head": {
+    "ref": "ef466a9b449425444c7571fee5fcf6dbe053007b",
+    "sha": "ef466a9b449425444c7571fee5fcf6dbe053007b"
+  },
+  "options": {
+    "only": [
+      "stories",
+      "app"
+    ],
+    "threshold": 0.03,
+    "viewport": {
+      "stories": {
+        "width": 1024,
+        "height": 768
+      },
+      "app": {
+        "width": 1280,
+        "height": 800
+      }
+    }
+  },
+  "selection": {
+    "tokens": [],
+    "vars": [],
+    "files": [
+      ".changeset/behaviors-overlays.md",
+      "apps/docs-site/src/components/ds/library/Behaviors.test.ts",
+      "apps/docs-site/src/components/ds/library/views/PatternsView.test.ts",
+      "apps/docs-site/src/components/registry.tsx",
+      "apps/docs-site/src/lib/library/patterns.test.ts",
+      "apps/docs-site/src/lib/llms.test.ts",
+      "apps/docs-site/src/lib/studio-patterns.test.ts",
+      "packages/core/test/patterns.test.ts",
+      "packages/react/src/components/Accordion/Accordion.docs.json",
+      "packages/react/src/components/AlertDialog/AlertDialog.docs.json",
+      "packages/react/src/components/AlertDialog/AlertDialog.test.tsx",
+      "packages/react/src/components/ChoiceCard/ChoiceCard.docs.json",
+      "packages/react/src/components/Dialog/Dialog.docs.json",
+      "packages/react/src/components/Dialog/Dialog.test.tsx",
+      "packages/react/src/components/Drawer/Drawer.docs.json",
+      "packages/react/src/components/Drawer/Drawer.test.tsx",
+      "packages/react/src/components/Menu/Menu.docs.json",
+      "packages/react/src/components/Menu/Menu.test.tsx",
+      "packages/react/src/components/Popover/Popover.docs.json",
+      "packages/react/src/components/Popover/Popover.test.tsx",
+      "packages/react/src/components/RadioGroup/RadioGroup.docs.json",
+      "packages/react/src/components/Tabs/Tabs.docs.json",
+      "packages/react/src/components/Tabs/Tabs.test.tsx",
+      "packages/react/src/components/Tooltip/Tooltip.docs.json",
+      "patterns/close-on-escape.pattern.json",
+      "patterns/close-on-outside-click.pattern.json",
+      "patterns/focus-after-close.pattern.json",
+      "patterns/focus-on-open.pattern.json",
+      "patterns/jump-to-ends.pattern.json",
+      "patterns/move-with-arrows.pattern.json",
+      "patterns/open-from-trigger.pattern.json",
+      "patterns/open-list.pattern.json",
+      "patterns/pick-with-enter.pattern.json",
+      "patterns/scroll-lock.pattern.json",
+      "patterns/trap-focus.pattern.json",
+      "patterns/type-to-jump.pattern.json"
+    ],
+    "components": [],
+    "stories": [],
+    "fallback": null,
+    "app": {
+      "include": false,
+      "reason": "No token, component or app change"
+    }
+  },
+  "summary": {
+    "shots": 0,
+    "changed": 0,
+    "unchanged": 0,
+    "added": 0,
+    "removed": 0,
+    "errors": 0,
+    "maxPercent": 0
+  },
+  "shots": []
+}

@@ -32,8 +32,14 @@ describe('bridge_get_pattern', () => {
     const p = (await ops.getPatternOp(ctx, { id: 'close-on-escape' })) as { kind: string; components: { component: string; text: string }[] };
     expect(p.kind).toBe('interaction');
     expect(p.components).toEqual([
+      { component: 'AlertDialog', text: 'Escape cancels: nothing happens', keys: ['Escape'] },
       { component: 'Combobox', text: 'Escape closes the list', keys: ['Escape'] },
+      { component: 'Dialog', text: 'Closes on Escape', keys: ['Escape'] },
+      { component: 'Drawer', text: 'Closes on Escape', keys: ['Escape'] },
+      { component: 'Menu', text: 'Closes on Escape', keys: ['Escape'] },
+      { component: 'Popover', text: 'Closes on Escape', keys: ['Escape'] },
       { component: 'Select', text: 'Closes on Escape', keys: ['Escape'] },
+      { component: 'Tooltip', text: 'Escape hides it', keys: ['Escape'] },
     ]);
   });
 

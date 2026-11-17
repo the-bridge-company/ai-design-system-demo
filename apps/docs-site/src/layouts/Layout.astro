@@ -21,7 +21,7 @@ import { switchTarget } from '../lib/space-switch';
 import { loadComponents } from '../lib/components';
 import { shellMarker, studioPathOfShell } from '../lib/team-shells';
 import { COMPONENT_SHELL_ROUTE, LIBRARY_SHELL_ROOT, LIBRARY_TEAM_NAV, libraryShellMarker, routeOfShell } from '../lib/library-shells';
-import { COMPARE, DOCS_SECURITY, LANDING, LIBRARY_HOME, SPACE_LABEL, STUDIO_HOME, locate, navFor, workspaceNav, type NavEntry, type Space } from '../lib/nav';
+import { COMPARE, DOCS_SECURITY, LANDING, LIBRARY_HOME, SPACE_LABEL, STUDIO_HOME, locate, navFor, workspaceNav, type NavEntry, type NavItem, type Space } from '../lib/nav';
 import type { IconName } from '../brand/icons';
 import { PRIVACY_PAGE } from '../lib/account';
 import { siteRepo, siteRepoJson } from '../lib/config';
@@ -100,7 +100,7 @@ const shellHref = (route: string) => `${LIBRARY_SHELL_ROOT}${route}`;
 const nav: NavEntry[] = library
   ? LIBRARY_TEAM_NAV.map((e) =>
       e.children
-        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.navLabel ?? c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta })), ...(e.until ? { until: e.until } : {}) }
+        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta, ...(c.kind ? { kind: c.kind } : {}) })), ...(e.until ? { until: e.until } : {}) }
         : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta, ...(e.until ? { until: e.until } : {}) },
     )
   : workspace
@@ -123,9 +123,12 @@ const showToc = toc ?? (!isStudio && !wide && !isHome);
 // A team's component page (shell components/item/) sits under Components in the nav, as Bridge's own pages do.
 const navRoute = libraryRoute === COMPONENT_SHELL_ROUTE ? 'components/' : libraryRoute;
 const isCurrent = (href: string) => (library ? href === `${LIBRARY_SHELL_ROOT}${navRoute}` : path === href);
+// A row is current on its page, and on the pages it stands for (under Patterns, a pattern's page makes its kind's row
+// current). A team's pattern page (?p=<id>) is only known in the browser: scripts/library-team.ts showPatternKinds.
+const isCurrentItem = (item: NavItem) => isCurrent(item.href) || Boolean(item.also?.includes(path));
 
 // Breadcrumb only below the side nav's depth (a component page): the Harbor header and the nav say the rest.
-const nested = !!here.item && here.item.href !== path;
+const nested = !!here.item && here.item.href !== path && !here.item.also?.includes(path);
 const trail: Crumb[] = crumbs || (nested && here.item ? [{ label: here.item.label, href: here.item.href }, { label: title }] : []);
 const showCrumbs = crumbs !== false && !isStudio && trail.length > 1;
 const crumbItems = trail.map((c, i) => (c.href && i < trail.length - 1 ? { label: c.label, href: c.href } : { label: c.label }));
@@ -322,7 +325,8 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
               }
               // Every group renders open, the same for every visitor; scripts/shell.ts applies this tab's toggles
               // to the other groups (lib/nav-groups.ts) and never closes the one holding the current page.
-              const current = library ? entry.children!.some((c) => isCurrent(c.href)) : here.entry?.label === entry.label;
+              // A team's Patterns rows are sections of one page (#pt-<kind>): the group holds that page.
+              const current = library ? entry.children!.some((c) => isCurrent(c.href.split('#')[0]!)) : here.entry?.label === entry.label;
               const id = `nav-group-${n}`;
               return (
                 <li class="nav-group" hidden={entry.until ? true : undefined} data-nav-until={entry.until}>
@@ -340,14 +344,12 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                   </button>
                   <ul class="nav-sub" id={id} data-nav-sub={entry.until}>
                     {entry.children!.map((item) => (
-                      <>
-                        {item.heading && <li class="nav-sub-head">{item.heading}</li>}
-                        <li class:list={[{ 'nav-apart': item.apart }]}>
-                          <Link variant="subtle" href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined} data-keep-branch={isStudio ? '' : undefined}>
-                            <span>{item.label}</span>
-                          </Link>
-                        </li>
-                      </>
+                      // A team's Patterns rows are built hidden: each shows once its data has a pattern of that kind.
+                      <li class:list={[{ 'nav-apart': item.apart }]} hidden={library && item.kind ? true : undefined} data-nav-kind={item.kind}>
+                        <Link variant="subtle" href={item.href} aria-current={isCurrentItem(item) ? 'page' : undefined} data-keep-branch={isStudio ? '' : undefined}>
+                          <span>{item.label}</span>
+                        </Link>
+                      </li>
                     ))}
                   </ul>
                 </li>

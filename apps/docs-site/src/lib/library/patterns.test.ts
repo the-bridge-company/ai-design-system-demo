@@ -1,12 +1,15 @@
 // The Patterns pages of a Library over this repository's model: interactions read from the components that share a
 // behavior id (each in its words, with what the stage needs), actions as written, grouped by kind, and their links.
 import { describe, expect, it } from 'vitest';
-import type { RepoModel } from '@bridge-ds/core';
+import { PATTERN_KIND_LABEL, PATTERN_KINDS, type RepoModel } from '@bridge-ds/core';
 import { repoModel } from '../model';
-import { interactionIds, libraryPatterns, patternById, patternComponents, patternsLead, teamPatternsNav } from './patterns';
+import { interactionIds, libraryPatterns, patternById, patternComponents, patternsLead } from './patterns';
 import { patternsNav } from '../nav';
+import { LIBRARY_PATTERN_KIND_PAGES, patternKindSection } from '../library-shells';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
 import { patternHref } from '../../components/ds/library/library-data';
-import { patternHrefs, patternLinks } from '../../components/ds/library/views/PatternsView';
+import { PatternsView, patternHrefs, patternLinks } from '../../components/ds/library/views/PatternsView';
 import { behaviorPatterns } from '../../components/ds/library/views/ComponentView';
 import { librarySearchIndex } from './search-index';
 
@@ -69,30 +72,21 @@ describe('pattern links', () => {
   });
 });
 
-describe('teamPatternsNav (a team Library nav, under Overview)', () => {
-  const href = (id: string) => `/library/acme/ds/patterns/?p=${id}`;
-
-  it('lists the team\'s own patterns in the order and under the kind labels of Bridge\'s own nav', () => {
-    const items = teamPatternsNav(groups, href);
-    const own = patternsNav().slice(1);
-    expect(items.map((i) => [i.label, i.heading])).toEqual(own.map((i) => [i.label, i.heading]));
-    expect(items.map((i) => i.heading).filter(Boolean)).toEqual(['Interactions', 'Actions']);
-    expect(items[0]).toEqual({ id: 'close-on-escape', href: '/library/acme/ds/patterns/?p=close-on-escape', label: patternById(groups, 'close-on-escape')!.pattern.name, meta: patternById(groups, 'close-on-escape')!.pattern.purpose, heading: 'Interactions', current: false });
-    expect(items.some((i) => i.current)).toBe(false);
+describe('the Patterns nav rows, by kind (founder decision 2026-11-15)', () => {
+  it('has one row per kind, named as core names the kind, opening the index on its section', () => {
+    expect(LIBRARY_PATTERN_KIND_PAGES.map((r) => [r.kind, r.label])).toEqual(PATTERN_KINDS.map((k) => [k, PATTERN_KIND_LABEL[k]]));
+    for (const r of LIBRARY_PATTERN_KIND_PAGES) expect(r.route).toBe(`patterns/#${patternKindSection(r.kind!)}`);
   });
 
-  it('marks only the pattern the page shows', () => {
-    const items = teamPatternsNav(groups, href, 'delete');
-    expect(items.filter((i) => i.current).map((i) => i.id)).toEqual(['delete']);
-    // An id the team does not have marks nothing (Overview stays current).
-    expect(teamPatternsNav(groups, href, 'not-a-pattern').some((i) => i.current)).toBe(false);
+  it('opens sections the Patterns page has', () => {
+    const html = renderToStaticMarkup(createElement(PatternsView, { groups, hrefs: patternHrefs({ team: null }, groups) }));
+    for (const g of groups) expect(html).toContain(`id="${patternKindSection(g.kind)}"`);
   });
 
-  it('shows only the kinds the team has, and nothing without patterns', () => {
-    const interactionsOnly = groups.filter((g) => g.kind === 'interaction');
-    const items = teamPatternsNav(interactionsOnly, href);
-    expect(items.map((i) => i.heading).filter(Boolean)).toEqual(['Interactions']);
-    expect(items.map((i) => i.id)).toEqual(['close-on-escape', 'focus-after-close', 'pick-with-enter']);
-    expect(teamPatternsNav([], href)).toEqual([]);
+  it("lists Bridge's own kinds, each standing for its patterns' pages, no row per pattern and no Overview", () => {
+    expect(patternsNav()).toEqual([
+      { href: '/patterns/#pt-interaction', label: 'Interactions', meta: expect.any(String), kind: 'interaction', also: ['/patterns/close-on-escape/', '/patterns/focus-after-close/', '/patterns/pick-with-enter/'] },
+      { href: '/patterns/#pt-action', label: 'Actions', meta: expect.any(String), kind: 'action', also: ['/patterns/delete/', '/patterns/send-for-review/'] },
+    ]);
   });
 });

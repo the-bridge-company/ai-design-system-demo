@@ -11,7 +11,8 @@ import { LIBRARY_SHELL_ROOT, libraryFromPath, libraryHref } from '../lib/library
 import { RESERVED_PATHS_URL, STUDIO_ROOT, teamHref, type ReservedPaths } from '../lib/team-path';
 import { llmsTxtUrl } from '../lib/library/published';
 import { libraryTeamName } from '../lib/recent-teams';
-import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE, teamPatternsNav, type TeamPatternNavItem } from '../lib/library/patterns';
+import type { PatternKind } from '@bridge-ds/core';
+import { libraryPatterns, patternById, PATTERN_QUERY } from '../lib/library/patterns';
 import { loadTeamData, loadTeamLlms, whenLibraryOpen } from './team-data';
 import { libraryFileUrl } from './library-access-api';
 import { refreshSpaceSwitch } from './space-switch';
@@ -71,38 +72,18 @@ export function showPatternsNav(has: boolean, root: ParentNode = document) {
 }
 
 /**
- * Fills the Patterns group of a team's nav under its built Overview: a quiet kind label, then one page per pattern of
- * the team (lib/library/patterns.ts teamPatternsNav). Each row is a copy of the built Overview row (the DS Link the
- * layout renders), so it looks and behaves like every other page of the nav. On a pattern page that pattern is the
- * current page, not Overview. Running it again replaces the rows it added.
+ * The rows of a team's Patterns group, by kind (Interactions, Actions: lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES),
+ * built hidden by the layout: each shows when the team has a pattern of its kind. On a pattern's page (?p=<id>) the row
+ * of that pattern's kind is the current page; on the index none is (the group holds the page).
  */
-export function fillPatternsNav(items: readonly TeamPatternNavItem[], root: ParentNode = document) {
-  for (const list of root.querySelectorAll<HTMLElement>('[data-nav-sub="patterns"]')) {
-    for (const el of list.querySelectorAll('[data-nav-pattern]')) el.remove();
-    const overview = list.querySelector<HTMLLIElement>(':scope > li:not(.nav-sub-head)');
-    const link = overview?.querySelector('a');
-    if (!overview || !link) continue;
-    const onPattern = items.some((i) => i.current);
-    if (onPattern) link.removeAttribute('aria-current');
-    const rows: HTMLLIElement[] = [];
-    for (const item of items) {
-      if (item.heading) {
-        const head = document.createElement('li');
-        head.className = 'nav-sub-head';
-        head.textContent = item.heading;
-        head.setAttribute('data-nav-pattern', '');
-        rows.push(head);
-      }
-      const row = overview.cloneNode(true) as HTMLLIElement;
-      row.setAttribute('data-nav-pattern', item.id);
-      const a = row.querySelector('a')!;
-      a.setAttribute('href', item.href);
-      a.querySelector('span')!.textContent = item.label;
-      if (item.current) a.setAttribute('aria-current', 'page');
-      else a.removeAttribute('aria-current');
-      rows.push(row);
-    }
-    overview.after(...rows);
+export function showPatternKinds(kinds: readonly PatternKind[], current: PatternKind | null, root: ParentNode = document) {
+  for (const li of root.querySelectorAll<HTMLElement>('[data-nav-kind]')) {
+    const kind = li.dataset.navKind as PatternKind;
+    li.hidden = !kinds.includes(kind);
+    const a = li.querySelector('a');
+    if (!a) continue;
+    if (kind === current) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
   }
 }
 
@@ -138,7 +119,7 @@ export function initLibraryTeam() {
       const patterns = libraryPatterns(data.model);
       // The pattern this page shows: only the Patterns shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx).
       const shown = document.documentElement.dataset.libraryShell === 'patterns' ? new URLSearchParams(location.search).get(PATTERN_QUERY) : null;
-      fillPatternsNav(teamPatternsNav(patterns, (id) => libraryHref(team.owner, team.repo, `${PATTERNS_ROUTE}?${PATTERN_QUERY}=${encodeURIComponent(id)}`), shown));
+      showPatternKinds(patterns.map((g) => g.kind), shown ? (patternById(patterns, shown)?.kind ?? null) : null);
       showPatternsNav(patterns.length > 0);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));

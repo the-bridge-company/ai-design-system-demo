@@ -76,32 +76,3 @@ export function patternsLead(groups: readonly PatternGroup[]): string {
   ].filter(Boolean);
   return parts.length ? `${parts.join(', and ')}. Each one works the same wherever it appears.` : 'No patterns yet.';
 }
-
-/** One page under Patterns in a team's Library nav: the pattern's name, its page, the kind label above a kind's first. */
-export interface TeamPatternNavItem {
-  id: string;
-  href: string;
-  label: string;
-  meta: string;
-  /** The first pattern of a kind: the quiet label above it (Interactions, Actions), as on Bridge's own Library. */
-  heading?: string;
-  /** The pattern this page shows (?p=<id>). */
-  current: boolean;
-}
-
-/**
- * The patterns of a team's Library nav, under Overview: the same order and kind labels as Bridge's own (lib/nav.ts
- * patternsNav), only the team's own patterns, each at its page (`href(id)`, the team's ?p=<id>). Empty without patterns.
- */
-export function teamPatternsNav(groups: readonly PatternGroup[], href: (id: string) => string, currentId: string | null = null): TeamPatternNavItem[] {
-  return groups.flatMap((g) =>
-    g.items.map((e, i): TeamPatternNavItem => ({
-      id: e.pattern.id,
-      href: href(e.pattern.id),
-      label: e.pattern.name,
-      meta: e.pattern.purpose,
-      ...(i === 0 ? { heading: g.label } : {}),
-      current: e.pattern.id === currentId,
-    })),
-  );
-}

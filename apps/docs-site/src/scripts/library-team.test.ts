@@ -2,7 +2,7 @@
 // A team's Library shell: noindex unless the team opts in on a public repository, and the build-time links follow the
 // team in the address.
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyIndexing, markNoindex, paintTeamName, pointLibraryLinks, markPatternKind, showPatternsNav } from './library-team';
+import { applyIndexing, markNoindex, paintTeamName, pointLibraryLinks, markPatternKind } from './library-team';
 
 const robots = () => document.head.querySelectorAll('meta[name="robots"]');
 
@@ -87,20 +87,20 @@ describe('the team name in a Library (never the repository in words)', () => {
 });
 
 describe('the Patterns group of a team Library nav', () => {
-  // The markup Layout.astro builds for the group: hidden until the team has patterns, one row per kind, both always
-  // (a kind with no pattern yet lands on its section's empty line), opening the Patterns page on its section.
+  // The markup Layout.astro builds for the group: shown for every team, one row per kind, both always (a kind with no
+  // pattern yet lands on its section's empty line), opening the Patterns page on its section.
   const built = () => `
     <ul class="nav">
-      <li class="nav-group" hidden data-nav-until="patterns">
+      <li class="nav-group">
         <button type="button" class="nav-link nav-toggle" data-nav-group="Patterns" aria-controls="g" aria-expanded="true"><span>Patterns</span></button>
-        <ul class="nav-sub" id="g" data-nav-sub="patterns">
+        <ul class="nav-sub" id="g">
           <li data-nav-kind="interaction"><a class="link subtle" href="/library/acme/ds/patterns/#pt-interaction"><span>Interactions</span></a></li>
           <li data-nav-kind="action"><a class="link subtle" href="/library/acme/ds/patterns/#pt-action"><span>Actions</span></a></li>
         </ul>
       </li>
       <li class="nav-group"><ul class="nav-sub" id="u"><li><a href="/library/acme/ds/install/" aria-current="page"><span>Install</span></a></li></ul></li>
     </ul>`;
-  const rows = () => [...document.querySelectorAll<HTMLElement>('[data-nav-sub="patterns"] > li')].filter((li) => !li.hidden).map((li) => `${li.querySelector('a')!.getAttribute('aria-current') ? '> ' : ''}${li.textContent!.trim()} ${li.querySelector('a')!.getAttribute('href')}`);
+  const rows = () => [...document.querySelectorAll<HTMLElement>('#g > li')].filter((li) => !li.hidden).map((li) => `${li.querySelector('a')!.getAttribute('aria-current') ? '> ' : ''}${li.textContent!.trim()} ${li.querySelector('a')!.getAttribute('href')}`);
 
   afterEach(() => {
     document.body.innerHTML = '';
@@ -121,16 +121,6 @@ describe('the Patterns group of a team Library nav', () => {
     markPatternKind('interaction');
     expect(rows()).toEqual(['> Interactions /library/acme/ds/patterns/#pt-interaction', 'Actions /library/acme/ds/patterns/#pt-action']);
     markPatternKind(null);
-    expect(document.querySelectorAll('[data-nav-sub] [aria-current]')).toHaveLength(0);
-  });
-
-  it('shows the group only once the team has patterns', () => {
-    document.body.innerHTML = built();
-    const group = document.querySelector<HTMLElement>('[data-nav-until="patterns"]')!;
-    expect(group.hidden).toBe(true);
-    showPatternsNav(false);
-    expect(group.hidden).toBe(true);
-    showPatternsNav(true);
-    expect(group.hidden).toBe(false);
+    expect(document.querySelectorAll('#g [aria-current]')).toHaveLength(0);
   });
 });

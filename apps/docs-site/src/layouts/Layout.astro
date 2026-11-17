@@ -100,18 +100,18 @@ const shellHref = (route: string) => `${LIBRARY_SHELL_ROOT}${route}`;
 const nav: NavEntry[] = library
   ? LIBRARY_TEAM_NAV.map((e) =>
       e.children
-        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta, ...(c.kind ? { kind: c.kind } : {}) })), ...(e.until ? { until: e.until } : {}) }
-        : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta, ...(e.until ? { until: e.until } : {}) },
+        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta, ...(c.kind ? { kind: c.kind } : {}) })) }
+        : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta },
     )
   : workspace
     ? workspaceNav()
-    : navFor(space, { team: hosted });
+    : navFor(space);
 const isStudio = space === 'studio';
 // The Studio rail (option A, 2026-11-04): the top entries, then Products and Design system (ProductsNav, with the
 // entries placed 'design-system'), then Settings at the foot. The workspace has no groups: Home, then Settings.
 const groups = isStudio && !library;
 const topNav = groups ? nav.filter((e) => !e.place) : nav;
-const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon, ...(e.until ? { until: e.until } : {}) })) : [];
+const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon })) : [];
 const footNav = groups ? nav.filter((e) => e.place === 'foot' && e.href) : [];
 const isHome = path === LIBRARY_HOME || path === STUDIO_HOME;
 // Tokens, Components and Quality can show the library as an open change (lib/view-scope): the selector and the banner.
@@ -309,7 +309,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                 const current = isCurrent(entry.href);
                 const inside = !current && here.entry?.label === entry.label;
                 return (
-                  <li hidden={entry.until ? true : undefined} data-nav-until={entry.until}>
+                  <li>
                     <Link variant="subtle" className="nav-link" href={entry.href} aria-current={current ? 'page' : undefined} data-active={inside ? '' : undefined} data-keep-branch={isStudio ? '' : undefined}>
                       <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
                       <span>{entry.label}</span>
@@ -329,7 +329,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
               const current = library ? entry.children!.some((c) => isCurrent(c.href.split('#')[0]!)) : here.entry?.label === entry.label;
               const id = `nav-group-${n}`;
               return (
-                <li class="nav-group" hidden={entry.until ? true : undefined} data-nav-until={entry.until}>
+                <li class="nav-group">
                   <!-- bridge-audit-ignore-next-line: a side nav group opener styled as its sibling nav links (with the review count badge and chevron); the DS SidebarNav is a React island and would rebuild the whole rail -->
                   <button type="button" class="nav-link nav-toggle" aria-expanded="true" aria-controls={id} data-nav-group={entry.label} data-nav-current={current || undefined} data-active={current || undefined}>
                     <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
@@ -342,7 +342,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                     )}
                     <span class="nav-chev" aria-hidden="true"><Icon icon={siteIcon('chevron')} size="sm" className="icon" /></span>
                   </button>
-                  <ul class="nav-sub" id={id} data-nav-sub={entry.until}>
+                  <ul class="nav-sub" id={id}>
                     {entry.children!.map((item) => (
                       // A team's Patterns rows (both kinds, empty or not): the browser marks the current one on a pattern's page.
                       <li class:list={[{ 'nav-apart': item.apart }]} data-nav-kind={item.kind}>

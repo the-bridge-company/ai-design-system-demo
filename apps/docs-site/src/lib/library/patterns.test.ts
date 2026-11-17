@@ -112,10 +112,10 @@ describe('pattern links', () => {
     });
   });
 
-  it('lists the team Patterns page in search only when the team has patterns', () => {
+  it('lists the team Patterns page in search, with or without patterns (as the nav does)', () => {
     const titles = (m: RepoModel) => librarySearchIndex(m, 'acme', 'ds').filter((i) => i.kind === 'page').map((i) => i.title);
     expect(titles(repoModel)).toContain('Patterns');
-    expect(titles({ ...repoModel, patterns: [] } as RepoModel)).not.toContain('Patterns');
+    expect(titles({ ...repoModel, patterns: [] } as RepoModel)).toContain('Patterns');
   });
 });
 

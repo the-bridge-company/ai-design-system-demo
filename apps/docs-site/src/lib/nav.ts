@@ -59,8 +59,6 @@ export interface NavEntry {
    * ProductsNav.tsx), or at the foot above the account (Settings). Unset: the top entries.
    */
   place?: 'design-system' | 'foot';
-  /** Built hidden, shown once the team's data has it (a team's Library: lib/library-shells.ts). */
-  until?: 'patterns';
   /**
    * The pages a group stands for when its rows are sections of a page (Patterns: the index and each pattern): search,
    * llms.txt and locate read these instead of the rows.
@@ -137,21 +135,19 @@ export const PATTERNS_HOME = `/${PATTERNS_ROUTE}`;
  * The Patterns group, by kind (founder decision 2026-11-15): Interactions, then Actions, each opening the index on its
  * section (lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES, the same rows as a team's Library). Both rows, even for a
  * kind with no pattern yet: its section says how one comes to exist. No row per pattern and no Overview: a pattern's
- * page makes its kind's row current. Empty without patterns.
+ * page makes its kind's row current. Both rows even with no pattern at all (the page's empty state).
  */
 export function patternsNav(): NavItem[] {
   const groups = libraryPatterns(repoModel);
-  if (!groups.length) return [];
   return LIBRARY_PATTERN_KIND_PAGES.map((row): NavItem => {
     const items = groups.find((g) => g.kind === row.kind)?.items ?? [];
     return { href: `/${row.route}`, label: row.label, meta: row.meta, kind: row.kind!, also: items.map((e) => `/${patternRoute(e.pattern.id)}`) };
   });
 }
 
-/** The pages of the Patterns group, for search and llms.txt: the index, then each pattern. Empty without patterns. */
+/** The pages of the Patterns group, for search and llms.txt: the index (always), then each pattern. */
 export function patternPages(): NavItem[] {
   const groups = libraryPatterns(repoModel);
-  if (!groups.length) return [];
   return [
     { href: PATTERNS_HOME, label: LIBRARY_PATTERNS_PAGE.label, meta: patternsLead(groups) },
     ...groups.flatMap((g) => g.items.map((e): NavItem => ({ href: `/${patternRoute(e.pattern.id)}`, label: e.pattern.name, meta: e.pattern.purpose }))),
@@ -174,7 +170,8 @@ export function libraryNav(): NavEntry[] {
     { href: LIBRARY_HOME, label: 'Home', icon: 'home', meta: "What's new and where to start" },
     { label: 'Foundations', icon: 'layers', children: FOUNDATIONS },
     { href: '/components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance' },
-    ...(patterns.length ? [{ label: 'Patterns', icon: 'hand' as const, children: patterns, pages: patternPages() }] : []),
+    // Always, with or without patterns: an empty kind (or no pattern at all) shows how one comes to exist.
+    { label: 'Patterns', icon: 'hand', children: patterns, pages: patternPages() },
     { label: 'Use', icon: 'book', children: LIBRARY_USE },
   ];
 }
@@ -183,16 +180,12 @@ export function libraryNav(): NavEntry[] {
 export const STUDIO_PATTERNS_HREF = '/studio/patterns/';
 
 /**
- * The Studio nav. Patterns sits under Design system right after Components, only for a design system with patterns:
- * Bridge's own when its patterns/ has some; a team's (`team`, the team shells) built hidden (`until`), shown once its
- * data has patterns (components/ds/studio/ProductsNav.tsx), the same rule as its Library. Not branchAware: the page reads
- * the latest library only, a "Viewing" selector there would change nothing.
+ * The Studio nav. Patterns sits under Design system right after Components, for every design system, with or without
+ * patterns (its page's empty state says how one comes to exist), as in the Library. Not branchAware: the page reads the
+ * latest library only, a "Viewing" selector there would change nothing.
  */
-export function studioNav(opts: { team?: boolean } = {}): NavEntry[] {
-  const patterns: NavEntry[] =
-    opts.team || libraryPatterns(repoModel).length
-      ? [{ href: STUDIO_PATTERNS_HREF, label: 'Patterns', icon: 'hand', place: 'design-system', meta: 'Interactions and actions shared across the product, and the changes asked on them', ...(opts.team ? { until: 'patterns' as const } : {}) }]
-      : [];
+export function studioNav(): NavEntry[] {
+  const patterns: NavEntry[] = [{ href: STUDIO_PATTERNS_HREF, label: 'Patterns', icon: 'hand', place: 'design-system', meta: 'Interactions and actions shared across the product, and the changes asked on them' }];
   return [
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
     { href: STUDIO_EXPLORATIONS_HREF, label: 'Explorations', icon: 'branch', badge: 'explorations', meta: 'Every exploration, what waits on you first, from exploring to shipped' },
@@ -220,7 +213,7 @@ export function workspaceNav(): NavEntry[] {
   ];
 }
 
-export const navFor = (space: Space, opts: { team?: boolean } = {}) => (space === 'studio' ? studioNav(opts) : libraryNav());
+export const navFor = (space: Space) => (space === 'studio' ? studioNav() : libraryNav());
 
 const norm = (path: string) => path.replace(/\/?$/, '/');
 

@@ -30,12 +30,9 @@ const group = (name: string) => screen.getByText(name, { selector: 'div' }).pare
 const linksIn = (el: HTMLElement) => within(el).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')]);
 
 describe('ProductsNavView', () => {
-  it("draws a team's Patterns entry right after Components only once the team has patterns", () => {
-    const withPatterns: NavPage[] = [PAGES[0]!, { href: '/studio/patterns/', label: 'Patterns', icon: 'hand', until: 'patterns' }, ...PAGES.slice(1)];
-    const hidden = nav({ products: [], current: null, path: '/studio/components/', pages: withPatterns });
-    expect(linksIn(group('Design system')).map(([label]) => label)).toEqual(['Components', 'Tokens', 'Quality']);
-    hidden.unmount();
-    nav({ products: [], current: null, path: '/studio/patterns/', pages: withPatterns, patterns: true });
+  it("draws the Patterns entry right after Components for every team, with or without patterns", () => {
+    const withPatterns: NavPage[] = [PAGES[0]!, { href: '/studio/patterns/', label: 'Patterns', icon: 'hand' }, ...PAGES.slice(1)];
+    nav({ products: [], current: null, path: '/studio/patterns/', pages: withPatterns });
     expect(linksIn(group('Design system')).map(([label]) => label)).toEqual(['Components', 'Patterns', 'Tokens', 'Quality']);
     expect(screen.getByRole('link', { name: 'Patterns' }).getAttribute('aria-current')).toBe('page');
   });

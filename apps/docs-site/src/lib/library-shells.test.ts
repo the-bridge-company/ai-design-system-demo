@@ -143,11 +143,11 @@ describe('addresses', () => {
     const pages = libraryTeamPages().map((p) => p.route);
     for (const r of pages) expect(LIBRARY_SHELL_ROUTES).toContain(r);
     expect(LIBRARY_TEAM_NAV.map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Patterns', 'Use']);
-    // Patterns is built hidden: a team shows it once its data has patterns (scripts/library-team.ts).
+    // Patterns shows for every team, with or without patterns (the page's empty state), never built hidden.
     // A group by kind, as on Bridge's own Library (decision 2026-11-15): Interactions and Actions open the one Patterns
     // page on their section; no Overview row. Search keeps the page as "Patterns".
+    expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).not.toHaveProperty('until');
     expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({
-      until: 'patterns',
       children: [
         { route: 'patterns/#pt-interaction', label: 'Interactions', kind: 'interaction' },
         { route: 'patterns/#pt-action', label: 'Actions', kind: 'action' },

@@ -66,11 +66,6 @@ export function paintTeamName(team: { owner: string; repo: string }, site: { nam
   if (typeof document !== 'undefined' && root === document) document.title = document.title.replace(/\| [^|]+$/, `| ${shown}`);
 }
 
-/** The Patterns entry of a team's nav is built hidden: it shows once the team's data has patterns to show. */
-export function showPatternsNav(has: boolean, root: ParentNode = document) {
-  for (const el of root.querySelectorAll<HTMLElement>('[data-nav-until="patterns"]')) el.hidden = !has;
-}
-
 /**
  * The rows of a team's Patterns group, by kind (Interactions, Actions: lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES),
  * both shown even for a kind with no pattern yet (its section says how one comes to exist). On a pattern's page
@@ -118,7 +113,6 @@ export function initLibraryTeam() {
       // The pattern this page shows: only the Patterns shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx).
       const shown = document.documentElement.dataset.libraryShell === 'patterns' ? new URLSearchParams(location.search).get(PATTERN_QUERY) : null;
       markPatternKind(shown ? (patternById(patterns, shown)?.kind ?? null) : null);
-      showPatternsNav(patterns.length > 0);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));
     })

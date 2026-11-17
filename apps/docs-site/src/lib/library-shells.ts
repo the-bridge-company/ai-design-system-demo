@@ -21,8 +21,6 @@ export interface LibraryPage {
   meta: string;
   /** Sits slightly apart from the pages above it (All tokens under the foundations). */
   apart?: boolean;
-  /** Built hidden, shown once the team's data has it (Patterns: scripts/library-team.ts showPatternsNav). */
-  until?: 'patterns';
   /** A row under Patterns: the kind of pattern it opens the Patterns page on (shown even with none of it yet). */
   kind?: 'interaction' | 'action';
 }
@@ -62,13 +60,13 @@ export const COMPONENT_SHELL_ROUTE = 'components/item/';
 export const COMPONENT_SLUG_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
 
 /** A top-level entry of a team's Library side nav: a page, or a group of pages (Foundations). */
-export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[]; until?: 'patterns' };
+export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[] };
 
 /**
  * The Patterns index of a team's Library, for search: the nav does not list it as a row (no "Overview"), its rows are
  * the kinds below, each opening this page on its section.
  */
-export const LIBRARY_PATTERNS_PAGE: LibraryPage = { route: 'patterns/', label: 'Patterns', icon: 'hand', meta: 'Interactions several components share and actions people take across the product', until: 'patterns' };
+export const LIBRARY_PATTERNS_PAGE: LibraryPage = { route: 'patterns/', label: 'Patterns', icon: 'hand', meta: 'Interactions several components share and actions people take across the product' };
 
 /** The section of the Patterns page that holds one kind (views/PatternsView.tsx renders <h2 id="pt-<kind>">). */
 export const patternKindSection = (kind: 'interaction' | 'action'): string => `pt-${kind}`;
@@ -76,8 +74,8 @@ export const patternKindSection = (kind: 'interaction' | 'action'): string => `p
 /**
  * The rows under Patterns, by kind (founder decision 2026-11-15): a gesture several components share is an
  * Interaction, a task that chains several components is an Action, how one component applies a gesture stays on its
- * page. Each row opens the Patterns page on its kind's section; both rows show while the Library has patterns, a kind
- * with none yet landing on its section's empty line. The same rows for Bridge's own Library (lib/nav.ts patternsNav)
+ * page. Each row opens the Patterns page on its kind's section; both rows always show, a kind with none yet landing on
+ * its section's empty line (no pattern at all: the page's empty state). The same rows for Bridge's own Library (lib/nav.ts patternsNav)
  * and every team's (scripts/library-team.ts markPatternKind). Labels are @bridge-ds/core PATTERN_KIND_LABEL (library-shells.test.ts checks it).
  */
 export const LIBRARY_PATTERN_KIND_PAGES: LibraryPage[] = [
@@ -94,13 +92,13 @@ export const LIBRARY_TEAM_NAV: LibraryNavEntry[] = [
   { label: 'Foundations', icon: 'layers', children: LIBRARY_FOUNDATION_PAGES },
   { route: 'components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance and live stories' },
   // One shell for a team (its patterns are only known once its data is read): the index, each pattern by ?p=<id>. Its
-  // rows are the kinds, both always (the group shows once the team's data has a pattern).
-  { label: 'Patterns', icon: 'hand', until: 'patterns', children: LIBRARY_PATTERN_KIND_PAGES },
+  // rows are the kinds, both always, the group too (with no pattern the page's empty state says how one comes to exist).
+  { label: 'Patterns', icon: 'hand', children: LIBRARY_PATTERN_KIND_PAGES },
   { label: 'Use', icon: 'book', children: LIBRARY_USE_PAGES },
 ];
 
 /** Every page of a team's Library nav, groups opened, in nav order. Patterns is its one page (its rows are sections of it). */
-export const libraryTeamPages = (): LibraryPage[] => LIBRARY_TEAM_NAV.flatMap((e) => (e.until === 'patterns' ? [LIBRARY_PATTERNS_PAGE] : (e.children ?? [e])));
+export const libraryTeamPages = (): LibraryPage[] => LIBRARY_TEAM_NAV.flatMap((e) => (e.children === LIBRARY_PATTERN_KIND_PAGES ? [LIBRARY_PATTERNS_PAGE] : (e.children ?? [e])));
 
 /**
  * The Library routes a team has, relative to its Library root ('' is Home). Each has a shell page. 'foundations/'

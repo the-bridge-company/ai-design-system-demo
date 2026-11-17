@@ -32,9 +32,13 @@ export interface BehaviorDecisionProps {
   actions?: BehaviorDecisionActions | null;
   /** "Play both": today and Claude's preview (BehaviorReplaySlot), for the lead and the person who asked. */
   replay?: ReactNode;
+  /** False where a title above already names the request (a pattern's drawer): the zone is labelled, not headed. */
+  heading?: boolean;
+  /** The decision before Play both (a pattern's drawer): the three actions come right after what is asked. */
+  decisionFirst?: boolean;
 }
 
-export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions, replay }: BehaviorDecisionProps) {
+export default function BehaviorDecision({ today, wanted, asker, askerFirst, where, actions, replay, heading = true, decisionFirst = false }: BehaviorDecisionProps) {
   const headingId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +87,12 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
   };
 
   return (
-    <section className="rq-bh" aria-labelledby={headingId}>
-      <h2 id={headingId} className="rq-bh-who">
-        {asker} asks to change how it behaves
-      </h2>
+    <section className="rq-bh" {...(heading ? { 'aria-labelledby': headingId } : { 'aria-label': `${asker} asks to change how it behaves` })}>
+      {heading && (
+        <h2 id={headingId} className="rq-bh-who">
+          {asker} asks to change how it behaves
+        </h2>
+      )}
       <p className="rq-bh-line">
         {today ? (
           <>
@@ -103,7 +109,7 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
         <strong className="rq-bh-wanted">{wanted}</strong>
       </p>
       {where && <p className="rq-bh-where">It gets in the way in {where.replace(/[.]+$/, '')}.</p>}
-      {replay}
+      {!decisionFirst && replay}
       {actions && (
         <>
           <ButtonGroup className="rq-decide">
@@ -174,6 +180,7 @@ export default function BehaviorDecision({ today, wanted, asker, askerFirst, whe
           </Dialog>
         </>
       )}
+      {decisionFirst && replay}
     </section>
   );
 }

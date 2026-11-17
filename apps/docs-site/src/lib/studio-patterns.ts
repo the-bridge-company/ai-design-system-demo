@@ -7,7 +7,7 @@
 // it asks about one component's behavior whose id is an interaction pattern (behavior.of 'component', behavior = the
 // pattern id: "Select: close on Escape" concerns Close on Escape). Only the ones that wait for the lead's decision
 // (open, `request: behavior` without `bridge-build`, nobody on them): one made the default is on Being built.
-import { behaviorAskOf, isUndecidedBehaviorRequest, parseRequestIssue, requestIssueTitle } from '@bridge-ds/core';
+import { behaviorAskOf, isNewPatternAsk, isUndecidedBehaviorRequest, parseRequestIssue, requesterOf, requestIssueTitle, type BehaviorAsk } from '@bridge-ds/core';
 import { patternComponents, type PatternGroup } from './library/patterns';
 import type { BehaviorIssue } from './home-model';
 
@@ -19,6 +19,10 @@ export interface StudioPatternRow {
   components: string[];
   /** Its page in the Library. */
   href: string;
+  /** An action's rules, in its file's order (what "Suggest a change to this pattern" picks from). */
+  rules?: string[];
+  /** An interaction's components with their own words for it (what "Suggest a change to this behavior" picks from). */
+  uses?: { component: string; text: string }[];
 }
 
 export interface StudioPatternGroup {
@@ -32,6 +36,12 @@ export interface StudioPatternGroup {
 export interface PatternRequest {
   number: number;
   title: string;
+  /** What it asks (the row drawer shows it to the lead, with the decision). */
+  ask?: BehaviorAsk;
+  /** Who asked, as the request names them ("Sofia", "@leo"). */
+  asker?: string;
+  /** Their GitHub login when the request has one (the decline reason notifies them). */
+  requester?: string;
 }
 
 /** The Library groups as Studio rows, in the Library's order; `href` gives each pattern's Library page. */
@@ -39,7 +49,14 @@ export function studioPatternGroups(groups: readonly PatternGroup[], href: (id: 
   return groups.map((g) => ({
     kind: g.kind,
     label: g.label,
-    rows: g.items.map((e) => ({ id: e.pattern.id, name: e.pattern.name, purpose: e.pattern.purpose, components: patternComponents(e), href: href(e.pattern.id) })),
+    rows: g.items.map((e) => ({
+      id: e.pattern.id,
+      name: e.pattern.name,
+      purpose: e.pattern.purpose,
+      components: patternComponents(e),
+      href: href(e.pattern.id),
+      ...(e.kind === 'action' ? { rules: e.pattern.rules } : { uses: e.components.map((c) => ({ component: c.component, text: c.text })) }),
+    })),
   }));
 }
 
@@ -72,7 +89,45 @@ export function patternRequests(issues: readonly BehaviorIssue[], groups: readon
     const id = ask.of === 'pattern' ? ask.id : ask.behavior;
     // A component behavior concerns a pattern only when that pattern is an interaction (the behavior id names it).
     if (!id || !ids.has(id) || (ask.of === 'component' && ids.get(id) !== 'interaction')) continue;
-    (out.get(id) ?? out.set(id, []).get(id)!).push({ number: i.number, title: requestIssueTitle(r) });
+    (out.get(id) ?? out.set(id, []).get(id)!).push({ number: i.number, title: requestIssueTitle(r), ask, ...whoAsked(i, r.requestedBy) });
+  }
+  return out;
+}
+
+/** Who asked a request: the name Bridge's server wrote, else the GitHub login. */
+function whoAsked(i: BehaviorIssue, requestedBy: string | undefined): { asker: string; requester?: string } {
+  const login = requestedBy ?? i.user?.login ?? '';
+  const named = requesterOf(i.body)?.name;
+  return { asker: named ?? (login ? `@${login.replace(/^@/, '')}` : 'Someone'), ...(login ? { requester: login } : {}) };
+}
+
+/** A proposal that is not a pattern yet, for the lead's one "Asked, not patterns yet" line. */
+export interface AskedProposal {
+  number: number;
+  /** "Archive" (a new action), "Type to jump on Menu" (a behavior asked of a component that does not do it yet). */
+  name: string;
+}
+
+/** "type-to-jump" as words, when no component names the behavior: "Type to jump". */
+const idWords = (id: string) => id.replace(/[-_]+/g, ' ').trim().replace(/^./, (c) => c.toUpperCase());
+
+/**
+ * The undecided behavior requests that propose something that is not a pattern yet (oldest first): a new action
+ * (a pattern ask with places, its id not a row), or a behavior asked of a component that does not do it yet (a
+ * component ask with a behavior id and no sentence for today) whose id is no interaction row. A request on a row is
+ * that row's (patternRequests). `behaviorNames`: behavior id -> its words in a component's docs.json, else the id in
+ * words. Never a row, never in the Library: a pattern exists once its file is merged.
+ */
+export function askedNotPatterns(issues: readonly BehaviorIssue[], groups: readonly StudioPatternGroup[], behaviorNames: ReadonlyMap<string, string> = new Map()): AskedProposal[] {
+  const ids = new Set(groups.flatMap((g) => g.rows.map((r) => r.id)));
+  const out: AskedProposal[] = [];
+  for (const i of [...issues].sort((a, b) => a.number - b.number)) {
+    if (i.pull_request || !isUndecidedBehaviorRequest(i.labels) || (i.assignees ?? []).length) continue;
+    const r = parseRequestIssue(i.body);
+    const ask = behaviorAskOf(r);
+    if (!r || !ask) continue;
+    if (isNewPatternAsk(ask) && !ids.has(ask.id)) out.push({ number: i.number, name: r.component.replace(/\s+pattern$/i, '').trim() || idWords(ask.id) });
+    else if (ask.of === 'component' && ask.behavior && !ask.today && !ids.has(ask.behavior)) out.push({ number: i.number, name: `${behaviorNames.get(ask.behavior) ?? idWords(ask.behavior)} on ${ask.id}` });
   }
   return out;
 }
@@ -83,13 +138,16 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
  * The header's one sentence: how many of each kind, then, for whoever decides on them, how many wait for a decision.
  * `waiting` is null while unknown or for a viewer who does not decide.
  */
-export function studioPatternsLead(groups: readonly StudioPatternGroup[], waiting: number | null = null): string {
+export function studioPatternsLead(groups: readonly StudioPatternGroup[], waiting: number | null = null, proposals = 0): string {
   const n = (kind: StudioPatternGroup['kind']) => groups.find((g) => g.kind === kind)?.rows.length ?? 0;
   const parts = [n('interaction') ? count(n('interaction'), 'interaction') : '', n('action') ? count(n('action'), 'action') : ''].filter(Boolean);
   // No pattern: the empty state under the header says it, once.
   if (!parts.length) return '';
   const head = `${parts.join(' and ')} shared across the product`;
-  return waiting ? `${head}, ${count(waiting, 'change')} asked on them ${waiting === 1 ? 'waits' : 'wait'} for your decision.` : `${head}.`;
+  // New proposals (askedNotPatterns) wait on the same person: counted in the same sentence, once.
+  const asks = [waiting ? `${count(waiting, 'change')} asked on them` : '', proposals ? `${proposals} new ${proposals === 1 ? 'one' : 'ones'}` : ''].filter(Boolean);
+  const total = (waiting ?? 0) + proposals;
+  return asks.length ? `${head}, ${asks.join(' and ')} ${total === 1 ? 'waits' : 'wait'} for your decision.` : `${head}.`;
 }
 
 /** The words of a pattern's requests cell: "1 change asked", "2 changes asked". */

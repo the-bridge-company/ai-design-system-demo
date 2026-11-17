@@ -77,3 +77,16 @@ describe('BehaviorDecision', () => {
     expect(screen.getByRole('status').textContent).toBe('Question sent to Dana. The request waits for you to decide.');
   });
 });
+
+describe('BehaviorDecision in a pattern drawer', () => {
+  it('puts the decision right after what is asked, then Play both, with no heading', () => {
+    const a: BehaviorDecisionActions = { onDefault: vi.fn(async () => undefined), onNotNow: vi.fn(), onAsk: vi.fn(async () => undefined) };
+    const { container } = render(
+      createElement(BehaviorDecision, { today: '', wanted: 'Escape closes the menu.', asker: 'Sofia', askerFirst: 'Sofia', actions: a, heading: false, decisionFirst: true, replay: createElement('p', { 'data-replay': '' }, 'Play both') }),
+    );
+    expect(container.querySelector('h2')).toBeNull();
+    const decide = screen.getByRole('button', { name: 'Make it the default' });
+    const replay = container.querySelector('[data-replay]')!;
+    expect(decide.compareDocumentPosition(replay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});

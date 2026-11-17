@@ -5,7 +5,7 @@
 // changeset, a pull request that closes the request. Also who made it the default, read from the comment Bridge
 // writes. Pure: no I/O.
 
-import { behaviorAskOf, type ComponentChangeRequest } from './requests';
+import { behaviorAskOf, isNewPatternAsk, type BehaviorAsk, type ComponentChangeRequest } from './requests';
 
 /** What the caller read in the repository for the brief. Every field is optional: absent means not known. */
 export interface BehaviorFacts {
@@ -71,6 +71,7 @@ export function behaviorBrief(r: ComponentChangeRequest, ctx: { issue?: number |
   if (!ask) return '';
   const f = ctx.facts ?? {};
   const ref = ctx.issue ? `#${ctx.issue}` : 'this request';
+  if (isNewPatternAsk(ask)) return newPatternBrief(r, ask, ref, ctx);
   const pattern = ask.of === 'pattern';
   const patternFile = `patterns/${ask.id}.pattern.json`;
   const which = pattern ? (ask.rule !== undefined ? `Rule ${ask.rule + 1}` : 'A new rule') : ask.behavior ? `${ask.behavior}${f.keys?.length ? ` (keys: ${f.keys.join(', ')})` : ''}` : 'A new behavior';
@@ -103,6 +104,37 @@ export function behaviorBrief(r: ComponentChangeRequest, ctx: { issue?: number |
     '',
     'Rules:',
     `- Follow ${ctx.agentsFile ?? 'AGENTS.md'}: Base UI for behavior, tokens only in component CSS, tests, docs.json, changeset.`,
+    `- If something is unclear, comment on ${ref} instead of guessing.`,
+  ].join('\n');
+}
+
+/**
+ * The brief for a new action pattern proposed from Studio (requests.ts isNewPatternAsk): write its pattern file from
+ * the request, with a real file and match for every place, found in the product code. Nothing invented: a place whose
+ * code cannot be found is asked about on the request, and the repository test refuses a match that is not in its file.
+ */
+function newPatternBrief(r: ComponentChangeRequest, ask: BehaviorAsk, ref: string, ctx: { issue?: number | undefined; issueUrl?: string | undefined; agentsFile?: string | undefined }): string {
+  const name = r.component.replace(/\s+pattern$/i, '').trim() || ask.id;
+  const file = `patterns/${ask.id}.pattern.json`;
+  return [
+    `Build Bridge behavior request ${ref}${ctx.issueUrl ? ` (${ctx.issueUrl})` : ''}: the design system lead made this new action pattern the default.`,
+    '',
+    `Pattern: ${name} (${file}, a new file, kind "action")`,
+    `What it is for: ${ask.wanted}`,
+    ...(ask.rules?.length ? ['Rules, as people see them:', ...ask.rules.map((x) => `- ${x}`)] : []),
+    'Where people do it today:',
+    ...(ask.places ?? []).map((p) => `- ${p.screen}: "${p.label}"${p.link ? ` (${p.link})` : ''}`),
+    '',
+    'Do:',
+    `1. Write ${file}: id "${ask.id}", kind "action", name "${name}", its purpose and rules from above, the components it uses, and usedIn.`,
+    '2. For every place, find the screen in the product code (the Bridge connector lists the product repositories) and write its usedIn entry: the screen, the label people read, the file and a match that is in that file.',
+    `3. If a place cannot be found in the code, leave it out and comment on ${ref} instead of guessing. A pattern needs at least two places.`,
+    '4. Run the tests: the pattern test fails when a match is not in its file.',
+    '5. Add a changeset.',
+    `6. Work on a branch named agent/build-${ctx.issue ?? '<issue number>'}. The pull request body must contain "Closes ${ctx.issue ? `#${ctx.issue}` : '#<issue number>'}", so the request reads Shipped when it merges.`,
+    '',
+    'Rules:',
+    `- Follow ${ctx.agentsFile ?? 'AGENTS.md'}.`,
     `- If something is unclear, comment on ${ref} instead of guessing.`,
   ].join('\n');
 }

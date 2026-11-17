@@ -401,3 +401,239 @@ export function behaviorRequest(
 export function behaviorSentLines(n: number, lead: string | null = null): { lead: string; next: string; link: string } {
   return { lead: `Request #${n} sent to ${lead ?? 'the design system lead'}.`, next: `${lead ?? 'They'} decide${lead ? 's' : ''}. Once it is the default, your developers build it.`, link: 'Follow your request' };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// "Suggest a pattern" on Studio > Patterns (components/ds/studio/PatternSuggest.tsx) and "Ask another component to do
+// this" in a pattern's drawer: two more targets of the same behavior request, decided by the design system lead in
+// the same place. Nothing here creates a pattern: a pattern exists once a developer merged its file and the repository
+// test checked it against the code (an action's places, an interaction's two components).
+
+/** What a suggestion shares: a behavior components should do the same way, or an action people take in places. */
+export type PatternSuggestKind = 'interaction' | 'action';
+
+export const SUGGEST_KINDS: { value: PatternSuggestKind; title: string; line: string }[] = [
+  { value: 'interaction', title: 'Something components should do the same way', line: 'A behavior one component has, like Type to jump. You ask another component to do it too.' },
+  { value: 'action', title: 'An action people take in several places', line: 'Like Archive or Delete. You name the places where people do it today.' },
+];
+
+export const isPatternSuggestKind = (x: unknown): x is PatternSuggestKind => x === 'interaction' || x === 'action';
+
+/** The words of the "Suggest a pattern" drawer and its entry points. `lead`: as in behaviorFormCopy. */
+export function suggestPatternCopy(lead: string | null = null) {
+  return {
+    open: 'Suggest a pattern',
+    title: 'Suggest a pattern',
+    description: `${lead ?? 'The design system lead'} decides, then your developers make it a pattern. It shows here once it is in the code.`,
+    kind: 'What do you want to share?',
+    submit: `Send to ${lead ?? 'the design system lead'}`,
+    busy: 'Sending',
+    /** The empty state's sentence for someone who can suggest one. */
+    empty: `A pattern is an interaction several components share, or an action people take across the product. Seen one in your products? Suggest it: ${lead ?? 'the design system lead'} decides, then your developers add it.`,
+  } as const;
+}
+
+/** One place people do a proposed action today, as the form holds it. */
+export interface PlaceDraft {
+  screen: string;
+  label: string;
+  link: string;
+}
+
+export const EMPTY_PLACE: PlaceDraft = { screen: '', label: '', link: '' };
+
+/** A new action, as the form holds it. `rules`: one rule per line. */
+export interface NewPatternDraft {
+  name: string;
+  purpose: string;
+  rules: string;
+  places: PlaceDraft[];
+}
+
+export const EMPTY_NEW_PATTERN: NewPatternDraft = { name: '', purpose: '', rules: '', places: [EMPTY_PLACE, EMPTY_PLACE] };
+
+/** The fewest places a new action needs, as a pattern file does (core validatePattern). */
+export const MIN_PLACES = 2;
+
+export const NEW_PATTERN_COPY = {
+  name: { label: 'Name', hint: 'The verb people read on the button.' },
+  purpose: 'What it is for',
+  rules: { label: 'Its rules, as people see them', hint: 'One rule per line.' },
+  places: { title: 'Where people do it today', line: 'At least two places: the screen, and the label people read there.' },
+  place: (n: number) => `Place ${n}`,
+  screen: { label: 'Screen', placeholder: 'Acme CRM, Deals list' },
+  label: { label: 'What people read there', placeholder: 'Archive deal' },
+  link: { label: 'Link or image (optional)', placeholder: 'A Figma frame or a page' },
+  remove: (n: number) => `Remove place ${n}`,
+  add: 'Add a place',
+  missing: {
+    name: 'Name the action, like Archive.',
+    purpose: 'Say what it is for, in a sentence.',
+    rules: 'Write at least one rule, as people see it.',
+    places: 'Name at least two places where people do it today: the screen and the label they read.',
+  },
+  /** A name that is a pattern already: the words before the link that opens it. */
+  duplicate: (name: string) => `${name} is already a pattern.`,
+  duplicateLink: 'Suggest a change to it instead.',
+} as const;
+
+/** The kebab-case id a proposed name would have ("Move to archive" -> "move-to-archive"). */
+export const patternIdFrom = (name: string): string =>
+  name
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+/** The pattern a proposed name already is (same name or same id, any case), or undefined. */
+export function duplicatePattern<T extends { id: string; name: string }>(name: string, patterns: readonly T[]): T | undefined {
+  const n = name.trim().toLowerCase();
+  const id = patternIdFrom(name);
+  if (!n) return undefined;
+  return patterns.find((p) => p.name.trim().toLowerCase() === n || (id && p.id === id));
+}
+
+/** The rules of the form, one per line, blank lines left out. */
+export const rulesOfText = (text: string): string[] =>
+  text
+    .split('\n')
+    .map((r) => r.trim())
+    .filter(Boolean);
+
+/** The places with a screen and a label: the ones that count. */
+export const filledPlaces = (places: readonly PlaceDraft[]): PlaceDraft[] => places.filter((p) => p.screen.trim() && p.label.trim());
+
+/** What blocks the send of a new action, per field (empty when it can be sent). `patterns`: the rows of the page. */
+export function newPatternProblems(f: NewPatternDraft, patterns: readonly { id: string; name: string }[]): { name?: string; duplicate?: string; purpose?: string; rules?: string; places?: string } {
+  const m = NEW_PATTERN_COPY.missing;
+  const dup = duplicatePattern(f.name, patterns);
+  return {
+    ...(f.name.trim() ? {} : { name: m.name }),
+    ...(dup ? { duplicate: dup.id } : {}),
+    ...(f.purpose.trim() ? {} : { purpose: m.purpose }),
+    ...(rulesOfText(f.rules).length ? {} : { rules: m.rules }),
+    ...(filledPlaces(f.places).length >= MIN_PLACES ? {} : { places: m.places }),
+  };
+}
+
+/** The behavior request a new action files: a pattern ask with its proposed id, its rules and its places. */
+export function newPatternRequest(f: NewPatternDraft, requestedBy?: string | null): ComponentChangeRequest {
+  const name = f.name.trim();
+  const ask: BehaviorAsk = {
+    of: 'pattern',
+    id: patternIdFrom(name),
+    today: '',
+    wanted: f.purpose,
+    rules: rulesOfText(f.rules),
+    places: filledPlaces(f.places).map((p) => ({ screen: p.screen.trim(), label: p.label.trim(), ...(p.link.trim() ? { link: p.link.trim() } : {}) })),
+  };
+  return behaviorRequestOf(`${name} pattern`, ask, { source: 'studio', requestedBy });
+}
+
+/** A component of the team as the adoption picker reads it: its name and its own behaviors (docs.json). */
+export interface BehaviorHolder {
+  name: string;
+  behaviors: readonly { id: string; text: string }[];
+}
+
+/** A behavior some component has: its id, its words, the components that list it. */
+export interface SharedBehaviorChoice {
+  value: string;
+  label: string;
+  /** The components that already do it. */
+  by: string[];
+}
+
+/**
+ * The behaviors a component already has that are not an interaction yet ("Type to jump, from Select"), in component
+ * order, each once: what "Something components should do the same way" offers. `interactions`: the interaction rows'
+ * ids, which their own drawer asks about.
+ */
+export function sharedBehaviorChoices(components: readonly BehaviorHolder[], interactions: ReadonlySet<string> = new Set()): SharedBehaviorChoice[] {
+  const out = new Map<string, SharedBehaviorChoice>();
+  for (const c of components)
+    for (const b of c.behaviors) {
+      if (interactions.has(b.id)) continue;
+      const seen = out.get(b.id);
+      if (seen) seen.by.push(c.name);
+      else out.set(b.id, { value: b.id, label: b.text, by: [c.name] });
+    }
+  return [...out.values()].map((x) => ({ ...x, label: `${x.label}, from ${x.by.join(', ')}` }));
+}
+
+/** The components that do not list `behavior` yet, in component order: who can be asked to do it too. */
+export const adopterChoices = (components: readonly BehaviorHolder[], behavior: string | null): { value: string; label: string }[] =>
+  behavior ? components.filter((c) => !c.behaviors.some((b) => b.id === behavior)).map((c) => ({ value: c.name, label: c.name })) : [];
+
+/** The words of the adoption form. `fromRow`: in a pattern's drawer, where the behavior is the row's. */
+export function adoptFormCopy(fromRow: boolean, lead: string | null = null) {
+  return {
+    heading: 'Ask another component to do this',
+    behavior: { label: 'Which behavior?', hint: 'What one component does today, from the Library.', placeholder: 'Pick a behavior' },
+    component: { label: fromRow ? 'Which component?' : 'Which component should do it too?', hint: 'Only components that do not do it yet.', placeholder: 'Pick a component' },
+    loading: 'Reading the components',
+    none: 'Every component already does this.',
+    noBehavior: 'No component lists a behavior yet. Start from a component: Change how it behaves.',
+    wanted: 'What should it do?',
+    where: { label: 'Where people would feel it (optional)', hint: 'A screen or a product.' },
+    after: fromRow
+      ? `${lead ?? 'The design system lead'} decides. Once it is the default, your developers build it and it shows here.`
+      : 'Once two components do it, it shows here as an interaction. Your developers give it its name.',
+    submit: `Send to ${lead ?? 'the design system lead'}`,
+    busy: 'Sending',
+    missing: { behavior: 'Pick the behavior to share.', component: 'Pick the component that should do it too.', wanted: 'Say what it should do, in a sentence.' },
+  } as const;
+}
+
+/** An adoption, as the form holds it. */
+export interface AdoptDraft {
+  behavior: string | null;
+  component: string | null;
+  wanted: string;
+  where: string;
+}
+
+/** What blocks the send of an adoption (empty when it can be sent). */
+export function adoptProblems(f: AdoptDraft): { behavior?: string; component?: string; wanted?: string } {
+  const m = adoptFormCopy(false).missing;
+  return { ...(f.behavior ? {} : { behavior: m.behavior }), ...(f.component ? {} : { component: m.component }), ...(f.wanted.trim() ? {} : { wanted: m.wanted }) };
+}
+
+/**
+ * The behavior request an adoption files: a component ask on the component that should do it, with the behavior id
+ * and no sentence for today (it does not do it yet). Studio > Patterns shows it on that interaction's row, or in the
+ * lead's "Asked, not patterns yet" line while no interaction has that id (lib/studio-patterns.ts askedNotPatterns).
+ */
+export function adoptRequest(f: AdoptDraft & { behavior: string; component: string }, requestedBy?: string | null): ComponentChangeRequest {
+  return behaviorRequestOf(f.component, { of: 'component', id: f.component, behavior: f.behavior, today: '', wanted: f.wanted, where: f.where }, { source: 'studio', requestedBy });
+}
+
+/**
+ * "Suggest a change" on an interaction's drawer: the shared behavior as one component does it, changed. It files the
+ * component behavior request (behaviorRequest, that behavior picked), which Studio > Patterns shows on the row.
+ */
+export function interactionChangeCopy(lead: string | null = null) {
+  return {
+    heading: 'Suggest a change to this behavior',
+    open: 'Suggest a change',
+    which: { label: 'On which component?', placeholder: 'Pick a component', hint: 'Each one says it in its own words, from the Library.' },
+    wanted: 'What should it do instead?',
+    where: { label: 'Where people would feel it (optional)', hint: 'A screen or a product.' },
+    submit: `Send to ${lead ?? 'the design system lead'}`,
+    missing: { which: 'Pick the component whose behavior you want to change.', wanted: 'Say what it should do, in a sentence.' },
+  } as const;
+}
+
+/** The words of a pattern's drawer. */
+export function patternDrawerCopy(lead: string | null = null) {
+  return {
+    components: 'Components that do it',
+    uses: 'Components it uses',
+    library: 'Open in Library',
+    back: 'Back',
+    close: 'Close',
+    /** The lead's section: what waits for their decision on this pattern. */
+    waiting: (n: number) => (n === 1 ? 'One change waits for your decision' : `${n} changes wait for your decision`),
+    after: `${lead ?? 'The design system lead'} decides. Once it is the default, your developers build it and it shows here.`,
+  } as const;
+}

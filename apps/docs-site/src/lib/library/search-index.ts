@@ -4,7 +4,6 @@
 // page as text, and swatches go through safeSpecimenValue. Pure, browser-safe.
 import type { RepoModel, TokenRow } from '@bridge-ds/core';
 import { libraryHref, libraryTeamPages } from '../library-shells';
-import { libraryPatterns } from './patterns';
 import type { SearchItem } from '../search';
 import { teamComponentRows } from '../team-components';
 import { safeSpecimenValue } from '../token-specimens';
@@ -65,9 +64,8 @@ function designSystemItems(model: Pick<RepoModel, 'tokens' | 'components'>, link
 
 export function librarySearchIndex(model: Pick<RepoModel, 'tokens' | 'components' | 'patterns'>, owner: string, repo: string): SearchItem[] {
   const href = (route: string) => libraryHref(owner, repo, route);
-  // Patterns only when the team has some to show (the nav shows it on the same condition).
-  const hasPatterns = libraryPatterns(model as RepoModel).length > 0;
-  const pages: SearchItem[] = libraryTeamPages().filter((e) => !e.until || (e.until === 'patterns' && hasPatterns)).map((e) => ({ kind: 'page', title: e.label, href: href(e.route), meta: e.meta, keys: 'library' }));
+  // Every page of the nav, Patterns included with or without patterns (its empty state says how one comes to exist).
+  const pages: SearchItem[] = libraryTeamPages().map((e) => ({ kind: 'page', title: e.label, href: href(e.route), meta: e.meta, keys: 'library' }));
   return [...pages, ...designSystemItems(model, { component: (slug) => href(`components/${encodeURIComponent(slug)}/`), token: (path) => href(`tokens/?t=${encodeURIComponent(path)}`) })];
 }
 

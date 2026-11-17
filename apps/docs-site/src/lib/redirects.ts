@@ -33,6 +33,8 @@ export const REDIRECTS: Record<string, string> = {
   '/studio/settings/repository': '/studio/settings/#repository',
   '/studio/settings/governance': '/studio/settings/#approvals',
   '/studio/settings/integrations': '/studio/settings/#integrations',
+  // Patterns has one page per kind (2026-11-17): the old index opens Interactions.
+  '/patterns': '/patterns/interactions/',
   // The theme playground left with the Field Guide redesign: brand and density now switch inside each preview.
   '/playground': '/library/',
 };

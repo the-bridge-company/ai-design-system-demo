@@ -92,6 +92,14 @@ describe('a reader', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('opened with ?suggest=action, gets no drawer: only a member who can write suggests', async () => {
+    history.replaceState(null, '', '/studio/acme/ds/patterns/?suggest=action');
+    render(createElement(PatternsBody, { groups: GROUPS, suggest: suggest(false) }));
+    await act(async () => undefined);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    history.replaceState(null, '', '/');
+  });
+
   it("keeps today's empty state, with no button", () => {
     render(createElement(PatternsBody, { groups: [], suggest: suggest(false) }));
     expect(screen.getByRole('heading', { name: 'No patterns yet' })).toBeTruthy();
@@ -119,6 +127,27 @@ describe('a member who can write', () => {
     const buttons = screen.getAllByRole('button', { name: 'Suggest a pattern' });
     expect(buttons).toHaveLength(1);
     expect(screen.getByText(/Seen one in your products\? Suggest it: the design system lead decides/)).toBeTruthy();
+  });
+
+  it('opened from the Library to suggest an action (?suggest=action), gets the drawer on that kind, once', async () => {
+    history.replaceState(null, '', '/studio/acme/ds/patterns/?suggest=action');
+    render(createElement(PatternsBody, { groups: GROUPS, suggest: suggest() }));
+    const d = await screen.findByRole('dialog');
+    expect(within(d).getByRole('radio', { name: /An action people take in several places/ })).toBeChecked();
+    expect(field('Name', d)).toBeTruthy();
+    // The address forgets it: a reload does not open the drawer again.
+    expect(location.search).toBe('');
+    await expectNoAxeViolations(d);
+    history.replaceState(null, '', '/');
+  });
+
+  it('opened to suggest any pattern (?suggest=pattern), gets the drawer on the choice of kind', async () => {
+    history.replaceState(null, '', '/studio/acme/ds/patterns/?suggest=pattern');
+    render(createElement(PatternsBody, { groups: [], suggest: suggest() }));
+    const d = await screen.findByRole('dialog');
+    expect(within(d).getByText('What do you want to share?')).toBeTruthy();
+    expect(within(d).queryByRole('radio', { checked: true })).toBeNull();
+    history.replaceState(null, '', '/');
   });
 
   it('asks what to share first, then shows the matching form only', async () => {

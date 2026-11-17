@@ -9,10 +9,11 @@ import { describe, expect, it } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../../packages/react/src/test/axe';
 import { repoModel } from '../../../../lib/model';
 import { loadComponents } from '../../../../lib/library/components';
-import { libraryPatterns, patternById } from '../../../../lib/library/patterns';
+import { libraryPatterns, patternById, patternKindGroup } from '../../../../lib/library/patterns';
 import type { LibraryData } from '../library-data';
 import ComponentView from './ComponentView';
-import { PatternsView, PatternView, patternHrefs, patternLinks, placesByLabel, usedByLabel } from './PatternsView';
+import { PatternKindView, PatternView, patternHrefs, patternLinks, placesByLabel, usedByLabel } from './PatternsView';
+import type { PatternKind } from '@bridge-ds/core';
 
 const own: LibraryData = { model: repoModel, team: null, extras: {} };
 const SB = 'https://storybook.example.com';
@@ -22,12 +23,49 @@ const view = (id: string, extra: { live?: boolean; storybook?: string } = { live
   return render(createElement(PatternView, { entry, links: patternLinks(own, entry), ...extra }));
 };
 
-describe('Patterns index', () => {
-  it('lists each kind once, each pattern by name with what it is for, and never a second "Patterns" title', () => {
-    const { container } = render(createElement(PatternsView, { groups, hrefs: patternHrefs(own, groups) }));
-    expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Patterns', 'Interactions', 'Actions']);
+describe('a kind page (Patterns > Interactions, Patterns > Actions)', () => {
+  const kind = (k: PatternKind, gs = groups) => patternKindGroup(gs, k);
+
+  it('titles the page with the kind, one sentence, then a card per pattern of that kind only', async () => {
+    const { container } = render(createElement(PatternKindView, { group: kind('action'), hrefs: patternHrefs(own, groups) }));
+    expect(container.querySelector('h1')!.textContent).toBe('Actions');
+    expect(container.textContent).toContain('actions people take across the product. Each one works the same wherever it appears.');
     expect(screen.getByRole('link', { name: 'Delete' })).toHaveAttribute('href', '/patterns/delete/');
-    expect(container.textContent).toContain('Escape closes what is open over the page: a list, a menu, a dialog, a tip.');
+    // Only actions: no interaction card on this page, and no section heading per kind (no "On this page").
+    expect(screen.queryByRole('link', { name: 'Close on Escape' })).toBeNull();
+    expect([...container.querySelectorAll('h2')].map((h) => h.textContent)).toEqual(kind('action').items.map((e) => e.pattern.name));
+    await expectNoAxeViolations(container);
+  });
+
+  it("draws each interaction's card with what it is for", () => {
+    render(createElement(PatternKindView, { group: kind('interaction'), hrefs: patternHrefs(own, groups) }));
+    expect(screen.getByRole('link', { name: 'Close on Escape' })).toHaveAttribute('href', '/patterns/close-on-escape/');
+    expect(document.body.textContent).toContain('Escape closes what is open over the page: a list, a menu, a dialog, a tip.');
+  });
+
+  it('with none yet, says what the kind is and how one comes to exist, with no link for a reader', async () => {
+    const only = groups.filter((g) => g.kind === 'interaction');
+    const { container } = render(createElement(PatternKindView, { group: kind('action', only), hrefs: patternHrefs(own, only) }));
+    expect(container.querySelector('h1')!.textContent).toBe('Actions');
+    expect(container.textContent).toContain('Tasks that chain several components, done the same way across the product.');
+    const empty = container.querySelector('[data-pt-empty="action"]')!;
+    expect(empty.querySelector('p')!.textContent).toBe('None yet. An action appears here once people do the same task the same way in at least two places, like Delete.');
+    expect(within(empty as HTMLElement).queryByRole('link')).toBeNull();
+    // A Field Guide drawing, decorative.
+    expect(empty.querySelector('svg.ill')?.getAttribute('aria-hidden')).toBe('true');
+    await expectNoAxeViolations(container);
+  });
+
+  it('with none yet, gives a member who can write one link to suggest that kind in Studio', async () => {
+    const { container } = render(createElement(PatternKindView, { group: kind('interaction', []), hrefs: {}, suggestHref: (k: PatternKind) => `/studio/acme/ds/patterns/?suggest=${k}` }));
+    expect(screen.getByRole('link', { name: 'Suggest an interaction' })).toHaveAttribute('href', '/studio/acme/ds/patterns/?suggest=interaction');
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    await expectNoAxeViolations(container);
+  });
+
+  it('with patterns, never offers to suggest one (Studio does)', () => {
+    render(createElement(PatternKindView, { group: kind('interaction'), hrefs: patternHrefs(own, groups), suggestHref: (k: PatternKind) => `/x?suggest=${k}` }));
+    expect(screen.queryByRole('link', { name: /^Suggest/ })).toBeNull();
   });
 });
 

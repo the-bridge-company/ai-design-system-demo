@@ -7,9 +7,23 @@
 // it asks about one component's behavior whose id is an interaction pattern (behavior.of 'component', behavior = the
 // pattern id: "Select: close on Escape" concerns Close on Escape). Only the ones that wait for the lead's decision
 // (open, `request: behavior` without `bridge-build`, nobody on them): one made the default is on Being built.
-import { behaviorAskOf, isNewPatternAsk, isUndecidedBehaviorRequest, parseRequestIssue, requesterOf, requestIssueTitle, type BehaviorAsk } from '@bridge-ds/core';
-import { patternComponents, type PatternGroup } from './library/patterns';
+import { behaviorAskOf, isNewPatternAsk, type PatternKind, isUndecidedBehaviorRequest, parseRequestIssue, requesterOf, requestIssueTitle, type BehaviorAsk } from '@bridge-ds/core';
+import { patternComponents, patternKindGroups, type PatternGroup } from './library/patterns';
 import type { BehaviorIssue } from './home-model';
+
+/**
+ * Studio's Patterns page opened to suggest one (the Library's "Suggest an action" beside an empty kind): ?suggest=<kind>
+ * opens the Suggest a pattern drawer on that kind, ?suggest=pattern on the choice of kind.
+ */
+export const SUGGEST_QUERY = 'suggest';
+export const suggestPatternRoute = (kind: PatternKind | null): string => `patterns/?${SUGGEST_QUERY}=${kind ?? 'pattern'}`;
+
+/** What the address asks: a kind, `null` for any kind, `undefined` when it asks nothing. */
+export function suggestAsked(search: string): PatternKind | null | undefined {
+  const v = new URLSearchParams(search).get(SUGGEST_QUERY);
+  if (v === null) return undefined;
+  return v === 'interaction' || v === 'action' ? v : null;
+}
 
 export interface StudioPatternRow {
   id: string;
@@ -44,9 +58,12 @@ export interface PatternRequest {
   requester?: string;
 }
 
-/** The Library groups as Studio rows, in the Library's order; `href` gives each pattern's Library page. */
+/**
+ * The Library groups as Studio rows, in the Library's order; `href` gives each pattern's Library page. Both kinds, always:
+ * a kind the design system lacks keeps its group with no row (the table says how one comes to exist).
+ */
 export function studioPatternGroups(groups: readonly PatternGroup[], href: (id: string) => string): StudioPatternGroup[] {
-  return groups.map((g) => ({
+  return patternKindGroups(groups).map((g) => ({
     kind: g.kind,
     label: g.label,
     rows: g.items.map((e) => ({

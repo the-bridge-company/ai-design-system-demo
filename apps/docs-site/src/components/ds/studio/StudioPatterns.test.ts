@@ -15,6 +15,27 @@ const GROUPS: StudioPatternGroup[] = [
 ];
 
 describe('PatternsTable', () => {
+  it('keeps the group of a kind with no pattern, with how one comes to exist in one cell across the columns', async () => {
+    const groups: StudioPatternGroup[] = [GROUPS[0]!, { kind: 'action', label: 'Actions', rows: [] }];
+    const { container } = render(createElement(PatternsTable, { groups, requests: null }));
+    expect(screen.getAllByRole('rowheader').map((c) => c.textContent)).toEqual(['Interactions', 'Close on EscapeEscape closes what opened.', 'Actions']);
+    const cell = container.querySelector<HTMLTableCellElement>('[data-spt-empty="action"] td')!;
+    expect(cell.colSpan).toBe(2);
+    expect(cell.textContent).toBe('None yet. An action appears here once people do the same task the same way in at least two places, like Delete.');
+    // No fake row: nothing in it to open or link.
+    expect(within(cell).queryByRole('link')).toBeNull();
+    expect(container.querySelector('[data-spt-row]:not([data-spt-row="close-on-escape"])')).toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
+  it("spans the decision column too when something waits on the other kind", () => {
+    const groups: StudioPatternGroup[] = [{ kind: 'interaction', label: 'Interactions', rows: [] }, GROUPS[1]!];
+    const { container } = render(createElement(PatternsTable, { groups, requests: new Map([['delete', [{ number: 12, title: 'Delete pattern: offer Undo' }]]]) }));
+    const cell = container.querySelector<HTMLTableCellElement>('[data-spt-empty="interaction"] td')!;
+    expect(cell.colSpan).toBe(3);
+    expect(cell.textContent).toContain('An interaction appears here once two components do the same thing the same way');
+  });
+
   it('groups the rows under their kind once, each name opening its Library page, a lone row keeping its components', async () => {
     const { container } = render(createElement(PatternsTable, { groups: GROUPS, requests: null }));
     expect(screen.getAllByRole('rowheader').map((c) => c.textContent)).toEqual(['Interactions', 'Close on EscapeEscape closes what opened.', 'Actions', 'DeleteRemoves something for good.']);

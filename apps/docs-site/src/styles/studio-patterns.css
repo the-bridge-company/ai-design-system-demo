@@ -34,6 +34,11 @@
   color: var(--color-text-muted);
 }
 
+/* A kind with no pattern: how one comes to exist, one cell across the columns, at a row's rhythm. */
+.spt-table .spt-empty {
+  padding-block: var(--space-2);
+}
+
 .spt-muted {
   color: var(--color-text-muted);
 }

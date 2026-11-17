@@ -143,17 +143,21 @@ describe('addresses', () => {
     const pages = libraryTeamPages().map((p) => p.route);
     for (const r of pages) expect(LIBRARY_SHELL_ROUTES).toContain(r);
     expect(LIBRARY_TEAM_NAV.map((e) => e.label)).toEqual(['Home', 'Foundations', 'Components', 'Patterns', 'Use']);
-    // Patterns is built hidden: a team shows it once its data has patterns (scripts/library-team.ts).
+    // Patterns shows for every team, with or without patterns (the page's empty state), never built hidden.
     // A group by kind, as on Bridge's own Library (decision 2026-11-15): Interactions and Actions open the one Patterns
     // page on their section; no Overview row. Search keeps the page as "Patterns".
+    expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).not.toHaveProperty('until');
     expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({
-      until: 'patterns',
       children: [
-        { route: 'patterns/#pt-interaction', label: 'Interactions', kind: 'interaction' },
-        { route: 'patterns/#pt-action', label: 'Actions', kind: 'action' },
+        { route: 'patterns/interactions/', label: 'Interactions', kind: 'interaction' },
+        { route: 'patterns/actions/', label: 'Actions', kind: 'action' },
       ],
     });
-    expect(libraryTeamPages().filter((p) => p.route.startsWith('patterns/'))).toEqual([expect.objectContaining({ route: 'patterns/', label: 'Patterns' })]);
+    // Each kind is its own page (2026-11-17), found by search under its name.
+    expect(libraryTeamPages().filter((p) => p.route.startsWith('patterns/')).map((p) => [p.route, p.label])).toEqual([
+      ['patterns/interactions/', 'Interactions'],
+      ['patterns/actions/', 'Actions'],
+    ]);
     expect(FOUNDATIONS.map((f) => f.href)).toEqual(LIBRARY_FOUNDATION_PAGES.map((p) => `/${p.route}`));
     expect(pages).toContain('foundations/accessibility/');
   });
@@ -241,11 +245,11 @@ describe('Use pages', () => {
     for (const p of LIBRARY_USE_PAGES) expect(LIBRARY_SHELL_ROUTES).toContain(p.route);
     expect(libraryHref('acme', 'ds', 'changelog/')).toBe('/library/acme/ds/changelog/');
     expect(ownLibraryPath('how-review-works/')).toBe('/how-review-works/');
-    expect(ownLibraryPath('patterns/')).toBe('/patterns/');
+    expect(ownLibraryPath('patterns/')).toBe('/patterns/interactions/');
     expect(ownLibraryPath('patterns/?p=close-on-escape')).toBe('/patterns/close-on-escape/');
-    expect(ownLibraryPath('patterns/?p=../x')).toBe('/patterns/');
+    expect(ownLibraryPath('patterns/?p=../x')).toBe('/patterns/interactions/');
     // The nav's rows by kind open the index on their section.
-    expect(ownLibraryPath('patterns/#pt-action')).toBe('/patterns/#pt-action');
+    expect(ownLibraryPath('patterns/actions/')).toBe('/patterns/actions/');
     expect(ownLibraryRedirects({ owner: 'acme', repo: 'ds' }).find((r) => r.source === '/library/acme/ds/install/')?.destination).toBe('/install/');
   });
 });

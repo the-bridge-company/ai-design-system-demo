@@ -1,10 +1,11 @@
 // The Patterns pages of a Library, for any repo model (Bridge's own at build time, a team's in the browser): the
 // patterns of patterns/<id>.pattern.json (@bridge-ds/core patterns.ts) grouped by kind, each interaction with the
 // components that list its behavior id, in their own words. Pure: the model comes in as an argument.
+import { PATTERN_KIND_INTRO, PATTERNS_ROUTE } from '../library-shells';
 import { behaviorUses, interactionsWithUses, PATTERN_KIND_LABEL, PATTERN_KINDS, readBehaviors, type ActionPattern, type ExampleNode, type InteractionPattern, type InteractionUse, type PatternKind, type RepoModel } from '@bridge-ds/core';
 
-/** The Library route of the Patterns index, and of one pattern on Bridge's own Library. */
-export const PATTERNS_ROUTE = 'patterns/';
+// The routes and the kinds' sentences live with the Library shells (no @bridge-ds/core there: astro.config reads them).
+export { PATTERN_KIND_INTRO, PATTERN_KIND_ROUTE, PATTERNS_ROUTE } from '../library-shells';
 export const patternRoute = (id: string): string => `${PATTERNS_ROUTE}${encodeURIComponent(id)}/`;
 /** On a team's Library the patterns share one shell: the pattern is in the query (?p=close-on-escape). */
 export const PATTERN_QUERY = 'p';
@@ -67,7 +68,36 @@ export const interactionIds = (groups: readonly PatternGroup[]): Set<string> => 
 /** The components a pattern uses: an action names them, an interaction is the components that do it. */
 export const patternComponents = (e: PatternEntry): string[] => (e.kind === 'action' ? e.pattern.components : e.components.map((c) => c.component));
 
-/** The one line of the Patterns index and of the nav: how many of each kind. */
+/**
+ * What a kind with no pattern says, on its Library page and in Studio's Patterns table: how a pattern of that
+ * kind comes to exist (the rules of patterns/: an interaction is shared by two components or more, an action is done
+ * the same way in at least two places). Both kinds keep their place, so the page reads the same with or without them.
+ */
+export const PATTERN_KIND_EMPTY: Record<PatternKind, string> = {
+  interaction: 'None yet. An interaction appears here once two components do the same thing the same way, like closing on Escape.',
+  action: 'None yet. An action appears here once people do the same task the same way in at least two places, like Delete.',
+};
+
+/** The link a member who can write gets beside an empty kind, to suggest one in Studio. */
+export const PATTERN_KIND_SUGGEST: Record<PatternKind, string> = { interaction: 'Suggest an interaction', action: 'Suggest an action' };
+
+/** The kinds in order, each with its patterns (none for a kind the design system lacks): the page shows both. */
+export const patternKindGroups = (groups: readonly PatternGroup[]): PatternGroup[] =>
+  PATTERN_KINDS.map((kind) => groups.find((g) => g.kind === kind) ?? { kind, label: PATTERN_KIND_LABEL[kind], items: [] });
+
+/** The one sentence under a kind page's title: how many there are, or what the kind is while there is none. */
+export function patternKindLead(group: Pick<PatternGroup, 'kind' | 'items'>): string {
+  const n = group.items.length;
+  if (!n) return PATTERN_KIND_INTRO[group.kind];
+  return group.kind === 'interaction'
+    ? `${n} ${n === 1 ? 'interaction' : 'interactions'} several components share. Each one works the same wherever it appears.`
+    : `${n} ${n === 1 ? 'action' : 'actions'} people take across the product. Each one works the same wherever it appears.`;
+}
+
+/** One kind of a Library's patterns, with none for a kind it lacks. */
+export const patternKindGroup = (groups: readonly PatternGroup[], kind: PatternKind): PatternGroup => patternKindGroups(groups).find((g) => g.kind === kind)!;
+
+/** The one line of the Patterns group for search and llms.txt: how many of each kind. */
 export function patternsLead(groups: readonly PatternGroup[]): string {
   const n = (kind: PatternKind) => groups.find((g) => g.kind === kind)?.items.length ?? 0;
   const parts = [

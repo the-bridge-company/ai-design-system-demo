@@ -26,9 +26,9 @@ import { HeaderActions } from './StudioHead';
 import { leadNameOf } from './BehaviorRequestForm';
 import RequestDecide from './RequestDecide';
 import { PatternRowDrawer, requestHref, SuggestPatternDrawer, type Decider, type PatternSuggestContext } from './PatternDrawers';
-import { askedNotPatterns, patternRequests, sharedComponents, studioPatternGroups, studioPatternsLead, type AskedProposal, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
-import { suggestPatternCopy } from '../../../lib/change-intent';
-import { libraryPatterns, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
+import { askedNotPatterns, patternRequests, sharedComponents, studioPatternGroups, studioPatternsLead, suggestAsked, SUGGEST_QUERY, type AskedProposal, type PatternRequest, type StudioPatternGroup } from '../../../lib/studio-patterns';
+import { suggestPatternCopy, type PatternSuggestKind } from '../../../lib/change-intent';
+import { libraryPatterns, PATTERN_KIND_EMPTY, PATTERN_QUERY, PATTERNS_ROUTE } from '../../../lib/library/patterns';
 import { libraryHref } from '../../../lib/library-shells';
 import { setPageSummary } from '../../../lib/page-summary';
 import type { BehaviorIssue } from '../../../lib/home-model';
@@ -134,6 +134,14 @@ export function PatternsTable({ groups, requests, onOpen }: PatternsTableProps) 
                 </TableHead>
               )}
             </TableRow>
+            {/* A kind with no pattern keeps its group: how one comes to exist, in one cell across the columns. */}
+            {!g.rows.length && (
+              <TableRow data-spt-empty={g.kind}>
+                <TableCell colSpan={cols} className="spt-empty spt-muted">
+                  {PATTERN_KIND_EMPTY[g.kind]}
+                </TableCell>
+              </TableRow>
+            )}
             {g.rows.map((r) => {
               const list = requests?.get(r.id) ?? [];
               return (
@@ -218,6 +226,19 @@ export function PatternsBody({ groups, suggest = null }: PatternsBodyProps) {
   const open = rows.find((r) => r.row.id === openId) ?? null;
   const empty = !groups.some((g) => g.rows.length);
   const copy = suggestPatternCopy(lead);
+  // Opened from the Library to suggest one (?suggest=<kind>, lib/studio-patterns.ts suggestPatternRoute): the drawer
+  // opens once, on that kind, as soon as the viewer may suggest; the address forgets it so a reload does not reopen it.
+  const [preset, setPreset] = useState<PatternSuggestKind | null>(null);
+  useEffect(() => {
+    if (!canSuggest) return;
+    const asked = suggestAsked(location.search);
+    if (asked === undefined) return;
+    setPreset(asked);
+    setSuggesting(true);
+    const url = new URL(location.href);
+    url.searchParams.delete(SUGGEST_QUERY);
+    history.replaceState(history.state, '', url);
+  }, [canSuggest]);
 
   const suggestDrawer = suggest && canSuggest && (
     <SuggestPatternDrawer
@@ -230,7 +251,11 @@ export function PatternsBody({ groups, suggest = null }: PatternsBodyProps) {
         setSuggesting(false);
         setOpenId(id);
       }}
-      onClose={() => setSuggesting(false)}
+      onClose={() => {
+        setSuggesting(false);
+        setPreset(null);
+      }}
+      preset={preset}
     />
   );
   const openSuggest = (variant: 'primary' | 'secondary') => (

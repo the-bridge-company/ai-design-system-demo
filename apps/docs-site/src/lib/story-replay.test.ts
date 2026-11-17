@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CLICK_OUTSIDE, keyLabel } from '@bridge-ds/core';
 import { behaviorOf, keysStoryUrl, parseKeysResult, replaySequence, replayStateOf, resultLine, RESULT_MESSAGE, sameResult } from './story-replay';
 
 const behaviors = [
@@ -16,6 +17,12 @@ describe('the keys played', () => {
     expect(replaySequence(behaviors, null)).toEqual(['Enter', 'ArrowDown']);
     expect(replaySequence([], 'x')).toEqual([]);
     expect(behaviorOf(behaviors, { behavior: 'tab-leaves' })).toEqual({ announces: 'Shipping speed, collapsed', keys: ['Tab'] });
+  });
+
+  it('plays a click outside like a key: open, move, then click away', () => {
+    const withMouse = [...behaviors, { id: 'pick-on-outside-click', family: 'Closing', text: 'A click outside keeps the highlighted option', keys: [CLICK_OUTSIDE] }];
+    expect(replaySequence(withMouse, 'pick-on-outside-click')).toEqual(['Enter', 'ArrowDown', 'click-outside']);
+    expect(behaviorOf(withMouse, { behavior: 'pick-on-outside-click' }).keys.map(keyLabel)).toEqual(['Click outside']);
   });
 });
 

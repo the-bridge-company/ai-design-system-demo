@@ -8,6 +8,7 @@
 // only Bridge's blocks (parsePreviewState). The team's per-branch Storybook (bridge.config.json previews.apps.storybook)
 // deploys the branch; Studio plays the same keys on today's story and on it. Pure, browser safe.
 
+import { CLICK_OUTSIDE } from './behaviors';
 import { behaviorAskOf, type ComponentChangeRequest } from './requests';
 
 /** The branch Claude's preview of request #n lives on. */
@@ -144,7 +145,7 @@ export function behaviorPreviewBrief(r: ComponentChangeRequest, n: number, f: Be
       : `2. Change ${ask.id} so it does what "Wanted" says. Keep every other behavior as it is; use what its Base UI primitive offers before writing your own handling; do not add or rename props unless the change cannot be made without one.`,
     pattern
       ? '3. Keep the places the pattern lists in usedIn doing the same.'
-      : `3. Update its \`behaviors\` entry${ask.behavior ? ` \`${ask.behavior}\`` : ''} in ${f.docsPath ?? 'its docs.json'}: the text says the new behavior, the keys are the keys that do it. Keep the id when the meaning stays; when the meaning changes, give it a new kebab-case id.`,
+      : `3. Update its \`behaviors\` entry${ask.behavior ? ` \`${ask.behavior}\`` : ''} in ${f.docsPath ?? 'its docs.json'}: the text says the new behavior, the keys are the keys that do it (a click away from the component is written \`${CLICK_OUTSIDE}\`, so Studio can replay it). Keep the id when the meaning stays; when the meaning changes, give it a new kebab-case id.`,
     `4. Add a test next to its other tests that ${f.keys?.length ? `presses ${f.keys.join(', ')}` : 'presses the keys that do it'} and checks the new behavior. Run it.`,
     '5. Add a changeset for the package you changed (a patch, one sentence saying the new behavior), as AGENTS.md asks of every change.',
     `6. Commit, push ${branch}, and open a draft pull request titled "Preview for #${n}" (gh pr create --draft --base ${base} --title "Preview for #${n}"). Never write "Closes #${n}": it is a preview, a developer builds from it or keeps it.`,

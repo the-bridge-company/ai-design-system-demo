@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BEHAVE_INTENT, BEHAVIOR_NEW, behaviorChoices, behaviorFormCopy, behaviorFormProblems, behaviorRequest, behaviorSentLines, isTeamChangeIntent, ruleChoices } from './change-intent';
+import { BEHAVE_INTENT, BEHAVIOR_NEW, behaviorChoices, behaviorFormCopy, behaviorFormProblems, behaviorRequest, behaviorSentLines, isTeamChangeIntent, ruleChoices, adopterChoices, adoptFormCopy, adoptProblems, adoptRequest, duplicatePattern, EMPTY_NEW_PATTERN, interactionChangeCopy, NEW_PATTERN_COPY, newPatternProblems, newPatternRequest, patternDrawerCopy, patternIdFrom, sharedBehaviorChoices, SUGGEST_KINDS, suggestPatternCopy } from './change-intent';
 import { PICK_COMPONENT_LINE, CHANGE_INTENTS, TEAM_CHANGE_INTENTS, TEAM_FRAME_MISSING, MISMATCH_KIND, STRUCTURE_KINDS, buildFormCopy, buildFormProblems, buildModeFor, buildSentLines, teamBuildRequest, teamIntentOptions, FRAME_MISSING, developerMessage, NO_TOKEN_LINE, REQUEST_KIND_OF, changeFormCopy, changeFormProblems, changeRequest, formModeFor, intentOptions, isChangeIntent, sentLine, startedLines } from './change-intent';
 import { BEHAVIOR_REQUEST_LABEL, BUILD_KINDS, REQUEST_KINDS, behaviorAskOf, composeBuildRequestIssue, composeRequestIssue, isBuildRequestIssue, parseBuildRequestIssue, parseRequestIssue } from '@bridge-ds/core';
 
@@ -259,5 +259,72 @@ describe('the lead by name on a behavior request', () => {
       expect(o.line.startsWith('It does not match Figma.')).toBe(true);
       expect(o.line).not.toMatch(/behave/);
     }
+  });
+});
+
+describe('Suggest a pattern', () => {
+  const rows = [
+    { id: 'delete', name: 'Delete' },
+    { id: 'close-on-escape', name: 'Close on Escape' },
+  ];
+  const place = (screen: string, label: string, link = '') => ({ screen, label, link });
+  const filled = { name: 'Archive', purpose: 'Keeps it out of the lists.', rules: 'Nothing is deleted.\n\nA toast offers Undo.\n', places: [place('Acme CRM, Deals', 'Archive deal', 'https://figma.com/x'), place('Acme Prints, Orders', 'Move to archive')] };
+
+  it('blocks a new action until name, purpose, a rule and two places are there, saying how to fix each', () => {
+    expect(newPatternProblems(filled, rows)).toEqual({});
+    expect(newPatternProblems(EMPTY_NEW_PATTERN, rows)).toEqual({ name: NEW_PATTERN_COPY.missing.name, purpose: NEW_PATTERN_COPY.missing.purpose, rules: NEW_PATTERN_COPY.missing.rules, places: NEW_PATTERN_COPY.missing.places });
+    // A place counts with a screen and a label; the link is optional.
+    expect(newPatternProblems({ ...filled, places: [filled.places[0]!, place('Orders', '')] }, rows).places).toBe('Name at least two places where people do it today: the screen and the label they read.');
+  });
+
+  it('refuses a name that is a pattern already, by name or by id, any case', () => {
+    expect(newPatternProblems({ ...filled, name: 'delete' }, rows).duplicate).toBe('delete');
+    expect(duplicatePattern('Close on escape', rows)?.id).toBe('close-on-escape');
+    expect(duplicatePattern('Close-on Escape!', rows)?.id).toBe('close-on-escape');
+    expect(duplicatePattern('Archive', rows)).toBeUndefined();
+    expect(NEW_PATTERN_COPY.duplicate('Delete')).toBe('Delete is already a pattern.');
+    expect(patternIdFrom('Move to archive')).toBe('move-to-archive');
+  });
+
+  it('files a behavior request on the proposed id with its rules and its places, never a pattern', () => {
+    const r = newPatternRequest(filled, 'sofia');
+    expect(r).toMatchObject({ kind: 'behavior', component: 'Archive pattern', requestedBy: 'sofia' });
+    expect(r.behavior).toEqual({
+      of: 'pattern',
+      id: 'archive',
+      today: '',
+      wanted: 'Keeps it out of the lists.',
+      rules: ['Nothing is deleted.', 'A toast offers Undo.'],
+      places: [{ screen: 'Acme CRM, Deals', label: 'Archive deal', link: 'https://figma.com/x' }, { screen: 'Acme Prints, Orders', label: 'Move to archive' }],
+    });
+  });
+
+  it('offers behaviors one component has that are not interactions yet, and only components that do not do it', () => {
+    const comps = [
+      { name: 'Select', behaviors: [{ id: 'type-to-jump', text: 'Type to jump' }, { id: 'close-on-escape', text: 'Closes on Escape' }] },
+      { name: 'Menu', behaviors: [{ id: 'loop', text: 'Arrow keys loop' }] },
+      { name: 'Combobox', behaviors: [{ id: 'close-on-escape', text: 'Closes on Escape' }, { id: 'type-to-jump', text: 'Type to jump' }] },
+    ];
+    expect(sharedBehaviorChoices(comps, new Set(['close-on-escape']))).toEqual([
+      { value: 'type-to-jump', label: 'Type to jump, from Select, Combobox', by: ['Select', 'Combobox'] },
+      { value: 'loop', label: 'Arrow keys loop, from Menu', by: ['Menu'] },
+    ]);
+    expect(adopterChoices(comps, 'type-to-jump')).toEqual([{ value: 'Menu', label: 'Menu' }]);
+    expect(adopterChoices(comps, 'loop').map((c) => c.value)).toEqual(['Select', 'Combobox']);
+    expect(adopterChoices(comps, null)).toEqual([]);
+  });
+
+  it('files an adoption as the component behavior request, with no sentence for today', () => {
+    expect(adoptProblems({ behavior: null, component: null, wanted: ' ', where: '' })).toEqual({ behavior: 'Pick the behavior to share.', component: 'Pick the component that should do it too.', wanted: 'Say what it should do, in a sentence.' });
+    const r = adoptRequest({ behavior: 'type-to-jump', component: 'Menu', wanted: 'Typing a letter jumps to the item.', where: 'Account menu' });
+    expect(r.behavior).toEqual({ of: 'component', id: 'Menu', behavior: 'type-to-jump', today: '', wanted: 'Typing a letter jumps to the item.', where: 'Account menu' });
+  });
+
+  it('speaks in the Bridge voice, naming the lead when there is one', () => {
+    expect(suggestPatternCopy('Dana').submit).toBe('Send to Dana');
+    expect(suggestPatternCopy(null).description).toBe('The design system lead decides, then your developers make it a pattern. It shows here once it is in the code.');
+    expect(adoptFormCopy(true, 'Dana').after).toBe('Dana decides. Once it is the default, your developers build it and it shows here.');
+    const text = JSON.stringify([SUGGEST_KINDS, suggestPatternCopy('Dana'), adoptFormCopy(false), adoptFormCopy(true), interactionChangeCopy(), patternDrawerCopy('Dana'), NEW_PATTERN_COPY.missing, NEW_PATTERN_COPY.places]);
+    expect(text).not.toMatch(/—/);
   });
 });

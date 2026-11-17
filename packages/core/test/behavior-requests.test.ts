@@ -7,6 +7,8 @@ import {
   askRequesterOnGitHub,
   BEHAVIOR_REQUEST_LABEL,
   behaviorAskOf,
+  behaviorBrief,
+  isNewPatternAsk,
   behaviorDefaultComment,
   behaviorRequestOf,
   BUILD_REQUEST_LABEL,
@@ -101,5 +103,51 @@ describe('the lead decides before Being built', () => {
     expect(behaviorDefaultComment({ name: 'Dana' })).toMatch(/^Dana made it the default in Bridge Studio\./);
     expect(behaviorDefaultComment('lee')).toMatch(/^@lee made it the default/);
     await expect(askRequesterOnGitHub(gh as unknown as GitHubClient, 9, '  ')).rejects.toThrow(/Write your question/);
+  });
+});
+
+describe('a new action pattern proposed from Studio', () => {
+  const archive: BehaviorAsk = {
+    of: 'pattern',
+    id: 'archive',
+    today: '',
+    wanted: 'Takes something people no longer need out of their lists, and keeps it.',
+    rules: ['Archived items stay under Archived.', 'A toast offers Undo.'],
+    places: [
+      { screen: 'Acme CRM, Deals, a deal', label: 'Archive deal', link: 'https://www.figma.com/design/abc' },
+      { screen: 'Acme Prints, Orders', label: 'Move to archive' },
+    ],
+  };
+
+  it('round-trips its places and rules through the issue body, and shows them as rows', () => {
+    const r = behaviorRequestOf('Archive pattern', archive, { requestedBy: 'sofia' });
+    expect(isNewPatternAsk(behaviorAskOf(r))).toBe(true);
+    const issue = composeRequestIssue(r);
+    expect(issue.title).toBe('Archive pattern: A new action pattern');
+    expect(issue.labels).toContain(BEHAVIOR_REQUEST_LABEL);
+    expect(issue.body).toContain('| Place 1 | Acme CRM, Deals, a deal: "Archive deal" (https://www.figma.com/design/abc) |');
+    expect(issue.body).toContain('| Rule 2 | A toast offers Undo. |');
+    expect(issue.body).not.toMatch(/—/);
+    expect(behaviorAskOf(parseRequestIssue(issue.body))).toEqual(archive);
+  });
+
+  it('keeps an older ask without places as it was, and drops a bad shape', () => {
+    const old = behaviorAskOf({ kind: 'behavior', behavior: { of: 'pattern', id: 'delete', rule: 0, today: 'Ask first', wanted: 'Offer Undo' } });
+    expect(old).toEqual({ of: 'pattern', id: 'delete', rule: 0, today: 'Ask first', wanted: 'Offer Undo' });
+    expect(isNewPatternAsk(old)).toBe(false);
+    const bad = behaviorAskOf({ kind: 'behavior', behavior: { of: 'pattern', id: 'archive', today: '', wanted: 'Keeps it', places: 'everywhere', rules: [3] } as unknown as BehaviorAsk });
+    expect(bad).toEqual({ of: 'pattern', id: 'archive', today: '', wanted: 'Keeps it' });
+    const some = behaviorAskOf({ kind: 'behavior', behavior: { of: 'pattern', id: 'archive', today: '', wanted: 'Keeps it', places: [{ screen: 'Deals', label: '' }, { screen: 'Orders', label: 'Archive' }, null] } as unknown as BehaviorAsk });
+    expect(some?.places).toEqual([{ screen: 'Orders', label: 'Archive' }]);
+    // A component ask never carries places.
+    expect(behaviorAskOf({ kind: 'behavior', behavior: { ...select, places: archive.places } as BehaviorAsk })).toEqual(select);
+  });
+
+  it('briefs the developer to write the pattern file from real code, never guessing a place', () => {
+    const brief = behaviorBrief(behaviorRequestOf('Archive pattern', archive), { issue: 51 });
+    expect(brief).toContain('Pattern: Archive (patterns/archive.pattern.json, a new file, kind "action")');
+    expect(brief).toContain('- Acme Prints, Orders: "Move to archive"');
+    expect(brief).toContain('comment on #51 instead of guessing');
+    expect(brief).not.toMatch(/—/);
   });
 });

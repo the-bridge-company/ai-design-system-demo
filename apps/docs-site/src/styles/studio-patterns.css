@@ -47,3 +47,119 @@
 .spt-asked li + li {
   margin-top: var(--space-1);
 }
+
+/* A row's name opens its drawer (PatternDrawers.tsx): the DS link-look Button, a name on its own line. */
+.spt-table .spt-open {
+  font-weight: var(--font-weight-medium);
+}
+
+/* The lead's one quiet line under the table: proposals that are not patterns yet. */
+.spt-asked-line {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-muted);
+}
+
+/* The drawers: the pattern (its components, its Library page), the form under a rule, what waits for the lead. */
+.spt-d {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.spt-d-h {
+  margin: 0;
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.spt-d-uses,
+.spt-d-form,
+.spt-d-wait {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.spt-d-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.spt-d-link {
+  margin: 0;
+}
+
+.spt-d-req {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.spt-d-req .rq-bh {
+  margin-block-start: 0;
+}
+
+.spt-sent:focus {
+  outline: none;
+}
+
+.spt-after {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* A new action's places: one block per place, the screen and the label side by side, then the optional link. */
+.spt-places {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.spt-places-h {
+  margin: 0;
+  padding: 0;
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.spt-places-line {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--color-text-muted);
+}
+
+.spt-place {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+}
+
+.spt-place-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.spt-place-n {
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+  font-weight: var(--font-weight-medium);
+}
+
+.spt-place-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .spt-place-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

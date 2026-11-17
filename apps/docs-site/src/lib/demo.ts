@@ -234,6 +234,7 @@ const ACTION_LINES: Readonly<Record<string, string>> = {
   'send a build request': 'A build request asks developers to build this component change, with your design attached.',
   'draft with claude': 'Your own Claude, with Bridge connected, drafts the sections. Each one waits for your Keep or Discard.',
   'send a behavior request': 'A behavior request asks the design system lead to change how this works. They decide, then developers build it.',
+  'suggest a pattern': 'On your own team, this sends your suggestion to your design system lead, who decides. Your text stays in this browser: open Suggest a pattern again to pick it up.',
   'make it the default': 'Making it the default changes how it works in every product. Developers build it next.',
   'ask the requester': 'Your question goes to the person who asked, on their request.',
   'behavior-decision': 'Deciding on a behavior request changes how it works in every product, and tells the person who asked.',

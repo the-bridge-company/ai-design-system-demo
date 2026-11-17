@@ -10,6 +10,8 @@ import { draftBehaviorText } from './change-drafts';
 import { EXPLORATION_LABEL, explorationRules } from './explorations';
 import { subjectTitle } from './titles';
 
+const isText = (x: unknown): x is string => typeof x === 'string' && x.trim() !== '';
+
 export type RequestKind = 'new-component' | 'new-variant' | 'prop-change' | 'structure' | 'visual' | 'token-binding' | 'bug' | 'behavior' | 'other';
 export type RequestSource = 'figma' | 'studio' | 'cli' | 'mcp';
 export type RequestStatus = 'requested' | 'in-progress' | 'done' | 'declined';
@@ -93,12 +95,43 @@ export interface BehaviorAsk {
   wanted: string;
   /** Where it gets in the way (a screen, a product), when the requester said. */
   where?: string | undefined;
+  /**
+   * A new action pattern proposed from Studio (`of: 'pattern'`, `id` the proposed kebab id, no rule): the places
+   * people do it today, at least two, in the requester's words. Developers find the file and the match in the code
+   * when they write the pattern file; the repository test is the gate. Absent on every other ask.
+   */
+  places?: BehaviorPlace[] | undefined;
+  /** The rules of a proposed action pattern, as people see them, one sentence each. Absent on every other ask. */
+  rules?: string[] | undefined;
 }
+
+/** One place people do a proposed action today: the screen, the label they read there, a link or image when given. */
+export interface BehaviorPlace {
+  screen: string;
+  label: string;
+  link?: string | undefined;
+}
+
+/** The places of an ask, checked: well-formed ones only (screen and label as text), trimmed. */
+function placesOf(x: unknown): BehaviorPlace[] {
+  if (!Array.isArray(x)) return [];
+  return x.flatMap((p): BehaviorPlace[] => {
+    const o = p as Partial<BehaviorPlace> | null;
+    if (!o || typeof o !== 'object' || !isText(o.screen) || !isText(o.label)) return [];
+    return [{ screen: o.screen.trim(), label: o.label.trim(), ...(isText(o.link) ? { link: o.link.trim() } : {}) }];
+  });
+}
+
+const rulesOf = (x: unknown): string[] => (Array.isArray(x) ? x.filter(isText).map((r) => r.trim()) : []);
+
+/**
+ * A new action pattern proposed from Studio: a pattern ask with places. A change to an existing pattern (a rule, or
+ * something it does not do yet) never carries places.
+ */
+export const isNewPatternAsk = (ask: Pick<BehaviorAsk, 'of' | 'places'> | null | undefined): boolean => ask?.of === 'pattern' && Boolean(ask.places?.length);
 
 /** The label of a behavior request (every request carries `request: <kind>`). */
 export const BEHAVIOR_REQUEST_LABEL = 'request: behavior';
-
-const isText = (x: unknown): x is string => typeof x === 'string' && x.trim() !== '';
 
 /** The behavior ask of a request, checked (a body anyone can edit may hold any shape), or null when it has none. */
 export function behaviorAskOf(r: Pick<ComponentChangeRequest, 'kind' | 'behavior'> | null | undefined): BehaviorAsk | null {
@@ -114,6 +147,8 @@ export function behaviorAskOf(r: Pick<ComponentChangeRequest, 'kind' | 'behavior
     today: (b.today ?? '').trim(),
     wanted: b.wanted.trim(),
     ...(isText(b.where) ? { where: b.where.trim() } : {}),
+    ...(b.of === 'pattern' && placesOf(b.places).length ? { places: placesOf(b.places) } : {}),
+    ...(b.of === 'pattern' && rulesOf(b.rules).length ? { rules: rulesOf(b.rules) } : {}),
   };
 }
 
@@ -131,7 +166,28 @@ export function behaviorRequestOf(subject: string, ask: BehaviorAsk, opts: { sou
     today: ask.today.trim(),
     wanted: ask.wanted.trim(),
     ...(ask.where?.trim() ? { where: ask.where.trim() } : {}),
+    ...(ask.of === 'pattern' && placesOf(ask.places).length ? { places: placesOf(ask.places) } : {}),
+    ...(ask.of === 'pattern' && rulesOf(ask.rules).length ? { rules: rulesOf(ask.rules) } : {}),
   };
+  // A new action pattern: what it is for, its rules and the places people do it today, one row each, so every reader
+  // of requests (the issue, Studio, the brief) shows the evidence.
+  if (isNewPatternAsk(clean)) {
+    const places = clean.places ?? [];
+    return {
+      component: subject.trim(),
+      kind: 'behavior',
+      title: 'A new action pattern',
+      summary: `A new action pattern. What it is for: ${clean.wanted.replace(/[.]+$/, '')}. People do it today in ${places.length} places.`,
+      changes: [
+        { field: 'What it is for', after: clean.wanted },
+        ...(clean.rules ?? []).map((r, i) => ({ field: `Rule ${i + 1}`, after: r })),
+        ...places.map((p, i) => ({ field: `Place ${i + 1}`, after: `${p.screen}: "${p.label}"${p.link ? ` (${p.link})` : ''}` })),
+      ],
+      source: opts.source ?? 'studio',
+      ...(opts.requestedBy ? { requestedBy: opts.requestedBy } : {}),
+      behavior: clean,
+    };
+  }
   const text = draftBehaviorText(subject, clean);
   const field = clean.behavior ?? (clean.rule !== undefined ? `Rule ${clean.rule + 1}` : 'New behavior');
   return {

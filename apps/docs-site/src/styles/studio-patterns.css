@@ -102,6 +102,15 @@
   margin: 0;
 }
 
+/* An action's rules: a plain numbered list, quiet next to the drawer's title and purpose. */
+.spt-d-rules {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--color-text-muted);
+}
+
 .spt-d-req {
   display: grid;
   gap: var(--space-3);

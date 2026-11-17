@@ -1,6 +1,6 @@
 // Studio > Patterns, the two drawers (board 2B and 3A to 3E, docs: StudioPatterns.tsx):
-//   - PatternRowDrawer: a row opened. What the pattern is for (the drawer's description), the components that do it,
-//     its Library page. A member who can write gets one way to suggest: "Ask another component to do this" (an
+//   - PatternRowDrawer: a row opened. What the pattern is for (the drawer's description), an action's rules (a quiet
+//     numbered list), the components that do it, its Library page. A member who can write gets one way to suggest: "Ask another component to do this" (an
 //     interaction) or "Suggest a change to this pattern" (an action, the PatternChange form), and for an interaction
 //     "Suggest a change" (the shared behavior as one component does it). The lead who decides gets the changes that
 //     wait on this pattern in an Accordion, the first open, each with the request page's decision (BehaviorDecision,
@@ -178,6 +178,20 @@ export function PatternRowDrawer({ row, kind, suggest, lead, waiting, decider, o
                   ))}
                 </Accordion>
               </section>
+            )}
+            {mode === 'view' && !interaction && row.rules && row.rules.length > 0 && (
+              // An action is its rules (patterns/<id>.pattern.json): a quiet numbered list under the purpose, read only;
+              // "Suggest a change to this pattern" picks one of them.
+              <div className="spt-d-uses">
+                <h3 className="spt-d-h" id={`${formId}-rules`}>
+                  {c.rules}
+                </h3>
+                <ol className="spt-d-rules" aria-labelledby={`${formId}-rules`} data-spt-rules="">
+                  {row.rules.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ol>
+              </div>
             )}
             {components}
             {mode === 'view' ? (

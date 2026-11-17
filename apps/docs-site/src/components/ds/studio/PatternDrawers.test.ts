@@ -11,16 +11,17 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { behaviorRequestOf, composeRequestIssue, type BehaviorAsk } from '@bridge-ds/core';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
-import { PatternsBody } from './StudioPatterns';
+import StudioPatterns, { PatternsBody, type SiteSuggest } from './StudioPatterns';
 import { suggestDraftKey, type PatternSuggestContext } from './PatternDrawers';
 import type { StudioPatternGroup } from '../../../lib/studio-patterns';
 import type { BehaviorIssue } from '../../../lib/home-model';
 
-const gh = vi.hoisted(() => ({ lead: false, issues: [] as unknown[], sent: [] as unknown[] }));
+const gh = vi.hoisted(() => ({ lead: false, issues: [] as unknown[], sent: [] as unknown[], access: null as { write: boolean } | null }));
 
 vi.mock('../../../scripts/github-session', () => ({
   readRepo: () => ({ owner: 'acme', repo: 'ds' }),
-  resolveAccess: async () => null,
+  resolveAccess: async () => gh.access,
+  onAccess: () => undefined,
   signedInWithGitHub: () => false,
   currentViewer: () => null,
   currentContributor: () => null,
@@ -76,6 +77,7 @@ beforeEach(() => {
   gh.lead = false;
   gh.issues = [];
   gh.sent = [];
+  gh.access = null;
   localStorage.clear();
 });
 afterEach(() => vi.clearAllMocks());
@@ -218,6 +220,25 @@ describe('a member who can write', () => {
     await expectNoAxeViolations(drawer());
   });
 
+  it("shows an action's rules in its drawer, numbered under the purpose; an interaction has none", async () => {
+    render(createElement(PatternsBody, { groups: GROUPS, suggest: suggest() }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const d = await screen.findByRole('dialog', { name: 'Delete' });
+    const rules = within(d).getByRole('list', { name: 'Rules' });
+    expect(rules.tagName).toBe('OL');
+    expect(within(rules).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Ask first.', 'Type the name.']);
+    expect(within(d).getByRole('link', { name: 'Open in Library' })).toBeTruthy();
+    await expectNoAxeViolations(d);
+    // The form picks among the same rules: the list leaves with the view.
+    fireEvent.click(within(d).getByRole('button', { name: 'Suggest a change to this pattern' }));
+    expect(within(drawer()).queryByRole('list', { name: 'Rules' })).toBeNull();
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Back' }));
+    fireEvent.keyDown(drawer(), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close on Escape' }));
+    const i = await screen.findByRole('dialog', { name: 'Close on Escape' });
+    expect(within(i).queryByRole('list', { name: 'Rules' })).toBeNull();
+  });
+
   it("opens an action's drawer on the rule form of PatternChange", async () => {
     render(createElement(PatternsBody, { groups: GROUPS, suggest: suggest() }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
@@ -260,5 +281,37 @@ describe('the lead who decides', () => {
     await act(async () => undefined);
     expect(container.querySelector('[data-spt-asked]')).toBeNull();
     expect(screen.queryByText('Waiting for your decision')).toBeNull();
+  });
+});
+
+describe("Bridge's own Studio (pages/studio/patterns.astro)", () => {
+  const site: SiteSuggest = { components: [{ name: 'Select', behaviors: [{ id: 'type-to-jump', text: 'Type to jump' }] }] };
+
+  it('stays read only signed out: no button, names linked to the Library', async () => {
+    const { container } = render(createElement(StudioPatterns, { groups: GROUPS, site }));
+    await act(async () => undefined);
+    expect(screen.queryByRole('button', { name: 'Suggest a pattern' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Delete' })).toBeTruthy();
+    await expectNoAxeViolations(container);
+  });
+
+  it('stays read only for a member who only reads', async () => {
+    gh.access = { write: false };
+    render(createElement(StudioPatterns, { groups: GROUPS, site }));
+    await act(async () => undefined);
+    expect(screen.queryByRole('button', { name: 'Suggest a pattern' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Delete' })).toBeTruthy();
+  });
+
+  it('gives a member who can write the same button and drawers as a team page', async () => {
+    gh.access = { write: true };
+    const { container } = render(createElement(StudioPatterns, { groups: GROUPS, site }));
+    expect(await screen.findByRole('button', { name: 'Suggest a pattern' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Delete' })).toBeNull();
+    await expectNoAxeViolations(container);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const d = await screen.findByRole('dialog', { name: 'Delete' });
+    expect(within(d).getByRole('list', { name: 'Rules' })).toBeTruthy();
+    expect(within(d).getByRole('button', { name: 'Suggest a change to this pattern' })).toBeTruthy();
   });
 });

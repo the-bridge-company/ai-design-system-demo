@@ -629,6 +629,8 @@ export function patternDrawerCopy(lead: string | null = null) {
   return {
     components: 'Components that do it',
     uses: 'Components it uses',
+    /** An action's rules, in its file's order. */
+    rules: 'Rules',
     library: 'Open in Library',
     back: 'Back',
     close: 'Close',

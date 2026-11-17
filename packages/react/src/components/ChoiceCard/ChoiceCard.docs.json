@@ -75,5 +75,17 @@
     "text": "Title and description column",
     "title": "Title, names the radio",
     "description": "Description, linked with aria-describedby"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move the choice",
+      "try": "Click Keep mine, then press the right arrow",
+      "keys": [
+        "ArrowRight",
+        "ArrowDown"
+      ]
+    }
+  ]
 }

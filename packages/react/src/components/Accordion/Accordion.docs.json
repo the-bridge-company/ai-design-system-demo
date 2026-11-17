@@ -53,5 +53,23 @@
     "chevron": "Chevron",
     "panel": "Panel",
     "content": "Panel content"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "toggle-section",
+      "family": "Opening",
+      "text": "Enter or Space opens and closes a section",
+      "try": "Tab to Spacing tokens and press Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ]
+    },
+    {
+      "id": "one-open-at-a-time",
+      "family": "Opening",
+      "text": "Opening a section closes the open one, unless several may stay open",
+      "try": "Open Spacing tokens: Color tokens closes"
+    }
+  ]
 }

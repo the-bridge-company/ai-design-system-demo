@@ -1,0 +1,6 @@
+{
+  "id": "focus-on-open",
+  "kind": "interaction",
+  "name": "Focus on open",
+  "purpose": "When it opens, the focus moves into it, so the keyboard starts there."
+}

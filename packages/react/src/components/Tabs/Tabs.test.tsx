@@ -210,3 +210,31 @@ describe('Tabs selection', () => {
     await expectNoAxeViolations();
   });
 });
+
+// The behaviors Tabs.docs.json declares that the tests above do not press.
+describe('Tabs behaviors', () => {
+  it('Home and End go to the first and the last tab; Left arrow moves back and wraps', async () => {
+    render(<Example />);
+    await userEvent.tab();
+    const tokens = screen.getByRole('tab', { name: 'Tokens' });
+    expect(tokens).toHaveFocus();
+    await userEvent.keyboard('{End}');
+    expect(screen.getByRole('tab', { name: 'Changelog' })).toHaveFocus();
+    await userEvent.keyboard('{Home}');
+    expect(tokens).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Changelog' })).toHaveFocus();
+  });
+
+  it('Space selects the focused tab, like Enter', async () => {
+    render(<Example />);
+    await userEvent.tab();
+    await userEvent.keyboard('{ArrowRight}');
+    const components = screen.getByRole('tab', { name: 'Components' });
+    expect(components).toHaveFocus();
+    expect(components).toHaveAttribute('aria-selected', 'false');
+    await userEvent.keyboard(' ');
+    expect(components).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Component list');
+  });
+});

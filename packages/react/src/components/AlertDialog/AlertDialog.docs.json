@@ -74,5 +74,69 @@
     "header": "Title and description",
     "actions": "Cancel and confirm buttons",
     "confirmText": "Field to type the name in, when the impact is high (confirmText)"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-from-trigger",
+      "family": "Opening",
+      "text": "Opens from its button",
+      "try": "Tab to Delete 3 tokens and press Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ],
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open",
+      "try": "Open it, then try to scroll the page",
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "trap-focus",
+      "family": "Focus",
+      "text": "Tab moves between its two buttons only",
+      "try": "Open it, then press Tab a few times",
+      "keys": [
+        "Tab"
+      ],
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Escape cancels: nothing happens",
+      "try": "Open it, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "stay-open-on-outside-click",
+      "family": "Closing",
+      "text": "A click outside does not close it",
+      "try": "Open it, then click the dimmed page",
+      "keys": [
+        "click-outside"
+      ],
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "focus-on-open",
+      "family": "Focus",
+      "text": "Focus starts on Cancel, the safe choice (on the field when a name must be typed)",
+      "try": "Open it: the focus ring is on Cancel",
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the button that opened it",
+      "try": "Open it and press Esc: the focus ring is back on Delete 3 tokens",
+      "example": { "c": "AlertDialog", "children": [{ "c": "AlertDialogTrigger", "p": { "render": { "c": "Button", "p": { "variant": "danger" }, "children": ["Delete 3 tokens"] } } }, { "c": "AlertDialogContent", "p": { "title": "Delete 3 tokens?", "description": "Components that use them fall back to their defaults. This cannot be undone.", "confirmLabel": "Delete tokens" } }] }
+    }
+  ]
 }

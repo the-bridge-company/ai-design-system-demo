@@ -60,5 +60,76 @@
     "close": "Close button",
     "body": "Scrolling body",
     "footer": "Footer"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "open-from-trigger",
+      "family": "Opening",
+      "text": "Opens from its button",
+      "try": "Tab to Edit token and press Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ],
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "scroll-lock",
+      "family": "Opening",
+      "text": "Page scroll paused while open",
+      "try": "Open the panel, then try to scroll the page",
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "trap-focus",
+      "family": "Focus",
+      "text": "Tab stays inside the panel",
+      "try": "Open the panel, then press Tab a few times",
+      "keys": [
+        "Tab"
+      ],
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "close-on-escape",
+      "family": "Closing",
+      "text": "Closes on Escape",
+      "try": "Open the panel, then press Esc",
+      "keys": [
+        "Escape"
+      ],
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "close-on-outside-click",
+      "family": "Closing",
+      "text": "Closes on a click outside, unless that is turned off",
+      "try": "Open the panel, then click the dimmed page",
+      "keys": [
+        "click-outside"
+      ],
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "close-on-swipe",
+      "family": "Closing",
+      "text": "On touch, a swipe toward its edge closes it",
+      "try": "On a touch screen, open the panel and swipe it toward its edge",
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "focus-on-open",
+      "family": "Focus",
+      "text": "The panel takes the focus, then Tab walks its controls",
+      "try": "Open the panel, then press Tab: the focus ring is on Close",
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    },
+    {
+      "id": "focus-after-close",
+      "family": "Focus",
+      "text": "Focus goes back to the button that opened it",
+      "try": "Open the panel and press Esc: the focus ring is back on Edit token",
+      "example": { "c": "Drawer", "children": [{ "c": "DrawerTrigger", "p": { "render": { "c": "Button", "p": { "variant": "secondary" }, "children": ["Edit token"] } } }, { "c": "DrawerContent", "p": { "title": "Edit token", "footer": { "c": "Button", "children": ["Save"] } }, "children": [{ "c": "Input", "p": { "label": "Value", "defaultValue": "{color.harbor.700}" } }] }] }
+    }
+  ]
 }

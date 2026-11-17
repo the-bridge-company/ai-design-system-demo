@@ -4,7 +4,9 @@
 // to do. Bridge's own page runs the component in the page; a team's Library plays its Storybook story.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ExampleNode } from '@bridge-ds/core';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { repoModel } from '../../../lib/model';
@@ -13,6 +15,7 @@ import { CP_TOC_REFRESH, readableDocs } from '../../../lib/library/component-pag
 import type { LibraryData } from './library-data';
 import ComponentView from './views/ComponentView';
 import Behaviors from './Behaviors';
+import ClientExample from '../studio/ClientExample';
 
 const SB = 'https://storybook.example.com';
 const team: LibraryData = { model: repoModel, team: { owner: 'acme', repo: 'ds' }, extras: { storybook: SB, sourceBase: 'https://github.com/acme/ds/blob/main/' } };
@@ -61,5 +64,50 @@ describe('Behaviors section', () => {
     // Picking keeps focus on the row, so the list stays easy to walk with the keyboard.
     expect(document.activeElement === loading || document.activeElement === document.body).toBe(true);
     await expectNoAxeViolations();
+  });
+});
+
+// An overlay's docs preview is only its button: each behavior carries the example the stage draws instead, the real
+// component, so what its line says to do ("Open the dialog, then press Esc") can be done on Bridge's own page.
+describe('the examples the stage draws for overlays', () => {
+  const examples = loadComponents(repoModel).flatMap((c) => {
+    const b = ((readableDocs(c.docs) as { behaviors?: { example?: unknown; try?: string }[] } | null)?.behaviors ?? []).filter((x) => x.example);
+    return b.length ? [{ name: c.name, examples: b.map((x) => x.example as ExampleNode), tries: b.every((x) => x.try) }] : [];
+  });
+
+  it('are one example per component, on every behavior that has a line to try', () => {
+    expect(examples.map((e) => e.name).sort()).toEqual(['AlertDialog', 'Combobox', 'Dialog', 'Drawer', 'Menu', 'Popover', 'Tooltip']);
+    for (const e of examples.filter((x) => x.name !== 'Combobox')) {
+      expect(new Set(e.examples.map((x) => JSON.stringify(x))).size, e.name).toBe(1);
+      expect(e.tries, e.name).toBe(true);
+    }
+  });
+
+  it.each([
+    ['Dialog', 'Rename token', 'dialog'],
+    ['AlertDialog', 'Delete 3 tokens', 'alertdialog'],
+    ['Drawer', 'Edit token', 'dialog'],
+    ['Menu', 'Token actions', 'menu'],
+  ])('%s: the button opens the real popup', async (name, label, role) => {
+    const user = userEvent.setup();
+    render(createElement(ClientExample, { node: examples.find((e) => e.name === name)!.examples[0]! }));
+    await user.click(screen.getByRole('button', { name: label }));
+    expect(await screen.findByRole(role)).toBeInTheDocument();
+  });
+
+  it('Popover: the button opens the real popover', async () => {
+    const user = userEvent.setup();
+    render(createElement(ClientExample, { node: examples.find((e) => e.name === 'Popover')!.examples[0]! }));
+    await user.click(screen.getByRole('button', { name: 'Reviewers' }));
+    expect(await screen.findByRole('button', { name: 'Add reviewer' })).toBeInTheDocument();
+  });
+
+  it('Tooltip: keyboard focus on the button shows the tip', async () => {
+    const user = userEvent.setup();
+    render(createElement(ClientExample, { node: examples.find((e) => e.name === 'Tooltip')!.examples[0]! }));
+    await user.tab();
+    const button = screen.getByRole('button', { name: 'Copy token name' });
+    expect(button).toHaveFocus();
+    await waitFor(() => expect(button).toHaveAttribute('data-popup-open'));
   });
 });

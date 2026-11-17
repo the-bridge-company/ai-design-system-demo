@@ -167,3 +167,81 @@ describe('Menu', () => {
     });
   });
 });
+
+// The behaviors Menu.docs.json declares, each played with its keys (or its click outside).
+describe('Menu behaviors', () => {
+  const locked = () => document.documentElement.hasAttribute('data-base-ui-scroll-locked');
+  const item = (name: string) => screen.getByRole('menuitem', { name });
+
+  it('Enter or Space on the trigger opens it with the first item focused', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    const trigger = screen.getByRole('button', { name: 'Token actions' });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    await screen.findByRole('menu');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.keyboard(' ');
+    await screen.findByRole('menu');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+  });
+
+  it('Home and End go to the first and the last item; arrows wrap around', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    screen.getByRole('button', { name: 'Token actions' }).focus();
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+    await user.keyboard('{End}');
+    await waitFor(() => expect(item('Delete')).toHaveFocus());
+    await user.keyboard('{Home}');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+    await user.keyboard('{ArrowUp}');
+    await waitFor(() => expect(item('Delete')).toHaveFocus());
+  });
+
+  it('typing a letter jumps to the item that starts with it', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    screen.getByRole('button', { name: 'Token actions' }).focus();
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+    await user.keyboard('s');
+    await waitFor(() => expect(screen.getByRole('menuitemcheckbox', { name: 'Show deprecated' })).toHaveFocus());
+  });
+
+  it('after Enter runs an item, focus is back on the trigger', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    const trigger = screen.getByRole('button', { name: 'Token actions' });
+    trigger.focus();
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() => expect(item('Rename')).toHaveFocus());
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it('a click outside closes it', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    await user.click(screen.getByRole('button', { name: 'Token actions' }));
+    await screen.findByRole('menu');
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+  });
+
+  it('pauses the page scroll while open', async () => {
+    const user = userEvent.setup();
+    render(<TokenMenu />);
+    await waitFor(() => expect(locked()).toBe(false));
+    await user.click(screen.getByRole('button', { name: 'Token actions' }));
+    await screen.findByRole('menu');
+    await waitFor(() => expect(locked()).toBe(true));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(locked()).toBe(false));
+  });
+});

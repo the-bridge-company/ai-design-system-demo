@@ -58,6 +58,68 @@ describe('Dialog', () => {
   });
 });
 
+// The behaviors Dialog.docs.json declares, each played with its keys (or its click outside).
+describe('Dialog behaviors', () => {
+  const locked = () => document.documentElement.hasAttribute('data-base-ui-scroll-locked');
+
+  it('Space on the trigger opens it too', async () => {
+    const user = userEvent.setup();
+    render(<RenameDialog />);
+    screen.getByRole('button', { name: 'Rename token' }).focus();
+    await user.keyboard(' ');
+    expect(await screen.findByRole('dialog', { name: 'Rename token' })).toBeInTheDocument();
+  });
+
+  it('Tab and Shift+Tab keep the focus inside: past the last control it wraps to the first', async () => {
+    const user = userEvent.setup();
+    render(<RenameDialog />);
+    await user.click(screen.getByRole('button', { name: 'Rename token' }));
+    await screen.findByRole('dialog');
+    const field = screen.getByRole('textbox', { name: 'New name' });
+    const close = screen.getByRole('button', { name: 'Close dialog' });
+    await waitFor(() => expect(field).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(close).toHaveFocus());
+    await user.keyboard('{Tab}');
+    await waitFor(() => expect(field).toHaveFocus());
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    await waitFor(() => expect(close).toHaveFocus());
+  });
+
+  it('a click outside closes it, unless disablePointerDismissal', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<RenameDialog />);
+    await user.click(screen.getByRole('button', { name: 'Rename token' }));
+    await screen.findByRole('dialog');
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    unmount();
+    render(
+      <Dialog disablePointerDismissal>
+        <DialogTrigger render={<Button variant="secondary" />}>Rename token</DialogTrigger>
+        <DialogContent title="Rename token" />
+      </Dialog>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Rename token' }));
+    await screen.findByRole('dialog');
+    await user.click(document.body);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('pauses the page scroll while open', async () => {
+    const user = userEvent.setup();
+    render(<RenameDialog />);
+    await waitFor(() => expect(locked()).toBe(false));
+    await user.click(screen.getByRole('button', { name: 'Rename token' }));
+    await screen.findByRole('dialog');
+    await waitFor(() => expect(locked()).toBe(true));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(locked()).toBe(false));
+  });
+});
+
 describe('AlertDialog', () => {
   it('is an alertdialog, focuses Cancel first and confirms', async () => {
     const user = userEvent.setup();

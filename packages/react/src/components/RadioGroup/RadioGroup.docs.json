@@ -151,5 +151,17 @@
     "itemDescription": "Option description",
     "error": "Error message",
     "tile": "Tile grid (tile appearance)"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move the choice",
+      "try": "Click Squash and merge, then press the down arrow",
+      "keys": [
+        "ArrowDown",
+        "ArrowUp"
+      ]
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 // One registry of renderable components, shared by the static examples (Example.tsx) and the props playground.
 // Every export of @bridge-ds/react that is a component is registered automatically, so a new component shows up in
 // the docs as soon as it is exported. A few layout helpers used only by the docs examples are added by hand.
-import type { ComponentType, CSSProperties, ReactNode } from 'react';
+import { Children, isValidElement, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import * as DS from '@bridge-ds/react';
 import { Copy, Ellipsis, GitPullRequest, Pencil, Trash2, type LucideIcon } from 'lucide-react';
 import { safeUrl } from '../lib/html';
@@ -14,8 +14,15 @@ const layout = (style: CSSProperties) =>
 const isComponent = (name: string, v: unknown) =>
   /^[A-Z]/.test(name) && (typeof v === 'function' || (typeof v === 'object' && v !== null && '$$typeof' in v));
 
+// Tooltip takes one element as its trigger, while an example's children always come as a list: give it the one.
+function Tooltip({ children, ...rest }: Omit<DS.TooltipProps, 'children'> & { children?: ReactNode }) {
+  const [trigger] = Children.toArray(children);
+  return isValidElement(trigger) ? <DS.Tooltip {...rest}>{trigger}</DS.Tooltip> : null;
+}
+
 export const REGISTRY: Record<string, ComponentType<any>> = {
   ...(Object.fromEntries(Object.entries(DS).filter(([k, v]) => isComponent(k, v))) as Record<string, ComponentType<any>>),
+  Tooltip,
   Row: layout({ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }),
   Box: layout({ maxWidth: '26rem', width: '100%' }),
 };

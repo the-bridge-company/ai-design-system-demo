@@ -87,5 +87,37 @@
     "contained": "Contained variant (deprecated: use underline Tabs for sections, SegmentedControl for a view or a filter)",
     "panel": "Panel",
     "linked": "Linked panel, outside the Tabs root (keeps the page's text size)"
-  }
+  },
+  "behaviors": [
+    {
+      "id": "move-with-arrows",
+      "family": "Moving",
+      "text": "Arrow keys move between tabs, and wrap (up and down when vertical)",
+      "try": "Click Tokens, then press the right arrow",
+      "keys": [
+        "ArrowRight",
+        "ArrowLeft"
+      ]
+    },
+    {
+      "id": "jump-to-ends",
+      "family": "Moving",
+      "text": "Home and End go to the first and the last tab",
+      "try": "Click Tokens, then press End",
+      "keys": [
+        "Home",
+        "End"
+      ]
+    },
+    {
+      "id": "pick-with-enter",
+      "family": "Picking",
+      "text": "Enter or Space shows the focused tab",
+      "try": "Click Tokens, press the right arrow, then Enter",
+      "keys": [
+        "Enter",
+        "Space"
+      ]
+    }
+  ]
 }

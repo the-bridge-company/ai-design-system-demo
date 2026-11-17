@@ -18,9 +18,9 @@ const groups = libraryPatterns(repoModel);
 describe('libraryPatterns', () => {
   it('groups interactions first, then actions, by name', () => {
     expect(groups.map((g) => g.label)).toEqual(['Interactions', 'Actions']);
-    expect(groups[0]!.items.map((e) => e.pattern.id)).toEqual(['close-on-escape', 'focus-after-close', 'pick-with-enter']);
+    expect(groups[0]!.items.map((e) => e.pattern.id)).toEqual(['close-on-outside-click', 'close-on-escape', 'focus-after-close', 'focus-on-open', 'trap-focus', 'jump-to-ends', 'move-with-arrows', 'open-list', 'open-from-trigger', 'scroll-lock', 'pick-with-enter', 'type-to-jump']);
     expect(groups[1]!.items.map((e) => e.pattern.id)).toEqual(['delete', 'send-for-review']);
-    expect(patternsLead(groups)).toBe('3 interactions several components share, and 2 actions people take across the product. Each one works the same wherever it appears.');
+    expect(patternsLead(groups)).toBe('12 interactions several components share, and 2 actions people take across the product. Each one works the same wherever it appears.');
   });
 
   it('gives an interaction its components in their own words, with their page and stage', () => {
@@ -28,11 +28,17 @@ describe('libraryPatterns', () => {
     expect(e.kind).toBe('interaction');
     if (e.kind !== 'interaction') return;
     expect(e.components.map((c) => [c.component, c.text, c.slug]).sort()).toEqual([
+      ['AlertDialog', 'Escape cancels: nothing happens', 'alert-dialog'],
       ['Combobox', 'Escape closes the list', 'combobox'],
+      ['Dialog', 'Closes on Escape', 'dialog'],
+      ['Drawer', 'Closes on Escape', 'drawer'],
+      ['Menu', 'Closes on Escape', 'menu'],
+      ['Popover', 'Closes on Escape', 'popover'],
       ['Select', 'Closes on Escape', 'select'],
+      ['Tooltip', 'Escape hides it', 'tooltip'],
     ]);
     expect(e.components.every((c) => c.preview && c.try && c.storyId)).toBe(true);
-    expect(patternComponents(e).sort()).toEqual(['Combobox', 'Select']);
+    expect(patternComponents(e).sort()).toEqual(['AlertDialog', 'Combobox', 'Dialog', 'Drawer', 'Menu', 'Popover', 'Select', 'Tooltip']);
   });
 
   it('shows nothing for a model without patterns', () => {
@@ -57,11 +63,33 @@ describe('pattern links', () => {
   });
 
   it('gives a component page a link from each shared behavior row to its interaction', () => {
-    expect([...interactionIds(groups)].sort()).toEqual(['close-on-escape', 'focus-after-close', 'pick-with-enter']);
+    expect([...interactionIds(groups)].sort()).toEqual([
+      'close-on-escape',
+      'close-on-outside-click',
+      'focus-after-close',
+      'focus-on-open',
+      'jump-to-ends',
+      'move-with-arrows',
+      'open-from-trigger',
+      'open-list',
+      'pick-with-enter',
+      'scroll-lock',
+      'trap-focus',
+      'type-to-jump',
+    ]);
     expect(behaviorPatterns({ ...own, extras: {} })).toEqual({
       'close-on-escape': '/patterns/close-on-escape/',
+      'close-on-outside-click': '/patterns/close-on-outside-click/',
       'focus-after-close': '/patterns/focus-after-close/',
+      'focus-on-open': '/patterns/focus-on-open/',
+      'jump-to-ends': '/patterns/jump-to-ends/',
+      'move-with-arrows': '/patterns/move-with-arrows/',
+      'open-from-trigger': '/patterns/open-from-trigger/',
+      'open-list': '/patterns/open-list/',
       'pick-with-enter': '/patterns/pick-with-enter/',
+      'scroll-lock': '/patterns/scroll-lock/',
+      'trap-focus': '/patterns/trap-focus/',
+      'type-to-jump': '/patterns/type-to-jump/',
     });
   });
 
@@ -85,7 +113,21 @@ describe('the Patterns nav rows, by kind (founder decision 2026-11-15)', () => {
 
   it("lists Bridge's own kinds, each standing for its patterns' pages, no row per pattern and no Overview", () => {
     expect(patternsNav()).toEqual([
-      { href: '/patterns/#pt-interaction', label: 'Interactions', meta: expect.any(String), kind: 'interaction', also: ['/patterns/close-on-escape/', '/patterns/focus-after-close/', '/patterns/pick-with-enter/'] },
+      { href: '/patterns/#pt-interaction', label: 'Interactions', meta: expect.any(String), kind: 'interaction', also: [
+          '/patterns/close-on-outside-click/',
+          '/patterns/close-on-escape/',
+          '/patterns/focus-after-close/',
+          '/patterns/focus-on-open/',
+          '/patterns/trap-focus/',
+          '/patterns/jump-to-ends/',
+          '/patterns/move-with-arrows/',
+          '/patterns/open-list/',
+          '/patterns/open-from-trigger/',
+          '/patterns/scroll-lock/',
+          '/patterns/pick-with-enter/',
+          '/patterns/type-to-jump/',
+        ],
+      },
       { href: '/patterns/#pt-action', label: 'Actions', meta: expect.any(String), kind: 'action', also: ['/patterns/delete/', '/patterns/send-for-review/'] },
     ]);
   });

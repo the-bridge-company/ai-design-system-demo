@@ -264,9 +264,18 @@ describe('the patterns of this repository', () => {
   it('writes an interaction only for a behavior two components or more list', () => {
     expect(interactionProblems(patterns, behaviorUses(docs))).toEqual([]);
     expect(interactionsWithUses(patterns, behaviorUses(docs)).map((x) => [x.pattern.id, x.uses.map((u) => u.component)])).toEqual([
-      ['close-on-escape', ['Combobox', 'Select']],
-      ['focus-after-close', ['Combobox', 'Select']],
-      ['pick-with-enter', ['Combobox', 'Select']],
+      ['close-on-outside-click', ['Dialog', 'Drawer', 'Menu', 'Popover', 'Select']],
+      ['close-on-escape', ['AlertDialog', 'Combobox', 'Dialog', 'Drawer', 'Menu', 'Popover', 'Select', 'Tooltip']],
+      ['focus-after-close', ['AlertDialog', 'Combobox', 'Dialog', 'Drawer', 'Menu', 'Popover', 'Select']],
+      ['focus-on-open', ['AlertDialog', 'Dialog', 'Drawer', 'Menu', 'Popover']],
+      ['trap-focus', ['AlertDialog', 'Dialog', 'Drawer']],
+      ['jump-to-ends', ['Menu', 'Tabs']],
+      ['move-with-arrows', ['ChoiceCard', 'Menu', 'RadioGroup', 'Select', 'Tabs']],
+      ['open-list', ['Menu', 'Select']],
+      ['open-from-trigger', ['AlertDialog', 'Dialog', 'Drawer', 'Popover']],
+      ['scroll-lock', ['AlertDialog', 'Dialog', 'Drawer', 'Menu', 'Select']],
+      ['pick-with-enter', ['Combobox', 'Menu', 'Select', 'Tabs']],
+      ['type-to-jump', ['Menu', 'Select']],
     ]);
   });
 });

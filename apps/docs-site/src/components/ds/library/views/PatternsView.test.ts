@@ -27,7 +27,7 @@ describe('Patterns index', () => {
     const { container } = render(createElement(PatternsView, { groups, hrefs: patternHrefs(own, groups) }));
     expect([...container.querySelectorAll('h1, h2')].map((h) => h.textContent)).toEqual(['Patterns', 'Interactions', 'Actions']);
     expect(screen.getByRole('link', { name: 'Delete' })).toHaveAttribute('href', '/patterns/delete/');
-    expect(container.textContent).toContain('Escape closes an open list.');
+    expect(container.textContent).toContain('Escape closes what is open over the page: a list, a menu, a dialog, a tip.');
   });
 });
 
@@ -131,6 +131,16 @@ describe('a component page', () => {
     const select = loadComponents(repoModel).find((c) => c.name === 'Select')!;
     const { container } = render(createElement(ComponentView, { data: { ...own, extras: { storybook: SB } }, component: select }));
     const shared = [...container.querySelectorAll<HTMLAnchorElement>('.bh-pattern')].map((a) => a.getAttribute('href'));
-    expect(shared.sort()).toEqual(['/patterns/close-on-escape/', '/patterns/focus-after-close/', '/patterns/pick-with-enter/']);
+    // Every row of Select is shared but Tab leaves without picking, which only Select does.
+    expect(shared.sort()).toEqual([
+      '/patterns/close-on-escape/',
+      '/patterns/close-on-outside-click/',
+      '/patterns/focus-after-close/',
+      '/patterns/move-with-arrows/',
+      '/patterns/open-list/',
+      '/patterns/pick-with-enter/',
+      '/patterns/scroll-lock/',
+      '/patterns/type-to-jump/',
+    ]);
   });
 });

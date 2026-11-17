@@ -1,10 +1,11 @@
 // The Patterns pages of a Library, for any repo model (Bridge's own at build time, a team's in the browser): the
 // patterns of patterns/<id>.pattern.json (@bridge-ds/core patterns.ts) grouped by kind, each interaction with the
 // components that list its behavior id, in their own words. Pure: the model comes in as an argument.
+import { PATTERN_KIND_INTRO, PATTERNS_ROUTE } from '../library-shells';
 import { behaviorUses, interactionsWithUses, PATTERN_KIND_LABEL, PATTERN_KINDS, readBehaviors, type ActionPattern, type ExampleNode, type InteractionPattern, type InteractionUse, type PatternKind, type RepoModel } from '@bridge-ds/core';
 
-/** The Library route of the Patterns index, and of one pattern on Bridge's own Library. */
-export const PATTERNS_ROUTE = 'patterns/';
+// The routes and the kinds' sentences live with the Library shells (no @bridge-ds/core there: astro.config reads them).
+export { PATTERN_KIND_INTRO, PATTERN_KIND_ROUTE, PATTERNS_ROUTE } from '../library-shells';
 export const patternRoute = (id: string): string => `${PATTERNS_ROUTE}${encodeURIComponent(id)}/`;
 /** On a team's Library the patterns share one shell: the pattern is in the query (?p=close-on-escape). */
 export const PATTERN_QUERY = 'p';
@@ -83,18 +84,6 @@ export const PATTERN_KIND_SUGGEST: Record<PatternKind, string> = { interaction: 
 /** The kinds in order, each with its patterns (none for a kind the design system lacks): the page shows both. */
 export const patternKindGroups = (groups: readonly PatternGroup[]): PatternGroup[] =>
   PATTERN_KINDS.map((kind) => groups.find((g) => g.kind === kind) ?? { kind, label: PATTERN_KIND_LABEL[kind], items: [] });
-
-/**
- * Each kind has its own Library page (founder decision 2026-11-17, "two real pages"): Patterns > Interactions and
- * Patterns > Actions. The old index (patterns/) sends to Interactions; a pattern keeps its own address.
- */
-export const PATTERN_KIND_ROUTE: Record<PatternKind, string> = { interaction: `${PATTERNS_ROUTE}interactions/`, action: `${PATTERNS_ROUTE}actions/` };
-
-/** What a kind is, in one sentence: its page's intro while it has none, and its nav row's line. */
-export const PATTERN_KIND_INTRO: Record<PatternKind, string> = {
-  interaction: 'Gestures several components share, the same wherever they appear.',
-  action: 'Tasks that chain several components, done the same way across the product.',
-};
 
 /** The one sentence under a kind page's title: how many there are, or what the kind is while there is none. */
 export function patternKindLead(group: Pick<PatternGroup, 'kind' | 'items'>): string {

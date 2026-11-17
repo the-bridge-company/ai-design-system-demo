@@ -6,7 +6,6 @@
 // Pure: astro.config.mjs (bridge-team-shells) checks the built site with checkLibraryShells after every build, and
 // library-shells.test.ts checks vercel.json against libraryRewrites().
 import { OWNER_PATTERN, REPO_PATTERN, isTeamName } from './team-path';
-import { PATTERN_KIND_INTRO, PATTERN_KIND_ROUTE, PATTERNS_ROUTE } from './library/patterns';
 
 /** Where Bridge's own Library lives; a team's Library lives under it, at /library/<owner>/<repo>/. */
 export const LIBRARY_ROOT = '/library/';
@@ -62,6 +61,21 @@ export const COMPONENT_SLUG_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
 
 /** A top-level entry of a team's Library side nav: a page, or a group of pages (Foundations). */
 export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[] };
+
+/** The Library route of a pattern on a team's Library (?p=<id>), and the root of a pattern's page on Bridge's own. */
+export const PATTERNS_ROUTE = 'patterns/';
+
+/**
+ * Each kind has its own Library page (founder decision 2026-11-17, "two real pages"): Patterns > Interactions and
+ * Patterns > Actions. The old index (patterns/) sends to Interactions; a pattern keeps its own address.
+ */
+export const PATTERN_KIND_ROUTE: Record<'interaction' | 'action', string> = { interaction: `${PATTERNS_ROUTE}interactions/`, action: `${PATTERNS_ROUTE}actions/` };
+
+/** What a kind is, in one sentence: its page's intro while it has none, and its nav row's line. */
+export const PATTERN_KIND_INTRO: Record<'interaction' | 'action', string> = {
+  interaction: 'Gestures several components share, the same wherever they appear.',
+  action: 'Tasks that chain several components, done the same way across the product.',
+};
 
 /**
  * The rows under Patterns, one page each (founder decisions 2026-11-15 and 2026-11-17, "two real pages"): a gesture

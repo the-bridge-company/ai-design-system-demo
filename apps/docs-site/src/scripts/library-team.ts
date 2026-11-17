@@ -68,8 +68,8 @@ export function paintTeamName(team: { owner: string; repo: string }, site: { nam
 
 /**
  * The rows of a team's Patterns group, by kind (Interactions, Actions: lib/library-shells.ts LIBRARY_PATTERN_KIND_PAGES),
- * both shown even for a kind with no pattern yet (its section says how one comes to exist). On a pattern's page
- * (?p=<id>) the row of that pattern's kind is the current page; on the index none is (the group holds the page).
+ * each its own page, both shown even for a kind with no pattern yet. On a pattern's page (?p=<id>) the row of that
+ * pattern's kind is the current page (a kind's page is its row as the layout built it).
  */
 export function markPatternKind(current: PatternKind | null, root: ParentNode = document) {
   for (const li of root.querySelectorAll<HTMLElement>('[data-nav-kind]')) {
@@ -110,9 +110,10 @@ export function initLibraryTeam() {
     .then(async (data) => {
       paintTeamName(team, data.model.site);
       const patterns = libraryPatterns(data.model);
-      // The pattern this page shows: only the Patterns shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx).
+      // The pattern this page shows: only the pattern shell reads ?p= (components/ds/library/LibraryTeamPatterns.tsx); a
+      // kind's page is its row as built, left alone.
       const shown = document.documentElement.dataset.libraryShell === 'patterns' ? new URLSearchParams(location.search).get(PATTERN_QUERY) : null;
-      markPatternKind(shown ? (patternById(patterns, shown)?.kind ?? null) : null);
+      if (shown) markPatternKind(patternById(patterns, shown)?.kind ?? null);
       applyIndexing({ public: libraryIsPublic(data.model.config) && !data.servedBy, private: data.private });
       if (await loadTeamLlms()) linkLlms(data.servedBy ? libraryFileUrl(`${data.owner}/${data.repo}`, 'llms') : llmsTxtUrl(data.owner, data.repo, data.private));
     })

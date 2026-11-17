@@ -7,6 +7,8 @@
 //   main         since the last deployed commit (VERCEL_GIT_PREVIOUS_SHA, else HEAD^).
 //   any other    since the merge-base with origin/main, so the first push of a branch with several commits
 //                sees all of them, not only the last one. Vercel clones shallow: main is fetched if missing.
+//   agent/preview-<n>  Storybook only: Claude's preview of a behavior request (packages/core behavior-preview.ts) is
+//                played in Studio from that branch's Storybook, so it needs its deploy. Every other app skips it.
 //   agent/*      never previewed: agent branches are validated by the GitHub checks and only deploy once merged,
 //                which keeps Vercel under its daily deployment limit. The vercel.json files also turn Git
 //                deployments off for agent/**, test/** and changeset-release/** (git.deploymentEnabled), so Vercel
@@ -33,6 +35,8 @@ export const APP_PATHS = {
 export const MAIN = 'main';
 /** Branches that never get a preview deploy. */
 export const NO_PREVIEW = ['agent/'];
+/** Agent branches that still get a Storybook deploy: Claude's behavior previews (agent/preview-<n>), played in Studio. */
+export const STORYBOOK_PREVIEW = 'agent/preview-';
 
 /** True when any changed file is an input of the app. Unknown apps always build. */
 export function shouldBuild(app, changedFiles) {
@@ -46,7 +50,8 @@ export function shouldBuild(app, changedFiles) {
  * the decision is unit tested without a repository. Returns { build, base, reason }.
  */
 export function decide(app, { ref = '', previousSha = '', repoUrl = '' } = {}, git) {
-  if (NO_PREVIEW.some((prefix) => ref.startsWith(prefix))) {
+  const behaviorPreview = app === 'storybook' && ref.startsWith(STORYBOOK_PREVIEW);
+  if (!behaviorPreview && NO_PREVIEW.some((prefix) => ref.startsWith(prefix))) {
     return { build: false, base: null, reason: `${ref} is an agent branch, no preview: it deploys once merged.` };
   }
   let base;

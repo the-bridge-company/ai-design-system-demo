@@ -1,5 +1,7 @@
 import type { Decorator, Preview } from '@storybook/react-vite';
 import { useEffect } from 'react';
+// Static: Storybook turns `storybook/test` into a global in its build, so a dynamic import() of it fails there.
+import { userEvent } from 'storybook/test';
 import '@bridge-ds/tokens/fonts.css';
 import '@bridge-ds/tokens/tokens.css';
 import '../packages/react/src/styles/base.css';
@@ -129,9 +131,11 @@ if (typeof window !== 'undefined' && window.parent !== window && new URLSearchPa
     const keys = d.keys.filter((k): k is string => typeof k === 'string' && k.length > 0 && k.length <= 20).slice(0, 12);
     void (async () => {
       const root = document.getElementById('storybook-root');
-      const first = root?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])') ?? null;
+      const control = () => root?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])') ?? null;
+      // The frame says it is ready on load, which can come before the story renders: wait for its first control.
+      for (let i = 0; i < 30 && !control(); i++) await new Promise((r) => setTimeout(r, 100));
+      const first = control();
       first?.focus();
-      const { userEvent } = await import('storybook/test');
       const user = userEvent.setup();
       for (const k of keys) await user.keyboard(token(k));
       await new Promise((r) => setTimeout(r, 300));

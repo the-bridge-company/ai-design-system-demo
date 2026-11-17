@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { agentBehaviors, BEHAVIOR_FAMILIES, behaviorGroups, keyLabel, readBehaviors, validateBehaviors } from '../src/behaviors';
+import { agentBehaviors, BEHAVIOR_FAMILIES, behaviorGroups, CLICK_OUTSIDE, keyLabel, readBehaviors, validateBehaviors } from '../src/behaviors';
 import { validateDocs } from '../src/docs-proposal';
 import { formatDocsJson, type ComponentDocsJson } from '../src/docs-draft';
 
@@ -127,5 +127,11 @@ describe('reading and grouping', () => {
 
   it('labels keys the way the Kbd reads them', () => {
     expect(['ArrowDown', 'ArrowUp', 'Escape', 'Enter', 'Tab'].map(keyLabel)).toEqual(['↓', '↑', 'Esc', 'Enter', 'Tab']);
+  });
+
+  it('labels the click-outside gesture in words and accepts it in keys', () => {
+    expect(CLICK_OUTSIDE).toBe('click-outside');
+    expect(keyLabel(CLICK_OUTSIDE)).toBe('Click outside');
+    expect(validateBehaviors([{ id: 'close-on-outside-click', family: 'Closing', text: 'Closes on a click outside', keys: [CLICK_OUTSIDE] }])).toEqual([]);
   });
 });

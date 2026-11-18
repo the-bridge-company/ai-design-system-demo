@@ -19,16 +19,16 @@ is synced live and the plugin never writes to `main` directly.
 
 ## Scope (MVP)
 
-The plugin keeps one promise (owner decision 2026-11-11, Studio canvas "Décisions"): **"Your tokens sync both ways.
-Bridge tells you what is missing in your Figma and checks that it has caught up with the code."**
+The plugin keeps one promise (owner decisions 2026-11-11 and 2026-11-18): **"Your tokens sync both ways."**
 
 | Shown | Hidden for the MVP, code kept |
 | --- | --- |
 | Sign in with Bridge (or a developer token) | Drawing and updating component sets from code ("Pull components", "Include components", Update, Update all) |
 | Pull of tokens into Figma Variables | Two-way variant sync (component changes read back from Figma) |
 | Push of variable edits: a pull request or a suggestion, contrast checked | Component changes sent from Figma: requests, library branches, "Request a component change", "Not in the design system yet", "Fix in Figma first" |
-| What is missing in Figma: the components from the code this file does not have (its own count, by name) | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
-| Compare with code | "Draft with Claude" and the Claude card in Settings |
+| Contrast checked before a send | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
+| | "Draft with Claude" and the Claude card in Settings |
+| | What is missing in Figma (by name only, blind to library components) and Compare with code (it compares the sets Bridge drew), hidden on 2026-11-18 |
 
 One constant decides it: `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts` (`true` ships). Setting it to `false` shows the
 hidden features again, as `JIRA_IN_BRIDGE` does in the site. The sections below marked **Hidden in the MVP** document

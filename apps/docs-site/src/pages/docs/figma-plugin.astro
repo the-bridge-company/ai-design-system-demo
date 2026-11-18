@@ -11,21 +11,18 @@ const sections = [
 ];
 ---
 
-<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (tokens both ways, what is missing in Figma, Compare with code) and how to install it from Figma Community." sections={sections}>
+<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (your tokens both ways between GitHub and Figma Variables) and how to install it from Figma Community." sections={sections}>
   <section aria-labelledby="what">
     <h2 id="what">What it does</h2>
-    <p>Your tokens sync both ways. DS Bridge tells you what is missing in your Figma and checks that it has caught up with the code. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
+    <p>Your tokens sync both ways between your repository and Figma Variables. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
 
     <h3>Pull: tokens from code into Figma</h3>
     <p>Pull brings the latest tokens from the library into Figma Variables, one collection per tier with its modes, showing the plan before anything is written. Your own Figma edits are kept, and tokens changed on both sides show as conflicts for you to decide.</p>
-    <p>Pull also says which components from the code your Figma file does not have yet. Your own components count: they are matched by name, so "Forms/Select" is the code's Select. Components from libraries are not counted yet.</p>
 
     <h3>Push: your variable edits back for review</h3>
     <p>Push lists the variables you changed, with the contrast they move in every brand and theme. Blocking problems, such as a pair that fails contrast, disable the send.</p>
     <p>Your edits go to <strong>Send for review</strong> or to <strong>Try in an exploration</strong>. Depending on your repository, they become a pull request with a change table, contrast before and after, and the risk tier, or a suggestion for your design system lead. A pull request that only changes token values can ship once your checks pass; renamed or removed tokens wait for a developer.</p>
 
-    <h3>Compare with code</h3>
-    <p><strong>Compare with code</strong>, in the Pull tab, compares the component sets Bridge drew in your file with images of them rendered from code, and says <strong>Matches the code</strong> or <strong>Differs from the code</strong>. Your own components, matched by name, say that Bridge can't compare them yet. Nothing in the file changes.</p>
   </section>
 
   <section aria-labelledby="install">

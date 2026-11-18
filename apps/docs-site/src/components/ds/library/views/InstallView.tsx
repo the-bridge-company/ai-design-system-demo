@@ -131,25 +131,20 @@ export default function InstallView({ data }: { data: LibraryData }) {
           <ol className="lib-steps">
             <li>
               <p>
-                <Link href={bridge.pluginZipUrl}>Download the plugin</Link> and unzip it. It is always the latest version.
+                Open <Link href={bridge.pluginCommunityUrl}>DS Bridge on Figma Community</Link> and choose <strong>Open in...</strong>, or <strong>Save</strong> to keep it in your plugins.
               </p>
             </li>
             <li>
               <p>
-                In the Figma desktop app: Plugins, Development, Import plugin from manifest, and pick <code>manifest.json</code> in the <code>bridge-figma-plugin</code> folder.
-              </p>
-            </li>
-            <li>
-              <p>
-                Run it from Plugins, Development, DS Bridge, then choose <strong>Sign in with Bridge</strong> and pick your team in the browser{repo && <> (<code>{repo}</code>)</>}. No token to paste.
+                Run it from Plugins, DS Bridge, then choose <strong>Sign in with Bridge</strong> and pick your team in the browser{repo && <> (<code>{repo}</code>)</>}. No token to paste.
               </p>
             </li>
           </ol>
           <p className="small muted">
-            To update it, unzip the new version over the same folder, replacing its files: nothing to import again. If Figma lists DS Bridge twice, remove the older copy in Plugins, Development, Manage plugins in development.
+            Figma gives you new versions by itself. If Figma lists DS Bridge twice, remove the development copy in Plugins, Development, Manage plugins in development.
           </p>
           <p className="small muted">
-            The Figma Community listing is in review. Developers can also build it from a clone of <Link href={bridge.repoUrl}>Bridge</Link>:
+            Developers can try unpublished changes with <Link href={bridge.pluginZipUrl}>the development build</Link>, or build it from a clone of <Link href={bridge.repoUrl}>Bridge</Link>:
           </p>
           <CodeBlock className="cx-block" code={plugin} label="Build the plugin" />
           <p className="small muted">

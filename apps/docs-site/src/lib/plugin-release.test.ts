@@ -21,7 +21,8 @@ describe('Figma plugin download', () => {
 
   it('names the plugin the way Figma lists it', () => {
     const page = readFileSync(join(ROOT, 'apps/docs-site/src/pages/docs/figma-plugin.astro'), 'utf8');
-    expect(page).toContain(`Development &gt; ${manifest.name}</strong>`);
+    expect(page).toContain(`Plugins &gt; ${manifest.name}</strong>`);
+    expect(page).toContain('{PLUGIN_COMMUNITY_URL}');
     expect(page).toContain('{PLUGIN_ZIP_URL}');
     expect(workflow).toContain(`Plugins > Development > ${manifest.name},`);
   });

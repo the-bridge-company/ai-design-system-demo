@@ -1,4 +1,4 @@
-// Flow: the Pull start screen of a file pulled before. Getting updates keeps the one footer action and folds its steps
+// Flow (full scope: the MVP has no Compare with code): the Pull start screen of a file pulled before. Getting updates keeps the one footer action and folds its steps
 // into "How updates work"; Compare with code is its own block below, with its last result and its own button, and runs
 // with the progress row. "Check fidelity" is gone from the designer's words.
 import assert from 'node:assert/strict';
@@ -8,7 +8,7 @@ import { openPlugin } from './ui-harness';
 test('returning: How updates work folded, Compare with code its own block with the last result', async () => {
   const at = new Date();
   at.setHours(14, 50, 0, 0);
-  const p = await openPlugin({ pulled: true, sync: { lastCompare: JSON.stringify({ components: 32, differs: 8, matches: 24, notChecked: 0, variantsChecked: 0, variantsSkipped: 0, at: at.toISOString() }) } });
+  const p = await openPlugin({ fullScope: true, pulled: true, sync: { lastCompare: JSON.stringify({ components: 32, differs: 8, matches: 24, notChecked: 0, variantsChecked: 0, variantsSkipped: 0, at: at.toISOString() }) } });
   assert.equal(p.headline(), 'Get the latest design system');
   const how = p.document.querySelector<HTMLDetailsElement>('[data-how="updates"]');
   assert.ok(how && !how.open, 'How updates work: one folded line');

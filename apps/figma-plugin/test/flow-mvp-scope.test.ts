@@ -1,5 +1,5 @@
-// Flow: the plugin as it ships for the MVP (shared/scope.ts, owner decision 2026-11-11). Tokens both ways, what is
-// missing in Figma, Compare with code. Hidden: drawing components, component requests, the Claude fix loop, Draft with
+// Flow: the plugin as it ships for the MVP (shared/scope.ts, owner decisions 2026-11-11 and 2026-11-18). Tokens both
+// ways. Hidden: what is missing in Figma, Compare with code, drawing components, component requests, the Claude fix loop, Draft with
 // Claude and the Claude setup card. The other flow tests open the plugin with `fullScope` to cover the hidden code.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -10,7 +10,7 @@ test('the MVP scope is what ships', () => {
   assert.equal(PLUGIN_MVP_SCOPE, true);
 });
 
-test('MVP: Pull lists what is missing in Figma and builds nothing; Push sends variables only; no Claude anywhere', async () => {
+test('MVP: Pull shows tokens only, no component and no Compare with code; Push sends variables only; no Claude anywhere', async () => {
   const p = await openPlugin({
     pulled: true,
     edit: (s) => {
@@ -21,16 +21,19 @@ test('MVP: Pull lists what is missing in Figma and builds nothing; Push sends va
     },
   });
 
-  // Pull: the components from the code are counted and the missing ones named; nothing offers to build them.
+  // Pull start: no Compare with code block.
+  assert.ok(!p.document.querySelector('[data-block="compare"]'), 'no Compare with code');
+  // Pull: tokens only. No component count, no missing list, nothing offers to build or compare.
   await p.click('Check for updates');
-  await p.until(() => !!p.document.querySelector('[data-block="missing-in-figma"]'));
+  await p.until(() => p.headline() !== 'Get the latest design system' && !/Checking|Reading/i.test(p.headline()));
   const text = p.text();
-  assert.match(text, /0 of \d+ components from the code are in this file/);
-  assert.match(text, /\d+ components missing in Figma/);
+  assert.ok(!p.document.querySelector('[data-block="missing-in-figma"]'), 'no list of missing components');
+  assert.doesNotMatch(text, /components from the code|missing in Figma|Compare with code/);
   assert.doesNotMatch(text, /Include components|New components|to add, on a "Components" page|Update all|Pull components first/);
   assert.doesNotMatch(text, /Ask Claude|Draft with Claude|Claude's fix/);
   assert.ok(!p.calls.includes('apply-components'), 'no component set is drawn');
   assert.ok(!p.calls.includes('scan-components'), 'no component of the file is read for updates');
+  assert.ok(!p.calls.includes('list-components'), 'the file is not read for component names');
 
   // Push: the variable edit only, no component scan, no request, no drafting help.
   await p.click('Push');

@@ -15,14 +15,15 @@ and the plugin window title (`src/main/index.ts`). "Bridge" alone is too generic
 
 ## Scope
 
-The listing makes one promise, the one decided for the MVP (owner, 2026-11-11, note on the Studio canvas
-"Décisions" page): **"Your tokens sync both ways. Bridge tells you what is missing in your Figma and checks that it
-has caught up with the code."** ("Start from a mockup" is a Studio feature, not the plugin's.)
+The listing makes one promise, the one decided for the MVP (owner, 2026-11-11, narrowed on 2026-11-18):
+**"Your tokens sync both ways."** ("Start from a mockup" is a Studio feature, not the plugin's.) What is missing in
+Figma and Compare with code were dropped on 2026-11-18: matching by name could not see a team's library components,
+and a list of missing components had no action while drawing them is hidden.
 
 Everything else the code can do is hidden behind one constant, `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts`, and is
 never mentioned here: drawing or updating component sets from code, two-way variant sync, component changes sent
 from Figma as requests or branches, "Ask Claude to fix it" and the fix loop, "Draft with Claude" and the Claude setup
-card. "Send to Figma" (2026-11-10) is a Studio button, off there; the plugin has none. Setting the constant to `false`
+card, what is missing in Figma and Compare with code. "Send to Figma" (2026-11-10) is a Studio button, off there; the plugin has none. Setting the constant to `false`
 shows them again; this listing would then need its own update.
 
 ## Tagline (52 of 60 characters)
@@ -37,7 +38,7 @@ Paste as is (plain text with line breaks; use the dialog's list button for the "
 Every line says what the plugin does today; check it against "What each claim rests on" below before changing it.
 
 ```
-Your tokens sync both ways. DS Bridge tells you what is missing in your Figma and checks that it has caught up with the code.
+Your tokens sync both ways between your GitHub repository and Figma Variables, with contrast checked before anything is sent.
 
 DS Bridge connects Figma Variables to the design tokens of a design system kept in a GitHub repository. The repository stays the source of truth: you pull from it, edit in Figma, and send your edits back for review.
 
@@ -50,7 +51,6 @@ Pull: from the code into Figma
 - Creates one variable collection per tier (Primitives, Brand, Base, Semantic, Density, Component) with their modes: themes, brands, densities. Aliases between collections are kept.
 - Keeps the edits you made in Figma. Tokens removed in code are marked [orphan], never deleted.
 - On plans limited to one mode per collection, it creates one collection per mode instead.
-- Tells you what is missing: which components from the code this file does not have yet. Your own components count: they are matched by name ("Forms/Select" is the code's Select). Components from libraries are not counted yet.
 
 Push: your Figma edits back to the code
 - Lists the variables you changed since your last pull, with color swatches before and after. When a token changed both in Figma and in the code, you choose which one to keep.
@@ -59,9 +59,6 @@ Push: your Figma edits back to the code
   - Suggestion mode: your edits become a GitHub issue for your design system lead. Nothing is written to the code.
   - Pull request mode: the plugin opens a branch and a pull request with the token files you changed (plus a changeset when your repository asks for one), a table of the changes and the contrast before and after.
 - The plugin never writes to your main branch. In pull request mode, if your team set up Bridge's GitHub app, Bridge can merge a pull request that only changes token values once your checks pass. Renamed or removed tokens wait for a developer.
-
-Compare with code
-- Checks that the component sets Bridge drew in this file still look like the code: each one is exported and compared with images of the same component rendered from your code, which your repository publishes with Bridge's GitHub workflow. Your own components, matched by name, are listed with "Bridge can't compare this one yet: it was not drawn by Bridge." Nothing in the file changes.
 
 Privacy
 - The plugin talks to two sites: api.github.com (your repository) and bridgedesignsystem.com (Sign in with Bridge, and merging a token pull request). No analytics, no AI service.
@@ -98,7 +95,7 @@ For Figma's data security questions (publish dialog, or a reviewer's email). Pla
 **Does the plugin make network requests? To which domains?**
 Yes, to two domains, both declared in `manifest.json`:
 - `https://api.github.com`: reads and writes the team's own repository (token files, configuration, branches, pull
-  requests and issues for the variable edits the user sends, and the reference images Compare with code reads).
+  requests and issues for the variable edits the user sends).
 - `https://bridgedesignsystem.com` (Bridge, our site): `POST /api/plugin-link` for Sign in with Bridge, and
   `POST /api/ship` to ask Bridge to merge a token pull request the user just opened.
 The plugin also opens links in the user's browser when they click them (github.com, bridgedesignsystem.com), through
@@ -110,15 +107,12 @@ The plugin also opens links in the user's browser when they click them (github.c
   pull request numbers. Bridge uses the token to ask GitHub who the user is and what they can access, and does not
   keep it. During Sign in with Bridge, the token is held encrypted on Bridge's side for at most 5 minutes, until the
   plugin collects it once.
-- Compare with code exports component images inside the plugin to compare them; they are not sent anywhere. The
-  component names read for "what is missing" stay in the plugin too.
 
 **What does the plugin store, and where?**
 - On the user's computer (`figma.clientStorage`): the GitHub sign-in or token, whether GitHub last refused it, how it
   was obtained (Bridge or pasted) and the GitHub login of the person who signed in.
 - In the Figma file (shared plugin data, namespace `dsbridge`): the repository, branch and tokens folder, the last
-  pulled commit, ids and markers on the variables and component sets the plugin manages, the last Compare with code
-  result, and per-person sync state keyed by the Figma user id (the `currentuser` permission). The token is never
+  pulled commit, ids and markers on the variables the plugin manages, and per-person sync state keyed by the Figma user id (the `currentuser` permission). The token is never
   stored in the file.
 
 **Personal data, analytics, tracking?**
@@ -137,7 +131,7 @@ Re-check these before changing the copy above.
 
 | Claim | Where it is in the code |
 | --- | --- |
-| Only the MVP promise is shown | `src/shared/scope.ts` (`PLUGIN_MVP_SCOPE`), `test/flow-mvp-scope.test.ts` |
+| Only the MVP promise is shown: no component, no Compare with code | `src/shared/scope.ts` (`PLUGIN_MVP_SCOPE`), `src/ui/index.ts` (`componentsGroup`, `compareBlock`, `fidelityGroup` return null), `test/flow-mvp-scope.test.ts` |
 | Sign in with Bridge, no token to paste, sign-in expires | `src/sync/bridge-sign-in.ts` (`startBridgeSignIn`, `pollBridgeSignIn`), `apps/docs-site/api/plugin-link/index.ts` |
 | Pasted fine-grained token for developers | `src/ui/index.ts` (`viewSettings`, "For developers: connect with a token") |
 | Token in client storage only, never in the file | `src/main/github-token.ts` (`saveGitHubToken`) |
@@ -145,13 +139,11 @@ Re-check these before changing the copy above.
 | Two domains, no analytics | `manifest.json` `allowedDomains`; with the MVP scope every `fetch` is the GitHub client, `bridge-sign-in.ts` or `ship.ts` (the fix loop's `fix-session.ts` and `approve-fixes.ts` are hidden: `watchFixes` and `approver` return early) |
 | Preview before anything is written, local edits kept, orphans not deleted | `src/sync/flows.ts` (`analyze`, `buildPull`), `src/main/apply.ts` |
 | One collection per tier, aliases across collections, one collection per mode on limited plans | `src/sync/mapping.ts`, `src/main/apply.ts` (split layout when `addMode` throws) |
-| What is missing in Figma, own components matched by name, Bridge's mark first | `src/sync/figma-names.ts` (`normalizeComponentName`, `presenceInFigma`), `src/main/build-components.ts` (`listComponents`, local components only), `src/ui/index.ts` (`missingInFigmaGroup`), `test/figma-names.test.ts`, `test/flow-missing-by-name.test.ts` |
 | Three-way diff, conflicts decided by the user, swatches | `src/sync/flows.ts` (`buildPush`), `src/ui/index.ts` (`viewPush`) |
 | Contrast AA, AAA or fail, failing pair blocks the send | `@bridge-ds/core` `wcag.ts`, `src/ui/index.ts` (`viewPush`, blocking problems disable the bar) |
 | Suggestion mode: a GitHub issue | `src/sync/flows.ts` (`sendSuggestion`), `@bridge-ds/core` `config.ts` (`changesMode`: "suggest" when the config does not say) |
 | Pull request mode: branch, pull request, change table, contrast | `src/sync/flows.ts` (`openPullRequest`), `@bridge-ds/core` `pr-composer.ts` |
 | Bridge can merge token-value pull requests after checks | `src/sync/ship.ts`, `apps/docs-site/api/ship/index.ts` (needs the Bridge GitHub app) |
-| Compare with code | `src/sync/fidelity.ts` (`runFidelityCheck`), images on the `bridge-visual` branch |
 | Never calls an AI service, holds no AI key | no Anthropic call or key in `src/` |
 
 ## What the previous copy said that was not true
@@ -169,7 +161,7 @@ The copy submitted on 2026-10-16 promised more than the plugin does today, or de
 - "Nothing is ever written to main. CI and your code owners decide." Partly true: the plugin never writes to main,
   but Bridge can merge a token-value pull request once the checks pass.
 - "Contrast ... the token build in CI fails on them." True for this repository only; it depends on each team's CI.
-- Sign in with Bridge and Compare with code were not mentioned. The other features the code has (drawing components,
+- Sign in with Bridge was not mentioned. The other features the code has (drawing components,
   component requests, the Claude features) are out of the MVP scope: hidden in the plugin, not in the listing.
 
 ## Images
@@ -186,11 +178,11 @@ The carousel only shows real UI. Gallery 1 is `dist/ui.html` rendered in Chrome 
 GitHub; outside Figma, the Figma side (the variables and two edits) comes from the plugin's test simulator, as the
 caption says. Galleries 2 and 3 are the live pages, unedited.
 
-Rendered again on 2026-11-16 for the MVP scope: gallery 1 shows the Pull of a first file with "0 of 81 components
-from the code are in this file" and the missing ones, and the Push with **Send for review**; galleries 2 and 3 are
-the Bridge DS team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The
-PR #468 page is captured down to its conversation (`clipHeight` in `web-shots.mjs`): the crop is made at capture,
-the page itself is not edited. Below it the live page shows the status of its before and after images, left out.
+Rendered again on 2026-11-18 for the tokens-only scope: the cover and gallery 1 (the Pull of a first file with its
+610 variables, and the Push with **Send for review**). Galleries 2 and 3 are the 2026-11-16 renders: the Bridge DS
+team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The PR #468 page is
+captured down to its conversation (`clipHeight` in `web-shots.mjs`): the crop is made at capture, the page itself is
+not edited.
 
 ## How to publish (owner)
 
@@ -218,6 +210,18 @@ must be on for that account (Figma requires it to publish).
     Settings > Environment Variables > `PLUGIN_URL` = the Community URL, for Production, then redeploy.
 
 Later releases: build, then **Publish new version** from the same menu, with release notes. The id stays the same.
+
+### Release notes, version of 2026-11-18
+
+```
+Tokens only, and easier to start.
+- Sign in with Bridge: pick your team in the browser, no token to paste.
+- Push follows your repository: a suggestion for your design system lead, or a pull request with the contrast before and after.
+- A pair that fails contrast blocks the send, in every brand and theme.
+- Component features are out of this version: the plugin syncs your tokens, nothing else.
+```
+
+Update the description and the cover, and replace carousel 1, in the same dialog.
 
 ## Rebuild the images
 

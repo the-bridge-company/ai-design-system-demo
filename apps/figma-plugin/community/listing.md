@@ -178,11 +178,11 @@ The carousel only shows real UI. Gallery 1 is `dist/ui.html` rendered in Chrome 
 GitHub; outside Figma, the Figma side (the variables and two edits) comes from the plugin's test simulator, as the
 caption says. Galleries 2 and 3 are the live pages, unedited.
 
-Rendered again on 2026-11-16 for the MVP scope: gallery 1 shows the Pull of a first file with "0 of 81 components
-from the code are in this file" and the missing ones, and the Push with **Send for review**; galleries 2 and 3 are
-the Bridge DS team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The
-PR #468 page is captured down to its conversation (`clipHeight` in `web-shots.mjs`): the crop is made at capture,
-the page itself is not edited. Below it the live page shows the status of its before and after images, left out.
+Rendered again on 2026-11-18 for the tokens-only scope: the cover and gallery 1 (the Pull of a first file with its
+610 variables, and the Push with **Send for review**). Galleries 2 and 3 are the 2026-11-16 renders: the Bridge DS
+team in Studio (`/studio/~/the-bridge-company/ai-design-system-demo/`), PR #468 and its tokens. The PR #468 page is
+captured down to its conversation (`clipHeight` in `web-shots.mjs`): the crop is made at capture, the page itself is
+not edited.
 
 ## How to publish (owner)
 
@@ -210,6 +210,18 @@ must be on for that account (Figma requires it to publish).
     Settings > Environment Variables > `PLUGIN_URL` = the Community URL, for Production, then redeploy.
 
 Later releases: build, then **Publish new version** from the same menu, with release notes. The id stays the same.
+
+### Release notes, version of 2026-11-18
+
+```
+Tokens only, and easier to start.
+- Sign in with Bridge: pick your team in the browser, no token to paste.
+- Push follows your repository: a suggestion for your design system lead, or a pull request with the contrast before and after.
+- A pair that fails contrast blocks the send, in every brand and theme.
+- Component features are out of this version: the plugin syncs your tokens, nothing else.
+```
+
+Update the description and the cover, and replace carousel 1, in the same dialog.
 
 ## Rebuild the images
 

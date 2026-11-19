@@ -1,0 +1,165 @@
+/* /figma-plugin/ (pages/figma-plugin.astro), on top of styles/pricing.css (.pr type, the Harbor band, the hairline
+   list) and styles/homepage.css (the column, the step tabs). Mobile first; side by side from 900px like the rest of
+   the site. Tokens only; the dark theme comes from the tokens. */
+
+/* ---------- hero: the title, then the words and the actions, then the two-way picture ---------- */
+.fp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6) var(--space-12);
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-4);
+}
+
+.fp-h1 {
+  max-width: 12ch;
+}
+
+.fp-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.fp-cta {
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-top: 0;
+}
+
+/* Who it is for, said plainly under the actions: body text, not a grey footnote. */
+.fp-note {
+  color: var(--color-text-default);
+}
+
+/* A real screen, framed like the plugin window: hairline edge, container radius, no shadow. */
+.fp-shot {
+  display: block;
+  margin: 0;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  overflow: hidden;
+  background-color: var(--color-surface-default);
+}
+
+.fp-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fp-hero-shot {
+  grid-column: 1 / -1;
+  margin-top: var(--space-4);
+}
+
+/* The cover band is a light capture with a white margin around its cards: on a dark page it reads as one rounded
+   white plate; on the light page the margin melts into the page, so the band is pulled out by it to line up the cards
+   with the title. */
+.fp-hero-shot {
+  margin-inline: calc(var(--space-3) * -1);
+}
+
+/* The cover band and the plugin window draw their own cards and edges: no second frame (no nested cards). */
+.fp-hero-shot,
+.fp-panel {
+  border: 0;
+  background-color: transparent;
+}
+
+/* ---------- how it works: the screens inside the step panel ---------- */
+.fp-panel,
+.fp-wide {
+  width: 100%;
+  height: auto;
+}
+
+/* The plugin window is tall: about the size Figma gives it, so it reads at 1x and the step text stays beside it.
+   The screenshot carries the window's own edge and shadow. */
+.fp-panel {
+  max-width: calc(var(--size-96) + var(--space-10));
+}
+
+/* The Studio page is wide: it takes the whole panel, not the drawings' column, so its text stays readable. */
+.fp .hp-ui:has(.fp-wide),
+.fp .hp-sc:has(.fp-wide) {
+  max-width: none;
+}
+
+/* ---------- what you need ---------- */
+.fp-needs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.fp-needs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+}
+
+.fp-needs-list strong {
+  color: var(--color-text-default);
+}
+
+/* ---------- the Harbor band: the way to Bridge ---------- */
+.fp-band-wrap {
+  padding-top: var(--space-20);
+}
+
+.fp-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+
+.fp-band-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.fp-band-text .pr-h2 {
+  max-width: 22ch;
+}
+
+.fp-band-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-top: var(--space-2);
+}
+
+/* On the Harbor zone the drawing's zone fills switch to paper so they stay visible (as .zone .ill in brand.css). */
+.fp-band-art [data-fill="zone"] {
+  fill: var(--color-surface-default);
+}
+
+.fp-band-art {
+  justify-self: center;
+  width: min(100%, var(--size-80));
+  height: auto;
+}
+
+@media (min-width: 900px) {
+  .fp-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    padding-top: var(--space-20);
+  }
+
+  .fp-hero-shot {
+    margin-top: var(--space-8);
+  }
+
+  .fp-band {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-12);
+  }
+}

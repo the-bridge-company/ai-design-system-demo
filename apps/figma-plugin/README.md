@@ -40,7 +40,23 @@ See it with real data on the live Bridge site: the [token explorer](https://brid
 shows what a Pull brings into Figma, and [Changes](https://bridgedesignsystem.com/studio/changes/?pr=468) shows
 the pull request a Push opened (PR #468). Components are in [Storybook](https://bridge-storybook.floriangouloubi.com).
 
-## Install (Figma desktop)
+## Install
+
+DS Bridge is on Figma Community: https://www.figma.com/community/plugin/1693034743850648023/ds-bridge (live since 2026-11-18).
+
+1. Open the [Community page](https://www.figma.com/community/plugin/1693034743850648023/ds-bridge) and choose **Open in...** (or **Save** to keep it in your plugins).
+2. Run it from **Plugins > DS Bridge** in any Figma file, in the desktop app or the browser.
+
+Figma updates it for everyone when a new version is published: nothing to download again. The `id` in `manifest.json`
+is the published id. The Community listing (copy, icon, cover, gallery) and the publishing steps are in
+[`community/`](community/listing.md).
+
+If you imported the development build before, Figma may list DS Bridge twice: remove the local copy in **Plugins >
+Development > Manage plugins in development** (Remove local version).
+
+### Development build (for developers)
+
+To try a change before it is published:
 
 1. Download the latest build: [bridge-figma-plugin.zip](https://github.com/the-bridge-company/ai-design-system-demo/releases/download/figma-plugin-latest/bridge-figma-plugin.zip),
    and unzip it. `.github/workflows/figma-plugin-release.yml` rebuilds it on every plugin change to `main`.
@@ -49,14 +65,10 @@ the pull request a Push opened (PR #468). Components are in [Storybook](https://
 3. Run it from **Plugins > Development > DS Bridge**.
 
 To update it, unzip the new zip over the same `bridge-figma-plugin` folder, replacing its files: nothing to import
-again. Importing the new folder as well leaves two dev entries with the same id and no way to tell which one runs; if
-that happened, remove the older one in **Plugins > Development > Manage plugins in development** (Remove local version).
+again.
 
 From source instead: `npm install`, then `npm run plugin:build` from the repo root (writes `apps/figma-plugin/dist/`),
 and import `apps/figma-plugin/manifest.json`.
-
-Published on Figma Community: https://www.figma.com/community/plugin/1693034743850648023 (in review since 2026-10-16). The `id` in `manifest.json` is that published id. The Community listing (copy, icon, cover,
-gallery) and the publishing steps are in [`community/`](community/listing.md).
 
 ## Sign in with Bridge
 

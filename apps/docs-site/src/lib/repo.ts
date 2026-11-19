@@ -44,6 +44,9 @@ export const PLUGIN_URL = process.env.PLUGIN_URL || `${GITHUB_URL}/tree/${DEFAUL
 
 /** The built plugin, ready to import in Figma desktop: .github/workflows/figma-plugin-release.yml publishes it on every
  *  plugin change to main, as this asset on this rolling release. */
+/** The DS Bridge listing on Figma Community, live since 2026-11-18: the way designers install it. */
+export const PLUGIN_COMMUNITY_URL = 'https://www.figma.com/community/plugin/1693034743850648023/ds-bridge';
+
 export const PLUGIN_RELEASE_TAG = 'figma-plugin-latest';
 export const PLUGIN_ZIP = 'bridge-figma-plugin.zip';
 export const PLUGIN_ZIP_URL = `${GITHUB_URL}/releases/download/${PLUGIN_RELEASE_TAG}/${PLUGIN_ZIP}`;

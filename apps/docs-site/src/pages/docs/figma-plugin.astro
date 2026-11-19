@@ -2,7 +2,7 @@
 // /docs/figma-plugin/: the DS Bridge Figma plugin. First version: facts only from apps/figma-plugin/README.md.
 import Docs from '../../layouts/Docs.astro';
 import { Link } from '@bridge-ds/react';
-import { GITHUB_URL, PLUGIN_ZIP_URL } from '../../lib/repo';
+import { GITHUB_URL, PLUGIN_COMMUNITY_URL, PLUGIN_ZIP_URL } from '../../lib/repo';
 
 const sections = [
   { id: 'what', label: 'What it does' },
@@ -11,35 +11,30 @@ const sections = [
 ];
 ---
 
-<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (tokens both ways, what is missing in Figma, Compare with code) and how to install it in Figma desktop." sections={sections}>
+<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (your tokens, both ways) and how to install it from Figma Community." sections={sections}>
   <section aria-labelledby="what">
     <h2 id="what">What it does</h2>
-    <p>Your tokens sync both ways. DS Bridge tells you what is missing in your Figma and checks that it has caught up with the code. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
+    <p>Your tokens sync both ways. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
 
     <h3>Pull: tokens from code into Figma</h3>
     <p>Pull brings the latest tokens from the library into Figma Variables, one collection per tier with its modes, showing the plan before anything is written. Your own Figma edits are kept, and tokens changed on both sides show as conflicts for you to decide.</p>
-    <p>Pull also says which components from the code your Figma file does not have yet. Your own components count: they are matched by name, so "Forms/Select" is the code's Select. Components from libraries are not counted yet.</p>
 
     <h3>Push: your variable edits back for review</h3>
     <p>Push lists the variables you changed, with the contrast they move in every brand and theme. Blocking problems, such as a pair that fails contrast, disable the send.</p>
     <p>Your edits go to <strong>Send for review</strong> or to <strong>Try in an exploration</strong>. Depending on your repository, they become a pull request with a change table, contrast before and after, and the risk tier, or a suggestion for your design system lead. A pull request that only changes token values can ship once your checks pass; renamed or removed tokens wait for a developer.</p>
-
-    <h3>Compare with code</h3>
-    <p><strong>Compare with code</strong>, in the Pull tab, compares the component sets Bridge drew in your file with images of them rendered from code, and says <strong>Matches the code</strong> or <strong>Differs from the code</strong>. Your own components, matched by name, say that Bridge can't compare them yet. Nothing in the file changes.</p>
   </section>
 
   <section aria-labelledby="install">
     <h2 id="install">Install it</h2>
-    <p>The Figma Community listing is not live yet: it has been in review since 2026-10-16. Until then, install it in the Figma desktop app:</p>
+    <p>DS Bridge is on Figma Community.</p>
     <ol>
-      <li><Link href={PLUGIN_ZIP_URL}>Download the plugin</Link> and unzip it. The link always gives the latest version.</li>
-      <li>In Figma, open <strong>Plugins &gt; Development &gt; Import plugin from manifest...</strong> and pick <code>manifest.json</code> in the <code>bridge-figma-plugin</code> folder.</li>
-      <li>Run it from <strong>Plugins &gt; Development &gt; DS Bridge</strong>.</li>
+      <li>Open <Link href={PLUGIN_COMMUNITY_URL}>DS Bridge on Figma Community</Link> and choose <strong>Open in...</strong>, or <strong>Save</strong> to keep it in your plugins.</li>
+      <li>Run it from <strong>Plugins &gt; DS Bridge</strong> in any Figma file, in the desktop app or the browser.</li>
     </ol>
     <h3>Update it</h3>
-    <p>Download the zip again and unzip it over the old <code>bridge-figma-plugin</code> folder, replacing its files. Nothing to import again: Figma runs the new version and keeps your sign-in.</p>
-    <p>If you imported a second copy, Figma lists DS Bridge twice and you can't tell which one runs. Open <strong>Plugins &gt; Development &gt; Manage plugins in development</strong> and choose <strong>Remove local version</strong> on the older one.</p>
-    <p>Developers can build it from <Link href={GITHUB_URL}>the repository</Link> instead: <code>npm install</code>, then <code>npm run plugin:build</code>, and import <code>apps/figma-plugin/manifest.json</code>.</p>
+    <p>Nothing to do: Figma gives you the new version when it is published, and keeps your sign-in.</p>
+    <p>If you installed the development build before, Figma lists DS Bridge twice. Open <strong>Plugins &gt; Development &gt; Manage plugins in development</strong> and choose <strong>Remove local version</strong>.</p>
+    <p>Developers can try unpublished changes: <Link href={PLUGIN_ZIP_URL}>download the development build</Link>, unzip it and import its <code>manifest.json</code> in <strong>Plugins &gt; Development &gt; Import plugin from manifest...</strong> in Figma desktop, or build it from <Link href={GITHUB_URL}>the repository</Link> with <code>npm install</code> then <code>npm run plugin:build</code>.</p>
   </section>
 
   <section aria-labelledby="need">

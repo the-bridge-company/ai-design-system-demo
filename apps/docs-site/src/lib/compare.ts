@@ -119,7 +119,7 @@ export const SHORT: CompareRow[] = [
     feature: 'Figma kit built from code, with a fidelity check',
     detail: 'Pixel match between Figma and code',
     cells: [
-      p('Tokens and missing parts', 'Tokens become Figma variables, both ways. The plugin lists the components your Figma file is missing and checks the ones Bridge drew against the code; it does not draw new ones for now.'),
+      p('Tokens, both ways', 'Tokens become Figma variables, and your edits go back for review, contrast checked. Components are not synced for now.'),
       p('Tokens only', 'Tokens become Figma variables and styles. Not components.'),
       n,
       n,

@@ -3,10 +3,12 @@
 // menu and the footer Product column open it; the plugin docs stay at /docs/figma-plugin/. The plugin on Figma
 // Community is the tokens-only MVP: this page promises Pull and Push of tokens, nothing about components (the hidden
 // features are listed as "Coming next" in the docs only). Built like /pricing/: the hero (one primary action, the
-// Community page), how it works (the homepage step tabs, real plugin and Studio screens), what you need, and the one
-// Harbor band that leads to Bridge. Screens: public/plugin-art/, cropped from apps/figma-plugin/community/ (the cover's
-// lower band without its subtitle, gallery 1 rendered for the tokens-only scope, gallery 2). Styles:
-// styles/figma-plugin.css on top of styles/pricing.css.
+// Community page, what you need in one line under it), how it works (the homepage step tabs, real plugin and Studio
+// screens) and the one Harbor band that leads to Bridge. Screens: public/plugin-art/. The two-way picture is the
+// Community cover's lower band, drawn again on a transparent ground in a light and a dark version, wide and stacked
+// for phones (the page shows the one that matches data-theme). The plugin windows are framed as in gallery 1, Pull with
+// its variable list open; the Studio screen is from gallery 2. Styles: styles/figma-plugin.css on top of
+// styles/pricing.css.
 import '../styles/homepage.css';
 import '../styles/home-illus.css';
 import '../styles/pricing.css';
@@ -24,12 +26,6 @@ import { PLUGIN_COMMUNITY_URL } from '../lib/repo';
 
 // Create your team opens the sign-in screen with sign-up words, like the homepage's Get started.
 const GET_STARTED = signInHref(null, true);
-
-const NEEDS = [
-  { lead: 'A Bridge account.', text: 'Choose Sign in with Bridge, no token to paste.' },
-  { lead: 'Your tokens in a GitHub repository.', text: 'GitHub only for now.' },
-  { lead: 'Any Figma plan,', text: 'the free one included.' },
-];
 ---
 
 <Landing title="DS Bridge Figma plugin | Bridge" description="Pull your design system's tokens into Figma Variables. Send your edits back for review, contrast checked. Free, on Figma Community.">
@@ -42,17 +38,16 @@ const NEEDS = [
           <ButtonLink variant="primary" size="lg" iconEnd={ArrowUpRight} href={PLUGIN_COMMUNITY_URL}>Get it on Figma Community</ButtonLink>
           <ButtonLink variant="link" size="lg" href={DOCS_FIGMA_PLUGIN}>Read the plugin docs</ButtonLink>
         </div>
-        <p class="pr-text fp-note">Needs a Bridge account, free. GitHub only. Works on the free Figma plan.</p>
+        <p class="pr-text fp-note">Needs a free Bridge account (<Link href={GET_STARTED}>create your team</Link>). GitHub only. Works on the free Figma plan.</p>
       </div>
-      <figure class="fp-shot fp-hero-shot">
-        <picture>
-          <source media="(max-width: 699px)" srcset="/plugin-art/sync-both-ways-narrow.png" width="600" height="416" />
-          <img
-            src="/plugin-art/sync-both-ways.png"
-            width="1831"
-            height="436"
-            alt="Pull takes your tokens from the code on GitHub into Figma Variables, one collection per tier. Push sends the variables you edited in Figma back for review."
-          />
+      <figure class="fp-hero-shot">
+        <picture class="fp-theme-light">
+          <source media="(max-width: 699px)" srcset="/plugin-art/sync-both-ways-narrow.png" width="800" height="1124" />
+          <img src="/plugin-art/sync-both-ways.png" width="1831" height="436" alt="Pull takes your tokens from the code on GitHub into Figma Variables, one collection per tier. Push sends the variables you edited in Figma back for review." />
+        </picture>
+        <picture class="fp-theme-dark">
+          <source media="(max-width: 699px)" srcset="/plugin-art/sync-both-ways-narrow-dark.png" width="800" height="1124" />
+          <img src="/plugin-art/sync-both-ways-dark.png" width="1831" height="436" alt="Pull takes your tokens from the code on GitHub into Figma Variables, one collection per tier. Push sends the variables you edited in Figma back for review." loading="lazy" />
         </picture>
       </figure>
     </section>
@@ -78,26 +73,10 @@ const NEEDS = [
         'Bridge Studio: the token change color.bg.zone sent from the plugin, from Primary 200 to Primary 100, added to the library after review',
       ]}
     >
-      <div slot="p0" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/pull-panel.png" width="592" height="822" alt="" loading="lazy" /></div>
-      <div slot="p1" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/push-panel.png" width="592" height="822" alt="" loading="lazy" /></div>
+      <div slot="p0" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/pull-panel.png" width="656" height="893" alt="" loading="lazy" /></div>
+      <div slot="p1" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/push-panel.png" width="656" height="893" alt="" loading="lazy" /></div>
       <div slot="p2" class="hp-sc hp-sc-center"><img class="fp-shot fp-wide" src="/plugin-art/review-in-studio.png" width="892" height="268" alt="" loading="lazy" /></div>
     </HpStepSection>
-
-    <section class="hp-wrap fp-needs" aria-labelledby="fp-needs">
-      <div class="fp-needs-head">
-        <h2 id="fp-needs" class="pr-h2">What you need.</h2>
-        <ButtonLink variant="secondary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Create your team</span></ButtonLink>
-      </div>
-      <ul class="pr-commitments fp-needs-list">
-        {
-          NEEDS.map((n) => (
-            <li>
-              <strong>{n.lead}</strong> {n.text}
-            </li>
-          ))
-        }
-      </ul>
-    </section>
 
     <div class="hp-wrap fp-band-wrap">
       <section class="pr-band fp-band" aria-labelledby="fp-bridge">

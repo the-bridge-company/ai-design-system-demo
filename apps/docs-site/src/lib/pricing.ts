@@ -265,7 +265,6 @@ export const HOME_FOUNDING = {
   titleLead: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays `,
   titleAccent: 'free',
   titleEnd: '.',
-  lead: `Bridge is free for every team today. Paid plans open in ${PAID_PLANS_OPEN}.`,
   primary: 'Create your team',
   secondary: 'See planned prices',
   facts: [

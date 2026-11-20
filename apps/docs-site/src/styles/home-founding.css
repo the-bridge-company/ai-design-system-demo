@@ -35,14 +35,6 @@
   font-variation-settings: "SOFT" 100;
 }
 
-.hp-fd-p {
-  max-width: 34ch;
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--_t19);
-  line-height: var(--font-leading-28);
-}
-
 .hp-fd-cta {
   display: flex;
   flex-wrap: wrap;

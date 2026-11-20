@@ -464,7 +464,14 @@
   margin-top: 0;
 }
 
-.rail-section a,
+.rail-section a {
+  gap: var(--space-3);
+  min-height: var(--size-9);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+/* A row not open yet (ProductsNav NavPage.soon): a span, the same box as a link row. */
 .rail-section .rail-soon {
   gap: var(--space-3);
   min-height: var(--size-9);

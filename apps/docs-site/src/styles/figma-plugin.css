@@ -2,35 +2,42 @@
    list) and styles/homepage.css (the column, the step tabs). Mobile first; side by side from 900px like the rest of
    the site. Tokens only; the dark theme comes from the tokens. */
 
-/* ---------- hero: the title, then the words and the actions, then the two-way picture ---------- */
+/* ---------- hero: centered, the title on two lines, the words, one action, then the two-way picture ---------- */
 .fp-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6) var(--space-12);
+  gap: var(--space-6);
+  justify-items: center;
   padding-top: var(--space-12);
   padding-bottom: var(--space-4);
+  text-align: center;
 }
 
+/* "Your tokens sync" on the first line, "both ways." under it; a phone wraps where it fits. */
 .fp-h1 {
-  max-width: 12ch;
+  margin-inline: auto;
+}
+
+@media (max-width: 699px) {
+  .fp-h1-br {
+    display: none;
+  }
 }
 
 .fp-hero-side {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  align-items: flex-start;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.fp-hero-side .pr-lead {
+  max-width: 52ch;
 }
 
 .fp-cta {
-  align-items: center;
-  gap: var(--space-3) var(--space-6);
+  justify-content: center;
   padding-top: 0;
-}
-
-/* Who it is for, said plainly under the actions: body text, not a grey footnote. */
-.fp-note {
-  color: var(--color-text-default);
 }
 
 /* A real screen: the plugin windows and the Studio page draw their own edges and shadow, so no second frame. */
@@ -44,6 +51,7 @@
    lines up with the title. */
 .fp-hero-shot {
   grid-column: 1 / -1;
+  justify-self: stretch;
   margin: var(--space-4) 0 0;
 }
 
@@ -144,7 +152,6 @@
 }
 
 @media (min-width: 900px) {
-  /* One column on every screen: the title, then the words and the actions under it, then the picture. */
   .fp-hero {
     padding-top: var(--space-20);
   }

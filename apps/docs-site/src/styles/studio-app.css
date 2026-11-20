@@ -464,7 +464,8 @@
   margin-top: 0;
 }
 
-.rail-section a {
+.rail-section a,
+.rail-section .rail-soon {
   gap: var(--space-3);
   min-height: var(--size-9);
   font-size: var(--typography-ui-size);
@@ -487,7 +488,8 @@
   padding: 0 var(--space-3);
 }
 
-.rail-section a svg {
+.rail-section a svg,
+.rail-section .rail-soon svg {
   width: var(--icon-size-md);
   height: var(--icon-size-md);
 }

@@ -21,7 +21,7 @@ import { switchTarget } from '../lib/space-switch';
 import { loadComponents } from '../lib/components';
 import { shellMarker, studioPathOfShell } from '../lib/team-shells';
 import { COMPONENT_SHELL_ROUTE, LIBRARY_SHELL_ROOT, LIBRARY_TEAM_NAV, libraryShellMarker, routeOfShell } from '../lib/library-shells';
-import { COMPARE, DOCS_SECURITY, LANDING, LIBRARY_HOME, SPACE_LABEL, STUDIO_HOME, locate, navFor, workspaceNav, type NavEntry, type NavItem, type Space } from '../lib/nav';
+import { COMING_SOON, COMPARE, DOCS_SECURITY, LANDING, LIBRARY_HOME, SPACE_LABEL, STUDIO_HOME, isComingSoonPath, locate, navFor, workspaceNav, type NavEntry, type NavItem, type Space } from '../lib/nav';
 import type { IconName } from '../brand/icons';
 import { PRIVACY_PAGE } from '../lib/account';
 import { siteRepo, siteRepoJson } from '../lib/config';
@@ -38,6 +38,7 @@ import { appSlugAtBuild, signInConfig } from '../lib/signin-config';
 import { GITHUB_URL, STORYBOOK_URL, sourceUrl } from '../lib/repo';
 import { humanDate } from '../lib/stats';
 import { BRANDS, DEFAULT_BRAND } from '../lib/tokens';
+import { ComingSoon } from '../components/site/ComingSoon';
 import { Avatar, Badge, Breadcrumb, Button, Icon, IconButton, Kbd, Link } from '@bridge-ds/react';
 import { siteIcon } from '../brand/site-icons';
 import { Menu as MenuIcon, Search, X } from 'lucide-react';
@@ -111,7 +112,9 @@ const isStudio = space === 'studio';
 // entries placed 'design-system'), then Settings at the foot. The workspace has no groups: Home, then Settings.
 const groups = isStudio && !library;
 const topNav = groups ? nav.filter((e) => !e.place) : nav;
-const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon })) : [];
+const designPages = groups && !noRepo ? nav.filter((e) => e.place === 'design-system' && e.href).map((e) => ({ href: e.href!, label: e.label, icon: e.icon, ...(e.soon ? { soon: true } : {}) })) : [];
+// A Patterns page while Patterns is coming soon (lib/nav.ts NavEntry.soon): the coming soon screen in its place.
+const soonPage = isComingSoonPath(path) || isComingSoonPath(Astro.url.pathname);
 const footNav = groups ? nav.filter((e) => e.place === 'foot' && e.href) : [];
 const isHome = path === LIBRARY_HOME || path === STUDIO_HOME;
 // Tokens, Components and Quality can show the library as an open change (lib/view-scope): the selector and the banner.
@@ -305,6 +308,17 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
         <ul class="nav">
           {
             topNav.map((entry, n) => {
+              // Not open yet: the row in place, disabled, with its tag; no link, so no one lands on it.
+              if (entry.soon)
+                return (
+                  <li>
+                    <span class="nav-link nav-soon" aria-disabled="true">
+                      <Icon icon={siteIcon(entry.icon)} size="md" className="icon" />
+                      <span>{entry.label}</span>
+                      <Badge tone="neutral" size="sm" className="nav-soon-tag">{COMING_SOON}</Badge>
+                    </span>
+                  </li>
+                );
               if (entry.href) {
                 const current = isCurrent(entry.href);
                 const inside = !current && here.entry?.label === entry.label;
@@ -418,7 +432,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
               {showToc ? (
                 <div class="page-grid">
                   <div class="page-body">
-                    <slot />
+                    {soonPage ? <ComingSoon studio={isStudio} /> : <slot />}
                   </div>
                   <aside class="page-toc" aria-label="On this page" data-auto-toc hidden>
                     <p class="page-toc-title">On this page</p>
@@ -426,13 +440,13 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
                   </aside>
                 </div>
               ) : (
-                <slot />
+                soonPage ? <ComingSoon studio={isStudio} /> : <slot />
               )}
             </div>
           ) : showToc ? (
             <div class="page-grid">
               <div class="page-body">
-                <slot />
+                {soonPage ? <ComingSoon studio={isStudio} /> : <slot />}
               </div>
               <aside class="page-toc" aria-label="On this page" data-auto-toc hidden>
                 <p class="page-toc-title">On this page</p>
@@ -440,7 +454,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
               </aside>
             </div>
           ) : (
-            <slot />
+            soonPage ? <ComingSoon studio={isStudio} /> : <slot />
           )
         }
         {

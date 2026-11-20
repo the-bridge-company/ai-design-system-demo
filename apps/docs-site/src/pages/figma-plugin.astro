@@ -20,25 +20,20 @@ import ButtonLink from '../components/ds/ButtonLink';
 import HandUnderline from '../components/site/HandUnderline.astro';
 import HpStepSection from '../components/home/HpStepSection.astro';
 import Illustration from '../components/Illustration.astro';
-import { signInHref } from '../lib/account';
-import { DEMO, DOCS_FIGMA_PLUGIN, LANDING } from '../lib/nav';
+import { DEMO, LANDING } from '../lib/nav';
 import { PLUGIN_COMMUNITY_URL } from '../lib/repo';
 
-// Create your team opens the sign-in screen with sign-up words, like the homepage's Get started.
-const GET_STARTED = signInHref(null, true);
 ---
 
 <Landing title="DS Bridge Figma plugin | Bridge" description="Pull your design system's tokens into Figma Variables. Send your edits back for review, contrast checked. Free, on Figma Community.">
   <div class="hp pr fp">
     <section class="hp-wrap fp-hero" aria-labelledby="fp-title">
-      <h1 id="fp-title" class="pr-h1 fp-h1">Your tokens sync <HandUnderline>both ways</HandUnderline>.</h1>
+      <h1 id="fp-title" class="pr-h1 fp-h1">Your tokens sync<br class="fp-h1-br" /> <HandUnderline>both ways</HandUnderline>.</h1>
       <div class="fp-hero-side">
         <p class="pr-lead">Pull your design system's tokens into Figma Variables. Send your edits back for review, contrast checked.</p>
         <div class="pr-hero-cta fp-cta">
           <ButtonLink variant="primary" size="lg" iconEnd={ArrowUpRight} href={PLUGIN_COMMUNITY_URL}>Get it on Figma Community</ButtonLink>
-          <ButtonLink variant="link" size="lg" href={DOCS_FIGMA_PLUGIN}>Read the plugin docs</ButtonLink>
         </div>
-        <p class="pr-text fp-note">Needs a free Bridge account (<Link href={GET_STARTED}>create your team</Link>). GitHub only. Works on the free Figma plan.</p>
       </div>
       <figure class="fp-hero-shot">
         <picture class="fp-theme-light">
@@ -75,7 +70,7 @@ const GET_STARTED = signInHref(null, true);
     >
       <div slot="p0" class="hp-sc hp-sc-center"><figure class="fp-window"><img src="/plugin-art/pull-window.png" width="480" height="640" alt="" loading="lazy" /></figure></div>
       <div slot="p1" class="hp-sc hp-sc-center"><figure class="fp-window"><img src="/plugin-art/push-window.png" width="480" height="640" alt="" loading="lazy" /></figure></div>
-      <div slot="p2" class="hp-sc hp-sc-center"><img class="fp-shot fp-wide" src="/plugin-art/review-in-studio.png" width="892" height="268" alt="" loading="lazy" /></div>
+      <div slot="p2" class="hp-sc hp-sc-center"><img class="fp-shot fp-wide" src="/plugin-art/review-in-studio.png" width="1032" height="300" alt="" loading="lazy" /></div>
     </HpStepSection>
 
     <div class="hp-wrap fp-band-wrap">

@@ -7,9 +7,8 @@ import { Button, IconButton, Link } from '@bridge-ds/react';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import Logo from '../Logo.astro';
 import ButtonLink from '../ds/ButtonLink';
-import { PLUGIN_COMMUNITY_URL } from '../../lib/repo';
 import SiteNavItem, { type Props as Item } from './SiteNavItem.astro';
-import { ABOUT, PRICING, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, STUDIO_HOME } from '../../lib/nav';
+import { ABOUT, FIGMA_PLUGIN, PRICING, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, STUDIO_HOME } from '../../lib/nav';
 import { SIGNIN_PAGE } from '../../lib/account';
 
 interface Props {
@@ -25,7 +24,7 @@ const groups: { id: string; label: string; items: Item[] }[] = [
     label: 'Product',
     items: [
       { href: STUDIO_HOME, title: 'Bridge', text: 'Review and keep design system changes', icon: 'bridge' },
-      { href: PLUGIN_COMMUNITY_URL, title: 'Figma plugin', text: 'Your tokens in Figma, both ways', icon: 'plugin' },
+      { href: FIGMA_PLUGIN, title: 'Figma plugin', text: 'Your tokens in Figma, both ways', icon: 'plugin' },
     ],
   },
   {

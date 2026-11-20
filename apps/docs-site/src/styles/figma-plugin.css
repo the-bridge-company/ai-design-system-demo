@@ -1,0 +1,154 @@
+/* /figma-plugin/ (pages/figma-plugin.astro), on top of styles/pricing.css (.pr type, the Harbor band, the hairline
+   list) and styles/homepage.css (the column, the step tabs). Mobile first; side by side from 900px like the rest of
+   the site. Tokens only; the dark theme comes from the tokens. */
+
+/* ---------- hero: the title, then the words and the actions, then the two-way picture ---------- */
+.fp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6) var(--space-12);
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-4);
+}
+
+.fp-h1 {
+  max-width: 12ch;
+}
+
+.fp-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.fp-cta {
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-top: 0;
+}
+
+/* Who it is for, said plainly under the actions: body text, not a grey footnote. */
+.fp-note {
+  color: var(--color-text-default);
+}
+
+/* A real screen: the plugin windows and the Studio page draw their own edges and shadow, so no second frame. */
+.fp-shot {
+  display: block;
+  margin: 0;
+}
+
+/* The two-way picture: transparent PNGs drawn for each theme (light and dark plates), the one matching data-theme
+   shows. Its plates sit a little inside the image: on wide screens it is pulled out by that inset so the Code card
+   lines up with the title. */
+.fp-hero-shot {
+  grid-column: 1 / -1;
+  margin: var(--space-4) 0 0;
+}
+
+.fp-hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fp-theme-dark,
+:root[data-theme="dark"] .fp-theme-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .fp-theme-dark {
+  display: block;
+}
+
+/* ---------- how it works: the screens inside the step panel ---------- */
+.fp-panel,
+.fp-wide {
+  width: 100%;
+  height: auto;
+}
+
+/* The plugin window at its own size (560 px, plus the room its shadow takes), so its text reads at 1x beside the step
+   text. */
+.fp-panel {
+  max-width: calc(var(--size-140) + var(--space-24));
+}
+
+/* The plugin window and the Studio page take the whole panel, not the drawings' column, so their text stays
+   readable. */
+.fp .hp-ui:has(.fp-wide, .fp-panel),
+.fp .hp-sc:has(.fp-wide, .fp-panel) {
+  max-width: none;
+}
+
+/* On a phone the whole window would shrink its text: show its top (the banner and the first variables) instead, the
+   window itself as wide as the panel (its transparent shadow margin, 48 of 656 px a side, overflows). */
+@media (max-width: 699px) {
+  .fp-panel {
+    width: calc(100% * 656 / 560);
+    max-width: none;
+    margin-inline: calc(100% * -48 / 560);
+    aspect-ratio: 656 / 500;
+    object-fit: cover;
+    object-position: top;
+  }
+}
+
+/* ---------- the Harbor band: the way to Bridge ---------- */
+.fp-band-wrap {
+  padding-top: var(--space-20);
+}
+
+.fp-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+
+.fp-band-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.fp-band-text .pr-h2 {
+  max-width: 22ch;
+}
+
+.fp-band-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-top: var(--space-2);
+}
+
+/* On the Harbor zone the drawing's zone fills switch to paper so they stay visible (as .zone .ill in brand.css). */
+.fp-band-art [data-fill="zone"] {
+  fill: var(--color-surface-default);
+}
+
+.fp-band-art {
+  justify-self: center;
+  width: min(100%, var(--size-80));
+  height: auto;
+}
+
+@media (min-width: 900px) {
+  .fp-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    padding-top: var(--space-20);
+  }
+
+  .fp-hero-shot {
+    margin: var(--space-8) calc(var(--space-3) * -1) 0;
+  }
+
+  .fp-band {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-12);
+  }
+}

@@ -74,6 +74,9 @@ export const COMPARE = '/compare/';
 export const ABOUT = '/about/';
 /** Free, Team and Organization (pages/pricing.astro). */
 export const PRICING = '/pricing/';
+/** The DS Bridge Figma plugin's product page (pages/figma-plugin.astro): the header Product menu and the footer open it.
+ * The plugin docs stay at DOCS_FIGMA_PLUGIN, the install at the Community page (lib/repo PLUGIN_COMMUNITY_URL). */
+export const FIGMA_PLUGIN = '/figma-plugin/';
 /** The terms of service (pages/terms.astro) and the legal notice (pages/legal.astro), linked from every footer. */
 export const TERMS = '/terms/';
 export const LEGAL = '/legal/';

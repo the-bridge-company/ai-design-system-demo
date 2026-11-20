@@ -1,0 +1,95 @@
+---
+// /figma-plugin/: the product page of the DS Bridge Figma plugin (founder decisions 2026-11-19). The header Product
+// menu and the footer Product column open it; the plugin docs stay at /docs/figma-plugin/. The plugin on Figma
+// Community is the tokens-only MVP: this page promises Pull and Push of tokens, nothing about components (the hidden
+// features are listed as "Coming next" in the docs only). Built like /pricing/: the hero (one primary action, the
+// Community page, what you need in one line under it), how it works (the homepage step tabs, real plugin and Studio
+// screens) and the one Harbor band that leads to Bridge. Screens: public/plugin-art/. The two-way picture is the
+// Community cover's lower band, drawn again on a transparent ground in a light and a dark version, wide and stacked
+// for phones (the page shows the one that matches data-theme). The plugin windows are framed as in gallery 1, Pull with
+// its variable list open; the Studio screen is from gallery 2. Styles: styles/figma-plugin.css on top of
+// styles/pricing.css.
+import '../styles/homepage.css';
+import '../styles/home-illus.css';
+import '../styles/pricing.css';
+import '../styles/figma-plugin.css';
+import Landing from '../layouts/Landing.astro';
+import { Link } from '@bridge-ds/react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import ButtonLink from '../components/ds/ButtonLink';
+import HandUnderline from '../components/site/HandUnderline.astro';
+import HpStepSection from '../components/home/HpStepSection.astro';
+import Illustration from '../components/Illustration.astro';
+import { signInHref } from '../lib/account';
+import { DEMO, DOCS_FIGMA_PLUGIN, LANDING } from '../lib/nav';
+import { PLUGIN_COMMUNITY_URL } from '../lib/repo';
+
+// Create your team opens the sign-in screen with sign-up words, like the homepage's Get started.
+const GET_STARTED = signInHref(null, true);
+---
+
+<Landing title="DS Bridge Figma plugin | Bridge" description="Pull your design system's tokens into Figma Variables. Send your edits back for review, contrast checked. Free, on Figma Community.">
+  <div class="hp pr fp">
+    <section class="hp-wrap fp-hero" aria-labelledby="fp-title">
+      <h1 id="fp-title" class="pr-h1 fp-h1">Your tokens sync <HandUnderline>both ways</HandUnderline>.</h1>
+      <div class="fp-hero-side">
+        <p class="pr-lead">Pull your design system's tokens into Figma Variables. Send your edits back for review, contrast checked.</p>
+        <div class="pr-hero-cta fp-cta">
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowUpRight} href={PLUGIN_COMMUNITY_URL}>Get it on Figma Community</ButtonLink>
+          <ButtonLink variant="link" size="lg" href={DOCS_FIGMA_PLUGIN}>Read the plugin docs</ButtonLink>
+        </div>
+        <p class="pr-text fp-note">Needs a free Bridge account (<Link href={GET_STARTED}>create your team</Link>). GitHub only. Works on the free Figma plan.</p>
+      </div>
+      <figure class="fp-hero-shot">
+        <picture class="fp-theme-light">
+          <source media="(max-width: 699px)" srcset="/plugin-art/sync-both-ways-narrow.png" width="800" height="1124" />
+          <img src="/plugin-art/sync-both-ways.png" width="1831" height="436" alt="Pull takes your tokens from the code on GitHub into Figma Variables, one collection per tier. Push sends the variables you edited in Figma back for review." />
+        </picture>
+        <picture class="fp-theme-dark">
+          <source media="(max-width: 699px)" srcset="/plugin-art/sync-both-ways-narrow-dark.png" width="800" height="1124" />
+          <img src="/plugin-art/sync-both-ways-dark.png" width="1831" height="436" alt="Pull takes your tokens from the code on GitHub into Figma Variables, one collection per tier. Push sends the variables you edited in Figma back for review." loading="lazy" />
+        </picture>
+      </figure>
+    </section>
+
+    <HpStepSection
+      id="fp-how"
+      title="Pull, edit, send for review."
+      lede="The repository stays the source of truth."
+      steps={[
+        {
+          title: 'Pull: code into Figma',
+          text: 'One collection per tier, with its modes. You see the plan before anything is written, your Figma edits are kept, and conflicts are yours to decide.',
+        },
+        {
+          title: 'Push: your edits, contrast checked',
+          text: 'Each edited variable shows the contrast it moves in every brand and theme. A failing pair disables the send.',
+        },
+        { title: 'Reviewed, never written to main', text: 'Your edits become a pull request or a suggestion for your design system lead.' },
+      ]}
+      labels={[
+        'The plugin, Pull tab: Bring your design system into this file, 610 variables from the design system, nothing is written until you apply, and an Apply to Figma button',
+        'The plugin, Push tab: 2 changes ready to send, all 17 contrast pairs the checked edits move still pass, each edited variable with its light and dark values before and after, and a Send for review button',
+        'Bridge Studio: the token change color.bg.zone sent from the plugin, from Primary 200 to Primary 100, added to the library after review',
+      ]}
+    >
+      <div slot="p0" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/pull-panel.png" width="656" height="893" alt="" loading="lazy" /></div>
+      <div slot="p1" class="hp-sc hp-sc-center"><img class="fp-shot fp-panel" src="/plugin-art/push-panel.png" width="656" height="893" alt="" loading="lazy" /></div>
+      <div slot="p2" class="hp-sc hp-sc-center"><img class="fp-shot fp-wide" src="/plugin-art/review-in-studio.png" width="892" height="268" alt="" loading="lazy" /></div>
+    </HpStepSection>
+
+    <div class="hp-wrap fp-band-wrap">
+      <section class="pr-band fp-band" aria-labelledby="fp-bridge">
+        <div class="fp-band-text">
+          <h2 id="fp-bridge" class="pr-h2">The plugin keeps Figma in sync. Bridge decides what is kept.</h2>
+          <p class="pr-text">Explore with AI, keep what works in your design system.</p>
+          <div class="fp-band-cta">
+            <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={LANDING}>See how Bridge works</ButtonLink>
+            <Link href={DEMO}>Open the demo</Link>
+          </div>
+        </div>
+        <Illustration name="hero" width={320} class="fp-band-art" />
+      </section>
+    </div>
+  </div>
+</Landing>

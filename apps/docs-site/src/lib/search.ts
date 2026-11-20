@@ -1,6 +1,6 @@
 // Command palette index: pages, components and every token. Served as /search-index.json and fetched on first open.
 import { loadComponents } from './components';
-import { ABOUT, COMPARE, PRICING, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, SPACE_LABEL, allPages } from './nav';
+import { ABOUT, COMPARE, FIGMA_PLUGIN, PRICING, DOCS_FIGMA_PLUGIN, DOCS_HOME, LANDING, SPACE_LABEL, allPages } from './nav';
 import { loadTokens } from './tokens';
 import { studioHref } from './team-path';
 import { JIRA_IN_BRIDGE } from './studio-flags';
@@ -47,6 +47,7 @@ export function searchIndex(): SearchItem[] {
     { kind: 'page', title: 'Bridge overview', href: LANDING, meta: 'What Bridge does, from an exploration to the design system', keys: 'landing home product' },
     { kind: 'page', title: 'Compare', href: COMPARE, meta: 'Bridge next to Figma, Supernova, zeroheight, Tokens Studio, Chromatic and story.to.design', keys: 'comparison alternatives competitors code connect' },
     { kind: 'page', title: 'Pricing', href: PRICING, meta: 'Free for a small team, then per editor, capped per design system', keys: 'pricing price plans free team organization billing cost saml' },
+    { kind: 'page', title: 'Figma plugin', href: FIGMA_PLUGIN, meta: 'Your tokens sync both ways between GitHub and Figma Variables, free on Figma Community', keys: 'figma plugin ds bridge tokens variables pull push sync community' },
     { kind: 'page', title: 'About Bridge', href: ABOUT, meta: 'Why Bridge exists, its license, who made it', keys: 'about author open source fair source license mit fsl' },
     { kind: 'page', title: 'Getting started with Bridge', href: DOCS_HOME, meta: 'Sign in, connect your design system, your first exploration, glossary', keys: 'docs guide start sign in glossary' },
     { kind: 'page', title: 'DS Bridge Figma plugin', href: DOCS_FIGMA_PLUGIN, meta: 'Pull tokens from code, push your variable edits for review, install from Figma Community', keys: 'figma plugin install pull push tokens variables community' },

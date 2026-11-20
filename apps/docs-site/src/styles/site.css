@@ -1534,3 +1534,29 @@ label {
 :root[data-view-only] #ed-add {
   display: none;
 }
+
+/* A nav entry not open yet (lib/nav.ts NavEntry.soon): the row in place, in the disabled ink, with its "Coming soon"
+   tag at the end; no link, no hover plate, no pointer. */
+.rail .nav-soon,
+.rail-section .rail-soon {
+  color: var(--color-text-disabled);
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .rail .nav-soon:hover,
+  .rail-section .rail-soon:hover {
+    background-color: transparent;
+    color: var(--color-text-disabled);
+  }
+}
+
+/* The tag sits right after the label, the same in the Library rail and in Studio's Design system group. */
+.rail-section .rail-soon .nav-soon-tag {
+  margin-inline-start: var(--space-2);
+}
+
+/* The coming soon screen (components/site/ComingSoon.tsx): room above and below, like an empty page. */
+.coming-soon {
+  padding-block: var(--space-20);
+}

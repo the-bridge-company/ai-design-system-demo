@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ABOUT, allPages, COMPARE, DEMO, FIGMA_PLUGIN, DOCS_AUTOMATIC_MEASURE, DOCS_CONFLUENCE, DOCS_FIGMA_PLUGIN, DOCS_HOME, DOCS_SECURITY, HOW_REVIEW_WORKS, LANDING, LIBRARY_HOME, LEGAL, locate, PRICING, TERMS, navFor, SETTINGS_HOME, SETTINGS_SECTIONS, spaceOf, WORKSPACE_SETTINGS, workspaceNav } from './nav';
+import { ABOUT, allPages, COMPARE, isComingSoonPath, patternsNav, DEMO, FIGMA_PLUGIN, DOCS_AUTOMATIC_MEASURE, DOCS_CONFLUENCE, DOCS_FIGMA_PLUGIN, DOCS_HOME, DOCS_SECURITY, HOW_REVIEW_WORKS, LANDING, LIBRARY_HOME, LEGAL, locate, PRICING, TERMS, navFor, SETTINGS_HOME, SETTINGS_SECTIONS, spaceOf, WORKSPACE_SETTINGS, workspaceNav } from './nav';
 import { WORKSPACE_HOME } from './start';
 import { DEMO_REPOS } from './demo';
 import { REDIRECT_SCRIPT_BODY, REDIRECTS, redirectScript, redirectTarget } from './redirects';
@@ -25,23 +25,21 @@ describe('navigation data', () => {
     expect(missing.map((p) => p.href)).toEqual([]);
   });
 
-  it('lists Patterns by kind, Interactions then Actions, each its own page (decisions 2026-11-15 and 2026-11-17)', () => {
-    const patterns = navFor('library').find((e) => e.label === 'Patterns')!;
-    // No Overview row and no row per pattern: both kinds, always (a kind with no pattern yet lands on its empty line).
-    expect(patterns.children!.map((i) => [i.label, i.href])).toEqual([
+  it('shows Patterns as coming soon in both spaces: a disabled row, no link, no page in search (owner 2026-11-20)', () => {
+    const library = navFor('library').find((e) => e.label === 'Patterns')!;
+    expect(library).toMatchObject({ soon: true });
+    expect(library.children).toBeUndefined();
+    expect(navFor('studio').find((e) => e.label === 'Patterns')).toMatchObject({ soon: true, place: 'design-system' });
+    // Search and llms.txt send no one to it.
+    expect(allPages().filter((p) => p.href.includes('/patterns/'))).toEqual([]);
+    // The rows by kind are kept for when it opens: Interactions then Actions, each its own page.
+    expect(patternsNav().map((i) => [i.label, i.href])).toEqual([
       ['Interactions', '/patterns/interactions/'],
       ['Actions', '/patterns/actions/'],
     ]);
-    // A kind's page is its row; a pattern's page makes its kind's row current.
-    expect(locate('/patterns/delete/')).toMatchObject({ group: 'Patterns', item: { label: 'Actions' } });
-    expect(locate('/patterns/close-on-escape/')).toMatchObject({ group: 'Patterns', item: { label: 'Interactions' } });
-    expect(locate('/patterns/actions/')).toMatchObject({ group: 'Patterns', item: { label: 'Actions' } });
-    // Search and llms.txt find each kind's page, then each pattern by name; the old index is a redirect, not a page.
-    const pages = allPages().filter((p) => p.href.startsWith('/patterns/'));
-    expect(pages.slice(0, 2).map((p) => p.href)).toEqual(['/patterns/interactions/', '/patterns/actions/']);
-    expect(pages.map((p) => p.href)).not.toContain('/patterns/');
-    expect(pages.map((p) => p.label)).toEqual(expect.arrayContaining(['Close on Escape', 'Delete', 'Send for review', 'Pick with Enter']));
-    expect(pages.map((p) => p.label)).not.toContain('Overview');
+    // Every Patterns address, Library or Studio, any team, shows the coming soon screen.
+    for (const p of ['/patterns/interactions/', '/patterns/delete/', '/studio/patterns/', '/team-shell/patterns/']) expect(isComingSoonPath(p), p).toBe(true);
+    for (const p of ['/components/select/', '/studio/components/', '/']) expect(isComingSoonPath(p), p).toBe(false);
   });
 
   it('lists each page once per space', () => {
@@ -67,7 +65,8 @@ describe('navigation data', () => {
       // The Studio's Design system group stays a handful: Components, Patterns, Tokens, Quality.
       expect(nav.filter((e) => e.place === 'design-system').length).toBeLessThanOrEqual(4);
       expect(nav.length).toBeLessThanOrEqual(9);
-      for (const e of nav) expect(Boolean(e.href) !== Boolean(e.children), e.label).toBe(true);
+      // A page or a group, never both; a section coming soon may be neither (a disabled row).
+      for (const e of nav) if (!(e.soon && !e.children)) expect(Boolean(e.href) !== Boolean(e.children), e.label).toBe(true);
     }
   });
 

@@ -64,7 +64,14 @@ export interface NavEntry {
    * llms.txt and locate read these instead of the rows.
    */
   pages?: NavItem[];
+  /**
+   * Not open yet (Patterns, owner 2026-11-20): drawn disabled with a "Coming soon" tag, no link, left out of search;
+   * its pages show the coming soon screen to anyone who has their address (layouts/Layout.astro).
+   */
+  soon?: boolean;
 }
+
+export { COMING_SOON, isComingSoonPath } from './coming-soon';
 
 /** The Library home. "/" is the product landing (pages/index.astro), with its own header and footer. */
 export const LIBRARY_HOME = '/library/';
@@ -164,13 +171,12 @@ export function componentFamilies() {
 }
 
 export function libraryNav(): NavEntry[] {
-  const patterns = patternsNav();
   return [
     { href: LIBRARY_HOME, label: 'Home', icon: 'home', meta: "What's new and where to start" },
     { label: 'Foundations', icon: 'layers', children: FOUNDATIONS },
     { href: '/components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance' },
-    // Always, with or without patterns: an empty kind (or no pattern at all) shows how one comes to exist.
-    { label: 'Patterns', icon: 'hand', children: patterns, pages: patternPages() },
+    // Coming soon (owner 2026-11-20): the row stays, disabled with its tag; patternsNav() comes back when it opens.
+    { label: 'Patterns', icon: 'hand', soon: true, meta: 'Interactions and actions shared across the product, coming soon' },
     { label: 'Use', icon: 'book', children: LIBRARY_USE },
   ];
 }
@@ -184,7 +190,7 @@ export const STUDIO_PATTERNS_HREF = '/studio/patterns/';
  * latest library only, a "Viewing" selector there would change nothing.
  */
 export function studioNav(): NavEntry[] {
-  const patterns: NavEntry[] = [{ href: STUDIO_PATTERNS_HREF, label: 'Patterns', icon: 'hand', place: 'design-system', meta: 'Interactions and actions shared across the product, and the changes asked on them' }];
+  const patterns: NavEntry[] = [{ href: STUDIO_PATTERNS_HREF, label: 'Patterns', icon: 'hand', place: 'design-system', soon: true, meta: 'Interactions and actions shared across the product, coming soon' }];
   return [
     { href: STUDIO_HOME, label: 'Home', icon: 'gauge', meta: 'What waits for you, suggestions and activity' },
     { href: STUDIO_EXPLORATIONS_HREF, label: 'Explorations', icon: 'branch', badge: 'explorations', meta: 'Every exploration, what waits on you first, from exploring to shipped' },
@@ -256,7 +262,8 @@ export function locate(path: string): { space: Space; entry?: NavEntry; group?: 
 /** Every page entry of both spaces, for the command palette and llms.txt. */
 export function allPages(): (NavItem & { space: Space })[] {
   const spaces: Space[] = ['library', 'studio'];
-  return spaces.flatMap((space) => navFor(space).flatMap((e) => (e.pages ?? pagesOf(e)).map((i) => ({ ...i, space }))));
+  // A section not open yet (soon) is left out: search and llms.txt never send anyone to it.
+  return spaces.flatMap((space) => navFor(space).filter((e) => !e.soon).flatMap((e) => (e.pages ?? pagesOf(e)).map((i) => ({ ...i, space }))));
 }
 
 export const SPACE_LABEL: Record<Space, string> = { library: 'Library', studio: 'Studio' };

@@ -150,6 +150,8 @@ function body(spec: ThumbSpec, size: ThumbSize, chip?: string | null, eager?: bo
       return <Halves before={<Glyphs value={spec.before} scale={s} />} after={<Glyphs value={spec.after} scale={s} />} />;
     }
     case 'image':
+      // Something new has no before: its after alone.
+      if (!spec.before) return <img className="bt-img" src={spec.after} alt="" loading="lazy" decoding="async" />;
       return (
         <Halves
           before={<img className="bt-img" src={spec.before} alt="" loading="lazy" decoding="async" />}

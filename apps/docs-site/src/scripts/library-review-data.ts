@@ -375,6 +375,16 @@ export async function loadLibraryReview(paint: (d: ReviewData) => void, opts: { 
       data.screenRoutes.set(k, shot?.route ?? null);
     }),
   ]);
+  // A piece with no picture of its own (an exploration's new component, no library change yet, or a change with no
+  // visual impact run): the capture of the screen that asks for it, the screen it is "New in".
+  for (const p of data.pieces) {
+    const own = data.thumbs.get(p.key);
+    if (own && own.kind !== 'icon') continue;
+    const shot = askingScreens(p, data.products)
+      .map((sc) => (sc.number ? data.screens.get(screenKey(sc)) : undefined))
+      .find((s) => s?.kind === 'screen' && s.src);
+    if (shot) data.thumbs.set(p.key, shot);
+  }
   emit();
 }
 

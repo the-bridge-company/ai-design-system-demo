@@ -40,6 +40,62 @@ describe('Select', () => {
     await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
   });
 
+  it('keeps the highlighted option when a click outside closes the list', async () => {
+    const onValueChange = vi.fn();
+    render(
+      <>
+        <Select label="Theme" options={THEMES} defaultValue="system" onValueChange={onValueChange} />
+        <p>Outside</p>
+      </>,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Theme' });
+    await userEvent.tab();
+    await userEvent.keyboard('{ArrowDown}');
+    await screen.findByRole('listbox');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'System' })).toHaveAttribute('data-highlighted'));
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Light' })).toHaveAttribute('data-highlighted'));
+    await userEvent.click(screen.getByText('Outside'));
+    await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
+    expect(onValueChange).toHaveBeenCalledTimes(1);
+    expect(onValueChange).toHaveBeenCalledWith('light');
+    expect(trigger).toHaveTextContent('Light');
+  });
+
+  it('still closes on Escape without picking the highlighted option', async () => {
+    const onValueChange = vi.fn();
+    render(<Select label="Theme" options={THEMES} defaultValue="system" onValueChange={onValueChange} />);
+    const trigger = screen.getByRole('combobox', { name: 'Theme' });
+    await userEvent.tab();
+    await userEvent.keyboard('{ArrowDown}');
+    await screen.findByRole('listbox');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'System' })).toHaveAttribute('data-highlighted'));
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Light' })).toHaveAttribute('data-highlighted'));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(trigger).toHaveTextContent('System');
+  });
+
+  it('only closes a multiple Select on a click outside', async () => {
+    const onValuesChange = vi.fn();
+    render(
+      <>
+        <Select multiple inlineLabel="Theme" options={THEMES} values={[]} onValuesChange={onValuesChange} />
+        <p>Outside</p>
+      </>,
+    );
+    const trigger = screen.getByRole('combobox');
+    await userEvent.tab();
+    await userEvent.keyboard('{ArrowDown}');
+    await screen.findByRole('listbox');
+    await waitFor(() => expect(screen.getByRole('option', { name: 'System' })).toHaveAttribute('data-highlighted'));
+    await userEvent.click(screen.getByText('Outside'));
+    await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
+    expect(onValuesChange).not.toHaveBeenCalled();
+  });
+
   it('marks disabled options and skips them with arrows', async () => {
     render(<Select label="Theme" options={THEMES} defaultValue="dark" />);
     await userEvent.click(screen.getByRole('combobox', { name: 'Theme' }));

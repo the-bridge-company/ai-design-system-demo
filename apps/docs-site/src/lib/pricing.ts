@@ -179,6 +179,8 @@ export interface Tier {
   cta?: string;
   /** Text in the card footer instead of a button. */
   footerNote?: string;
+  /** What a founding team keeps on this tier, said on the card itself (Free): the limits above stop at the cutoff. */
+  founding?: { title: string; text: string };
 }
 
 export const TIERS: Tier[] = [
@@ -187,6 +189,10 @@ export const TIERS: Tier[] = [
     name: 'Free',
     pitch: 'For a small team getting started.',
     includes: [`Up to ${inWords(FREE_EDITORS)} editors`, 'Unlimited readers', 'One design system', 'Every feature'],
+    founding: {
+      title: `Created by ${FOUNDING_CUTOFF_LABEL}: no limits`,
+      text: 'A founding team keeps unlimited editors and design systems, free with no end date.',
+    },
     cta: 'Create your team',
   },
   {

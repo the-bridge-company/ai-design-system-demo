@@ -128,6 +128,8 @@ describe('pricing (/pricing/)', () => {
     expect(TIERS.map((t) => t.cta)).toEqual(['Create your team', undefined, 'Ask about Organization']);
     expect(TIERS.filter((t) => t.badge).map((t) => t.id)).toEqual(['team', 'organization']);
     expect(TIERS.find((t) => t.id === 'team')!.footerNote).toBe('Start today on Free. Created by 31 March 2027, your team never pays this.');
+    // The Free card says what a founding team keeps, so its limits never read as the founder's limits.
+    expect(TIERS.find((t) => t.id === 'free')!.founding).toEqual({ title: 'Created by 31 March 2027: no limits', text: 'A founding team keeps unlimited editors and design systems, free with no end date.' });
     expect(page.match(/variant="primary"/g)).toHaveLength(1);
     expect(allWords).not.toMatch(/countdown|hurry|launch offer|checkout/i);
   });

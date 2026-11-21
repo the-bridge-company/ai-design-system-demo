@@ -100,6 +100,12 @@ export default function PricingPlans({ hrefs }: PricingPlansProps) {
                       <li key={line}>{line}</li>
                     ))}
                   </ul>
+                  {t.founding && (
+                    <a className="pr-founding" href="#founding">
+                      <span className="pr-founding-title">{t.founding.title}</span>
+                      <span className="pr-founding-text">{t.founding.text}</span>
+                    </a>
+                  )}
                 </CardBody>
                 <CardFooter className="pr-card-foot">
                   {t.cta && href ? (

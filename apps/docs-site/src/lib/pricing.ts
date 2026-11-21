@@ -218,7 +218,7 @@ export const TIERS: Tier[] = [
  * hosted use. Bridge pays the hosting (functions, storage, email); the team's own Claude account and GitHub carry the
  * rest. Said on the pricing page, in the founding commitment and in the FAQ, with the same words.
  */
-export const FAIR_USE = 'Hosting is fair use: a team whose hosted use runs far above a typical team is slowed or paused, never deleted, and can self-host without limit.';
+export const FAIR_USE = 'Hosting is fair use: a team whose hosted use runs far above a typical team chooses usage credits, a paid plan or self-hosting, and is only slowed or paused, never deleted, if it chooses nothing.';
 
 /** "On every tier, Free included": permanent wording, a bold lead and the rest of the sentence. */
 export const COMMITMENTS_TITLE = 'On every tier, Free included';
@@ -226,7 +226,7 @@ export const COMMITMENTS: { lead: string; text: string }[] = [
   { lead: 'Components and tokens are MIT.', text: 'What goes into your product, with no non-compete.' },
   { lead: 'Each version becomes MIT', text: 'two years after its release (FSL-1.1-MIT).' },
   { lead: 'Self-hosting has no limit:', text: 'as many editors and design systems as you like.' },
-  { lead: 'A free account never receives an invoice.', text: 'No card, no automatic charge when you grow.' },
+  { lead: 'A free account never receives an invoice it did not ask for.', text: 'No card, no automatic charge when you grow.' },
   { lead: 'A limit never deletes.', text: 'Bridge pauses, hides or makes read-only. Free means every feature and every seat; hosted use is fair use (terms 8.4).' },
   { lead: 'Sign-in stays free on every tier.', text: SIGN_IN },
 ];
@@ -388,7 +388,7 @@ export const FAQ: FaqItem[] = [
     question: 'Who pays for what when Bridge is free?',
     answer: [
       'Your team pays for what runs on its side: Claude runs in your own Claude account (Bridge holds no API key), your code and previews stay on your GitHub and your hosting.',
-      'Bridge pays for what it hosts: Studio and the Library pages, the Claude connector, the functions behind them, storage and the emails it sends. That cost grows with use, so the hosted service is fair use on every tier, founding teams included (terms, section 8.4). A typical team never meets it.',
+      'Bridge pays for what it hosts: Studio and the Library pages, the Claude connector, the functions behind them, storage and the emails it sends. That cost grows with use, so the hosted service is fair use on every tier, founding teams included (terms, section 8.4). A typical team never meets it. A team far above it gets a message first, then chooses: prepaid usage credits (once paid plans open, never renewed on their own), a paid plan, or self-hosting. Only a team that chooses nothing is slowed or paused, and nothing is ever deleted.',
       'Signing in with GitHub reads with your own GitHub access and costs Bridge far less than a code sent by email. Self-hosting has no limit at all.',
     ],
   },

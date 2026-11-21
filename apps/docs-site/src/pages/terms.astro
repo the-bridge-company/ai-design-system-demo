@@ -123,7 +123,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       <p>The plans and their planned prices are below. The <Link href={PRICING}>pricing page</Link> shows them too; if the two ever differ, the pricing page at the date of your order applies to that order.</p>
       <p><strong>Free</strong></p>
       <ul>
-        <li>0, never billed. A Free team never receives an invoice.</li>
+        <li>0, never billed. A Free team never receives an invoice for anything an admin did not buy (usage credits, section 8.4).</li>
         <li>Up to {FREE_EDITORS} editors and {FREE_DESIGN_SYSTEMS} design system.</li>
         <li>No availability commitment and no support commitment.</li>
       </ul>
@@ -181,13 +181,14 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
         <li>pause actions that would go over the limit.</li>
       </ul>
       <p>8.2 Everything comes back as it was when the team goes back under the limit or the payment is made.</p>
-      <p>8.3 A Free team is never billed. Bridge never moves a team to a paid plan without an admin choosing it.</p>
+      <p>8.3 A Free team is never billed for anything an admin did not buy. Bridge never moves a team to a paid plan, and never sells it usage credits (section 8.4), without an admin choosing it.</p>
       <p>8.4 Fair use of the hosted service. Every plan, Free and founding teams included, gives every feature and every seat it lists. The hosted service itself (the functions, storage and emails Bridge runs and pays for) is provided for fair use: the use a team makes in the normal course of designing and reviewing its design system. If a team's hosted use runs far above that of a typical team, for at least several days, Bridge will:</p>
       <ul>
-        <li>first write to the team's admins, say what is high and how to bring it down (for example signing in with GitHub, which reads with the team's own access);</li>
-        <li>then, if it continues for 14 days after that message, slow down or pause only the hosted actions concerned, as in section 8.1, never deleting anything.</li>
+        <li>write to the team's admins, say what is high and how to bring it down (for example signing in with GitHub, which reads with the team's own access); and</li>
+        <li>offer the admins a choice: buy usage credits, choose a paid plan that includes more hosted use, or self-host Bridge without limit (section 14).</li>
       </ul>
-      <p>The team can always self-host Bridge without limit (section 14), or choose a paid plan if one offers more hosted capacity. Fair use is not a way to charge a team without an admin choosing it (section 8.3).</p>
+      <p>Usage credits are prepaid by an admin and only pay for hosted use above fair use. They never renew on their own unless an admin turns that on, and their price and terms are published on the pricing page before they can be bought. They can be bought once paid plans open; until then the choice is between bringing use down and self-hosting.</p>
+      <p>If no admin makes a choice within 14 days of that message and the use stays far above fair use, Bridge slows down or pauses only the hosted actions concerned, as in section 8.1, never deleting anything, until the use comes down or an admin chooses. Fair use is never a way to charge a team without an admin choosing it (section 8.3).</p>
     </section>
 
     <section class="pv-section" aria-labelledby="t9">

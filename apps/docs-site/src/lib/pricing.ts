@@ -179,6 +179,8 @@ export interface Tier {
   cta?: string;
   /** Text in the card footer instead of a button. */
   footerNote?: string;
+  /** What a founding team keeps on this tier, said on the card itself (Free): the limits above stop at the cutoff. */
+  founding?: { title: string; text: string };
 }
 
 export const TIERS: Tier[] = [
@@ -187,6 +189,10 @@ export const TIERS: Tier[] = [
     name: 'Free',
     pitch: 'For a small team getting started.',
     includes: [`Up to ${inWords(FREE_EDITORS)} editors`, 'Unlimited readers', 'One design system', 'Every feature'],
+    founding: {
+      title: `Created by ${FOUNDING_CUTOFF_LABEL}: no limits`,
+      text: 'A founding team keeps unlimited editors and design systems, free with no end date.',
+    },
     cta: 'Create your team',
   },
   {
@@ -213,14 +219,21 @@ export const TIERS: Tier[] = [
   },
 ];
 
+/**
+ * Hosting is fair use (terms 8.4, version 2, 2026-11-21): what is free is every feature and every seat, not unbounded
+ * hosted use. Bridge pays the hosting (functions, storage, email); the team's own Claude account and GitHub carry the
+ * rest. Said on the pricing page, in the founding commitment and in the FAQ, with the same words.
+ */
+export const FAIR_USE = 'Hosting is fair use: a team whose hosted use runs far above a typical team chooses usage credits, a paid plan or self-hosting, and is only slowed or paused, never deleted, if it chooses nothing.';
+
 /** "On every tier, Free included": permanent wording, a bold lead and the rest of the sentence. */
 export const COMMITMENTS_TITLE = 'On every tier, Free included';
 export const COMMITMENTS: { lead: string; text: string }[] = [
   { lead: 'Components and tokens are MIT.', text: 'What goes into your product, with no non-compete.' },
   { lead: 'Each version becomes MIT', text: 'two years after its release (FSL-1.1-MIT).' },
   { lead: 'Self-hosting has no limit:', text: 'as many editors and design systems as you like.' },
-  { lead: 'A free account never receives an invoice.', text: 'No card, no automatic charge when you grow.' },
-  { lead: 'A limit never deletes.', text: 'Bridge pauses, hides or makes read-only.' },
+  { lead: 'A free account never receives an invoice it did not ask for.', text: 'No card, no automatic charge when you grow.' },
+  { lead: 'A limit never deletes.', text: 'Bridge pauses, hides or makes read-only. Free means every feature and every seat; hosted use is fair use (terms 8.4).' },
   { lead: 'Sign-in stays free on every tier.', text: SIGN_IN },
 ];
 
@@ -235,6 +248,7 @@ export const FOUNDING_TITLE = 'Founding teams';
 export const FOUNDING_TEXT = [
   `Every team created on Bridge by ${FOUNDING_CUTOFF_LABEL} keeps, at no cost and with no end date, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
   'No future price change applies to it. Support and uptime stay those of Free.',
+  FAIR_USE,
   'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.',
   'This commitment is part of our terms of service and binds anyone who takes Bridge over.',
 ];
@@ -255,7 +269,7 @@ export const FOUNDING_FACTS: { title: string; text: string }[] = [
   },
   { title: 'In writing', text: 'This commitment is part of our terms of service and binds anyone who takes Bridge over. No future price change applies to it.' },
 ];
-export const FOUNDING_BAND_NOTE = `Support and uptime stay those of Free. ${'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.'}`;
+export const FOUNDING_BAND_NOTE = `Support and uptime stay those of Free. ${FAIR_USE} ${'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.'}`;
 
 /** Home B: the founding section before the last call. The board's "why" sentence waits for Florian's words. */
 export const HOME_FOUNDING = {
@@ -374,6 +388,15 @@ export const FAQ: FaqItem[] = [
       'Self-hosting has no limit on every tier, Free included, so nobody depends on our hosting.',
     ],
     link: { to: 'privacy', label: 'What Bridge keeps, in detail' },
+  },
+  {
+    id: 'what-free-costs',
+    question: 'Who pays for what when Bridge is free?',
+    answer: [
+      'Your team pays for what runs on its side: Claude runs in your own Claude account (Bridge holds no API key), your code and previews stay on your GitHub and your hosting.',
+      'Bridge pays for what it hosts: Studio and the Library pages, the Claude connector, the functions behind them, storage and the emails it sends. That cost grows with use, so the hosted service is fair use on every tier, founding teams included (terms, section 8.4). A typical team never meets it. A team far above it gets a message first, then chooses: prepaid usage credits (once paid plans open, never renewed on their own), a paid plan, or self-hosting. Only a team that chooses nothing is slowed or paused, and nothing is ever deleted.',
+      'Signing in with GitHub reads with your own GitHub access and costs Bridge far less than a code sent by email. Self-hosting has no limit at all.',
+    ],
   },
   {
     id: 'vat',

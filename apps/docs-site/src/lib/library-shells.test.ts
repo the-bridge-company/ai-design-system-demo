@@ -147,7 +147,9 @@ describe('addresses', () => {
     // A group by kind, as on Bridge's own Library (decision 2026-11-15): Interactions and Actions open the one Patterns
     // page on their section; no Overview row. Search keeps the page as "Patterns".
     expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).not.toHaveProperty('until');
+    // Coming soon for every team (owner 2026-11-20): Layout.astro draws it as a disabled row with its tag.
     expect(LIBRARY_TEAM_NAV.find((e) => e.label === 'Patterns')).toMatchObject({
+      soon: true,
       children: [
         { route: 'patterns/interactions/', label: 'Interactions', kind: 'interaction' },
         { route: 'patterns/actions/', label: 'Actions', kind: 'action' },

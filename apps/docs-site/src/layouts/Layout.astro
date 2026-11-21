@@ -101,7 +101,7 @@ const shellHref = (route: string) => `${LIBRARY_SHELL_ROOT}${route}`;
 const nav: NavEntry[] = library
   ? LIBRARY_TEAM_NAV.map((e) =>
       e.children
-        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta, ...(c.kind ? { kind: c.kind } : {}) })) }
+        ? { label: e.label, icon: e.icon as IconName, children: e.children.map((c) => ({ href: shellHref(c.route), label: c.label, icon: c.icon as IconName, apart: c.apart, meta: c.meta, ...(c.kind ? { kind: c.kind } : {}) })), ...(e.soon ? { soon: true } : {}) }
         : { href: shellHref(e.route), label: e.label, icon: e.icon as IconName, meta: e.meta },
     )
   : workspace

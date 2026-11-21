@@ -60,7 +60,7 @@ export const COMPONENT_SHELL_ROUTE = 'components/item/';
 export const COMPONENT_SLUG_PATTERN = '[A-Za-z0-9][A-Za-z0-9-]*';
 
 /** A top-level entry of a team's Library side nav: a page, or a group of pages (Foundations). */
-export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[] };
+export type LibraryNavEntry = (LibraryPage & { children?: undefined }) | { label: string; icon: string; children: LibraryPage[]; soon?: boolean };
 
 /** The Library route of a pattern on a team's Library (?p=<id>), and the root of a pattern's page on Bridge's own. */
 export const PATTERNS_ROUTE = 'patterns/';
@@ -99,7 +99,8 @@ export const LIBRARY_TEAM_NAV: LibraryNavEntry[] = [
   { label: 'Foundations', icon: 'layers', children: LIBRARY_FOUNDATION_PAGES },
   { route: 'components/', label: 'Components', icon: 'diamonds', meta: 'Every component with its guidance and live stories' },
   // A shell per kind, and one for every pattern by ?p=<id> (a team's patterns are only known once its data is read).
-  { label: 'Patterns', icon: 'hand', children: LIBRARY_PATTERN_KIND_PAGES },
+  // Coming soon (owner 2026-11-20, as on Bridge's own Library and Studio): a disabled row with its tag, no rows under it.
+  { label: 'Patterns', icon: 'hand', children: LIBRARY_PATTERN_KIND_PAGES, soon: true },
   { label: 'Use', icon: 'book', children: LIBRARY_USE_PAGES },
 ];
 

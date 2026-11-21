@@ -37,3 +37,12 @@ export function kinds(rs: Result[]): string {
     .map((r) => `- ${r.name}: ${Object.entries(r.byKind).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}; answers by source: ${Object.entries(r.bySource).map(([k, n]) => `${k} ${n}`).join(', ')}; tokens minted: ${r.mints}`)
     .join('\n');
 }
+
+/** Bridge's own cost per page load: function invocations (proxy requests) and Redis commands (Upstash bills both). */
+export function costs(rs: Result[]): string {
+  const per = (n: number, r: Result) => (r.pageLoads ? (n / r.pageLoads).toFixed(1) : 'n/a');
+  return md(
+    ['Scenario', 'Page loads', 'Proxy requests', 'Requests / load', 'Redis commands', 'Commands / load'],
+    rs.map((r) => [r.name, String(r.pageLoads), String(r.requests), per(r.requests, r), String(r.redisCommands), per(r.redisCommands, r)]),
+  );
+}

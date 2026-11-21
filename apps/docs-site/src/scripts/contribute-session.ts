@@ -620,6 +620,105 @@ async function recentRead(repo: string, target: string, path: string, headers: R
   return first && !r ? first : r ? toResponse(r) : send();
 }
 
+// --- Reads of one moment in one request --------------------------------------------------------------------------
+// A Studio page sends its reads in waves (the access and the default branch head, then the lists, then each row's
+// details): about 20 single reads a load, each one a function run on the server and a member check plus a counter
+// round trip in Redis. An email member's reads that leave this tab within READ_BATCH_MS of each other go out as one
+// request (api/_lib/team-read.ts onReads): one run, one member check, one MGET. A read alone in its moment goes as
+// before (gh=); anything the batch cannot answer (an older server, a network error, `later`) is sent alone.
+
+/** How long a read waits for the others of its moment. */
+export const READ_BATCH_MS = 8;
+/** Reads per request (api/_lib/team-read.ts MAX_READS) and the longest address a batch is given. */
+export const READ_BATCH_MAX = 24;
+const READ_BATCH_URL_MAX = 6000;
+/** An Accept the batch can carry in front of its path (one media type, no space). */
+const BATCH_ACCEPT = /^[A-Za-z0-9.+/-]+$/;
+
+interface QueuedRead {
+  read: string;
+  alone: () => Promise<Response>;
+  done: (r: Response) => void;
+  fail: (e: unknown) => void;
+}
+const readQueues = new Map<string, QueuedRead[]>();
+
+/** One GET of `path` (under api.github.com) through the team's proxy, with the other reads of this moment. */
+function batchedRead(repo: string, path: string, accept: string, alone: () => Promise<Response>): Promise<Response> {
+  if (accept && !BATCH_ACCEPT.test(accept)) return alone();
+  return new Promise((done, fail) => {
+    const k = key(repo);
+    let q = readQueues.get(k);
+    if (!q) {
+      q = [];
+      readQueues.set(k, q);
+      setTimeout(() => sendReadBatch(k), READ_BATCH_MS);
+    }
+    q.push({ read: accept ? `${accept} ${path}` : path, alone, done, fail });
+  });
+}
+
+function sendReadBatch(k: string): void {
+  const q = readQueues.get(k);
+  readQueues.delete(k);
+  if (!q?.length) return;
+  const one = (r: QueuedRead) => void r.alone().then(r.done, r.fail);
+  if (q.length === 1) return one(q[0]!);
+  const base = `${CONTRIBUTE_API}?repo=${encodeURIComponent(k)}`;
+  let part: QueuedRead[] = [];
+  let url = base;
+  const parts: { url: string; reads: QueuedRead[] }[] = [];
+  for (const r of q) {
+    const arg = `&read=${encodeURIComponent(r.read)}`;
+    if (part.length && (part.length >= READ_BATCH_MAX || url.length + arg.length > READ_BATCH_URL_MAX)) {
+      parts.push({ url, reads: part });
+      part = [];
+      url = base;
+    }
+    part.push(r);
+    url += arg;
+  }
+  parts.push({ url, reads: part });
+  for (const p of parts) {
+    if (p.reads.length === 1) one(p.reads[0]!);
+    else void sendReads(p.url, p.reads, one);
+  }
+}
+
+async function sendReads(url: string, reads: QueuedRead[], one: (r: QueuedRead) => void): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetchImpl(url, { headers: { Accept: 'application/json', [CONTRIBUTE_HEADER]: '1' }, credentials: 'same-origin' });
+  } catch {
+    return reads.forEach(one);
+  }
+  const json = /json/i.test(res.headers.get('content-type') ?? '');
+  // The session ended, or Bridge is busy for this reader: every read gets that answer, none is sent again.
+  if ((res.status === 401 || res.status === 429) && json) {
+    const body = await res.text().catch(() => '');
+    return reads.forEach((r) => r.done(new Response(body, { status: res.status, headers: res.headers })));
+  }
+  let data: { reads?: unknown } | null = null;
+  if (res.ok && json) data = (await res.json().catch(() => null)) as { reads?: unknown } | null;
+  const answers = Array.isArray(data?.reads) && data.reads.length === reads.length ? (data.reads as Record<string, unknown>[]) : null;
+  // An older server (no batches), or an answer this page does not understand: each read alone, as before.
+  if (!answers) return reads.forEach(one);
+  reads.forEach((r, i) => {
+    const a = answers[i] ?? {};
+    const status = typeof a.status === 'number' && a.status >= 200 && a.status <= 599 ? a.status : 0;
+    if (a.later === true || !status) return one(r);
+    if (typeof a.error === 'string') {
+      const retry: Record<string, string> = typeof a.retryAfter === 'number' ? { 'Retry-After': String(a.retryAfter) } : {};
+      return r.done(new Response(JSON.stringify({ error: a.error, message: a.message, ...(a.retryAfter ? { retryAfter: a.retryAfter } : {}) }), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...retry } }));
+    }
+    const headers: Record<string, string> = { 'Content-Type': typeof a.type === 'string' && a.type ? a.type : 'application/json; charset=utf-8' };
+    if (typeof a.etag === 'string') headers.ETag = a.etag;
+    if (typeof a.link === 'string') headers.Link = a.link;
+    if (typeof a.cache === 'string') headers['X-Bridge-Cache'] = a.cache;
+    r.done(new Response(status === 204 || status === 205 ? null : typeof a.body === 'string' ? a.body : '', { status, headers }));
+  });
+}
+
 // --- Change statuses through Bridge -------------------------------------------------------------------------------
 // The status of each open change takes five reads (scripts/pr-status.ts pullStatus: the pull request, its reviews and
 // files, the check runs and commit status of its head). For a member, the page asks the server once for all its open
@@ -834,7 +933,12 @@ export async function contributeFetch(repo: string, url: string, init: RequestIn
   // this tab's copy nor Bridge's fresh one; Bridge checks with GitHub again (FRESH_HEADER, members only). An email
   // member's writes go through Bridge, which forgets its copies by itself (api/_lib/team-read.ts noteWrite).
   const fresh = Boolean(as) && method === 'GET' && wantsFresh(init.cache);
-  const send = () => fetchImpl(target, { ...init, headers: { ...headers, [CONTRIBUTE_HEADER]: '1', ...(method === 'GET' ? { [MISSING_HEADER]: '1' } : {}), ...(fresh ? { [FRESH_HEADER]: '1' } : {}) }, credentials: 'same-origin' });
+  const sendAlone = () => fetchImpl(target, { ...init, headers: { ...headers, [CONTRIBUTE_HEADER]: '1', ...(method === 'GET' ? { [MISSING_HEADER]: '1' } : {}), ...(fresh ? { [FRESH_HEADER]: '1' } : {}) }, credentials: 'same-origin' });
+  // An email member's plain read goes with the other reads of this moment (batchedRead); a GitHub sign-in's, a read
+  // that can be cancelled and every write go alone, as before.
+  const accept = Object.entries(headers).find(([h]) => h.toLowerCase() === 'accept')?.[1]?.trim() ?? '';
+  const batch = method === 'GET' && !as && !init.signal && holdsContributeSession(repo);
+  const send = batch ? () => batchedRead(repo, path, accept, sendAlone) : sendAlone;
   // The status reads of an open change the server answered for the whole list (prefetchChangeStatuses).
   const answered = method === 'GET' && !fresh ? changeRead(repo, path, headers) : null;
   const [res, mine] = await Promise.all([

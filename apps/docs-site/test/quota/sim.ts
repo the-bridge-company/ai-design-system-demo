@@ -1,5 +1,5 @@
 // The quota load test (docs/QUOTA-LOADTEST.md): simulated Studio sessions over a fake clock, driving the real server
-// read path (api/contribute handleContribute -> api/_lib/team-read.ts onRead, onChanges, onBlobs, onUsers) with the
+// read path (api/contribute handleContribute -> api/_lib/team-read.ts onRead, onReads, onChanges, onBlobs, onUsers) with the
 // in-memory Redis and a fake GitHub (fake-github.ts). Nothing here calls GitHub or Upstash.
 //
 // Time runs in TICK_MS steps: every request due in one step is sent together (in flight together, so the cache sees
@@ -8,10 +8,10 @@
 
 import { createHmac } from 'node:crypto';
 import { handleGithubWebhook } from '../../api/_lib/github-webhook';
-import { memoryRedis } from '../../api/_lib/redis';
+import { memoryRedis, type Redis } from '../../api/_lib/redis';
 import { sharedAppTokens } from '../../api/_lib/shared-token';
 import type { AppTokens } from '../../api/_lib/github-app';
-import { budgetOf, clearReadMemory, countKey, noteWrite, READ_LIMITS } from '../../api/_lib/team-read';
+import { budgetOf, clearReadMemory, countKey, MAX_READS, noteWrite, READ_LIMITS } from '../../api/_lib/team-read';
 import { type ContribDeps, cookieName, handleContribute, signSession } from '../../api/contribute/index';
 import { memberStore } from '../../api/_lib/members';
 import { fakeGitHub, fakeWorld, finishChecks, pushCommit, type FakeWorld } from './fake-github';
@@ -21,6 +21,8 @@ const HOUR = 60 * 60 * 1000;
 const MIN = 60 * 1000;
 export const TICK_MS = 250;
 export const PHASE_MS = 500;
+/** Reads per batch request, as the browser sends them (scripts/contribute-session.ts READ_BATCH_MAX). */
+const READ_BATCH_MAX = MAX_READS;
 const HOST = 'bridge.example.com';
 const ORIGIN = `https://${HOST}`;
 const SECRET = 's'.repeat(40);
@@ -77,6 +79,11 @@ export interface Scenario {
    * installation's other activity sends a delivery every 5 minutes, so the webhooks look alive (HOOK_HEALTHY_MS).
    */
   webhooks?: boolean;
+  /**
+   * The browser sends the gh= reads of one moment together (scripts/contribute-session.ts batchedRead, read=...).
+   * Default true, as Studio does now; false gives the cost before batches (one request per read).
+   */
+  batch?: boolean;
 }
 
 export interface Result {
@@ -86,8 +93,10 @@ export interface Result {
   pageLoads: number;
   /** Reads the pages asked for (a change in a status batch is its 5 reads, a blob or a login is one). */
   reads: number;
-  /** Proxy requests (gh=, changes=, blobs=, users=). */
+  /** Proxy requests (gh=, reads=, changes=, blobs=, users=): one function invocation each. */
   requests: number;
+  /** Redis commands the functions sent (Upstash bills every command, each one of a pipeline too). */
+  redisCommands: number;
   /** Reads the person's tab answered itself (no request to Bridge). */
   tabKept: number;
   counted: number;
@@ -147,7 +156,20 @@ export async function runScenario(s: Scenario): Promise<Result> {
   let now = T0;
   const world: FakeWorld = fakeWorld(s.changes);
   const gh = fakeGitHub(world, () => now, { tokenBoundEtags: s.tokenBoundEtags });
-  const redis = memoryRedis(() => now);
+  const store = memoryRedis(() => now);
+  // What the functions send to Redis, as Upstash bills it (every command of a pipeline counts); the simulation's own
+  // bookkeeping below reads `store` directly and is not counted.
+  let commands = 0;
+  const redis: Redis = {
+    cmd: (...a) => {
+      commands += 1;
+      return store.cmd(...a);
+    },
+    pipe: (c) => {
+      commands += c.length;
+      return store.pipe(c);
+    },
+  };
   let mints = 0;
   /** GitHub's token endpoint: a new token on every mint. */
   const minter: AppTokens = { installationToken: async () => `ghs_read_m${mints++}` };
@@ -168,7 +190,7 @@ export async function runScenario(s: Scenario): Promise<Result> {
   });
   const env = { LIBRARY_SESSION_SECRET: SECRET, ...(s.env ?? {}) };
   const team = `${world.owner}/${world.repo}`;
-  const members = memberStore(redis);
+  const members = memberStore(store);
   const cookies = new Map<string, string>();
   for (const p of s.people) {
     await members.put(team, { email: p.email, name: p.email.split('@')[0]!, role: p.role === 'lead' ? 'admin' : 'edit', version: 1, addedBy: 'dana', at: new Date(now).toISOString() });
@@ -180,7 +202,7 @@ export async function runScenario(s: Scenario): Promise<Result> {
   const hook = async (event: string, payload: Record<string, unknown>) => {
     const body = JSON.stringify({ ...payload, installation: { id: 7 } });
     const sig = `sha256=${createHmac('sha256', HOOK_SECRET).update(body).digest('hex')}`;
-    const r = await handleGithubWebhook(new Request(`${ORIGIN}/api/github-webhook`, { method: 'POST', body, headers: { 'content-type': 'application/json', 'x-hub-signature-256': sig, 'x-github-delivery': `d-${deliveries++}`, 'x-github-event': event } }), { redis, secret: HOOK_SECRET, now: () => now });
+    const r = await handleGithubWebhook(new Request(`${ORIGIN}/api/github-webhook`, { method: 'POST', body, headers: { 'content-type': 'application/json', 'x-hub-signature-256': sig, 'x-github-delivery': `d-${deliveries++}`, 'x-github-event': event } }), { redis: store, secret: HOOK_SECRET, now: () => now });
     if (r.status !== 200) throw new Error(`webhook ${event}: ${r.status}`);
   };
   const repository = { full_name: team, default_branch: 'main' };
@@ -194,6 +216,7 @@ export async function runScenario(s: Scenario): Promise<Result> {
     pageLoads: 0,
     reads: 0,
     requests: 0,
+    redisCommands: 0,
     tabKept: 0,
     counted: 0,
     free: 0,
@@ -224,18 +247,89 @@ export async function runScenario(s: Scenario): Promise<Result> {
     new Request(`${ORIGIN}/api/contribute?repo=${encodeURIComponent(team)}&${query}`, { headers: { host: HOST, 'x-real-ip': '198.51.100.7', cookie: cookies.get(email)!, ...headers } });
 
   /** One read the page asks for, through the real handler; the follow-ups it implies (a change left out) come back. */
-  const send = async (email: string, read: ClientRead): Promise<ClientRead[]> => {
-    // The person's tab keeps answers (and shares a read in flight): scripts/contribute-session.ts. A status batch is
-    // shared too (prefetchChangeStatuses: one in flight per batch, its reads kept 20 s), so the badge's and Home's
-    // go out once.
+  /**
+   * Whether the person's tab still keeps this answer (and shares a read in flight): scripts/contribute-session.ts. A
+   * status batch is shared too (prefetchChangeStatuses: one in flight per batch, its reads kept 20 s), so the badge's
+   * and Home's go out once. Otherwise the read is noted as kept from now.
+   */
+  const tabKeeps = (email: string, read: ClientRead): boolean => {
     const tab = tabs.get(email) ?? new Map<string, number>();
     tabs.set(email, tab);
     const key = JSON.stringify([read.repo, read.gh, read.users, read.changes?.map((c) => `${c.number}:${c.sha}`)]);
     if ((tab.get(key) ?? 0) > now) {
       res.tabKept += 1;
-      return [];
+      return true;
     }
     tab.set(key, now + (read.keep ?? (read.gh !== undefined && BY_SHA.test(read.gh) ? 10 * MIN : 20 * 1000)));
+    return false;
+  };
+
+  /** Notes the reader's budgets after a request (peaks, cap). */
+  const afterRequest = async (email: string, request: Request, spentBefore: number) => {
+    const who = budgetOf(request, { kind: 'member', email }).who;
+    const [mine, all] = (await store.pipe([['GET', countKey('member', who, now)], ['GET', countKey('team', team.toLowerCase(), now)]])).map((x) => Number(x) || 0);
+    res.peakMemberWeight = Math.max(res.peakMemberWeight, mine!);
+    res.peakTeamCalls = Math.max(res.peakTeamCalls, all!);
+    if (spentBefore >= upLimit) atCap.add(email);
+  };
+
+  /** A busy answer: whose budget it was (the team's GitHub calls, the reader's, else the member's requests). */
+  const noteBusy = async (email: string, spentBefore: number) => {
+    res.busyAnswers += 1;
+    sawBusy.add(email);
+    const teamCount = Number(await store.cmd('GET', countKey('team', team.toLowerCase(), now))) || 0;
+    if (teamCount >= teamLimit) res.teamBudgetHits += 1;
+    else if (spentBefore < upLimit) res.memberBudgetHits += 1;
+  };
+
+  /**
+   * The gh= reads of one moment of a page, as the browser sends them (scripts/contribute-session.ts batchedRead): the
+   * ones the tab does not keep go out together, READ_BATCH_MAX per request (read=...&read=...), a lone one as gh=.
+   * Without `s.batch`, each one alone (the cost before batches).
+   */
+  const sendMoment = async (email: string, reads: ClientRead[]): Promise<ClientRead[]> => {
+    const batchable = s.batch === false ? [] : reads.filter((x) => x.gh !== undefined && !x.headers);
+    const rest = reads.filter((x) => !batchable.includes(x));
+    const due = batchable.filter((x) => !tabKeeps(email, x));
+    const parts: ClientRead[][] = [];
+    for (let i = 0; i < due.length; i += READ_BATCH_MAX) parts.push(due.slice(i, i + READ_BATCH_MAX));
+    const follow = await Promise.all([
+      ...rest.map((x) => send(email, x)),
+      ...parts.map(async (part) => {
+        if (part.length === 1) return send(email, part[0]!, true);
+        await sendBatch(email, part);
+        return [];
+      }),
+    ]);
+    return follow.flat();
+  };
+
+  const sendBatch = async (email: string, part: ClientRead[]): Promise<void> => {
+    res.requests += 1;
+    res.reads += part.length;
+    const q = part.map((x) => `read=${encodeURIComponent(`/repos/${x.repo ?? team}${x.gh}`)}`).join('&');
+    const request = req(email, q);
+    const upKey = countKey('up', budgetOf(request, { kind: 'member', email }).who, now);
+    const spentBefore = Number(await store.cmd('GET', upKey)) || 0;
+    const answer = await handleContribute(request, env, instances[Math.floor(pick() * instances.length)]!);
+    await afterRequest(email, request, spentBefore);
+    if (answer.status === 429) {
+      for (let i = 0; i < part.length; i++) await noteBusy(email, spentBefore);
+      return;
+    }
+    if (answer.status !== 200) throw new Error(`batch: ${answer.status} ${await answer.text()}`);
+    const body = (await answer.json()) as { reads: { status?: number; cache?: string; error?: string; later?: true }[] };
+    for (const a of body.reads) {
+      const source = a.later ? 'later' : (a.cache ?? String(a.status));
+      res.bySource[source] = (res.bySource[source] ?? 0) + 1;
+      if (spentBefore >= upLimit && source !== 'hit') res.capHits += 1;
+      if (a.status === 429) await noteBusy(email, spentBefore);
+    }
+  };
+
+  /** One read the page asks for, through the real handler; the follow-ups it implies (a change left out) come back. */
+  const send = async (email: string, read: ClientRead, checked = false): Promise<ClientRead[]> => {
+    if (!checked && tabKeeps(email, read)) return [];
     let q: string;
     if (read.gh !== undefined) q = `gh=${encodeURIComponent(`/repos/${read.repo ?? team}${read.gh}`)}`;
     else if (read.changes) q = `changes=${read.changes.map((c) => `${c.number}:${c.sha}`).join(',')}`;
@@ -245,25 +339,14 @@ export async function runScenario(s: Scenario): Promise<Result> {
     res.reads += read.changes ? read.changes.length * 5 : (read.blobs?.length ?? read.users?.length ?? 1);
     const request = req(email, q, read.headers);
     const upKey = countKey('up', budgetOf(request, { kind: 'member', email }).who, now);
-    const spentBefore = Number(await redis.cmd('GET', upKey)) || 0;
+    const spentBefore = Number(await store.cmd('GET', upKey)) || 0;
     const answer = await handleContribute(request, env, instances[Math.floor(pick() * instances.length)]!);
-    const who = budgetOf(request, { kind: 'member', email }).who;
-    const [mine, all] = (await redis.pipe([['GET', countKey('member', who, now)], ['GET', countKey('team', team.toLowerCase(), now)]])).map((x) => Number(x) || 0);
-    res.peakMemberWeight = Math.max(res.peakMemberWeight, mine!);
-    res.peakTeamCalls = Math.max(res.peakTeamCalls, all!);
+    await afterRequest(email, request, spentBefore);
     const source = answer.headers.get('x-bridge-cache') ?? (read.gh !== undefined ? String(answer.status) : 'batch');
     res.bySource[source] = (res.bySource[source] ?? 0) + 1;
-    if (spentBefore >= upLimit) {
-      atCap.add(email);
-      if (source !== 'hit') res.capHits += 1;
-    }
+    if (spentBefore >= upLimit && source !== 'hit') res.capHits += 1;
     if (answer.status === 429) {
-      res.busyAnswers += 1;
-      sawBusy.add(email);
-      // The team's GitHub calls, the reader's, else the member's requests (abuse protection).
-      const teamCount = Number(await redis.cmd('GET', countKey('team', team.toLowerCase(), now))) || 0;
-      if (teamCount >= teamLimit) res.teamBudgetHits += 1;
-      else if (spentBefore < upLimit) res.memberBudgetHits += 1;
+      await noteBusy(email, spentBefore);
       return [];
     }
     if (read.changes && answer.status === 200) {
@@ -293,8 +376,8 @@ export async function runScenario(s: Scenario): Promise<Result> {
           const phases = PAGES[page](world, ctx);
           phases.forEach((reads, k) => {
             const run = async () => {
-              const follow = (await Promise.all(reads.map((x) => send(p.email, x)))).flat();
-              if (follow.length) queue({ at: now + PHASE_MS, run: async () => void (await Promise.all(follow.map((x) => send(p.email, x)))) });
+              const follow = await sendMoment(p.email, reads);
+              if (follow.length) queue({ at: now + PHASE_MS, run: async () => void (await sendMoment(p.email, follow)) });
             };
             if (k === 0) queue({ at, run });
             else queue({ at: at + k * PHASE_MS, run });
@@ -318,7 +401,7 @@ export async function runScenario(s: Scenario): Promise<Result> {
           await hook('check_suite', { action: 'requested', repository });
         }
         // A write through Bridge marks the team (api/contribute noteWrite): kept answers are revalidated at once.
-        if (viaBridge) await noteWrite(redis, team, now);
+        if (viaBridge) await noteWrite(store, team, now);
       },
     });
     jobs.push({
@@ -367,6 +450,7 @@ export async function runScenario(s: Scenario): Promise<Result> {
   res.readersAtCap = atCap.size;
   res.readersBusy = sawBusy.size;
   res.mints = mints;
+  res.redisCommands = commands;
   res.hitRatio = res.reads ? 1 - res.counted / res.reads : 1;
   return res;
 }
@@ -417,6 +501,8 @@ export function scenarios(o: { duration?: number } = {}): Scenario[] {
       seed: 11,
     },
     { name: 'B', label: '10 designers + 2 leads, mixed pages, a load every 1 to 3 min, 5 updates an hour', changes: 10, people: team(b, 10, 2, MIN, 3 * MIN), duration, updates: Math.round(5 * scale), seed: 12 },
+    // B as the browser sent it before read batches (one request per gh= read): the reference for Bridge's own cost.
+    { name: 'B0', label: 'B with each read alone (before read batches)', changes: 10, people: team(rng(2), 10, 2, MIN, 3 * MIN), duration, updates: Math.round(5 * scale), seed: 12, batch: false },
     { name: 'C', label: '50 designers + 5 leads, same rates', changes: 20, people: team(c, 50, 5, MIN, 3 * MIN), duration, updates: Math.round(5 * scale), seed: 13 },
     // C again with the team budget out of the way: what the same people ask of GitHub when nobody is turned away.
     { name: 'C2', label: 'C with READ_MAX_TEAM lifted (the demand)', changes: 20, people: team(rng(3), 50, 5, MIN, 3 * MIN), duration, updates: Math.round(5 * scale), seed: 13, env: { READ_MAX_TEAM: '100000000' } },

@@ -339,6 +339,76 @@ describe('a member reads through Bridge with fewer requests', () => {
     expect(proxied()).toBe(4);
   });
 
+  const batches = () => calls.filter((c) => c.url.includes('&read='));
+  /** Requests that read the team (single or batch), not the page's other calls ("mine"). */
+  const reads = () => calls.filter((c) => c.url.includes('gh=') || c.url.includes('&read='));
+  const readsOf = (url: string) => new URL(url, 'https://bridge.example.com').searchParams.getAll('read');
+
+  it('sends the reads of one moment in one request, each answered as GitHub would, then kept like any read', async () => {
+    signIn();
+    answer = (url) =>
+      url.includes('&read=')
+        ? json(200, {
+            reads: [
+              { status: 200, type: 'application/json; charset=utf-8', etag: '"p1"', link: '<x>; rel="next"', cache: 'hit', body: '[{"number":1}]' },
+              { status: 200, type: 'application/vnd.github.raw', cache: 'miss', body: 'raw text' },
+              { status: 404, type: 'application/json; charset=utf-8', cache: 'hit', body: '{"message":"Not Found"}' },
+              { status: 403, error: 'not-allowed', message: 'Bridge does not read this from GitHub.' },
+            ],
+          })
+        : json(500, {});
+    const [pulls, raw, missing, refused] = await Promise.allSettled([get('/repos/acme/ds/pulls'), get('/repos/acme/ds/contents/llms.txt', 'application/vnd.github.raw'), get('/repos/acme/ds/contents/missing.json'), get('/repos/acme/ds/actions/runs/1')]);
+    expect(proxied()).toBe(0);
+    expect(batches()).toHaveLength(1);
+    expect(readsOf(batches()[0]!.url)).toEqual(['application/vnd.github+json /repos/acme/ds/pulls', 'application/vnd.github.raw /repos/acme/ds/contents/llms.txt', 'application/vnd.github+json /repos/acme/ds/contents/missing.json', 'application/vnd.github+json /repos/acme/ds/actions/runs/1']);
+    const p = (pulls as PromiseFulfilledResult<Response>).value;
+    expect(p.status).toBe(200);
+    expect(p.headers.get('etag')).toBe('"p1"');
+    expect(p.headers.get('link')).toBe('<x>; rel="next"');
+    expect(await p.json()).toEqual([{ number: 1 }]);
+    expect(await (raw as PromiseFulfilledResult<Response>).value.text()).toBe('raw text');
+    expect((missing as PromiseFulfilledResult<Response>).value.status).toBe(404);
+    // Bridge's refusal of one read is said in its words, as for a read alone.
+    expect(((refused as PromiseRejectedResult).reason as Error).message).toBe('Bridge does not read this from GitHub.');
+    // Kept in the tab like a read alone: asked again within a moment, no request.
+    expect(await (await get('/repos/acme/ds/pulls')).json()).toEqual([{ number: 1 }]);
+    expect(reads()).toHaveLength(1);
+  });
+
+  it('a read alone in its moment goes as before; an older server or a left-out read is asked alone', async () => {
+    signIn();
+    answer = () => json(200, { one: true });
+    await get('/repos/acme/ds/pulls/1');
+    expect(proxied()).toBe(1);
+    expect(batches()).toHaveLength(0);
+    // A server without batches answers anything but its JSON: each read is sent alone, nothing is lost.
+    answer = (url) => (url.includes('&read=') ? json(400, { error: 'bad_request', message: 'Say which GitHub call, with gh.' }) : json(200, { one: true }));
+    const r = await Promise.all([get('/repos/acme/ds/pulls/2'), get('/repos/acme/ds/pulls/3')]);
+    expect(await Promise.all(r.map((x) => x.json()))).toEqual([{ one: true }, { one: true }]);
+    expect(batches()).toHaveLength(1);
+    expect(proxied()).toBe(3);
+    // `later` (the batch was full): that read alone.
+    answer = (url) => (url.includes('&read=') ? json(200, { reads: [{ status: 200, type: 'application/json', cache: 'hit', body: '{"n":4}' }, { later: true }] }) : json(200, { n: 5 }));
+    const [four, five] = await Promise.all([get('/repos/acme/ds/pulls/4'), get('/repos/acme/ds/pulls/5')]);
+    expect(await four.json()).toEqual({ n: 4 });
+    expect(await five.json()).toEqual({ n: 5 });
+    expect(proxied()).toBe(4);
+  });
+
+  it('an ended session or Bridge busy answers every read of the batch, without sending them again', async () => {
+    signIn();
+    answer = () => json(401, { error: 'signin', message: 'Sign in to read this team.' });
+    await Promise.allSettled([get('/repos/acme/ds/pulls/1'), get('/repos/acme/ds/pulls/2')]);
+    expect(reads()).toHaveLength(1);
+    expect(contributorFor('acme/ds')).toBeNull();
+    signIn();
+    calls.length = 0;
+    answer = () => new Response(JSON.stringify({ error: 'busy', message: 'Bridge is busy, try again in 2 min.', retryAfter: 120 }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '120' } });
+    const out = await Promise.allSettled([get('/repos/acme/ds/pulls/6'), get('/repos/acme/ds/pulls/7')]);
+    expect(reads()).toHaveLength(1);
+    for (const o of out) expect(((o as PromiseRejectedResult).reason as Error).message).toBe('Bridge is busy, try again in 2 min.');
+  });
+
   it("names people through Bridge: several logins in one request, GitHub's /users shape, 404 for an unknown login", async () => {
     signIn();
     answer = (url) => (url.includes('users=') ? json(200, { users: { dana: { login: 'dana', name: 'Dana Whitfield', avatar_url: null, type: 'User' }, ghost: null } }) : json(200, {}));

@@ -128,6 +128,36 @@ was 189 counted calls (343 in C3b), under 900 points a minute.
    the others queue. Across functions there is no lock: N warm functions can still make N calls for the same answer at
    the same moment (the harness runs one process, so its C3 shares in-flight calls across the 4 simulated functions).
 
+## Bridge's own cost per page load (read batches, 2026-11-21)
+
+GitHub's quota is not the only budget: every proxy request is a function invocation, and every Redis command counts
+against Upstash (the free tier's 500k commands a month filled once). The harness now counts both (the Redis commands
+the functions send, every command of a pipeline included; the harness's own bookkeeping is not counted).
+
+Before, an email member's Studio load sent about 22 single `gh=` reads, each one a member check (`members.get`) and
+a counter pipeline (INCRBY, EXPIRE, MGET), plus SET and counter writes on a miss or a revalidation. Now the browser
+sends the `gh=` reads that leave a tab within 8 ms of each other as one `read=...&read=...` request
+(`READ_BATCH_MS`, `batchedRead` in `src/scripts/contribute-session.ts`; `onReads` in `api/_lib/team-read.ts`): one
+function run, one member check, one counter pipeline weighted by the number of reads, one MGET for every kept answer,
+one pipeline for the GitHub calls the misses cost, and each repository's `known` mark once. A read alone in its moment
+goes as `gh=` as before. GitHub-signed members, visitors of the public demo and other origins are unchanged.
+
+| Scenario | Requests / load, before | Requests / load, after | Redis commands / load, before | Redis commands / load, after | Counted GitHub calls, before / after |
+| --- | --- | --- | --- | --- | --- |
+| A: 1 lead | 21.6 | 3.8 | 249.8 | 151.0 | 230 / 230 |
+| B: 10 designers + 2 leads | 21.8 | 3.9 | 140.3 | 60.7 | 258 / 258 |
+| C: 50 designers + 5 leads | 25.9 | 3.9 | 130.0 | 38.9 | 355 / 354 |
+| E: C2 with webhooks healthy | 25.9 | 3.9 | 109.6 | 21.1 | 357 / 356 |
+| D: burst on Home | 50.1 | 5.1 | 220.7 | 34.3 | 167 / 167 |
+
+B: 7,728 proxy requests for 355 loads before, 1,384 now (5.6 times fewer); 49,807 Redis commands before, 21,551 now
+(2.3 times fewer; 5.2 times in E, where webhooks keep answers fresh). `B0` in the report is B as the browser sent it
+before (`batch: false`), the reference row. What is left is mostly revalidations: an answer past its fresh window
+(30 s without webhooks) that GitHub confirms with a free 304 is kept again (one SET per answer), which is why A (one
+lead reloading every 2 minutes) and B stay higher than E. The per-reader and per-team limits keep their meaning: each
+read of a batch counts 1 against `READ_MAX_IP`, and each GitHub call of a miss counts against `READ_MAX_UPSTREAM` and
+`READ_MAX_TEAM` (peaks unchanged: 216 and 149 in B).
+
 ## How the harness works
 
 `npm run loadtest:github -w @bridge-ds/docs-site` runs every scenario (about 14 s) and prints both tables;

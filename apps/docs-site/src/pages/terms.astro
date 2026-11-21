@@ -39,9 +39,9 @@ import {
 } from '../lib/pricing';
 import { PUBLISHER } from '../lib/legal';
 
-/** Version 1, effective the day the pricing page was published. */
-const VERSION: string | null = '1';
-const EFFECTIVE_DATE: string | null = '16 November 2026';
+/** Version 1, effective 16 November 2026 (the day the pricing page was published). Version 2 adds fair use of the hosted service (8.4). */
+const VERSION: string | null = '2';
+const EFFECTIVE_DATE: string | null = '21 November 2026';
 // TO DECIDE (Florian): adding editors during a period: billed pro rata for the rest of the period, or from the next renewal.
 const ADDED_EDITORS_BILLING: string | null = null;
 // TO DECIDE (Florian): notice before a price change or a new version of these terms applies (30 days proposed).
@@ -182,6 +182,12 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       </ul>
       <p>8.2 Everything comes back as it was when the team goes back under the limit or the payment is made.</p>
       <p>8.3 A Free team is never billed. Bridge never moves a team to a paid plan without an admin choosing it.</p>
+      <p>8.4 Fair use of the hosted service. Every plan, Free and founding teams included, gives every feature and every seat it lists. The hosted service itself (the functions, storage and emails Bridge runs and pays for) is provided for fair use: the use a team makes in the normal course of designing and reviewing its design system. If a team's hosted use runs far above that of a typical team, for at least several days, Bridge will:</p>
+      <ul>
+        <li>first write to the team's admins, say what is high and how to bring it down (for example signing in with GitHub, which reads with the team's own access);</li>
+        <li>then, if it continues for 14 days after that message, slow down or pause only the hosted actions concerned, as in section 8.1, never deleting anything.</li>
+      </ul>
+      <p>The team can always self-host Bridge without limit (section 14), or choose a paid plan if one offers more hosted capacity. Fair use is not a way to charge a team without an admin choosing it (section 8.3).</p>
     </section>
 
     <section class="pv-section" aria-labelledby="t9">
@@ -212,8 +218,9 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       <p>10.2 What they keep. For as long as this commitment lasts (section 10.4), a founding team keeps, at no charge:</p>
       <ul>
         <li>everything it can do on the day paid plans open{FOUNDING_SNAPSHOT_URL && <>, as listed in the <Link href={FOUNDING_SNAPSHOT_URL}>founding snapshot</Link></>}; and</li>
-        <li>everything the Free plan gains after that day.</li>
+        <li>everything the Free plan gains after that day,</li>
       </ul>
+      <p>within the fair use of the hosted service in section 8.4.</p>
       <p>No price change made after that day applies to a founding team for what it keeps under this section.</p>
       <p>10.3 Support and availability. Founding teams receive the support and availability of the Free plan. If a founding team chooses a paid plan, that plan's terms apply to it for as long as it pays, and it returns to its founding rights when it stops.</p>
       <p>10.4 Duration and the only way it ends. This commitment is made for an indefinite period. The founding team may leave at any time. Bridge may end it only in these cases:</p>
@@ -224,6 +231,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       <p>Bridge will not end this commitment for any other reason, including to move founding teams to a paid plan.</p>
       <p>10.5 If Bridge changes hands. If the Bridge service, or the business that runs it, is sold, contributed or otherwise transferred, Bridge will transfer the contracts with founding teams together with the service, and will require the acquirer to take over this section 10 in full. Each founding team agrees now, in advance, to that transfer of its contract, which will take effect for it once it has been notified. Bridge guarantees (se porte fort) that the acquirer will honour this section; if the acquirer does not, Bridge remains liable for the consequences. No transfer of the service may be made in a way that removes these rights.</p>
       <p>10.6 Changes to these terms (section 16) cannot reduce the rights in this section 10 for an existing founding team without that team's written agreement.</p>
+      <p>10.7 A founding team created before version 2 of these terms (21 November 2026) keeps section 10 as written in version 1, without the fair use reference in 10.2, unless it agrees in writing to version 2.</p>
     </section>
 
     <section class="pv-section" aria-labelledby="t11">

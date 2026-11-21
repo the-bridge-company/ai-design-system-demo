@@ -93,7 +93,7 @@ describe('pricing (/pricing/)', () => {
     expect(BILLING_EARLIEST_LAUNCH).toBe(pricing.PAID_PLANS_EARLIEST);
     expect(FAQ[0].answer[0]).toBe('Not before 1 April 2027. We will write to every team at least 30 days before, with the final prices. Teams created by 31 March 2027 stay free.');
     expect(pricing.FAQ_OPEN).toBe(FAQ[0].id);
-    expect(FAQ.map((f) => f.id)).toEqual(['when', 'fourth-editor', 'stop-paying', 'self-host', 'hosting', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
+    expect(FAQ.map((f) => f.id)).toEqual(['when', 'fourth-editor', 'stop-paying', 'self-host', 'hosting', 'what-free-costs', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
     const discounts = FAQ.find((f) => f.id === 'discounts')!;
     expect(pricing.faqAnswer(discounts, 'EUR').join(' ')).toContain('cap at €120 per design system');
     expect(pricing.faqAnswer(discounts, 'USD').join(' ')).toContain('cap at $140 per design system');

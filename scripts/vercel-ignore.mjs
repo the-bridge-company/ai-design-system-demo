@@ -14,6 +14,12 @@
 //                deployments off for agent/**, test/** and changeset-release/** (git.deploymentEnabled), so Vercel
 //                does not even create a deployment for them: an ignored build still counts toward the limit. This
 //                check stays as the fallback.
+//   other branches  Since Vercel Pro bills build CPU minutes (2026-11-21: ~6,500 builds a month, ~85 % of the bill),
+//                the vercel.json files also turn off fix/**, feat/**, chore/**, docs/**, site/** pull request branches
+//                (checked by GitHub CI, previewed locally) and the data branches (bridge-data, bridge-visual,
+//                bridge-shots, bridge-requests, sample-team-member, figma-file-*), which only hold files read through
+//                the GitHub API. main, explore/**, bridge/**, tokens/** and agent/preview-* (Storybook) keep deploying:
+//                Studio's Try it, preview shots and behavior previews read them.
 //
 //   ignoreCommand in apps/docs-site/vercel.json:  node ../../scripts/vercel-ignore.mjs docs
 import { execFileSync } from 'node:child_process';

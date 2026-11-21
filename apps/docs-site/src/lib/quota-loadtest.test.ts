@@ -20,6 +20,19 @@ describe('quota load test (smoke)', () => {
     expect(r.hitRatio).toBeGreaterThan(0.3);
   });
 
+  it("a page's reads of one moment go in one request: far fewer function runs and Redis commands, the same GitHub calls", async () => {
+    // Each run its own scenario: a person's page picks draw from the scenario's random source.
+    const b = () => scenarios({ duration: 12 * MIN }).find((s) => s.name === 'B')!;
+    const alone = await runScenario({ ...b(), batch: false });
+    const batched = await runScenario({ ...b(), batch: true });
+    expect(batched.pageLoads).toBe(alone.pageLoads);
+    expect(batched.reads).toBe(alone.reads);
+    expect(batched.requests).toBeLessThan(alone.requests / 3);
+    expect(batched.redisCommands).toBeLessThan(alone.redisCommands / 2);
+    expect(batched.counted).toBeLessThanOrEqual(alone.counted);
+    expect(batched.busyAnswers).toBe(0);
+  });
+
   it('a burst of people on Home shares one set of GitHub calls instead of one per person', async () => {
     const d = scenarios().find((s) => s.name === 'D')!;
     const ten = await runScenario({ ...d, people: d.people.slice(0, 10) });

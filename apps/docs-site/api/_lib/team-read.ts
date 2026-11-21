@@ -15,6 +15,12 @@
 //       A request that carries X-Bridge-Missing: 1 (Bridge's own pages) gets GitHub's 404 (a file or branch that is not
 //       there, such as a team without a Bridge snapshot) as 200 with X-Bridge-Missing: 1 and GitHub's body, so the
 //       browser logs no error for an expected empty state; the page reads it back as the 404 (lib/contribute.ts).
+//   GET /api/contribute?repo=owner/name&read=<[accept ]path>&read=...   (same origin only, at most MAX_READS)
+//       { reads: [ { status, type, etag?, link?, cache, body } | { status, error, message, retryAfter? } | { later } ] }
+//       the reads of one moment of a page in one request, in the order asked (onReads): each `read` is a gh= path, with
+//       the Accept it wants first when not GitHub's default ("application/vnd.github.raw /repos/..."). The reader is
+//       checked once, their budget counted once with the reads' weight, every kept answer read in one MGET. GitHub's
+//       404 comes back as status 404; a read Bridge refuses carries its refusal; `later`, ask that read alone.
 //   GET /api/contribute?repo=owner/name&users=<login>,<login>,...   (members only, at most MAX_USERS logins)
 //       { users: { <login lower case>: { login, name, avatar_url, type } | null } }  the public GitHub profile of each
 //       login (name and avatar, nothing else), null for one GitHub does not know. Studio names the builders and
@@ -855,6 +861,14 @@ export interface ReadTarget {
   query: string;
 }
 
+/** How a read through GitHub is kept; `sink`: a batch's writes, sent once for all its reads (onReads). */
+interface GitHubOpts {
+  keep: boolean;
+  forever: boolean;
+  slim: boolean;
+  sink?: (string | number)[][];
+}
+
 /** What a read through GitHub gave: the answer, where it came from, and whether this request paid a GitHub call. */
 interface Through {
   k: Kept;
@@ -868,12 +882,17 @@ interface Through {
  * GitHub's limit), kept for the next reader. Concurrent misses of the same answer share one call (once). GitHub busy
  * or down: what was kept (confirmed within STALE_KEEP_S), else busy or unreachable.
  */
-async function throughGitHub(ctx: ReadCtx, owner: string, repo: string, url: string, accept: string, key: string, kept: Kept | null, o: { keep: boolean; forever: boolean; slim: boolean }): Promise<Through> {
+async function throughGitHub(ctx: ReadCtx, owner: string, repo: string, url: string, accept: string, key: string, kept: Kept | null, o: GitHubOpts): Promise<Through> {
   const { v, leader } = await once(`get:${key}`, () => askGitHub(ctx, owner, repo, url, accept, key, kept, o));
   return { ...v, spent: leader && v.source === 'miss' };
 }
 
-async function askGitHub(ctx: ReadCtx, owner: string, repo: string, url: string, accept: string, key: string, kept: Kept | null, o: { keep: boolean; forever: boolean; slim: boolean }): Promise<Omit<Through, 'spent'>> {
+async function askGitHub(ctx: ReadCtx, owner: string, repo: string, url: string, accept: string, key: string, kept: Kept | null, o: GitHubOpts): Promise<Omit<Through, 'spent'>> {
+  // A batch collects the writes and sends them once (onReads); a single read sends its own.
+  const write = async (w: (string | number)[][]) => {
+    if (o.sink) o.sink.push(...w);
+    else await ctx.redis.pipe(w);
+  };
   const now = ctx.now();
   const token = await tokenFor(ctx, owner, repo);
   const old = standIn(kept, now);
@@ -897,7 +916,7 @@ async function askGitHub(ctx: ReadCtx, owner: string, repo: string, url: string,
   const known = ['SET', knownKey(`${owner}/${repo}`), '1', 'EX', KEEP_S];
   if (res.status === 304 && kept) {
     const fresh = { ...kept, at: now };
-    if (kept.body.length <= MAX_KEPT_CHARS) await ctx.redis.pipe([['SET', key, JSON.stringify(fresh), 'EX', ETAG_KEEP_S], known]);
+    if (kept.body.length <= MAX_KEPT_CHARS) await write([['SET', key, JSON.stringify(fresh), 'EX', ETAG_KEEP_S], known]);
     return { k: fresh, source: 'revalidated' };
   }
   const text = res.status === 204 || res.status === 304 ? '' : await res.text();
@@ -906,15 +925,36 @@ async function askGitHub(ctx: ReadCtx, owner: string, repo: string, url: string,
   // Answers worth keeping: a success, or a 404 (a missing file stays missing for a while).
   if (o.keep && (k.status === 200 || k.status === 404)) {
     if (o.forever && k.status === 200) remember(key, k);
-    if (body.length <= MAX_KEPT_CHARS) await ctx.redis.pipe([['SET', key, JSON.stringify(k), 'EX', o.forever && k.status === 200 ? IMMUTABLE_KEEP_S : ETAG_KEEP_S], known]);
+    if (body.length <= MAX_KEPT_CHARS) await write([['SET', key, JSON.stringify(k), 'EX', o.forever && k.status === 200 ? IMMUTABLE_KEEP_S : ETAG_KEEP_S], known]);
   }
   return { k, source: 'miss' };
 }
 
-/** One GitHub GET through the policy and the cache. */
-export async function onRead(req: Request, ctx: ReadCtx, t: ReadTarget, reader: Reader): Promise<Response> {
+/** One read of a request, before storage is asked: its cache key and the keys to read with it (planRead). */
+interface ReadPlan {
+  t: ReadTarget;
+  url: string;
+  accept: string;
+  key: string;
+  forever: boolean;
+  keep: boolean;
+  slim: boolean;
+  topic: ReadTopic | null;
+  /** The answer kept in this function's memory (immutable answers only). */
+  mem: string | Kept | undefined;
+  /** Keys read in the request's one MGET: the kept answer, its topic's change mark and the webhooks' last delivery. */
+  extra: string[];
+}
+
+/** What a request may still cost the app in GitHub calls, shared by its reads (one counter pipeline per request). */
+interface Spending {
+  left: number;
+  spent: number;
+}
+
+/** The checks and cache keys of one GET (`acceptIn`: the Accept the page asked for). Throws not-allowed. */
+function planRead(t: ReadTarget, reader: Reader, acceptIn: string): ReadPlan {
   if (!readAllowed(t.rest, reader)) throw new HttpError(403, 'not-allowed', READ_WORDS.notAllowed);
-  const acceptIn = req.headers.get('accept')?.trim() ?? '';
   const accept = ACCEPT.test(acceptIn) ? acceptIn : 'application/vnd.github+json';
   const url = `${API}/repos/${t.owner}/${t.repo}${t.rawRest.length ? `/${t.rawRest.join('/')}` : ''}${t.query ? `?${t.query}` : ''}`;
   const forever = immutable(t.rest, t.query);
@@ -923,51 +963,185 @@ export async function onRead(req: Request, ctx: ReadCtx, t: ReadTarget, reader: 
   const slim = isPullList(t.rest);
   // Slimmed lists have their own keys: one kept whole before them is never answered, nor confirmed with its ETag.
   const key = getKey(t.full, accept, slim ? `${url} slim` : url);
-  const inm = req.headers.get('if-none-match');
-  // GitHub's 404 answered as a 200 "missing" result, for a page that asked for it (MISSING_HEADER).
-  const missingOk = req.headers.get(MISSING_HEADER) === '1';
-  const answer = (k: Kept, source: 'hit' | 'revalidated' | 'miss' | 'stale' | 'swr', etagIn: string | null) => answerKept(k, source, etagIn, missingOk, slim);
-  const now = ctx.now();
-
-  // A member who just wrote to GitHub from the page asks GitHub again (with the kept ETag); a visitor never does.
-  const fresh = reader.kind === 'member' && req.headers.get(FRESH_HEADER) === '1';
-
   const mem = forever ? memory.get(key) : undefined;
   // The topic's last change GitHub sent for the repository read (a product's own) and whether the webhooks arrive,
   // read in the same round trip as the answer kept.
   const topic = forever ? null : topicOf(t.rest);
   const extra = mem || !keep ? [] : [key, ...(topic ? [changedKey(`${t.owner}/${t.repo}`, topic), HOOK_LAST_KEY] : [])];
-  const { values, wrote, up } = await countAndRead(ctx, req, t.full, reader, 1, extra);
-  if (mem && typeof mem !== 'string') return answer(mem, 'hit', inm);
-  const kept = keep ? parseKept(values[0]) : null;
-  const window = freshFor(topic, Number(values[2]) || 0, now);
-  if (kept && (forever || (!fresh && stillFresh(kept.at, now, window, wrote, Number(values[1]) || 0)))) {
-    if (forever) remember(key, kept);
-    return answer(kept, 'hit', inm);
+  return { t, url, accept, key, forever, keep, slim, topic, mem, extra };
+}
+
+/**
+ * The answer of one planned read, from what storage gave (`values`, in the order of plan.extra): memory, the kept
+ * answer while fresh, a visitor's kept answer behind a check with GitHub (swr), what is kept when the reader or the
+ * team spent their GitHub calls (stale, else busy), else GitHub with the kept ETag. `fresh`: a member's read right
+ * after they wrote (FRESH_HEADER). GitHub calls are taken from `budget` and counted in it; the caller spends them.
+ */
+async function settleRead(
+  ctx: ReadCtx,
+  p: ReadPlan,
+  reader: Reader,
+  values: unknown[],
+  wrote: number,
+  up: Upstream,
+  budget: Spending,
+  fresh: boolean,
+  sink?: (string | number)[][],
+): Promise<{ k: Kept; source: 'hit' | 'revalidated' | 'miss' | 'stale' | 'swr' }> {
+  const now = ctx.now();
+  if (p.mem && typeof p.mem !== 'string') return { k: p.mem, source: 'hit' };
+  const kept = p.keep ? parseKept(values[0]) : null;
+  const window = freshFor(p.topic, Number(values[2]) || 0, now);
+  if (kept && (p.forever || (!fresh && stillFresh(kept.at, now, window, wrote, Number(values[1]) || 0)))) {
+    if (p.forever) remember(p.key, kept);
+    return { k: kept, source: 'hit' };
   }
+  const o: GitHubOpts = { keep: p.keep, forever: p.forever, slim: p.slim };
   // A visitor (never a write of their own to wait for): a kept answer confirmed within SWR_MS at once, checked with
   // GitHub behind it by one function at a time (the lock), so a slow or busy GitHub never shows on the page.
-  if (kept && !fresh && (reader.kind === 'guest' || reader.visitor) && now - kept.at < SWR_MS && up.left > 0) {
-    const lock = await ctx.redis.cmd('SET', revalidateLockKey(key), '1', 'NX', 'EX', REVALIDATE_LOCK_S).catch(() => null);
+  if (kept && !fresh && (reader.kind === 'guest' || reader.visitor) && now - kept.at < SWR_MS && budget.left > 0) {
+    const lock = await ctx.redis.cmd('SET', revalidateLockKey(p.key), '1', 'NX', 'EX', REVALIDATE_LOCK_S).catch(() => null);
     if (lock === 'OK') {
       afterAnswer(
-        throughGitHub(ctx, t.owner, t.repo, url, accept, key, kept, { keep, forever, slim }).then(async (r) => {
+        throughGitHub(ctx, p.t.owner, p.t.repo, p.url, p.accept, p.key, kept, o).then(async (r) => {
           if (r.spent) await up.spend(1);
         }),
       );
     }
-    return answer(kept, 'swr', inm);
+    return { k: kept, source: 'swr' };
   }
   // The reader or the team spent their share of the app's GitHub calls, or the reader is over their request budget:
   // what is kept (confirmed within STALE_KEEP_S), else busy until the window turns.
-  if (up.left <= 0) {
+  if (budget.left <= 0) {
     const old = standIn(kept, now);
-    if (old) return answer(old, 'stale', inm);
+    if (old) return { k: old, source: 'stale' };
     throw busy(up.wait);
   }
-  const { k, source, spent } = await throughGitHub(ctx, t.owner, t.repo, url, accept, key, kept, { keep, forever, slim });
-  if (spent) await up.spend(1);
-  return answer(k, source, inm);
+  // Taken before the call (concurrent reads of a batch share the budget), given back when it cost nothing.
+  budget.left -= 1;
+  let got: Through;
+  try {
+    got = await throughGitHub(ctx, p.t.owner, p.t.repo, p.url, p.accept, p.key, kept, sink ? { ...o, sink } : o);
+  } catch (e) {
+    budget.left += 1;
+    throw e;
+  }
+  if (got.spent) budget.spent += 1;
+  else budget.left += 1;
+  return { k: got.k, source: got.source };
+}
+
+/** One GitHub GET through the policy and the cache. */
+export async function onRead(req: Request, ctx: ReadCtx, t: ReadTarget, reader: Reader): Promise<Response> {
+  const p = planRead(t, reader, req.headers.get('accept')?.trim() ?? '');
+  const inm = req.headers.get('if-none-match');
+  // GitHub's 404 answered as a 200 "missing" result, for a page that asked for it (MISSING_HEADER).
+  const missingOk = req.headers.get(MISSING_HEADER) === '1';
+  // A member who just wrote to GitHub from the page asks GitHub again (with the kept ETag); a visitor never does.
+  const fresh = reader.kind === 'member' && req.headers.get(FRESH_HEADER) === '1';
+  const { values, wrote, up } = await countAndRead(ctx, req, t.full, reader, 1, p.extra);
+  const budget: Spending = { left: up.left, spent: 0 };
+  const { k, source } = await settleRead(ctx, p, reader, values, wrote, up, budget, fresh);
+  await up.spend(budget.spent);
+  return answerKept(k, source, inm, missingOk, p.slim);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Many reads in one request: the reads a page sends at one moment
+
+/** Reads per batch request (GET ?repo=<team>&read=...&read=...). */
+export const MAX_READS = 24;
+
+/** One read of a batch: its target and the Accept the page asked for ('' for GitHub's default). */
+export interface BatchRead {
+  t: ReadTarget;
+  accept: string;
+  /** A product repository of the team (not the team's own): checked once per repository (onReads productCheck). */
+  product: { owner: string; repo: string } | null;
+}
+
+/**
+ * What one read of a batch answered: GitHub's status, body and headers (a 404 as GitHub said it), Bridge's refusal of
+ * that read alone ({ status, error, message }), or `later` (the answer would pass MAX_BATCH_BYTES: ask it alone).
+ */
+export type BatchAnswer =
+  | { status: number; type: string; etag?: string; link?: string; cache: string; body: string }
+  | { status: number; error: string; message: string; retryAfter?: number }
+  | { later: true };
+
+/**
+ * Many GETs of one reader at once, the reads of one moment of a page: the reader is known once (by the caller), their
+ * request budget counted once with the reads' weight (one per read, as before), every kept answer read in one MGET, the
+ * GitHub calls the misses cost counted in one pipeline, and the misses' writes sent together. Each read goes through the
+ * same policy, cache and limits as onRead; a read Bridge refuses (not allowed, the app missing on a product, busy)
+ * answers that refusal in its place and the others go on. `productCheck` is productReadAllowed for the team.
+ */
+export async function onReads(req: Request, ctx: ReadCtx, full: string, reads: BatchRead[], reader: Reader, productCheck: (product: { owner: string; repo: string }) => Promise<void>): Promise<Response> {
+  const refusal = (e: unknown): BatchAnswer => {
+    if (!(e instanceof HttpError)) throw e;
+    const retry = Number(e.headers?.['Retry-After']);
+    return { status: e.status, error: e.code, message: e.message, ...(Number.isFinite(retry) && retry > 0 ? { retryAfter: retry } : {}) };
+  };
+  // Each product repository is checked once for the whole batch (the team's config, then the app's token).
+  const checks = new Map<string, Promise<void>>();
+  const plans = await Promise.all(
+    reads.map(async (r): Promise<ReadPlan | BatchAnswer> => {
+      try {
+        if (r.product) {
+          const k = `${r.product.owner}/${r.product.repo}`.toLowerCase();
+          let c = checks.get(k);
+          if (!c) {
+            c = productCheck(r.product);
+            checks.set(k, c);
+          }
+          await c;
+        }
+        return planRead(r.t, reader, r.accept);
+      } catch (e) {
+        return refusal(e);
+      }
+    }),
+  );
+  const isPlan = (x: ReadPlan | BatchAnswer): x is ReadPlan => 'key' in x;
+  // One MGET for every read, each key once.
+  const keys = [...new Set(plans.filter(isPlan).flatMap((p) => p.extra))];
+  const { values, wrote, up } = await countAndRead(ctx, req, full, reader, Math.max(1, reads.length), keys);
+  const kept = new Map(keys.map((k, i) => [k, values[i] ?? null]));
+  const budget: Spending = { left: up.left, spent: 0 };
+  const sink: (string | number)[][] = [];
+  const answers = await Promise.all(
+    plans.map(async (p): Promise<BatchAnswer> => {
+      if (!isPlan(p)) return p;
+      try {
+        const { k, source } = await settleRead(ctx, p, reader, p.extra.map((x) => kept.get(x) ?? null), wrote, up, budget, false, sink);
+        return { status: k.status, type: PASS_TYPE.test(k.type) ? k.type : 'application/octet-stream', ...(k.etag ? { etag: k.etag } : {}), ...(k.link ? { link: k.link } : {}), cache: source, body: k.status === 204 ? '' : k.body };
+      } catch (e) {
+        return refusal(e);
+      }
+    }),
+  );
+  if (sink.length) {
+    // A repository's "known" mark once per batch, however many of its answers were kept.
+    const marks = new Set<string>();
+    const writes = sink.filter((w) => {
+      const k = String(w[1]);
+      if (!k.startsWith('bridge:read:known:')) return true;
+      if (marks.has(k)) return false;
+      marks.add(k);
+      return true;
+    });
+    await ctx.redis.pipe(writes).catch(() => undefined);
+  }
+  await up.spend(budget.spent);
+  // The answer stays under MAX_BATCH_BYTES: past it, a read is left for later (the page asks it alone, from the cache).
+  let bytes = 0;
+  const out = answers.map((a): BatchAnswer => {
+    const size = 'body' in a ? a.body.length : 0;
+    if (size && bytes > 0 && bytes + size > MAX_BATCH_BYTES) return { later: true };
+    bytes += size;
+    return a;
+  });
+  return json(200, { reads: out }, { 'Cache-Control': 'private, no-store' });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

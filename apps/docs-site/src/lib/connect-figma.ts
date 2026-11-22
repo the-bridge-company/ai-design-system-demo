@@ -48,13 +48,29 @@ export function connectStep(
 
 export const teamLabel = (t: Pick<AccountTeam, 'name' | 'repo'>) => t.name?.trim() || t.repo.split('/')[1] || t.repo;
 
+/** The approve answers that end this sign-in (api/plugin-link): the plugin has to start a new one. */
+export type EndedReason = 'expired' | 'used';
+
+/** An approve refusal (api/plugin-link `error`) that ends this code for good, or null when trying again can work. */
+export function endedBy(status: number, error: unknown): EndedReason | null {
+  if (error === 'used' || status === 409) return 'used';
+  if (error === 'expired' || error === 'bad_request' || status === 410) return 'expired';
+  return null;
+}
+
+/** Who is signed in, for the quiet line under the action: the account's name, else its email. */
+export const signedInName = (a: Pick<Account, 'name' | 'email'>) => a.name?.trim() || a.email;
+
 export const CONNECT_WORDS = {
   title: 'Connect Figma',
   lede: 'Pick the team whose design system this Figma file uses. Bridge connects the plugin, nothing else changes.',
-  noCode: 'Open this page from the Bridge plugin in Figma: Settings, Sign in with Bridge.',
-  signin: 'Sign in to Bridge first, then come back here.',
-  signinGitHubHere: 'GitHub is connected in this browser, but you are not signed in to your Bridge account. Sign in to Bridge, then come back here.',
+  ledeOne: 'DS Bridge in Figma will use this team\'s design system. Bridge connects the plugin, nothing else changes.',
+  noCodeTitle: 'Start from Figma',
+  noCode: 'Open this page from the DS Bridge plugin in Figma: Sign in with Bridge.',
+  signin: 'Sign in to Bridge first. Bridge brings you back to this step afterwards.',
+  signinGitHubHere: 'GitHub is connected in this browser, but you are not signed in to your Bridge account. Sign in to Bridge, then Bridge brings you back here.',
   unreachable: 'Bridge could not check your sign-in. Reload this page in a minute.',
+  reload: 'Reload',
   signinAction: 'Sign in',
   github: 'The plugin works on your design system through GitHub. Connect your GitHub account once, then pick the team.',
   githubAction: 'Connect GitHub',
@@ -62,7 +78,13 @@ export const CONNECT_WORDS = {
   teamLabel: 'Team',
   connect: 'Connect Figma',
   connecting: 'Connecting',
+  signedInAs: (who: string) => `Signed in as ${who}.`,
+  otherAccount: 'Use another account',
   doneTitle: 'Figma is connected',
-  done: (team: string) => `Go back to Figma: the plugin now works with ${team}. You can close this tab.`,
+  done: (team: string) => `Go back to Figma: DS Bridge now uses the ${team} design system.`,
+  openStudio: 'Open Studio',
+  expiredTitle: 'This sign-in expired',
+  usedTitle: 'This sign-in was already used',
+  startAgain: 'Start again from the DS Bridge plugin in Figma: Sign in with Bridge.',
   failed: 'Bridge could not connect Figma. Try again in a minute.',
 } as const;

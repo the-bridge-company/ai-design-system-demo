@@ -3,11 +3,17 @@
 // the team and this browser's GitHub sign-in to the server, which checks the sign-in can open that team's design
 // system; the plugin, which polls with its own secret, receives them once. No token is ever shown. Steps and words:
 // lib/connect-figma.ts.
-import { useEffect, useState } from 'react';
-import { Alert, Button, Radio, RadioGroup, Spinner } from '@bridge-ds/react';
+//
+// The body of a standalone card (pages/studio/connect-figma.astro, Layout standalone): one heading, one sentence, the
+// team choice and one primary action, then who is signed in as a quiet line. Each outcome replaces the card's words:
+//   done             "Figma is connected", go back to Figma, one quiet link to Studio
+//   expired / used   the code cannot be approved again: start again from the plugin, no action here
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Button, Link, Radio, RadioGroup, Spinner } from '@bridge-ds/react';
 import { signInHref } from '../../../lib/account';
 import type { Account } from '../../../lib/account';
-import { CONNECT_WORDS as W, LINK_API, codeFrom, connectStep, teamLabel, type ConnectStep } from '../../../lib/connect-figma';
+import { studioHref } from '../../../lib/team-path';
+import { CONNECT_WORDS as W, LINK_API, codeFrom, connectStep, endedBy, signedInName, teamLabel, type ConnectStep, type EndedReason } from '../../../lib/connect-figma';
 
 const here = () => location.pathname + location.search;
 
@@ -23,12 +29,21 @@ async function freshGitHub(): Promise<{ token: string; expiresIn: number | null 
   return { token, expiresIn: at ? Math.max(60, Math.floor((at - Date.now()) / 1000)) : null };
 }
 
+async function otherAccount() {
+  const { signOut } = await import('../../../scripts/account-session');
+  await signOut().catch(() => {});
+  location.assign(signInHref(here()));
+}
+
 export default function ConnectFigma() {
   const [step, setStep] = useState<ConnectStep | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
   const [team, setTeam] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [ended, setEnded] = useState<EndedReason | null>(null);
+  const title = useRef<HTMLHeadingElement>(null);
   const code = typeof location === 'undefined' ? null : codeFrom(location.search);
 
   useEffect(() => {
@@ -44,6 +59,7 @@ export default function ConnectFigma() {
       const teams = account && github ? await import('../../../scripts/pickable-teams').then(({ loadPickableTeams }) => loadPickableTeams(account, github.token)).catch(() => undefined) : undefined;
       if (!live) return;
       const s = connectStep(code, account, Boolean(github), teams, { reachable: info.available, githubHere });
+      setAccount(account);
       setStep(s);
       if (s.kind === 'pick') setTeam(s.teams[0]!.repo);
     })();
@@ -51,6 +67,11 @@ export default function ConnectFigma() {
       live = false;
     };
   }, [code]);
+
+  // An outcome replaces the card's words: the heading takes focus so it is read out, and the action is gone.
+  useEffect(() => {
+    if (done || ended) title.current?.focus();
+  }, [done, ended]);
 
   async function connect() {
     if (step?.kind !== 'pick' || !code) return;
@@ -69,9 +90,13 @@ export default function ConnectFigma() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'approve', code, repo: picked.repo, token: github.token, expires_in: github.expiresIn ?? undefined, name: picked.name ?? undefined }),
       });
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
       if (!res.ok) {
-        setError(body.message ?? W.failed);
+        const end = endedBy(res.status, body.error);
+        if (end) setEnded(end);
+        // GitHub no longer accepts this browser's sign-in: the step that connects it again.
+        else if (body.error === 'signin') setStep({ kind: 'github' });
+        else setError(body.message ?? W.failed);
         return;
       }
       setDone(teamLabel(picked));
@@ -82,52 +107,115 @@ export default function ConnectFigma() {
     }
   }
 
-  if (done) return <Alert tone="success" title={W.doneTitle}>{W.done(done)}</Alert>;
-  if (!step) return <Spinner label="Checking your sign-in" />;
+  const heading = (text: string) => (
+    <h1 id="cf-title" className="cf-title" ref={title} tabIndex={-1}>
+      {text}
+    </h1>
+  );
+  const who = account && (
+    <p className="cf-who t-ui t-muted">
+      {W.signedInAs(signedInName(account))}{' '}
+      <Button variant="link" onClick={() => void otherAccount()}>
+        {W.otherAccount}
+      </Button>
+    </p>
+  );
+
+  if (done)
+    return (
+      <>
+        {heading(W.doneTitle)}
+        <p className="cf-text">{W.done(done)}</p>
+        <p className="cf-who t-ui">
+          <Link href={studioHref()}>{W.openStudio}</Link>
+        </p>
+      </>
+    );
+  if (ended)
+    return (
+      <>
+        {heading(ended === 'used' ? W.usedTitle : W.expiredTitle)}
+        <p className="cf-text">{W.startAgain}</p>
+      </>
+    );
+  if (!step)
+    return (
+      <>
+        {heading(W.title)}
+        <Spinner label="Checking your sign-in" />
+      </>
+    );
   switch (step.kind) {
     case 'no-code':
-      return <Alert tone="info">{W.noCode}</Alert>;
+      return (
+        <>
+          {heading(W.noCodeTitle)}
+          <p className="cf-text">{W.noCode}</p>
+        </>
+      );
     case 'unreachable':
-      return <Alert tone="warning">{W.unreachable}</Alert>;
+      return (
+        <>
+          {heading(W.title)}
+          <Alert tone="warning">{W.unreachable}</Alert>
+          <Button variant="primary" size="lg" fullWidth onClick={() => location.reload()}>
+            {W.reload}
+          </Button>
+        </>
+      );
     case 'signin':
       return (
-        <div className="cf-step">
-          <p>{step.githubHere ? W.signinGitHubHere : W.signin}</p>
-          <Button variant="primary" onClick={() => location.assign(signInHref(here()))}>
+        <>
+          {heading(W.title)}
+          <p className="cf-text">{step.githubHere ? W.signinGitHubHere : W.signin}</p>
+          <Button variant="primary" size="lg" fullWidth onClick={() => location.assign(signInHref(here()))}>
             {W.signinAction}
           </Button>
-        </div>
+        </>
       );
     case 'github':
       return (
-        <div className="cf-step">
-          <p>{W.github}</p>
-          <Button variant="primary" onClick={() => void import('../../../scripts/account-session').then(({ linkGitHub }) => linkGitHub(here()))}>
+        <>
+          {heading(W.title)}
+          <p className="cf-text">{W.github}</p>
+          <Button variant="primary" size="lg" fullWidth onClick={() => void import('../../../scripts/account-session').then(({ linkGitHub }) => linkGitHub(here()))}>
             {W.githubAction}
           </Button>
-        </div>
+          {who}
+        </>
       );
     case 'no-teams':
-      return <Alert tone="info">{W.noTeams}</Alert>;
-    case 'pick':
       return (
-        <div className="cf-step">
-          {step.teams.length > 1 ? (
+        <>
+          {heading(W.title)}
+          <p className="cf-text">{W.noTeams}</p>
+          {who}
+        </>
+      );
+    case 'pick': {
+      const many = step.teams.length > 1;
+      return (
+        <>
+          {heading(W.title)}
+          <p className="cf-text">{many ? W.lede : W.ledeOne}</p>
+          {many ? (
             <RadioGroup label={W.teamLabel} value={team} onValueChange={setTeam}>
               {step.teams.map((t) => (
                 <Radio key={t.repo} value={t.repo} label={teamLabel(t)} />
               ))}
             </RadioGroup>
           ) : (
-            <p>
+            <p className="cf-text">
               {W.teamLabel}: <strong>{teamLabel(step.teams[0]!)}</strong>
             </p>
           )}
           {error && <Alert tone="danger">{error}</Alert>}
-          <Button variant="primary" onClick={() => void connect()} disabled={busy}>
+          <Button variant="primary" size="lg" fullWidth onClick={() => void connect()} disabled={busy} loading={busy}>
             {busy ? W.connecting : W.connect}
           </Button>
-        </div>
+          {who}
+        </>
       );
+    }
   }
 }

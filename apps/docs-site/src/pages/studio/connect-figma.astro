@@ -1,51 +1,67 @@
 ---
 // Where the Figma plugin's "Sign in with Bridge" opens (api/plugin-link, docs/SIGN-IN.md "The Figma plugin"). Not in the
 // nav. The person picks the team whose design system the Figma file uses; the plugin receives it, with no token pasted.
+// Standalone (Layout standalone), like a sign-in or consent screen: the Bridge mark, then one centered card whose top
+// is the page's one Harbor zone with the Field Guide drawing. No top bar, no Studio nav, no search, no space switch:
+// this is a step of the plugin, not a page of the product. The card's words and actions: ConnectFigma.tsx.
 import Layout from '../../layouts/Layout.astro';
+import Logo from '../../components/Logo.astro';
 import Illustration from '../../components/Illustration.astro';
+import { Card } from '@bridge-ds/react';
 import ConnectFigma from '../../components/ds/studio/ConnectFigma';
 import { CONNECT_WORDS as W } from '../../lib/connect-figma';
-import { lastUpdated } from '../../lib/repo';
-
-const updated = lastUpdated(['apps/docs-site/src/pages/studio/connect-figma.astro', 'apps/docs-site/src/components/ds/studio/ConnectFigma.tsx', 'apps/docs-site/api/plugin-link/index.ts']);
 ---
 
-<Layout title={W.title} description="Connect the Bridge plugin in Figma to your team's design system." crumbs={false} updated={updated}>
-  <section class="zone cf" aria-labelledby="cf-title">
-    <div class="cf-art" aria-hidden="true"><Illustration name="components" width={132} /></div>
-    <div class="cf-text">
-      <h1 id="cf-title" class="cf-title">{W.title}</h1>
-      <p class="cf-sub">{W.lede}</p>
-      <ConnectFigma client:load />
-    </div>
-  </section>
+<Layout title={W.title} description="Connect the Bridge plugin in Figma to your team's design system." crumbs={false} standalone>
+  <div class="cf">
+    <Logo />
+    <Card className="cf-card" aria-labelledby="cf-title">
+      <div class="zone cf-art" aria-hidden="true"><Illustration name="components" width={132} /></div>
+      <div class="cf-body">
+        <ConnectFigma client:load />
+      </div>
+    </Card>
+  </div>
 </Layout>
 
 <style>
-  .cf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-4) var(--space-6);
-    max-width: calc(var(--size-64) * 3);
-    margin: var(--space-10) auto;
-    padding: var(--space-6) var(--space-7);
+  /* Over the bare page's padding and min-height (styles/start.css), which count a top bar this page does not have. */
+  :global(main.bare-main:has(.cf)) {
+    min-height: 100dvh;
+    padding: 0;
   }
 
+  .cf {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: var(--space-6);
+    padding: var(--space-16) var(--space-4) var(--space-12);
+  }
+
+  .cf :global(.cf-card) {
+    display: grid;
+    width: 100%;
+    max-width: var(--size-120);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* The card's top: the page's one Harbor zone, square at the bottom where it meets the card body. */
   .cf-art {
     display: flex;
-    flex: none;
-    color: var(--color-text-default);
+    justify-content: center;
+    padding: var(--space-6) var(--space-4) var(--space-5);
+    border-radius: 0;
   }
 
-  .cf-text {
+  .cf-body {
     display: grid;
-    flex: 1 1 var(--size-60);
     gap: var(--space-4);
-    min-width: 0;
+    padding: var(--space-6) var(--space-7) var(--space-7);
   }
 
-  .cf-title {
+  .cf-body :global(.cf-title) {
     margin: 0;
     font-family: var(--typography-h2-family);
     font-size: var(--typography-h2-size);
@@ -54,30 +70,31 @@ const updated = lastUpdated(['apps/docs-site/src/pages/studio/connect-figma.astr
     line-height: var(--typography-h2-line-height);
   }
 
-  .cf-sub {
+  /* The heading takes focus when an outcome replaces the card's words, only so it is read out: no ring on a heading. */
+  .cf-body :global(.cf-title:focus) {
+    outline: none;
+  }
+
+  .cf-body :global(.cf-text) {
     margin: 0;
     font-size: var(--typography-ui-size);
     line-height: var(--typography-ui-line-height);
   }
 
-  .cf-text :global(.cf-step) {
-    display: grid;
-    gap: var(--space-4);
-    justify-items: start;
-  }
-
-  .cf-text :global(.cf-step p) {
+  /* Who is signed in, under the action: one quiet line, set apart from the step by a hairline. */
+  .cf-body :global(.cf-who) {
     margin: 0;
+    padding-block-start: var(--space-4);
+    border-block-start: var(--border-width-default) solid var(--color-border-default);
   }
 
   @media (max-width: 640px) {
     .cf {
-      margin: var(--space-6) 0;
-      padding: var(--space-5);
+      padding: var(--space-8) var(--space-4) var(--space-10);
     }
 
-    .cf-art {
-      display: none;
+    .cf-body {
+      padding: var(--space-5);
     }
   }
 </style>

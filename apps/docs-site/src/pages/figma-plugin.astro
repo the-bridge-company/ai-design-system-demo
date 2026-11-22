@@ -6,9 +6,10 @@
 // Community page, what you need in one line under it), how it works (the homepage step tabs, real plugin and Studio
 // screens) and the one Harbor band that leads to Bridge. Screens: public/plugin-art/. The two-way picture is the
 // Community cover's lower band, drawn again on a transparent ground in a light and a dark version, wide and stacked
-// for phones (the page shows the one that matches data-theme). The plugin windows are framed as in gallery 1, Pull with
-// its variable list open; the Studio screen is from gallery 2. Styles: styles/figma-plugin.css on top of
-// styles/pricing.css.
+// for phones (the page shows the one that matches data-theme). The plugin windows are the real UI captured at 2x, Pull
+// with its variable list open, and again at phone width (360) for phones; the Studio screen is the live change page,
+// wide and at phone width. Every image is rendered by apps/docs-site/art/plugin-page/ (commands in its README.md).
+// Styles: styles/figma-plugin.css on top of styles/pricing.css.
 import '../styles/homepage.css';
 import '../styles/home-illus.css';
 import '../styles/pricing.css';
@@ -68,9 +69,30 @@ import { PLUGIN_COMMUNITY_URL } from '../lib/repo';
         'Bridge Studio: the token change color.bg.zone sent from the plugin, from Primary 200 to Primary 100, added to the library after review',
       ]}
     >
-      <div slot="p0" class="hp-sc hp-sc-center"><figure class="fp-window"><img src="/plugin-art/pull-window.png" width="480" height="640" alt="" loading="lazy" /></figure></div>
-      <div slot="p1" class="hp-sc hp-sc-center"><figure class="fp-window"><img src="/plugin-art/push-window.png" width="480" height="640" alt="" loading="lazy" /></figure></div>
-      <div slot="p2" class="hp-sc hp-sc-center"><img class="fp-shot fp-wide" src="/plugin-art/review-in-studio.png" width="1032" height="300" alt="" loading="lazy" /></div>
+      <div slot="p0" class="hp-sc hp-sc-center">
+        <figure class="fp-window">
+          <picture>
+            <source media="(max-width: 699px)" srcset="/plugin-art/pull-window-phone.png" width="360" height="640" />
+            <img src="/plugin-art/pull-window.png" width="480" height="640" alt="" loading="lazy" />
+          </picture>
+        </figure>
+      </div>
+      <div slot="p1" class="hp-sc hp-sc-center">
+        <figure class="fp-window">
+          <picture>
+            <source media="(max-width: 699px)" srcset="/plugin-art/push-window-phone.png" width="360" height="640" />
+            <img src="/plugin-art/push-window.png" width="480" height="640" alt="" loading="lazy" />
+          </picture>
+        </figure>
+      </div>
+      <div slot="p2" class="hp-sc hp-sc-center">
+        <figure class="fp-window fp-wide">
+          <picture>
+            <source media="(max-width: 699px)" srcset="/plugin-art/review-in-studio-phone.png" width="330" height="334" />
+            <img src="/plugin-art/review-in-studio.png" width="1032" height="300" alt="" loading="lazy" />
+          </picture>
+        </figure>
+      </div>
     </HpStepSection>
 
     <div class="hp-wrap fp-band-wrap">

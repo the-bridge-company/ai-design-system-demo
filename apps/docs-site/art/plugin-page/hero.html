@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sync both ways</title>
+<!-- The two-way picture of /figma-plugin/ (public/plugin-art/sync-both-ways*.png). Not served: render.mjs opens it
+     with ?layout=wide|narrow&theme=light|dark and screenshots #wide or #narrow. Same drawing as the lower band of the
+     Community cover (apps/figma-plugin/community/src/art.html). Commands: README.md in this folder. -->
+
+<style>
+  @font-face { font-family: "Fraunces"; src: url("../../../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Instrument Sans"; src: url("../../../../node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2") format("woff2"); font-weight: 400 700; }
+  @font-face { font-family: "Plex Mono"; src: url("../../../../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Plex Mono"; src: url("../../../../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+  /* Light = the bridge brand light tokens; dark = the dark tokens (surface ink 900, border ink 800, text ink 50,
+     muted ink 400, link harbor 300, water harbor 800). Background stays transparent: the page shows through. */
+  :root { --plate: #ffffff; --ink: #15202b; --ink-2: #5b6672; --line: #e3e8ee; --water: #cfe8ff; --deep: #0b4a8b; --sw-edge: rgba(21, 32, 43, 0.16); }
+  :root.dark { --plate: #15202b; --ink: #f5f7f9; --ink-2: #a0aab5; --line: #323e4c; --water: #043e70; --deep: #aad2fe; --sw-edge: rgba(245, 247, 249, 0.28); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: transparent; }
+  body { font-family: "Instrument Sans", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .art { position: relative; display: none; }
+  .art.on { display: block; }
+  .plate { background: var(--plate); border: 2px solid var(--line); border-radius: 20px; padding: 30px 36px; }
+  .plate h3 { font-size: 24px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
+  .plate h3 small { font-family: "Plex Mono", monospace; font-size: 16px; font-weight: 400; color: var(--ink-2); }
+  .row { display: flex; align-items: center; gap: 14px; font-family: "Plex Mono", monospace; font-size: 18px; height: 58px; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .sw { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--sw-edge); flex: none; }
+  .row .v { margin-left: auto; color: var(--ink-2); font-size: 16px; }
+  .row.changed .v { color: var(--deep); font-weight: 500; }
+  .lane b { display: block; font-family: "Fraunces", Georgia, serif; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; font-variation-settings: "opsz" 96; }
+  .lane span { font-size: 20px; color: var(--ink-2); }
+  .ink-s { stroke: var(--ink); } .ink-f { fill: var(--ink); }
+  .deep-s { stroke: var(--deep); } .deep-f { fill: var(--deep); }
+  .water-s { stroke: var(--water); }
+
+  /* Wide: the cover band of the Community cover, 1831 x 436 */
+  #wide { width: 1831px; height: 436px; }
+  #wide .plate { position: absolute; top: 20px; width: 560px; height: 396px; }
+  #wide .code { left: 20px; }
+  #wide .figma { left: 1251px; }
+  #wide .span { position: absolute; left: 596px; width: 640px; top: 20px; height: 396px; }
+  #wide .span svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #wide .lane { position: absolute; left: 0; right: 0; text-align: center; }
+  #wide .lane.pull { top: 0; }
+  #wide .lane.push { top: 318px; }
+
+  /* Narrow: the two cards stacked, Pull down and Push up between them, 400 wide (rendered at 2x) */
+  #narrow { width: 400px; padding: 4px; }
+  #narrow .plate { padding: 20px 22px 8px; border-radius: 16px; }
+  #narrow .plate h3 { font-size: 19px; margin-bottom: 6px; }
+  #narrow .plate h3 small { font-size: 12px; }
+  #narrow .row { font-size: 14px; height: 44px; gap: 10px; }
+  #narrow .sw { width: 20px; height: 20px; border-radius: 5px; }
+  #narrow .row .v { font-size: 12.5px; }
+  #narrow .span { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 168px; }
+  #narrow .lane b { font-size: 24px; }
+  #narrow .lane span { font-size: 14px; }
+  #narrow .lane { display: flex; align-items: center; gap: 12px; }
+  #narrow .lane.pull { justify-self: end; text-align: right; }
+  #narrow .lane.push { justify-self: start; }
+  #narrow .lane svg { width: 20px; height: 136px; flex: none; }
+  #narrow .mark { width: 92px; height: 72px; margin: 0 18px; }
+</style>
+</head>
+<body>
+<div class="art" id="wide">
+  <div class="plate code">
+    <h3>Code <small>GitHub · DTCG JSON</small></h3>
+    <div class="row"><span class="sw" style="background:#15202b"></span>color.text.default<span class="v">{palette.neutral.900}</span></div>
+    <div class="row changed"><span class="sw" style="background:#5b6672"></span>color.text.muted<span class="v">{palette.neutral.600}</span></div>
+    <div class="row"><span class="sw" style="background:#cfe8ff"></span>color.bg.zone<span class="v">{palette.primary.200}</span></div>
+    <div class="row"><span class="sw" style="background:#0b4a8b"></span>color.action.primary.bg<span class="v">{palette.primary.700}</span></div>
+    <div class="row"><span class="sw" style="background:#ffffff"></span>color.bg.default<span class="v">{palette.neutral.0}</span></div>
+  </div>
+  <div class="span">
+    <svg viewBox="0 0 640 396" aria-hidden="true">
+      <defs>
+        <marker id="w-ink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="ink-f" d="M0 0L10 5L0 10z" /></marker>
+        <marker id="w-deep" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="deep-f" d="M0 0L10 5L0 10z" /></marker>
+      </defs>
+      <path class="ink-s" d="M48 92 H586" stroke-width="5" stroke-linecap="round" marker-end="url(#w-ink)" />
+      <g transform="translate(194 92) scale(9)">
+        <path class="ink-s" d="M3 16Q14 2 25 16" fill="none" stroke-width="1" stroke-linecap="round" />
+        <path class="ink-s" d="M2 16h24" stroke-width="1" stroke-linecap="round" />
+        <path class="ink-s" d="M9 16v-4M14 16v-7M19 16v-4" stroke-width="0.75" stroke-linecap="round" />
+      </g>
+      <path class="water-s" d="M230 260 H410" stroke-width="14" stroke-linecap="round" />
+      <path class="deep-s" d="M592 300 H54" stroke-width="5" stroke-linecap="round" marker-end="url(#w-deep)" />
+    </svg>
+    <div class="lane pull"><b>Pull</b><span>code to Figma</span></div>
+    <div class="lane push"><b>Push</b><span>Figma back for review</span></div>
+  </div>
+  <div class="plate figma">
+    <h3>Figma <small>Variables · 6 collections</small></h3>
+    <div class="row"><span class="sw" style="background:#15202b"></span>color/text/default<span class="v">Semantic</span></div>
+    <div class="row changed"><span class="sw" style="background:#495562"></span>color/text/muted<span class="v">edited</span></div>
+    <div class="row"><span class="sw" style="background:#cfe8ff"></span>color/bg/zone<span class="v">Semantic</span></div>
+    <div class="row"><span class="sw" style="background:#0b4a8b"></span>palette/primary/700<span class="v">Brand</span></div>
+    <div class="row"><span class="sw" style="background:#cfe8ff"></span>color/harbor/200<span class="v">Primitives</span></div>
+  </div>
+</div>
+
+<div class="art" id="narrow">
+  <div class="plate code">
+    <h3>Code <small>GitHub · DTCG JSON</small></h3>
+    <div class="row"><span class="sw" style="background:#15202b"></span>color.text.default<span class="v">{palette.neutral.900}</span></div>
+    <div class="row changed"><span class="sw" style="background:#5b6672"></span>color.text.muted<span class="v">{palette.neutral.600}</span></div>
+    <div class="row"><span class="sw" style="background:#cfe8ff"></span>color.bg.zone<span class="v">{palette.primary.200}</span></div>
+  </div>
+  <div class="span">
+    <div class="lane pull">
+      <div><b>Pull</b><span>code to Figma</span></div>
+      <svg viewBox="0 0 20 136" aria-hidden="true">
+        <defs><marker id="n-ink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="ink-f" d="M0 0L10 5L0 10z" /></marker></defs>
+        <path class="ink-s" d="M10 6 V122" stroke-width="4" stroke-linecap="round" marker-end="url(#n-ink)" />
+      </svg>
+    </div>
+    <svg class="mark" viewBox="0 0 28 22" aria-hidden="true">
+      <path class="ink-s" d="M3 16Q14 2 25 16" fill="none" stroke-width="1.6" stroke-linecap="round" />
+      <path class="ink-s" d="M2 16h24" stroke-width="1.6" stroke-linecap="round" />
+      <path class="ink-s" d="M9 16v-4M14 16v-7M19 16v-4" stroke-width="1.2" stroke-linecap="round" />
+      <path class="water-s" d="M7 19.5h14" stroke-width="2" stroke-linecap="round" />
+    </svg>
+    <div class="lane push">
+      <svg viewBox="0 0 20 136" aria-hidden="true">
+        <defs><marker id="n-deep" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path class="deep-f" d="M0 0L10 5L0 10z" /></marker></defs>
+        <path class="deep-s" d="M10 130 V14" stroke-width="4" stroke-linecap="round" marker-end="url(#n-deep)" />
+      </svg>
+      <div><b>Push</b><span>Figma back<br>for review</span></div>
+    </div>
+  </div>
+  <div class="plate figma">
+    <h3>Figma <small>Variables · 6 collections</small></h3>
+    <div class="row"><span class="sw" style="background:#15202b"></span>color/text/default<span class="v">Semantic</span></div>
+    <div class="row changed"><span class="sw" style="background:#495562"></span>color/text/muted<span class="v">edited</span></div>
+    <div class="row"><span class="sw" style="background:#cfe8ff"></span>color/bg/zone<span class="v">Semantic</span></div>
+  </div>
+</div>
+<script>
+  const q = new URLSearchParams(location.search);
+  document.getElementById(q.get('layout') || 'wide').classList.add('on');
+  if (q.get('theme') === 'dark') document.documentElement.classList.add('dark');
+</script>
+</body>
+</html>

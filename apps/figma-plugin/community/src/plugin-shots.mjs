@@ -4,8 +4,10 @@
 // to the real api.github.com, read-only (GET only, anything else is refused), with GITHUB_TOKEN when it is set, else
 // anonymously (public repository, 60 calls an hour). Answers are kept in <out-dir>/github-cache, so the push shot
 // reuses what the pull shot read, and a second run reads nothing it already has.
-// Usage: [GITHUB_TOKEN=...] node plugin-shots.mjs <snapshot.json> <out-dir> <pull|push>
-// pull: a file with no variables yet (first pull plan). push: a pulled file with a designer's edits.
+// Usage: [GITHUB_TOKEN=...] [WIDTH=480] node plugin-shots.mjs <snapshot.json> <out-dir> <pull|pull-list|push>
+// pull: a file with no variables yet (first pull plan). pull-list: the same with its variable list open (the
+// /figma-plugin/ page, apps/docs-site/art/plugin-page/README.md). push: a pulled file with a designer's edits.
+// WIDTH: the window width in CSS px (Figma's default is 480); another width adds -<width> to the file name.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -14,6 +16,8 @@ import { chromium } from 'playwright-core';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const [snapshotPath, outDir, mode = 'push'] = process.argv.slice(2);
+const width = Number(process.env.WIDTH || 480);
+const suffix = width === 480 ? '' : `-${width}`;
 const token = process.env.GITHUB_TOKEN;
 if (!snapshotPath || !outDir) throw new Error('usage: [GITHUB_TOKEN=...] node plugin-shots.mjs <snapshot.json> <out-dir> <pull|push>');
 const auth = token ? { authorization: `Bearer ${token}` } : {};
@@ -41,7 +45,7 @@ const init = {
 };
 
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
-const page = await browser.newPage({ viewport: { width: 480, height: 640 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({ viewport: { width, height: 640 }, deviceScaleFactor: 2 });
 await page.route('https://plugin.local/**', (r) => r.fulfill({ contentType: 'text/html', body: ui }));
 await page.route('https://api.github.com/**', async (r) => {
   if (r.request().method() !== 'GET') return r.abort();
@@ -79,15 +83,19 @@ const settle = () =>
     .then(() => page.waitForFunction(() => document.getElementById('panel')?.getAttribute('aria-busy') !== 'true' && !document.querySelector('.progress'), null, { timeout: 120000 }))
     .then(() => page.waitForTimeout(600));
 
-if (mode === 'pull') {
+if (mode === 'pull' || mode === 'pull-list') {
   await page.getByRole('button', { name: 'Check for updates' }).click();
   await settle();
-  await page.screenshot({ path: join(outDir, 'plugin-pull.png') });
+  if (mode === 'pull-list') {
+    await page.getByText(/^See the \d+ variables$/).click();
+    await page.waitForTimeout(400);
+  }
+  await page.screenshot({ path: join(outDir, `plugin-${mode}${suffix}.png`) });
 } else {
   await page.getByRole('tab', { name: 'Push' }).click();
   await page.getByRole('button', { name: 'Scan for changes' }).click();
   await settle();
-  await page.screenshot({ path: join(outDir, 'plugin-push.png') });
+  await page.screenshot({ path: join(outDir, `plugin-push${suffix}.png`) });
 }
 await page.unrouteAll({ behavior: 'ignoreErrors' });
 await browser.close();

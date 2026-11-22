@@ -80,13 +80,20 @@ interface Props {
    */
   bare?: boolean;
   /**
+   * A step another app sends the person to (pages/studio/connect-figma.astro): bare, and without the top bar either.
+   * The page draws its own Bridge mark above one centered card, like a sign-in or consent screen. Sets <html
+   * data-standalone>.
+   */
+  standalone?: boolean;
+  /**
    * The browser workspace (pages/studio/workspace.astro, board EmptyB): the Studio with nothing connected. Reads no
    * repository either (<html data-no-repo data-workspace>): no demo banner, no review count, the chip names the workspace.
    */
   workspace?: boolean;
 }
 
-const { title, description, sources = [], updated, wide = false, crumbs, toc, hosted = false, library = false, bare = false, workspace = false } = Astro.props;
+const { title, description, sources = [], updated, wide = false, crumbs, toc, hosted = false, library = false, bare: bareOnly = false, standalone = false, workspace = false } = Astro.props;
+const bare = bareOnly || standalone;
 // Pages that read no repository: the start screen and the browser workspace.
 const noRepo = bare || workspace;
 // A shell at /team-shell/tokens/ is the Tokens page of Studio: same nav, same current entry.
@@ -163,7 +170,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
 ---
 
 <!doctype html>
-<html lang="en" data-hosted={hosted ? '' : undefined} data-hosted-site={hostedSite ? '' : undefined} data-no-repo={noRepo ? '' : undefined} data-workspace={workspace ? '' : undefined} data-bare={bare ? '' : undefined} data-shell={shell} data-library-shell={library ? libraryShellMarker(libraryRoute ?? '') : undefined} data-theme="light" data-brand="bridge" data-density="comfortable" data-space={space} data-own-library={`${siteRepo().owner}/${siteRepo().repo}`} data-gh-app={ghApp} data-gh-slug={ghSlug} data-brands={[DEFAULT_BRAND, ...BRANDS.filter((b) => b !== DEFAULT_BRAND)].join(' ')}>
+<html lang="en" data-hosted={hosted ? '' : undefined} data-hosted-site={hostedSite ? '' : undefined} data-no-repo={noRepo ? '' : undefined} data-workspace={workspace ? '' : undefined} data-bare={bare ? '' : undefined} data-standalone={standalone ? '' : undefined} data-shell={shell} data-library-shell={library ? libraryShellMarker(libraryRoute ?? '') : undefined} data-theme="light" data-brand="bridge" data-density="comfortable" data-space={space} data-own-library={`${siteRepo().owner}/${siteRepo().repo}`} data-gh-app={ghApp} data-gh-slug={ghSlug} data-brands={[DEFAULT_BRAND, ...BRANDS.filter((b) => b !== DEFAULT_BRAND)].join(' ')}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -246,6 +253,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
   </head>
   <body>
     <Link variant="subtle" className="skip" href="#main">Skip to content</Link>
+    {!standalone && (
     <header class="topbar">
       <div class="topbar-start">
         {/* Collapse or expand the side nav (wide screens; the phone keeps its menu button). Not on the start screen: no rail. */}
@@ -277,6 +285,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
         )}
       </div>
     </header>
+    )}
     {/* The demo, for a visitor who cannot change it: the demo banner (scripts/demo-gate.ts mounts
         components/ds/studio/DemoBanner.tsx here once the session knows who is visiting), Studio and a team Library. */}
     {((isStudio && !noRepo) || library) && (

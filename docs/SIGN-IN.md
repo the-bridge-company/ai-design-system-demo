@@ -192,7 +192,9 @@ Designers connect the DS Bridge plugin with the Bridge account they already use,
 2. On that page the person signs in to Bridge if needed, connects GitHub once if this browser has no GitHub sign-in,
    picks the team, and presses **Connect Figma**. The page sends the code, the team's repository and this browser's
    GitHub sign-in (`approve`, same origin only). The server checks with GitHub that the sign-in can read that repository
-   (`wrong_team` otherwise) and keeps the answer.
+   (`wrong_team` otherwise) and keeps the answer. The page is standalone, like a sign-in or consent screen: the Bridge
+   mark and one card, no Studio top bar or nav. Once approved it says "Figma is connected" and to go back to Figma; an
+   expired or already used code says to start again from the plugin.
 3. The plugin polls (`poll`, every 3 seconds, with its secret) and receives the repository, the team name, the default
    branch and the token, once. It saves the token on that computer (`figma.clientStorage`, marked as a Bridge sign-in)
    and the repository with the file.

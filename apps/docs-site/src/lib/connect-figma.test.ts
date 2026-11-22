@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Account } from './account';
-import { CONNECT_WORDS, codeFrom, connectStep, teamLabel } from './connect-figma';
+import { CONNECT_WORDS, codeFrom, connectStep, endedBy, signedInName, teamLabel } from './connect-figma';
 
 const account = (teams: Account['teams']): Account => ({ email: 'ana@acme.com', name: 'Ana', github: { login: 'ana', id: 1 }, teams });
 const team = (repo: string, name: string | null = null) => ({ repo, name, role: 'edit', via: 'email' });
@@ -26,6 +26,26 @@ describe('Connect Figma (Studio side of Sign in with Bridge)', () => {
     expect(connectStep('ABCDEFGH23', null, false, undefined, { reachable: false }).kind).toBe('unreachable');
     expect(connectStep('ABCDEFGH23', null, false, undefined, { reachable: true, githubHere: true })).toEqual({ kind: 'signin', githubHere: true });
     expect(connectStep('ABCDEFGH23', null, false)).toEqual({ kind: 'signin', githubHere: false });
+  });
+
+  it('ends the sign-in only on the answers a retry cannot fix (expired, used)', () => {
+    expect(endedBy(410, 'expired')).toBe('expired');
+    expect(endedBy(400, 'bad_request')).toBe('expired');
+    expect(endedBy(409, 'used')).toBe('used');
+    expect(endedBy(403, 'wrong_team')).toBeNull();
+    expect(endedBy(401, 'signin')).toBeNull();
+    expect(endedBy(502, 'unreachable')).toBeNull();
+  });
+
+  it('names who is signed in by name, else by email', () => {
+    expect(signedInName({ name: 'Ana', email: 'ana@acme.com' })).toBe('Ana');
+    expect(signedInName({ name: '  ', email: 'ana@acme.com' })).toBe('ana@acme.com');
+  });
+
+  it('says the next step happens in Figma, never "close this tab"', () => {
+    expect(CONNECT_WORDS.done('Bridge DS')).toBe('Go back to Figma: DS Bridge now uses the Bridge DS design system.');
+    const all = Object.values(CONNECT_WORDS).map((w) => (typeof w === 'function' ? w('Acme') : w)).join(' ');
+    expect(all).not.toMatch(/close this tab/i);
   });
 
   it('never shows a token or an em dash', () => {

@@ -82,9 +82,6 @@ const settle = () =>
 if (mode === 'pull') {
   await page.getByRole('button', { name: 'Check for updates' }).click();
   await settle();
-  // Open what is missing in Figma, so the shot shows the promise: tokens to bring in, components the file lacks.
-  await page.getByText(/^\d+ components? missing in Figma$/).click();
-  await page.waitForTimeout(400);
   await page.screenshot({ path: join(outDir, 'plugin-pull.png') });
 } else {
   await page.getByRole('tab', { name: 'Push' }).click();
